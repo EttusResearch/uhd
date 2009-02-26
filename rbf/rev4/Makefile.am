@@ -1,5 +1,5 @@
 #
-# Copyright 2005,2006,2009 Free Software Foundation, Inc.
+# Copyright 2009 Free Software Foundation, Inc.
 # 
 # This file is part of GNU Radio
 # 
@@ -19,4 +19,13 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-SUBDIRS = rev2 rev4
+include $(top_srcdir)/Makefile.common
+
+rbf4datadir = $(prefix)/share/usrp/rev4
+
+dist_rbf4data_DATA =		\
+	std_2rxhb_2tx.rbf		\
+	std_4rx_0tx.rbf		\
+	inband_1rxhb_1tx.rbf	\
+	inband_2rxhb_2tx.rbf	\
+	multi_2rxhb_2tx.rbf
