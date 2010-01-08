@@ -1,0 +1,15 @@
+/Makefile
+/Makefile.in
+/aclocal.m4
+/autom4te.cache/
+/bootstrap
+/config.guess
+/config.log
+/config.status
+/config.sub
+/configure
+/install-sh
+/libtool
+/ltmain.sh
+/missing
+/usrp-uhd.pc

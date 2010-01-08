@@ -1,0 +1,33 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+## Setup Autotools
+##################################################
+AC_PREREQ(2.60)
+AC_INIT
+AM_INIT_AUTOMAKE(usrp_uhd, 0)
+
+##################################################
+## Check Libs
+##################################################
+AC_PROG_CXX
+LT_INIT
+AX_BOOST_BASE([1.36])
+AX_BOOST_THREAD
+
+##################################################
+## Check Programs
+##################################################
+AC_PATH_PROG(SED, sed)
+AC_PATH_PROG(PYTHON, python)
+
+##################################################
+## Create Files
+##################################################
+AC_CONFIG_FILES([ \
+	usrp-uhd.pc \
+	Makefile \
+])
+AC_OUTPUT
