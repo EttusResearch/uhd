@@ -4,10 +4,4 @@
 
 include $(top_srcdir)/Makefile.common
 
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = usrp-uhd.pc
-
-EXTRA_DIST = \
-	usrp-uhd.pc.in
-
-SUBDIRS =
+SUBDIRS = usrp_uhd

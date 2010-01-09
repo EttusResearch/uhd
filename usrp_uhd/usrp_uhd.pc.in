@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: usrp-uhd
+Name: usrp_uhd
 Description: Universal Software Radio Peripheral - Unified Hardware Driver
 Requires: 
 Version: @VERSION@
-Libs: -L${libdir} -lusrp-uhd
+Libs: -L${libdir} -lusrp_uhd
 Cflags: -I${includedir}

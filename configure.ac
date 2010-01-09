@@ -27,7 +27,10 @@ AC_PATH_PROG(PYTHON, python)
 ## Create Files
 ##################################################
 AC_CONFIG_FILES([ \
-	usrp-uhd.pc \
 	Makefile \
+	usrp_uhd/usrp_uhd.pc \
+	usrp_uhd/Makefile \
+	usrp_uhd/include/Makefile \
+	usrp_uhd/lib/Makefile \
 ])
 AC_OUTPUT

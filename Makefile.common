@@ -2,3 +2,8 @@
 # Copyright 2010 Ettus Research LLC
 #
 
+USRP_UHD_INCLUDES = \
+	-I$(top_srcdir)/usrp_uhd/include
+
+USRP_UHD_LA = \
+	$(top_srcdir)/usrp_uhd/lib/libusrp_uhd.la

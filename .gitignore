@@ -12,4 +12,9 @@
 /libtool
 /ltmain.sh
 /missing
-/usrp-uhd.pc
+/depcomp
+*.la
+*.lo
+*.o
+*.libs
+*.deps
