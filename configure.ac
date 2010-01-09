@@ -32,5 +32,8 @@ AC_CONFIG_FILES([ \
 	usrp_uhd/Makefile \
 	usrp_uhd/include/Makefile \
 	usrp_uhd/lib/Makefile \
+	usrp_dboard/Makefile \
+	usrp_dboard/include/Makefile \
+	usrp_dboard/lib/Makefile \
 ])
 AC_OUTPUT

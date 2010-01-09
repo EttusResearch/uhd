@@ -4,6 +4,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = \
-	usrp_dboard \
-	usrp_uhd
+SUBDIRS =
+
+noinst_HEADERS = \
+	usrp_dboard/interface.hpp

@@ -20,6 +20,7 @@ libusrp_uhd_la_SOURCES = \
 
 libusrp_uhd_la_LIBADD = \
 	$(BOOST_LDFLAGS) \
-	$(BOOST_THREAD_LIB)
+	$(BOOST_THREAD_LIB) \
+	$(USRP_DBOARD_LA)
 
 noinst_HEADERS =

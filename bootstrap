@@ -1,0 +1,10 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+rm -rf *.cache
+
+aclocal -I config
+autoconf
+libtoolize --automake
+automake --add-missing --gnu --warnings=all

@@ -4,6 +4,4 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = \
-	usrp_dboard \
-	usrp_uhd
+SUBDIRS = include lib
