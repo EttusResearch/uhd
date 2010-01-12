@@ -4,13 +4,8 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS =
+SUBDIRS = usrp_uhd
 
 this_includedir = $(includedir)
 this_include_HEADERS = \
 	usrp_uhd.hpp
-
-usrp_uhd_includedir = $(includedir)/usrp_uhd
-usrp_uhd_include_HEADERS = \
-	usrp_uhd/usrp_addr.hpp \
-	usrp_uhd/wax.hpp

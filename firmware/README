@@ -1,0 +1,4 @@
+This is a placeholder for the firmware code (microblaze and 8051).
+
+The layout should have a common library of source and header files.
+Each usrp-like will have its own device-specific libs and apps.

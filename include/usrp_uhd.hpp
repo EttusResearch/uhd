@@ -5,22 +5,22 @@
 #ifndef INCLUDED_USRP_UHD_HPP
 #define INCLUDED_USRP_UHD_HPP
 
-#include <usrp_uhd/usrp_addr.hpp>
+#include <usrp_uhd/device_addr.hpp>
 #include <usrp_uhd/wax.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <vector>
 #include <sys/uio.h>
 
-namespace usrp{
+namespace usrp_uhd{
 
-    class uhd{
+    class usrp_uhd{
 
     public:
-        typedef boost::shared_ptr<uhd> sptr;
+        typedef boost::shared_ptr<usrp_uhd> sptr;
         typedef boost::function<bool(void *data, size_t len)> recv_hdlr_t;
-        uhd(usrp_addr_t usrp_addr);
-        ~uhd(void);
+        usrp_uhd(device_addr_t device_addr);
+        ~usrp_uhd(void);
 
         //the io interface
         void send(const std::vector<iovec> &iovs);
@@ -38,6 +38,6 @@ namespace usrp{
         wax::type d_mboard;
     };
 
-} //namespace usrp
+} //namespace usrp_uhd
 
 #endif /* INCLUDED_USRP_UHD_HPP */

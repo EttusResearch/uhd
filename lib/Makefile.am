@@ -4,23 +4,18 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS =
+SUBDIRS = usrp quadradio
 
-AM_CPPFLAGS = \
-	$(USRP_UHD_INCLUDES) \
-	$(BOOST_CPPFLAGS)
+AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 
 lib_LTLIBRARIES = \
 	libusrp_uhd.la
 
 libusrp_uhd_la_SOURCES = \
-	usrp_addr.cpp \
+	device_addr.cpp \
 	usrp_uhd.cpp \
 	wax.cpp
 
-libusrp_uhd_la_LIBADD = \
-	$(BOOST_LDFLAGS) \
-	$(BOOST_THREAD_LIB) \
-	$(USRP_DBOARD_LA)
+libusrp_uhd_la_LIBADD = $(GENERAL_LDDFLAGS)
 
 noinst_HEADERS =

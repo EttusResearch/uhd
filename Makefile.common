@@ -2,20 +2,12 @@
 # Copyright 2010 Ettus Research LLC
 #
 
-########################################################################
-## Makefile variables for the top level component: the uhd
-########################################################################
-USRP_UHD_INCLUDES = \
-	-I$(top_srcdir)/usrp_uhd/include
+USRP_UHD_LA = $(top_srcdir)/lib/libusrp_uhd.la
 
-USRP_UHD_LA = \
-	$(top_srcdir)/usrp_uhd/lib/libusrp_uhd.la
-	
-########################################################################
-## Makefile variables for the usrp dboard component
-########################################################################
-USRP_DBOARD_INCLUDES = \
-	-I$(top_srcdir)/usrp_dboard/include
+GENERAL_CPPFLAGS = \
+	-I$(top_srcdir)/include \
+	$(BOOST_CPPFLAGS)
 
-USRP_DBOARD_LA = \
-	$(top_srcdir)/usrp_dboard/lib/libusrp_dboard.la
+GENERAL_LDDFLAGS = \
+	$(BOOST_LDFLAGS) \
+	$(BOOST_THREAD_LIB)

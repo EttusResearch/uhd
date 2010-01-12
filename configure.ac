@@ -28,12 +28,17 @@ AC_PATH_PROG(PYTHON, python)
 ##################################################
 AC_CONFIG_FILES([ \
 	Makefile \
-	usrp_uhd/usrp_uhd.pc \
-	usrp_uhd/Makefile \
-	usrp_uhd/include/Makefile \
-	usrp_uhd/lib/Makefile \
-	usrp_dboard/Makefile \
-	usrp_dboard/include/Makefile \
-	usrp_dboard/lib/Makefile \
+	include/Makefile \
+	include/usrp_uhd/Makefile \
+	include/usrp_uhd/usrp/Makefile \
+	include/usrp_uhd/usrp/dboard/Makefile \
+	include/usrp_uhd/usrp/mboard/Makefile \
+	include/usrp_uhd/quadradio/Makefile \
+	lib/Makefile \
+	lib/usrp/Makefile \
+	lib/usrp/dboard/Makefile \
+	lib/usrp/mboard/Makefile \
+	lib/quadradio/Makefile \
+	test/Makefile \
 ])
 AC_OUTPUT
