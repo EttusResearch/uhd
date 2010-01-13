@@ -2,8 +2,8 @@
 // Copyright 2010 Ettus Research LLC
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_BASE_H
-#define INCLUDED_USRP_UHD_USRP_DBOARD_BASE_H
+#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_BASE_HPP
+#define INCLUDED_USRP_UHD_USRP_DBOARD_BASE_HPP
 
 #include <usrp_uhd/wax.hpp>
 #include <boost/utility.hpp>
@@ -77,4 +77,4 @@ public:
 
 }}} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_BASE_H */
+#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_BASE_HPP */

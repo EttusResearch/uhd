@@ -2,8 +2,8 @@
 // Copyright 2010 Ettus Research LLC
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_H
-#define INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_H
+#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP
+#define INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP
 
 #include <vector>
 #include <usrp_uhd/wax.hpp>
@@ -44,4 +44,4 @@ private:
 
 }}} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_H */
+#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP */

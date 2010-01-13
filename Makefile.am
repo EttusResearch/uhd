@@ -14,6 +14,7 @@ pkgconfig_DATA = usrp_uhd.pc
 
 EXTRA_DIST = $(srcdir)/usrp_uhd.pc.in
 BUILT_SOURCES = usrp_uhd.pc
+MOSTLYCLEANFILES = $(BUILT_SOURCES)
 
 usrp_uhd.pc: $(srcdir)/usrp_uhd.pc.in Makefile
 	$(SED) \

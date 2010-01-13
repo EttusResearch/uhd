@@ -10,11 +10,15 @@ AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 
 noinst_LTLIBRARIES = lib.la
 
+dboard_sources = \
+	basic.cpp
+
 lib_la_SOURCES = \
+	$(dboard_sources) \
 	base.cpp \
 	interface.cpp \
 	manager.cpp
 
 lib_la_LIBADD = $(GENERAL_LDDFLAGS)
 
-noinst_HEADERS =
+noinst_HEADERS = dboards.hpp

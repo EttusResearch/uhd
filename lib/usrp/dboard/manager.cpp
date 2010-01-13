@@ -19,8 +19,8 @@ public:
     enum type_t{RX_TYPE, TX_TYPE};
 
     //structors
-    subdev_proxy(xcvr_base::sptr dboard, type_t type)
-    : _dboard(dboard), _type(type){
+    subdev_proxy(xcvr_base::sptr subdev, type_t type)
+    : _subdev(subdev), _type(type){
         /* NOP */
     }
 
@@ -29,22 +29,22 @@ public:
     }
 
 private:
-    xcvr_base::sptr   _dboard;
+    xcvr_base::sptr   _subdev;
     type_t            _type;
 
     //forward the get calls to the rx or tx
     void get(const wax::type &key, wax::type &val){
         switch(_type){
-        case RX_TYPE: return _dboard->rx_get(key, val);
-        case TX_TYPE: return _dboard->tx_get(key, val);
+        case RX_TYPE: return _subdev->rx_get(key, val);
+        case TX_TYPE: return _subdev->tx_get(key, val);
         }
     }
 
     //forward the set calls to the rx or tx
     void set(const wax::type &key, const wax::type &val){
         switch(_type){
-        case RX_TYPE: return _dboard->rx_set(key, val);
-        case TX_TYPE: return _dboard->tx_set(key, val);
+        case RX_TYPE: return _subdev->rx_set(key, val);
+        case TX_TYPE: return _subdev->tx_set(key, val);
         }
     }
 };
@@ -52,8 +52,8 @@ private:
 /***********************************************************************
  * dboard manager methods
  **********************************************************************/
-//include dboard derived classes:
-//TODO #inlude "basic.hpp"
+//include dboard derived classes (local include)
+#include "dboards.hpp"
 
 #define MAKE_DBOARD_ID_WORD(rx_id, tx_id) \
     ((uint32_t(rx_id) << 16) | (uint32_t(tx_id) << 0))
@@ -67,10 +67,10 @@ manager::manager(
     //xcvrs will be added to both vectors
     switch(MAKE_DBOARD_ID_WORD(rx_dboard_id, tx_dboard_id)){
     default:
-        //_rx_dboards.push_back(xcvr_base::sptr(new basic_rx(0, dboard_interface)));
-        //_rx_dboards.push_back(xcvr_base::sptr(new basic_rx(1, dboard_interface)));
-        //_rx_dboards.push_back(xcvr_base::sptr(new basic_rx(2, dboard_interface)));
-        //_tx_dboards.push_back(xcvr_base::sptr(new basic_tx(0, dboard_interface)));
+        _rx_dboards.push_back(xcvr_base::sptr(new basic_rx(0, dboard_interface)));
+        _rx_dboards.push_back(xcvr_base::sptr(new basic_rx(1, dboard_interface)));
+        _rx_dboards.push_back(xcvr_base::sptr(new basic_rx(2, dboard_interface)));
+        _tx_dboards.push_back(xcvr_base::sptr(new basic_tx(0, dboard_interface)));
         break;
     }
 }

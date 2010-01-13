@@ -2,9 +2,9 @@
 # Copyright 2010 Ettus Research LLC
 #
 
-USRP_UHD_LA = $(top_srcdir)/lib/libusrp_uhd.la
+USRP_UHD_LA = $(abs_top_builddir)/lib/libusrp_uhd.la
 
-USRP_UHD_USRP_DBOARD_LA = $(top_srcdir)/lib/usrp/dboard/lib.la
+USRP_UHD_USRP_DBOARD_LA = $(abs_top_builddir)/lib/usrp/dboard/lib.la
 
 GENERAL_CPPFLAGS = \
 	-I$(top_srcdir)/include \

@@ -2,8 +2,8 @@
 // Copyright 2010 Ettus Research LLC
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_INTERFACE_H
-#define INCLUDED_USRP_UHD_USRP_DBOARD_INTERFACE_H
+#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_INTERFACE_HPP
+#define INCLUDED_USRP_UHD_USRP_DBOARD_INTERFACE_HPP
 
 #include <boost/shared_ptr.hpp>
 #include <stdint.h>
@@ -144,4 +144,4 @@ public:
 
 }}} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_INTERFACE_H */
+#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_INTERFACE_HPP */
