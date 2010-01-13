@@ -11,7 +11,9 @@ AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 noinst_LTLIBRARIES = lib.la
 
 lib_la_SOURCES = \
-	interface.cpp
+	base.cpp \
+	interface.cpp \
+	manager.cpp
 
 lib_la_LIBADD = $(GENERAL_LDDFLAGS)
 
