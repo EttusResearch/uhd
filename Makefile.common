@@ -4,6 +4,8 @@
 
 USRP_UHD_LA = $(top_srcdir)/lib/libusrp_uhd.la
 
+USRP_UHD_USRP_DBOARD_LA = $(top_srcdir)/lib/usrp/dboard/lib.la
+
 GENERAL_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	$(BOOST_CPPFLAGS)
