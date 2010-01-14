@@ -23,7 +23,7 @@ public:
     //tells the host which device to use
     enum spi_dev_t{
         SPI_TX_DEV,
-        SPI_RX_DEV,
+        SPI_RX_DEV
     };
 
     //args for writing spi data

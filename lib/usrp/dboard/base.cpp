@@ -38,11 +38,11 @@ rx_base::~rx_base(void){
     /* NOP */
 }
 
-void rx_base::tx_get(const wax::type &key, wax::type &val){
+void rx_base::tx_get(const wax::type &, wax::type &){
     throw std::runtime_error("cannot call tx_get on a rx dboard");
 }
 
-void rx_base::tx_set(const wax::type &key, const wax::type &val){
+void rx_base::tx_set(const wax::type &, const wax::type &){
     throw std::runtime_error("cannot call tx_set on a rx dboard");
 }
 
@@ -58,10 +58,10 @@ tx_base::~tx_base(void){
     /* NOP */
 }
 
-void tx_base::rx_get(const wax::type &key, wax::type &val){
+void tx_base::rx_get(const wax::type &, wax::type &){
     throw std::runtime_error("cannot call rx_get on a tx dboard");
 }
 
-void tx_base::rx_set(const wax::type &key, const wax::type &val){
+void tx_base::rx_set(const wax::type &, const wax::type &){
     throw std::runtime_error("cannot call rx_set on a tx dboard");
 }

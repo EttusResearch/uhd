@@ -18,7 +18,7 @@ namespace usrp_uhd{
     */
     struct mac_addr_t{
         struct ether_addr mac_addr;
-        mac_addr_t(const std::string &str = "00:00:00:00:00:00");
+        mac_addr_t(const std::string &mac_addr_str = "00:00:00:00:00:00");
         std::string to_string(void) const;
     };
 
@@ -28,7 +28,7 @@ namespace usrp_uhd{
     */
     struct ip_addr_t{
         struct in_addr ip_addr;
-        ip_addr_t(const std::string &str = "0.0.0.0");
+        ip_addr_t(const std::string &ip_addr_str = "0.0.0.0");
         std::string to_string(void) const;
     };
 

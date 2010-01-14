@@ -16,11 +16,11 @@ basic_rx::~basic_rx(void){
     /* NOP */
 }
 
-void basic_rx::rx_get(const wax::type &key, wax::type &val){
+void basic_rx::rx_get(const wax::type &, wax::type &){
     /* TODO */
 }
 
-void basic_rx::rx_set(const wax::type &key, const wax::type &val){
+void basic_rx::rx_set(const wax::type &, const wax::type &){
     /* TODO */
 }
 
@@ -36,10 +36,10 @@ basic_tx::~basic_tx(void){
     /* NOP */
 }
 
-void basic_tx::tx_get(const wax::type &key, wax::type &val){
+void basic_tx::tx_get(const wax::type &, wax::type &){
     /* TODO */
 }
 
-void basic_tx::tx_set(const wax::type &key, const wax::type &val){
+void basic_tx::tx_set(const wax::type &, const wax::type &){
     /* TODO */
 }

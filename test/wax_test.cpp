@@ -74,7 +74,7 @@ int main(void){
         std::cout << test_type << std::endl;
         std::cout << "done" << std::endl;
     }catch(std::exception const& e){
-        std::cout << "Exception: " << e.what() << std::endl;
+        std::cerr << "Exception: " << e.what() << std::endl;
         return ~0;
     }
     return 0;
