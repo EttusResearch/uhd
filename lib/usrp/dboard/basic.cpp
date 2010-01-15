@@ -7,8 +7,7 @@
 /***********************************************************************
  * Basic RX dboard
  **********************************************************************/
-basic_rx::basic_rx(size_t subdev_index, interface::sptr dboard_interface)
-: rx_base(subdev_index, dboard_interface){
+basic_rx::basic_rx(ctor_args_t const& args) : rx_base(args){
     /* NOP */
 }
 
@@ -27,8 +26,7 @@ void basic_rx::rx_set(const wax::type &, const wax::type &){
 /***********************************************************************
  * Basic TX dboard
  **********************************************************************/
-basic_tx::basic_tx(size_t subdev_index, interface::sptr dboard_interface)
-: tx_base(subdev_index, dboard_interface){
+basic_tx::basic_tx(ctor_args_t const& args) : tx_base(args){
     /* NOP */
 }
 

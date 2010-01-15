@@ -8,6 +8,7 @@
 #include <usrp_uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <usrp_uhd/usrp/dboard/interface.hpp>
 
 namespace usrp_uhd{ namespace usrp{ namespace dboard{
@@ -19,9 +20,13 @@ namespace usrp_uhd{ namespace usrp{ namespace dboard{
 class xcvr_base : boost::noncopyable{
 public:
     typedef boost::shared_ptr<xcvr_base> sptr;
+    //the constructor args consist of a subdev index and an interface
+    //derived classes should pass the args into the base class ctor
+    //but should not have to deal with the internals of the args
+    typedef boost::tuple<size_t, interface::sptr> ctor_args_t;
 
     //structors
-    xcvr_base(size_t subdev_index, interface::sptr dboard_interface);
+    xcvr_base(ctor_args_t const&);
     ~xcvr_base(void);
 
     //interface
@@ -48,7 +53,7 @@ public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    rx_base(size_t subdev_index, interface::sptr sptr_interface);
+    rx_base(ctor_args_t const&);
 
     virtual ~rx_base(void);
 
@@ -66,7 +71,7 @@ public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    tx_base(size_t subdev_index, interface::sptr sptr_interface);
+    tx_base(ctor_args_t const&);
 
     virtual ~tx_base(void);
 

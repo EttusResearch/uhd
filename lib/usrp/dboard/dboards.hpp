@@ -14,7 +14,10 @@ using namespace usrp_uhd::usrp::dboard;
  **********************************************************************/
 class basic_rx : public rx_base{
 public:
-    basic_rx(size_t subdev_index, interface::sptr dboard_interface);
+    static xcvr_base::sptr make(ctor_args_t const& args){
+        return xcvr_base::sptr(new basic_rx(args));
+    }
+    basic_rx(ctor_args_t const& args);
     ~basic_rx(void);
 
     void rx_get(const wax::type &key, wax::type &val);
@@ -23,7 +26,10 @@ public:
 
 class basic_tx : public tx_base{
 public:
-    basic_tx(size_t subdev_index, interface::sptr dboard_interface);
+    static xcvr_base::sptr make(ctor_args_t const& args){
+        return xcvr_base::sptr(new basic_tx(args));
+    }
+    basic_tx(ctor_args_t const& args);
     ~basic_tx(void);
 
     void tx_get(const wax::type &key, wax::type &val);

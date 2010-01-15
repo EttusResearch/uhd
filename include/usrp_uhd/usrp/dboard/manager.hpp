@@ -8,6 +8,7 @@
 #include <vector>
 #include <usrp_uhd/wax.hpp>
 #include <boost/utility.hpp>
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <usrp_uhd/usrp/dboard/base.hpp>
 
@@ -19,12 +20,46 @@ namespace usrp_uhd{ namespace usrp{ namespace dboard{
  * Provide wax::obj access to the subdevs inside.
  */
 class manager : boost::noncopyable{
+
+public:
+    //a dboard can be identified by a 16 bit integer
+    typedef uint16_t dboard_id_t;
+
+    //dboard constructor (each dboard should have a ::make with this signature)
+    typedef boost::function<xcvr_base::sptr(xcvr_base::ctor_args_t)> dboard_ctor_t;
+
+    /*!
+     * Register rx subdevices for a given dboard id.
+     *
+     * \param dboard_id the rx dboard id
+     * \param dboard_ctor the dboard constructor function pointer
+     * \param num_subdevs the number of rx subdevs in this dboard
+     */
+    static void register_rx_subdev(
+        dboard_id_t dboard_id,
+        dboard_ctor_t dboard_ctor,
+        size_t num_subdevs
+    );
+
+    /*!
+     * Register tx subdevices for a given dboard id.
+     *
+     * \param dboard_id the tx dboard id
+     * \param dboard_ctor the dboard constructor function pointer
+     * \param num_subdevs the number of tx subdevs in this dboard
+     */
+    static void register_tx_subdev(
+        dboard_id_t dboard_id,
+        dboard_ctor_t dboard_ctor,
+        size_t num_subdevs
+    );
+
 public:
     typedef boost::shared_ptr<manager> sptr;
     //structors
     manager(
-        uint16_t rx_dboard_id,
-        uint16_t tx_dboard_id,
+        dboard_id_t rx_dboard_id,
+        dboard_id_t tx_dboard_id,
         interface::sptr dboard_interface
     );
     ~manager(void);

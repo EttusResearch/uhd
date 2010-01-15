@@ -9,8 +9,8 @@ using namespace usrp_uhd::usrp::dboard;
 /***********************************************************************
  * xcvr dboard base class
  **********************************************************************/
-xcvr_base::xcvr_base(size_t subdev_index, interface::sptr dboard_interface)
- : _subdev_index(subdev_index), _dboard_interface(dboard_interface){
+xcvr_base::xcvr_base(ctor_args_t const& args)
+ : _subdev_index(args.get<0>()), _dboard_interface(args.get<1>()){
     /* NOP */
 }
 
@@ -29,8 +29,8 @@ interface::sptr xcvr_base::get_interface(void){
 /***********************************************************************
  * rx dboard base class
  **********************************************************************/
-rx_base::rx_base(size_t subdev_index, interface::sptr dboard_interface)
-: xcvr_base(subdev_index, dboard_interface){
+rx_base::rx_base(ctor_args_t const& args)
+: xcvr_base(args){
     /* NOP */
 }
 
@@ -49,8 +49,8 @@ void rx_base::tx_set(const wax::type &, const wax::type &){
 /***********************************************************************
  * tx dboard base class
  **********************************************************************/
-tx_base::tx_base(size_t subdev_index, interface::sptr dboard_interface)
-: xcvr_base(subdev_index, dboard_interface){
+tx_base::tx_base(ctor_args_t const& args)
+: xcvr_base(args){
     /* NOP */
 }
 

@@ -3,8 +3,73 @@
 //
 
 #include <usrp_uhd/usrp/dboard/manager.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/format.hpp>
+#include <map>
+#include "dboards.hpp"
 
 using namespace usrp_uhd::usrp::dboard;
+
+/***********************************************************************
+ * register internal dboards
+ *
+ * Register internal/known dboards located in this build tree.
+ * Each board should have entries below mapping an id to a constructor.
+ * The xcvr type boards should register both rx and tx sides.
+ *
+ * This function will be called before new boards are registered.
+ * This allows for internal boards to be externally overridden.
+ * This function will also be called when creating a new manager
+ * to ensure that the maps are filled with the entries below.
+ **********************************************************************/
+static void register_internal_dboards(void){
+    //ensure that this function can only be called once per instance
+    static bool called = false;
+    if (called) return; called = true;
+    //register the known dboards (dboard id, constructor, num subdevs)
+    manager::register_tx_subdev(0x0000, &basic_tx::make, 1);
+    manager::register_rx_subdev(0x0001, &basic_rx::make, 3);
+}
+
+/***********************************************************************
+ * storage and registering for dboards
+ **********************************************************************/
+//hold a dboard constructor and the number of subdevs
+typedef boost::tuple<manager::dboard_ctor_t, size_t> dboard_reg_val_t;
+
+//map a dboard id to a registered value tuple
+typedef std::map<manager::dboard_id_t, dboard_reg_val_t> dboard_reg_map_t;
+
+//static instances of registered dboard ids
+static dboard_reg_map_t dboard_rx_regs, dboard_tx_regs;
+
+/*!
+ * Helper function to register a dboard contructor to its id.
+ * This should be called by the api calls to register subdevs.
+ */
+static void register_xx_subdev(
+    manager::dboard_id_t dboard_id,
+    manager::dboard_ctor_t dboard_ctor,
+    size_t num_subdevs,
+    dboard_reg_map_t &dboard_reg_map
+){
+    register_internal_dboards(); //always call first
+    dboard_reg_map.insert(std::pair<manager::dboard_id_t, dboard_reg_val_t>(
+        dboard_id, dboard_reg_val_t(dboard_ctor, num_subdevs)
+    ));
+}
+
+void manager::register_rx_subdev(
+    dboard_id_t dboard_id, dboard_ctor_t dboard_ctor, size_t num_subdevs
+){
+    register_xx_subdev(dboard_id, dboard_ctor, num_subdevs, dboard_rx_regs);
+}
+
+void manager::register_tx_subdev(
+    dboard_id_t dboard_id, dboard_ctor_t dboard_ctor, size_t num_subdevs
+){
+    register_xx_subdev(dboard_id, dboard_ctor, num_subdevs, dboard_tx_regs);
+}
 
 /***********************************************************************
  * internal helper classes
@@ -52,27 +117,37 @@ private:
 /***********************************************************************
  * dboard manager methods
  **********************************************************************/
-//include dboard derived classes (local include)
-#include "dboards.hpp"
-
-#define MAKE_DBOARD_ID_WORD(rx_id, tx_id) \
-    ((uint32_t(rx_id) << 16) | (uint32_t(tx_id) << 0))
+static void create_subdevs(
+    dboard_reg_map_t &dboard_reg_map,
+    manager::dboard_id_t dboard_id,
+    interface::sptr dboard_interface,
+    std::vector<xcvr_base::sptr> &subdevs,
+    std::string const& xx_type
+){
+    //verify that there is a registered constructor for this id
+    if (dboard_reg_map.count(dboard_id) == 0){
+        throw std::runtime_error(str(
+            boost::format("Unknown %s dboard id: 0x%04x") % xx_type % dboard_id
+        ));
+    }
+    //create new subdevices for the dboard ids
+    for (size_t i = 0; i < dboard_reg_map[dboard_id].get<1>(); i++){
+        subdevs.push_back(
+            dboard_reg_map[dboard_id].get<0>()(
+                xcvr_base::ctor_args_t(i, dboard_interface)
+            )
+        );
+    }
+}
 
 manager::manager(
-    uint16_t rx_dboard_id,
-    uint16_t tx_dboard_id,
+    dboard_id_t rx_dboard_id,
+    dboard_id_t tx_dboard_id,
     interface::sptr dboard_interface
 ){
-    //TODO build some boards based on ids
-    //xcvrs will be added to both vectors
-    switch(MAKE_DBOARD_ID_WORD(rx_dboard_id, tx_dboard_id)){
-    default:
-        _rx_dboards.push_back(xcvr_base::sptr(new basic_rx(0, dboard_interface)));
-        _rx_dboards.push_back(xcvr_base::sptr(new basic_rx(1, dboard_interface)));
-        _rx_dboards.push_back(xcvr_base::sptr(new basic_rx(2, dboard_interface)));
-        _tx_dboards.push_back(xcvr_base::sptr(new basic_tx(0, dboard_interface)));
-        break;
-    }
+    register_internal_dboards(); //always call first
+    create_subdevs(dboard_rx_regs, rx_dboard_id, dboard_interface, _rx_dboards, "rx");
+    create_subdevs(dboard_tx_regs, tx_dboard_id, dboard_interface, _tx_dboards, "tx");
 }
 
 manager::~manager(void){
