@@ -8,7 +8,6 @@
 #include <vector>
 #include <usrp_uhd/wax.hpp>
 #include <boost/utility.hpp>
-#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <usrp_uhd/usrp/dboard/base.hpp>
 
@@ -26,29 +25,16 @@ public:
     typedef uint16_t dboard_id_t;
 
     //dboard constructor (each dboard should have a ::make with this signature)
-    typedef boost::function<xcvr_base::sptr(xcvr_base::ctor_args_t)> dboard_ctor_t;
+    typedef base::sptr(*dboard_ctor_t)(base::ctor_args_t const&);
 
     /*!
-     * Register rx subdevices for a given dboard id.
+     * Register subdevices for a given dboard id.
      *
-     * \param dboard_id the rx dboard id
+     * \param dboard_id the dboard id (rx or tx)
      * \param dboard_ctor the dboard constructor function pointer
-     * \param num_subdevs the number of rx subdevs in this dboard
+     * \param num_subdevs the number of subdevs in this dboard
      */
-    static void register_rx_subdev(
-        dboard_id_t dboard_id,
-        dboard_ctor_t dboard_ctor,
-        size_t num_subdevs
-    );
-
-    /*!
-     * Register tx subdevices for a given dboard id.
-     *
-     * \param dboard_id the tx dboard id
-     * \param dboard_ctor the dboard constructor function pointer
-     * \param num_subdevs the number of tx subdevs in this dboard
-     */
-    static void register_tx_subdev(
+    static void register_subdevs(
         dboard_id_t dboard_id,
         dboard_ctor_t dboard_ctor,
         size_t num_subdevs
@@ -73,8 +59,8 @@ public:
 private:
     //list of rx and tx dboards in this manager
     //each dboard here is actually a subdevice
-    std::vector<xcvr_base::sptr> _rx_dboards;
-    std::vector<xcvr_base::sptr> _tx_dboards;
+    std::vector<base::sptr> _rx_dboards;
+    std::vector<base::sptr> _tx_dboards;
 };
 
 }}} //namespace

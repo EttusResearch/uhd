@@ -7,10 +7,29 @@
 using namespace usrp_uhd::usrp::dboard;
 
 /***********************************************************************
+ * base dboard base class
+ **********************************************************************/
+base::base(ctor_args_t const& args)
+ : _subdev_index(args.get<0>()), _dboard_interface(args.get<1>()){
+    /* NOP */
+}
+
+base::~base(void){
+    /* NOP */
+}
+
+size_t base::get_subdev_index(void){
+    return _subdev_index;
+}
+
+interface::sptr base::get_interface(void){
+    return _dboard_interface;
+}
+
+/***********************************************************************
  * xcvr dboard base class
  **********************************************************************/
-xcvr_base::xcvr_base(ctor_args_t const& args)
- : _subdev_index(args.get<0>()), _dboard_interface(args.get<1>()){
+xcvr_base::xcvr_base(ctor_args_t const& args) : base(args){
     /* NOP */
 }
 
@@ -18,19 +37,10 @@ xcvr_base::~xcvr_base(void){
     /* NOP */
 }
 
-size_t xcvr_base::get_subdev_index(void){
-    return _subdev_index;
-}
-
-interface::sptr xcvr_base::get_interface(void){
-    return _dboard_interface;
-}
-
 /***********************************************************************
  * rx dboard base class
  **********************************************************************/
-rx_base::rx_base(ctor_args_t const& args)
-: xcvr_base(args){
+rx_base::rx_base(ctor_args_t const& args) : base(args){
     /* NOP */
 }
 
@@ -49,8 +59,7 @@ void rx_base::tx_set(const wax::type &, const wax::type &){
 /***********************************************************************
  * tx dboard base class
  **********************************************************************/
-tx_base::tx_base(ctor_args_t const& args)
-: xcvr_base(args){
+tx_base::tx_base(ctor_args_t const& args) : base(args){
     /* NOP */
 }
 

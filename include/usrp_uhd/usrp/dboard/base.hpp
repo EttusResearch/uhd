@@ -15,19 +15,19 @@ namespace usrp_uhd{ namespace usrp{ namespace dboard{
 
 /*!
  * A daughter board base class for all dboards.
- * Sub classes for xcvr boards should inherit this.
+ * Only other dboard base classes should inherit this.
  */
-class xcvr_base : boost::noncopyable{
+class base : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<xcvr_base> sptr;
+    typedef boost::shared_ptr<base> sptr;
     //the constructor args consist of a subdev index and an interface
     //derived classes should pass the args into the base class ctor
     //but should not have to deal with the internals of the args
     typedef boost::tuple<size_t, interface::sptr> ctor_args_t;
 
     //structors
-    xcvr_base(ctor_args_t const&);
-    ~xcvr_base(void);
+    base(ctor_args_t const&);
+    ~base(void);
 
     //interface
     virtual void rx_get(const wax::type &key, wax::type &val) = 0;
@@ -45,10 +45,23 @@ private:
 };
 
 /*!
+ * A xcvr daughter board implements rx and tx methods
+ * Sub classes for xcvr boards should inherit this.
+ */
+class xcvr_base : public base{
+public:
+    /*!
+     * Create a new xcvr dboard object, override in subclasses.
+     */
+    xcvr_base(ctor_args_t const&);
+    ~xcvr_base(void);
+};
+
+/*!
  * A rx daughter board only implements rx methods.
  * Sub classes for rx-only boards should inherit this.
  */
-class rx_base : public xcvr_base{
+class rx_base : public base{
 public:
     /*!
      * Create a new rx dboard object, override in subclasses.
@@ -66,7 +79,7 @@ public:
  * A tx daughter board only implements tx methods.
  * Sub classes for rx-only boards should inherit this.
  */
-class tx_base : public xcvr_base{
+class tx_base : public base{
 public:
     /*!
      * Create a new rx dboard object, override in subclasses.

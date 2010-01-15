@@ -14,8 +14,8 @@ using namespace usrp_uhd::usrp::dboard;
  **********************************************************************/
 class basic_rx : public rx_base{
 public:
-    static xcvr_base::sptr make(ctor_args_t const& args){
-        return xcvr_base::sptr(new basic_rx(args));
+    static base::sptr make(ctor_args_t const& args){
+        return base::sptr(new basic_rx(args));
     }
     basic_rx(ctor_args_t const& args);
     ~basic_rx(void);
@@ -26,8 +26,8 @@ public:
 
 class basic_tx : public tx_base{
 public:
-    static xcvr_base::sptr make(ctor_args_t const& args){
-        return xcvr_base::sptr(new basic_tx(args));
+    static base::sptr make(ctor_args_t const& args){
+        return base::sptr(new basic_tx(args));
     }
     basic_tx(ctor_args_t const& args);
     ~basic_tx(void);

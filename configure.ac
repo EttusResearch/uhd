@@ -14,8 +14,30 @@ AM_INIT_AUTOMAKE(usrp_uhd, 0)
 ##################################################
 AC_PROG_CXX
 LT_INIT
-AX_BOOST_BASE([1.36])
+AX_BOOST_BASE([1.36], [], AC_MSG_ERROR("cannot find boost"))
 AX_BOOST_THREAD
+
+##################################################
+## Check Headers
+##################################################
+AC_DEFUN([UHD_CHECK_HEADER],[
+    AC_CHECK_HEADER([$1], [], AC_MSG_ERROR("cannot find header $1"))
+])
+UHD_CHECK_HEADER([sys/uio.h])
+UHD_CHECK_HEADER([arpa/inet.h])
+UHD_CHECK_HEADER([netinet/ether.h])
+
+##################################################
+## Check Flags
+##################################################
+AC_DEFUN([UHD_OPTIONAL_CXXFLAG],[
+    AX_CXX_CHECK_FLAG([$1], [], [], [CXXFLAGS="${CXXFLAGS} $1"])
+])
+UHD_OPTIONAL_CXXFLAG([-Wall])
+UHD_OPTIONAL_CXXFLAG([-Wextra])
+UHD_OPTIONAL_CXXFLAG([-Werror])
+UHD_OPTIONAL_CXXFLAG([-pedantic])
+UHD_OPTIONAL_CXXFLAG([-ansi])
 
 ##################################################
 ## Check Programs
