@@ -6,17 +6,25 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS =
 
-AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
+if HAVE_CPPUNIT
+
+AM_CPPFLAGS = \
+	$(GENERAL_CPPFLAGS) \
+	$(CPPUNIT_CFLAGS)
 
 LDADD = \
 	$(GENERAL_LDDFLAGS) \
-	$(USRP_UHD_LA)
+	$(USRP_UHD_LA) \
+	$(CPPUNIT_LIBS)
 
-noinst_PROGRAMS = \
-	addr_test \
-	wax_test
+noinst_PROGRAMS = cppunit_test
 
-addr_test_SOURCES = addr_test.cpp
-wax_test_SOURCES = wax_test.cpp
+cppunit_test_SOURCES = \
+	cppunit_test.cpp \
+	addr_test.cpp \
+	usrp_dboard_test.cpp \
+	wax_test.cpp
 
 TESTS = $(noinst_PROGRAMS)
+
+endif

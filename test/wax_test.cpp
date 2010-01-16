@@ -3,11 +3,11 @@
 //
 
 #include <usrp_uhd/wax.hpp>
-#include <iostream>
-#include <stdexcept>
-#include <vector>
-#include <boost/assert.hpp>
+#include <cppunit/extensions/HelperMacros.h>
 
+/***********************************************************************
+ * demo class for wax framework
+ **********************************************************************/
 class wax_demo : public wax::obj{
 private:
     std::vector<float> d_nums;
@@ -40,42 +40,59 @@ public:
     }
 };
 
-#define transform(i, j, k) float(i * j * k + i + j + k);
+/***********************************************************************
+ * cpp unit setup
+ **********************************************************************/
+class wax_test : public CppUnit::TestFixture{
+    CPPUNIT_TEST_SUITE(wax_test);
+    CPPUNIT_TEST(test_chaining);
+    CPPUNIT_TEST(test_set_get);
+    CPPUNIT_TEST(test_proxy);
+    CPPUNIT_TEST(test_print);
+    CPPUNIT_TEST_SUITE_END();
 
-int main(void){
-    try{
-        wax_demo wd(2, 10);
-        //test chained access
-        std::cout << "chain 1" << std::endl;
-        wd[size_t(0)];
-        std::cout << "chain 2" << std::endl;
-        wd[size_t(0)][size_t(0)];
-        std::cout << "chain 3" << std::endl;
-        wd[size_t(0)][size_t(0)][size_t(0)];
-        //set a bunch of values
-        std::cout << "set and get all" << std::endl;
-        for (size_t i = 0; i < 10; i++){
-            for (size_t j = 0; j < 10; j++){
-                for (size_t k = 0; k < 10; k++){
-                    float val = transform(i, j, k);
-                    //std::cout << i << " " << j << " " << k << std::endl;
-                    wd[i][j][k] = val;
-                    BOOST_ASSERT(wax::cast<float>(wd[i][j][k]) == val);
-                }
+public:
+    void test_chaining(void);
+    void test_set_get(void);
+    void test_proxy(void);
+    void test_print(void);
+};
+
+CPPUNIT_TEST_SUITE_REGISTRATION(wax_test);
+
+static wax_demo wd(2, 10);
+
+void wax_test::test_chaining(void){
+    std::cout << "chain 1" << std::endl;
+    wd[size_t(0)];
+    std::cout << "chain 2" << std::endl;
+    wd[size_t(0)][size_t(0)];
+    std::cout << "chain 3" << std::endl;
+    wd[size_t(0)][size_t(0)][size_t(0)];
+}
+
+void wax_test::test_set_get(void){
+    std::cout << "set and get all" << std::endl;
+    for (size_t i = 0; i < 10; i++){
+        for (size_t j = 0; j < 10; j++){
+            for (size_t k = 0; k < 10; k++){
+                float val = i * j * k + i + j + k;
+                //std::cout << i << " " << j << " " << k << std::endl;
+                wd[i][j][k] = val;
+                CPPUNIT_ASSERT_EQUAL(val, wax::cast<float>(wd[i][j][k]));
             }
         }
-        //test storing a proxy
-        std::cout << "store proxy" << std::endl;
-        wax::proxy p = wd[size_t(0)][size_t(0)];
-        p[size_t(0)] = float(5);
-        //test printing a type
-        std::cout << "print type" << std::endl;
-        wax::type test_type = float(3.33);
-        std::cout << test_type << std::endl;
-        std::cout << "done" << std::endl;
-    }catch(std::exception const& e){
-        std::cerr << "Exception: " << e.what() << std::endl;
-        return ~0;
     }
-    return 0;
+}
+
+void wax_test::test_proxy(void){
+    std::cout << "store proxy" << std::endl;
+    wax::proxy p = wd[size_t(0)][size_t(0)];
+    p[size_t(0)] = float(5);
+}
+
+void wax_test::test_print(void){
+    std::cout << "print type" << std::endl;
+    wax::type test_type = float(3.33);
+    std::cout << test_type << std::endl;
 }
