@@ -11,6 +11,7 @@ AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 lib_LTLIBRARIES = libusrp_uhd.la
 
 libusrp_uhd_la_SOURCES = \
+	device.cpp \
 	device_addr.cpp \
 	usrp_uhd.cpp \
 	wax.cpp

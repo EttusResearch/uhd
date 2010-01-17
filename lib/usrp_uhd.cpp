@@ -4,5 +4,4 @@
 
 #include <usrp_uhd.hpp>
 
-usrp_uhd::usrp_uhd::usrp_uhd(device_addr_t){}
-usrp_uhd::usrp_uhd::~usrp_uhd(void){}
+//nothing here, just includes the header so the compiler can check
