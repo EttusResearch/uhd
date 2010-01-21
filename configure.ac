@@ -16,6 +16,7 @@ AC_PROG_CXX
 LT_INIT
 
 AX_BOOST_BASE([1.36], [], AC_MSG_ERROR("cannot find boost"))
+AX_BOOST_ASIO
 AX_BOOST_THREAD
 
 AM_PATH_CPPUNIT([1.9.6], [HAVE_CPPUNIT=true], [HAVE_CPPUNIT=false])
@@ -28,7 +29,6 @@ AC_DEFUN([UHD_CHECK_HEADER],[
     AC_CHECK_HEADER([$1], [], AC_MSG_ERROR("cannot find header $1"))
 ])
 
-UHD_CHECK_HEADER([sys/uio.h])
 UHD_CHECK_HEADER([arpa/inet.h])
 UHD_CHECK_HEADER([netinet/ether.h])
 

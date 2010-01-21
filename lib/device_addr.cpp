@@ -81,8 +81,9 @@ usrp_uhd::device_addr_t::device_addr_t(device_addr_type_t device_addr_type){
     usb_args.vendor_id = 0xffff;
     usb_args.product_id = 0xffff;
     eth_args.ifc = "eth0";
-    eth_args.mac_addr = mac_addr_t("ff:ff:ff:ff:ff:ff");
-    udp_args.ip_addr = ip_addr_t("255.255.255.255");
+    eth_args.mac_addr = "ff:ff:ff:ff:ff:ff";
+    udp_args.addr = "255.255.255.255";
+    discovery_args.mboard_id = ~0;
 }
 
 std::string usrp_uhd::device_addr_t::to_string(void) const{
@@ -110,7 +111,7 @@ std::string usrp_uhd::device_addr_t::to_string(void) const{
         break;
     case DEVICE_ADDR_TYPE_UDP:
         out << "UDP Socket" << std::endl;
-        out << "IP Addr: " << udp_args.ip_addr << std::endl;
+        out << "Address: " << udp_args.addr << std::endl;
         break;
     case DEVICE_ADDR_TYPE_GPMC:
         out << "GPMC" << std::endl;

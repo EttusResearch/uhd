@@ -18,6 +18,6 @@ libusrp_uhd_la_SOURCES = \
 
 libusrp_uhd_la_LIBADD = \
 	$(GENERAL_LDDFLAGS) \
-	$(USRP_UHD_USRP_DBOARD_LA)
+	$(USRP_UHD_USRP_LA)
 
 noinst_HEADERS =

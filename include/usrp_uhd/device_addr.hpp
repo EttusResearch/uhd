@@ -60,14 +60,19 @@ namespace usrp_uhd{
         } usb_args;
         struct{
             std::string ifc;
-            mac_addr_t mac_addr;
+            std::string mac_addr;
         } eth_args;
         struct{
-            ip_addr_t ip_addr;
+            std::string addr;
         } udp_args;
         struct{
             //TODO unknown for now
         } gpmc_args;
+
+        //the discovery args are filled in by the discovery routine
+        struct{
+            uint16_t mboard_id;
+        } discovery_args;
 
         /*!
          * \brief Convert a usrp device_addr_t into a string representation

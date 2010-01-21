@@ -20,8 +20,9 @@ LDADD = \
 noinst_PROGRAMS = cppunit_test
 
 cppunit_test_SOURCES = \
-	cppunit_test.cpp \
 	addr_test.cpp \
+	device_test.cpp \
+	cppunit_test.cpp \
 	usrp_dboard_test.cpp \
 	wax_test.cpp
 

@@ -4,7 +4,9 @@
 
 USRP_UHD_LA = $(abs_top_builddir)/lib/libusrp_uhd.la
 
+USRP_UHD_USRP_LA = $(abs_top_builddir)/lib/usrp/lib.la
 USRP_UHD_USRP_DBOARD_LA = $(abs_top_builddir)/lib/usrp/dboard/lib.la
+USRP_UHD_USRP_MBOARD_LA = $(abs_top_builddir)/lib/usrp/mboard/lib.la
 
 GENERAL_CPPFLAGS = \
 	-I$(top_srcdir)/include \
@@ -12,4 +14,5 @@ GENERAL_CPPFLAGS = \
 
 GENERAL_LDDFLAGS = \
 	$(BOOST_LDFLAGS) \
+	$(BOOST_ASIO_LIB) \
 	$(BOOST_THREAD_LIB)
