@@ -30,6 +30,8 @@ private:
     void set(const wax::type &, const wax::type &);
 
     std::vector<mboard::base::sptr> _mboards;
+    boost::function<void(const device::send_args_t &)> _send_raw_cb;
+    boost::function<void(const device::recv_args_t &)> _recv_raw_cb;
 };
 
 }} //namespace

@@ -96,50 +96,44 @@ public:
     /*!
      * Read daughterboard GPIO pin values
      *
-     * \param bank     GPIO_TX_BANK or GPIO_RX_BANK
+     * \param bank GPIO_TX_BANK or GPIO_RX_BANK
      * \return the value of the gpio bank
      */
     virtual uint16_t read_gpio(gpio_bank_t bank) = 0;
 
     /*!
      * \brief Write to I2C peripheral
-     * \param i2c_addr		I2C bus address (7-bits)
-     * \param buf		the data to write
-     * Writes are limited to a maximum of of 64 bytes.
+     * \param i2c_addr I2C bus address (7-bits)
+     * \param buf the data to write
      */
-    virtual void write_i2c (int i2c_addr, const std::string &buf) = 0;
+    virtual void write_i2c(int i2c_addr, const std::string &buf) = 0;
 
     /*!
      * \brief Read from I2C peripheral
-     * \param i2c_addr		I2C bus address (7-bits)
-     * \param len		number of bytes to read
+     * \param i2c_addr I2C bus address (7-bits)
+     * \param len number of bytes to read
      * \return the data read if successful, else a zero length string.
-     * Reads are limited to a maximum of 64 bytes.
      */
-    virtual std::string read_i2c (int i2c_addr, size_t len) = 0;
+    virtual std::string read_i2c(int i2c_addr, size_t len) = 0;
 
     /*!
      * \brief Write data to SPI bus peripheral.
      *
      * \param dev which spi device
      * \param push args for writing
-     * \param buf		the data to write
-     *
-     * Writes are limited to a maximum of 64 bytes.
+     * \param buf the data to write
      */
-    virtual void write_spi (spi_dev_t dev, spi_push_t push, const std::string &buf) = 0;
+    virtual void write_spi(spi_dev_t dev, spi_push_t push, const std::string &buf) = 0;
 
     /*!
      * \brief Read data from SPI bus peripheral.
      *
      * \param dev which spi device
      * \param push args for reading
-     * \param len		number of bytes to read.  Must be in [0,64].
+     * \param len number of bytes to read
      * \return the data read if sucessful, else a zero length string.
-     *
-     * Reads are limited to a maximum of 64 bytes.
      */
-    virtual std::string read_spi (spi_dev_t dev, spi_latch_t latch, size_t len) = 0;
+    virtual std::string read_spi(spi_dev_t dev, spi_latch_t latch, size_t len) = 0;
 };
 
 }}} //namespace

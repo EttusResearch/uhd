@@ -7,6 +7,8 @@
 
 #include <usrp_uhd/usrp/mboard/base.hpp>
 #include <usrp_uhd/device_addr.hpp>
+#include <usrp_uhd/usrp/dboard/manager.hpp>
+#include <vector>
 
 namespace usrp_uhd{ namespace usrp{ namespace mboard{
 
@@ -22,6 +24,8 @@ public:
 private:
     void get(const wax::type &, wax::type &);
     void set(const wax::type &, const wax::type &);
+
+    std::vector<dboard::manager::sptr> _dboard_managers;
 };
 
 }}} //namespace

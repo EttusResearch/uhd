@@ -4,11 +4,32 @@
 
 #include <usrp_uhd/usrp/usrp.hpp>
 #include <usrp_uhd/usrp/mboard/test.hpp>
+#include <boost/bind.hpp>
 #include <stdexcept>
 
 using namespace usrp_uhd::usrp;
 
+/***********************************************************************
+ * default callbacks for the send and recv
+ * these should be replaced with callbacks from the mboard object
+ **********************************************************************/
+static void send_raw_default(const usrp_uhd::device::send_args_t &){
+    throw std::runtime_error("No callback registered for send raw");
+}
+
+static void recv_raw_default(const usrp_uhd::device::recv_args_t &){
+    throw std::runtime_error("No callback registered for recv raw");
+}
+
+/***********************************************************************
+ * the usrp device wrapper
+ **********************************************************************/
 usrp::usrp(const device_addr_t & device_addr){
+    //set the default callbacks, the code below should replace them
+    _send_raw_cb = boost::bind(&send_raw_default, _1);
+    _recv_raw_cb = boost::bind(&recv_raw_default, _1);
+
+    //create mboard based on the device addr
     if (device_addr.type == DEVICE_ADDR_TYPE_VIRTUAL){
         _mboards.push_back(
             mboard::base::sptr(new mboard::test(device_addr))
@@ -49,10 +70,10 @@ void usrp::set(const wax::type &, const wax::type &){
     throw std::runtime_error("Cannot set in usrp device");
 }
 
-void usrp::send_raw(const send_args_t &){
-    //TODO make the call on the mboard
+void usrp::send_raw(const send_args_t &args){
+    return _send_raw_cb(args);
 }
 
-void usrp::recv_raw(const recv_args_t &){
-    //TODO make the call on the mboard
+void usrp::recv_raw(const recv_args_t &args){
+    return _recv_raw_cb(args);
 }

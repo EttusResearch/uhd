@@ -26,8 +26,14 @@ public:
     typedef boost::shared_ptr<device> sptr;
 
     //argument types for send and recv raw methods
-    typedef std::vector<boost::asio::const_buffer> send_args_t;
+    //the send args is an array of buffers
+    //the recv args is a callback that takes a buffer
+    typedef std::vector<boost::asio::const_buffer>                   send_args_t;
     typedef boost::function<bool(const boost::asio::const_buffer &)> recv_args_t;
+
+    //structors
+    device(void);
+    virtual ~device(void);
 
     /*!
      * \brief Discover usrp devices attached to the host.
@@ -54,16 +60,6 @@ public:
     static sptr make(const device_addr_t & hint, size_t which = 0);
 
     /*!
-     * Constructor: Called in derived classes.
-     */
-    device(void);
-
-    /*!
-     * Deconstructor: called automatically by the shared pointer.
-     */
-    virtual ~device(void);
-
-    /*!
      * Get the device address for this board.
      */
     device_addr_t get_device_addr(void);
@@ -74,8 +70,6 @@ public:
 
     //connect dsps and subdevs
     void connect(const wax::type &src, const wax::type &sink);
-
-private:
 };
 
 } //namespace usrp_uhd
