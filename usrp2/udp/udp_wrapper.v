@@ -22,7 +22,7 @@ module udp_wrapper
    // TX side
    fifo36_to_fifo19 fifo36_to_fifo19
      (.clk(clk), .reset(reset), .clear(clear),
-      .f36_datain(tx_f36_data), .f36_src_rdy_i(tx_f36_src_rdy_), .f36_dst_rdy_o(tx_f36_dst_rdy_o),
+      .f36_datain(tx_f36_data), .f36_src_rdy_i(tx_f36_src_rdy_i), .f36_dst_rdy_o(tx_f36_dst_rdy_o),
       .f19_dataout(tx_int1_data), .f19_src_rdy_o(tx_int1_src_rdy), .f19_dst_rdy_i(tx_int1_dst_rdy) );
 
    fifo_short #(.WIDTH(19)) shortfifo19_a
