@@ -745,7 +745,11 @@ module u2_core
 
    assign debug = debug_udp;
    assign debug_gpio_0 = debug_mac;
-   assign debug_gpio_1 = { rx_f19_src_rdy, rx_f19_dst_rdy, rx_f19_data };
+   assign debug_gpio_1 = { { tx_f19_data[15:8] },
+			   { tx_f19_data[7:0] },
+			   { 3'd0, tx_f19_src_rdy, tx_f19_dst_rdy, tx_f19_data[18:16] },
+			   { 2'b0, rd2_ready_i, rd2_ready_o, rd2_flags } };
+   
    
 endmodule // u2_core
 

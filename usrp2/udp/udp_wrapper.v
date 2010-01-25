@@ -77,9 +77,16 @@ module udp_wrapper
       .dataout(rx_f36_data), .src_rdy_o(rx_f36_src_rdy_o), .dst_rdy_i(rx_f36_dst_rdy_i),
       .space(), .occupied() );
 
+   /*
    assign debug = { { 1'b0, rx_f19_data[18:16], rx_f19_src_rdy_i, rx_f19_dst_rdy_o, rx_f36_src_rdy_o, rx_f36_dst_rdy_i },
 		    { 2'b0, rx_int1_src_rdy, rx_int1_dst_rdy, rx_int2_src_rdy, rx_int2_dst_rdy, rx_int3_src_rdy, rx_int3_dst_rdy},
 		    { rx_int3_data[35:32], rx_f36_data[35:32] },
 		    { debug_state[1:0], rx_int1_data[18:16], rx_int2_data[18:16] } };
+    */
+
+   assign debug = { { 3'd0, tx_int1_src_rdy, tx_int1_dst_rdy, tx_int1_data[18:16] },
+		    { 3'd0, tx_int2_src_rdy, tx_int2_dst_rdy, tx_int2_data[18:16] },
+		    { tx_int2_data[15:8] },
+		    { tx_int2_data[7:0] } };
    
 endmodule // udp_wrapper
