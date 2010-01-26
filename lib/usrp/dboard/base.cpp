@@ -9,9 +9,8 @@ using namespace usrp_uhd::usrp::dboard;
 /***********************************************************************
  * base dboard base class
  **********************************************************************/
-base::base(ctor_args_t const& args)
- : _subdev_index(args.get<0>()), _dboard_interface(args.get<1>()){
-    /* NOP */
+base::base(ctor_args_t const& args){
+    boost::tie(_subdev_index, _dboard_interface) = args;
 }
 
 base::~base(void){

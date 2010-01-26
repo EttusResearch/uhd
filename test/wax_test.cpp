@@ -2,8 +2,8 @@
 // Copyright 2010 Ettus Research LLC
 //
 
+#include <boost/test/unit_test.hpp>
 #include <usrp_uhd/wax.hpp>
-#include <cppunit/extensions/HelperMacros.h>
 
 /***********************************************************************
  * demo class for wax framework
@@ -40,29 +40,9 @@ public:
     }
 };
 
-/***********************************************************************
- * cpp unit setup
- **********************************************************************/
-class wax_test : public CppUnit::TestFixture{
-    CPPUNIT_TEST_SUITE(wax_test);
-    CPPUNIT_TEST(test_chaining);
-    CPPUNIT_TEST(test_set_get);
-    CPPUNIT_TEST(test_proxy);
-    CPPUNIT_TEST(test_print);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
-    void test_chaining(void);
-    void test_set_get(void);
-    void test_proxy(void);
-    void test_print(void);
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(wax_test);
-
 static wax_demo wd(2, 10);
 
-void wax_test::test_chaining(void){
+BOOST_AUTO_TEST_CASE(test_chaining){
     std::cout << "chain 1" << std::endl;
     wd[size_t(0)];
     std::cout << "chain 2" << std::endl;
@@ -71,7 +51,7 @@ void wax_test::test_chaining(void){
     wd[size_t(0)][size_t(0)][size_t(0)];
 }
 
-void wax_test::test_set_get(void){
+BOOST_AUTO_TEST_CASE(test_set_get){
     std::cout << "set and get all" << std::endl;
     for (size_t i = 0; i < 10; i++){
         for (size_t j = 0; j < 10; j++){
@@ -79,19 +59,19 @@ void wax_test::test_set_get(void){
                 float val = i * j * k + i + j + k;
                 //std::cout << i << " " << j << " " << k << std::endl;
                 wd[i][j][k] = val;
-                CPPUNIT_ASSERT_EQUAL(val, wax::cast<float>(wd[i][j][k]));
+                BOOST_CHECK_EQUAL(val, wax::cast<float>(wd[i][j][k]));
             }
         }
     }
 }
 
-void wax_test::test_proxy(void){
+BOOST_AUTO_TEST_CASE(test_proxy){
     std::cout << "store proxy" << std::endl;
     wax::proxy p = wd[size_t(0)][size_t(0)];
     p[size_t(0)] = float(5);
 }
 
-void wax_test::test_print(void){
+BOOST_AUTO_TEST_CASE(test_print){
     std::cout << "print type" << std::endl;
     wax::type test_type = float(3.33);
     std::cout << test_type << std::endl;

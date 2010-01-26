@@ -6,7 +6,7 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS =
 
-if HAVE_CPPUNIT
+if HAVE_UNIT_TEST
 
 AM_CPPFLAGS = \
 	$(GENERAL_CPPFLAGS) \
@@ -14,15 +14,15 @@ AM_CPPFLAGS = \
 
 LDADD = \
 	$(GENERAL_LDDFLAGS) \
-	$(USRP_UHD_LA) \
-	$(CPPUNIT_LIBS)
+	$(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
+	$(USRP_UHD_LA)
 
-noinst_PROGRAMS = cppunit_test
+noinst_PROGRAMS = main_test
 
-cppunit_test_SOURCES = \
+main_test_SOURCES = \
+	main_test.cpp \
 	addr_test.cpp \
 	device_test.cpp \
-	cppunit_test.cpp \
 	usrp_dboard_test.cpp \
 	wax_test.cpp
 

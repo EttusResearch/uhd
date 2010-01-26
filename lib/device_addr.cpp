@@ -10,7 +10,9 @@
 #include <boost/algorithm/string.hpp>
 
 //----------------------- u2 mac addr wrapper ------------------------//
-usrp_uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str){
+usrp_uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
+    std::string mac_addr_str = (mac_addr_str_ == "")? "ff:ff:ff:ff:ff:ff" : mac_addr_str_;
+
     //ether_aton_r(str.c_str(), &mac_addr);
     uint8_t p[6] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
 
@@ -56,7 +58,8 @@ std::ostream& operator<<(std::ostream &os, const usrp_uhd::mac_addr_t &x){
 }
 
 //----------------------- u2 ipv4 wrapper ----------------------------//
-usrp_uhd::ip_addr_t::ip_addr_t(const std::string &ip_addr_str){
+usrp_uhd::ip_addr_t::ip_addr_t(const std::string &ip_addr_str_){
+    std::string ip_addr_str = (ip_addr_str_ == "")? "255.255.255.255" : ip_addr_str_;
     int ret = inet_pton(AF_INET, ip_addr_str.c_str(), &ip_addr);
     if (ret == 0) throw std::runtime_error("Invalid ip address: " + ip_addr_str);
 }
@@ -81,8 +84,8 @@ usrp_uhd::device_addr_t::device_addr_t(device_addr_type_t device_addr_type){
     usb_args.vendor_id = 0xffff;
     usb_args.product_id = 0xffff;
     eth_args.ifc = "eth0";
-    eth_args.mac_addr = "ff:ff:ff:ff:ff:ff";
-    udp_args.addr = "255.255.255.255";
+    eth_args.mac_addr = "";
+    udp_args.addr = "";
     discovery_args.mboard_id = ~0;
 }
 

@@ -27,7 +27,7 @@ public:
 
     //structors
     base(ctor_args_t const&);
-    ~base(void);
+    virtual ~base(void);
 
     //interface
     virtual void rx_get(const wax::type &key, wax::type &val) = 0;
@@ -54,7 +54,7 @@ public:
      * Create a new xcvr dboard object, override in subclasses.
      */
     xcvr_base(ctor_args_t const&);
-    ~xcvr_base(void);
+    virtual ~xcvr_base(void);
 };
 
 /*!

@@ -10,23 +10,53 @@ AC_INIT
 AM_INIT_AUTOMAKE(usrp_uhd, 0)
 
 ##################################################
-## Check Libs
+## Setup C++ and Libtool
 ##################################################
 AC_PROG_CXX
 LT_INIT
 
-AX_BOOST_BASE([1.36], [], AC_MSG_ERROR("cannot find boost"))
-AX_BOOST_ASIO
-AX_BOOST_THREAD
+##################################################
+## Check Boost
+##################################################
+AC_DEFUN([UHD_CHECK_BOOST],[$1
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE(AC_LANG_PROGRAM(
+        [[@%:@include <boost/static_assert.hpp>]],
+        [[
+            #ifdef $2
+                BOOST_STATIC_ASSERT(true);
+            #else
+                BOOST_STATIC_ASSERT(false);
+            #endif
+            return 0;
+        ]]
+    ), [$3], [$4])
+    AC_LANG_POP([C++])
+])
 
-AM_PATH_CPPUNIT([1.9.6], [HAVE_CPPUNIT=true], [HAVE_CPPUNIT=false])
-AM_CONDITIONAL([HAVE_CPPUNIT], [$HAVE_CPPUNIT])
+UHD_CHECK_BOOST(
+    [AX_BOOST_BASE([1.36])], [HAVE_BOOST],
+    [], [AC_MSG_ERROR("cannot find boost")]
+)
+UHD_CHECK_BOOST(
+    [AX_BOOST_ASIO], [HAVE_BOOST_ASIO],
+    [], [AC_MSG_ERROR("cannot find boost asio")]
+)
+UHD_CHECK_BOOST(
+    [AX_BOOST_THREAD], [HAVE_BOOST_THREAD],
+    [], [AC_MSG_ERROR("cannot find boost thread")]
+)
+UHD_CHECK_BOOST(
+    [AX_BOOST_UNIT_TEST_FRAMEWORK], [HAVE_BOOST_UNIT_TEST_FRAMEWORK],
+    [HAVE_UNIT_TEST=true], [HAVE_UNIT_TEST=false]
+)
+AM_CONDITIONAL([HAVE_UNIT_TEST], [$HAVE_UNIT_TEST])
 
 ##################################################
 ## Check Headers
 ##################################################
 AC_DEFUN([UHD_CHECK_HEADER],[
-    AC_CHECK_HEADER([$1], [], AC_MSG_ERROR("cannot find header $1"))
+    AC_CHECK_HEADER([$1], [], [AC_MSG_ERROR("cannot find header $1")])
 ])
 
 UHD_CHECK_HEADER([arpa/inet.h])
