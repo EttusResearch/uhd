@@ -4,7 +4,7 @@
 
 #include <usrp_uhd/device.hpp>
 #include <usrp_uhd/usrp/mboard/base.hpp>
-#include <vector>
+#include <map>
 
 #ifndef INCLUDED_USRP_UHD_USRP_USRP_HPP
 #define INCLUDED_USRP_UHD_USRP_USRP_HPP
@@ -29,7 +29,7 @@ private:
     void get(const wax::type &, wax::type &);
     void set(const wax::type &, const wax::type &);
 
-    std::vector<mboard::base::sptr> _mboards;
+    std::map<std::string, mboard::base::sptr> _mboards;
     boost::function<void(const device::send_args_t &)> _send_raw_cb;
     boost::function<void(const device::recv_args_t &)> _recv_raw_cb;
 };

@@ -10,15 +10,15 @@ using namespace usrp_uhd::usrp::dboard;
  * base dboard base class
  **********************************************************************/
 base::base(ctor_args_t const& args){
-    boost::tie(_subdev_index, _dboard_interface) = args;
+    boost::tie(_subdev_name, _dboard_interface) = args;
 }
 
 base::~base(void){
     /* NOP */
 }
 
-size_t base::get_subdev_index(void){
-    return _subdev_index;
+std::string base::get_subdev_name(void){
+    return _subdev_name;
 }
 
 interface::sptr base::get_interface(void){

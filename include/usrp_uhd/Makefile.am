@@ -11,4 +11,5 @@ this_include_HEADERS = \
 	device.hpp \
 	device_addr.hpp \
 	props.hpp \
+	utils.hpp \
 	wax.hpp

@@ -6,6 +6,7 @@
 #include <usrp_uhd/wax.hpp>
 #include <complex>
 #include <vector>
+#include <stdint.h>
 
 #ifndef INCLUDED_USRP_UHD_PROPS_HPP
 #define INCLUDED_USRP_UHD_PROPS_HPP
@@ -56,8 +57,9 @@ namespace usrp_uhd{
     typedef std::vector<real_scalar_t> real_vec_t;
     typedef std::vector<complex_scalar_t> complex_vec_t;
 
-    //typedef for addressing indexable components
-    typedef boost::tuple<wax::type, size_t> indexed_prop_t;
+    //typedef for handling named properties
+    typedef std::vector<std::string> prop_names_t;
+    typedef boost::tuple<wax::type, std::string> named_prop_t;
 
     /*!
     * Possible device properties.
@@ -65,7 +67,7 @@ namespace usrp_uhd{
     enum device_prop_t{
         DEVICE_PROP_NAME,              //ro, std::string
         DEVICE_PROP_MBOARD,            //ro, wax::obj
-        DEVICE_PROP_NUM_MBOARDS        //ro, size_t
+        DEVICE_PROP_MBOARD_NAMES       //ro, prop_names_t
     };
 
     /*!
@@ -76,16 +78,18 @@ namespace usrp_uhd{
         MBOARD_PROP_MTU,               //ro, size_t
         MBOARD_PROP_CLOCK_RATE,        //ro, freq_t
         MBOARD_PROP_RX_DSP,            //ro, wax::obj
-        MBOARD_PROP_NUM_RX_DSPS,       //ro, size_t
+        MBOARD_PROP_RX_DSP_NAMES,      //ro, prop_names_t
         MBOARD_PROP_TX_DSP,            //ro, wax::obj
-        MBOARD_PROP_NUM_TX_DSPS,       //ro, size_t
+        MBOARD_PROP_TX_DSP_NAMES,      //ro, prop_names_t
         MBOARD_PROP_RX_DBOARD,         //ro, wax::obj
-        MBOARD_PROP_NUM_RX_DBOARDS,    //ro, size_t
+        MBOARD_PROP_RX_DBOARD_NAMES,   //ro, prop_names_t
         MBOARD_PROP_TX_DBOARD,         //ro, wax::obj
-        MBOARD_PROP_NUM_TX_DBOARDS,    //ro, size_t
+        MBOARD_PROP_TX_DBOARD_NAMES,   //ro, prop_names_t
         MBOARD_PROP_PPS_SOURCE,        //rw, std::string (sma, mimo)
+        MBOARD_PROP_PPS_SOURCE_NAMES,  //ro, prop_names_t
         MBOARD_PROP_PPS_POLARITY,      //rw, int, +/- 1
         MBOARD_PROP_REF_SOURCE,        //rw, std::string (int, sma, mimo)
+        MBOARD_PROP_REF_SOURCE_NAMES,  //ro, prop_names_t
         MBOARD_PROP_TIME_NOW,          //wo, time_spec_t
         MBOARD_PROP_TIME_NEXT_PPS      //wo, time_spec_t
     };
@@ -108,7 +112,7 @@ namespace usrp_uhd{
     enum dboard_prop_t{
         DBOARD_PROP_NAME,              //ro, std::string
         DBOARD_PROP_SUBDEV,            //ro, wax::obj
-        DBOARD_PROP_NUM_SUBDEVS,       //ro, size_t
+        DBOARD_PROP_SUBDEV_NAMES,      //ro, prop_names_t
         DBOARD_PROP_CODEC              //ro, wax::obj
     };
 
@@ -121,7 +125,7 @@ namespace usrp_uhd{
         CODEC_PROP_GAIN_MAX,           //ro, gain_t
         CODEC_PROP_GAIN_MIN,           //ro, gain_t
         CODEC_PROP_GAIN_STEP,          //ro, gain_t
-        CODEC_PROP_NUM_GAINS,          //ro, size_t
+        CODEC_PROP_GAIN_NAMES,         //ro, prop_names_t
         CODEC_PROP_CLOCK_RATE          //ro, freq_t
     };
 
@@ -134,11 +138,12 @@ namespace usrp_uhd{
         SUBDEV_PROP_GAIN_MAX,          //ro, gain_t
         SUBDEV_PROP_GAIN_MIN,          //ro, gain_t
         SUBDEV_PROP_GAIN_STEP,         //ro, gain_t
-        SUBDEV_PROP_NUM_GAINS,         //ro, size_t
+        SUBDEV_PROP_GAIN_NAMES,        //ro, prop_names_t
         SUBDEV_PROP_FREQ,              //rw, freq_t
         SUBDEV_PROP_FREQ_MAX,          //ro, freq_t
         SUBDEV_PROP_FREQ_MIN,          //ro, freq_t
         SUBDEV_PROP_ANTENNA,           //rw, std::string
+        SUBDEV_PROP_ANTENNA_NAMES,     //ro, prop_names_t
         SUBDEV_PROP_ENABLED,           //rw, bool
         SUBDEV_PROP_QUADRATURE,        //ro, bool
         SUBDEV_PROP_IQ_SWAPPED,        //ro, bool

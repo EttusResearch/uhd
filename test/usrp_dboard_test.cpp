@@ -34,12 +34,12 @@ BOOST_AUTO_TEST_CASE(test_manager){
     manager::sptr mgr0(new manager(0x0001, 0x0000, ifc0)); //basic rx, basic tx
 
     std::cout << "Testing the dboard manager..." << std::endl;
-    BOOST_CHECK_EQUAL(size_t(3), mgr0->get_num_rx_subdevs());
-    BOOST_CHECK_EQUAL(size_t(1), mgr0->get_num_tx_subdevs());
+    BOOST_CHECK_EQUAL(size_t(3), mgr0->get_rx_subdev_names().size());
+    BOOST_CHECK_EQUAL(size_t(1), mgr0->get_tx_subdev_names().size());
 
     std::cout << "Testing access (will fail later when db code filled in)..." << std::endl;
-    BOOST_CHECK_THROW(mgr0->get_rx_subdev(3), std::out_of_range);
-    BOOST_CHECK_THROW(mgr0->get_tx_subdev(1), std::out_of_range);
-    (*mgr0->get_rx_subdev(0))[NULL];
-    (*mgr0->get_tx_subdev(0))[NULL];
+    BOOST_CHECK_THROW(mgr0->get_rx_subdev(""), std::invalid_argument);
+    BOOST_CHECK_THROW(mgr0->get_tx_subdev("x"), std::invalid_argument);
+    (*mgr0->get_rx_subdev("a"))[NULL];
+    (*mgr0->get_tx_subdev(""))[NULL];
 }

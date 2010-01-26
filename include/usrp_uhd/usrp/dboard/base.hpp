@@ -20,10 +20,10 @@ namespace usrp_uhd{ namespace usrp{ namespace dboard{
 class base : boost::noncopyable{
 public:
     typedef boost::shared_ptr<base> sptr;
-    //the constructor args consist of a subdev index and an interface
+    //the constructor args consist of a subdev name and an interface
     //derived classes should pass the args into the base class ctor
     //but should not have to deal with the internals of the args
-    typedef boost::tuple<size_t, interface::sptr> ctor_args_t;
+    typedef boost::tuple<std::string, interface::sptr> ctor_args_t;
 
     //structors
     base(ctor_args_t const&);
@@ -36,11 +36,11 @@ public:
     virtual void tx_set(const wax::type &key, const wax::type &val) = 0;
 
 protected:
-    size_t get_subdev_index(void);
+    std::string get_subdev_name(void);
     interface::sptr get_interface(void);
 
 private:
-    size_t             _subdev_index;
+    std::string        _subdev_name;
     interface::sptr    _dboard_interface;
 };
 

@@ -4,6 +4,8 @@
 
 #include <usrp_uhd/usrp/usrp.hpp>
 #include <usrp_uhd/usrp/mboard/test.hpp>
+#include <usrp_uhd/utils.hpp>
+#include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <stdexcept>
 
@@ -31,9 +33,7 @@ usrp::usrp(const device_addr_t & device_addr){
 
     //create mboard based on the device addr
     if (device_addr.type == DEVICE_ADDR_TYPE_VIRTUAL){
-        _mboards.push_back(
-            mboard::base::sptr(new mboard::test(device_addr))
-        );
+        _mboards[""] = mboard::base::sptr(new mboard::test(device_addr));
     }
 }
 
@@ -42,10 +42,10 @@ usrp::~usrp(void){
 }
 
 void usrp::get(const wax::type &key_, wax::type &val){
-    //extract the index if key is an indexed prop
-    wax::type key = key_; size_t index = 0;
-    if (key.type() == typeid(indexed_prop_t)){
-        boost::tie(key, index) = wax::cast<indexed_prop_t>(key);
+    //extract the index if key is a named prop
+    wax::type key = key_; std::string name = "";
+    if (key.type() == typeid(named_prop_t)){
+        boost::tie(key, name) = wax::cast<named_prop_t>(key);
     }
 
     //handle the get request conditioned on the key
@@ -55,13 +55,16 @@ void usrp::get(const wax::type &key_, wax::type &val){
         return;
 
     case DEVICE_PROP_MBOARD:
+        if (_mboards.count(name) == 0) throw std::invalid_argument(
+            str(boost::format("Unknown mboard name %s") % name)
+        );
         //turn the mboard sptr object into a wax::obj::sptr
         //this allows the properties access through the wax::proxy
-        val = wax::obj::cast(_mboards.at(index));
+        val = wax::obj::cast(_mboards[name]);
         return;
 
-    case DEVICE_PROP_NUM_MBOARDS:
-        val = size_t(_mboards.size());
+    case DEVICE_PROP_MBOARD_NAMES:
+        val = prop_names_t(get_map_keys(_mboards));
         return;
     }
 }

@@ -3,7 +3,10 @@
 //
 
 #include <usrp_uhd/usrp/mboard/test.hpp>
+#include <usrp_uhd/utils.hpp>
 #include <usrp_uhd/props.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 #include <stdexcept>
 
 using namespace usrp_uhd;
@@ -42,10 +45,10 @@ public:
     ~shell_dboard(void){}
 private:
     void get(const wax::type &key_, wax::type &val){
-        //extract the index if key is an indexed prop
-        wax::type key = key_; size_t index = 0;
-        if (key.type() == typeid(indexed_prop_t)){
-            boost::tie(key, index) = wax::cast<indexed_prop_t>(key);
+        //extract the index if key is a named prop
+        wax::type key = key_; std::string name = "";
+        if (key.type() == typeid(named_prop_t)){
+            boost::tie(key, name) = wax::cast<named_prop_t>(key);
         }
 
         //handle the get request conditioned on the key
@@ -57,22 +60,22 @@ private:
         case DBOARD_PROP_SUBDEV:
             switch(_type){
             case TYPE_RX:
-                val = _mgr->get_rx_subdev(index);
+                val = _mgr->get_rx_subdev(name);
                 return;
 
             case TYPE_TX:
-                val = _mgr->get_tx_subdev(index);
+                val = _mgr->get_tx_subdev(name);
                 return;
             }
 
-        case DBOARD_PROP_NUM_SUBDEVS:
+        case DBOARD_PROP_SUBDEV_NAMES:
             switch(_type){
             case TYPE_RX:
-                val = _mgr->get_num_rx_subdevs();
+                val = _mgr->get_rx_subdev_names();
                 return;
 
             case TYPE_TX:
-                val = _mgr->get_num_tx_subdevs();
+                val = _mgr->get_tx_subdev_names();
                 return;
             }
 
@@ -97,9 +100,9 @@ test::test(const device_addr_t &device_addr){
     //create a manager for each dboard
     for (size_t i = 0; i < device_addr.virtual_args.num_dboards; i++){
         dboard::interface::sptr ifc(new dummy_interface());
-        _dboard_managers.push_back(dboard::manager::sptr(
+        _dboard_managers[boost::lexical_cast<std::string>(i)] = dboard::manager::sptr(
             new dboard::manager(0x0001, 0x0000, ifc)
-        ));
+        );
     }
 }
 
@@ -108,10 +111,10 @@ test::~test(void){
 }
 
 void test::get(const wax::type &key_, wax::type &val){
-    //extract the index if key is an indexed prop
-    wax::type key = key_; size_t index = 0;
-    if (key.type() == typeid(indexed_prop_t)){
-        boost::tie(key, index) = wax::cast<indexed_prop_t>(key);
+    //extract the index if key is a named prop
+    wax::type key = key_; std::string name = "";
+    if (key.type() == typeid(named_prop_t)){
+        boost::tie(key, name) = wax::cast<named_prop_t>(key);
     }
 
     //handle the get request conditioned on the key
@@ -121,34 +124,42 @@ void test::get(const wax::type &key_, wax::type &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
+        if (_dboard_managers.count(name) == 0) throw std::invalid_argument(
+            str(boost::format("Unknown rx dboard name %s") % name)
+        );
         val = wax::obj::sptr(
-            new shell_dboard(_dboard_managers.at(index), shell_dboard::TYPE_RX)
+            new shell_dboard(_dboard_managers[name], shell_dboard::TYPE_RX)
         );
         return;
 
-    case MBOARD_PROP_NUM_RX_DBOARDS:
-        val = size_t(_dboard_managers.size());
+    case MBOARD_PROP_RX_DBOARD_NAMES:
+        val = prop_names_t(get_map_keys(_dboard_managers));
         return;
 
     case MBOARD_PROP_TX_DBOARD:
+        if (_dboard_managers.count(name) == 0) throw std::invalid_argument(
+            str(boost::format("Unknown tx dboard name %s") % name)
+        );
         val = wax::obj::sptr(
-            new shell_dboard(_dboard_managers.at(index), shell_dboard::TYPE_TX)
+            new shell_dboard(_dboard_managers[name], shell_dboard::TYPE_TX)
         );
         return;
 
-    case MBOARD_PROP_NUM_TX_DBOARDS:
-        val = size_t(_dboard_managers.size());
+    case MBOARD_PROP_TX_DBOARD_NAMES:
+        val = prop_names_t(get_map_keys(_dboard_managers));
         return;
 
     case MBOARD_PROP_MTU:
     case MBOARD_PROP_CLOCK_RATE:
     case MBOARD_PROP_RX_DSP:
-    case MBOARD_PROP_NUM_RX_DSPS:
+    case MBOARD_PROP_RX_DSP_NAMES:
     case MBOARD_PROP_TX_DSP:
-    case MBOARD_PROP_NUM_TX_DSPS:
+    case MBOARD_PROP_TX_DSP_NAMES:
     case MBOARD_PROP_PPS_SOURCE:
+    case MBOARD_PROP_PPS_SOURCE_NAMES:
     case MBOARD_PROP_PPS_POLARITY:
     case MBOARD_PROP_REF_SOURCE:
+    case MBOARD_PROP_REF_SOURCE_NAMES:
     case MBOARD_PROP_TIME_NOW:
     case MBOARD_PROP_TIME_NEXT_PPS:
         throw std::runtime_error("unhandled prop is usrp test mboard");

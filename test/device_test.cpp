@@ -22,11 +22,11 @@ BOOST_AUTO_TEST_CASE(test_device){
     std::cout << wax::cast<std::string>(mb0[MBOARD_PROP_NAME]) << std::endl;
     BOOST_CHECK_EQUAL(
         device_addr.virtual_args.num_dboards,
-        wax::cast<size_t>(mb0[MBOARD_PROP_NUM_RX_DBOARDS])
+        wax::cast<prop_names_t>(mb0[MBOARD_PROP_RX_DBOARD_NAMES]).size()
     );
     BOOST_CHECK_EQUAL(
         device_addr.virtual_args.num_dboards,
-        wax::cast<size_t>(mb0[MBOARD_PROP_NUM_TX_DBOARDS])
+        wax::cast<prop_names_t>(mb0[MBOARD_PROP_TX_DBOARD_NAMES]).size()
     );
 
 }

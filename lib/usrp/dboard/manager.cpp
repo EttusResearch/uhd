@@ -3,10 +3,13 @@
 //
 
 #include <usrp_uhd/usrp/dboard/manager.hpp>
+#include <usrp_uhd/utils.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <map>
+#include <boost/foreach.hpp>
 #include "dboards.hpp"
 
+using namespace usrp_uhd;
 using namespace usrp_uhd::usrp::dboard;
 
 /***********************************************************************
@@ -26,8 +29,8 @@ static void register_internal_dboards(void){
     static bool called = false;
     if (called) return; called = true;
     //register the known dboards (dboard id, constructor, num subdevs)
-    manager::register_subdevs(0x0000, &basic_tx::make, 1);
-    manager::register_subdevs(0x0001, &basic_rx::make, 3);
+    manager::register_subdevs(0x0000, &basic_tx::make, boost::assign::list_of(""));
+    manager::register_subdevs(0x0001, &basic_rx::make, boost::assign::list_of("a")("b")("ab"));
 }
 
 /***********************************************************************
@@ -36,17 +39,17 @@ static void register_internal_dboards(void){
 //map a dboard id to a dboard constructor
 static std::map<manager::dboard_id_t, manager::dboard_ctor_t> id_to_ctor_map;
 
-//map a dboard constructor to number of subdevices
-static std::map<manager::dboard_ctor_t, size_t> ctor_to_num_map;
+//map a dboard constructor to subdevice names
+static std::map<manager::dboard_ctor_t, prop_names_t> ctor_to_names_map;
 
 void manager::register_subdevs(
     dboard_id_t dboard_id,
     dboard_ctor_t dboard_ctor,
-    size_t num_subdevs
+    const prop_names_t &subdev_names
 ){
     register_internal_dboards(); //always call first
     id_to_ctor_map[dboard_id] = dboard_ctor;
-    ctor_to_num_map[dboard_ctor] = num_subdevs;
+    ctor_to_names_map[dboard_ctor] = subdev_names;
 }
 
 /***********************************************************************
@@ -119,27 +122,27 @@ manager::manager(
     const dboard_ctor_t tx_dboard_ctor = get_dboard_ctor(tx_dboard_id, "tx");
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
-        for (size_t i = 0; i < ctor_to_num_map[rx_dboard_ctor]; i++){
+        BOOST_FOREACH(std::string name, ctor_to_names_map[rx_dboard_ctor]){
             base::sptr xcvr_dboard = rx_dboard_ctor(
-                base::ctor_args_t(i, dboard_interface)
+                base::ctor_args_t(name, dboard_interface)
             );
-            _rx_dboards.push_back(xcvr_dboard);
-            _tx_dboards.push_back(xcvr_dboard);
+            _rx_dboards[name] = xcvr_dboard;
+            _tx_dboards[name] = xcvr_dboard;
         }
     }
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
         //make the rx subdevs
-        for (size_t i = 0; i < ctor_to_num_map[rx_dboard_ctor]; i++){
-            _rx_dboards.push_back(rx_dboard_ctor(
-                base::ctor_args_t(i, dboard_interface)
-            ));
+        BOOST_FOREACH(std::string name, ctor_to_names_map[rx_dboard_ctor]){
+            _rx_dboards[name] = rx_dboard_ctor(
+                base::ctor_args_t(name, dboard_interface)
+            );
         }
         //make the tx subdevs
-        for (size_t i = 0; i < ctor_to_num_map[tx_dboard_ctor]; i++){
-            _tx_dboards.push_back(tx_dboard_ctor(
-                base::ctor_args_t(i, dboard_interface)
-            ));
+        BOOST_FOREACH(std::string name, ctor_to_names_map[tx_dboard_ctor]){
+            _tx_dboards[name] = tx_dboard_ctor(
+                base::ctor_args_t(name, dboard_interface)
+            );
         }
     }
 }
@@ -148,22 +151,28 @@ manager::~manager(void){
     /* NOP */
 }
 
-size_t manager::get_num_rx_subdevs(void){
-    return _rx_dboards.size();
+prop_names_t manager::get_rx_subdev_names(void){
+    return get_map_keys(_rx_dboards);
 }
 
-size_t manager::get_num_tx_subdevs(void){
-    return _tx_dboards.size();
+prop_names_t manager::get_tx_subdev_names(void){
+    return get_map_keys(_tx_dboards);
 }
 
-wax::obj::sptr manager::get_rx_subdev(size_t subdev_index){
+wax::obj::sptr manager::get_rx_subdev(const std::string &subdev_name){
+    if (_rx_dboards.count(subdev_name) == 0) throw std::invalid_argument(
+        str(boost::format("Unknown rx subdev name %s") % subdev_name)
+    );
     return wax::obj::sptr(new subdev_proxy(
-        _rx_dboards.at(subdev_index), subdev_proxy::RX_TYPE)
+        _rx_dboards[subdev_name], subdev_proxy::RX_TYPE)
     );
 }
 
-wax::obj::sptr manager::get_tx_subdev(size_t subdev_index){
+wax::obj::sptr manager::get_tx_subdev(const std::string &subdev_name){
+    if (_tx_dboards.count(subdev_name) == 0) throw std::invalid_argument(
+        str(boost::format("Unknown tx subdev name %s") % subdev_name)
+    );
     return wax::obj::sptr(new subdev_proxy(
-        _tx_dboards.at(subdev_index), subdev_proxy::TX_TYPE)
+        _tx_dboards[subdev_name], subdev_proxy::TX_TYPE)
     );
 }

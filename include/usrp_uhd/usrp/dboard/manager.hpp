@@ -5,8 +5,9 @@
 #ifndef INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP
 #define INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP
 
-#include <vector>
+#include <map>
 #include <usrp_uhd/wax.hpp>
+#include <usrp_uhd/props.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <usrp_uhd/usrp/dboard/base.hpp>
@@ -32,12 +33,12 @@ public:
      *
      * \param dboard_id the dboard id (rx or tx)
      * \param dboard_ctor the dboard constructor function pointer
-     * \param num_subdevs the number of subdevs in this dboard
+     * \param subdev_names the names of the subdevs on this dboard
      */
     static void register_subdevs(
         dboard_id_t dboard_id,
         dboard_ctor_t dboard_ctor,
-        size_t num_subdevs
+        const prop_names_t &subdev_names
     );
 
 public:
@@ -51,16 +52,16 @@ public:
     ~manager(void);
 
     //interface
-    size_t get_num_rx_subdevs(void);
-    size_t get_num_tx_subdevs(void);
-    wax::obj::sptr get_rx_subdev(size_t subdev_index);
-    wax::obj::sptr get_tx_subdev(size_t subdev_index);
+    prop_names_t get_rx_subdev_names(void);
+    prop_names_t get_tx_subdev_names(void);
+    wax::obj::sptr get_rx_subdev(const std::string &subdev_name);
+    wax::obj::sptr get_tx_subdev(const std::string &subdev_name);
 
 private:
     //list of rx and tx dboards in this manager
     //each dboard here is actually a subdevice
-    std::vector<base::sptr> _rx_dboards;
-    std::vector<base::sptr> _tx_dboards;
+    std::map<std::string, base::sptr> _rx_dboards;
+    std::map<std::string, base::sptr> _tx_dboards;
 };
 
 }}} //namespace
