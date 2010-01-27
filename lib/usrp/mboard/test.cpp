@@ -30,6 +30,8 @@ public:
     std::string read_i2c (int, size_t){return "";}
     void write_spi (spi_dev_t, spi_push_t, const std::string &){}
     std::string read_spi (spi_dev_t, spi_latch_t, size_t){return "";}
+    double get_rx_clock_rate(void){return 0.0;}
+    double get_tx_clock_rate(void){return 0.0;}
 };
 
 /***********************************************************************
@@ -121,6 +123,10 @@ void test::get(const wax::type &key_, wax::type &val){
     switch(wax::cast<mboard_prop_t>(key)){
     case MBOARD_PROP_NAME:
         val = std::string("usrp test mboard");
+        return;
+
+    case MBOARD_PROP_OTHERS:
+        val = prop_names_t(); //empty other props
         return;
 
     case MBOARD_PROP_RX_DBOARD:

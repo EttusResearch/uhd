@@ -26,9 +26,9 @@ public:
     typedef boost::shared_ptr<device> sptr;
 
     //argument types for send and recv raw methods
-    //the send args is an array of buffers
-    //the recv args is a callback that takes a buffer
-    typedef std::vector<boost::asio::const_buffer>                   send_args_t;
+    //the send args is convertable to a boost asio buffer
+    //the recv args is a callback that takes a boost asio buffer
+    typedef boost::asio::const_buffer                                send_args_t;
     typedef boost::function<bool(const boost::asio::const_buffer &)> recv_args_t;
 
     //structors

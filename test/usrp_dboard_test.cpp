@@ -24,6 +24,8 @@ public:
     std::string read_i2c (int, size_t){return "";}
     void write_spi (spi_dev_t, spi_push_t, const std::string &){}
     std::string read_spi (spi_dev_t, spi_latch_t, size_t){return "";}
+    double get_rx_clock_rate(void){return 0.0;}
+    double get_tx_clock_rate(void){return 0.0;}
 };
 
 BOOST_AUTO_TEST_CASE(test_manager){

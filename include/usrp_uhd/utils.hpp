@@ -21,6 +21,8 @@ std::vector<Key> get_map_keys(const std::map<Key, T> &m){
     return v;
 }
 
+//TODO implement a set and get gains that takes a wx obj ptr, and gain properties
+
 //TODO check name in vector of names
 
 //TODO optionally extract a name from the named_prop_t

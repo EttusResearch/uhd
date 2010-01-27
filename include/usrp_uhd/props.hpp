@@ -62,7 +62,10 @@ namespace usrp_uhd{
     typedef boost::tuple<wax::type, std::string> named_prop_t;
 
     /*!
-    * Possible device properties.
+    * Possible device properties:
+    *   In general, a device will have a single mboard.
+    *   In certain mimo applications, multiple boards
+    *   will be present in the interface for configuration.
     */
     enum device_prop_t{
         DEVICE_PROP_NAME,              //ro, std::string
@@ -71,10 +74,14 @@ namespace usrp_uhd{
     };
 
     /*!
-    * Possible device mboard properties
+    * Possible device mboard properties:
+    *   The general mboard properties are listed below.
+    *   Custom properties can be identified with a string
+    *   and discovered though the others property.
     */
     enum mboard_prop_t{
         MBOARD_PROP_NAME,              //ro, std::string
+        MBOARD_PROP_OTHERS,            //ro, prop_names_t
         MBOARD_PROP_MTU,               //ro, size_t
         MBOARD_PROP_CLOCK_RATE,        //ro, freq_t
         MBOARD_PROP_RX_DSP,            //ro, wax::obj
@@ -95,15 +102,16 @@ namespace usrp_uhd{
     };
 
     /*!
-    * Possible device dsp properties
+    * Possible device dsp properties:
+    *   A dsp can have a wide range of possible properties.
+    *   A ddc would have a properties "decim", "freq", "taps"...
+    *   Other properties could be gains, complex scalars, enables...
+    *   For this reason the only required properties of a dsp is a name
+    *   and a property to get list of other possible properties.
     */
     enum dsp_prop_t{
         DSP_PROP_NAME,                 //ro, std::string
-        DSP_PROP_FREQ,                 //rw, freq_t
-        DSP_PROP_TAPS,                 //rw, *_vec_t
-        DSP_PROP_RATE,                 //rw, *_scalar_t, decim/interp
-        DSP_PROP_SCALAR,               //rw, *_scalar_t
-        DSP_PROP_ENABLED               //rw, bool or time_spec_t
+        DSP_PROP_OTHERS                //ro, prop_names_t
     };
 
     /*!
@@ -117,10 +125,13 @@ namespace usrp_uhd{
     };
 
     /*!
-    * Possible device codec properties
+    * Possible device codec properties:
+    *   A codec is expected to have a rate and gain elements.
+    *   Other properties can be discovered through the others prop.
     */
     enum codec_prop_t{
         CODEC_PROP_NAME,               //ro, std::string
+        CODEC_PROP_OTHERS,             //ro, prop_names_t
         CODEC_PROP_GAIN,               //rw, gain_t
         CODEC_PROP_GAIN_MAX,           //ro, gain_t
         CODEC_PROP_GAIN_MIN,           //ro, gain_t
@@ -134,6 +145,7 @@ namespace usrp_uhd{
     */
     enum subdev_prop_t{
         SUBDEV_PROP_NAME,              //ro, std::string
+        SUBDEV_PROP_OTHERS,            //ro, prop_names_t
         SUBDEV_PROP_GAIN,              //rw, gain_t
         SUBDEV_PROP_GAIN_MAX,          //ro, gain_t
         SUBDEV_PROP_GAIN_MIN,          //ro, gain_t
@@ -150,8 +162,7 @@ namespace usrp_uhd{
         SUBDEV_PROP_SPECTRUM_INVERTED, //ro, bool
         SUBDEV_PROP_IS_TX,             //ro, bool
         SUBDEV_PROP_RSSI,              //ro, gain_t
-        SUBDEV_PROP_BANDWIDTH,         //rw, freq_t
-        SUBDEV_PROP_CLOCK_RATE         //ro, freq_t
+        SUBDEV_PROP_BANDWIDTH          //rw, freq_t
     };
 
 } //namespace usrp_uhd

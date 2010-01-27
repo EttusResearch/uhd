@@ -134,6 +134,19 @@ public:
      * \return the data read if sucessful, else a zero length string.
      */
     virtual std::string read_spi(spi_dev_t dev, spi_latch_t latch, size_t len) = 0;
+
+    /*!
+     * \brief Get the rate of the rx dboard clock.
+     * \return the clock rate
+     */
+    virtual double get_rx_clock_rate(void) = 0;
+
+    /*!
+     * \brief Get the rate of the tx dboard clock.
+     * \return the clock rate
+     */
+    virtual double get_tx_clock_rate(void) = 0;
+
 };
 
 }}} //namespace

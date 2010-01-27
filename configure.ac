@@ -19,19 +19,12 @@ LT_INIT
 ## Check Boost
 ##################################################
 AC_DEFUN([UHD_CHECK_BOOST],[$1
-    AC_LANG_PUSH([C++])
-    AC_COMPILE_IFELSE(AC_LANG_PROGRAM(
-        [[@%:@include <boost/static_assert.hpp>]],
-        [[
-            #ifdef $2
-                BOOST_STATIC_ASSERT(true);
-            #else
-                BOOST_STATIC_ASSERT(false);
-            #endif
-            return 0;
-        ]]
-    ), [$3], [$4])
-    AC_LANG_POP([C++])
+    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([],[[
+        #ifndef $2
+            fail
+        #endif
+        return 0;
+    ]]), [$3], [$4])
 ])
 
 UHD_CHECK_BOOST(
@@ -41,6 +34,18 @@ UHD_CHECK_BOOST(
 UHD_CHECK_BOOST(
     [AX_BOOST_ASIO], [HAVE_BOOST_ASIO],
     [], [AC_MSG_ERROR("cannot find boost asio")]
+)
+UHD_CHECK_BOOST(
+    [AX_BOOST_DATE_TIME], [HAVE_BOOST_DATE_TIME],
+    [], [AC_MSG_ERROR("cannot find boost date time")]
+)
+UHD_CHECK_BOOST(
+    [AX_BOOST_PROGRAM_OPTIONS], [HAVE_BOOST_PROGRAM_OPTIONS],
+    [], [AC_MSG_ERROR("cannot find boost program options")]
+)
+UHD_CHECK_BOOST(
+    [AX_BOOST_SYSTEM], [HAVE_BOOST_SYSTEM],
+    [], [AC_MSG_ERROR("cannot find boost system")]
 )
 UHD_CHECK_BOOST(
     [AX_BOOST_THREAD], [HAVE_BOOST_THREAD],
