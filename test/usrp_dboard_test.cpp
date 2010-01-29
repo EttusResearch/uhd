@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(test_manager){
     interface::sptr ifc0(new dummy_interface());
 
     std::cout << "Making a usrp dboard manager..." << std::endl;
-    manager::sptr mgr0(new manager(0x0001, 0x0000, ifc0)); //basic rx, basic tx
+    manager::sptr mgr0(new manager(ID_BASIC_RX, ID_BASIC_TX, ifc0));
 
     std::cout << "Testing the dboard manager..." << std::endl;
     BOOST_CHECK_EQUAL(size_t(3), mgr0->get_rx_subdev_names().size());

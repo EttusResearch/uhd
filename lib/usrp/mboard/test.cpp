@@ -100,7 +100,7 @@ test::test(const device_addr_t &device_addr){
     for (size_t i = 0; i < device_addr.virtual_args.num_dboards; i++){
         dboard::interface::sptr ifc(new dummy_interface());
         _dboard_managers[boost::lexical_cast<std::string>(i)] = dboard::manager::sptr(
-            new dboard::manager(0x0001, 0x0000, ifc)
+            new dboard::manager(dboard::ID_BASIC_RX, dboard::ID_BASIC_TX, ifc)
         );
     }
 }

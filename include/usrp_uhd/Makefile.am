@@ -12,5 +12,6 @@ this_include_HEADERS = \
 	device_addr.hpp \
 	gain_handler.hpp \
 	props.hpp \
+	time_spec.hpp \
 	utils.hpp \
 	wax.hpp

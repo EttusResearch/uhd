@@ -11,6 +11,7 @@
 
 using namespace usrp_uhd;
 using namespace usrp_uhd::usrp::dboard;
+using namespace boost::assign;
 
 /***********************************************************************
  * register internal dboards
@@ -28,16 +29,16 @@ static void register_internal_dboards(void){
     //ensure that this function can only be called once per instance
     static bool called = false;
     if (called) return; called = true;
-    //register the known dboards (dboard id, constructor, num subdevs)
-    manager::register_subdevs(0x0000, &basic_tx::make, boost::assign::list_of(""));
-    manager::register_subdevs(0x0001, &basic_rx::make, boost::assign::list_of("a")("b")("ab"));
+    //register the known dboards (dboard id, constructor, subdev names)
+    manager::register_subdevs(ID_BASIC_TX, &basic_tx::make, list_of(""));
+    manager::register_subdevs(ID_BASIC_RX, &basic_rx::make, list_of("a")("b")("ab"));
 }
 
 /***********************************************************************
  * storage and registering for dboards
  **********************************************************************/
 //map a dboard id to a dboard constructor
-static std::map<manager::dboard_id_t, manager::dboard_ctor_t> id_to_ctor_map;
+static std::map<dboard_id_t, manager::dboard_ctor_t> id_to_ctor_map;
 
 //map a dboard constructor to subdevice names
 static std::map<manager::dboard_ctor_t, prop_names_t> ctor_to_names_map;
@@ -99,7 +100,7 @@ private:
  * dboard manager methods
  **********************************************************************/
 static manager::dboard_ctor_t const& get_dboard_ctor(
-    manager::dboard_id_t dboard_id,
+    dboard_id_t dboard_id,
     std::string const& xx_type
 ){
     //verify that there is a registered constructor for this id

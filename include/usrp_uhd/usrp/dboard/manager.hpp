@@ -11,6 +11,7 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <usrp_uhd/usrp/dboard/base.hpp>
+#include <usrp_uhd/usrp/dboard/id.hpp>
 
 namespace usrp_uhd{ namespace usrp{ namespace dboard{
 
@@ -22,8 +23,6 @@ namespace usrp_uhd{ namespace usrp{ namespace dboard{
 class manager : boost::noncopyable{
 
 public:
-    //a dboard can be identified by a 16 bit integer
-    typedef uint16_t dboard_id_t;
 
     //dboard constructor (each dboard should have a ::make with this signature)
     typedef base::sptr(*dboard_ctor_t)(base::ctor_args_t const&);

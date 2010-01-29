@@ -16,6 +16,7 @@ dboard_sources = \
 lib_la_SOURCES = \
 	$(dboard_sources) \
 	base.cpp \
+	id.cpp \
 	interface.cpp \
 	manager.cpp
 
