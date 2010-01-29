@@ -13,6 +13,7 @@ lib_LTLIBRARIES = libusrp_uhd.la
 libusrp_uhd_la_SOURCES = \
 	device.cpp \
 	device_addr.cpp \
+	gain_handler.cpp \
 	usrp_uhd.cpp \
 	wax.cpp
 

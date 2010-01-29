@@ -42,11 +42,8 @@ usrp::~usrp(void){
 }
 
 void usrp::get(const wax::type &key_, wax::type &val){
-    //extract the index if key is a named prop
-    wax::type key = key_; std::string name = "";
-    if (key.type() == typeid(named_prop_t)){
-        boost::tie(key, name) = wax::cast<named_prop_t>(key);
-    }
+    wax::type key; std::string name;
+    tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(wax::cast<device_prop_t>(key)){

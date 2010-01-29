@@ -5,6 +5,15 @@
 #include <boost/test/unit_test.hpp>
 #include <usrp_uhd/wax.hpp>
 
+enum opt_a_t{OPTION_A_0, OPTION_A_1};
+enum opt_b_t{OPTION_B_0, OPTION_B_1};
+
+BOOST_AUTO_TEST_CASE(test_enums){
+    wax::type opta = OPTION_A_0;
+    BOOST_CHECK_THROW(wax::cast<opt_b_t>(opta), wax::bad_cast);
+    BOOST_CHECK_EQUAL(wax::cast<opt_a_t>(opta), OPTION_A_0);
+}
+
 /***********************************************************************
  * demo class for wax framework
  **********************************************************************/
@@ -69,6 +78,10 @@ BOOST_AUTO_TEST_CASE(test_proxy){
     std::cout << "store proxy" << std::endl;
     wax::proxy p = wd[size_t(0)][size_t(0)];
     p[size_t(0)] = float(5);
+
+    std::cout << "assign proxy" << std::endl;
+    wax::type a = p[size_t(0)];
+    BOOST_CHECK_EQUAL(wax::cast<float>(a), float(5));
 }
 
 BOOST_AUTO_TEST_CASE(test_print){

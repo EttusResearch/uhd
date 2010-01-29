@@ -10,6 +10,7 @@ this_includedir = $(includedir)/usrp_uhd
 this_include_HEADERS = \
 	device.hpp \
 	device_addr.hpp \
+	gain_handler.hpp \
 	props.hpp \
 	utils.hpp \
 	wax.hpp

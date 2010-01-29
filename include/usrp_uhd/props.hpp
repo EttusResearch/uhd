@@ -62,6 +62,18 @@ namespace usrp_uhd{
     typedef boost::tuple<wax::type, std::string> named_prop_t;
 
     /*!
+     * Utility function to separate a named property into its components.
+     * \param key a reference to the prop object
+     * \param name a reference to the name object
+     */
+    inline named_prop_t extract_named_prop(const wax::type &key, const std::string &name = ""){
+        if (key.type() == typeid(named_prop_t)){
+            return wax::cast<named_prop_t>(key);
+        }
+        return named_prop_t(key, name);
+    }
+
+    /*!
     * Possible device properties:
     *   In general, a device will have a single mboard.
     *   In certain mimo applications, multiple boards

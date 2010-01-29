@@ -47,11 +47,8 @@ public:
     ~shell_dboard(void){}
 private:
     void get(const wax::type &key_, wax::type &val){
-        //extract the index if key is a named prop
-        wax::type key = key_; std::string name = "";
-        if (key.type() == typeid(named_prop_t)){
-            boost::tie(key, name) = wax::cast<named_prop_t>(key);
-        }
+        wax::type key; std::string name;
+        tie(key, name) = extract_named_prop(key_);
 
         //handle the get request conditioned on the key
         switch(wax::cast<dboard_prop_t>(key)){
@@ -113,11 +110,8 @@ test::~test(void){
 }
 
 void test::get(const wax::type &key_, wax::type &val){
-    //extract the index if key is a named prop
-    wax::type key = key_; std::string name = "";
-    if (key.type() == typeid(named_prop_t)){
-        boost::tie(key, name) = wax::cast<named_prop_t>(key);
-    }
+    wax::type key; std::string name;
+    tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(wax::cast<mboard_prop_t>(key)){
