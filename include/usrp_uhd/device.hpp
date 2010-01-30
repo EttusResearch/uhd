@@ -11,8 +11,8 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <vector>
 #include <boost/asio/buffer.hpp>
+#include <vector>
 
 namespace usrp_uhd{
 
@@ -26,9 +26,9 @@ public:
     typedef boost::shared_ptr<device> sptr;
 
     //argument types for send and recv raw methods
-    //the send args is convertable to a boost asio buffer
+    //the send args is a vector of the boost asio buffers
     //the recv args is a callback that takes a boost asio buffer
-    typedef boost::asio::const_buffer                                send_args_t;
+    typedef std::vector<boost::asio::const_buffer>                   send_args_t;
     typedef boost::function<bool(const boost::asio::const_buffer &)> recv_args_t;
 
     //structors
