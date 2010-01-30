@@ -70,24 +70,6 @@ std::ostream& operator<<(std::ostream &os, const usrp_uhd::mac_addr_t &x){
     return os;
 }
 
-//----------------------- u2 ipv4 wrapper ----------------------------//
-usrp_uhd::ip_addr_t::ip_addr_t(const std::string &ip_addr_str_){
-    std::string ip_addr_str = (ip_addr_str_ == "")? "255.255.255.255" : ip_addr_str_;
-    int ret = inet_pton(AF_INET, ip_addr_str.c_str(), &ip_addr);
-    if (ret == 0) throw std::runtime_error("Invalid ip address: " + ip_addr_str);
-}
-
-std::string usrp_uhd::ip_addr_t::to_string(void) const{
-    char addr_buf[128];
-    inet_ntop(AF_INET, &ip_addr, addr_buf, INET_ADDRSTRLEN);
-    return std::string(addr_buf);
-}
-
-std::ostream& operator<<(std::ostream &os, const usrp_uhd::ip_addr_t &x){
-    os << x.to_string();
-    return os;
-}
-
 //----------------------- usrp device_addr_t wrapper -------------------------//
 usrp_uhd::device_addr_t::device_addr_t(device_addr_type_t device_addr_type){
     type = device_addr_type;

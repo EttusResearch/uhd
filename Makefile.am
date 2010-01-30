@@ -17,7 +17,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = include lib test
+SUBDIRS = include lib test apps
 
 ########################################################################
 ## Handle the pkgconfig file generation

@@ -26,12 +26,3 @@ BOOST_AUTO_TEST_CASE(test_mac_addr){
     std::cout << "Output: " << mac_addr << std::endl;
     BOOST_CHECK_EQUAL(mac_addr_str, mac_addr.to_string());
 }
-
-BOOST_AUTO_TEST_CASE(test_ip_addr){
-    std::cout << "Testing ip addr..." << std::endl;
-    const std::string ip_addr_str("192.168.1.10");
-    usrp_uhd::ip_addr_t ip_addr(ip_addr_str);
-    std::cout << "Input: " << ip_addr_str << std::endl;
-    std::cout << "Output: " << ip_addr << std::endl;
-    BOOST_CHECK_EQUAL(ip_addr_str, ip_addr.to_string());
-}

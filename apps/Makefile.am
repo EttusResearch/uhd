@@ -21,13 +21,11 @@ SUBDIRS =
 
 AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 
-noinst_LTLIBRARIES = lib.la
+LDADD = \
+	$(GENERAL_LDDFLAGS) \
+	$(USRP_UHD_LA)
 
-lib_la_SOURCES = \
-	base.cpp \
-	test.cpp \
-	usrp2.cpp
+noinst_PROGRAMS = discover_usrps
 
-lib_la_LIBADD = $(GENERAL_LDDFLAGS)
+discover_usrps_SOURCES = discover_usrps.cpp
 
-noinst_HEADERS = usrp2_fw_common.h

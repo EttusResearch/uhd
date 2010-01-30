@@ -77,7 +77,7 @@ AC_DEFUN([UHD_CHECK_HEADER],[
     AC_CHECK_HEADER([$1], [], [AC_MSG_ERROR("cannot find header $1")])
 ])
 
-UHD_CHECK_HEADER([arpa/inet.h])
+UHD_CHECK_HEADER([netinet/in.h])
 UHD_CHECK_HEADER([netinet/ether.h])
 
 ##################################################
@@ -104,6 +104,7 @@ AC_PATH_PROG(PYTHON, python)
 ##################################################
 AC_CONFIG_FILES([ \
 	Makefile \
+	apps/Makefile \
 	include/Makefile \
 	include/usrp_uhd/Makefile \
 	include/usrp_uhd/usrp/Makefile \

@@ -21,7 +21,7 @@
 #include <string>
 #include <iostream>
 #include <netinet/ether.h>
-#include <arpa/inet.h>
+#include <stdint.h>
 
 namespace usrp_uhd{
 
@@ -32,16 +32,6 @@ namespace usrp_uhd{
     struct mac_addr_t{
         struct ether_addr mac_addr;
         mac_addr_t(const std::string &mac_addr_str = "00:00:00:00:00:00");
-        std::string to_string(void) const;
-    };
-
-    /*!
-    * Wrapper for an ipv4 address.
-    * Provides conversion between string and binary formats.
-    */
-    struct ip_addr_t{
-        struct in_addr ip_addr;
-        ip_addr_t(const std::string &ip_addr_str = "0.0.0.0");
         std::string to_string(void) const;
     };
 
@@ -103,6 +93,5 @@ namespace usrp_uhd{
 //ability to use types with stream operators
 std::ostream& operator<<(std::ostream &os, const usrp_uhd::device_addr_t &x);
 std::ostream& operator<<(std::ostream &os, const usrp_uhd::mac_addr_t &x);
-std::ostream& operator<<(std::ostream &os, const usrp_uhd::ip_addr_t &x);
 
 #endif /* INCLUDED_USRP_UHD_DEVICE_ADDR_HPP */

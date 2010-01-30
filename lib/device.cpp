@@ -16,6 +16,7 @@
 //
 
 #include <usrp_uhd/usrp/usrp.hpp>
+#include <usrp_uhd/usrp/mboard/usrp2.hpp>
 #include <usrp_uhd/device.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
@@ -24,6 +25,10 @@ using namespace usrp_uhd;
 
 std::vector<device_addr_t> device::discover(const device_addr_t & hint = device_addr_t()){
     std::vector<device_addr_t> device_addrs;
+    if (hint.type == DEVICE_ADDR_TYPE_UDP){
+        std::vector<device_addr_t> usrp2_addrs = usrp::mboard::usrp2::discover(hint);
+        device_addrs.insert(device_addrs.begin(), usrp2_addrs.begin(), usrp2_addrs.end());
+    }
     if (hint.type == DEVICE_ADDR_TYPE_VIRTUAL){
         //make a copy of the hint for virtual testing
         device_addr_t virtual_device_addr = hint;

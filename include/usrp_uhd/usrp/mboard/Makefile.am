@@ -22,4 +22,5 @@ SUBDIRS =
 this_includedir = $(includedir)/usrp_uhd/usrp/mboard
 this_include_HEADERS = \
 	base.hpp \
-	test.hpp
+	test.hpp \
+	usrp2.hpp
