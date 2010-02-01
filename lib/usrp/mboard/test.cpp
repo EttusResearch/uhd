@@ -59,9 +59,9 @@ public:
     }
     ~shell_dboard(void){}
 private:
-    void get(const wax::type &key_, wax::type &val){
-        wax::type key; std::string name;
-        tie(key, name) = extract_named_prop(key_);
+    void get(const wax::obj &key_, wax::obj &val){
+        wax::obj key; std::string name;
+        boost::tie(key, name) = extract_named_prop(key_);
 
         //handle the get request conditioned on the key
         switch(wax::cast<dboard_prop_t>(key)){
@@ -97,7 +97,7 @@ private:
         }
     }
 
-    void set(const wax::type &, const wax::type &){
+    void set(const wax::obj &, const wax::obj &){
         throw std::runtime_error("Cannot set on usrp test dboard");
     }
 
@@ -122,9 +122,9 @@ test::~test(void){
     /* NOP */
 }
 
-void test::get(const wax::type &key_, wax::type &val){
-    wax::type key; std::string name;
-    tie(key, name) = extract_named_prop(key_);
+void test::get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(wax::cast<mboard_prop_t>(key)){
@@ -179,6 +179,6 @@ void test::get(const wax::type &key_, wax::type &val){
     }
 }
 
-void test::set(const wax::type &, const wax::type &){
+void test::set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("Cannot set on usrp test mboard");
 }

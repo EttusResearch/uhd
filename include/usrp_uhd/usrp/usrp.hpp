@@ -39,8 +39,8 @@ public:
     void recv_raw(const recv_args_t &);
 
 private:
-    void get(const wax::type &, wax::type &);
-    void set(const wax::type &, const wax::type &);
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
 
     std::map<std::string, mboard::base::sptr> _mboards;
     boost::function<void(const device::send_args_t &)> _send_raw_cb;

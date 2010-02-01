@@ -33,8 +33,8 @@ public:
     basic_rx(ctor_args_t const& args);
     ~basic_rx(void);
 
-    void rx_get(const wax::type &key, wax::type &val);
-    void rx_set(const wax::type &key, const wax::type &val);
+    void rx_get(const wax::obj &key, wax::obj &val);
+    void rx_set(const wax::obj &key, const wax::obj &val);
 };
 
 class basic_tx : public tx_base{
@@ -45,8 +45,8 @@ public:
     basic_tx(ctor_args_t const& args);
     ~basic_tx(void);
 
-    void tx_get(const wax::type &key, wax::type &val);
-    void tx_set(const wax::type &key, const wax::type &val);
+    void tx_get(const wax::obj &key, wax::obj &val);
+    void tx_set(const wax::obj &key, const wax::obj &val);
 
 };
 

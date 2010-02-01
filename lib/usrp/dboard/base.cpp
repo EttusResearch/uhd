@@ -16,6 +16,7 @@
 //
 
 #include <usrp_uhd/usrp/dboard/base.hpp>
+#include <stdexcept>
 
 using namespace usrp_uhd::usrp::dboard;
 
@@ -60,11 +61,11 @@ rx_base::~rx_base(void){
     /* NOP */
 }
 
-void rx_base::tx_get(const wax::type &, wax::type &){
+void rx_base::tx_get(const wax::obj &, wax::obj &){
     throw std::runtime_error("cannot call tx_get on a rx dboard");
 }
 
-void rx_base::tx_set(const wax::type &, const wax::type &){
+void rx_base::tx_set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("cannot call tx_set on a rx dboard");
 }
 
@@ -79,10 +80,10 @@ tx_base::~tx_base(void){
     /* NOP */
 }
 
-void tx_base::rx_get(const wax::type &, wax::type &){
+void tx_base::rx_get(const wax::obj &, wax::obj &){
     throw std::runtime_error("cannot call rx_get on a tx dboard");
 }
 
-void tx_base::rx_set(const wax::type &, const wax::type &){
+void tx_base::rx_set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("cannot call rx_set on a tx dboard");
 }

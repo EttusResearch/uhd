@@ -43,10 +43,10 @@ public:
     virtual ~base(void);
 
     //interface
-    virtual void rx_get(const wax::type &key, wax::type &val) = 0;
-    virtual void rx_set(const wax::type &key, const wax::type &val) = 0;
-    virtual void tx_get(const wax::type &key, wax::type &val) = 0;
-    virtual void tx_set(const wax::type &key, const wax::type &val) = 0;
+    virtual void rx_get(const wax::obj &key, wax::obj &val) = 0;
+    virtual void rx_set(const wax::obj &key, const wax::obj &val) = 0;
+    virtual void tx_get(const wax::obj &key, wax::obj &val) = 0;
+    virtual void tx_set(const wax::obj &key, const wax::obj &val) = 0;
 
 protected:
     std::string get_subdev_name(void);
@@ -84,8 +84,8 @@ public:
     virtual ~rx_base(void);
 
     //override here so the derived classes cannot
-    void tx_get(const wax::type &key, wax::type &val);
-    void tx_set(const wax::type &key, const wax::type &val);
+    void tx_get(const wax::obj &key, wax::obj &val);
+    void tx_set(const wax::obj &key, const wax::obj &val);
 };
 
 /*!
@@ -102,8 +102,8 @@ public:
     virtual ~tx_base(void);
 
     //override here so the derived classes cannot
-    void rx_get(const wax::type &key, wax::type &val);
-    void rx_set(const wax::type &key, const wax::type &val);
+    void rx_get(const wax::obj &key, wax::obj &val);
+    void rx_set(const wax::obj &key, const wax::obj &val);
 };
 
 }}} //namespace

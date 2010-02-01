@@ -42,8 +42,8 @@ public:
     ~usrp2(void);
 
 private:
-    void get(const wax::type &, wax::type &);
-    void set(const wax::type &, const wax::type &);
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
 
     std::map<std::string, dboard::manager::sptr> _dboard_managers;
 };

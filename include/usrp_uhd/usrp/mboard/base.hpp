@@ -36,8 +36,8 @@ public:
     //TODO other api calls
 
 private:
-    virtual void get(const wax::type &, wax::type &) = 0;
-    virtual void set(const wax::type &, const wax::type &) = 0;
+    virtual void get(const wax::obj &, wax::obj &) = 0;
+    virtual void set(const wax::obj &, const wax::obj &) = 0;
 };
 
 }}} //namespace

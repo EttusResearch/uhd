@@ -48,11 +48,11 @@ template<typename T> T signum(T n){
 inline void tune(
     freq_t target_freq,
     freq_t lo_offset,
-    wax::proxy subdev_freq_proxy,
+    wax::obj subdev_freq_proxy,
     bool subdev_quadrature,
     bool subdev_spectrum_inverted,
     bool subdev_is_tx,
-    wax::proxy dsp_freq_proxy,
+    wax::obj dsp_freq_proxy,
     freq_t dsp_sample_rate
 ){
     // Ask the d'board to tune as closely as it can to target_freq+lo_offset

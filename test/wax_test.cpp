@@ -22,7 +22,7 @@ enum opt_a_t{OPTION_A_0, OPTION_A_1};
 enum opt_b_t{OPTION_B_0, OPTION_B_1};
 
 BOOST_AUTO_TEST_CASE(test_enums){
-    wax::type opta = OPTION_A_0;
+    wax::obj opta = OPTION_A_0;
     BOOST_CHECK_THROW(wax::cast<opt_b_t>(opta), wax::bad_cast);
     BOOST_CHECK_EQUAL(wax::cast<opt_a_t>(opta), OPTION_A_0);
 }
@@ -46,14 +46,14 @@ public:
     ~wax_demo(void){
         /* NOP */
     }
-    void get(const wax::type &key, wax::type &value){
+    void get(const wax::obj &key, wax::obj &value){
         if (d_subs.size() == 0){
             value = d_nums[wax::cast<size_t>(key)];
         }else{
-            value = obj::cast(&d_subs[wax::cast<size_t>(key)]);
+            value = d_subs[wax::cast<size_t>(key)].get_link();
         }
     }
-    void set(const wax::type &key, const wax::type &value){
+    void set(const wax::obj &key, const wax::obj &value){
         if (d_subs.size() == 0){
             d_nums[wax::cast<size_t>(key)] = wax::cast<float>(value);
         }else{
@@ -71,6 +71,8 @@ BOOST_AUTO_TEST_CASE(test_chaining){
     wd[size_t(0)][size_t(0)];
     std::cout << "chain 3" << std::endl;
     wd[size_t(0)][size_t(0)][size_t(0)];
+    std::cout << "cast proxy with link" << std::endl;
+    wax::cast<wax::obj::ptr>(wd[size_t(0)][size_t(0)]);
 }
 
 BOOST_AUTO_TEST_CASE(test_set_get){
@@ -89,16 +91,16 @@ BOOST_AUTO_TEST_CASE(test_set_get){
 
 BOOST_AUTO_TEST_CASE(test_proxy){
     std::cout << "store proxy" << std::endl;
-    wax::proxy p = wd[size_t(0)][size_t(0)];
+    wax::obj p = wd[size_t(0)][size_t(0)];
     p[size_t(0)] = float(5);
 
     std::cout << "assign proxy" << std::endl;
-    wax::type a = p[size_t(0)];
+    wax::obj a = p[size_t(0)];
     BOOST_CHECK_EQUAL(wax::cast<float>(a), float(5));
 }
 
 BOOST_AUTO_TEST_CASE(test_print){
     std::cout << "print type" << std::endl;
-    wax::type test_type = float(3.33);
+    wax::obj test_type = float(3.33);
     std::cout << test_type << std::endl;
 }

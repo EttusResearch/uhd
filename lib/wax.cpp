@@ -19,6 +19,15 @@
 #include <stdexcept>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/function.hpp>
+
+/***********************************************************************
+ * Proxy Contents
+ **********************************************************************/
+struct proxy_args_t{
+    boost::function<void(wax::obj &)>       get;
+    boost::function<void(const wax::obj &)> set;
+};
 
 /***********************************************************************
  * WAX Object
@@ -27,58 +36,74 @@ wax::obj::obj(void){
     /* NOP */
 }
 
+wax::obj::obj(const obj &o){
+    _contents = o._contents;
+}
+
 wax::obj::~obj(void){
     /* NOP */
 }
 
-wax::proxy wax::obj::operator[](const type &key){
-    return proxy(
-        boost::bind(&obj::get, this, key, _1),
-        boost::bind(&obj::set, this, key, _1)
-    );
-}
-
-/***********************************************************************
- * WAX Proxy
- **********************************************************************/
-wax::proxy::proxy(wax::proxy::getter_t getter, wax::proxy::setter_t setter)
-: d_getter(getter), d_setter(setter){
-    /* NOP */
-}
-
-wax::proxy::~proxy(void){
-    /* NOP */
-}
-
-wax::proxy wax::proxy::operator[](const type &key){
-    type val((*this)());
-    //check if its a regular pointer and call
-    if (val.type() == typeid(obj::ptr)){
-        return (*cast<obj::ptr>(val))[key];
+wax::obj wax::obj::operator[](const obj &key){
+    if (_contents.type() == typeid(proxy_args_t)){
+        obj val = resolve();
+        //check if its a regular pointer and call
+        if (val.type() == typeid(obj::ptr)){
+            return (*cast<obj::ptr>(val))[key];
+        }
+        //check if its a smart pointer and call
+        if (val.type() == typeid(obj::sptr)){
+            return (*cast<obj::sptr>(val))[key];
+        }
+        //unknown obj
+        throw std::runtime_error("cannot use [] on non wax::obj pointer");
     }
-    //check if its a smart pointer and call
-    if (val.type() == typeid(obj::sptr)){
-        return (*cast<obj::sptr>(val))[key];
+    else{
+        proxy_args_t proxy_args;
+        proxy_args.get = boost::bind(&obj::get, this, key, _1);
+        proxy_args.set = boost::bind(&obj::set, this, key, _1);
+        return wax::obj(proxy_args);
     }
-    //unknown type
-    throw std::runtime_error("cannot use [] on non wax::obj pointer");
 }
 
-wax::proxy wax::proxy::operator=(const type &val){
-    d_setter(val);
+wax::obj & wax::obj::operator=(const obj &val){
+    if (_contents.type() == typeid(proxy_args_t)){
+        boost::any_cast<proxy_args_t>(_contents).set(val);
+    }
+    else{
+        _contents = val._contents;
+    }
     return *this;
 }
 
-wax::type wax::proxy::operator()(void){
-    type val;
-    d_getter(val);
-    return val;
+wax::obj wax::obj::get_link(void) const{
+    return ptr(this);
 }
 
-/***********************************************************************
- * WAX Type
- **********************************************************************/
-std::ostream& operator<<(std::ostream &os, const wax::type &x){
-    os << boost::format("WAX type (%s)") % x.type().name();
+const std::type_info & wax::obj::type(void) const{
+    return _contents.type();
+}
+
+boost::any wax::obj::resolve(void) const{
+    if (_contents.type() == typeid(proxy_args_t)){
+        obj val;
+        boost::any_cast<proxy_args_t>(_contents).get(val);
+        return val.resolve();
+    }
+    else{
+        return _contents;
+    }
+}
+
+std::ostream& operator<<(std::ostream &os, const wax::obj &x){
+    os << boost::format("WAX obj (%s)") % x.type().name();
     return os;
+}
+
+void wax::obj::get(const obj &, obj &){
+    throw std::runtime_error("Cannot call get on wax obj base class");
+}
+
+void wax::obj::set(const obj &, const obj &){
+    throw std::runtime_error("Cannot call set on wax obj base class");
 }

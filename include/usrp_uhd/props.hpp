@@ -42,14 +42,14 @@ namespace usrp_uhd{
 
     //typedef for handling named properties
     typedef std::vector<std::string> prop_names_t;
-    typedef boost::tuple<wax::type, std::string> named_prop_t;
+    typedef boost::tuple<wax::obj, std::string> named_prop_t;
 
     /*!
      * Utility function to separate a named property into its components.
      * \param key a reference to the prop object
      * \param name a reference to the name object
      */
-    inline named_prop_t extract_named_prop(const wax::type &key, const std::string &name = ""){
+    inline named_prop_t extract_named_prop(const wax::obj &key, const std::string &name = ""){
         if (key.type() == typeid(named_prop_t)){
             return wax::cast<named_prop_t>(key);
         }

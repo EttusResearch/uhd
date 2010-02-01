@@ -93,7 +93,7 @@ private:
     type_t       _type;
 
     //forward the get calls to the rx or tx
-    void get(const wax::type &key, wax::type &val){
+    void get(const wax::obj &key, wax::obj &val){
         switch(_type){
         case RX_TYPE: return _subdev->rx_get(key, val);
         case TX_TYPE: return _subdev->tx_get(key, val);
@@ -101,7 +101,7 @@ private:
     }
 
     //forward the set calls to the rx or tx
-    void set(const wax::type &key, const wax::type &val){
+    void set(const wax::obj &key, const wax::obj &val){
         switch(_type){
         case RX_TYPE: return _subdev->rx_set(key, val);
         case TX_TYPE: return _subdev->tx_set(key, val);

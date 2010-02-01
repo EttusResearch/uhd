@@ -33,7 +33,7 @@ using namespace usrp_uhd;
 /*!
  * Helper function to simplify getting a named gain (also min, max, step).
  */
-static gain_t get_named_gain(wax::obj::ptr wax_obj_ptr, wax::type prop, std::string name){
+static gain_t get_named_gain(wax::obj::ptr wax_obj_ptr, wax::obj prop, std::string name){
     return wax::cast<gain_t>((*wax_obj_ptr)[named_prop_t(prop, name)]);
 }
 
@@ -44,9 +44,9 @@ gain_handler::~gain_handler(void){
     /* NOP */
 }
 
-void gain_handler::_check_key(const wax::type &key_){
-    wax::type key; std::string name;
-    tie(key, name) = extract_named_prop(key_);
+void gain_handler::_check_key(const wax::obj &key_){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
     
     try{
         //only handle non wildcard names
@@ -72,13 +72,13 @@ void gain_handler::_check_key(const wax::type &key_){
     catch(const std::assert_error &){}
 }
 
-bool gain_handler::intercept_get(const wax::type &key, wax::type &val){
+bool gain_handler::intercept_get(const wax::obj &key, wax::obj &val){
     _check_key(key); //verify the key
 
     // use a vector of tuples to map properties to a reducer function
-    // we cant use a map because the wax::type cant be sorted
+    // we cant use a map because the wax::obj cant be sorted
     typedef boost::function<gain_t(gain_t, gain_t)> reducer_t;
-    typedef boost::tuple<wax::type, reducer_t> tuple_t;
+    typedef boost::tuple<wax::obj, reducer_t> tuple_t;
     reducer_t reducer_sum = boost::bind(std::sum<gain_t>, _1, _2);
     reducer_t reducer_max = boost::bind(std::max<gain_t>, _1, _2);
     std::vector<tuple_t> prop_to_reducer = boost::assign::tuple_list_of
@@ -108,11 +108,11 @@ bool gain_handler::intercept_get(const wax::type &key, wax::type &val){
     return false;
 }
 
-bool gain_handler::intercept_set(const wax::type &key_, const wax::type &val){
+bool gain_handler::intercept_set(const wax::obj &key_, const wax::obj &val){
     _check_key(key_); //verify the key
 
-    wax::type key; std::string name;
-    tie(key, name) = extract_named_prop(key_);
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
 
     /*!
      * Verify that a named gain component is in range.

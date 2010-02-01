@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(test_device){
     std::cout << wax::cast<std::string>((*dev)[DEVICE_PROP_NAME]) << std::endl;
 
     std::cout << "Access the mboard" << std::endl;
-    wax::proxy mb0 = (*dev)[DEVICE_PROP_MBOARD];
+    wax::obj mb0 = (*dev)[DEVICE_PROP_MBOARD];
     std::cout << wax::cast<std::string>(mb0[MBOARD_PROP_NAME]) << std::endl;
     BOOST_CHECK_EQUAL(
         device_addr.virtual_args.num_dboards,

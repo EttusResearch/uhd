@@ -54,9 +54,9 @@ usrp::~usrp(void){
     /* NOP */
 }
 
-void usrp::get(const wax::type &key_, wax::type &val){
-    wax::type key; std::string name;
-    tie(key, name) = extract_named_prop(key_);
+void usrp::get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(wax::cast<device_prop_t>(key)){
@@ -70,7 +70,7 @@ void usrp::get(const wax::type &key_, wax::type &val){
         );
         //turn the mboard sptr object into a wax::obj::sptr
         //this allows the properties access through the wax::proxy
-        val = wax::obj::cast(_mboards[name]);
+        val = _mboards[name]->get_link();
         return;
 
     case DEVICE_PROP_MBOARD_NAMES:
@@ -79,7 +79,7 @@ void usrp::get(const wax::type &key_, wax::type &val){
     }
 }
 
-void usrp::set(const wax::type &, const wax::type &){
+void usrp::set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("Cannot set in usrp device");
 }
 

@@ -49,11 +49,11 @@ public:
     ~gainful_obj(void){}
 
 private:
-    void get(const wax::type &key_, wax::type &val){
+    void get(const wax::obj &key_, wax::obj &val){
         if (_gain_handler->intercept_get(key_, val)) return;
 
-        wax::type key; std::string name;
-        tie(key, name) = extract_named_prop(key_);
+        wax::obj key; std::string name;
+        boost::tie(key, name) = extract_named_prop(key_);
 
         //handle the get request conditioned on the key
         switch(wax::cast<prop_t>(key)){
@@ -79,11 +79,11 @@ private:
         }
     }
 
-    void set(const wax::type &key_, const wax::type &val){
+    void set(const wax::obj &key_, const wax::obj &val){
         if (_gain_handler->intercept_set(key_, val)) return;
 
-        wax::type key; std::string name;
-        tie(key, name) = extract_named_prop(key_);
+        wax::obj key; std::string name;
+        boost::tie(key, name) = extract_named_prop(key_);
 
         //handle the get request conditioned on the key
         switch(wax::cast<prop_t>(key)){

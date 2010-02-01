@@ -82,7 +82,7 @@ public:
     virtual void recv_raw(const recv_args_t &) = 0;
 
     //connect dsps and subdevs
-    void connect(const wax::type &src, const wax::type &sink);
+    void connect(const wax::obj &src, const wax::obj &sink);
 };
 
 } //namespace usrp_uhd

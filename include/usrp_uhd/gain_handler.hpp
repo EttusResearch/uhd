@@ -51,7 +51,7 @@ public:
      * Ensures that the gain name is valid.
      * \return true for handled, false to pass on
      */
-    bool intercept_get(const wax::type &key, wax::type &val);
+    bool intercept_get(const wax::obj &key, wax::obj &val);
 
     /*!
      * Intercept sets for overall gain.
@@ -59,16 +59,16 @@ public:
      * Ensures that the new gain is within range.
      * \return true for handled, false to pass on
      */
-    bool intercept_set(const wax::type &key, const wax::type &val);
+    bool intercept_set(const wax::obj &key, const wax::obj &val);
 
 private:
 
     wax::obj::ptr  _wax_obj_ptr;
-    wax::type      _gain_prop;
-    wax::type      _gain_min_prop;
-    wax::type      _gain_max_prop;
-    wax::type      _gain_step_prop;
-    wax::type      _gain_names_prop;
+    wax::obj      _gain_prop;
+    wax::obj      _gain_min_prop;
+    wax::obj      _gain_max_prop;
+    wax::obj      _gain_step_prop;
+    wax::obj      _gain_names_prop;
 
     /*!
      * Verify that the key is valid:
@@ -76,14 +76,14 @@ private:
      * If the name if not valid, throw a std::invalid_argument.
      * The name can only be valid if its in the list of gain names.
      */
-    void _check_key(const wax::type &key);
+    void _check_key(const wax::obj &key);
 
     /*
      * Private interface to test if two wax types are equal:
      * The constructor will bind an instance of this for a specific type.
      * This bound equals functions allows the intercept methods to be non-templated.
      */
-    template <class T> static bool is_equal(const wax::type &a, const wax::type &b){
+    template <class T> static bool is_equal(const wax::obj &a, const wax::obj &b){
         try{
             return wax::cast<T>(a) == wax::cast<T>(b);
         }
@@ -91,7 +91,7 @@ private:
             return false;
         }
     }
-    boost::function<bool(const wax::type &, const wax::type &)> _is_equal;
+    boost::function<bool(const wax::obj &, const wax::obj &)> _is_equal;
 
 };
 
