@@ -21,16 +21,21 @@
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 
-/***********************************************************************
- * Proxy Contents
- **********************************************************************/
+/*!
+ * The proxy args for internal use within this cpp file:
+ *
+ * It contains bound functions for setting/getting a property.
+ * Only the methods in this file may create or parse proxy args.
+ * Class methods have special handling for the case when the
+ * wax obj contains an instance of the proxy args.
+ */ 
 struct proxy_args_t{
     boost::function<void(wax::obj &)>       get;
     boost::function<void(const wax::obj &)> set;
 };
 
 /***********************************************************************
- * WAX Object
+ * Structors
  **********************************************************************/
 wax::obj::obj(void){
     /* NOP */
@@ -44,6 +49,9 @@ wax::obj::~obj(void){
     /* NOP */
 }
 
+/***********************************************************************
+ * Special Operators
+ **********************************************************************/
 wax::obj wax::obj::operator[](const obj &key){
     if (_contents.type() == typeid(proxy_args_t)){
         obj val = resolve();
@@ -76,6 +84,9 @@ wax::obj & wax::obj::operator=(const obj &val){
     return *this;
 }
 
+/***********************************************************************
+ * Public Methods
+ **********************************************************************/
 wax::obj wax::obj::get_link(void) const{
     return ptr(this);
 }
@@ -84,6 +95,9 @@ const std::type_info & wax::obj::type(void) const{
     return _contents.type();
 }
 
+/***********************************************************************
+ * Private Methods
+ **********************************************************************/
 boost::any wax::obj::resolve(void) const{
     if (_contents.type() == typeid(proxy_args_t)){
         obj val;
@@ -95,15 +109,18 @@ boost::any wax::obj::resolve(void) const{
     }
 }
 
-std::ostream& operator<<(std::ostream &os, const wax::obj &x){
-    os << boost::format("WAX obj (%s)") % x.type().name();
-    return os;
-}
-
 void wax::obj::get(const obj &, obj &){
     throw std::runtime_error("Cannot call get on wax obj base class");
 }
 
 void wax::obj::set(const obj &, const obj &){
     throw std::runtime_error("Cannot call set on wax obj base class");
+}
+
+/***********************************************************************
+ * Friends
+ **********************************************************************/
+std::ostream& operator<<(std::ostream &os, const wax::obj &x){
+    os << boost::format("WAX obj (%s)") % x.type().name();
+    return os;
 }
