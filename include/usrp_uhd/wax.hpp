@@ -19,7 +19,6 @@
 #define INCLUDED_WAX_HPP
 
 #include <boost/any.hpp>
-#include <boost/shared_ptr.hpp>
 #include <iostream>
 
 /*!
@@ -45,8 +44,6 @@
 
 namespace wax{
 
-    typedef boost::bad_any_cast bad_cast;
-
     /*!
      * WAX object base class:
      *
@@ -61,9 +58,6 @@ namespace wax{
      */
     class obj{
     public:
-        //obj pointer typedefs
-        typedef boost::shared_ptr<obj> sptr;
-        typedef obj*                   ptr;
 
         /*!
          * Default constructor:
@@ -149,6 +143,12 @@ namespace wax{
         boost::any _contents;
 
     };
+
+    /*!
+     * The wax::bad cast will be thrown when
+     * cast is called with the wrong typeid.
+     */
+    typedef boost::bad_any_cast bad_cast;
 
     /*!
      * Cast a wax::obj into the desired obj.

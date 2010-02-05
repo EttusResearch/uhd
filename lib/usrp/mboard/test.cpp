@@ -140,9 +140,11 @@ void test::get(const wax::obj &key_, wax::obj &val){
         if (_dboard_managers.count(name) == 0) throw std::invalid_argument(
             str(boost::format("Unknown rx dboard name %s") % name)
         );
-        val = wax::obj::sptr(
-            new shell_dboard(_dboard_managers[name], shell_dboard::TYPE_RX)
-        );
+        //FIXME store the shell dboard within the class
+        //may not fix, plan to remove this test class when real usrps work
+        //val = wax::obj::sptr(
+        //    new shell_dboard(_dboard_managers[name], shell_dboard::TYPE_RX)
+        //);
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
@@ -153,9 +155,11 @@ void test::get(const wax::obj &key_, wax::obj &val){
         if (_dboard_managers.count(name) == 0) throw std::invalid_argument(
             str(boost::format("Unknown tx dboard name %s") % name)
         );
-        val = wax::obj::sptr(
-            new shell_dboard(_dboard_managers[name], shell_dboard::TYPE_TX)
-        );
+        //FIXME store the shell dboard within the class
+        //may not fix, plan to remove this test class when real usrps work
+        //val = wax::obj::sptr(
+        //    new shell_dboard(_dboard_managers[name], shell_dboard::TYPE_TX)
+        //);
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:

@@ -31,7 +31,7 @@ public:
     typedef boost::shared_ptr<gain_handler> sptr;
 
     template <class T> gain_handler(
-        wax::obj::ptr wax_obj_ptr, const T &gain_prop,
+        wax::obj *wax_obj_ptr, const T &gain_prop,
         const T &gain_min_prop, const T &gain_max_prop,
         const T &gain_step_prop, const T &gain_names_prop
     ){
@@ -63,7 +63,7 @@ public:
 
 private:
 
-    wax::obj::ptr  _wax_obj_ptr;
+    wax::obj     *_wax_obj_ptr;
     wax::obj      _gain_prop;
     wax::obj      _gain_min_prop;
     wax::obj      _gain_max_prop;

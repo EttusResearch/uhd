@@ -140,22 +140,36 @@ manager::manager(
             base::sptr xcvr_dboard = rx_dboard_ctor(
                 base::ctor_args_t(name, dboard_interface)
             );
-            _rx_dboards[name] = xcvr_dboard;
-            _tx_dboards[name] = xcvr_dboard;
+            //create a rx proxy for this xcvr board
+            _rx_dboards[name] = subdev_proxy::sptr(
+                new subdev_proxy(xcvr_dboard, subdev_proxy::RX_TYPE)
+            );
+            //create a tx proxy for this xcvr board
+            _tx_dboards[name] = subdev_proxy::sptr(
+                new subdev_proxy(xcvr_dboard, subdev_proxy::TX_TYPE)
+            );
         }
     }
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
         //make the rx subdevs
         BOOST_FOREACH(std::string name, ctor_to_names_map[rx_dboard_ctor]){
-            _rx_dboards[name] = rx_dboard_ctor(
+            base::sptr rx_dboard = rx_dboard_ctor(
                 base::ctor_args_t(name, dboard_interface)
+            );
+            //create a rx proxy for this rx board
+            _rx_dboards[name] = subdev_proxy::sptr(
+                new subdev_proxy(rx_dboard, subdev_proxy::RX_TYPE)
             );
         }
         //make the tx subdevs
         BOOST_FOREACH(std::string name, ctor_to_names_map[tx_dboard_ctor]){
-            _tx_dboards[name] = tx_dboard_ctor(
+            base::sptr tx_dboard = tx_dboard_ctor(
                 base::ctor_args_t(name, dboard_interface)
+            );
+            //create a tx proxy for this tx board
+            _tx_dboards[name] = subdev_proxy::sptr(
+                new subdev_proxy(tx_dboard, subdev_proxy::TX_TYPE)
             );
         }
     }
@@ -173,20 +187,18 @@ prop_names_t manager::get_tx_subdev_names(void){
     return get_map_keys(_tx_dboards);
 }
 
-wax::obj::sptr manager::get_rx_subdev(const std::string &subdev_name){
+wax::obj manager::get_rx_subdev(const std::string &subdev_name){
     if (_rx_dboards.count(subdev_name) == 0) throw std::invalid_argument(
         str(boost::format("Unknown rx subdev name %s") % subdev_name)
     );
-    return wax::obj::sptr(new subdev_proxy(
-        _rx_dboards[subdev_name], subdev_proxy::RX_TYPE)
-    );
+    //get a link to the rx subdev proxy
+    return wax::cast<subdev_proxy::sptr>(_rx_dboards[subdev_name])->get_link();
 }
 
-wax::obj::sptr manager::get_tx_subdev(const std::string &subdev_name){
+wax::obj manager::get_tx_subdev(const std::string &subdev_name){
     if (_tx_dboards.count(subdev_name) == 0) throw std::invalid_argument(
         str(boost::format("Unknown tx subdev name %s") % subdev_name)
     );
-    return wax::obj::sptr(new subdev_proxy(
-        _tx_dboards[subdev_name], subdev_proxy::TX_TYPE)
-    );
+    //get a link to the tx subdev proxy
+    return wax::cast<subdev_proxy::sptr>(_tx_dboards[subdev_name])->get_link();
 }

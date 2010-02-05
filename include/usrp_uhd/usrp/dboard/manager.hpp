@@ -66,14 +66,15 @@ public:
     //interface
     prop_names_t get_rx_subdev_names(void);
     prop_names_t get_tx_subdev_names(void);
-    wax::obj::sptr get_rx_subdev(const std::string &subdev_name);
-    wax::obj::sptr get_tx_subdev(const std::string &subdev_name);
+    wax::obj get_rx_subdev(const std::string &subdev_name);
+    wax::obj get_tx_subdev(const std::string &subdev_name);
 
 private:
     //list of rx and tx dboards in this manager
-    //each dboard here is actually a subdevice
-    std::map<std::string, base::sptr> _rx_dboards;
-    std::map<std::string, base::sptr> _tx_dboards;
+    //each dboard here is actually a subdevice proxy
+    //the subdevice proxy is internal to the cpp file
+    std::map<std::string, wax::obj> _rx_dboards;
+    std::map<std::string, wax::obj> _tx_dboards;
 };
 
 }}} //namespace

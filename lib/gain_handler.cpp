@@ -33,7 +33,7 @@ using namespace usrp_uhd;
 /*!
  * Helper function to simplify getting a named gain (also min, max, step).
  */
-static gain_t get_named_gain(wax::obj::ptr wax_obj_ptr, wax::obj prop, std::string name){
+static gain_t get_named_gain(wax::obj *wax_obj_ptr, wax::obj prop, std::string name){
     return wax::cast<gain_t>((*wax_obj_ptr)[named_prop_t(prop, name)]);
 }
 

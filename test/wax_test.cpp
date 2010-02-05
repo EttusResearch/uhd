@@ -71,8 +71,6 @@ BOOST_AUTO_TEST_CASE(test_chaining){
     wd[size_t(0)][size_t(0)];
     std::cout << "chain 3" << std::endl;
     wd[size_t(0)][size_t(0)][size_t(0)];
-    std::cout << "cast proxy with link" << std::endl;
-    wax::cast<wax::obj::ptr>(wd[size_t(0)][size_t(0)]);
 }
 
 BOOST_AUTO_TEST_CASE(test_set_get){

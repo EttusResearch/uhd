@@ -34,6 +34,18 @@ struct proxy_args_t{
     boost::function<void(const wax::obj &)> set;
 };
 
+/*!
+ * The link args for internal use within this cpp file:
+ *
+ * It contains a link (in this case a pointer) to a wax object.
+ * Only the methods in this file may create or parse link args.
+ * The get_link method is the creator of a link args object.
+ * The [] operator will resolve the link and make the [] call.
+ */
+struct link_args_t{
+    wax::obj *obj_ptr;
+};
+
 /***********************************************************************
  * Structors
  **********************************************************************/
@@ -55,16 +67,12 @@ wax::obj::~obj(void){
 wax::obj wax::obj::operator[](const obj &key){
     if (_contents.type() == typeid(proxy_args_t)){
         obj val = resolve();
-        //check if its a regular pointer and call
-        if (val.type() == typeid(obj::ptr)){
-            return (*cast<obj::ptr>(val))[key];
-        }
-        //check if its a smart pointer and call
-        if (val.type() == typeid(obj::sptr)){
-            return (*cast<obj::sptr>(val))[key];
+        //check if its a special link and call
+        if (val.type() == typeid(link_args_t)){
+            return (*cast<link_args_t>(val).obj_ptr)[key];
         }
         //unknown obj
-        throw std::runtime_error("cannot use [] on non wax::obj pointer");
+        throw std::runtime_error("cannot use [] on non wax::obj link");
     }
     else{
         proxy_args_t proxy_args;
@@ -88,7 +96,9 @@ wax::obj & wax::obj::operator=(const obj &val){
  * Public Methods
  **********************************************************************/
 wax::obj wax::obj::get_link(void) const{
-    return ptr(this);
+    link_args_t link_args;
+    link_args.obj_ptr = const_cast<obj*>(this);
+    return link_args;
 }
 
 const std::type_info & wax::obj::type(void) const{
