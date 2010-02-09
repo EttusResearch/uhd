@@ -16,23 +16,8 @@
 //
 
 #include <usrp_uhd/wax.hpp>
-#include <stdexcept>
-#include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/function.hpp>
-
-/*!
- * The proxy args for internal use within this cpp file:
- *
- * It contains bound functions for setting/getting a property.
- * Only the methods in this file may create or parse proxy args.
- * Class methods have special handling for the case when the
- * wax obj contains an instance of the proxy args.
- */ 
-struct proxy_args_t{
-    boost::function<void(wax::obj &)>       get;
-    boost::function<void(const wax::obj &)> set;
-};
+#include <stdexcept>
 
 /*!
  * The link args for internal use within this cpp file:
@@ -41,9 +26,45 @@ struct proxy_args_t{
  * Only the methods in this file may create or parse link args.
  * The get_link method is the creator of a link args object.
  * The [] operator will resolve the link and make the [] call.
+ *
+ * TODO: register the link args with the wax obj that it links to.
+ * That way, if the obj destructs, the link can be invalidated.
+ * The operator() will throw, rather than dereferencing bad memory.
  */
-struct link_args_t{
-    wax::obj *obj_ptr;
+class link_args_t{
+public:
+    link_args_t(const wax::obj *obj_ptr) : _obj_ptr(obj_ptr){
+        /* NOP */
+    }
+    wax::obj & operator()(void){
+        return *const_cast<wax::obj *>(_obj_ptr);
+    }
+private:
+    const wax::obj *_obj_ptr;
+};
+
+/*!
+ * The proxy args for internal use within this cpp file:
+ *
+ * It contains a link and a key for setting/getting a property.
+ * Only the methods in this file may create or parse proxy args.
+ * Class methods have special handling for the case when the
+ * wax obj contains an instance of the proxy args.
+ */
+class proxy_args_t{
+public:
+    proxy_args_t(const wax::obj *obj_ptr, const wax::obj &key) : _key(key){
+        _obj_link = obj_ptr->get_link();
+    }
+    wax::obj & operator()(void){
+        return wax::cast<link_args_t>(_obj_link)();
+    }
+    const wax::obj & key(void){
+        return _key;
+    }
+private:
+    wax::obj _obj_link;
+    const wax::obj _key;
 };
 
 /***********************************************************************
@@ -69,22 +90,20 @@ wax::obj wax::obj::operator[](const obj &key){
         obj val = resolve();
         //check if its a special link and call
         if (val.type() == typeid(link_args_t)){
-            return (*cast<link_args_t>(val).obj_ptr)[key];
+            return cast<link_args_t>(val)()[key];
         }
         //unknown obj
         throw std::runtime_error("cannot use [] on non wax::obj link");
     }
     else{
-        proxy_args_t proxy_args;
-        proxy_args.get = boost::bind(&obj::get, this, key, _1);
-        proxy_args.set = boost::bind(&obj::set, this, key, _1);
-        return wax::obj(proxy_args);
+        return proxy_args_t(this, key);
     }
 }
 
 wax::obj & wax::obj::operator=(const obj &val){
     if (_contents.type() == typeid(proxy_args_t)){
-        boost::any_cast<proxy_args_t>(_contents).set(val);
+        proxy_args_t proxy_args = boost::any_cast<proxy_args_t>(_contents);
+        proxy_args().set(proxy_args.key(), val);
     }
     else{
         _contents = val._contents;
@@ -96,13 +115,11 @@ wax::obj & wax::obj::operator=(const obj &val){
  * Public Methods
  **********************************************************************/
 wax::obj wax::obj::get_link(void) const{
-    link_args_t link_args;
-    link_args.obj_ptr = const_cast<obj*>(this);
-    return link_args;
+    return link_args_t(this);
 }
 
 const std::type_info & wax::obj::type(void) const{
-    return _contents.type();
+    return resolve().type();
 }
 
 /***********************************************************************
@@ -111,7 +128,8 @@ const std::type_info & wax::obj::type(void) const{
 boost::any wax::obj::resolve(void) const{
     if (_contents.type() == typeid(proxy_args_t)){
         obj val;
-        boost::any_cast<proxy_args_t>(_contents).get(val);
+        proxy_args_t proxy_args = boost::any_cast<proxy_args_t>(_contents);
+        proxy_args().get(proxy_args.key(), val);
         return val.resolve();
     }
     else{
