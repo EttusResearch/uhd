@@ -108,14 +108,16 @@ AC_CONFIG_FILES([ \
 	include/Makefile \
 	include/uhd/Makefile \
 	include/uhd/usrp/Makefile \
+	include/uhd/quadradio/Makefile \
+	include/uhd/transport/Makefile \
 	include/uhd/usrp/dboard/Makefile \
 	include/uhd/usrp/mboard/Makefile \
-	include/uhd/quadradio/Makefile \
 	lib/Makefile \
+	lib/quadradio/Makefile \
+	lib/transport/Makefile \
 	lib/usrp/Makefile \
 	lib/usrp/dboard/Makefile \
 	lib/usrp/mboard/Makefile \
-	lib/quadradio/Makefile \
 	test/Makefile \
 ])
 AC_OUTPUT

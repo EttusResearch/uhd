@@ -15,20 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-UHD_LA = $(abs_top_builddir)/lib/libuhd.la
-UHD_TRANSPORT_LA   = $(abs_top_builddir)/lib/transport/lib.la
-UHD_USRP_LA        = $(abs_top_builddir)/lib/usrp/lib.la
-UHD_USRP_DBOARD_LA = $(abs_top_builddir)/lib/usrp/dboard/lib.la
-UHD_USRP_MBOARD_LA = $(abs_top_builddir)/lib/usrp/mboard/lib.la
+include $(top_srcdir)/Makefile.common
 
-GENERAL_CPPFLAGS = \
-	-I$(top_srcdir)/include \
-	$(BOOST_CPPFLAGS)
+SUBDIRS =
 
-GENERAL_LDDFLAGS = \
-	$(BOOST_ASIO_LIB) \
-	$(BOOST_DATE_TIME_LIB) \
-	$(BOOST_LDFLAGS) \
-	$(BOOST_PROGRAM_OPTIONS_LIB) \
-	$(BOOST_SYSTEM_LIB) \
-	$(BOOST_THREAD_LIB)
+AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
+
+lib_LTLIBRARIES = lib.la
+
+lib_la_SOURCES = \
+	udp.cpp
+
+lib_la_LIBADD = $(GENERAL_LDDFLAGS)
+
+noinst_HEADERS =

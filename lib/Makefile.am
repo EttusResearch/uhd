@@ -17,7 +17,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = usrp quadradio
+SUBDIRS = quadradio transport usrp
 
 AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 
@@ -32,6 +32,7 @@ libuhd_la_SOURCES = \
 
 libuhd_la_LIBADD = \
 	$(GENERAL_LDDFLAGS) \
+	$(UHD_TRANSPORT_LA) \
 	$(UHD_USRP_LA)
 
 noinst_HEADERS =

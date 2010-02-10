@@ -17,7 +17,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = usrp quadradio
+SUBDIRS = quadradio transport usrp
 
 this_includedir = $(includedir)/uhd
 this_include_HEADERS = \

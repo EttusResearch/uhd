@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: uhd
-Description: Universal Software Radio Peripheral - Unified Hardware Driver
+Description: Universal Hardware Driver
 Requires: 
 Version: @VERSION@
 Libs: -L${libdir} -luhd

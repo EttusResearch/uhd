@@ -38,12 +38,6 @@ class device : boost::noncopyable, public wax::obj{
 public:
     typedef boost::shared_ptr<device> sptr;
 
-    //argument types for send and recv raw methods
-    //the send args is a vector of the boost asio buffers
-    //the recv args is a callback that takes a boost asio buffer
-    typedef std::vector<boost::asio::const_buffer>                   send_args_t;
-    typedef boost::function<bool(const boost::asio::const_buffer &)> recv_args_t;
-
     //structors
     device(void);
     virtual ~device(void);
@@ -78,11 +72,8 @@ public:
     device_addr_t get_device_addr(void);
 
     //the io interface
-    virtual void send_raw(const send_args_t &) = 0;
-    virtual void recv_raw(const recv_args_t &) = 0;
-
-    //connect dsps and subdevs
-    void connect(const wax::obj &src, const wax::obj &sink);
+    virtual void send_raw(const std::vector<boost::asio::const_buffer> &) = 0;
+    virtual const boost::asio::const_buffer recv_raw(void) = 0;
 };
 
 } //namespace uhd

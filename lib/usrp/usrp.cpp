@@ -28,11 +28,11 @@ using namespace uhd::usrp;
  * default callbacks for the send and recv
  * these should be replaced with callbacks from the mboard object
  **********************************************************************/
-static void send_raw_default(const uhd::device::send_args_t &){
+static void send_raw_default(const std::vector<boost::asio::const_buffer> &){
     throw std::runtime_error("No callback registered for send raw");
 }
 
-static void recv_raw_default(const uhd::device::recv_args_t &){
+static const boost::asio::const_buffer recv_raw_default(void){
     throw std::runtime_error("No callback registered for recv raw");
 }
 
@@ -42,7 +42,7 @@ static void recv_raw_default(const uhd::device::recv_args_t &){
 usrp::usrp(const device_addr_t & device_addr){
     //set the default callbacks, the code below should replace them
     _send_raw_cb = boost::bind(&send_raw_default, _1);
-    _recv_raw_cb = boost::bind(&recv_raw_default, _1);
+    _recv_raw_cb = boost::bind(&recv_raw_default);
 
     //create mboard based on the device addr
     if (device_addr.type == DEVICE_ADDR_TYPE_VIRTUAL){
@@ -83,10 +83,10 @@ void usrp::set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("Cannot set in usrp device");
 }
 
-void usrp::send_raw(const send_args_t &args){
-    return _send_raw_cb(args);
+void usrp::send_raw(const std::vector<boost::asio::const_buffer> &buffs){
+    return _send_raw_cb(buffs);
 }
 
-void usrp::recv_raw(const recv_args_t &args){
-    return _recv_raw_cb(args);
+const boost::asio::const_buffer usrp::recv_raw(void){
+    return _recv_raw_cb();
 }
