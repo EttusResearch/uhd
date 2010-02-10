@@ -12,7 +12,6 @@ module safe_u1e
    
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
-   defparam 	clk_fpga_pin.IOSTANDARD = "LVPECL_25";
 
    reg [31:0] 	ctr;
 
