@@ -175,7 +175,7 @@ timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
 top/u2_core/u2_core.v \
-top/safe_u1e/u1e.ucf \
+top/safe_u1e/safe_u1e.ucf \
 top/safe_u1e/safe_u1e.v 
 
 ##################################################
