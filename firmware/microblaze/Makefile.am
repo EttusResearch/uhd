@@ -1,6 +1,6 @@
-#!/bin/sh
-#
 # Copyright 2010 Ettus Research LLC
+#
+# Copyright 2007,2008 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-rm -rf *.cache
+include $(top_srcdir)/Makefile.common
 
-aclocal -I config
-autoconf
-libtoolize --automake
-automake --add-missing --gnu --warnings=all
+EXTRA_DIST = \
+	u2_flash_tool
+
+SUBDIRS = include lib apps
+
+

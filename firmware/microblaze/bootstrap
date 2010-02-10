@@ -18,7 +18,7 @@
 
 rm -rf *.cache
 
-aclocal -I config
+aclocal
 autoconf
 libtoolize --automake
 automake --add-missing --gnu --warnings=all

@@ -1,6 +1,5 @@
-#!/bin/sh
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2008, 2010 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-rm -rf *.cache
+include $(top_srcdir)/Makefile.common
 
-aclocal -I config
-autoconf
-libtoolize --automake
-automake --add-missing --gnu --warnings=all
+noinst_HEADERS = \
+    usrp2_cdefs.h \
+    usrp2_eth_packet.h \
+    usrp2_ipv4_packet.h \
+    usrp2_udp_packet.h \
+    usrp2_fpga_regs.h \
+    usrp2_i2c_addr.h \
+    usrp2_clock_bits.h \
+    usrp2_types.h \
+    network.h \
+    vrt/bits.h \
+    vrt/types.h
