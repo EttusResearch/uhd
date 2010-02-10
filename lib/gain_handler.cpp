@@ -15,14 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/gain_handler.hpp>
-#include <usrp_uhd/utils.hpp>
+#include <uhd/gain_handler.hpp>
+#include <uhd/utils.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <vector>
 
-using namespace usrp_uhd;
+using namespace uhd;
 
 /***********************************************************************
  * Helper functions and macros

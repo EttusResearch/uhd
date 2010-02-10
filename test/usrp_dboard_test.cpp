@@ -16,9 +16,9 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <usrp_uhd/usrp/dboard/manager.hpp>
+#include <uhd/usrp/dboard/manager.hpp>
 
-using namespace usrp_uhd::usrp::dboard;
+using namespace uhd::usrp::dboard;
 
 /***********************************************************************
  * dummy interface for dboards

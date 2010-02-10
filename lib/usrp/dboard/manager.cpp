@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/dboard/manager.hpp>
-#include <usrp_uhd/utils.hpp>
+#include <uhd/usrp/dboard/manager.hpp>
+#include <uhd/utils.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include "dboards.hpp"
 
-using namespace usrp_uhd;
-using namespace usrp_uhd::usrp::dboard;
+using namespace uhd;
+using namespace uhd::usrp::dboard;
 using namespace boost::assign;
 
 /***********************************************************************

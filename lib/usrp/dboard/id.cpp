@@ -15,12 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/dboard/id.hpp>
+#include <uhd/usrp/dboard/id.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <map>
 
-using namespace usrp_uhd::usrp::dboard;
+using namespace uhd::usrp::dboard;
 
 std::ostream& operator<<(std::ostream &os, const dboard_id_t &id){
     //map the dboard ids to string representations

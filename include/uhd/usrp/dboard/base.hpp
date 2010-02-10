@@ -15,16 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_BASE_HPP
-#define INCLUDED_USRP_UHD_USRP_DBOARD_BASE_HPP
+#ifndef INCLUDED_UHD_USRP_DBOARD_BASE_HPP
+#define INCLUDED_UHD_USRP_DBOARD_BASE_HPP
 
-#include <usrp_uhd/wax.hpp>
+#include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <usrp_uhd/usrp/dboard/interface.hpp>
+#include <uhd/usrp/dboard/interface.hpp>
 
-namespace usrp_uhd{ namespace usrp{ namespace dboard{
+namespace uhd{ namespace usrp{ namespace dboard{
 
 /*!
  * A daughter board base class for all dboards.
@@ -108,4 +108,4 @@ public:
 
 }}} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_BASE_HPP */
+#endif /* INCLUDED_UHD_USRP_DBOARD_BASE_HPP */

@@ -17,8 +17,8 @@
 
 include $(top_srcdir)/Makefile.common
 
-SUBDIRS = usrp_uhd
+SUBDIRS = uhd
 
 this_includedir = $(includedir)
 this_include_HEADERS = \
-	usrp_uhd.hpp
+	uhd.hpp

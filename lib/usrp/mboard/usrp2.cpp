@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/mboard/usrp2.hpp>
+#include <uhd/usrp/mboard/usrp2.hpp>
 #include "usrp2_fw_common.h"
-#include <usrp_uhd/device.hpp>
+#include <uhd/device.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
@@ -25,8 +25,8 @@
 #include <boost/lexical_cast.hpp>
 #include <netinet/in.h>
 
-using namespace usrp_uhd;
-using namespace usrp_uhd::usrp::mboard;
+using namespace uhd;
+using namespace uhd::usrp::mboard;
 using boost::asio::ip::udp;
 
 /***********************************************************************

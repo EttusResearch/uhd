@@ -19,7 +19,7 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = usrp quadradio
 
-this_includedir = $(includedir)/usrp_uhd
+this_includedir = $(includedir)/uhd
 this_include_HEADERS = \
 	device.hpp \
 	device_addr.hpp \

@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/dboard/base.hpp>
+#include <uhd/usrp/dboard/base.hpp>
 #include <stdexcept>
 
-using namespace usrp_uhd::usrp::dboard;
+using namespace uhd::usrp::dboard;
 
 /***********************************************************************
  * base dboard base class

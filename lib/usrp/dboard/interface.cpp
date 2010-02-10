@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/dboard/interface.hpp>
+#include <uhd/usrp/dboard/interface.hpp>
 
-using namespace usrp_uhd::usrp::dboard;
+using namespace uhd::usrp::dboard;
 
 interface::interface(void){
     /* NOP */

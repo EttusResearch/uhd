@@ -16,15 +16,15 @@
 //
 
 #include <boost/shared_ptr.hpp>
-#include <usrp_uhd/wax.hpp>
-#include <usrp_uhd/props.hpp>
+#include <uhd/wax.hpp>
+#include <uhd/props.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-#ifndef INCLUDED_USRP_UHD_GAIN_HANDLER_HPP
-#define INCLUDED_USRP_UHD_GAIN_HANDLER_HPP
+#ifndef INCLUDED_UHD_GAIN_HANDLER_HPP
+#define INCLUDED_UHD_GAIN_HANDLER_HPP
 
-namespace usrp_uhd{
+namespace uhd{
 
 class gain_handler{
 public:
@@ -95,7 +95,7 @@ private:
 
 };
 
-} //namespace usrp_uhd
+} //namespace uhd
 
-#endif /* INCLUDED_USRP_UHD_GAIN_HANDLER_HPP */
+#endif /* INCLUDED_UHD_GAIN_HANDLER_HPP */
 

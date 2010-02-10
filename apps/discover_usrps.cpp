@@ -15,13 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd.hpp>
+#include <uhd.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 
 namespace po = boost::program_options;
-using namespace usrp_uhd;
+using namespace uhd;
 
 int main(int argc, char *argv[]){
     po::options_description desc("Allowed options");
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
     }
 
     //extract the ip address (not optional for now)
-    usrp_uhd::device_addr_t device_addr(usrp_uhd::DEVICE_ADDR_TYPE_UDP);
+    uhd::device_addr_t device_addr(uhd::DEVICE_ADDR_TYPE_UDP);
     if (vm.count("ip-addr")) {
         device_addr.udp_args.addr = vm["ip-addr"].as<std::string>();
     } else {
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
     }
 
     //discover the usrps
-    std::vector<usrp_uhd::device_addr_t> device_addrs = usrp_uhd::device::discover(device_addr);
+    std::vector<uhd::device_addr_t> device_addrs = uhd::device::discover(device_addr);
     for (size_t i = 0; i < device_addrs.size(); i++){
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << "-- USRP Device " << i << std::endl;

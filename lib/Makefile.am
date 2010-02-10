@@ -21,17 +21,17 @@ SUBDIRS = usrp quadradio
 
 AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 
-lib_LTLIBRARIES = libusrp_uhd.la
+lib_LTLIBRARIES = libuhd.la
 
-libusrp_uhd_la_SOURCES = \
+libuhd_la_SOURCES = \
 	device.cpp \
 	device_addr.cpp \
 	gain_handler.cpp \
-	usrp_uhd.cpp \
+	uhd.cpp \
 	wax.cpp
 
-libusrp_uhd_la_LIBADD = \
+libuhd_la_LIBADD = \
 	$(GENERAL_LDDFLAGS) \
-	$(USRP_UHD_USRP_LA)
+	$(UHD_USRP_LA)
 
 noinst_HEADERS =

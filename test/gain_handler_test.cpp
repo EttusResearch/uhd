@@ -16,11 +16,11 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <usrp_uhd/gain_handler.hpp>
-#include <usrp_uhd/utils.hpp>
+#include <uhd/gain_handler.hpp>
+#include <uhd/utils.hpp>
 #include <iostream>
 
-using namespace usrp_uhd;
+using namespace uhd;
 
 enum prop_t{
     PROP_GAIN,

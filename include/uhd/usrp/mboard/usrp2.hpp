@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_MBOARD_USRP2_HPP
-#define INCLUDED_USRP_UHD_USRP_MBOARD_USRP2_HPP
+#ifndef INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
+#define INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
 
-#include <usrp_uhd/usrp/mboard/base.hpp>
-#include <usrp_uhd/device_addr.hpp>
-#include <usrp_uhd/usrp/dboard/manager.hpp>
+#include <uhd/usrp/mboard/base.hpp>
+#include <uhd/device_addr.hpp>
+#include <uhd/usrp/dboard/manager.hpp>
 #include <map>
 
-namespace usrp_uhd{ namespace usrp{ namespace mboard{
+namespace uhd{ namespace usrp{ namespace mboard{
 
 /*!
  * The usrp2 mboard class.
@@ -50,4 +50,4 @@ private:
 
 }}} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_MBOARD_USRP2_HPP */
+#endif /* INCLUDED_UHD_USRP_MBOARD_USRP2_HPP */

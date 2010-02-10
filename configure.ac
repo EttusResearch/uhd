@@ -20,7 +20,7 @@
 ##################################################
 AC_PREREQ(2.60)
 AC_INIT
-AM_INIT_AUTOMAKE(usrp_uhd, 0)
+AM_INIT_AUTOMAKE(uhd, 0)
 
 ##################################################
 ## Setup C++ and Libtool
@@ -106,11 +106,11 @@ AC_CONFIG_FILES([ \
 	Makefile \
 	apps/Makefile \
 	include/Makefile \
-	include/usrp_uhd/Makefile \
-	include/usrp_uhd/usrp/Makefile \
-	include/usrp_uhd/usrp/dboard/Makefile \
-	include/usrp_uhd/usrp/mboard/Makefile \
-	include/usrp_uhd/quadradio/Makefile \
+	include/uhd/Makefile \
+	include/uhd/usrp/Makefile \
+	include/uhd/usrp/dboard/Makefile \
+	include/uhd/usrp/mboard/Makefile \
+	include/uhd/quadradio/Makefile \
 	lib/Makefile \
 	lib/usrp/Makefile \
 	lib/usrp/dboard/Makefile \

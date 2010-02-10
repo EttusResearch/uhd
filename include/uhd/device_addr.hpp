@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_UHD_DEVICE_ADDR_HPP
-#define INCLUDED_USRP_UHD_DEVICE_ADDR_HPP
+#ifndef INCLUDED_UHD_DEVICE_ADDR_HPP
+#define INCLUDED_UHD_DEVICE_ADDR_HPP
 
 #include <string>
 #include <iostream>
 #include <netinet/ether.h>
 #include <stdint.h>
 
-namespace usrp_uhd{
+namespace uhd{
 
     /*!
     * Wrapper for an ethernet mac address.
@@ -88,10 +88,10 @@ namespace usrp_uhd{
         device_addr_t(device_addr_type_t device_addr_type = DEVICE_ADDR_TYPE_AUTO);
     };
 
-} //namespace usrp_uhd
+} //namespace uhd
 
 //ability to use types with stream operators
-std::ostream& operator<<(std::ostream &os, const usrp_uhd::device_addr_t &x);
-std::ostream& operator<<(std::ostream &os, const usrp_uhd::mac_addr_t &x);
+std::ostream& operator<<(std::ostream &os, const uhd::device_addr_t &x);
+std::ostream& operator<<(std::ostream &os, const uhd::mac_addr_t &x);
 
-#endif /* INCLUDED_USRP_UHD_DEVICE_ADDR_HPP */
+#endif /* INCLUDED_UHD_DEVICE_ADDR_HPP */

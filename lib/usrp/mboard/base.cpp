@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/mboard/base.hpp>
+#include <uhd/usrp/mboard/base.hpp>
 #include <stdexcept>
 
-using namespace usrp_uhd::usrp::mboard;
+using namespace uhd::usrp::mboard;
 
 base::base(void){
     /* NOP */

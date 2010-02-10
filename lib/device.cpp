@@ -15,13 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/usrp.hpp>
-#include <usrp_uhd/usrp/mboard/usrp2.hpp>
-#include <usrp_uhd/device.hpp>
+#include <uhd/usrp/usrp.hpp>
+#include <uhd/usrp/mboard/usrp2.hpp>
+#include <uhd/device.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
-using namespace usrp_uhd;
+using namespace uhd;
 
 std::vector<device_addr_t> device::discover(const device_addr_t & hint = device_addr_t()){
     std::vector<device_addr_t> device_addrs;
@@ -58,7 +58,7 @@ device::sptr device::make(const device_addr_t & hint, size_t which){
     //create the new device with the discovered address
     //TODO only a usrp device will be made (until others are supported)
     if (true){
-        return sptr(new usrp_uhd::usrp::usrp(device_addrs.at(which)));
+        return sptr(new uhd::usrp::usrp(device_addrs.at(which)));
     }
     throw std::runtime_error("cant make a device");
 }

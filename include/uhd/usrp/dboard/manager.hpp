@@ -15,18 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP
-#define INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP
+#ifndef INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
+#define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
 #include <map>
-#include <usrp_uhd/wax.hpp>
-#include <usrp_uhd/props.hpp>
+#include <uhd/wax.hpp>
+#include <uhd/props.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <usrp_uhd/usrp/dboard/base.hpp>
-#include <usrp_uhd/usrp/dboard/id.hpp>
+#include <uhd/usrp/dboard/base.hpp>
+#include <uhd/usrp/dboard/id.hpp>
 
-namespace usrp_uhd{ namespace usrp{ namespace dboard{
+namespace uhd{ namespace usrp{ namespace dboard{
 
 /*!
  * A daughter board subdev manager class.
@@ -79,4 +79,4 @@ private:
 
 }}} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_DBOARD_MANAGER_HPP */
+#endif /* INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP */

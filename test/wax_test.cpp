@@ -16,7 +16,7 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <usrp_uhd/wax.hpp>
+#include <uhd/wax.hpp>
 
 enum opt_a_t{OPTION_A_0, OPTION_A_1};
 enum opt_b_t{OPTION_B_0, OPTION_B_1};

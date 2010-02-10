@@ -16,9 +16,9 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <usrp_uhd/device.hpp>
+#include <uhd/device.hpp>
 
-using namespace usrp_uhd;
+using namespace uhd;
 
 BOOST_AUTO_TEST_CASE(test_device){
     device_addr_t device_addr(DEVICE_ADDR_TYPE_VIRTUAL);

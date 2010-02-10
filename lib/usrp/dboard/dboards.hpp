@@ -18,9 +18,9 @@
 #ifndef INCLUDED_LOCAL_DBOARDS_HPP
 #define INCLUDED_LOCAL_DBOARDS_HPP
 
-#include <usrp_uhd/usrp/dboard/base.hpp>
+#include <uhd/usrp/dboard/base.hpp>
 
-using namespace usrp_uhd::usrp::dboard;
+using namespace uhd::usrp::dboard;
 
 /***********************************************************************
  * The basic boards:

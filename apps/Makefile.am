@@ -23,7 +23,7 @@ AM_CPPFLAGS = $(GENERAL_CPPFLAGS)
 
 LDADD = \
 	$(GENERAL_LDDFLAGS) \
-	$(USRP_UHD_LA)
+	$(UHD_LA)
 
 noinst_PROGRAMS = discover_usrps
 

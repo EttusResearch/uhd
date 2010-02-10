@@ -15,14 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/test/unit_test.hpp>
-#include <uhd/device_addr.hpp>
+#ifndef INCLUDED_UHD_HPP
+#define INCLUDED_UHD_HPP
 
-BOOST_AUTO_TEST_CASE(test_mac_addr){
-    std::cout << "Testing mac addr..." << std::endl;
-    const std::string mac_addr_str("00:01:23:45:67:89");
-    uhd::mac_addr_t mac_addr(mac_addr_str);
-    std::cout << "Input: " << mac_addr_str << std::endl;
-    std::cout << "Output: " << mac_addr << std::endl;
-    BOOST_CHECK_EQUAL(mac_addr_str, mac_addr.to_string());
-}
+//include convenience headers
+#include <uhd/device.hpp>
+
+#endif /* INCLUDED_UHD_HPP */

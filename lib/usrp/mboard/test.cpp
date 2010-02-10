@@ -15,21 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/mboard/test.hpp>
-#include <usrp_uhd/utils.hpp>
-#include <usrp_uhd/props.hpp>
+#include <uhd/usrp/mboard/test.hpp>
+#include <uhd/utils.hpp>
+#include <uhd/props.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
-using namespace usrp_uhd;
-using namespace usrp_uhd::usrp;
-using namespace usrp_uhd::usrp::mboard;
+using namespace uhd;
+using namespace uhd::usrp;
+using namespace uhd::usrp::mboard;
 
 /***********************************************************************
  * dummy interface for dboards
  **********************************************************************/
-class dummy_interface : public usrp_uhd::usrp::dboard::interface{
+class dummy_interface : public uhd::usrp::dboard::interface{
 public:
     dummy_interface(void){}
     ~dummy_interface(void){}

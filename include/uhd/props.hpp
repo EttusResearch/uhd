@@ -16,15 +16,15 @@
 //
 
 #include <boost/tuple/tuple.hpp>
-#include <usrp_uhd/time_spec.hpp>
-#include <usrp_uhd/wax.hpp>
+#include <uhd/time_spec.hpp>
+#include <uhd/wax.hpp>
 #include <complex>
 #include <vector>
 
-#ifndef INCLUDED_USRP_UHD_PROPS_HPP
-#define INCLUDED_USRP_UHD_PROPS_HPP
+#ifndef INCLUDED_UHD_PROPS_HPP
+#define INCLUDED_UHD_PROPS_HPP
 
-namespace usrp_uhd{
+namespace uhd{
 
     //common typedefs for board properties
     typedef float gain_t;
@@ -160,6 +160,6 @@ namespace usrp_uhd{
         SUBDEV_PROP_BANDWIDTH          //rw, freq_t
     };
 
-} //namespace usrp_uhd
+} //namespace uhd
 
-#endif /* INCLUDED_USRP_UHD_PROPS_HPP */
+#endif /* INCLUDED_UHD_PROPS_HPP */

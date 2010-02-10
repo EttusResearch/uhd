@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/wax.hpp>
+#include <uhd/wax.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
@@ -24,10 +24,10 @@
 #include <vector>
 #include <map>
 
-#ifndef INCLUDED_USRP_UHD_UTILS_HPP
-#define INCLUDED_USRP_UHD_UTILS_HPP
+#ifndef INCLUDED_UHD_UTILS_HPP
+#define INCLUDED_UHD_UTILS_HPP
 
-namespace usrp_uhd{
+namespace uhd{
 
 template <class Key, class T> //TODO template this better
 std::vector<Key> get_map_keys(const std::map<Key, T> &m){
@@ -89,7 +89,7 @@ inline void tune(
     //return some kind of tune result tuple/struct
 }
 
-} //namespace usrp_uhd
+} //namespace uhd
 
 /*!
  * Useful templated functions and classes that I like to pretend are part of stl
@@ -128,4 +128,4 @@ namespace std{
 
 }//namespace std
 
-#endif /* INCLUDED_USRP_UHD_UTILS_HPP */
+#endif /* INCLUDED_UHD_UTILS_HPP */

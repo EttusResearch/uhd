@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/device_addr.hpp>
+#include <uhd/device_addr.hpp>
 #include <sstream>
 #include <cstring>
 #include <stdexcept>
@@ -23,7 +23,7 @@
 #include <boost/algorithm/string.hpp>
 
 //----------------------- u2 mac addr wrapper ------------------------//
-usrp_uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
+uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
     std::string mac_addr_str = (mac_addr_str_ == "")? "ff:ff:ff:ff:ff:ff" : mac_addr_str_;
 
     //ether_aton_r(str.c_str(), &mac_addr);
@@ -55,7 +55,7 @@ usrp_uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
     memcpy(&mac_addr, p, sizeof(mac_addr));
 }
 
-std::string usrp_uhd::mac_addr_t::to_string(void) const{
+std::string uhd::mac_addr_t::to_string(void) const{
     //ether_ntoa_r(&mac_addr, addr_buf);
     const uint8_t *p = reinterpret_cast<const uint8_t *>(&mac_addr);
     return str(
@@ -65,13 +65,13 @@ std::string usrp_uhd::mac_addr_t::to_string(void) const{
     );
 }
 
-std::ostream& operator<<(std::ostream &os, const usrp_uhd::mac_addr_t &x){
+std::ostream& operator<<(std::ostream &os, const uhd::mac_addr_t &x){
     os << x.to_string();
     return os;
 }
 
 //----------------------- usrp device_addr_t wrapper -------------------------//
-usrp_uhd::device_addr_t::device_addr_t(device_addr_type_t device_addr_type){
+uhd::device_addr_t::device_addr_t(device_addr_type_t device_addr_type){
     type = device_addr_type;
     virtual_args.num_rx_dsps = 0;
     virtual_args.num_tx_dsps = 0;
@@ -84,7 +84,7 @@ usrp_uhd::device_addr_t::device_addr_t(device_addr_type_t device_addr_type){
     discovery_args.mboard_id = ~0;
 }
 
-std::string usrp_uhd::device_addr_t::to_string(void) const{
+std::string uhd::device_addr_t::to_string(void) const{
     std::ostringstream out;
     out << "USRP Type: ";
     switch(type){
@@ -121,7 +121,7 @@ std::string usrp_uhd::device_addr_t::to_string(void) const{
     return out.str();
 }
 
-std::ostream& operator<<(std::ostream &os, const usrp_uhd::device_addr_t &x)
+std::ostream& operator<<(std::ostream &os, const uhd::device_addr_t &x)
 {
   os << x.to_string();
   return os;

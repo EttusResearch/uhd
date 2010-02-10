@@ -15,31 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_UHD_USRP_MBOARD_BASE_HPP
-#define INCLUDED_USRP_UHD_USRP_MBOARD_BASE_HPP
+#include <uhd.hpp>
 
-#include <usrp_uhd/wax.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
-
-namespace usrp_uhd{ namespace usrp{ namespace mboard{
-
-/*!
- * A base class for usrp mboard objects.
- */
-class base : boost::noncopyable, public wax::obj{
-public:
-    typedef boost::shared_ptr<base> sptr;
-    base(void);
-    ~base(void);
-
-    //TODO other api calls
-
-private:
-    virtual void get(const wax::obj &, wax::obj &) = 0;
-    virtual void set(const wax::obj &, const wax::obj &) = 0;
-};
-
-}}} //namespace
-
-#endif /* INCLUDED_USRP_UHD_USRP_MBOARD_BASE_HPP */
+//nothing here, just includes the header so the compiler can check

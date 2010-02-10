@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/wax.hpp>
+#include <uhd/wax.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 

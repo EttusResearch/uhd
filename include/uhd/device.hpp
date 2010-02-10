@@ -15,19 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_UHD_DEVICE_HPP
-#define INCLUDED_USRP_UHD_DEVICE_HPP
+#ifndef INCLUDED_UHD_DEVICE_HPP
+#define INCLUDED_UHD_DEVICE_HPP
 
-#include <usrp_uhd/device_addr.hpp>
-#include <usrp_uhd/props.hpp>
-#include <usrp_uhd/wax.hpp>
+#include <uhd/device_addr.hpp>
+#include <uhd/props.hpp>
+#include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/asio/buffer.hpp>
 #include <vector>
 
-namespace usrp_uhd{
+namespace uhd{
 
 /*!
  * The usrp device interface represents the usrp hardware.
@@ -85,6 +85,6 @@ public:
     void connect(const wax::obj &src, const wax::obj &sink);
 };
 
-} //namespace usrp_uhd
+} //namespace uhd
 
-#endif /* INCLUDED_USRP_UHD_DEVICE_HPP */
+#endif /* INCLUDED_UHD_DEVICE_HPP */

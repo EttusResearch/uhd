@@ -15,14 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/device.hpp>
-#include <usrp_uhd/usrp/mboard/base.hpp>
+#include <uhd/device.hpp>
+#include <uhd/usrp/mboard/base.hpp>
 #include <map>
 
-#ifndef INCLUDED_USRP_UHD_USRP_USRP_HPP
-#define INCLUDED_USRP_UHD_USRP_USRP_HPP
+#ifndef INCLUDED_UHD_USRP_USRP_HPP
+#define INCLUDED_UHD_USRP_USRP_HPP
 
-namespace usrp_uhd{ namespace usrp{
+namespace uhd{ namespace usrp{
 
 /*!
  * A usrp device provides a device-level interface to usrp mboards.
@@ -49,4 +49,4 @@ private:
 
 }} //namespace
 
-#endif /* INCLUDED_USRP_UHD_USRP_USRP_HPP */
+#endif /* INCLUDED_UHD_USRP_USRP_HPP */

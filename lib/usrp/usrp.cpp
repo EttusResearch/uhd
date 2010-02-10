@@ -15,24 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <usrp_uhd/usrp/usrp.hpp>
-#include <usrp_uhd/usrp/mboard/test.hpp>
-#include <usrp_uhd/utils.hpp>
+#include <uhd/usrp/usrp.hpp>
+#include <uhd/usrp/mboard/test.hpp>
+#include <uhd/utils.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <stdexcept>
 
-using namespace usrp_uhd::usrp;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * default callbacks for the send and recv
  * these should be replaced with callbacks from the mboard object
  **********************************************************************/
-static void send_raw_default(const usrp_uhd::device::send_args_t &){
+static void send_raw_default(const uhd::device::send_args_t &){
     throw std::runtime_error("No callback registered for send raw");
 }
 
-static void recv_raw_default(const usrp_uhd::device::recv_args_t &){
+static void recv_raw_default(const uhd::device::recv_args_t &){
     throw std::runtime_error("No callback registered for recv raw");
 }
 

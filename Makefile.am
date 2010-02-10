@@ -23,13 +23,13 @@ SUBDIRS = include lib test apps
 ## Handle the pkgconfig file generation
 ########################################################################
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = usrp_uhd.pc
+pkgconfig_DATA = uhd.pc
 
-EXTRA_DIST = $(srcdir)/usrp_uhd.pc.in
-BUILT_SOURCES = usrp_uhd.pc
+EXTRA_DIST = $(srcdir)/uhd.pc.in
+BUILT_SOURCES = uhd.pc
 MOSTLYCLEANFILES = $(BUILT_SOURCES)
 
-usrp_uhd.pc: $(srcdir)/usrp_uhd.pc.in Makefile
+uhd.pc: $(srcdir)/uhd.pc.in Makefile
 	$(SED) \
 		-e 's|@prefix[@]|$(prefix)|g' \
 		-e 's|@exec_prefix[@]|$(exec_prefix)|g' \

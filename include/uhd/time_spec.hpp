@@ -17,10 +17,10 @@
 
 #include <stdint.h>
 
-#ifndef INCLUDED_USRP_UHD_TIME_SPEC_HPP
-#define INCLUDED_USRP_UHD_TIME_SPEC_HPP
+#ifndef INCLUDED_UHD_TIME_SPEC_HPP
+#define INCLUDED_UHD_TIME_SPEC_HPP
 
-namespace usrp_uhd{
+namespace uhd{
 
     /*!
      * A time_spec_t holds a seconds and ticks time value.
@@ -52,6 +52,6 @@ namespace usrp_uhd{
         }
     };
 
-} //namespace usrp_uhd
+} //namespace uhd
 
-#endif /* INCLUDED_USRP_UHD_TIME_SPEC_HPP */
+#endif /* INCLUDED_UHD_TIME_SPEC_HPP */
