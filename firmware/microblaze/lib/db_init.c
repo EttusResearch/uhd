@@ -1,4 +1,6 @@
-/* -*- c++ -*- */
+//
+// Copyright 2010 Ettus Research LLC
+//
 /*
  * Copyright 2008,2009 Free Software Foundation, Inc.
  *
@@ -23,61 +25,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <db.h>
-#include <db_base.h>
 #include <hal_io.h>
 #include <nonstdio.h>
-
-
-struct db_base *tx_dboard;	// the tx daughterboard that's installed
-struct db_base *rx_dboard;	// the rx daughterboard that's installed
-
-extern struct db_base db_basic_tx;
-extern struct db_base db_basic_rx;
-extern struct db_base db_lf_tx;
-extern struct db_base db_lf_rx;
-extern struct db_base db_rfx_400_tx;
-extern struct db_base db_rfx_400_rx;
-extern struct db_base db_rfx_900_tx;
-extern struct db_base db_rfx_900_rx;
-extern struct db_base db_rfx_1200_tx;
-extern struct db_base db_rfx_1200_rx;
-extern struct db_base db_rfx_1800_tx;
-extern struct db_base db_rfx_1800_rx;
-extern struct db_base db_rfx_2400_tx;
-extern struct db_base db_rfx_2400_rx;
-extern struct db_base db_tvrx1;
-extern struct db_base db_tvrx2;
-extern struct db_base db_tvrx3;
-extern struct db_base db_dbsrx;
-
-extern struct db_base db_xcvr2450_tx;
-extern struct db_base db_xcvr2450_rx;
-
-struct db_base *all_dboards[] = {
-  &db_basic_tx,
-  &db_basic_rx,
-  &db_lf_tx,
-  &db_lf_rx,
-  &db_rfx_400_tx,
-  &db_rfx_400_rx,
-  &db_rfx_900_tx,
-  &db_rfx_900_rx,
-  &db_rfx_1200_tx,
-  &db_rfx_1200_rx,
-  &db_rfx_1800_tx,
-  &db_rfx_1800_rx,
-  &db_rfx_2400_tx,
-  &db_rfx_2400_rx,
-  &db_tvrx1,
-#if 0
-  &db_tvrx2,
-#endif
-  &db_tvrx3,
-  &db_dbsrx,
-  &db_xcvr2450_tx,
-  &db_xcvr2450_rx,
-  0
-};
 
 
 typedef enum { UDBE_OK, UDBE_NO_EEPROM, UDBE_INVALID_EEPROM } usrp_dbeeprom_status_t;
@@ -132,14 +81,6 @@ read_dboard_eeprom(int i2c_addr)
 static struct db_base *
 lookup_dbid(int dbid)
 {
-  if (dbid < 0)
-    return 0;
-
-  int i;
-  for (i = 0; all_dboards[i]; i++)
-    if (all_dboards[i]->dbid == dbid)
-      return all_dboards[i];
-
   return 0;
 }
 
@@ -172,10 +113,10 @@ set_atr_regs(int bank, struct db_base *db)
   int		mask;
   int		i;
 
-  val[ATR_IDLE] = db->atr_rxval;
-  val[ATR_RX]   = db->atr_rxval;
-  val[ATR_TX]   = db->atr_txval;
-  val[ATR_FULL] = db->atr_txval;
+  val[ATR_IDLE] = 0;//db->atr_rxval;
+  val[ATR_RX]   = 0;//db->atr_rxval;
+  val[ATR_TX]   = 0;//db->atr_txval;
+  val[ATR_FULL] = 0;//db->atr_txval;
 
   if (bank == GPIO_TX_BANK){
     mask = 0xffff0000;
@@ -198,13 +139,13 @@ set_gpio_mode(int bank, struct db_base *db)
 {
   int	i;
 
-  hal_gpio_set_ddr(bank, db->output_enables, 0xffff);
+  hal_gpio_set_ddr(bank, /*db->output_enables*/0, 0xffff);
   set_atr_regs(bank, db);
 
   for (i = 0; i < 16; i++){
-    if (db->used_pins & (1 << i)){
+    if (/*db->used_pins*/0 & (1 << i)){
       // set to either GPIO_SEL_SW or GPIO_SEL_ATR
-      hal_gpio_set_sel(bank, i, (db->atr_mask & (1 << i)) ? 'a' : 's');
+      hal_gpio_set_sel(bank, i, (/*db->atr_mask*/0 & (1 << i)) ? 'a' : 's');
     }
   }
 }
@@ -212,7 +153,7 @@ set_gpio_mode(int bank, struct db_base *db)
 static int __attribute__((unused))
 determine_tx_mux_value(struct db_base *db) 
 {
-  if (db->i_and_q_swapped)
+  if (/*db->i_and_q_swapped*/0)
     return 0x01;
   else
     return 0x10;
@@ -241,7 +182,7 @@ determine_rx_mux_value(struct db_base *db)
   int	subdev1_uses;
   int	uses;
 
-  if (db->is_quadrature)
+  if (/*db->is_quadrature*/0)
     subdev0_uses = 0x3;		// uses A/D 0 and 1
   else
     subdev0_uses = 0x1;		// uses A/D 0 only
@@ -253,7 +194,7 @@ determine_rx_mux_value(struct db_base *db)
 
   uses = subdev0_uses;
 
-  int swap_iq = db->i_and_q_swapped & 0x1;
+  int swap_iq = /*db->i_and_q_swapped*/0 & 0x1;
   int index = (swap_iq << 2) | uses;
 
   return truth_table[index];
@@ -263,7 +204,7 @@ determine_rx_mux_value(struct db_base *db)
 void
 db_init(void)
 {
-  int	m;
+  /*int	m;
 
   tx_dboard = lookup_dboard(I2C_ADDR_TX_A, &db_basic_tx, "Tx");
   //printf("db_init: tx dbid = 0x%x\n", tx_dboard->dbid);
@@ -281,7 +222,7 @@ db_init(void)
   m = determine_rx_mux_value(rx_dboard);
   dsp_rx_regs->rx_mux = m;
   //printf("rx_mux = 0x%x\n", m);
-  rx_dboard->current_lo_offset = rx_dboard->default_lo_offset;
+  rx_dboard->current_lo_offset = rx_dboard->default_lo_offset;*/
 }
 
 /*!
@@ -337,14 +278,14 @@ calc_dxc_freq(u2_fxpt_freq_t target_freq, u2_fxpt_freq_t baseband_freq,
 bool
 db_set_lo_offset(struct db_base *db, u2_fxpt_freq_t offset)
 {
-  db->current_lo_offset = offset;
+  //db->current_lo_offset = offset;
   return true;
 }
 
 bool
 db_tune(struct db_base *db, u2_fxpt_freq_t target_freq, struct tune_result *result)
 {
-  memset(result, 0, sizeof(*result));
+  /*memset(result, 0, sizeof(*result));
   bool inverted = false;
   u2_fxpt_freq_t dxc_freq;
   u2_fxpt_freq_t actual_dxc_freq;
@@ -379,7 +320,7 @@ db_tune(struct db_base *db, u2_fxpt_freq_t target_freq, struct tune_result *resu
   result->dxc_freq = dxc_freq;
   result->residual_freq = dxc_freq - actual_dxc_freq;
   result->inverted = inverted;
-  return ok;
+  return ok;*/return false;
 }
 
 static int32_t
@@ -424,5 +365,5 @@ db_set_duc_freq(u2_fxpt_freq_t dxc_freq, u2_fxpt_freq_t *actual_dxc_freq)
 bool
 db_set_gain(struct db_base *db, u2_fxpt_gain_t gain)
 {
-  return db->set_gain(db, gain);
+  return false;//db->set_gain(db, gain);
 }

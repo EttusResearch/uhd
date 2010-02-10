@@ -20,7 +20,6 @@ include $(top_srcdir)/Makefile.common
 noinst_LIBRARIES = \
 	libu2fw.a
 
-
 libu2fw_a_SOURCES = \
 	abort.c \
 	ad9510.c \
@@ -28,12 +27,7 @@ libu2fw_a_SOURCES = \
 	bsm12.c \
 	buffer_pool.c \
 	clocks.c \
-	db_basic.c \
-	db_dbsrx.c \
 	db_init.c \
-	db_rfx.c \
-	db_tvrx.c \
-	db_xcvr2450.c \
 	dbsm.c \
 	eeprom.c \
 	ethernet.c \
@@ -57,8 +51,7 @@ libu2fw_a_SOURCES = \
 	printf.c \
 	sd.c \
 	spi.c \
-	u2_init.c	
-
+	u2_init.c
 
 noinst_HEADERS = \
 	ad9510.h \
@@ -68,7 +61,6 @@ noinst_HEADERS = \
 	buffer_pool.h \
 	clocks.h \
 	db.h \
-	db_base.h \
 	dbsm.h \
 	eth_mac.h \
 	eth_mac_regs.h \
@@ -92,7 +84,7 @@ noinst_HEADERS = \
 	stdio.h \
 	u2_init.h \
 	usrp2_bytesex.h \
-        wb16550.h
+	wb16550.h
 
 EXTRA_DIST = \
-        microblaze.ld
+	microblaze.ld

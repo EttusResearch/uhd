@@ -30,7 +30,6 @@
 #include "nonstdio.h"
 #include "print_rmon_regs.h"
 #include "db.h"
-#include "db_base.h"
 #include "clocks.h"
 #include "u2_init.h"
 #include <string.h>
@@ -115,7 +114,7 @@ config_tx_v2_cmd(const op_config_tx_v2_t *p,
   bool ok = true;
   
   if (p->valid & CFGV_GAIN){
-    ok &= db_set_gain(tx_dboard, p->gain);
+    //ok &= db_set_gain(tx_dboard, p->gain);
   }
 
   if (p->valid & CFGV_FREQ){
@@ -124,7 +123,7 @@ config_tx_v2_cmd(const op_config_tx_v2_t *p,
       stop_rx_cmd();
     
     u2_fxpt_freq_t f = u2_fxpt_freq_from_hilo(p->freq_hi, p->freq_lo);
-    bool tune_ok = db_tune(tx_dboard, f, &tune_result);
+    bool tune_ok = false;//db_tune(tx_dboard, f, &tune_result);
     ok &= tune_ok;
     print_tune_result("Tx", tune_ok, f, &tune_result);
 
@@ -189,7 +188,7 @@ config_rx_v2_cmd(const op_config_rx_v2_t *p,
   bool ok = true;
   
   if (p->valid & CFGV_GAIN){
-    ok &= db_set_gain(rx_dboard, p->gain);
+    //ok &= db_set_gain(rx_dboard, p->gain);
   }
 
   if (p->valid & CFGV_FREQ){
@@ -198,7 +197,7 @@ config_rx_v2_cmd(const op_config_rx_v2_t *p,
       stop_rx_cmd();
     
     u2_fxpt_freq_t f = u2_fxpt_freq_from_hilo(p->freq_hi, p->freq_lo);
-    bool tune_ok = db_tune(rx_dboard, f, &tune_result);
+    bool tune_ok = false;//db_tune(rx_dboard, f, &tune_result);
     ok &= tune_ok;
     print_tune_result("Rx", tune_ok, f, &tune_result);
 
@@ -253,14 +252,14 @@ config_rx_v2_cmd(const op_config_rx_v2_t *p,
 static void
 fill_db_info(u2_db_info_t *p, const struct db_base *db)
 {
-  p->dbid = db->dbid;
+  /*p->dbid = db->dbid;
   p->freq_min_hi = u2_fxpt_freq_hi(db->freq_min);
   p->freq_min_lo = u2_fxpt_freq_lo(db->freq_min);
   p->freq_max_hi = u2_fxpt_freq_hi(db->freq_max);
   p->freq_max_lo = u2_fxpt_freq_lo(db->freq_max);
   p->gain_min = db->gain_min;
   p->gain_max = db->gain_max;
-  p->gain_step_size = db->gain_step_size;
+  p->gain_step_size = db->gain_step_size;*/
 }
 
 static size_t
@@ -276,8 +275,8 @@ dboard_info_cmd(const op_generic_t *p,
   r->rid = p->rid;
   r->ok = true;
 
-  fill_db_info(&r->tx_db_info, tx_dboard);
-  fill_db_info(&r->rx_db_info, rx_dboard);
+  //fill_db_info(&r->tx_db_info, tx_dboard);
+  //fill_db_info(&r->rx_db_info, rx_dboard);
 
   return r->len;
 }
@@ -323,11 +322,12 @@ poke_cmd(const op_poke_t *p)
 static bool
 set_lo_offset_cmd(const op_freq_t *p)
 {
-  u2_fxpt_freq_t f = u2_fxpt_freq_from_hilo(p->freq_hi, p->freq_lo);
+  /*u2_fxpt_freq_t f = u2_fxpt_freq_from_hilo(p->freq_hi, p->freq_lo);
   if (p->opcode == OP_SET_TX_LO_OFFSET)
     return db_set_lo_offset(tx_dboard, f);
   else
     return db_set_lo_offset(rx_dboard, f);
+  */return false;
 }
 
 static size_t
