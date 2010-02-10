@@ -1,3 +1,8 @@
+
+NET "CLK_FPGA_P"  LOC = "Y11"  ;
+NET "CLK_FPGA_N"  LOC = "Y10"  ;
+
+## GPMC
 #NET "EM_CLK"  LOC = "F11"  ;
 #NET "overo_gpio23"  LOC = "B3"  ;
 #NET "overo_gpio22"  LOC = "A3"  ;
@@ -56,6 +61,7 @@
 #NET "EM_A3"  LOC = "E7"  ;
 #NET "EM_A2"  LOC = "A7"  ;
 #NET "EM_A1"  LOC = "C15"  ;
+
 #NET "db_scl"  LOC = "U4"  ;
 #NET "db_sda"  LOC = "U5"  ;
 #NET "db_sclk_rx"  LOC = "W3"  ;
@@ -72,49 +78,57 @@
 #NET "cgen_sen_b"  LOC = "T1"  ;
 #NET "FPGA_TXD"  LOC = "U1"  ;
 #NET "FPGA_RXD"  LOC = "T6"  ;
-#NET "debug_00"  LOC = "P6"  ;
-#NET "debug_01"  LOC = "R6"  ;
-#NET "debug_02"  LOC = "P1"  ;
-#NET "debug_03"  LOC = "P2"  ;
-#NET "debug_04"  LOC = "N6"  ;
-#NET "debug_05"  LOC = "N5"  ;
-#NET "debug_06"  LOC = "N1"  ;
-#NET "debug_07"  LOC = "K2"  ;
-#NET "debug_08"  LOC = "K3"  ;
-#NET "debug_09"  LOC = "K6"  ;
-#NET "debug_10"  LOC = "L5"  ;
-#NET "debug_11"  LOC = "H2"  ;
-#NET "debug_12"  LOC = "K4"  ;
-#NET "debug_13"  LOC = "K5"  ;
-#NET "debug_14"  LOC = "G1"  ;
-#NET "debug_15"  LOC = "H1"  ;
-#NET "debug_16"  LOC = "H5"  ;
-#NET "debug_17"  LOC = "H6"  ;
-#NET "debug_18"  LOC = "E3"  ;
-#NET "debug_19"  LOC = "E4"  ;
-#NET "debug_20"  LOC = "G5"  ;
-#NET "debug_21"  LOC = "G6"  ;
-#NET "debug_22"  LOC = "F2"  ;
-#NET "debug_23"  LOC = "F1"  ;
-#NET "debug_24"  LOC = "H3"  ;
-#NET "debug_25"  LOC = "H4"  ;
-#NET "debug_26"  LOC = "F4"  ;
-#NET "debug_27"  LOC = "F5"  ;
-#NET "debug_28"  LOC = "C2"  ;
-#NET "debug_29"  LOC = "C1"  ;
-#NET "debug_30"  LOC = "F3"  ;
-#NET "debug_31"  LOC = "G3"  ;
-#NET "debug_pb2"  LOC = "Y2"  ;
-#NET "debug_pb1"  LOC = "AA1"  ;
-#NET "debug_pb0"  LOC = "N3"  ;
-#NET "dip_sw_7"  LOC = "T3"  ;
-#NET "dip_sw_6"  LOC = "U3"  ;
-#NET "dip_sw_5"  LOC = "M3"  ;
-#NET "dip_sw_4"  LOC = "N4"  ;
-#NET "dip_sw_3"  LOC = "J3"  ;
-#NET "dip_sw_2"  LOC = "J4"  ;
-#NET "dip_sw_1"  LOC = "J6"  ;
-#NET "dip_sw_0"  LOC = "J7"  ;
+
+## Debug pins
+NET "debug_led<2>"  LOC = "T5"  ;
+NET "debug_led<1>"  LOC = "R2"  ;
+NET "debug_led<0>"  LOC = "R1"  ;
+#NET "debug<0>"  LOC = "P6"  ;
+#NET "debug<1>"  LOC = "R6"  ;
+#NET "debug<2>"  LOC = "P1"  ;
+#NET "debug<3>"  LOC = "P2"  ;
+#NET "debug<4>"  LOC = "N6"  ;
+#NET "debug<5>"  LOC = "N5"  ;
+#NET "debug<6>"  LOC = "N1"  ;
+#NET "debug<7>"  LOC = "K2"  ;
+#NET "debug<8>"  LOC = "K3"  ;
+#NET "debug<9>"  LOC = "K6"  ;
+#NET "debug<10>"  LOC = "L5"  ;
+#NET "debug<11>"  LOC = "H2"  ;
+#NET "debug<12>"  LOC = "K4"  ;
+#NET "debug<13>"  LOC = "K5"  ;
+#NET "debug<14>"  LOC = "G1"  ;
+#NET "debug<15>"  LOC = "H1"  ;
+#NET "debug<16>"  LOC = "H5"  ;
+#NET "debug<17>"  LOC = "H6"  ;
+#NET "debug<18>"  LOC = "E3"  ;
+#NET "debug<19>"  LOC = "E4"  ;
+#NET "debug<20>"  LOC = "G5"  ;
+#NET "debug<21>"  LOC = "G6"  ;
+#NET "debug<22>"  LOC = "F2"  ;
+#NET "debug<23>"  LOC = "F1"  ;
+#NET "debug<24>"  LOC = "H3"  ;
+#NET "debug<25>"  LOC = "H4"  ;
+#NET "debug<26>"  LOC = "F4"  ;
+#NET "debug<27>"  LOC = "F5"  ;
+#NET "debug<28>"  LOC = "C2"  ;
+#NET "debug<29>"  LOC = "C1"  ;
+#NET "debug<30>"  LOC = "F3"  ;
+#NET "debug<31>"  LOC = "G3"  ;
+
+#NET "debug_pb<2>"  LOC = "Y2"  ;
+#NET "debug_pb<1>"  LOC = "AA1"  ;
+#NET "debug_pb<0>"  LOC = "N3"  ;
+
+#NET "dip_sw<7>"  LOC = "T3"  ;
+#NET "dip_sw<6>"  LOC = "U3"  ;
+#NET "dip_sw<5>"  LOC = "M3"  ;
+#NET "dip_sw<4>"  LOC = "N4"  ;
+#NET "dip_sw<3>"  LOC = "J3"  ;
+#NET "dip_sw<2>"  LOC = "J4"  ;
+#NET "dip_sw<1>"  LOC = "J6"  ;
+#NET "dip_sw<0>"  LOC = "J7"  ;
+
 #NET "cgen_st_status"  LOC = "D4"  ;
 #NET "cgen_st_ld"  LOC = "D1"  ;
 #NET "cgen_st_refmon"  LOC = "E1"  ;
@@ -122,20 +136,12 @@
 #NET "cgen_ref_sel"  LOC = "J1"  ;
 #NET "debug_clk0"  LOC = "L6"  ;
 #NET "debug_clk1"  LOC = "M5"  ;
-#NET "unnamed_net37"  LOC = "B1"  ;
-#NET "unnamed_net36"  LOC = "B22"  ;
-#NET "unnamed_net35"  LOC = "D2"  ;
-#NET "unnamed_net34"  LOC = "A21"  ;
 #NET "GND"  LOC = "V19"  ;
 #NET "fpga_cfg_prog_b"  LOC = "A2"  ;
 #NET "fpga_cfg_done"  LOC = "AB21"  ;
-#NET "unnamed_net45"  LOC = "F7"  ;
 #NET "fpga_cfg_din"  LOC = "W17"  ;
 #NET "fpga_cfg_cclk"  LOC = "V17"  ;
 #NET "fpga_cfg_init_b"  LOC = "W15"  ;
-#NET "unnamed_net44"  LOC = "V6"  ;
-#NET "unnamed_net43"  LOC = "AA3"  ;
-#NET "unnamed_net42"  LOC = "AB3"  ;
 #NET "aux_sdi_codec"  LOC = "F19"  ;
 #NET "aux_sdo_codec"  LOC = "F18"  ;
 #NET "aux_sclk_codec"  LOC = "D21"  ;
@@ -144,7 +150,9 @@
 #NET "mosi_codec"  LOC = "E19"  ;
 #NET "miso_codec"  LOC = "F21"  ;
 #NET "sclk_codec"  LOC = "E20"  ;
+
 #NET "RXSYNC"  LOC = "F22"  ;
+
 #NET "DB11"  LOC = "E22"  ;
 #NET "DB10"  LOC = "J19"  ;
 #NET "DB09"  LOC = "H20"  ;
@@ -169,6 +177,7 @@
 #NET "DA02"  LOC = "R22"  ;
 #NET "DA01"  LOC = "P22"  ;
 #NET "DA00"  LOC = "N17"  ;
+
 #NET "TX13"  LOC = "P19"  ;
 #NET "TX12"  LOC = "R18"  ;
 #NET "TX11"  LOC = "U20"  ;
@@ -185,7 +194,9 @@
 #NET "TX00"  LOC = "AA22"  ;
 #NET "TXSYNC"  LOC = "U18"  ;
 #NET "TXBLANK"  LOC = "U19"  ;
+
 #NET "PPS_IN"  LOC = "M17"  ;
+
 #NET "io_tx_00"  LOC = "AB20"  ;
 #NET "io_tx_01"  LOC = "Y17"  ;
 #NET "io_tx_02"  LOC = "Y16"  ;
@@ -218,11 +229,16 @@
 #NET "io_rx_13"  LOC = "AA4"  ;
 #NET "io_rx_14"  LOC = "W5"  ;
 #NET "io_rx_15"  LOC = "Y4"  ;
+
 #NET "CLKOUT2_CODEC"  LOC = "U12"  ;
 #NET "CLKOUT1_CODEC"  LOC = "V12"  ;
 
-NET "CLK_FPGA_P"  LOC = "Y11"  ;
-NET "CLK_FPGA_N"  LOC = "Y10"  ;
-NET "debug_led<2>"  LOC = "T5"  ;
-NET "debug_led<1>"  LOC = "R2"  ;
-NET "debug_led<0>"  LOC = "R1"  ;
+## Unnamed, need to figure out what they do
+#NET "unnamed_net37"  LOC = "B1"  ;
+#NET "unnamed_net36"  LOC = "B22"  ;
+#NET "unnamed_net35"  LOC = "D2"  ;
+#NET "unnamed_net34"  LOC = "A21"  ;
+#NET "unnamed_net45"  LOC = "F7"  ;
+#NET "unnamed_net44"  LOC = "V6"  ;
+#NET "unnamed_net43"  LOC = "AA3"  ;
+#NET "unnamed_net42"  LOC = "AB3"  ;
