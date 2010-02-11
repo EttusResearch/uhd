@@ -18,10 +18,7 @@
 #ifndef INCLUDED_USRP2_TYPES_H
 #define INCLUDED_USRP2_TYPES_H
 
-#include <usrp2_cdefs.h>
 #include <stdint.h>
-
-__U2_BEGIN_DECLS
 
 /*!
  * \brief Fixed point representation of a frequency in Hertz (VITA-49 compatible)
@@ -104,9 +101,5 @@ u2_fxpt_gain_round_to_int(u2_fxpt_gain_t fx)
 { 
   return (int)((fx+(1<<(U2_FPG_RP-1)))>>U2_FPG_RP);
 }
-
-
-__U2_END_DECLS
-
 
 #endif /* INCLUDED_USRP2_TYPES_H */

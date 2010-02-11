@@ -19,10 +19,6 @@
 #ifndef INCLUDED_USRP2_I2C_ADDR_H
 #define INCLUDED_USRP2_I2C_ADDR_H
 
-#include "usrp2_cdefs.h"
-
-__U2_BEGIN_DECLS
-
 // I2C addresses
 
 #define I2C_DEV_EEPROM	0x50		// 24LC02[45]:  7-bits 1010xxx
@@ -76,7 +72,6 @@ __U2_BEGIN_DECLS
 
 #define	DB_EEPROM_CUSTOM_BASE		DB_EEPROM_CLEN	// first avail offset for
 							//   daughterboard specific use
-__U2_END_DECLS
 
 #endif /* INCLUDED_USRP2_I2C_ADDR_H */
 

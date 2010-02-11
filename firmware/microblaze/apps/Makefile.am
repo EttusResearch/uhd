@@ -21,31 +21,33 @@ include $(top_srcdir)/Makefile.common
 
 LDADD = ../lib/libu2fw.a
 
-noinst_PROGRAMS = \
-	blink_leds \
-	blink_leds2 \
-	buf_ram_test \
-	burn_dbsrx_eeprom \
-	can_i_sub \
-	echo \
-	hello \
-	read_dbids \
-	set_hw_rev \
-	test1 \
-	test_db_spi \
-	test_i2c \
-	test_sd \
-	test_ram \
-	test_phy_comm \
-	test_lsadc \
-	test_lsdac \
-	timer_test \
-	txrx \
-	burnrev30 \
-	burnrev31 \
-	burnrev40 \
-	sd_gentest \
-	sd_bounce
+noinst_PROGRAMS = txrx.elf
+
+#	blink_leds \
+#	blink_leds2 \
+#	buf_ram_test \
+#	burn_dbsrx_eeprom \
+#	can_i_sub \
+#	echo \
+#	hello \
+#	read_dbids \
+#	set_hw_rev \
+#	test1 \
+#	test_db_spi \
+#	test_i2c \
+#	test_sd \
+#	test_ram \
+#	test_phy_comm \
+#	test_lsadc \
+#	test_lsdac \
+#	timer_test \
+#	txrx \
+#	burnrev30 \
+#	burnrev31 \
+#	burnrev40 \
+#	sd_gentest \
+#	sd_bounce
+#
 
 #nononono =  \
 #	eth_serdes \
@@ -62,18 +64,18 @@ noinst_PROGRAMS = \
 # tx_drop_SOURCES = tx_drop.c app_common.c
 # tx_drop_rate_limited_SOURCES = tx_drop_rate_limited.c app_common.c
 # tx_drop2_SOURCES = tx_drop2.c app_common.c
-txrx_SOURCES = txrx.c
+txrx_elf_SOURCES = txrx.c
 # app_common_v2.c
-factory_test_SOURCES = factory_test.c app_common_v2.c
-eth_serdes_SOURCES = eth_serdes.c app_passthru_v2.c
-serdes_txrx_SOURCES = serdes_txrx.c app_common_v2.c
-mimo_tx_SOURCES = mimo_tx.c mimo_app_common_v2.c
-mimo_tx_slave_SOURCES = mimo_tx_slave.c app_common_v2.c
+#factory_test_SOURCES = factory_test.c app_common_v2.c
+#eth_serdes_SOURCES = eth_serdes.c app_passthru_v2.c
+#serdes_txrx_SOURCES = serdes_txrx.c app_common_v2.c
+#mimo_tx_SOURCES = mimo_tx.c mimo_app_common_v2.c
+#mimo_tx_slave_SOURCES = mimo_tx_slave.c app_common_v2.c
 
-noinst_HEADERS = \
-        app_common_v2.h \
-        app_passthru_v2.h \
-        mimo_app_common_v2.h
-
+#noinst_HEADERS = \
+#        app_common_v2.h \
+#        app_passthru_v2.h \
+#        mimo_app_common_v2.h
+#
 
 MOSTLYCLEANFILES = *.map

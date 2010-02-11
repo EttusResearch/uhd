@@ -41,6 +41,7 @@ AC_CONFIG_FILES([ \
     Makefile \
     apps/Makefile \
     include/Makefile \
+    include/net/Makefile \
     lib/Makefile \
 ])
 AC_OUTPUT

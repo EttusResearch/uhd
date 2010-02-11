@@ -48,14 +48,14 @@ AM_CFLAGS = $(STD_CFLAGS) $(MB_CFLAGS)
 #AM_LDFLAGS = -Wl,-T,$(LINKER_SCRIPT) -Wl,-defsym -Wl,_STACK_SIZE=1024
 #AM_LDFLAGS = -Wl,-T,$(LINKER_SCRIPT) -Wl,-Map -Wl,$@.map
 #AM_LDFLAGS = -Wl,-T,$(LINKER_SCRIPT)
-AM_LDFLAGS = -Wl,-Map -Wl,$@.map -Wl,-defsym -Wl,_STACK_SIZE=3072
+AM_LDFLAGS = -Wl,-Map -Wl,$(@:.elf=.map) -Wl,-defsym -Wl,_STACK_SIZE=3072
 #AM_LDFLAGS = -Wl,-defsym -Wl,_STACK_SIZE=2048
 
 
-%.bin : %
+%.bin : %.elf
 	mb-objcopy -O binary $< $@
 
-%.dump : %
+%.dump : %.elf
 	mb-objdump -DSC $< > $@
 
 %.rom : %.bin
@@ -65,9 +65,9 @@ AM_LDFLAGS = -Wl,-Map -Wl,$@.map -Wl,-defsym -Wl,_STACK_SIZE=3072
 #.PRECIOUS : %.bin
 
 
-BINS =  $(noinst_PROGRAMS:=.bin)
-ROMS =  $(noinst_PROGRAMS:=.rom)
-DUMPS = $(noinst_PROGRAMS:=.dump)
+BINS =  $(noinst_PROGRAMS:.elf=.bin)
+ROMS =  $(noinst_PROGRAMS:.elf=.rom)
+DUMPS = $(noinst_PROGRAMS:.elf=.dump)
 
 noinst_DATA = $(BINS) $(ROMS) $(DUMPS)
 

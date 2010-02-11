@@ -33,11 +33,7 @@
 #include <stdbool.h>
 #include "ethernet.h"
 #include "nonstdio.h"
-#include "usrp2_eth_packet.h"
-//#include "usrp2_ipv4_packet.h"
-#include "usrp2_udp_packet.h"
 #include "dbsm.h"
-//#include "app_common_v2.h"
 #include <net/padded_eth_hdr.h>
 #include <net_common.h>
 #include "memcpy_wa.h"
@@ -249,7 +245,7 @@ link_changed_callback(int speed)
 }
 
 void
-start_rx_streaming_cmd(op_start_rx_streaming_t *p)
+start_rx_streaming_cmd(void *p)
 {
   /*
    * Construct  ethernet header and preload into two buffers
@@ -259,8 +255,8 @@ start_rx_streaming_cmd(op_start_rx_streaming_t *p)
   } mem _AL4;
 
   memset(&mem, 0, sizeof(mem));
-  p->items_per_frame = (1500)/sizeof(uint32_t) - (DSP_TX_FIRST_LINE + VRT_HEADER_WORDS + VRT_TRAILER_WORDS); //FIXME
-  mem.ctrl_word = (VRT_HEADER_WORDS+p->items_per_frame+VRT_TRAILER_WORDS)*sizeof(uint32_t) | 1 << 16;
+  //p->items_per_frame = (1500)/sizeof(uint32_t) - (DSP_TX_FIRST_LINE + VRT_HEADER_WORDS + VRT_TRAILER_WORDS); //FIXME
+  //mem.ctrl_word = (VRT_HEADER_WORDS+p->items_per_frame+VRT_TRAILER_WORDS)*sizeof(uint32_t) | 1 << 16;
 
   memcpy_wa(buffer_ram(DSP_RX_BUF_0), &mem, sizeof(mem));
   memcpy_wa(buffer_ram(DSP_RX_BUF_1), &mem, sizeof(mem));
@@ -299,9 +295,9 @@ start_rx_streaming_cmd(op_start_rx_streaming_t *p)
   if (FW_SETS_SEQNO)
     fw_seqno = 0;
 
-  streaming_items_per_frame = p->items_per_frame;
-  time_secs = p->time_secs;
-  time_ticks = p->time_ticks;
+  //streaming_items_per_frame = p->items_per_frame;
+  //time_secs = p->time_secs;
+  //time_ticks = p->time_ticks;
   restart_streaming();
 }
 
