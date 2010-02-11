@@ -22,6 +22,8 @@
 #include "config.h"
 #endif
 
+#include <lwip/ip.h>
+#include <lwip/udp.h>
 #include "u2_init.h"
 #include "memory_map.h"
 #include "spi.h"
@@ -32,16 +34,19 @@
 #include "ethernet.h"
 #include "nonstdio.h"
 #include "usrp2_eth_packet.h"
-#include "usrp2_ipv4_packet.h"
+//#include "usrp2_ipv4_packet.h"
 #include "usrp2_udp_packet.h"
 #include "dbsm.h"
-#include "app_common_v2.h"
+//#include "app_common_v2.h"
+#include <net/padded_eth_hdr.h>
+#include <net_common.h>
 #include "memcpy_wa.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include "clocks.h"
 #include <vrt/bits.h>
+#include "usrp2_fw_common.h"
 
 #define FW_SETS_SEQNO	1	// define to 0 or 1 (FIXME must be 1 for now)
 
@@ -71,7 +76,7 @@ static int fw_seqno;	// used when f/w is filling in sequence numbers
  */
 
 // DSP Tx reads ethernet header words
-#define DSP_TX_FIRST_LINE ((sizeof(u2_eth_ip_udp_t))/4)
+#define DSP_TX_FIRST_LINE ((sizeof(padded_eth_hdr_t) + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))/sizeof(uint32_t))
 
 // Receive from ethernet
 buf_cmd_args_t dsp_tx_recv_args = {
@@ -134,6 +139,49 @@ bool is_streaming(void){ return streaming_p; }
 
 // ----------------------------------------------------------------
 
+static eth_mac_addr_t get_my_eth_mac_addr(void){
+    return *ethernet_mac_addr();
+}
+
+static struct ip_addr get_my_ip_addr(void){
+    struct ip_addr addr;
+    addr.addr = 192 << 24 | 168 << 16 | 10 << 8 | 2 << 0;
+    return addr;
+}
+
+static bool _is_data;
+
+void handle_udp_data_packet(
+    struct socket_address src, struct socket_address dst,
+    unsigned char *payload, int payload_len
+){
+    //TODO store the reply port
+    _is_data = true;
+}
+
+void handle_udp_ctrl_packet(
+    struct socket_address src, struct socket_address dst,
+    unsigned char *payload, int payload_len
+){
+    printf("Got ctrl packet #words: %d\n", (int)payload_len);
+    send_udp_pkt(USRP2_UDP_CTRL_PORT, src, payload, payload_len);
+}
+
+/*
+ * Called when an ethernet packet is received.
+ * Return true if we handled it here, otherwise
+ * it'll be passed on to the DSP Tx pipe
+ */
+static bool
+eth_pkt_inspector(dbsm_t *sm, int bufno)
+{
+  _is_data = false;
+  handle_eth_packet(buffer_ram(bufno), buffer_pool_status->last_line[bufno] - 3);
+  return !_is_data;
+}
+
+//------------------------------------------------------------------
+
 #define VRT_HEADER_WORDS 5
 #define VRT_TRAILER_WORDS 1
 
@@ -179,13 +227,25 @@ restart_streaming(void)
  *
  * init chksum to zero to start.
  */
-static unsigned int
+/*static unsigned int
 CHKSUM(unsigned int x, unsigned int *chksum)
 {
   *chksum += x;
   *chksum = (*chksum & 0xffff) + (*chksum>>16);
   *chksum = (*chksum & 0xffff) + (*chksum>>16);
   return x;
+}*/
+
+/*
+ * Called when eth phy state changes (w/ interrupts disabled)
+ */
+volatile bool link_is_up = false;	// eth handler sets this
+void
+link_changed_callback(int speed)
+{
+  link_is_up = speed != 0;
+  hal_set_leds(link_is_up ? LED_RJ45 : 0x0, LED_RJ45);
+  printf("\neth link changed: speed = %d\n", speed);
 }
 
 void
@@ -199,23 +259,23 @@ start_rx_streaming_cmd(op_start_rx_streaming_t *p)
   } mem _AL4;
 
   memset(&mem, 0, sizeof(mem));
-  p->items_per_frame = (1500 - sizeof(u2_eth_ip_udp_t))/sizeof(uint32_t) - (VRT_HEADER_WORDS + VRT_TRAILER_WORDS); //FIXME
+  p->items_per_frame = (1500)/sizeof(uint32_t) - (DSP_TX_FIRST_LINE + VRT_HEADER_WORDS + VRT_TRAILER_WORDS); //FIXME
   mem.ctrl_word = (VRT_HEADER_WORDS+p->items_per_frame+VRT_TRAILER_WORDS)*sizeof(uint32_t) | 1 << 16;
 
   memcpy_wa(buffer_ram(DSP_RX_BUF_0), &mem, sizeof(mem));
   memcpy_wa(buffer_ram(DSP_RX_BUF_1), &mem, sizeof(mem));
 
   //setup ethernet header machine
-  sr_udp_sm->eth_hdr.mac_dst_0_1 = (host_dst_mac_addr.addr[0] << 8) | host_dst_mac_addr.addr[1];
+  /*sr_udp_sm->eth_hdr.mac_dst_0_1 = (host_dst_mac_addr.addr[0] << 8) | host_dst_mac_addr.addr[1];
   sr_udp_sm->eth_hdr.mac_dst_2_3 = (host_dst_mac_addr.addr[2] << 8) | host_dst_mac_addr.addr[3];
   sr_udp_sm->eth_hdr.mac_dst_4_5 = (host_dst_mac_addr.addr[4] << 8) | host_dst_mac_addr.addr[5];
   sr_udp_sm->eth_hdr.mac_src_0_1 = (host_src_mac_addr.addr[0] << 8) | host_src_mac_addr.addr[1];
   sr_udp_sm->eth_hdr.mac_src_2_3 = (host_src_mac_addr.addr[2] << 8) | host_src_mac_addr.addr[3];
   sr_udp_sm->eth_hdr.mac_src_4_5 = (host_src_mac_addr.addr[4] << 8) | host_src_mac_addr.addr[5];
-  sr_udp_sm->eth_hdr.ether_type = ETHERTYPE_IPV4;
+  sr_udp_sm->eth_hdr.ether_type = ETHERTYPE_IPV4;*/
 
   //setup ip header machine
-  unsigned int chksum = 0;
+  /*unsigned int chksum = 0;
   sr_udp_sm->ip_hdr.ver_ihl_tos = CHKSUM(0x4500, &chksum);    // IPV4,  5 words of header (20 bytes), TOS=0
   sr_udp_sm->ip_hdr.total_length = UDP_SM_INS_IP_LEN;             // Don't checksum this line in SW
   sr_udp_sm->ip_hdr.identification = CHKSUM(0x0000, &chksum);    // ID
@@ -234,7 +294,7 @@ start_rx_streaming_cmd(op_start_rx_streaming_t *p)
   sr_udp_sm->udp_hdr.src_port = host_src_udp_port;
   sr_udp_sm->udp_hdr.dst_port = host_dst_udp_port;
   sr_udp_sm->udp_hdr.length = UDP_SM_INS_UDP_LEN;
-  sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
+  sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum*/
 
   if (FW_SETS_SEQNO)
     fw_seqno = 0;
@@ -324,6 +384,11 @@ main(void)
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
 
+  register_get_eth_mac_addr(get_my_eth_mac_addr);
+  register_get_ip_addr(get_my_ip_addr);
+  register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
+  register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+
 #if 0
   // make bit 15 of Tx gpio's be a s/w output
   hal_gpio_set_sel(GPIO_TX_BANK, 15, 's');
@@ -402,13 +467,4 @@ main(void)
       putchar('O');
     }
   }
-}
-
-//-------------------compile time checks--------------------------------
-#define COMPILE_TIME_ASSERT(pred) switch(0){case 0:case pred:;}
-
-void compile_time_checks(void){
-    COMPILE_TIME_ASSERT(sizeof(u2_eth_hdr_t) == 14);
-    COMPILE_TIME_ASSERT(sizeof(u2_ipv4_hdr_t) == 20);
-    COMPILE_TIME_ASSERT(sizeof(u2_udp_hdr_t) == 8);
 }

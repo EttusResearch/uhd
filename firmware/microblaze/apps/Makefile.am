@@ -62,7 +62,8 @@ noinst_PROGRAMS = \
 # tx_drop_SOURCES = tx_drop.c app_common.c
 # tx_drop_rate_limited_SOURCES = tx_drop_rate_limited.c app_common.c
 # tx_drop2_SOURCES = tx_drop2.c app_common.c
-txrx_SOURCES = txrx.c app_common_v2.c
+txrx_SOURCES = txrx.c
+# app_common_v2.c
 factory_test_SOURCES = factory_test.c app_common_v2.c
 eth_serdes_SOURCES = eth_serdes.c app_passthru_v2.c
 serdes_txrx_SOURCES = serdes_txrx.c app_common_v2.c

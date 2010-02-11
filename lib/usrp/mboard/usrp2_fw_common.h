@@ -39,13 +39,13 @@ typedef enum{
 typedef struct{
     uint32_t id;
     uint32_t seq;
-    union data{
-        struct discovery_addrs{
+    union{
+        struct{
             uint32_t ip_addr;
             uint8_t  mac_addr[6];
             uint8_t  _padding[2];
-        };
-    };
+        } discovery_addrs;
+    } data;
 } usrp2_ctrl_data_t;
 
 #ifdef __cplusplus

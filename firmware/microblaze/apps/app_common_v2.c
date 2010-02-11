@@ -34,6 +34,7 @@
 #include "u2_init.h"
 #include <string.h>
 #include <stddef.h>
+#include "usrp2_fw_common.h"
 
 volatile bool link_is_up = false;	// eth handler sets this
 int cpu_tx_buf_dest_port = PORT_ETH;
@@ -537,6 +538,12 @@ static size_t handle_control_packets(
   return REPLY_PAYLOAD_MAX_LEN - reply_payload_space;
 }
 
+static void handle_control_packet(
+    const usrp2_ctrl_data_t *data_in, usrp2_ctrl_data_t *data_out
+){
+    
+}
+
 static void
 send_reply(void *reply, size_t reply_len)
 {
@@ -611,16 +618,16 @@ handle_control_chan_frame(u2_eth_ip_udp_t *pkt, size_t len)
   struct {
     uint32_t ctrl_word;
     u2_eth_ip_udp_t hdr;
-    uint8_t payload[REPLY_PAYLOAD_MAX_LEN];
+    usrp2_ctrl_data_t data;
   } reply _AL4;
   memset(&reply, 0, sizeof(reply));
 
   // process the control data
-  size_t len_out = handle_control_packets(
-    (uint8_t*)pkt + sizeof(u2_eth_ip_udp_t),
-    len - sizeof(u2_eth_ip_udp_t), reply.payload
+  handle_control_packet(
+    (usrp2_ctrl_data_t*)((uint8_t*)pkt + sizeof(u2_eth_ip_udp_t)),
+    &reply.data
   );
-  size_t total_len = sizeof(reply) - REPLY_PAYLOAD_MAX_LEN + len_out;
+  size_t total_len = sizeof(reply);
   reply.ctrl_word = total_len;
 
   // load the ethernet header
@@ -632,7 +639,7 @@ handle_control_chan_frame(u2_eth_ip_udp_t *pkt, size_t len)
   reply.hdr.ip.ip_hl = sizeof(u2_ipv4_hdr_t)/sizeof(uint32_t);
   reply.hdr.ip.ip_v = 4;
   reply.hdr.ip.ip_tos = 0;
-  reply.hdr.ip.ip_len = sizeof(u2_ipv4_hdr_t) + sizeof(u2_udp_hdr_t) + len_out;
+  reply.hdr.ip.ip_len = sizeof(u2_ipv4_hdr_t) + sizeof(u2_udp_hdr_t) + sizeof(usrp2_ctrl_data_t);
   reply.hdr.ip.ip_id = 0;
   reply.hdr.ip.ip_off = IP_DF;
   reply.hdr.ip.ip_ttl = 255;
@@ -645,7 +652,7 @@ handle_control_chan_frame(u2_eth_ip_udp_t *pkt, size_t len)
   // load the udp header
   reply.hdr.udp.src_port = pkt->udp.dst_port;
   reply.hdr.udp.dst_port = pkt->udp.src_port;
-  reply.hdr.udp.length = sizeof(u2_udp_hdr_t) + len_out;
+  reply.hdr.udp.length = sizeof(u2_udp_hdr_t) + sizeof(usrp2_ctrl_data_t);
   reply.hdr.udp.checksum = 0;
 
   //send the reply
@@ -663,6 +670,7 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
 {
   u2_eth_ip_udp_t *pkt = (u2_eth_ip_udp_t *) buffer_ram(bufno);
   size_t byte_len = (buffer_pool_status->last_line[bufno] - 3) * 4;
+  printf("Got an eth packet of len %d\n", (int)byte_len);
 
   if (pkt->eth.ethertype != ETHERTYPE_IPV4)
     return true; // ignore, probably bogus PAUSE frame from MAC
@@ -670,16 +678,16 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
   // inspect rcvd frame and figure out what do do.
   switch (pkt->udp.dst_port){
 
-  case 32768:
+  case USRP2_UDP_CTRL_PORT:
     //record the ip and mac addrs (used when setting up data init)
     host_dst_ip_addr = pkt->ip.ip_src;
     host_src_ip_addr = create_ip_from_host(pkt->ip.ip_src);
     host_dst_mac_addr = pkt->eth.src;
     host_src_mac_addr = *ethernet_mac_addr();
-    handle_control_chan_frame(pkt, byte_len);
+    //handle_control_chan_frame(pkt, byte_len);
     return true;
 
-  case 32769:
+  case USRP2_UDP_DATA_PORT:
     //record the udp data ports (used when setting up data init)
     host_dst_udp_port = pkt->udp.src_port;
     host_src_udp_port = pkt->udp.dst_port;

@@ -60,13 +60,13 @@ void stop_rx_cmd(void);
 void restart_streaming(void);
 bool is_streaming(void);
 
-#include "usrp2_ipv4_packet.h"
-#include "usrp2_udp_packet.h"
+//#include "usrp2_ipv4_packet.h"
+//#include "usrp2_udp_packet.h"
 
 /*!
  * \brief consolidated packet: padding + ethernet header + ip header + udp header
  */
-typedef struct {
+/*typedef struct {
   uint16_t          padding;
   u2_eth_hdr_t      eth;
   u2_ipv4_hdr_t     ip;
@@ -79,5 +79,5 @@ extern struct in_addr host_dst_ip_addr;
 extern struct in_addr host_src_ip_addr;
 extern eth_mac_addr_t host_dst_mac_addr;
 extern eth_mac_addr_t host_src_mac_addr;
-
+*/
 #endif /* INCLUDED_APP_COMMON_H */

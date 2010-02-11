@@ -51,7 +51,10 @@ libu2fw_a_SOURCES = \
 	printf.c \
 	sd.c \
 	spi.c \
-	u2_init.c
+	u2_init.c \
+	net_common.c \
+	arp_cache.c \
+	banal.c
 
 noinst_HEADERS = \
 	ad9510.h \
@@ -84,7 +87,12 @@ noinst_HEADERS = \
 	stdio.h \
 	u2_init.h \
 	usrp2_bytesex.h \
-	wb16550.h
+	wb16550.h \
+	net_common.h \
+	if_arp.h \
+	arp_cache.h \
+	banal.h \
+	ethertype.h
 
 EXTRA_DIST = \
 	microblaze.ld

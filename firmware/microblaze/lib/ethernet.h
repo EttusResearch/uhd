@@ -19,7 +19,7 @@
 #ifndef INCLUDED_ETHERNET_H
 #define INCLUDED_ETHERNET_H
 
-#include "network.h"
+#include <net/eth_mac_addr.h>
 #include <stdbool.h>
 
 typedef void (*ethernet_link_changed_callback_t)(int speed);

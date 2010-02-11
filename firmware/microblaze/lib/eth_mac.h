@@ -19,7 +19,7 @@
 #ifndef INCLUDED_ETH_MAC_H
 #define INCLUDED_ETH_MAC_H
 
-#include "network.h"
+#include <net/eth_mac_addr.h>
 
 void eth_mac_init(const eth_mac_addr_t *src);
 

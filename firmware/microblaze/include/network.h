@@ -20,6 +20,7 @@
  * Various networking related structures and defines
  */
 
+#if 0
 #ifndef INCLUDED_NETWORK_H
 #define INCLUDED_NETWORK_H
 
@@ -80,3 +81,5 @@ make_sockaddr_in(struct in_addr addr, int port)
 #endif
 
 #endif /* INCLUDED_NETWORK_H */
+
+#endif
