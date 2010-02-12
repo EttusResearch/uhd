@@ -32,7 +32,7 @@ static void send_raw_default(const std::vector<boost::asio::const_buffer> &){
     throw std::runtime_error("No callback registered for send raw");
 }
 
-static const boost::asio::const_buffer recv_raw_default(void){
+static boost::asio::const_buffer recv_raw_default(void){
     throw std::runtime_error("No callback registered for recv raw");
 }
 
@@ -87,6 +87,6 @@ void usrp::send_raw(const std::vector<boost::asio::const_buffer> &buffs){
     return _send_raw_cb(buffs);
 }
 
-const boost::asio::const_buffer usrp::recv_raw(void){
+boost::asio::const_buffer usrp::recv_raw(void){
     return _recv_raw_cb();
 }

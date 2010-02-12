@@ -73,7 +73,7 @@ public:
 
     //the io interface
     virtual void send_raw(const std::vector<boost::asio::const_buffer> &) = 0;
-    virtual const boost::asio::const_buffer recv_raw(void) = 0;
+    virtual boost::asio::const_buffer recv_raw(void) = 0;
 };
 
 } //namespace uhd

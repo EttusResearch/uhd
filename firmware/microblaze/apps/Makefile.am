@@ -19,7 +19,9 @@
 
 include $(top_srcdir)/Makefile.common
 
-LDADD = ../lib/libu2fw.a
+LDADD = $(top_srcdir)/lib/libu2fw.a
+
+AM_CFLAGS += -I$(top_srcdir)/../../lib/usrp/mboard
 
 noinst_PROGRAMS = txrx.elf
 
@@ -78,4 +80,3 @@ txrx_elf_SOURCES = txrx.c
 #        mimo_app_common_v2.h
 #
 
-MOSTLYCLEANFILES = *.map

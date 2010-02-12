@@ -33,6 +33,7 @@ extern "C" {
 #define USRP2_UDP_DATA_PORT 49153
 
 typedef enum{
+    USRP2_CTRL_ID_NONE,
     USRP2_CTRL_ID_HELLO
 } usrp2_ctrl_id_t;
 

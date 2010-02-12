@@ -96,9 +96,3 @@ BOOST_AUTO_TEST_CASE(test_proxy){
     wax::obj a = p[size_t(0)];
     BOOST_CHECK_EQUAL(wax::cast<float>(a), float(5));
 }
-
-BOOST_AUTO_TEST_CASE(test_print){
-    std::cout << "print type" << std::endl;
-    wax::obj test_type = float(3.33);
-    std::cout << test_type << std::endl;
-}

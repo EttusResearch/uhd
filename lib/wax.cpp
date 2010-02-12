@@ -144,11 +144,3 @@ void wax::obj::get(const obj &, obj &){
 void wax::obj::set(const obj &, const obj &){
     throw std::runtime_error("Cannot call set on wax obj base class");
 }
-
-/***********************************************************************
- * Friends
- **********************************************************************/
-std::ostream& operator<<(std::ostream &os, const wax::obj &x){
-    os << boost::format("WAX obj (%s)") % x.type().name();
-    return os;
-}

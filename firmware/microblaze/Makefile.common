@@ -17,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+########################################################################
+# lwIP header include dirs
+########################################################################
 LWIPDIR = $(top_srcdir)/lwip/lwip-1.3.1
 
 LWIP_INCLUDES = \
@@ -25,50 +28,55 @@ LWIP_INCLUDES = \
 	-I$(LWIPDIR)/src/include \
 	-I$(LWIPDIR)/src/include/ipv4
 
-STD_INCLUDES = \
+########################################################################
+# local include dirs
+########################################################################
+LOCAL_INCLUDES = \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib \
-	-I$(top_srcdir)/../../lib/usrp/mboard \
-	$(LWIP_INCLUDES)
+	-I$(top_srcdir)/lib
 
+########################################################################
+# misc flags for the mb-gcc compiler
+########################################################################
+MBGCC_CFLAGS = \
+	--std=gnu99 -Wall -Werror-implicit-function-declaration \
+	-mxl-soft-div -msoft-float -mxl-soft-mul -mxl-barrel-shift
+
+MBGCC_LFLAGS = -Wl,-defsym -Wl,_STACK_SIZE=3072
+
+########################################################################
+# define for the hal io (FIXME move?)
+########################################################################
 #HAL_IO = -DHAL_IO_USES_DBOARD_PINS 
 HAL_IO = -DHAL_IO_USES_UART 
 
-AM_CPPFLAGS = $(HAL_IO) $(STD_INCLUDES)
+########################################################################
+# set the cflags and ldflags
+########################################################################
+AM_CFLAGS = $(MBGCC_CFLAGS) $(LOCAL_INCLUDES) $(LWIP_INCLUDES) $(HAL_IO)
 
-STD_CFLAGS = --std=gnu99 -Wall -Werror-implicit-function-declaration -mxl-soft-div -msoft-float
+AM_LDFLAGS = $(MBGCC_LFLAGS)
 
-MB_CFLAGS = -mxl-soft-mul -mxl-barrel-shift
-
-AM_CFLAGS = $(STD_CFLAGS) $(MB_CFLAGS)
-#AM_CFLAGS = $(STD_CFLAGS) -mxl-soft-mul -mxl-barrel-shift -mxl-gp-opt -G 16384
-
-
-#LINKER_SCRIPT = $(top_srcdir)/lib/microblaze.ld
-#AM_LDFLAGS = -Wl,-T,$(LINKER_SCRIPT) -Wl,-defsym -Wl,_STACK_SIZE=1024
-#AM_LDFLAGS = -Wl,-T,$(LINKER_SCRIPT) -Wl,-Map -Wl,$@.map
-#AM_LDFLAGS = -Wl,-T,$(LINKER_SCRIPT)
-AM_LDFLAGS = -Wl,-Map -Wl,$(@:.elf=.map) -Wl,-defsym -Wl,_STACK_SIZE=3072
-#AM_LDFLAGS = -Wl,-defsym -Wl,_STACK_SIZE=2048
-
+########################################################################
+# Common stuff for building top level microblaze images
+########################################################################
+AM_LDFLAGS += -Wl,-Map -Wl,$(@:.elf=.map)
 
 %.bin : %.elf
-	mb-objcopy -O binary $< $@
+	$(MB_OBJCOPY) -O binary $< $@
 
 %.dump : %.elf
-	mb-objdump -DSC $< > $@
+	$(MB_OBJDUMP) -DSC $< > $@
 
 %.rom : %.bin
-	hexdump -v -e'1/1 "%.2X\n"' $< > $@
+	$(HEXDUMP) -v -e'1/1 "%.2X\n"' $< > $@
 
+_generated_from_elf = \
+	$(noinst_PROGRAMS:.elf=.map) \
+	$(noinst_PROGRAMS:.elf=.bin) \
+	$(noinst_PROGRAMS:.elf=.dump) \
+	$(noinst_PROGRAMS:.elf=.rom)
 
-#.PRECIOUS : %.bin
+noinst_DATA = $(_generated_from_elf)
 
-
-BINS =  $(noinst_PROGRAMS:.elf=.bin)
-ROMS =  $(noinst_PROGRAMS:.elf=.rom)
-DUMPS = $(noinst_PROGRAMS:.elf=.dump)
-
-noinst_DATA = $(BINS) $(ROMS) $(DUMPS)
-
-CLEANFILES = $(ROMS) $(DUMPS) $(BINS)
+MOSTLYCLEANFILES = $(_generated_from_elf)

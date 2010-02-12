@@ -17,6 +17,7 @@
 
 #include <uhd/transport/udp.hpp>
 #include <boost/format.hpp>
+#include <boost/assign/list_of.hpp>
 #include <iostream>
 
 uhd::transport::udp::udp(const std::string &addr, const std::string &port, bool bcast){
@@ -47,19 +48,20 @@ void uhd::transport::udp::send(const std::vector<boost::asio::const_buffer> &buf
     _socket->send_to(buffs, _receiver_endpoint);
 }
 
-void uhd::transport::udp::send(const void *buff, size_t len){
-    _socket->send_to(boost::asio::buffer(buff, len), _receiver_endpoint);
+void uhd::transport::udp::send(const boost::asio::const_buffer &buff){
+    std::vector<boost::asio::const_buffer> buffs = boost::assign::list_of(buff);
+    send(buffs);
 }
 
-const boost::asio::const_buffer uhd::transport::udp::recv(void){
+boost::asio::const_buffer uhd::transport::udp::recv(void){
+    size_t len = 0;
     //recv if data is available
     if (_socket->available()){
-        size_t len = _socket->receive_from(
+        len = _socket->receive_from(
             boost::asio::buffer(_recv_buff, sizeof(_recv_buff)),
             _sender_endpoint
         );
-        return boost::asio::buffer(_recv_buff, len);
     }
-    //return an empty buffer
-    return boost::asio::buffer(_recv_buff, 0);
+    //return the buffer with the received length
+    return boost::asio::buffer(_recv_buff, len);
 }

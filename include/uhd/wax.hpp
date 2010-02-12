@@ -164,7 +164,4 @@ namespace wax{
 
 } //namespace wax
 
-//ability to use wax::obj with stream operators
-std::ostream& operator<<(std::ostream &, const wax::obj &);
-
 #endif /* INCLUDED_WAX_HPP */

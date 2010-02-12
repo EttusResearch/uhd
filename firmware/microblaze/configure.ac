@@ -35,6 +35,13 @@ AC_PROG_CC([mb-gcc])
 LT_INIT
 
 ##################################################
+## Setup Tools
+##################################################
+AC_PATH_PROG([MB_OBJCOPY], [mb-objcopy])
+AC_PATH_PROG([MB_OBJDUMP], [mb-objdump])
+AC_PATH_PROG([HEXDUMP],    [hexdump])
+
+##################################################
 ## Create Files
 ##################################################
 AC_CONFIG_FILES([ \

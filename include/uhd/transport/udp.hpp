@@ -52,17 +52,16 @@ public:
 
     /*!
      * Send a single buffer.
-     * \param buff a pointer into memory
-     * \param len the length in bytes
+     * \param buff single asio buffer
      */
-    void send(const void *buff, size_t len);
+    void send(const boost::asio::const_buffer &buff);
 
     /*!
      * Receive a buffer. The memory is managed internally.
      * Calling recv will invalidate the buffer of the previous recv.
      * \return an asio const buffer with internal memory
      */
-    const boost::asio::const_buffer recv(void);
+    boost::asio::const_buffer recv(void);
 
 private:
     boost::asio::ip::udp::socket   *_socket;
