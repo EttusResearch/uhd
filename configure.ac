@@ -26,7 +26,7 @@ AM_INIT_AUTOMAKE(uhd, 0)
 ## Setup C++ and Libtool
 ##################################################
 AC_PROG_CXX
-LT_INIT
+AC_PROG_LIBTOOL#LT_INIT
 
 ##################################################
 ## Check Boost
@@ -89,7 +89,7 @@ AC_DEFUN([UHD_OPTIONAL_CXXFLAG],[
 
 UHD_OPTIONAL_CXXFLAG([-Wall])
 UHD_OPTIONAL_CXXFLAG([-Wextra])
-UHD_OPTIONAL_CXXFLAG([-Werror])
+#UHD_OPTIONAL_CXXFLAG([-Werror])
 UHD_OPTIONAL_CXXFLAG([-pedantic])
 UHD_OPTIONAL_CXXFLAG([-ansi])
 

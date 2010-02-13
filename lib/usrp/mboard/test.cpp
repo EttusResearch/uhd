@@ -91,7 +91,6 @@ private:
             }
 
         case DBOARD_PROP_CODEC:
-            val = NULL; //TODO
             return;
         }
     }

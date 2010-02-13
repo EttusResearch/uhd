@@ -55,6 +55,6 @@ BOOST_AUTO_TEST_CASE(test_manager){
     std::cout << "Testing access (will fail later when db code filled in)..." << std::endl;
     BOOST_CHECK_THROW(mgr0->get_rx_subdev(""), std::invalid_argument);
     BOOST_CHECK_THROW(mgr0->get_tx_subdev("x"), std::invalid_argument);
-    mgr0->get_rx_subdev("a")[NULL];
-    mgr0->get_tx_subdev("")[NULL];
+    mgr0->get_rx_subdev("a")[0];
+    mgr0->get_tx_subdev("")[0];
 }

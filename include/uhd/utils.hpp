@@ -89,7 +89,7 @@ inline void tune(
     // Calculate the DDC setting that will downconvert the baseband from the
     // daughterboard to our target frequency.
     freq_t delta_freq = target_freq - inter_freq;
-    int delta_sign = std::signum(delta_freq);
+    freq_t delta_sign = std::signum(delta_freq);
     delta_freq *= delta_sign;
     delta_freq = fmod(delta_freq, dsp_sample_rate);
     bool inverted = delta_freq > dsp_sample_rate/2.0;

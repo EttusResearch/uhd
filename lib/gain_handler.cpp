@@ -72,35 +72,40 @@ void gain_handler::_check_key(const wax::obj &key_){
     catch(const std::assert_error &){}
 }
 
+static gain_t gain_max(gain_t a, gain_t b){
+    return std::max(a, b);
+}
+static gain_t gain_sum(gain_t a, gain_t b){
+    return std::sum(a, b);
+}
+
 bool gain_handler::intercept_get(const wax::obj &key, wax::obj &val){
     _check_key(key); //verify the key
 
-    // use a vector of tuples to map properties to a reducer function
-    // we cant use a map because the wax::obj cant be sorted
-    typedef boost::function<gain_t(gain_t, gain_t)> reducer_t;
-    typedef boost::tuple<wax::obj, reducer_t> tuple_t;
-    reducer_t reducer_sum = boost::bind(std::sum<gain_t>, _1, _2);
-    reducer_t reducer_max = boost::bind(std::max<gain_t>, _1, _2);
-    std::vector<tuple_t> prop_to_reducer = boost::assign::tuple_list_of
-        (_gain_prop,      reducer_sum)(_gain_min_prop,  reducer_sum)
-        (_gain_max_prop,  reducer_sum)(_gain_step_prop, reducer_max);
+    std::vector<wax::obj> gain_props = boost::assign::list_of
+        (_gain_prop)(_gain_min_prop)(_gain_max_prop)(_gain_step_prop);
 
     /*!
      * Handle getting overall gains when a name is not specified.
      * For the gain props below, set the overall value and return true. 
      */
-    BOOST_FOREACH(tuple_t p2r, prop_to_reducer){
-        if (_is_equal(key, p2r.get<0>())){
+    BOOST_FOREACH(wax::obj prop_key, gain_props){
+        if (_is_equal(key, prop_key)){
             //form the gains vector from the props vector
             prop_names_t prop_names = GET_PROP_NAMES();
             std::vector<gain_t> gains(prop_names.size());
             std::transform(
                 prop_names.begin(), prop_names.end(), gains.begin(),
-                boost::bind(get_named_gain, _wax_obj_ptr, p2r.get<0>(), _1)
+                boost::bind(get_named_gain, _wax_obj_ptr, key, _1)
             );
 
             //reduce across the gain vector
-            val = std::reduce<gain_t>(gains.begin(), gains.end(), p2r.get<1>());
+            if (_is_equal(key, _gain_step_prop)){
+                val = std::reduce<gain_t>(gains.begin(), gains.end(), gain_max);
+            }
+            else{
+                val = std::reduce<gain_t>(gains.begin(), gains.end(), gain_sum);
+            }
             return true;
         }
     }
