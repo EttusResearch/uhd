@@ -21,6 +21,7 @@
 #include <uhd/usrp/mboard/base.hpp>
 #include <uhd/device_addr.hpp>
 #include <uhd/usrp/dboard/manager.hpp>
+#include <uhd/transport/udp.hpp>
 #include <map>
 
 namespace uhd{ namespace usrp{ namespace mboard{
@@ -36,7 +37,7 @@ public:
      * \param hint a device addr with the usrp2 address filled in
      * \return a vector of device addresses for all usrp2s found
      */
-    static std::vector<device_addr_t> discover(const device_addr_t &hint);
+    static device_addrs_t discover(const device_addr_t &hint);
 
     usrp2(const device_addr_t &);
     ~usrp2(void);
@@ -46,6 +47,8 @@ private:
     void set(const wax::obj &, const wax::obj &);
 
     std::map<std::string, dboard::manager::sptr> _dboard_managers;
+    uhd::transport::udp::sptr _udp_ctrl_transport;
+    uhd::transport::udp::sptr _udp_data_transport;
 };
 
 }}} //namespace

@@ -21,10 +21,9 @@
 using namespace uhd;
 
 BOOST_AUTO_TEST_CASE(test_device){
-    device_addr_t device_addr(DEVICE_ADDR_TYPE_VIRTUAL);
-    device_addr.virtual_args.num_dboards = 2;
-    device_addr.virtual_args.num_rx_dsps = 3;
-    device_addr.virtual_args.num_tx_dsps = 4;
+    device_addr_t device_addr;
+    device_addr["type"] = "test";
+    device_addr["num_dboards"] = "2";
     device::sptr dev = device::make(device_addr);
 
     std::cout << "Access the device" << std::endl;
@@ -34,11 +33,11 @@ BOOST_AUTO_TEST_CASE(test_device){
     wax::obj mb0 = (*dev)[DEVICE_PROP_MBOARD];
     std::cout << wax::cast<std::string>(mb0[MBOARD_PROP_NAME]) << std::endl;
     BOOST_CHECK_EQUAL(
-        device_addr.virtual_args.num_dboards,
+        2,
         wax::cast<prop_names_t>(mb0[MBOARD_PROP_RX_DBOARD_NAMES]).size()
     );
     BOOST_CHECK_EQUAL(
-        device_addr.virtual_args.num_dboards,
+        2,
         wax::cast<prop_names_t>(mb0[MBOARD_PROP_TX_DBOARD_NAMES]).size()
     );
 

@@ -159,28 +159,37 @@ void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    printf("Got ctrl packet #words: %d\n", (int)payload_len);
+    //printf("Got ctrl packet #words: %d\n", (int)payload_len);
     if (payload_len < sizeof(usrp2_ctrl_data_t)){
         //TODO send err packet
         return;
     }
+
     //setup the input and output data
     usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
     usrp2_ctrl_data_t ctrl_data_out = {
-        .id=USRP2_CTRL_ID_NONE,
+        .id=USRP2_CTRL_ID_HUH_WHAT,
         .seq=ctrl_data_in->seq
     };
+
     //handle the data based on the id
     switch(ctrl_data_in->id){
-    case USRP2_CTRL_ID_HELLO:
-        ctrl_data_out.id = ctrl_data_in->id;
-        //grab the addrs
+
+    case USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
         struct ip_addr ip_addr = get_my_ip_addr();
-        eth_mac_addr_t mac_addr = get_my_eth_mac_addr();
-        //copy them into the out data
-        memcpy(&ctrl_data_out.data.discovery_addrs.ip_addr, &ip_addr, sizeof(ip_addr));
-        memcpy(&ctrl_data_out.data.discovery_addrs.mac_addr, &mac_addr, sizeof(mac_addr));
+        memcpy(&ctrl_data_out.data.ip_addr, &ip_addr, sizeof(ip_addr));
         break;
+
+    case USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
+        eth_mac_addr_t mac_addr = get_my_eth_mac_addr();
+        memcpy(&ctrl_data_out.data.mac_addr, &mac_addr, sizeof(mac_addr));
+        break;
+
+    default:
+        ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
+
     }
     send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
 }

@@ -23,8 +23,10 @@ this_includedir = $(includedir)/uhd
 this_include_HEADERS = \
 	device.hpp \
 	device_addr.hpp \
+	dict.hpp \
 	gain_handler.hpp \
 	props.hpp \
+	shared_iovec.hpp \
 	time_spec.hpp \
 	utils.hpp \
 	wax.hpp

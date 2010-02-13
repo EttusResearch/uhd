@@ -32,12 +32,12 @@ namespace uhd{ namespace usrp{
  */
 class usrp : public device{
 public:
-    usrp(const device_addr_t & device_addr);
+    usrp(const device_addr_t &device_addr);
     ~usrp(void);
 
     //the io interface
     void send_raw(const std::vector<boost::asio::const_buffer> &);
-    boost::asio::const_buffer recv_raw(void);
+    uhd::shared_iovec recv_raw(void);
 
 private:
     void get(const wax::obj &, wax::obj &);
@@ -45,7 +45,7 @@ private:
 
     std::map<std::string, mboard::base::sptr> _mboards;
     boost::function<void(const std::vector<boost::asio::const_buffer> &)> _send_raw_cb;
-    boost::function<boost::asio::const_buffer(void)> _recv_raw_cb;
+    boost::function<uhd::shared_iovec(void)> _recv_raw_cb;
 };
 
 }} //namespace

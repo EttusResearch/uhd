@@ -53,15 +53,15 @@ void uhd::transport::udp::send(const boost::asio::const_buffer &buff){
     send(buffs);
 }
 
-boost::asio::const_buffer uhd::transport::udp::recv(void){
-    size_t len = 0;
-    //recv if data is available
-    if (_socket->available()){
-        len = _socket->receive_from(
-            boost::asio::buffer(_recv_buff, sizeof(_recv_buff)),
+uhd::shared_iovec uhd::transport::udp::recv(void){
+    //allocate a buffer for the number of bytes available (could be zero)
+    uhd::shared_iovec iov(_socket->available());
+    //call recv only if data is available
+    if (iov.len != 0){
+        _socket->receive_from(
+            boost::asio::buffer(iov.base, iov.len),
             _sender_endpoint
         );
     }
-    //return the buffer with the received length
-    return boost::asio::buffer(_recv_buff, len);
+    return iov;
 }

@@ -18,10 +18,12 @@
 #ifndef INCLUDED_UHD_DEVICE_ADDR_HPP
 #define INCLUDED_UHD_DEVICE_ADDR_HPP
 
+#include <uhd/dict.hpp>
 #include <string>
 #include <iostream>
 #include <netinet/ether.h>
 #include <stdint.h>
+#include <vector>
 
 namespace uhd{
 
@@ -36,62 +38,30 @@ namespace uhd{
     };
 
     /*!
-    * Possible usrp device interface types.
-    */
-    enum device_addr_type_t{
-        DEVICE_ADDR_TYPE_AUTO,
-        DEVICE_ADDR_TYPE_VIRTUAL,
-        DEVICE_ADDR_TYPE_USB,
-        DEVICE_ADDR_TYPE_ETH,
-        DEVICE_ADDR_TYPE_UDP,
-        DEVICE_ADDR_TYPE_GPMC
-    };
+     * The device address args are just a mapping of key/value string pairs.
+     * When left empty, the discovery routine will try to find all usrps.
+     * The discovery can be narrowed down by specifying the transport type arguments.
+     *
+     * For example, to access a specific usrp2 one would specify the transport type
+     * ("type", "udp") and the transport args ("addr", "<resolvable_hostname_or_addr>").
+     */
+    typedef dict<std::string, std::string> device_addr_t;
+    typedef std::vector<device_addr_t> device_addrs_t;
 
     /*!
-    * Structure to hold properties that identify a usrp device.
-    */
-    struct device_addr_t{
-        device_addr_type_t type;
-        struct{
-            size_t num_rx_dsps;
-            size_t num_tx_dsps;
-            size_t num_dboards;
-        } virtual_args;
-        struct{
-            uint16_t vendor_id;
-            uint16_t product_id;
-        } usb_args;
-        struct{
-            std::string ifc;
-            std::string mac_addr;
-        } eth_args;
-        struct{
-            std::string addr;
-        } udp_args;
-        struct{
-            //TODO unknown for now
-        } gpmc_args;
-
-        //the discovery args are filled in by the discovery routine
-        struct{
-            uint16_t mboard_id;
-        } discovery_args;
-
-        /*!
-         * \brief Convert a usrp device_addr_t into a string representation
-         */
-        std::string to_string(void) const;
-
-        /*!
-         * \brief Default constructor to initialize the device_addr_t struct
-         */
-        device_addr_t(device_addr_type_t device_addr_type = DEVICE_ADDR_TYPE_AUTO);
-    };
+     * Function to turn a device address into a string.
+     * Just having the operator<< below should be sufficient.
+     * However, boost format seems to complain with the %
+     * and this is just easier because it works.
+     * \param device_addr a device address instance
+     * \return the string representation
+     */
+    std::string device_addr_to_string(const device_addr_t &device_addr);
 
 } //namespace uhd
 
 //ability to use types with stream operators
-std::ostream& operator<<(std::ostream &os, const uhd::device_addr_t &x);
-std::ostream& operator<<(std::ostream &os, const uhd::mac_addr_t &x);
+std::ostream& operator<<(std::ostream &, const uhd::device_addr_t &);
+std::ostream& operator<<(std::ostream &, const uhd::mac_addr_t &);
 
 #endif /* INCLUDED_UHD_DEVICE_ADDR_HPP */

@@ -27,6 +27,7 @@ libuhd_la_SOURCES = \
 	device.cpp \
 	device_addr.cpp \
 	gain_handler.cpp \
+	shared_iovec.cpp \
 	uhd.cpp \
 	wax.cpp
 

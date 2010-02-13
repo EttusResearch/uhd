@@ -28,24 +28,38 @@ extern "C" {
 #endif
 
 // udp ports for the usrp2 communication
-// Dynamic and/or private ports: 49152–65535
+// Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
 #define USRP2_UDP_DATA_PORT 49153
 
 typedef enum{
-    USRP2_CTRL_ID_NONE,
-    USRP2_CTRL_ID_HELLO
+    USRP2_CTRL_ID_HUH_WHAT,
+    //USRP2_CTRL_ID_FOR_SURE, //TODO error condition enums
+    //USRP2_CTRL_ID_SUX_MAN,
+    USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO,
+    USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE,
+    USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO,
+    USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO,
+    USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE,
+    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO
 } usrp2_ctrl_id_t;
 
 typedef struct{
     uint32_t id;
     uint32_t seq;
     union{
-        struct{
-            uint32_t ip_addr;
-            uint8_t  mac_addr[6];
-            uint8_t  _padding[2];
-        } discovery_addrs;
+        uint32_t ip_addr;
+        uint8_t mac_addr[6];
+        /*struct {
+            uint8_t bank;
+            uint16_t ddr;
+            uint16_t mask;
+        } gpio_ddr_args;
+        struct {
+            uint8_t bank;
+            uint16_t val;
+            uint16_t mask;
+        } gpio_val_args;*/
     } data;
 } usrp2_ctrl_data_t;
 

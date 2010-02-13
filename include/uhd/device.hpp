@@ -25,6 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/asio/buffer.hpp>
+#include <uhd/shared_iovec.hpp>
 #include <vector>
 
 namespace uhd{
@@ -51,7 +52,7 @@ public:
      * \param hint a partially (or fully) filled in device address
      * \return a vector of device addresses for all usrps on the system
      */
-    static std::vector<device_addr_t> discover(const device_addr_t & hint);
+    static device_addrs_t discover(const device_addr_t &hint);
 
     /*!
      * \brief Create a new usrp device from the device address hint.
@@ -64,7 +65,7 @@ public:
      * \param which which address to use when multiple are discovered
      * \return a shared pointer to a new device instance
      */
-    static sptr make(const device_addr_t & hint, size_t which = 0);
+    static sptr make(const device_addr_t &hint, size_t which = 0);
 
     /*!
      * Get the device address for this board.
@@ -73,7 +74,7 @@ public:
 
     //the io interface
     virtual void send_raw(const std::vector<boost::asio::const_buffer> &) = 0;
-    virtual boost::asio::const_buffer recv_raw(void) = 0;
+    virtual uhd::shared_iovec recv_raw(void) = 0;
 };
 
 } //namespace uhd

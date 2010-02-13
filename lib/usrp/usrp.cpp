@@ -16,6 +16,7 @@
 //
 
 #include <uhd/usrp/usrp.hpp>
+#include <uhd/usrp/mboard/usrp2.hpp>
 #include <uhd/usrp/mboard/test.hpp>
 #include <uhd/utils.hpp>
 #include <boost/format.hpp>
@@ -32,21 +33,27 @@ static void send_raw_default(const std::vector<boost::asio::const_buffer> &){
     throw std::runtime_error("No callback registered for send raw");
 }
 
-static boost::asio::const_buffer recv_raw_default(void){
+static uhd::shared_iovec recv_raw_default(void){
     throw std::runtime_error("No callback registered for recv raw");
 }
 
 /***********************************************************************
  * the usrp device wrapper
  **********************************************************************/
-usrp::usrp(const device_addr_t & device_addr){
+usrp::usrp(const device_addr_t &device_addr){
     //set the default callbacks, the code below should replace them
     _send_raw_cb = boost::bind(&send_raw_default, _1);
     _recv_raw_cb = boost::bind(&recv_raw_default);
 
     //create mboard based on the device addr
-    if (device_addr.type == DEVICE_ADDR_TYPE_VIRTUAL){
+    if (not device_addr.has_key("type")){
+        //TODO nothing
+    }
+    else if (device_addr["type"] == "test"){
         _mboards[""] = mboard::base::sptr(new mboard::test(device_addr));
+    }
+    else if (device_addr["type"] == "udp"){
+        _mboards[""] = mboard::base::sptr(new mboard::usrp2(device_addr));
     }
 }
 
@@ -87,6 +94,6 @@ void usrp::send_raw(const std::vector<boost::asio::const_buffer> &buffs){
     return _send_raw_cb(buffs);
 }
 
-boost::asio::const_buffer usrp::recv_raw(void){
+uhd::shared_iovec usrp::recv_raw(void){
     return _recv_raw_cb();
 }

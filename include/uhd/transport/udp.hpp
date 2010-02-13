@@ -18,7 +18,7 @@
 #include <boost/asio.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <stdio.h>
+#include <uhd/shared_iovec.hpp>
 
 #ifndef INCLUDED_UHD_TRANSPORT_UDP_HPP
 #define INCLUDED_UHD_TRANSPORT_UDP_HPP
@@ -59,16 +59,15 @@ public:
     /*!
      * Receive a buffer. The memory is managed internally.
      * Calling recv will invalidate the buffer of the previous recv.
-     * \return an asio const buffer with internal memory
+     * \return a shared iovec with allocated memory
      */
-    boost::asio::const_buffer recv(void);
+    uhd::shared_iovec recv(void);
 
 private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::ip::udp::endpoint _receiver_endpoint;
     boost::asio::ip::udp::endpoint _sender_endpoint;
     boost::asio::io_service        _io_service;
-    uint8_t                        _recv_buff[1500]; //max mtu
 };
 
 }} //namespace

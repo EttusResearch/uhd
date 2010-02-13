@@ -109,8 +109,10 @@ private:
  * test usrp mboard class
  **********************************************************************/
 test::test(const device_addr_t &device_addr){
+    //extract the number of dboards
+    size_t num_dboards = boost::lexical_cast<size_t>(device_addr["num_dboards"]);
     //create a manager for each dboard
-    for (size_t i = 0; i < device_addr.virtual_args.num_dboards; i++){
+    for (size_t i = 0; i < num_dboards; i++){
         dboard::interface::sptr ifc(new dummy_interface());
         _dboard_managers[boost::lexical_cast<std::string>(i)] = dboard::manager::sptr(
             new dboard::manager(dboard::ID_BASIC_RX, dboard::ID_BASIC_TX, ifc)

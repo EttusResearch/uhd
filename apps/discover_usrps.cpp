@@ -41,9 +41,10 @@ int main(int argc, char *argv[]){
     }
 
     //extract the ip address (not optional for now)
-    uhd::device_addr_t device_addr(uhd::DEVICE_ADDR_TYPE_UDP);
+    uhd::device_addr_t device_addr;
+    device_addr["type"] = "udp";
     if (vm.count("ip-addr")) {
-        device_addr.udp_args.addr = vm["ip-addr"].as<std::string>();
+        device_addr["addr"] = vm["ip-addr"].as<std::string>();
     } else {
         std::cout << "IP Addess was not set" << std::endl;
         return ~0;
