@@ -21,7 +21,6 @@
 
 #include <memory_map.h>
 #include <i2c.h>
-#include <usrp2_i2c_addr.h>
 #include <string.h>
 #include <stdio.h>
 #include <db.h>

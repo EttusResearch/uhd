@@ -24,7 +24,9 @@
 #define INCLUDED_DB_H
 
 #include <usrp2_types.h>
+#include <usrp2_i2c_addr.h>
 
+int read_dboard_eeprom(int i2c_addr);
 
 struct db_base;
 

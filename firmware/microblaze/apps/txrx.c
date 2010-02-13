@@ -43,6 +43,7 @@
 #include "clocks.h"
 #include <vrt/bits.h>
 #include "usrp2_fw_common.h"
+#include <db.h>
 
 #define FW_SETS_SEQNO	1	// define to 0 or 1 (FIXME must be 1 for now)
 
@@ -185,6 +186,12 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
         eth_mac_addr_t mac_addr = get_my_eth_mac_addr();
         memcpy(&ctrl_data_out.data.mac_addr, &mac_addr, sizeof(mac_addr));
+        break;
+
+    case USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE;
+        ctrl_data_out.data.dboard_ids.tx_id = read_dboard_eeprom(I2C_ADDR_TX_A);
+        ctrl_data_out.data.dboard_ids.rx_id = read_dboard_eeprom(I2C_ADDR_RX_A);
         break;
 
     default:

@@ -57,6 +57,8 @@ int main(int argc, char *argv[]){
         std::cout << "-- USRP Device " << i << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << device_addrs[i] << std::endl << std::endl;
+        //make each device just to test (TODO: remove this)
+        device::make(device_addrs[i]);
     }
 
     return 0;

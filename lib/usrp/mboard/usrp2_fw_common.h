@@ -41,7 +41,9 @@ typedef enum{
     USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO,
     USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO,
     USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE,
-    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO
+    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO,
+    USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO,
+    USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE
 } usrp2_ctrl_id_t;
 
 typedef struct{
@@ -50,6 +52,10 @@ typedef struct{
     union{
         uint32_t ip_addr;
         uint8_t mac_addr[6];
+        struct {
+            uint16_t rx_id;
+            uint16_t tx_id;
+        } dboard_ids;
         /*struct {
             uint8_t bank;
             uint16_t ddr;
