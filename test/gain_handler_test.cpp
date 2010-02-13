@@ -17,7 +17,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/gain_handler.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/dict.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -74,7 +74,7 @@ private:
             return;
 
         case PROP_GAIN_NAMES:
-            val = prop_names_t(get_map_keys(_gains));
+            val = prop_names_t(_gains.get_keys());
             return;
         }
     }
@@ -100,10 +100,10 @@ private:
     }
 
     gain_handler::sptr _gain_handler;
-    std::map<std::string, gain_t> _gains;
-    std::map<std::string, gain_t> _gains_min;
-    std::map<std::string, gain_t> _gains_max;
-    std::map<std::string, gain_t> _gains_step;
+    uhd::dict<std::string, gain_t> _gains;
+    uhd::dict<std::string, gain_t> _gains_min;
+    uhd::dict<std::string, gain_t> _gains_max;
+    uhd::dict<std::string, gain_t> _gains_step;
 
 };
 

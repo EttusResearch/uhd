@@ -16,21 +16,19 @@
 //
 
 #include <uhd/usrp/dboard/id.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <map>
+#include <uhd/dict.hpp>
 
 using namespace uhd::usrp::dboard;
 
 std::ostream& operator<<(std::ostream &os, const dboard_id_t &id){
     //map the dboard ids to string representations
-    std::map<dboard_id_t, std::string> id_to_str = boost::assign::map_list_of
-        (ID_BASIC_TX, "basic tx")
-        (ID_BASIC_RX, "basic rx")
-    ;
+    uhd::dict<dboard_id_t, std::string> id_to_str;
+    id_to_str[ID_BASIC_TX] = "basic tx";
+    id_to_str[ID_BASIC_RX] = "basic rx";
 
     //get the string representation
-    if (id_to_str.count(id) != 0){
+    if (id_to_str.has_key(id)){
         os << id_to_str[id];
     }
     else{

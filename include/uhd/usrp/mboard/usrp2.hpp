@@ -22,7 +22,7 @@
 #include <uhd/device_addr.hpp>
 #include <uhd/usrp/dboard/manager.hpp>
 #include <uhd/transport/udp.hpp>
-#include <map>
+#include <uhd/dict.hpp>
 
 namespace uhd{ namespace usrp{ namespace mboard{
 
@@ -46,7 +46,7 @@ private:
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
 
-    std::map<std::string, dboard::manager::sptr> _dboard_managers;
+    uhd::dict<std::string, dboard::manager::sptr> _dboard_managers;
     uhd::transport::udp::sptr _udp_ctrl_transport;
     uhd::transport::udp::sptr _udp_data_transport;
 };

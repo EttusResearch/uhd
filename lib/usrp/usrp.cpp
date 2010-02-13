@@ -18,7 +18,6 @@
 #include <uhd/usrp/usrp.hpp>
 #include <uhd/usrp/mboard/usrp2.hpp>
 #include <uhd/usrp/mboard/test.hpp>
-#include <uhd/utils.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <stdexcept>
@@ -72,7 +71,7 @@ void usrp::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
-        if (_mboards.count(name) == 0) throw std::invalid_argument(
+        if (not _mboards.has_key(name)) throw std::invalid_argument(
             str(boost::format("Unknown mboard name %s") % name)
         );
         //turn the mboard sptr object into a wax::obj::sptr
@@ -81,7 +80,7 @@ void usrp::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD_NAMES:
-        val = prop_names_t(get_map_keys(_mboards));
+        val = prop_names_t(_mboards.get_keys());
         return;
     }
 }

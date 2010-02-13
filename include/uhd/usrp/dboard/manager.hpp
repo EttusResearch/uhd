@@ -18,7 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 #define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
-#include <map>
+#include <uhd/dict.hpp>
 #include <uhd/wax.hpp>
 #include <uhd/props.hpp>
 #include <boost/utility.hpp>
@@ -73,8 +73,8 @@ private:
     //list of rx and tx dboards in this manager
     //each dboard here is actually a subdevice proxy
     //the subdevice proxy is internal to the cpp file
-    std::map<std::string, wax::obj> _rx_dboards;
-    std::map<std::string, wax::obj> _tx_dboards;
+    uhd::dict<std::string, wax::obj> _rx_dboards;
+    uhd::dict<std::string, wax::obj> _tx_dboards;
 };
 
 }}} //namespace

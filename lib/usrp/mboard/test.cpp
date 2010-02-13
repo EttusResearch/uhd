@@ -16,7 +16,6 @@
 //
 
 #include <uhd/usrp/mboard/test.hpp>
-#include <uhd/utils.hpp>
 #include <uhd/props.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
@@ -139,7 +138,7 @@ void test::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        if (_dboard_managers.count(name) == 0) throw std::invalid_argument(
+        if (not _dboard_managers.has_key(name)) throw std::invalid_argument(
             str(boost::format("Unknown rx dboard name %s") % name)
         );
         //FIXME store the shell dboard within the class
@@ -150,11 +149,11 @@ void test::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
-        val = prop_names_t(get_map_keys(_dboard_managers));
+        val = prop_names_t(_dboard_managers.get_keys());
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        if (_dboard_managers.count(name) == 0) throw std::invalid_argument(
+        if (not _dboard_managers.has_key(name)) throw std::invalid_argument(
             str(boost::format("Unknown tx dboard name %s") % name)
         );
         //FIXME store the shell dboard within the class
@@ -165,7 +164,7 @@ void test::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
-        val = prop_names_t(get_map_keys(_dboard_managers));
+        val = prop_names_t(_dboard_managers.get_keys());
         return;
 
     case MBOARD_PROP_MTU:

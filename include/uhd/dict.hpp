@@ -20,8 +20,8 @@
 
 #include <map>
 #include <vector>
-#include <boost/foreach.hpp>
 #include <stdexcept>
+#include <boost/foreach.hpp>
 
 namespace uhd{
 
@@ -31,6 +31,9 @@ namespace uhd{
      */
     template <class Key, class Val> class dict{
     public:
+        typedef std::map<Key, Val> map_t;
+        typedef std::pair<Key, Val> pair_t;
+
         /*!
          * Create a new empty dictionary.
          */
@@ -42,7 +45,7 @@ namespace uhd{
          * Create a dictionary from a map.
          * \param map a map with key value pairs
          */
-        dict(const std::map<Key, Val> &map){
+        dict(const map_t &map){
             _map = map;
         }
 
@@ -59,8 +62,7 @@ namespace uhd{
          */
         std::vector<Key> get_keys(void) const{
             std::vector<Key> keys;
-            std::pair<Key, Val> p;
-            BOOST_FOREACH(p, _map){
+            BOOST_FOREACH(pair_t p, _map){
                 keys.push_back(p.first);
             }
             return keys;
@@ -72,8 +74,7 @@ namespace uhd{
          */
         std::vector<Val> get_vals(void) const{
             std::vector<Val> vals;
-            std::pair<Key, Val> p;
-            BOOST_FOREACH(p, _map){
+            BOOST_FOREACH(pair_t p, _map){
                 vals.push_back(p.second);
             }
             return vals;
@@ -85,8 +86,7 @@ namespace uhd{
          * \return true if found
          */
         bool has_key(const Key &key) const{
-            std::pair<Key, Val> p;
-            BOOST_FOREACH(p, _map){
+            BOOST_FOREACH(pair_t p, _map){
                 if (p.first == key) return true;
             }
             return false;
@@ -132,7 +132,7 @@ namespace uhd{
         }
 
     private:
-        std::map<Key, Val> _map; //private container
+        map_t _map; //private container
     };
 
 } //namespace uhd

@@ -16,7 +16,6 @@
 //
 
 #include <uhd/usrp/dboard/manager.hpp>
-#include <uhd/utils.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -51,10 +50,10 @@ static void register_internal_dboards(void){
  * storage and registering for dboards
  **********************************************************************/
 //map a dboard id to a dboard constructor
-static std::map<dboard_id_t, manager::dboard_ctor_t> id_to_ctor_map;
+static uhd::dict<dboard_id_t, manager::dboard_ctor_t> id_to_ctor_map;
 
 //map a dboard constructor to subdevice names
-static std::map<manager::dboard_ctor_t, prop_names_t> ctor_to_names_map;
+static uhd::dict<manager::dboard_ctor_t, prop_names_t> ctor_to_names_map;
 
 void manager::register_subdevs(
     dboard_id_t dboard_id,
@@ -117,7 +116,7 @@ static manager::dboard_ctor_t const& get_dboard_ctor(
     std::string const& xx_type
 ){
     //verify that there is a registered constructor for this id
-    if (id_to_ctor_map.count(dboard_id) == 0){
+    if (not id_to_ctor_map.has_key(dboard_id)){
         throw std::runtime_error(str(
             boost::format("Unknown %s dboard id: 0x%04x") % xx_type % dboard_id
         ));
@@ -180,15 +179,15 @@ manager::~manager(void){
 }
 
 prop_names_t manager::get_rx_subdev_names(void){
-    return get_map_keys(_rx_dboards);
+    return _rx_dboards.get_keys();
 }
 
 prop_names_t manager::get_tx_subdev_names(void){
-    return get_map_keys(_tx_dboards);
+    return _tx_dboards.get_keys();
 }
 
 wax::obj manager::get_rx_subdev(const std::string &subdev_name){
-    if (_rx_dboards.count(subdev_name) == 0) throw std::invalid_argument(
+    if (not _rx_dboards.has_key(subdev_name)) throw std::invalid_argument(
         str(boost::format("Unknown rx subdev name %s") % subdev_name)
     );
     //get a link to the rx subdev proxy
@@ -196,7 +195,7 @@ wax::obj manager::get_rx_subdev(const std::string &subdev_name){
 }
 
 wax::obj manager::get_tx_subdev(const std::string &subdev_name){
-    if (_tx_dboards.count(subdev_name) == 0) throw std::invalid_argument(
+    if (not _tx_dboards.has_key(subdev_name)) throw std::invalid_argument(
         str(boost::format("Unknown tx subdev name %s") % subdev_name)
     );
     //get a link to the tx subdev proxy

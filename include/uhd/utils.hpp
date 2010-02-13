@@ -27,70 +27,6 @@
 #ifndef INCLUDED_UHD_UTILS_HPP
 #define INCLUDED_UHD_UTILS_HPP
 
-namespace uhd{
-
-template <class Key, class T> //TODO template this better
-std::vector<Key> get_map_keys(const std::map<Key, T> &m){
-    std::vector<Key> v;
-    std::pair<Key, T> p;
-    BOOST_FOREACH(p, m){
-        v.push_back(p.first);
-    }
-    return v;
-}
-
-template<typename T> T signum(T n){
-    if (n < 0) return -1;
-    if (n > 0) return 1;
-    return 0;
-}
-
-inline void tune(
-    freq_t target_freq,
-    freq_t lo_offset,
-    wax::obj subdev_freq_proxy,
-    bool subdev_quadrature,
-    bool subdev_spectrum_inverted,
-    bool subdev_is_tx,
-    wax::obj dsp_freq_proxy,
-    freq_t dsp_sample_rate
-){
-    // Ask the d'board to tune as closely as it can to target_freq+lo_offset
-    subdev_freq_proxy = target_freq + lo_offset;
-    freq_t inter_freq = wax::cast<freq_t>(subdev_freq_proxy);
-
-    // Calculate the DDC setting that will downconvert the baseband from the
-    // daughterboard to our target frequency.
-    freq_t delta_freq = target_freq - inter_freq;
-    int delta_sign = signum(delta_freq);
-    delta_freq *= delta_sign;
-    delta_freq = fmod(delta_freq, dsp_sample_rate);
-    bool inverted = delta_freq > dsp_sample_rate/2.0;
-    freq_t dxc_freq = inverted? (delta_freq - dsp_sample_rate) : (-delta_freq);
-    dxc_freq *= delta_sign;
-
-    // If the spectrum is inverted, and the daughterboard doesn't do
-    // quadrature downconversion, we can fix the inversion by flipping the
-    // sign of the dxc_freq...  (This only happens using the basic_rx board)
-    if (subdev_spectrum_inverted){
-        inverted = not inverted;
-    }
-    if (inverted and not subdev_quadrature){
-        dxc_freq = -dxc_freq;
-        inverted = not inverted;
-    }
-    if (subdev_is_tx){
-        dxc_freq = -dxc_freq;	// down conversion versus up conversion
-    }
-
-    dsp_freq_proxy = dxc_freq;
-    //freq_t actual_dxc_freq = wax::cast<freq_t>(dsp_freq_proxy);
-
-    //return some kind of tune result tuple/struct
-}
-
-} //namespace uhd
-
 /*!
  * Useful templated functions and classes that I like to pretend are part of stl
  */
@@ -126,6 +62,60 @@ namespace std{
         return a + b;
     }
 
+    template<typename T> T signum(T n){
+        if (n < 0) return -1;
+        if (n > 0) return 1;
+        return 0;
+    }
+
 }//namespace std
+
+namespace uhd{
+
+inline void tune(
+    freq_t target_freq,
+    freq_t lo_offset,
+    wax::obj subdev_freq_proxy,
+    bool subdev_quadrature,
+    bool subdev_spectrum_inverted,
+    bool subdev_is_tx,
+    wax::obj dsp_freq_proxy,
+    freq_t dsp_sample_rate
+){
+    // Ask the d'board to tune as closely as it can to target_freq+lo_offset
+    subdev_freq_proxy = target_freq + lo_offset;
+    freq_t inter_freq = wax::cast<freq_t>(subdev_freq_proxy);
+
+    // Calculate the DDC setting that will downconvert the baseband from the
+    // daughterboard to our target frequency.
+    freq_t delta_freq = target_freq - inter_freq;
+    int delta_sign = std::signum(delta_freq);
+    delta_freq *= delta_sign;
+    delta_freq = fmod(delta_freq, dsp_sample_rate);
+    bool inverted = delta_freq > dsp_sample_rate/2.0;
+    freq_t dxc_freq = inverted? (delta_freq - dsp_sample_rate) : (-delta_freq);
+    dxc_freq *= delta_sign;
+
+    // If the spectrum is inverted, and the daughterboard doesn't do
+    // quadrature downconversion, we can fix the inversion by flipping the
+    // sign of the dxc_freq...  (This only happens using the basic_rx board)
+    if (subdev_spectrum_inverted){
+        inverted = not inverted;
+    }
+    if (inverted and not subdev_quadrature){
+        dxc_freq = -dxc_freq;
+        inverted = not inverted;
+    }
+    if (subdev_is_tx){
+        dxc_freq = -dxc_freq;	// down conversion versus up conversion
+    }
+
+    dsp_freq_proxy = dxc_freq;
+    //freq_t actual_dxc_freq = wax::cast<freq_t>(dsp_freq_proxy);
+
+    //return some kind of tune result tuple/struct
+}
+
+} //namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_HPP */
