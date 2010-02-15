@@ -13,6 +13,7 @@
 /ltmain.sh
 /missing
 /depcomp
+*.a
 *.la
 *.lo
 *.o
