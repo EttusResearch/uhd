@@ -17,11 +17,13 @@
 
 #include <uhd/usrp/mboard/usrp2.hpp>
 #include <uhd/device.hpp>
+#include <uhd/transport/udp.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
 #include <netinet/in.h>
-#include "usrp2_fw_common.h"
+#include "usrp2_impl.hpp"
+//#include "usrp2_dboard_interface.hpp"
 
 using namespace uhd::usrp::mboard;
 
@@ -74,61 +76,30 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
  * Structors
  **********************************************************************/
 usrp2::usrp2(const device_addr_t &device_addr){
-    //initialize the transports for udp
-    _udp_ctrl_transport = uhd::transport::udp::sptr(
+    //create a control transport
+    uhd::transport::udp::sptr ctrl_transport(
         new uhd::transport::udp(
             device_addr["addr"],
             boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
         )
     );
-    _udp_data_transport = uhd::transport::udp::sptr(
+
+    //create a data transport
+    uhd::transport::udp::sptr data_transport(
         new uhd::transport::udp(
             device_addr["addr"],
             boost::lexical_cast<std::string>(USRP2_UDP_DATA_PORT)
         )
     );
-    //grab the dboard ids over the control line
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO);
-    usrp2_ctrl_data_t in_data = _ctrl_send_and_recv(out_data);
-    //TODO assert the control data id response
-    std::cout << boost::format("rx id 0x%.2x, tx id 0x%.2x")
-        % ntohs(in_data.data.dboard_ids.rx_id)
-        % ntohs(in_data.data.dboard_ids.tx_id) << std::endl;
-    //TODO setup the dboard manager with the dboard ids
+
+    //create the usrp2 implementation guts
+    _impl = usrp2_impl::sptr(
+        new usrp2_impl(ctrl_transport, data_transport)
+    );
 }
 
 usrp2::~usrp2(void){
     /* NOP */
-}
-
-/***********************************************************************
- * Transactions
- **********************************************************************/
-template <class T> T usrp2::_ctrl_send_and_recv(const T &out_data){
-    //fill in the seq number and send
-    T out_copy = out_data;
-    out_copy.seq = htonl(++_ctrl_seq_num);
-    _udp_ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(T)));
-
-    //loop and recieve until the time is up
-    size_t num_timeouts = 0;
-    while(true){
-        uhd::shared_iovec iov = _udp_ctrl_transport->recv();
-        if (iov.len < sizeof(T)){
-            //sleep a little so we dont burn cpu
-            if (num_timeouts++ > 50) break;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-        }else{
-            //handle the received data
-            T in_data = *reinterpret_cast<const T *>(iov.base);
-            if (ntohl(in_data.seq) == _ctrl_seq_num){
-                return in_data;
-            }
-            //didnt get seq, continue on...
-        }
-    }
-    throw std::runtime_error("usrp2 no control response");
 }
 
 /***********************************************************************

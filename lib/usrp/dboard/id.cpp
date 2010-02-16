@@ -24,6 +24,7 @@ using namespace uhd::usrp::dboard;
 std::ostream& operator<<(std::ostream &os, const dboard_id_t &id){
     //map the dboard ids to string representations
     uhd::dict<dboard_id_t, std::string> id_to_str;
+    id_to_str[ID_NONE]     = "none";
     id_to_str[ID_BASIC_TX] = "basic tx";
     id_to_str[ID_BASIC_RX] = "basic rx";
 

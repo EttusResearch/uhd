@@ -22,6 +22,9 @@ ENABLE_TESTING()
 ########################################################################
 # Setup CPack
 ########################################################################
+SET(CPACK_PACKAGE_VERSION_MAJOR 0)
+SET(CPACK_PACKAGE_VERSION_MINOR 0)
+SET(CPACK_PACKAGE_VERSION_PATCH 0)
 SET(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/README)
 SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
 INCLUDE(CPack) #include after setting vars

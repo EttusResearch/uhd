@@ -42,6 +42,8 @@ static void register_internal_dboards(void){
     static bool called = false;
     if (called) return; called = true;
     //register the known dboards (dboard id, constructor, subdev names)
+    manager::register_subdevs(ID_NONE,     &basic_tx::make, list_of(""));   //for none, make a basic tx
+    manager::register_subdevs(ID_NONE,     &basic_rx::make, list_of("ab")); //for none, make a basic rx (one subdev)
     manager::register_subdevs(ID_BASIC_TX, &basic_tx::make, list_of(""));
     manager::register_subdevs(ID_BASIC_RX, &basic_rx::make, list_of("a")("b")("ab"));
 }

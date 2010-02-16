@@ -20,8 +20,6 @@
 
 #include <uhd/usrp/mboard/base.hpp>
 #include <uhd/device_addr.hpp>
-#include <uhd/usrp/dboard/manager.hpp>
-#include <uhd/transport/udp.hpp>
 
 namespace uhd{ namespace usrp{ namespace mboard{
 
@@ -45,15 +43,7 @@ private:
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
 
-    dboard::manager::sptr _dboard_manager;
-
-    uhd::transport::udp::sptr _udp_ctrl_transport;
-    uhd::transport::udp::sptr _udp_data_transport;
-
-    uint32_t _ctrl_seq_num;
-    //use this template for send/recv so this header
-    //does not need to know about internal structs
-    template <class T> T _ctrl_send_and_recv(const T &);
+    wax::obj _impl;
 };
 
 }}} //namespace

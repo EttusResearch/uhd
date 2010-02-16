@@ -23,6 +23,7 @@
 namespace uhd{ namespace usrp{ namespace dboard{
 
 enum dboard_id_t{
+    ID_NONE     = 0xffff,
     ID_BASIC_TX = 0x0000,
     ID_BASIC_RX = 0x0001
 };

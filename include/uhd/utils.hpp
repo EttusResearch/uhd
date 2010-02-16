@@ -70,7 +70,7 @@ namespace std{
 
 }//namespace std
 
-namespace uhd{
+/*namespace uhd{
 
 inline void tune(
     freq_t target_freq,
@@ -116,6 +116,6 @@ inline void tune(
     //return some kind of tune result tuple/struct
 }
 
-} //namespace uhd
+} //namespace uhd*/
 
 #endif /* INCLUDED_UHD_UTILS_HPP */
