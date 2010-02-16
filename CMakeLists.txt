@@ -18,8 +18,14 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD)
 ENABLE_TESTING()
-INCLUDE(CPack)
 #SET(CMAKE_VERBOSE_MAKEFILE true)
+
+########################################################################
+# Setup CPack
+########################################################################
+SET(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/README)
+SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+INCLUDE(CPack) #include after setting vars
 
 ########################################################################
 # Install Dirs
@@ -67,7 +73,11 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 ########################################################################
 # Create Pkg Config File
 ########################################################################
-CONFIGURE_FILE(uhd.pc.in uhd.pc @ONLY)
+CONFIGURE_FILE(
+    ${CMAKE_SOURCE_DIR}/uhd.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+    @ONLY
+)
 INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
     DESTINATION ${LIBRARY_DIR}/pkgconfig

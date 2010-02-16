@@ -1,7 +1,7 @@
 prefix=@CMAKE_INSTALL_PREFIX@
-exec_prefix=@CMAKE_INSTALL_PREFIX@
-libdir=@CMAKE_INSTALL_PREFIX@/@LIBRARY_DIR@
-includedir=@CMAKE_INSTALL_PREFIX@/@HEADER_DIR@
+exec_prefix=${prefix}
+libdir=${prefix}/@LIBRARY_DIR@
+includedir=${prefix}/@HEADER_DIR@
 
 Name: @CPACK_PACKAGE_NAME@
 Description: Universal Hardware Driver
