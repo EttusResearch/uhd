@@ -16,9 +16,6 @@
 #
 
 
-ADD_SUBDIRECTORY(usrp)
-ADD_SUBDIRECTORY(transport)
-
 ADD_LIBRARY(uhd SHARED
     device.cpp
     device_addr.cpp
@@ -26,10 +23,18 @@ ADD_LIBRARY(uhd SHARED
     shared_iovec.cpp
     uhd.cpp
     wax.cpp
+    transport/udp.cpp
+    usrp/usrp.cpp
+    usrp/dboard/basic.cpp
+    usrp/dboard/base.cpp
+    usrp/dboard/id.cpp
+    usrp/dboard/interface.cpp
+    usrp/dboard/manager.cpp
+    usrp/mboard/base.cpp
+    usrp/mboard/test.cpp
+    usrp/mboard/usrp2.cpp
 )
 
-TARGET_LINK_LIBRARIES(uhd uhd_usrp)
-TARGET_LINK_LIBRARIES(uhd uhd_transport)
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})
 
 INSTALL(TARGETS uhd LIBRARY DESTINATION ${LIBRARY_DIR})
