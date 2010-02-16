@@ -42,7 +42,7 @@
 #include <string.h>
 #include "clocks.h"
 #include <vrt/bits.h>
-#include "usrp2_fw_common.h"
+#include "usrp2/fw_common.h"
 #include <db.h>
 
 #define FW_SETS_SEQNO	1	// define to 0 or 1 (FIXME must be 1 for now)
