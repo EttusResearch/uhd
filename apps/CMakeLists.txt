@@ -18,3 +18,5 @@
 ADD_EXECUTABLE(discover_usrps discover_usrps.cpp)
 
 TARGET_LINK_LIBRARIES(discover_usrps uhd)
+
+INSTALL(TARGETS discover_usrps RUNTIME DESTINATION ${RUNTIME_DIR})

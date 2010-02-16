@@ -1,11 +1,11 @@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-includedir=@includedir@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_PREFIX@/@LIBRARY_DIR@
+includedir=@CMAKE_INSTALL_PREFIX@/@HEADER_DIR@
 
-Name: uhd
+Name: @CPACK_PACKAGE_NAME@
 Description: Universal Hardware Driver
-Requires: 
-Version: @VERSION@
+Requires:
+Version: @CPACK_PACKAGE_VERSION@
 Libs: -L${libdir} -luhd
 Cflags: -I${includedir}

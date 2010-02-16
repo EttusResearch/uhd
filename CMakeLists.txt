@@ -19,11 +19,36 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD)
 ENABLE_TESTING()
 INCLUDE(CPack)
+#SET(CMAKE_VERBOSE_MAKEFILE true)
+
+########################################################################
+# Install Dirs
+########################################################################
+SET(RUNTIME_DIR bin)
+SET(LIBRARY_DIR lib)
+SET(RESOURCE_DIR share)
+SET(HEADER_DIR include)
 
 ########################################################################
 # Local Include Dir
 ########################################################################
-INCLUDE_DIRECTORIES(${UHD_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+
+########################################################################
+# Optional Compiler Flags
+########################################################################
+INCLUDE(CheckCXXCompilerFlag)
+FUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
+    CHECK_CXX_COMPILER_FLAG(${flag} ${have})
+    IF(${have})
+        ADD_DEFINITIONS(${flag})
+    ENDIF(${have})
+ENDFUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
+
+UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
+UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
+UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
+UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
 
 ########################################################################
 # Setup Boost
@@ -40,8 +65,18 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
 ########################################################################
+# Create Pkg Config File
+########################################################################
+CONFIGURE_FILE(uhd.pc.in uhd.pc @ONLY)
+INSTALL(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+    DESTINATION ${LIBRARY_DIR}/pkgconfig
+)
+
+########################################################################
 # Add the subdirectories
 ########################################################################
+ADD_SUBDIRECTORY(apps)
+ADD_SUBDIRECTORY(include)
 ADD_SUBDIRECTORY(lib)
 ADD_SUBDIRECTORY(test)
-ADD_SUBDIRECTORY(apps)

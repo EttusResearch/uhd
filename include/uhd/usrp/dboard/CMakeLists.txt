@@ -16,20 +16,10 @@
 #
 
 
-ADD_SUBDIRECTORY(usrp)
-ADD_SUBDIRECTORY(transport)
-
-ADD_LIBRARY(uhd SHARED
-    device.cpp
-    device_addr.cpp
-    gain_handler.cpp
-    shared_iovec.cpp
-    uhd.cpp
-    wax.cpp
+INSTALL(FILES
+    base.hpp
+    id.hpp
+    interface.hpp
+    manager.hpp
+    DESTINATION ${HEADER_DIR}/uhd/usrp/dboard
 )
-
-TARGET_LINK_LIBRARIES(uhd uhd_usrp)
-TARGET_LINK_LIBRARIES(uhd uhd_transport)
-TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})
-
-INSTALL(TARGETS uhd LIBRARY DESTINATION ${LIBRARY_DIR})
