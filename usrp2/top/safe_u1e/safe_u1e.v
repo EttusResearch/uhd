@@ -7,7 +7,7 @@ module safe_u1e
    output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
 
    // GPMC
-   input EM_CLK, input [15:0] EM_D, input [10:1] EM_A, 
+   input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A,
    input EM_WAIT0, input EM_NCS4, input EM_NWP, input EM_NWE, input EM_NOE, input EM_NADV_ALE
    );
 
@@ -27,5 +27,11 @@ module safe_u1e
    assign debug_clk = { EM_CLK, clk_fpga };
    assign debug = { { EM_WAIT0, EM_NADV_ALE, EM_NWP, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
-   
+
+   wire 	EM_output_enable = (~EM_NOE & ~EM_NCS4);
+   wire [15:0] 	EM_D_out = 16'hBEEF;
+   wire [15:0] 	EM_D_in = EM_D;
+
+   assign EM_D = EM_output_enable ? EM_D_out : 16'bz;
+      
 endmodule // safe_u2plus
