@@ -17,13 +17,38 @@
 
 #include <uhd/usrp/dboard/manager.hpp>
 #include <boost/utility.hpp>
+#include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/transport/udp.hpp>
+#include <uhd/dict.hpp>
 #include "usrp2_fw_common.h"
 
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
+/***********************************************************************
+ * USRP2 DBoard Wrapper
+ **********************************************************************/
+class usrp2_dboard : boost::noncopyable, public wax::obj{
+public:
+    typedef boost::shared_ptr<usrp2_dboard> sptr;
+    enum type_t {TYPE_RX, TYPE_TX};
+
+    usrp2_dboard(uhd::usrp::dboard::manager::sptr manager, type_t type);
+    
+    ~usrp2_dboard(void);
+
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
+
+private:
+    uhd::usrp::dboard::manager::sptr   _mgr;
+    type_t                             _type;
+};
+
+/***********************************************************************
+ * USRP2 Implementation
+ **********************************************************************/
 class usrp2_impl : boost::noncopyable{
 public:
     typedef boost::shared_ptr<usrp2_impl> sptr;
@@ -37,14 +62,18 @@ public:
 
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
 
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
+
 private:
     uhd::transport::udp::sptr _ctrl_transport;
     uhd::transport::udp::sptr _data_transport;
 
     uint32_t _ctrl_seq_num;
+    boost::mutex _ctrl_mutex;
 
-    uhd::usrp::dboard::manager::sptr   _dboard_manager;
-    uhd::usrp::dboard::interface::sptr _dboard_interface;
+    uhd::dict<std::string, usrp2_dboard::sptr> _rx_dboards;
+    uhd::dict<std::string, usrp2_dboard::sptr> _tx_dboards;
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */

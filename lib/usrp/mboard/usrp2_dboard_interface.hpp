@@ -23,8 +23,8 @@
 
 class usrp2_dboard_interface : public uhd::usrp::dboard::interface{
 public:
-    usrp2_dboard_interface(const usrp2_impl *impl) : _impl(impl){
-        /* NOP */
+    usrp2_dboard_interface(usrp2_impl *impl){
+        _impl = impl;
     }
 
     ~usrp2_dboard_interface(void){
@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    const usrp2_impl *_impl;
+    usrp2_impl *_impl;
 };
 
 #endif /* INCLUDED_USRP2_DBOARD_INTERFACE_HPP */

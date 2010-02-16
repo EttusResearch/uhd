@@ -89,7 +89,7 @@ namespace uhd{
         MBOARD_PROP_TX_DBOARD_NAMES,   //ro, prop_names_t
         MBOARD_PROP_PPS_SOURCE,        //rw, std::string (sma, mimo)
         MBOARD_PROP_PPS_SOURCE_NAMES,  //ro, prop_names_t
-        MBOARD_PROP_PPS_POLARITY,      //rw, int, +/- 1
+        MBOARD_PROP_PPS_POLARITY,      //rw, std::string (pos, neg)
         MBOARD_PROP_REF_SOURCE,        //rw, std::string (int, sma, mimo)
         MBOARD_PROP_REF_SOURCE_NAMES,  //ro, prop_names_t
         MBOARD_PROP_TIME_NOW,          //wo, time_spec_t

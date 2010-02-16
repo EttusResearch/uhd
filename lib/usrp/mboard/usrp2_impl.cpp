@@ -15,15 +15,72 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <uhd/utils.hpp>
+#include <uhd/props.hpp>
 #include <iostream>
 #include "usrp2_impl.hpp"
 #include "usrp2_dboard_interface.hpp"
 
+using namespace uhd;
 using namespace uhd::usrp;
 
+/***********************************************************************
+ * USRP2 DBoard Wrapper
+ **********************************************************************/
+usrp2_dboard::usrp2_dboard(uhd::usrp::dboard::manager::sptr mgr, type_t type){
+    _mgr = mgr;
+    _type = type;
+}
+
+usrp2_dboard::~usrp2_dboard(void){
+    /* NOP */
+}
+
+void usrp2_dboard::get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the get request conditioned on the key
+    switch(wax::cast<dboard_prop_t>(key)){
+    case DBOARD_PROP_NAME:
+        val = std::string("usrp2 dboard");
+        return;
+
+    case DBOARD_PROP_SUBDEV:
+        switch(_type){
+        case TYPE_RX:
+            val = _mgr->get_rx_subdev(name);
+            return;
+
+        case TYPE_TX:
+            val = _mgr->get_tx_subdev(name);
+            return;
+        }
+
+    case DBOARD_PROP_SUBDEV_NAMES:
+        switch(_type){
+        case TYPE_RX:
+            val = _mgr->get_rx_subdev_names();
+            return;
+
+        case TYPE_TX:
+            val = _mgr->get_tx_subdev_names();
+            return;
+        }
+
+    case DBOARD_PROP_CODEC:
+        throw std::runtime_error("unhandled prop in usrp2 dboard");
+    }
+}
+
+void usrp2_dboard::set(const wax::obj &, const wax::obj &){
+    throw std::runtime_error("Cannot set on usrp2 dboard");
+}
+
+/***********************************************************************
+ * USRP2 Implementation
+ **********************************************************************/
 usrp2_impl::usrp2_impl(
     uhd::transport::udp::sptr ctrl_transport,
     uhd::transport::udp::sptr data_transport
@@ -49,19 +106,31 @@ usrp2_impl::usrp2_impl(
     );
 
     //create a new dboard interface and manager
-    _dboard_interface = dboard::interface::sptr(
+    dboard::interface::sptr dboard_interface(
         new usrp2_dboard_interface(this)
     );
-    _dboard_manager = dboard::manager::sptr(
-        new dboard::manager(rx_dboard_id, tx_dboard_id, _dboard_interface)
+    dboard::manager::sptr dboard_manager(
+        new dboard::manager(rx_dboard_id, tx_dboard_id, dboard_interface)
     );
+
+    //load dboards
+    _rx_dboards[""] = usrp2_dboard::sptr(new usrp2_dboard(dboard_manager, usrp2_dboard::TYPE_RX));
+    _tx_dboards[""] = usrp2_dboard::sptr(new usrp2_dboard(dboard_manager, usrp2_dboard::TYPE_TX));
+
+    //TOD load dsps
+
 }
 
 usrp2_impl::~usrp2_impl(void){
     /* NOP */
 }
 
+/***********************************************************************
+ * Control Send/Recv
+ **********************************************************************/
 usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data){
+    boost::mutex::scoped_lock lock(_ctrl_mutex);
+
     //fill in the seq number and send
     usrp2_ctrl_data_t out_copy = out_data;
     out_copy.seq = htonl(++_ctrl_seq_num);
@@ -85,4 +154,49 @@ usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_da
         }
     }
     throw std::runtime_error("usrp2 no control response");
+}
+
+/***********************************************************************
+ * Get Properties
+ **********************************************************************/
+void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the get request conditioned on the key
+    switch(wax::cast<mboard_prop_t>(key)){
+    case MBOARD_PROP_NAME:
+        val = std::string("usrp2 mboard");
+        return;
+
+    case MBOARD_PROP_OTHERS:
+        val = prop_names_t(); //empty other props
+        return;
+
+    case MBOARD_PROP_RX_DBOARD:
+    case MBOARD_PROP_RX_DBOARD_NAMES:
+    case MBOARD_PROP_TX_DBOARD:
+    case MBOARD_PROP_TX_DBOARD_NAMES:
+    case MBOARD_PROP_MTU:
+    case MBOARD_PROP_CLOCK_RATE:
+    case MBOARD_PROP_RX_DSP:
+    case MBOARD_PROP_RX_DSP_NAMES:
+    case MBOARD_PROP_TX_DSP:
+    case MBOARD_PROP_TX_DSP_NAMES:
+    case MBOARD_PROP_PPS_SOURCE:
+    case MBOARD_PROP_PPS_SOURCE_NAMES:
+    case MBOARD_PROP_PPS_POLARITY:
+    case MBOARD_PROP_REF_SOURCE:
+    case MBOARD_PROP_REF_SOURCE_NAMES:
+    case MBOARD_PROP_TIME_NOW:
+    case MBOARD_PROP_TIME_NEXT_PPS:
+        throw std::runtime_error("unhandled prop in usrp2 mboard");
+    }
+}
+
+/***********************************************************************
+ * Set Properties
+ **********************************************************************/
+void usrp2_impl::set(const wax::obj &, const wax::obj &){
+    throw std::runtime_error("Cannot set on usrp2 mboard");
 }

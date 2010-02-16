@@ -105,13 +105,13 @@ usrp2::~usrp2(void){
 /***********************************************************************
  * Get Properties
  **********************************************************************/
-void usrp2::get(const wax::obj &, wax::obj &){
-    
+void usrp2::get(const wax::obj &key, wax::obj &val){
+    return wax::cast<usrp2_impl::sptr>(_impl)->get(key, val);
 }
 
 /***********************************************************************
  * Set Properties
  **********************************************************************/
-void usrp2::set(const wax::obj &, const wax::obj &){
-    
+void usrp2::set(const wax::obj &key, const wax::obj &val){
+    return wax::cast<usrp2_impl::sptr>(_impl)->set(key, val);
 }
