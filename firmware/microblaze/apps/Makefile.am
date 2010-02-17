@@ -21,7 +21,7 @@ include $(top_srcdir)/Makefile.common
 
 LDADD = $(top_srcdir)/lib/libu2fw.a
 
-AM_CFLAGS += -I$(top_srcdir)/../../lib/usrp/mboard
+AM_CFLAGS += -I$(top_srcdir)/../../host/lib/usrp/mboard
 
 noinst_PROGRAMS = txrx.elf
 
