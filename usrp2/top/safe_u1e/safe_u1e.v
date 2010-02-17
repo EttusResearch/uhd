@@ -29,9 +29,13 @@ module safe_u1e
 		    { EM_D } };
 
    wire 	EM_output_enable = (~EM_NOE & ~EM_NCS4);
-   wire [15:0] 	EM_D_out = 16'hBEEF;
-   wire [15:0] 	EM_D_in = EM_D;
+   wire [15:0] 	EM_D_out;
 
    assign EM_D = EM_output_enable ? EM_D_out : 16'bz;
+
+   ram_2port #(.DWIDTH(16), .AWIDTH(10)) ram_2port
+     (.clka(clk_fpga), .ena(~EM_NCS4), .wea(~EM_NWE), .addra(EM_A), .dia(EM_D), .doa(EM_D_out),
+      .clkb(clk_fpga), .enb(0), .web(0), .addrb(0), .dib(0), .dob());
+   
       
 endmodule // safe_u2plus
