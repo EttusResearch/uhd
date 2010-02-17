@@ -36,15 +36,37 @@ typedef enum{
     USRP2_CTRL_ID_HUH_WHAT,
     //USRP2_CTRL_ID_FOR_SURE, //TODO error condition enums
     //USRP2_CTRL_ID_SUX_MAN,
+
     USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO,
     USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE,
     USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO,
+
     USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO,
     USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE,
     USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO,
+
+    USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO,
+    USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE,
+
     USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO,
     USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE
 } usrp2_ctrl_id_t;
+
+typedef enum{
+    USRP2_PPS_SOURCE_SMA,
+    USRP2_PPS_SOURCE_MIMO
+} usrp2_pps_source_t;
+
+typedef enum{
+    USRP2_PPS_POLARITY_POS,
+    USRP2_PPS_POLARITY_NEG
+} usrp2_pps_polarity_t;
+
+typedef enum{
+    USRP2_REF_SOURCE_INT,
+    USRP2_REF_SOURCE_SMA,
+    USRP2_REF_SOURCE_MIMO
+} usrp2_ref_source_t;
 
 typedef struct{
     uint32_t id;
@@ -56,6 +78,12 @@ typedef struct{
             uint16_t rx_id;
             uint16_t tx_id;
         } dboard_ids;
+        struct {
+            uint8_t pps_source;
+            uint8_t pps_polarity;
+            uint8_t ref_source;
+            uint8_t _pad;
+        } clock_config;
         /*struct {
             uint8_t bank;
             uint16_t ddr;

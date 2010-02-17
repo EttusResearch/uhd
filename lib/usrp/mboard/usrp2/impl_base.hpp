@@ -15,65 +15,64 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard/manager.hpp>
 #include <boost/utility.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/transport/udp.hpp>
 #include <uhd/dict.hpp>
-#include "usrp2_fw_common.h"
+#include "dboard_impl.hpp"
+#include "fw_common.h"
 
-#ifndef INCLUDED_USRP2_IMPL_HPP
-#define INCLUDED_USRP2_IMPL_HPP
+#ifndef INCLUDED_IMPL_BASE_HPP
+#define INCLUDED_IMPL_BASE_HPP
 
-/***********************************************************************
- * USRP2 DBoard Wrapper
- **********************************************************************/
-class usrp2_dboard : boost::noncopyable, public wax::obj{
+class impl_base : boost::noncopyable, public wax::obj{
 public:
-    typedef boost::shared_ptr<usrp2_dboard> sptr;
-    enum type_t {TYPE_RX, TYPE_TX};
+    typedef boost::shared_ptr<impl_base> sptr;
 
-    usrp2_dboard(uhd::usrp::dboard::manager::sptr manager, type_t type);
-    
-    ~usrp2_dboard(void);
-
-    void get(const wax::obj &, wax::obj &);
-    void set(const wax::obj &, const wax::obj &);
-
-private:
-    uhd::usrp::dboard::manager::sptr   _mgr;
-    type_t                             _type;
-};
-
-/***********************************************************************
- * USRP2 Implementation
- **********************************************************************/
-class usrp2_impl : boost::noncopyable{
-public:
-    typedef boost::shared_ptr<usrp2_impl> sptr;
-
-    usrp2_impl(
+    /*!
+     * Create a new usrp2 impl base.
+     * \param ctrl_transport the udp transport for control
+     * \param data_transport the udp transport for data
+     */
+    impl_base(
         uhd::transport::udp::sptr ctrl_transport,
         uhd::transport::udp::sptr data_transport
     );
 
-    ~usrp2_impl(void);
+    ~impl_base(void);
 
+    //performs a control transaction
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
 
+    //properties access methods
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
 
+    //misc access methods
+    double get_master_clock_freq(void);
+    void update_clock_config(void);
+
 private:
+    //udp transports for control and data
     uhd::transport::udp::sptr _ctrl_transport;
     uhd::transport::udp::sptr _data_transport;
 
+    //private vars for dealing with send/recv control
     uint32_t _ctrl_seq_num;
     boost::mutex _ctrl_mutex;
 
-    uhd::dict<std::string, usrp2_dboard::sptr> _rx_dboards;
-    uhd::dict<std::string, usrp2_dboard::sptr> _tx_dboards;
+    //containers for the dboard objects
+    uhd::dict<std::string, dboard_impl::sptr> _rx_dboards;
+    uhd::dict<std::string, dboard_impl::sptr> _tx_dboards;
+
+    //shadows for various settings
+    std::string _pps_source, _pps_polarity, _ref_source;
+
+    //mappings from clock config strings to over the wire enums
+    uhd::dict<std::string, usrp2_pps_source_t>   _pps_source_dict;
+    uhd::dict<std::string, usrp2_pps_polarity_t> _pps_polarity_dict;
+    uhd::dict<std::string, usrp2_ref_source_t>   _ref_source_dict;
 };
 
-#endif /* INCLUDED_USRP2_IMPL_HPP */
+#endif /* INCLUDED_IMPL_BASE_HPP */

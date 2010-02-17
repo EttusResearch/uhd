@@ -16,18 +16,18 @@
 //
 
 #include <uhd/usrp/dboard/interface.hpp>
-#include "usrp2_impl.hpp"
+#include "impl_base.hpp"
 
-#ifndef INCLUDED_USRP2_DBOARD_INTERFACE_HPP
-#define INCLUDED_USRP2_DBOARD_INTERFACE_HPP
+#ifndef INCLUDED_DBOARD_INTERFACE_HPP
+#define INCLUDED_DBOARD_INTERFACE_HPP
 
-class usrp2_dboard_interface : public uhd::usrp::dboard::interface{
+class dboard_interface : public uhd::usrp::dboard::interface{
 public:
-    usrp2_dboard_interface(usrp2_impl *impl){
+    dboard_interface(impl_base *impl){
         _impl = impl;
     }
 
-    ~usrp2_dboard_interface(void){
+    ~dboard_interface(void){
         /* NOP */
     }
 
@@ -52,15 +52,15 @@ public:
     std::string read_spi (spi_dev_t, spi_latch_t, size_t){return "";}
 
     double get_rx_clock_rate(void){
-        return 100e6;
+        return _impl->get_master_clock_freq();
     }
 
     double get_tx_clock_rate(void){
-        return 100e6;
+        return _impl->get_master_clock_freq();
     }
 
 private:
-    usrp2_impl *_impl;
+    impl_base *_impl;
 };
 
-#endif /* INCLUDED_USRP2_DBOARD_INTERFACE_HPP */
+#endif /* INCLUDED_DBOARD_INTERFACE_HPP */

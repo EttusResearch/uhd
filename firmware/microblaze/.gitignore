@@ -40,3 +40,5 @@
 /configure.lineno
 /configure.guess
 /configure.sub
+*.deps
+*.o
