@@ -10,7 +10,7 @@ module u1e_core
    );
 
    // Debug circuitry
-   reg [31:0] 	ctr;
+   reg [31:0] 	ctr=0;
    always @(posedge clk_fpga)
      ctr <= ctr + 1;
    
@@ -37,7 +37,7 @@ module u1e_core
    assign wb_clk = clk_fpga;
    reg [15:0] 	reg_fast, reg_slow;
 
-   localparam [10:0] WB_ADR_REG_FAST = 36;
+   localparam [10:0] WB_ADR_REG_FAST = 11'd36;
    localparam [10:0] WB_ADR_REG_SLOW = 38;
    
    always @(posedge wb_clk)
@@ -47,6 +47,5 @@ module u1e_core
    assign wb_dat_miso = (wb_adr == WB_ADR_REG_FAST) ? reg_fast : 16'bx;
 
    assign wb_ack = wb_stb & wb_cyc;
-   
-   
-endmodule // u2plus
+      
+endmodule // u1e_core

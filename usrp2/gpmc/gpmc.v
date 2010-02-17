@@ -18,8 +18,8 @@ module gpmc
 
    // CS4 is RAM_2PORT for high-speed data
    ram_2port #(.DWIDTH(16), .AWIDTH(10)) ram_2port
-     (.clka(clk_fpga), .ena(~EM_NCS4), .wea(~EM_NWE), .addra(EM_A), .dia(EM_D), .doa(EM_D_ram),
-      .clkb(clk_fpga), .enb(0), .web(0), .addrb(0), .dib(0), .dob());
+     (.clka(wb_clk), .ena(~EM_NCS4), .wea(~EM_NWE), .addra(EM_A), .dia(EM_D), .doa(EM_D_ram),
+      .clkb(wb_clk), .enb(0), .web(0), .addrb(0), .dib(0), .dob());
 
    // CS6 is Control, Wishbone bus bridge (wb master)
    // Sync version
