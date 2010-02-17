@@ -82,9 +82,9 @@ public:
      * The mask controls which pins are controlled by ATR.
      *
      * \param bank      GPIO_TX_BANK or GPIO_RX_BANK
-     * \param tx_value  16-bits, 0=FPGA input, 1=FPGA output
-     * \param rx_value  16-bits, 0=FPGA input, 1=FPGA output
-     * \param mask      16-bits, 0=ignore, 1=atr
+     * \param tx_value  16-bits, 0=FPGA output low, 1=FPGA output high
+     * \param rx_value  16-bits, 0=FPGA output low, 1=FPGA output high
+     * \param mask      16-bits, 0=software, 1=atr
      */
     virtual void set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t rx_value, uint16_t mask) = 0;
 

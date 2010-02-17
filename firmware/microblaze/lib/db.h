@@ -103,4 +103,7 @@ bool
 db_set_gain(struct db_base *db, u2_fxpt_gain_t gain);
  
 
+void
+set_atr_regs(int bank, int atr_rxval, int atr_txval);
+
 #endif /* INCLUDED_DB_H */

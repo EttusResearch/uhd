@@ -105,17 +105,17 @@ lookup_dboard(int i2c_addr, struct db_base *default_db, char *msg)
 }
 
 void
-set_atr_regs(int bank, struct db_base *db)
+set_atr_regs(int bank, int atr_rxval, int atr_txval)
 {
   uint32_t	val[4];
   int		shift;
   int		mask;
   int		i;
 
-  val[ATR_IDLE] = 0;//db->atr_rxval;
-  val[ATR_RX]   = 0;//db->atr_rxval;
-  val[ATR_TX]   = 0;//db->atr_txval;
-  val[ATR_FULL] = 0;//db->atr_txval;
+  val[ATR_IDLE] = atr_rxval;
+  val[ATR_RX]   = atr_rxval;
+  val[ATR_TX]   = atr_txval;
+  val[ATR_FULL] = atr_txval;
 
   if (bank == GPIO_TX_BANK){
     mask = 0xffff0000;
@@ -139,7 +139,7 @@ set_gpio_mode(int bank, struct db_base *db)
   int	i;
 
   hal_gpio_set_ddr(bank, /*db->output_enables*/0, 0xffff);
-  set_atr_regs(bank, db);
+  //set_atr_regs(bank, db);
 
   for (i = 0; i < 16; i++){
     if (/*db->used_pins*/0 & (1 << i)){

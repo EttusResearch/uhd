@@ -156,6 +156,9 @@ void handle_udp_data_packet(
     _is_data = true;
 }
 
+#define OTW_GPIO_BANK_TO_NUM(bank) \
+    (((bank) == USRP2_GPIO_BANK_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
+
 void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
@@ -176,6 +179,9 @@ void handle_udp_ctrl_packet(
     //handle the data based on the id
     switch(ctrl_data_in->id){
 
+    /*******************************************************************
+     * Addressing
+     ******************************************************************/
     case USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
         struct ip_addr ip_addr = get_my_ip_addr();
@@ -194,6 +200,9 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.data.dboard_ids.rx_id = read_dboard_eeprom(I2C_ADDR_RX_A);
         break;
 
+    /*******************************************************************
+     * Clock Config
+     ******************************************************************/
     case USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO:
         //TODO handle MC_PROVIDE_CLK_TO_MIMO when we do MIMO setup
         ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE;
@@ -230,6 +239,53 @@ void handle_udp_ctrl_packet(
         }
         sr_time64->flags = pps_flags;
 
+        break;
+
+    /*******************************************************************
+     * GPIO
+     ******************************************************************/
+    case USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO:
+        hal_gpio_set_ddr(
+            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
+            ctrl_data_in->data.gpio_config.value,
+            ctrl_data_in->data.gpio_config.mask
+        );
+        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE;
+        break;
+
+    case USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO:
+        hal_gpio_write(
+            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
+            ctrl_data_in->data.gpio_config.value,
+            ctrl_data_in->data.gpio_config.mask
+        );
+        ctrl_data_out.id = USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE;
+        break;
+
+    case USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO:
+        ctrl_data_out.data.gpio_config.value = hal_gpio_read(
+            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank)
+        );
+        ctrl_data_out.id = USRP2_CTRL_ID_HERE_IS_YOUR_GPIO_PIN_VALS_DUDE;
+        break;
+
+    case USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO:{
+            //setup the atr registers for this bank
+            int bank = OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.atr_config.bank);
+            set_atr_regs(
+                bank,
+                ctrl_data_in->data.atr_config.rx_value,
+                ctrl_data_in->data.atr_config.tx_value
+            );
+
+            //setup the sels based on the atr config mask
+            int mask = ctrl_data_in->data.atr_config.mask;
+            for (int i = 0; i < 16; i++){
+                // set to either GPIO_SEL_SW or GPIO_SEL_ATR
+                hal_gpio_set_sel(bank, i, (mask & (1 << i)) ? 'a' : 's');
+            }
+            ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE;
+        }
         break;
 
     default:

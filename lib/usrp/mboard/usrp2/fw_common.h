@@ -51,6 +51,18 @@ typedef enum{
     USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO,
     USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE,
 
+    USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO,
+    USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE,
+
+    USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO,
+    USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE,
+
+    USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO,
+    USRP2_CTRL_ID_HERE_IS_YOUR_GPIO_PIN_VALS_DUDE,
+
+    USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO,
+    USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -71,6 +83,11 @@ typedef enum{
     USRP2_REF_SOURCE_MIMO
 } usrp2_ref_source_t;
 
+typedef enum{
+    USRP2_GPIO_BANK_RX,
+    USRP2_GPIO_BANK_TX
+} usrp2_gpio_bank_t;
+
 typedef struct{
     uint32_t id;
     uint32_t seq;
@@ -87,16 +104,19 @@ typedef struct{
             uint8_t ref_source;
             uint8_t _pad;
         } clock_config;
-        /*struct {
-            uint8_t bank;
-            uint16_t ddr;
-            uint16_t mask;
-        } gpio_ddr_args;
         struct {
             uint8_t bank;
-            uint16_t val;
+            uint8_t _pad[3];
+            uint16_t value;
             uint16_t mask;
-        } gpio_val_args;*/
+        } gpio_config;
+        struct {
+            uint8_t bank;
+            uint8_t _pad[3];
+            uint16_t tx_value;
+            uint16_t rx_value;
+            uint16_t mask;
+        } atr_config;
     } data;
 } usrp2_ctrl_data_t;
 

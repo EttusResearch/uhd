@@ -35,6 +35,7 @@ ADD_LIBRARY(uhd SHARED
     usrp/mboard/usrp2.cpp
     usrp/mboard/usrp2/impl_base.cpp
     usrp/mboard/usrp2/dboard_impl.cpp
+    usrp/mboard/usrp2/dboard_interface.cpp
 )
 
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})

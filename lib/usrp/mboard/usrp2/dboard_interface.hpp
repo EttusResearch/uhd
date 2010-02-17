@@ -23,25 +23,21 @@
 
 class dboard_interface : public uhd::usrp::dboard::interface{
 public:
-    dboard_interface(impl_base *impl){
-        _impl = impl;
-    }
+    dboard_interface(impl_base *impl);
 
-    ~dboard_interface(void){
-        /* NOP */
-    }
+    ~dboard_interface(void);
 
     void write_aux_dac(int, int){}
 
     int read_aux_adc(int){return 0;}
 
-    void set_atr_reg(gpio_bank_t, uint16_t, uint16_t, uint16_t){}
+    void set_atr_reg(gpio_bank_t, uint16_t, uint16_t, uint16_t);
 
-    void set_gpio_ddr(gpio_bank_t, uint16_t, uint16_t){}
+    void set_gpio_ddr(gpio_bank_t, uint16_t, uint16_t);
 
-    void write_gpio(gpio_bank_t, uint16_t, uint16_t){}
+    void write_gpio(gpio_bank_t, uint16_t, uint16_t);
 
-    uint16_t read_gpio(gpio_bank_t){return 0;}
+    uint16_t read_gpio(gpio_bank_t);
 
     void write_i2c (int, const std::string &){}
 
@@ -51,13 +47,9 @@ public:
 
     std::string read_spi (spi_dev_t, spi_latch_t, size_t){return "";}
 
-    double get_rx_clock_rate(void){
-        return _impl->get_master_clock_freq();
-    }
+    double get_rx_clock_rate(void);
 
-    double get_tx_clock_rate(void){
-        return _impl->get_master_clock_freq();
-    }
+    double get_tx_clock_rate(void);
 
 private:
     impl_base *_impl;
