@@ -12,7 +12,7 @@ module gpmc
 
    wire 	EM_output_enable = (~EM_NOE & (~EM_NCS4 | ~EM_NCS6));
    wire [15:0] 	EM_D_ram;
-   reg [15:0] 	EM_D_wb;
+   wire [15:0] 	EM_D_wb;
 
    assign EM_D = ~EM_output_enable ? 16'bz : ~EM_NCS4 ? EM_D_ram : EM_D_wb;
 
@@ -44,10 +44,13 @@ module gpmc
 	  wb_sel_o <= ~EM_NBE;
        end
 
+   reg [15:0] EM_D_wb_reg;
    always @(posedge wb_clk)
      if(wb_ack_i)
-       EM_D_wb <= wb_dat_miso;
+       EM_D_wb_reg <= wb_dat_miso;
 
+   assign EM_D_wb = wb_ack_i ? wb_dat_miso : EM_D_wb_reg;
+   
    // stb, oe_del, we_del
    assign wb_cyc_o = wb_stb_o;
 

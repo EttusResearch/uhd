@@ -25,16 +25,18 @@ module gpmc_model
       input [10:0] addr;
       input [15:0] data;
       begin
-	 #2;
+	 #2.3;
 	 EM_A <= addr[10:1];
 	 EM_D_int <= data;
-	 #4;
+	 #2.01;
 	 EM_NCS6 <= 0;
-	 #5;
+	 #14;
 	 EM_NWE <= 0;
-	 #41;
-	 EM_NWE <= 1;
+	 #77.5;
 	 EM_NCS6 <= 1;
+	 //#1.5;
+	 EM_NWE <= 1;
+	 #6;
 	 EM_A <= 10'bz;
 	 EM_D_int <= 16'bz;
       end
@@ -43,17 +45,19 @@ module gpmc_model
    task GPMC_Read;
       input [10:0] addr;
       begin
-	 #2;
+	 #1.3;
 	 EM_A <= addr[10:1];
-	 #4;
+	 #3;
 	 EM_NCS6 <= 0;
-	 #5;
+	 #14;
 	 EM_NOE <= 0;
-	 #41;
-	 EM_NOE <= 1;
+	 #77.5;
 	 EM_NCS6 <= 1;
-	 EM_A <= 10'bz;
+	 //#1.5;
 	 $display("Data Read from GPMC: %X",EM_D);
+	 EM_NOE <= 1;
+	 #254;
+	 EM_A <= 10'bz;
       end
    endtask // GPMC_Read
    
