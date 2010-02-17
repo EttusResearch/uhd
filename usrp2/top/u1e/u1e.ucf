@@ -3,8 +3,6 @@ NET "CLK_FPGA_P"  LOC = "Y11"  ;
 NET "CLK_FPGA_N"  LOC = "Y10"  ;
 
 ## GPMC
-NET "EM_CLK"  LOC = "F11"  ;
-
 NET "EM_D<15>"  LOC = "D13"  ;
 NET "EM_D<14>"  LOC = "D15"  ;
 NET "EM_D<13>"  LOC = "C16"  ;
@@ -33,20 +31,20 @@ NET "EM_A<3>"  LOC = "E7"  ;
 NET "EM_A<2>"  LOC = "A7"  ;
 NET "EM_A<1>"  LOC = "C15"  ;
 
-#NET "EM_NCS6"  LOC = "E17"  ;
+NET "EM_NCS6"  LOC = "E17"  ;
 #NET "EM_NCS5"  LOC = "E10"  ;
 NET "EM_NCS4"  LOC = "E6"  ;
 #NET "EM_NCS1"  LOC = "D18"  ;
 #NET "EM_NCS0"  LOC = "D17"  ;
 
+NET "EM_CLK"  LOC = "F11"  ;
 NET "EM_WAIT0"  LOC = "F14"  ;
-#NET "EM_NBE1"  LOC = "D14"  ;
-#NET "EM_NBE0"  LOC = "A13"  ;
-NET "EM_NWP"  LOC = "F13"  ;
+NET "EM_NBE<1>"  LOC = "D14"  ;
+NET "EM_NBE<0>"  LOC = "A13"  ;
 NET "EM_NWE"  LOC = "B13"  ;
 NET "EM_NOE"  LOC = "A14"  ;
-NET "EM_NADV_ALE"  LOC = "B15"  ;
-
+#NET "EM_NADV_ALE"  LOC = "B15"  ;
+#NET "EM_NWP"  LOC = "F13"  ;
 
 ## Overo GPIO
 #NET "overo_gpio0"  LOC = "F9"  ;

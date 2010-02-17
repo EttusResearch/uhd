@@ -174,7 +174,8 @@ timing/time_receiver.v \
 timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
-top/u2_core/u2_core.v \
+gpmc/gpmc.v \
+top/u1e/u1e_core.v \
 top/u1e/u1e.ucf \
 top/u1e/u1e.v 
 
