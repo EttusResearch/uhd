@@ -194,6 +194,44 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.data.dboard_ids.rx_id = read_dboard_eeprom(I2C_ADDR_RX_A);
         break;
 
+    case USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO:
+        //TODO handle MC_PROVIDE_CLK_TO_MIMO when we do MIMO setup
+        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE;
+
+        //handle the 10 mhz ref source
+        uint32_t ref_flags = 0;
+        switch(ctrl_data_out.data.clock_config.ref_source){
+        case USRP2_REF_SOURCE_INT:
+            ref_flags = MC_WE_DONT_LOCK; break;
+        case USRP2_REF_SOURCE_SMA:
+            ref_flags = MC_WE_LOCK_TO_SMA; break;
+        case USRP2_REF_SOURCE_MIMO:
+            ref_flags = MC_WE_LOCK_TO_MIMO; break;
+        }
+        clocks_mimo_config(ref_flags & MC_REF_CLK_MASK);
+
+        //handle the pps config
+        uint32_t pps_flags = 0;
+
+        //fill in the pps polarity flags
+        switch(ctrl_data_out.data.clock_config.pps_polarity){
+        case USRP2_PPS_POLARITY_POS:
+            pps_flags |= 0x01 << 0; break;
+        case USRP2_PPS_POLARITY_NEG:
+            pps_flags |= 0x00 << 0; break;
+        }
+
+        //fill in the pps source flags
+        switch(ctrl_data_out.data.clock_config.pps_source){
+        case USRP2_PPS_SOURCE_SMA:
+            pps_flags |= 0x00 << 1; break;
+        case USRP2_PPS_SOURCE_MIMO:
+            pps_flags |= 0x01 << 1; break;
+        }
+        sr_time64->flags = pps_flags;
+
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 
