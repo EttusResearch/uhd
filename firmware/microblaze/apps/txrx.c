@@ -44,6 +44,7 @@
 #include <vrt/bits.h>
 #include "usrp2/fw_common.h"
 #include <db.h>
+#include <i2c.h>
 
 #define FW_SETS_SEQNO	1	// define to 0 or 1 (FIXME must be 1 for now)
 
@@ -316,6 +317,33 @@ void handle_udp_ctrl_packet(
             }
             ctrl_data_out.data.spi_args.bytes = num_bytes;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
+        }
+        break;
+
+    /*******************************************************************
+     * I2C
+     ******************************************************************/
+    case USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO:{
+            uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
+            i2c_read(
+                ctrl_data_in->data.i2c_args.addr,
+                ctrl_data_out.data.i2c_args.data,
+                num_bytes
+            );
+            ctrl_data_out.id = USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE;
+            ctrl_data_out.data.i2c_args.bytes = num_bytes;
+        }
+        break;
+
+    case USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO:{
+            uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
+            i2c_write(
+                ctrl_data_in->data.i2c_args.addr,
+                ctrl_data_in->data.i2c_args.data,
+                num_bytes
+            );
+            ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
+            ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
         break;
 

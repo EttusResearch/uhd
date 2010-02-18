@@ -39,9 +39,9 @@ public:
 
     uint16_t read_gpio(gpio_bank_t);
 
-    void write_i2c(int, const byte_vector_t &){}
+    void write_i2c(int, const byte_vector_t &);
 
-    byte_vector_t read_i2c(int, size_t){return byte_vector_t();}
+    byte_vector_t read_i2c(int, size_t);
 
     double get_rx_clock_rate(void);
 

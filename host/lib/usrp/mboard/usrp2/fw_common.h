@@ -66,6 +66,12 @@ typedef enum{
     USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO,
     USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE,
 
+    USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO,
+    USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE,
+
+    USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO,
+    USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -133,6 +139,11 @@ typedef struct{
             uint8_t bytes;
             uint8_t data[sizeof(uint32_t)];
         } spi_args;
+        struct {
+            uint8_t addr;
+            uint8_t bytes;
+            uint8_t data[sizeof(uint32_t)];
+        } i2c_args;
     } data;
 } usrp2_ctrl_data_t;
 

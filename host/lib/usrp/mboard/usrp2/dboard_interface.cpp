@@ -19,6 +19,8 @@
 #include "dboard_interface.hpp"
 #include "fw_common.h"
 
+using namespace uhd::usrp::dboard;
+
 /***********************************************************************
  * Structors
  **********************************************************************/
@@ -50,7 +52,7 @@ double dboard_interface::get_tx_clock_rate(void){
  * \param bank the dboard interface gpio bank enum
  * \return an over the wire representation
  */
-static uint8_t gpio_bank_to_otw(uhd::usrp::dboard::interface::gpio_bank_t bank){
+static uint8_t gpio_bank_to_otw(interface::gpio_bank_t bank){
     switch(bank){
     case uhd::usrp::dboard::interface::GPIO_TX_BANK: return USRP2_DIR_TX;
     case uhd::usrp::dboard::interface::GPIO_RX_BANK: return USRP2_DIR_RX;
@@ -119,7 +121,7 @@ void dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t
  * \param dev the dboard interface spi dev enum
  * \return an over the wire representation
  */
-static uint8_t spi_dev_to_otw(uhd::usrp::dboard::interface::spi_dev_t dev){
+static uint8_t spi_dev_to_otw(interface::spi_dev_t dev){
     switch(dev){
     case uhd::usrp::dboard::interface::SPI_TX_DEV: return USRP2_DIR_TX;
     case uhd::usrp::dboard::interface::SPI_RX_DEV: return USRP2_DIR_RX;
@@ -133,7 +135,7 @@ static uint8_t spi_dev_to_otw(uhd::usrp::dboard::interface::spi_dev_t dev){
  * \param latch the dboard interface spi latch enum
  * \return an over the wire representation
  */
-static uint8_t spi_latch_to_otw(uhd::usrp::dboard::interface::spi_latch_t latch){
+static uint8_t spi_latch_to_otw(interface::spi_latch_t latch){
     switch(latch){
     case uhd::usrp::dboard::interface::SPI_LATCH_RISE: return USRP2_CLK_EDGE_RISE;
     case uhd::usrp::dboard::interface::SPI_LATCH_FALL: return USRP2_CLK_EDGE_FALL;
@@ -147,7 +149,7 @@ static uint8_t spi_latch_to_otw(uhd::usrp::dboard::interface::spi_latch_t latch)
  * \param push the dboard interface spi push enum
  * \return an over the wire representation
  */
-static uint8_t spi_push_to_otw(uhd::usrp::dboard::interface::spi_push_t push){
+static uint8_t spi_push_to_otw(interface::spi_push_t push){
     switch(push){
     case uhd::usrp::dboard::interface::SPI_PUSH_RISE: return USRP2_CLK_EDGE_RISE;
     case uhd::usrp::dboard::interface::SPI_PUSH_FALL: return USRP2_CLK_EDGE_FALL;
@@ -155,7 +157,7 @@ static uint8_t spi_push_to_otw(uhd::usrp::dboard::interface::spi_push_t push){
     throw std::invalid_argument("unknown spi push type");
 }
 
-uhd::usrp::dboard::interface::byte_vector_t dboard_interface::transact_spi(
+interface::byte_vector_t dboard_interface::transact_spi(
     spi_dev_t dev,
     spi_latch_t latch,
     spi_push_t push,
@@ -188,6 +190,52 @@ uhd::usrp::dboard::interface::byte_vector_t dboard_interface::transact_spi(
     byte_vector_t result;
     for (size_t i = 0; i < buf.size(); i++){
         result.push_back(in_data.data.spi_args.data[i]);
+    }
+    return result;
+}
+
+/***********************************************************************
+ * I2C
+ **********************************************************************/
+void dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
+    out_data.data.i2c_args.addr = i2c_addr;
+    out_data.data.i2c_args.bytes = buf.size();
+
+    //limitation of i2c transaction size
+    ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
+
+    //copy in the data
+    for (size_t i = 0; i < buf.size(); i++){
+        out_data.data.i2c_args.data[i] = buf[i];
+    }
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+}
+
+interface::byte_vector_t dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
+    out_data.data.i2c_args.addr = i2c_addr;
+    out_data.data.i2c_args.bytes = num_bytes;
+
+    //limitation of i2c transaction size
+    ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
+    ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
+
+    //copy out the data
+    byte_vector_t result;
+    for (size_t i = 0; i < num_bytes; i++){
+        result.push_back(in_data.data.i2c_args.data[i]);
     }
     return result;
 }

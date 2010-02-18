@@ -126,10 +126,10 @@ public:
     /*!
      * \brief Read from I2C peripheral
      * \param i2c_addr I2C bus address (7-bits)
-     * \param len number of bytes to read
+     * \param num_bytes number of bytes to read
      * \return the data read if successful, else a zero length string.
      */
-    virtual byte_vector_t read_i2c(int i2c_addr, size_t len) = 0;
+    virtual byte_vector_t read_i2c(int i2c_addr, size_t num_bytes) = 0;
 
     /*!
      * \brief Write data to SPI bus peripheral.
