@@ -27,9 +27,9 @@ public:
 
     ~dboard_interface(void);
 
-    void write_aux_dac(int, int){}
+    void write_aux_dac(unit_type_t, int, int);
 
-    int read_aux_adc(int){return 0;}
+    int read_aux_adc(unit_type_t, int);
 
     void set_atr_reg(gpio_bank_t, uint16_t, uint16_t, uint16_t);
 

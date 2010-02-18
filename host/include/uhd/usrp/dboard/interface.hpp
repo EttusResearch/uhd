@@ -35,6 +35,12 @@ public:
     typedef boost::shared_ptr<interface> sptr;
     typedef std::vector<uint8_t> byte_vector_t;
 
+    //tells the host which unit to use
+    enum unit_type_t{
+        UNIT_TYPE_RX,
+        UNIT_TYPE_TX
+    };
+
     //tells the host which device to use
     enum spi_dev_t{
         SPI_TX_DEV,
@@ -65,17 +71,19 @@ public:
 
     /*!
      * Write to an aux dac.
+     * \param unit which unit rx or tx
      * \param which_dac the dac index 0, 1, 2, 3...
      * \param value the value to write
      */
-    virtual void write_aux_dac(int which_dac, int value) = 0;
+    virtual void write_aux_dac(unit_type_t unit, int which_dac, int value) = 0;
 
     /*!
      * Read from an aux adc.
+     * \param unit which unit rx or tx
      * \param which_adc the adc index 0, 1, 2, 3...
      * \return the value that was read
      */
-    virtual int read_aux_adc(int which_adc) = 0;
+    virtual int read_aux_adc(unit_type_t unit, int which_adc) = 0;
 
     /*!
      * Set daughterboard ATR register.

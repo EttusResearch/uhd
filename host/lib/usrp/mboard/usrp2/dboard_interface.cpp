@@ -239,3 +239,46 @@ interface::byte_vector_t dboard_interface::read_i2c(int i2c_addr, size_t num_byt
     }
     return result;
 }
+
+/***********************************************************************
+ * Aux DAX/ADC
+ **********************************************************************/
+/*!
+ * Static function to convert a unit type enum
+ * to an over-the-wire value for the usrp2 control.
+ * \param unit the dboard interface unit type enum
+ * \return an over the wire representation
+ */
+static uint8_t spi_dev_to_otw(interface::unit_type_t unit){
+    switch(unit){
+    case uhd::usrp::dboard::interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
+    case uhd::usrp::dboard::interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
+    }
+    throw std::invalid_argument("unknown unit type type");
+}
+
+void dboard_interface::write_aux_dac(interface::unit_type_t unit, int which, int value){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
+    out_data.data.aux_args.dir = spi_dev_to_otw(unit);
+    out_data.data.aux_args.which = which;
+    out_data.data.aux_args.dir = htonl(value);
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
+}
+
+int dboard_interface::read_aux_adc(interface::unit_type_t unit, int which){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);
+    out_data.data.aux_args.dir = spi_dev_to_otw(unit);
+    out_data.data.aux_args.which = which;
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE);
+    return ntohl(in_data.data.aux_args.value);
+}

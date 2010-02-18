@@ -72,6 +72,12 @@ typedef enum{
     USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO,
     USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE,
 
+    USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO,
+    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE,
+
+    USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO,
+    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -144,6 +150,12 @@ typedef struct{
             uint8_t bytes;
             uint8_t data[sizeof(uint32_t)];
         } i2c_args;
+        struct {
+            uint8_t dir;
+            uint8_t which;
+            uint8_t _pad[2];
+            uint32_t value;
+        } aux_args;
     } data;
 } usrp2_ctrl_data_t;
 
