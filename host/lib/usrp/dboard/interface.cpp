@@ -26,3 +26,29 @@ interface::interface(void){
 interface::~interface(void){
     /* NOP */
 }
+
+void interface::write_spi(
+    spi_dev_t dev,
+    spi_push_t push,
+    const byte_vector_t &buf
+){
+    transact_spi(dev, SPI_LATCH_RISE, push, buf, false); //dont readback
+}
+
+interface::byte_vector_t interface::read_spi(
+    spi_dev_t dev,
+    spi_latch_t latch,
+    size_t num_bytes
+){
+    byte_vector_t buf(num_bytes, 0x00); //dummy data
+    return transact_spi(dev, latch, SPI_PUSH_RISE, buf, true); //readback
+}
+
+interface::byte_vector_t interface::read_write_spi(
+    spi_dev_t dev,
+    spi_latch_t latch,
+    spi_push_t push,
+    const byte_vector_t &buf
+){
+    return transact_spi(dev, latch, push, buf, true); //readback
+}

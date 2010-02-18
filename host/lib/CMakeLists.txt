@@ -31,7 +31,6 @@ ADD_LIBRARY(uhd SHARED
     usrp/dboard/interface.cpp
     usrp/dboard/manager.cpp
     usrp/mboard/base.cpp
-    usrp/mboard/test.cpp
     usrp/mboard/usrp2.cpp
     usrp/mboard/usrp2/impl_base.cpp
     usrp/mboard/usrp2/dboard_impl.cpp

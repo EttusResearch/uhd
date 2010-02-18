@@ -135,6 +135,17 @@ manager::manager(
     register_internal_dboards(); //always call first
     const dboard_ctor_t rx_dboard_ctor = get_dboard_ctor(rx_dboard_id, "rx");
     const dboard_ctor_t tx_dboard_ctor = get_dboard_ctor(tx_dboard_id, "tx");
+
+    //initialize the gpio pins before creating subdevs
+    dboard_interface->set_gpio_ddr(interface::GPIO_RX_BANK, 0x0000, 0xffff); //all inputs
+    dboard_interface->set_gpio_ddr(interface::GPIO_TX_BANK, 0x0000, 0xffff);
+
+    dboard_interface->write_gpio(interface::GPIO_RX_BANK, 0x0000, 0xffff); //all zeros
+    dboard_interface->write_gpio(interface::GPIO_TX_BANK, 0x0000, 0xffff);
+
+    dboard_interface->set_atr_reg(interface::GPIO_RX_BANK, 0x0000, 0x0000, 0x0000); //software controlled
+    dboard_interface->set_atr_reg(interface::GPIO_TX_BANK, 0x0000, 0x0000, 0x0000);
+
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
         BOOST_FOREACH(std::string name, ctor_to_names_map[rx_dboard_ctor]){
@@ -151,6 +162,7 @@ manager::manager(
             );
         }
     }
+
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
         //make the rx subdevs

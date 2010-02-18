@@ -19,9 +19,7 @@
 ADD_EXECUTABLE(main_test
     main_test.cpp
     addr_test.cpp
-    device_test.cpp
     gain_handler_test.cpp
-    usrp_dboard_test.cpp
     wax_test.cpp
 )
 

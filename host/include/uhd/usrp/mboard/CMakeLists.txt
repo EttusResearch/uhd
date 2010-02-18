@@ -18,7 +18,6 @@
 
 INSTALL(FILES
     base.hpp
-    test.hpp
     usrp2.hpp
     DESTINATION ${HEADER_DIR}/uhd/usrp/mboard
 )

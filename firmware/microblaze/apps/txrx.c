@@ -157,7 +157,7 @@ void handle_udp_data_packet(
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \
-    (((bank) == USRP2_GPIO_BANK_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
+    (((bank) == USRP2_DIR_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
 
 void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
@@ -285,6 +285,37 @@ void handle_udp_ctrl_packet(
                 hal_gpio_set_sel(bank, i, (mask & (1 << i)) ? 'a' : 's');
             }
             ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE;
+        }
+        break;
+
+    /*******************************************************************
+     * SPI
+     ******************************************************************/
+    case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
+            uint8_t num_bytes = ctrl_data_in->data.spi_args.bytes;
+
+            //load the data from the array of bytes
+            uint32_t data = 0x0;
+            for (size_t i = 0; i < num_bytes; i++){
+                data = (data << 8) | ctrl_data_in->data.spi_args.data[i];
+            }
+
+            //transact
+            uint32_t result = spi_transact(
+                (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
+                (ctrl_data_in->data.spi_args.dev == USRP2_DIR_RX)? SPI_SS_RX_DB : SPI_SS_TX_DB,
+                data, num_bytes*8, //length in bits
+                (ctrl_data_in->data.spi_args.push == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
+                (ctrl_data_in->data.spi_args.latch == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
+            );
+
+            //load the result into the array of bytes
+            for (size_t i = 0; i < num_bytes; i++){
+                uint8_t byte_shift = num_bytes - i - 1;
+                ctrl_data_out.data.spi_args.data[i] = (result >> (byte_shift*8)) & 0xff;
+            }
+            ctrl_data_out.data.spi_args.bytes = num_bytes;
+            ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
         }
         break;
 

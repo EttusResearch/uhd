@@ -63,6 +63,9 @@ typedef enum{
     USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO,
     USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE,
 
+    USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO,
+    USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -84,9 +87,14 @@ typedef enum{
 } usrp2_ref_source_t;
 
 typedef enum{
-    USRP2_GPIO_BANK_RX,
-    USRP2_GPIO_BANK_TX
-} usrp2_gpio_bank_t;
+    USRP2_DIR_RX,
+    USRP2_DIR_TX
+} usrp2_dir_which_t;
+
+typedef enum{
+    USRP2_CLK_EDGE_RISE,
+    USRP2_CLK_EDGE_FALL
+} usrp2_clk_edge_t;
 
 typedef struct{
     uint32_t id;
@@ -117,6 +125,14 @@ typedef struct{
             uint16_t rx_value;
             uint16_t mask;
         } atr_config;
+        struct {
+            uint8_t dev;
+            uint8_t latch;
+            uint8_t push;
+            uint8_t readback;
+            uint8_t bytes;
+            uint8_t data[sizeof(uint32_t)];
+        } spi_args;
     } data;
 } usrp2_ctrl_data_t;
 

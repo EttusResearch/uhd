@@ -39,19 +39,23 @@ public:
 
     uint16_t read_gpio(gpio_bank_t);
 
-    void write_i2c (int, const std::string &){}
+    void write_i2c(int, const byte_vector_t &){}
 
-    std::string read_i2c (int, size_t){return "";}
-
-    void write_spi (spi_dev_t, spi_push_t, const std::string &){}
-
-    std::string read_spi (spi_dev_t, spi_latch_t, size_t){return "";}
+    byte_vector_t read_i2c(int, size_t){return byte_vector_t();}
 
     double get_rx_clock_rate(void);
 
     double get_tx_clock_rate(void);
 
 private:
+    byte_vector_t transact_spi(
+        spi_dev_t dev,
+        spi_latch_t latch,
+        spi_push_t push,
+        const byte_vector_t &buf,
+        bool readback
+    );
+
     impl_base *_impl;
 };
 

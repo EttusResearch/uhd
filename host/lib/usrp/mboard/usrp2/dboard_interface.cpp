@@ -52,10 +52,10 @@ double dboard_interface::get_tx_clock_rate(void){
  */
 static uint8_t gpio_bank_to_otw(uhd::usrp::dboard::interface::gpio_bank_t bank){
     switch(bank){
-    case uhd::usrp::dboard::interface::GPIO_TX_BANK: return USRP2_GPIO_BANK_TX;
-    case uhd::usrp::dboard::interface::GPIO_RX_BANK: return USRP2_GPIO_BANK_RX;
+    case uhd::usrp::dboard::interface::GPIO_TX_BANK: return USRP2_DIR_TX;
+    case uhd::usrp::dboard::interface::GPIO_RX_BANK: return USRP2_DIR_RX;
     }
-    throw std::runtime_error("unknown gpio bank");
+    throw std::invalid_argument("unknown gpio bank type");
 }
 
 void dboard_interface::set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint16_t mask){
@@ -108,4 +108,86 @@ void dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE);
+}
+
+/***********************************************************************
+ * SPI
+ **********************************************************************/
+/*!
+ * Static function to convert a spi dev enum
+ * to an over-the-wire value for the usrp2 control.
+ * \param dev the dboard interface spi dev enum
+ * \return an over the wire representation
+ */
+static uint8_t spi_dev_to_otw(uhd::usrp::dboard::interface::spi_dev_t dev){
+    switch(dev){
+    case uhd::usrp::dboard::interface::SPI_TX_DEV: return USRP2_DIR_TX;
+    case uhd::usrp::dboard::interface::SPI_RX_DEV: return USRP2_DIR_RX;
+    }
+    throw std::invalid_argument("unknown spi device type");
+}
+
+/*!
+ * Static function to convert a spi latch enum
+ * to an over-the-wire value for the usrp2 control.
+ * \param latch the dboard interface spi latch enum
+ * \return an over the wire representation
+ */
+static uint8_t spi_latch_to_otw(uhd::usrp::dboard::interface::spi_latch_t latch){
+    switch(latch){
+    case uhd::usrp::dboard::interface::SPI_LATCH_RISE: return USRP2_CLK_EDGE_RISE;
+    case uhd::usrp::dboard::interface::SPI_LATCH_FALL: return USRP2_CLK_EDGE_FALL;
+    }
+    throw std::invalid_argument("unknown spi latch type");
+}
+
+/*!
+ * Static function to convert a spi push enum
+ * to an over-the-wire value for the usrp2 control.
+ * \param push the dboard interface spi push enum
+ * \return an over the wire representation
+ */
+static uint8_t spi_push_to_otw(uhd::usrp::dboard::interface::spi_push_t push){
+    switch(push){
+    case uhd::usrp::dboard::interface::SPI_PUSH_RISE: return USRP2_CLK_EDGE_RISE;
+    case uhd::usrp::dboard::interface::SPI_PUSH_FALL: return USRP2_CLK_EDGE_FALL;
+    }
+    throw std::invalid_argument("unknown spi push type");
+}
+
+uhd::usrp::dboard::interface::byte_vector_t dboard_interface::transact_spi(
+    spi_dev_t dev,
+    spi_latch_t latch,
+    spi_push_t push,
+    const byte_vector_t &buf,
+    bool readback
+){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
+    out_data.data.spi_args.dev = spi_dev_to_otw(dev);
+    out_data.data.spi_args.latch = spi_latch_to_otw(latch);
+    out_data.data.spi_args.push = spi_push_to_otw(push);
+    out_data.data.spi_args.readback = (readback)? 1 : 0;
+    out_data.data.spi_args.bytes = buf.size();
+
+    //limitation of spi transaction size
+    ASSERT_THROW(buf.size() <= sizeof(out_data.data.spi_args.data));
+
+    //copy in the data
+    for (size_t i = 0; i < buf.size(); i++){
+        out_data.data.spi_args.data[i] = buf[i];
+    }
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
+    ASSERT_THROW(in_data.data.spi_args.bytes == buf.size());
+
+    //copy out the data
+    byte_vector_t result;
+    for (size_t i = 0; i < buf.size(); i++){
+        result.push_back(in_data.data.spi_args.data[i]);
+    }
+    return result;
 }

@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP
 
 #include <boost/shared_ptr.hpp>
+#include <vector>
 #include <stdint.h>
 
 namespace uhd{ namespace usrp{ namespace dboard{
@@ -32,6 +33,7 @@ namespace uhd{ namespace usrp{ namespace dboard{
 class interface{
 public:
     typedef boost::shared_ptr<interface> sptr;
+    typedef std::vector<uint8_t> byte_vector_t;
 
     //tells the host which device to use
     enum spi_dev_t{
@@ -119,7 +121,7 @@ public:
      * \param i2c_addr I2C bus address (7-bits)
      * \param buf the data to write
      */
-    virtual void write_i2c(int i2c_addr, const std::string &buf) = 0;
+    virtual void write_i2c(int i2c_addr, const byte_vector_t &buf) = 0;
 
     /*!
      * \brief Read from I2C peripheral
@@ -127,7 +129,7 @@ public:
      * \param len number of bytes to read
      * \return the data read if successful, else a zero length string.
      */
-    virtual std::string read_i2c(int i2c_addr, size_t len) = 0;
+    virtual byte_vector_t read_i2c(int i2c_addr, size_t len) = 0;
 
     /*!
      * \brief Write data to SPI bus peripheral.
@@ -136,17 +138,29 @@ public:
      * \param push args for writing
      * \param buf the data to write
      */
-    virtual void write_spi(spi_dev_t dev, spi_push_t push, const std::string &buf) = 0;
+    void write_spi(spi_dev_t dev, spi_push_t push, const byte_vector_t &buf);
 
     /*!
-     * \brief Read data from SPI bus peripheral.
+     * \brief Read data to SPI bus peripheral.
      *
      * \param dev which spi device
-     * \param push args for reading
-     * \param len number of bytes to read
-     * \return the data read if sucessful, else a zero length string.
+     * \param latch args for reading
+     * \param num_bytes number of bytes to read
+     * \return the data that was read
      */
-    virtual std::string read_spi(spi_dev_t dev, spi_latch_t latch, size_t len) = 0;
+    byte_vector_t read_spi(spi_dev_t dev, spi_latch_t latch, size_t num_bytes);
+
+    /*!
+     * \brief Read and write data to SPI bus peripheral.
+     * The data read back will be the same length as the input buffer.
+     *
+     * \param dev which spi device
+     * \param latch args for reading
+     * \param push args for clock
+     * \param buf the data to write
+     * \return the data that was read
+     */
+    byte_vector_t read_write_spi(spi_dev_t dev, spi_latch_t latch, spi_push_t push, const byte_vector_t &buf);
 
     /*!
      * \brief Get the rate of the rx dboard clock.
@@ -160,6 +174,24 @@ public:
      */
     virtual double get_tx_clock_rate(void) = 0;
 
+private:
+    /*!
+     * \brief Read and write data to SPI bus peripheral.
+     *
+     * \param dev which spi device
+     * \param latch args for reading
+     * \param push args for clock
+     * \param buf the data to write
+     * \param readback false for write only
+     * \return the data that was read
+     */
+    virtual byte_vector_t transact_spi(
+        spi_dev_t dev,
+        spi_latch_t latch,
+        spi_push_t push,
+        const byte_vector_t &buf,
+        bool readback
+    ) = 0;
 };
 
 }}} //namespace
