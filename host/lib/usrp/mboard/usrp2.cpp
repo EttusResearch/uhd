@@ -22,7 +22,7 @@
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
 #include <netinet/in.h>
-#include "usrp2/impl_base.hpp"
+#include "usrp2/usrp2_impl.hpp"
 
 using namespace uhd::usrp::mboard;
 
@@ -92,8 +92,8 @@ usrp2::usrp2(const device_addr_t &device_addr){
     );
 
     //create the usrp2 implementation guts
-    _impl = impl_base::sptr(
-        new impl_base(ctrl_transport, data_transport)
+    _impl = usrp2_impl::sptr(
+        new usrp2_impl(ctrl_transport, data_transport)
     );
 }
 
@@ -105,12 +105,12 @@ usrp2::~usrp2(void){
  * Get Properties
  **********************************************************************/
 void usrp2::get(const wax::obj &key, wax::obj &val){
-    return wax::cast<impl_base::sptr>(_impl)->get(key, val);
+    return wax::cast<usrp2_impl::sptr>(_impl)->get(key, val);
 }
 
 /***********************************************************************
  * Set Properties
  **********************************************************************/
 void usrp2::set(const wax::obj &key, const wax::obj &val){
-    return wax::cast<impl_base::sptr>(_impl)->set(key, val);
+    return wax::cast<usrp2_impl::sptr>(_impl)->set(key, val);
 }

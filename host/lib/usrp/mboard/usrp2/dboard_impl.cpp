@@ -15,62 +15,110 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/format.hpp>
 #include <uhd/utils.hpp>
 #include <uhd/props.hpp>
-#include <iostream>
-#include "dboard_impl.hpp"
+#include "usrp2_impl.hpp"
 #include "dboard_interface.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
 
-dboard_impl::dboard_impl(uhd::usrp::dboard::manager::sptr mgr, type_t type){
-    _mgr = mgr;
-    _type = type;
+/***********************************************************************
+ * Helper Methods
+ **********************************************************************/
+void usrp2_impl::dboard_init(void){
+    //grab the dboard ids over the control line
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO);
+    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE);
+    std::cout << boost::format("rx id 0x%.2x, tx id 0x%.2x")
+        % ntohs(in_data.data.dboard_ids.rx_id)
+        % ntohs(in_data.data.dboard_ids.tx_id) << std::endl;
+
+    //extract the dboard ids an convert them to enums
+    dboard::dboard_id_t rx_dboard_id = static_cast<dboard::dboard_id_t>(
+        ntohs(in_data.data.dboard_ids.rx_id)
+    );
+    dboard::dboard_id_t tx_dboard_id = static_cast<dboard::dboard_id_t>(
+        ntohs(in_data.data.dboard_ids.tx_id)
+    );
+
+    //create a new dboard interface and manager
+    dboard::interface::sptr _dboard_interface(
+        new dboard_interface(this)
+    );
+    dboard::manager::sptr _dboard_manager(
+        new dboard::manager(rx_dboard_id, tx_dboard_id, _dboard_interface)
+    );
+
+    //load dboards
+    _rx_dboards[""] = wax_obj_proxy(
+        boost::bind(&usrp2_impl::rx_dboard_get, this, _1, _2),
+        boost::bind(&usrp2_impl::rx_dboard_set, this, _1, _2)
+    );
+    _tx_dboards[""] = wax_obj_proxy(
+        boost::bind(&usrp2_impl::tx_dboard_get, this, _1, _2),
+        boost::bind(&usrp2_impl::tx_dboard_set, this, _1, _2)
+    );
 }
 
-dboard_impl::~dboard_impl(void){
-    /* NOP */
-}
-
-void dboard_impl::get(const wax::obj &key_, wax::obj &val){
+/***********************************************************************
+ * RX DBoard Properties
+ **********************************************************************/
+void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(wax::cast<dboard_prop_t>(key)){
     case DBOARD_PROP_NAME:
-        val = std::string("usrp2 dboard");
+        val = std::string("usrp2 dboard (rx unit)");
         return;
 
     case DBOARD_PROP_SUBDEV:
-        switch(_type){
-        case TYPE_RX:
-            val = _mgr->get_rx_subdev(name);
-            return;
-
-        case TYPE_TX:
-            val = _mgr->get_tx_subdev(name);
-            return;
-        }
+        val = _dboard_manager->get_rx_subdev(name);
+        return;
 
     case DBOARD_PROP_SUBDEV_NAMES:
-        switch(_type){
-        case TYPE_RX:
-            val = _mgr->get_rx_subdev_names();
-            return;
-
-        case TYPE_TX:
-            val = _mgr->get_tx_subdev_names();
-            return;
-        }
+        val = _dboard_manager->get_rx_subdev_names();
+        return;
 
     case DBOARD_PROP_CODEC:
         throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 
-void dboard_impl::set(const wax::obj &, const wax::obj &){
+void usrp2_impl::rx_dboard_set(const wax::obj &, const wax::obj &){
+    throw std::runtime_error("Cannot set on usrp2 dboard");
+}
+
+/***********************************************************************
+ * TX DBoard Properties
+ **********************************************************************/
+void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the get request conditioned on the key
+    switch(wax::cast<dboard_prop_t>(key)){
+    case DBOARD_PROP_NAME:
+        val = std::string("usrp2 dboard (tx unit)");
+        return;
+
+    case DBOARD_PROP_SUBDEV:
+        val = _dboard_manager->get_tx_subdev(name);
+        return;
+
+    case DBOARD_PROP_SUBDEV_NAMES:
+        val = _dboard_manager->get_tx_subdev_names();
+        return;
+
+    case DBOARD_PROP_CODEC:
+        throw std::runtime_error("unhandled prop in usrp2 dboard");
+    }
+}
+
+void usrp2_impl::tx_dboard_set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("Cannot set on usrp2 dboard");
 }

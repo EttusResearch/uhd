@@ -17,14 +17,14 @@
 
 #include <uhd/utils.hpp>
 #include "dboard_interface.hpp"
-#include "fw_common.h"
+#include "usrp2_impl.hpp"
 
 using namespace uhd::usrp::dboard;
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-dboard_interface::dboard_interface(impl_base *impl){
+dboard_interface::dboard_interface(usrp2_impl *impl){
     _impl = impl;
 }
 

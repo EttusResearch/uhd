@@ -16,7 +16,7 @@
 #
 
 
-ADD_LIBRARY(uhd SHARED
+SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
@@ -32,10 +32,14 @@ ADD_LIBRARY(uhd SHARED
     usrp/dboard/manager.cpp
     usrp/mboard/base.cpp
     usrp/mboard/usrp2.cpp
-    usrp/mboard/usrp2/impl_base.cpp
     usrp/mboard/usrp2/dboard_impl.cpp
     usrp/mboard/usrp2/dboard_interface.cpp
+    usrp/mboard/usrp2/dsp_impl.cpp
+    usrp/mboard/usrp2/mboard_impl.cpp
+    usrp/mboard/usrp2/usrp2_impl.cpp
 )
+
+ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})
 

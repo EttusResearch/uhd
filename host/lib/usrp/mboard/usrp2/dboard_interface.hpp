@@ -16,14 +16,15 @@
 //
 
 #include <uhd/usrp/dboard/interface.hpp>
-#include "impl_base.hpp"
 
 #ifndef INCLUDED_DBOARD_INTERFACE_HPP
 #define INCLUDED_DBOARD_INTERFACE_HPP
 
+class usrp2_impl; //dummy class declaration
+
 class dboard_interface : public uhd::usrp::dboard::interface{
 public:
-    dboard_interface(impl_base *impl);
+    dboard_interface(usrp2_impl *impl);
 
     ~dboard_interface(void);
 
@@ -56,7 +57,7 @@ private:
         bool readback
     );
 
-    impl_base *_impl;
+    usrp2_impl *_impl;
 };
 
 #endif /* INCLUDED_DBOARD_INTERFACE_HPP */
