@@ -16,6 +16,7 @@
 //
 
 #include <uhd/usrp/dboard/base.hpp>
+#include <boost/format.hpp>
 #include <stdexcept>
 
 using namespace uhd::usrp::dboard;
@@ -24,7 +25,7 @@ using namespace uhd::usrp::dboard;
  * base dboard base class
  **********************************************************************/
 base::base(ctor_args_t const& args){
-    boost::tie(_subdev_name, _dboard_interface) = args;
+    boost::tie(_subdev_name, _dboard_interface, _rx_id, _tx_id) = args;
 }
 
 base::~base(void){
@@ -39,11 +40,28 @@ interface::sptr base::get_interface(void){
     return _dboard_interface;
 }
 
+dboard_id_t base::get_rx_id(void){
+    return _rx_id;
+}
+
+dboard_id_t base::get_tx_id(void){
+    return _tx_id;
+}
+
 /***********************************************************************
  * xcvr dboard base class
  **********************************************************************/
 xcvr_base::xcvr_base(ctor_args_t const& args) : base(args){
-    /* NOP */
+    if (get_rx_id() == ID_NONE){
+        throw std::runtime_error(str(boost::format(
+            "cannot create xcvr board when the rx id is \"%s\""
+        ) % id::to_string(ID_NONE)));
+    }
+    if (get_tx_id() == ID_NONE){
+        throw std::runtime_error(str(boost::format(
+            "cannot create xcvr board when the tx id is \"%s\""
+        ) % id::to_string(ID_NONE)));
+    }
 }
 
 xcvr_base::~xcvr_base(void){
@@ -54,7 +72,12 @@ xcvr_base::~xcvr_base(void){
  * rx dboard base class
  **********************************************************************/
 rx_base::rx_base(ctor_args_t const& args) : base(args){
-    /* NOP */
+    if (get_tx_id() != ID_NONE){
+        throw std::runtime_error(str(boost::format(
+            "cannot create rx board when the tx id is \"%s\""
+            " -> expected a tx id of \"%s\""
+        ) % id::to_string(get_tx_id()) % id::to_string(ID_NONE)));
+    }
 }
 
 rx_base::~rx_base(void){
@@ -73,7 +96,12 @@ void rx_base::tx_set(const wax::obj &, const wax::obj &){
  * tx dboard base class
  **********************************************************************/
 tx_base::tx_base(ctor_args_t const& args) : base(args){
-    /* NOP */
+    if (get_rx_id() != ID_NONE){
+        throw std::runtime_error(str(boost::format(
+            "cannot create tx board when the rx id is \"%s\""
+            " -> expected a rx id of \"%s\""
+        ) % id::to_string(get_rx_id()) % id::to_string(ID_NONE)));
+    }
 }
 
 tx_base::~tx_base(void){

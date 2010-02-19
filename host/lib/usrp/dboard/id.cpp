@@ -21,7 +21,7 @@
 
 using namespace uhd::usrp::dboard;
 
-std::ostream& operator<<(std::ostream &os, const dboard_id_t &id){
+std::string id::to_string(const dboard_id_t &id){
     //map the dboard ids to string representations
     uhd::dict<dboard_id_t, std::string> id_to_str;
     id_to_str[ID_NONE]     = "none";
@@ -29,11 +29,6 @@ std::ostream& operator<<(std::ostream &os, const dboard_id_t &id){
     id_to_str[ID_BASIC_RX] = "basic rx";
 
     //get the string representation
-    if (id_to_str.has_key(id)){
-        os << id_to_str[id];
-    }
-    else{
-        os << boost::format("dboard id %u") % unsigned(id);
-    }
-    return os;
+    std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
+    return str(boost::format("%s (0x%.4x)") % name % id);
 }

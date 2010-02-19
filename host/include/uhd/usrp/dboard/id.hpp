@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <iostream>
+#include <string>
 
 #ifndef INCLUDED_UHD_USRP_DBOARD_ID_HPP
 #define INCLUDED_UHD_USRP_DBOARD_ID_HPP
@@ -28,8 +28,10 @@ enum dboard_id_t{
     ID_BASIC_RX = 0x0001
 };
 
-}}} //namespace
+struct id{
+    static std::string to_string(const dboard_id_t &id);
+};
 
-std::ostream& operator<<(std::ostream &, const uhd::usrp::dboard::dboard_id_t &);
+}}} //namespace
 
 #endif /* INCLUDED_UHD_USRP_DBOARD_ID_HPP */

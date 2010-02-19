@@ -16,6 +16,7 @@
 //
 
 #include <uhd.hpp>
+#include <uhd/props.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -58,7 +59,8 @@ int main(int argc, char *argv[]){
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << device_addrs[i] << std::endl << std::endl;
         //make each device just to test (TODO: remove this)
-        device::make(device_addrs[i]);
+        uhd::device::sptr dev = device::make(device_addrs[i]);
+        std::cout << wax::cast<std::string>((*dev)[uhd::DEVICE_PROP_MBOARD][uhd::MBOARD_PROP_NAME]) << std::endl;
     }
 
     return 0;
