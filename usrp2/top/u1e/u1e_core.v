@@ -12,20 +12,15 @@ module u1e_core
    inout db_sda, inout db_scl,
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun
    );
-
-   wire 	wb_clk, wb_rst;
-
-   assign tx_have_space = 0;
-   assign tx_underrun = 0;
-   assign rx_have_data = 0;
-   assign rx_overrun = 0;
+   
+   wire   wb_clk, wb_rst;
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPMC Slave to Wishbone Master
    localparam dw = 16;
    localparam aw = 11;
    localparam sw = 2;
-      
+   
    wire [dw-1:0] m0_dat_mosi, m0_dat_miso;
    wire [aw-1:0] m0_adr;
    wire [sw-1:0] m0_sel;
@@ -114,19 +109,27 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 0, LEDs and Switches
    
-   reg [15:0] 	reg_fast, reg_slow;
+   reg [15:0] 	 reg_fast, reg_slow;
    localparam REG_FAST = 7'd4;
-   localparam REG_SWITCHES = 7'd5;
+   localparam REG_SWITCHES = 7'd6;
+   localparam REG_GPIOS = 7'd8;
+
+   reg [3:0] 	 reg_gpios;
    
    always @(posedge wb_clk)
      if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_FAST))
        reg_fast <= s0_dat_mosi;
+
+   always @(posedge wb_clk)
+     if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_GPIOS))
+       reg_gpios <= s0_dat_mosi;
 
    assign s0_dat_miso = (s0_adr[6:0] == REG_FAST) ? reg_fast : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
 			16'hBEEF;
    assign s0_ack = s0_stb & s0_cyc;
 
+   assign { rx_overrun, rx_have_data, tx_underrun, tx_have_space } = reg_gpios;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 1, UART

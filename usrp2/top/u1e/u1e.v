@@ -27,6 +27,6 @@ module u1e
 		     .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
 		     .db_sda(db_sda), .db_scl(db_scl),
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
-		     .rx_have_data(overo_gpio_146), .rx_overrun(overo_gpio147) );
+		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147) );
    
 endmodule // u1e
