@@ -56,10 +56,10 @@ NET "EM_NOE"  LOC = "A14"  ;
 #NET "overo_gpio65"  LOC = "F8"  ;
 #NET "overo_gpio127"  LOC = "C8"  ;
 #NET "overo_gpio128"  LOC = "G8"  ;
-#NET "overo_gpio144"  LOC = "A5"  ;
-#NET "overo_gpio145"  LOC = "C7"  ;
-#NET "overo_gpio146"  LOC = "A6"  ;
-#NET "overo_gpio147"  LOC = "B6"  ;
+NET "overo_gpio144"  LOC = "A5"  ;  # tx_have_space
+NET "overo_gpio145"  LOC = "C7"  ;  # tx_underrun
+NET "overo_gpio146"  LOC = "A6"  ;  # rx_have_data
+NET "overo_gpio147"  LOC = "B6"  ;  # rx_overrun
 #NET "overo_gpio163"  LOC = "D7"  ;
 #NET "overo_gpio170"  LOC = "E8"  ;
 #NET "overo_gpio176"  LOC = "B4"  ;
@@ -68,13 +68,13 @@ NET "EM_NOE"  LOC = "A14"  ;
 #NET "overo_txd1"  LOC = "C6"  ;
 #NET "overo_rxd1"  LOC = "D6"  ;
 
-#NET "FPGA_TXD"  LOC = "U1"  ;
-#NET "FPGA_RXD"  LOC = "T6"  ;
+NET "FPGA_TXD"  LOC = "U1"  ;
+NET "FPGA_RXD"  LOC = "T6"  ;
 
 #NET "SYSEN"  LOC = "C11"  ;
 
-#NET "db_scl"  LOC = "U4"  ;
-#NET "db_sda"  LOC = "U5"  ;
+NET "db_scl"  LOC = "U4"  ;
+NET "db_sda"  LOC = "U5"  ;
 #NET "db_sclk_rx"  LOC = "W3"  ;
 #NET "db_miso_rx"  LOC = "W2"  ;
 #NET "db_mosi_rx"  LOC = "V4"  ;
@@ -134,18 +134,18 @@ NET "debug<31>"  LOC = "G3"  ;
 NET "debug_clk<0>"  LOC = "L6"  ;
 NET "debug_clk<1>"  LOC = "M5"  ;
 
-#NET "debug_pb<2>"  LOC = "Y2"  ;
-#NET "debug_pb<1>"  LOC = "AA1"  ;
-#NET "debug_pb<0>"  LOC = "N3"  ;
+NET "debug_pb<2>"  LOC = "Y2"  ;
+NET "debug_pb<1>"  LOC = "AA1"  ;
+NET "debug_pb<0>"  LOC = "N3"  ;
 
-#NET "dip_sw<7>"  LOC = "T3"  ;
-#NET "dip_sw<6>"  LOC = "U3"  ;
-#NET "dip_sw<5>"  LOC = "M3"  ;
-#NET "dip_sw<4>"  LOC = "N4"  ;
-#NET "dip_sw<3>"  LOC = "J3"  ;
-#NET "dip_sw<2>"  LOC = "J4"  ;
-#NET "dip_sw<1>"  LOC = "J6"  ;
-#NET "dip_sw<0>"  LOC = "J7"  ;
+NET "dip_sw<7>"  LOC = "T3"  ;
+NET "dip_sw<6>"  LOC = "U3"  ;
+NET "dip_sw<5>"  LOC = "M3"  ;
+NET "dip_sw<4>"  LOC = "N4"  ;
+NET "dip_sw<3>"  LOC = "J3"  ;
+NET "dip_sw<2>"  LOC = "J4"  ;
+NET "dip_sw<1>"  LOC = "J6"  ;
+NET "dip_sw<0>"  LOC = "J7"  ;
 
 ## AD9862 Interface
 #NET "aux_sdi_codec"  LOC = "F19"  ;
