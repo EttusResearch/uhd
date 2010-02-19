@@ -10,10 +10,11 @@
 
 # Models
 -y ../../models
+-y /opt/Xilinx/10.1/ISE/verilog/src/unisims
 
 # Open Cores
--y ../opencores/spi/rtl/verilog
-+incdir+../opencores/spi/rtl/verilog
--y ../opencores/i2c/rtl/verilog
-+incdir+../opencores/i2c/rtl/verilog
+-y ../../opencores/spi/rtl/verilog
++incdir+../../opencores/spi/rtl/verilog
+-y ../../opencores/i2c/rtl/verilog
++incdir+../../opencores/i2c/rtl/verilog
 

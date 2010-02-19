@@ -7,6 +7,8 @@ module tb_u1e();
    wire [31:0] debug;
    wire [1:0] debug_clk;
 
+   xlnx_glbl glbl (.GSR(),.GTS());
+
    initial begin
       $dumpfile("tb_u1e.lxt");
       $dumpvars(0,tb_u1e);
