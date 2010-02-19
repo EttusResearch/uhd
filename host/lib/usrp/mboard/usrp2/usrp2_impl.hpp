@@ -128,11 +128,18 @@ private:
     uhd::dict<std::string, wax_obj_proxy> _tx_dboards;
 
     //methods and shadows for the ddc dsp
+    std::vector<size_t> _allowed_decim_and_interp_rates;
     static const size_t _num_ddc = 1;
     size_t _ddc_decim[_num_ddc];
     double _ddc_freq[_num_ddc];
-    void ddc_init(size_t which);
+    void init_ddc_config(size_t which);
     void update_ddc_config(size_t which_ddc);
+
+    //methods and shadows for the duc dsp
+    size_t _duc_interp;
+    double _duc_freq;
+    void init_duc_config(void);
+    void update_duc_config(void);
 
     //properties interface for ddc
     void ddc_get(const wax::obj &, wax::obj &, size_t which);

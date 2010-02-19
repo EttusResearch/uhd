@@ -40,8 +40,11 @@ usrp2_impl::usrp2_impl(
 
     //init the ddcs (however many we have)
     for (size_t i = 0; i < _num_ddc; i++){
-        ddc_init(i);
+        init_ddc_config(i);
     }
+
+    //init the duc
+    init_duc_config();
 
     //initialize the clock configuration
     init_clock_config();
