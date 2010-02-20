@@ -37,19 +37,6 @@ static uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t 
 }
 
 void usrp2_impl::init_ddc_config(void){
-    //load the allowed decim/interp rates
-    //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
-    _allowed_decim_and_interp_rates.clear();
-    for (size_t i = 4; i <= 128; i+=1){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 130; i <= 256; i+=2){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 260; i <= 512; i+=4){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-
     //create the ddc in the rx dsp dict
     _rx_dsps["ddc0"] = wax_obj_proxy(
         boost::bind(&usrp2_impl::ddc_get, this, _1, _2),
@@ -59,8 +46,11 @@ void usrp2_impl::init_ddc_config(void){
     //initial config and update
     _ddc_decim = 16;
     _ddc_freq = 0;
-    _ddc_enabled = false;
     update_ddc_config();
+
+    _ddc_stream_at = time_spec_t();
+    _ddc_enabled = false;
+    update_ddc_enabled();
 }
 
 void usrp2_impl::update_ddc_config(void){
@@ -75,6 +65,22 @@ void usrp2_impl::update_ddc_config(void){
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE);
+}
+
+void usrp2_impl::update_ddc_enabled(void){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO);
+    out_data.data.streaming.enabled = (_ddc_enabled)? 1 : 0;
+    out_data.data.streaming.secs =  htonl(_ddc_stream_at.secs);
+    out_data.data.streaming.ticks = htonl(_ddc_stream_at.ticks);
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_CONFIGURED_THAT_STREAMING_DUDE);
+
+    //clear the stream at time spec (it must be set for the next round of enable/disable)
+    _ddc_stream_at = time_spec_t();
 }
 
 /***********************************************************************
@@ -95,7 +101,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
                     ("decim_rates")
                     ("freq")
                     ("enabled")
-                    //TODO ("stream_at")
+                    ("stream_at")
                 ;
                 val = others;
             }
@@ -156,7 +162,13 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     else if (key_name == "enabled"){
         bool new_enabled = wax::cast<bool>(val);
         _ddc_enabled = new_enabled; //shadow
-        //update_ddc_config(); TODO separate update
+        update_ddc_enabled();
+        return;
+    }
+    else if (key_name == "stream_at"){
+        time_spec_t new_stream_at = wax::cast<time_spec_t>(val);
+        _ddc_stream_at = new_stream_at; //shadow
+        //update_ddc_enabled(); //dont update from here
         return;
     }
 

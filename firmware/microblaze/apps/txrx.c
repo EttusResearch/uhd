@@ -139,6 +139,9 @@ bool is_streaming(void){ return streaming_p; }
 
 // ----------------------------------------------------------------
 
+void start_rx_streaming_cmd(void *p);
+void stop_rx_cmd(void);
+
 static eth_mac_addr_t get_my_eth_mac_addr(void){
     return *ethernet_mac_addr();
 }
@@ -413,6 +416,19 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE;
         break;
 
+    case USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO:
+        time_secs =  ctrl_data_in->data.streaming.secs;
+        time_ticks = ctrl_data_in->data.streaming.ticks;
+        if (ctrl_data_in->data.streaming.enabled == 0){
+            stop_rx_cmd();
+        }
+        else{
+            start_rx_streaming_cmd(NULL);
+        }
+
+        ctrl_data_out.id = USRP2_CTRL_ID_CONFIGURED_THAT_STREAMING_DUDE;
+        break;
+
     /*******************************************************************
      * DUC
      ******************************************************************/
@@ -602,7 +618,7 @@ stop_rx_cmd(void)
 }
 
 
-static void
+/*static void
 setup_tx()
 {
   sr_tx_ctrl->clear_state = 1;
@@ -617,7 +633,7 @@ setup_tx()
   dsp_tx_regs->freq = 0;
   dsp_tx_regs->scale_iq = (tx_scale << 16) | tx_scale;
   dsp_tx_regs->interp_rate = interp;
-}
+}*/
 
 
 #if (FW_SETS_SEQNO)
@@ -710,7 +726,7 @@ main(void)
 
 
   // program tx registers
-  setup_tx();
+  //setup_tx();
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);

@@ -34,6 +34,19 @@ usrp2_impl::usrp2_impl(
     _ctrl_transport = ctrl_transport;
     _data_transport = data_transport;
 
+    //load the allowed decim/interp rates
+    //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
+    _allowed_decim_and_interp_rates.clear();
+    for (size_t i = 4; i <= 128; i+=1){
+        _allowed_decim_and_interp_rates.push_back(i);
+    }
+    for (size_t i = 130; i <= 256; i+=2){
+        _allowed_decim_and_interp_rates.push_back(i);
+    }
+    for (size_t i = 260; i <= 512; i+=4){
+        _allowed_decim_and_interp_rates.push_back(i);
+    }
+
     //init the tx and rx dboards
     dboard_init();
 

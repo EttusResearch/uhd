@@ -134,9 +134,10 @@ private:
     size_t _ddc_decim;
     uhd::freq_t _ddc_freq;
     bool _ddc_enabled;
-    //TODO uhd::time_spec_t _ddc_stream_at;
+    uhd::time_spec_t _ddc_stream_at;
     void init_ddc_config(void);
     void update_ddc_config(void);
+    void update_ddc_enabled(void);
 
     //methods and shadows for the duc dsp
     size_t _duc_interp;
