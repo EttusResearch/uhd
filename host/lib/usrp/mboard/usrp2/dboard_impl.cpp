@@ -16,7 +16,6 @@
 //
 
 #include <uhd/utils.hpp>
-#include <uhd/props.hpp>
 #include "usrp2_impl.hpp"
 #include "dboard_interface.hpp"
 

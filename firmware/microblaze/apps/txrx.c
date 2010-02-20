@@ -386,6 +386,61 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE;
         break;
 
+    /*******************************************************************
+     * DDC
+     ******************************************************************/
+    case USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO:
+        dsp_rx_regs->freq = ctrl_data_in->data.ddc_args.freq_word;
+
+        //setup the interp and half band filters
+        {
+            uint32_t decim = ctrl_data_in->data.ddc_args.decim;
+            uint32_t hb1 = 0;
+            uint32_t hb2 = 0;
+            if (!(decim & 1)){
+              hb2 = 1;
+              decim = decim >> 1;
+            }
+            if (!(decim & 1)){
+              hb1 = 1;
+              decim = decim >> 1;
+            }
+            uint32_t decim_word = (hb1<<9) | (hb2<<8) | decim;
+            dsp_rx_regs->decim_rate = decim_word;
+            printf("Decim: %d, register %d\n", ctrl_data_in->data.ddc_args.decim, decim_word);
+        }
+
+        ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE;
+        break;
+
+    /*******************************************************************
+     * DUC
+     ******************************************************************/
+    case USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO:
+        dsp_tx_regs->freq = ctrl_data_in->data.duc_args.freq_word;
+        dsp_tx_regs->scale_iq = ctrl_data_in->data.duc_args.scale_iq;
+
+        //setup the interp and half band filters
+        {
+            uint32_t interp = ctrl_data_in->data.duc_args.interp;
+            uint32_t hb1 = 0;
+            uint32_t hb2 = 0;
+            if (!(interp & 1)){
+              hb2 = 1;
+              interp = interp >> 1;
+            }
+            if (!(interp & 1)){
+              hb1 = 1;
+              interp = interp >> 1;
+            }
+            uint32_t interp_word = (hb1<<9) | (hb2<<8) | interp;
+            dsp_tx_regs->interp_rate = interp_word;
+            printf("Interp: %d, register %d\n", ctrl_data_in->data.duc_args.interp, interp_word);
+        }
+
+        ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE;
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 

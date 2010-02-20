@@ -30,15 +30,15 @@ namespace uhd{
     typedef float gain_t;
     typedef double freq_t;
 
-    //scalar types
-    typedef int int_scalar_t;
-    typedef float real_scalar_t;
-    typedef std::complex<real_scalar_t> complex_scalar_t;
+    //scalar types (have not used yet, dont uncomment until needed)
+    //typedef int int_scalar_t;
+    //typedef float real_scalar_t;
+    //typedef std::complex<real_scalar_t> complex_scalar_t;
 
-    //vector types
-    typedef std::vector<int_scalar_t> int_vec_t;
-    typedef std::vector<real_scalar_t> real_vec_t;
-    typedef std::vector<complex_scalar_t> complex_vec_t;
+    //vector types (have not used yet, dont uncomment until needed)
+    //typedef std::vector<int_scalar_t> int_vec_t;
+    //typedef std::vector<real_scalar_t> real_vec_t;
+    //typedef std::vector<complex_scalar_t> complex_vec_t;
 
     //typedef for handling named properties
     typedef std::vector<std::string> prop_names_t;

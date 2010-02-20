@@ -16,6 +16,8 @@
 //
 
 #include <uhd/dict.hpp>
+#include <uhd/props.hpp>
+#include <uhd/time_spec.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -129,21 +131,22 @@ private:
 
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;
-    static const size_t _num_ddc = 1;
-    size_t _ddc_decim[_num_ddc];
-    double _ddc_freq[_num_ddc];
-    void init_ddc_config(size_t which);
-    void update_ddc_config(size_t which_ddc);
+    size_t _ddc_decim;
+    uhd::freq_t _ddc_freq;
+    bool _ddc_enabled;
+    //TODO uhd::time_spec_t _ddc_stream_at;
+    void init_ddc_config(void);
+    void update_ddc_config(void);
 
     //methods and shadows for the duc dsp
     size_t _duc_interp;
-    double _duc_freq;
+    uhd::freq_t _duc_freq;
     void init_duc_config(void);
     void update_duc_config(void);
 
     //properties interface for ddc
-    void ddc_get(const wax::obj &, wax::obj &, size_t which);
-    void ddc_set(const wax::obj &, const wax::obj &, size_t which);
+    void ddc_get(const wax::obj &, wax::obj &);
+    void ddc_set(const wax::obj &, const wax::obj &);
     uhd::dict<std::string, wax_obj_proxy> _rx_dsps;
 
     //properties interface for duc

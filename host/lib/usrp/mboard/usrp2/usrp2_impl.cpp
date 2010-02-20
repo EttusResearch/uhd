@@ -19,7 +19,6 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <uhd/utils.hpp>
-#include <uhd/props.hpp>
 #include <iostream>
 #include "usrp2_impl.hpp"
 
@@ -38,10 +37,8 @@ usrp2_impl::usrp2_impl(
     //init the tx and rx dboards
     dboard_init();
 
-    //init the ddcs (however many we have)
-    for (size_t i = 0; i < _num_ddc; i++){
-        init_ddc_config(i);
-    }
+    //init the ddc
+    init_ddc_config();
 
     //init the duc
     init_duc_config();

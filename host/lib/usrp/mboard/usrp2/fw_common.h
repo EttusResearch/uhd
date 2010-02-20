@@ -78,6 +78,12 @@ typedef enum{
     USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO,
     USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE,
 
+    USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO,
+    USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE,
+
+    USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO,
+    USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -156,6 +162,21 @@ typedef struct{
             uint8_t _pad[2];
             uint32_t value;
         } aux_args;
+        struct {
+            uint32_t freq_word;
+            uint32_t decim;
+        } ddc_args;
+        struct {
+            uint8_t enabled;
+            uint8_t _pad[3];
+            uint32_t secs;
+            uint32_t ticks;
+        } streaming;
+        struct {
+            uint32_t freq_word;
+            uint32_t interp;
+            uint32_t scale_iq;
+        } duc_args;
     } data;
 } usrp2_ctrl_data_t;
 
