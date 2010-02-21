@@ -16,10 +16,13 @@
 #
 
 
-ADD_SUBDIRECTORY(dboard)
-ADD_SUBDIRECTORY(mboard)
-
 INSTALL(FILES
+    dboard_base.hpp
+    dboard_id.hpp
+    dboard_interface.hpp
+    dboard_manager.hpp
+    mboard_base.hpp
+    usrp2.hpp
     usrp.hpp
     DESTINATION ${HEADER_DIR}/uhd/usrp
 )

@@ -16,7 +16,7 @@
 //
 
 #include <uhd/usrp/usrp.hpp>
-#include <uhd/usrp/mboard/usrp2.hpp>
+#include <uhd/usrp/usrp2.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <stdexcept>
@@ -48,7 +48,7 @@ usrp::usrp(const device_addr_t &device_addr){
         //TODO nothing
     }
     else if (device_addr["type"] == "udp"){
-        _mboards[""] = mboard::base::sptr(new mboard::usrp2(device_addr));
+        _mboards[""] = mboard_base::sptr(new usrp2(device_addr));
     }
 }
 

@@ -18,15 +18,15 @@
 #ifndef INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
 #define INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
 
-#include <uhd/usrp/mboard/base.hpp>
+#include <uhd/usrp/mboard_base.hpp>
 #include <uhd/device_addr.hpp>
 
-namespace uhd{ namespace usrp{ namespace mboard{
+namespace uhd{ namespace usrp{
 
 /*!
  * The usrp2 mboard class.
  */
-class usrp2 : public base{
+class usrp2 : public mboard_base{
 public:
     /*!
      * Discover usrp2 devices over the ethernet.
@@ -46,6 +46,6 @@ private:
     wax::obj _impl;
 };
 
-}}} //namespace
+}} //namespace
 
 #endif /* INCLUDED_UHD_USRP_MBOARD_USRP2_HPP */

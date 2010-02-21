@@ -15,20 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard/id.hpp>
-#include <boost/format.hpp>
-#include <uhd/dict.hpp>
+#include <uhd/usrp/mboard_base.hpp>
+#include <stdexcept>
 
-using namespace uhd::usrp::dboard;
+using namespace uhd::usrp;
 
-std::string id::to_string(const dboard_id_t &id){
-    //map the dboard ids to string representations
-    uhd::dict<dboard_id_t, std::string> id_to_str;
-    id_to_str[ID_NONE]     = "none";
-    id_to_str[ID_BASIC_TX] = "basic tx";
-    id_to_str[ID_BASIC_RX] = "basic rx";
+mboard_base::mboard_base(void){
+    /* NOP */
+}
 
-    //get the string representation
-    std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
-    return str(boost::format("%s (0x%.4x)") % name % id);
+mboard_base::~mboard_base(void){
+    /* NOP */
 }

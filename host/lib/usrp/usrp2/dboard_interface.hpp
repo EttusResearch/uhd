@@ -15,18 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard/interface.hpp>
+#include <uhd/usrp/dboard_interface.hpp>
 
 #ifndef INCLUDED_DBOARD_INTERFACE_HPP
 #define INCLUDED_DBOARD_INTERFACE_HPP
 
 class usrp2_impl; //dummy class declaration
 
-class dboard_interface : public uhd::usrp::dboard::interface{
+class usrp2_dboard_interface : public uhd::usrp::dboard_interface{
 public:
-    dboard_interface(usrp2_impl *impl);
+    usrp2_dboard_interface(usrp2_impl *impl);
 
-    ~dboard_interface(void);
+    ~usrp2_dboard_interface(void);
 
     void write_aux_dac(unit_type_t, int, int);
 

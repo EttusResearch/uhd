@@ -36,19 +36,19 @@ void usrp2_impl::dboard_init(void){
         % ntohs(in_data.data.dboard_ids.tx_id) << std::endl;
 
     //extract the dboard ids an convert them to enums
-    dboard::dboard_id_t rx_dboard_id = static_cast<dboard::dboard_id_t>(
+    dboard_id_t rx_dboard_id = static_cast<dboard_id_t>(
         ntohs(in_data.data.dboard_ids.rx_id)
     );
-    dboard::dboard_id_t tx_dboard_id = static_cast<dboard::dboard_id_t>(
+    dboard_id_t tx_dboard_id = static_cast<dboard_id_t>(
         ntohs(in_data.data.dboard_ids.tx_id)
     );
 
     //create a new dboard interface and manager
-    dboard::interface::sptr _dboard_interface(
-        new dboard_interface(this)
+    dboard_interface::sptr _dboard_interface(
+        new usrp2_dboard_interface(this)
     );
-    dboard::manager::sptr _dboard_manager(
-        new dboard::manager(rx_dboard_id, tx_dboard_id, _dboard_interface)
+    dboard_manager::sptr _dboard_manager(
+        new dboard_manager(rx_dboard_id, tx_dboard_id, _dboard_interface)
     );
 
     //load dboards

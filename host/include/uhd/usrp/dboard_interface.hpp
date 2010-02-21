@@ -22,17 +22,17 @@
 #include <vector>
 #include <stdint.h>
 
-namespace uhd{ namespace usrp{ namespace dboard{
+namespace uhd{ namespace usrp{
 
 /*!
- * The daughter board interface to be subclassed.
- * A dboard instance interfaces with the mboard though this api. 
- * This interface provides i2c, spi, gpio, atr, aux dac/adc access.
- * Each mboard should have a specially tailored dboard interface.
+ * The daughter board dboard_interface to be subclassed.
+ * A dboard instance dboard_interfaces with the mboard though this api. 
+ * This dboard_interface provides i2c, spi, gpio, atr, aux dac/adc access.
+ * Each mboard should have a specially tailored dboard dboard_interface.
  */
-class interface{
+class dboard_interface{
 public:
-    typedef boost::shared_ptr<interface> sptr;
+    typedef boost::shared_ptr<dboard_interface> sptr;
     typedef std::vector<uint8_t> byte_vector_t;
 
     //tells the host which unit to use
@@ -66,8 +66,8 @@ public:
     };
 
     //structors
-    interface(void);
-    virtual ~interface(void);
+    dboard_interface(void);
+    virtual ~dboard_interface(void);
 
     /*!
      * Write to an aux dac.
@@ -202,6 +202,6 @@ private:
     ) = 0;
 };
 
-}}} //namespace
+}} //namespace
 
 #endif /* INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP */

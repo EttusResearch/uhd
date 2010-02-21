@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard/manager.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <uhd/utils.hpp>

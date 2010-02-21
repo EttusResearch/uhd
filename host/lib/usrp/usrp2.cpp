@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/mboard/usrp2.hpp>
+#include <uhd/usrp/usrp2.hpp>
 #include <uhd/device.hpp>
 #include <uhd/transport/udp.hpp>
 #include <boost/lexical_cast.hpp>
@@ -24,7 +24,7 @@
 #include <netinet/in.h>
 #include "usrp2/usrp2_impl.hpp"
 
-using namespace uhd::usrp::mboard;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Discovery over the udp transport

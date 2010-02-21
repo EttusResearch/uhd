@@ -16,7 +16,7 @@
 //
 
 #include <uhd/device.hpp>
-#include <uhd/usrp/mboard/base.hpp>
+#include <uhd/usrp/mboard_base.hpp>
 #include <uhd/dict.hpp>
 
 #ifndef INCLUDED_UHD_USRP_USRP_HPP
@@ -43,7 +43,7 @@ private:
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
 
-    uhd::dict<std::string, mboard::base::sptr> _mboards;
+    uhd::dict<std::string, mboard_base::sptr> _mboards;
     boost::function<void(const std::vector<boost::asio::const_buffer> &)> _send_raw_cb;
     boost::function<uhd::shared_iovec(void)> _recv_raw_cb;
 };

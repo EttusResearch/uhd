@@ -19,27 +19,27 @@
 #include "dboard_interface.hpp"
 #include "usrp2_impl.hpp"
 
-using namespace uhd::usrp::dboard;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-dboard_interface::dboard_interface(usrp2_impl *impl){
+usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
     _impl = impl;
 }
 
-dboard_interface::~dboard_interface(void){
+usrp2_dboard_interface::~usrp2_dboard_interface(void){
     /* NOP */
 }
 
 /***********************************************************************
  * Clock Rates
  **********************************************************************/
-double dboard_interface::get_rx_clock_rate(void){
+double usrp2_dboard_interface::get_rx_clock_rate(void){
     return _impl->get_master_clock_freq();
 }
 
-double dboard_interface::get_tx_clock_rate(void){
+double usrp2_dboard_interface::get_tx_clock_rate(void){
     return _impl->get_master_clock_freq();
 }
 
@@ -52,15 +52,15 @@ double dboard_interface::get_tx_clock_rate(void){
  * \param bank the dboard interface gpio bank enum
  * \return an over the wire representation
  */
-static uint8_t gpio_bank_to_otw(interface::gpio_bank_t bank){
+static uint8_t gpio_bank_to_otw(dboard_interface::gpio_bank_t bank){
     switch(bank){
-    case uhd::usrp::dboard::interface::GPIO_TX_BANK: return USRP2_DIR_TX;
-    case uhd::usrp::dboard::interface::GPIO_RX_BANK: return USRP2_DIR_RX;
+    case uhd::usrp::dboard_interface::GPIO_TX_BANK: return USRP2_DIR_TX;
+    case uhd::usrp::dboard_interface::GPIO_RX_BANK: return USRP2_DIR_RX;
     }
     throw std::invalid_argument("unknown gpio bank type");
 }
 
-void dboard_interface::set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint16_t mask){
+void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint16_t mask){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO);
@@ -73,7 +73,7 @@ void dboard_interface::set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint16_t m
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE);
 }
 
-void dboard_interface::write_gpio(gpio_bank_t bank, uint16_t value, uint16_t mask){
+void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, uint16_t value, uint16_t mask){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO);
@@ -86,7 +86,7 @@ void dboard_interface::write_gpio(gpio_bank_t bank, uint16_t value, uint16_t mas
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE);
 }
 
-uint16_t dboard_interface::read_gpio(gpio_bank_t bank){
+uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO);
@@ -98,7 +98,7 @@ uint16_t dboard_interface::read_gpio(gpio_bank_t bank){
     return ntohs(in_data.data.gpio_config.value);
 }
 
-void dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t rx_value, uint16_t mask){
+void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t rx_value, uint16_t mask){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO);
@@ -121,10 +121,10 @@ void dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t
  * \param dev the dboard interface spi dev enum
  * \return an over the wire representation
  */
-static uint8_t spi_dev_to_otw(interface::spi_dev_t dev){
+static uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
     switch(dev){
-    case uhd::usrp::dboard::interface::SPI_TX_DEV: return USRP2_DIR_TX;
-    case uhd::usrp::dboard::interface::SPI_RX_DEV: return USRP2_DIR_RX;
+    case uhd::usrp::dboard_interface::SPI_TX_DEV: return USRP2_DIR_TX;
+    case uhd::usrp::dboard_interface::SPI_RX_DEV: return USRP2_DIR_RX;
     }
     throw std::invalid_argument("unknown spi device type");
 }
@@ -135,10 +135,10 @@ static uint8_t spi_dev_to_otw(interface::spi_dev_t dev){
  * \param latch the dboard interface spi latch enum
  * \return an over the wire representation
  */
-static uint8_t spi_latch_to_otw(interface::spi_latch_t latch){
+static uint8_t spi_latch_to_otw(dboard_interface::spi_latch_t latch){
     switch(latch){
-    case uhd::usrp::dboard::interface::SPI_LATCH_RISE: return USRP2_CLK_EDGE_RISE;
-    case uhd::usrp::dboard::interface::SPI_LATCH_FALL: return USRP2_CLK_EDGE_FALL;
+    case uhd::usrp::dboard_interface::SPI_LATCH_RISE: return USRP2_CLK_EDGE_RISE;
+    case uhd::usrp::dboard_interface::SPI_LATCH_FALL: return USRP2_CLK_EDGE_FALL;
     }
     throw std::invalid_argument("unknown spi latch type");
 }
@@ -149,15 +149,15 @@ static uint8_t spi_latch_to_otw(interface::spi_latch_t latch){
  * \param push the dboard interface spi push enum
  * \return an over the wire representation
  */
-static uint8_t spi_push_to_otw(interface::spi_push_t push){
+static uint8_t spi_push_to_otw(dboard_interface::spi_push_t push){
     switch(push){
-    case uhd::usrp::dboard::interface::SPI_PUSH_RISE: return USRP2_CLK_EDGE_RISE;
-    case uhd::usrp::dboard::interface::SPI_PUSH_FALL: return USRP2_CLK_EDGE_FALL;
+    case uhd::usrp::dboard_interface::SPI_PUSH_RISE: return USRP2_CLK_EDGE_RISE;
+    case uhd::usrp::dboard_interface::SPI_PUSH_FALL: return USRP2_CLK_EDGE_FALL;
     }
     throw std::invalid_argument("unknown spi push type");
 }
 
-interface::byte_vector_t dboard_interface::transact_spi(
+dboard_interface::byte_vector_t usrp2_dboard_interface::transact_spi(
     spi_dev_t dev,
     spi_latch_t latch,
     spi_push_t push,
@@ -197,7 +197,7 @@ interface::byte_vector_t dboard_interface::transact_spi(
 /***********************************************************************
  * I2C
  **********************************************************************/
-void dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
+void usrp2_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
@@ -217,7 +217,7 @@ void dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
 }
 
-interface::byte_vector_t dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
+dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
@@ -249,15 +249,15 @@ interface::byte_vector_t dboard_interface::read_i2c(int i2c_addr, size_t num_byt
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static uint8_t spi_dev_to_otw(interface::unit_type_t unit){
+static uint8_t spi_dev_to_otw(dboard_interface::unit_type_t unit){
     switch(unit){
-    case uhd::usrp::dboard::interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
-    case uhd::usrp::dboard::interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
+    case uhd::usrp::dboard_interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
+    case uhd::usrp::dboard_interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
     }
     throw std::invalid_argument("unknown unit type type");
 }
 
-void dboard_interface::write_aux_dac(interface::unit_type_t unit, int which, int value){
+void usrp2_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, int which, int value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
@@ -270,7 +270,7 @@ void dboard_interface::write_aux_dac(interface::unit_type_t unit, int which, int
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
 }
 
-int dboard_interface::read_aux_adc(interface::unit_type_t unit, int which){
+int usrp2_dboard_interface::read_aux_adc(dboard_interface::unit_type_t unit, int which){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);

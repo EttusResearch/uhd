@@ -23,22 +23,22 @@
 #include <uhd/props.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/usrp/dboard/base.hpp>
-#include <uhd/usrp/dboard/id.hpp>
+#include <uhd/usrp/dboard_base.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 
-namespace uhd{ namespace usrp{ namespace dboard{
+namespace uhd{ namespace usrp{
 
 /*!
- * A daughter board subdev manager class.
+ * A daughter board subdev dboard_manager class.
  * Create subdev instances for each subdev on a dboard.
  * Provide wax::obj access to the subdevs inside.
  */
-class manager : boost::noncopyable{
+class dboard_manager : boost::noncopyable{
 
 public:
 
     //dboard constructor (each dboard should have a ::make with this signature)
-    typedef base::sptr(*dboard_ctor_t)(base::ctor_args_t const&);
+    typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t const&);
 
     /*!
      * Register subdevices for a given dboard id.
@@ -54,29 +54,29 @@ public:
     );
 
 public:
-    typedef boost::shared_ptr<manager> sptr;
+    typedef boost::shared_ptr<dboard_manager> sptr;
     //structors
-    manager(
+    dboard_manager(
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
-        interface::sptr dboard_interface
+        dboard_interface::sptr interface
     );
-    ~manager(void);
+    ~dboard_manager(void);
 
-    //interface
+    //dboard_interface
     prop_names_t get_rx_subdev_names(void);
     prop_names_t get_tx_subdev_names(void);
     wax::obj get_rx_subdev(const std::string &subdev_name);
     wax::obj get_tx_subdev(const std::string &subdev_name);
 
 private:
-    //list of rx and tx dboards in this manager
+    //list of rx and tx dboards in this dboard_manager
     //each dboard here is actually a subdevice proxy
     //the subdevice proxy is internal to the cpp file
     uhd::dict<std::string, wax::obj> _rx_dboards;
     uhd::dict<std::string, wax::obj> _tx_dboards;
 };
 
-}}} //namespace
+}} //namespace
 
 #endif /* INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP */

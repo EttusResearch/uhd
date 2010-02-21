@@ -15,103 +15,103 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard/base.hpp>
+#include <uhd/usrp/dboard_base.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
-using namespace uhd::usrp::dboard;
+using namespace uhd::usrp;
 
 /***********************************************************************
- * base dboard base class
+ * dboard_base dboard dboard_base class
  **********************************************************************/
-base::base(ctor_args_t const& args){
+dboard_base::dboard_base(ctor_args_t const& args){
     boost::tie(_subdev_name, _dboard_interface, _rx_id, _tx_id) = args;
 }
 
-base::~base(void){
+dboard_base::~dboard_base(void){
     /* NOP */
 }
 
-std::string base::get_subdev_name(void){
+std::string dboard_base::get_subdev_name(void){
     return _subdev_name;
 }
 
-interface::sptr base::get_interface(void){
+dboard_interface::sptr dboard_base::get_interface(void){
     return _dboard_interface;
 }
 
-dboard_id_t base::get_rx_id(void){
+dboard_id_t dboard_base::get_rx_id(void){
     return _rx_id;
 }
 
-dboard_id_t base::get_tx_id(void){
+dboard_id_t dboard_base::get_tx_id(void){
     return _tx_id;
 }
 
 /***********************************************************************
- * xcvr dboard base class
+ * xcvr dboard dboard_base class
  **********************************************************************/
-xcvr_base::xcvr_base(ctor_args_t const& args) : base(args){
+xcvr_dboard_base::xcvr_dboard_base(ctor_args_t const& args) : dboard_base(args){
     if (get_rx_id() == ID_NONE){
         throw std::runtime_error(str(boost::format(
             "cannot create xcvr board when the rx id is \"%s\""
-        ) % id::to_string(ID_NONE)));
+        ) % dboard_id::to_string(ID_NONE)));
     }
     if (get_tx_id() == ID_NONE){
         throw std::runtime_error(str(boost::format(
             "cannot create xcvr board when the tx id is \"%s\""
-        ) % id::to_string(ID_NONE)));
+        ) % dboard_id::to_string(ID_NONE)));
     }
 }
 
-xcvr_base::~xcvr_base(void){
+xcvr_dboard_base::~xcvr_dboard_base(void){
     /* NOP */
 }
 
 /***********************************************************************
- * rx dboard base class
+ * rx dboard dboard_base class
  **********************************************************************/
-rx_base::rx_base(ctor_args_t const& args) : base(args){
+rx_dboard_base::rx_dboard_base(ctor_args_t const& args) : dboard_base(args){
     if (get_tx_id() != ID_NONE){
         throw std::runtime_error(str(boost::format(
             "cannot create rx board when the tx id is \"%s\""
             " -> expected a tx id of \"%s\""
-        ) % id::to_string(get_tx_id()) % id::to_string(ID_NONE)));
+        ) % dboard_id::to_string(get_tx_id()) % dboard_id::to_string(ID_NONE)));
     }
 }
 
-rx_base::~rx_base(void){
+rx_dboard_base::~rx_dboard_base(void){
     /* NOP */
 }
 
-void rx_base::tx_get(const wax::obj &, wax::obj &){
+void rx_dboard_base::tx_get(const wax::obj &, wax::obj &){
     throw std::runtime_error("cannot call tx_get on a rx dboard");
 }
 
-void rx_base::tx_set(const wax::obj &, const wax::obj &){
+void rx_dboard_base::tx_set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("cannot call tx_set on a rx dboard");
 }
 
 /***********************************************************************
- * tx dboard base class
+ * tx dboard dboard_base class
  **********************************************************************/
-tx_base::tx_base(ctor_args_t const& args) : base(args){
+tx_dboard_base::tx_dboard_base(ctor_args_t const& args) : dboard_base(args){
     if (get_rx_id() != ID_NONE){
         throw std::runtime_error(str(boost::format(
             "cannot create tx board when the rx id is \"%s\""
             " -> expected a rx id of \"%s\""
-        ) % id::to_string(get_rx_id()) % id::to_string(ID_NONE)));
+        ) % dboard_id::to_string(get_rx_id()) % dboard_id::to_string(ID_NONE)));
     }
 }
 
-tx_base::~tx_base(void){
+tx_dboard_base::~tx_dboard_base(void){
     /* NOP */
 }
 
-void tx_base::rx_get(const wax::obj &, wax::obj &){
+void tx_dboard_base::rx_get(const wax::obj &, wax::obj &){
     throw std::runtime_error("cannot call rx_get on a tx dboard");
 }
 
-void tx_base::rx_set(const wax::obj &, const wax::obj &){
+void tx_dboard_base::rx_set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("cannot call rx_set on a tx dboard");
 }

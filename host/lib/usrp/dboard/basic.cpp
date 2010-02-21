@@ -20,7 +20,7 @@
 /***********************************************************************
  * Basic RX dboard
  **********************************************************************/
-basic_rx::basic_rx(ctor_args_t const& args) : rx_base(args){
+basic_rx::basic_rx(ctor_args_t const& args) : rx_dboard_base(args){
     /* NOP */
 }
 
@@ -39,7 +39,7 @@ void basic_rx::rx_set(const wax::obj &, const wax::obj &){
 /***********************************************************************
  * Basic TX dboard
  **********************************************************************/
-basic_tx::basic_tx(ctor_args_t const& args) : tx_base(args){
+basic_tx::basic_tx(ctor_args_t const& args) : tx_dboard_base(args){
     /* NOP */
 }
 

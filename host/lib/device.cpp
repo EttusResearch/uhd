@@ -16,7 +16,7 @@
 //
 
 #include <uhd/usrp/usrp.hpp>
-#include <uhd/usrp/mboard/usrp2.hpp>
+#include <uhd/usrp/usrp2.hpp> //TODO remove and call discover from usrp
 #include <uhd/device.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
@@ -34,7 +34,7 @@ device_addrs_t device::discover(const device_addr_t &hint){
         device_addrs.push_back(test_device_addr);
     }
     else if (hint["type"] == "udp"){
-        std::vector<device_addr_t> usrp2_addrs = usrp::mboard::usrp2::discover(hint);
+        std::vector<device_addr_t> usrp2_addrs = usrp::usrp2::discover(hint);
         device_addrs.insert(device_addrs.begin(), usrp2_addrs.begin(), usrp2_addrs.end());
     }
     return device_addrs;

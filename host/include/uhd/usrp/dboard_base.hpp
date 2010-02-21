@@ -22,26 +22,26 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <uhd/usrp/dboard/id.hpp>
-#include <uhd/usrp/dboard/interface.hpp>
+#include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/dboard_interface.hpp>
 
-namespace uhd{ namespace usrp{ namespace dboard{
+namespace uhd{ namespace usrp{
 
 /*!
- * A daughter board base class for all dboards.
- * Only other dboard base classes should inherit this.
+ * A daughter board dboard_base class for all dboards.
+ * Only other dboard dboard_base classes should inherit this.
  */
-class base : boost::noncopyable{
+class dboard_base : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<base> sptr;
+    typedef boost::shared_ptr<dboard_base> sptr;
     //the constructor args consist of a subdev name and an interface
-    //derived classes should pass the args into the base class ctor
+    //derived classes should pass the args into the dboard_base class ctor
     //but should not have to deal with the internals of the args
-    typedef boost::tuple<std::string, interface::sptr, dboard_id_t, dboard_id_t> ctor_args_t;
+    typedef boost::tuple<std::string, dboard_interface::sptr, dboard_id_t, dboard_id_t> ctor_args_t;
 
     //structors
-    base(ctor_args_t const&);
-    virtual ~base(void);
+    dboard_base(ctor_args_t const&);
+    virtual ~dboard_base(void);
 
     //interface
     virtual void rx_get(const wax::obj &key, wax::obj &val) = 0;
@@ -51,13 +51,13 @@ public:
 
 protected:
     std::string get_subdev_name(void);
-    interface::sptr get_interface(void);
+    dboard_interface::sptr get_interface(void);
     dboard_id_t get_rx_id(void);
     dboard_id_t get_tx_id(void);
 
 private:
     std::string        _subdev_name;
-    interface::sptr    _dboard_interface;
+    dboard_interface::sptr    _dboard_interface;
     dboard_id_t        _rx_id, _tx_id;
 };
 
@@ -65,27 +65,27 @@ private:
  * A xcvr daughter board implements rx and tx methods
  * Sub classes for xcvr boards should inherit this.
  */
-class xcvr_base : public base{
+class xcvr_dboard_base : public dboard_base{
 public:
     /*!
      * Create a new xcvr dboard object, override in subclasses.
      */
-    xcvr_base(ctor_args_t const&);
-    virtual ~xcvr_base(void);
+    xcvr_dboard_base(ctor_args_t const&);
+    virtual ~xcvr_dboard_base(void);
 };
 
 /*!
  * A rx daughter board only implements rx methods.
  * Sub classes for rx-only boards should inherit this.
  */
-class rx_base : public base{
+class rx_dboard_base : public dboard_base{
 public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    rx_base(ctor_args_t const&);
+    rx_dboard_base(ctor_args_t const&);
 
-    virtual ~rx_base(void);
+    virtual ~rx_dboard_base(void);
 
     //override here so the derived classes cannot
     void tx_get(const wax::obj &key, wax::obj &val);
@@ -96,20 +96,20 @@ public:
  * A tx daughter board only implements tx methods.
  * Sub classes for rx-only boards should inherit this.
  */
-class tx_base : public base{
+class tx_dboard_base : public dboard_base{
 public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    tx_base(ctor_args_t const&);
+    tx_dboard_base(ctor_args_t const&);
 
-    virtual ~tx_base(void);
+    virtual ~tx_dboard_base(void);
 
     //override here so the derived classes cannot
     void rx_get(const wax::obj &key, wax::obj &val);
     void rx_set(const wax::obj &key, const wax::obj &val);
 };
 
-}}} //namespace
+}} //namespace
 
 #endif /* INCLUDED_UHD_USRP_DBOARD_BASE_HPP */

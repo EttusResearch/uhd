@@ -15,19 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard/interface.hpp>
+#include <uhd/usrp/dboard_interface.hpp>
 
-using namespace uhd::usrp::dboard;
+using namespace uhd::usrp;
 
-interface::interface(void){
+dboard_interface::dboard_interface(void){
     /* NOP */
 }
 
-interface::~interface(void){
+dboard_interface::~dboard_interface(void){
     /* NOP */
 }
 
-void interface::write_spi(
+void dboard_interface::write_spi(
     spi_dev_t dev,
     spi_push_t push,
     const byte_vector_t &buf
@@ -35,7 +35,7 @@ void interface::write_spi(
     transact_spi(dev, SPI_LATCH_RISE, push, buf, false); //dont readback
 }
 
-interface::byte_vector_t interface::read_spi(
+dboard_interface::byte_vector_t dboard_interface::read_spi(
     spi_dev_t dev,
     spi_latch_t latch,
     size_t num_bytes
@@ -44,7 +44,7 @@ interface::byte_vector_t interface::read_spi(
     return transact_spi(dev, latch, SPI_PUSH_RISE, buf, true); //readback
 }
 
-interface::byte_vector_t interface::read_write_spi(
+dboard_interface::byte_vector_t dboard_interface::read_write_spi(
     spi_dev_t dev,
     spi_latch_t latch,
     spi_push_t push,

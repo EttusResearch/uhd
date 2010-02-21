@@ -18,17 +18,17 @@
 #ifndef INCLUDED_LOCAL_DBOARDS_HPP
 #define INCLUDED_LOCAL_DBOARDS_HPP
 
-#include <uhd/usrp/dboard/base.hpp>
+#include <uhd/usrp/dboard_base.hpp>
 
-using namespace uhd::usrp::dboard;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * The basic boards:
  **********************************************************************/
-class basic_rx : public rx_base{
+class basic_rx : public rx_dboard_base{
 public:
-    static base::sptr make(ctor_args_t const& args){
-        return base::sptr(new basic_rx(args));
+    static dboard_base::sptr make(ctor_args_t const& args){
+        return dboard_base::sptr(new basic_rx(args));
     }
     basic_rx(ctor_args_t const& args);
     ~basic_rx(void);
@@ -37,10 +37,10 @@ public:
     void rx_set(const wax::obj &key, const wax::obj &val);
 };
 
-class basic_tx : public tx_base{
+class basic_tx : public tx_dboard_base{
 public:
-    static base::sptr make(ctor_args_t const& args){
-        return base::sptr(new basic_tx(args));
+    static dboard_base::sptr make(ctor_args_t const& args){
+        return dboard_base::sptr(new basic_tx(args));
     }
     basic_tx(ctor_args_t const& args);
     ~basic_tx(void);

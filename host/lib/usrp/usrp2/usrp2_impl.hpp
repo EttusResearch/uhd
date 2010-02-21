@@ -22,7 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <uhd/transport/udp.hpp>
-#include <uhd/usrp/dboard/manager.hpp>
+#include <uhd/usrp/dboard_manager.hpp>
 #include "fw_common.h"
 
 #ifndef INCLUDED_USRP2_IMPL_HPP
@@ -116,7 +116,7 @@ private:
     uhd::dict<std::string, usrp2_ref_source_t>   _ref_source_dict;
 
     //rx and tx dboard methods and objects
-    uhd::usrp::dboard::manager::sptr _dboard_manager;
+    uhd::usrp::dboard_manager::sptr _dboard_manager;
     void dboard_init(void);
 
     //properties interface for rx dboard
