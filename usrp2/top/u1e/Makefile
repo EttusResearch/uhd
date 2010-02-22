@@ -69,7 +69,7 @@ control_lib/ram_2port.v \
 control_lib/ram_harv_cache.v \
 control_lib/ram_loader.v \
 control_lib/setting_reg.v \
-control_lib/settings_bus.v \
+control_lib/settings_bus_16LE.v \
 control_lib/srl.v \
 control_lib/system_control.v \
 control_lib/wb_1master.v \

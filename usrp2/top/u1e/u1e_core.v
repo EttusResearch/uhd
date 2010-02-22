@@ -103,7 +103,7 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s5_ack = 0;   assign s6_ack = 0;   assign s7_ack = 0;
+   assign s6_ack = 0;   assign s7_ack = 0;
    assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
@@ -182,10 +182,21 @@ module u1e_core
    nsgpio16LE 
      nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
 		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
-		.dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
+		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
 
+   // /////////////////////////////////////////////////////////////////////////
+   // Settings Bus -- Slave #5
+
+   wire [7:0] 	set_addr;
+   wire [31:0] 	set_data;
+   wire 	set_stb;
+   
+   settings_bus_16LE settings_bus_16LE
+     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s5_adr),.wb_dat_i(s5_dat_mosi),
+      .wb_stb_i(s5_stb),.wb_we_i(s5_we),.wb_ack_o(s5_ack),
+      .strobe(set_stb),.addr(set_addr),.data(set_data) );
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
