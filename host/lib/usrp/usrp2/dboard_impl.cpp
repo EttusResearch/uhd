@@ -47,8 +47,8 @@ void usrp2_impl::dboard_init(void){
     dboard_interface::sptr _dboard_interface(
         new usrp2_dboard_interface(this)
     );
-    dboard_manager::sptr _dboard_manager(
-        new dboard_manager(rx_dboard_id, tx_dboard_id, _dboard_interface)
+    dboard_manager::sptr _dboard_manager = dboard_manager::make(
+        rx_dboard_id, tx_dboard_id, _dboard_interface
     );
 
     //load dboards

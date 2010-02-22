@@ -17,6 +17,7 @@
 
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils.hpp>
+#include <uhd/dict.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
@@ -66,6 +67,33 @@ void dboard_manager::register_subdevs(
 }
 
 /***********************************************************************
+ * dboard manager implementation class
+ **********************************************************************/
+class dboard_manager_impl : public dboard_manager{
+
+public:
+    dboard_manager_impl(
+        dboard_id_t rx_dboard_id,
+        dboard_id_t tx_dboard_id,
+        dboard_interface::sptr interface
+    );
+    ~dboard_manager_impl(void);
+
+    //dboard_interface
+    prop_names_t get_rx_subdev_names(void);
+    prop_names_t get_tx_subdev_names(void);
+    wax::obj get_rx_subdev(const std::string &subdev_name);
+    wax::obj get_tx_subdev(const std::string &subdev_name);
+
+private:
+    //list of rx and tx dboards in this dboard_manager
+    //each dboard here is actually a subdevice proxy
+    //the subdevice proxy is internal to the cpp file
+    uhd::dict<std::string, wax::obj> _rx_dboards;
+    uhd::dict<std::string, wax::obj> _tx_dboards;
+};
+
+/***********************************************************************
  * internal helper classes
  **********************************************************************/
 /*!
@@ -109,7 +137,20 @@ private:
 };
 
 /***********************************************************************
- * dboard dboard_manager methods
+ * make routine for dboard manager
+ **********************************************************************/
+dboard_manager::sptr dboard_manager::make(
+    dboard_id_t rx_dboard_id,
+    dboard_id_t tx_dboard_id,
+    dboard_interface::sptr interface
+){
+    return dboard_manager::sptr(
+        new dboard_manager_impl(rx_dboard_id, tx_dboard_id, interface)
+    );
+}
+
+/***********************************************************************
+ * implementation class methods
  **********************************************************************/
 static args_t get_dboard_args(
     dboard_id_t dboard_id,
@@ -128,7 +169,8 @@ static args_t get_dboard_args(
     //verify that there is a registered constructor for this id
     if (not id_to_args_map.has_key(dboard_id)){
         throw std::runtime_error(str(
-            boost::format("Unknown %s dboard id: 0x%04x") % xx_type % dboard_id
+            boost::format("Unregistered %s dboard id: %s")
+            % xx_type % dboard_id::to_string(dboard_id)
         ));
     }
 
@@ -136,7 +178,7 @@ static args_t get_dboard_args(
     return id_to_args_map[dboard_id];
 }
 
-dboard_manager::dboard_manager(
+dboard_manager_impl::dboard_manager_impl(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
     dboard_interface::sptr interface
@@ -202,19 +244,19 @@ dboard_manager::dboard_manager(
     }
 }
 
-dboard_manager::~dboard_manager(void){
+dboard_manager_impl::~dboard_manager_impl(void){
     /* NOP */
 }
 
-prop_names_t dboard_manager::get_rx_subdev_names(void){
+prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
     return _rx_dboards.get_keys();
 }
 
-prop_names_t dboard_manager::get_tx_subdev_names(void){
+prop_names_t dboard_manager_impl::get_tx_subdev_names(void){
     return _tx_dboards.get_keys();
 }
 
-wax::obj dboard_manager::get_rx_subdev(const std::string &subdev_name){
+wax::obj dboard_manager_impl::get_rx_subdev(const std::string &subdev_name){
     if (not _rx_dboards.has_key(subdev_name)) throw std::invalid_argument(
         str(boost::format("Unknown rx subdev name %s") % subdev_name)
     );
@@ -222,7 +264,7 @@ wax::obj dboard_manager::get_rx_subdev(const std::string &subdev_name){
     return wax::cast<subdev_proxy::sptr>(_rx_dboards[subdev_name])->get_link();
 }
 
-wax::obj dboard_manager::get_tx_subdev(const std::string &subdev_name){
+wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
     if (not _tx_dboards.has_key(subdev_name)) throw std::invalid_argument(
         str(boost::format("Unknown tx subdev name %s") % subdev_name)
     );

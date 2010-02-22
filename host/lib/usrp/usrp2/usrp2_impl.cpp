@@ -90,9 +90,9 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
     );
 
     //create the usrp2 implementation guts
-    return device::sptr(dynamic_cast<device*>(
+    return device::sptr(
         new usrp2_impl(ctrl_transport, data_transport)
-    ));
+    );
 }
 
 /***********************************************************************

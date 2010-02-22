@@ -18,13 +18,11 @@
 #ifndef INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 #define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
-#include <uhd/dict.hpp>
-#include <uhd/wax.hpp>
 #include <uhd/props.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_id.hpp>
+#include <boost/utility.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace uhd{ namespace usrp{
 
@@ -36,6 +34,7 @@ namespace uhd{ namespace usrp{
 class dboard_manager : boost::noncopyable{
 
 public:
+    typedef boost::shared_ptr<dboard_manager> sptr;
 
     //dboard constructor (each dboard should have a ::make with this signature)
     typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t const&);
@@ -53,28 +52,24 @@ public:
         const prop_names_t &subdev_names
     );
 
-public:
-    typedef boost::shared_ptr<dboard_manager> sptr;
-    //structors
-    dboard_manager(
+    /*!
+     * Make a new dboard manager.
+     * \param rx_dboard_id the id of the rx dboard
+     * \param tx_dboard_id the id of the tx dboard
+     * \param interface the custom dboard interface
+     * \return an sptr to the new dboard manager
+     */
+    static sptr make(
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
         dboard_interface::sptr interface
     );
-    ~dboard_manager(void);
 
     //dboard_interface
-    prop_names_t get_rx_subdev_names(void);
-    prop_names_t get_tx_subdev_names(void);
-    wax::obj get_rx_subdev(const std::string &subdev_name);
-    wax::obj get_tx_subdev(const std::string &subdev_name);
-
-private:
-    //list of rx and tx dboards in this dboard_manager
-    //each dboard here is actually a subdevice proxy
-    //the subdevice proxy is internal to the cpp file
-    uhd::dict<std::string, wax::obj> _rx_dboards;
-    uhd::dict<std::string, wax::obj> _tx_dboards;
+    virtual prop_names_t get_rx_subdev_names(void) = 0;
+    virtual prop_names_t get_tx_subdev_names(void) = 0;
+    virtual wax::obj get_rx_subdev(const std::string &subdev_name) = 0;
+    virtual wax::obj get_tx_subdev(const std::string &subdev_name) = 0;
 };
 
 }} //namespace
