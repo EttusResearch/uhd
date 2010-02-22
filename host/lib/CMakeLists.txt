@@ -24,14 +24,11 @@ SET(libuhd_sources
     uhd.cpp
     wax.cpp
     transport/udp.cpp
-    usrp/usrp.cpp
     usrp/dboard/basic.cpp
     usrp/dboard_base.cpp
     usrp/dboard_id.cpp
     usrp/dboard_interface.cpp
     usrp/dboard_manager.cpp
-    usrp/mboard_base.cpp
-    usrp/usrp2.cpp
     usrp/usrp2/dboard_impl.cpp
     usrp/usrp2/dboard_interface.cpp
     usrp/usrp2/dsp_impl.cpp

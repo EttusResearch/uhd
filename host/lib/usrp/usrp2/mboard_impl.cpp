@@ -23,6 +23,13 @@ using namespace uhd;
 /***********************************************************************
  * Helper Methods
  **********************************************************************/
+void usrp2_impl::mboard_init(void){
+    _mboards[""] = wax_obj_proxy(
+        boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
+        boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
+    );
+}
+
 void usrp2_impl::init_clock_config(void){
     //init the pps source clock config
     _pps_source_dict["sma"]  = USRP2_PPS_SOURCE_SMA;
@@ -60,7 +67,7 @@ void usrp2_impl::update_clock_config(void){
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
-void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
+void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
@@ -146,7 +153,7 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * MBoard Set Properties
  **********************************************************************/
-void usrp2_impl::set(const wax::obj &key, const wax::obj &val){
+void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(wax::cast<mboard_prop_t>(key)){
 

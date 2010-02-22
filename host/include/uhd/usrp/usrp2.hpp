@@ -18,15 +18,14 @@
 #ifndef INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
 #define INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
 
-#include <uhd/usrp/mboard_base.hpp>
-#include <uhd/device_addr.hpp>
+#include <uhd/device.hpp>
 
 namespace uhd{ namespace usrp{
 
 /*!
- * The usrp2 mboard class.
+ * The usrp2 device class.
  */
-class usrp2 : public mboard_base{
+class usrp2 : public device{
 public:
     /*!
      * Discover usrp2 devices over the ethernet.
@@ -36,14 +35,12 @@ public:
      */
     static device_addrs_t discover(const device_addr_t &hint);
 
-    usrp2(const device_addr_t &);
-    ~usrp2(void);
-
-private:
-    void get(const wax::obj &, wax::obj &);
-    void set(const wax::obj &, const wax::obj &);
-
-    wax::obj _impl;
+    /*!
+     * Make a usrp2 from a device address.
+     * \param addr the device address
+     * \return a device sptr to a new usrp2
+     */
+    static device::sptr make(const device_addr_t &addr);
 };
 
 }} //namespace

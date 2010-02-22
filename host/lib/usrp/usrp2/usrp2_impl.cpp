@@ -22,6 +22,78 @@
 #include "usrp2_impl.hpp"
 
 using namespace uhd;
+using namespace uhd::usrp;
+
+/***********************************************************************
+ * Discovery over the udp transport
+ **********************************************************************/
+uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
+    device_addrs_t usrp2_addrs;
+
+    //create a udp transport to communicate
+    //TODO if an addr is not provided, search all interfaces?
+    std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
+    uhd::transport::udp udp_transport(hint["addr"], ctrl_port, true);
+
+    //send a hello control packet
+    usrp2_ctrl_data_t ctrl_data_out;
+    ctrl_data_out.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
+    udp_transport.send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+
+    //loop and recieve until the time is up
+    size_t num_timeouts = 0;
+    while(true){
+        uhd::shared_iovec iov = udp_transport.recv();
+        //std::cout << boost::asio::buffer_size(buff) << "\n";
+        if (iov.len < sizeof(usrp2_ctrl_data_t)){
+            //sleep a little so we dont burn cpu
+            if (num_timeouts++ > 50) break;
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        }else{
+            //handle the received data
+            const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(iov.base);
+            switch(ntohl(ctrl_data_in->id)){
+            case USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE:
+                //make a boost asio ipv4 with the raw addr in host byte order
+                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+                device_addr_t new_addr;
+                new_addr["name"] = "USRP2";
+                new_addr["type"] = "udp";
+                new_addr["addr"] = ip_addr.to_string();
+                usrp2_addrs.push_back(new_addr);
+                break;
+            }
+        }
+    }
+
+    return usrp2_addrs;
+}
+
+/***********************************************************************
+ * Make
+ **********************************************************************/
+device::sptr usrp2::make(const device_addr_t &device_addr){
+    //create a control transport
+    uhd::transport::udp::sptr ctrl_transport(
+        new uhd::transport::udp(
+            device_addr["addr"],
+            boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
+        )
+    );
+
+    //create a data transport
+    uhd::transport::udp::sptr data_transport(
+        new uhd::transport::udp(
+            device_addr["addr"],
+            boost::lexical_cast<std::string>(USRP2_UDP_DATA_PORT)
+        )
+    );
+
+    //create the usrp2 implementation guts
+    return device::sptr(dynamic_cast<device*>(
+        new usrp2_impl(ctrl_transport, data_transport)
+    ));
+}
 
 /***********************************************************************
  * Structors
@@ -45,6 +117,9 @@ usrp2_impl::usrp2_impl(
     for (size_t i = 260; i <= 512; i+=4){
         _allowed_decim_and_interp_rates.push_back(i);
     }
+
+    //init the mboard
+    mboard_init();
 
     //init the tx and rx dboards
     dboard_init();
@@ -99,4 +174,42 @@ usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_da
         }
     }
     throw std::runtime_error("usrp2 no control response");
+}
+
+/***********************************************************************
+ * Device Properties
+ **********************************************************************/
+void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the get request conditioned on the key
+    switch(wax::cast<device_prop_t>(key)){
+    case DEVICE_PROP_NAME:
+        val = std::string("usrp2 device");
+        return;
+
+    case DEVICE_PROP_MBOARD:
+        val = _mboards[name].get_link();
+        return;
+
+    case DEVICE_PROP_MBOARD_NAMES:
+        val = prop_names_t(_mboards.get_keys());
+        return;
+    }
+}
+
+void usrp2_impl::set(const wax::obj &, const wax::obj &){
+    throw std::runtime_error("Cannot set in usrp2 device");
+}
+
+/***********************************************************************
+ * IO Interface
+ **********************************************************************/
+void usrp2_impl::send_raw(const std::vector<boost::asio::const_buffer> &){
+    return;
+}
+
+uhd::shared_iovec usrp2_impl::recv_raw(void){
+    throw std::runtime_error("not implemented");
 }

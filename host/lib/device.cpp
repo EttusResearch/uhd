@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/usrp.hpp>
-#include <uhd/usrp/usrp2.hpp> //TODO remove and call discover from usrp
+#include <uhd/usrp/usrp2.hpp>
 #include <uhd/device.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
@@ -26,12 +25,7 @@ using namespace uhd;
 device_addrs_t device::discover(const device_addr_t &hint){
     device_addrs_t device_addrs;
     if (not hint.has_key("type")){
-        //TODO nothing
-    }
-    else if (hint["type"] == "test"){
-        //make a copy of the hint for testing
-        device_addr_t test_device_addr = hint;
-        device_addrs.push_back(test_device_addr);
+        //TODO call discover for others and append results
     }
     else if (hint["type"] == "udp"){
         std::vector<device_addr_t> usrp2_addrs = usrp::usrp2::discover(hint);
@@ -58,9 +52,9 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     }
 
     //create the new device with the discovered address
-    //TODO only a usrp device will be made (until others are supported)
-    if (true){
-        return sptr(new uhd::usrp::usrp(device_addrs.at(which)));
+    //TODO only a usrp2 device will be made (until others are supported)
+    if (hint.has_key("type") and hint["type"] == "udp"){
+        return usrp::usrp2::make(device_addrs.at(which));
     }
     throw std::runtime_error("cant make a device");
 }

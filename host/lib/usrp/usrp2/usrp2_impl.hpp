@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/usrp/usrp2.hpp>
 #include <uhd/dict.hpp>
 #include <uhd/props.hpp>
 #include <uhd/time_spec.hpp>
@@ -70,7 +71,7 @@ private:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class usrp2_impl : boost::noncopyable, public wax::obj{
+class usrp2_impl : public uhd::device{
 public:
     typedef boost::shared_ptr<usrp2_impl> sptr;
 
@@ -96,6 +97,10 @@ public:
     //misc access methods
     double get_master_clock_freq(void);
 
+    //the io interface
+    void send_raw(const std::vector<boost::asio::const_buffer> &);
+    uhd::shared_iovec recv_raw(void);
+
 private:
     //udp transports for control and data
     uhd::transport::udp::sptr _ctrl_transport;
@@ -118,6 +123,12 @@ private:
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     void dboard_init(void);
+
+    //properties for the mboard
+    void mboard_init(void);
+    void mboard_get(const wax::obj &, wax::obj &);
+    void mboard_set(const wax::obj &, const wax::obj &);
+    uhd::dict<std::string, wax_obj_proxy> _mboards;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
