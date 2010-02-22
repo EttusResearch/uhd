@@ -91,6 +91,8 @@ private:
     //the subdevice proxy is internal to the cpp file
     uhd::dict<std::string, wax::obj> _rx_dboards;
     uhd::dict<std::string, wax::obj> _tx_dboards;
+    dboard_interface::sptr _interface;
+    void set_nice_gpio_pins(void);
 };
 
 /***********************************************************************
@@ -184,6 +186,7 @@ dboard_manager_impl::dboard_manager_impl(
     dboard_interface::sptr interface
 ){
     register_internal_dboards(); //always call first
+    _interface = interface;
 
     dboard_ctor_t rx_dboard_ctor; prop_names_t rx_subdevs;
     boost::tie(rx_dboard_ctor, rx_subdevs) = get_dboard_args(rx_dboard_id, "rx");
@@ -192,14 +195,7 @@ dboard_manager_impl::dboard_manager_impl(
     boost::tie(tx_dboard_ctor, tx_subdevs) = get_dboard_args(tx_dboard_id, "tx");
 
     //initialize the gpio pins before creating subdevs
-    interface->set_gpio_ddr(dboard_interface::GPIO_RX_BANK, 0x0000, 0xffff); //all inputs
-    interface->set_gpio_ddr(dboard_interface::GPIO_TX_BANK, 0x0000, 0xffff);
-
-    interface->write_gpio(dboard_interface::GPIO_RX_BANK, 0x0000, 0xffff); //all zeros
-    interface->write_gpio(dboard_interface::GPIO_TX_BANK, 0x0000, 0xffff);
-
-    interface->set_atr_reg(dboard_interface::GPIO_RX_BANK, 0x0000, 0x0000, 0x0000); //software controlled
-    interface->set_atr_reg(dboard_interface::GPIO_TX_BANK, 0x0000, 0x0000, 0x0000);
+    set_nice_gpio_pins();
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
@@ -245,7 +241,7 @@ dboard_manager_impl::dboard_manager_impl(
 }
 
 dboard_manager_impl::~dboard_manager_impl(void){
-    /* NOP */
+    set_nice_gpio_pins();
 }
 
 prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
@@ -270,4 +266,17 @@ wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
     );
     //get a link to the tx subdev proxy
     return wax::cast<subdev_proxy::sptr>(_tx_dboards[subdev_name])->get_link();
+}
+
+void dboard_manager_impl::set_nice_gpio_pins(void){
+    //std::cout << "Set nice GPIO pins" << std::endl;
+
+    _interface->set_gpio_ddr(dboard_interface::GPIO_RX_BANK, 0x0000, 0xffff); //all inputs
+    _interface->set_gpio_ddr(dboard_interface::GPIO_TX_BANK, 0x0000, 0xffff);
+
+    _interface->write_gpio(dboard_interface::GPIO_RX_BANK, 0x0000, 0xffff); //all zeros
+    _interface->write_gpio(dboard_interface::GPIO_TX_BANK, 0x0000, 0xffff);
+
+    _interface->set_atr_reg(dboard_interface::GPIO_RX_BANK, 0x0000, 0x0000, 0x0000); //software controlled
+    _interface->set_atr_reg(dboard_interface::GPIO_TX_BANK, 0x0000, 0x0000, 0x0000);
 }
