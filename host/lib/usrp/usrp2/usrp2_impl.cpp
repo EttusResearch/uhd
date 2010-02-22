@@ -33,17 +33,18 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     //create a udp transport to communicate
     //TODO if an addr is not provided, search all interfaces?
     std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
-    uhd::transport::udp udp_transport(hint["addr"], ctrl_port, true);
+    transport::udp::sptr udp_transport = \
+        transport::udp::make(hint["addr"], ctrl_port, true);
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out;
     ctrl_data_out.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
-    udp_transport.send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+    udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the time is up
     size_t num_timeouts = 0;
     while(true){
-        uhd::shared_iovec iov = udp_transport.recv();
+        uhd::shared_iovec iov = udp_transport->recv();
         //std::cout << boost::asio::buffer_size(buff) << "\n";
         if (iov.len < sizeof(usrp2_ctrl_data_t)){
             //sleep a little so we dont burn cpu
@@ -72,21 +73,17 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
+#define num2str(num) (boost::lexical_cast<std::string>(num))
+
 device::sptr usrp2::make(const device_addr_t &device_addr){
     //create a control transport
-    uhd::transport::udp::sptr ctrl_transport(
-        new uhd::transport::udp(
-            device_addr["addr"],
-            boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
-        )
+    transport::udp::sptr ctrl_transport = transport::udp::make(
+        device_addr["addr"], num2str(USRP2_UDP_CTRL_PORT)
     );
 
     //create a data transport
-    uhd::transport::udp::sptr data_transport(
-        new uhd::transport::udp(
-            device_addr["addr"],
-            boost::lexical_cast<std::string>(USRP2_UDP_DATA_PORT)
-        )
+    transport::udp::sptr data_transport = transport::udp::make(
+        device_addr["addr"], num2str(USRP2_UDP_DATA_PORT)
     );
 
     //create the usrp2 implementation guts
@@ -99,8 +96,8 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(
-    uhd::transport::udp::sptr ctrl_transport,
-    uhd::transport::udp::sptr data_transport
+    transport::udp::sptr ctrl_transport,
+    transport::udp::sptr data_transport
 ){
     _ctrl_transport = ctrl_transport;
     _data_transport = data_transport;
@@ -121,9 +118,6 @@ usrp2_impl::usrp2_impl(
     //init the mboard
     mboard_init();
 
-    //init the tx and rx dboards
-    dboard_init();
-
     //init the ddc
     init_ddc_config();
 
@@ -132,6 +126,10 @@ usrp2_impl::usrp2_impl(
 
     //initialize the clock configuration
     init_clock_config();
+
+    //init the tx and rx dboards (do last)
+    dboard_init();
+
 }
 
 usrp2_impl::~usrp2_impl(void){
