@@ -64,7 +64,7 @@ control_lib/gray_send.v \
 control_lib/icache.v \
 control_lib/mux4.v \
 control_lib/mux8.v \
-control_lib/nsgpio.v \
+control_lib/nsgpio16LE.v \
 control_lib/ram_2port.v \
 control_lib/ram_harv_cache.v \
 control_lib/ram_loader.v \

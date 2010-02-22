@@ -10,7 +10,8 @@ module u1e_core
    input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
    
    inout db_sda, inout db_scl,
-   output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun
+   output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
+   inout [15:0] io_tx, inout [15:0] io_rx
    );
    
    wire   wb_clk, wb_rst;
@@ -102,7 +103,7 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s4_ack = 0;   assign s5_ack = 0;   assign s6_ack = 0;   assign s7_ack = 0;
+   assign s5_ack = 0;   assign s6_ack = 0;   assign s7_ack = 0;
    assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
@@ -172,6 +173,20 @@ module u1e_core
    IOBUF scl_pin(.O(scl_pad_i), .IO(db_scl), .I(scl_pad_o), .T(scl_pad_oen_o));
    IOBUF sda_pin(.O(sda_pad_i), .IO(db_sda), .I(sda_pad_o), .T(sda_pad_oen_o));
 
+   // /////////////////////////////////////////////////////////////////////////
+   // GPIOs -- Slave #4
+
+   wire [31:0] 	atr_lines;
+   wire [31:0] 	debug_gpio_0, debug_gpio_1;
+   
+   nsgpio16LE 
+     nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
+		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
+		.dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
+		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
+		.gpio( {io_tx,io_rx} ) );
+
+   
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
    

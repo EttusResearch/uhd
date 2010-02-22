@@ -11,7 +11,8 @@ module u1e
    input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
 
    inout db_sda, inout db_scl, // I2C
-   output overo_gpio144, output overo_gpio145, output overo_gpio146, output overo_gpio147  // Fifo controls
+   output overo_gpio144, output overo_gpio145, output overo_gpio146, output overo_gpio147,  // Fifo controls
+   inout [15:0] io_tx, inout [15:0] io_rx
    );
 
    // FPGA-specific pins connections
@@ -27,6 +28,7 @@ module u1e
 		     .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
 		     .db_sda(db_sda), .db_scl(db_scl),
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
-		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147) );
+		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
+		     .io_tx(io_tx), .io_rx(io_rx) );
    
 endmodule // u1e
