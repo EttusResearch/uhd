@@ -171,7 +171,11 @@ module u2_rev3
        wd <= wd + 1;
    assign 	WDI = wd[15];
    
-   IBUFGDS clk_fpga_pin (.O(clk_fpga),.I(clk_fpga_p),.IB(clk_fpga_n));
+   wire 	clk_fpga_unbuf;
+
+   IBUFGDS clk_fpga_pin (.O(clk_fpga_unbuf),.I(clk_fpga_p),.IB(clk_fpga_n));
+   BUFG clk_fpga_BUF (.O(clk_fpga),.I(clk_fpga_unbuf));
+
    defparam 	clk_fpga_pin.IOSTANDARD = "LVPECL_25";
    
    wire 	exp_pps_in;
