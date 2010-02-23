@@ -98,8 +98,8 @@ public:
     double get_master_clock_freq(void);
 
     //the io interface
-    void send_raw(const std::vector<boost::asio::const_buffer> &);
-    uhd::shared_iovec recv_raw(void);
+    size_t send(const boost::asio::const_buffer &, const uhd::metadata_t &, const std::string &);
+    size_t recv(const boost::asio::mutable_buffer &, uhd::metadata_t &, const std::string &);
 
 private:
     //udp transports for control and data

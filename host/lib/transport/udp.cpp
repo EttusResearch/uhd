@@ -17,7 +17,6 @@
 
 #include <uhd/transport/udp.hpp>
 #include <boost/format.hpp>
-#include <boost/assign/list_of.hpp>
 #include <iostream>
 
 /***********************************************************************
@@ -30,8 +29,9 @@ public:
     ~udp_impl(void);
 
     //send/recv
-    void send(const std::vector<boost::asio::const_buffer> &buffs);
-    void send(const boost::asio::const_buffer &buff);
+    size_t send(const std::vector<boost::asio::const_buffer> &buffs);
+    size_t send(const boost::asio::const_buffer &buff);
+    size_t recv(const boost::asio::mutable_buffer &buff);
     uhd::shared_iovec recv(void);
 
 private:
@@ -79,13 +79,17 @@ udp_impl::~udp_impl(void){
     delete _socket;
 }
 
-void udp_impl::send(const std::vector<boost::asio::const_buffer> &buffs){
-    _socket->send_to(buffs, _receiver_endpoint);
+size_t udp_impl::send(const std::vector<boost::asio::const_buffer> &buffs){
+    return _socket->send_to(buffs, _receiver_endpoint);
 }
 
-void udp_impl::send(const boost::asio::const_buffer &buff){
-    std::vector<boost::asio::const_buffer> buffs = boost::assign::list_of(buff);
-    send(buffs);
+size_t udp_impl::send(const boost::asio::const_buffer &buff){
+    return _socket->send_to(boost::asio::buffer(buff), _receiver_endpoint);
+}
+
+size_t udp_impl::recv(const boost::asio::mutable_buffer &buff){
+    if (_socket->available() == 0) return 0;
+    return _socket->receive_from(boost::asio::buffer(buff), _sender_endpoint);
 }
 
 uhd::shared_iovec udp_impl::recv(void){

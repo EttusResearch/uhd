@@ -159,7 +159,10 @@ void handle_udp_data_packet(
     unsigned char *payload, int payload_len
 ){
     //TODO store the reply port
-    _is_data = true;
+
+    //forward this data to the dsp when the payload is sufficient
+    //the small payload is used to give the device the udp source port
+    _is_data = payload_len > sizeof(uint32_t);
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \

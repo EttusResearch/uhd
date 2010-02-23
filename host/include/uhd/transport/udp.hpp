@@ -41,18 +41,31 @@ public:
 
     /*!
      * Send a vector of buffer (like send_msg).
+     * Blocks until the data is sent.
      * \param buffs a vector of asio buffers
+     * \return the number of bytes sent
      */
-    virtual void send(const std::vector<boost::asio::const_buffer> &buffs) = 0;
+    virtual size_t send(const std::vector<boost::asio::const_buffer> &buffs) = 0;
 
     /*!
      * Send a single buffer.
+     * Blocks until the data is sent.
      * \param buff single asio buffer
+     * \return the number of bytes sent
      */
-    virtual void send(const boost::asio::const_buffer &buff) = 0;
+    virtual size_t send(const boost::asio::const_buffer &buff) = 0;
+
+    /*!
+     * Receive a buffer. Write into the memory provided.
+     * Returns empty when data is not available.
+     * \param buff a mutable buffer to receive into
+     * \return the number of bytes received.
+     */
+    virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
 
     /*!
      * Receive a buffer. The memory is managed internally.
+     * Returns zero when data is not available.
      * Calling recv will invalidate the buffer of the previous recv.
      * \return a shared iovec with allocated memory
      */
