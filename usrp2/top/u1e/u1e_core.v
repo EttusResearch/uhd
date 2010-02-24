@@ -206,6 +206,9 @@ module u1e_core
    assign debug = { { 1'b0, EM_WAIT0, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
 
+   assign debug_gpio_0 = { m0_we, m0_stb, m0_ack, s1_stb, s0_stb, m0_adr[10:0], m0_dat_mosi[15:0] };
+   assign debug_gpio_1 = { debug_txd, debug_rxd };
+   
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_fast;  // LEDs are arranged funny on board
    
 endmodule // u1e_core
