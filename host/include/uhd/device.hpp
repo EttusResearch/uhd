@@ -77,7 +77,7 @@ public:
      * \param buff a buffer pointing to some read-only memory
      * \param metadata data describing the buffer's contents
      * \param the type of data loaded in the buffer (32fc, 16sc)
-     * \return the number of bytes sent
+     * \return the number of samples sent
      */
     virtual size_t send(
         const boost::asio::const_buffer &buff,
@@ -91,7 +91,7 @@ public:
      * \param buff the buffer to fill with IF data
      * \param metadata data to fill describing the buffer
      * \param the type of data to fill into the buffer (32fc, 16sc)
-     * \return the number of bytes received
+     * \return the number of samples received
      */
     virtual size_t recv(
         const boost::asio::mutable_buffer &buff,

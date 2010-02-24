@@ -31,8 +31,8 @@ public:
     //send/recv
     size_t send(const std::vector<boost::asio::const_buffer> &buffs);
     size_t send(const boost::asio::const_buffer &buff);
+    size_t recv(const std::vector<boost::asio::mutable_buffer> &buffs);
     size_t recv(const boost::asio::mutable_buffer &buff);
-    uhd::shared_iovec recv(void);
 
 private:
     boost::asio::ip::udp::socket   *_socket;
@@ -87,20 +87,12 @@ size_t udp_impl::send(const boost::asio::const_buffer &buff){
     return _socket->send_to(boost::asio::buffer(buff), _receiver_endpoint);
 }
 
+size_t udp_impl::recv(const std::vector<boost::asio::mutable_buffer> &buffs){
+    if (_socket->available() == 0) return 0;
+    return _socket->receive_from(buffs, _sender_endpoint);
+}
+
 size_t udp_impl::recv(const boost::asio::mutable_buffer &buff){
     if (_socket->available() == 0) return 0;
     return _socket->receive_from(boost::asio::buffer(buff), _sender_endpoint);
-}
-
-uhd::shared_iovec udp_impl::recv(void){
-    //allocate a buffer for the number of bytes available (could be zero)
-    uhd::shared_iovec iov(_socket->available());
-    //call recv only if data is available
-    if (iov.len != 0){
-        _socket->receive_from(
-            boost::asio::buffer(iov.base, iov.len),
-            _sender_endpoint
-        );
-    }
-    return iov;
 }

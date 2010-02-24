@@ -102,6 +102,11 @@ public:
     size_t recv(const boost::asio::mutable_buffer &, uhd::metadata_t &, const std::string &);
 
 private:
+    //the raw io interface (samples are in the usrp2 native format)
+    size_t send_raw(const boost::asio::const_buffer &, const uhd::metadata_t &);
+    size_t recv_raw(const boost::asio::mutable_buffer &, uhd::metadata_t &);
+    uhd::dict<uint32_t, size_t> _stream_id_to_packet_seq;
+
     //udp transports for control and data
     uhd::transport::udp::sptr _ctrl_transport;
     uhd::transport::udp::sptr _data_transport;

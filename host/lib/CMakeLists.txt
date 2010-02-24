@@ -20,7 +20,6 @@ SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
-    shared_iovec.cpp
     uhd.cpp
     wax.cpp
     transport/udp.cpp
@@ -32,6 +31,7 @@ SET(libuhd_sources
     usrp/usrp2/dboard_impl.cpp
     usrp/usrp2/dboard_interface.cpp
     usrp/usrp2/dsp_impl.cpp
+    usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
     usrp/usrp2/usrp2_impl.cpp
 )

@@ -26,7 +26,6 @@ INSTALL(FILES
     gain_handler.hpp
     metadata.hpp
     props.hpp
-    shared_iovec.hpp
     time_spec.hpp
     utils.hpp
     wax.hpp

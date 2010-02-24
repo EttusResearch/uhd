@@ -18,7 +18,6 @@
 #include <boost/asio.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/shared_iovec.hpp>
 
 #ifndef INCLUDED_UHD_TRANSPORT_UDP_HPP
 #define INCLUDED_UHD_TRANSPORT_UDP_HPP
@@ -58,18 +57,18 @@ public:
     /*!
      * Receive a buffer. Write into the memory provided.
      * Returns empty when data is not available.
+     * \param buffs a vector of asio buffers
+     * \return the number of bytes received.
+     */
+    virtual size_t recv(const std::vector<boost::asio::mutable_buffer> &buffs) = 0;
+
+    /*!
+     * Receive a buffer. Write into the memory provided.
+     * Returns empty when data is not available.
      * \param buff a mutable buffer to receive into
      * \return the number of bytes received.
      */
     virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
-
-    /*!
-     * Receive a buffer. The memory is managed internally.
-     * Returns zero when data is not available.
-     * Calling recv will invalidate the buffer of the previous recv.
-     * \return a shared iovec with allocated memory
-     */
-    virtual uhd::shared_iovec recv(void) = 0;
 };
 
 }} //namespace

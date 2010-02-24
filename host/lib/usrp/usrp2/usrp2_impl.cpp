@@ -44,19 +44,21 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     //loop and recieve until the time is up
     size_t num_timeouts = 0;
     while(true){
-        uhd::shared_iovec iov = udp_transport->recv();
-        //std::cout << boost::asio::buffer_size(buff) << "\n";
-        if (iov.len < sizeof(usrp2_ctrl_data_t)){
+        usrp2_ctrl_data_t ctrl_data_in;
+        size_t len = udp_transport->recv(
+            boost::asio::buffer(&ctrl_data_in, sizeof(ctrl_data_in))
+        );
+        //std::cout << len << "\n";
+        if (len < sizeof(usrp2_ctrl_data_t)){
             //sleep a little so we dont burn cpu
             if (num_timeouts++ > 50) break;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }else{
             //handle the received data
-            const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(iov.base);
-            switch(ntohl(ctrl_data_in->id)){
+            switch(ntohl(ctrl_data_in.id)){
             case USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE:
                 //make a boost asio ipv4 with the raw addr in host byte order
-                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
                 new_addr["type"] = "udp";
@@ -161,14 +163,16 @@ usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_da
     //loop and recieve until the time is up
     size_t num_timeouts = 0;
     while(true){
-        uhd::shared_iovec iov = _ctrl_transport->recv();
-        if (iov.len < sizeof(usrp2_ctrl_data_t)){
+        usrp2_ctrl_data_t in_data;
+        size_t len = _ctrl_transport->recv(
+            boost::asio::buffer(&in_data, sizeof(in_data))
+        );
+        if (len < sizeof(usrp2_ctrl_data_t)){
             //sleep a little so we dont burn cpu
             if (num_timeouts++ > 50) break;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }else{
             //handle the received data
-            usrp2_ctrl_data_t in_data = *reinterpret_cast<const usrp2_ctrl_data_t *>(iov.base);
             if (ntohl(in_data.seq) == _ctrl_seq_num){
                 return in_data;
             }
@@ -203,77 +207,4 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_impl::set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("Cannot set in usrp2 device");
-}
-
-/***********************************************************************
- * IO Interface
- **********************************************************************/
-static const float float_scale_factor = pow(2.0, 15);
-
-size_t usrp2_impl::send(
-    const boost::asio::const_buffer &buff,
-    const uhd::metadata_t &metadata,
-    const std::string &type
-){
-    if (type == "fc32"){
-        //extract the buffer elements
-        const float *float_buff = boost::asio::buffer_cast<const float*>(buff);
-        const size_t buff_len = boost::asio::buffer_size(buff)/sizeof(float);
-
-        //convert floats into the shorts buffer
-        int16_t *shorts_buff = new int16_t[buff_len];
-        for (size_t i = 0; i < buff_len; i++){
-            shorts_buff[i] = float_buff[i]*float_scale_factor;
-        }
-
-        //send from a buffer of shorts
-        size_t bytes_sent = send(
-            boost::asio::buffer(shorts_buff, buff_len*sizeof(int16_t)),
-            metadata, "sc16"
-        );
-
-        //cleanup
-        delete [] shorts_buff;
-        return bytes_sent;
-    }
-
-    if (type == "sc16"){
-        throw std::runtime_error("not implemented");
-    }
-
-    throw std::runtime_error(str(boost::format("usrp2 send: cannot handle type \"%s\"") % type));
-}
-
-size_t usrp2_impl::recv(
-    const boost::asio::mutable_buffer &buff,
-    uhd::metadata_t &metadata,
-    const std::string &type
-){
-    if (type == "fc32"){
-        //extract the buffer elements
-        float *float_buff = boost::asio::buffer_cast<float*>(buff);
-        const size_t buff_len = boost::asio::buffer_size(buff)/sizeof(float);
-
-        //receive into a buffer of shorts
-        int16_t *shorts_buff = new int16_t[buff_len];
-        size_t bytes_received = recv(
-            boost::asio::buffer(shorts_buff, buff_len*sizeof(int16_t)),
-            metadata, "sc16"
-        );
-
-        //convert floats into the shorts buffer
-        for (size_t i = 0; i < bytes_received/sizeof(int16_t); i++){
-            float_buff[i] = shorts_buff[i]/float_scale_factor;
-        }
-
-        //cleanup
-        delete [] shorts_buff;
-        return bytes_received;
-    }
-
-    if (type == "sc16"){
-        throw std::runtime_error("not implemented");
-    }
-
-    throw std::runtime_error(str(boost::format("usrp2 recv: cannot handle type \"%s\"") % type));
 }

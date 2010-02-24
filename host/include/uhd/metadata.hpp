@@ -30,13 +30,17 @@ namespace uhd{
  */
 struct metadata_t{
     uint32_t stream_id;
+    bool has_stream_id;
     time_spec_t time_spec;
+    bool has_time_spec;
     bool start_of_burst;
     bool end_of_burst;
 
     metadata_t(void){
         stream_id = 0;
+        has_stream_id = false;
         time_spec = time_spec_t();
+        has_time_spec = false;
         start_of_burst = false;
         end_of_burst = false;
     }
