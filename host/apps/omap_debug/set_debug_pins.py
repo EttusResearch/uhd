@@ -17,10 +17,10 @@ gpio_ctrl_lo = 8
 gpio_ctrl_hi = 12
 
 def set_reg(reg, val):
-    os.system("usrp1-e-ctl w %d 1 %d" % (reg,val))
+    os.system("./usrp1-e-ctl w %d 1 %d" % (reg,val))
 
 def get_reg(reg):
-    fin,fout = os.popen4("usrp1-e-ctl r %d 1" % (reg,))
+    fin,fout = os.popen4("./usrp1-e-ctl r %d 1" % (reg,))
     print fout.read()
 
 # Set DDRs to output
