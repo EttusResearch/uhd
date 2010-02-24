@@ -105,7 +105,7 @@ size_t usrp2_impl::send_raw(
 
     //fill in complete header word
     vrt_hdr[0] = htonl(vrt_hdr_flags |
-        ((_stream_id_to_packet_seq[metadata.stream_id]++ << 16) & 0xf) |
+        ((_stream_id_to_packet_seq[metadata.stream_id]++ & 0xf) << 16) |
         ((boost::asio::buffer_size(buff)/sizeof(uint32_t)) & 0xffff)
     );
 
