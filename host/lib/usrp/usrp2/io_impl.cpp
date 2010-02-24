@@ -37,25 +37,6 @@ static const size_t max_vrt_header_words = 5;
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
-
-/*static void pack_vrt_header(
-    size_t num_data_words,            //input
-    const uhd::metadata_t &metadata,  //input
-    uint32_t *vrt_header,             //output
-    size_t &vrt_header_words          //output
-){
-    //
-}
-
-static void unpack_vrt_header(
-    size_t &num_data_words,           //output
-    uhd::metadata_t &metadata,        //output
-    const uint32_t *vrt_header,       //input
-    size_t &vrt_header_words          //output
-){
-    //
-}*/
-
 static inline void host_floats_to_usrp2_shorts(
     int16_t *usrp2_shorts,
     const float *host_floats,
