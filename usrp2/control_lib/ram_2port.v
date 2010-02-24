@@ -21,7 +21,7 @@ module ram_2port
    integer 	    i;
    initial
      for(i=0;i<(1<<AWIDTH);i=i+1)
-       ram[i] <= {AWIDTH{1'b0}};
+       ram[i] <= {DWIDTH{1'b0}};
    
    always @(posedge clka) begin
       if (ena)
