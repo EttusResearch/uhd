@@ -177,6 +177,9 @@ module u2_rev3
    BUFG clk_fpga_BUF (.O(clk_fpga),.I(clk_fpga_unbuf));
 
    defparam 	clk_fpga_pin.IOSTANDARD = "LVPECL_25";
+
+   wire 	cpld_clock_buf;
+   BUFG cpld_clock_BUF (.O(cpld_clock_buf),.I(cpld_clock));
    
    wire 	exp_pps_in;
    IBUFDS exp_pps_in_pin (.O(exp_pps_in),.I(exp_pps_in_p),.IB(exp_pps_in_n));
@@ -314,7 +317,9 @@ module u2_rev3
    reg [15:0] ser_r_int;
    reg 	      ser_rklsb_int, ser_rkmsb_int;
 
-   always @(posedge ser_rx_clk)
+   wire       ser_rx_clk_buf;
+   BUFG ser_rx_clk_BUF (.O(ser_rx_clk_buf),.I(ser_rx_clk));
+   always @(posedge ser_rx_clk_buf)
      begin
 	ser_r_int <= ser_r;
 	ser_rklsb_int <= ser_rklsb;
@@ -371,7 +376,7 @@ module u2_rev3
 		     .ser_t		(ser_t_unreg[15:0]),
 		     .ser_tklsb		(ser_tklsb_unreg),
 		     .ser_tkmsb		(ser_tkmsb_unreg),
-		     .ser_rx_clk	(ser_rx_clk),
+		     .ser_rx_clk	(ser_rx_clk_buf),
 		     .ser_r		(ser_r_int[15:0]),
 		     .ser_rklsb		(ser_rklsb_int),
 		     .ser_rkmsb		(ser_rkmsb_int),
