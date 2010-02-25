@@ -15,14 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/shared_iovec.hpp>
+#include <uhd/usrp/usrp1e.hpp>
 
-uhd::shared_iovec::shared_iovec(size_t len_){
-    _shared_array = boost::shared_array<uint8_t>(new uint8_t[len_]);
-    base = _shared_array.get();
-    len = len_;
+using namespace uhd;
+using namespace uhd::usrp;
+
+/*!
+ * This file defines the usrp1e discover and make functions
+ * when the required kernel module headers are not present.
+ */
+
+device_addrs_t usrp1e::discover(const device_addr_t &){
+    return device_addrs_t(); //return empty list
 }
 
-uhd::shared_iovec::~shared_iovec(void){
-    /* NOP */
+device::sptr usrp1e::make(const device_addr_t &){
+    throw std::runtime_error("this build has no usrp1e support");
 }

@@ -24,8 +24,8 @@ INSTALL(FILES
     device_addr.hpp
     dict.hpp
     gain_handler.hpp
+    metadata.hpp
     props.hpp
-    shared_iovec.hpp
     time_spec.hpp
     utils.hpp
     wax.hpp

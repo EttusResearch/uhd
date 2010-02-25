@@ -33,32 +33,36 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     //create a udp transport to communicate
     //TODO if an addr is not provided, search all interfaces?
     std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
-    uhd::transport::udp udp_transport(hint["addr"], ctrl_port, true);
+    transport::udp::sptr udp_transport = \
+        transport::udp::make(hint["addr"], ctrl_port, true);
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out;
     ctrl_data_out.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
-    udp_transport.send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+    udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the time is up
     size_t num_timeouts = 0;
     while(true){
-        uhd::shared_iovec iov = udp_transport.recv();
-        //std::cout << boost::asio::buffer_size(buff) << "\n";
-        if (iov.len < sizeof(usrp2_ctrl_data_t)){
+        usrp2_ctrl_data_t ctrl_data_in;
+        size_t len = udp_transport->recv(
+            boost::asio::buffer(&ctrl_data_in, sizeof(ctrl_data_in))
+        );
+        //std::cout << len << "\n";
+        if (len < sizeof(usrp2_ctrl_data_t)){
             //sleep a little so we dont burn cpu
             if (num_timeouts++ > 50) break;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }else{
             //handle the received data
-            const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(iov.base);
-            switch(ntohl(ctrl_data_in->id)){
+            switch(ntohl(ctrl_data_in.id)){
             case USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE:
                 //make a boost asio ipv4 with the raw addr in host byte order
-                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
-                new_addr["type"] = "udp";
+                new_addr["type"] = "usrp2";
+                new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
                 break;
@@ -72,21 +76,17 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
+#define num2str(num) (boost::lexical_cast<std::string>(num))
+
 device::sptr usrp2::make(const device_addr_t &device_addr){
     //create a control transport
-    uhd::transport::udp::sptr ctrl_transport(
-        new uhd::transport::udp(
-            device_addr["addr"],
-            boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
-        )
+    transport::udp::sptr ctrl_transport = transport::udp::make(
+        device_addr["addr"], num2str(USRP2_UDP_CTRL_PORT)
     );
 
     //create a data transport
-    uhd::transport::udp::sptr data_transport(
-        new uhd::transport::udp(
-            device_addr["addr"],
-            boost::lexical_cast<std::string>(USRP2_UDP_DATA_PORT)
-        )
+    transport::udp::sptr data_transport = transport::udp::make(
+        device_addr["addr"], num2str(USRP2_UDP_DATA_PORT)
     );
 
     //create the usrp2 implementation guts
@@ -99,8 +99,8 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(
-    uhd::transport::udp::sptr ctrl_transport,
-    uhd::transport::udp::sptr data_transport
+    transport::udp::sptr ctrl_transport,
+    transport::udp::sptr data_transport
 ){
     _ctrl_transport = ctrl_transport;
     _data_transport = data_transport;
@@ -121,9 +121,6 @@ usrp2_impl::usrp2_impl(
     //init the mboard
     mboard_init();
 
-    //init the tx and rx dboards
-    dboard_init();
-
     //init the ddc
     init_ddc_config();
 
@@ -132,6 +129,14 @@ usrp2_impl::usrp2_impl(
 
     //initialize the clock configuration
     init_clock_config();
+
+    //init the tx and rx dboards (do last)
+    dboard_init();
+
+    //send a small data packet so the usrp2 knows the udp source port
+    uint32_t zero_data = 0;
+    _data_transport->send(boost::asio::buffer(&zero_data, sizeof(zero_data)));
+
 }
 
 usrp2_impl::~usrp2_impl(void){
@@ -159,14 +164,16 @@ usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_da
     //loop and recieve until the time is up
     size_t num_timeouts = 0;
     while(true){
-        uhd::shared_iovec iov = _ctrl_transport->recv();
-        if (iov.len < sizeof(usrp2_ctrl_data_t)){
+        usrp2_ctrl_data_t in_data;
+        size_t len = _ctrl_transport->recv(
+            boost::asio::buffer(&in_data, sizeof(in_data))
+        );
+        if (len < sizeof(usrp2_ctrl_data_t)){
             //sleep a little so we dont burn cpu
             if (num_timeouts++ > 50) break;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }else{
             //handle the received data
-            usrp2_ctrl_data_t in_data = *reinterpret_cast<const usrp2_ctrl_data_t *>(iov.base);
             if (ntohl(in_data.seq) == _ctrl_seq_num){
                 return in_data;
             }
@@ -201,15 +208,4 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_impl::set(const wax::obj &, const wax::obj &){
     throw std::runtime_error("Cannot set in usrp2 device");
-}
-
-/***********************************************************************
- * IO Interface
- **********************************************************************/
-void usrp2_impl::send_raw(const std::vector<boost::asio::const_buffer> &){
-    return;
-}
-
-uhd::shared_iovec usrp2_impl::recv_raw(void){
-    throw std::runtime_error("not implemented");
 }

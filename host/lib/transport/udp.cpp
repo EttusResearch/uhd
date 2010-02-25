@@ -17,10 +17,45 @@
 
 #include <uhd/transport/udp.hpp>
 #include <boost/format.hpp>
-#include <boost/assign/list_of.hpp>
 #include <iostream>
 
-uhd::transport::udp::udp(const std::string &addr, const std::string &port, bool bcast){
+/***********************************************************************
+ * UDP implementation class
+ **********************************************************************/
+class udp_impl : public uhd::transport::udp{
+public:
+    //structors
+    udp_impl(const std::string &addr, const std::string &port, bool bcast);
+    ~udp_impl(void);
+
+    //send/recv
+    size_t send(const std::vector<boost::asio::const_buffer> &buffs);
+    size_t send(const boost::asio::const_buffer &buff);
+    size_t recv(const std::vector<boost::asio::mutable_buffer> &buffs);
+    size_t recv(const boost::asio::mutable_buffer &buff);
+
+private:
+    boost::asio::ip::udp::socket   *_socket;
+    boost::asio::ip::udp::endpoint _receiver_endpoint;
+    boost::asio::ip::udp::endpoint _sender_endpoint;
+    boost::asio::io_service        _io_service;
+};
+
+/***********************************************************************
+ * UDP public make function
+ **********************************************************************/
+uhd::transport::udp::sptr uhd::transport::udp::make(
+    const std::string &addr,
+    const std::string &port,
+    bool bcast
+){
+    return uhd::transport::udp::sptr(new udp_impl(addr, port, bcast));
+}
+
+/***********************************************************************
+ * UDP implementation methods
+ **********************************************************************/
+udp_impl::udp_impl(const std::string &addr, const std::string &port, bool bcast){
     //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
     // resolve the address
@@ -40,28 +75,24 @@ uhd::transport::udp::udp(const std::string &addr, const std::string &port, bool 
 
 }
 
-uhd::transport::udp::~udp(void){
+udp_impl::~udp_impl(void){
     delete _socket;
 }
 
-void uhd::transport::udp::send(const std::vector<boost::asio::const_buffer> &buffs){
-    _socket->send_to(buffs, _receiver_endpoint);
+size_t udp_impl::send(const std::vector<boost::asio::const_buffer> &buffs){
+    return _socket->send_to(buffs, _receiver_endpoint);
 }
 
-void uhd::transport::udp::send(const boost::asio::const_buffer &buff){
-    std::vector<boost::asio::const_buffer> buffs = boost::assign::list_of(buff);
-    send(buffs);
+size_t udp_impl::send(const boost::asio::const_buffer &buff){
+    return _socket->send_to(boost::asio::buffer(buff), _receiver_endpoint);
 }
 
-uhd::shared_iovec uhd::transport::udp::recv(void){
-    //allocate a buffer for the number of bytes available (could be zero)
-    uhd::shared_iovec iov(_socket->available());
-    //call recv only if data is available
-    if (iov.len != 0){
-        _socket->receive_from(
-            boost::asio::buffer(iov.base, iov.len),
-            _sender_endpoint
-        );
-    }
-    return iov;
+size_t udp_impl::recv(const std::vector<boost::asio::mutable_buffer> &buffs){
+    if (_socket->available() == 0) return 0;
+    return _socket->receive_from(buffs, _sender_endpoint);
+}
+
+size_t udp_impl::recv(const boost::asio::mutable_buffer &buff){
+    if (_socket->available() == 0) return 0;
+    return _socket->receive_from(boost::asio::buffer(buff), _sender_endpoint);
 }

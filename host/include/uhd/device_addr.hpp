@@ -56,7 +56,9 @@ namespace uhd{
      * \param device_addr a device address instance
      * \return the string representation
      */
-    std::string device_addr_to_string(const device_addr_t &device_addr);
+    struct device_addr{
+        static std::string to_string(const device_addr_t &device_addr);
+    };
 
 } //namespace uhd
 
