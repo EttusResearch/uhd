@@ -41,17 +41,28 @@ SET(libuhd_sources
 ########################################################################
 # Conditionally add the usrp1e sources
 ########################################################################
-INCLUDE(CheckIncludeFile)
-CHECK_INCLUDE_FILE("linux/ioctl.h" HAS_LINUX_IOCTL_H)
-IF(HAS_LINUX_IOCTL_H)
+INCLUDE(CheckIncludeFiles)
+SET(usrp1e_required_headers
+    linux/ioctl.h
+    linux/spi/spidev.h
+)
+CHECK_INCLUDE_FILES(
+    "${usrp1e_required_headers}"
+    HAS_USRP1E_REQUIRED_HEADERS
+)
+
+IF(HAS_USRP1E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "Building usrp1e support...")
     LIST(APPEND libuhd_sources
+        usrp/usrp1e/fpga-downloader.cc
         usrp/usrp1e/usrp1e_impl.cpp
     )
-ELSE(HAS_LINUX_IOCTL_H)
+ELSE(HAS_USRP1E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "Skipping usrp1e support...")
     LIST(APPEND libuhd_sources
         usrp/usrp1e/usrp1e_none.cpp
     )
-ENDIF(HAS_LINUX_IOCTL_H)
+ENDIF(HAS_USRP1E_REQUIRED_HEADERS)
 
 ########################################################################
 # Setup libuhd library

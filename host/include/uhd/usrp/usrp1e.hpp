@@ -41,6 +41,12 @@ public:
      * \return a device sptr to a new usrp1e
      */
     static device::sptr make(const device_addr_t &addr);
+
+    /*!
+     * Load the FPGA with an image file.
+     * \param bin_file the name of the fpga image file
+     */
+    static void load_fpga(const std::string &bin_file);
 };
 
 }} //namespace

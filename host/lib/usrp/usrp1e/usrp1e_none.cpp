@@ -32,3 +32,7 @@ device_addrs_t usrp1e::discover(const device_addr_t &){
 device::sptr usrp1e::make(const device_addr_t &){
     throw std::runtime_error("this build has no usrp1e support");
 }
+
+void usrp1e::load_fpga(const std::string &){
+    throw std::runtime_error("this build has no usrp1e support");
+}
