@@ -22,13 +22,12 @@
 #include <iostream>
 
 namespace po = boost::program_options;
-using namespace uhd;
 
 int main(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("ip-addr", po::value<std::string>(), "usrp2 ip address")
+        ("addr", po::value<std::string>(), "resolvable network address")
     ;
 
     po::variables_map vm;
@@ -41,13 +40,12 @@ int main(int argc, char *argv[]){
         return ~0;
     }
 
-    //extract the ip address (not optional for now)
+    //extract the address (not optional for now)
     uhd::device_addr_t device_addr;
-    device_addr["type"] = "udp";
-    if (vm.count("ip-addr")) {
-        device_addr["addr"] = vm["ip-addr"].as<std::string>();
+    if (vm.count("addr")) {
+        device_addr["addr"] = vm["addr"].as<std::string>();
     } else {
-        std::cout << "IP Addess was not set" << std::endl;
+        std::cout << "The address was not set" << std::endl;
         return ~0;
     }
 
@@ -59,7 +57,7 @@ int main(int argc, char *argv[]){
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << device_addrs[i] << std::endl << std::endl;
         //make each device just to test (TODO: remove this)
-        uhd::device::sptr dev = device::make(device_addrs[i]);
+        uhd::device::sptr dev = uhd::device::make(device_addrs[i]);
         std::cout << wax::cast<std::string>((*dev)[uhd::DEVICE_PROP_MBOARD][uhd::MBOARD_PROP_NAME]) << std::endl;
     }
 

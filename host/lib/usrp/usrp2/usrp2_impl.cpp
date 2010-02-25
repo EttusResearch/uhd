@@ -60,8 +60,8 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
                 //make a boost asio ipv4 with the raw addr in host byte order
                 boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;
-                new_addr["name"] = "USRP2";
-                new_addr["type"] = "udp";
+                new_addr["name"] = "usrp2";
+                new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
                 break;

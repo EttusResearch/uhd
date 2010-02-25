@@ -24,10 +24,7 @@ using namespace uhd;
 
 device_addrs_t device::discover(const device_addr_t &hint){
     device_addrs_t device_addrs;
-    if (not hint.has_key("type")){
-        //TODO call discover for others and append results
-    }
-    else if (hint["type"] == "udp"){
+    if (hint.has_key("addr")){
         std::vector<device_addr_t> usrp2_addrs = usrp::usrp2::discover(hint);
         device_addrs.insert(device_addrs.begin(), usrp2_addrs.begin(), usrp2_addrs.end());
     }
@@ -53,7 +50,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
 
     //create the new device with the discovered address
     //TODO only a usrp2 device will be made (until others are supported)
-    if (hint.has_key("type") and hint["type"] == "udp"){
+    if (hint.has_key("addr")){
         return usrp::usrp2::make(device_addrs.at(which));
     }
     throw std::runtime_error("cant make a device");
