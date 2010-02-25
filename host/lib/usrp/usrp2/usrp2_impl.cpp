@@ -62,7 +62,6 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
                 new_addr["type"] = "usrp2";
-                new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
                 break;

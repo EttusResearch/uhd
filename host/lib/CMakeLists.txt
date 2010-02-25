@@ -41,9 +41,17 @@ SET(libuhd_sources
 ########################################################################
 # Conditionally add the usrp1e sources
 ########################################################################
-LIST(APPEND libuhd_sources
-    usrp/usrp1e/usrp1e_none.cpp
-)
+INCLUDE(CheckIncludeFile)
+CHECK_INCLUDE_FILE("linux/ioctl.h" HAS_LINUX_IOCTL_H)
+IF(HAS_LINUX_IOCTL_H)
+    LIST(APPEND libuhd_sources
+        usrp/usrp1e/usrp1e_impl.cpp
+    )
+ELSE(HAS_LINUX_IOCTL_H)
+    LIST(APPEND libuhd_sources
+        usrp/usrp1e/usrp1e_none.cpp
+    )
+ENDIF(HAS_LINUX_IOCTL_H)
 
 ########################################################################
 # Setup libuhd library
