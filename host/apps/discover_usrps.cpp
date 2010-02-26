@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd.hpp>
+#include <uhd/device.hpp>
 #include <uhd/props.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>

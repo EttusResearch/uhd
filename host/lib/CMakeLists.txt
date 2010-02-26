@@ -22,7 +22,6 @@ SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
-    uhd.cpp
     wax.cpp
     transport/udp.cpp
     usrp/dboard/basic.cpp
