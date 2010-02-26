@@ -216,7 +216,7 @@ module u1e_core
 
    // /////////////////////////////////////////////////////////////////////////
    // GPIOs -- Slave #4
-
+/*
    wire [31:0] 	atr_lines;
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
    
@@ -226,7 +226,7 @@ module u1e_core
 		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
-
+*/
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #5
 
@@ -247,6 +247,7 @@ module u1e_core
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
 
+   assign {io_tx,io_rx} = debug_gpmc;
    assign debug_gpio_0 = { debug_gpmc };
    assign debug_gpio_1 = { debug_txd, debug_rxd };
    
