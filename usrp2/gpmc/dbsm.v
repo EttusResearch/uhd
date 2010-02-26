@@ -56,28 +56,18 @@ module dbsm
 	  full <= 0;
        end
      else
-       if(write_done)
-	 if(writeable[write_sel]==(NUM_BUFS-1))
-	   begin
-	      write_sel <= 0;
-	      if(read_sel == 0)
-		full <= 1;
-	   end
+       if(write_done & writeable[write_sel])
+	 if(write_sel ==(NUM_BUFS-1))
+	   write_sel <= 0;
 	 else
-	   begin
-	      write_sel <= write_sel + 1;
-	      if(read_sel == write_sel + 1)
-		full <= 1;
-	   end // else: !if(writeable[write_sel]==(NUM_BUFS-1))
-       else if(read_done)
-	 full <= 0;
-
+	   write_sel <= write_sel + 1;
+   
    always @(posedge clk)
      if(reset | clear)
        read_sel <= 0;
      else
-       if(read_done)
-	 if(readable[read_sel]==(NUM_BUFS-1))
+       if(read_done & readable[read_sel])
+	 if(read_sel==(NUM_BUFS-1))
 	   read_sel <= 0;
 	 else
 	   read_sel <= read_sel + 1;
