@@ -43,7 +43,7 @@ const unsigned int PROG_B = 175;
 const unsigned int DONE   = 173;
 const unsigned int INIT_B = 114;
 
-static std::string bit_file = "safe_u1e.bin";
+//static std::string bit_file = "safe_u1e.bin";
 
 const int BUF_SIZE = 4096;
 
@@ -198,7 +198,7 @@ void spidev::send(char *buf, char *rbuf, unsigned int nbytes)
 
 }
 
-static void send_file_to_fpga(std::string &file_name, gpio &error, gpio &done)
+static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &done)
 {
 	std::ifstream bitstream;
 
@@ -258,5 +258,5 @@ void uhd::usrp::usrp1e::load_fpga(const std::string &bin_file){
 
 	std::cout << "Done = " << gpio_done.get_value() << std::endl;
 
-	send_file_to_fpga(bit_file, gpio_init_b, gpio_done);
+	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 }
