@@ -78,11 +78,12 @@ module gpmc_model
 	#1000;
 	GPMC_Read(1,36);
 	#1000;
-	GPMC_Write(0,36,16'hF00D);
-	GPMC_Write(0,38,16'hF00D);
-	GPMC_Write(0,40,16'hF00D);
-	GPMC_Write(0,11'h7FFE,16'hF00D);
-	#1000;
+	GPMC_Write(0,36,16'h1234);
+	GPMC_Write(0,38,16'h5678);
+	GPMC_Write(0,40,16'h9abc);
+	GPMC_Write(0,11'h2F4,16'hF00D);
+	GPMC_Write(0,11'h7FE,16'hF00D);
+	#100000;
 	$finish;
      end
    

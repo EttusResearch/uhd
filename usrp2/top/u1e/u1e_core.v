@@ -26,6 +26,13 @@ module u1e_core
    wire [aw-1:0] m0_adr;
    wire [sw-1:0] m0_sel;
    wire 	 m0_cyc, m0_stb, m0_we, m0_ack, m0_err, m0_rty;
+
+   // FIFO buffers
+   wire [31:0] 	 read_data, write_data;
+   wire [8:0] 	 read_addr, write_addr;
+   reg [8:0] 	 addr;
+   
+   wire 	 read_done, write_done, read_en, write_en, read_ready, write_ready;
    
    gpmc gpmc (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 	      .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
@@ -43,9 +50,32 @@ module u1e_core
 	      .read_ready(read_ready), .read_done(read_done),
 	      .write_en(write_en), .write_addr(write_addr), .write_data(write_data), 
 	      .write_ready(write_ready), .write_done(write_done) );
+   
+   // Loopback
+   assign write_data = read_data;
+   
+   reg [10:0] 	 counter;
+   assign write_addr = counter[10:2];
+   assign read_addr = counter[10:2];   
 
-   assign wb_clk = clk_fpga;
-
+   assign read_done = (counter == 11'h7FF);
+   assign write_done = (counter == 11'h7FF);
+   
+   always @(posedge wb_clk)
+     if(wb_rst)
+       counter <= 0;
+     else 
+       if(counter == 0)
+	 counter <= write_ready & read_ready;
+       else if(counter == 11'h7FF)
+	 counter <= 0;
+       else
+	 counter <= counter + 1;
+   
+   assign read_en = (counter[1:0] == 1);
+   assign write_en = (counter[1:0] == 2);
+   
+	      
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
