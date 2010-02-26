@@ -32,7 +32,11 @@ module gpmc
    // ////////////////////////////////////////////
    // Write path
    wire 	read_sel_in, write_sel_in, clear_in;
-   wire 	write_done_in = ~EM_NCS4 & ~EM_NWE & (EM_A == 10'h3FF);
+   wire 	write_done_in;
+   
+   edge_sync #(.POSEDGE(0)) 
+   edge_sync_wdi(.clk(wb_clk), .rst(wb_rst), 
+		 .sig(~EM_NCS4 & ~EM_NWE & (EM_A == 10'h3FF)), .trig(write_done_in));
    
    ram_2port_mixed_width buffer_in
      (.clk16(wb_clk), .en16(~EM_NCS4), .we16(~EM_NWE), .addr16({write_sel_in,EM_A}), .di16(EM_D), .do16(),
@@ -47,7 +51,11 @@ module gpmc
    // ////////////////////////////////////////////
    // Read path
    wire 	read_sel_out, write_sel_out, clear_out;
-   wire 	read_done_out = ~EM_NCS4 & ~EM_NOE & (EM_A == 10'h3FF);
+   wire 	read_done_out;
+      
+   edge_sync #(.POSEDGE(0)) 
+   edge_sync_rdo(.clk(wb_clk), .rst(wb_rst), 
+		 .sig(~EM_NCS4 & ~EM_NOE & (EM_A == 10'h3FF)), .trig(read_done_out));
    
    ram_2port_mixed_width buffer_out
      (.clk16(wb_clk), .en16(~EM_NCS4), .we16(0), .addr16({read_sel_out,EM_A}), .di16(0), .do16(EM_D_ram),
