@@ -15,8 +15,8 @@ module ram_2port_mixed_width
 
    wire 	 en32a = en32 & ~addr32[9];
    wire 	 en32b = en32 & addr32[9];
-   wire 	 en16a = en16 & ~addr16[9];
-   wire 	 en16b = en16 & addr16[9];
+   wire 	 en16a = en16 & ~addr16[10];
+   wire 	 en16b = en16 & addr16[10];
 
    wire [31:0] 	 do32a, do32b;
    wire [15:0] 	 do16a, do16b;
