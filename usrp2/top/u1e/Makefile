@@ -176,6 +176,8 @@ timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
 gpmc/gpmc.v \
+gpmc/edge_sync.v \
+gpmc/dbsm.v \
 top/u1e/u1e_core.v \
 top/u1e/u1e.ucf \
 top/u1e/u1e.v 
