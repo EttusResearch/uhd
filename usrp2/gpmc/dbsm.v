@@ -39,13 +39,15 @@ module dbsm
    
    // Two of these buffer state machines
    genvar     i;
-   for(i=0;i<NUM_BUFS;i=i+1)
-     generate
-	bsm bsm(.clk(clk), .reset(reset), .clear(clear), 
-		.write_done((write_sel == i) & write_done), 
-		.read_done((read_sel == i) & read_done), 
-		.readable(readable[i]), .writeable(writeable[i]));
-     endgenerate
+   generate
+      for(i=0;i<NUM_BUFS;i=i+1)
+	begin : BSMS
+	   bsm bsm(.clk(clk), .reset(reset), .clear(clear),
+		   .write_done((write_sel == i) & write_done),
+		   .read_done((read_sel == i) & read_done),
+		   .readable(readable[i]), .writeable(writeable[i]));
+	end
+   endgenerate
    
    reg 	 full;
    
