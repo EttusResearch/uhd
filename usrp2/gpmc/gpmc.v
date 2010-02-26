@@ -16,7 +16,8 @@ module gpmc
    // RAM Interface signals
    input ram_clk, 
    input read_en, input [8:0] read_addr, output [31:0] read_data, output read_ready, input read_done,
-   input write_en, input [8:0] write_addr, input [31:0] write_data, output write_ready, input write_done
+   input write_en, input [8:0] write_addr, input [31:0] write_data, output write_ready, input write_done,
+   output [31:0] debug
    );
 
    wire 	EM_output_enable = (~EM_NOE & (~EM_NCS4 | ~EM_NCS6));
@@ -65,6 +66,12 @@ module gpmc
 		 .read_sel(read_sel_out), .read_ready(rx_have_data), .read_done(read_done_out),
 		 .write_sel(write_sel_out), .write_ready(write_ready), .write_done(write_done));
 
+
+   assign debug = { { 2'b00, write_done_in, write_sel_in, read_en, read_sel_in, read_ready, read_done},
+		    { 2'b00, read_sel_out, write_en, write_sel_out, read_done_out, write_ready, write_done },
+		    { 8'd0 }, 
+		    { 8'd0 } };
+   
    // CS6 is Control, Wishbone bus bridge (wb master)
    // Sync version
    reg [1:0] 	cs_del, we_del, oe_del;

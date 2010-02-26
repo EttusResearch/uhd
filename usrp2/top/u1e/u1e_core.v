@@ -33,6 +33,8 @@ module u1e_core
    reg [8:0] 	 addr;
    
    wire 	 read_done, write_done, read_en, write_en, read_ready, write_ready;
+
+   wire [31:0] 	 debug_gpmc;
    
    gpmc gpmc (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 	      .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
@@ -49,7 +51,8 @@ module u1e_core
 	      .read_en(read_en), .read_addr(read_addr), .read_data(read_data), 
 	      .read_ready(read_ready), .read_done(read_done),
 	      .write_en(write_en), .write_addr(write_addr), .write_data(write_data), 
-	      .write_ready(write_ready), .write_done(write_done) );
+	      .write_ready(write_ready), .write_done(write_done),
+	      .debug(debug_gpmc));
    
    // Loopback
    assign write_data = read_data;
@@ -241,10 +244,10 @@ module u1e_core
    
    // Debug circuitry
    assign debug_clk = { EM_CLK, clk_fpga };
-   assign debug = { { 1'b0, EM_WAIT0, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
+   assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
 
-   assign debug_gpio_0 = { m0_we, m0_stb, m0_ack, s1_stb, s0_stb, m0_adr[10:0], m0_dat_mosi[15:0] };
+   assign debug_gpio_0 = { debug_gpmc };
    assign debug_gpio_1 = { debug_txd, debug_rxd };
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_fast;  // LEDs are arranged funny on board
