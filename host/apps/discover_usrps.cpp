@@ -28,6 +28,7 @@ int main(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("addr", po::value<std::string>(), "resolvable network address")
+        ("node", po::value<std::string>(), "path to linux device node")
     ;
 
     po::variables_map vm;
@@ -35,22 +36,28 @@ int main(int argc, char *argv[]){
     po::notify(vm); 
 
     //print the help message
-    if (vm.count("help")) {
+    if (vm.count("help")){
         std::cout << boost::format("Discover USRPs %s") % desc << std::endl;
         return ~0;
     }
 
-    //extract the address (not optional for now)
+    //load the options into the address
     uhd::device_addr_t device_addr;
-    if (vm.count("addr")) {
+    if (vm.count("addr")){
         device_addr["addr"] = vm["addr"].as<std::string>();
-    } else {
-        std::cout << "The address was not set" << std::endl;
+    }
+    if (vm.count("node")){
+        device_addr["node"] = vm["node"].as<std::string>();
+    }
+
+    //discover the usrps and print the results
+    uhd::device_addrs_t device_addrs = uhd::device::discover(device_addr);
+
+    if (device_addrs.size() == 0){
+        std::cerr << "No USRP Devices Found" << std::endl;
         return ~0;
     }
 
-    //discover the usrps
-    std::vector<uhd::device_addr_t> device_addrs = uhd::device::discover(device_addr);
     for (size_t i = 0; i < device_addrs.size(); i++){
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << "-- USRP Device " << i << std::endl;

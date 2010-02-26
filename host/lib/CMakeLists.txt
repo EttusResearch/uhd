@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+########################################################################
+# Create a list of libuhd sources
+########################################################################
 SET(libuhd_sources
     device.cpp
     device_addr.cpp
@@ -36,6 +38,16 @@ SET(libuhd_sources
     usrp/usrp2/usrp2_impl.cpp
 )
 
+########################################################################
+# Conditionally add the usrp1e sources
+########################################################################
+LIST(APPEND libuhd_sources
+    usrp/usrp1e/usrp1e_none.cpp
+)
+
+########################################################################
+# Setup libuhd library
+########################################################################
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})

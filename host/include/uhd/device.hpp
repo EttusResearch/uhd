@@ -38,10 +38,6 @@ class device : boost::noncopyable, public wax::obj{
 public:
     typedef boost::shared_ptr<device> sptr;
 
-    //structors
-    device(void);
-    virtual ~device(void);
-
     /*!
      * \brief Discover usrp devices attached to the host.
      *
