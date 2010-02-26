@@ -21,7 +21,8 @@ module u1e
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
 
-   u1e_core u1e_core(.clk_fpga(clk_fpga), .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
+   u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(debug_pb[2]),
+		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_pb(debug_pb), .dip_sw(dip_sw), .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
 		     .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 		     .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), 

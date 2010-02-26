@@ -1,8 +1,7 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
 
 module u1e_core
-  (input clk_fpga, output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
+  (input clk_fpga, input rst_fpga,
+   output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
    input [2:0] debug_pb, input [7:0] dip_sw, output debug_txd, input debug_rxd,
    
    // GPMC
@@ -14,7 +13,8 @@ module u1e_core
    inout [15:0] io_tx, inout [15:0] io_rx
    );
    
-   wire   wb_clk, wb_rst;
+   wire 	wb_clk = clk_fpga;
+   wire 	wb_rst = rst_fpga;
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPMC Slave to Wishbone Master
@@ -31,10 +31,18 @@ module u1e_core
 	      .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
 	      .EM_NOE(EM_NOE),
 
+	      .rx_have_data(rx_have_data), .tx_have_space(tx_have_space),
+	      
 	      .wb_clk(wb_clk), .wb_rst(wb_rst),
 	      .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
 	      .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
-	      .wb_ack_i(m0_ack));
+	      .wb_ack_i(m0_ack),
+
+	      .ram_clk(wb_clk),
+	      .read_en(read_en), .read_addr(read_addr), .read_data(read_data), 
+	      .read_ready(read_ready), .read_done(read_done),
+	      .write_en(write_en), .write_addr(write_addr), .write_data(write_data), 
+	      .write_ready(write_ready), .write_done(write_done) );
 
    assign wb_clk = clk_fpga;
 
@@ -130,7 +138,7 @@ module u1e_core
 			16'hBEEF;
    assign s0_ack = s0_stb & s0_cyc;
 
-   assign { rx_overrun, rx_have_data, tx_underrun, tx_have_space } = reg_gpios;
+   assign { rx_overrun, tx_underrun } = reg_gpios;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 1, UART

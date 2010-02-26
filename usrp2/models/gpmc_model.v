@@ -22,6 +22,7 @@ module gpmc_model
      end
    
    task GPMC_Write;
+      input ctrl;
       input [10:0] addr;
       input [15:0] data;
       begin
@@ -29,10 +30,14 @@ module gpmc_model
 	 EM_A <= addr[10:1];
 	 EM_D_int <= data;
 	 #2.01;
-	 EM_NCS6 <= 0;
+	 if(ctrl)
+	   EM_NCS6 <= 0;
+	 else
+	   EM_NCS4 <= 0;
 	 #14;
 	 EM_NWE <= 0;
 	 #77.5;
+	 EM_NCS4 <= 1;
 	 EM_NCS6 <= 1;
 	 //#1.5;
 	 EM_NWE <= 1;
@@ -43,15 +48,20 @@ module gpmc_model
    endtask // GPMC_Write
 
    task GPMC_Read;
+      input ctrl;
       input [10:0] addr;
       begin
 	 #1.3;
 	 EM_A <= addr[10:1];
 	 #3;
-	 EM_NCS6 <= 0;
+	 if(ctrl)
+	   EM_NCS6 <= 0;
+	 else
+	   EM_NCS4 <= 0;
 	 #14;
 	 EM_NOE <= 0;
 	 #77.5;
+	 EM_NCS4 <= 1;
 	 EM_NCS6 <= 1;
 	 //#1.5;
 	 $display("Data Read from GPMC: %X",EM_D);
@@ -64,9 +74,14 @@ module gpmc_model
    initial
      begin
 	#1000;
-	GPMC_Write(36,16'hBEEF);
+	GPMC_Write(1,36,16'hF00D);
 	#1000;
-	GPMC_Read(36);
+	GPMC_Read(1,36);
+	#1000;
+	GPMC_Write(0,36,16'hF00D);
+	GPMC_Write(0,38,16'hF00D);
+	GPMC_Write(0,40,16'hF00D);
+	GPMC_Write(0,11'h7FFE,16'hF00D);
 	#1000;
 	$finish;
      end
