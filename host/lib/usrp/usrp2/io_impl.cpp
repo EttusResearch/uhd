@@ -26,8 +26,8 @@ using namespace uhd::usrp;
 /***********************************************************************
  * Constants
  **********************************************************************/
-typedef std::complex<float>   fc32_t;
-typedef std::complex<int16_t> sc16_t;
+typedef std::complex<float> fc32_t;
+typedef std::complex<short> sc16_t;
 
 static const float float_scale_factor = pow(2.0, 15);
 
@@ -159,7 +159,7 @@ size_t usrp2_impl::send(
     const uhd::metadata_t &metadata,
     const std::string &type
 ){
-    if (type == "fc32"){
+    if (type == "32fc"){
         size_t num_samps = boost::asio::buffer_size(buff)/sizeof(fc32_t);
         boost::shared_array<sc16_t> raw_mem(new sc16_t[num_samps]);
         boost::asio::mutable_buffer raw_buff(raw_mem.get(), num_samps*sizeof(sc16_t));
@@ -173,7 +173,7 @@ size_t usrp2_impl::send(
         return send_raw(raw_buff, metadata);
     }
 
-    if (type == "sc16"){
+    if (type == "16sc"){
         #ifdef HAVE_BIG_ENDIAN
         return send_raw(buff, metadata);
         #else
@@ -202,7 +202,7 @@ size_t usrp2_impl::recv(
     uhd::metadata_t &metadata,
     const std::string &type
 ){
-    if (type == "fc32"){
+    if (type == "32fc"){
         size_t num_samps = boost::asio::buffer_size(buff)/sizeof(fc32_t);
         boost::shared_array<sc16_t> raw_mem(new sc16_t[num_samps]);
         boost::asio::mutable_buffer raw_buff(raw_mem.get(), num_samps*sizeof(sc16_t));
@@ -218,7 +218,7 @@ size_t usrp2_impl::recv(
         return num_samps;
     }
 
-    if (type == "sc16"){
+    if (type == "16sc"){
         #ifdef HAVE_BIG_ENDIAN
         return recv_raw(buff, metadata);
         #else
