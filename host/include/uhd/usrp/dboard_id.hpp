@@ -28,9 +28,9 @@ enum dboard_id_t{
     ID_BASIC_RX = 0x0001
 };
 
-struct dboard_id{
-    static std::string to_string(const dboard_id_t &id);
-};
+namespace dboard_id{
+    std::string to_string(const dboard_id_t &id);
+}
 
 }} //namespace
 

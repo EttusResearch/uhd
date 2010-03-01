@@ -22,6 +22,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+namespace asio = boost::asio;
 
 /***********************************************************************
  * Constants
@@ -38,28 +39,28 @@ static const size_t max_vrt_header_words = 5;
  * Helper Functions
  **********************************************************************/
 static inline void host_floats_to_usrp2_shorts(
-    int16_t *usrp2_shorts,
+    short *usrp2_shorts,
     const float *host_floats,
     size_t num_samps
 ){
     for(size_t i = 0; i < num_samps; i++){
-        usrp2_shorts[i] = htons(int16_t(host_floats[i]*float_scale_factor));
+        usrp2_shorts[i] = htons(short(host_floats[i]*float_scale_factor));
     }
 }
 
 static inline void usrp2_shorts_to_host_floats(
     float *host_floats,
-    const int16_t *usrp2_shorts,
+    const short *usrp2_shorts,
     size_t num_samps
 ){
     for(size_t i = 0; i < num_samps; i++){
-        host_floats[i] = float(ntohs(usrp2_shorts[i])/float_scale_factor);
+        host_floats[i] = float(short(ntohs(usrp2_shorts[i])))/float_scale_factor;
     }
 }
 
 static inline void host_shorts_to_usrp2_shorts(
-    int16_t *usrp2_shorts,
-    const int16_t *host_shorts,
+    short *usrp2_shorts,
+    const short *host_shorts,
     size_t num_samps
 ){
     for(size_t i = 0; i < num_samps; i++){
@@ -68,8 +69,8 @@ static inline void host_shorts_to_usrp2_shorts(
 }
 
 static inline void usrp2_shorts_to_host_shorts(
-    int16_t *host_shorts,
-    const int16_t *usrp2_shorts,
+    short *host_shorts,
+    const short *usrp2_shorts,
     size_t num_samps
 ){
     for(size_t i = 0; i < num_samps; i++){
@@ -102,16 +103,17 @@ size_t usrp2_impl::send_raw(
     }
     vrt_hdr_flags |= (metadata.start_of_burst)? (0x1 << 25) : 0;
     vrt_hdr_flags |= (metadata.end_of_burst)?   (0x1 << 24) : 0;
+    num_vrt_hdr_words += asio::buffer_size(buff)/sizeof(uint32_t);
 
     //fill in complete header word
     vrt_hdr[0] = htonl(vrt_hdr_flags |
         ((_stream_id_to_packet_seq[metadata.stream_id]++ & 0xf) << 16) |
-        ((boost::asio::buffer_size(buff)/sizeof(uint32_t)) & 0xffff)
+        (num_vrt_hdr_words & 0xffff)
     );
 
     //load the buffer vector
     size_t vrt_hdr_size = num_vrt_hdr_words*sizeof(uint32_t);
-    buffs[0] = boost::asio::buffer(&vrt_hdr, vrt_hdr_size);
+    buffs[0] = asio::buffer(&vrt_hdr, vrt_hdr_size);
     buffs[1] = buff;
 
     //send and return number of samples
@@ -125,11 +127,33 @@ size_t usrp2_impl::recv_raw(
     const boost::asio::mutable_buffer &buff,
     uhd::metadata_t &metadata
 ){
+    //handle the case where there is spillover
+    if (asio::buffer_size(_splillover_buff) != 0){
+        size_t bytes_to_copy = std::min(
+            asio::buffer_size(_splillover_buff),
+            asio::buffer_size(buff)
+        );
+        std::memcpy(
+            asio::buffer_cast<void*>(buff),
+            asio::buffer_cast<const void*>(_splillover_buff),
+            bytes_to_copy
+        );
+        _splillover_buff = asio::buffer(
+            asio::buffer_cast<uint8_t*>(_splillover_buff)+bytes_to_copy,
+            asio::buffer_size(_splillover_buff)-bytes_to_copy
+        );
+        //std::cout << boost::format("Copied spillover %d samples") % (bytes_to_copy/sizeof(sc16_t)) << std::endl;
+        return bytes_to_copy/sizeof(sc16_t);
+    }
+
     //load the buffer vector
-    std::vector<boost::asio::mutable_buffer> buffs(2);
+    std::vector<boost::asio::mutable_buffer> buffs(3);
     uint32_t vrt_hdr[max_vrt_header_words];
-    buffs[0] = boost::asio::buffer(vrt_hdr, max_vrt_header_words);
-    buffs[1] = buff;
+    buffs[0] = asio::buffer(vrt_hdr, max_vrt_header_words*sizeof(uint32_t));
+    buffs[1] = asio::buffer(//make sure its on a word boundary
+        buff, asio::buffer_size(buff) & ~(sizeof(uint32_t) - 1)
+    );
+    buffs[2] = asio::buffer(_spillover_mem, _mtu);
 
     //receive into the buffers
     size_t bytes_recvd = _data_transport->recv(buffs);
@@ -146,9 +170,15 @@ size_t usrp2_impl::recv_raw(
     metadata.time_spec.secs = ntohl(vrt_hdr[2]);
     metadata.time_spec.ticks = ntohl(vrt_hdr[3]);
 
-    //return the number of samples received
-    size_t num_words = vrt_header & 0xffff;
-    return (num_words*sizeof(uint32_t))/sizeof(sc16_t);
+    //extract the number of bytes received
+    size_t num_words = (vrt_header & 0xffff) - max_vrt_header_words;
+    size_t num_bytes = num_words*sizeof(uint32_t);
+
+    //handle the case where spillover memory was used
+    size_t spillover_size = num_bytes - std::min(num_bytes, asio::buffer_size(buff));
+    _splillover_buff = asio::buffer(_spillover_mem, spillover_size);
+
+    return (num_bytes - spillover_size)/sizeof(sc16_t);
 }
 
 /***********************************************************************
@@ -160,13 +190,13 @@ size_t usrp2_impl::send(
     const std::string &type
 ){
     if (type == "32fc"){
-        size_t num_samps = boost::asio::buffer_size(buff)/sizeof(fc32_t);
+        size_t num_samps = asio::buffer_size(buff)/sizeof(fc32_t);
         boost::shared_array<sc16_t> raw_mem(new sc16_t[num_samps]);
         boost::asio::mutable_buffer raw_buff(raw_mem.get(), num_samps*sizeof(sc16_t));
 
         host_floats_to_usrp2_shorts(
-            boost::asio::buffer_cast<int16_t*>(raw_buff),
-            boost::asio::buffer_cast<const float*>(buff),
+            asio::buffer_cast<short*>(raw_buff),
+            asio::buffer_cast<const float*>(buff),
             num_samps*2 //double for complex
         );
 
@@ -177,13 +207,13 @@ size_t usrp2_impl::send(
         #ifdef HAVE_BIG_ENDIAN
         return send_raw(buff, metadata);
         #else
-        size_t num_samps = boost::asio::buffer_size(buff)/sizeof(sc16_t);
+        size_t num_samps = asio::buffer_size(buff)/sizeof(sc16_t);
         boost::shared_array<sc16_t> raw_mem(new sc16_t[num_samps]);
         boost::asio::mutable_buffer raw_buff(raw_mem.get(), num_samps*sizeof(sc16_t));
 
         host_shorts_to_usrp2_shorts(
-            boost::asio::buffer_cast<int16_t*>(raw_buff),
-            boost::asio::buffer_cast<const int16_t*>(buff),
+            asio::buffer_cast<short*>(raw_buff),
+            asio::buffer_cast<const short*>(buff),
             num_samps*2 //double for complex
         );
 
@@ -203,15 +233,15 @@ size_t usrp2_impl::recv(
     const std::string &type
 ){
     if (type == "32fc"){
-        size_t num_samps = boost::asio::buffer_size(buff)/sizeof(fc32_t);
+        size_t num_samps = asio::buffer_size(buff)/sizeof(fc32_t);
         boost::shared_array<sc16_t> raw_mem(new sc16_t[num_samps]);
         boost::asio::mutable_buffer raw_buff(raw_mem.get(), num_samps*sizeof(sc16_t));
 
         num_samps = recv_raw(raw_buff, metadata);
 
         usrp2_shorts_to_host_floats(
-            boost::asio::buffer_cast<float*>(buff),
-            boost::asio::buffer_cast<const int16_t*>(raw_buff),
+            asio::buffer_cast<float*>(buff),
+            asio::buffer_cast<const short*>(raw_buff),
             num_samps*2 //double for complex
         );
 
@@ -222,15 +252,15 @@ size_t usrp2_impl::recv(
         #ifdef HAVE_BIG_ENDIAN
         return recv_raw(buff, metadata);
         #else
-        size_t num_samps = boost::asio::buffer_size(buff)/sizeof(sc16_t);
+        size_t num_samps = asio::buffer_size(buff)/sizeof(sc16_t);
         boost::shared_array<sc16_t> raw_mem(new sc16_t[num_samps]);
         boost::asio::mutable_buffer raw_buff(raw_mem.get(), num_samps*sizeof(sc16_t));
 
         num_samps = recv_raw(raw_buff, metadata);
 
         usrp2_shorts_to_host_shorts(
-            boost::asio::buffer_cast<int16_t*>(buff),
-            boost::asio::buffer_cast<const int16_t*>(raw_buff),
+            asio::buffer_cast<short*>(buff),
+            asio::buffer_cast<const short*>(raw_buff),
             num_samps*2 //double for complex
         );
 

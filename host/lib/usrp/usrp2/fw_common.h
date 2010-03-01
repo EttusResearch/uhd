@@ -168,6 +168,7 @@ typedef struct{
         struct {
             uint32_t freq_word;
             uint32_t decim;
+            uint32_t scale_iq;
         } ddc_args;
         struct {
             uint8_t enabled;

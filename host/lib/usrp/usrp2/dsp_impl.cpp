@@ -36,6 +36,10 @@ static uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t 
     return freq_word;
 }
 
+static uint32_t calculate_iq_scale_word(int16_t i, int16_t q){
+    return ((i & 0xffff) << 16) | ((q & 0xffff) << 0);
+}
+
 void usrp2_impl::init_ddc_config(void){
     //create the ddc in the rx dsp dict
     _rx_dsps["ddc0"] = wax_obj_proxy(
@@ -61,6 +65,10 @@ void usrp2_impl::update_ddc_config(void){
         calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
     );
     out_data.data.ddc_args.decim = htonl(_ddc_decim);
+    static const uint32_t default_rx_scale_iq = 1024;
+    out_data.data.ddc_args.scale_iq = htonl(
+        calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
+    );
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -209,7 +217,9 @@ void usrp2_impl::update_duc_config(void){
         calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
     );
     out_data.data.duc_args.interp = htonl(_duc_interp);
-    out_data.data.duc_args.scale_iq = htonl(scale);
+    out_data.data.duc_args.scale_iq = htonl(
+        calculate_iq_scale_word(scale, scale)
+    );
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);

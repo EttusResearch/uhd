@@ -430,6 +430,8 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO:
         dsp_rx_regs->freq = ctrl_data_in->data.ddc_args.freq_word;
+        dsp_rx_regs->scale_iq = ctrl_data_in->data.ddc_args.scale_iq;
+        dsp_rx_regs->rx_mux = 0x00 | (0x01 << 2); //TODO fill in from control
 
         //setup the interp and half band filters
         {
@@ -471,6 +473,7 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO:
         dsp_tx_regs->freq = ctrl_data_in->data.duc_args.freq_word;
         dsp_tx_regs->scale_iq = ctrl_data_in->data.duc_args.scale_iq;
+        dsp_tx_regs->tx_mux = 0x01; //TODO fill in from control
 
         //setup the interp and half band filters
         {

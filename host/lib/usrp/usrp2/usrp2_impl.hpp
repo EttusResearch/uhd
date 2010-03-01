@@ -106,6 +106,9 @@ private:
     size_t send_raw(const boost::asio::const_buffer &, const uhd::metadata_t &);
     size_t recv_raw(const boost::asio::mutable_buffer &, uhd::metadata_t &);
     uhd::dict<uint32_t, size_t> _stream_id_to_packet_seq;
+    static const size_t _mtu = 1500;
+    uint8_t _spillover_mem[_mtu];
+    boost::asio::mutable_buffer _splillover_buff;
 
     //udp transports for control and data
     uhd::transport::udp::sptr _ctrl_transport;
