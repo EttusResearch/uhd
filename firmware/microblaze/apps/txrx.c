@@ -158,19 +158,10 @@ static struct ip_addr get_my_ip_addr(void){
     return addr;
 }
 
-static bool _is_data;
-
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    //forward this data to the dsp when the payload is sufficient
-    //the small payload is used to give the device the udp source port
-    if (payload_len > sizeof(uint32_t)){
-        _is_data = true;
-        return;
-    }
-
     //its a tiny payload, load the fast-path variables
     fp_mac_addr_src = get_my_eth_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
@@ -513,9 +504,18 @@ void handle_udp_ctrl_packet(
 static bool
 eth_pkt_inspector(dbsm_t *sm, int bufno)
 {
-  _is_data = false;
-  handle_eth_packet(buffer_ram(bufno), buffer_pool_status->last_line[bufno] - 3);
-  return !_is_data;
+  //extract buffer point and length
+  uint32_t *buff = (uint32_t *)buffer_ram(bufno);
+  size_t len = buffer_pool_status->last_line[bufno] - 3;
+
+  //treat this as fast-path data?
+  if (is_udp_packet_with_vrt(buff, len, USRP2_UDP_DATA_PORT)){
+    return false;
+  }
+
+  //pass it to the slow-path handler
+  handle_eth_packet(buff, len);
+  return true;
 }
 
 //------------------------------------------------------------------
@@ -750,6 +750,10 @@ main(void)
 
   // tell app_common that this dbsm could be sending to the ethernet
   ac_could_be_sending_to_eth = &dsp_rx_sm;
+
+  sr_tx_ctrl->clear_state = 1;
+  bp_clear_buf(DSP_TX_BUF_0);
+  bp_clear_buf(DSP_TX_BUF_1);
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);

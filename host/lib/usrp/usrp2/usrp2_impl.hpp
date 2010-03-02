@@ -108,7 +108,12 @@ private:
     uhd::dict<uint32_t, size_t> _tx_stream_id_to_packet_seq;
     uhd::dict<uint32_t, size_t> _rx_stream_id_to_packet_seq;
     static const size_t _mtu = 1500; //FIXME we have no idea
-    static const size_t _max_samples_per_packet = _mtu/sizeof(uint32_t);
+    static const size_t _max_samples_per_packet =
+        _mtu/sizeof(uint32_t) -
+        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32 -
+        ((2 + 14 + 20 + 8)/sizeof(uint32_t)) //size of headers (pad, eth, ip, udp)
+    ;
     uint32_t _tmp_send_mem[_mtu/sizeof(uint32_t)];
     uint32_t _tmp_recv_mem[_mtu/sizeof(uint32_t)];
     uint32_t _spillover_mem[_mtu/sizeof(uint32_t)];

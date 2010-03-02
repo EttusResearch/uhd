@@ -378,6 +378,17 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
   }
 }
 
+bool is_udp_packet_with_vrt(uint32_t *p, size_t nlines, int port){
+    struct ip_hdr *ip = (struct ip_hdr *)(p + 4);
+    struct udp_hdr *udp = (struct udp_hdr *)(((char *)ip) + IP_HLEN);
+    uint32_t *payload = (uint32_t *)(((char *)udp) + UDP_HLEN);
+    return \
+        (p[3] & 0xffff) == ETHERTYPE_IPV4 &&
+        IPH_PROTO(ip) == IP_PROTO_UDP &&
+        udp->dest == port &&
+        payload[0] != 0; //must be non zero vrt header
+}
+
 void
 handle_eth_packet(uint32_t *p, size_t nlines)
 {

@@ -127,12 +127,11 @@ size_t usrp2_impl::send_raw(
     }
     vrt_hdr_flags |= (metadata.start_of_burst)? (0x1 << 25) : 0;
     vrt_hdr_flags |= (metadata.end_of_burst)?   (0x1 << 24) : 0;
-    num_vrt_hdr_words += asio::buffer_size(buff)/sizeof(uint32_t);
 
     //fill in complete header word
     vrt_hdr[0] = htonl(vrt_hdr_flags |
         ((_tx_stream_id_to_packet_seq[metadata.stream_id]++ & 0xf) << 16) |
-        (num_vrt_hdr_words & 0xffff)
+        ((num_vrt_hdr_words + asio::buffer_size(buff)/sizeof(uint32_t)) & 0xffff)
     );
 
     //load the buffer vector
@@ -151,6 +150,8 @@ size_t usrp2_impl::recv_raw(
     const boost::asio::mutable_buffer &buff,
     uhd::metadata_t &metadata
 ){
+    metadata = metadata_t(); //clear metadata
+
     //handle the case where there is spillover
     if (asio::buffer_size(_splillover_buff) != 0){
         size_t bytes_to_copy = std::min(
@@ -198,9 +199,9 @@ size_t usrp2_impl::recv_raw(
     _rx_stream_id_to_packet_seq[metadata.stream_id] = my_seq;
 
     //extract the number of bytes received
-    size_t num_words = (vrt_header & 0xffff);
-    num_words -= USRP2_HOST_RX_VRT_HEADER_WORDS32;
-    num_words -= USRP2_HOST_RX_VRT_TRAILER_WORDS32;
+    size_t num_words = (vrt_header & 0xffff) -
+        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32;
     size_t num_bytes = num_words*sizeof(uint32_t);
 
     //handle the case where spillover memory was used

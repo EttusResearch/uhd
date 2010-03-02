@@ -56,5 +56,6 @@ void send_udp_pkt(int src_port, struct socket_address dst,
 
 void handle_eth_packet(uint32_t *p, size_t nlines);
 
+bool is_udp_packet_with_vrt(uint32_t *p, size_t nlines, int port);
 
 #endif /* INCLUDED_NET_COMMON_H */

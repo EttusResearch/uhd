@@ -82,12 +82,7 @@ void usrp2_impl::update_ddc_enabled(void){
     out_data.data.streaming.enabled = (_ddc_enabled)? 1 : 0;
     out_data.data.streaming.secs =  htonl(_ddc_stream_at.secs);
     out_data.data.streaming.ticks = htonl(_ddc_stream_at.ticks);
-    out_data.data.streaming.samples = htonl(
-        _mtu/sizeof(uint32_t) -
-        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32 -
-        ((2 + 14 + 20 + 8)/sizeof(uint32_t)) //size of headers (pad, eth, ip, udp)
-    );
+    out_data.data.streaming.samples = htonl(_max_samples_per_packet);
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
