@@ -82,6 +82,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
+        ASSERT_THROW(_rx_dboards.has_key(name));
         val = _rx_dboards[name].get_link();
         return;
 
@@ -90,6 +91,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD:
+        ASSERT_THROW(_tx_dboards.has_key(name));
         val = _tx_dboards[name].get_link();
         return;
 
@@ -97,17 +99,12 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(_tx_dboards.get_keys());
         return;
 
-    case MBOARD_PROP_MTU:
-        // FIXME we dont know the real MTU...
-        // give them something to fragment about
-        val = size_t(1500);
-        return;
-
     case MBOARD_PROP_CLOCK_RATE:
         val = freq_t(get_master_clock_freq());
         return;
 
     case MBOARD_PROP_RX_DSP:
+        ASSERT_THROW(_rx_dsps.has_key(name));
         val = _rx_dsps[name].get_link();
         return;
 
@@ -116,6 +113,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DSP:
+        ASSERT_THROW(_tx_dsps.has_key(name));
         val = _tx_dsps[name].get_link();
         return;
 
@@ -183,7 +181,6 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_NAME:
     case MBOARD_PROP_OTHERS:
-    case MBOARD_PROP_MTU:
     case MBOARD_PROP_CLOCK_RATE:
     case MBOARD_PROP_RX_DSP:
     case MBOARD_PROP_RX_DSP_NAMES:

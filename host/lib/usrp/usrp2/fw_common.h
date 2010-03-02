@@ -27,6 +27,10 @@
 extern "C" {
 #endif
 
+// size of the vrt header and trailer to the host
+#define USRP2_HOST_RX_VRT_HEADER_WORDS32 5
+#define USRP2_HOST_RX_VRT_TRAILER_WORDS32 1 //FIXME fpga sets wrong header size when no trailer present
+
 // udp ports for the usrp2 communication
 // Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
@@ -175,6 +179,7 @@ typedef struct{
             uint8_t _pad[3];
             uint32_t secs;
             uint32_t ticks;
+            uint32_t samples;
         } streaming;
         struct {
             uint32_t freq_word;

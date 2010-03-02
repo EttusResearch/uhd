@@ -48,7 +48,7 @@ void usrp2_impl::init_ddc_config(void){
     );
 
     //initial config and update
-    _ddc_decim = 16;
+    _ddc_decim = 64;
     _ddc_freq = 0;
     update_ddc_config();
 
@@ -82,6 +82,12 @@ void usrp2_impl::update_ddc_enabled(void){
     out_data.data.streaming.enabled = (_ddc_enabled)? 1 : 0;
     out_data.data.streaming.secs =  htonl(_ddc_stream_at.secs);
     out_data.data.streaming.ticks = htonl(_ddc_stream_at.ticks);
+    out_data.data.streaming.samples = htonl(
+        _mtu/sizeof(uint32_t) -
+        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32 -
+        ((2 + 14 + 20 + 8)/sizeof(uint32_t)) //size of headers (pad, eth, ip, udp)
+    );
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -151,8 +157,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     if (key_name == "decim"){
         size_t new_decim = wax::cast<size_t>(val);
         ASSERT_THROW(std::has(
-            _allowed_decim_and_interp_rates.begin(),
-            _allowed_decim_and_interp_rates.end(),
+            _allowed_decim_and_interp_rates,
             new_decim
         ));
         _ddc_decim = new_decim; //shadow
@@ -196,7 +201,7 @@ void usrp2_impl::init_duc_config(void){
     );
 
     //initial config and update
-    _duc_interp = 16;
+    _duc_interp = 64;
     _duc_freq = 0;
     update_duc_config();
 }
@@ -280,8 +285,7 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
     if (key_name == "interp"){
         size_t new_interp = wax::cast<size_t>(val);
         ASSERT_THROW(std::has(
-            _allowed_decim_and_interp_rates.begin(),
-            _allowed_decim_and_interp_rates.end(),
+            _allowed_decim_and_interp_rates,
             new_interp
         ));
         _duc_interp = new_interp; //shadow

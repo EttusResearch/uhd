@@ -57,6 +57,11 @@ namespace std{
         return last != std::find(first, last, elem);
     }
 
+    template<class T, class V>
+    bool has(const V &vector, const T &elem){
+        return has(vector.begin(), vector.end(), elem);
+    }
+
     template<class T>
     T sum(const T &a, const T &b){
         return a + b;

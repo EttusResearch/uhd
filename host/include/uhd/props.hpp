@@ -65,7 +65,9 @@ namespace uhd{
     enum device_prop_t{
         DEVICE_PROP_NAME,              //ro, std::string
         DEVICE_PROP_MBOARD,            //ro, wax::obj
-        DEVICE_PROP_MBOARD_NAMES       //ro, prop_names_t
+        DEVICE_PROP_MBOARD_NAMES,      //ro, prop_names_t
+        DEVICE_PROP_MAX_RX_SAMPLES,    //ro, size_t
+        DEVICE_PROP_MAX_TX_SAMPLES     //ro, size_t
     };
 
     /*!
@@ -77,7 +79,6 @@ namespace uhd{
     enum mboard_prop_t{
         MBOARD_PROP_NAME,              //ro, std::string
         MBOARD_PROP_OTHERS,            //ro, prop_names_t
-        MBOARD_PROP_MTU,               //ro, size_t
         MBOARD_PROP_CLOCK_RATE,        //ro, freq_t
         MBOARD_PROP_RX_DSP,            //ro, wax::obj
         MBOARD_PROP_RX_DSP_NAMES,      //ro, prop_names_t

@@ -133,9 +133,8 @@ usrp2_impl::usrp2_impl(
     //init the tx and rx dboards (do last)
     dboard_init();
 
-    //send a small data packet so the usrp2 knows the udp source port
-    uint32_t zero_data = 0;
-    _data_transport->send(boost::asio::buffer(&zero_data, sizeof(zero_data)));
+    //init the send and recv io
+    io_init();
 
 }
 
@@ -197,12 +196,22 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
+        ASSERT_THROW(_mboards.has_key(name));
         val = _mboards[name].get_link();
         return;
 
     case DEVICE_PROP_MBOARD_NAMES:
         val = prop_names_t(_mboards.get_keys());
         return;
+
+    case DEVICE_PROP_MAX_RX_SAMPLES:
+        val = size_t(_max_samples_per_packet);
+        return;
+
+    case DEVICE_PROP_MAX_TX_SAMPLES:
+        val = size_t(_max_samples_per_packet);
+        return;
+
     }
 }
 

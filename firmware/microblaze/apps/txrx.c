@@ -457,6 +457,8 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO:
         time_secs =  ctrl_data_in->data.streaming.secs;
         time_ticks = ctrl_data_in->data.streaming.ticks;
+        streaming_items_per_frame = ctrl_data_in->data.streaming.samples;
+
         if (ctrl_data_in->data.streaming.enabled == 0){
             stop_rx_cmd();
         }
@@ -518,8 +520,15 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
 
 //------------------------------------------------------------------
 
-#define VRT_HEADER_WORDS 5
-#define VRT_TRAILER_WORDS 0
+static uint16_t get_vrt_packet_words(void){
+    return streaming_items_per_frame + \
+        USRP2_HOST_RX_VRT_HEADER_WORDS32 + \
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32;
+}
+
+static bool vrt_has_trailer(void){
+    return USRP2_HOST_RX_VRT_TRAILER_WORDS32 > 0;
+}
 
 void
 restart_streaming(void)
@@ -530,10 +539,10 @@ restart_streaming(void)
   sr_rx_ctrl->clear_overrun = 1;			// reset
   sr_rx_ctrl->vrt_header = (0
      | VRTH_PT_IF_DATA_WITH_SID
-     | ((VRT_TRAILER_WORDS)? VRTH_HAS_TRAILER : 0)
+     | (vrt_has_trailer()? VRTH_HAS_TRAILER : 0)
      | VRTH_TSI_OTHER
      | VRTH_TSF_SAMPLE_CNT
-     | (VRT_HEADER_WORDS+streaming_items_per_frame+VRT_TRAILER_WORDS));
+  );
   sr_rx_ctrl->vrt_stream_id = 0;
   sr_rx_ctrl->vrt_trailer = 0;
 
@@ -595,8 +604,9 @@ start_rx_streaming_cmd(void)
   } mem _AL4;
 
   memset(&mem, 0, sizeof(mem));
-  streaming_items_per_frame = (1500)/sizeof(uint32_t) - (DSP_TX_FIRST_LINE + VRT_HEADER_WORDS + VRT_TRAILER_WORDS); //FIXME
-  mem.ctrl_word = (VRT_HEADER_WORDS+streaming_items_per_frame+VRT_TRAILER_WORDS)*sizeof(uint32_t) | 1 << 16;
+  printf("samples per frame: %d\n", streaming_items_per_frame);
+  printf("words in a vrt packet %d\n", get_vrt_packet_words());
+  mem.ctrl_word = get_vrt_packet_words()*sizeof(uint32_t) | 1 << 16;
 
   memcpy_wa(buffer_ram(DSP_RX_BUF_0), &mem, sizeof(mem));
   memcpy_wa(buffer_ram(DSP_RX_BUF_1), &mem, sizeof(mem));
@@ -652,25 +662,6 @@ stop_rx_cmd(void)
   }
 
 }
-
-
-/*static void
-setup_tx()
-{
-  sr_tx_ctrl->clear_state = 1;
-  bp_clear_buf(DSP_TX_BUF_0);
-  bp_clear_buf(DSP_TX_BUF_1);
-
-  int tx_scale = 256;
-  int interp = 32;
-
-  // setup some defaults
-
-  dsp_tx_regs->freq = 0;
-  dsp_tx_regs->scale_iq = (tx_scale << 16) | tx_scale;
-  dsp_tx_regs->interp_rate = interp;
-}*/
-
 
 #if (FW_SETS_SEQNO)
 /*
@@ -759,10 +750,6 @@ main(void)
 
   // tell app_common that this dbsm could be sending to the ethernet
   ac_could_be_sending_to_eth = &dsp_rx_sm;
-
-
-  // program tx registers
-  //setup_tx();
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);

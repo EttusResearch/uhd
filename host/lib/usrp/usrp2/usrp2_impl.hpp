@@ -105,10 +105,15 @@ private:
     //the raw io interface (samples are in the usrp2 native format)
     size_t send_raw(const boost::asio::const_buffer &, const uhd::metadata_t &);
     size_t recv_raw(const boost::asio::mutable_buffer &, uhd::metadata_t &);
-    uhd::dict<uint32_t, size_t> _stream_id_to_packet_seq;
-    static const size_t _mtu = 1500;
-    uint8_t _spillover_mem[_mtu];
+    uhd::dict<uint32_t, size_t> _tx_stream_id_to_packet_seq;
+    uhd::dict<uint32_t, size_t> _rx_stream_id_to_packet_seq;
+    static const size_t _mtu = 1500; //FIXME we have no idea
+    static const size_t _max_samples_per_packet = _mtu/sizeof(uint32_t);
+    uint32_t _tmp_send_mem[_mtu/sizeof(uint32_t)];
+    uint32_t _tmp_recv_mem[_mtu/sizeof(uint32_t)];
+    uint32_t _spillover_mem[_mtu/sizeof(uint32_t)];
     boost::asio::mutable_buffer _splillover_buff;
+    void io_init(void);
 
     //udp transports for control and data
     uhd::transport::udp::sptr _ctrl_transport;
