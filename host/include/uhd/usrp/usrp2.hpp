@@ -29,6 +29,11 @@ class usrp2 : public device{
 public:
     /*!
      * Discover usrp2 devices over the ethernet.
+     *
+     * Recommended key/value pairs for the device hint address:
+     * hint["addr"] = address, where address is a resolvable address
+     * or ip address, which may or may not be a broadcast address.
+     *
      * This static method will be called by the device::discover.
      * \param hint a device addr with the usrp2 address filled in
      * \return a vector of device addresses for all usrp2s found
@@ -37,6 +42,11 @@ public:
 
     /*!
      * Make a usrp2 from a device address.
+     *
+     * Required key/value pairs for the device address:
+     * hint["addr"] = address, where address is a resolvable address
+     * or ip address, which must be the specific address of a usrp2.
+     *
      * \param addr the device address
      * \return a device sptr to a new usrp2
      */

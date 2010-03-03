@@ -23,7 +23,7 @@ SET(libuhd_sources
     device_addr.cpp
     gain_handler.cpp
     wax.cpp
-    transport/udp.cpp
+    transport/udp_simple.cpp
     usrp/dboard/basic.cpp
     usrp/dboard_base.cpp
     usrp/dboard_id.cpp
@@ -35,6 +35,13 @@ SET(libuhd_sources
     usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
     usrp/usrp2/usrp2_impl.cpp
+)
+
+########################################################################
+# Conditionally add the udp sources
+########################################################################
+LIST(APPEND libuhd_sources
+    transport/udp_zero_copy_none.cpp
 )
 
 ########################################################################

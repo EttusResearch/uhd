@@ -23,6 +23,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::transport;
 
 /***********************************************************************
  * Discovery over the udp transport
@@ -33,8 +34,9 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     //create a udp transport to communicate
     //TODO if an addr is not provided, search all interfaces?
     std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
-    transport::udp::sptr udp_transport = \
-        transport::udp::make(hint["addr"], ctrl_port, true);
+    udp_simple::sptr udp_transport = udp_simple::make_broadcast(
+        hint["addr"], ctrl_port
+    );
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out;
@@ -76,16 +78,18 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
-#define num2str(num) (boost::lexical_cast<std::string>(num))
+template <class T> std::string num2str(T num){
+    return boost::lexical_cast<std::string>(num);
+}
 
 device::sptr usrp2::make(const device_addr_t &device_addr){
     //create a control transport
-    transport::udp::sptr ctrl_transport = transport::udp::make(
+    udp_simple::sptr ctrl_transport = udp_simple::make_connected(
         device_addr["addr"], num2str(USRP2_UDP_CTRL_PORT)
     );
 
     //create a data transport
-    transport::udp::sptr data_transport = transport::udp::make(
+    udp_zero_copy::sptr data_transport = udp_zero_copy::make(
         device_addr["addr"], num2str(USRP2_UDP_DATA_PORT)
     );
 
@@ -99,8 +103,8 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(
-    transport::udp::sptr ctrl_transport,
-    transport::udp::sptr data_transport
+    udp_simple::sptr ctrl_transport,
+    udp_zero_copy::sptr data_transport
 ){
     _ctrl_transport = ctrl_transport;
     _data_transport = data_transport;
