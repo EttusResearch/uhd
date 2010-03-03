@@ -24,6 +24,7 @@ SET(libuhd_sources
     gain_handler.cpp
     wax.cpp
     transport/udp_simple.cpp
+    transport/vrt.cpp
     usrp/dboard/basic.cpp
     usrp/dboard_base.cpp
     usrp/dboard_id.cpp
