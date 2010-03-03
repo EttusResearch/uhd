@@ -209,11 +209,11 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MAX_RX_SAMPLES:
-        val = size_t(_max_samples_per_packet);
+        val = size_t(_max_rx_samples_per_packet);
         return;
 
     case DEVICE_PROP_MAX_TX_SAMPLES:
-        val = size_t(_max_samples_per_packet);
+        val = size_t(_max_tx_samples_per_packet);
         return;
 
     }

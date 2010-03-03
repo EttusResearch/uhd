@@ -22,6 +22,7 @@
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -104,20 +105,20 @@ public:
 
 private:
     //the raw io interface (samples are in the usrp2 native format)
-    size_t send_raw(const uhd::metadata_t &);
     void recv_raw(uhd::metadata_t &);
     uhd::dict<uint32_t, size_t> _tx_stream_id_to_packet_seq;
     uhd::dict<uint32_t, size_t> _rx_stream_id_to_packet_seq;
     static const size_t _mtu = 1500; //FIXME we have no idea
-    static const size_t _max_samples_per_packet =
-        _mtu/sizeof(uint32_t) -
+    static const size_t _hdrs = (2 + 14 + 20 + 8); //size of headers (pad, eth, ip, udp)
+    static const size_t _max_rx_samples_per_packet =
+        (_mtu - _hdrs)/sizeof(uint32_t) -
         USRP2_HOST_RX_VRT_HEADER_WORDS32 -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32 -
-        ((2 + 14 + 20 + 8)/sizeof(uint32_t)) //size of headers (pad, eth, ip, udp)
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32
     ;
-    static const size_t _tx_vrt_max_offset_words32 = 7; //TODO move to future vrt lib
-    uint32_t _tx_mem[_mtu/sizeof(uint32_t)];
-    boost::asio::const_buffer _tx_copy_buff;
+    static const size_t _max_tx_samples_per_packet =
+        (_mtu - _hdrs)/sizeof(uint32_t) -
+        uhd::transport::vrt::max_header_words32
+    ;
     uhd::transport::smart_buffer::sptr _rx_smart_buff;
     boost::asio::const_buffer _rx_copy_buff;
     void io_init(void);

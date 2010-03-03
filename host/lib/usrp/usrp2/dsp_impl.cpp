@@ -82,7 +82,7 @@ void usrp2_impl::update_ddc_enabled(void){
     out_data.data.streaming.enabled = (_ddc_enabled)? 1 : 0;
     out_data.data.streaming.secs =  htonl(_ddc_stream_at.secs);
     out_data.data.streaming.ticks = htonl(_ddc_stream_at.ticks);
-    out_data.data.streaming.samples = htonl(_max_samples_per_packet);
+    out_data.data.streaming.samples = htonl(_max_rx_samples_per_packet);
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);

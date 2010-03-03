@@ -33,6 +33,7 @@ namespace vrt{
      * \param header_buff memory to write the packed vrt header
      * \param num_header_words32 number of words in the vrt header
      * \param num_payload_words32 the length of the payload
+     * \param num_packet_words32 the length of the packet
      * \param packet_count the packet count sequence number
      */
     void pack(
@@ -40,6 +41,7 @@ namespace vrt{
         uint32_t *header_buff,      //output
         size_t &num_header_words32, //output
         size_t num_payload_words32, //input
+        size_t &num_packet_words32, //output
         size_t packet_count         //input
     );
 
@@ -49,6 +51,7 @@ namespace vrt{
      * \param header_buff memory to read the packed vrt header
      * \param num_header_words32 number of words in the vrt header
      * \param num_payload_words32 the length of the payload
+     * \param num_packet_words32 the length of the packet
      * \param packet_count the packet count sequence number
      */
     void unpack(
@@ -56,6 +59,7 @@ namespace vrt{
         const uint32_t *header_buff,     //input
         size_t &num_header_words32,      //output
         size_t &num_payload_words32,     //output
+        size_t num_packet_words32,       //input
         size_t &packet_count             //output
     );
 

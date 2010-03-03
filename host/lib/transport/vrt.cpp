@@ -26,6 +26,7 @@ void vrt::pack(
     uint32_t *header_buff,      //output
     size_t &num_header_words32, //output
     size_t num_payload_words32, //input
+    size_t &num_packet_words32, //output
     size_t packet_count         //input
 ){
     uint32_t vrt_hdr_flags = 0;
@@ -47,10 +48,12 @@ void vrt::pack(
     vrt_hdr_flags |= (metadata.start_of_burst)? (0x1 << 25) : 0;
     vrt_hdr_flags |= (metadata.end_of_burst)?   (0x1 << 24) : 0;
 
+    num_packet_words32 = num_header_words32 + num_payload_words32;
+
     //fill in complete header word
     header_buff[0] = htonl(vrt_hdr_flags |
         ((packet_count & 0xf) << 16) |
-        ((num_header_words32 + num_payload_words32) & 0xffff)
+        (num_packet_words32 & 0xffff)
     );
 }
 
@@ -59,6 +62,7 @@ void vrt::unpack(
     const uint32_t *header_buff,     //input
     size_t &num_header_words32,      //output
     size_t &num_payload_words32,     //output
+    size_t num_packet_words32,       //input
     size_t &packet_count             //output
 ){
     //clear the metadata
@@ -70,8 +74,8 @@ void vrt::unpack(
     packet_count = (vrt_hdr_word >> 16) & 0xf;
 
     //failure cases
-    if (packet_words32 == 0) //FIXME check the packet length before we continue
-        throw std::runtime_error("bad vrt header");
+    if (packet_words32 == 0 or num_packet_words32 < packet_words32)
+        throw std::runtime_error("bad vrt header or packet fragment");
     if (vrt_hdr_word & (0x7 << 29))
         throw std::runtime_error("unsupported vrt packet type");
 

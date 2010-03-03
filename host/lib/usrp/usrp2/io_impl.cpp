@@ -21,6 +21,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::transport;
 namespace asio = boost::asio;
 
 /***********************************************************************
@@ -116,79 +117,43 @@ static inline void usrp2_items_to_host_items(
 }
 
 /***********************************************************************
- * Send Raw Data
- **********************************************************************/
-size_t usrp2_impl::send_raw(const uhd::metadata_t &metadata){
-    size_t num_items = asio::buffer_size(_tx_copy_buff)/sizeof(uint32_t);
-    const uint32_t *items = asio::buffer_cast<const uint32_t *>(_tx_copy_buff);
-
-    uint32_t vrt_hdr[_tx_vrt_max_offset_words32];
-    uint32_t vrt_hdr_flags = 0;
-    size_t num_vrt_hdr_words = 1;
-
-    //load the vrt header and flags
-    if(metadata.has_stream_id){
-        vrt_hdr_flags |= (0x1 << 28); //IF Data packet with Stream Identifier
-        vrt_hdr[num_vrt_hdr_words++] = htonl(metadata.stream_id);
-    }
-    if(metadata.has_time_spec){
-        vrt_hdr_flags |= (0x3 << 22) | (0x1 << 20); //TSI: Other, TSF: Sample Count Timestamp
-        vrt_hdr[num_vrt_hdr_words++] = htonl(metadata.time_spec.secs);
-        vrt_hdr[num_vrt_hdr_words++] = htonl(metadata.time_spec.ticks);
-        vrt_hdr[num_vrt_hdr_words++] = 0; //unused part of fractional seconds
-    }
-    vrt_hdr_flags |= (metadata.start_of_burst)? (0x1 << 25) : 0;
-    vrt_hdr_flags |= (metadata.end_of_burst)?   (0x1 << 24) : 0;
-
-    //fill in complete header word
-    vrt_hdr[0] = htonl(vrt_hdr_flags |
-        ((_tx_stream_id_to_packet_seq[metadata.stream_id]++ & 0xf) << 16) |
-        ((num_vrt_hdr_words + num_items) & 0xffff)
-    );
-
-    //copy in the vrt header (yes we left space)
-    std::memcpy(((uint32_t *)items) - num_vrt_hdr_words, vrt_hdr, num_vrt_hdr_words);
-    asio::const_buffer buff(items - num_vrt_hdr_words, (num_vrt_hdr_words + num_items)*sizeof(uint32_t));
-
-    //send and return number of samples
-    return (_data_transport->send(buff) - num_vrt_hdr_words*sizeof(uint32_t))/sizeof(sc16_t);
-}
-
-/***********************************************************************
  * Receive Raw Data
  **********************************************************************/
 void usrp2_impl::recv_raw(uhd::metadata_t &metadata){
     //do a receive
     _rx_smart_buff = _data_transport->recv();
 
-    ////////////////////////////////////////////////////////////////////
-    // !!!! FIXME this is very flawed, use a proper vrt unpacker !!!!!!!
-    ////////////////////////////////////////////////////////////////////
-
     //unpack the vrt header
     const uint32_t *vrt_hdr = asio::buffer_cast<const uint32_t *>(_rx_smart_buff->get());
-    metadata = uhd::metadata_t();
-    uint32_t vrt_header = ntohl(vrt_hdr[0]);
-    metadata.has_stream_id = true;
-    metadata.stream_id = ntohl(vrt_hdr[1]);
-    metadata.has_time_spec = true;
-    metadata.time_spec.secs = ntohl(vrt_hdr[2]);
-    metadata.time_spec.ticks = ntohl(vrt_hdr[3]);
+    size_t num_packet_words32 = asio::buffer_size(_rx_smart_buff->get())/sizeof(uint32_t);
+    size_t num_header_words32_out;
+    size_t num_payload_words32_out;
+    size_t packet_count_out;
+    try{
+        vrt::unpack(
+            metadata,                //output
+            vrt_hdr,                 //input
+            num_header_words32_out,  //output
+            num_payload_words32_out, //output
+            num_packet_words32,      //input
+            packet_count_out         //output
+        );
+    }catch(const std::exception &e){
+        std::cerr << "bad vrt header: " << e.what() << std::endl;
+        _rx_copy_buff = boost::asio::buffer("", 0);
+    }
 
-    size_t my_seq = (vrt_header >> 16) & 0xf;
-    //std::cout << "seq " << my_seq << std::endl;
-    if (my_seq != ((_rx_stream_id_to_packet_seq[metadata.stream_id]+1) & 0xf)) std::cout << "bad seq " << my_seq << std::endl;
-    _rx_stream_id_to_packet_seq[metadata.stream_id] = my_seq;
-
-    //extract the number of bytes received
-    size_t num_words = (vrt_header & 0xffff) -
-        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32;
+    //handle the packet count / sequence number
+    size_t last_packet_count = _rx_stream_id_to_packet_seq[metadata.stream_id];
+    if (packet_count_out != (last_packet_count+1)%16){
+        std::cerr << "bad packet count: " << packet_count_out << std::endl;
+    }
+    _rx_stream_id_to_packet_seq[metadata.stream_id] = packet_count_out;
 
     //setup the rx buffer to point to the data
     _rx_copy_buff = boost::asio::buffer(
-        vrt_hdr + USRP2_HOST_RX_VRT_HEADER_WORDS32,
-        num_words*sizeof(uint32_t)
+        vrt_hdr + num_header_words32_out,
+        num_payload_words32_out*sizeof(uint32_t)
     );
 }
 
@@ -200,8 +165,9 @@ size_t usrp2_impl::send(
     const uhd::metadata_t &metadata,
     const std::string &type
 ){
-    uint32_t *items = _tx_mem + _tx_vrt_max_offset_words32; //offset for data
-    size_t num_samps = _max_samples_per_packet;
+    uint32_t tx_mem[_mtu/sizeof(uint32_t)];
+    uint32_t *items = tx_mem + vrt::max_header_words32; //offset for data
+    size_t num_samps = _max_tx_samples_per_packet;
 
     //calculate the number of samples to be copied
     //and copy the samples into the send buffer
@@ -217,9 +183,26 @@ size_t usrp2_impl::send(
         throw std::runtime_error(str(boost::format("usrp2 send: cannot handle type \"%s\"") % type));
     }
 
-    //send the samples (this line seems silly, will be better with vrt lib)
-    _tx_copy_buff = asio::buffer(items, num_samps*sizeof(uint32_t));
-    return send_raw(metadata); //return num_samps;
+    uint32_t vrt_hdr[vrt::max_header_words32];
+    size_t num_header_words32, num_packet_words32;
+    size_t packet_count = _tx_stream_id_to_packet_seq[metadata.stream_id]++;
+
+    //pack metadata into a vrt header
+    vrt::pack(
+        metadata,            //input
+        vrt_hdr,             //output
+        num_header_words32,  //output
+        num_samps,           //input
+        num_packet_words32,  //output
+        packet_count         //input
+    );
+
+    //copy in the vrt header (yes we left space)
+    std::memcpy(items - num_header_words32, vrt_hdr, num_header_words32);
+    asio::const_buffer send_buff(items - num_header_words32, num_packet_words32*sizeof(uint32_t));
+
+    //send and return number of samples
+    _data_transport->send(send_buff); return num_samps;
 }
 
 /***********************************************************************

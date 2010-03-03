@@ -27,6 +27,7 @@ static void pack_and_unpack(
 ){
     uint32_t header_buff[vrt::max_header_words32];
     size_t num_header_words32;
+    size_t num_packet_words32;
 
     //pack metadata into a vrt header
     vrt::pack(
@@ -34,6 +35,7 @@ static void pack_and_unpack(
         header_buff,         //output
         num_header_words32,  //output
         num_payload_words32, //input
+        num_packet_words32,  //output
         packet_count         //input
     );
 
@@ -48,6 +50,7 @@ static void pack_and_unpack(
         header_buff,             //input
         num_header_words32_out,  //output
         num_payload_words32_out, //output
+        num_packet_words32,      //input
         packet_count_out         //output
     );
 
