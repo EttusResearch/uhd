@@ -124,8 +124,12 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
     _rx_smart_buff = _data_transport->recv();
 
     //unpack the vrt header
-    const uint32_t *vrt_hdr = asio::buffer_cast<const uint32_t *>(_rx_smart_buff->get());
     size_t num_packet_words32 = asio::buffer_size(_rx_smart_buff->get())/sizeof(uint32_t);
+    if (num_packet_words32 == 0){
+        _rx_copy_buff = boost::asio::buffer("", 0);
+        return; //must exit here after setting the buffer
+    }
+    const uint32_t *vrt_hdr = asio::buffer_cast<const uint32_t *>(_rx_smart_buff->get());
     size_t num_header_words32_out;
     size_t num_payload_words32_out;
     size_t packet_count_out;
@@ -141,17 +145,18 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
     }catch(const std::exception &e){
         std::cerr << "bad vrt header: " << e.what() << std::endl;
         _rx_copy_buff = boost::asio::buffer("", 0);
+        return; //must exit here after setting the buffer
     }
 
     //handle the packet count / sequence number
-    size_t last_packet_count = _rx_stream_id_to_packet_seq[metadata.stream_id];
-    if (packet_count_out != (last_packet_count+1)%16){
+    size_t expected_packet_count = _rx_stream_id_to_packet_seq[metadata.stream_id];
+    if (packet_count_out != expected_packet_count){
         std::cerr << "bad packet count: " << packet_count_out << std::endl;
     }
-    _rx_stream_id_to_packet_seq[metadata.stream_id] = packet_count_out;
+    _rx_stream_id_to_packet_seq[metadata.stream_id] = (packet_count_out+1)%16;
 
     //setup the rx buffer to point to the data
-    _rx_copy_buff = boost::asio::buffer(
+    _rx_copy_buff = asio::buffer(
         vrt_hdr + num_header_words32_out,
         num_payload_words32_out*sizeof(uint32_t)
     );
@@ -226,7 +231,9 @@ size_t usrp2_impl::recv(
 
     //extract the number of samples available to copy
     //and a pointer into the usrp2 received items memory
-    size_t num_samps = asio::buffer_size(_rx_copy_buff)/sizeof(uint32_t);
+    size_t bytes_to_copy = asio::buffer_size(_rx_copy_buff);
+    if (bytes_to_copy == 0) return 0; //nothing to receive
+    size_t num_samps = bytes_to_copy/sizeof(uint32_t);
     const uint32_t *items = asio::buffer_cast<const uint32_t*>(_rx_copy_buff);
 
     //calculate the number of samples to be copied
@@ -244,7 +251,9 @@ size_t usrp2_impl::recv(
     }
 
     //update the rx copy buffer to reflect the bytes copied
-    _rx_copy_buff = asio::buffer(items + num_samps, num_samps*sizeof(uint32_t));
+    _rx_copy_buff = asio::buffer(
+        items + num_samps, bytes_to_copy - num_samps*sizeof(uint32_t)
+    );
 
     return num_samps;
 }
