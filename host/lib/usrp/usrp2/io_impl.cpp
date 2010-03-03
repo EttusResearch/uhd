@@ -198,11 +198,12 @@ size_t usrp2_impl::send(
     );
 
     //copy in the vrt header (yes we left space)
-    std::memcpy(items - num_header_words32, vrt_hdr, num_header_words32);
-    asio::const_buffer send_buff(items - num_header_words32, num_packet_words32*sizeof(uint32_t));
+    items -= num_header_words32;
+    std::memcpy(items, vrt_hdr, num_header_words32*sizeof(uint32_t));
 
     //send and return number of samples
-    _data_transport->send(send_buff); return num_samps;
+    _data_transport->send(asio::buffer(items, num_packet_words32*sizeof(uint32_t)));
+    return num_samps;
 }
 
 /***********************************************************************
