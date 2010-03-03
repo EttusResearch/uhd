@@ -100,12 +100,12 @@ public:
     double get_master_clock_freq(void);
 
     //the io interface
-    size_t send(const boost::asio::const_buffer &, const uhd::metadata_t &, const std::string &);
-    size_t recv(const boost::asio::mutable_buffer &, uhd::metadata_t &, const std::string &);
+    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const std::string &);
+    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const std::string &);
 
 private:
     //the raw io interface (samples are in the usrp2 native format)
-    void recv_raw(uhd::metadata_t &);
+    void recv_raw(uhd::rx_metadata_t &);
     uhd::dict<uint32_t, size_t> _tx_stream_id_to_packet_seq;
     uhd::dict<uint32_t, size_t> _rx_stream_id_to_packet_seq;
     static const size_t _mtu = 1500; //FIXME we have no idea

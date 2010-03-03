@@ -119,7 +119,7 @@ static inline void usrp2_items_to_host_items(
 /***********************************************************************
  * Receive Raw Data
  **********************************************************************/
-void usrp2_impl::recv_raw(uhd::metadata_t &metadata){
+void usrp2_impl::recv_raw(rx_metadata_t &metadata){
     //do a receive
     _rx_smart_buff = _data_transport->recv();
 
@@ -161,8 +161,8 @@ void usrp2_impl::recv_raw(uhd::metadata_t &metadata){
  * Send Data
  **********************************************************************/
 size_t usrp2_impl::send(
-    const boost::asio::const_buffer &buff,
-    const uhd::metadata_t &metadata,
+    const asio::const_buffer &buff,
+    const tx_metadata_t &metadata,
     const std::string &type
 ){
     uint32_t tx_mem[_mtu/sizeof(uint32_t)];
@@ -210,13 +210,19 @@ size_t usrp2_impl::send(
  * Receive Data
  **********************************************************************/
 size_t usrp2_impl::recv(
-    const boost::asio::mutable_buffer &buff,
-    uhd::metadata_t &metadata,
+    const asio::mutable_buffer &buff,
+    rx_metadata_t &metadata,
     const std::string &type
 ){
     //perform a receive if no rx data is waiting to be copied
-    if (asio::buffer_size(_rx_copy_buff) == 0) recv_raw(metadata);
-    //TODO otherwise flag the metadata to show that is is a fragment
+    if (asio::buffer_size(_rx_copy_buff) == 0){
+        recv_raw(metadata);
+    }
+    //otherwise flag the metadata to show that is is a fragment
+    else{
+        metadata = rx_metadata_t();
+        metadata.is_fragment = true;
+    }
 
     //extract the number of samples available to copy
     //and a pointer into the usrp2 received items memory

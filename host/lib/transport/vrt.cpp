@@ -22,12 +22,12 @@
 using namespace uhd::transport;
 
 void vrt::pack(
-    const metadata_t &metadata, //input
-    uint32_t *header_buff,      //output
-    size_t &num_header_words32, //output
-    size_t num_payload_words32, //input
-    size_t &num_packet_words32, //output
-    size_t packet_count         //input
+    const tx_metadata_t &metadata, //input
+    uint32_t *header_buff,         //output
+    size_t &num_header_words32,    //output
+    size_t num_payload_words32,    //input
+    size_t &num_packet_words32,    //output
+    size_t packet_count            //input
 ){
     uint32_t vrt_hdr_flags = 0;
     num_header_words32 = 1;
@@ -58,7 +58,7 @@ void vrt::pack(
 }
 
 void vrt::unpack(
-    metadata_t &metadata,            //output
+    rx_metadata_t &metadata,         //output
     const uint32_t *header_buff,     //input
     size_t &num_header_words32,      //output
     size_t &num_payload_words32,     //output
@@ -66,7 +66,7 @@ void vrt::unpack(
     size_t &packet_count             //output
 ){
     //clear the metadata
-    metadata = metadata_t();
+    metadata = rx_metadata_t();
 
     //extract vrt header
     uint32_t vrt_hdr_word = ntohl(header_buff[0]);

@@ -70,6 +70,13 @@ public:
     /*!
      * Send a buffer containing IF data with its metadata.
      *
+     * Send handles fragmentation as follows:
+     * If the buffer has more samples than the maximum supported,
+     * the send method will send the maximum number of samples
+     * as supported by the transport and return the number sent.
+     * It is up to the caller to call send again on the un-sent
+     * portions of the buffer, until the buffer is exhausted.
+     *
      * \param buff a buffer pointing to some read-only memory
      * \param metadata data describing the buffer's contents
      * \param the type of data loaded in the buffer (32fc, 16sc)
@@ -77,12 +84,22 @@ public:
      */
     virtual size_t send(
         const boost::asio::const_buffer &buff,
-        const metadata_t &metadata,
+        const tx_metadata_t &metadata,
         const std::string &type = "32fc"
     ) = 0;
 
     /*!
      * Receive a buffer containing IF data and its metadata.
+     *
+     * Receive handles fragmentation as follows:
+     * If the buffer has insufficient space to hold all samples
+     * that were received in a single packet over-the-wire,
+     * then the buffer will be completely filled and the implementation
+     * will hold a pointer into the remaining portion of the packet.
+     * Subsequent calls will load from the remainder of the packet,
+     * and will flag the metadata to show that this is a fragment.
+     * The next call to receive, after the remainder becomes exahausted,
+     * will perform an over-the-wire receive as usual.
      *
      * \param buff the buffer to fill with IF data
      * \param metadata data to fill describing the buffer
@@ -91,7 +108,7 @@ public:
      */
     virtual size_t recv(
         const boost::asio::mutable_buffer &buff,
-        metadata_t &metadata,
+        rx_metadata_t &metadata,
         const std::string &type = "32fc"
     ) = 0;
 };

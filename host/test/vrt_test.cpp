@@ -21,7 +21,7 @@
 using namespace uhd::transport;
 
 static void pack_and_unpack(
-    const uhd::metadata_t &metadata,
+    const uhd::tx_metadata_t &metadata,
     size_t num_payload_words32,
     size_t packet_count
 ){
@@ -39,7 +39,7 @@ static void pack_and_unpack(
         packet_count         //input
     );
 
-    uhd::metadata_t metadata_out;
+    uhd::rx_metadata_t metadata_out;
     size_t num_header_words32_out;
     size_t num_payload_words32_out;
     size_t packet_count_out;
@@ -70,19 +70,19 @@ static void pack_and_unpack(
 }
 
 BOOST_AUTO_TEST_CASE(test_with_none){
-    uhd::metadata_t metadata;
+    uhd::tx_metadata_t metadata;
     pack_and_unpack(metadata, 300, 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_with_sid){
-    uhd::metadata_t metadata;
+    uhd::tx_metadata_t metadata;
     metadata.has_stream_id = true;
     metadata.stream_id = 6;
     pack_and_unpack(metadata, 400, 2);
 }
 
 BOOST_AUTO_TEST_CASE(test_with_time_spec){
-    uhd::metadata_t metadata;
+    uhd::tx_metadata_t metadata;
     metadata.has_time_spec = true;
     metadata.time_spec.secs = 7;
     metadata.time_spec.ticks = 2000;
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_with_time_spec){
 }
 
 BOOST_AUTO_TEST_CASE(test_with_sid_and_time_spec){
-    uhd::metadata_t metadata;
+    uhd::tx_metadata_t metadata;
     metadata.has_stream_id = true;
     metadata.stream_id = 2;
     metadata.has_time_spec = true;
