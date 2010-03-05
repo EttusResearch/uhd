@@ -24,6 +24,7 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
+namespace asio = boost::asio;
 
 /***********************************************************************
  * Discovery over the udp transport
@@ -43,19 +44,12 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     ctrl_data_out.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
-    //loop and recieve until the time is up
-    size_t num_timeouts = 0;
+    //loop and recieve until the timeout
     while(true){
         usrp2_ctrl_data_t ctrl_data_in;
-        size_t len = udp_transport->recv(
-            boost::asio::buffer(&ctrl_data_in, sizeof(ctrl_data_in))
-        );
+        size_t len = udp_transport->recv(asio::buffer(&ctrl_data_in, sizeof(ctrl_data_in)));
         //std::cout << len << "\n";
-        if (len < sizeof(usrp2_ctrl_data_t)){
-            //sleep a little so we dont burn cpu
-            if (num_timeouts++ > 50) break;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-        }else{
+        if (len >= sizeof(usrp2_ctrl_data_t)){
             //handle the received data
             switch(ntohl(ctrl_data_in.id)){
             case USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE:
@@ -67,9 +61,11 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
                 new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
-                break;
+                //dont break here, it will exit the while loop
+                //just continue on to the next loop iteration
             }
         }
+        if (len == 0) break; //timeout
     }
 
     return usrp2_addrs;
@@ -164,24 +160,15 @@ usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_da
     out_copy.seq = htonl(++_ctrl_seq_num);
     _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
-    //loop and recieve until the time is up
-    size_t num_timeouts = 0;
+    //loop until we get the packet or timeout
     while(true){
         usrp2_ctrl_data_t in_data;
-        size_t len = _ctrl_transport->recv(
-            boost::asio::buffer(&in_data, sizeof(in_data))
-        );
-        if (len < sizeof(usrp2_ctrl_data_t)){
-            //sleep a little so we dont burn cpu
-            if (num_timeouts++ > 50) break;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-        }else{
-            //handle the received data
-            if (ntohl(in_data.seq) == _ctrl_seq_num){
-                return in_data;
-            }
-            //didnt get seq, continue on...
+        size_t len = _ctrl_transport->recv(asio::buffer(&in_data, sizeof(in_data)));
+        if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(in_data.seq) == _ctrl_seq_num){
+            return in_data;
         }
+        if (len == 0) break; //timeout
+        //didnt get seq or bad packet, continue looking...
     }
     throw std::runtime_error("usrp2 no control response");
 }

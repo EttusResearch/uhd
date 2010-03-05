@@ -21,6 +21,9 @@
 
 using namespace uhd;
 
+static const size_t default_decim = 16;
+static const size_t default_interp = 16;
+
 /***********************************************************************
  * DDC Helper Methods
  **********************************************************************/
@@ -37,7 +40,7 @@ static uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t 
 }
 
 static uint32_t calculate_iq_scale_word(int16_t i, int16_t q){
-    return ((i & 0xffff) << 16) | ((q & 0xffff) << 0);
+    return (uint16_t(i) << 16) | (uint16_t(q) << 0);
 }
 
 void usrp2_impl::init_ddc_config(void){
@@ -48,7 +51,7 @@ void usrp2_impl::init_ddc_config(void){
     );
 
     //initial config and update
-    _ddc_decim = 64;
+    _ddc_decim = default_decim;
     _ddc_freq = 0;
     update_ddc_config();
 
@@ -196,7 +199,7 @@ void usrp2_impl::init_duc_config(void){
     );
 
     //initial config and update
-    _duc_interp = 64;
+    _duc_interp = default_interp;
     _duc_freq = 0;
     update_duc_config();
 }

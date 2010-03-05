@@ -71,9 +71,9 @@ static inline void host_floats_to_usrp2_items(
     size_t num_samps
 ){
     unrolled_loop(i, num_samps,{
-        int16_t real = host_floats[i].real()*shorts_per_float;
-        int16_t imag = host_floats[i].imag()*shorts_per_float;
-        usrp2_items[i] = htonl(((real << 16) & 0xffff) | ((imag << 0) & 0xffff));
+        uint16_t real = host_floats[i].real()*shorts_per_float;
+        uint16_t imag = host_floats[i].imag()*shorts_per_float;
+        usrp2_items[i] = htonl((real << 16) | (imag << 0));
     });
 }
 
@@ -84,8 +84,8 @@ static inline void usrp2_items_to_host_floats(
 ){
     unrolled_loop(i, num_samps,{
         uint32_t item = ntohl(usrp2_items[i]);
-        int16_t real = (item >> 16) & 0xffff;
-        int16_t imag = (item >> 0)  & 0xffff;
+        int16_t real = item >> 16;
+        int16_t imag = item >> 0;
         host_floats[i] = fc32_t(real*floats_per_short, imag*floats_per_short);
     });
 }
@@ -130,9 +130,7 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
         return; //must exit here after setting the buffer
     }
     const uint32_t *vrt_hdr = asio::buffer_cast<const uint32_t *>(_rx_smart_buff->get());
-    size_t num_header_words32_out;
-    size_t num_payload_words32_out;
-    size_t packet_count_out;
+    size_t num_header_words32_out, num_payload_words32_out, packet_count_out;
     try{
         vrt::unpack(
             metadata,                //output

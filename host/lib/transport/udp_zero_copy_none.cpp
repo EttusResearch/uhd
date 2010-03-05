@@ -16,6 +16,8 @@
 //
 
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <boost/thread.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd::transport;
 
@@ -67,6 +69,9 @@ public:
 private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::io_service        _io_service;
+
+    size_t get_recv_buff_size(void);
+    void set_recv_buff_size(size_t);
 };
 
 udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port){
@@ -81,6 +86,18 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
     _socket = new boost::asio::ip::udp::socket(_io_service);
     _socket->open(boost::asio::ip::udp::v4());
     _socket->connect(receiver_endpoint);
+
+    // set the rx socket buffer size:
+    // pick a huge size, and deal with whatever we get
+    set_recv_buff_size(54321e3); //some big number!
+    size_t current_buff_size = get_recv_buff_size();
+    std::cout << boost::format(
+        "Current rx socket buffer size: %d\n"
+    ) % current_buff_size;
+    if (current_buff_size < .1e6) std::cout << boost::format(
+        "Adjust max rx socket buffer size (linux only):\n"
+        "  sysctl -w net.core.rmem_max=VALUE\n"
+    );
 }
 
 udp_zero_copy_impl::~udp_zero_copy_impl(void){
@@ -92,19 +109,37 @@ size_t udp_zero_copy_impl::send(const boost::asio::const_buffer &buff){
 }
 
 smart_buffer::sptr udp_zero_copy_impl::recv(void){
-    size_t available = _socket->available();
+    size_t available = 0;
+
+    //implement timeout through polling and sleeping
+    boost::asio::deadline_timer timer(_socket->get_io_service());
+    timer.expires_from_now(boost::posix_time::milliseconds(50));
+    while (not ((available = _socket->available()) or timer.expires_from_now().is_negative())){
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    }
 
     //allocate memory and create buffer
     uint32_t *buff_mem = new uint32_t[available/sizeof(uint32_t)];
     boost::asio::mutable_buffer buff(buff_mem, available);
 
     //receive only if data is available
-    if (available > 0){
+    if (available){
         _socket->receive(boost::asio::buffer(buff));
     }
 
     //create a new smart buffer to house the data
     return smart_buffer::sptr(new smart_buffer_impl(buff));
+}
+
+size_t udp_zero_copy_impl::get_recv_buff_size(void){
+    boost::asio::socket_base::receive_buffer_size option;
+    _socket->get_option(option);
+    return option.value();
+}
+
+void udp_zero_copy_impl::set_recv_buff_size(size_t new_size){
+    boost::asio::socket_base::receive_buffer_size option(new_size);
+    _socket->set_option(option);
 }
 
 /***********************************************************************

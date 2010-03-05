@@ -504,16 +504,22 @@ void handle_udp_ctrl_packet(
 static bool
 eth_pkt_inspector(dbsm_t *sm, int bufno)
 {
-  //extract buffer point and length
+  //point me to the ethernet frame
   uint32_t *buff = (uint32_t *)buffer_ram(bufno);
-  size_t len = buffer_pool_status->last_line[bufno] - 3;
 
   //treat this as fast-path data?
-  if (is_udp_packet_with_vrt(buff, len, USRP2_UDP_DATA_PORT)){
-    return false;
-  }
+  // We have to do this operation as fast as possible.
+  // Therefore, we do not check all the headers,
+  // just check that the udp port matches
+  // and that the vrt header is non zero.
+  // In the future, a hardware state machine will do this...
+  if ( //warning! magic numbers approaching....
+      (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
+      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != 0)
+  ) return false;
 
   //pass it to the slow-path handler
+  size_t len = buffer_pool_status->last_line[bufno] - 3;
   handle_eth_packet(buff, len);
   return true;
 }

@@ -77,6 +77,9 @@ public:
      * It is up to the caller to call send again on the un-sent
      * portions of the buffer, until the buffer is exhausted.
      *
+     * This is a blocking call and will not return until the number
+     * of samples returned have been read out of the buffer.
+     *
      * \param buff a buffer pointing to some read-only memory
      * \param metadata data describing the buffer's contents
      * \param the type of data loaded in the buffer (32fc, 16sc)
@@ -100,6 +103,14 @@ public:
      * and will flag the metadata to show that this is a fragment.
      * The next call to receive, after the remainder becomes exahausted,
      * will perform an over-the-wire receive as usual.
+     *
+     * This is a blocking call and will not return until the number
+     * of samples returned have been written into the buffer.
+     * However, a call to receive may timeout and return zero samples.
+     * The timeout duration is decided by the underlying transport layer.
+     * The caller should assume that the call to receive will not return
+     * immediately when no packets are available to the transport layer,
+     * and that the timeout duration is reasonably tuned for performance.
      *
      * \param buff the buffer to fill with IF data
      * \param metadata data to fill describing the buffer

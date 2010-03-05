@@ -67,9 +67,9 @@ public:
 
     /*!
      * Receive into the provided buffer.
-     * Returns empty when data is not available.
+     * Blocks until data is received or a timeout occurs.
      * \param buff a mutable buffer to receive into
-     * \return the number of bytes received.
+     * \return the number of bytes received or zero on timeout
      */
     virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
 };

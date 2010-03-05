@@ -64,9 +64,9 @@ public:
 
     /*!
      * Receive a buffer.
+     * Blocks until data is received or a timeout occurs.
      * The memory is managed by the implementation.
-     * Returns an empty buffer when data is not available.
-     * \return a smart buffer with memory and size
+     * \return a smart buffer (empty on timeout)
      */
     virtual smart_buffer::sptr recv(void) = 0;
 };

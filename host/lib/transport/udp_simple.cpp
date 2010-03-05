@@ -16,10 +16,33 @@
 //
 
 #include <uhd/transport/udp_simple.hpp>
+#include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 
 using namespace uhd::transport;
+
+/***********************************************************************
+ * Helper Functions
+ **********************************************************************/
+/*!
+ * A receive timeout for a socket:
+ *
+ * It seems that asio cannot have timeouts with synchronous io.
+ * However, we can implement a polling loop that will timeout.
+ * This is okay bacause this is the slow-path implementation.
+ *
+ * \param socket the asio socket
+ */
+static void reasonable_recv_timeout(
+    boost::asio::ip::udp::socket &socket
+){
+    boost::asio::deadline_timer timer(socket.get_io_service());
+    timer.expires_from_now(boost::posix_time::milliseconds(50));
+    while (not (socket.available() or timer.expires_from_now().is_negative())){
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    }
+}
 
 /***********************************************************************
  * UDP connected implementation class
@@ -62,7 +85,8 @@ size_t udp_connected_impl::send(const boost::asio::const_buffer &buff){
 }
 
 size_t udp_connected_impl::recv(const boost::asio::mutable_buffer &buff){
-    if (_socket->available() == 0) return 0;
+    reasonable_recv_timeout(*_socket);
+    if (not _socket->available()) return 0;
     return _socket->receive(boost::asio::buffer(buff));
 }
 
@@ -112,7 +136,8 @@ size_t udp_broadcast_impl::send(const boost::asio::const_buffer &buff){
 }
 
 size_t udp_broadcast_impl::recv(const boost::asio::mutable_buffer &buff){
-    if (_socket->available() == 0) return 0;
+    reasonable_recv_timeout(*_socket);
+    if (not _socket->available()) return 0;
     boost::asio::ip::udp::endpoint sender_endpoint;
     return _socket->receive_from(boost::asio::buffer(buff), sender_endpoint);
 }
