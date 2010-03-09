@@ -72,7 +72,7 @@ std::ostream& operator<<(std::ostream &os, const uhd::mac_addr_t &x){
 }
 
 //----------------------- usrp device_addr_t wrapper -------------------------//
-std::string uhd::device_addr_to_string(const uhd::device_addr_t &device_addr){
+std::string uhd::device_addr::to_string(const uhd::device_addr_t &device_addr){
     std::stringstream ss;
     BOOST_FOREACH(std::string key, device_addr.get_keys()){
         ss << boost::format("%s: %s") % key % device_addr[key] << std::endl;
@@ -81,6 +81,6 @@ std::string uhd::device_addr_to_string(const uhd::device_addr_t &device_addr){
 }
 
 std::ostream& operator<<(std::ostream &os, const uhd::device_addr_t &device_addr){
-    os << uhd::device_addr_to_string(device_addr);
+    os << uhd::device_addr::to_string(device_addr);
     return os;
 }

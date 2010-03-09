@@ -18,7 +18,6 @@
 #include <boost/asio.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/shared_iovec.hpp>
 
 #ifndef INCLUDED_UHD_TRANSPORT_UDP_HPP
 #define INCLUDED_UHD_TRANSPORT_UDP_HPP
@@ -30,44 +29,46 @@ public:
     typedef boost::shared_ptr<udp> sptr;
 
     /*!
-     * Constructor.
+     * Make a new udp transport.
      * The address will be resolved, it can be a host name or ipv4.
      * The port will be resolved, it can be a port type or number.
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      * \param bcast if true, enable the broadcast option on the socket
      */
-    udp(const std::string &addr, const std::string &port, bool bcast = false);
-
-    /*!
-     * Destructor
-     */
-    ~udp(void);
+    static sptr make(const std::string &addr, const std::string &port, bool bcast = false);
 
     /*!
      * Send a vector of buffer (like send_msg).
+     * Blocks until the data is sent.
      * \param buffs a vector of asio buffers
+     * \return the number of bytes sent
      */
-    void send(const std::vector<boost::asio::const_buffer> &buffs);
+    virtual size_t send(const std::vector<boost::asio::const_buffer> &buffs) = 0;
 
     /*!
      * Send a single buffer.
+     * Blocks until the data is sent.
      * \param buff single asio buffer
+     * \return the number of bytes sent
      */
-    void send(const boost::asio::const_buffer &buff);
+    virtual size_t send(const boost::asio::const_buffer &buff) = 0;
 
     /*!
-     * Receive a buffer. The memory is managed internally.
-     * Calling recv will invalidate the buffer of the previous recv.
-     * \return a shared iovec with allocated memory
+     * Receive a buffer. Write into the memory provided.
+     * Returns empty when data is not available.
+     * \param buffs a vector of asio buffers
+     * \return the number of bytes received.
      */
-    uhd::shared_iovec recv(void);
+    virtual size_t recv(const std::vector<boost::asio::mutable_buffer> &buffs) = 0;
 
-private:
-    boost::asio::ip::udp::socket   *_socket;
-    boost::asio::ip::udp::endpoint _receiver_endpoint;
-    boost::asio::ip::udp::endpoint _sender_endpoint;
-    boost::asio::io_service        _io_service;
+    /*!
+     * Receive a buffer. Write into the memory provided.
+     * Returns empty when data is not available.
+     * \param buff a mutable buffer to receive into
+     * \return the number of bytes received.
+     */
+    virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
 };
 
 }} //namespace

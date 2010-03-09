@@ -15,12 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+########################################################################
+# Create a list of libuhd sources
+########################################################################
 SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
-    shared_iovec.cpp
     uhd.cpp
     wax.cpp
     transport/udp.cpp
@@ -32,10 +33,40 @@ SET(libuhd_sources
     usrp/usrp2/dboard_impl.cpp
     usrp/usrp2/dboard_interface.cpp
     usrp/usrp2/dsp_impl.cpp
+    usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
     usrp/usrp2/usrp2_impl.cpp
 )
 
+########################################################################
+# Conditionally add the usrp1e sources
+########################################################################
+INCLUDE(CheckIncludeFiles)
+SET(usrp1e_required_headers
+    linux/ioctl.h
+    linux/spi/spidev.h
+)
+CHECK_INCLUDE_FILES(
+    "${usrp1e_required_headers}"
+    HAS_USRP1E_REQUIRED_HEADERS
+)
+
+IF(HAS_USRP1E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "Building usrp1e support...")
+    LIST(APPEND libuhd_sources
+        usrp/usrp1e/fpga-downloader.cc
+        usrp/usrp1e/usrp1e_impl.cpp
+    )
+ELSE(HAS_USRP1E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "Skipping usrp1e support...")
+    LIST(APPEND libuhd_sources
+        usrp/usrp1e/usrp1e_none.cpp
+    )
+ENDIF(HAS_USRP1E_REQUIRED_HEADERS)
+
+########################################################################
+# Setup libuhd library
+########################################################################
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})

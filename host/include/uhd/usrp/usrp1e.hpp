@@ -15,34 +15,40 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_USRP2_HPP
-#define INCLUDED_UHD_USRP_USRP2_HPP
+#ifndef INCLUDED_UHD_USRP_USRP1E_HPP
+#define INCLUDED_UHD_USRP_USRP1E_HPP
 
 #include <uhd/device.hpp>
 
 namespace uhd{ namespace usrp{
 
 /*!
- * The usrp2 device class.
+ * The usrp1e device class.
  */
-class usrp2 : public device{
+class usrp1e : public device{
 public:
     /*!
-     * Discover usrp2 devices over the ethernet.
+     * Discover usrp1e devices on the system via the device node.
      * This static method will be called by the device::discover.
-     * \param hint a device addr with the usrp2 address filled in
-     * \return a vector of device addresses for all usrp2s found
+     * \param hint a device addr with the usrp1e address filled in
+     * \return a vector of device addresses for all usrp1es found
      */
     static device_addrs_t discover(const device_addr_t &hint);
 
     /*!
-     * Make a usrp2 from a device address.
+     * Make a usrp1e from a device address.
      * \param addr the device address
-     * \return a device sptr to a new usrp2
+     * \return a device sptr to a new usrp1e
      */
     static device::sptr make(const device_addr_t &addr);
+
+    /*!
+     * Load the FPGA with an image file.
+     * \param bin_file the name of the fpga image file
+     */
+    static void load_fpga(const std::string &bin_file);
 };
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_USRP2_HPP */
+#endif /* INCLUDED_UHD_USRP_USRP1E_HPP */

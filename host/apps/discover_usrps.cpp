@@ -22,13 +22,13 @@
 #include <iostream>
 
 namespace po = boost::program_options;
-using namespace uhd;
 
 int main(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("ip-addr", po::value<std::string>(), "usrp2 ip address")
+        ("addr", po::value<std::string>(), "resolvable network address")
+        ("node", po::value<std::string>(), "path to linux device node")
     ;
 
     po::variables_map vm;
@@ -36,30 +36,35 @@ int main(int argc, char *argv[]){
     po::notify(vm); 
 
     //print the help message
-    if (vm.count("help")) {
+    if (vm.count("help")){
         std::cout << boost::format("Discover USRPs %s") % desc << std::endl;
         return ~0;
     }
 
-    //extract the ip address (not optional for now)
+    //load the options into the address
     uhd::device_addr_t device_addr;
-    device_addr["type"] = "udp";
-    if (vm.count("ip-addr")) {
-        device_addr["addr"] = vm["ip-addr"].as<std::string>();
-    } else {
-        std::cout << "IP Addess was not set" << std::endl;
+    if (vm.count("addr")){
+        device_addr["addr"] = vm["addr"].as<std::string>();
+    }
+    if (vm.count("node")){
+        device_addr["node"] = vm["node"].as<std::string>();
+    }
+
+    //discover the usrps and print the results
+    uhd::device_addrs_t device_addrs = uhd::device::discover(device_addr);
+
+    if (device_addrs.size() == 0){
+        std::cerr << "No USRP Devices Found" << std::endl;
         return ~0;
     }
 
-    //discover the usrps
-    std::vector<uhd::device_addr_t> device_addrs = uhd::device::discover(device_addr);
     for (size_t i = 0; i < device_addrs.size(); i++){
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << "-- USRP Device " << i << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << device_addrs[i] << std::endl << std::endl;
         //make each device just to test (TODO: remove this)
-        uhd::device::sptr dev = device::make(device_addrs[i]);
+        uhd::device::sptr dev = uhd::device::make(device_addrs[i]);
         std::cout << wax::cast<std::string>((*dev)[uhd::DEVICE_PROP_MBOARD][uhd::MBOARD_PROP_NAME]) << std::endl;
     }
 

@@ -1,0 +1,69 @@
+//
+// Copyright 2010 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include <unistd.h>
+#include <boost/format.hpp>
+#include "usrp1e_impl.hpp"
+
+using namespace uhd;
+using namespace uhd::usrp;
+
+/***********************************************************************
+ * Helper Functions
+ **********************************************************************/
+static bool file_exists(const std::string &file_path){
+    return access(file_path.c_str(), F_OK) == 0;
+}
+
+/***********************************************************************
+ * Discovery
+ **********************************************************************/
+device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
+    device_addrs_t usrp1e_addrs;
+
+    //if a node was provided, use it and only it
+    if (device_addr.has_key("node")){
+        if (not file_exists(device_addr["node"])) return usrp1e_addrs;
+        device_addr_t new_addr;
+        new_addr["name"] = "USRP1E";
+        new_addr["type"] = "usrp1e";
+        new_addr["node"] = device_addr["node"];
+        usrp1e_addrs.push_back(new_addr);
+    }
+
+    //otherwise look for a few nodes at small indexes
+    else{
+        for(size_t i = 0; i < 5; i++){
+            std::string node = str(boost::format("/dev/usrp1_e%d") % i);
+            if (not file_exists(node)) continue;
+            device_addr_t new_addr;
+            new_addr["name"] = "USRP1E";
+            new_addr["type"] = "usrp1e";
+            new_addr["node"] = node;
+            usrp1e_addrs.push_back(new_addr);
+        }
+    }
+
+    return usrp1e_addrs;
+}
+
+/***********************************************************************
+ * Make
+ **********************************************************************/
+device::sptr usrp1e::make(const device_addr_t &){
+    throw std::runtime_error("not implemented yet");
+}

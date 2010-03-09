@@ -15,14 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/shared_iovec.hpp>
+#include <uhd/usrp/usrp1e.hpp>
 
-uhd::shared_iovec::shared_iovec(size_t len_){
-    _shared_array = boost::shared_array<uint8_t>(new uint8_t[len_]);
-    base = _shared_array.get();
-    len = len_;
-}
+#ifndef INCLUDED_USRP1E_IMPL_HPP
+#define INCLUDED_USRP1E_IMPL_HPP
 
-uhd::shared_iovec::~shared_iovec(void){
-    /* NOP */
-}
+#endif /* INCLUDED_USRP1E_IMPL_HPP */
