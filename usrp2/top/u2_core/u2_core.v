@@ -744,7 +744,11 @@ module u2_core
  */
 
    assign debug = debug_udp;
-   assign debug_gpio_0 = debug_mac;
+   assign debug_gpio_0 = { {8'd0},
+			   {4'd0, rx_data[99:96]},
+			   {run_rx_d1, run_rx, strobe_rx, overrun, wr1_flags[3:0]} , 
+			   {wr1_ready_i, wr1_ready_o, rx1_src_rdy, rx1_dst_rdy, rx1_data[35:32]}};
+   
    assign debug_gpio_1 = { { tx_f19_data[15:8] },
 			   { tx_f19_data[7:0] },
 			   { 3'd0, tx_f19_src_rdy, tx_f19_dst_rdy, tx_f19_data[18:16] },
