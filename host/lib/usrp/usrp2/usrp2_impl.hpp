@@ -135,6 +135,7 @@ private:
     std::string _pps_source, _pps_polarity, _ref_source;
     void init_clock_config(void);
     void update_clock_config(void);
+    void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
     //mappings from clock config strings to over the wire enums
     uhd::dict<std::string, usrp2_pps_source_t>   _pps_source_dict;

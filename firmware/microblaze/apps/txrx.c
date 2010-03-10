@@ -489,6 +489,16 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE;
         break;
 
+    /*******************************************************************
+     * Time Config
+     ******************************************************************/
+    case USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO:
+        sr_time64->imm = (ctrl_data_in->data.time_args.now == 0)? 0 : 1;
+        sr_time64->ticks = ctrl_data_in->data.time_args.ticks;
+        sr_time64->secs = ctrl_data_in->data.time_args.secs; //set this last to latch the regs
+        ctrl_data_out.id = USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE;
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 

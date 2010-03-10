@@ -26,6 +26,7 @@ INSTALL(FILES
     gain_handler.hpp
     metadata.hpp
     props.hpp
+    simple_device.hpp
     time_spec.hpp
     utils.hpp
     wax.hpp

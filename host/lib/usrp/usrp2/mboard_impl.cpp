@@ -28,6 +28,10 @@ void usrp2_impl::mboard_init(void){
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
+
+    //set the time on the usrp2 as close as possible to the system utc time
+    boost::posix_time::ptime now(boost::posix_time::microsec_clock::universal_time());
+    set_time_spec(time_spec_t(now, get_master_clock_freq()), true);
 }
 
 void usrp2_impl::init_clock_config(void){
@@ -62,6 +66,19 @@ void usrp2_impl::update_clock_config(void){
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE);
+}
+
+void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO);
+    out_data.data.time_args.secs  = htonl(time_spec.secs);
+    out_data.data.time_args.ticks = htonl(time_spec.ticks);
+    out_data.data.time_args.now   = (now)? 1 : 0;
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE);
 }
 
 /***********************************************************************
@@ -157,7 +174,7 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_PPS_SOURCE:{
             std::string name = wax::cast<std::string>(val);
-            ASSERT_THROW(_pps_source_dict.has_key(name));
+            assert_has(_pps_source_dict.get_keys(), name, "usrp2 pps source");
             _pps_source = name; //shadow
             update_clock_config();
         }
@@ -165,7 +182,7 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_PPS_POLARITY:{
             std::string name = wax::cast<std::string>(val);
-            ASSERT_THROW(_pps_polarity_dict.has_key(name));
+            assert_has(_pps_polarity_dict.get_keys(), name, "usrp2 pps polarity");
             _pps_polarity = name; //shadow
             update_clock_config();
         }
@@ -173,11 +190,21 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_REF_SOURCE:{
             std::string name = wax::cast<std::string>(val);
-            ASSERT_THROW(_ref_source_dict.has_key(name));
+            assert_has(_ref_source_dict.get_keys(), name, "usrp2 reference source");
             _ref_source = name; //shadow
             update_clock_config();
         }
         return;
+
+    case MBOARD_PROP_TIME_NOW:{
+        set_time_spec(wax::cast<time_spec_t>(val), true);
+        return;
+    }
+
+    case MBOARD_PROP_TIME_NEXT_PPS:{
+        set_time_spec(wax::cast<time_spec_t>(val), false);
+        return;
+    }
 
     case MBOARD_PROP_NAME:
     case MBOARD_PROP_OTHERS:
@@ -192,8 +219,6 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     case MBOARD_PROP_TX_DBOARD_NAMES:
     case MBOARD_PROP_PPS_SOURCE_NAMES:
     case MBOARD_PROP_REF_SOURCE_NAMES:
-    case MBOARD_PROP_TIME_NOW:
-    case MBOARD_PROP_TIME_NEXT_PPS:
         throw std::runtime_error("Error: trying to set read-only property on usrp2 mboard");
 
     }

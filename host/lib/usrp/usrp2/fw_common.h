@@ -91,6 +91,9 @@ typedef enum{
     USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO,
     USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE,
 
+    USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO,
+    USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -186,6 +189,11 @@ typedef struct{
             uint32_t interp;
             uint32_t scale_iq;
         } duc_args;
+        struct {
+            uint32_t secs;
+            uint32_t ticks;
+            uint8_t now;
+        } time_args;
     } data;
 } usrp2_ctrl_data_t;
 

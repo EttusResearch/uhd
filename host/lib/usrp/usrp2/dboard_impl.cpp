@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils.hpp>
+#include <boost/format.hpp>
 #include "usrp2_impl.hpp"
 #include "dboard_interface.hpp"
 
@@ -83,8 +84,8 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_rx_subdev_names();
         return;
 
-    case DBOARD_PROP_CODEC:
-        throw std::runtime_error("unhandled prop in usrp2 dboard");
+    //case DBOARD_PROP_CODEC:
+    //    throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 
@@ -113,8 +114,8 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_tx_subdev_names();
         return;
 
-    case DBOARD_PROP_CODEC:
-        throw std::runtime_error("unhandled prop in usrp2 dboard");
+    //case DBOARD_PROP_CODEC:
+    //    throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 

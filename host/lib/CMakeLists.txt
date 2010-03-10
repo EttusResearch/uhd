@@ -23,6 +23,8 @@ SET(libuhd_sources
     device_addr.cpp
     gain_handler.cpp
     metadata.cpp
+    simple_device.cpp
+    time_spec.cpp
     wax.cpp
     transport/udp_simple.cpp
     transport/vrt.cpp

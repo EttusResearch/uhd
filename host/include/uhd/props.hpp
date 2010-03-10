@@ -116,16 +116,16 @@ namespace uhd{
     enum dboard_prop_t{
         DBOARD_PROP_NAME,              //ro, std::string
         DBOARD_PROP_SUBDEV,            //ro, wax::obj
-        DBOARD_PROP_SUBDEV_NAMES,      //ro, prop_names_t
-        DBOARD_PROP_CODEC              //ro, wax::obj
-    };
+        DBOARD_PROP_SUBDEV_NAMES       //ro, prop_names_t
+        //DBOARD_PROP_CODEC              //ro, wax::obj //----> not sure, dont have to deal with yet
+    }; 
 
-    /*!
+    /*! ------ not dealing with yet, commented out ------------
     * Possible device codec properties:
     *   A codec is expected to have a rate and gain elements.
     *   Other properties can be discovered through the others prop.
     */
-    enum codec_prop_t{
+    /*enum codec_prop_t{
         CODEC_PROP_NAME,               //ro, std::string
         CODEC_PROP_OTHERS,             //ro, prop_names_t
         CODEC_PROP_GAIN,               //rw, gain_t
@@ -133,8 +133,8 @@ namespace uhd{
         CODEC_PROP_GAIN_MIN,           //ro, gain_t
         CODEC_PROP_GAIN_STEP,          //ro, gain_t
         CODEC_PROP_GAIN_NAMES,         //ro, prop_names_t
-        CODEC_PROP_CLOCK_RATE          //ro, freq_t
-    };
+        //CODEC_PROP_CLOCK_RATE          //ro, freq_t //----> not sure we care to know
+    };*/
 
     /*!
     * Possible device subdev properties
@@ -156,9 +156,9 @@ namespace uhd{
         SUBDEV_PROP_QUADRATURE,        //ro, bool
         SUBDEV_PROP_IQ_SWAPPED,        //ro, bool
         SUBDEV_PROP_SPECTRUM_INVERTED, //ro, bool
-        SUBDEV_PROP_IS_TX,             //ro, bool
-        SUBDEV_PROP_RSSI,              //ro, gain_t
-        SUBDEV_PROP_BANDWIDTH          //rw, freq_t
+        SUBDEV_PROP_LO_INTERFERES      //ro, bool
+        //SUBDEV_PROP_RSSI,              //ro, gain_t //----> not on all boards, use named prop
+        //SUBDEV_PROP_BANDWIDTH          //rw, freq_t //----> not on all boards, use named prop
     };
 
 } //namespace uhd

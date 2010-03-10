@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils.hpp>
+#include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include "usrp2_impl.hpp"
 
@@ -110,7 +111,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
                 prop_names_t others = boost::assign::list_of
                     ("rate")
                     ("decim")
-                    ("decim_rates")
+                    ("decims")
                     ("freq")
                     ("enabled")
                     ("stream_at")
@@ -131,7 +132,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
         val = _ddc_decim;
         return;
     }
-    else if (key_name == "decim_rates"){
+    else if (key_name == "decims"){
         val = _allowed_decim_and_interp_rates;
         return;
     }
@@ -154,10 +155,10 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     std::string key_name = wax::cast<std::string>(key);
     if (key_name == "decim"){
         size_t new_decim = wax::cast<size_t>(val);
-        ASSERT_THROW(std::has(
+        assert_has(
             _allowed_decim_and_interp_rates,
-            new_decim
-        ));
+            new_decim, "usrp2 decimation"
+        );
         _ddc_decim = new_decim; //shadow
         update_ddc_config();
         return;
@@ -244,7 +245,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
                 prop_names_t others = boost::assign::list_of
                     ("rate")
                     ("interp")
-                    ("interp_rates")
+                    ("interps")
                     ("freq")
                 ;
                 val = others;
@@ -263,7 +264,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
         val = _duc_interp;
         return;
     }
-    else if (key_name == "interp_rates"){
+    else if (key_name == "interps"){
         val = _allowed_decim_and_interp_rates;
         return;
     }
@@ -282,10 +283,10 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
     std::string key_name = wax::cast<std::string>(key);
     if (key_name == "interp"){
         size_t new_interp = wax::cast<size_t>(val);
-        ASSERT_THROW(std::has(
+        assert_has(
             _allowed_decim_and_interp_rates,
-            new_interp
-        ));
+            new_interp, "usrp2 interpolation"
+        );
         _duc_interp = new_interp; //shadow
         update_duc_config();
         return;
