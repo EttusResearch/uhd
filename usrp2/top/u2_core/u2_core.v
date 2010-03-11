@@ -583,19 +583,25 @@ module u2_core
       .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
+   wire [31:0] 	 vrc_debug;
+   
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .sample_fifo_o(rx_data), .sample_fifo_dst_rdy_i(rx_dst_rdy), .sample_fifo_src_rdy_o(rx_src_rdy));
+      .sample_fifo_o(rx_data), .sample_fifo_dst_rdy_i(rx_dst_rdy), .sample_fifo_src_rdy_o(rx_src_rdy),
+      .debug_rx(vrc_debug));
 
+   wire [3:0] 	 vita_state;
+   
    vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample_fifo_i(rx_data), .sample_fifo_dst_rdy_o(rx_dst_rdy), .sample_fifo_src_rdy_i(rx_src_rdy),
       .data_o(rx1_data), .dst_rdy_i(rx1_dst_rdy), .src_rdy_o(rx1_src_rdy),
-      .fifo_occupied(), .fifo_full(), .fifo_empty() );
+      .fifo_occupied(), .fifo_full(), .fifo_empty(),
+      .debug_rx(vita_state) );
 
    fifo_cascade #(.WIDTH(36), .SIZE(10)) rx_fifo_cascade
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
@@ -743,9 +749,10 @@ module u2_core
 			     { GMII_TX_EN,3'd0, wr2_ready_i, wr2_ready_o, rd2_ready_i, rd2_ready_o } };
  */
 
-   assign debug = debug_udp;
-   assign debug_gpio_0 = { {8'd0},
-			   {4'd0, rx_data[99:96]},
+//   assign debug = debug_udp;
+   assign debug = vrc_debug;
+   assign debug_gpio_0 = { {4'd0, vita_state},
+			   {2'd0, rx_dst_rdy, rx_src_rdy, rx_data[99:96]},
 			   {run_rx_d1, run_rx, strobe_rx, overrun, wr1_flags[3:0]} , 
 			   {wr1_ready_i, wr1_ready_o, rx1_src_rdy, rx1_dst_rdy, rx1_data[35:32]}};
    

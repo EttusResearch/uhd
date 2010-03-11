@@ -194,6 +194,6 @@ module vita_rx_framer
 				      ~|flags_fifo_o[3:1]) |
 				     (vita_state==VITA_ERR_TRAILER));
    
-   assign debug_rx  = 0;
+   assign debug_rx  = vita_state;
    
 endmodule // rx_control
