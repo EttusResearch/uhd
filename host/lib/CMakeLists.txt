@@ -30,7 +30,6 @@ SET(libuhd_sources
     transport/vrt.cpp
     usrp/dboard/basic.cpp
     usrp/dboard_base.cpp
-    usrp/dboard_id.cpp
     usrp/dboard_interface.cpp
     usrp/dboard_manager.cpp
     usrp/usrp2/dboard_impl.cpp

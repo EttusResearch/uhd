@@ -24,6 +24,11 @@
 #include <boost/current_function.hpp>
 
 /*!
+ * Defines a static code block that will be called before main()
+ */
+#define STATIC_BLOCK(_name, _code) struct _name{_name(void){_code}} _name
+
+/*!
  * Useful templated functions and classes that I like to pretend are part of stl
  */
 namespace std{

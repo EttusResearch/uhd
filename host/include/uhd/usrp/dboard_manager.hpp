@@ -44,11 +44,13 @@ public:
      *
      * \param dboard_id the dboard id (rx or tx)
      * \param dboard_ctor the dboard constructor function pointer
+     * \param name the canonical name for the dboard represented
      * \param subdev_names the names of the subdevs on this dboard
      */
     static void register_subdevs(
         dboard_id_t dboard_id,
         dboard_ctor_t dboard_ctor,
+        const std::string &name,
         const prop_names_t &subdev_names
     );
 

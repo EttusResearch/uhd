@@ -179,7 +179,12 @@ public:
         return get_xx_rates(_rx_ddc[std::string("decims")], _rx_ddc[std::string("rate")]);
     }
 
-    tune_result_t set_rx_freq(double target_freq, double lo_offset){
+    tune_result_t set_rx_freq(double target_freq){
+        double lo_offset = 0.0;
+        //if the local oscillator will be in the passband, use an offset
+        if (wax::cast<bool>(_rx_subdev[SUBDEV_PROP_LO_INTERFERES])){
+            lo_offset = get_rx_rate()*2.0;
+        }
         return tune(target_freq, lo_offset, _rx_subdev, _rx_ddc, false/* not tx */);
     }
 
@@ -242,7 +247,12 @@ public:
         return get_xx_rates(_tx_duc[std::string("interps")], _tx_duc[std::string("rate")]);
     }
 
-    tune_result_t set_tx_freq(double target_freq, double lo_offset){
+    tune_result_t set_tx_freq(double target_freq){
+        double lo_offset = 0.0;
+        //if the local oscillator will be in the passband, use an offset
+        if (wax::cast<bool>(_tx_subdev[SUBDEV_PROP_LO_INTERFERES])){
+            lo_offset = get_tx_rate()*2.0;
+        }
         return tune(target_freq, lo_offset, _tx_subdev, _tx_duc, true/* is tx */);
     }
 

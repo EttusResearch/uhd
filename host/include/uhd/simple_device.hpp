@@ -70,7 +70,7 @@ public:
     virtual double get_rx_rate(void) = 0;
     virtual std::vector<double> get_rx_rates(void) = 0;
 
-    virtual tune_result_t set_rx_freq(double target_freq, double lo_offset) = 0;
+    virtual tune_result_t set_rx_freq(double freq) = 0;
     virtual double get_rx_freq_min(void) = 0;
     virtual double get_rx_freq_max(void) = 0;
 
@@ -91,7 +91,7 @@ public:
     virtual double get_tx_rate(void) = 0;
     virtual std::vector<double> get_tx_rates(void) = 0;
 
-    virtual tune_result_t set_tx_freq(double target_freq, double lo_offset) = 0;
+    virtual tune_result_t set_tx_freq(double freq) = 0;
     virtual double get_tx_freq_min(void) = 0;
     virtual double get_tx_freq_max(void) = 0;
 

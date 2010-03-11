@@ -18,36 +18,12 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils.hpp>
 #include <uhd/dict.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include "dboard/dboards.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
-
-/***********************************************************************
- * register internal dboards
- *
- * Register internal/known dboards located in this build tree.
- * Each board should have entries below mapping an id to a constructor.
- * The xcvr type boards should register both rx and tx sides.
- *
- * This function will be called before new boards are registered.
- * This allows for internal boards to be externally overridden.
- * This function will also be called when creating a new dboard_manager
- * to ensure that the maps are filled with the entries below.
- **********************************************************************/
-static void register_internal_dboards(void){
-    //ensure that this function can only be called once per instance
-    static bool called = false;
-    if (called) return; called = true;
-    //register the known dboards (dboard id, constructor, subdev names)
-    dboard_manager::register_subdevs(ID_BASIC_TX, &basic_tx::make, list_of(""));
-    dboard_manager::register_subdevs(ID_BASIC_RX, &basic_rx::make, list_of("a")("b")("ab"));
-}
 
 /***********************************************************************
  * storage and registering for dboards
@@ -57,13 +33,22 @@ typedef boost::tuple<dboard_manager::dboard_ctor_t, prop_names_t> args_t;
 //map a dboard id to a dboard constructor
 static uhd::dict<dboard_id_t, args_t> id_to_args_map;
 
+//map a dboard id to a canonical name
+static uhd::dict<dboard_id_t, std::string> id_to_str;
+
 void dboard_manager::register_subdevs(
     dboard_id_t dboard_id,
     dboard_ctor_t dboard_ctor,
+    const std::string &name,
     const prop_names_t &subdev_names
 ){
-    register_internal_dboards(); //always call first
+    id_to_str[dboard_id] = name;
     id_to_args_map[dboard_id] = args_t(dboard_ctor, subdev_names);
+}
+
+std::string dboard_id::to_string(const dboard_id_t &id){
+    std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
+    return str(boost::format("%s (0x%.4x)") % name % id);
 }
 
 /***********************************************************************
@@ -160,12 +145,12 @@ static args_t get_dboard_args(
 ){
     //special case, its rx and the none id (0xffff)
     if (xx_type == "rx" and dboard_id == ID_NONE){
-        return args_t(&basic_rx::make, list_of("ab"));
+        return get_dboard_args(0x0001, xx_type);
     }
 
     //special case, its tx and the none id (0xffff)
     if (xx_type == "tx" and dboard_id == ID_NONE){
-        return args_t(&basic_tx::make, list_of(""));
+        return get_dboard_args(0x0000, xx_type);
     }
 
     //verify that there is a registered constructor for this id
@@ -185,7 +170,6 @@ dboard_manager_impl::dboard_manager_impl(
     dboard_id_t tx_dboard_id,
     dboard_interface::sptr interface
 ){
-    register_internal_dboards(); //always call first
     _interface = interface;
 
     dboard_ctor_t rx_dboard_ctor; prop_names_t rx_subdevs;

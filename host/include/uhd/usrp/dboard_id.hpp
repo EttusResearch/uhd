@@ -16,17 +16,16 @@
 //
 
 #include <string>
+#include <stdint.h>
 
 #ifndef INCLUDED_UHD_USRP_DBOARD_ID_HPP
 #define INCLUDED_UHD_USRP_DBOARD_ID_HPP
 
 namespace uhd{ namespace usrp{
 
-enum dboard_id_t{
-    ID_NONE     = 0xffff,
-    ID_BASIC_TX = 0x0000,
-    ID_BASIC_RX = 0x0001
-};
+typedef uint16_t dboard_id_t;
+
+static const dboard_id_t ID_NONE = 0xffff;
 
 namespace dboard_id{
     std::string to_string(const dboard_id_t &id);
