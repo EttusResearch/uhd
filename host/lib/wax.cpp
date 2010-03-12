@@ -36,7 +36,11 @@ public:
     link_args_t(const wax::obj *obj_ptr) : _obj_ptr(obj_ptr){
         /* NOP */
     }
-    wax::obj & operator()(void){
+    wax::obj & operator()(void) const{
+        //recursively resolve link args to get at original pointer
+        if (_obj_ptr->type() == typeid(link_args_t)){
+            return wax::cast<link_args_t>(*_obj_ptr)();
+        }
         return *const_cast<wax::obj *>(_obj_ptr);
     }
 private:
@@ -56,10 +60,10 @@ public:
     proxy_args_t(const wax::obj *obj_ptr, const wax::obj &key) : _key(key){
         _obj_link = obj_ptr->get_link();
     }
-    wax::obj & operator()(void){
+    wax::obj & operator()(void) const{
         return wax::cast<link_args_t>(_obj_link)();
     }
-    const wax::obj & key(void){
+    const wax::obj & key(void) const{
         return _key;
     }
 private:

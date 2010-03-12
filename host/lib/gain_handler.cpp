@@ -17,6 +17,7 @@
 
 #include <uhd/gain_handler.hpp>
 #include <uhd/utils.hpp>
+#include <uhd/props.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -25,53 +26,8 @@
 using namespace uhd;
 
 /***********************************************************************
- * Helper functions and macros
+ * helper functions
  **********************************************************************/
-#define GET_PROP_NAMES() \
-    wax::cast<prop_names_t>((*_wax_obj_ptr)[_gain_names_prop])
-
-/*!
- * Helper function to simplify getting a named gain (also min, max, step).
- */
-static gain_t get_named_gain(wax::obj *wax_obj_ptr, wax::obj prop, std::string name){
-    return wax::cast<gain_t>((*wax_obj_ptr)[named_prop_t(prop, name)]);
-}
-
-/***********************************************************************
- * Class methods of gain handler
- **********************************************************************/
-gain_handler::~gain_handler(void){
-    /* NOP */
-}
-
-void gain_handler::_check_key(const wax::obj &key_){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
-    
-    try{
-        //only handle non wildcard names
-        ASSERT_THROW(name != "");
-
-        //only handle these gain props
-        ASSERT_THROW(
-            _is_equal(key, _gain_prop)     or
-            _is_equal(key, _gain_min_prop) or
-            _is_equal(key, _gain_max_prop) or
-            _is_equal(key, _gain_step_prop)
-        );
-
-        //check that the name is allowed
-        prop_names_t prop_names = GET_PROP_NAMES();
-        ASSERT_THROW(not std::has(prop_names.begin(), prop_names.end(), name));
-
-        //if we get here, throw an exception
-        throw std::invalid_argument(str(
-            boost::format("Unknown gain name %s") % name
-        ));
-    }
-    catch(const std::assert_error &){}
-}
-
 static gain_t gain_max(gain_t a, gain_t b){
     return std::max(a, b);
 }
@@ -79,89 +35,169 @@ static gain_t gain_sum(gain_t a, gain_t b){
     return std::sum(a, b);
 }
 
-bool gain_handler::intercept_get(const wax::obj &key, wax::obj &val){
-    _check_key(key); //verify the key
+/***********************************************************************
+ * gain handler implementation interface
+ **********************************************************************/
+class gain_handler_impl : public gain_handler{
+public:
+    gain_handler_impl(
+        const wax::obj &link,
+        const gain_props_t &gain_props,
+        is_equal_t is_equal
+    );
+    ~gain_handler_impl(void);
+    bool intercept_get(const wax::obj &key, wax::obj &val);
+    bool intercept_set(const wax::obj &key, const wax::obj &val);
 
-    std::vector<wax::obj> gain_props = boost::assign::list_of
-        (_gain_prop)(_gain_min_prop)(_gain_max_prop)(_gain_step_prop);
+private:
+    wax::obj     _link;
+    gain_props_t _gain_props;
+    is_equal_t   _is_equal;
 
-    /*!
-     * Handle getting overall gains when a name is not specified.
-     * For the gain props below, set the overall value and return true. 
-     */
-    BOOST_FOREACH(wax::obj prop_key, gain_props){
-        if (_is_equal(key, prop_key)){
-            //form the gains vector from the props vector
-            prop_names_t prop_names = GET_PROP_NAMES();
-            std::vector<gain_t> gains(prop_names.size());
-            std::transform(
-                prop_names.begin(), prop_names.end(), gains.begin(),
-                boost::bind(get_named_gain, _wax_obj_ptr, key, _1)
-            );
+    prop_names_t get_gain_names(void);
+    std::vector<gain_t> get_gains(const wax::obj &prop_key);
+    gain_t get_overall_gain_val(void);
+    gain_t get_overall_gain_min(void);
+    gain_t get_overall_gain_max(void);
+    gain_t get_overall_gain_step(void);
+};
 
-            //reduce across the gain vector
-            if (_is_equal(key, _gain_step_prop)){
-                val = std::reduce<gain_t>(gains.begin(), gains.end(), gain_max);
-            }
-            else{
-                val = std::reduce<gain_t>(gains.begin(), gains.end(), gain_sum);
-            }
-            return true;
-        }
-    }
-
-    return false;
+/***********************************************************************
+ * the make function
+ **********************************************************************/
+gain_handler::sptr gain_handler::make(
+    const wax::obj &link,
+    const gain_props_t &gain_props,
+    is_equal_t is_equal
+){
+    return sptr(new gain_handler_impl(link, gain_props, is_equal));
 }
 
-bool gain_handler::intercept_set(const wax::obj &key_, const wax::obj &val){
-    _check_key(key_); //verify the key
+/***********************************************************************
+ * gain handler implementation methods
+ **********************************************************************/
+gain_handler::gain_props_t::gain_props_t(void){
+    /* NOP */
+}
 
+gain_handler_impl::gain_handler_impl(
+    const wax::obj &link,
+    const gain_props_t &gain_props,
+    is_equal_t is_equal
+){
+    _link = link;
+    _gain_props = gain_props;
+    _is_equal = is_equal;
+}
+
+gain_handler_impl::~gain_handler_impl(void){
+    /* NOP */
+}
+
+prop_names_t gain_handler_impl::get_gain_names(void){
+    return wax::cast<prop_names_t>(_link[_gain_props.gain_names_prop]);
+}
+
+std::vector<gain_t> gain_handler_impl::get_gains(const wax::obj &prop_key){
+    std::vector<gain_t> gains;
+    BOOST_FOREACH(std::string name, get_gain_names()){
+        gains.push_back(wax::cast<gain_t>(_link[named_prop_t(prop_key, name)]));
+    }
+    return gains;
+}
+
+gain_t gain_handler_impl::get_overall_gain_val(void){
+    return std::reduce<gain_t>(get_gains(_gain_props.gain_val_prop), gain_sum);
+}
+
+gain_t gain_handler_impl::get_overall_gain_min(void){
+    return std::reduce<gain_t>(get_gains(_gain_props.gain_min_prop), gain_sum);
+}
+
+gain_t gain_handler_impl::get_overall_gain_max(void){
+    return std::reduce<gain_t>(get_gains(_gain_props.gain_max_prop), gain_sum);
+}
+
+gain_t gain_handler_impl::get_overall_gain_step(void){
+    return std::reduce<gain_t>(get_gains(_gain_props.gain_step_prop), gain_max);
+}
+
+/***********************************************************************
+ * gain handler implementation get method
+ **********************************************************************/
+bool gain_handler_impl::intercept_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
-    /*!
-     * Verify that a named gain component is in range.
-     */
-    try{
-        //only handle the gain props
-        ASSERT_THROW(_is_equal(key, _gain_prop));
-
-        //check that the gain is in range
-        gain_t gain = wax::cast<gain_t>(val);
-        gain_t gain_min = get_named_gain(_wax_obj_ptr, _gain_min_prop,  name);
-        gain_t gain_max = get_named_gain(_wax_obj_ptr, _gain_max_prop,  name);
-        ASSERT_THROW(gain > gain_max or gain < gain_min);
-
-        //if we get here, throw an exception
-        throw std::range_error(str(
-            boost::format("gain %s is out of range of (%f, %f)") % name % gain_min % gain_max
-        ));
+    //not a wildcard... dont handle (but check name)
+    if (name != ""){
+        assert_has(get_gain_names(), name, "gain name");
+        return false;
     }
-    catch(const std::assert_error &){}
 
-    /*!
-     * Handle setting the overall gain.
-     */
-    if (_is_equal(key, _gain_prop) and name == ""){
-        gain_t gain = wax::cast<gain_t>(val);
-        prop_names_t prop_names = GET_PROP_NAMES();
-        BOOST_FOREACH(std::string name, prop_names){
-            //get the min, max, step for this gain name
-            gain_t gain_min  = get_named_gain(_wax_obj_ptr, _gain_min_prop,  name);
-            gain_t gain_max  = get_named_gain(_wax_obj_ptr, _gain_max_prop,  name);
-            gain_t gain_step = get_named_gain(_wax_obj_ptr, _gain_step_prop, name);
-
-            //clip g to be within the allowed range
-            gain_t g = std::min(std::max(gain, gain_min), gain_max);
-            //set g to be a multiple of the step size
-            g -= fmod(g, gain_step);
-            //set g to be the new gain
-            (*_wax_obj_ptr)[named_prop_t(_gain_prop, name)] = g;
-            //subtract g out of the total gain left to apply
-            gain -= g;
-        }
+    if (_is_equal(key, _gain_props.gain_val_prop)){
+        val = get_overall_gain_val();
         return true;
     }
 
-    return false;
+    if (_is_equal(key, _gain_props.gain_min_prop)){
+        val = get_overall_gain_min();
+        return true;
+    }
+
+    if (_is_equal(key, _gain_props.gain_max_prop)){
+        val = get_overall_gain_max();
+        return true;
+    }
+
+    if (_is_equal(key, _gain_props.gain_step_prop)){
+        val = get_overall_gain_step();
+        return true;
+    }
+
+    return false; //not handled
+}
+
+/***********************************************************************
+ * gain handler implementation set method
+ **********************************************************************/
+bool gain_handler_impl::intercept_set(const wax::obj &key_, const wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //not a gain value key... dont handle
+    if (not _is_equal(key, _gain_props.gain_val_prop)) return false;
+
+    gain_t gain_val = wax::cast<gain_t>(val);
+
+    //not a wildcard... dont handle (but check name and range)
+    if (name != ""){
+        assert_has(get_gain_names(), name, "gain name");
+        gain_t gain_min = wax::cast<gain_t>(_link[named_prop_t(_gain_props.gain_min_prop, name)]);
+        gain_t gain_max = wax::cast<gain_t>(_link[named_prop_t(_gain_props.gain_max_prop, name)]);
+        if (gain_val > gain_max or gain_val < gain_min) throw std::range_error(str(
+            boost::format("A value of %f for gain %s is out of range of (%f, %f)")
+            % gain_val % name % gain_min % gain_max
+        ));
+        return false;
+    }
+
+    //set the overall gain
+    BOOST_FOREACH(std::string name, get_gain_names()){
+        //get the min, max, step for this gain name
+        gain_t gain_min  = wax::cast<gain_t>(_link[named_prop_t(_gain_props.gain_min_prop, name)]);
+        gain_t gain_max  = wax::cast<gain_t>(_link[named_prop_t(_gain_props.gain_max_prop, name)]);
+        gain_t gain_step = wax::cast<gain_t>(_link[named_prop_t(_gain_props.gain_step_prop, name)]);
+
+        //clip g to be within the allowed range
+        gain_t g = std::min(std::max(gain_val, gain_min), gain_max);
+        //set g to be a multiple of the step size
+        g -= fmod(g, gain_step);
+        //set g to be the new gain
+        _link[named_prop_t(_gain_props.gain_val_prop, name)] = g;
+        //subtract g out of the total gain left to apply
+        gain_val -= g;
+    }
+
+    return true;
 }

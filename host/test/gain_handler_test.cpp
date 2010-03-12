@@ -17,7 +17,9 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/gain_handler.hpp>
+#include <uhd/props.hpp>
 #include <uhd/dict.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -33,9 +35,17 @@ enum prop_t{
 class gainful_obj : public wax::obj{
 public:
     gainful_obj(void){
-        _gain_handler = gain_handler::sptr(new gain_handler(
-            this, PROP_GAIN, PROP_GAIN_MIN, PROP_GAIN_MAX, PROP_GAIN_STEP, PROP_GAIN_NAMES
-        ));
+        //initialize gain props struct
+        gain_handler::gain_props_t gain_props;
+        gain_props.gain_val_prop = PROP_GAIN;
+        gain_props.gain_min_prop = PROP_GAIN_MIN;
+        gain_props.gain_max_prop = PROP_GAIN_MAX;
+        gain_props.gain_step_prop = PROP_GAIN_STEP;
+        gain_props.gain_names_prop = PROP_GAIN_NAMES;
+        //make a new gain handler
+        _gain_handler = gain_handler::make(
+            this->get_link(), gain_props, boost::bind(&gain_handler::is_equal<prop_t>, _1, _2)
+        );
         _gains["g0"] = 0;
         _gains["g1"] = 0;
         _gains_min["g0"] = -10;
@@ -113,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_gain_handler){
 
     BOOST_CHECK_THROW(
         wax::cast<gain_t>(go0[named_prop_t(PROP_GAIN, "fail")]),
-        std::invalid_argument
+        std::exception
     );
 
     std::cout << "verifying the overall min, max, step" << std::endl;

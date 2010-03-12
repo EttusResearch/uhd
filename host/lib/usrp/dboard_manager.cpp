@@ -16,10 +16,12 @@
 //
 
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/gain_handler.hpp>
 #include <uhd/utils.hpp>
 #include <uhd/dict.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
 using namespace uhd;
@@ -42,6 +44,7 @@ void dboard_manager::register_subdevs(
     const std::string &name,
     const prop_names_t &subdev_names
 ){
+    //std::cout << "registering: " << name << std::endl;
     id_to_str[dboard_id] = name;
     id_to_args_map[dboard_id] = args_t(dboard_ctor, subdev_names);
 }
@@ -50,6 +53,63 @@ std::string dboard_id::to_string(const dboard_id_t &id){
     std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
     return str(boost::format("%s (0x%.4x)") % name % id);
 }
+
+/***********************************************************************
+ * internal helper classe
+ **********************************************************************/
+/*!
+ * A special wax proxy object that forwards calls to a subdev.
+ * A sptr to an instance will be used in the properties structure. 
+ */
+class subdev_proxy : boost::noncopyable, public wax::obj{
+public:
+    typedef boost::shared_ptr<subdev_proxy> sptr;
+    enum type_t{RX_TYPE, TX_TYPE};
+
+    //structors
+    subdev_proxy(dboard_base::sptr subdev, type_t type)
+    : _subdev(subdev), _type(type){
+        //initialize gain props struct
+        gain_handler::gain_props_t gain_props;
+        gain_props.gain_val_prop = SUBDEV_PROP_GAIN;
+        gain_props.gain_min_prop = SUBDEV_PROP_GAIN_MIN;
+        gain_props.gain_max_prop = SUBDEV_PROP_GAIN_MAX;
+        gain_props.gain_step_prop = SUBDEV_PROP_GAIN_STEP;
+        gain_props.gain_names_prop = SUBDEV_PROP_GAIN_NAMES;
+
+        //make a new gain handler
+        _gain_handler = gain_handler::make(
+            this->get_link(), gain_props, boost::bind(&gain_handler::is_equal<subdev_prop_t>, _1, _2)
+        );
+    }
+
+    ~subdev_proxy(void){
+        /* NOP */
+    }
+
+private:
+    gain_handler::sptr   _gain_handler;
+    dboard_base::sptr   _subdev;
+    type_t              _type;
+
+    //forward the get calls to the rx or tx
+    void get(const wax::obj &key, wax::obj &val){
+        if (_gain_handler->intercept_get(key, val)) return;
+        switch(_type){
+        case RX_TYPE: return _subdev->rx_get(key, val);
+        case TX_TYPE: return _subdev->tx_get(key, val);
+        }
+    }
+
+    //forward the set calls to the rx or tx
+    void set(const wax::obj &key, const wax::obj &val){
+        if (_gain_handler->intercept_set(key, val)) return;
+        switch(_type){
+        case RX_TYPE: return _subdev->rx_set(key, val);
+        case TX_TYPE: return _subdev->tx_set(key, val);
+        }
+    }
+};
 
 /***********************************************************************
  * dboard manager implementation class
@@ -74,53 +134,10 @@ private:
     //list of rx and tx dboards in this dboard_manager
     //each dboard here is actually a subdevice proxy
     //the subdevice proxy is internal to the cpp file
-    uhd::dict<std::string, wax::obj> _rx_dboards;
-    uhd::dict<std::string, wax::obj> _tx_dboards;
+    uhd::dict<std::string, subdev_proxy::sptr> _rx_dboards;
+    uhd::dict<std::string, subdev_proxy::sptr> _tx_dboards;
     dboard_interface::sptr _interface;
     void set_nice_gpio_pins(void);
-};
-
-/***********************************************************************
- * internal helper classes
- **********************************************************************/
-/*!
- * A special wax proxy object that forwards calls to a subdev.
- * A sptr to an instance will be used in the properties structure. 
- */
-class subdev_proxy : boost::noncopyable, public wax::obj{
-public:
-    typedef boost::shared_ptr<subdev_proxy> sptr;
-    enum type_t{RX_TYPE, TX_TYPE};
-
-    //structors
-    subdev_proxy(dboard_base::sptr subdev, type_t type)
-    : _subdev(subdev), _type(type){
-        /* NOP */
-    }
-
-    ~subdev_proxy(void){
-        /* NOP */
-    }
-
-private:
-    dboard_base::sptr   _subdev;
-    type_t              _type;
-
-    //forward the get calls to the rx or tx
-    void get(const wax::obj &key, wax::obj &val){
-        switch(_type){
-        case RX_TYPE: return _subdev->rx_get(key, val);
-        case TX_TYPE: return _subdev->tx_get(key, val);
-        }
-    }
-
-    //forward the set calls to the rx or tx
-    void set(const wax::obj &key, const wax::obj &val){
-        switch(_type){
-        case RX_TYPE: return _subdev->rx_set(key, val);
-        case TX_TYPE: return _subdev->tx_set(key, val);
-        }
-    }
 };
 
 /***********************************************************************
@@ -241,7 +258,7 @@ wax::obj dboard_manager_impl::get_rx_subdev(const std::string &subdev_name){
         str(boost::format("Unknown rx subdev name %s") % subdev_name)
     );
     //get a link to the rx subdev proxy
-    return wax::cast<subdev_proxy::sptr>(_rx_dboards[subdev_name])->get_link();
+    return _rx_dboards[subdev_name]->get_link();
 }
 
 wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
@@ -249,7 +266,7 @@ wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
         str(boost::format("Unknown tx subdev name %s") % subdev_name)
     );
     //get a link to the tx subdev proxy
-    return wax::cast<subdev_proxy::sptr>(_tx_dboards[subdev_name])->get_link();
+    return _tx_dboards[subdev_name]->get_link();
 }
 
 void dboard_manager_impl::set_nice_gpio_pins(void){

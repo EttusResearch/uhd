@@ -73,12 +73,12 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
     return dboard_base::sptr(new basic_tx(args, 32e6));
 }
 
-STATIC_BLOCK(reg_dboards, {
+STATIC_BLOCK(reg_dboards){
     dboard_manager::register_subdevs(0x0000, &make_basic_tx, "Basic TX", list_of(""));
     dboard_manager::register_subdevs(0x0001, &make_basic_rx, "Basic RX", list_of("a")("b")("ab"));
     dboard_manager::register_subdevs(0x000e, &make_lf_tx,    "LF TX",    list_of(""));
     dboard_manager::register_subdevs(0x000f, &make_lf_rx,    "LF RX",    list_of("a")("b")("ab"));
-});
+}
 
 /***********************************************************************
  * Basic and LF RX dboard

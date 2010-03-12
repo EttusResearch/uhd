@@ -32,9 +32,16 @@ using namespace uhd;
  * Create a new device from a device address.
  * Based on the address, call the appropriate make functions.
  * \param dev_addr the device address
+ * \param hint the device address that was used to find the device
  * \return a smart pointer to a device
  */
-static device::sptr make_device(const device_addr_t &dev_addr){
+static device::sptr make_device(const device_addr_t &dev_addr_, const device_addr_t &hint){
+    //copy keys that were in hint but not in dev_addr
+    //this way, we can pass additional transport arguments
+    device_addr_t dev_addr = dev_addr_;
+    BOOST_FOREACH(std::string key, hint.get_keys()){
+        if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
+    }
 
     //create a usrp1e
     if (dev_addr["type"] == "usrp1e"){
@@ -46,7 +53,9 @@ static device::sptr make_device(const device_addr_t &dev_addr){
         return usrp::usrp2::make(dev_addr);
     }
 
-    throw std::runtime_error("cant make a device");
+    throw std::runtime_error(str(
+        boost::format("Cant make a device for %s") % device_addr::to_string(dev_addr)
+    ));
 }
 
 /*!
@@ -126,7 +135,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     }
     //create and register a new device
     catch(const std::assert_error &e){
-        device::sptr dev = make_device(dev_addr);
+        device::sptr dev = make_device(dev_addr, hint);
         hash_to_device[dev_hash] = dev;
         return dev;
     }

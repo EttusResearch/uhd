@@ -26,7 +26,7 @@
 /*!
  * Defines a static code block that will be called before main()
  */
-#define STATIC_BLOCK(_name, _code) struct _name{_name(void){_code}} _name
+#define STATIC_BLOCK(_x) struct _x{_x();}_x;_x::_x()
 
 /*!
  * Useful templated functions and classes that I like to pretend are part of stl
@@ -53,6 +53,11 @@ namespace std{
             tmp = fcn(tmp, *first);
         }
         return tmp;
+    }
+
+    template<class T, class Iterable, class Function>
+    T reduce(Iterable iterable, Function fcn, T init = 0){
+        return reduce(iterable.begin(), iterable.end(), fcn, init);
     }
 
     template<class T, class InputIterator>
