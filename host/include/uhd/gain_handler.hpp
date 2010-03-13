@@ -32,13 +32,9 @@ public:
     /*!
      * A set of properties for dealing with gains.
      */
-    struct gain_props_t{
-        wax::obj gain_val_prop;
-        wax::obj gain_min_prop;
-        wax::obj gain_max_prop;
-        wax::obj gain_step_prop;
-        wax::obj gain_names_prop;
-        gain_props_t(void); //default constructor
+    struct props_t{
+        wax::obj value, range, names;
+        props_t(void); //default constructor
     };
 
     /*!
@@ -47,12 +43,12 @@ public:
      * It is up to the caller to provide an "is_equal" function that
      * can tell weather two properties (in a wax obj) are equal.
      * \param link a link to the wax obj with properties
-     * \param gain_props a struct of properties keys
+     * \param props a struct of properties keys
      * \param is_equal the function that tests for equal properties
      */
     static sptr make(
         const wax::obj &link,
-        const gain_props_t &gain_props,
+        const props_t &props,
         is_equal_t is_equal
     );
 

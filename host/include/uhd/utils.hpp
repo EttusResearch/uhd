@@ -70,11 +70,6 @@ namespace std{
         return has(iterable.begin(), iterable.end(), elem);
     }
 
-    template<class T>
-    T sum(const T &a, const T &b){
-        return a + b;
-    }
-
     template<typename T> T signum(T n){
         if (n < 0) return -1;
         if (n > 0) return 1;

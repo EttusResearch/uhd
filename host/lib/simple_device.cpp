@@ -188,12 +188,11 @@ public:
         return tune(target_freq, lo_offset, _rx_subdev, _rx_ddc, false/* not tx */);
     }
 
-    double get_rx_freq_min(void){
-        return wax::cast<double>(_rx_subdev[SUBDEV_PROP_FREQ_MIN]);
-    }
-
-    double get_rx_freq_max(void){
-        return wax::cast<double>(_rx_subdev[SUBDEV_PROP_FREQ_MAX]);
+    std::vector<double> get_rx_freq_range(void){
+        std::vector<double> range(2);
+        boost::tie(range[0], range[1]) = \
+            wax::cast<freq_range_t>(_rx_subdev[SUBDEV_PROP_FREQ_RANGE]);
+        return range;
     }
 
     void set_rx_gain(float gain){
@@ -201,19 +200,14 @@ public:
     }
 
     float get_rx_gain(void){
-        return wax::cast<float>(_rx_subdev[SUBDEV_PROP_GAIN]);
+        return wax::cast<gain_t>(_rx_subdev[SUBDEV_PROP_GAIN]);
     }
 
-    float get_rx_gain_min(void){
-        return wax::cast<float>(_rx_subdev[SUBDEV_PROP_GAIN_MIN]);
-    }
-
-    float get_rx_gain_max(void){
-        return wax::cast<float>(_rx_subdev[SUBDEV_PROP_GAIN_MAX]);
-    }
-
-    float get_rx_gain_step(void){
-        return wax::cast<float>(_rx_subdev[SUBDEV_PROP_GAIN_STEP]);
+    std::vector<float> get_rx_gain_range(void){
+        std::vector<float> range(3);
+        boost::tie(range[0], range[1], range[2]) = \
+            wax::cast<gain_range_t>(_rx_subdev[SUBDEV_PROP_GAIN_RANGE]);
+        return range;
     }
 
     void set_rx_antenna(const std::string &ant){
@@ -256,12 +250,11 @@ public:
         return tune(target_freq, lo_offset, _tx_subdev, _tx_duc, true/* is tx */);
     }
 
-    double get_tx_freq_min(void){
-        return wax::cast<double>(_tx_subdev[SUBDEV_PROP_FREQ_MIN]);
-    }
-
-    double get_tx_freq_max(void){
-        return wax::cast<double>(_tx_subdev[SUBDEV_PROP_FREQ_MAX]);
+    std::vector<double> get_tx_freq_range(void){
+        std::vector<double> range(2);
+        boost::tie(range[0], range[1]) = \
+            wax::cast<freq_range_t>(_tx_subdev[SUBDEV_PROP_FREQ_RANGE]);
+        return range;
     }
 
     void set_tx_gain(float gain){
@@ -269,19 +262,14 @@ public:
     }
 
     float get_tx_gain(void){
-        return wax::cast<float>(_tx_subdev[SUBDEV_PROP_GAIN]);
+        return wax::cast<gain_t>(_tx_subdev[SUBDEV_PROP_GAIN]);
     }
 
-    float get_tx_gain_min(void){
-        return wax::cast<float>(_tx_subdev[SUBDEV_PROP_GAIN_MIN]);
-    }
-
-    float get_tx_gain_max(void){
-        return wax::cast<float>(_tx_subdev[SUBDEV_PROP_GAIN_MAX]);
-    }
-
-    float get_tx_gain_step(void){
-        return wax::cast<float>(_tx_subdev[SUBDEV_PROP_GAIN_STEP]);
+    std::vector<float> get_tx_gain_range(void){
+        std::vector<float> range(3);
+        boost::tie(range[0], range[1], range[2]) = \
+            wax::cast<gain_range_t>(_tx_subdev[SUBDEV_PROP_GAIN_RANGE]);
+        return range;
     }
 
     void set_tx_antenna(const std::string &ant){

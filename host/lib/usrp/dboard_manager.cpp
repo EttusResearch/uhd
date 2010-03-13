@@ -70,16 +70,15 @@ public:
     subdev_proxy(dboard_base::sptr subdev, type_t type)
     : _subdev(subdev), _type(type){
         //initialize gain props struct
-        gain_handler::gain_props_t gain_props;
-        gain_props.gain_val_prop = SUBDEV_PROP_GAIN;
-        gain_props.gain_min_prop = SUBDEV_PROP_GAIN_MIN;
-        gain_props.gain_max_prop = SUBDEV_PROP_GAIN_MAX;
-        gain_props.gain_step_prop = SUBDEV_PROP_GAIN_STEP;
-        gain_props.gain_names_prop = SUBDEV_PROP_GAIN_NAMES;
+        gain_handler::props_t gain_props;
+        gain_props.value = SUBDEV_PROP_GAIN;
+        gain_props.range = SUBDEV_PROP_GAIN_RANGE;
+        gain_props.names = SUBDEV_PROP_GAIN_NAMES;
 
         //make a new gain handler
         _gain_handler = gain_handler::make(
-            this->get_link(), gain_props, boost::bind(&gain_handler::is_equal<subdev_prop_t>, _1, _2)
+            this->get_link(), gain_props,
+            boost::bind(&gain_handler::is_equal<subdev_prop_t>, _1, _2)
         );
     }
 

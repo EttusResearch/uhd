@@ -30,6 +30,12 @@ namespace uhd{
     typedef float gain_t;
     typedef double freq_t;
 
+    //gain range tuple (min, max, step)
+    typedef boost::tuple<gain_t, gain_t, gain_t> gain_range_t;
+
+    //freq range tuple (min, max)
+    typedef boost::tuple<freq_t, freq_t> freq_range_t;
+
     //scalar types (have not used yet, dont uncomment until needed)
     //typedef int int_scalar_t;
     //typedef float real_scalar_t;
@@ -143,13 +149,10 @@ namespace uhd{
         SUBDEV_PROP_NAME,              //ro, std::string
         SUBDEV_PROP_OTHERS,            //ro, prop_names_t
         SUBDEV_PROP_GAIN,              //rw, gain_t
-        SUBDEV_PROP_GAIN_MAX,          //ro, gain_t
-        SUBDEV_PROP_GAIN_MIN,          //ro, gain_t
-        SUBDEV_PROP_GAIN_STEP,         //ro, gain_t
+        SUBDEV_PROP_GAIN_RANGE,        //ro, gain_range_t
         SUBDEV_PROP_GAIN_NAMES,        //ro, prop_names_t
         SUBDEV_PROP_FREQ,              //rw, freq_t
-        SUBDEV_PROP_FREQ_MAX,          //ro, freq_t
-        SUBDEV_PROP_FREQ_MIN,          //ro, freq_t
+        SUBDEV_PROP_FREQ_RANGE,        //ro, freq_range_t
         SUBDEV_PROP_ANTENNA,           //rw, std::string
         SUBDEV_PROP_ANTENNA_NAMES,     //ro, prop_names_t
         SUBDEV_PROP_ENABLED,           //rw, bool

@@ -71,14 +71,11 @@ public:
     virtual std::vector<double> get_rx_rates(void) = 0;
 
     virtual tune_result_t set_rx_freq(double freq) = 0;
-    virtual double get_rx_freq_min(void) = 0;
-    virtual double get_rx_freq_max(void) = 0;
+    virtual std::vector<double> get_rx_freq_range(void) = 0;
 
     virtual void set_rx_gain(float gain) = 0;
     virtual float get_rx_gain(void) = 0;
-    virtual float get_rx_gain_min(void) = 0;
-    virtual float get_rx_gain_max(void) = 0;
-    virtual float get_rx_gain_step(void) = 0;
+    virtual std::vector<float> get_rx_gain_range(void) = 0;
 
     virtual void set_rx_antenna(const std::string &ant) = 0;
     virtual std::string get_rx_antenna(void) = 0;
@@ -92,14 +89,11 @@ public:
     virtual std::vector<double> get_tx_rates(void) = 0;
 
     virtual tune_result_t set_tx_freq(double freq) = 0;
-    virtual double get_tx_freq_min(void) = 0;
-    virtual double get_tx_freq_max(void) = 0;
+    virtual std::vector<double> get_tx_freq_range(void) = 0;
 
     virtual void set_tx_gain(float gain) = 0;
     virtual float get_tx_gain(void) = 0;
-    virtual float get_tx_gain_min(void) = 0;
-    virtual float get_tx_gain_max(void) = 0;
-    virtual float get_tx_gain_step(void) = 0;
+    virtual std::vector<float> get_tx_gain_range(void) = 0;
 
     virtual void set_tx_antenna(const std::string &ant) = 0;
     virtual std::string get_tx_antenna(void) = 0;

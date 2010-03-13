@@ -111,10 +111,11 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-    case SUBDEV_PROP_GAIN_MAX:
-    case SUBDEV_PROP_GAIN_MIN:
-    case SUBDEV_PROP_GAIN_STEP:
         val = gain_t(0);
+        return;
+
+    case SUBDEV_PROP_GAIN_RANGE:
+        val = gain_range_t(0, 0, 0);
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
@@ -125,12 +126,8 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = freq_t(0);
         return;
 
-    case SUBDEV_PROP_FREQ_MAX:
-        val = +_max_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_MIN:
-        val = -_max_freq;
+    case SUBDEV_PROP_FREQ_RANGE:
+        val = freq_range_t(+_max_freq, -_max_freq);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -177,13 +174,10 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_NAME:
     case SUBDEV_PROP_OTHERS:
-    case SUBDEV_PROP_GAIN_MAX:
-    case SUBDEV_PROP_GAIN_MIN:
-    case SUBDEV_PROP_GAIN_STEP:
+    case SUBDEV_PROP_GAIN_RANGE:
     case SUBDEV_PROP_GAIN_NAMES:
     case SUBDEV_PROP_FREQ:
-    case SUBDEV_PROP_FREQ_MAX:
-    case SUBDEV_PROP_FREQ_MIN:
+    case SUBDEV_PROP_FREQ_RANGE:
     case SUBDEV_PROP_ANTENNA_NAMES:
     case SUBDEV_PROP_QUADRATURE:
     case SUBDEV_PROP_IQ_SWAPPED:
@@ -223,10 +217,11 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-    case SUBDEV_PROP_GAIN_MAX:
-    case SUBDEV_PROP_GAIN_MIN:
-    case SUBDEV_PROP_GAIN_STEP:
         val = gain_t(0);
+        return;
+
+    case SUBDEV_PROP_GAIN_RANGE:
+        val = gain_range_t(0, 0, 0);
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
@@ -237,12 +232,8 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = freq_t(0);
         return;
 
-    case SUBDEV_PROP_FREQ_MAX:
-        val = +_max_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_MIN:
-        val = -_max_freq;
+    case SUBDEV_PROP_FREQ_RANGE:
+        val = freq_range_t(+_max_freq, -_max_freq);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -289,13 +280,10 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_NAME:
     case SUBDEV_PROP_OTHERS:
-    case SUBDEV_PROP_GAIN_MAX:
-    case SUBDEV_PROP_GAIN_MIN:
-    case SUBDEV_PROP_GAIN_STEP:
+    case SUBDEV_PROP_GAIN_RANGE:
     case SUBDEV_PROP_GAIN_NAMES:
     case SUBDEV_PROP_FREQ:
-    case SUBDEV_PROP_FREQ_MAX:
-    case SUBDEV_PROP_FREQ_MIN:
+    case SUBDEV_PROP_FREQ_RANGE:
     case SUBDEV_PROP_ANTENNA_NAMES:
     case SUBDEV_PROP_QUADRATURE:
     case SUBDEV_PROP_IQ_SWAPPED:
