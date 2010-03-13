@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils.hpp>
+#include <boost/assign/list_of.hpp>
 #include "usrp2_impl.hpp"
 
 using namespace uhd;
@@ -88,14 +89,50 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
+    //handle the other props
+    if (key.type() == typeid(std::string)){
+        if (wax::cast<std::string>(key) == "mac-addr"){
+            //setup the out data
+            usrp2_ctrl_data_t out_data;
+            out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO);
+
+            //send and recv
+            usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
+
+            //extract the address
+            val = reinterpret_cast<mac_addr_t*>(in_data.data.mac_addr)->to_string();
+            return;
+        }
+
+        if (wax::cast<std::string>(key) == "ip-addr"){
+            //setup the out data
+            usrp2_ctrl_data_t out_data;
+            out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
+
+            //send and recv
+            usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
+
+            //extract the address
+            val = boost::asio::ip::address_v4(ntohl(in_data.data.ip_addr)).to_string();
+            return;
+        }
+    }
+
     //handle the get request conditioned on the key
     switch(wax::cast<mboard_prop_t>(key)){
     case MBOARD_PROP_NAME:
         val = std::string("usrp2 mboard");
         return;
 
-    case MBOARD_PROP_OTHERS:
-        val = prop_names_t(); //empty other props
+    case MBOARD_PROP_OTHERS:{
+            prop_names_t others = boost::assign::list_of
+                ("mac-addr")
+                ("ip-addr")
+            ;
+            val = others;
+        }
         return;
 
     case MBOARD_PROP_RX_DBOARD:
@@ -169,6 +206,34 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
  * MBoard Set Properties
  **********************************************************************/
 void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
+    //handle the other props
+    if (key.type() == typeid(std::string)){
+        if (wax::cast<std::string>(key) == "mac-addr"){
+            //setup the out data
+            usrp2_ctrl_data_t out_data;
+            out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO);
+            mac_addr_t mac_addr(wax::cast<std::string>(val));
+            std::memcpy(out_data.data.mac_addr, &mac_addr, sizeof(mac_addr_t));
+
+            //send and recv
+            usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
+            return;
+        }
+
+        if (wax::cast<std::string>(key) == "ip-addr"){
+            //setup the out data
+            usrp2_ctrl_data_t out_data;
+            out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO);
+            out_data.data.ip_addr = htonl(boost::asio::ip::address_v4::from_string(wax::cast<std::string>(val)).to_ulong());
+
+            //send and recv
+            usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
+            return;
+        }
+    }
+
     //handle the get request conditioned on the key
     switch(wax::cast<mboard_prop_t>(key)){
 
