@@ -30,27 +30,30 @@ using namespace uhd::usrp;
 /***********************************************************************
  * storage and registering for dboards
  **********************************************************************/
-typedef boost::tuple<dboard_manager::dboard_ctor_t, prop_names_t> args_t;
+//dboard registry tuple: dboard constructor, canonical name, subdev names
+typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, prop_names_t> args_t;
 
 //map a dboard id to a dboard constructor
-static uhd::dict<dboard_id_t, args_t> id_to_args_map;
+typedef uhd::dict<dboard_id_t, args_t> id_to_args_map_t;
+STATIC_INSTANCE(id_to_args_map_t, get_id_to_args_map)
 
-//map a dboard id to a canonical name
-static uhd::dict<dboard_id_t, std::string> id_to_str;
-
-void dboard_manager::register_subdevs(
+void dboard_manager::register_dboard(
     dboard_id_t dboard_id,
     dboard_ctor_t dboard_ctor,
     const std::string &name,
     const prop_names_t &subdev_names
 ){
     //std::cout << "registering: " << name << std::endl;
-    id_to_str[dboard_id] = name;
-    id_to_args_map[dboard_id] = args_t(dboard_ctor, subdev_names);
+    if (get_id_to_args_map().has_key(dboard_id)){
+        throw std::runtime_error(str(boost::format(
+            "The dboard id 0x%.4x is already registered to %s."
+        ) % dboard_id % dboard_id::to_string(dboard_id)));
+    }
+    get_id_to_args_map()[dboard_id] = args_t(dboard_ctor, name, subdev_names);
 }
 
 std::string dboard_id::to_string(const dboard_id_t &id){
-    std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
+    std::string name = (get_id_to_args_map().has_key(id))? get_id_to_args_map()[id].get<1>() : "unknown";
     return str(boost::format("%s (0x%.4x)") % name % id);
 }
 
@@ -170,7 +173,7 @@ static args_t get_dboard_args(
     }
 
     //verify that there is a registered constructor for this id
-    if (not id_to_args_map.has_key(dboard_id)){
+    if (not get_id_to_args_map().has_key(dboard_id)){
         throw std::runtime_error(str(
             boost::format("Unregistered %s dboard id: %s")
             % xx_type % dboard_id::to_string(dboard_id)
@@ -178,7 +181,7 @@ static args_t get_dboard_args(
     }
 
     //return the dboard args for this id
-    return id_to_args_map[dboard_id];
+    return get_id_to_args_map()[dboard_id];
 }
 
 dboard_manager_impl::dboard_manager_impl(
@@ -188,11 +191,11 @@ dboard_manager_impl::dboard_manager_impl(
 ){
     _interface = interface;
 
-    dboard_ctor_t rx_dboard_ctor; prop_names_t rx_subdevs;
-    boost::tie(rx_dboard_ctor, rx_subdevs) = get_dboard_args(rx_dboard_id, "rx");
+    dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
+    boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(rx_dboard_id, "rx");
 
-    dboard_ctor_t tx_dboard_ctor; prop_names_t tx_subdevs;
-    boost::tie(tx_dboard_ctor, tx_subdevs) = get_dboard_args(tx_dboard_id, "tx");
+    dboard_ctor_t tx_dboard_ctor; std::string tx_name; prop_names_t tx_subdevs;
+    boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(tx_dboard_id, "tx");
 
     //initialize the gpio pins before creating subdevs
     set_nice_gpio_pins();
@@ -200,16 +203,16 @@ dboard_manager_impl::dboard_manager_impl(
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
         ASSERT_THROW(rx_subdevs == tx_subdevs);
-        BOOST_FOREACH(std::string name, rx_subdevs){
+        BOOST_FOREACH(std::string subdev, rx_subdevs){
             dboard_base::sptr xcvr_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(name, interface, rx_dboard_id, tx_dboard_id)
+                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, tx_dboard_id)
             );
             //create a rx proxy for this xcvr board
-            _rx_dboards[name] = subdev_proxy::sptr(
+            _rx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(xcvr_dboard, subdev_proxy::RX_TYPE)
             );
             //create a tx proxy for this xcvr board
-            _tx_dboards[name] = subdev_proxy::sptr(
+            _tx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(xcvr_dboard, subdev_proxy::TX_TYPE)
             );
         }
@@ -218,22 +221,22 @@ dboard_manager_impl::dboard_manager_impl(
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
         //make the rx subdevs
-        BOOST_FOREACH(std::string name, rx_subdevs){
+        BOOST_FOREACH(std::string subdev, rx_subdevs){
             dboard_base::sptr rx_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(name, interface, rx_dboard_id, ID_NONE)
+                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, ID_NONE)
             );
             //create a rx proxy for this rx board
-            _rx_dboards[name] = subdev_proxy::sptr(
+            _rx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(rx_dboard, subdev_proxy::RX_TYPE)
             );
         }
         //make the tx subdevs
-        BOOST_FOREACH(std::string name, tx_subdevs){
+        BOOST_FOREACH(std::string subdev, tx_subdevs){
             dboard_base::sptr tx_dboard = tx_dboard_ctor(
-                dboard_base::ctor_args_t(name, interface, ID_NONE, tx_dboard_id)
+                dboard_base::ctor_args_t(subdev, interface, ID_NONE, tx_dboard_id)
             );
             //create a tx proxy for this tx board
-            _tx_dboards[name] = subdev_proxy::sptr(
+            _tx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(tx_dboard, subdev_proxy::TX_TYPE)
             );
         }

@@ -57,6 +57,14 @@ namespace uhd{
         }
 
         /*!
+         * Get the number of elements in this dict.
+         * \param the number of elements
+         */
+        std::size_t size(void) const{
+            return _map.size();
+        }
+
+        /*!
          * Get a list of the keys in this dict.
          * \return vector of keys
          */

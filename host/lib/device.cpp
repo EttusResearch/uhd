@@ -15,49 +15,22 @@
 // asize_t with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/usrp1e.hpp>
-#include <uhd/usrp/usrp2.hpp>
+#include <uhd/device.hpp>
 #include <uhd/dict.hpp>
 #include <uhd/utils.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <algorithm>
 
 using namespace uhd;
 
-/*!
- * Create a new device from a device address.
- * Based on the address, call the appropriate make functions.
- * \param dev_addr the device address
- * \param hint the device address that was used to find the device
- * \return a smart pointer to a device
- */
-static device::sptr make_device(const device_addr_t &dev_addr_, const device_addr_t &hint){
-    //copy keys that were in hint but not in dev_addr
-    //this way, we can pass additional transport arguments
-    device_addr_t dev_addr = dev_addr_;
-    BOOST_FOREACH(std::string key, hint.get_keys()){
-        if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
-    }
-
-    //create a usrp1e
-    if (dev_addr["type"] == "usrp1e"){
-        return usrp::usrp1e::make(dev_addr);
-    }
-
-    //create a usrp2
-    if (dev_addr["type"] == "usrp2"){
-        return usrp::usrp2::make(dev_addr);
-    }
-
-    throw std::runtime_error(str(
-        boost::format("Cant make a device for %s") % device_addr::to_string(dev_addr)
-    ));
-}
-
+/***********************************************************************
+ * Helper Functions
+ **********************************************************************/
 /*!
  * Make a device hash that maps 1 to 1 with a device address.
  * The hash will be used to identify created devices.
@@ -81,19 +54,34 @@ static size_t hash_device_addr(
 }
 
 /***********************************************************************
+ * Registration
+ **********************************************************************/
+typedef boost::tuple<device::discover_t, device::make_t> dev_fcn_reg_t;
+
+// instantiate the device function registry container
+STATIC_INSTANCE(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
+
+void device::register_device(
+    const discover_t &discover,
+    const make_t &make
+){
+    //std::cout << "registering device" << std::endl;
+    get_dev_fcn_regs().push_back(dev_fcn_reg_t(discover, make));
+}
+
+/***********************************************************************
  * Discover
  **********************************************************************/
 device_addrs_t device::discover(const device_addr_t &hint){
     device_addrs_t device_addrs;
 
-    //discover the usrp1es
-    std::vector<device_addr_t> usrp2_addrs = usrp::usrp1e::discover(hint);
-    device_addrs.insert(device_addrs.begin(), usrp2_addrs.begin(), usrp2_addrs.end());
-
-    //discover the usrp2s
-    if (hint.has_key("addr")){
-        std::vector<device_addr_t> usrp2_addrs = usrp::usrp2::discover(hint);
-        device_addrs.insert(device_addrs.begin(), usrp2_addrs.begin(), usrp2_addrs.end());
+    BOOST_FOREACH(dev_fcn_reg_t fcn, get_dev_fcn_regs()){
+        device_addrs_t discovered_addrs = fcn.get<0>()(hint);
+        device_addrs.insert(
+            device_addrs.begin(),
+            discovered_addrs.begin(),
+            discovered_addrs.end()
+        );
     }
 
     return device_addrs;
@@ -103,24 +91,38 @@ device_addrs_t device::discover(const device_addr_t &hint){
  * Make
  **********************************************************************/
 device::sptr device::make(const device_addr_t &hint, size_t which){
-    std::vector<device_addr_t> device_addrs = discover(hint);
+    typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
+    std::vector<dev_addr_make_t> dev_addr_makers;
+
+    BOOST_FOREACH(dev_fcn_reg_t fcn, get_dev_fcn_regs()){
+        BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
+            //copy keys that were in hint but not in dev_addr
+            //this way, we can pass additional transport arguments
+            BOOST_FOREACH(std::string key, hint.get_keys()){
+                if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
+            }
+            //append the discovered address and its factory function
+            dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
+        }
+    }
 
     //check that we found any devices
-    if (device_addrs.size() == 0){
+    if (dev_addr_makers.size() == 0){
         throw std::runtime_error(str(
             boost::format("No devices found for %s") % device_addr::to_string(hint)
         ));
     }
 
     //check that the which index is valid
-    if (device_addrs.size() <= which){
+    if (dev_addr_makers.size() <= which){
         throw std::runtime_error(str(
             boost::format("No device at index %d for %s") % which % device_addr::to_string(hint)
         ));
     }
 
     //create a unique hash for the device address
-    device_addr_t dev_addr = device_addrs.at(which);
+    device_addr_t dev_addr; make_t maker;
+    boost::tie(dev_addr, maker) = dev_addr_makers.at(which);
     size_t dev_hash = hash_device_addr(dev_addr);
     //std::cout << boost::format("Hash: %u") % dev_hash << std::endl;
 
@@ -135,7 +137,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     }
     //create and register a new device
     catch(const std::assert_error &e){
-        device::sptr dev = make_device(dev_addr, hint);
+        device::sptr dev = maker(dev_addr);
         hash_to_device[dev_hash] = dev;
         return dev;
     }

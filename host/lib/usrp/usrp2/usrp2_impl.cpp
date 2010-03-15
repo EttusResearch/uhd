@@ -26,6 +26,10 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
+STATIC_BLOCK(register_device){
+    device::register_device(&usrp2::discover, &usrp2::make);
+}
+
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
@@ -57,7 +61,6 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
                 boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
-                new_addr["type"] = "usrp2";
                 new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);

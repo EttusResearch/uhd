@@ -24,9 +24,18 @@
 #include <boost/current_function.hpp>
 
 /*!
- * Defines a static code block that will be called before main()
+ * Defines a function that implements the "construct on first use" idiom
+ * \param _t the type definition for the instance
+ * \param _x the name of the defined function
+ * \return a reference to the lazy instance
  */
-#define STATIC_BLOCK(_x) struct _x{_x();}_x;_x::_x()
+#define STATIC_INSTANCE(_t, _x) static _t &_x(){static _t _x; return _x;}
+
+/*!
+ * Defines a static code block that will be called before main()
+ * \param _x the name of the defined struct (must be unique in file)
+ */
+#define STATIC_BLOCK(_x) static struct _x{_x();}_x;_x::_x()
 
 /*!
  * Useful templated functions and classes that I like to pretend are part of stl
@@ -42,7 +51,7 @@ namespace std{
 
     #define ASSERT_THROW(_x) if (not (_x)) { \
         throw std::assert_error(str(boost::format( \
-            "Assertion Failed:\n  %s:%d\n  %s\n  __/ %s __/" \
+            "Assertion Failed:\n  %s:%d\n  %s\n  ---> %s <---" \
         ) % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % std::string(#_x))); \
     }
 

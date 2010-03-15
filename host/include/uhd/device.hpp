@@ -37,6 +37,19 @@ class device : boost::noncopyable, public wax::obj{
 
 public:
     typedef boost::shared_ptr<device> sptr;
+    typedef boost::function<device_addrs_t(const device_addr_t &)> discover_t;
+    typedef boost::function<sptr(const device_addr_t &)> make_t;
+
+    /*!
+     * Register a device into the discovery and factory system.
+     *
+     * \param discover a function that discovers devices
+     * \param make a factory function that makes a device
+     */
+    static void register_device(
+        const discover_t &discover,
+        const make_t &make
+    );
 
     /*!
      * \brief Discover usrp devices attached to the host.
