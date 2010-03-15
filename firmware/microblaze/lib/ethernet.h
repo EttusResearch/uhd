@@ -20,6 +20,7 @@
 #define INCLUDED_ETHERNET_H
 
 #include <net/eth_mac_addr.h>
+#include <lwip/ip_addr.h>
 #include <stdbool.h>
 
 typedef void (*ethernet_link_changed_callback_t)(int speed);
@@ -47,6 +48,16 @@ const eth_mac_addr_t *ethernet_mac_addr(void);
  * \brief write mac address to eeprom and begin using it
  */
 bool ethernet_set_mac_addr(const eth_mac_addr_t *t);
+
+/*!
+ * \returns IP address
+ */
+const struct ip_addr *get_ip_addr(void);
+
+/*!
+ * \brief write ip address to eeprom and begin using it
+ */
+bool set_ip_addr(const struct ip_addr *t);
 
 
 /*

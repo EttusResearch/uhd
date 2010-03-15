@@ -153,24 +153,18 @@ static eth_mac_addr_t get_my_eth_mac_addr(void){
 }
 
 static struct ip_addr get_my_ip_addr(void){
-    struct ip_addr addr;
-    addr.addr = 192 << 24 | 168 << 16 | 10 << 8 | 2 << 0;
-    return addr;
+    return *get_ip_addr();
 }
 
-static bool _is_data;
+static void print_ip_addr(const void *t){
+    uint8_t *p = (uint8_t *)t;
+    printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+}
 
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    //forward this data to the dsp when the payload is sufficient
-    //the small payload is used to give the device the udp source port
-    if (payload_len > sizeof(uint32_t)){
-        _is_data = true;
-        return;
-    }
-
     //its a tiny payload, load the fast-path variables
     fp_mac_addr_src = get_my_eth_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
@@ -179,21 +173,13 @@ void handle_udp_data_packet(
     printf("Storing for fast path:\n");
     printf("  source mac addr: ");
     print_mac_addr(fp_mac_addr_src.addr); newline();
-    printf("  source ip addr: %d.%d.%d.%d\n",
-        ((const unsigned char*)&fp_socket_src.addr.addr)[0],
-        ((const unsigned char*)&fp_socket_src.addr.addr)[1],
-        ((const unsigned char*)&fp_socket_src.addr.addr)[2],
-        ((const unsigned char*)&fp_socket_src.addr.addr)[3]
-    );
+    printf("  source ip addr: ");
+    print_ip_addr(&fp_socket_src.addr); newline();
     printf("  source udp port: %d\n", fp_socket_src.port);
     printf("  destination mac addr: ");
     print_mac_addr(fp_mac_addr_dst.addr); newline();
-    printf("  destination ip addr: %d.%d.%d.%d\n",
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[0],
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[1],
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[2],
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[3]
-    );
+    printf("  destination ip addr: ");
+    print_ip_addr(&fp_socket_dst.addr); newline();
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
 }
@@ -226,14 +212,24 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
-        struct ip_addr ip_addr = get_my_ip_addr();
-        memcpy(&ctrl_data_out.data.ip_addr, &ip_addr, sizeof(ip_addr));
+        memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
+        break;
+
+    case USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
+        set_ip_addr((struct ip_addr *)&ctrl_data_in->data.ip_addr);
+        memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
         break;
 
     case USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
-        eth_mac_addr_t mac_addr = get_my_eth_mac_addr();
-        memcpy(&ctrl_data_out.data.mac_addr, &mac_addr, sizeof(mac_addr));
+        memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
+        break;
+
+    case USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
+        ethernet_set_mac_addr((eth_mac_addr_t *)&ctrl_data_in->data.mac_addr);
+        memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
         break;
 
     case USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO:
@@ -430,6 +426,8 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO:
         dsp_rx_regs->freq = ctrl_data_in->data.ddc_args.freq_word;
+        dsp_rx_regs->scale_iq = ctrl_data_in->data.ddc_args.scale_iq;
+        dsp_rx_regs->rx_mux = 0x00 | (0x01 << 2); //TODO fill in from control
 
         //setup the interp and half band filters
         {
@@ -455,6 +453,8 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO:
         time_secs =  ctrl_data_in->data.streaming.secs;
         time_ticks = ctrl_data_in->data.streaming.ticks;
+        streaming_items_per_frame = ctrl_data_in->data.streaming.samples;
+
         if (ctrl_data_in->data.streaming.enabled == 0){
             stop_rx_cmd();
         }
@@ -471,6 +471,7 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO:
         dsp_tx_regs->freq = ctrl_data_in->data.duc_args.freq_word;
         dsp_tx_regs->scale_iq = ctrl_data_in->data.duc_args.scale_iq;
+        dsp_tx_regs->tx_mux = 0x01; //TODO fill in from control
 
         //setup the interp and half band filters
         {
@@ -493,6 +494,16 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE;
         break;
 
+    /*******************************************************************
+     * Time Config
+     ******************************************************************/
+    case USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO:
+        sr_time64->imm = (ctrl_data_in->data.time_args.now == 0)? 0 : 1;
+        sr_time64->ticks = ctrl_data_in->data.time_args.ticks;
+        sr_time64->secs = ctrl_data_in->data.time_args.secs; //set this last to latch the regs
+        ctrl_data_out.id = USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE;
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 
@@ -508,15 +519,37 @@ void handle_udp_ctrl_packet(
 static bool
 eth_pkt_inspector(dbsm_t *sm, int bufno)
 {
-  _is_data = false;
-  handle_eth_packet(buffer_ram(bufno), buffer_pool_status->last_line[bufno] - 3);
-  return !_is_data;
+  //point me to the ethernet frame
+  uint32_t *buff = (uint32_t *)buffer_ram(bufno);
+
+  //treat this as fast-path data?
+  // We have to do this operation as fast as possible.
+  // Therefore, we do not check all the headers,
+  // just check that the udp port matches
+  // and that the vrt header is non zero.
+  // In the future, a hardware state machine will do this...
+  if ( //warning! magic numbers approaching....
+      (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
+      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != 0)
+  ) return false;
+
+  //pass it to the slow-path handler
+  size_t len = buffer_pool_status->last_line[bufno] - 3;
+  handle_eth_packet(buff, len);
+  return true;
 }
 
 //------------------------------------------------------------------
 
-#define VRT_HEADER_WORDS 5
-#define VRT_TRAILER_WORDS 0
+static uint16_t get_vrt_packet_words(void){
+    return streaming_items_per_frame + \
+        USRP2_HOST_RX_VRT_HEADER_WORDS32 + \
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32;
+}
+
+static bool vrt_has_trailer(void){
+    return USRP2_HOST_RX_VRT_TRAILER_WORDS32 > 0;
+}
 
 void
 restart_streaming(void)
@@ -527,10 +560,10 @@ restart_streaming(void)
   sr_rx_ctrl->clear_overrun = 1;			// reset
   sr_rx_ctrl->vrt_header = (0
      | VRTH_PT_IF_DATA_WITH_SID
-     | ((VRT_TRAILER_WORDS)? VRTH_HAS_TRAILER : 0)
+     | (vrt_has_trailer()? VRTH_HAS_TRAILER : 0)
      | VRTH_TSI_OTHER
      | VRTH_TSF_SAMPLE_CNT
-     | (VRT_HEADER_WORDS+streaming_items_per_frame+VRT_TRAILER_WORDS));
+  );
   sr_rx_ctrl->vrt_stream_id = 0;
   sr_rx_ctrl->vrt_trailer = 0;
 
@@ -592,8 +625,9 @@ start_rx_streaming_cmd(void)
   } mem _AL4;
 
   memset(&mem, 0, sizeof(mem));
-  streaming_items_per_frame = (1500)/sizeof(uint32_t) - (DSP_TX_FIRST_LINE + VRT_HEADER_WORDS + VRT_TRAILER_WORDS); //FIXME
-  mem.ctrl_word = (VRT_HEADER_WORDS+streaming_items_per_frame+VRT_TRAILER_WORDS)*sizeof(uint32_t) | 1 << 16;
+  printf("samples per frame: %d\n", streaming_items_per_frame);
+  printf("words in a vrt packet %d\n", get_vrt_packet_words());
+  mem.ctrl_word = get_vrt_packet_words()*sizeof(uint32_t) | 1 << 16;
 
   memcpy_wa(buffer_ram(DSP_RX_BUF_0), &mem, sizeof(mem));
   memcpy_wa(buffer_ram(DSP_RX_BUF_1), &mem, sizeof(mem));
@@ -650,25 +684,6 @@ stop_rx_cmd(void)
 
 }
 
-
-/*static void
-setup_tx()
-{
-  sr_tx_ctrl->clear_state = 1;
-  bp_clear_buf(DSP_TX_BUF_0);
-  bp_clear_buf(DSP_TX_BUF_1);
-
-  int tx_scale = 256;
-  int interp = 32;
-
-  // setup some defaults
-
-  dsp_tx_regs->freq = 0;
-  dsp_tx_regs->scale_iq = (tx_scale << 16) | tx_scale;
-  dsp_tx_regs->interp_rate = interp;
-}*/
-
-
 #if (FW_SETS_SEQNO)
 /*
  * Debugging ONLY.  This will be handled by the tx_protocol_engine.
@@ -710,6 +725,7 @@ main(void)
   putstr("\nTxRx-NEWETH\n");
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
+  print_ip_addr(get_ip_addr()); newline();
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
@@ -757,9 +773,9 @@ main(void)
   // tell app_common that this dbsm could be sending to the ethernet
   ac_could_be_sending_to_eth = &dsp_rx_sm;
 
-
-  // program tx registers
-  //setup_tx();
+  sr_tx_ctrl->clear_state = 1;
+  bp_clear_buf(DSP_TX_BUF_0);
+  bp_clear_buf(DSP_TX_BUF_1);
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);

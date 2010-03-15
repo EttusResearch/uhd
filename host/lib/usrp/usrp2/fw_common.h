@@ -27,6 +27,10 @@
 extern "C" {
 #endif
 
+// size of the vrt header and trailer to the host
+#define USRP2_HOST_RX_VRT_HEADER_WORDS32 5
+#define USRP2_HOST_RX_VRT_TRAILER_WORDS32 1 //FIXME fpga sets wrong header size when no trailer present
+
 // udp ports for the usrp2 communication
 // Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
@@ -86,6 +90,9 @@ typedef enum{
 
     USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO,
     USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE,
+
+    USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO,
+    USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE,
 
     USRP2_CTRL_ID_PEACE_OUT
 
@@ -168,18 +175,25 @@ typedef struct{
         struct {
             uint32_t freq_word;
             uint32_t decim;
+            uint32_t scale_iq;
         } ddc_args;
         struct {
             uint8_t enabled;
             uint8_t _pad[3];
             uint32_t secs;
             uint32_t ticks;
+            uint32_t samples;
         } streaming;
         struct {
             uint32_t freq_word;
             uint32_t interp;
             uint32_t scale_iq;
         } duc_args;
+        struct {
+            uint32_t secs;
+            uint32_t ticks;
+            uint8_t now;
+        } time_args;
     } data;
 } usrp2_ctrl_data_t;
 

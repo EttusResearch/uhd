@@ -15,6 +15,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd.hpp>
+#include <uhd/time_spec.hpp>
 
-//nothing here, just includes the header so the compiler can check
+using namespace uhd;
+
+time_spec_t::time_spec_t(void){
+    secs = ~0;
+    ticks = ~0;
+}
+
+time_spec_t::time_spec_t(uint32_t new_secs, uint32_t new_ticks){
+    secs = new_secs;
+    ticks = new_ticks;
+}
+
+static const boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
+static double time_tick_rate(boost::posix_time::time_duration::ticks_per_second());
+
+time_spec_t::time_spec_t(boost::posix_time::ptime time, double tick_rate){
+    boost::posix_time::time_duration td = time - epoch;
+    secs = td.total_seconds();
+    double time_ticks_per_device_ticks = time_tick_rate/tick_rate;
+    ticks = td.fractional_seconds()/time_ticks_per_device_ticks;
+}

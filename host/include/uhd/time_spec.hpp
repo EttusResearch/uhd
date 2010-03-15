@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <stdint.h>
 
 #ifndef INCLUDED_UHD_TIME_SPEC_HPP
@@ -36,20 +37,22 @@ namespace uhd{
          * Create a time_spec_t that holds a wildcard time.
          * This will have implementation-specific meaning.
          */
-        time_spec_t(void){
-            secs = ~0;
-            ticks = ~0;
-        }
+        time_spec_t(void);
 
         /*!
          * Create a time_spec_t from seconds and ticks.
          * \param new_secs the new seconds
          * \param new_ticks the new ticks (default = 0)
          */
-        time_spec_t(uint32_t new_secs, uint32_t new_ticks = 0){
-            secs = new_secs;
-            ticks = new_ticks;
-        }
+        time_spec_t(uint32_t new_secs, uint32_t new_ticks = 0);
+
+        /*!
+         * Create a time_spec_t from boost posix time.
+         * \param time fine-grained boost posix time
+         * \param tick_rate the rate of ticks per second
+         */
+        time_spec_t(boost::posix_time::ptime time, double tick_rate);
+
     };
 
 } //namespace uhd

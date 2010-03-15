@@ -15,18 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <unistd.h>
+#include <uhd/utils.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem.hpp>
 #include "usrp1e_impl.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
 
+STATIC_BLOCK(register_usrp1e_device){
+    device::register_device(&usrp1e::discover, &usrp1e::make);
+}
+
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
 static bool file_exists(const std::string &file_path){
-    return access(file_path.c_str(), F_OK) == 0;
+    return boost::filesystem::exists(file_path);
 }
 
 /***********************************************************************
@@ -40,7 +45,6 @@ device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
         if (not file_exists(device_addr["node"])) return usrp1e_addrs;
         device_addr_t new_addr;
         new_addr["name"] = "USRP1E";
-        new_addr["type"] = "usrp1e";
         new_addr["node"] = device_addr["node"];
         usrp1e_addrs.push_back(new_addr);
     }
@@ -52,7 +56,6 @@ device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
             if (not file_exists(node)) continue;
             device_addr_t new_addr;
             new_addr["name"] = "USRP1E";
-            new_addr["type"] = "usrp1e";
             new_addr["node"] = node;
             usrp1e_addrs.push_back(new_addr);
         }

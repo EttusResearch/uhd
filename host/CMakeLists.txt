@@ -63,6 +63,7 @@ UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
 ########################################################################
 FIND_PACKAGE(Boost 1.36 REQUIRED
     date_time
+    filesystem
     program_options
     system
     thread

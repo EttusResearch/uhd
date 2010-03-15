@@ -23,12 +23,27 @@
 namespace uhd{
 
 /*!
- * Metadata structure for describing the IF data.
- * Includes stream ID, time specification, and burst flags.
+ * RX metadata structure for describing sent IF data.
+ * Includes stream ID, time specification, and fragmentation flags.
  * The receive routines will convert IF data headers into metadata.
+ */
+struct rx_metadata_t{
+    uint32_t stream_id;
+    bool has_stream_id;
+    time_spec_t time_spec;
+    bool has_time_spec;
+    bool is_fragment;
+
+    //default constructor
+    rx_metadata_t(void);
+};
+
+/*!
+ * TX metadata structure for describing received IF data.
+ * Includes stream ID, time specification, and burst flags.
  * The send routines will convert the metadata to IF data headers.
  */
-struct metadata_t{
+struct tx_metadata_t{
     uint32_t stream_id;
     bool has_stream_id;
     time_spec_t time_spec;
@@ -36,14 +51,8 @@ struct metadata_t{
     bool start_of_burst;
     bool end_of_burst;
 
-    metadata_t(void){
-        stream_id = 0;
-        has_stream_id = false;
-        time_spec = time_spec_t();
-        has_time_spec = false;
-        start_of_burst = false;
-        end_of_burst = false;
-    }
+    //default constructor
+    tx_metadata_t(void);
 };
 
 } //namespace uhd

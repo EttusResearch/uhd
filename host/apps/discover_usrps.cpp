@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd.hpp>
+#include <uhd/device.hpp>
 #include <uhd/props.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -63,9 +63,7 @@ int main(int argc, char *argv[]){
         std::cout << "-- USRP Device " << i << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << device_addrs[i] << std::endl << std::endl;
-        //make each device just to test (TODO: remove this)
-        uhd::device::sptr dev = uhd::device::make(device_addrs[i]);
-        std::cout << wax::cast<std::string>((*dev)[uhd::DEVICE_PROP_MBOARD][uhd::MBOARD_PROP_NAME]) << std::endl;
+        uhd::device::make(device_addrs[i]); //test make
     }
 
     return 0;

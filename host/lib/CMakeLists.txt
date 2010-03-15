@@ -22,12 +22,14 @@ SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
-    uhd.cpp
+    metadata.cpp
+    simple_device.cpp
+    time_spec.cpp
     wax.cpp
-    transport/udp.cpp
+    transport/udp_simple.cpp
+    transport/vrt.cpp
     usrp/dboard/basic.cpp
     usrp/dboard_base.cpp
-    usrp/dboard_id.cpp
     usrp/dboard_interface.cpp
     usrp/dboard_manager.cpp
     usrp/usrp2/dboard_impl.cpp
@@ -36,6 +38,13 @@ SET(libuhd_sources
     usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
     usrp/usrp2/usrp2_impl.cpp
+)
+
+########################################################################
+# Conditionally add the udp sources
+########################################################################
+LIST(APPEND libuhd_sources
+    transport/udp_zero_copy_none.cpp
 )
 
 ########################################################################

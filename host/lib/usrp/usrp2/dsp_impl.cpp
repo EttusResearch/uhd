@@ -16,10 +16,14 @@
 //
 
 #include <uhd/utils.hpp>
+#include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include "usrp2_impl.hpp"
 
 using namespace uhd;
+
+static const size_t default_decim = 16;
+static const size_t default_interp = 16;
 
 /***********************************************************************
  * DDC Helper Methods
@@ -36,6 +40,10 @@ static uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t 
     return freq_word;
 }
 
+static uint32_t calculate_iq_scale_word(int16_t i, int16_t q){
+    return (uint16_t(i) << 16) | (uint16_t(q) << 0);
+}
+
 void usrp2_impl::init_ddc_config(void){
     //create the ddc in the rx dsp dict
     _rx_dsps["ddc0"] = wax_obj_proxy(
@@ -44,7 +52,7 @@ void usrp2_impl::init_ddc_config(void){
     );
 
     //initial config and update
-    _ddc_decim = 16;
+    _ddc_decim = default_decim;
     _ddc_freq = 0;
     update_ddc_config();
 
@@ -61,6 +69,10 @@ void usrp2_impl::update_ddc_config(void){
         calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
     );
     out_data.data.ddc_args.decim = htonl(_ddc_decim);
+    static const uint32_t default_rx_scale_iq = 1024;
+    out_data.data.ddc_args.scale_iq = htonl(
+        calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
+    );
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -74,6 +86,7 @@ void usrp2_impl::update_ddc_enabled(void){
     out_data.data.streaming.enabled = (_ddc_enabled)? 1 : 0;
     out_data.data.streaming.secs =  htonl(_ddc_stream_at.secs);
     out_data.data.streaming.ticks = htonl(_ddc_stream_at.ticks);
+    out_data.data.streaming.samples = htonl(_max_rx_samples_per_packet);
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -89,7 +102,7 @@ void usrp2_impl::update_ddc_enabled(void){
 void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     //handle the case where the key is an expected dsp property
     if (key.type() == typeid(dsp_prop_t)){
-        switch(wax::cast<dsp_prop_t>(key)){
+        switch(key.as<dsp_prop_t>()){
         case DSP_PROP_NAME:
             val = std::string("usrp2 ddc0");
             return;
@@ -98,7 +111,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
                 prop_names_t others = boost::assign::list_of
                     ("rate")
                     ("decim")
-                    ("decim_rates")
+                    ("decims")
                     ("freq")
                     ("enabled")
                     ("stream_at")
@@ -110,7 +123,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     }
 
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "rate"){
         val = get_master_clock_freq();
         return;
@@ -119,7 +132,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
         val = _ddc_decim;
         return;
     }
-    else if (key_name == "decim_rates"){
+    else if (key_name == "decims"){
         val = _allowed_decim_and_interp_rates;
         return;
     }
@@ -139,20 +152,19 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
 
 void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "decim"){
-        size_t new_decim = wax::cast<size_t>(val);
-        ASSERT_THROW(std::has(
-            _allowed_decim_and_interp_rates.begin(),
-            _allowed_decim_and_interp_rates.end(),
-            new_decim
-        ));
+        size_t new_decim = val.as<size_t>();
+        assert_has(
+            _allowed_decim_and_interp_rates,
+            new_decim, "usrp2 decimation"
+        );
         _ddc_decim = new_decim; //shadow
         update_ddc_config();
         return;
     }
     else if (key_name == "freq"){
-        freq_t new_freq = wax::cast<freq_t>(val);
+        freq_t new_freq = val.as<freq_t>();
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _ddc_freq = new_freq; //shadow
@@ -160,13 +172,13 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         return;
     }
     else if (key_name == "enabled"){
-        bool new_enabled = wax::cast<bool>(val);
+        bool new_enabled = val.as<bool>();
         _ddc_enabled = new_enabled; //shadow
         update_ddc_enabled();
         return;
     }
     else if (key_name == "stream_at"){
-        time_spec_t new_stream_at = wax::cast<time_spec_t>(val);
+        time_spec_t new_stream_at = val.as<time_spec_t>();
         _ddc_stream_at = new_stream_at; //shadow
         //update_ddc_enabled(); //dont update from here
         return;
@@ -188,7 +200,7 @@ void usrp2_impl::init_duc_config(void){
     );
 
     //initial config and update
-    _duc_interp = 16;
+    _duc_interp = default_interp;
     _duc_freq = 0;
     update_duc_config();
 }
@@ -209,7 +221,9 @@ void usrp2_impl::update_duc_config(void){
         calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
     );
     out_data.data.duc_args.interp = htonl(_duc_interp);
-    out_data.data.duc_args.scale_iq = htonl(scale);
+    out_data.data.duc_args.scale_iq = htonl(
+        calculate_iq_scale_word(scale, scale)
+    );
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -222,7 +236,7 @@ void usrp2_impl::update_duc_config(void){
 void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
     //handle the case where the key is an expected dsp property
     if (key.type() == typeid(dsp_prop_t)){
-        switch(wax::cast<dsp_prop_t>(key)){
+        switch(key.as<dsp_prop_t>()){
         case DSP_PROP_NAME:
             val = std::string("usrp2 duc0");
             return;
@@ -231,7 +245,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
                 prop_names_t others = boost::assign::list_of
                     ("rate")
                     ("interp")
-                    ("interp_rates")
+                    ("interps")
                     ("freq")
                 ;
                 val = others;
@@ -241,7 +255,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
     }
 
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "rate"){
         val = get_master_clock_freq();
         return;
@@ -250,7 +264,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
         val = _duc_interp;
         return;
     }
-    else if (key_name == "interp_rates"){
+    else if (key_name == "interps"){
         val = _allowed_decim_and_interp_rates;
         return;
     }
@@ -266,20 +280,19 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
 
 void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "interp"){
-        size_t new_interp = wax::cast<size_t>(val);
-        ASSERT_THROW(std::has(
-            _allowed_decim_and_interp_rates.begin(),
-            _allowed_decim_and_interp_rates.end(),
-            new_interp
-        ));
+        size_t new_interp = val.as<size_t>();
+        assert_has(
+            _allowed_decim_and_interp_rates,
+            new_interp, "usrp2 interpolation"
+        );
         _duc_interp = new_interp; //shadow
         update_duc_config();
         return;
     }
     else if (key_name == "freq"){
-        freq_t new_freq = wax::cast<freq_t>(val);
+        freq_t new_freq = val.as<freq_t>();
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _duc_freq = new_freq; //shadow

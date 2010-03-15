@@ -20,6 +20,7 @@ ADD_EXECUTABLE(main_test
     main_test.cpp
     addr_test.cpp
     gain_handler_test.cpp
+    vrt_test.cpp
     wax_test.cpp
 )
 

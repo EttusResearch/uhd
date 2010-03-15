@@ -56,9 +56,9 @@ protected:
     dboard_id_t get_tx_id(void);
 
 private:
-    std::string        _subdev_name;
+    std::string               _subdev_name;
     dboard_interface::sptr    _dboard_interface;
-    dboard_id_t        _rx_id, _tx_id;
+    dboard_id_t               _rx_id, _tx_id;
 };
 
 /*!
@@ -71,6 +71,7 @@ public:
      * Create a new xcvr dboard object, override in subclasses.
      */
     xcvr_dboard_base(ctor_args_t const&);
+
     virtual ~xcvr_dboard_base(void);
 };
 

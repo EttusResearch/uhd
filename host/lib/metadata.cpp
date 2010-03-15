@@ -15,20 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard_id.hpp>
-#include <boost/format.hpp>
-#include <uhd/dict.hpp>
+#include <uhd/metadata.hpp>
 
-using namespace uhd::usrp;
+using namespace uhd;
 
-std::string dboard_id::to_string(const dboard_id_t &id){
-    //map the dboard ids to string representations
-    uhd::dict<dboard_id_t, std::string> id_to_str;
-    id_to_str[ID_NONE]     = "none";
-    id_to_str[ID_BASIC_TX] = "basic tx";
-    id_to_str[ID_BASIC_RX] = "basic rx";
+rx_metadata_t::rx_metadata_t(void){
+    stream_id = 0;
+    has_stream_id = false;
+    time_spec = time_spec_t();
+    has_time_spec = false;
+    is_fragment = false;
+}
 
-    //get the string representation
-    std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
-    return str(boost::format("%s (0x%.4x)") % name % id);
+tx_metadata_t::tx_metadata_t(void){
+    stream_id = 0;
+    has_stream_id = false;
+    time_spec = time_spec_t();
+    has_time_spec = false;
+    start_of_burst = false;
+    end_of_burst = false;
 }
