@@ -271,53 +271,95 @@ ethernet_init(void)
 }
 
 static bool 
-unprogrammed(const eth_mac_addr_t *t)
+unprogrammed(const void *t, size_t len)
 {
   int i;
+  uint8_t *p = (uint8_t *)t;
   bool all_zeros = true;
   bool all_ones =  true;
-  for (i = 0; i < 6; i++){
-    all_zeros &= t->addr[i] == 0x00;
-    all_ones  &= t->addr[i] == 0xff;
+  for (i = 0; i < len; i++){
+    all_zeros &= p[i] == 0x00;
+    all_ones  &= p[i] == 0xff;
   }
   return all_ones | all_zeros;
 }
 
-static int8_t src_addr_initialized = false;
-static eth_mac_addr_t src_addr = {{
+//////////////////// MAC Addr Stuff ///////////////////////
+
+static int8_t src_mac_addr_initialized = false;
+static eth_mac_addr_t src_mac_addr = {{
     0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff
   }};
 
 const eth_mac_addr_t *
 ethernet_mac_addr(void)
 {
-  if (!src_addr_initialized){    // fetch from eeprom
-    src_addr_initialized = true;
+  if (!src_mac_addr_initialized){    // fetch from eeprom
+    src_mac_addr_initialized = true;
 
     // if we're simulating, don't read the EEPROM model, it's REALLY slow
-    if (hwconfig_simulation_p())	
-      return &src_addr;
+    if (hwconfig_simulation_p())
+      return &src_mac_addr;
     
     eth_mac_addr_t tmp;
-    bool ok = eeprom_read(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, &tmp.addr[0], 6);
-    if (!ok || unprogrammed(&tmp)){
+    bool ok = eeprom_read(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, &tmp, sizeof(tmp));
+    if (!ok || unprogrammed(&tmp, sizeof(tmp))){
       // use the default
     }
     else
-      src_addr = tmp;
+      src_mac_addr = tmp;
   }
 
-  return &src_addr;
+  return &src_mac_addr;
 }
 
 bool
 ethernet_set_mac_addr(const eth_mac_addr_t *t)
 {
-  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, &t->addr[0], 6);
+  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, &t, sizeof(eth_mac_addr_t));
   if (ok){
-    src_addr = *t;
-    src_addr_initialized = true;
+    src_mac_addr = *t;
+    src_mac_addr_initialized = true;
     eth_mac_set_addr(t);
+  }
+
+  return ok;
+}
+
+//////////////////// IP Addr Stuff ///////////////////////
+
+static int8_t src_ip_addr_initialized = false;
+static struct ip_addr src_ip_addr = {
+    (192 << 24 | 168 << 16 | 10 << 8 | 2 << 0)
+};
+
+
+const struct ip_addr *get_ip_addr(void)
+{
+  if (!src_ip_addr_initialized){    // fetch from eeprom
+    src_ip_addr_initialized = true;
+
+    // if we're simulating, don't read the EEPROM model, it's REALLY slow
+    if (hwconfig_simulation_p())
+      return &src_ip_addr;
+    
+    struct ip_addr tmp;
+    bool ok = eeprom_read(I2C_ADDR_MBOARD, MBOARD_IP_ADDR, &tmp, sizeof(tmp));
+    if (!ok || unprogrammed(&tmp, sizeof(tmp))){
+      // use the default
+    }
+    else
+      src_ip_addr = tmp;
+  }
+
+  return &src_ip_addr;
+}
+
+bool set_ip_addr(const struct ip_addr *t){
+  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_IP_ADDR, &t, sizeof(struct ip_addr));
+  if (ok){
+    src_ip_addr = *t;
+    src_ip_addr_initialized = true;
   }
 
   return ok;

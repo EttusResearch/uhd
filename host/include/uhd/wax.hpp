@@ -124,6 +124,17 @@ namespace wax{
          */
         const std::type_info & type(void) const;
 
+        /*!
+         * Cast this obj into the desired type.
+         * Usage myobj.as<type>()
+         *
+         * \return an object of the desired type
+         * \throw wax::bad_cast when the cast fails
+         */
+        template<class T> T as(void) const{
+            return boost::any_cast<T>(resolve());
+        }
+
     private:
         //private interface (override in subclasses)
         virtual void get(const obj &, obj &);
@@ -137,7 +148,6 @@ namespace wax{
          * \return a boost any type with contents
          */
         boost::any resolve(void) const;
-        template<class T> friend T cast(const obj &);
 
         //private contents of this obj
         boost::any _contents;
@@ -159,7 +169,7 @@ namespace wax{
      * \throw wax::bad_cast when the cast fails
      */
     template<class T> T cast(const obj &val){
-        return boost::any_cast<T>(val.resolve());
+        return val.as<T>();
     }
 
 } //namespace wax

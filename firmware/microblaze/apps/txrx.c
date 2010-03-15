@@ -153,9 +153,12 @@ static eth_mac_addr_t get_my_eth_mac_addr(void){
 }
 
 static struct ip_addr get_my_ip_addr(void){
-    struct ip_addr addr;
-    addr.addr = 192 << 24 | 168 << 16 | 10 << 8 | 2 << 0;
-    return addr;
+    return *get_ip_addr();
+}
+
+static void print_ip_addr(const void *t){
+    uint8_t *p = (uint8_t *)t;
+    printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
 }
 
 void handle_udp_data_packet(
@@ -170,21 +173,13 @@ void handle_udp_data_packet(
     printf("Storing for fast path:\n");
     printf("  source mac addr: ");
     print_mac_addr(fp_mac_addr_src.addr); newline();
-    printf("  source ip addr: %d.%d.%d.%d\n",
-        ((const unsigned char*)&fp_socket_src.addr.addr)[0],
-        ((const unsigned char*)&fp_socket_src.addr.addr)[1],
-        ((const unsigned char*)&fp_socket_src.addr.addr)[2],
-        ((const unsigned char*)&fp_socket_src.addr.addr)[3]
-    );
+    printf("  source ip addr: ");
+    print_ip_addr(&fp_socket_src.addr); newline();
     printf("  source udp port: %d\n", fp_socket_src.port);
     printf("  destination mac addr: ");
     print_mac_addr(fp_mac_addr_dst.addr); newline();
-    printf("  destination ip addr: %d.%d.%d.%d\n",
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[0],
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[1],
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[2],
-        ((const unsigned char*)&fp_socket_dst.addr.addr)[3]
-    );
+    printf("  destination ip addr: ");
+    print_ip_addr(&fp_socket_dst.addr); newline();
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
 }
@@ -217,14 +212,24 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
-        struct ip_addr ip_addr = get_my_ip_addr();
-        memcpy(&ctrl_data_out.data.ip_addr, &ip_addr, sizeof(ip_addr));
+        memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
+        break;
+
+    case USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
+        set_ip_addr((struct ip_addr *)&ctrl_data_in->data.ip_addr);
+        memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
         break;
 
     case USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
-        eth_mac_addr_t mac_addr = get_my_eth_mac_addr();
-        memcpy(&ctrl_data_out.data.mac_addr, &mac_addr, sizeof(mac_addr));
+        memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
+        break;
+
+    case USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
+        ethernet_set_mac_addr((eth_mac_addr_t *)&ctrl_data_in->data.mac_addr);
+        memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
         break;
 
     case USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO:
@@ -720,6 +725,7 @@ main(void)
   putstr("\nTxRx-NEWETH\n");
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
+  print_ip_addr(get_ip_addr()); newline();
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();

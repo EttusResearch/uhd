@@ -41,6 +41,7 @@
 #define MBOARD_REV_LSB	0x00
 #define	MBOARD_REV_MSB  0x01
 #define	MBOARD_MAC_ADDR 0x02
+#define MBOARD_IP_ADDR  0x0C
 
 
 // format of daughterboard EEPROM
