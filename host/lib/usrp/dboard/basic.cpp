@@ -75,9 +75,9 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
 
 STATIC_BLOCK(reg_dboards){
     dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX", list_of(""));
-    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("a")("b")("ab"));
+    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
     dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX",    list_of(""));
-    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("a")("b")("ab"));
+    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("ab")("a")("b"));
 }
 
 /***********************************************************************
