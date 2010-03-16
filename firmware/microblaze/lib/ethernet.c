@@ -316,7 +316,7 @@ ethernet_mac_addr(void)
 bool
 ethernet_set_mac_addr(const eth_mac_addr_t *t)
 {
-  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, &t, sizeof(eth_mac_addr_t));
+  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, t, sizeof(eth_mac_addr_t));
   if (ok){
     src_mac_addr = *t;
     src_mac_addr_initialized = true;
@@ -356,7 +356,7 @@ const struct ip_addr *get_ip_addr(void)
 }
 
 bool set_ip_addr(const struct ip_addr *t){
-  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_IP_ADDR, &t, sizeof(struct ip_addr));
+  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
   if (ok){
     src_ip_addr = *t;
     src_ip_addr_initialized = true;

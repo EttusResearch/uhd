@@ -16,10 +16,47 @@
 //
 
 #include <uhd/utils.hpp>
-#include "dboard_interface.hpp"
 #include "usrp2_impl.hpp"
 
 using namespace uhd::usrp;
+
+class usrp2_dboard_interface : public dboard_interface{
+public:
+    usrp2_dboard_interface(usrp2_impl *impl);
+    ~usrp2_dboard_interface(void);
+
+    void write_aux_dac(unit_type_t, int, int);
+    int read_aux_adc(unit_type_t, int);
+
+    void set_atr_reg(gpio_bank_t, uint16_t, uint16_t, uint16_t);
+    void set_gpio_ddr(gpio_bank_t, uint16_t, uint16_t);
+    void write_gpio(gpio_bank_t, uint16_t, uint16_t);
+    uint16_t read_gpio(gpio_bank_t);
+
+    void write_i2c(int, const byte_vector_t &);
+    byte_vector_t read_i2c(int, size_t);
+
+    double get_rx_clock_rate(void);
+    double get_tx_clock_rate(void);
+
+private:
+    byte_vector_t transact_spi(
+        spi_dev_t dev,
+        spi_latch_t latch,
+        spi_push_t push,
+        const byte_vector_t &buf,
+        bool readback
+    );
+
+    usrp2_impl *_impl;
+};
+
+/***********************************************************************
+ * Make Function
+ **********************************************************************/
+dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
+    return dboard_interface::sptr(new usrp2_dboard_interface(impl));
+}
 
 /***********************************************************************
  * Structors

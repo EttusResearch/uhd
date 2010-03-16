@@ -18,7 +18,6 @@
 #include <uhd/utils.hpp>
 #include <boost/format.hpp>
 #include "usrp2_impl.hpp"
-#include "dboard_interface.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -32,23 +31,16 @@ void usrp2_impl::dboard_init(void){
     out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO);
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE);
-    std::cout << boost::format("rx id 0x%.2x, tx id 0x%.2x")
-        % ntohs(in_data.data.dboard_ids.rx_id)
-        % ntohs(in_data.data.dboard_ids.tx_id) << std::endl;
 
-    //extract the dboard ids an convert them to enums
-    dboard_id_t rx_dboard_id = static_cast<dboard_id_t>(
-        ntohs(in_data.data.dboard_ids.rx_id)
-    );
-    dboard_id_t tx_dboard_id = static_cast<dboard_id_t>(
-        ntohs(in_data.data.dboard_ids.tx_id)
-    );
+    //extract the dboard ids an convert them
+    dboard_id_t rx_dboard_id = ntohs(in_data.data.dboard_ids.rx_id);
+    dboard_id_t tx_dboard_id = ntohs(in_data.data.dboard_ids.tx_id);
 
     //create a new dboard interface and manager
     dboard_interface::sptr _dboard_interface(
-        new usrp2_dboard_interface(this)
+        make_usrp2_dboard_interface(this)
     );
-    dboard_manager::sptr _dboard_manager = dboard_manager::make(
+    _dboard_manager = dboard_manager::make(
         rx_dboard_id, tx_dboard_id, _dboard_interface
     );
 
@@ -61,6 +53,46 @@ void usrp2_impl::dboard_init(void){
         boost::bind(&usrp2_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::tx_dboard_set, this, _1, _2)
     );
+
+    //init the subdevs in use (use the first subdevice)
+    _rx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0));
+    _tx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0));
+    update_mux_config();
+}
+
+void usrp2_impl::update_mux_config(void){
+    //calculate the rx mux
+    uint32_t rx_mux = 0;
+    ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
+    wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
+    std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
+    if (rx_subdev[SUBDEV_PROP_QUADRATURE].as<bool>()){
+        rx_mux = (0x01 << 2) | (0x00 << 0); //Q=ADC1, I=ADC0
+    }else{
+        rx_mux = 0x00; //ADC0
+    }
+    if (rx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()){
+        rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
+    }
+
+    //calculate the tx mux
+    uint32_t tx_mux = 0x10;
+    ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
+    wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
+    std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
+    if (tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()){
+        tx_mux = (((tx_mux >> 0) & 0x1) << 1) | (((tx_mux >> 1) & 0x1) << 0);
+    }
+
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO);
+    out_data.data.mux_args.rx_mux = htonl(rx_mux);
+    out_data.data.mux_args.tx_mux = htonl(tx_mux);
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE);
 }
 
 /***********************************************************************
@@ -84,12 +116,22 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_rx_subdev_names();
         return;
 
+    case DBOARD_PROP_USED_SUBDEVS:
+        val = _rx_subdevs_in_use;
+        return;
+
     //case DBOARD_PROP_CODEC:
     //    throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 
-void usrp2_impl::rx_dboard_set(const wax::obj &, const wax::obj &){
+void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
+    if (key.as<dboard_prop_t>() == DBOARD_PROP_USED_SUBDEVS){
+        _rx_subdevs_in_use = val.as<prop_names_t>();
+        update_mux_config(); //if the val is bad, this will throw
+        return;
+    }
+
     throw std::runtime_error("Cannot set on usrp2 dboard");
 }
 
@@ -114,11 +156,21 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_tx_subdev_names();
         return;
 
+    case DBOARD_PROP_USED_SUBDEVS:
+        val = _tx_subdevs_in_use;
+        return;
+
     //case DBOARD_PROP_CODEC:
     //    throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 
-void usrp2_impl::tx_dboard_set(const wax::obj &, const wax::obj &){
+void usrp2_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
+    if (key.as<dboard_prop_t>() == DBOARD_PROP_USED_SUBDEVS){
+        _tx_subdevs_in_use = val.as<prop_names_t>();
+        update_mux_config(); //if the val is bad, this will throw
+        return;
+    }
+
     throw std::runtime_error("Cannot set on usrp2 dboard");
 }

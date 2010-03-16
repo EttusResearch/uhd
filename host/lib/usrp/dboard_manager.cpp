@@ -46,7 +46,7 @@ void dboard_manager::register_dboard(
     //std::cout << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_id)){
         throw std::runtime_error(str(boost::format(
-            "The dboard id 0x%.4x is already registered to %s."
+            "The dboard id 0x%04x is already registered to %s."
         ) % dboard_id % dboard_id::to_string(dboard_id)));
     }
     get_id_to_args_map()[dboard_id] = args_t(dboard_ctor, name, subdev_names);
@@ -54,7 +54,7 @@ void dboard_manager::register_dboard(
 
 std::string dboard_id::to_string(const dboard_id_t &id){
     std::string name = (get_id_to_args_map().has_key(id))? get_id_to_args_map()[id].get<1>() : "unknown";
-    return str(boost::format("%s (0x%.4x)") % name % id);
+    return str(boost::format("%s (0x%04x)") % name % id);
 }
 
 /***********************************************************************

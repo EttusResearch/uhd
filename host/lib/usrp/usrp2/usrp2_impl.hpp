@@ -31,6 +31,15 @@
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
+class usrp2_impl; //dummy class declaration
+
+/*!
+ * Make a usrp2 dboard interface.
+ * \param impl a pointer to the usrp2 impl object
+ * \return a sptr to a new dboard interface
+ */
+uhd::usrp::dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl);
+
 /*!
  * Simple wax obj proxy class:
  * Provides a wax obj interface for a set and a get function.
@@ -156,11 +165,14 @@ private:
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
     uhd::dict<std::string, wax_obj_proxy> _rx_dboards;
+    uhd::prop_names_t _rx_subdevs_in_use;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     uhd::dict<std::string, wax_obj_proxy> _tx_dboards;
+    uhd::prop_names_t _tx_subdevs_in_use;
+    void update_mux_config(void);
 
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;

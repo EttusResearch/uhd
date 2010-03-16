@@ -94,6 +94,9 @@ typedef enum{
     USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO,
     USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE,
 
+    USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO,
+    USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -194,6 +197,10 @@ typedef struct{
             uint32_t ticks;
             uint8_t now;
         } time_args;
+        struct {
+            uint32_t rx_mux;
+            uint32_t tx_mux;
+        } mux_args;
     } data;
 } usrp2_ctrl_data_t;
 
