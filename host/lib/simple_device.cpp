@@ -42,15 +42,15 @@ static tune_result_t tune(
     bool is_tx
 ){
     wax::obj subdev_freq_proxy = subdev[SUBDEV_PROP_FREQ];
-    bool subdev_quadrature = wax::cast<bool>(subdev[SUBDEV_PROP_QUADRATURE]);
-    bool subdev_spectrum_inverted = wax::cast<bool>(subdev[SUBDEV_PROP_SPECTRUM_INVERTED]);
+    bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
+    bool subdev_spectrum_inverted = subdev[SUBDEV_PROP_SPECTRUM_INVERTED].as<bool>();
     wax::obj dxc_freq_proxy = dxc[std::string("freq")];
-    double dxc_sample_rate = wax::cast<double>(dxc[std::string("rate")]);
+    double dxc_sample_rate = dxc[std::string("rate")].as<double>();
 
     // Ask the d'board to tune as closely as it can to target_freq+lo_offset
     double target_inter_freq = target_freq + lo_offset;
     subdev_freq_proxy = target_inter_freq;
-    double actual_inter_freq = wax::cast<double>(subdev_freq_proxy);
+    double actual_inter_freq = subdev_freq_proxy.as<double>();
 
     // Calculate the DDC setting that will downconvert the baseband from the
     // daughterboard to our target frequency.
@@ -77,7 +77,7 @@ static tune_result_t tune(
     target_dxc_freq *= (is_tx)? -1.0 : +1.0;
 
     dxc_freq_proxy = target_dxc_freq;
-    double actual_dxc_freq = wax::cast<double>(dxc_freq_proxy);
+    double actual_dxc_freq = dxc_freq_proxy.as<double>();
 
     //return some kind of tune result tuple/struct
     tune_result_t tune_result;
@@ -117,8 +117,8 @@ device_addr_t args_to_device_addr(const std::string &args){
 
 static std::vector<double> get_xx_rates(wax::obj decerps, wax::obj rate){
     std::vector<double> rates;
-    BOOST_FOREACH(size_t decerp, wax::cast<std::vector<size_t> >(decerps)){
-        rates.push_back(wax::cast<double>(rate)/decerp);
+    BOOST_FOREACH(size_t decerp, decerps.as<std::vector<size_t> >()){
+        rates.push_back(rate.as<double>()/decerp);
     }
     return rates;
 }
@@ -146,7 +146,7 @@ public:
     }
 
     std::string get_name(void){
-        return wax::cast<std::string>(_mboard[MBOARD_PROP_NAME]);
+        return _mboard[MBOARD_PROP_NAME].as<std::string>();
     }
 
     /*******************************************************************
@@ -157,21 +157,21 @@ public:
     }
 
     bool get_streaming(void){
-        return wax::cast<bool>(_rx_ddc[std::string("enabled")]);
+        return _rx_ddc[std::string("enabled")].as<bool>();
     }
 
     /*******************************************************************
      * RX methods
      ******************************************************************/
     void set_rx_rate(double rate){
-        double samp_rate = wax::cast<double>(_rx_ddc[std::string("rate")]);
+        double samp_rate = _rx_ddc[std::string("rate")].as<double>();
         assert_has(get_rx_rates(), rate, "simple device rx rate");
         _rx_ddc[std::string("decim")] = size_t(samp_rate/rate);
     }
 
     double get_rx_rate(void){
-        double samp_rate = wax::cast<double>(_rx_ddc[std::string("rate")]);
-        size_t decim = wax::cast<size_t>(_rx_ddc[std::string("decim")]);
+        double samp_rate = _rx_ddc[std::string("rate")].as<double>();
+        size_t decim = _rx_ddc[std::string("decim")].as<size_t>();
         return samp_rate/decim;
     }
 
@@ -182,7 +182,7 @@ public:
     tune_result_t set_rx_freq(double target_freq){
         double lo_offset = 0.0;
         //if the local oscillator will be in the passband, use an offset
-        if (wax::cast<bool>(_rx_subdev[SUBDEV_PROP_LO_INTERFERES])){
+        if (_rx_subdev[SUBDEV_PROP_LO_INTERFERES].as<bool>()){
             lo_offset = get_rx_rate()*2.0;
         }
         return tune(target_freq, lo_offset, _rx_subdev, _rx_ddc, false/* not tx */);
@@ -191,7 +191,7 @@ public:
     std::vector<double> get_rx_freq_range(void){
         std::vector<double> range(2);
         boost::tie(range[0], range[1]) = \
-            wax::cast<freq_range_t>(_rx_subdev[SUBDEV_PROP_FREQ_RANGE]);
+            _rx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
         return range;
     }
 
@@ -200,13 +200,13 @@ public:
     }
 
     float get_rx_gain(void){
-        return wax::cast<gain_t>(_rx_subdev[SUBDEV_PROP_GAIN]);
+        return _rx_subdev[SUBDEV_PROP_GAIN].as<gain_t>();
     }
 
     std::vector<float> get_rx_gain_range(void){
         std::vector<float> range(3);
         boost::tie(range[0], range[1], range[2]) = \
-            wax::cast<gain_range_t>(_rx_subdev[SUBDEV_PROP_GAIN_RANGE]);
+            _rx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
         return range;
     }
 
@@ -215,25 +215,25 @@ public:
     }
 
     std::string get_rx_antenna(void){
-        return wax::cast<std::string>(_rx_subdev[SUBDEV_PROP_ANTENNA]);
+        return _rx_subdev[SUBDEV_PROP_ANTENNA].as<std::string>();
     }
 
     std::vector<std::string> get_rx_antennas(void){
-        return wax::cast<std::vector<std::string> >(_rx_subdev[SUBDEV_PROP_ANTENNA_NAMES]);
+        return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
     }
 
     /*******************************************************************
      * TX methods
      ******************************************************************/
     void set_tx_rate(double rate){
-        double samp_rate = wax::cast<double>(_tx_duc[std::string("rate")]);
+        double samp_rate = _tx_duc[std::string("rate")].as<double>();
         assert_has(get_tx_rates(), rate, "simple device tx rate");
         _tx_duc[std::string("interp")] = size_t(samp_rate/rate);
     }
 
     double get_tx_rate(void){
-        double samp_rate = wax::cast<double>(_tx_duc[std::string("rate")]);
-        size_t interp = wax::cast<size_t>(_tx_duc[std::string("interp")]);
+        double samp_rate = _tx_duc[std::string("rate")].as<double>();
+        size_t interp = _tx_duc[std::string("interp")].as<size_t>();
         return samp_rate/interp;
     }
 
@@ -244,7 +244,7 @@ public:
     tune_result_t set_tx_freq(double target_freq){
         double lo_offset = 0.0;
         //if the local oscillator will be in the passband, use an offset
-        if (wax::cast<bool>(_tx_subdev[SUBDEV_PROP_LO_INTERFERES])){
+        if (_tx_subdev[SUBDEV_PROP_LO_INTERFERES].as<bool>()){
             lo_offset = get_tx_rate()*2.0;
         }
         return tune(target_freq, lo_offset, _tx_subdev, _tx_duc, true/* is tx */);
@@ -253,7 +253,7 @@ public:
     std::vector<double> get_tx_freq_range(void){
         std::vector<double> range(2);
         boost::tie(range[0], range[1]) = \
-            wax::cast<freq_range_t>(_tx_subdev[SUBDEV_PROP_FREQ_RANGE]);
+            _tx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
         return range;
     }
 
@@ -262,13 +262,13 @@ public:
     }
 
     float get_tx_gain(void){
-        return wax::cast<gain_t>(_tx_subdev[SUBDEV_PROP_GAIN]);
+        return _tx_subdev[SUBDEV_PROP_GAIN].as<gain_t>();
     }
 
     std::vector<float> get_tx_gain_range(void){
         std::vector<float> range(3);
         boost::tie(range[0], range[1], range[2]) = \
-            wax::cast<gain_range_t>(_tx_subdev[SUBDEV_PROP_GAIN_RANGE]);
+            _tx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
         return range;
     }
 
@@ -277,11 +277,11 @@ public:
     }
 
     std::string get_tx_antenna(void){
-        return wax::cast<std::string>(_tx_subdev[SUBDEV_PROP_ANTENNA]);
+        return _tx_subdev[SUBDEV_PROP_ANTENNA].as<std::string>();
     }
 
     std::vector<std::string> get_tx_antennas(void){
-        return wax::cast<std::vector<std::string> >(_tx_subdev[SUBDEV_PROP_ANTENNA_NAMES]);
+        return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
     }
 
 private:

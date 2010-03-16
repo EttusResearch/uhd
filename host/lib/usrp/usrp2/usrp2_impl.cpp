@@ -184,7 +184,7 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<device_prop_t>(key)){
+    switch(key.as<device_prop_t>()){
     case DEVICE_PROP_NAME:
         val = std::string("usrp2 device");
         return;

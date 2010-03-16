@@ -98,7 +98,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<subdev_prop_t>(key)){
+    switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
         val = std::string(str(boost::format("%s:%s")
             % dboard_id::to_string(get_rx_id())
@@ -159,14 +159,14 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<subdev_prop_t>(key)){
+    switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(wax::cast<gain_t>(val) == gain_t(0));
+        ASSERT_THROW(val.as<gain_t>() == gain_t(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(wax::cast<std::string>(val) == std::string(""));
+        ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
 
     case SUBDEV_PROP_ENABLED:
@@ -207,7 +207,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<subdev_prop_t>(key)){
+    switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
         val = dboard_id::to_string(get_tx_id());
         return;
@@ -265,14 +265,14 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<subdev_prop_t>(key)){
+    switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(wax::cast<gain_t>(val) == gain_t(0));
+        ASSERT_THROW(val.as<gain_t>() == gain_t(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(wax::cast<std::string>(val) == std::string(""));
+        ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
 
     case SUBDEV_PROP_ENABLED:

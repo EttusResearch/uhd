@@ -57,7 +57,7 @@ namespace uhd{
      */
     inline named_prop_t extract_named_prop(const wax::obj &key, const std::string &name = ""){
         if (key.type() == typeid(named_prop_t)){
-            return wax::cast<named_prop_t>(key);
+            return key.as<named_prop_t>();
         }
         return named_prop_t(key, name);
     }

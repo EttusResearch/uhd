@@ -48,7 +48,7 @@ private:
     gain_t get_overall_gain_val(void);
     gain_range_t get_overall_gain_range(void);
     template <class T> T get_named_prop(const wax::obj &prop, const std::string &name){
-        return wax::cast<T>(_link[named_prop_t(prop, name)]);
+        return _link[named_prop_t(prop, name)].as<T>();
     }
 };
 
@@ -85,7 +85,7 @@ gain_handler_impl::~gain_handler_impl(void){
 }
 
 prop_names_t gain_handler_impl::get_gain_names(void){
-    return wax::cast<prop_names_t>(_link[_props.names]);
+    return _link[_props.names].as<prop_names_t>();
 }
 
 gain_t gain_handler_impl::get_overall_gain_val(void){
@@ -145,7 +145,7 @@ bool gain_handler_impl::intercept_set(const wax::obj &key_, const wax::obj &val)
     //not a gain value key... dont handle
     if (not _is_equal(key, _props.value)) return false;
 
-    gain_t gain_val = wax::cast<gain_t>(val);
+    gain_t gain_val = val.as<gain_t>();
 
     //not a wildcard... dont handle (but check name and range)
     if (name != ""){

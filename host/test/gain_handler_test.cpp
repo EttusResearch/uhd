@@ -59,7 +59,7 @@ private:
         boost::tie(key, name) = extract_named_prop(key_);
 
         //handle the get request conditioned on the key
-        switch(wax::cast<prop_t>(key)){
+        switch(key.as<prop_t>()){
         case PROP_GAIN_VALUE:
             val = _gain_values[name];
             return;
@@ -81,9 +81,9 @@ private:
         boost::tie(key, name) = extract_named_prop(key_);
 
         //handle the get request conditioned on the key
-        switch(wax::cast<prop_t>(key)){
+        switch(key.as<prop_t>()){
         case PROP_GAIN_VALUE:
-            _gain_values[name] = wax::cast<gain_t>(val);
+            _gain_values[name] = val.as<gain_t>();
             return;
 
         case PROP_GAIN_RANGE:
@@ -103,14 +103,14 @@ BOOST_AUTO_TEST_CASE(test_gain_handler){
     gainful_obj go0;
 
     BOOST_CHECK_THROW(
-        wax::cast<gain_t>(go0[named_prop_t(PROP_GAIN_VALUE, "fail")]),
+        go0[named_prop_t(PROP_GAIN_VALUE, "fail")].as<gain_t>(),
         std::exception
     );
 
     std::cout << "verifying the overall min, max, step" << std::endl;
     gain_t gain_min, gain_max, gain_step;
     boost::tie(gain_min, gain_max, gain_step) = \
-        wax::cast<gain_range_t>(go0[PROP_GAIN_RANGE]);
+        go0[PROP_GAIN_RANGE].as<gain_range_t>();
     BOOST_CHECK_EQUAL(gain_min, gain_t(-10));
     BOOST_CHECK_EQUAL(gain_max, gain_t(100));
     BOOST_CHECK_EQUAL(gain_step, gain_t(1.5));
@@ -118,5 +118,5 @@ BOOST_AUTO_TEST_CASE(test_gain_handler){
     std::cout << "verifying the overall gain" << std::endl;
     go0[named_prop_t(PROP_GAIN_VALUE, "g0")] = gain_t(-5);
     go0[named_prop_t(PROP_GAIN_VALUE, "g1")] = gain_t(30);
-    BOOST_CHECK_EQUAL(wax::cast<gain_t>(go0[PROP_GAIN_VALUE]), gain_t(25));
+    BOOST_CHECK_EQUAL(go0[PROP_GAIN_VALUE].as<gain_t>(), gain_t(25));
 }

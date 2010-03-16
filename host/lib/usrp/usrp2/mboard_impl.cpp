@@ -91,7 +91,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     //handle the other props
     if (key.type() == typeid(std::string)){
-        if (wax::cast<std::string>(key) == "mac-addr"){
+        if (key.as<std::string>() == "mac-addr"){
             //setup the out data
             usrp2_ctrl_data_t out_data;
             out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO);
@@ -105,7 +105,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
             return;
         }
 
-        if (wax::cast<std::string>(key) == "ip-addr"){
+        if (key.as<std::string>() == "ip-addr"){
             //setup the out data
             usrp2_ctrl_data_t out_data;
             out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
@@ -121,7 +121,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     }
 
     //handle the get request conditioned on the key
-    switch(wax::cast<mboard_prop_t>(key)){
+    switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
         val = std::string("usrp2 mboard");
         return;
@@ -208,11 +208,11 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
-        if (wax::cast<std::string>(key) == "mac-addr"){
+        if (key.as<std::string>() == "mac-addr"){
             //setup the out data
             usrp2_ctrl_data_t out_data;
             out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO);
-            mac_addr_t mac_addr(wax::cast<std::string>(val));
+            mac_addr_t mac_addr(val.as<std::string>());
             std::memcpy(out_data.data.mac_addr, &mac_addr, sizeof(mac_addr_t));
 
             //send and recv
@@ -221,11 +221,11 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
             return;
         }
 
-        if (wax::cast<std::string>(key) == "ip-addr"){
+        if (key.as<std::string>() == "ip-addr"){
             //setup the out data
             usrp2_ctrl_data_t out_data;
             out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO);
-            out_data.data.ip_addr = htonl(boost::asio::ip::address_v4::from_string(wax::cast<std::string>(val)).to_ulong());
+            out_data.data.ip_addr = htonl(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_ulong());
 
             //send and recv
             usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -235,10 +235,10 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     }
 
     //handle the get request conditioned on the key
-    switch(wax::cast<mboard_prop_t>(key)){
+    switch(key.as<mboard_prop_t>()){
 
     case MBOARD_PROP_PPS_SOURCE:{
-            std::string name = wax::cast<std::string>(val);
+            std::string name = val.as<std::string>();
             assert_has(_pps_source_dict.get_keys(), name, "usrp2 pps source");
             _pps_source = name; //shadow
             update_clock_config();
@@ -246,7 +246,7 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_PPS_POLARITY:{
-            std::string name = wax::cast<std::string>(val);
+            std::string name = val.as<std::string>();
             assert_has(_pps_polarity_dict.get_keys(), name, "usrp2 pps polarity");
             _pps_polarity = name; //shadow
             update_clock_config();
@@ -254,7 +254,7 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_REF_SOURCE:{
-            std::string name = wax::cast<std::string>(val);
+            std::string name = val.as<std::string>();
             assert_has(_ref_source_dict.get_keys(), name, "usrp2 reference source");
             _ref_source = name; //shadow
             update_clock_config();
@@ -262,12 +262,12 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_TIME_NOW:{
-        set_time_spec(wax::cast<time_spec_t>(val), true);
+        set_time_spec(val.as<time_spec_t>(), true);
         return;
     }
 
     case MBOARD_PROP_TIME_NEXT_PPS:{
-        set_time_spec(wax::cast<time_spec_t>(val), false);
+        set_time_spec(val.as<time_spec_t>(), false);
         return;
     }
 

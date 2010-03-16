@@ -74,7 +74,7 @@ public:
      */
     template <class T> static bool is_equal(const wax::obj &a, const wax::obj &b){
         try{
-            return wax::cast<T>(a) == wax::cast<T>(b);
+            return a.as<T>() == b.as<T>();
         }
         catch(const wax::bad_cast &){
             return false;

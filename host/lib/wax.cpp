@@ -39,7 +39,7 @@ public:
     wax::obj & operator()(void) const{
         //recursively resolve link args to get at original pointer
         if (_obj_ptr->type() == typeid(link_args_t)){
-            return wax::cast<link_args_t>(*_obj_ptr)();
+            return _obj_ptr->as<link_args_t>()();
         }
         return *const_cast<wax::obj *>(_obj_ptr);
     }
@@ -61,7 +61,7 @@ public:
         _obj_link = obj_ptr->get_link();
     }
     wax::obj & operator()(void) const{
-        return wax::cast<link_args_t>(_obj_link)();
+        return _obj_link.as<link_args_t>()();
     }
     const wax::obj & key(void) const{
         return _key;
@@ -94,7 +94,7 @@ wax::obj wax::obj::operator[](const obj &key){
         obj val = resolve();
         //check if its a special link and call
         if (val.type() == typeid(link_args_t)){
-            return cast<link_args_t>(val)()[key];
+            return val.as<link_args_t>()()[key];
         }
         //unknown obj
         throw std::runtime_error("cannot use [] on non wax::obj link");

@@ -71,7 +71,7 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<dboard_prop_t>(key)){
+    switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_NAME:
         val = std::string("usrp2 dboard (rx unit)");
         return;
@@ -101,7 +101,7 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
-    switch(wax::cast<dboard_prop_t>(key)){
+    switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_NAME:
         val = std::string("usrp2 dboard (tx unit)");
         return;

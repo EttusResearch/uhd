@@ -102,7 +102,7 @@ void usrp2_impl::update_ddc_enabled(void){
 void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     //handle the case where the key is an expected dsp property
     if (key.type() == typeid(dsp_prop_t)){
-        switch(wax::cast<dsp_prop_t>(key)){
+        switch(key.as<dsp_prop_t>()){
         case DSP_PROP_NAME:
             val = std::string("usrp2 ddc0");
             return;
@@ -123,7 +123,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     }
 
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "rate"){
         val = get_master_clock_freq();
         return;
@@ -152,9 +152,9 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
 
 void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "decim"){
-        size_t new_decim = wax::cast<size_t>(val);
+        size_t new_decim = val.as<size_t>();
         assert_has(
             _allowed_decim_and_interp_rates,
             new_decim, "usrp2 decimation"
@@ -164,7 +164,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         return;
     }
     else if (key_name == "freq"){
-        freq_t new_freq = wax::cast<freq_t>(val);
+        freq_t new_freq = val.as<freq_t>();
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _ddc_freq = new_freq; //shadow
@@ -172,13 +172,13 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         return;
     }
     else if (key_name == "enabled"){
-        bool new_enabled = wax::cast<bool>(val);
+        bool new_enabled = val.as<bool>();
         _ddc_enabled = new_enabled; //shadow
         update_ddc_enabled();
         return;
     }
     else if (key_name == "stream_at"){
-        time_spec_t new_stream_at = wax::cast<time_spec_t>(val);
+        time_spec_t new_stream_at = val.as<time_spec_t>();
         _ddc_stream_at = new_stream_at; //shadow
         //update_ddc_enabled(); //dont update from here
         return;
@@ -236,7 +236,7 @@ void usrp2_impl::update_duc_config(void){
 void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
     //handle the case where the key is an expected dsp property
     if (key.type() == typeid(dsp_prop_t)){
-        switch(wax::cast<dsp_prop_t>(key)){
+        switch(key.as<dsp_prop_t>()){
         case DSP_PROP_NAME:
             val = std::string("usrp2 duc0");
             return;
@@ -255,7 +255,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
     }
 
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "rate"){
         val = get_master_clock_freq();
         return;
@@ -280,9 +280,9 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
 
 void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
     //handle string-based properties specific to this dsp
-    std::string key_name = wax::cast<std::string>(key);
+    std::string key_name = key.as<std::string>();
     if (key_name == "interp"){
-        size_t new_interp = wax::cast<size_t>(val);
+        size_t new_interp = val.as<size_t>();
         assert_has(
             _allowed_decim_and_interp_rates,
             new_interp, "usrp2 interpolation"
@@ -292,7 +292,7 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
         return;
     }
     else if (key_name == "freq"){
-        freq_t new_freq = wax::cast<freq_t>(val);
+        freq_t new_freq = val.as<freq_t>();
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _duc_freq = new_freq; //shadow
