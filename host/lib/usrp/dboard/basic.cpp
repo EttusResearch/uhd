@@ -172,11 +172,13 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ENABLED:
         return; // it wont do you much good, but you can set it
 
+    case SUBDEV_PROP_FREQ:
+        return; // it wont do you much good, but you can set it
+
     case SUBDEV_PROP_NAME:
     case SUBDEV_PROP_OTHERS:
     case SUBDEV_PROP_GAIN_RANGE:
     case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ:
     case SUBDEV_PROP_FREQ_RANGE:
     case SUBDEV_PROP_ANTENNA_NAMES:
     case SUBDEV_PROP_QUADRATURE:
@@ -278,11 +280,13 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ENABLED:
         return; // it wont do you much good, but you can set it
 
+    case SUBDEV_PROP_FREQ:
+        return; // it wont do you much good, but you can set it
+
     case SUBDEV_PROP_NAME:
     case SUBDEV_PROP_OTHERS:
     case SUBDEV_PROP_GAIN_RANGE:
     case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ:
     case SUBDEV_PROP_FREQ_RANGE:
     case SUBDEV_PROP_ANTENNA_NAMES:
     case SUBDEV_PROP_QUADRATURE:

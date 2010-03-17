@@ -133,8 +133,16 @@ public:
         _mboard = (*_dev)[DEVICE_PROP_MBOARD];
         _rx_ddc = _mboard[named_prop_t(MBOARD_PROP_RX_DSP, "ddc0")];
         _tx_duc = _mboard[named_prop_t(MBOARD_PROP_TX_DSP, "duc0")];
-        _rx_subdev = _mboard[MBOARD_PROP_RX_DBOARD][DBOARD_PROP_SUBDEV];
-        _tx_subdev = _mboard[MBOARD_PROP_TX_DBOARD][DBOARD_PROP_SUBDEV];
+
+        //extract rx subdevice
+        wax::obj rx_dboard = _mboard[MBOARD_PROP_RX_DBOARD];
+        std::string rx_subdev_in_use = rx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
+        _rx_subdev = rx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, rx_subdev_in_use)];
+
+        //extract tx subdevice
+        wax::obj tx_dboard = _mboard[MBOARD_PROP_TX_DBOARD];
+        std::string tx_subdev_in_use = tx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
+        _tx_subdev = tx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)];
     }
 
     ~simple_device_impl(void){

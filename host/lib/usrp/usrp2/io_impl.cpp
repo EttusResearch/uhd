@@ -149,7 +149,7 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
     //handle the packet count / sequence number
     size_t expected_packet_count = _rx_stream_id_to_packet_seq[metadata.stream_id];
     if (packet_count_out != expected_packet_count){
-        std::cerr << "bad packet count: " << packet_count_out << std::endl;
+        std::cerr << "S" << (packet_count_out - expected_packet_count)%16;
     }
     _rx_stream_id_to_packet_seq[metadata.stream_id] = (packet_count_out+1)%16;
 
