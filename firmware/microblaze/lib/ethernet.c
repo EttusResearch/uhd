@@ -320,7 +320,7 @@ ethernet_set_mac_addr(const eth_mac_addr_t *t)
   if (ok){
     src_mac_addr = *t;
     src_mac_addr_initialized = true;
-    eth_mac_set_addr(t);
+    //eth_mac_set_addr(t); //this breaks the link
   }
 
   return ok;

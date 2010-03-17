@@ -79,5 +79,6 @@ int main(int argc, char *argv[]){
         std::cout << "  Done" << std::endl;
     }
 
+    std::cout << "Power-cycle the usrp2 for the changes to take effect." << std::endl;
     return 0;
 }

@@ -109,14 +109,14 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     //check that we found any devices
     if (dev_addr_makers.size() == 0){
         throw std::runtime_error(str(
-            boost::format("No devices found for %s") % device_addr::to_string(hint)
+            boost::format("No devices found for ----->\n%s") % device_addr::to_string(hint)
         ));
     }
 
     //check that the which index is valid
     if (dev_addr_makers.size() <= which){
         throw std::runtime_error(str(
-            boost::format("No device at index %d for %s") % which % device_addr::to_string(hint)
+            boost::format("No device at index %d for ----->\n%s") % which % device_addr::to_string(hint)
         ));
     }
 

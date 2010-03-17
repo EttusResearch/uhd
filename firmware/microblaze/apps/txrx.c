@@ -148,14 +148,6 @@ static struct socket_address fp_socket_src, fp_socket_dst;
 void start_rx_streaming_cmd(void);
 void stop_rx_cmd(void);
 
-static eth_mac_addr_t get_my_eth_mac_addr(void){
-    return *ethernet_mac_addr();
-}
-
-static struct ip_addr get_my_ip_addr(void){
-    return *get_ip_addr();
-}
-
 static void print_ip_addr(const void *t){
     uint8_t *p = (uint8_t *)t;
     printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
@@ -166,7 +158,7 @@ void handle_udp_data_packet(
     unsigned char *payload, int payload_len
 ){
     //its a tiny payload, load the fast-path variables
-    fp_mac_addr_src = get_my_eth_mac_addr();
+    fp_mac_addr_src = *ethernet_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
     fp_socket_src = dst;
     fp_socket_dst = src;
@@ -540,6 +532,21 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
       ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != 0)
   ) return false;
 
+  //test if its an ip recovery packet
+  typedef struct{
+      padded_eth_hdr_t eth_hdr;
+      char code[4];
+      union {
+        struct ip_addr ip_addr;
+      } data;
+  }recovery_packet_t;
+  recovery_packet_t *recovery_packet = (recovery_packet_t *)buff;
+  if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
+      printf("Got ip recovery packet: "); print_ip_addr(&recovery_packet->data.ip_addr); newline();
+      set_ip_addr(&recovery_packet->data.ip_addr);
+      return true;
+  }
+
   //pass it to the slow-path handler
   size_t len = buffer_pool_status->last_line[bufno] - 3;
   handle_eth_packet(buff, len);
@@ -737,8 +744,9 @@ main(void)
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
 
-  register_get_eth_mac_addr(get_my_eth_mac_addr);
-  register_get_ip_addr(get_my_ip_addr);
+  register_mac_addr(ethernet_mac_addr());
+  register_ip_addr(get_ip_addr());
+
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
 
