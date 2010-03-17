@@ -26,18 +26,18 @@ def mac_addr_repr_to_binary_string(mac_addr):
     return ''.join(map(lambda x: chr(int(x, 16)), mac_addr.split(':')))
 
 if __name__ == '__main__':
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(usage='usage: %prog [options]\n'+__doc__)
     parser.add_option('--ifc', type='string', help='ethernet interface name [default=%default]', default='eth0')
     parser.add_option('--new-ip', type='string', help='ip address to set [default=%default]', default='192.168.10.2')
     (options, args) = parser.parse_args()
 
     #create the raw socket
-    print "Opening raw socket on interface: ", options.ifc
+    print "Opening raw socket on interface:", options.ifc
     soc = socket.socket(socket.PF_PACKET, socket.SOCK_RAW)
     soc.bind((options.ifc, RECOVERY_ETHERTYPE))
 
     #create the recovery packet
-    print "Loading packet with new ip address: ", options.new_ip
+    print "Loading packet with ip address:", options.new_ip
     packet = struct.pack(
         '!6s6sH4s4s',
         mac_addr_repr_to_binary_string(BCAST_MAC_ADDR),
@@ -46,5 +46,7 @@ if __name__ == '__main__':
         IP_RECOVERY_CODE,
         socket.inet_aton(options.new_ip),
     )
+
+    print "Sending packet (%d bytes)"%len(packet)
     soc.send(packet)
     print "Done"
