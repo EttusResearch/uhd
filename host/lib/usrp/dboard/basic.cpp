@@ -75,9 +75,9 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
 
 STATIC_BLOCK(reg_dboards){
     dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX", list_of(""));
-    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("a")("b")("ab"));
+    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
     dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX",    list_of(""));
-    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("a")("b")("ab"));
+    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("ab")("a")("b"));
 }
 
 /***********************************************************************
@@ -100,7 +100,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = std::string(str(boost::format("%s:%s")
+        val = std::string(str(boost::format("%s - %s")
             % dboard_id::to_string(get_rx_id())
             % get_subdev_name()
         ));
@@ -172,11 +172,13 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ENABLED:
         return; // it wont do you much good, but you can set it
 
+    case SUBDEV_PROP_FREQ:
+        return; // it wont do you much good, but you can set it
+
     case SUBDEV_PROP_NAME:
     case SUBDEV_PROP_OTHERS:
     case SUBDEV_PROP_GAIN_RANGE:
     case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ:
     case SUBDEV_PROP_FREQ_RANGE:
     case SUBDEV_PROP_ANTENNA_NAMES:
     case SUBDEV_PROP_QUADRATURE:
@@ -278,11 +280,13 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ENABLED:
         return; // it wont do you much good, but you can set it
 
+    case SUBDEV_PROP_FREQ:
+        return; // it wont do you much good, but you can set it
+
     case SUBDEV_PROP_NAME:
     case SUBDEV_PROP_OTHERS:
     case SUBDEV_PROP_GAIN_RANGE:
     case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ:
     case SUBDEV_PROP_FREQ_RANGE:
     case SUBDEV_PROP_ANTENNA_NAMES:
     case SUBDEV_PROP_QUADRATURE:

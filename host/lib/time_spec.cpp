@@ -24,17 +24,17 @@ time_spec_t::time_spec_t(void){
     ticks = ~0;
 }
 
-time_spec_t::time_spec_t(uint32_t new_secs, uint32_t new_ticks){
+time_spec_t::time_spec_t(boost::uint32_t new_secs, boost::uint32_t new_ticks){
     secs = new_secs;
     ticks = new_ticks;
 }
 
 static const boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
-static double time_tick_rate(boost::posix_time::time_duration::ticks_per_second());
+static double time_tick_rate = double(boost::posix_time::time_duration::ticks_per_second());
 
 time_spec_t::time_spec_t(boost::posix_time::ptime time, double tick_rate){
     boost::posix_time::time_duration td = time - epoch;
-    secs = td.total_seconds();
+    secs = boost::uint32_t(td.total_seconds());
     double time_ticks_per_device_ticks = time_tick_rate/tick_rate;
-    ticks = td.fractional_seconds()/time_ticks_per_device_ticks;
+    ticks = boost::uint32_t(td.fractional_seconds()/time_ticks_per_device_ticks);
 }

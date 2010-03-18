@@ -18,6 +18,7 @@
 #include <uhd/utils.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include "usrp2_impl.hpp"
 
 using namespace uhd;
@@ -25,14 +26,20 @@ using namespace uhd;
 static const size_t default_decim = 16;
 static const size_t default_interp = 16;
 
+#define rint boost::math::iround
+
+template <class T> T log2(T num){
+    return std::log(num)/std::log(T(2));
+}
+
 /***********************************************************************
  * DDC Helper Methods
  **********************************************************************/
-static uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t clock_freq){
-    double scale_factor = pow(2.0, 32);
+static boost::uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t clock_freq){
+    double scale_factor = std::pow(2.0, 32);
 
     //calculate the freq register word
-    uint32_t freq_word = rint((freq / clock_freq) * scale_factor);
+    boost::uint32_t freq_word = rint((freq / clock_freq) * scale_factor);
 
     //update the actual frequency
     freq = (double(freq_word) / scale_factor) * clock_freq;
@@ -40,8 +47,8 @@ static uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t 
     return freq_word;
 }
 
-static uint32_t calculate_iq_scale_word(int16_t i, int16_t q){
-    return (uint16_t(i) << 16) | (uint16_t(q) << 0);
+static boost::uint32_t calculate_iq_scale_word(boost::int16_t i, boost::int16_t q){
+    return (boost::uint16_t(i) << 16) | (boost::uint16_t(q) << 0);
 }
 
 void usrp2_impl::init_ddc_config(void){
@@ -69,7 +76,7 @@ void usrp2_impl::update_ddc_config(void){
         calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
     );
     out_data.data.ddc_args.decim = htonl(_ddc_decim);
-    static const uint32_t default_rx_scale_iq = 1024;
+    static const boost::int16_t default_rx_scale_iq = 1024;
     out_data.data.ddc_args.scale_iq = htonl(
         calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
     );
@@ -211,8 +218,8 @@ void usrp2_impl::update_duc_config(void){
     while(tmp_interp > 128) tmp_interp /= 2;
 
     // Calculate closest multiplier constant to reverse gain absent scale multipliers
-    size_t interp_cubed = pow(tmp_interp, 3);
-    size_t scale = rint((4096*pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
+    double interp_cubed = std::pow(double(tmp_interp), 3);
+    boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
     //setup the out data
     usrp2_ctrl_data_t out_data;

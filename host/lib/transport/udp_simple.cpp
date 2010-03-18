@@ -38,7 +38,7 @@ static void reasonable_recv_timeout(
     boost::asio::ip::udp::socket &socket
 ){
     boost::asio::deadline_timer timer(socket.get_io_service());
-    timer.expires_from_now(boost::posix_time::milliseconds(50));
+    timer.expires_from_now(boost::posix_time::milliseconds(100));
     while (not (socket.available() or timer.expires_from_now().is_negative())){
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     }

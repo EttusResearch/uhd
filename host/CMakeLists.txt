@@ -53,10 +53,18 @@ FUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     ENDIF(${have})
 ENDFUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
+IF(UNIX)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
+ENDIF(UNIX)
+
+IF(WIN32)
+    ADD_DEFINITIONS(-Dnot=! -Dand=&& -Dor=||) #logical operators
+    ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #as requested by vs
+    ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+ENDIF(WIN32)
 
 ########################################################################
 # Setup Boost
@@ -65,6 +73,7 @@ FIND_PACKAGE(Boost 1.36 REQUIRED
     date_time
     filesystem
     program_options
+    regex
     system
     thread
     unit_test_framework
@@ -79,7 +88,7 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 INCLUDE(TestBigEndian)
 TEST_BIG_ENDIAN(HAVE_BIG_ENDIAN)
 IF(HAVE_BIG_ENDIAN)
-    ADD_DEFINITIONS("-DHAVE_BIG_ENDIAN=/* */")
+    ADD_DEFINITIONS(-DHAVE_BIG_ENDIAN)
 ENDIF(HAVE_BIG_ENDIAN)
 
 ########################################################################

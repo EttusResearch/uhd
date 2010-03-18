@@ -16,7 +16,7 @@
 //
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <stdint.h>
+#include <boost/cstdint.hpp>
 
 #ifndef INCLUDED_UHD_TIME_SPEC_HPP
 #define INCLUDED_UHD_TIME_SPEC_HPP
@@ -30,8 +30,8 @@ namespace uhd{
      * and for controlling the start of streaming for applicable dsps.
      */
     struct time_spec_t{
-        uint32_t secs;
-        uint32_t ticks;
+        boost::uint32_t secs;
+        boost::uint32_t ticks;
 
         /*!
          * Create a time_spec_t that holds a wildcard time.
@@ -44,7 +44,7 @@ namespace uhd{
          * \param new_secs the new seconds
          * \param new_ticks the new ticks (default = 0)
          */
-        time_spec_t(uint32_t new_secs, uint32_t new_ticks = 0);
+        time_spec_t(boost::uint32_t new_secs, boost::uint32_t new_ticks = 0);
 
         /*!
          * Create a time_spec_t from boost posix time.

@@ -19,10 +19,9 @@
 #define INCLUDED_UHD_DEVICE_ADDR_HPP
 
 #include <uhd/dict.hpp>
+#include <boost/cstdint.hpp>
 #include <string>
 #include <iostream>
-#include <netinet/ether.h>
-#include <stdint.h>
 #include <vector>
 
 namespace uhd{
@@ -32,7 +31,7 @@ namespace uhd{
     * Provides conversion between string and binary formats.
     */
     struct mac_addr_t{
-        struct ether_addr mac_addr;
+        boost::uint8_t mac_addr[6];
         mac_addr_t(const std::string &mac_addr_str = "00:00:00:00:00:00");
         std::string to_string(void) const;
     };

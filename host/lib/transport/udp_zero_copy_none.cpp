@@ -16,8 +16,10 @@
 //
 
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
+#include <iostream>
 
 using namespace uhd::transport;
 
@@ -36,7 +38,7 @@ public:
     }
 
     ~smart_buffer_impl(void){
-        delete [] boost::asio::buffer_cast<const uint32_t *>(_buff);
+        delete [] boost::asio::buffer_cast<const boost::uint32_t *>(_buff);
     }
 
     const boost::asio::const_buffer &get(void) const{
@@ -89,12 +91,12 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
 
     // set the rx socket buffer size:
     // pick a huge size, and deal with whatever we get
-    set_recv_buff_size(54321e3); //some big number!
+    set_recv_buff_size(size_t(54321e3)); //some big number!
     size_t current_buff_size = get_recv_buff_size();
     std::cout << boost::format(
         "Current rx socket buffer size: %d\n"
     ) % current_buff_size;
-    if (current_buff_size < .1e6) std::cout << boost::format(
+    if (current_buff_size < size_t(.1e6)) std::cout << boost::format(
         "Adjust max rx socket buffer size (linux only):\n"
         "  sysctl -w net.core.rmem_max=VALUE\n"
     );
@@ -119,7 +121,7 @@ smart_buffer::sptr udp_zero_copy_impl::recv(void){
     }
 
     //allocate memory and create buffer
-    uint32_t *buff_mem = new uint32_t[available/sizeof(uint32_t)];
+    boost::uint32_t *buff_mem = new boost::uint32_t[available/sizeof(boost::uint32_t)];
     boost::asio::mutable_buffer buff(buff_mem, available);
 
     //receive only if data is available

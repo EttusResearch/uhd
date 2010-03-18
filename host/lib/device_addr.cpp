@@ -28,7 +28,7 @@ uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
     std::string mac_addr_str = (mac_addr_str_ == "")? "ff:ff:ff:ff:ff:ff" : mac_addr_str_;
 
     //ether_aton_r(str.c_str(), &mac_addr);
-    uint8_t p[6] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
+    boost::uint8_t p[6] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
 
     try{
         //only allow patterns of xx:xx or xx:xx:xx:xx:xx:xx
@@ -43,7 +43,7 @@ uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
             int hex_num;
             std::istringstream iss(hex_strs[i]);
             iss >> std::hex >> hex_num;
-            p[i] = uint8_t(hex_num);
+            p[i] = boost::uint8_t(hex_num);
         }
 
     }
@@ -58,7 +58,7 @@ uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
 
 std::string uhd::mac_addr_t::to_string(void) const{
     //ether_ntoa_r(&mac_addr, addr_buf);
-    const uint8_t *p = reinterpret_cast<const uint8_t *>(&mac_addr);
+    const boost::uint8_t *p = reinterpret_cast<const boost::uint8_t *>(&mac_addr);
     return str(
         boost::format("%02x:%02x:%02x:%02x:%02x:%02x")
         % int(p[0]) % int(p[1]) % int(p[2])

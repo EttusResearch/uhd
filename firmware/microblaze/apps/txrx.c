@@ -148,14 +148,6 @@ static struct socket_address fp_socket_src, fp_socket_dst;
 void start_rx_streaming_cmd(void);
 void stop_rx_cmd(void);
 
-static eth_mac_addr_t get_my_eth_mac_addr(void){
-    return *ethernet_mac_addr();
-}
-
-static struct ip_addr get_my_ip_addr(void){
-    return *get_ip_addr();
-}
-
 static void print_ip_addr(const void *t){
     uint8_t *p = (uint8_t *)t;
     printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
@@ -166,7 +158,7 @@ void handle_udp_data_packet(
     unsigned char *payload, int payload_len
 ){
     //its a tiny payload, load the fast-path variables
-    fp_mac_addr_src = get_my_eth_mac_addr();
+    fp_mac_addr_src = *ethernet_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
     fp_socket_src = dst;
     fp_socket_dst = src;
@@ -427,7 +419,6 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO:
         dsp_rx_regs->freq = ctrl_data_in->data.ddc_args.freq_word;
         dsp_rx_regs->scale_iq = ctrl_data_in->data.ddc_args.scale_iq;
-        dsp_rx_regs->rx_mux = 0x00 | (0x01 << 2); //TODO fill in from control
 
         //setup the interp and half band filters
         {
@@ -471,7 +462,6 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO:
         dsp_tx_regs->freq = ctrl_data_in->data.duc_args.freq_word;
         dsp_tx_regs->scale_iq = ctrl_data_in->data.duc_args.scale_iq;
-        dsp_tx_regs->tx_mux = 0x01; //TODO fill in from control
 
         //setup the interp and half band filters
         {
@@ -504,6 +494,15 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE;
         break;
 
+    /*******************************************************************
+     * MUX Config
+     ******************************************************************/
+    case USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO:
+        dsp_rx_regs->rx_mux = ctrl_data_in->data.mux_args.rx_mux;
+        dsp_tx_regs->tx_mux = ctrl_data_in->data.mux_args.tx_mux;
+        ctrl_data_out.id = USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE;
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 
@@ -532,6 +531,21 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
       (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
       ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != 0)
   ) return false;
+
+  //test if its an ip recovery packet
+  typedef struct{
+      padded_eth_hdr_t eth_hdr;
+      char code[4];
+      union {
+        struct ip_addr ip_addr;
+      } data;
+  }recovery_packet_t;
+  recovery_packet_t *recovery_packet = (recovery_packet_t *)buff;
+  if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
+      printf("Got ip recovery packet: "); print_ip_addr(&recovery_packet->data.ip_addr); newline();
+      set_ip_addr(&recovery_packet->data.ip_addr);
+      return true;
+  }
 
   //pass it to the slow-path handler
   size_t len = buffer_pool_status->last_line[bufno] - 3;
@@ -730,8 +744,9 @@ main(void)
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
 
-  register_get_eth_mac_addr(get_my_eth_mac_addr);
-  register_get_ip_addr(get_my_ip_addr);
+  register_mac_addr(ethernet_mac_addr());
+  register_ip_addr(get_ip_addr());
+
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
 

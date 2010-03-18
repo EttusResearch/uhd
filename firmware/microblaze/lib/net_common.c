@@ -51,16 +51,14 @@ ip_addr_eq(const struct ip_addr a, const struct ip_addr b)
 
 // ------------------------------------------------------------------------
 
-get_eth_mac_addr_t _get_eth_mac_addr = NULL;
-
-void register_get_eth_mac_addr(get_eth_mac_addr_t get_eth_mac_addr){
-    _get_eth_mac_addr = get_eth_mac_addr;
+static eth_mac_addr_t _local_mac_addr;
+void register_mac_addr(const eth_mac_addr_t *mac_addr){
+    _local_mac_addr = *mac_addr;
 }
 
-get_ip_addr_t _get_ip_addr = NULL;
-
-void register_get_ip_addr(get_ip_addr_t get_ip_addr){
-    _get_ip_addr = get_ip_addr;
+static struct ip_addr _local_ip_addr;
+void register_ip_addr(const struct ip_addr *ip_addr){
+    _local_ip_addr = *ip_addr;
 }
 
 //-------------------------------------------------------------------------
@@ -140,7 +138,7 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   padded_eth_hdr_t	ehdr;
   ehdr.pad = 0;
   ehdr.dst = dst;
-  ehdr.src = _get_eth_mac_addr();
+  ehdr.src = _local_mac_addr;
   ehdr.ethertype = ethertype;
 
   uint32_t *p = buffer_ram(CPU_TX_BUF);
@@ -218,7 +216,6 @@ send_ip_pkt(struct ip_addr dst, int protocol,
 	    const void *buf0, size_t len0,
 	    const void *buf1, size_t len1)
 {
-  struct ip_addr src = _get_ip_addr();
   int ttl = 32;
 
   struct ip_hdr ip;
@@ -228,7 +225,7 @@ send_ip_pkt(struct ip_addr dst, int protocol,
   IPH_OFFSET_SET(&ip, IP_DF);	/* don't fragment */
   ip._ttl_proto = (ttl << 8) | (protocol & 0xff);
   ip._chksum = 0;
-  ip.src = src;
+  ip.src = _local_ip_addr;
   ip.dest = dst;
 
   ip._chksum = ~chksum_buffer((unsigned short *) &ip,
@@ -373,8 +370,8 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
   sip.addr = get_int32(p->ar_sip);
   tip.addr = get_int32(p->ar_tip);
 
-  if (ip_addr_eq(tip, _get_ip_addr())){	// They're looking for us...
-    send_arp_reply(p, _get_eth_mac_addr());
+  if (ip_addr_eq(tip, _local_ip_addr)){	// They're looking for us...
+    send_arp_reply(p, _local_mac_addr);
   }
 }
 

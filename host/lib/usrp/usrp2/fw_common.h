@@ -24,7 +24,12 @@
  * Therefore, this header may only contain valid C code.
  */
 #ifdef __cplusplus
+#include <boost/cstdint.hpp>
+#define _SINS_ boost:://stdint namespace when in c++
 extern "C" {
+#else
+#include <stdint.h>
+#define _SINS_
 #endif
 
 // size of the vrt header and trailer to the host
@@ -94,6 +99,9 @@ typedef enum{
     USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO,
     USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE,
 
+    USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO,
+    USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE,
+
     USRP2_CTRL_ID_PEACE_OUT
 
 } usrp2_ctrl_id_t;
@@ -125,75 +133,79 @@ typedef enum{
 } usrp2_clk_edge_t;
 
 typedef struct{
-    uint32_t id;
-    uint32_t seq;
+    _SINS_ uint32_t id;
+    _SINS_ uint32_t seq;
     union{
-        uint32_t ip_addr;
-        uint8_t mac_addr[6];
+        _SINS_ uint32_t ip_addr;
+        _SINS_ uint8_t mac_addr[6];
         struct {
-            uint16_t rx_id;
-            uint16_t tx_id;
+            _SINS_ uint16_t rx_id;
+            _SINS_ uint16_t tx_id;
         } dboard_ids;
         struct {
-            uint8_t pps_source;
-            uint8_t pps_polarity;
-            uint8_t ref_source;
-            uint8_t _pad;
+            _SINS_ uint8_t pps_source;
+            _SINS_ uint8_t pps_polarity;
+            _SINS_ uint8_t ref_source;
+            _SINS_ uint8_t _pad;
         } clock_config;
         struct {
-            uint8_t bank;
-            uint8_t _pad[3];
-            uint16_t value;
-            uint16_t mask;
+            _SINS_ uint8_t bank;
+            _SINS_ uint8_t _pad[3];
+            _SINS_ uint16_t value;
+            _SINS_ uint16_t mask;
         } gpio_config;
         struct {
-            uint8_t bank;
-            uint8_t _pad[3];
-            uint16_t tx_value;
-            uint16_t rx_value;
-            uint16_t mask;
+            _SINS_ uint8_t bank;
+            _SINS_ uint8_t _pad[3];
+            _SINS_ uint16_t tx_value;
+            _SINS_ uint16_t rx_value;
+            _SINS_ uint16_t mask;
         } atr_config;
         struct {
-            uint8_t dev;
-            uint8_t latch;
-            uint8_t push;
-            uint8_t readback;
-            uint8_t bytes;
-            uint8_t data[sizeof(uint32_t)];
+            _SINS_ uint8_t dev;
+            _SINS_ uint8_t latch;
+            _SINS_ uint8_t push;
+            _SINS_ uint8_t readback;
+            _SINS_ uint8_t bytes;
+            _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
         } spi_args;
         struct {
-            uint8_t addr;
-            uint8_t bytes;
-            uint8_t data[sizeof(uint32_t)];
+            _SINS_ uint8_t addr;
+            _SINS_ uint8_t bytes;
+            _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
         } i2c_args;
         struct {
-            uint8_t dir;
-            uint8_t which;
-            uint8_t _pad[2];
-            uint32_t value;
+            _SINS_ uint8_t dir;
+            _SINS_ uint8_t which;
+            _SINS_ uint8_t _pad[2];
+            _SINS_ uint32_t value;
         } aux_args;
         struct {
-            uint32_t freq_word;
-            uint32_t decim;
-            uint32_t scale_iq;
+            _SINS_ uint32_t freq_word;
+            _SINS_ uint32_t decim;
+            _SINS_ uint32_t scale_iq;
         } ddc_args;
         struct {
-            uint8_t enabled;
-            uint8_t _pad[3];
-            uint32_t secs;
-            uint32_t ticks;
-            uint32_t samples;
+            _SINS_ uint8_t enabled;
+            _SINS_ uint8_t _pad[3];
+            _SINS_ uint32_t secs;
+            _SINS_ uint32_t ticks;
+            _SINS_ uint32_t samples;
         } streaming;
         struct {
-            uint32_t freq_word;
-            uint32_t interp;
-            uint32_t scale_iq;
+            _SINS_ uint32_t freq_word;
+            _SINS_ uint32_t interp;
+            _SINS_ uint32_t scale_iq;
         } duc_args;
         struct {
-            uint32_t secs;
-            uint32_t ticks;
-            uint8_t now;
+            _SINS_ uint32_t secs;
+            _SINS_ uint32_t ticks;
+            _SINS_ uint8_t now;
         } time_args;
+        struct {
+            _SINS_ uint32_t rx_mux;
+            _SINS_ uint32_t tx_mux;
+        } mux_args;
     } data;
 } usrp2_ctrl_data_t;
 

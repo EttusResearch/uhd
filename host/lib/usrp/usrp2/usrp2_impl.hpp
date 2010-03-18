@@ -31,6 +31,15 @@
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
+class usrp2_impl; //dummy class declaration
+
+/*!
+ * Make a usrp2 dboard interface.
+ * \param impl a pointer to the usrp2 impl object
+ * \return a sptr to a new dboard interface
+ */
+uhd::usrp::dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl);
+
 /*!
  * Simple wax obj proxy class:
  * Provides a wax obj interface for a set and a get function.
@@ -106,17 +115,17 @@ public:
 private:
     //the raw io interface (samples are in the usrp2 native format)
     void recv_raw(uhd::rx_metadata_t &);
-    uhd::dict<uint32_t, size_t> _tx_stream_id_to_packet_seq;
-    uhd::dict<uint32_t, size_t> _rx_stream_id_to_packet_seq;
+    uhd::dict<boost::uint32_t, size_t> _tx_stream_id_to_packet_seq;
+    uhd::dict<boost::uint32_t, size_t> _rx_stream_id_to_packet_seq;
     static const size_t _mtu = 1500; //FIXME we have no idea
     static const size_t _hdrs = (2 + 14 + 20 + 8); //size of headers (pad, eth, ip, udp)
     static const size_t _max_rx_samples_per_packet =
-        (_mtu - _hdrs)/sizeof(uint32_t) -
+        (_mtu - _hdrs)/sizeof(boost::uint32_t) -
         USRP2_HOST_RX_VRT_HEADER_WORDS32 -
         USRP2_HOST_RX_VRT_TRAILER_WORDS32
     ;
     static const size_t _max_tx_samples_per_packet =
-        (_mtu - _hdrs)/sizeof(uint32_t) -
+        (_mtu - _hdrs)/sizeof(boost::uint32_t) -
         uhd::transport::vrt::max_header_words32
     ;
     uhd::transport::smart_buffer::sptr _rx_smart_buff;
@@ -128,7 +137,7 @@ private:
     uhd::transport::udp_zero_copy::sptr _data_transport;
 
     //private vars for dealing with send/recv control
-    uint32_t _ctrl_seq_num;
+    boost::uint32_t _ctrl_seq_num;
     boost::mutex _ctrl_mutex;
 
     //methods and shadows for clock configuration
@@ -156,11 +165,14 @@ private:
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
     uhd::dict<std::string, wax_obj_proxy> _rx_dboards;
+    uhd::prop_names_t _rx_subdevs_in_use;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     uhd::dict<std::string, wax_obj_proxy> _tx_dboards;
+    uhd::prop_names_t _tx_subdevs_in_use;
+    void update_mux_config(void);
 
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;

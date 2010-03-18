@@ -122,7 +122,8 @@ namespace uhd{
     enum dboard_prop_t{
         DBOARD_PROP_NAME,              //ro, std::string
         DBOARD_PROP_SUBDEV,            //ro, wax::obj
-        DBOARD_PROP_SUBDEV_NAMES       //ro, prop_names_t
+        DBOARD_PROP_SUBDEV_NAMES,      //ro, prop_names_t
+        DBOARD_PROP_USED_SUBDEVS       //ro, prop_names_t
         //DBOARD_PROP_CODEC              //ro, wax::obj //----> not sure, dont have to deal with yet
     }; 
 
@@ -135,9 +136,7 @@ namespace uhd{
         CODEC_PROP_NAME,               //ro, std::string
         CODEC_PROP_OTHERS,             //ro, prop_names_t
         CODEC_PROP_GAIN,               //rw, gain_t
-        CODEC_PROP_GAIN_MAX,           //ro, gain_t
-        CODEC_PROP_GAIN_MIN,           //ro, gain_t
-        CODEC_PROP_GAIN_STEP,          //ro, gain_t
+        CODEC_PROP_GAIN_RANGE,         //ro, gain_range_t
         CODEC_PROP_GAIN_NAMES,         //ro, prop_names_t
         //CODEC_PROP_CLOCK_RATE          //ro, freq_t //----> not sure we care to know
     };*/
