@@ -19,8 +19,8 @@
 #define INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP
 
 #include <boost/shared_ptr.hpp>
+#include <boost/cstdint.hpp>
 #include <vector>
-#include <stdint.h>
 
 namespace uhd{ namespace usrp{
 
@@ -33,7 +33,7 @@ namespace uhd{ namespace usrp{
 class dboard_interface{
 public:
     typedef boost::shared_ptr<dboard_interface> sptr;
-    typedef std::vector<uint8_t> byte_vector_t;
+    typedef std::vector<boost::uint8_t> byte_vector_t;
 
     //tells the host which unit to use
     enum unit_type_t{
@@ -96,7 +96,7 @@ public:
      * \param rx_value  16-bits, 0=FPGA output low, 1=FPGA output high
      * \param mask      16-bits, 0=software, 1=atr
      */
-    virtual void set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t rx_value, uint16_t mask) = 0;
+    virtual void set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask) = 0;
 
     /*!
      * Set daughterboard GPIO data direction register.
@@ -105,7 +105,7 @@ public:
      * \param value     16-bits, 0=FPGA input, 1=FPGA output
      * \param mask      16-bits, 0=ignore, 1=set
      */
-    virtual void set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint16_t mask) = 0;
+    virtual void set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask) = 0;
 
     /*!
      * Set daughterboard GPIO pin values.
@@ -114,7 +114,7 @@ public:
      * \param value    16 bits, 0=low, 1=high
      * \param mask     16 bits, 0=ignore, 1=set
      */
-    virtual void write_gpio(gpio_bank_t bank, uint16_t value, uint16_t mask) = 0;
+    virtual void write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask) = 0;
 
     /*!
      * Read daughterboard GPIO pin values
@@ -122,7 +122,7 @@ public:
      * \param bank GPIO_TX_BANK or GPIO_RX_BANK
      * \return the value of the gpio bank
      */
-    virtual uint16_t read_gpio(gpio_bank_t bank) = 0;
+    virtual boost::uint16_t read_gpio(gpio_bank_t bank) = 0;
 
     /*!
      * \brief Write to I2C peripheral

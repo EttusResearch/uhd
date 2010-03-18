@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(test_set_get){
     for (size_t i = 0; i < 10; i++){
         for (size_t j = 0; j < 10; j++){
             for (size_t k = 0; k < 10; k++){
-                float val = i * j * k + i + j + k;
+                float val = float(i * j * k + i + j + k);
                 //std::cout << i << " " << j << " " << k << std::endl;
                 wd[i][j][k] = val;
                 BOOST_CHECK_EQUAL(val, wd[i][j][k].as<float>());

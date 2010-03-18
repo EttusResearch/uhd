@@ -28,9 +28,9 @@ namespace uhd{
  * The receive routines will convert IF data headers into metadata.
  */
 struct rx_metadata_t{
-    uint32_t stream_id;
-    bool has_stream_id;
+    boost::uint32_t stream_id;
     time_spec_t time_spec;
+    bool has_stream_id;
     bool has_time_spec;
     bool is_fragment;
 
@@ -44,9 +44,9 @@ struct rx_metadata_t{
  * The send routines will convert the metadata to IF data headers.
  */
 struct tx_metadata_t{
-    uint32_t stream_id;
-    bool has_stream_id;
+    boost::uint32_t stream_id;
     time_spec_t time_spec;
+    bool has_stream_id;
     bool has_time_spec;
     bool start_of_burst;
     bool end_of_burst;

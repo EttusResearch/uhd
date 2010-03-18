@@ -62,7 +62,7 @@ void usrp2_impl::dboard_init(void){
 
 void usrp2_impl::update_mux_config(void){
     //calculate the rx mux
-    uint32_t rx_mux = 0;
+    boost::uint32_t rx_mux = 0;
     ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
     wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
     std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
@@ -76,7 +76,7 @@ void usrp2_impl::update_mux_config(void){
     }
 
     //calculate the tx mux
-    uint32_t tx_mux = 0x10;
+    boost::uint32_t tx_mux = 0x10;
     ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
     wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
     std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;

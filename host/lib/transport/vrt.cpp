@@ -16,20 +16,21 @@
 //
 
 #include <uhd/transport/vrt.hpp>
-#include <netinet/in.h>
+#include <boost/asio.hpp> //endianness conversion
 #include <stdexcept>
 
+using namespace uhd;
 using namespace uhd::transport;
 
 void vrt::pack(
     const tx_metadata_t &metadata, //input
-    uint32_t *header_buff,         //output
+    boost::uint32_t *header_buff,  //output
     size_t &num_header_words32,    //output
     size_t num_payload_words32,    //input
     size_t &num_packet_words32,    //output
     size_t packet_count            //input
 ){
-    uint32_t vrt_hdr_flags = 0;
+    boost::uint32_t vrt_hdr_flags = 0;
     num_header_words32 = 1;
 
     //load the vrt header and flags
@@ -58,18 +59,18 @@ void vrt::pack(
 }
 
 void vrt::unpack(
-    rx_metadata_t &metadata,         //output
-    const uint32_t *header_buff,     //input
-    size_t &num_header_words32,      //output
-    size_t &num_payload_words32,     //output
-    size_t num_packet_words32,       //input
-    size_t &packet_count             //output
+    rx_metadata_t &metadata,            //output
+    const boost::uint32_t *header_buff, //input
+    size_t &num_header_words32,         //output
+    size_t &num_payload_words32,        //output
+    size_t num_packet_words32,          //input
+    size_t &packet_count                //output
 ){
     //clear the metadata
     metadata = rx_metadata_t();
 
     //extract vrt header
-    uint32_t vrt_hdr_word = ntohl(header_buff[0]);
+    boost::uint32_t vrt_hdr_word = ntohl(header_buff[0]);
     size_t packet_words32 = vrt_hdr_word & 0xffff;
     packet_count = (vrt_hdr_word >> 16) & 0xf;
 

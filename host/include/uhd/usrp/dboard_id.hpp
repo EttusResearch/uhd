@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <boost/cstdint.hpp>
 #include <string>
-#include <stdint.h>
 
 #ifndef INCLUDED_UHD_USRP_DBOARD_ID_HPP
 #define INCLUDED_UHD_USRP_DBOARD_ID_HPP
 
 namespace uhd{ namespace usrp{
 
-typedef uint16_t dboard_id_t;
+typedef boost::uint16_t dboard_id_t;
 
 static const dboard_id_t ID_NONE = 0xffff;
 

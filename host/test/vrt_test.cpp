@@ -25,7 +25,7 @@ static void pack_and_unpack(
     size_t num_payload_words32,
     size_t packet_count
 ){
-    uint32_t header_buff[vrt::max_header_words32];
+    boost::uint32_t header_buff[vrt::max_header_words32];
     size_t num_header_words32;
     size_t num_packet_words32;
 
