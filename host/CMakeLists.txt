@@ -64,11 +64,14 @@ IF(WIN32)
     ADD_DEFINITIONS(-Dnot=! -Dand=&& -Dor=||) #logical operators
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #as requested by vs
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+    ADD_DEFINITIONS(-DBOOST_THREAD_DYN_DLL) #avoids multiple symbols link error
+    ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
 ENDIF(WIN32)
 
 ########################################################################
 # Setup Boost
 ########################################################################
+SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42")
 FIND_PACKAGE(Boost 1.36 REQUIRED
     date_time
     program_options
