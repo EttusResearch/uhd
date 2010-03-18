@@ -25,9 +25,10 @@ namespace uhd{ namespace usrp{
 
 typedef boost::uint16_t dboard_id_t;
 
-static const dboard_id_t ID_NONE = 0xffff;
+static const dboard_id_t ID_NONE = 0xffff; //TODO: REMOVE ME
 
 namespace dboard_id{
+    static const dboard_id_t NONE = 0xffff;
     std::string to_string(const dboard_id_t &id);
 }
 

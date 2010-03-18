@@ -63,7 +63,11 @@ CHECK_INCLUDE_FILES(
 IF(HAS_USRP1E_REQUIRED_HEADERS)
     MESSAGE(STATUS "Building usrp1e support...")
     LIST(APPEND libuhd_sources
+        usrp/usrp1e/dboard_impl.cpp
+        usrp/usrp1e/dboard_interface.cpp
+        usrp/usrp1e/dsp_impl.cpp
         usrp/usrp1e/fpga-downloader.cc
+        usrp/usrp1e/mboard_impl.cpp
         usrp/usrp1e/usrp1e_impl.cpp
     )
 ELSE(HAS_USRP1E_REQUIRED_HEADERS)

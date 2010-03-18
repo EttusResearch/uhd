@@ -70,3 +70,36 @@ device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
 device::sptr usrp1e::make(const device_addr_t &){
     throw std::runtime_error("not implemented yet");
 }
+
+/***********************************************************************
+ * Structors
+ **********************************************************************/
+usrp1e_impl::usrp1e_impl(void){
+    //initialize the mboard
+    mboard_init();
+
+    //initialize the dboards
+    dboard_init();
+
+    //initialize the dsps
+    rx_ddc_init();
+    tx_duc_init();
+}
+
+usrp1e_impl::~usrp1e_impl(void){
+    /* NOP */
+}
+
+/***********************************************************************
+ * Device Get
+ **********************************************************************/
+void usrp1e_impl::get(const wax::obj &, wax::obj &){
+    
+}
+
+/***********************************************************************
+ * Device Set
+ **********************************************************************/
+void usrp1e_impl::set(const wax::obj &, const wax::obj &){
+    
+}
