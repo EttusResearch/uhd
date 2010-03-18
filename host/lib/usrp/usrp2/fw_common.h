@@ -29,6 +29,7 @@
 extern "C" {
 #else
 #include <stdint.h>
+#define _SINS_
 #endif
 
 // size of the vrt header and trailer to the host
