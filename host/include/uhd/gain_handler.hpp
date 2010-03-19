@@ -33,7 +33,7 @@ public:
     /*!
      * A set of properties for dealing with gains.
      */
-    struct props_t{
+    struct UHD_API props_t{
         wax::obj value, range, names;
         props_t(void); //default constructor
     };

@@ -65,6 +65,7 @@ IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #as requested by vs
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
     ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
+    ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
 ENDIF(WIN32)
 
 ########################################################################
@@ -83,17 +84,6 @@ FIND_PACKAGE(Boost 1.36 REQUIRED
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-
-IF(WIN32)
-    #force dynamic linking (otherwise automatic linking fails in msvs)
-    ADD_DEFINITIONS(-DBOOST_DATE_TIME_DYN_DLL)
-    ADD_DEFINITIONS(-DBOOST_FILESYSTEM_DYN_DLL)
-    ADD_DEFINITIONS(-DBOOST_PROGRAM_OPTIONS_DYN_DLL)
-    ADD_DEFINITIONS(-DBOOST_REGEX_DYN_DLL)
-    ADD_DEFINITIONS(-DBOOST_SYSTEM_DYN_DLL)
-    ADD_DEFINITIONS(-DBOOST_THREAD_DYN_DLL)
-    ADD_DEFINITIONS(-DBOOST_UNIT_TEST_FRAMEWORK_DYN_DLL)
-ENDIF(WIN32)
 
 ########################################################################
 # Setup Endianess
