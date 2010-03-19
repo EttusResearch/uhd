@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_USRP1E_HPP
 #define INCLUDED_UHD_USRP_USRP1E_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/device.hpp>
 
 namespace uhd{ namespace usrp{
@@ -25,7 +26,7 @@ namespace uhd{ namespace usrp{
 /*!
  * The usrp1e device class.
  */
-class usrp1e : public device{
+class UHD_API usrp1e : public device{
 public:
     /*!
      * Discover usrp1e devices on the system via the device node.

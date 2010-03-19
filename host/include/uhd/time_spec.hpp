@@ -15,11 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/cstdint.hpp>
-
 #ifndef INCLUDED_UHD_TIME_SPEC_HPP
 #define INCLUDED_UHD_TIME_SPEC_HPP
+
+#include <uhd/config.hpp>
+#include <boost/cstdint.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace uhd{
 
@@ -29,7 +30,7 @@ namespace uhd{
      * The time_spec_t can be used when setting the time on devices
      * and for controlling the start of streaming for applicable dsps.
      */
-    struct time_spec_t{
+    struct UHD_API time_spec_t{
         boost::uint32_t secs;
         boost::uint32_t ticks;
 

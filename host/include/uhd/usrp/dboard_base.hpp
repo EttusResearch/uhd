@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_DBOARD_BASE_HPP
 #define INCLUDED_UHD_USRP_DBOARD_BASE_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -31,7 +32,7 @@ namespace uhd{ namespace usrp{
  * A daughter board dboard_base class for all dboards.
  * Only other dboard dboard_base classes should inherit this.
  */
-class dboard_base : boost::noncopyable{
+class UHD_API dboard_base : boost::noncopyable{
 public:
     typedef boost::shared_ptr<dboard_base> sptr;
     //the constructor args consist of a subdev name and an interface
@@ -65,7 +66,7 @@ private:
  * A xcvr daughter board implements rx and tx methods
  * Sub classes for xcvr boards should inherit this.
  */
-class xcvr_dboard_base : public dboard_base{
+class UHD_API xcvr_dboard_base : public dboard_base{
 public:
     /*!
      * Create a new xcvr dboard object, override in subclasses.
@@ -79,7 +80,7 @@ public:
  * A rx daughter board only implements rx methods.
  * Sub classes for rx-only boards should inherit this.
  */
-class rx_dboard_base : public dboard_base{
+class UHD_API rx_dboard_base : public dboard_base{
 public:
     /*!
      * Create a new rx dboard object, override in subclasses.
@@ -97,7 +98,7 @@ public:
  * A tx daughter board only implements tx methods.
  * Sub classes for rx-only boards should inherit this.
  */
-class tx_dboard_base : public dboard_base{
+class UHD_API tx_dboard_base : public dboard_base{
 public:
     /*!
      * Create a new rx dboard object, override in subclasses.

@@ -15,13 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-#include <uhd/device.hpp>
-#include <vector>
-
 #ifndef INCLUDED_UHD_SIMPLE_DEVICE_HPP
 #define INCLUDED_UHD_SIMPLE_DEVICE_HPP
+
+#include <uhd/config.hpp>
+#include <uhd/device.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
+#include <vector>
 
 namespace uhd{
 
@@ -33,7 +34,7 @@ namespace uhd{
  * the target and actual digital converter frequency.
  * It also tell us weather or not the spectrum is inverted.
  */
-struct tune_result_t{
+struct UHD_API tune_result_t{
     double target_inter_freq;
     double actual_inter_freq;
     double target_dxc_freq;
@@ -48,7 +49,7 @@ struct tune_result_t{
  * The wrapper provides convenience functions to tune the devices
  * as well as to set the dboard gains, antennas, and other properties.
  */
-class simple_device : boost::noncopyable{
+class UHD_API simple_device : boost::noncopyable{
 public:
     typedef boost::shared_ptr<simple_device> sptr;
     static sptr make(const std::string &args);

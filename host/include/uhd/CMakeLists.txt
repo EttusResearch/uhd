@@ -20,6 +20,7 @@ ADD_SUBDIRECTORY(transport)
 ADD_SUBDIRECTORY(usrp)
 
 INSTALL(FILES
+    config.hpp
     device.hpp
     device_addr.hpp
     dict.hpp

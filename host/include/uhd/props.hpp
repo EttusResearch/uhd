@@ -15,14 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef INCLUDED_UHD_PROPS_HPP
+#define INCLUDED_UHD_PROPS_HPP
+
 #include <boost/tuple/tuple.hpp>
 #include <uhd/time_spec.hpp>
 #include <uhd/wax.hpp>
 #include <complex>
 #include <vector>
-
-#ifndef INCLUDED_UHD_PROPS_HPP
-#define INCLUDED_UHD_PROPS_HPP
 
 namespace uhd{
 

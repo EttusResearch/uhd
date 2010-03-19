@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP
 #define INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP
 
+#include <uhd/config.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include <vector>
@@ -30,7 +31,7 @@ namespace uhd{ namespace usrp{
  * This dboard_interface provides i2c, spi, gpio, atr, aux dac/adc access.
  * Each mboard should have a specially tailored dboard dboard_interface.
  */
-class dboard_interface{
+class UHD_API dboard_interface{
 public:
     typedef boost::shared_ptr<dboard_interface> sptr;
     typedef std::vector<boost::uint8_t> byte_vector_t;

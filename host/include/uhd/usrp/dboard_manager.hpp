@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 #define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_id.hpp>
@@ -31,7 +32,7 @@ namespace uhd{ namespace usrp{
  * Create subdev instances for each subdev on a dboard.
  * Provide wax::obj access to the subdevs inside.
  */
-class dboard_manager : boost::noncopyable{
+class UHD_API dboard_manager : boost::noncopyable{
 
 public:
     typedef boost::shared_ptr<dboard_manager> sptr;

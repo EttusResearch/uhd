@@ -15,16 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef INCLUDED_UHD_GAIN_HANDLER_HPP
+#define INCLUDED_UHD_GAIN_HANDLER_HPP
+
+#include <uhd/config.hpp>
 #include <uhd/wax.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
-#ifndef INCLUDED_UHD_GAIN_HANDLER_HPP
-#define INCLUDED_UHD_GAIN_HANDLER_HPP
-
 namespace uhd{
 
-class gain_handler{
+class UHD_API gain_handler{
 public:
     typedef boost::shared_ptr<gain_handler> sptr;
     typedef boost::function<bool(const wax::obj &, const wax::obj &)> is_equal_t;

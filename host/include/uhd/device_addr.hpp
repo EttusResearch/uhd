@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_DEVICE_ADDR_HPP
 #define INCLUDED_UHD_DEVICE_ADDR_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/dict.hpp>
 #include <boost/cstdint.hpp>
 #include <string>
@@ -30,7 +31,7 @@ namespace uhd{
     * Wrapper for an ethernet mac address.
     * Provides conversion between string and binary formats.
     */
-    struct mac_addr_t{
+    struct UHD_API mac_addr_t{
         boost::uint8_t mac_addr[6];
         mac_addr_t(const std::string &mac_addr_str = "00:00:00:00:00:00");
         std::string to_string(void) const;
@@ -56,13 +57,13 @@ namespace uhd{
      * \return the string representation
      */
     namespace device_addr{
-        std::string to_string(const device_addr_t &device_addr);
+        UHD_API std::string to_string(const device_addr_t &device_addr);
     }
 
 } //namespace uhd
 
 //ability to use types with stream operators
-std::ostream& operator<<(std::ostream &, const uhd::device_addr_t &);
-std::ostream& operator<<(std::ostream &, const uhd::mac_addr_t &);
+UHD_API std::ostream& operator<<(std::ostream &, const uhd::device_addr_t &);
+UHD_API std::ostream& operator<<(std::ostream &, const uhd::mac_addr_t &);
 
 #endif /* INCLUDED_UHD_DEVICE_ADDR_HPP */

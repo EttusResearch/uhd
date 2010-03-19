@@ -15,13 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP
+#define INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP
+
+#include <uhd/config.hpp>
 #include <uhd/transport/smart_buffer.hpp>
 #include <boost/asio.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-
-#ifndef INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP
-#define INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP
 
 namespace uhd{ namespace transport{
 
@@ -35,7 +36,7 @@ namespace uhd{ namespace transport{
  * If no platform specific solution is available, make returns a boost asio
  * implementation that wraps the functionality around a standard recv() call.
  */
-class udp_zero_copy : boost::noncopyable{
+class UHD_API udp_zero_copy : boost::noncopyable{
 public:
     typedef boost::shared_ptr<udp_zero_copy> sptr;
 
