@@ -25,7 +25,7 @@ using namespace uhd;
  * Helper Methods
  **********************************************************************/
 void usrp2_impl::mboard_init(void){
-    _mboards[""] = wax_obj_proxy(
+    _mboards[""] = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
@@ -137,7 +137,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_RX_DBOARD:
         ASSERT_THROW(_rx_dboards.has_key(name));
-        val = _rx_dboards[name].get_link();
+        val = _rx_dboards[name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
@@ -146,7 +146,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_TX_DBOARD:
         ASSERT_THROW(_tx_dboards.has_key(name));
-        val = _tx_dboards[name].get_link();
+        val = _tx_dboards[name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
@@ -159,7 +159,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_RX_DSP:
         ASSERT_THROW(_rx_dsps.has_key(name));
-        val = _rx_dsps[name].get_link();
+        val = _rx_dsps[name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
@@ -168,7 +168,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_TX_DSP:
         ASSERT_THROW(_tx_dsps.has_key(name));
-        val = _tx_dsps[name].get_link();
+        val = _tx_dsps[name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:

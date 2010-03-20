@@ -15,6 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef INCLUDED_USRP2_IMPL_HPP
+#define INCLUDED_USRP2_IMPL_HPP
+
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/dict.hpp>
 #include <uhd/props.hpp>
@@ -27,9 +30,6 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include "fw_common.h"
-
-#ifndef INCLUDED_USRP2_IMPL_HPP
-#define INCLUDED_USRP2_IMPL_HPP
 
 class usrp2_impl; //dummy class declaration
 
@@ -50,19 +50,24 @@ class wax_obj_proxy : public wax::obj{
 public:
     typedef boost::function<void(const wax::obj &, wax::obj &)>       get_t;
     typedef boost::function<void(const wax::obj &, const wax::obj &)> set_t;
+    typedef boost::shared_ptr<wax_obj_proxy> sptr;
 
-    wax_obj_proxy(void){
+    static sptr make(const get_t &get, const set_t &set){
+        return sptr(new wax_obj_proxy(get, set));
+    }
+
+    ~wax_obj_proxy(void){
         /* NOP */
     }
+
+private:
+    get_t _get;
+    set_t _set;
 
     wax_obj_proxy(const get_t &get, const set_t &set){
         _get = get;
         _set = set;
     };
-
-    ~wax_obj_proxy(void){
-        /* NOP */
-    }
 
     void get(const wax::obj &key, wax::obj &val){
         return _get(key, val);
@@ -71,10 +76,6 @@ public:
     void set(const wax::obj &key, const wax::obj &val){
         return _set(key, val);
     }
-
-private:
-    get_t _get;
-    set_t _set;
 };
 
 /*!
@@ -98,10 +99,6 @@ public:
 
     ~usrp2_impl(void);
 
-    //properties interface
-    void get(const wax::obj &, wax::obj &);
-    void set(const wax::obj &, const wax::obj &);
-
     //performs a control transaction
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
 
@@ -113,6 +110,10 @@ public:
     size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const std::string &);
 
 private:
+    //device properties interface
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
+
     //the raw io interface (samples are in the usrp2 native format)
     void recv_raw(uhd::rx_metadata_t &);
     uhd::dict<boost::uint32_t, size_t> _tx_stream_id_to_packet_seq;
@@ -159,18 +160,18 @@ private:
     void mboard_init(void);
     void mboard_get(const wax::obj &, wax::obj &);
     void mboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy> _mboards;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _mboards;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy> _rx_dboards;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dboards;
     uhd::prop_names_t _rx_subdevs_in_use;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy> _tx_dboards;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dboards;
     uhd::prop_names_t _tx_subdevs_in_use;
     void update_mux_config(void);
 
@@ -193,12 +194,12 @@ private:
     //properties interface for ddc
     void ddc_get(const wax::obj &, wax::obj &);
     void ddc_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy> _rx_dsps;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsps;
 
     //properties interface for duc
     void duc_get(const wax::obj &, wax::obj &);
     void duc_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy> _tx_dsps;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsps;
 
 };
 

@@ -191,7 +191,7 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
 
     case DEVICE_PROP_MBOARD:
         ASSERT_THROW(_mboards.has_key(name));
-        val = _mboards[name].get_link();
+        val = _mboards[name]->get_link();
         return;
 
     case DEVICE_PROP_MBOARD_NAMES:

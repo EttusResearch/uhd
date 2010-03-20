@@ -45,11 +45,11 @@ void usrp2_impl::dboard_init(void){
     );
 
     //load dboards
-    _rx_dboards[""] = wax_obj_proxy(
+    _rx_dboards[""] = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::rx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::rx_dboard_set, this, _1, _2)
     );
-    _tx_dboards[""] = wax_obj_proxy(
+    _tx_dboards[""] = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::tx_dboard_set, this, _1, _2)
     );
