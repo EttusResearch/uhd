@@ -29,6 +29,7 @@ INSTALL(FILES
     props.hpp
     simple_device.hpp
     time_spec.hpp
+    types.hpp
     utils.hpp
     wax.hpp
     DESTINATION ${HEADER_DIR}/uhd

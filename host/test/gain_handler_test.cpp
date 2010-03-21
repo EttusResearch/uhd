@@ -17,6 +17,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/gain_handler.hpp>
+#include <uhd/types.hpp>
 #include <uhd/props.hpp>
 #include <uhd/dict.hpp>
 #include <boost/bind.hpp>
@@ -108,12 +109,10 @@ BOOST_AUTO_TEST_CASE(test_gain_handler){
     );
 
     std::cout << "verifying the overall min, max, step" << std::endl;
-    gain_t gain_min, gain_max, gain_step;
-    boost::tie(gain_min, gain_max, gain_step) = \
-        go0[PROP_GAIN_RANGE].as<gain_range_t>();
-    BOOST_CHECK_EQUAL(gain_min, gain_t(-10));
-    BOOST_CHECK_EQUAL(gain_max, gain_t(100));
-    BOOST_CHECK_EQUAL(gain_step, gain_t(1.5));
+    gain_range_t gain = go0[PROP_GAIN_RANGE].as<gain_range_t>();
+    BOOST_CHECK_EQUAL(gain.min, gain_t(-10));
+    BOOST_CHECK_EQUAL(gain.max, gain_t(100));
+    BOOST_CHECK_EQUAL(gain.step, gain_t(1.5));
 
     std::cout << "verifying the overall gain" << std::endl;
     go0[named_prop_t(PROP_GAIN_VALUE, "g0")] = gain_t(-5);

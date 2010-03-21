@@ -25,6 +25,7 @@ SET(libuhd_sources
     metadata.cpp
     simple_device.cpp
     time_spec.cpp
+    types.cpp
     wax.cpp
     transport/udp_simple.cpp
     transport/vrt.cpp
@@ -44,7 +45,7 @@ SET(libuhd_sources
 # Conditionally add the udp sources
 ########################################################################
 LIST(APPEND libuhd_sources
-    transport/udp_zero_copy_none.cpp
+    transport/udp_zero_copy_asio.cpp
 )
 
 ########################################################################

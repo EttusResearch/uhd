@@ -20,11 +20,12 @@
 
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/dict.hpp>
-#include <uhd/props.hpp>
+#include <uhd/types.hpp>
 #include <uhd/time_spec.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/assign/list_of.hpp>
 #include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -142,15 +143,15 @@ private:
     boost::mutex _ctrl_mutex;
 
     //methods and shadows for clock configuration
-    std::string _pps_source, _pps_polarity, _ref_source;
+    uhd::clock_config_t _clock_config;
     void init_clock_config(void);
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
     //mappings from clock config strings to over the wire enums
-    uhd::dict<std::string, usrp2_pps_source_t>   _pps_source_dict;
-    uhd::dict<std::string, usrp2_pps_polarity_t> _pps_polarity_dict;
-    uhd::dict<std::string, usrp2_ref_source_t>   _ref_source_dict;
+    uhd::dict<std::string, usrp2_ref_source_t> _ref_source_dict;
+    uhd::dict<std::string, usrp2_pps_source_t> _pps_source_dict;
+    uhd::dict<uhd::clock_config_t::polarity_t, usrp2_pps_polarity_t> _pps_polarity_dict;
 
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;
