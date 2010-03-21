@@ -22,6 +22,7 @@ SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
+    load_modules.cpp
     metadata.cpp
     simple_device.cpp
     time_spec.cpp
@@ -56,11 +57,29 @@ LIST(APPEND libuhd_sources
 )
 
 ########################################################################
+# Setup defines for module loading
+########################################################################
+INCLUDE(CheckIncludeFileCXX)
+
+CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
+CHECK_INCLUDE_FILE_CXX(Winbase.h HAVE_WINBASE_H)
+
+IF(HAVE_DLFCN_H)
+    MESSAGE(STATUS "Module loading supported through dlopen...")
+    ADD_DEFINITIONS(-DHAVE_DLFCN_H)
+ELSEIF(HAVE_WINBASE_H)
+    MESSAGE(STATUS "Module loading supported through LoadLibrary...")
+    ADD_DEFINITIONS(-DHAVE_WINBASE_H)
+ELSE(HAVE_DLFCN_H)
+    MESSAGE(STATUS "Module loading not supported...")
+ENDIF(HAVE_DLFCN_H)
+
+########################################################################
 # Setup libuhd library
 ########################################################################
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 
-TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
 
 SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
 

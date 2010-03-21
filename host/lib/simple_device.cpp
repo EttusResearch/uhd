@@ -21,7 +21,6 @@
 #include <uhd/props.hpp>
 #include <uhd/types.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
