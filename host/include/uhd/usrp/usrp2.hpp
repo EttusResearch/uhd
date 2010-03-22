@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_USRP2_HPP
 #define INCLUDED_UHD_USRP_USRP2_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/device.hpp>
 
 namespace uhd{ namespace usrp{
@@ -25,7 +26,7 @@ namespace uhd{ namespace usrp{
 /*!
  * The usrp2 device class.
  */
-class usrp2 : public device{
+class UHD_API usrp2 : public device{
 public:
     /*!
      * Discover usrp2 devices over the ethernet.

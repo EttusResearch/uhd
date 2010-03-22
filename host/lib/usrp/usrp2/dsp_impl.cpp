@@ -53,7 +53,7 @@ static boost::uint32_t calculate_iq_scale_word(boost::int16_t i, boost::int16_t 
 
 void usrp2_impl::init_ddc_config(void){
     //create the ddc in the rx dsp dict
-    _rx_dsps["ddc0"] = wax_obj_proxy(
+    _rx_dsps["ddc0"] = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::ddc_get, this, _1, _2),
         boost::bind(&usrp2_impl::ddc_set, this, _1, _2)
     );
@@ -201,7 +201,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
  **********************************************************************/
 void usrp2_impl::init_duc_config(void){
     //create the duc in the tx dsp dict
-    _tx_dsps["duc0"] = wax_obj_proxy(
+    _tx_dsps["duc0"] = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::duc_get, this, _1, _2),
         boost::bind(&usrp2_impl::duc_set, this, _1, _2)
     );

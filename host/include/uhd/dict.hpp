@@ -40,6 +40,19 @@ namespace uhd{
         }
 
         /*!
+         * Input iterator constructor:
+         * Makes boost::assign::map_list_of work.
+         * \param first the begin iterator
+         * \param last the end iterator
+         */
+        template <class InputIterator>
+        dict(InputIterator first, InputIterator last){
+            for(InputIterator it = first; it != last; it++){
+                _map.push_back(*it);
+            }
+        }
+
+        /*!
          * Destroy this dict.
          */
         ~dict(void){

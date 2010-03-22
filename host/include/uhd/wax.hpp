@@ -18,6 +18,7 @@
 #ifndef INCLUDED_WAX_HPP
 #define INCLUDED_WAX_HPP
 
+#include <uhd/config.hpp>
 #include <boost/any.hpp>
 
 /*!
@@ -59,7 +60,7 @@ namespace wax{
      * For property nesting, wax obj subclasses return special links
      * to other wax obj subclasses, and the api handles the magic.
      */
-    class obj{
+    class UHD_API obj{
     public:
 
         /*!

@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_METADATA_HPP
 #define INCLUDED_UHD_METADATA_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/time_spec.hpp>
 
 namespace uhd{
@@ -27,7 +28,7 @@ namespace uhd{
  * Includes stream ID, time specification, and fragmentation flags.
  * The receive routines will convert IF data headers into metadata.
  */
-struct rx_metadata_t{
+struct UHD_API rx_metadata_t{
     boost::uint32_t stream_id;
     time_spec_t time_spec;
     bool has_stream_id;
@@ -43,7 +44,7 @@ struct rx_metadata_t{
  * Includes stream ID, time specification, and burst flags.
  * The send routines will convert the metadata to IF data headers.
  */
-struct tx_metadata_t{
+struct UHD_API tx_metadata_t{
     boost::uint32_t stream_id;
     time_spec_t time_spec;
     bool has_stream_id;

@@ -15,24 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DBOARD_ID_HPP
-#define INCLUDED_UHD_USRP_DBOARD_ID_HPP
+#include <uhd/utils.hpp>
+#include <iostream>
 
-#include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
-#include <string>
-
-namespace uhd{ namespace usrp{
-
-typedef boost::uint16_t dboard_id_t;
-
-static const dboard_id_t ID_NONE = 0xffff; //TODO: REMOVE ME
-
-namespace dboard_id{
-    static const dboard_id_t NONE = 0xffff;
-    UHD_API std::string to_string(const dboard_id_t &id);
+STATIC_BLOCK(module_test){
+    std::cout << "---------------------------------------" << std::endl;
+    std::cout << "-- Good news, everyone!" << std::endl;
+    std::cout << "-- The test module has been loaded." << std::endl;
+    std::cout << "---------------------------------------" << std::endl;
 }
-
-}} //namespace
-
-#endif /* INCLUDED_UHD_USRP_DBOARD_ID_HPP */

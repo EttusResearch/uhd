@@ -15,11 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/metadata.hpp>
-#include <cstddef>
-
 #ifndef INCLUDED_UHD_TRANSPORT_VRT_HPP
 #define INCLUDED_UHD_TRANSPORT_VRT_HPP
+
+#include <uhd/config.hpp>
+#include <uhd/metadata.hpp>
+#include <cstddef>
 
 namespace uhd{ namespace transport{
 
@@ -36,7 +37,7 @@ namespace vrt{
      * \param num_packet_words32 the length of the packet
      * \param packet_count the packet count sequence number
      */
-    void pack(
+    UHD_API void pack(
         const tx_metadata_t &metadata, //input
         boost::uint32_t *header_buff,  //output
         size_t &num_header_words32,    //output
@@ -54,7 +55,7 @@ namespace vrt{
      * \param num_packet_words32 the length of the packet
      * \param packet_count the packet count sequence number
      */
-    void unpack(
+    UHD_API void unpack(
         rx_metadata_t &metadata,            //output
         const boost::uint32_t *header_buff, //input
         size_t &num_header_words32,         //output

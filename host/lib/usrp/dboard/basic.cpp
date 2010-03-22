@@ -17,6 +17,7 @@
 
 #include <uhd/utils.hpp>
 #include <uhd/props.hpp>
+#include <uhd/types.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>

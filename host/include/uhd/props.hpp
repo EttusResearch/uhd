@@ -15,36 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/tuple/tuple.hpp>
-#include <uhd/time_spec.hpp>
-#include <uhd/wax.hpp>
-#include <complex>
-#include <vector>
-
 #ifndef INCLUDED_UHD_PROPS_HPP
 #define INCLUDED_UHD_PROPS_HPP
 
+#include <uhd/config.hpp>
+#include <uhd/wax.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <vector>
+#include <string>
+
 namespace uhd{
-
-    //common typedefs for board properties
-    typedef float gain_t;
-    typedef double freq_t;
-
-    //gain range tuple (min, max, step)
-    typedef boost::tuple<gain_t, gain_t, gain_t> gain_range_t;
-
-    //freq range tuple (min, max)
-    typedef boost::tuple<freq_t, freq_t> freq_range_t;
-
-    //scalar types (have not used yet, dont uncomment until needed)
-    //typedef int int_scalar_t;
-    //typedef float real_scalar_t;
-    //typedef std::complex<real_scalar_t> complex_scalar_t;
-
-    //vector types (have not used yet, dont uncomment until needed)
-    //typedef std::vector<int_scalar_t> int_vec_t;
-    //typedef std::vector<real_scalar_t> real_vec_t;
-    //typedef std::vector<complex_scalar_t> complex_vec_t;
 
     //typedef for handling named properties
     typedef std::vector<std::string> prop_names_t;
@@ -55,7 +35,8 @@ namespace uhd{
      * \param key a reference to the prop object
      * \param name a reference to the name object
      */
-    inline named_prop_t extract_named_prop(const wax::obj &key, const std::string &name = ""){
+    inline UHD_API named_prop_t //must be exported as part of the api to work (TODO move guts to cpp file)
+    extract_named_prop(const wax::obj &key, const std::string &name = ""){
         if (key.type() == typeid(named_prop_t)){
             return key.as<named_prop_t>();
         }
@@ -94,10 +75,8 @@ namespace uhd{
         MBOARD_PROP_RX_DBOARD_NAMES,   //ro, prop_names_t
         MBOARD_PROP_TX_DBOARD,         //ro, wax::obj
         MBOARD_PROP_TX_DBOARD_NAMES,   //ro, prop_names_t
-        MBOARD_PROP_PPS_SOURCE,        //rw, std::string (sma, mimo)
+        MBOARD_PROP_CLOCK_CONFIG,      //rw, clock_config_t
         MBOARD_PROP_PPS_SOURCE_NAMES,  //ro, prop_names_t
-        MBOARD_PROP_PPS_POLARITY,      //rw, std::string (pos, neg)
-        MBOARD_PROP_REF_SOURCE,        //rw, std::string (int, sma, mimo)
         MBOARD_PROP_REF_SOURCE_NAMES,  //ro, prop_names_t
         MBOARD_PROP_TIME_NOW,          //wo, time_spec_t
         MBOARD_PROP_TIME_NEXT_PPS      //wo, time_spec_t

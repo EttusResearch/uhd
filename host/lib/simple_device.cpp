@@ -19,17 +19,13 @@
 #include <uhd/device.hpp>
 #include <uhd/utils.hpp>
 #include <uhd/props.hpp>
+#include <uhd/types.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
 using namespace uhd;
-
-tune_result_t::tune_result_t(void){
-    /* NOP */
-}
 
 /***********************************************************************
  * Tune Helper Function
@@ -196,11 +192,8 @@ public:
         return tune(target_freq, lo_offset, _rx_subdev, _rx_ddc, false/* not tx */);
     }
 
-    std::vector<double> get_rx_freq_range(void){
-        std::vector<double> range(2);
-        boost::tie(range[0], range[1]) = \
-            _rx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
-        return range;
+    freq_range_t get_rx_freq_range(void){
+        return _rx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
     }
 
     void set_rx_gain(float gain){
@@ -211,11 +204,8 @@ public:
         return _rx_subdev[SUBDEV_PROP_GAIN].as<gain_t>();
     }
 
-    std::vector<float> get_rx_gain_range(void){
-        std::vector<float> range(3);
-        boost::tie(range[0], range[1], range[2]) = \
-            _rx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
-        return range;
+    gain_range_t get_rx_gain_range(void){
+        return _rx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
     }
 
     void set_rx_antenna(const std::string &ant){
@@ -258,11 +248,8 @@ public:
         return tune(target_freq, lo_offset, _tx_subdev, _tx_duc, true/* is tx */);
     }
 
-    std::vector<double> get_tx_freq_range(void){
-        std::vector<double> range(2);
-        boost::tie(range[0], range[1]) = \
-            _tx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
-        return range;
+    freq_range_t get_tx_freq_range(void){
+        return _tx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
     }
 
     void set_tx_gain(float gain){
@@ -273,11 +260,8 @@ public:
         return _tx_subdev[SUBDEV_PROP_GAIN].as<gain_t>();
     }
 
-    std::vector<float> get_tx_gain_range(void){
-        std::vector<float> range(3);
-        boost::tie(range[0], range[1], range[2]) = \
-            _tx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
-        return range;
+    gain_range_t get_tx_gain_range(void){
+        return _tx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
     }
 
     void set_tx_antenna(const std::string &ant){

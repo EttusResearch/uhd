@@ -17,10 +17,12 @@
 
 #include <uhd/gain_handler.hpp>
 #include <uhd/utils.hpp>
+#include <uhd/types.hpp>
 #include <uhd/props.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <cmath>
 #include <vector>
 
 using namespace uhd;
@@ -99,12 +101,10 @@ gain_t gain_handler_impl::get_overall_gain_val(void){
 gain_range_t gain_handler_impl::get_overall_gain_range(void){
     gain_t gain_min = 0, gain_max = 0, gain_step = 0;
     BOOST_FOREACH(std::string name, get_gain_names()){
-        gain_t gain_min_tmp, gain_max_tmp, gain_step_tmp;
-        boost::tie(gain_min_tmp, gain_max_tmp, gain_step_tmp) = \
-            get_named_prop<gain_range_t>(_props.range, name);
-        gain_min += gain_min_tmp;
-        gain_max += gain_max_tmp;
-        gain_step = std::max(gain_step, gain_step_tmp);
+        gain_range_t gain_tmp = get_named_prop<gain_range_t>(_props.range, name);
+        gain_min += gain_tmp.min;
+        gain_max += gain_tmp.max;
+        gain_step = std::max(gain_step, gain_tmp.step);
     }
     return gain_range_t(gain_min, gain_max, gain_step);
 }
@@ -150,12 +150,10 @@ bool gain_handler_impl::intercept_set(const wax::obj &key_, const wax::obj &val)
     //not a wildcard... dont handle (but check name and range)
     if (name != ""){
         assert_has(get_gain_names(), name, "gain name");
-        gain_t gain_min, gain_max, gain_step;
-        boost::tie(gain_min, gain_max, gain_step) = \
-            get_named_prop<gain_range_t>(_props.range, name);
-        if (gain_val > gain_max or gain_val < gain_min) throw std::range_error(str(
+        gain_range_t gain = get_named_prop<gain_range_t>(_props.range, name);
+        if (gain_val > gain.max or gain_val < gain.min) throw std::range_error(str(
             boost::format("A value of %f for gain %s is out of range of (%f, %f)")
-            % gain_val % name % gain_min % gain_max
+            % gain_val % name % gain.min % gain.max
         ));
         return false;
     }
@@ -163,14 +161,12 @@ bool gain_handler_impl::intercept_set(const wax::obj &key_, const wax::obj &val)
     //set the overall gain
     BOOST_FOREACH(std::string name, get_gain_names()){
         //get the min, max, step for this gain name
-        gain_t gain_min, gain_max, gain_step;
-        boost::tie(gain_min, gain_max, gain_step) = \
-            get_named_prop<gain_range_t>(_props.range, name);
+        gain_range_t gain = get_named_prop<gain_range_t>(_props.range, name);
 
         //clip g to be within the allowed range
-        gain_t g = std::min(std::max(gain_val, gain_min), gain_max);
+        gain_t g = std::min(std::max(gain_val, gain.min), gain.max);
         //set g to be a multiple of the step size
-        g -= fmod(g, gain_step);
+        g -= std::fmod(g, gain.step);
         //set g to be the new gain
         _link[named_prop_t(_props.value, name)] = g;
         //subtract g out of the total gain left to apply

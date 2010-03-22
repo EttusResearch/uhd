@@ -15,32 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-#include <uhd/device.hpp>
-#include <vector>
-
 #ifndef INCLUDED_UHD_SIMPLE_DEVICE_HPP
 #define INCLUDED_UHD_SIMPLE_DEVICE_HPP
 
-namespace uhd{
+#include <uhd/config.hpp>
+#include <uhd/device.hpp>
+#include <uhd/types.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
+#include <vector>
 
-/*!
- * The tune result struct holds result of a 2-phase tuning:
- * The struct hold the result of tuning the dboard as
- * the target and actual intermediate frequency.
- * The struct hold the result of tuning the DDC/DUC as
- * the target and actual digital converter frequency.
- * It also tell us weather or not the spectrum is inverted.
- */
-struct tune_result_t{
-    double target_inter_freq;
-    double actual_inter_freq;
-    double target_dxc_freq;
-    double actual_dxc_freq;
-    bool spectrum_inverted;
-    tune_result_t(void);
-};
+namespace uhd{
 
 /*!
  * The simple UHD device class:
@@ -48,7 +33,7 @@ struct tune_result_t{
  * The wrapper provides convenience functions to tune the devices
  * as well as to set the dboard gains, antennas, and other properties.
  */
-class simple_device : boost::noncopyable{
+class UHD_API simple_device : boost::noncopyable{
 public:
     typedef boost::shared_ptr<simple_device> sptr;
     static sptr make(const std::string &args);
@@ -71,11 +56,11 @@ public:
     virtual std::vector<double> get_rx_rates(void) = 0;
 
     virtual tune_result_t set_rx_freq(double freq) = 0;
-    virtual std::vector<double> get_rx_freq_range(void) = 0;
+    virtual freq_range_t get_rx_freq_range(void) = 0;
 
     virtual void set_rx_gain(float gain) = 0;
     virtual float get_rx_gain(void) = 0;
-    virtual std::vector<float> get_rx_gain_range(void) = 0;
+    virtual gain_range_t get_rx_gain_range(void) = 0;
 
     virtual void set_rx_antenna(const std::string &ant) = 0;
     virtual std::string get_rx_antenna(void) = 0;
@@ -89,11 +74,11 @@ public:
     virtual std::vector<double> get_tx_rates(void) = 0;
 
     virtual tune_result_t set_tx_freq(double freq) = 0;
-    virtual std::vector<double> get_tx_freq_range(void) = 0;
+    virtual freq_range_t get_tx_freq_range(void) = 0;
 
     virtual void set_tx_gain(float gain) = 0;
     virtual float get_tx_gain(void) = 0;
-    virtual std::vector<float> get_tx_gain_range(void) = 0;
+    virtual gain_range_t get_tx_gain_range(void) = 0;
 
     virtual void set_tx_antenna(const std::string &ant) = 0;
     virtual std::string get_tx_antenna(void) = 0;

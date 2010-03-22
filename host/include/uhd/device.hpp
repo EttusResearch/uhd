@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_DEVICE_HPP
 #define INCLUDED_UHD_DEVICE_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/device_addr.hpp>
 #include <uhd/props.hpp>
 #include <uhd/metadata.hpp>
@@ -33,7 +34,7 @@ namespace uhd{
  * The usrp device interface represents the usrp hardware.
  * The api allows for discovery, configuration, and streaming.
  */
-class device : boost::noncopyable, public wax::obj{
+class UHD_API device : boost::noncopyable, public wax::obj{
 
 public:
     typedef boost::shared_ptr<device> sptr;
@@ -74,11 +75,6 @@ public:
      * \return a shared pointer to a new device instance
      */
     static sptr make(const device_addr_t &hint, size_t which = 0);
-
-    /*!
-     * Get the device address for this board.
-     */
-    device_addr_t get_device_addr(void);
 
     /*!
      * Send a buffer containing IF data with its metadata.

@@ -15,16 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
+#define INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
+
+#include <uhd/config.hpp>
 #include <boost/asio.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 
-#ifndef INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
-#define INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
-
 namespace uhd{ namespace transport{
 
-class udp_simple : boost::noncopyable{
+class UHD_API udp_simple : boost::noncopyable{
 public:
     typedef boost::shared_ptr<udp_simple> sptr;
 

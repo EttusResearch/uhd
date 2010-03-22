@@ -18,10 +18,11 @@
 #ifndef INCLUDED_UHD_UTILS_HPP
 #define INCLUDED_UHD_UTILS_HPP
 
-#include <stdexcept>
-#include <algorithm>
+#include <uhd/config.hpp>
 #include <boost/format.hpp>
 #include <boost/current_function.hpp>
+#include <stdexcept>
+#include <algorithm>
 
 /*!
  * Defines a function that implements the "construct on first use" idiom

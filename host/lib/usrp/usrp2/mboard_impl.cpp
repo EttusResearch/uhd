@@ -16,7 +16,6 @@
 //
 
 #include <uhd/utils.hpp>
-#include <boost/assign/list_of.hpp>
 #include "usrp2_impl.hpp"
 
 using namespace uhd;
@@ -25,7 +24,7 @@ using namespace uhd;
  * Helper Methods
  **********************************************************************/
 void usrp2_impl::mboard_init(void){
-    _mboards[""] = wax_obj_proxy(
+    _mboards[""] = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
@@ -36,21 +35,27 @@ void usrp2_impl::mboard_init(void){
 }
 
 void usrp2_impl::init_clock_config(void){
+    //init the ref source clock config
+    _ref_source_dict = boost::assign::map_list_of
+        ("int", USRP2_REF_SOURCE_INT)
+        ("sma", USRP2_REF_SOURCE_SMA)
+        ("mimo", USRP2_REF_SOURCE_MIMO)
+    ;
+    _clock_config.ref_source = "int";
+
     //init the pps source clock config
-    _pps_source_dict["sma"]  = USRP2_PPS_SOURCE_SMA;
-    _pps_source_dict["mimo"] = USRP2_PPS_SOURCE_MIMO;
-    _pps_source = "sma";
+    _pps_source_dict = boost::assign::map_list_of
+        ("sma", USRP2_PPS_SOURCE_SMA)
+        ("mimo", USRP2_PPS_SOURCE_MIMO)
+    ;
+    _clock_config.pps_source = "sma";
 
     //init the pps polarity clock config
-    _pps_polarity_dict["pos"] = USRP2_PPS_POLARITY_POS;
-    _pps_polarity_dict["neg"] = USRP2_PPS_POLARITY_NEG;
-    _pps_polarity = "neg";
-
-    //init the ref source clock config
-    _ref_source_dict["int"]  = USRP2_REF_SOURCE_INT;
-    _ref_source_dict["sma"]  = USRP2_REF_SOURCE_SMA;
-    _ref_source_dict["mimo"] = USRP2_REF_SOURCE_MIMO;
-    _ref_source = "int";
+    _pps_polarity_dict = boost::assign::map_list_of
+        (clock_config_t::POLARITY_POS, USRP2_PPS_POLARITY_POS)
+        (clock_config_t::POLARITY_NEG, USRP2_PPS_POLARITY_NEG)
+    ;
+    _clock_config.pps_polarity = clock_config_t::POLARITY_NEG;
 
     //update the clock config (sends a control packet)
     update_clock_config();
@@ -60,9 +65,9 @@ void usrp2_impl::update_clock_config(void){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO);
-    out_data.data.clock_config.pps_source   = _pps_source_dict  [_pps_source];
-    out_data.data.clock_config.pps_polarity = _pps_polarity_dict[_pps_polarity];
-    out_data.data.clock_config.ref_source   = _ref_source_dict  [_ref_source];
+    out_data.data.clock_config.ref_source   = _ref_source_dict  [_clock_config.ref_source];
+    out_data.data.clock_config.pps_source   = _pps_source_dict  [_clock_config.pps_source];
+    out_data.data.clock_config.pps_polarity = _pps_polarity_dict[_clock_config.pps_polarity];
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -137,7 +142,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_RX_DBOARD:
         ASSERT_THROW(_rx_dboards.has_key(name));
-        val = _rx_dboards[name].get_link();
+        val = _rx_dboards[name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
@@ -146,7 +151,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_TX_DBOARD:
         ASSERT_THROW(_tx_dboards.has_key(name));
-        val = _tx_dboards[name].get_link();
+        val = _tx_dboards[name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
@@ -159,7 +164,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_RX_DSP:
         ASSERT_THROW(_rx_dsps.has_key(name));
-        val = _rx_dsps[name].get_link();
+        val = _rx_dsps[name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
@@ -168,27 +173,19 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_TX_DSP:
         ASSERT_THROW(_tx_dsps.has_key(name));
-        val = _tx_dsps[name].get_link();
+        val = _tx_dsps[name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
         val = prop_names_t(_tx_dsps.get_keys());
         return;
 
-    case MBOARD_PROP_PPS_SOURCE:
-        val = _pps_source;
+    case MBOARD_PROP_CLOCK_CONFIG:
+        val = _clock_config;
         return;
 
     case MBOARD_PROP_PPS_SOURCE_NAMES:
         val = prop_names_t(_pps_source_dict.get_keys());
-        return;
-
-    case MBOARD_PROP_PPS_POLARITY:
-        val = _pps_polarity;
-        return;
-
-    case MBOARD_PROP_REF_SOURCE:
-        val = _ref_source;
         return;
 
     case MBOARD_PROP_REF_SOURCE_NAMES:
@@ -237,26 +234,11 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
-    case MBOARD_PROP_PPS_SOURCE:{
-            std::string name = val.as<std::string>();
-            assert_has(_pps_source_dict.get_keys(), name, "usrp2 pps source");
-            _pps_source = name; //shadow
-            update_clock_config();
-        }
-        return;
-
-    case MBOARD_PROP_PPS_POLARITY:{
-            std::string name = val.as<std::string>();
-            assert_has(_pps_polarity_dict.get_keys(), name, "usrp2 pps polarity");
-            _pps_polarity = name; //shadow
-            update_clock_config();
-        }
-        return;
-
-    case MBOARD_PROP_REF_SOURCE:{
-            std::string name = val.as<std::string>();
-            assert_has(_ref_source_dict.get_keys(), name, "usrp2 reference source");
-            _ref_source = name; //shadow
+    case MBOARD_PROP_CLOCK_CONFIG:{
+            clock_config_t clock_config = val.as<clock_config_t>();
+            assert_has(_pps_source_dict.get_keys(), clock_config.pps_source, "usrp2 pps source");
+            assert_has(_ref_source_dict.get_keys(), clock_config.ref_source, "usrp2 ref source");
+            _clock_config = clock_config; //shadow
             update_clock_config();
         }
         return;
