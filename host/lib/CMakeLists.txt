@@ -56,6 +56,7 @@ INCLUDE(CheckIncludeFiles)
 SET(usrp1e_required_headers
     linux/ioctl.h
     linux/spi/spidev.h
+    linux/usrp1_e.h
 )
 CHECK_INCLUDE_FILES(
     "${usrp1e_required_headers}"

@@ -37,11 +37,11 @@ void usrp1e_impl::dboard_init(void){
     );
 
     //setup the dboard proxies
-    _rx_dboard_proxy = wax_obj_proxy(
+    _rx_dboard_proxy = wax_obj_proxy::make(
         boost::bind(&usrp1e_impl::rx_dboard_get, this, _1, _2),
         boost::bind(&usrp1e_impl::rx_dboard_set, this, _1, _2)
     );
-    _tx_dboard_proxy = wax_obj_proxy(
+    _tx_dboard_proxy = wax_obj_proxy::make(
         boost::bind(&usrp1e_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp1e_impl::tx_dboard_set, this, _1, _2)
     );

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <boost/bind.hpp>
 #include <uhd/utils.hpp>
 #include "usrp1e_impl.hpp"
 
@@ -24,7 +25,10 @@ using namespace uhd::usrp;
  * RX DDC Initialization
  **********************************************************************/
 void usrp1e_impl::rx_ddc_init(void){
-    
+    _rx_ddc_proxy = wax_obj_proxy::make(
+        boost::bind(&usrp1e_impl::rx_ddc_get, this, _1, _2),
+        boost::bind(&usrp1e_impl::rx_ddc_set, this, _1, _2)
+    );
 }
 
 /***********************************************************************
@@ -45,7 +49,10 @@ void usrp1e_impl::rx_ddc_set(const wax::obj &, const wax::obj &){
  * TX DUC Initialization
  **********************************************************************/
 void usrp1e_impl::tx_duc_init(void){
-    
+    _tx_duc_proxy = wax_obj_proxy::make(
+        boost::bind(&usrp1e_impl::tx_duc_get, this, _1, _2),
+        boost::bind(&usrp1e_impl::tx_duc_set, this, _1, _2)
+    );
 }
 
 /***********************************************************************

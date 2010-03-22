@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <boost/bind.hpp>
 #include <uhd/utils.hpp>
 #include "usrp1e_impl.hpp"
 
@@ -24,7 +25,10 @@ using namespace uhd::usrp;
  * Mboard Initialization
  **********************************************************************/
 void usrp1e_impl::mboard_init(void){
-    
+    _mboard_proxy = wax_obj_proxy::make(
+        boost::bind(&usrp1e_impl::mboard_get, this, _1, _2),
+        boost::bind(&usrp1e_impl::mboard_set, this, _1, _2)
+    );
 }
 
 /***********************************************************************

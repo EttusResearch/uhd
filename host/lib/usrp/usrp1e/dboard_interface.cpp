@@ -16,7 +16,9 @@
 //
 
 #include <uhd/utils.hpp>
+#include <algorithm> //std::copy
 #include "usrp1e_impl.hpp"
+#include <linux/usrp1_e.h>
 
 using namespace uhd::usrp;
 
@@ -109,18 +111,70 @@ dboard_interface::byte_vector_t usrp1e_dboard_interface::transact_spi(
     const byte_vector_t &buf,
     bool readback
 ){
-    throw std::runtime_error("not implemented");
+    //load data struct
+    usrp_e_spi data;
+    data.readback = (readback)? UE_SPI_TXRX : UE_SPI_TXONLY;
+    data.slave = (dev == SPI_RX_DEV)? UE_SPI_CTRL_RXNEG : UE_SPI_CTRL_TXNEG;
+    data.length = buf.size() * 8; //bytes to bits
+    boost::uint8_t *data_bytes = reinterpret_cast<boost::uint8_t*>(&data.data);
+
+    //load the data
+    ASSERT_THROW(buf.size() <= sizeof(data.data));
+    std::copy(buf.begin(), buf.end(), data_bytes);
+
+    //load the flags
+    data.flags = 0;
+    data.flags |= (latch == SPI_LATCH_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
+    data.flags |= (push ==  SPI_PUSH_RISE)?  UE_SPI_PUSH_RISE  : UE_SPI_PUSH_FALL;
+
+    //call the spi ioctl
+    _impl->ioctl(USRP_E_SPI, &data);
+
+    //unload the data
+    byte_vector_t ret(data.length/8); //bits to bytes
+    ASSERT_THROW(ret.size() <= sizeof(data.data));
+    std::copy(data_bytes, data_bytes+ret.size(), ret.begin());
+    return ret;
 }
 
 /***********************************************************************
  * I2C
  **********************************************************************/
+static const size_t max_i2c_data_bytes = 10;
+
 void usrp1e_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
-    throw std::runtime_error("not implemented");
+    //allocate some memory for this transaction
+    ASSERT_THROW(buf.size() <= max_i2c_data_bytes);
+    boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
+
+    //load the data struct
+    usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
+    data.addr = i2c_addr;
+    data.len = buf.size();
+    std::copy(buf.begin(), buf.end(), data.data);
+
+    //call the spi ioctl
+    _impl->ioctl(USRP_E_I2C_WRITE, &data);
 }
 
 dboard_interface::byte_vector_t usrp1e_dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
-    throw std::runtime_error("not implemented");
+    //allocate some memory for this transaction
+    ASSERT_THROW(num_bytes <= max_i2c_data_bytes);
+    boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
+
+    //load the data struct
+    usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
+    data.addr = i2c_addr;
+    data.len = num_bytes;
+
+    //call the spi ioctl
+    _impl->ioctl(USRP_E_I2C_READ, &data);
+
+    //unload the data
+    byte_vector_t ret(data.len);
+    ASSERT_THROW(ret.size() == num_bytes);
+    std::copy(data.data, data.data+ret.size(), ret.begin());
+    return ret;
 }
 
 /***********************************************************************

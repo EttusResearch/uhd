@@ -40,19 +40,24 @@ class wax_obj_proxy : public wax::obj{
 public:
     typedef boost::function<void(const wax::obj &, wax::obj &)>       get_t;
     typedef boost::function<void(const wax::obj &, const wax::obj &)> set_t;
+    typedef boost::shared_ptr<wax_obj_proxy> sptr;
 
-    wax_obj_proxy(void){
+    static sptr make(const get_t &get, const set_t &set){
+        return sptr(new wax_obj_proxy(get, set));
+    }
+
+    ~wax_obj_proxy(void){
         /* NOP */
     }
+
+private:
+    get_t _get;
+    set_t _set;
 
     wax_obj_proxy(const get_t &get, const set_t &set){
         _get = get;
         _set = set;
     };
-
-    ~wax_obj_proxy(void){
-        /* NOP */
-    }
 
     void get(const wax::obj &key, wax::obj &val){
         return _get(key, val);
@@ -61,10 +66,6 @@ public:
     void set(const wax::obj &key, const wax::obj &val){
         return _set(key, val);
     }
-
-private:
-    get_t _get;
-    set_t _set;
 };
 
 /*!
@@ -74,12 +75,25 @@ private:
  */
 class usrp1e_impl : public uhd::device{
 public:
-    typedef boost::shared_ptr<usrp1e_impl> sptr;
-
-    usrp1e_impl(void);
+    //structors
+    usrp1e_impl(int node_fd);
     ~usrp1e_impl(void);
 
+    //the io interface
+    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const std::string &);
+    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const std::string &);
+
+    /*!
+     * Perform an ioctl call on the device node file descriptor.
+     * This will throw when the internal ioctl call fails.
+     * \param request the control word
+     * \param mem pointer to some memory
+     */
+    void ioctl(int request, void *mem);
+
 private:
+    int _node_fd;
+
     //device functions and settings
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
@@ -88,7 +102,7 @@ private:
     void mboard_init(void);
     void mboard_get(const wax::obj &, wax::obj &);
     void mboard_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy _mboard_proxy;
+    wax_obj_proxy::sptr _mboard_proxy;
 
     //xx dboard functions and settings
     void dboard_init(void);
@@ -97,24 +111,24 @@ private:
     //rx dboard functions and settings
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy _rx_dboard_proxy;
+    wax_obj_proxy::sptr _rx_dboard_proxy;
 
     //tx dboard functions and settings
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy _tx_dboard_proxy;
+    wax_obj_proxy::sptr _tx_dboard_proxy;
 
     //rx ddc functions and settings
     void rx_ddc_init(void);
     void rx_ddc_get(const wax::obj &, wax::obj &);
     void rx_ddc_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy _rx_ddc_proxy;
+    wax_obj_proxy::sptr _rx_ddc_proxy;
 
     //tx duc functions and settings
     void tx_duc_init(void);
     void tx_duc_get(const wax::obj &, wax::obj &);
     void tx_duc_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy _tx_duc_proxy;
+    wax_obj_proxy::sptr _tx_duc_proxy;
 };
 
 #endif /* INCLUDED_USRP1E_IMPL_HPP */
