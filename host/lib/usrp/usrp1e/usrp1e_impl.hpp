@@ -76,7 +76,7 @@ private:
 class usrp1e_impl : public uhd::device{
 public:
     //structors
-    usrp1e_impl(int node_fd);
+    usrp1e_impl(const std::string &node);
     ~usrp1e_impl(void);
 
     //the io interface
@@ -92,6 +92,7 @@ public:
     void ioctl(int request, void *mem);
 
 private:
+    static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
     int _node_fd;
 
     //device functions and settings

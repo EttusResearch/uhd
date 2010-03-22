@@ -71,21 +71,19 @@ device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
  * Make
  **********************************************************************/
 device::sptr usrp1e::make(const device_addr_t &device_addr){
-    std::string node = device_addr["node"];
-    int node_fd = open(node.c_str(), 0);
-    if (node_fd < 0){
-        throw std::runtime_error(str(
-            boost::format("Failed to open %s") % node
-        ));
-    }
-    return sptr(new usrp1e_impl(node_fd));
+    return sptr(new usrp1e_impl(device_addr["node"]));
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp1e_impl::usrp1e_impl(int node_fd){
-    _node_fd = node_fd;
+usrp1e_impl::usrp1e_impl(const std::string &node){
+    //open the device node and check file descriptor
+    if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
+        throw std::runtime_error(str(
+            boost::format("Failed to open %s") % node
+        ));
+    }
 
     //initialize the mboard
     mboard_init();
@@ -99,7 +97,8 @@ usrp1e_impl::usrp1e_impl(int node_fd){
 }
 
 usrp1e_impl::~usrp1e_impl(void){
-    /* NOP */
+    //close the device node file descriptor
+    ::close(_node_fd);
 }
 
 /***********************************************************************
@@ -136,11 +135,11 @@ void usrp1e_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MAX_RX_SAMPLES:
-        val = size_t(0); //TODO
+        val = size_t(_max_num_samples);
         return;
 
     case DEVICE_PROP_MAX_TX_SAMPLES:
-        val = size_t(0); //TODO
+        val = size_t(_max_num_samples);
         return;
 
     }
@@ -156,5 +155,24 @@ void usrp1e_impl::set(const wax::obj &, const wax::obj &){
 /***********************************************************************
  * Device IO (TODO)
  **********************************************************************/
-size_t usrp1e_impl::send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const std::string &){return 0;}
-size_t usrp1e_impl::recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const std::string &){return 0;}
+size_t usrp1e_impl::send(
+    const boost::asio::const_buffer &,
+    const uhd::tx_metadata_t &,
+    const std::string &type
+){
+    if (type != "16sc"){
+        throw std::runtime_error(str(boost::format("usrp1e send: cannot handle type \"%s\"") % type));
+    }
+    return 0;
+}
+
+size_t usrp1e_impl::recv(
+    const boost::asio::mutable_buffer &,
+    uhd::rx_metadata_t &,
+    const std::string &type
+){
+    if (type != "16sc"){
+        throw std::runtime_error(str(boost::format("usrp1e recv: cannot handle type \"%s\"") % type));
+    }
+    return 0;
+}
