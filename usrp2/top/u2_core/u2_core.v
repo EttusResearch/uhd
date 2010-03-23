@@ -751,16 +751,19 @@ module u2_core
 
 //   assign debug = debug_udp;
    assign debug = vrc_debug;
-   assign debug_gpio_0 = { {4'd0, vita_state},
+   assign debug_gpio_0 = { {pps_in, pps_int, 2'd0, vita_state},
 			   {2'd0, rx_dst_rdy, rx_src_rdy, rx_data[99:96]},
 			   {run_rx_d1, run_rx, strobe_rx, overrun, wr1_flags[3:0]} , 
 			   {wr1_ready_i, wr1_ready_o, rx1_src_rdy, rx1_dst_rdy, rx1_data[35:32]}};
+
+   assign debug_gpio_1 = {vita_time[63:32] };
    
-   assign debug_gpio_1 = { { tx_f19_data[15:8] },
+/*
+    assign debug_gpio_1 = { { tx_f19_data[15:8] },
 			   { tx_f19_data[7:0] },
 			   { 3'd0, tx_f19_src_rdy, tx_f19_dst_rdy, tx_f19_data[18:16] },
 			   { 2'b0, rd2_ready_i, rd2_ready_o, rd2_flags } };
-   
+ */  
    
 endmodule // u2_core
 
