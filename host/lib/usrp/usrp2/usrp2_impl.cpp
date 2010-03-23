@@ -26,7 +26,7 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-STATIC_BLOCK(register_device){
+STATIC_BLOCK(register_usrp2_device){
     device::register_device(&usrp2::discover, &usrp2::make);
 }
 
@@ -35,6 +35,8 @@ STATIC_BLOCK(register_device){
  **********************************************************************/
 uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     device_addrs_t usrp2_addrs;
+
+    if (not hint.has_key("addr")) return usrp2_addrs;
 
     //create a udp transport to communicate
     //TODO if an addr is not provided, search all interfaces?

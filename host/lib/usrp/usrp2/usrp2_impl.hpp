@@ -86,8 +86,6 @@ private:
  */
 class usrp2_impl : public uhd::device{
 public:
-    typedef boost::shared_ptr<usrp2_impl> sptr;
-
     /*!
      * Create a new usrp2 impl base.
      * \param ctrl_transport the udp transport for control
