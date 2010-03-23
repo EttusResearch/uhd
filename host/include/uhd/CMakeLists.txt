@@ -20,13 +20,16 @@ ADD_SUBDIRECTORY(transport)
 ADD_SUBDIRECTORY(usrp)
 
 INSTALL(FILES
+    config.hpp
     device.hpp
     device_addr.hpp
     dict.hpp
     gain_handler.hpp
+    metadata.hpp
     props.hpp
-    shared_iovec.hpp
+    simple_device.hpp
     time_spec.hpp
+    types.hpp
     utils.hpp
     wax.hpp
     DESTINATION ${HEADER_DIR}/uhd

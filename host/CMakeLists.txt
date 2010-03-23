@@ -53,17 +53,32 @@ FUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     ENDIF(${have})
 ENDFUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
-UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
+IF(UNIX)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
+    #only export symbols that are declared to be part of the uhd api:
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
+ENDIF(UNIX)
+
+IF(WIN32)
+    ADD_DEFINITIONS(-Dnot=! -Dand=&& -Dor=||) #logical operators
+    ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
+    ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+    ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
+    ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+ENDIF(WIN32)
 
 ########################################################################
 # Setup Boost
 ########################################################################
+SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42")
 FIND_PACKAGE(Boost 1.36 REQUIRED
     date_time
+    filesystem
     program_options
+    regex
     system
     thread
     unit_test_framework
@@ -71,6 +86,15 @@ FIND_PACKAGE(Boost 1.36 REQUIRED
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+########################################################################
+# Setup Endianess
+########################################################################
+INCLUDE(TestBigEndian)
+TEST_BIG_ENDIAN(HAVE_BIG_ENDIAN)
+IF(HAVE_BIG_ENDIAN)
+    ADD_DEFINITIONS(-DHAVE_BIG_ENDIAN)
+ENDIF(HAVE_BIG_ENDIAN)
 
 ########################################################################
 # Create Uninstall Target

@@ -18,15 +18,15 @@
 #ifndef INCLUDED_UHD_DEVICE_HPP
 #define INCLUDED_UHD_DEVICE_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/device_addr.hpp>
 #include <uhd/props.hpp>
+#include <uhd/metadata.hpp>
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/asio/buffer.hpp>
-#include <uhd/shared_iovec.hpp>
-#include <vector>
 
 namespace uhd{
 
@@ -34,14 +34,23 @@ namespace uhd{
  * The usrp device interface represents the usrp hardware.
  * The api allows for discovery, configuration, and streaming.
  */
-class device : boost::noncopyable, public wax::obj{
+class UHD_API device : boost::noncopyable, public wax::obj{
 
 public:
     typedef boost::shared_ptr<device> sptr;
+    typedef boost::function<device_addrs_t(const device_addr_t &)> discover_t;
+    typedef boost::function<sptr(const device_addr_t &)> make_t;
 
-    //structors
-    device(void);
-    virtual ~device(void);
+    /*!
+     * Register a device into the discovery and factory system.
+     *
+     * \param discover a function that discovers devices
+     * \param make a factory function that makes a device
+     */
+    static void register_device(
+        const discover_t &discover,
+        const make_t &make
+    );
 
     /*!
      * \brief Discover usrp devices attached to the host.
@@ -68,13 +77,60 @@ public:
     static sptr make(const device_addr_t &hint, size_t which = 0);
 
     /*!
-     * Get the device address for this board.
+     * Send a buffer containing IF data with its metadata.
+     *
+     * Send handles fragmentation as follows:
+     * If the buffer has more samples than the maximum supported,
+     * the send method will send the maximum number of samples
+     * as supported by the transport and return the number sent.
+     * It is up to the caller to call send again on the un-sent
+     * portions of the buffer, until the buffer is exhausted.
+     *
+     * This is a blocking call and will not return until the number
+     * of samples returned have been read out of the buffer.
+     *
+     * \param buff a buffer pointing to some read-only memory
+     * \param metadata data describing the buffer's contents
+     * \param the type of data loaded in the buffer (32fc, 16sc)
+     * \return the number of samples sent
      */
-    device_addr_t get_device_addr(void);
+    virtual size_t send(
+        const boost::asio::const_buffer &buff,
+        const tx_metadata_t &metadata,
+        const std::string &type = "32fc"
+    ) = 0;
 
-    //the io interface
-    virtual void send_raw(const std::vector<boost::asio::const_buffer> &) = 0;
-    virtual uhd::shared_iovec recv_raw(void) = 0;
+    /*!
+     * Receive a buffer containing IF data and its metadata.
+     *
+     * Receive handles fragmentation as follows:
+     * If the buffer has insufficient space to hold all samples
+     * that were received in a single packet over-the-wire,
+     * then the buffer will be completely filled and the implementation
+     * will hold a pointer into the remaining portion of the packet.
+     * Subsequent calls will load from the remainder of the packet,
+     * and will flag the metadata to show that this is a fragment.
+     * The next call to receive, after the remainder becomes exahausted,
+     * will perform an over-the-wire receive as usual.
+     *
+     * This is a blocking call and will not return until the number
+     * of samples returned have been written into the buffer.
+     * However, a call to receive may timeout and return zero samples.
+     * The timeout duration is decided by the underlying transport layer.
+     * The caller should assume that the call to receive will not return
+     * immediately when no packets are available to the transport layer,
+     * and that the timeout duration is reasonably tuned for performance.
+     *
+     * \param buff the buffer to fill with IF data
+     * \param metadata data to fill describing the buffer
+     * \param the type of data to fill into the buffer (32fc, 16sc)
+     * \return the number of samples received
+     */
+    virtual size_t recv(
+        const boost::asio::mutable_buffer &buff,
+        rx_metadata_t &metadata,
+        const std::string &type = "32fc"
+    ) = 0;
 };
 
 } //namespace uhd

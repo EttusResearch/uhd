@@ -15,14 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/shared_iovec.hpp>
+#include <uhd/utils.hpp>
+#include <iostream>
 
-uhd::shared_iovec::shared_iovec(size_t len_){
-    _shared_array = boost::shared_array<uint8_t>(new uint8_t[len_]);
-    base = _shared_array.get();
-    len = len_;
-}
-
-uhd::shared_iovec::~shared_iovec(void){
-    /* NOP */
+STATIC_BLOCK(module_test){
+    std::cout << "---------------------------------------" << std::endl;
+    std::cout << "-- Good news, everyone!" << std::endl;
+    std::cout << "-- The test module has been loaded." << std::endl;
+    std::cout << "---------------------------------------" << std::endl;
 }

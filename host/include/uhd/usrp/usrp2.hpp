@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
-#define INCLUDED_UHD_USRP_MBOARD_USRP2_HPP
+#ifndef INCLUDED_UHD_USRP_USRP2_HPP
+#define INCLUDED_UHD_USRP_USRP2_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/device.hpp>
 
 namespace uhd{ namespace usrp{
@@ -25,10 +26,15 @@ namespace uhd{ namespace usrp{
 /*!
  * The usrp2 device class.
  */
-class usrp2 : public device{
+class UHD_API usrp2 : public device{
 public:
     /*!
      * Discover usrp2 devices over the ethernet.
+     *
+     * Recommended key/value pairs for the device hint address:
+     * hint["addr"] = address, where address is a resolvable address
+     * or ip address, which may or may not be a broadcast address.
+     *
      * This static method will be called by the device::discover.
      * \param hint a device addr with the usrp2 address filled in
      * \return a vector of device addresses for all usrp2s found
@@ -37,6 +43,11 @@ public:
 
     /*!
      * Make a usrp2 from a device address.
+     *
+     * Required key/value pairs for the device address:
+     * hint["addr"] = address, where address is a resolvable address
+     * or ip address, which must be the specific address of a usrp2.
+     *
      * \param addr the device address
      * \return a device sptr to a new usrp2
      */
@@ -45,4 +56,4 @@ public:
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_MBOARD_USRP2_HPP */
+#endif /* INCLUDED_UHD_USRP_USRP2_HPP */

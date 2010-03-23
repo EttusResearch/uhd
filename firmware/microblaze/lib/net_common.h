@@ -33,21 +33,12 @@ extern dbsm_t *ac_could_be_sending_to_eth;
 
 void stop_streaming(void);
 
-/*!
- * Helpful typedefs for callback
- */
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);
 
-typedef eth_mac_addr_t (*get_eth_mac_addr_t)(void);
-typedef struct ip_addr (*get_ip_addr_t)(void);
+void register_mac_addr(const eth_mac_addr_t *mac_addr);
 
-/*!
- * Functions to register callbacks
- */
-void register_get_eth_mac_addr(get_eth_mac_addr_t get_eth_mac_addr);
-
-void register_get_ip_addr(get_ip_addr_t get_ip_addr);
+void register_ip_addr(const struct ip_addr *ip_addr);
 
 void register_udp_listener(int port, udp_receiver_t rcvr);
 
@@ -55,6 +46,5 @@ void send_udp_pkt(int src_port, struct socket_address dst,
 		  const void *buf, size_t len);
 
 void handle_eth_packet(uint32_t *p, size_t nlines);
-
 
 #endif /* INCLUDED_NET_COMMON_H */

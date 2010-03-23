@@ -17,8 +17,3 @@
 
 
 ADD_SUBDIRECTORY(uhd)
-
-INSTALL(FILES
-    uhd.hpp
-    DESTINATION ${HEADER_DIR}
-)

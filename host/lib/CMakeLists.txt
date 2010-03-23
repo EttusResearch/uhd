@@ -15,29 +15,100 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+########################################################################
+# Create a list of libuhd sources
+########################################################################
 SET(libuhd_sources
     device.cpp
     device_addr.cpp
     gain_handler.cpp
-    shared_iovec.cpp
-    uhd.cpp
+    load_modules.cpp
+    metadata.cpp
+    simple_device.cpp
+    time_spec.cpp
+    types.cpp
     wax.cpp
-    transport/udp.cpp
+    transport/udp_simple.cpp
+    transport/vrt.cpp
     usrp/dboard/basic.cpp
     usrp/dboard_base.cpp
-    usrp/dboard_id.cpp
     usrp/dboard_interface.cpp
     usrp/dboard_manager.cpp
     usrp/usrp2/dboard_impl.cpp
     usrp/usrp2/dboard_interface.cpp
     usrp/usrp2/dsp_impl.cpp
+    usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
     usrp/usrp2/usrp2_impl.cpp
 )
 
+########################################################################
+# Conditionally add the udp sources
+########################################################################
+LIST(APPEND libuhd_sources
+    transport/udp_zero_copy_asio.cpp
+)
+
+########################################################################
+# Conditionally add the usrp1e sources
+########################################################################
+INCLUDE(CheckIncludeFiles)
+SET(usrp1e_required_headers
+    linux/ioctl.h
+    linux/spi/spidev.h
+    linux/usrp1_e.h
+)
+CHECK_INCLUDE_FILES(
+    "${usrp1e_required_headers}"
+    HAS_USRP1E_REQUIRED_HEADERS
+)
+
+IF(HAS_USRP1E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "Building usrp1e support...")
+    LIST(APPEND libuhd_sources
+        usrp/usrp1e/dboard_impl.cpp
+        usrp/usrp1e/dboard_interface.cpp
+        usrp/usrp1e/dsp_impl.cpp
+        usrp/usrp1e/fpga-downloader.cc
+        usrp/usrp1e/mboard_impl.cpp
+        usrp/usrp1e/usrp1e_impl.cpp
+    )
+ELSE(HAS_USRP1E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "Skipping usrp1e support...")
+    LIST(APPEND libuhd_sources
+        usrp/usrp1e/usrp1e_none.cpp
+    )
+ENDIF(HAS_USRP1E_REQUIRED_HEADERS)
+
+########################################################################
+# Setup defines for module loading
+########################################################################
+INCLUDE(CheckIncludeFileCXX)
+
+CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
+CHECK_INCLUDE_FILE_CXX(Winbase.h HAVE_WINBASE_H)
+
+IF(HAVE_DLFCN_H)
+    MESSAGE(STATUS "Module loading supported through dlopen...")
+    ADD_DEFINITIONS(-DHAVE_DLFCN_H)
+ELSEIF(HAVE_WINBASE_H)
+    MESSAGE(STATUS "Module loading supported through LoadLibrary...")
+    ADD_DEFINITIONS(-DHAVE_WINBASE_H)
+ELSE(HAVE_DLFCN_H)
+    MESSAGE(STATUS "Module loading not supported...")
+ENDIF(HAVE_DLFCN_H)
+
+########################################################################
+# Setup libuhd library
+########################################################################
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 
-TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
 
-INSTALL(TARGETS uhd LIBRARY DESTINATION ${LIBRARY_DIR})
+SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
+
+INSTALL(TARGETS uhd
+    LIBRARY DESTINATION ${LIBRARY_DIR} # .so file
+    ARCHIVE DESTINATION ${LIBRARY_DIR} # .lib file
+    RUNTIME DESTINATION ${LIBRARY_DIR} # .dll file
+)

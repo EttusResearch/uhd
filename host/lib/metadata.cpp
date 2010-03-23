@@ -15,6 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd.hpp>
+#include <uhd/metadata.hpp>
 
-//nothing here, just includes the header so the compiler can check
+using namespace uhd;
+
+rx_metadata_t::rx_metadata_t(void){
+    stream_id = 0;
+    has_stream_id = false;
+    time_spec = time_spec_t();
+    has_time_spec = false;
+    is_fragment = false;
+}
+
+tx_metadata_t::tx_metadata_t(void){
+    stream_id = 0;
+    has_stream_id = false;
+    time_spec = time_spec_t();
+    has_time_spec = false;
+    start_of_burst = false;
+    end_of_burst = false;
+}

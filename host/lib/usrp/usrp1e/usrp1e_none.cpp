@@ -15,20 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/dboard_id.hpp>
-#include <boost/format.hpp>
-#include <uhd/dict.hpp>
+#include <uhd/usrp/usrp1e.hpp>
 
+using namespace uhd;
 using namespace uhd::usrp;
 
-std::string dboard_id::to_string(const dboard_id_t &id){
-    //map the dboard ids to string representations
-    uhd::dict<dboard_id_t, std::string> id_to_str;
-    id_to_str[ID_NONE]     = "none";
-    id_to_str[ID_BASIC_TX] = "basic tx";
-    id_to_str[ID_BASIC_RX] = "basic rx";
+/*!
+ * This file defines the usrp1e discover and make functions
+ * when the required kernel module headers are not present.
+ */
 
-    //get the string representation
-    std::string name = (id_to_str.has_key(id))? id_to_str[id] : "unknown";
-    return str(boost::format("%s (0x%.4x)") % name % id);
+device_addrs_t usrp1e::discover(const device_addr_t &){
+    return device_addrs_t(); //return empty list
+}
+
+device::sptr usrp1e::make(const device_addr_t &){
+    throw std::runtime_error("this build has no usrp1e support");
+}
+
+void usrp1e::load_fpga(const std::string &){
+    throw std::runtime_error("this build has no usrp1e support");
 }

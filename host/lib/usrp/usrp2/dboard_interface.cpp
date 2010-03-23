@@ -16,10 +16,47 @@
 //
 
 #include <uhd/utils.hpp>
-#include "dboard_interface.hpp"
 #include "usrp2_impl.hpp"
 
 using namespace uhd::usrp;
+
+class usrp2_dboard_interface : public dboard_interface{
+public:
+    usrp2_dboard_interface(usrp2_impl *impl);
+    ~usrp2_dboard_interface(void);
+
+    void write_aux_dac(unit_type_t, int, int);
+    int read_aux_adc(unit_type_t, int);
+
+    void set_atr_reg(gpio_bank_t, boost::uint16_t, boost::uint16_t, boost::uint16_t);
+    void set_gpio_ddr(gpio_bank_t, boost::uint16_t, boost::uint16_t);
+    void write_gpio(gpio_bank_t, boost::uint16_t, boost::uint16_t);
+    boost::uint16_t read_gpio(gpio_bank_t);
+
+    void write_i2c(int, const byte_vector_t &);
+    byte_vector_t read_i2c(int, size_t);
+
+    double get_rx_clock_rate(void);
+    double get_tx_clock_rate(void);
+
+private:
+    byte_vector_t transact_spi(
+        spi_dev_t dev,
+        spi_latch_t latch,
+        spi_push_t push,
+        const byte_vector_t &buf,
+        bool readback
+    );
+
+    usrp2_impl *_impl;
+};
+
+/***********************************************************************
+ * Make Function
+ **********************************************************************/
+dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
+    return dboard_interface::sptr(new usrp2_dboard_interface(impl));
+}
 
 /***********************************************************************
  * Structors
@@ -52,7 +89,7 @@ double usrp2_dboard_interface::get_tx_clock_rate(void){
  * \param bank the dboard interface gpio bank enum
  * \return an over the wire representation
  */
-static uint8_t gpio_bank_to_otw(dboard_interface::gpio_bank_t bank){
+static boost::uint8_t gpio_bank_to_otw(dboard_interface::gpio_bank_t bank){
     switch(bank){
     case uhd::usrp::dboard_interface::GPIO_TX_BANK: return USRP2_DIR_TX;
     case uhd::usrp::dboard_interface::GPIO_RX_BANK: return USRP2_DIR_RX;
@@ -60,7 +97,7 @@ static uint8_t gpio_bank_to_otw(dboard_interface::gpio_bank_t bank){
     throw std::invalid_argument("unknown gpio bank type");
 }
 
-void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint16_t mask){
+void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO);
@@ -73,7 +110,7 @@ void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, uint16_t value, uint
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE);
 }
 
-void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, uint16_t value, uint16_t mask){
+void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO);
@@ -86,7 +123,7 @@ void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, uint16_t value, uint16
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE);
 }
 
-uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
+boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO);
@@ -98,7 +135,7 @@ uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
     return ntohs(in_data.data.gpio_config.value);
 }
 
-void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, uint16_t rx_value, uint16_t mask){
+void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO);
@@ -121,7 +158,7 @@ void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, uint16_t tx_value, ui
  * \param dev the dboard interface spi dev enum
  * \return an over the wire representation
  */
-static uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
+static boost::uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
     switch(dev){
     case uhd::usrp::dboard_interface::SPI_TX_DEV: return USRP2_DIR_TX;
     case uhd::usrp::dboard_interface::SPI_RX_DEV: return USRP2_DIR_RX;
@@ -135,7 +172,7 @@ static uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
  * \param latch the dboard interface spi latch enum
  * \return an over the wire representation
  */
-static uint8_t spi_latch_to_otw(dboard_interface::spi_latch_t latch){
+static boost::uint8_t spi_latch_to_otw(dboard_interface::spi_latch_t latch){
     switch(latch){
     case uhd::usrp::dboard_interface::SPI_LATCH_RISE: return USRP2_CLK_EDGE_RISE;
     case uhd::usrp::dboard_interface::SPI_LATCH_FALL: return USRP2_CLK_EDGE_FALL;
@@ -149,7 +186,7 @@ static uint8_t spi_latch_to_otw(dboard_interface::spi_latch_t latch){
  * \param push the dboard interface spi push enum
  * \return an over the wire representation
  */
-static uint8_t spi_push_to_otw(dboard_interface::spi_push_t push){
+static boost::uint8_t spi_push_to_otw(dboard_interface::spi_push_t push){
     switch(push){
     case uhd::usrp::dboard_interface::SPI_PUSH_RISE: return USRP2_CLK_EDGE_RISE;
     case uhd::usrp::dboard_interface::SPI_PUSH_FALL: return USRP2_CLK_EDGE_FALL;
@@ -249,7 +286,7 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, s
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static uint8_t spi_dev_to_otw(dboard_interface::unit_type_t unit){
+static boost::uint8_t spi_dev_to_otw(dboard_interface::unit_type_t unit){
     switch(unit){
     case uhd::usrp::dboard_interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
     case uhd::usrp::dboard_interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
@@ -263,7 +300,7 @@ void usrp2_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, i
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
     out_data.data.aux_args.dir = spi_dev_to_otw(unit);
     out_data.data.aux_args.which = which;
-    out_data.data.aux_args.dir = htonl(value);
+    out_data.data.aux_args.value = htonl(value);
 
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);

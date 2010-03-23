@@ -15,14 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+########################################################################
+# unit test suite
+########################################################################
 ADD_EXECUTABLE(main_test
     main_test.cpp
     addr_test.cpp
     gain_handler_test.cpp
+    vrt_test.cpp
     wax_test.cpp
 )
-
 TARGET_LINK_LIBRARIES(main_test uhd)
-
 ADD_TEST(test main_test)
+
+########################################################################
+# demo of a loadable module
+########################################################################
+ADD_LIBRARY(module_test MODULE module_test.cpp)

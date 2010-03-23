@@ -18,7 +18,7 @@
 #ifndef INCLUDED_UHD_DICT_HPP
 #define INCLUDED_UHD_DICT_HPP
 
-#include <map>
+#include <list>
 #include <vector>
 #include <stdexcept>
 #include <boost/foreach.hpp>
@@ -27,11 +27,9 @@ namespace uhd{
 
     /*!
      * A templated dictionary class with a python-like interface.
-     * Its wraps around a std::map internally.
      */
     template <class Key, class Val> class dict{
     public:
-        typedef std::map<Key, Val> map_t;
         typedef std::pair<Key, Val> pair_t;
 
         /*!
@@ -42,11 +40,16 @@ namespace uhd{
         }
 
         /*!
-         * Create a dictionary from a map.
-         * \param map a map with key value pairs
+         * Input iterator constructor:
+         * Makes boost::assign::map_list_of work.
+         * \param first the begin iterator
+         * \param last the end iterator
          */
-        dict(const map_t &map){
-            _map = map;
+        template <class InputIterator>
+        dict(InputIterator first, InputIterator last){
+            for(InputIterator it = first; it != last; it++){
+                _map.push_back(*it);
+            }
         }
 
         /*!
@@ -57,12 +60,21 @@ namespace uhd{
         }
 
         /*!
+         * Get the number of elements in this dict.
+         * \param the number of elements
+         */
+        std::size_t size(void) const{
+            return _map.size();
+        }
+
+        /*!
          * Get a list of the keys in this dict.
+         * Key order depends on insertion precedence.
          * \return vector of keys
          */
         std::vector<Key> get_keys(void) const{
             std::vector<Key> keys;
-            BOOST_FOREACH(pair_t p, _map){
+            BOOST_FOREACH(const pair_t &p, _map){
                 keys.push_back(p.first);
             }
             return keys;
@@ -70,11 +82,12 @@ namespace uhd{
 
         /*!
          * Get a list of the values in this dict.
+         * Value order depends on insertion precedence.
          * \return vector of values
          */
         std::vector<Val> get_vals(void) const{
             std::vector<Val> vals;
-            BOOST_FOREACH(pair_t p, _map){
+            BOOST_FOREACH(const pair_t &p, _map){
                 vals.push_back(p.second);
             }
             return vals;
@@ -86,7 +99,7 @@ namespace uhd{
          * \return true if found
          */
         bool has_key(const Key &key) const{
-            BOOST_FOREACH(pair_t p, _map){
+            BOOST_FOREACH(const pair_t &p, _map){
                 if (p.first == key) return true;
             }
             return false;
@@ -100,8 +113,8 @@ namespace uhd{
          * \throw an exception when not found
          */
         const Val &operator[](const Key &key) const{
-            if (has_key(key)){
-                return _map.find(key)->second;
+            BOOST_FOREACH(const pair_t &p, _map){
+                if (p.first == key) return p.second;
             }
             throw std::invalid_argument("key not found in dict");
         }
@@ -113,7 +126,11 @@ namespace uhd{
          * \return a reference to the value
          */
         Val &operator[](const Key &key){
-            return _map[key];
+            BOOST_FOREACH(pair_t &p, _map){
+                if (p.first == key) return p.second;
+            }
+            _map.push_back(pair_t(key, Val()));
+            return _map.back().second;
         }
 
         /*!
@@ -122,17 +139,14 @@ namespace uhd{
          * \return the value of the item
          * \throw an exception when not found
          */
-        Val pop_key(const Key &key){
-            if (has_key(key)){
-                Val val = _map.find(key)->second;
-                _map.erase(key);
-                return val;
-            }
-            throw std::invalid_argument("key not found in dict");
+        Val pop(const Key &key){
+            Val val = (*this)[key];
+            _map.remove(pair_t(key, val));
+            return val;
         }
 
     private:
-        map_t _map; //private container
+        std::list<pair_t> _map; //private container
     };
 
 } //namespace uhd

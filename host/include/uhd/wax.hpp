@@ -18,31 +18,35 @@
 #ifndef INCLUDED_WAX_HPP
 #define INCLUDED_WAX_HPP
 
+#include <uhd/config.hpp>
 #include <boost/any.hpp>
-#include <iostream>
 
 /*!
  * WAX - it's a metaphor!
  *
- * The WAX framework allows object to have generic/anyobj properties.
+ * The WAX framework allows an object to have generic/anyobj properties.
  * These properties can be addressed through generic/anyobj identifiers.
- * A property of a WAX object may even be another WAX object.
  *
- * When a property is a WAX object, the returned value must be an obj pointer.
- * A WAX object provides two objs of pointers: obj::ptr and obj::sptr.
- * The choice of pointer vs smart pointer depends on the owner of the memory.
+ * The WAX object itself is an anytype container much like boost::any.
+ * To retrieve the value of the appropriate type, use my_obj.as<type>().
  *
  * Proprties may be referenced though the [] overloaded operator.
  * The [] operator returns a special proxy that allows for assigment.
  * Also, the [] operators may be chained as in the folowing examples:
- *   my_obj[prop1][prop2][prop3] = value
- *   value = my_obj[prop1][prop2][prop3]
+ *   my_obj[prop1][prop2][prop3] = value;
+ *   value = my_obj[prop1][prop2][prop3].as<type>();
  *
- * Any value returned from an access operation is of wax::obj.
- * To use this value, it must be cast with wax::cast<new_obj>(value).
+ * Property nesting occurs when a WAX object gets another object's link.
+ * This special link is obtained through a call to my_obj.get_link().
  */
 
 namespace wax{
+
+    /*!
+     * The wax::bad cast will be thrown when
+     * cast is called with the wrong typeid.
+     */
+    typedef boost::bad_any_cast bad_cast;
 
     /*!
      * WAX object base class:
@@ -56,7 +60,7 @@ namespace wax{
      * For property nesting, wax obj subclasses return special links
      * to other wax obj subclasses, and the api handles the magic.
      */
-    class obj{
+    class UHD_API obj{
     public:
 
         /*!
@@ -124,6 +128,17 @@ namespace wax{
          */
         const std::type_info & type(void) const;
 
+        /*!
+         * Cast this obj into the desired type.
+         * Usage: myobj.as<type>()
+         *
+         * \return an object of the desired type
+         * \throw wax::bad_cast when the cast fails
+         */
+        template<class T> T as(void) const{
+            return boost::any_cast<T>(resolve());
+        }
+
     private:
         //private interface (override in subclasses)
         virtual void get(const obj &, obj &);
@@ -137,30 +152,11 @@ namespace wax{
          * \return a boost any type with contents
          */
         boost::any resolve(void) const;
-        template<class T> friend T cast(const obj &);
 
         //private contents of this obj
         boost::any _contents;
 
     };
-
-    /*!
-     * The wax::bad cast will be thrown when
-     * cast is called with the wrong typeid.
-     */
-    typedef boost::bad_any_cast bad_cast;
-
-    /*!
-     * Cast a wax::obj into the desired obj.
-     * Usage wax::cast<new_obj>(my_value).
-     *
-     * \param val the obj to cast
-     * \return an object of the desired type
-     * \throw wax::bad_cast when the cast fails
-     */
-    template<class T> T cast(const obj &val){
-        return boost::any_cast<T>(val.resolve());
-    }
 
 } //namespace wax
 

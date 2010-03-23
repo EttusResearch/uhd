@@ -15,17 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/wax.hpp>
-#include <boost/foreach.hpp>
-#include <boost/format.hpp>
-#include <boost/function.hpp>
-#include <stdexcept>
-#include <algorithm>
-#include <vector>
-#include <map>
-
 #ifndef INCLUDED_UHD_UTILS_HPP
 #define INCLUDED_UHD_UTILS_HPP
+
+#include <uhd/config.hpp>
+#include <boost/format.hpp>
+#include <boost/current_function.hpp>
+#include <stdexcept>
+#include <algorithm>
+
+/*!
+ * Defines a function that implements the "construct on first use" idiom
+ * \param _t the type definition for the instance
+ * \param _x the name of the defined function
+ * \return a reference to the lazy instance
+ */
+#define STATIC_INSTANCE(_t, _x) static _t &_x(){static _t _x; return _x;}
+
+/*!
+ * Defines a static code block that will be called before main()
+ * \param _x the name of the defined struct (must be unique in file)
+ */
+#define STATIC_BLOCK(_x) static struct _x{_x();}_x;_x::_x()
 
 /*!
  * Useful templated functions and classes that I like to pretend are part of stl
@@ -40,7 +51,9 @@ namespace std{
     };
 
     #define ASSERT_THROW(_x) if (not (_x)) { \
-        throw std::assert_error("Assertion Failed: " + std::string(#_x)); \
+        throw std::assert_error(str(boost::format( \
+            "Assertion Failed:\n  %s:%d\n  %s\n  ---> %s <---" \
+        ) % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % std::string(#_x))); \
     }
 
     template<class T, class InputIterator, class Function>
@@ -52,14 +65,19 @@ namespace std{
         return tmp;
     }
 
+    template<class T, class Iterable, class Function>
+    T reduce(Iterable iterable, Function fcn, T init = 0){
+        return reduce(iterable.begin(), iterable.end(), fcn, init);
+    }
+
     template<class T, class InputIterator>
     bool has(InputIterator first, InputIterator last, const T &elem){
         return last != std::find(first, last, elem);
     }
 
-    template<class T>
-    T sum(const T &a, const T &b){
-        return a + b;
+    template<class T, class Iterable>
+    bool has(const Iterable &iterable, const T &elem){
+        return has(iterable.begin(), iterable.end(), elem);
     }
 
     template<typename T> T signum(T n){
@@ -70,52 +88,43 @@ namespace std{
 
 }//namespace std
 
-/*namespace uhd{
+#include <boost/format.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 
-inline void tune(
-    freq_t target_freq,
-    freq_t lo_offset,
-    wax::obj subdev_freq_proxy,
-    bool subdev_quadrature,
-    bool subdev_spectrum_inverted,
-    bool subdev_is_tx,
-    wax::obj dsp_freq_proxy,
-    freq_t dsp_sample_rate
-){
-    // Ask the d'board to tune as closely as it can to target_freq+lo_offset
-    subdev_freq_proxy = target_freq + lo_offset;
-    freq_t inter_freq = wax::cast<freq_t>(subdev_freq_proxy);
+namespace uhd{
 
-    // Calculate the DDC setting that will downconvert the baseband from the
-    // daughterboard to our target frequency.
-    freq_t delta_freq = target_freq - inter_freq;
-    freq_t delta_sign = std::signum(delta_freq);
-    delta_freq *= delta_sign;
-    delta_freq = fmod(delta_freq, dsp_sample_rate);
-    bool inverted = delta_freq > dsp_sample_rate/2.0;
-    freq_t dxc_freq = inverted? (delta_freq - dsp_sample_rate) : (-delta_freq);
-    dxc_freq *= delta_sign;
-
-    // If the spectrum is inverted, and the daughterboard doesn't do
-    // quadrature downconversion, we can fix the inversion by flipping the
-    // sign of the dxc_freq...  (This only happens using the basic_rx board)
-    if (subdev_spectrum_inverted){
-        inverted = not inverted;
-    }
-    if (inverted and not subdev_quadrature){
-        dxc_freq = -dxc_freq;
-        inverted = not inverted;
-    }
-    if (subdev_is_tx){
-        dxc_freq = -dxc_freq;	// down conversion versus up conversion
+    /*!
+     * Check that an element is found in a container.
+     * If not, throw a meaningful assertion error.
+     * The "what" in the error will show what is
+     * being set and a list of known good values.
+     *
+     * \param iterable a list of possible settings
+     * \param elem an element that may be in the list
+     * \param what a description of what is being set
+     * \throw assertion_error when elem not in list
+     */
+    template<class T, class Iterable> void assert_has(
+        const Iterable &iterable,
+        const T &elem,
+        const std::string &what = "unknown"
+    ){
+        if (std::has(iterable, elem)) return;
+        std::string possible_values = "";
+        BOOST_FOREACH(T e, iterable){
+            if (e != iterable.begin()[0]) possible_values += ", ";
+            possible_values += boost::lexical_cast<std::string>(e);
+        }
+        throw std::assert_error(str(boost::format(
+                "Error: %s is not a valid %s. "
+                "Possible values are: [%s]."
+            )
+            % boost::lexical_cast<std::string>(elem)
+            % what % possible_values
+        ));
     }
 
-    dsp_freq_proxy = dxc_freq;
-    //freq_t actual_dxc_freq = wax::cast<freq_t>(dsp_freq_proxy);
-
-    //return some kind of tune result tuple/struct
-}
-
-} //namespace uhd*/
+}//namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_HPP */

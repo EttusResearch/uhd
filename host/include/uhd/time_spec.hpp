@@ -15,10 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <stdint.h>
-
 #ifndef INCLUDED_UHD_TIME_SPEC_HPP
 #define INCLUDED_UHD_TIME_SPEC_HPP
+
+#include <uhd/config.hpp>
+#include <boost/cstdint.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace uhd{
 
@@ -28,28 +30,30 @@ namespace uhd{
      * The time_spec_t can be used when setting the time on devices
      * and for controlling the start of streaming for applicable dsps.
      */
-    struct time_spec_t{
-        uint32_t secs;
-        uint32_t ticks;
+    struct UHD_API time_spec_t{
+        boost::uint32_t secs;
+        boost::uint32_t ticks;
 
         /*!
          * Create a time_spec_t that holds a wildcard time.
          * This will have implementation-specific meaning.
          */
-        time_spec_t(void){
-            secs = ~0;
-            ticks = ~0;
-        }
+        time_spec_t(void);
 
         /*!
          * Create a time_spec_t from seconds and ticks.
          * \param new_secs the new seconds
          * \param new_ticks the new ticks (default = 0)
          */
-        time_spec_t(uint32_t new_secs, uint32_t new_ticks = 0){
-            secs = new_secs;
-            ticks = new_ticks;
-        }
+        time_spec_t(boost::uint32_t new_secs, boost::uint32_t new_ticks = 0);
+
+        /*!
+         * Create a time_spec_t from boost posix time.
+         * \param time fine-grained boost posix time
+         * \param tick_rate the rate of ticks per second
+         */
+        time_spec_t(boost::posix_time::ptime time, double tick_rate);
+
     };
 
 } //namespace uhd

@@ -15,39 +15,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_LOCAL_DBOARDS_HPP
-#define INCLUDED_LOCAL_DBOARDS_HPP
-
-#include <uhd/usrp/dboard_base.hpp>
+#include <boost/bind.hpp>
+#include <uhd/utils.hpp>
+#include "usrp1e_impl.hpp"
 
 using namespace uhd::usrp;
 
 /***********************************************************************
- * The basic boards:
+ * Mboard Initialization
  **********************************************************************/
-class basic_rx : public rx_dboard_base{
-public:
-    static dboard_base::sptr make(ctor_args_t const& args){
-        return dboard_base::sptr(new basic_rx(args));
-    }
-    basic_rx(ctor_args_t const& args);
-    ~basic_rx(void);
+void usrp1e_impl::mboard_init(void){
+    _mboard_proxy = wax_obj_proxy::make(
+        boost::bind(&usrp1e_impl::mboard_get, this, _1, _2),
+        boost::bind(&usrp1e_impl::mboard_set, this, _1, _2)
+    );
+}
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-};
+/***********************************************************************
+ * Mboard Get
+ **********************************************************************/
+void usrp1e_impl::mboard_get(const wax::obj &, wax::obj &){
+    
+}
 
-class basic_tx : public tx_dboard_base{
-public:
-    static dboard_base::sptr make(ctor_args_t const& args){
-        return dboard_base::sptr(new basic_tx(args));
-    }
-    basic_tx(ctor_args_t const& args);
-    ~basic_tx(void);
-
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
-
-};
-
-#endif /* INCLUDED_LOCAL_DBOARDS_HPP */
+/***********************************************************************
+ * Mboard Set
+ **********************************************************************/
+void usrp1e_impl::mboard_set(const wax::obj &, const wax::obj &){
+    
+}

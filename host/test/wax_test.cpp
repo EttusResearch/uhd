@@ -17,14 +17,15 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/wax.hpp>
+#include <iostream>
 
 enum opt_a_t{OPTION_A_0, OPTION_A_1};
 enum opt_b_t{OPTION_B_0, OPTION_B_1};
 
 BOOST_AUTO_TEST_CASE(test_enums){
     wax::obj opta = OPTION_A_0;
-    BOOST_CHECK_THROW(wax::cast<opt_b_t>(opta), wax::bad_cast);
-    BOOST_CHECK_EQUAL(wax::cast<opt_a_t>(opta), OPTION_A_0);
+    BOOST_CHECK_THROW(opta.as<opt_b_t>(), wax::bad_cast);
+    BOOST_CHECK_EQUAL(opta.as<opt_a_t>(), OPTION_A_0);
 }
 
 /***********************************************************************
@@ -48,14 +49,14 @@ public:
     }
     void get(const wax::obj &key, wax::obj &value){
         if (d_subs.size() == 0){
-            value = d_nums[wax::cast<size_t>(key)];
+            value = d_nums[key.as<size_t>()];
         }else{
-            value = d_subs[wax::cast<size_t>(key)].get_link();
+            value = d_subs[key.as<size_t>()].get_link();
         }
     }
     void set(const wax::obj &key, const wax::obj &value){
         if (d_subs.size() == 0){
-            d_nums[wax::cast<size_t>(key)] = wax::cast<float>(value);
+            d_nums[key.as<size_t>()] = value.as<float>();
         }else{
             throw std::runtime_error("cant set to a wax demo with sub demos");
         }
@@ -78,10 +79,10 @@ BOOST_AUTO_TEST_CASE(test_set_get){
     for (size_t i = 0; i < 10; i++){
         for (size_t j = 0; j < 10; j++){
             for (size_t k = 0; k < 10; k++){
-                float val = i * j * k + i + j + k;
+                float val = float(i * j * k + i + j + k);
                 //std::cout << i << " " << j << " " << k << std::endl;
                 wd[i][j][k] = val;
-                BOOST_CHECK_EQUAL(val, wax::cast<float>(wd[i][j][k]));
+                BOOST_CHECK_EQUAL(val, wd[i][j][k].as<float>());
             }
         }
     }
@@ -94,5 +95,5 @@ BOOST_AUTO_TEST_CASE(test_proxy){
 
     std::cout << "assign proxy" << std::endl;
     wax::obj a = p[size_t(0)];
-    BOOST_CHECK_EQUAL(wax::cast<float>(a), float(5));
+    BOOST_CHECK_EQUAL(a.as<float>(), float(5));
 }

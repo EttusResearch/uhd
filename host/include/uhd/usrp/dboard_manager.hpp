@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 #define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_id.hpp>
@@ -31,7 +32,7 @@ namespace uhd{ namespace usrp{
  * Create subdev instances for each subdev on a dboard.
  * Provide wax::obj access to the subdevs inside.
  */
-class dboard_manager : boost::noncopyable{
+class UHD_API dboard_manager : boost::noncopyable{
 
 public:
     typedef boost::shared_ptr<dboard_manager> sptr;
@@ -40,15 +41,17 @@ public:
     typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t const&);
 
     /*!
-     * Register subdevices for a given dboard id.
+     * Register a dboard into the system.
      *
      * \param dboard_id the dboard id (rx or tx)
      * \param dboard_ctor the dboard constructor function pointer
+     * \param name the canonical name for the dboard represented
      * \param subdev_names the names of the subdevs on this dboard
      */
-    static void register_subdevs(
+    static void register_dboard(
         dboard_id_t dboard_id,
         dboard_ctor_t dboard_ctor,
+        const std::string &name,
         const prop_names_t &subdev_names
     );
 

@@ -15,30 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/tuple/tuple.hpp>
-#include <uhd/time_spec.hpp>
-#include <uhd/wax.hpp>
-#include <complex>
-#include <vector>
-
 #ifndef INCLUDED_UHD_PROPS_HPP
 #define INCLUDED_UHD_PROPS_HPP
 
+#include <uhd/config.hpp>
+#include <uhd/wax.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <vector>
+#include <string>
+
 namespace uhd{
-
-    //common typedefs for board properties
-    typedef float gain_t;
-    typedef double freq_t;
-
-    //scalar types (have not used yet, dont uncomment until needed)
-    //typedef int int_scalar_t;
-    //typedef float real_scalar_t;
-    //typedef std::complex<real_scalar_t> complex_scalar_t;
-
-    //vector types (have not used yet, dont uncomment until needed)
-    //typedef std::vector<int_scalar_t> int_vec_t;
-    //typedef std::vector<real_scalar_t> real_vec_t;
-    //typedef std::vector<complex_scalar_t> complex_vec_t;
 
     //typedef for handling named properties
     typedef std::vector<std::string> prop_names_t;
@@ -49,9 +35,10 @@ namespace uhd{
      * \param key a reference to the prop object
      * \param name a reference to the name object
      */
-    inline named_prop_t extract_named_prop(const wax::obj &key, const std::string &name = ""){
+    inline UHD_API named_prop_t //must be exported as part of the api to work (TODO move guts to cpp file)
+    extract_named_prop(const wax::obj &key, const std::string &name = ""){
         if (key.type() == typeid(named_prop_t)){
-            return wax::cast<named_prop_t>(key);
+            return key.as<named_prop_t>();
         }
         return named_prop_t(key, name);
     }
@@ -65,7 +52,9 @@ namespace uhd{
     enum device_prop_t{
         DEVICE_PROP_NAME,              //ro, std::string
         DEVICE_PROP_MBOARD,            //ro, wax::obj
-        DEVICE_PROP_MBOARD_NAMES       //ro, prop_names_t
+        DEVICE_PROP_MBOARD_NAMES,      //ro, prop_names_t
+        DEVICE_PROP_MAX_RX_SAMPLES,    //ro, size_t
+        DEVICE_PROP_MAX_TX_SAMPLES     //ro, size_t
     };
 
     /*!
@@ -77,7 +66,6 @@ namespace uhd{
     enum mboard_prop_t{
         MBOARD_PROP_NAME,              //ro, std::string
         MBOARD_PROP_OTHERS,            //ro, prop_names_t
-        MBOARD_PROP_MTU,               //ro, size_t
         MBOARD_PROP_CLOCK_RATE,        //ro, freq_t
         MBOARD_PROP_RX_DSP,            //ro, wax::obj
         MBOARD_PROP_RX_DSP_NAMES,      //ro, prop_names_t
@@ -87,10 +75,8 @@ namespace uhd{
         MBOARD_PROP_RX_DBOARD_NAMES,   //ro, prop_names_t
         MBOARD_PROP_TX_DBOARD,         //ro, wax::obj
         MBOARD_PROP_TX_DBOARD_NAMES,   //ro, prop_names_t
-        MBOARD_PROP_PPS_SOURCE,        //rw, std::string (sma, mimo)
+        MBOARD_PROP_CLOCK_CONFIG,      //rw, clock_config_t
         MBOARD_PROP_PPS_SOURCE_NAMES,  //ro, prop_names_t
-        MBOARD_PROP_PPS_POLARITY,      //rw, std::string (pos, neg)
-        MBOARD_PROP_REF_SOURCE,        //rw, std::string (int, sma, mimo)
         MBOARD_PROP_REF_SOURCE_NAMES,  //ro, prop_names_t
         MBOARD_PROP_TIME_NOW,          //wo, time_spec_t
         MBOARD_PROP_TIME_NEXT_PPS      //wo, time_spec_t
@@ -116,24 +102,23 @@ namespace uhd{
         DBOARD_PROP_NAME,              //ro, std::string
         DBOARD_PROP_SUBDEV,            //ro, wax::obj
         DBOARD_PROP_SUBDEV_NAMES,      //ro, prop_names_t
-        DBOARD_PROP_CODEC              //ro, wax::obj
-    };
+        DBOARD_PROP_USED_SUBDEVS       //ro, prop_names_t
+        //DBOARD_PROP_CODEC              //ro, wax::obj //----> not sure, dont have to deal with yet
+    }; 
 
-    /*!
+    /*! ------ not dealing with yet, commented out ------------
     * Possible device codec properties:
     *   A codec is expected to have a rate and gain elements.
     *   Other properties can be discovered through the others prop.
     */
-    enum codec_prop_t{
+    /*enum codec_prop_t{
         CODEC_PROP_NAME,               //ro, std::string
         CODEC_PROP_OTHERS,             //ro, prop_names_t
         CODEC_PROP_GAIN,               //rw, gain_t
-        CODEC_PROP_GAIN_MAX,           //ro, gain_t
-        CODEC_PROP_GAIN_MIN,           //ro, gain_t
-        CODEC_PROP_GAIN_STEP,          //ro, gain_t
+        CODEC_PROP_GAIN_RANGE,         //ro, gain_range_t
         CODEC_PROP_GAIN_NAMES,         //ro, prop_names_t
-        CODEC_PROP_CLOCK_RATE          //ro, freq_t
-    };
+        //CODEC_PROP_CLOCK_RATE          //ro, freq_t //----> not sure we care to know
+    };*/
 
     /*!
     * Possible device subdev properties
@@ -142,22 +127,19 @@ namespace uhd{
         SUBDEV_PROP_NAME,              //ro, std::string
         SUBDEV_PROP_OTHERS,            //ro, prop_names_t
         SUBDEV_PROP_GAIN,              //rw, gain_t
-        SUBDEV_PROP_GAIN_MAX,          //ro, gain_t
-        SUBDEV_PROP_GAIN_MIN,          //ro, gain_t
-        SUBDEV_PROP_GAIN_STEP,         //ro, gain_t
+        SUBDEV_PROP_GAIN_RANGE,        //ro, gain_range_t
         SUBDEV_PROP_GAIN_NAMES,        //ro, prop_names_t
         SUBDEV_PROP_FREQ,              //rw, freq_t
-        SUBDEV_PROP_FREQ_MAX,          //ro, freq_t
-        SUBDEV_PROP_FREQ_MIN,          //ro, freq_t
+        SUBDEV_PROP_FREQ_RANGE,        //ro, freq_range_t
         SUBDEV_PROP_ANTENNA,           //rw, std::string
         SUBDEV_PROP_ANTENNA_NAMES,     //ro, prop_names_t
         SUBDEV_PROP_ENABLED,           //rw, bool
         SUBDEV_PROP_QUADRATURE,        //ro, bool
         SUBDEV_PROP_IQ_SWAPPED,        //ro, bool
         SUBDEV_PROP_SPECTRUM_INVERTED, //ro, bool
-        SUBDEV_PROP_IS_TX,             //ro, bool
-        SUBDEV_PROP_RSSI,              //ro, gain_t
-        SUBDEV_PROP_BANDWIDTH          //rw, freq_t
+        SUBDEV_PROP_LO_INTERFERES      //ro, bool
+        //SUBDEV_PROP_RSSI,              //ro, gain_t //----> not on all boards, use named prop
+        //SUBDEV_PROP_BANDWIDTH          //rw, freq_t //----> not on all boards, use named prop
     };
 
 } //namespace uhd
