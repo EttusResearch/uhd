@@ -42,7 +42,7 @@ public:
 
     /*!
      * Register a dboard into the system.
-     *
+     * For single subdevice boards, omit subdev_names.
      * \param dboard_id the dboard id (rx or tx)
      * \param dboard_ctor the dboard constructor function pointer
      * \param name the canonical name for the dboard represented
@@ -52,7 +52,7 @@ public:
         dboard_id_t dboard_id,
         dboard_ctor_t dboard_ctor,
         const std::string &name,
-        const prop_names_t &subdev_names
+        const prop_names_t &subdev_names = prop_names_t(1, "")
     );
 
     /*!

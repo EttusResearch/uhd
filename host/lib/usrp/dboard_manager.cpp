@@ -163,12 +163,12 @@ static args_t get_dboard_args(
     std::string const& xx_type
 ){
     //special case, its rx and the none id (0xffff)
-    if (xx_type == "rx" and dboard_id == ID_NONE){
+    if (xx_type == "rx" and dboard_id == dboard_id::NONE){
         return get_dboard_args(0x0001, xx_type);
     }
 
     //special case, its tx and the none id (0xffff)
-    if (xx_type == "tx" and dboard_id == ID_NONE){
+    if (xx_type == "tx" and dboard_id == dboard_id::NONE){
         return get_dboard_args(0x0000, xx_type);
     }
 
@@ -223,7 +223,7 @@ dboard_manager_impl::dboard_manager_impl(
         //make the rx subdevs
         BOOST_FOREACH(std::string subdev, rx_subdevs){
             dboard_base::sptr rx_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, ID_NONE)
+                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, dboard_id::NONE)
             );
             //create a rx proxy for this rx board
             _rx_dboards[subdev] = subdev_proxy::sptr(
@@ -233,7 +233,7 @@ dboard_manager_impl::dboard_manager_impl(
         //make the tx subdevs
         BOOST_FOREACH(std::string subdev, tx_subdevs){
             dboard_base::sptr tx_dboard = tx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, ID_NONE, tx_dboard_id)
+                dboard_base::ctor_args_t(subdev, interface, dboard_id::NONE, tx_dboard_id)
             );
             //create a tx proxy for this tx board
             _tx_dboards[subdev] = subdev_proxy::sptr(

@@ -26,9 +26,8 @@ namespace uhd{ namespace usrp{
 
 typedef boost::uint16_t dboard_id_t;
 
-static const dboard_id_t ID_NONE = 0xffff;
-
 namespace dboard_id{
+    static const dboard_id_t NONE = 0xffff;
     UHD_API std::string to_string(const dboard_id_t &id);
 }
 
