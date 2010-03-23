@@ -14,8 +14,8 @@ int main(int rgc, char *argv[])
 		buf[i] = i;
 	}
 
-	do {
+//	do {
 		cnt = write(fp, buf, 2048);
 		printf("Bytes written - %d\n", cnt);
-	} while (1);
+//	} while (1);
 }
