@@ -15,11 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ADD_EXECUTABLE(discover_usrps discover_usrps.cpp)
+TARGET_LINK_LIBRARIES(discover_usrps uhd)
+INSTALL(TARGETS discover_usrps RUNTIME DESTINATION ${RUNTIME_DIR})
 
-INSTALL(FILES
-    smart_buffer.hpp
-    udp_simple.hpp
-    udp_zero_copy.hpp
-    vrt.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/transport
-)
+ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
+TARGET_LINK_LIBRARIES(usrp2_burner uhd)
+INSTALL(TARGETS usrp2_burner RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
+
+INSTALL(FILES usrp2_recovery.py DESTINATION ${PKG_DATA_DIR}/utils)

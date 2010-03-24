@@ -32,5 +32,5 @@ INSTALL(FILES
     types.hpp
     utils.hpp
     wax.hpp
-    DESTINATION ${HEADER_DIR}/uhd
+    DESTINATION ${INCLUDE_DIR}/uhd
 )

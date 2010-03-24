@@ -23,5 +23,5 @@ INSTALL(FILES
     dboard_manager.hpp
     usrp1e.hpp
     usrp2.hpp
-    DESTINATION ${HEADER_DIR}/uhd/usrp
+    DESTINATION ${INCLUDE_DIR}/uhd/usrp
 )

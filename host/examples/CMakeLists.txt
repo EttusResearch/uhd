@@ -15,12 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ADD_EXECUTABLE(discover_usrps discover_usrps.cpp)
-TARGET_LINK_LIBRARIES(discover_usrps uhd)
-INSTALL(TARGETS discover_usrps RUNTIME DESTINATION ${RUNTIME_DIR})
-
-ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
-TARGET_LINK_LIBRARIES(usrp2_burner uhd)
-
-ADD_EXECUTABLE(uhd_rx_timed_samples uhd_rx_timed_samples.cpp)
-TARGET_LINK_LIBRARIES(uhd_rx_timed_samples uhd)
+ADD_EXECUTABLE(rx_timed_samples rx_timed_samples.cpp)
+TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
+INSTALL(TARGETS rx_timed_samples RUNTIME DESTINATION ${PKG_DATA_DIR}/examples)
