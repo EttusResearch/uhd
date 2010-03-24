@@ -21,3 +21,6 @@ INSTALL(TARGETS discover_usrps RUNTIME DESTINATION ${RUNTIME_DIR})
 
 ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
 TARGET_LINK_LIBRARIES(usrp2_burner uhd)
+
+ADD_EXECUTABLE(uhd_rx_timed_samples uhd_rx_timed_samples.cpp)
+TARGET_LINK_LIBRARIES(uhd_rx_timed_samples uhd)

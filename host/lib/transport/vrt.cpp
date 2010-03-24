@@ -42,8 +42,8 @@ void vrt::pack(
     if(metadata.has_time_spec){
         vrt_hdr_flags |= (0x3 << 22) | (0x1 << 20); //TSI: Other, TSF: Sample Count Timestamp
         header_buff[num_header_words32++] = htonl(metadata.time_spec.secs);
-        header_buff[num_header_words32++] = htonl(metadata.time_spec.ticks);
         header_buff[num_header_words32++] = 0; //unused part of fractional seconds
+        header_buff[num_header_words32++] = htonl(metadata.time_spec.ticks);
     }
 
     vrt_hdr_flags |= (metadata.start_of_burst)? (0x1 << 25) : 0;
@@ -99,8 +99,8 @@ void vrt::unpack(
 
     if (vrt_hdr_word & (0x3 << 20)){ //fractional time
         metadata.has_time_spec = true;
-        metadata.time_spec.ticks = ntohl(header_buff[num_header_words32++]);
         num_header_words32++; //unused part of fractional seconds
+        metadata.time_spec.ticks = ntohl(header_buff[num_header_words32++]);
     }
 
     size_t num_trailer_words32 = (vrt_hdr_word & (0x1 << 26))? 1 : 0;

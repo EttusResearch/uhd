@@ -154,8 +154,24 @@ public:
     }
 
     /*******************************************************************
+     * Timing
+     ******************************************************************/
+    void set_time_now(const time_spec_t &time_spec){
+        _mboard[MBOARD_PROP_TIME_NOW] = time_spec;
+    }
+
+    void set_time_next_pps(const time_spec_t &time_spec){
+        _mboard[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+    }
+
+    /*******************************************************************
      * Streaming
      ******************************************************************/
+    void set_streaming_at(const time_spec_t &time_spec){
+        _rx_ddc[std::string("stream_at")] = time_spec;
+        _rx_ddc[std::string("enabled")] = true;
+    }
+
     void set_streaming(bool enb){
         _rx_ddc[std::string("enabled")] = enb;
     }
