@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <linux/ioctl.h>
+#include <sys/ioctl.h>
 
 #include "usrp1_e.h"
 
@@ -37,4 +37,6 @@ int main(int argc, char *argv[])
 		spi_dat.readback = 0;
 		ioctl(fp, USRP_E_SPI, &spi_dat);
 	}
+
+	return 0;
 }
