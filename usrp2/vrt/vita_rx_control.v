@@ -155,7 +155,13 @@ module vita_rx_control
 			   ibs_state <= IBS_RUNNING;
 		      end
 	       end // else: !if(full)
-	 IBS_OVERRUN, IBS_LATECMD, IBS_BROKENCHAIN :
+	 IBS_OVERRUN :
+	   if(sample_fifo_in_rdy)
+	     ibs_state <= IBS_IDLE;
+	 IBS_LATECMD :
+	   if(sample_fifo_in_rdy)
+	     ibs_state <= IBS_IDLE;
+	 IBS_BROKENCHAIN :
 	   if(sample_fifo_in_rdy)
 	     ibs_state <= IBS_IDLE;
        endcase // case(ibs_state)
