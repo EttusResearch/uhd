@@ -4,9 +4,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "usrp1_e.h"
+#include "usrp_e.h"
 
-// Usage: usrp1_e_spi w|rb slave data
+// Usage: usrp_e_spi w|rb slave data
 
 int main(int argc, char *argv[])
 {
@@ -14,14 +14,14 @@ int main(int argc, char *argv[])
 	struct usrp_e_spi spi_dat;
 
 	if (argc < 4) {
-		printf("Usage: usrp1_e_spi w|rb slave data\n");
+		printf("Usage: usrp_e_spi w|rb slave data\n");
 		exit(-1);
 	}
 
 	slave = atoi(argv[2]);
 	data = atoi(argv[3]);
 
-	fp = open("/dev/usrp1_e0", O_RDWR);
+	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
 	spi_dat.slave = slave;

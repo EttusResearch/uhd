@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "usrp1_e.h"
+#include "usrp_e.h"
 
 // Usage: usrp_e_i2c w address data0 data1 data 2 ....
 // Usage: usrp_e_i2c r address count
@@ -17,8 +17,8 @@ int main(int argc, char *argv[])
 	int direction, address, count;
 
 	if (argc < 3) {
-		printf("Usage: usrp1_e_i2c w address data0 data1 data2 ...\n");
-		printf("Usage: usrp1_e_i2c r address count\n");
+		printf("Usage: usrp_e_i2c w address data0 data1 data2 ...\n");
+		printf("Usage: usrp_e_i2c r address count\n");
 		exit(-1);
 	}
 
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
 	address = atoi(argv[2]);
 
-	fp = open("/dev/usrp1_e0", O_RDWR);
+	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
 	if (direction) {

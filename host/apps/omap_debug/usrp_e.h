@@ -15,13 +15,13 @@
 #include <linux/types.h>
 #include <linux/ioctl.h>
 
-struct usrp1_e_ctl16 {
+struct usrp_e_ctl16 {
 	__u32 offset;
 	__u32 count;
 	__u16 buf[20];
 };
 
-struct usrp1_e_ctl32 {
+struct usrp_e_ctl32 {
 	__u32 offset;
 	__u32 count;
 	__u32 buf[10];
@@ -61,10 +61,10 @@ struct usrp_e_i2c {
 };
 
 #define USRP_E_IOC_MAGIC	'u'
-#define USRP_E_WRITE_CTL16	_IOW(USRP_E_IOC_MAGIC, 0x20, struct usrp1_e_ctl16)
-#define USRP_E_READ_CTL16	_IOWR(USRP_E_IOC_MAGIC, 0x21, struct usrp1_e_ctl16)
-#define USRP_E_WRITE_CTL32	_IOW(USRP_E_IOC_MAGIC, 0x22, struct usrp1_e_ctl32)
-#define USRP_E_READ_CTL32	_IOWR(USRP_E_IOC_MAGIC, 0x23, struct usrp1_e_ctl32)
+#define USRP_E_WRITE_CTL16	_IOW(USRP_E_IOC_MAGIC, 0x20, struct usrp_e_ctl16)
+#define USRP_E_READ_CTL16	_IOWR(USRP_E_IOC_MAGIC, 0x21, struct usrp_e_ctl16)
+#define USRP_E_WRITE_CTL32	_IOW(USRP_E_IOC_MAGIC, 0x22, struct usrp_e_ctl32)
+#define USRP_E_READ_CTL32	_IOWR(USRP_E_IOC_MAGIC, 0x23, struct usrp_e_ctl32)
 #define USRP_E_SPI		_IOW(USRP_E_IOC_MAGIC, 0x24, struct usrp_e_spi)
 #define USRP_E_I2C_READ		_IOR(USRP_E_IOC_MAGIC, 0x25, struct usrp_e_i2c)
 #define USRP_E_I2C_WRITE	_IOW(USRP_E_IOC_MAGIC, 0x26, struct usrp_e_i2c)
