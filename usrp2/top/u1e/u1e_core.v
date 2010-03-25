@@ -9,6 +9,8 @@ module u1e_core
    input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
    
    inout db_sda, inout db_scl,
+   output sclk, output [7:0] sen, output mosi, input miso,
+   
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
    inout [15:0] io_tx, inout [15:0] io_rx
    );
@@ -187,14 +189,11 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 2, SPI
 
-   /*
    spi_top shared_spi
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(s2_adr[4:0]),.wb_dat_i(s2_dat_o),
       .wb_dat_o(s2_dat_i),.wb_sel_i(s2_sel),.wb_we_i(s2_we),.wb_stb_i(s2_stb),
       .wb_cyc_i(s2_cyc),.wb_ack_o(s2_ack),.wb_err_o(),.wb_int_o(spi_int),
-      .ss_pad_o({sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
-      .sclk_pad_o(sclk),.mosi_pad_o(mosi),.miso_pad_i(miso) );
-    */
+      .ss_pad_o(sen), .sclk_pad_o(sclk), .mosi_pad_o(mosi), .miso_pad_i(miso) );
    
    // /////////////////////////////////////////////////////////////////////////
    // Slave 3, I2C
@@ -216,7 +215,7 @@ module u1e_core
 
    // /////////////////////////////////////////////////////////////////////////
    // GPIOs -- Slave #4
-/*
+
    wire [31:0] 	atr_lines;
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
    
@@ -226,7 +225,7 @@ module u1e_core
 		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
-*/
+
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #5
 
@@ -247,7 +246,6 @@ module u1e_core
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
 
-   assign {io_tx,io_rx} = debug_gpmc;
    assign debug_gpio_0 = { debug_gpmc };
    assign debug_gpio_1 = { debug_txd, debug_rxd };
    

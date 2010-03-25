@@ -68,27 +68,43 @@ NET "overo_gpio147"  LOC = "B6"  ;  # rx_overrun
 #NET "overo_txd1"  LOC = "C6"  ;
 #NET "overo_rxd1"  LOC = "D6"  ;
 
+## FTDI UART to USB converter
 NET "FPGA_TXD"  LOC = "U1"  ;
 NET "FPGA_RXD"  LOC = "T6"  ;
 
 #NET "SYSEN"  LOC = "C11"  ;
 
+## I2C
 NET "db_scl"  LOC = "U4"  ;
 NET "db_sda"  LOC = "U5"  ;
-#NET "db_sclk_rx"  LOC = "W3"  ;
-#NET "db_miso_rx"  LOC = "W2"  ;
-#NET "db_mosi_rx"  LOC = "V4"  ;
-#NET "db_sen_rx"  LOC = "V3"  ;
-#NET "db_sclk_tx"  LOC = "Y1"  ;
-#NET "db_miso_tx"  LOC = "W1"  ;
-#NET "db_mosi_tx"  LOC = "R3"  ;
-#NET "db_sen_tx"  LOC = "T4"  ;
 
-## Clock Gen
-#NET "cgen_miso"  LOC = "U2"  ;
-#NET "cgen_mosi"  LOC = "V1"  ;
-#NET "cgen_sclk"  LOC = "R5"  ;
-#NET "cgen_sen_b"  LOC = "T1"  ;
+## SPI
+### DBoard SPI
+NET "db_sclk_rx"  LOC = "W3"  ;
+NET "db_miso_rx"  LOC = "W2"  ;
+NET "db_mosi_rx"  LOC = "V4"  ;
+NET "db_sen_rx"  LOC = "V3"  ;
+NET "db_sclk_tx"  LOC = "Y1"  ;
+NET "db_miso_tx"  LOC = "W1"  ;
+NET "db_mosi_tx"  LOC = "R3"  ;
+NET "db_sen_tx"  LOC = "T4"  ;
+
+### AD9862 SPI and aux SPI Interfaces
+#NET "aux_sdi_codec"  LOC = "F19"  ;
+#NET "aux_sdo_codec"  LOC = "F18"  ;
+#NET "aux_sclk_codec"  LOC = "D21"  ;
+NET "sen_codec"  LOC = "D20"  ;
+NET "mosi_codec"  LOC = "E19"  ;
+NET "miso_codec"  LOC = "F21"  ;
+NET "sclk_codec"  LOC = "E20"  ;
+
+### Clock Gen SPI
+NET "cgen_miso"  LOC = "U2"  ;
+NET "cgen_mosi"  LOC = "V1"  ;
+NET "cgen_sclk"  LOC = "R5"  ;
+NET "cgen_sen_b"  LOC = "T1"  ;
+
+## Clock gen control
 #NET "cgen_st_status"  LOC = "D4"  ;
 #NET "cgen_st_ld"  LOC = "D1"  ;
 #NET "cgen_st_refmon"  LOC = "E1"  ;
@@ -147,17 +163,8 @@ NET "dip_sw<2>"  LOC = "J4"  ;
 NET "dip_sw<1>"  LOC = "J6"  ;
 NET "dip_sw<0>"  LOC = "J7"  ;
 
-## AD9862 Interface
-#NET "aux_sdi_codec"  LOC = "F19"  ;
-#NET "aux_sdo_codec"  LOC = "F18"  ;
-#NET "aux_sclk_codec"  LOC = "D21"  ;
-#NET "reset_codec"  LOC = "D22"  ;
-#NET "sen_codec"  LOC = "D20"  ;
-#NET "mosi_codec"  LOC = "E19"  ;
-#NET "miso_codec"  LOC = "F21"  ;
-#NET "sclk_codec"  LOC = "E20"  ;
-
 #NET "RXSYNC"  LOC = "F22"  ;
+#NET "reset_codec"  LOC = "D22"  ;
 
 #NET "DB<11>"  LOC = "E22"  ;
 #NET "DB<10>"  LOC = "J19"  ;
@@ -248,13 +255,12 @@ NET "io_rx<15>"  LOC = "Y4"  ;
 #NET "fpga_cfg_init_b"  LOC = "W15"  ;
 
 ## Unnamed, need to figure out what they do
-#NET "unnamed_net37"  LOC = "B1"  ;
-#NET "unnamed_net36"  LOC = "B22"  ;
-#NET "unnamed_net35"  LOC = "D2"  ;
-#NET "unnamed_net34"  LOC = "A21"  ;
-#NET "unnamed_net45"  LOC = "F7"  ;
-#NET "unnamed_net44"  LOC = "V6"  ;
-#NET "unnamed_net43"  LOC = "AA3"  ;
-#NET "unnamed_net42"  LOC = "AB3"  ;
-
-#NET "GND"  LOC = "V19"  ;
+#NET "unnamed_net37"  LOC = "B1"  ;  # TMS
+#NET "unnamed_net36"  LOC = "B22"  ; # TDO
+#NET "unnamed_net35"  LOC = "D2"  ;  # TDI
+#NET "unnamed_net34"  LOC = "A21"  ; # TCK
+#NET "unnamed_net45"  LOC = "F7"  ;  # PUDC_B
+#NET "unnamed_net44"  LOC = "V6"  ;  # M2
+#NET "unnamed_net43"  LOC = "AA3"  ; # M1
+#NET "unnamed_net42"  LOC = "AB3"  ; # M0
+#NET "GND"  LOC = "V19"  ;  # Suspend, unused
