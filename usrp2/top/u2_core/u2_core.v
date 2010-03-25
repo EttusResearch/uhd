@@ -440,15 +440,24 @@ module u2_core
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
 
+   wire [35:0] 	 buffer_udp;
+   wire 	 udp_src_rdy, udp_dst_rdy;
+   
    udp_wrapper #(.BASE(SR_UDP_SM)) udp_wrapper
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .rx_f19_data(rx_f19_data), .rx_f19_src_rdy_i(rx_f19_src_rdy), .rx_f19_dst_rdy_o(rx_f19_dst_rdy),
       .tx_f19_data(tx_f19_data), .tx_f19_src_rdy_o(tx_f19_src_rdy), .tx_f19_dst_rdy_i(tx_f19_dst_rdy),
       .rx_f36_data({wr2_flags,wr2_dat}), .rx_f36_src_rdy_o(wr2_ready_i), .rx_f36_dst_rdy_i(wr2_ready_o),
-      .tx_f36_data({rd2_flags,rd2_dat}), .tx_f36_src_rdy_i(rd2_ready_o), .tx_f36_dst_rdy_o(rd2_ready_i),
+//      .tx_f36_data({rd2_flags,rd2_dat}), .tx_f36_src_rdy_i(rd2_ready_o), .tx_f36_dst_rdy_o(rd2_ready_i),
+      .tx_f36_data(buffer_udp), .tx_f36_src_rdy_i(udp_src_rdy), .tx_f36_dst_rdy_o(udp_dst_rdy),
       .debug(debug_udp) );
-   
+
+   fifo_cascade #(.WIDTH(36), .SIZE(10)) txudp_fifo_cascade
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
+      .dataout(buffer_udp), .src_rdy_o(udp_src_rdy), .dst_rdy_i(udp_dst_rdy));
+
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #7
    settings_bus settings_bus
