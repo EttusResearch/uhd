@@ -23,4 +23,4 @@ ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
 TARGET_LINK_LIBRARIES(usrp2_burner uhd)
 INSTALL(TARGETS usrp2_burner RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
 
-INSTALL(FILES usrp2_recovery.py DESTINATION ${PKG_DATA_DIR}/utils)
+INSTALL(PROGRAMS usrp2_recovery.py DESTINATION ${PKG_DATA_DIR}/utils)

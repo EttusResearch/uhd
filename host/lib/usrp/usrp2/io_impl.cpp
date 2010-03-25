@@ -16,7 +16,6 @@
 //
 
 #include <complex>
-#include <algorithm>
 #include <boost/format.hpp>
 #include "usrp2_impl.hpp"
 
@@ -46,16 +45,14 @@ void usrp2_impl::io_init(void){
     _data_transport->send(asio::buffer(&zero_data, sizeof(zero_data)));
 }
 
-#define unrolled_loop(__i, __len, __inst) {\
+#define unrolled_loop(__inst, __len){ \
     size_t __i = 0; \
-    while(__i < (__len & ~0x7)){ \
-        __inst; __i++; __inst; __i++; \
-        __inst; __i++; __inst; __i++; \
-        __inst; __i++; __inst; __i++; \
-        __inst; __i++; __inst; __i++; \
+    for(; __i < (__len & ~0x3); __i+= 4){ \
+        __inst(__i+0); __inst(__i+1); \
+        __inst(__i+2); __inst(__i+3); \
     } \
-    while(__i < __len){ \
-        __inst; __i++;\
+    for(; __i < __len; __i++){ \
+        __inst(__i); \
     } \
 }
 
@@ -71,11 +68,12 @@ static inline void host_floats_to_usrp2_items(
     const fc32_t *host_floats,
     size_t num_samps
 ){
-    unrolled_loop(i, num_samps,{
-        boost::uint16_t real = boost::int16_t(host_floats[i].real()*shorts_per_float);
-        boost::uint16_t imag = boost::int16_t(host_floats[i].imag()*shorts_per_float);
-        usrp2_items[i] = htonl((real << 16) | (imag << 0));
-    });
+    #define host_floats_to_usrp2_items_i(i){ \
+        boost::uint16_t real = boost::int16_t(host_floats[i].real()*shorts_per_float); \
+        boost::uint16_t imag = boost::int16_t(host_floats[i].imag()*shorts_per_float); \
+        usrp2_items[i] = htonl((real << 16) | (imag << 0)); \
+    }
+    unrolled_loop(host_floats_to_usrp2_items_i, num_samps);
 }
 
 static inline void usrp2_items_to_host_floats(
@@ -83,12 +81,13 @@ static inline void usrp2_items_to_host_floats(
     const boost::uint32_t *usrp2_items,
     size_t num_samps
 ){
-    unrolled_loop(i, num_samps,{
-        boost::uint32_t item = ntohl(usrp2_items[i]);
-        boost::int16_t real = boost::uint16_t(item >> 16);
-        boost::int16_t imag = boost::uint16_t(item >> 0);
-        host_floats[i] = fc32_t(float(real*floats_per_short), float(imag*floats_per_short));
-    });
+    #define usrp2_items_to_host_floats_i(i){ \
+        boost::uint32_t item = ntohl(usrp2_items[i]); \
+        boost::int16_t real = boost::uint16_t(item >> 16); \
+        boost::int16_t imag = boost::uint16_t(item >> 0); \
+        host_floats[i] = fc32_t(float(real*floats_per_short), float(imag*floats_per_short)); \
+    }
+    unrolled_loop(usrp2_items_to_host_floats_i, num_samps);
 }
 
 static inline void host_items_to_usrp2_items(
@@ -96,11 +95,12 @@ static inline void host_items_to_usrp2_items(
     const boost::uint32_t *host_items,
     size_t num_samps
 ){
+    #define host_items_to_usrp2_items_i(i) usrp2_items[i] = htonl(host_items[i])
     if (is_big_endian){
         std::memcpy(usrp2_items, host_items, num_samps*sizeof(boost::uint32_t));
     }
     else{
-        unrolled_loop(i, num_samps, usrp2_items[i] = htonl(host_items[i]));
+        unrolled_loop(host_items_to_usrp2_items_i, num_samps);
     }
 }
 
@@ -109,11 +109,12 @@ static inline void usrp2_items_to_host_items(
     const boost::uint32_t *usrp2_items,
     size_t num_samps
 ){
+    #define usrp2_items_to_host_items_i(i) host_items[i] = ntohl(usrp2_items[i])
     if (is_big_endian){
         std::memcpy(host_items, usrp2_items, num_samps*sizeof(boost::uint32_t));
     }
     else{
-        unrolled_loop(i, num_samps, host_items[i] = ntohl(usrp2_items[i]));
+        unrolled_loop(usrp2_items_to_host_items_i, num_samps);
     }
 }
 
