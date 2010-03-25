@@ -22,6 +22,8 @@
 #include "config.h"
 #endif
 
+#define DEBUG_MODE 0 //0 for normal operation
+
 #include <lwip/ip.h>
 #include <lwip/udp.h>
 #include "u2_init.h"
@@ -275,7 +277,7 @@ void handle_udp_ctrl_packet(
      * GPIO
      ******************************************************************/
     case USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO:
-        hal_gpio_set_ddr(
+        if (!DEBUG_MODE) hal_gpio_set_ddr(
             OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
             ctrl_data_in->data.gpio_config.value,
             ctrl_data_in->data.gpio_config.mask
@@ -284,7 +286,7 @@ void handle_udp_ctrl_packet(
         break;
 
     case USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO:
-        hal_gpio_write(
+        if (!DEBUG_MODE) hal_gpio_write(
             OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
             ctrl_data_in->data.gpio_config.value,
             ctrl_data_in->data.gpio_config.mask
@@ -302,7 +304,7 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO:{
             //setup the atr registers for this bank
             int bank = OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.atr_config.bank);
-            set_atr_regs(
+            if (!DEBUG_MODE) set_atr_regs(
                 bank,
                 ctrl_data_in->data.atr_config.rx_value,
                 ctrl_data_in->data.atr_config.tx_value
@@ -312,7 +314,7 @@ void handle_udp_ctrl_packet(
             int mask = ctrl_data_in->data.atr_config.mask;
             for (int i = 0; i < 16; i++){
                 // set to either GPIO_SEL_SW or GPIO_SEL_ATR
-                hal_gpio_set_sel(bank, i, (mask & (1 << i)) ? 'a' : 's');
+                if (!DEBUG_MODE) hal_gpio_set_sel(bank, i, (mask & (1 << i)) ? 'a' : 's');
             }
             ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE;
         }
@@ -757,9 +759,9 @@ main(void)
 #endif
 
   output_regs->debug_mux_ctrl = 1;
-#if 0
-  hal_gpio_set_sels(GPIO_TX_BANK, "1111111111111111");
-  hal_gpio_set_sels(GPIO_RX_BANK, "1111111111111111");
+#if DEBUG_MODE
+  hal_gpio_set_sels(GPIO_TX_BANK, "0000000000000000");
+  hal_gpio_set_sels(GPIO_RX_BANK, "0000000000000000");
   hal_gpio_set_ddr(GPIO_TX_BANK, 0xffff, 0xffff);
   hal_gpio_set_ddr(GPIO_RX_BANK, 0xffff, 0xffff);
 #endif
