@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 struct pkt {
 	int checksum;
@@ -74,11 +75,10 @@ static void *write_thread(void *threadid)
 
 int main(int argc, char *argv[])
 {
-	int ret;
 	pthread_t tx, rx;
 	long int t;
 
-	fp = open("/dev/usrp1_e0", O_RDWR);
+	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
 	if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
