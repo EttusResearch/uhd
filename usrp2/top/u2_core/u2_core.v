@@ -144,6 +144,15 @@ module u2_core
    localparam SR_SIMTIMER = 198;  //  2
    localparam SR_TX_DSP   = 208;  // 16
    localparam SR_TX_CTRL  = 224;  // 16
+
+   // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
+   // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
+   localparam DSP_TX_FIFOSIZE = 10;
+   localparam DSP_RX_FIFOSIZE = 10;
+   localparam ETH_TX_FIFOSIZE = 10;
+   localparam ETH_RX_FIFOSIZE = 11;
+   localparam SERDES_TX_FIFOSIZE = 9;
+   localparam SERDES_RX_FIFOSIZE = 9;  // RX currently doesn't use a fifo?
    
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
@@ -440,24 +449,28 @@ module u2_core
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
 
-   wire [35:0] 	 buffer_udp;
-   wire 	 udp_src_rdy, udp_dst_rdy;
+   wire [35:0] 	 udp_tx_data, udp_rx_data;
+   wire 	 udp_tx_src_rdy, udp_tx_dst_rdy, udp_rx_src_rdy, udp_rx_dst_rdy;
    
    udp_wrapper #(.BASE(SR_UDP_SM)) udp_wrapper
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .rx_f19_data(rx_f19_data), .rx_f19_src_rdy_i(rx_f19_src_rdy), .rx_f19_dst_rdy_o(rx_f19_dst_rdy),
       .tx_f19_data(tx_f19_data), .tx_f19_src_rdy_o(tx_f19_src_rdy), .tx_f19_dst_rdy_i(tx_f19_dst_rdy),
-      .rx_f36_data({wr2_flags,wr2_dat}), .rx_f36_src_rdy_o(wr2_ready_i), .rx_f36_dst_rdy_i(wr2_ready_o),
-//      .tx_f36_data({rd2_flags,rd2_dat}), .tx_f36_src_rdy_i(rd2_ready_o), .tx_f36_dst_rdy_o(rd2_ready_i),
-      .tx_f36_data(buffer_udp), .tx_f36_src_rdy_i(udp_src_rdy), .tx_f36_dst_rdy_o(udp_dst_rdy),
+      .rx_f36_data(udp_rx_data), .rx_f36_src_rdy_o(udp_rx_src_rdy), .rx_f36_dst_rdy_i(udp_rx_dst_rdy),
+      .tx_f36_data(udp_tx_data), .tx_f36_src_rdy_i(udp_tx_src_rdy), .tx_f36_dst_rdy_o(udp_tx_dst_rdy),
       .debug(debug_udp) );
 
-   fifo_cascade #(.WIDTH(36), .SIZE(10)) txudp_fifo_cascade
+   fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(buffer_udp), .src_rdy_o(udp_src_rdy), .dst_rdy_i(udp_dst_rdy));
+      .dataout(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
 
+   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain(udp_rx_data), .src_rdy_i(udp_rx_src_rdy), .dst_rdy_o(udp_rx_dst_rdy),
+      .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
+   
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #7
    settings_bus settings_bus
@@ -612,7 +625,7 @@ module u2_core
       .fifo_occupied(), .fifo_full(), .fifo_empty(),
       .debug_rx(vita_state) );
 
-   fifo_cascade #(.WIDTH(36), .SIZE(10)) rx_fifo_cascade
+   fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain(rx1_data), .src_rdy_i(rx1_src_rdy), .dst_rdy_o(rx1_dst_rdy),
       .dataout({wr1_flags,wr1_dat}), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
@@ -626,7 +639,7 @@ module u2_core
 
    wire [31:0] 	 debug_vtc, debug_vtd, debug_vt;
    
-   fifo_cascade #(.WIDTH(36), .SIZE(10)) tx_fifo_cascade
+   fifo_cascade #(.WIDTH(36), .SIZE(DSP_TX_FIFOSIZE)) tx_fifo_cascade
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd1_flags,rd1_dat}), .src_rdy_i(rd1_ready_o), .dst_rdy_o(rd1_ready_i),
       .dataout(tx_data), .src_rdy_o(tx_src_rdy), .dst_rdy_i(tx_dst_rdy) );
@@ -660,7 +673,7 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
-   serdes #(.TXFIFOSIZE(9),.RXFIFOSIZE(9)) serdes
+   serdes #(.TXFIFOSIZE(SERDES_TX_FIFOSIZE),.RXFIFOSIZE(SERDES_RX_FIFOSIZE)) serdes
      (.clk(dsp_clk),.rst(dsp_rst),
       .ser_tx_clk(ser_tx_clk),.ser_t(ser_t),.ser_tklsb(ser_tklsb),.ser_tkmsb(ser_tkmsb),
       .rd_dat_i(rd0_dat),.rd_flags_i(rd0_flags),.rd_ready_o(rd0_ready_i),.rd_ready_i(rd0_ready_o),
