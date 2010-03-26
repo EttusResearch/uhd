@@ -10,7 +10,8 @@ module u1e_core
    
    inout db_sda, inout db_scl,
    output sclk, output [7:0] sen, output mosi, input miso,
-   
+
+   input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
    inout [15:0] io_tx, inout [15:0] io_rx
    );
@@ -151,13 +152,15 @@ module u1e_core
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
-   // Slave 0, LEDs and Switches
+   // Slave 0, Misc LEDs, Switches, controls
    
    reg [15:0] 	 reg_fast, reg_slow;
    localparam REG_FAST = 7'd4;
    localparam REG_SWITCHES = 7'd6;
    localparam REG_GPIOS = 7'd8;
-
+   localparam REG_CGEN_ST = 7'd9;
+   localparam REG_CGEN_CTRL = 7'd10;
+   
    reg [3:0] 	 reg_gpios;
    
    always @(posedge wb_clk)
@@ -168,8 +171,19 @@ module u1e_core
      if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_GPIOS))
        reg_gpios <= s0_dat_mosi;
 
+   reg [1:0] 	 reg_cgen_ctrls;
+   
+   always @(posedge wb_clk)
+     if(wb_rst)
+       reg_cgen_ctrls <= 2'b11;
+     else if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_CGEN_CTRL))
+       reg_cgen_ctrls <= s0_dat_mosi;
+   
+   assign {cgen_sync_b, cgen_ref_sel} = reg_cgen_ctrls;
+   
    assign s0_dat_miso = (s0_adr[6:0] == REG_FAST) ? reg_fast : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
+			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			16'hBEEF;
    assign s0_ack = s0_stb & s0_cyc;
 

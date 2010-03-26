@@ -16,6 +16,8 @@ module u1e
    output db_sclk_rx, output db_sen_rx, output db_mosi_rx, input db_miso_rx,   // DB TX SPI
    output sclk_codec, output sen_codec, output mosi_codec, input miso_codec,   // AD9862 main SPI
    output cgen_sclk, output cgen_sen_b, output cgen_mosi, input cgen_miso,     // Clock gen SPI
+
+   input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,
    
    output overo_gpio144, output overo_gpio145, output overo_gpio146, output overo_gpio147,  // Fifo controls
    inout [15:0] io_tx, inout [15:0] io_rx
@@ -44,6 +46,8 @@ module u1e
 		     .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
 		     .db_sda(db_sda), .db_scl(db_scl),
 		     .sclk(sclk), .sen({cgen_sen_b,sen_codec,db_sen_tx,db_sen_rx}), .mosi(mosi), .miso(miso),
+		     .cgen_st_status(cgen_st_status), .cgen_st_ld(cgen_st_ld),.cgen_st_refmon(cgen_st_refmon), 
+		     .cgen_sync_b(cgen_sync_b), .cgen_ref_sel(cgen_ref_sel),
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
 		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
 		     .io_tx(io_tx), .io_rx(io_rx) );

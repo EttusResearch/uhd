@@ -105,11 +105,11 @@ NET "cgen_sclk"  LOC = "R5"  ;
 NET "cgen_sen_b"  LOC = "T1"  ;
 
 ## Clock gen control
-#NET "cgen_st_status"  LOC = "D4"  ;
-#NET "cgen_st_ld"  LOC = "D1"  ;
-#NET "cgen_st_refmon"  LOC = "E1"  ;
-#NET "cgen_sync_b"  LOC = "M1"  ;
-#NET "cgen_ref_sel"  LOC = "J1"  ;
+NET "cgen_st_status"  LOC = "D4"  ;
+NET "cgen_st_ld"  LOC = "D1"  ;
+NET "cgen_st_refmon"  LOC = "E1"  ;
+NET "cgen_sync_b"  LOC = "M1"  ;
+NET "cgen_ref_sel"  LOC = "J1"  ;
 
 ## Debug pins
 NET "debug_led<2>"  LOC = "T5"  ;
