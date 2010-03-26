@@ -52,8 +52,6 @@
 #include <ethertype.h>
 #include <arp_cache.h>
 
-#define FW_SETS_SEQNO	1	// define to 0 or 1 (FIXME must be 1 for now)
-
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
  *
@@ -704,14 +702,8 @@ static void setup_network(void){
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
 }
 
-#if (FW_SETS_SEQNO)
 /*
- * Debugging ONLY.  This will be handled by the tx_protocol_engine.
- *
  * This is called when the DSP Rx chain has filled in a packet.
- * We set and increment the seqno, then return false, indicating
- * that we didn't handle the packet.  A bit of a kludge
- * but it should work.
  */
 bool 
 fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
@@ -731,7 +723,6 @@ fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
 
   return false;		// we didn't handle the packet
 }
-#endif
 
 
 inline static void
@@ -786,16 +777,10 @@ main(void)
 
   // initialize double buffering state machine for DSP RX -> Ethernet
 
-  if (FW_SETS_SEQNO){
     dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
 	      &dsp_rx_recv_args, &dsp_rx_send_args,
 	      fw_sets_seqno_inspector);
-  }
-  else {
-    dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
-	      &dsp_rx_recv_args, &dsp_rx_send_args,
-	      dbsm_nop_inspector);
-  }
+
 
   // tell app_common that this dbsm could be sending to the ethernet
   ac_could_be_sending_to_eth = &dsp_rx_sm;
