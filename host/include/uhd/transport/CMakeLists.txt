@@ -17,6 +17,7 @@
 
 
 INSTALL(FILES
+    if_addrs.hpp
     smart_buffer.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
