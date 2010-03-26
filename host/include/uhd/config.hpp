@@ -37,6 +37,13 @@
 //# pragma warning(disable: 4511) // 'class' : copy constructor could not be generated
 #endif
 
+//define logical operators
+#ifdef BOOST_MSVC
+  #define not !
+  #define and &&
+  #define or ||
+#endif
+
 // http://gcc.gnu.org/wiki/Visibility
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
