@@ -39,7 +39,6 @@
 //////////////////////////////////////////////////////////////////////
 
 `include "spi_defines.v"
-`include "timescale.v"
 
 module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
                   pos_edge, neg_edge, rx_negedge, tx_negedge,
@@ -87,7 +86,7 @@ module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
   assign tx_clk = (tx_negedge ? neg_edge : pos_edge) && !last;
   
   // Character bit counter
-  always @(posedge clk or posedge rst)
+  always @(posedge clk)
   begin
     if(rst)
       cnt <= {`SPI_CHAR_LEN_BITS+1{1'b0}};
@@ -101,7 +100,7 @@ module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
   end
   
   // Transfer in progress
-  always @(posedge clk or posedge rst)
+  always @(posedge clk)
   begin
     if(rst)
       tip <= 1'b0;
@@ -112,7 +111,7 @@ module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
   end
   
   // Sending bits to the line
-  always @(posedge clk or posedge rst)
+  always @(posedge clk)
   begin
     if (rst)
       s_out   <= 1'b0;
@@ -121,7 +120,7 @@ module spi_shift (clk, rst, latch, byte_sel, len, lsb, go,
   end
   
   // Receiving bits from the line
-  always @(posedge clk or posedge rst)
+  always @(posedge clk)
   begin
     if (rst)
       data   <= {`SPI_MAX_CHAR{1'b0}};

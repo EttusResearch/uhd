@@ -39,7 +39,6 @@
 //////////////////////////////////////////////////////////////////////
 
 `include "spi_defines.v"
-`include "timescale.v"
 
 module spi_clgen (clk_in, rst, go, enable, last_clk, divider, clk_out, pos_edge, neg_edge); 
 
@@ -66,7 +65,7 @@ module spi_clgen (clk_in, rst, go, enable, last_clk, divider, clk_out, pos_edge,
   assign cnt_one  = cnt == {{`SPI_DIVIDER_LEN-1{1'b0}}, 1'b1};
   
   // Counter counts half period
-  always @(posedge clk_in or posedge rst)
+  always @(posedge clk_in)
   begin
     if(rst)
       cnt <= {`SPI_DIVIDER_LEN{1'b1}};
@@ -80,7 +79,7 @@ module spi_clgen (clk_in, rst, go, enable, last_clk, divider, clk_out, pos_edge,
   end
   
   // clk_out is asserted every other half period
-  always @(posedge clk_in or posedge rst)
+  always @(posedge clk_in)
   begin
     if(rst)
       clk_out <= 1'b0;
@@ -89,7 +88,7 @@ module spi_clgen (clk_in, rst, go, enable, last_clk, divider, clk_out, pos_edge,
   end
    
   // Pos and neg edge signals
-  always @(posedge clk_in or posedge rst)
+  always @(posedge clk_in)
   begin
     if(rst)
       begin

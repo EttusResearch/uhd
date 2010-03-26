@@ -137,7 +137,7 @@
 `define SPI_TX_2                2
 `define SPI_TX_3                3
 `define SPI_CTRL                4
-`define SPI_DEVIDE              5
+`define SPI_DIVIDE              5
 `define SPI_SS                  6
 
 //

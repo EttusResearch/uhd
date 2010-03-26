@@ -1,3 +1,6 @@
+
+// Modified 2010 by Matt Ettus to remove old verilog style
+
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
 ////  spi_top.v                                                   ////
@@ -40,7 +43,6 @@
 
 
 `include "spi_defines.v"
-`include "timescale.v"
 
 module spi_top
 (
@@ -99,7 +101,7 @@ module spi_top
   wire                             last_bit;         // marks last character bit
   
   // Address decoder
-  assign spi_divider_sel = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_DEVIDE);
+  assign spi_divider_sel = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_DIVIDE);
   assign spi_ctrl_sel    = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_CTRL);
   assign spi_tx_sel[0]   = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_TX_0);
   assign spi_tx_sel[1]   = wb_cyc_i & wb_stb_i & (wb_adr_i[`SPI_OFS_BITS] == `SPI_TX_1);
@@ -130,14 +132,14 @@ module spi_top
 `endif
 `endif
       `SPI_CTRL:    wb_dat = {{32-`SPI_CTRL_BIT_NB{1'b0}}, ctrl};
-      `SPI_DEVIDE:  wb_dat = {{32-`SPI_DIVIDER_LEN{1'b0}}, divider};
+      `SPI_DIVIDE:  wb_dat = {{32-`SPI_DIVIDER_LEN{1'b0}}, divider};
       `SPI_SS:      wb_dat = {{32-`SPI_SS_NB{1'b0}}, ss};
       default:      wb_dat = 32'bx;
     endcase
   end
   
   // Wb data out
-  always @(posedge wb_clk_i or posedge wb_rst_i)
+  always @(posedge wb_clk_i)
   begin
     if (wb_rst_i)
       wb_dat_o <= 32'b0;
@@ -146,7 +148,7 @@ module spi_top
   end
   
   // Wb acknowledge
-  always @(posedge wb_clk_i or posedge wb_rst_i)
+  always @(posedge wb_clk_i)
   begin
     if (wb_rst_i)
       wb_ack_o <= 1'b0;
@@ -158,7 +160,7 @@ module spi_top
   assign wb_err_o = 1'b0;
   
   // Interrupt
-  always @(posedge wb_clk_i or posedge wb_rst_i)
+  always @(posedge wb_clk_i)
   begin
     if (wb_rst_i)
       wb_int_o <= 1'b0;
@@ -169,7 +171,7 @@ module spi_top
   end
   
   // Divider register
-  always @(posedge wb_clk_i or posedge wb_rst_i)
+  always @(posedge wb_clk_i)
   begin
     if (wb_rst_i)
         divider <= {`SPI_DIVIDER_LEN{1'b0}};
@@ -207,7 +209,7 @@ module spi_top
   end
   
   // Ctrl register
-  always @(posedge wb_clk_i or posedge wb_rst_i)
+  always @(posedge wb_clk_i)
   begin
     if (wb_rst_i)
       ctrl <= {`SPI_CTRL_BIT_NB{1'b0}};
@@ -231,7 +233,7 @@ module spi_top
   assign ass        = ctrl[`SPI_CTRL_ASS];
   
   // Slave select register
-  always @(posedge wb_clk_i or posedge wb_rst_i)
+  always @(posedge wb_clk_i)
   begin
     if (wb_rst_i)
       ss <= {`SPI_SS_NB{1'b0}};
