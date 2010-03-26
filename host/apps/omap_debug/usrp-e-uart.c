@@ -9,7 +9,7 @@
 
 // Usage: usrp_e_uart <string>
 
-#define UART_WRITE_ADDR ((1<<6) + 16) 
+#define UART_WRITE_ADDR (0x80 + 12) 
 
 int main(int argc, char *argv[])
 {
