@@ -167,17 +167,8 @@ public:
     /*******************************************************************
      * Streaming
      ******************************************************************/
-    void set_streaming_at(const time_spec_t &time_spec){
-        _rx_ddc[std::string("stream_at")] = time_spec;
-        _rx_ddc[std::string("enabled")] = true;
-    }
-
-    void set_streaming(bool enb){
-        _rx_ddc[std::string("enabled")] = enb;
-    }
-
-    bool get_streaming(void){
-        return _rx_ddc[std::string("enabled")].as<bool>();
+    void issue_stream_cmd(const stream_cmd_t &stream_cmd){
+        _rx_ddc[std::string("stream_cmd")] = stream_cmd;
     }
 
     /*******************************************************************

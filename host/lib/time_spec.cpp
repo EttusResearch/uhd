@@ -19,11 +19,6 @@
 
 using namespace uhd;
 
-time_spec_t::time_spec_t(void){
-    secs = ~0;
-    ticks = ~0;
-}
-
 time_spec_t::time_spec_t(boost::uint32_t new_secs, boost::uint32_t new_ticks){
     secs = new_secs;
     ticks = new_ticks;

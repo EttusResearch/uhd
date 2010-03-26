@@ -54,11 +54,6 @@
 
 #define FW_SETS_SEQNO	1	// define to 0 or 1 (FIXME must be 1 for now)
 
-#if (FW_SETS_SEQNO)
-static int fw_seqno;	// used when f/w is filling in sequence numbers
-#endif
-
-
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
  *
@@ -127,18 +122,14 @@ dbsm_t dsp_rx_sm;	// the state machine
 // The mac address of the host we're sending to.
 eth_mac_addr_t host_mac_addr;
 
-#define TIME_NOW ((uint32_t)(~0))
-
-// variables for streaming mode
-
-static bool         streaming_p = false;
-static unsigned int streaming_items_per_frame = 0;
-static uint32_t     time_secs = TIME_NOW;
-static uint32_t     time_ticks = TIME_NOW;
-static int          streaming_frame_count = 0;
+//controls continuous streaming...
+static bool   auto_reload_command = false;
+static size_t streaming_items_per_frame = 0;
+static int    streaming_frame_count = 0;
 #define FRAMES_PER_CMD	2
 
-bool is_streaming(void){ return streaming_p; }
+static void setup_network(void);
+static void setup_vrt(void);
 
 // ----------------------------------------------------------------
 // the fast-path setup global variables
@@ -159,6 +150,9 @@ void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
+    //store the 2nd word as the following:
+    streaming_items_per_frame = ((uint32_t *)payload)[1];
+
     //its a tiny payload, load the fast-path variables
     fp_mac_addr_src = *ethernet_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
@@ -176,6 +170,24 @@ void handle_udp_data_packet(
     print_ip_addr(&fp_socket_dst.addr); newline();
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
+
+    //setup network and vrt
+    setup_network();
+    setup_vrt();
+
+    // kick off the state machine
+    dbsm_start(&dsp_rx_sm);
+
+}
+
+static void inline issue_stream_command(size_t nsamps, bool now, bool chain, uint32_t secs, uint32_t ticks, bool start){
+    //printf("Stream cmd: nsamps %d, now %d, chain %d, secs %u, ticks %u\n", (int)nsamps, now, chain, secs, ticks);
+    sr_rx_ctrl->cmd = MK_RX_CMD(nsamps, now, chain);
+
+    if (start) dbsm_start(&dsp_rx_sm);
+
+    sr_rx_ctrl->time_secs = secs;
+    sr_rx_ctrl->time_ticks = ticks;	// enqueue command
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \
@@ -443,20 +455,68 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE;
         break;
 
-    case USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO:
-        time_secs =  ctrl_data_in->data.streaming.secs;
-        time_ticks = ctrl_data_in->data.streaming.ticks;
-        streaming_items_per_frame = ctrl_data_in->data.streaming.samples;
+    /*******************************************************************
+     * Streaming
+     ******************************************************************/
+    case USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO:{
 
-        if (ctrl_data_in->data.streaming.enabled == 0){
-            stop_rx_cmd();
+        //issue two commands and set the auto-reload flag
+        if (ctrl_data_in->data.stream_cmd.continuous){
+            printf("Setting up continuous streaming...\n");
+            auto_reload_command = true;
+            streaming_frame_count = FRAMES_PER_CMD;
+
+            issue_stream_command(
+                streaming_items_per_frame * FRAMES_PER_CMD,
+                (ctrl_data_in->data.stream_cmd.now == 0)? false : true, //now
+                true, //chain
+                ctrl_data_in->data.stream_cmd.secs,
+                ctrl_data_in->data.stream_cmd.ticks,
+                true //start
+            );
+
+            issue_stream_command(
+                streaming_items_per_frame * FRAMES_PER_CMD,
+                true, //now
+                true, //chain
+                0, 0, //time does not matter
+                false
+            );
+
         }
+
+        //issue regular stream commands (split commands if too large)
         else{
-            start_rx_streaming_cmd();
-        }
+            auto_reload_command = false;
+            size_t num_samps = ctrl_data_in->data.stream_cmd.num_samps;
+            if (num_samps == 0) num_samps = 1; //FIXME hack, zero is used when stopping continuous streaming but it somehow makes it inifinite
 
-        ctrl_data_out.id = USRP2_CTRL_ID_CONFIGURED_THAT_STREAMING_DUDE;
+            bool chain = num_samps > MAX_SAMPLES_PER_CMD;
+            issue_stream_command(
+                (chain)? streaming_items_per_frame : num_samps, //nsamps
+                (ctrl_data_in->data.stream_cmd.now == 0)? false : true, //now
+                chain, //chain
+                ctrl_data_in->data.stream_cmd.secs,
+                ctrl_data_in->data.stream_cmd.ticks,
+                false
+            );
+
+            //handle rest of the samples that did not fit into one cmd
+            while(chain){
+                num_samps -= MAX_SAMPLES_PER_CMD;
+                chain = num_samps > MAX_SAMPLES_PER_CMD;
+                issue_stream_command(
+                    (chain)? streaming_items_per_frame : num_samps, //nsamps
+                    true, //now
+                    chain, //chain
+                    0, 0, //time does not matter
+                    false
+                );
+            }
+        }
+        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE;
         break;
+    }
 
     /*******************************************************************
      * DUC
@@ -531,7 +591,7 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
   // In the future, a hardware state machine will do this...
   if ( //warning! magic numbers approaching....
       (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
-      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != 0)
+      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != USRP2_INVALID_VRT_HEADER)
   ) return false;
 
   //test if its an ip recovery packet
@@ -557,7 +617,7 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
 
 //------------------------------------------------------------------
 
-static uint16_t get_vrt_packet_words(void){
+static size_t get_vrt_packet_words(void){
     return streaming_items_per_frame + \
         USRP2_HOST_RX_VRT_HEADER_WORDS32 + \
         USRP2_HOST_RX_VRT_TRAILER_WORDS32;
@@ -567,9 +627,7 @@ static bool vrt_has_trailer(void){
     return USRP2_HOST_RX_VRT_TRAILER_WORDS32 > 0;
 }
 
-void
-restart_streaming(void)
-{
+static void setup_vrt(void){
   // setup RX DSP regs
   sr_rx_ctrl->nsamples_per_pkt = streaming_items_per_frame;
   sr_rx_ctrl->nchannels = 1;
@@ -582,26 +640,6 @@ restart_streaming(void)
   );
   sr_rx_ctrl->vrt_stream_id = 0;
   sr_rx_ctrl->vrt_trailer = 0;
-
-  streaming_p = true;
-  streaming_frame_count = FRAMES_PER_CMD;
-
-  sr_rx_ctrl->cmd =
-    MK_RX_CMD(FRAMES_PER_CMD * streaming_items_per_frame,
-    (time_ticks==TIME_NOW)?1:0, 1);  // conditionally set "now" bit, set "chain" bit
-
-  // kick off the state machine
-  dbsm_start(&dsp_rx_sm);
-
-  sr_rx_ctrl->time_secs = time_secs;
-  sr_rx_ctrl->time_ticks = time_ticks;		// enqueue first of two commands
-
-  // make sure this one and the rest have the "now" and "chain" bits set.
-  sr_rx_ctrl->cmd =
-    MK_RX_CMD(FRAMES_PER_CMD * streaming_items_per_frame, 1, 1);
-
-  sr_rx_ctrl->time_secs = 0;
-  sr_rx_ctrl->time_ticks = 0;		// enqueue second command
 }
 
 /*
@@ -630,19 +668,15 @@ link_changed_callback(int speed)
   printf("\neth link changed: speed = %d\n", speed);
 }
 
-void
-start_rx_streaming_cmd(void)
-{
-  /*
-   * Construct  ethernet header and preload into two buffers
-   */
+static void setup_network(void){
+  //setup header and load into two buffers
   struct {
     uint32_t ctrl_word;
   } mem _AL4;
 
   memset(&mem, 0, sizeof(mem));
-  printf("samples per frame: %d\n", streaming_items_per_frame);
-  printf("words in a vrt packet %d\n", get_vrt_packet_words());
+  printf("items per frame: %d\n", (int)streaming_items_per_frame);
+  printf("words in a vrt packet %d\n", (int)get_vrt_packet_words());
   mem.ctrl_word = get_vrt_packet_words()*sizeof(uint32_t) | 1 << 16;
 
   memcpy_wa(buffer_ram(DSP_RX_BUF_0), &mem, sizeof(mem));
@@ -678,26 +712,6 @@ start_rx_streaming_cmd(void)
   sr_udp_sm->udp_hdr.dst_port = fp_socket_dst.port;
   sr_udp_sm->udp_hdr.length = UDP_SM_INS_UDP_LEN;
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
-
-  if (FW_SETS_SEQNO)
-    fw_seqno = 0;
-
-  restart_streaming();
-}
-
-void
-stop_rx_cmd(void)
-{
-  if (is_streaming()){
-    streaming_p = false;
-
-    // no samples, "now", not chained
-    sr_rx_ctrl->cmd = MK_RX_CMD(0, 1, 0);
-
-    sr_rx_ctrl->time_secs = 0;
-    sr_rx_ctrl->time_ticks = 0;	// enqueue command
-  }
-
 }
 
 #if (FW_SETS_SEQNO)
@@ -713,10 +727,10 @@ bool
 fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
 {
   // queue up another rx command when required
-  if (streaming_p && --streaming_frame_count == 0){
+  if (auto_reload_command && --streaming_frame_count == 0){
     streaming_frame_count = FRAMES_PER_CMD;
     sr_rx_ctrl->time_secs = 0;
-    sr_rx_ctrl->time_ticks = 0;
+    sr_rx_ctrl->time_ticks = 0; //enqueue last command
   }
 
   return false;		// we didn't handle the packet
@@ -820,7 +834,7 @@ main(void)
       // FIXME Figure out how to handle this robustly.
       // Any buffers that are emptying should be allowed to drain...
 
-      if (streaming_p){
+      if (auto_reload_command){
 	// restart_streaming();
 	// FIXME report error
       }

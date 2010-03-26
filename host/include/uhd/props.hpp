@@ -76,8 +76,6 @@ namespace uhd{
         MBOARD_PROP_TX_DBOARD,         //ro, wax::obj
         MBOARD_PROP_TX_DBOARD_NAMES,   //ro, prop_names_t
         MBOARD_PROP_CLOCK_CONFIG,      //rw, clock_config_t
-        MBOARD_PROP_PPS_SOURCE_NAMES,  //ro, prop_names_t
-        MBOARD_PROP_REF_SOURCE_NAMES,  //ro, prop_names_t
         MBOARD_PROP_TIME_NOW,          //wo, time_spec_t
         MBOARD_PROP_TIME_NEXT_PPS      //wo, time_spec_t
     };

@@ -41,8 +41,12 @@ void usrp2_impl::io_init(void){
     _rx_copy_buff = asio::buffer("", 0);
 
     //send a small data packet so the usrp2 knows the udp source port
-    boost::uint32_t zero_data = 0;
-    _data_transport->send(asio::buffer(&zero_data, sizeof(zero_data)));
+    //and the maximum number of lines (32 bit words) per packet
+    boost::uint32_t data[2] = {
+        htonl(USRP2_INVALID_VRT_HEADER),
+        htonl(_max_rx_samples_per_packet)
+    };
+    _data_transport->send(asio::buffer(&data, sizeof(data)));
 }
 
 #define unrolled_loop(__inst, __len){ \

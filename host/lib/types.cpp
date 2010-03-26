@@ -51,7 +51,16 @@ tune_result_t::tune_result_t(void){
  * clock config
  **********************************************************************/
 clock_config_t::clock_config_t(void){
-    ref_source = ""; //not a valid setting
-    pps_source = ""; //not a valid setting
-    pps_polarity = POLARITY_NEG;
+    ref_source = REF_INT,
+    pps_source = PPS_INT,
+    pps_polarity = PPS_NEG;
+}
+
+/***********************************************************************
+ * stream command
+ **********************************************************************/
+stream_cmd_t::stream_cmd_t(void){
+    stream_now = true;
+    continuous = false;
+    num_samps = 0;
 }

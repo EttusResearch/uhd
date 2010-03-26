@@ -63,9 +63,8 @@ void usrp2_impl::init_ddc_config(void){
     _ddc_freq = 0;
     update_ddc_config();
 
-    _ddc_stream_at = time_spec_t();
-    _ddc_enabled = false;
-    update_ddc_enabled();
+    //initial command that kills streaming (in case if was left on)
+    //issue_ddc_stream_cmd(TODO)
 }
 
 void usrp2_impl::update_ddc_config(void){
@@ -86,21 +85,19 @@ void usrp2_impl::update_ddc_config(void){
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE);
 }
 
-void usrp2_impl::update_ddc_enabled(void){
+void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     //setup the out data
     usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO);
-    out_data.data.streaming.enabled = (_ddc_enabled)? 1 : 0;
-    out_data.data.streaming.secs =  htonl(_ddc_stream_at.secs);
-    out_data.data.streaming.ticks = htonl(_ddc_stream_at.ticks);
-    out_data.data.streaming.samples = htonl(_max_rx_samples_per_packet);
+    out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
+    out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
+    out_data.data.stream_cmd.continuous = (stream_cmd.continuous)? 1 : 0;
+    out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
+    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.ticks);
+    out_data.data.stream_cmd.num_samps = htonl(stream_cmd.num_samps);
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_CONFIGURED_THAT_STREAMING_DUDE);
-
-    //clear the stream at time spec (it must be set for the next round of enable/disable)
-    _ddc_stream_at = time_spec_t();
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
 }
 
 /***********************************************************************
@@ -120,8 +117,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
                     ("decim")
                     ("decims")
                     ("freq")
-                    ("enabled")
-                    ("stream_at")
+                    ("stream_cmd")
                 ;
                 val = others;
             }
@@ -145,10 +141,6 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     }
     else if (key_name == "freq"){
         val = _ddc_freq;
-        return;
-    }
-    else if (key_name == "enabled"){
-        val = _ddc_enabled;
         return;
     }
 
@@ -178,16 +170,8 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         update_ddc_config();
         return;
     }
-    else if (key_name == "enabled"){
-        bool new_enabled = val.as<bool>();
-        _ddc_enabled = new_enabled; //shadow
-        update_ddc_enabled();
-        return;
-    }
-    else if (key_name == "stream_at"){
-        time_spec_t new_stream_at = val.as<time_spec_t>();
-        _ddc_stream_at = new_stream_at; //shadow
-        //update_ddc_enabled(); //dont update from here
+    else if (key_name == "stream_cmd"){
+        issue_ddc_stream_cmd(val.as<stream_cmd_t>());
         return;
     }
 

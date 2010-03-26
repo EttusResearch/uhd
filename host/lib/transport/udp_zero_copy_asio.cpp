@@ -115,7 +115,7 @@ smart_buffer::sptr udp_zero_copy_impl::recv(void){
 
     //implement timeout through polling and sleeping
     boost::asio::deadline_timer timer(_socket->get_io_service());
-    timer.expires_from_now(boost::posix_time::milliseconds(50));
+    timer.expires_from_now(boost::posix_time::milliseconds(100));
     while (not ((available = _socket->available()) or timer.expires_from_now().is_negative())){
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     }

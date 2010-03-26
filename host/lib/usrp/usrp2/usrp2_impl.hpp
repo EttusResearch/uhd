@@ -21,7 +21,6 @@
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/dict.hpp>
 #include <uhd/types.hpp>
-#include <uhd/time_spec.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -146,11 +145,6 @@ private:
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
-    //mappings from clock config strings to over the wire enums
-    uhd::dict<std::string, usrp2_ref_source_t> _ref_source_dict;
-    uhd::dict<std::string, usrp2_pps_source_t> _pps_source_dict;
-    uhd::dict<uhd::clock_config_t::polarity_t, usrp2_pps_polarity_t> _pps_polarity_dict;
-
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     void dboard_init(void);
@@ -178,11 +172,9 @@ private:
     std::vector<size_t> _allowed_decim_and_interp_rates;
     size_t _ddc_decim;
     uhd::freq_t _ddc_freq;
-    bool _ddc_enabled;
-    uhd::time_spec_t _ddc_stream_at;
     void init_ddc_config(void);
     void update_ddc_config(void);
-    void update_ddc_enabled(void);
+    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
 
     //methods and shadows for the duc dsp
     size_t _duc_interp;

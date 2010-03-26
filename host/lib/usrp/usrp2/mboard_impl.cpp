@@ -35,27 +35,10 @@ void usrp2_impl::mboard_init(void){
 }
 
 void usrp2_impl::init_clock_config(void){
-    //init the ref source clock config
-    _ref_source_dict = boost::assign::map_list_of
-        ("int", USRP2_REF_SOURCE_INT)
-        ("sma", USRP2_REF_SOURCE_SMA)
-        ("mimo", USRP2_REF_SOURCE_MIMO)
-    ;
-    _clock_config.ref_source = "int";
-
-    //init the pps source clock config
-    _pps_source_dict = boost::assign::map_list_of
-        ("sma", USRP2_PPS_SOURCE_SMA)
-        ("mimo", USRP2_PPS_SOURCE_MIMO)
-    ;
-    _clock_config.pps_source = "sma";
-
-    //init the pps polarity clock config
-    _pps_polarity_dict = boost::assign::map_list_of
-        (clock_config_t::POLARITY_POS, USRP2_PPS_POLARITY_POS)
-        (clock_config_t::POLARITY_NEG, USRP2_PPS_POLARITY_NEG)
-    ;
-    _clock_config.pps_polarity = clock_config_t::POLARITY_NEG;
+    //setup the clock configuration settings
+    _clock_config.ref_source = clock_config_t::REF_INT;
+    _clock_config.pps_source = clock_config_t::PPS_SMA;
+    _clock_config.pps_polarity = clock_config_t::PPS_NEG;
 
     //update the clock config (sends a control packet)
     update_clock_config();
@@ -65,9 +48,35 @@ void usrp2_impl::update_clock_config(void){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO);
-    out_data.data.clock_config.ref_source   = _ref_source_dict  [_clock_config.ref_source];
-    out_data.data.clock_config.pps_source   = _pps_source_dict  [_clock_config.pps_source];
-    out_data.data.clock_config.pps_polarity = _pps_polarity_dict[_clock_config.pps_polarity];
+
+    //translate ref source enums
+    switch(_clock_config.ref_source){
+    case clock_config_t::REF_INT:
+        out_data.data.clock_config.ref_source = USRP2_REF_SOURCE_INT; break;
+    case clock_config_t::REF_SMA:
+        out_data.data.clock_config.ref_source = USRP2_REF_SOURCE_SMA; break;
+    case clock_config_t::REF_MIMO:
+        out_data.data.clock_config.ref_source = USRP2_REF_SOURCE_MIMO; break;
+    default: throw std::runtime_error("usrp2: unhandled clock configuration ref source");
+    }
+
+    //translate pps source enums
+    switch(_clock_config.pps_source){
+    case clock_config_t::PPS_SMA:
+        out_data.data.clock_config.pps_source = USRP2_PPS_SOURCE_SMA; break;
+    case clock_config_t::PPS_MIMO:
+        out_data.data.clock_config.pps_source = USRP2_PPS_SOURCE_MIMO; break;
+    default: throw std::runtime_error("usrp2: unhandled clock configuration pps source");
+    }
+
+    //translate pps polarity enums
+    switch(_clock_config.pps_polarity){
+    case clock_config_t::PPS_POS:
+        out_data.data.clock_config.pps_source = USRP2_PPS_POLARITY_POS; break;
+    case clock_config_t::PPS_NEG:
+        out_data.data.clock_config.pps_source = USRP2_PPS_POLARITY_NEG; break;
+    default: throw std::runtime_error("usrp2: unhandled clock configuration pps polarity");
+    }
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
@@ -184,14 +193,6 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    case MBOARD_PROP_PPS_SOURCE_NAMES:
-        val = prop_names_t(_pps_source_dict.get_keys());
-        return;
-
-    case MBOARD_PROP_REF_SOURCE_NAMES:
-        val = prop_names_t(_ref_source_dict.get_keys());
-        return;
-
     case MBOARD_PROP_TIME_NOW:
     case MBOARD_PROP_TIME_NEXT_PPS:
         throw std::runtime_error("Error: trying to get write-only property on usrp2 mboard");
@@ -234,13 +235,9 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
-    case MBOARD_PROP_CLOCK_CONFIG:{
-            clock_config_t clock_config = val.as<clock_config_t>();
-            assert_has(_pps_source_dict.get_keys(), clock_config.pps_source, "usrp2 pps source");
-            assert_has(_ref_source_dict.get_keys(), clock_config.ref_source, "usrp2 ref source");
-            _clock_config = clock_config; //shadow
-            update_clock_config();
-        }
+    case MBOARD_PROP_CLOCK_CONFIG:
+        _clock_config = val.as<clock_config_t>();
+        update_clock_config();
         return;
 
     case MBOARD_PROP_TIME_NOW:{
@@ -264,8 +261,6 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     case MBOARD_PROP_RX_DBOARD_NAMES:
     case MBOARD_PROP_TX_DBOARD:
     case MBOARD_PROP_TX_DBOARD_NAMES:
-    case MBOARD_PROP_PPS_SOURCE_NAMES:
-    case MBOARD_PROP_REF_SOURCE_NAMES:
         throw std::runtime_error("Error: trying to set read-only property on usrp2 mboard");
 
     }

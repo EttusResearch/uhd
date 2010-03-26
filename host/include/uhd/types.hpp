@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/time_spec.hpp>
 #include <string>
 
 namespace uhd{
@@ -66,16 +67,51 @@ namespace uhd{
      * Clock configuration settings:
      * The source for the 10MHz reference clock.
      * The source and polarity for the PPS clock.
-     * Possible settings for the reference and pps source
-     * are implementation specific motherboard properties.
-     * See the MBOARD_PROP_XXX_SOURCE_NAMES properties.
      */
-    struct clock_config_t{
-        enum polarity_t {POLARITY_NEG, POLARITY_POS};
-        std::string ref_source;
-        std::string pps_source;
-        polarity_t  pps_polarity;
+    struct UHD_API clock_config_t{
+        enum ref_source_t {
+            REF_INT, //internal reference
+            REF_SMA, //external sma port
+            REF_MIMO //mimo cable (usrp2 only)
+        } ref_source;
+        enum pps_source_t {
+            PPS_INT, //there is no internal
+            PPS_SMA, //external sma port
+            PPS_MIMO //mimo cable (usrp2 only)
+        } pps_source;
+        enum pps_polarity_t {
+            PPS_NEG, //negative edge
+            PPS_POS  //positive edge
+        } pps_polarity;
         clock_config_t(void);
+    };
+
+    /*!
+     * Command struct for configuration and control of streaming:
+     *
+     * A stream command defines how the device sends samples to the host.
+     * Streaming is controlled by submitting a stream command to the rx dsp.
+     * Granular control over what the device streams to the host can be
+     * achieved through submission of multiple (carefully-crafted) commands.
+     *
+     * The stream_now parameter controls when the stream begins.
+     * When true, the device will begin streaming ASAP. When false,
+     * the device will begin streaming at a time specified by time_spec.
+     *
+     * The continuous parameter controls the number of samples received.
+     * When true, the device continues streaming indefinitely. When false,
+     * the device will stream the number of samples specified by num_samps.
+     *
+     * Standard usage case:
+     * To start continuous streaming, set stream_now to true and continuous to true.
+     * To end continuous streaming, set stream_now to true and continuous to false.
+     */
+    struct UHD_API stream_cmd_t{
+        bool stream_now;
+        time_spec_t time_spec;
+        bool continuous;
+        size_t num_samps;
+        stream_cmd_t(void);
     };
 
 } //namespace uhd

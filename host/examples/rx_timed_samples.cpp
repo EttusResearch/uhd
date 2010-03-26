@@ -65,9 +65,14 @@ int main(int argc, char *argv[]){
 
     //setup streaming
     std::cout << std::endl;
-    std::cout << boost::format("Begin streaming %u seconds in the future...")
-        % seconds_in_future << std::endl;
-    sdev->set_streaming_at(uhd::time_spec_t(seconds_in_future));
+    std::cout << boost::format("Begin streaming %u samples, %d seconds in the future...")
+        % total_num_samps % seconds_in_future << std::endl;
+    uhd::stream_cmd_t stream_cmd;
+    stream_cmd.stream_now = false;
+    stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
+    stream_cmd.continuous = false;
+    stream_cmd.num_samps = total_num_samps;
+    sdev->issue_stream_cmd(stream_cmd);
 
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
@@ -83,8 +88,7 @@ int main(int argc, char *argv[]){
         num_acc_samps += num_rx_samps;
     }
 
-    //finished, stop streaming
-    sdev->set_streaming(false);
+    //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
     return 0;

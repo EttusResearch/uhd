@@ -51,9 +51,7 @@ public:
     /*******************************************************************
      * Streaming
      ******************************************************************/
-    virtual void set_streaming_at(const time_spec_t &time_spec) = 0;
-    virtual void set_streaming(bool enb) = 0;
-    virtual bool get_streaming(void) = 0;
+    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
 
     /*******************************************************************
      * RX methods
