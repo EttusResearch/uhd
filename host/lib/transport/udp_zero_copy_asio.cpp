@@ -17,6 +17,7 @@
 
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <iostream>

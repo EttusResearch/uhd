@@ -28,6 +28,7 @@ SET(libuhd_sources
     time_spec.cpp
     types.cpp
     wax.cpp
+    transport/if_addrs.cpp
     transport/udp_simple.cpp
     transport/vrt.cpp
     usrp/dboard/basic.cpp
@@ -60,7 +61,6 @@ LIST(APPEND libuhd_sources
 # Setup defines for module loading
 ########################################################################
 INCLUDE(CheckIncludeFileCXX)
-
 CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE_CXX(Winbase.h HAVE_WINBASE_H)
 
@@ -73,6 +73,19 @@ ELSEIF(HAVE_WINBASE_H)
 ELSE(HAVE_DLFCN_H)
     MESSAGE(STATUS "Module loading not supported...")
 ENDIF(HAVE_DLFCN_H)
+
+########################################################################
+# Setup defines for interface address discovery
+########################################################################
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(ifaddrs.h HAVE_IFADDRS_H)
+
+IF(HAVE_IFADDRS_H)
+    MESSAGE(STATUS "Interface address discovery supported through getifaddrs...")
+    ADD_DEFINITIONS(-DHAVE_IFADDRS_H)
+ELSE(HAVE_IFADDRS_H)
+    MESSAGE(STATUS "Interface address discovery not supported...")
+ENDIF(HAVE_IFADDRS_H)
 
 ########################################################################
 # Setup libuhd library

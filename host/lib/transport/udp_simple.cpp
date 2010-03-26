@@ -16,6 +16,7 @@
 //
 
 #include <uhd/transport/udp_simple.hpp>
+#include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <iostream>

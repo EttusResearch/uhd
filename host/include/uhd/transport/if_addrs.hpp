@@ -15,31 +15,33 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_SMART_BUFFER_HPP
-#define INCLUDED_UHD_TRANSPORT_SMART_BUFFER_HPP
+#ifndef INCLUDED_UHD_IFADDRS_HPP
+#define INCLUDED_UHD_IFADDRS_HPP
 
-#include <boost/asio/buffer.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
+#include <uhd/config.hpp>
+#include <string>
+#include <vector>
 
 namespace uhd{ namespace transport{
 
-/*!
- * A buffer that knows how to free itself:
- *
- * This is just the smart buffer interface.
- * A transport implementation will have its own
- * internal (custom) smart buffer implementation.
- *
- * A smart buffer contains a boost asio const buffer.
- * On destruction, the buffer contents will be freed.
- */
-class smart_buffer : boost::noncopyable{
-public:
-    typedef boost::shared_ptr<smart_buffer> sptr;
-    virtual const boost::asio::const_buffer &get(void) const = 0;
-};
+    /*!
+     * The address for a network interface.
+     */
+    struct UHD_API if_addrs_t{
+        std::string inet;
+        std::string mask;
+        std::string bcast;
+        if_addrs_t(void);
+    };
+
+    /*!
+     * Get a list of network interface addresses.
+     * The internal implementation is system-dependent.
+     * \return a vector of if addrs
+     */
+    UHD_API std::vector<if_addrs_t> get_if_addrs(void);
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_TRANSPORT_SMART_BUFFER_HPP */
+
+#endif /* INCLUDED_UHD_IFADDRS_HPP */
