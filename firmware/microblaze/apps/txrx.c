@@ -99,8 +99,15 @@ dbsm_t dsp_tx_sm;	// the state machine
  * ================================================================
  */
 
+typedef struct{
+    uint32_t control_word;
+    uint32_t vrt_header[];
+} rx_dsp_buff_t;
+
+#define MK_RX_CTRL_WORD(num_words) (((num_words)*sizeof(uint32_t)) | (1 << 16))
+
 // DSP Rx writes ethernet header words
-#define DSP_RX_FIRST_LINE 1 //1 = control stuff to udp sm
+#define DSP_RX_FIRST_LINE 1 //1 = number of control words (see above)
 
 // receive from DSP
 buf_cmd_args_t dsp_rx_recv_args = {
@@ -463,6 +470,7 @@ void handle_udp_ctrl_packet(
         //issue two commands and set the auto-reload flag
         if (ctrl_data_in->data.stream_cmd.continuous){
             printf("Setting up continuous streaming...\n");
+            printf("items per frame: %d\n", (int)streaming_items_per_frame);
             auto_reload_command = true;
             streaming_frame_count = FRAMES_PER_CMD;
 
@@ -617,12 +625,6 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
 
 //------------------------------------------------------------------
 
-static size_t get_vrt_packet_words(void){
-    return streaming_items_per_frame + \
-        USRP2_HOST_RX_VRT_HEADER_WORDS32 + \
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32;
-}
-
 static bool vrt_has_trailer(void){
     return USRP2_HOST_RX_VRT_TRAILER_WORDS32 > 0;
 }
@@ -669,18 +671,6 @@ link_changed_callback(int speed)
 }
 
 static void setup_network(void){
-  //setup header and load into two buffers
-  struct {
-    uint32_t ctrl_word;
-  } mem _AL4;
-
-  memset(&mem, 0, sizeof(mem));
-  printf("items per frame: %d\n", (int)streaming_items_per_frame);
-  printf("words in a vrt packet %d\n", (int)get_vrt_packet_words());
-  mem.ctrl_word = get_vrt_packet_words()*sizeof(uint32_t) | 1 << 16;
-
-  memcpy_wa(buffer_ram(DSP_RX_BUF_0), &mem, sizeof(mem));
-  memcpy_wa(buffer_ram(DSP_RX_BUF_1), &mem, sizeof(mem));
 
   //setup ethernet header machine
   sr_udp_sm->eth_hdr.mac_dst_0_1 = (fp_mac_addr_dst.addr[0] << 8) | fp_mac_addr_dst.addr[1];
@@ -726,6 +716,12 @@ static void setup_network(void){
 bool 
 fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
 {
+  // insert the correct length into the control word and vrt header
+  rx_dsp_buff_t *buff = (rx_dsp_buff_t*)buffer_ram(buf_this);
+  size_t vrt_len = buffer_pool_status->last_line[buf_this]-1;
+  buff->control_word = MK_RX_CTRL_WORD(vrt_len);
+  buff->vrt_header[0] = (buff->vrt_header[0] & ~VRTH_PKT_SIZE_MASK) | (vrt_len & VRTH_PKT_SIZE_MASK);
+
   // queue up another rx command when required
   if (auto_reload_command && --streaming_frame_count == 0){
     streaming_frame_count = FRAMES_PER_CMD;
