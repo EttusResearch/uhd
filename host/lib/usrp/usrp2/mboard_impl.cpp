@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/assert.hpp>
+#include <uhd/types/mac_addr.hpp>
 #include "usrp2_impl.hpp"
 
 using namespace uhd;
@@ -168,7 +169,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_CLOCK_RATE:
-        val = freq_t(get_master_clock_freq());
+        val = double(get_master_clock_freq());
         return;
 
     case MBOARD_PROP_RX_DSP:

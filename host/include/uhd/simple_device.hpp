@@ -20,7 +20,9 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
-#include <uhd/types.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/tune_result.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>

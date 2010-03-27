@@ -35,7 +35,7 @@ template <class T> T log2(T num){
 /***********************************************************************
  * DDC Helper Methods
  **********************************************************************/
-static boost::uint32_t calculate_freq_word_and_update_actual_freq(freq_t &freq, freq_t clock_freq){
+static boost::uint32_t calculate_freq_word_and_update_actual_freq(double &freq, double clock_freq){
     double scale_factor = std::pow(2.0, 32);
 
     //calculate the freq register word
@@ -163,7 +163,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         return;
     }
     else if (key_name == "freq"){
-        freq_t new_freq = val.as<freq_t>();
+        double new_freq = val.as<double>();
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _ddc_freq = new_freq; //shadow
@@ -283,7 +283,7 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
         return;
     }
     else if (key_name == "freq"){
-        freq_t new_freq = val.as<freq_t>();
+        double new_freq = val.as<double>();
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _duc_freq = new_freq; //shadow

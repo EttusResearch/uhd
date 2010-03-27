@@ -19,7 +19,7 @@
 #include <uhd/gain_handler.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
-#include <uhd/dict.hpp>
+#include <uhd/types/dict.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>

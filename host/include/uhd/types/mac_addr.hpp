@@ -15,23 +15,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/metadata.hpp>
+#ifndef INCLUDED_UHD_TYPES_MAC_ADDR_HPP
+#define INCLUDED_UHD_TYPES_MAC_ADDR_HPP
 
-using namespace uhd;
+#include <uhd/config.hpp>
+#include <boost/cstdint.hpp>
+#include <string>
 
-rx_metadata_t::rx_metadata_t(void){
-    stream_id = 0;
-    has_stream_id = false;
-    time_spec = time_spec_t();
-    has_time_spec = false;
-    is_fragment = false;
-}
+namespace uhd{
 
-tx_metadata_t::tx_metadata_t(void){
-    stream_id = 0;
-    has_stream_id = false;
-    time_spec = time_spec_t();
-    has_time_spec = false;
-    start_of_burst = false;
-    end_of_burst = false;
-}
+    /*!
+    * Wrapper for an ethernet mac address.
+    * Provides conversion between string and binary formats.
+    */
+    struct UHD_API mac_addr_t{
+        boost::uint8_t mac_addr[6];
+        mac_addr_t(const std::string &mac_addr_str = "00:00:00:00:00:00");
+        std::string to_string(void) const;
+    };
+
+} //namespace uhd
+
+#endif /* INCLUDED_UHD_TYPES_MAC_ADDR_HPP */

@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/assert.hpp>
+#include <uhd/types/clock_config.hpp>
 #include <boost/format.hpp>
 #include "usrp2_impl.hpp"
 

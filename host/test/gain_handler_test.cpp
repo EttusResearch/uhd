@@ -17,9 +17,9 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/gain_handler.hpp>
-#include <uhd/types.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/props.hpp>
-#include <uhd/dict.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -84,7 +84,7 @@ private:
         //handle the get request conditioned on the key
         switch(key.as<prop_t>()){
         case PROP_GAIN_VALUE:
-            _gain_values[name] = val.as<gain_t>();
+            _gain_values[name] = val.as<float>();
             return;
 
         case PROP_GAIN_RANGE:
@@ -94,7 +94,7 @@ private:
     }
 
     gain_handler::sptr _gain_handler;
-    uhd::dict<std::string, gain_t> _gain_values;
+    uhd::dict<std::string, float> _gain_values;
     uhd::dict<std::string, gain_range_t> _gain_ranges;
 
 };
@@ -104,18 +104,18 @@ BOOST_AUTO_TEST_CASE(test_gain_handler){
     gainful_obj go0;
 
     BOOST_CHECK_THROW(
-        go0[named_prop_t(PROP_GAIN_VALUE, "fail")].as<gain_t>(),
+        go0[named_prop_t(PROP_GAIN_VALUE, "fail")].as<float>(),
         std::exception
     );
 
     std::cout << "verifying the overall min, max, step" << std::endl;
     gain_range_t gain = go0[PROP_GAIN_RANGE].as<gain_range_t>();
-    BOOST_CHECK_EQUAL(gain.min, gain_t(-10));
-    BOOST_CHECK_EQUAL(gain.max, gain_t(100));
-    BOOST_CHECK_EQUAL(gain.step, gain_t(1.5));
+    BOOST_CHECK_EQUAL(gain.min, float(-10));
+    BOOST_CHECK_EQUAL(gain.max, float(100));
+    BOOST_CHECK_EQUAL(gain.step, float(1.5));
 
     std::cout << "verifying the overall gain" << std::endl;
-    go0[named_prop_t(PROP_GAIN_VALUE, "g0")] = gain_t(-5);
-    go0[named_prop_t(PROP_GAIN_VALUE, "g1")] = gain_t(30);
-    BOOST_CHECK_EQUAL(go0[PROP_GAIN_VALUE].as<gain_t>(), gain_t(25));
+    go0[named_prop_t(PROP_GAIN_VALUE, "g0")] = float(-5);
+    go0[named_prop_t(PROP_GAIN_VALUE, "g1")] = float(30);
+    BOOST_CHECK_EQUAL(go0[PROP_GAIN_VALUE].as<float>(), float(25));
 }

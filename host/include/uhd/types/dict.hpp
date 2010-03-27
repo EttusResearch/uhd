@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_DICT_HPP
-#define INCLUDED_UHD_DICT_HPP
+#ifndef INCLUDED_UHD_TYPES_DICT_HPP
+#define INCLUDED_UHD_TYPES_DICT_HPP
 
 #include <list>
 #include <vector>
@@ -151,4 +151,4 @@ namespace uhd{
 
 } //namespace uhd
 
-#endif /* INCLUDED_UHD_DICT_HPP */
+#endif /* INCLUDED_UHD_TYPES_DICT_HPP */

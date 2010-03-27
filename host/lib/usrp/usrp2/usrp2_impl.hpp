@@ -19,9 +19,9 @@
 #define INCLUDED_USRP2_IMPL_HPP
 
 #include <uhd/usrp/usrp2.hpp>
-#include <uhd/dict.hpp>
-#include <uhd/types.hpp>
-#include <uhd/time_spec.hpp>
+#include <uhd/types/dict.hpp>
+#include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/clock_config.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -173,14 +173,14 @@ private:
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;
     size_t _ddc_decim;
-    uhd::freq_t _ddc_freq;
+    double _ddc_freq;
     void init_ddc_config(void);
     void update_ddc_config(void);
     void issue_ddc_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
 
     //methods and shadows for the duc dsp
     size_t _duc_interp;
-    uhd::freq_t _duc_freq;
+    double _duc_freq;
     void init_duc_config(void);
     void update_duc_config(void);
 

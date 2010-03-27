@@ -19,9 +19,9 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/device_addr.hpp>
+#include <uhd/types/device_addr.hpp>
+#include <uhd/types/metadata.hpp>
 #include <uhd/props.hpp>
-#include <uhd/metadata.hpp>
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>

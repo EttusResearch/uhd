@@ -63,7 +63,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << "-- USRP Device " << i << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
-        std::cout << device_addrs[i] << std::endl << std::endl;
+        std::cout << device_addrs[i].to_string() << std::endl << std::endl;
         uhd::device::make(device_addrs[i]); //test make
     }
 

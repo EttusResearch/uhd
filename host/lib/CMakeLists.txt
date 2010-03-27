@@ -20,12 +20,9 @@
 ########################################################################
 SET(libuhd_sources
     device.cpp
-    device_addr.cpp
     gain_handler.cpp
     load_modules.cpp
-    metadata.cpp
     simple_device.cpp
-    time_spec.cpp
     types.cpp
     wax.cpp
     transport/if_addrs.cpp

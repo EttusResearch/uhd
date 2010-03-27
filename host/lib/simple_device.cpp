@@ -19,7 +19,6 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/props.hpp>
-#include <uhd/types.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -208,7 +207,7 @@ public:
     }
 
     float get_rx_gain(void){
-        return _rx_subdev[SUBDEV_PROP_GAIN].as<gain_t>();
+        return _rx_subdev[SUBDEV_PROP_GAIN].as<float>();
     }
 
     gain_range_t get_rx_gain_range(void){
@@ -264,7 +263,7 @@ public:
     }
 
     float get_tx_gain(void){
-        return _tx_subdev[SUBDEV_PROP_GAIN].as<gain_t>();
+        return _tx_subdev[SUBDEV_PROP_GAIN].as<float>();
     }
 
     gain_range_t get_tx_gain_range(void){

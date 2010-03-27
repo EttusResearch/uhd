@@ -16,7 +16,7 @@
 //
 
 #include <uhd/device.hpp>
-#include <uhd/dict.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/foreach.hpp>
@@ -110,14 +110,14 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     //check that we found any devices
     if (dev_addr_makers.size() == 0){
         throw std::runtime_error(str(
-            boost::format("No devices found for ----->\n%s") % device_addr::to_string(hint)
+            boost::format("No devices found for ----->\n%s") % hint.to_string()
         ));
     }
 
     //check that the which index is valid
     if (dev_addr_makers.size() <= which){
         throw std::runtime_error(str(
-            boost::format("No device at index %d for ----->\n%s") % which % device_addr::to_string(hint)
+            boost::format("No device at index %d for ----->\n%s") % which % hint.to_string()
         ));
     }
 

@@ -16,17 +16,15 @@
 #
 
 
-ADD_SUBDIRECTORY(transport)
-ADD_SUBDIRECTORY(types)
-ADD_SUBDIRECTORY(usrp)
-ADD_SUBDIRECTORY(utils)
-
 INSTALL(FILES
-    config.hpp
-    device.hpp
-    gain_handler.hpp
-    props.hpp
-    simple_device.hpp
-    wax.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd
+    clock_config.hpp
+    device_addr.hpp
+    dict.hpp
+    mac_addr.hpp
+    metadata.hpp
+    ranges.hpp
+    stream_cmd.hpp
+    time_spec.hpp
+    tune_result.hpp
+    DESTINATION ${INCLUDE_DIR}/uhd/types
 )
