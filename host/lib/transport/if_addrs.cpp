@@ -16,6 +16,9 @@
 //
 
 #include <uhd/transport/if_addrs.hpp>
+#include <boost/asio/ip/address_v4.hpp>
+#include <boost/cstdint.hpp>
+#include <iostream>
 
 uhd::transport::if_addrs_t::if_addrs_t(void){
     /* NOP */
@@ -26,17 +29,11 @@ uhd::transport::if_addrs_t::if_addrs_t(void){
  **********************************************************************/
 #ifdef HAVE_IFADDRS_H
 #include <ifaddrs.h>
-#include <boost/asio/ip/address_v4.hpp>
 
 static boost::asio::ip::address_v4 sockaddr_to_ip_addr(sockaddr *addr){
-    if (addr->sa_family == AF_INET) return boost::asio::ip::address_v4(ntohl(
+    return boost::asio::ip::address_v4(ntohl(
         reinterpret_cast<sockaddr_in*>(addr)->sin_addr.s_addr
     ));
-    return boost::asio::ip::address_v4::any();
-}
-
-static bool ifaddrs_valid(const struct ifaddrs *ifaddrs){
-    return ifaddrs->ifa_addr->sa_family == AF_INET;
 }
 
 std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
@@ -44,7 +41,12 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
     struct ifaddrs *ifap;
     if (getifaddrs(&ifap) == 0){
         for (struct ifaddrs *iter = ifap; iter != NULL; iter = iter->ifa_next){
-            if (not ifaddrs_valid(iter)) continue;
+            //ensure that the entries are valid
+            if (iter->ifa_addr->sa_family != AF_INET) continue;
+            if (iter->ifa_netmask->sa_family != AF_INET) continue;
+            if (iter->ifa_broadaddr->sa_family != AF_INET) continue;
+
+            //append a new set of interface addresses
             if_addrs_t if_addr;
             if_addr.inet = sockaddr_to_ip_addr(iter->ifa_addr).to_string();
             if_addr.mask = sockaddr_to_ip_addr(iter->ifa_netmask).to_string();
@@ -60,10 +62,7 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
  * Interface address discovery through windows api (TODO)
  **********************************************************************/
 #elif HAVE_WINSOCK2_H
-#include <boost/asio/ip/address_v4.hpp>
-#include <boost/cstdint.hpp>
 #include <winsock2.h>
-#include <iostream>
 
 std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
     std::vector<if_addrs_t> if_addrs;
