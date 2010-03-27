@@ -17,7 +17,8 @@
 
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/gain_handler.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/utils/static.hpp>
+#include <uhd/utils/assert.hpp>
 #include <uhd/dict.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
@@ -35,7 +36,7 @@ typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, prop_names_t> a
 
 //map a dboard id to a dboard constructor
 typedef uhd::dict<dboard_id_t, args_t> id_to_args_map_t;
-STATIC_INSTANCE(id_to_args_map_t, get_id_to_args_map)
+UHD_SINGLETON_FCN(id_to_args_map_t, get_id_to_args_map)
 
 void dboard_manager::register_dboard(
     dboard_id_t dboard_id,

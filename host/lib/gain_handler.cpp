@@ -16,7 +16,7 @@
 //
 
 #include <uhd/gain_handler.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/utils/assert.hpp>
 #include <uhd/types.hpp>
 #include <uhd/props.hpp>
 #include <boost/assign/list_of.hpp>

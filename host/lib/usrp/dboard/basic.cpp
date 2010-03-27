@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
 #include <uhd/props.hpp>
 #include <uhd/types.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -74,7 +75,7 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
     return dboard_base::sptr(new basic_tx(args, 32e6));
 }
 
-STATIC_BLOCK(reg_dboards){
+UHD_STATIC_BLOCK(reg_dboards){
     dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX");
     dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
     dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX");

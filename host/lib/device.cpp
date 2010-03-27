@@ -17,7 +17,8 @@
 
 #include <uhd/device.hpp>
 #include <uhd/dict.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
@@ -59,7 +60,7 @@ static size_t hash_device_addr(
 typedef boost::tuple<device::discover_t, device::make_t> dev_fcn_reg_t;
 
 // instantiate the device function registry container
-STATIC_INSTANCE(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
+UHD_SINGLETON_FCN(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
 
 void device::register_device(
     const discover_t &discover,
@@ -136,7 +137,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
         return hash_to_device[dev_hash].lock();
     }
     //create and register a new device
-    catch(const std::assert_error &){
+    catch(const uhd::assert_error &){
         device::sptr dev = maker(dev_addr);
         hash_to_device[dev_hash] = dev;
         return dev;

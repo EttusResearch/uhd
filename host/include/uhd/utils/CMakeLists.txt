@@ -15,22 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
-ADD_SUBDIRECTORY(transport)
-ADD_SUBDIRECTORY(usrp)
-ADD_SUBDIRECTORY(utils)
-
 INSTALL(FILES
-    config.hpp
-    device.hpp
-    device_addr.hpp
-    dict.hpp
-    gain_handler.hpp
-    metadata.hpp
-    props.hpp
-    simple_device.hpp
-    time_spec.hpp
-    types.hpp
-    wax.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd
+    algorithm.hpp
+    assert.hpp
+    safe_main.hpp
+    static.hpp
+    DESTINATION ${INCLUDE_DIR}/uhd/utils
 )

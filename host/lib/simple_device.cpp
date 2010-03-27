@@ -16,8 +16,8 @@
 //
 
 #include <uhd/simple_device.hpp>
-#include <uhd/device.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/props.hpp>
 #include <uhd/types.hpp>
 #include <boost/algorithm/string.hpp>

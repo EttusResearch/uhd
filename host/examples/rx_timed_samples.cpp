@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/safe_main.hpp>
 #include <uhd/simple_device.hpp>
 #include <uhd/props.hpp>
 #include <boost/program_options.hpp>
@@ -24,7 +25,7 @@
 
 namespace po = boost::program_options;
 
-int main(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string transport_args;
     int seconds_in_future;

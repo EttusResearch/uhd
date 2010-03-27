@@ -16,7 +16,8 @@
 //
 
 #include <uhd/transport/if_addrs.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -28,7 +29,7 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-STATIC_BLOCK(register_usrp2_device){
+UHD_STATIC_BLOCK(register_usrp2_device){
     device::register_device(&usrp2::discover, &usrp2::make);
 }
 

@@ -15,12 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/static.hpp>
-#include <iostream>
+#ifndef INCLUDED_UHD_UTILS_STATIC_HPP
+#define INCLUDED_UHD_UTILS_STATIC_HPP
 
-UHD_STATIC_BLOCK(module_test){
-    std::cout << "---------------------------------------" << std::endl;
-    std::cout << "-- Good news, everyone!" << std::endl;
-    std::cout << "-- The test module has been loaded." << std::endl;
-    std::cout << "---------------------------------------" << std::endl;
-}
+/*!
+ * Defines a function that implements the "construct on first use" idiom
+ * \param _t the type definition for the instance
+ * \param _x the name of the defined function
+ * \return a reference to the lazy instance
+ */
+#define UHD_SINGLETON_FCN(_t, _x) static _t &_x(){static _t _x; return _x;}
+
+/*!
+ * Defines a static code block that will be called before main()
+ * \param _x the name of the defined struct (must be unique in file)
+ */
+#define UHD_STATIC_BLOCK(_x) static struct _x{_x();}_x;_x::_x()
+
+#endif /* INCLUDED_UHD_UTILS_STATIC_HPP */
