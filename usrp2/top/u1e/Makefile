@@ -137,8 +137,7 @@ opencores/simple_pic/rtl/simple_pic.v \
 opencores/spi/rtl/verilog/spi_clgen.v \
 opencores/spi/rtl/verilog/spi_defines.v \
 opencores/spi/rtl/verilog/spi_shift.v \
-opencores/spi/rtl/verilog/spi_top.v \
-opencores/spi/rtl/verilog/timescale.v \
+opencores/spi/rtl/verilog/spi_top16.v \
 sdr_lib/acc.v \
 sdr_lib/add2.v \
 sdr_lib/add2_and_round.v \
