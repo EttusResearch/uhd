@@ -64,7 +64,7 @@ MESSAGE(STATUS "Configuring module loading...")
 
 INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILE_CXX(Windows.h HAVE_WINDOWS_H)
+CHECK_INCLUDE_FILE_CXX(windows.h HAVE_WINDOWS_H)
 
 IF(HAVE_DLFCN_H)
     MESSAGE(STATUS "  Module loading supported through dlopen.")
@@ -83,10 +83,14 @@ MESSAGE(STATUS "Configuring interface address discovery...")
 
 INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(ifaddrs.h HAVE_IFADDRS_H)
+CHECK_INCLUDE_FILE_CXX(winsock2.h HAVE_WINSOCK2_H)
 
 IF(HAVE_IFADDRS_H)
     MESSAGE(STATUS "  Interface address discovery supported through getifaddrs.")
     ADD_DEFINITIONS(-DHAVE_IFADDRS_H)
+ELSEIF(HAVE_WINSOCK2_H)
+    MESSAGE(STATUS "  Interface address discovery supported through SIO_GET_INTERFACE_LIST.")
+    ADD_DEFINITIONS(-DHAVE_WINSOCK2_H)
 ELSE(HAVE_IFADDRS_H)
     MESSAGE(STATUS "  Interface address discovery not supported.")
 ENDIF(HAVE_IFADDRS_H)

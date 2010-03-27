@@ -41,7 +41,7 @@ static void load_module(const std::string &file_name){
 }
 
 #elif HAVE_WINDOWS_H
-#include <Windows.h>
+#include <windows.h>
 
 static void load_module(const std::string &file_name){
     if (LoadLibrary(file_name.c_str()) == NULL){

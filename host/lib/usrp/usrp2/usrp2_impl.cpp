@@ -41,6 +41,9 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
     //if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")){
         BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
+            //avoid the loopback device
+            if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
+
             //create a new hint with this broadcast address
             device_addr_t new_hint = hint;
             new_hint["addr"] = if_addrs.bcast;
