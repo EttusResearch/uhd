@@ -18,6 +18,8 @@
 #ifndef INCLUDED_UHD_UTILS_STATIC_HPP
 #define INCLUDED_UHD_UTILS_STATIC_HPP
 
+#include <uhd/config.hpp>
+
 /*!
  * Defines a function that implements the "construct on first use" idiom
  * \param _t the type definition for the instance

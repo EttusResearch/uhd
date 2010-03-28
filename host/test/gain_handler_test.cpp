@@ -46,8 +46,8 @@ public:
         );
         _gain_values["g0"] = 0;
         _gain_values["g1"] = 0;
-        _gain_ranges["g0"] = gain_range_t(-10, 0, .1);
-        _gain_ranges["g1"] = gain_range_t(0, 100, 1.5);
+        _gain_ranges["g0"] = gain_range_t(-10, 0, float(.1));
+        _gain_ranges["g1"] = gain_range_t(0, 100, float(1.5));
     }
 
     ~gainful_obj(void){}

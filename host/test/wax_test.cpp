@@ -16,6 +16,7 @@
 //
 
 #include <boost/test/unit_test.hpp>
+#include <boost/shared_ptr.hpp>
 #include <uhd/wax.hpp>
 #include <iostream>
 
@@ -32,26 +33,29 @@ BOOST_AUTO_TEST_CASE(test_enums){
  * demo class for wax framework
  **********************************************************************/
 class wax_demo : public wax::obj{
-private:
-    std::vector<float> d_nums;
-    std::vector<wax_demo> d_subs;
 public:
+    typedef boost::shared_ptr<wax_demo> sptr;
+
     wax_demo(size_t sub_demos, size_t len){
         d_nums = std::vector<float>(len);
         if (sub_demos != 0){
             for (size_t i = 0; i < len; i++){
-                d_subs.push_back(wax_demo(sub_demos-1, len));
+                d_subs.push_back(sptr(new wax_demo(sub_demos-1, len)));
             }
         }
     }
     ~wax_demo(void){
         /* NOP */
     }
+private:
+    std::vector<float> d_nums;
+    std::vector<sptr> d_subs;
+
     void get(const wax::obj &key, wax::obj &value){
         if (d_subs.size() == 0){
             value = d_nums[key.as<size_t>()];
         }else{
-            value = d_subs[key.as<size_t>()].get_link();
+            value = d_subs[key.as<size_t>()]->get_link();
         }
     }
     void set(const wax::obj &key, const wax::obj &value){
@@ -63,9 +67,8 @@ public:
     }
 };
 
-static wax_demo wd(2, 10);
-
 BOOST_AUTO_TEST_CASE(test_chaining){
+    wax_demo wd(2, 1);
     std::cout << "chain 1" << std::endl;
     wd[size_t(0)];
     std::cout << "chain 2" << std::endl;
@@ -75,6 +78,7 @@ BOOST_AUTO_TEST_CASE(test_chaining){
 }
 
 BOOST_AUTO_TEST_CASE(test_set_get){
+    wax_demo wd(2, 10);
     std::cout << "set and get all" << std::endl;
     for (size_t i = 0; i < 10; i++){
         for (size_t j = 0; j < 10; j++){
@@ -89,6 +93,7 @@ BOOST_AUTO_TEST_CASE(test_set_get){
 }
 
 BOOST_AUTO_TEST_CASE(test_proxy){
+    wax_demo wd(2, 1);
     std::cout << "store proxy" << std::endl;
     wax::obj p = wd[size_t(0)][size_t(0)];
     p[size_t(0)] = float(5);
