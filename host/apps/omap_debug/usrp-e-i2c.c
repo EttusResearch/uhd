@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	printf("fp = %d\n", fp);
 
 	if (direction) {
-		count = argc - 2;
+		count = argc - 3;
 	} else {
 		count = atoi(argv[3]);
 	}
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 		for (i=0; i<count; i++) {
 			printf(" %X", i2c_msg->data[i]);
 		}
-		printf("/n");
+		printf("\n");
 			
 	}
 	return 0;
