@@ -34,7 +34,7 @@ static tune_result_t tune_xx_subdev_and_dxc(
     bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
     bool subdev_spectrum_inverted = subdev[SUBDEV_PROP_SPECTRUM_INVERTED].as<bool>();
     wax::obj dxc_freq_proxy = dxc[std::string("freq")];
-    double dxc_sample_rate = dxc[std::string("rate")].as<double>();
+    double dxc_sample_rate = dxc[std::string("if_rate")].as<double>();
 
     // Ask the d'board to tune as closely as it can to target_freq+lo_offset
     double target_inter_freq = target_freq + lo_offset;
@@ -96,7 +96,7 @@ tune_result_t uhd::tune_rx_subdev_and_ddc(
     double lo_offset = 0.0;
     //if the local oscillator will be in the passband, use an offset
     if (subdev[SUBDEV_PROP_LO_INTERFERES].as<bool>()){
-        lo_offset = 2.0*ddc[std::string("rate")].as<double>()/ddc[std::string("decim")].as<size_t>();
+        lo_offset = 2.0*ddc[std::string("bb_rate")].as<double>();
     }
     return tune_rx_subdev_and_ddc(subdev, ddc, target_freq, lo_offset);
 }
@@ -119,7 +119,7 @@ tune_result_t uhd::tune_tx_subdev_and_duc(
     double lo_offset = 0.0;
     //if the local oscillator will be in the passband, use an offset
     if (subdev[SUBDEV_PROP_LO_INTERFERES].as<bool>()){
-        lo_offset = 2.0*duc[std::string("rate")].as<double>()/duc[std::string("interp")].as<size_t>();
+        lo_offset = 2.0*duc[std::string("bb_rate")].as<double>();
     }
     return tune_tx_subdev_and_duc(subdev, duc, target_freq, lo_offset);
 }

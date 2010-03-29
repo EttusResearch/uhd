@@ -113,7 +113,8 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
 
         case DSP_PROP_OTHERS:{
                 prop_names_t others = boost::assign::list_of
-                    ("rate")
+                    ("if_rate")
+                    ("bb_rate")
                     ("decim")
                     ("decims")
                     ("freq")
@@ -127,8 +128,12 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
 
     //handle string-based properties specific to this dsp
     std::string key_name = key.as<std::string>();
-    if (key_name == "rate"){
+    if (key_name == "if_rate"){
         val = get_master_clock_freq();
+        return;
+    }
+    else if (key_name == "bb_rate"){
+        val = get_master_clock_freq()/_ddc_decim;
         return;
     }
     else if (key_name == "decim"){
@@ -234,7 +239,8 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
 
         case DSP_PROP_OTHERS:{
                 prop_names_t others = boost::assign::list_of
-                    ("rate")
+                    ("if_rate")
+                    ("bb_rate")
                     ("interp")
                     ("interps")
                     ("freq")
@@ -247,8 +253,12 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
 
     //handle string-based properties specific to this dsp
     std::string key_name = key.as<std::string>();
-    if (key_name == "rate"){
+    if (key_name == "if_rate"){
         val = get_master_clock_freq();
+        return;
+    }
+    else if (key_name == "bb_rate"){
+        val = get_master_clock_freq()/_duc_interp;
         return;
     }
     else if (key_name == "interp"){

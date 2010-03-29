@@ -30,7 +30,7 @@ namespace uhd{
  * the given target frequency + the LO offset (when applicable).
  * The ddc cordic is setup to bring the IF down to baseband.
  * \param subdev the dboard subdevice object with properties
- * \param ddc the ddc properties object (with "rate", "decim", "freq")
+ * \param ddc the ddc properties object (with "if_rate", "bb_rate", "freq")
  * \param target_freq the desired center frequency
  * \param lo_offset an offset for the subdevice IF from center
  * \return a tune result struct
@@ -55,7 +55,7 @@ UHD_API tune_result_t tune_rx_subdev_and_ddc(
  * the given target frequency + the LO offset (when applicable).
  * The duc cordic is setup to bring the baseband up to IF.
  * \param subdev the dboard subdevice object with properties
- * \param duc the duc properties object (with "rate", "interp", "freq")
+ * \param duc the duc properties object (with "if_rate", "bb_rate", "freq")
  * \param target_freq the desired center frequency
  * \param lo_offset an offset for the subdevice IF from center
  * \return a tune result struct

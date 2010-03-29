@@ -116,19 +116,17 @@ public:
      * RX methods
      ******************************************************************/
     void set_rx_rate(double rate){
-        double samp_rate = _rx_ddc[std::string("rate")].as<double>();
+        double samp_rate = _rx_ddc[std::string("if_rate")].as<double>();
         assert_has(get_rx_rates(), rate, "simple device rx rate");
         _rx_ddc[std::string("decim")] = size_t(samp_rate/rate);
     }
 
     double get_rx_rate(void){
-        double samp_rate = _rx_ddc[std::string("rate")].as<double>();
-        size_t decim = _rx_ddc[std::string("decim")].as<size_t>();
-        return samp_rate/decim;
+        return _rx_ddc[std::string("bb_rate")].as<double>();
     }
 
     std::vector<double> get_rx_rates(void){
-        return get_xx_rates(_rx_ddc[std::string("decims")], _rx_ddc[std::string("rate")]);
+        return get_xx_rates(_rx_ddc[std::string("decims")], _rx_ddc[std::string("if_rate")]);
     }
 
     tune_result_t set_rx_freq(double target_freq){
@@ -167,19 +165,17 @@ public:
      * TX methods
      ******************************************************************/
     void set_tx_rate(double rate){
-        double samp_rate = _tx_duc[std::string("rate")].as<double>();
+        double samp_rate = _tx_duc[std::string("if_rate")].as<double>();
         assert_has(get_tx_rates(), rate, "simple device tx rate");
         _tx_duc[std::string("interp")] = size_t(samp_rate/rate);
     }
 
     double get_tx_rate(void){
-        double samp_rate = _tx_duc[std::string("rate")].as<double>();
-        size_t interp = _tx_duc[std::string("interp")].as<size_t>();
-        return samp_rate/interp;
+        return _tx_duc[std::string("bb_rate")].as<double>();
     }
 
     std::vector<double> get_tx_rates(void){
-        return get_xx_rates(_tx_duc[std::string("interps")], _tx_duc[std::string("rate")]);
+        return get_xx_rates(_tx_duc[std::string("interps")], _tx_duc[std::string("if_rate")]);
     }
 
     tune_result_t set_tx_freq(double target_freq){
