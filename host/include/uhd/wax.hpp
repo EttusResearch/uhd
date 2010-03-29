@@ -38,6 +38,10 @@
  *
  * Property nesting occurs when a WAX object gets another object's link.
  * This special link is obtained through a call to my_obj.get_link().
+ *
+ * Note: Do not put a class derived from wax::obj into an stl container.
+ * MSVC will compile the code, but the binaries will crash at runtime.
+ * Rather, use pointers or smart pointers to instances of the derived class.
  */
 
 namespace wax{

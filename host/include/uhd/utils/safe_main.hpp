@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_UTILS_SAFE_MAIN_HPP
 #define INCLUDED_UHD_UTILS_SAFE_MAIN_HPP
 
+#include <uhd/config.hpp>
 #include <iostream>
 #include <stdexcept>
 
