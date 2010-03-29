@@ -22,7 +22,7 @@
 BOOST_AUTO_TEST_CASE(test_mac_addr){
     std::cout << "Testing mac addr..." << std::endl;
     const std::string mac_addr_str("00:01:23:45:67:89");
-    uhd::mac_addr_t mac_addr(mac_addr_str);
+    uhd::mac_addr_t mac_addr = uhd::mac_addr_t::from_string(mac_addr_str);
     std::cout << "Input: " << mac_addr_str << std::endl;
     std::cout << "Output: " << mac_addr.to_string() << std::endl;
     BOOST_CHECK_EQUAL(mac_addr_str, mac_addr.to_string());

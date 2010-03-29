@@ -18,10 +18,11 @@
 #ifndef INCLUDED_UHD_TYPES_DICT_HPP
 #define INCLUDED_UHD_TYPES_DICT_HPP
 
-#include <list>
-#include <vector>
-#include <stdexcept>
+#include <uhd/config.hpp>
 #include <boost/foreach.hpp>
+#include <stdexcept>
+#include <vector>
+#include <list>
 
 namespace uhd{
 

@@ -116,7 +116,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
             ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
 
             //extract the address
-            val = reinterpret_cast<mac_addr_t*>(in_data.data.mac_addr)->to_string();
+            val = mac_addr_t::from_bytes(in_data.data.mac_addr).to_string();
             return;
         }
 
@@ -211,8 +211,8 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
             //setup the out data
             usrp2_ctrl_data_t out_data;
             out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO);
-            mac_addr_t mac_addr(val.as<std::string>());
-            std::memcpy(out_data.data.mac_addr, &mac_addr, sizeof(mac_addr_t));
+            mac_addr_t mac_addr = mac_addr_t::from_string(val.as<std::string>());
+            std::copy(mac_addr.to_bytes(), mac_addr.to_bytes()+mac_addr_t::hlen, out_data.data.mac_addr);
 
             //send and recv
             usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);

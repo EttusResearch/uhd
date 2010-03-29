@@ -123,14 +123,55 @@ std::string device_addr_t::to_string(void) const{
     return ss.str();
 }
 
+static const std::string arg_delim = ";";
+static const std::string pair_delim = "=";
+
+static std::string trim(const std::string &in){
+    return boost::algorithm::trim_copy(in);
+}
+
+std::string device_addr_t::to_args_str(void) const{
+    std::string args_str;
+    const device_addr_t &device_addr = *this;
+    BOOST_FOREACH(const std::string &key, device_addr.get_keys()){
+        args_str += key + pair_delim + device_addr[key] + arg_delim;
+    }
+    return args_str;
+}
+
+device_addr_t device_addr_t::from_args_str(const std::string &args_str){
+    device_addr_t addr;
+
+    //split the args at the semi-colons
+    std::vector<std::string> pairs;
+    boost::split(pairs, args_str, boost::is_any_of(arg_delim));
+    BOOST_FOREACH(const std::string &pair, pairs){
+        if (trim(pair) == "") continue;
+
+        //split the key value pairs at the equals
+        std::vector<std::string> key_val;
+        boost::split(key_val, pair, boost::is_any_of(pair_delim));
+        if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args_str);
+        addr[trim(key_val[0])] = trim(key_val[1]);
+    }
+
+    return addr;
+}
+
 /***********************************************************************
  * mac addr
  **********************************************************************/
-uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
-    std::string mac_addr_str = (mac_addr_str_ == "")? "ff:ff:ff:ff:ff:ff" : mac_addr_str_;
+mac_addr_t::mac_addr_t(const boost::uint8_t *bytes){
+    std::copy(bytes, bytes+hlen, _bytes);
+}
 
-    //ether_aton_r(str.c_str(), &mac_addr);
-    boost::uint8_t p[6] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
+mac_addr_t mac_addr_t::from_bytes(const boost::uint8_t *bytes){
+    return mac_addr_t(bytes);
+}
+
+mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
+
+    boost::uint8_t p[hlen] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
 
     try{
         //only allow patterns of xx:xx or xx:xx:xx:xx:xx:xx
@@ -155,15 +196,17 @@ uhd::mac_addr_t::mac_addr_t(const std::string &mac_addr_str_){
         ));
     }
 
-    memcpy(&mac_addr, p, sizeof(mac_addr));
+    return from_bytes(p);
 }
 
-std::string uhd::mac_addr_t::to_string(void) const{
-    //ether_ntoa_r(&mac_addr, addr_buf);
-    const boost::uint8_t *p = reinterpret_cast<const boost::uint8_t *>(&mac_addr);
+const boost::uint8_t *mac_addr_t::to_bytes(void) const{
+    return _bytes;
+}
+
+std::string mac_addr_t::to_string(void) const{
     return str(
         boost::format("%02x:%02x:%02x:%02x:%02x:%02x")
-        % int(p[0]) % int(p[1]) % int(p[2])
-        % int(p[3]) % int(p[4]) % int(p[5])
+        % int(to_bytes()[0]) % int(to_bytes()[1]) % int(to_bytes()[2])
+        % int(to_bytes()[3]) % int(to_bytes()[4]) % int(to_bytes()[5])
     );
 }

@@ -19,7 +19,6 @@
 #include <uhd/utils/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/props.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
@@ -29,29 +28,6 @@ using namespace uhd;
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
-static std::string trim(const std::string &in){
-    return boost::algorithm::trim_copy(in);
-}
-
-device_addr_t args_to_device_addr(const std::string &args){
-    device_addr_t addr;
-
-    //split the args at the semi-colons
-    std::vector<std::string> pairs;
-    boost::split(pairs, args, boost::is_any_of(";"));
-    BOOST_FOREACH(std::string pair, pairs){
-        if (trim(pair) == "") continue;
-
-        //split the key value pairs at the equals
-        std::vector<std::string> key_val;
-        boost::split(key_val, pair, boost::is_any_of("="));
-        if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args);
-        addr[trim(key_val[0])] = trim(key_val[1]);
-    }
-
-    return addr;
-}
-
 static std::vector<double> get_xx_rates(wax::obj decerps, wax::obj rate){
     std::vector<double> rates;
     BOOST_FOREACH(size_t decerp, decerps.as<std::vector<size_t> >()){
@@ -223,5 +199,5 @@ private:
  * The Make Function
  **********************************************************************/
 simple_device::sptr simple_device::make(const std::string &args){
-    return sptr(new simple_device_impl(args_to_device_addr(args)));
+    return sptr(new simple_device_impl(device_addr_t::from_args_str(args)));
 }

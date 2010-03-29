@@ -57,27 +57,32 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::device::sptr u2_dev = uhd::usrp::usrp2::make(device_addr);
     //FIXME usees the default mboard for now (until the mimo link is supported)
     wax::obj u2_mb = (*u2_dev)[uhd::DEVICE_PROP_MBOARD];
+    std::cout << std::endl;
+
+    //fetch and print current settings
+    std::cout << "Fetching current settings from usrp2 eeprom:" << std::endl;
+    std::string curr_ip = u2_mb[std::string("ip-addr")].as<std::string>();
+    std::cout << boost::format("  Current IP Address: %s") % curr_ip << std::endl;
+    std::string curr_mac = u2_mb[std::string("mac-addr")].as<std::string>();
+    std::cout << boost::format("  Current MAC Address: %s") % curr_mac << std::endl;
+    std::cout << "  Done" << std::endl << std::endl;
 
     //try to set the new ip (if provided)
     if (vm.count("new-ip")){
         std::cout << "Burning a new ip address into the usrp2 eeprom:" << std::endl;
-        std::string old_ip = u2_mb[std::string("ip-addr")].as<std::string>();
-        std::cout << boost::format("  Old IP Address: %s") % old_ip << std::endl;
         std::string new_ip = vm["new-ip"].as<std::string>();
         std::cout << boost::format("  New IP Address: %s") % new_ip << std::endl;
         u2_mb[std::string("ip-addr")] = new_ip;
-        std::cout << "  Done" << std::endl;
+        std::cout << "  Done" << std::endl << std::endl;
     }
 
     //try to set the new mac (if provided)
     if (vm.count("new-mac")){
         std::cout << "Burning a new mac address into the usrp2 eeprom:" << std::endl;
-        std::string old_mac = u2_mb[std::string("mac-addr")].as<std::string>();
-        std::cout << boost::format("  Old MAC Address: %s") % old_mac << std::endl;
         std::string new_mac = vm["new-mac"].as<std::string>();
         std::cout << boost::format("  New MAC Address: %s") % new_mac << std::endl;
         u2_mb[std::string("mac-addr")] = new_mac;
-        std::cout << "  Done" << std::endl;
+        std::cout << "  Done" << std::endl << std::endl;
     }
 
     std::cout << "Power-cycle the usrp2 for the changes to take effect." << std::endl;

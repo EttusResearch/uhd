@@ -28,10 +28,39 @@ namespace uhd{
     * Wrapper for an ethernet mac address.
     * Provides conversion between string and binary formats.
     */
-    struct UHD_API mac_addr_t{
-        boost::uint8_t mac_addr[6];
-        mac_addr_t(const std::string &mac_addr_str = "00:00:00:00:00:00");
+    class UHD_API mac_addr_t{
+    public:
+        static const size_t hlen = 6;
+
+        /*!
+         * Create a mac address a byte array.
+         * \param bytes a pointer for the byte array
+         * \return a new mac address
+         */
+        static mac_addr_t from_bytes(const boost::uint8_t *bytes);
+
+        /*!
+         * Create a mac address from a string.
+         * \param mac_addr_str the string with delimiters
+         * \return a new mac address
+         */
+        static mac_addr_t from_string(const std::string &mac_addr_str);
+
+        /*!
+         * Get the byte representation of the mac address.
+         * \return a pointer to the internal byte array
+         */
+        const boost::uint8_t *to_bytes(void) const;
+
+        /*!
+         * Get the string representation of this mac address.
+         * \return a string with delimiters
+         */
         std::string to_string(void) const;
+
+    private:
+        mac_addr_t(const boost::uint8_t *bytes); //private constructor
+        boost::uint8_t _bytes[hlen]; //internal representation
     };
 
 } //namespace uhd

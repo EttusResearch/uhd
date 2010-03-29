@@ -47,7 +47,7 @@ static size_t hash_device_addr(
 
     //combine the hashes of sorted keys/value pairs
     size_t hash = 0;
-    BOOST_FOREACH(std::string key, keys){
+    BOOST_FOREACH(const std::string &key, keys){
         boost::hash_combine(hash, key);
         boost::hash_combine(hash, dev_addr[key]);
     }
@@ -76,7 +76,7 @@ void device::register_device(
 device_addrs_t device::discover(const device_addr_t &hint){
     device_addrs_t device_addrs;
 
-    BOOST_FOREACH(dev_fcn_reg_t fcn, get_dev_fcn_regs()){
+    BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
         device_addrs_t discovered_addrs = fcn.get<0>()(hint);
         device_addrs.insert(
             device_addrs.begin(),
@@ -95,11 +95,11 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
 
-    BOOST_FOREACH(dev_fcn_reg_t fcn, get_dev_fcn_regs()){
+    BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
         BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
             //copy keys that were in hint but not in dev_addr
             //this way, we can pass additional transport arguments
-            BOOST_FOREACH(std::string key, hint.get_keys()){
+            BOOST_FOREACH(const std::string &key, hint.get_keys()){
                 if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
             }
             //append the discovered address and its factory function

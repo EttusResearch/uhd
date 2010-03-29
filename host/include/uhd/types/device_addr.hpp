@@ -26,15 +26,40 @@
 namespace uhd{
 
     /*!
-     * The device address args are just a mapping of key/value string pairs.
-     * When left empty, the discovery routine will try to find all usrps.
-     * The discovery can be narrowed down by specifying the transport type arguments.
+     * Mapping of key/value pairs for locating devices on the system.
+     * When left empty, the device discovery routines will search
+     * all available transports on the system (ethernet, usb...).
      *
-     * For example, to access a specific usrp2 one would specify the transport type
-     * ("type", "udp") and the transport args ("addr", "<resolvable_hostname_or_addr>").
+     * To narrow down the discovery process to a particular device,
+     * specify a transport key/value pair specific to your device.
+     * Ex, to find a usrp2: my_dev_addr["addr"] = <resolvable_hostname_or_ip>
+     *
+     * The device address can also be used to pass arguments into
+     * the transport layer control to set (for example) buffer sizes.
      */
     class UHD_API device_addr_t : public dict<std::string, std::string>{
-        public: std::string to_string(void) const;
+    public:
+
+        /*!
+         * Convert a device address into a printable string.
+         * \return string good for use with std::cout <<
+         */
+        std::string to_string(void) const;
+
+        /*!
+         * Convert the device address into an args string.
+         * The args string contains delimiter symbols.
+         * \return a string with delimiter markup
+         */
+        std::string to_args_str(void) const;
+
+        /*!
+         * Make a device address from an args string.
+         * The args string contains delimiter symbols.
+         * \param args_str the arguments string
+         * \return the new device address
+         */
+        static device_addr_t from_args_str(const std::string &args_str);
     };
 
     //handy typedef for a vector of device addresses

@@ -204,7 +204,7 @@ dboard_manager_impl::dboard_manager_impl(
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
         ASSERT_THROW(rx_subdevs == tx_subdevs);
-        BOOST_FOREACH(std::string subdev, rx_subdevs){
+        BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr xcvr_dboard = rx_dboard_ctor(
                 dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, tx_dboard_id)
             );
@@ -222,7 +222,7 @@ dboard_manager_impl::dboard_manager_impl(
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
         //make the rx subdevs
-        BOOST_FOREACH(std::string subdev, rx_subdevs){
+        BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr rx_dboard = rx_dboard_ctor(
                 dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, dboard_id::NONE)
             );
@@ -232,7 +232,7 @@ dboard_manager_impl::dboard_manager_impl(
             );
         }
         //make the tx subdevs
-        BOOST_FOREACH(std::string subdev, tx_subdevs){
+        BOOST_FOREACH(const std::string &subdev, tx_subdevs){
             dboard_base::sptr tx_dboard = tx_dboard_ctor(
                 dboard_base::ctor_args_t(subdev, interface, dboard_id::NONE, tx_dboard_id)
             );
