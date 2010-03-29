@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/gain_handler.hpp>
+#include <uhd/utils/gain_handler.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/props.hpp>

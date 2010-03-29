@@ -16,7 +16,7 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <uhd/gain_handler.hpp>
+#include <uhd/utils/gain_handler.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/props.hpp>

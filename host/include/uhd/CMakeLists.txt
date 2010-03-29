@@ -24,7 +24,6 @@ ADD_SUBDIRECTORY(utils)
 INSTALL(FILES
     config.hpp
     device.hpp
-    gain_handler.hpp
     props.hpp
     simple_device.hpp
     wax.hpp

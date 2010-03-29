@@ -18,7 +18,9 @@
 INSTALL(FILES
     algorithm.hpp
     assert.hpp
+    gain_handler.hpp
     safe_main.hpp
     static.hpp
+    tune_helper.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
 )

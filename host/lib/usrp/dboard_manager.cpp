@@ -16,7 +16,7 @@
 //
 
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/gain_handler.hpp>
+#include <uhd/utils/gain_handler.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>

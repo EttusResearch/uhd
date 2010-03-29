@@ -23,6 +23,7 @@ SET(libuhd_sources
     gain_handler.cpp
     load_modules.cpp
     simple_device.cpp
+    tune_helper.cpp
     types.cpp
     wax.cpp
     transport/if_addrs.cpp
