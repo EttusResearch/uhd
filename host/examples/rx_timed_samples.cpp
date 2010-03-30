@@ -80,7 +80,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(num_acc_samps < total_num_samps){
         uhd::rx_metadata_t md;
         std::complex<float> buff[1000];
-        size_t num_rx_samps = dev->recv(boost::asio::buffer(buff, sizeof(buff)), md, "32fc");
+        size_t num_rx_samps = dev->recv(
+            boost::asio::buffer(buff, sizeof(buff)),
+            md, uhd::io_type_t::COMPLEX_FLOAT32
+        );
         if (num_rx_samps == 0) continue; //wait for packets with contents
 
         std::cout << boost::format("Got packet: %u samples, %u secs, %u ticks")

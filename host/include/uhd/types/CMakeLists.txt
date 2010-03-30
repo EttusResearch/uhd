@@ -20,8 +20,10 @@ INSTALL(FILES
     clock_config.hpp
     device_addr.hpp
     dict.hpp
+    io_type.hpp
     mac_addr.hpp
     metadata.hpp
+    otw_type.hpp
     ranges.hpp
     stream_cmd.hpp
     time_spec.hpp

@@ -29,18 +29,18 @@ namespace uhd{
      */
     struct UHD_API clock_config_t{
         enum ref_source_t {
-            REF_INT, //internal reference
-            REF_SMA, //external sma port
-            REF_MIMO //mimo cable (usrp2 only)
+            REF_INT  = 'i', //internal reference
+            REF_SMA  = 's', //external sma port
+            REF_MIMO = 'm'  //mimo cable (usrp2 only)
         } ref_source;
         enum pps_source_t {
-            PPS_INT, //there is no internal
-            PPS_SMA, //external sma port
-            PPS_MIMO //mimo cable (usrp2 only)
+            PPS_INT  = 'i', //there is no internal
+            PPS_SMA  = 's', //external sma port
+            PPS_MIMO = 'm'  //mimo cable (usrp2 only)
         } pps_source;
         enum pps_polarity_t {
-            PPS_NEG, //negative edge
-            PPS_POS  //positive edge
+            PPS_NEG = 'n', //negative edge
+            PPS_POS = 'p'  //positive edge
         } pps_polarity;
         clock_config_t(void);
     };

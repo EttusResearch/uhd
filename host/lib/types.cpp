@@ -23,10 +23,14 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/mac_addr.hpp>
+#include <uhd/types/otw_type.hpp>
+#include <uhd/types/io_type.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/cstdint.hpp>
 #include <stdexcept>
+#include <complex>
 
 using namespace uhd;
 
@@ -209,4 +213,35 @@ std::string mac_addr_t::to_string(void) const{
         % int(to_bytes()[0]) % int(to_bytes()[1]) % int(to_bytes()[2])
         % int(to_bytes()[3]) % int(to_bytes()[4]) % int(to_bytes()[5])
     );
+}
+
+/***********************************************************************
+ * otw type
+ **********************************************************************/
+otw_type_t::otw_type_t(void){
+    width = 0;
+    shift = 0;
+    byteorder = BO_NATIVE;
+}
+
+/***********************************************************************
+ * io type
+ **********************************************************************/
+static size_t tid_to_size(io_type_t::tid_t tid){
+    switch(tid){
+    case io_type_t::COMPLEX_FLOAT32: return sizeof(std::complex<float>);
+    case io_type_t::COMPLEX_INT16:   return sizeof(std::complex<boost::int16_t>);
+    case io_type_t::COMPLEX_INT8:    return sizeof(std::complex<boost::int8_t>);
+    default: throw std::runtime_error("unknown io type tid");
+    }
+}
+
+io_type_t::io_type_t(tid_t tid)
+: size(tid_to_size(tid)), tid(tid){
+    /* NOP */
+}
+
+io_type_t::io_type_t(size_t size)
+: size(size), tid(CUSTOM_TYPE){
+    /* NOP */
 }

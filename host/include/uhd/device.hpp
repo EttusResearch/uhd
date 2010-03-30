@@ -21,7 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
-#include <uhd/props.hpp>
+#include <uhd/types/io_type.hpp>
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -91,13 +91,13 @@ public:
      *
      * \param buff a buffer pointing to some read-only memory
      * \param metadata data describing the buffer's contents
-     * \param the type of data loaded in the buffer (32fc, 16sc)
+     * \param io_type the type of data loaded in the buffer
      * \return the number of samples sent
      */
     virtual size_t send(
         const boost::asio::const_buffer &buff,
         const tx_metadata_t &metadata,
-        const std::string &type = "32fc"
+        const io_type_t &io_type
     ) = 0;
 
     /*!
@@ -123,13 +123,13 @@ public:
      *
      * \param buff the buffer to fill with IF data
      * \param metadata data to fill describing the buffer
-     * \param the type of data to fill into the buffer (32fc, 16sc)
+     * \param io_type the type of data to fill into the buffer
      * \return the number of samples received
      */
     virtual size_t recv(
         const boost::asio::mutable_buffer &buff,
         rx_metadata_t &metadata,
-        const std::string &type = "32fc"
+        const io_type_t &io_type
     ) = 0;
 };
 
