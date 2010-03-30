@@ -15,10 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/assert.hpp>
-#include <algorithm> //std::copy
 #include "usrp_e_impl.hpp"
-#include <linux/usrp1_e.h>
+#include "usrp_e_regs.hpp"
+#include <uhd/types/dict.hpp>
+#include <uhd/utils/assert.hpp>
+#include <boost/assign/list_of.hpp>
+#include <algorithm> //std::copy
+#include <linux/usrp_e.h>
+#include <cstddef>
 
 using namespace uhd::usrp;
 
@@ -31,8 +35,8 @@ public:
     int read_aux_adc(unit_type_t, int);
 
     void set_atr_reg(gpio_bank_t, boost::uint16_t, boost::uint16_t, boost::uint16_t);
-    void set_gpio_ddr(gpio_bank_t, boost::uint16_t, boost::uint16_t);
-    void write_gpio(gpio_bank_t, boost::uint16_t, boost::uint16_t);
+    void set_gpio_ddr(gpio_bank_t, boost::uint16_t);
+    void write_gpio(gpio_bank_t, boost::uint16_t);
     boost::uint16_t read_gpio(gpio_bank_t);
 
     void write_i2c(int, const byte_vector_t &);
@@ -85,20 +89,85 @@ double usrp_e_dboard_interface::get_tx_clock_rate(void){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp_e_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
-    throw std::runtime_error("not implemented");
+void usrp_e_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
+    //define mapping of gpio bank to register address
+    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_ddr))
+        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_ddr))
+    ;
+
+    //load the data struct
+    usrp_e_ctl16 data;
+    data.offset = bank_to_addr[bank];
+    data.count = 1;
+    data.buf[0] = value;
+
+    //call the ioctl
+    _impl->ioctl(USRP_E_WRITE_CTL16, &data);
 }
 
-void usrp_e_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
-    throw std::runtime_error("not implemented");
+void usrp_e_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value){
+    //define mapping of gpio bank to register address
+    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_io))
+        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_io))
+    ;
+
+    //load the data struct
+    usrp_e_ctl16 data;
+    data.offset = bank_to_addr[bank];
+    data.count = 1;
+    data.buf[0] = value;
+
+    //call the ioctl
+    _impl->ioctl(USRP_E_WRITE_CTL16, &data);
 }
 
 boost::uint16_t usrp_e_dboard_interface::read_gpio(gpio_bank_t bank){
-    throw std::runtime_error("not implemented");
+    //define mapping of gpio bank to register address
+    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_io))
+        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_io))
+    ;
+
+    //load the data struct
+    usrp_e_ctl16 data;
+    data.offset = bank_to_addr[bank];
+    data.count = 1;
+
+    //call the ioctl
+    _impl->ioctl(USRP_E_READ_CTL16, &data);
+
+    return data.buf[0];
 }
 
 void usrp_e_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask){
-    throw std::runtime_error("not implemented");
+    //define mapping of gpio bank to register address
+    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_sel_low))
+        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_sel_low))
+    ;
+
+    //set the gpio selection mux to atr or software controlled
+    boost::uint16_t low_sel = 0, high_sel = 0;
+    for(size_t i = 0; i < 16; i++){
+        boost::uint16_t code = (mask & (1 << i))? GPIO_SEL_ATR : GPIO_SEL_SW;
+        if(i < 8) low_sel  |= code << (2*i-0);
+        else      high_sel |= code << (2*i-8);
+    }
+
+    //load the data struct
+    usrp_e_ctl16 data;
+    data.offset = bank_to_addr[bank];
+    data.count = 2;
+    data.buf[0] = low_sel;
+    data.buf[1] = high_sel;
+
+    //call the ioctl
+    _impl->ioctl(USRP_E_READ_CTL16, &data);
+
+    //----------------------------------------> TODO
+    //TODO set the atr regs
 }
 
 /***********************************************************************

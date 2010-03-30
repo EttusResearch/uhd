@@ -29,6 +29,7 @@ namespace uhd{
      */
     struct UHD_API clock_config_t{
         enum ref_source_t {
+            REF_AUTO = 'a', //automatic (device specific)
             REF_INT  = 'i', //internal reference
             REF_SMA  = 's', //external sma port
             REF_MIMO = 'm'  //mimo cable (usrp2 only)

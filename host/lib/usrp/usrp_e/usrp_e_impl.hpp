@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/clock_config.hpp>
 #include <uhd/usrp/usrp_e.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 
@@ -94,6 +95,8 @@ public:
 private:
     static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
     int _node_fd;
+
+    uhd::clock_config_t _clock_config;
 
     //device functions and settings
     void get(const wax::obj &, wax::obj &);

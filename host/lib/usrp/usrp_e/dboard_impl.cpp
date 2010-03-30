@@ -16,7 +16,6 @@
 //
 
 #include <boost/bind.hpp>
-#include <uhd/utils.hpp>
 #include "usrp_e_impl.hpp"
 
 using namespace uhd::usrp;
