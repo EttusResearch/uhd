@@ -38,22 +38,22 @@ class UHD_API device : boost::noncopyable, public wax::obj{
 
 public:
     typedef boost::shared_ptr<device> sptr;
-    typedef boost::function<device_addrs_t(const device_addr_t &)> discover_t;
+    typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
     typedef boost::function<sptr(const device_addr_t &)> make_t;
 
     /*!
      * Register a device into the discovery and factory system.
      *
-     * \param discover a function that discovers devices
+     * \param find a function that discovers devices
      * \param make a factory function that makes a device
      */
     static void register_device(
-        const discover_t &discover,
+        const find_t &find,
         const make_t &make
     );
 
     /*!
-     * \brief Discover usrp devices attached to the host.
+     * \brief Find usrp devices attached to the host.
      *
      * The hint device address should be used to narrow down the search
      * to particular transport types and/or transport arguments.
@@ -61,17 +61,17 @@ public:
      * \param hint a partially (or fully) filled in device address
      * \return a vector of device addresses for all usrps on the system
      */
-    static device_addrs_t discover(const device_addr_t &hint);
+    static device_addrs_t find(const device_addr_t &hint);
 
     /*!
      * \brief Create a new usrp device from the device address hint.
      *
-     * The make routine will call discover and pick one of the results.
+     * The make routine will call find and pick one of the results.
      * By default, the first result will be used to create a new device.
      * Use the which parameter as an index into the list of results.
      *
      * \param hint a partially (or fully) filled in device address
-     * \param which which address to use when multiple are discovered
+     * \param which which address to use when multiple are found
      * \return a shared pointer to a new device instance
      */
     static sptr make(const device_addr_t &hint, size_t which = 0);

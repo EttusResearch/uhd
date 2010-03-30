@@ -29,17 +29,16 @@ namespace uhd{ namespace usrp{
 class UHD_API usrp2 : public device{
 public:
     /*!
-     * Discover usrp2 devices over the ethernet.
+     * Find usrp2 devices over the ethernet.
      *
      * Recommended key/value pairs for the device hint address:
      * hint["addr"] = address, where address is a resolvable address
      * or ip address, which may or may not be a broadcast address.
      *
-     * This static method will be called by the device::discover.
      * \param hint a device addr with the usrp2 address filled in
      * \return a vector of device addresses for all usrp2s found
      */
-    static device_addrs_t discover(const device_addr_t &hint);
+    static device_addrs_t find(const device_addr_t &hint);
 
     /*!
      * Make a usrp2 from a device address.

@@ -30,13 +30,13 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 UHD_STATIC_BLOCK(register_usrp2_device){
-    device::register_device(&usrp2::discover, &usrp2::make);
+    device::register_device(&usrp2::find, &usrp2::make);
 }
 
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
-uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
+uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
     device_addrs_t usrp2_addrs;
 
     //if no address was specified, send a broadcast on each interface
@@ -50,7 +50,7 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
             new_hint["addr"] = if_addrs.bcast;
 
             //call discover with the new hint and append results
-            device_addrs_t new_usrp2_addrs = usrp2::discover(new_hint);
+            device_addrs_t new_usrp2_addrs = usrp2::find(new_hint);
             usrp2_addrs.insert(usrp2_addrs.begin(),
                 new_usrp2_addrs.begin(), new_usrp2_addrs.end()
             );
@@ -83,7 +83,6 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
                 boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
-                new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
                 //dont break here, it will exit the while loop

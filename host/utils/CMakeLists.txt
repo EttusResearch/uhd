@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ADD_EXECUTABLE(discover_usrps discover_usrps.cpp)
-TARGET_LINK_LIBRARIES(discover_usrps uhd)
-INSTALL(TARGETS discover_usrps RUNTIME DESTINATION ${RUNTIME_DIR})
+ADD_EXECUTABLE(uhd_find_devices uhd_find_devices.cpp)
+TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
+INSTALL(TARGETS uhd_find_devices RUNTIME DESTINATION ${RUNTIME_DIR})
 
 ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
 TARGET_LINK_LIBRARIES(usrp2_burner uhd)

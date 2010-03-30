@@ -57,23 +57,23 @@ static size_t hash_device_addr(
 /***********************************************************************
  * Registration
  **********************************************************************/
-typedef boost::tuple<device::discover_t, device::make_t> dev_fcn_reg_t;
+typedef boost::tuple<device::find_t, device::make_t> dev_fcn_reg_t;
 
 // instantiate the device function registry container
 UHD_SINGLETON_FCN(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
 
 void device::register_device(
-    const discover_t &discover,
+    const find_t &find,
     const make_t &make
 ){
     //std::cout << "registering device" << std::endl;
-    get_dev_fcn_regs().push_back(dev_fcn_reg_t(discover, make));
+    get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make));
 }
 
 /***********************************************************************
  * Discover
  **********************************************************************/
-device_addrs_t device::discover(const device_addr_t &hint){
+device_addrs_t device::find(const device_addr_t &hint){
     device_addrs_t device_addrs;
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
