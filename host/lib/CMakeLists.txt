@@ -54,18 +54,18 @@ LIST(APPEND libuhd_sources
 MESSAGE(STATUS "Configuring usrp-e support...")
 
 INCLUDE(CheckIncludeFiles)
-SET(usrp1e_required_headers
+SET(usrp_e_required_headers
     linux/ioctl.h
     linux/spi/spidev.h
-    linux/usrp1_e.h
+    linux/usrp_e.h
 )
 CHECK_INCLUDE_FILES(
-    "${usrp1e_required_headers}"
-    HAS_USRP1E_REQUIRED_HEADERS
+    "${usrp_e_required_headers}"
+    HAVE_USRP_E_REQUIRED_HEADERS
 )
 
-IF(HAS_USRP1E_REQUIRED_HEADERS)
-    MESSAGE(STATUS "  Building usrp1e support.")
+IF(HAVE_USRP_E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "  Building usrp-e support.")
     LIST(APPEND libuhd_sources
         usrp/usrp_e/dboard_impl.cpp
         usrp/usrp_e/dboard_interface.cpp
@@ -74,12 +74,12 @@ IF(HAS_USRP1E_REQUIRED_HEADERS)
         usrp/usrp_e/mboard_impl.cpp
         usrp/usrp_e/usrp_e_impl.cpp
     )
-ELSE(HAS_USRP1E_REQUIRED_HEADERS)
-    MESSAGE(STATUS "  Skipping usrp1e support.")
+ELSE(HAVE_USRP_E_REQUIRED_HEADERS)
+    MESSAGE(STATUS "  Skipping usrp-e support.")
     LIST(APPEND libuhd_sources
         usrp/usrp_e/usrp_e_none.cpp
     )
-ENDIF(HAS_USRP1E_REQUIRED_HEADERS)
+ENDIF(HAVE_USRP_E_REQUIRED_HEADERS)
 
 ########################################################################
 # Setup defines for module loading
