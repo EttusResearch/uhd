@@ -16,8 +16,9 @@
 //
 
 #include <uhd/device.hpp>
-#include <uhd/dict.hpp>
-#include <uhd/utils.hpp>
+#include <uhd/types/dict.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
@@ -46,7 +47,7 @@ static size_t hash_device_addr(
 
     //combine the hashes of sorted keys/value pairs
     size_t hash = 0;
-    BOOST_FOREACH(std::string key, keys){
+    BOOST_FOREACH(const std::string &key, keys){
         boost::hash_combine(hash, key);
         boost::hash_combine(hash, dev_addr[key]);
     }
@@ -56,26 +57,26 @@ static size_t hash_device_addr(
 /***********************************************************************
  * Registration
  **********************************************************************/
-typedef boost::tuple<device::discover_t, device::make_t> dev_fcn_reg_t;
+typedef boost::tuple<device::find_t, device::make_t> dev_fcn_reg_t;
 
 // instantiate the device function registry container
-STATIC_INSTANCE(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
+UHD_SINGLETON_FCN(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
 
 void device::register_device(
-    const discover_t &discover,
+    const find_t &find,
     const make_t &make
 ){
     //std::cout << "registering device" << std::endl;
-    get_dev_fcn_regs().push_back(dev_fcn_reg_t(discover, make));
+    get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make));
 }
 
 /***********************************************************************
  * Discover
  **********************************************************************/
-device_addrs_t device::discover(const device_addr_t &hint){
+device_addrs_t device::find(const device_addr_t &hint){
     device_addrs_t device_addrs;
 
-    BOOST_FOREACH(dev_fcn_reg_t fcn, get_dev_fcn_regs()){
+    BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
         device_addrs_t discovered_addrs = fcn.get<0>()(hint);
         device_addrs.insert(
             device_addrs.begin(),
@@ -94,11 +95,11 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
 
-    BOOST_FOREACH(dev_fcn_reg_t fcn, get_dev_fcn_regs()){
+    BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
         BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
             //copy keys that were in hint but not in dev_addr
             //this way, we can pass additional transport arguments
-            BOOST_FOREACH(std::string key, hint.get_keys()){
+            BOOST_FOREACH(const std::string &key, hint.get_keys()){
                 if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
             }
             //append the discovered address and its factory function
@@ -109,14 +110,14 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     //check that we found any devices
     if (dev_addr_makers.size() == 0){
         throw std::runtime_error(str(
-            boost::format("No devices found for ----->\n%s") % device_addr::to_string(hint)
+            boost::format("No devices found for ----->\n%s") % hint.to_string()
         ));
     }
 
     //check that the which index is valid
     if (dev_addr_makers.size() <= which){
         throw std::runtime_error(str(
-            boost::format("No device at index %d for ----->\n%s") % which % device_addr::to_string(hint)
+            boost::format("No device at index %d for ----->\n%s") % which % hint.to_string()
         ));
     }
 
@@ -136,7 +137,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
         return hash_to_device[dev_hash].lock();
     }
     //create and register a new device
-    catch(const std::assert_error &){
+    catch(const uhd::assert_error &){
         device::sptr dev = maker(dev_addr);
         hash_to_device[dev_hash] = dev;
         return dev;

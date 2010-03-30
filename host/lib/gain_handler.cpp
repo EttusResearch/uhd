@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/gain_handler.hpp>
-#include <uhd/utils.hpp>
-#include <uhd/types.hpp>
+#include <uhd/utils/gain_handler.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/types/ranges.hpp>
 #include <uhd/props.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
@@ -47,7 +47,7 @@ private:
     is_equal_t   _is_equal;
 
     prop_names_t get_gain_names(void);
-    gain_t get_overall_gain_val(void);
+    float get_overall_gain_val(void);
     gain_range_t get_overall_gain_range(void);
     template <class T> T get_named_prop(const wax::obj &prop, const std::string &name){
         return _link[named_prop_t(prop, name)].as<T>();
@@ -90,21 +90,21 @@ prop_names_t gain_handler_impl::get_gain_names(void){
     return _link[_props.names].as<prop_names_t>();
 }
 
-gain_t gain_handler_impl::get_overall_gain_val(void){
-    gain_t gain_val = 0;
+float gain_handler_impl::get_overall_gain_val(void){
+    float gain_val = 0;
     BOOST_FOREACH(std::string name, get_gain_names()){
-        gain_val += get_named_prop<gain_t>(_props.value, name);
+        gain_val += get_named_prop<float>(_props.value, name);
     }
     return gain_val;
 }
 
 gain_range_t gain_handler_impl::get_overall_gain_range(void){
-    gain_t gain_min = 0, gain_max = 0, gain_step = 0;
+    float gain_min = 0, gain_max = 0, gain_step = 0;
     BOOST_FOREACH(std::string name, get_gain_names()){
-        gain_range_t gain_tmp = get_named_prop<gain_range_t>(_props.range, name);
-        gain_min += gain_tmp.min;
-        gain_max += gain_tmp.max;
-        gain_step = std::max(gain_step, gain_tmp.step);
+        gain_range_t floatmp = get_named_prop<gain_range_t>(_props.range, name);
+        gain_min += floatmp.min;
+        gain_max += floatmp.max;
+        gain_step = std::max(gain_step, floatmp.step);
     }
     return gain_range_t(gain_min, gain_max, gain_step);
 }
@@ -145,7 +145,7 @@ bool gain_handler_impl::intercept_set(const wax::obj &key_, const wax::obj &val)
     //not a gain value key... dont handle
     if (not _is_equal(key, _props.value)) return false;
 
-    gain_t gain_val = val.as<gain_t>();
+    float gain_val = val.as<float>();
 
     //not a wildcard... dont handle (but check name and range)
     if (name != ""){
@@ -164,7 +164,7 @@ bool gain_handler_impl::intercept_set(const wax::obj &key_, const wax::obj &val)
         gain_range_t gain = get_named_prop<gain_range_t>(_props.range, name);
 
         //clip g to be within the allowed range
-        gain_t g = std::min(std::max(gain_val, gain.min), gain.max);
+        float g = std::min(std::max(gain_val, gain.min), gain.max);
         //set g to be a multiple of the step size
         g -= std::fmod(g, gain.step);
         //set g to be the new gain

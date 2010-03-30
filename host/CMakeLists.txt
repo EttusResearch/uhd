@@ -34,8 +34,9 @@ INCLUDE(CPack) #include after setting vars
 ########################################################################
 SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib)
-SET(RESOURCE_DIR share)
-SET(HEADER_DIR include)
+SET(INCLUDE_DIR include)
+SET(PKG_DATA_DIR share/uhd)
+MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 ########################################################################
 # Local Include Dir
@@ -63,10 +64,10 @@ IF(UNIX)
 ENDIF(UNIX)
 
 IF(WIN32)
-    ADD_DEFINITIONS(-Dnot=! -Dand=&& -Dor=||) #logical operators
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
     ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
+    ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS) #avoid warnings from std::getenv
     ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
 ENDIF(WIN32)
 
@@ -74,7 +75,7 @@ ENDIF(WIN32)
 # Setup Boost
 ########################################################################
 SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42")
-FIND_PACKAGE(Boost 1.36 REQUIRED
+FIND_PACKAGE(Boost 1.36 REQUIRED COMPONENTS
     date_time
     filesystem
     program_options
@@ -126,7 +127,8 @@ INSTALL(
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(apps)
+ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(include)
 ADD_SUBDIRECTORY(lib)
 ADD_SUBDIRECTORY(test)
+ADD_SUBDIRECTORY(utils)

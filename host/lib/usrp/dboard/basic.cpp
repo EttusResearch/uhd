@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
 #include <uhd/props.hpp>
-#include <uhd/types.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -33,26 +34,26 @@ using namespace boost::assign;
  **********************************************************************/
 class basic_rx : public rx_dboard_base{
 public:
-    basic_rx(ctor_args_t const& args, freq_t max_freq);
+    basic_rx(ctor_args_t const& args, double max_freq);
     ~basic_rx(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
     void rx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    freq_t _max_freq;
+    double _max_freq;
 };
 
 class basic_tx : public tx_dboard_base{
 public:
-    basic_tx(ctor_args_t const& args, freq_t max_freq);
+    basic_tx(ctor_args_t const& args, double max_freq);
     ~basic_tx(void);
 
     void tx_get(const wax::obj &key, wax::obj &val);
     void tx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    freq_t _max_freq;
+    double _max_freq;
 };
 
 /***********************************************************************
@@ -74,17 +75,17 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
     return dboard_base::sptr(new basic_tx(args, 32e6));
 }
 
-STATIC_BLOCK(reg_dboards){
-    dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX", list_of(""));
+UHD_STATIC_BLOCK(reg_dboards){
+    dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX");
     dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
-    dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX",    list_of(""));
+    dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX");
     dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("ab")("a")("b"));
 }
 
 /***********************************************************************
  * Basic and LF RX dboard
  **********************************************************************/
-basic_rx::basic_rx(ctor_args_t const& args, freq_t max_freq) : rx_dboard_base(args){
+basic_rx::basic_rx(ctor_args_t const& args, double max_freq) : rx_dboard_base(args){
     _max_freq = max_freq;
     // set the gpios to safe values (all inputs)
     get_interface()->set_gpio_ddr(dboard_interface::GPIO_RX_BANK, 0x0000, 0xffff);
@@ -112,7 +113,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        val = gain_t(0);
+        val = float(0);
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
@@ -124,7 +125,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = freq_t(0);
+        val = double(0);
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
@@ -163,7 +164,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<gain_t>() == gain_t(0));
+        ASSERT_THROW(val.as<float>() == float(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -195,7 +196,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 /***********************************************************************
  * Basic and LF TX dboard
  **********************************************************************/
-basic_tx::basic_tx(ctor_args_t const& args, freq_t max_freq) : tx_dboard_base(args){
+basic_tx::basic_tx(ctor_args_t const& args, double max_freq) : tx_dboard_base(args){
     _max_freq = max_freq;
     // set the gpios to safe values (all inputs)
     get_interface()->set_gpio_ddr(dboard_interface::GPIO_TX_BANK, 0x0000, 0xffff);
@@ -220,7 +221,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        val = gain_t(0);
+        val = float(0);
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
@@ -232,7 +233,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = freq_t(0);
+        val = double(0);
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
@@ -271,7 +272,7 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<gain_t>() == gain_t(0));
+        ASSERT_THROW(val.as<float>() == float(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:

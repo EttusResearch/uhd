@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_TIME_SPEC_HPP
-#define INCLUDED_UHD_TIME_SPEC_HPP
+#ifndef INCLUDED_UHD_TYPES_TIME_SPEC_HPP
+#define INCLUDED_UHD_TYPES_TIME_SPEC_HPP
 
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
@@ -35,17 +35,11 @@ namespace uhd{
         boost::uint32_t ticks;
 
         /*!
-         * Create a time_spec_t that holds a wildcard time.
-         * This will have implementation-specific meaning.
-         */
-        time_spec_t(void);
-
-        /*!
          * Create a time_spec_t from seconds and ticks.
-         * \param new_secs the new seconds
+         * \param new_secs the new seconds (default = 0)
          * \param new_ticks the new ticks (default = 0)
          */
-        time_spec_t(boost::uint32_t new_secs, boost::uint32_t new_ticks = 0);
+        time_spec_t(boost::uint32_t new_secs = 0, boost::uint32_t new_ticks = 0);
 
         /*!
          * Create a time_spec_t from boost posix time.
@@ -58,4 +52,4 @@ namespace uhd{
 
 } //namespace uhd
 
-#endif /* INCLUDED_UHD_TIME_SPEC_HPP */
+#endif /* INCLUDED_UHD_TYPES_TIME_SPEC_HPP */

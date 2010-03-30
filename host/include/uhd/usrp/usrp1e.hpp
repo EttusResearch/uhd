@@ -29,12 +29,11 @@ namespace uhd{ namespace usrp{
 class UHD_API usrp1e : public device{
 public:
     /*!
-     * Discover usrp1e devices on the system via the device node.
-     * This static method will be called by the device::discover.
+     * Find usrp1e devices on the system via the device node.
      * \param hint a device addr with the usrp1e address filled in
      * \return a vector of device addresses for all usrp1es found
      */
-    static device_addrs_t discover(const device_addr_t &hint);
+    static device_addrs_t find(const device_addr_t &hint);
 
     /*!
      * Make a usrp1e from a device address.

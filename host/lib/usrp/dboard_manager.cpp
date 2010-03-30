@@ -16,9 +16,10 @@
 //
 
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/gain_handler.hpp>
-#include <uhd/utils.hpp>
-#include <uhd/dict.hpp>
+#include <uhd/utils/gain_handler.hpp>
+#include <uhd/utils/static.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/types/dict.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
@@ -35,7 +36,7 @@ typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, prop_names_t> a
 
 //map a dboard id to a dboard constructor
 typedef uhd::dict<dboard_id_t, args_t> id_to_args_map_t;
-STATIC_INSTANCE(id_to_args_map_t, get_id_to_args_map)
+UHD_SINGLETON_FCN(id_to_args_map_t, get_id_to_args_map)
 
 void dboard_manager::register_dboard(
     dboard_id_t dboard_id,
@@ -163,12 +164,12 @@ static args_t get_dboard_args(
     std::string const& xx_type
 ){
     //special case, its rx and the none id (0xffff)
-    if (xx_type == "rx" and dboard_id == ID_NONE){
+    if (xx_type == "rx" and dboard_id == dboard_id::NONE){
         return get_dboard_args(0x0001, xx_type);
     }
 
     //special case, its tx and the none id (0xffff)
-    if (xx_type == "tx" and dboard_id == ID_NONE){
+    if (xx_type == "tx" and dboard_id == dboard_id::NONE){
         return get_dboard_args(0x0000, xx_type);
     }
 
@@ -203,7 +204,7 @@ dboard_manager_impl::dboard_manager_impl(
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
         ASSERT_THROW(rx_subdevs == tx_subdevs);
-        BOOST_FOREACH(std::string subdev, rx_subdevs){
+        BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr xcvr_dboard = rx_dboard_ctor(
                 dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, tx_dboard_id)
             );
@@ -221,9 +222,9 @@ dboard_manager_impl::dboard_manager_impl(
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
         //make the rx subdevs
-        BOOST_FOREACH(std::string subdev, rx_subdevs){
+        BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr rx_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, ID_NONE)
+                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, dboard_id::NONE)
             );
             //create a rx proxy for this rx board
             _rx_dboards[subdev] = subdev_proxy::sptr(
@@ -231,9 +232,9 @@ dboard_manager_impl::dboard_manager_impl(
             );
         }
         //make the tx subdevs
-        BOOST_FOREACH(std::string subdev, tx_subdevs){
+        BOOST_FOREACH(const std::string &subdev, tx_subdevs){
             dboard_base::sptr tx_dboard = tx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, ID_NONE, tx_dboard_id)
+                dboard_base::ctor_args_t(subdev, interface, dboard_id::NONE, tx_dboard_id)
             );
             //create a tx proxy for this tx board
             _tx_dboards[subdev] = subdev_proxy::sptr(

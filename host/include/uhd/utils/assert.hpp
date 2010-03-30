@@ -15,84 +15,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_UTILS_HPP
-#define INCLUDED_UHD_UTILS_HPP
+#ifndef INCLUDED_UHD_UTILS_ASSERT_HPP
+#define INCLUDED_UHD_UTILS_ASSERT_HPP
 
-#include <uhd/config.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/current_function.hpp>
 #include <stdexcept>
-#include <algorithm>
 
-/*!
- * Defines a function that implements the "construct on first use" idiom
- * \param _t the type definition for the instance
- * \param _x the name of the defined function
- * \return a reference to the lazy instance
- */
-#define STATIC_INSTANCE(_t, _x) static _t &_x(){static _t _x; return _x;}
-
-/*!
- * Defines a static code block that will be called before main()
- * \param _x the name of the defined struct (must be unique in file)
- */
-#define STATIC_BLOCK(_x) static struct _x{_x();}_x;_x::_x()
-
-/*!
- * Useful templated functions and classes that I like to pretend are part of stl
- */
-namespace std{
+namespace uhd{
 
     class assert_error : public std::logic_error{
     public:
-        explicit assert_error(const string& what_arg) : logic_error(what_arg){
+        explicit assert_error(const std::string& what_arg) : logic_error(what_arg){
             /* NOP */
         }
     };
 
     #define ASSERT_THROW(_x) if (not (_x)) { \
-        throw std::assert_error(str(boost::format( \
+        throw uhd::assert_error(str(boost::format( \
             "Assertion Failed:\n  %s:%d\n  %s\n  ---> %s <---" \
         ) % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % std::string(#_x))); \
     }
-
-    template<class T, class InputIterator, class Function>
-    T reduce(InputIterator first, InputIterator last, Function fcn, T init = 0){
-        T tmp = init;
-        for ( ; first != last; ++first ){
-            tmp = fcn(tmp, *first);
-        }
-        return tmp;
-    }
-
-    template<class T, class Iterable, class Function>
-    T reduce(Iterable iterable, Function fcn, T init = 0){
-        return reduce(iterable.begin(), iterable.end(), fcn, init);
-    }
-
-    template<class T, class InputIterator>
-    bool has(InputIterator first, InputIterator last, const T &elem){
-        return last != std::find(first, last, elem);
-    }
-
-    template<class T, class Iterable>
-    bool has(const Iterable &iterable, const T &elem){
-        return has(iterable.begin(), iterable.end(), elem);
-    }
-
-    template<typename T> T signum(T n){
-        if (n < 0) return -1;
-        if (n > 0) return 1;
-        return 0;
-    }
-
-}//namespace std
-
-#include <boost/format.hpp>
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-
-namespace uhd{
 
     /*!
      * Check that an element is found in a container.
@@ -116,7 +62,7 @@ namespace uhd{
             if (e != iterable.begin()[0]) possible_values += ", ";
             possible_values += boost::lexical_cast<std::string>(e);
         }
-        throw std::assert_error(str(boost::format(
+        throw uhd::assert_error(str(boost::format(
                 "Error: %s is not a valid %s. "
                 "Possible values are: [%s]."
             )
@@ -127,4 +73,4 @@ namespace uhd{
 
 }//namespace uhd
 
-#endif /* INCLUDED_UHD_UTILS_HPP */
+#endif /* INCLUDED_UHD_UTILS_ASSERT_HPP */

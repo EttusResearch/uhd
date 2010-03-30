@@ -15,9 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/transport/if_addrs.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
-#include <uhd/utils.hpp>
 #include <iostream>
 #include "usrp2_impl.hpp"
 
@@ -27,16 +30,33 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 STATIC_BLOCK(register_usrp2_device){
-    device::register_device(&usrp2::discover, &usrp2::make);
+    device::register_device(&usrp2::find, &usrp2::make);
 }
 
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
-uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
+uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
     device_addrs_t usrp2_addrs;
 
-    if (not hint.has_key("addr")) return usrp2_addrs;
+    //if no address was specified, send a broadcast on each interface
+    if (not hint.has_key("addr")){
+        BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
+            //avoid the loopback device
+            if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
+
+            //create a new hint with this broadcast address
+            device_addr_t new_hint = hint;
+            new_hint["addr"] = if_addrs.bcast;
+
+            //call discover with the new hint and append results
+            device_addrs_t new_usrp2_addrs = usrp2::find(new_hint);
+            usrp2_addrs.insert(usrp2_addrs.begin(),
+                new_usrp2_addrs.begin(), new_usrp2_addrs.end()
+            );
+        }
+        return usrp2_addrs;
+    }
 
     //create a udp transport to communicate
     //TODO if an addr is not provided, search all interfaces?
@@ -63,7 +83,6 @@ uhd::device_addrs_t usrp2::discover(const device_addr_t &hint){
                 boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
-                new_addr["transport"] = "udp";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
                 //dont break here, it will exit the while loop

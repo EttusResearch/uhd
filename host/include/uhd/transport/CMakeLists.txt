@@ -17,9 +17,10 @@
 
 
 INSTALL(FILES
+    if_addrs.hpp
     smart_buffer.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
     vrt.hpp
-    DESTINATION ${HEADER_DIR}/uhd/transport
+    DESTINATION ${INCLUDE_DIR}/uhd/transport
 )

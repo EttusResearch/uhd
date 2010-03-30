@@ -15,16 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_TYPES_HPP
-#define INCLUDED_UHD_TYPES_HPP
+#ifndef INCLUDED_UHD_TYPES_RANGES_HPP
+#define INCLUDED_UHD_TYPES_RANGES_HPP
 
 #include <uhd/config.hpp>
-#include <string>
 
 namespace uhd{
-
-    typedef float gain_t; //TODO REMOVE
-    typedef double freq_t; //TODO REMOVE
 
     /*!
      * The gain range struct describes possible gain settings.
@@ -45,39 +41,6 @@ namespace uhd{
         freq_range_t(double min = 0.0, double max = 0.0);
     };
 
-    /*!
-     * The tune result struct holds result of a 2-phase tuning:
-     * The struct hold the result of tuning the dboard as
-     * the target and actual intermediate frequency.
-     * The struct hold the result of tuning the DDC/DUC as
-     * the target and actual digital converter frequency.
-     * It also tell us weather or not the spectrum is inverted.
-     */
-    struct UHD_API tune_result_t{
-        double target_inter_freq;
-        double actual_inter_freq;
-        double target_dxc_freq;
-        double actual_dxc_freq;
-        bool spectrum_inverted;
-        tune_result_t(void);
-    };
-
-    /*!
-     * Clock configuration settings:
-     * The source for the 10MHz reference clock.
-     * The source and polarity for the PPS clock.
-     * Possible settings for the reference and pps source
-     * are implementation specific motherboard properties.
-     * See the MBOARD_PROP_XXX_SOURCE_NAMES properties.
-     */
-    struct clock_config_t{
-        enum polarity_t {POLARITY_NEG, POLARITY_POS};
-        std::string ref_source;
-        std::string pps_source;
-        polarity_t  pps_polarity;
-        clock_config_t(void);
-    };
-
 } //namespace uhd
 
-#endif /* INCLUDED_UHD_TYPES_HPP */
+#endif /* INCLUDED_UHD_TYPES_RANGES_HPP */

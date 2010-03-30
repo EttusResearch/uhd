@@ -17,20 +17,15 @@
 
 
 ADD_SUBDIRECTORY(transport)
+ADD_SUBDIRECTORY(types)
 ADD_SUBDIRECTORY(usrp)
+ADD_SUBDIRECTORY(utils)
 
 INSTALL(FILES
     config.hpp
     device.hpp
-    device_addr.hpp
-    dict.hpp
-    gain_handler.hpp
-    metadata.hpp
     props.hpp
     simple_device.hpp
-    time_spec.hpp
-    types.hpp
-    utils.hpp
     wax.hpp
-    DESTINATION ${HEADER_DIR}/uhd
+    DESTINATION ${INCLUDE_DIR}/uhd
 )

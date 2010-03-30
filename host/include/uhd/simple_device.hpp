@@ -20,7 +20,9 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
-#include <uhd/types.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/tune_result.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -43,10 +45,15 @@ public:
     virtual std::string get_name(void) = 0;
 
     /*******************************************************************
+     * Timing
+     ******************************************************************/
+    virtual void set_time_now(const time_spec_t &time_spec) = 0;
+    virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
+
+    /*******************************************************************
      * Streaming
      ******************************************************************/
-    virtual void set_streaming(bool enb) = 0;
-    virtual bool get_streaming(void) = 0;
+    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
 
     /*******************************************************************
      * RX methods

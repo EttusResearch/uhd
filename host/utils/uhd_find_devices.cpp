@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
 #include <uhd/props.hpp>
 #include <boost/program_options.hpp>
@@ -23,7 +24,7 @@
 
 namespace po = boost::program_options;
 
-int main(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
@@ -33,11 +34,11 @@ int main(int argc, char *argv[]){
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm); 
+    po::notify(vm);
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("Discover USRPs %s") % desc << std::endl;
+        std::cout << boost::format("UHD Find Devices %s") % desc << std::endl;
         return ~0;
     }
 
@@ -51,18 +52,18 @@ int main(int argc, char *argv[]){
     }
 
     //discover the usrps and print the results
-    uhd::device_addrs_t device_addrs = uhd::device::discover(device_addr);
+    uhd::device_addrs_t device_addrs = uhd::device::find(device_addr);
 
     if (device_addrs.size() == 0){
-        std::cerr << "No USRP Devices Found" << std::endl;
+        std::cerr << "No UHD Devices Found" << std::endl;
         return ~0;
     }
 
     for (size_t i = 0; i < device_addrs.size(); i++){
         std::cout << "--------------------------------------------------" << std::endl;
-        std::cout << "-- USRP Device " << i << std::endl;
+        std::cout << "-- UHD Device " << i << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
-        std::cout << device_addrs[i] << std::endl << std::endl;
+        std::cout << device_addrs[i].to_string() << std::endl << std::endl;
         uhd::device::make(device_addrs[i]); //test make
     }
 

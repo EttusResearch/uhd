@@ -15,12 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ADD_EXECUTABLE(discover_usrps discover_usrps.cpp)
-TARGET_LINK_LIBRARIES(discover_usrps uhd)
-INSTALL(TARGETS discover_usrps RUNTIME DESTINATION ${RUNTIME_DIR})
-
-ADD_EXECUTABLE(usrp1e_load_fpga usrp1e_load_fpga.cpp)
-TARGET_LINK_LIBRARIES(usrp1e_load_fpga uhd)
-
-ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
-TARGET_LINK_LIBRARIES(usrp2_burner uhd)
+INSTALL(FILES
+    algorithm.hpp
+    assert.hpp
+    gain_handler.hpp
+    safe_main.hpp
+    static.hpp
+    tune_helper.hpp
+    DESTINATION ${INCLUDE_DIR}/uhd/utils
+)

@@ -25,7 +25,7 @@ using namespace uhd::usrp;
  * when the required kernel module headers are not present.
  */
 
-device_addrs_t usrp1e::discover(const device_addr_t &){
+device_addrs_t usrp1e::find(const device_addr_t &){
     return device_addrs_t(); //return empty list
 }
 

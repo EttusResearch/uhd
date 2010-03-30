@@ -20,14 +20,13 @@
 ########################################################################
 SET(libuhd_sources
     device.cpp
-    device_addr.cpp
     gain_handler.cpp
     load_modules.cpp
-    metadata.cpp
     simple_device.cpp
-    time_spec.cpp
+    tune_helper.cpp
     types.cpp
     wax.cpp
+    transport/if_addrs.cpp
     transport/udp_simple.cpp
     transport/vrt.cpp
     usrp/dboard/basic.cpp
@@ -83,20 +82,40 @@ ENDIF(HAS_USRP1E_REQUIRED_HEADERS)
 ########################################################################
 # Setup defines for module loading
 ########################################################################
-INCLUDE(CheckIncludeFileCXX)
+MESSAGE(STATUS "Configuring module loading...")
 
+INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILE_CXX(Winbase.h HAVE_WINBASE_H)
+CHECK_INCLUDE_FILE_CXX(windows.h HAVE_WINDOWS_H)
 
 IF(HAVE_DLFCN_H)
-    MESSAGE(STATUS "Module loading supported through dlopen...")
+    MESSAGE(STATUS "  Module loading supported through dlopen.")
     ADD_DEFINITIONS(-DHAVE_DLFCN_H)
-ELSEIF(HAVE_WINBASE_H)
-    MESSAGE(STATUS "Module loading supported through LoadLibrary...")
-    ADD_DEFINITIONS(-DHAVE_WINBASE_H)
+ELSEIF(HAVE_WINDOWS_H)
+    MESSAGE(STATUS "  Module loading supported through LoadLibrary.")
+    ADD_DEFINITIONS(-DHAVE_WINDOWS_H)
 ELSE(HAVE_DLFCN_H)
-    MESSAGE(STATUS "Module loading not supported...")
+    MESSAGE(STATUS "  Module loading not supported.")
 ENDIF(HAVE_DLFCN_H)
+
+########################################################################
+# Setup defines for interface address discovery
+########################################################################
+MESSAGE(STATUS "Configuring interface address discovery...")
+
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(ifaddrs.h HAVE_IFADDRS_H)
+CHECK_INCLUDE_FILE_CXX(winsock2.h HAVE_WINSOCK2_H)
+
+IF(HAVE_IFADDRS_H)
+    MESSAGE(STATUS "  Interface address discovery supported through getifaddrs.")
+    ADD_DEFINITIONS(-DHAVE_IFADDRS_H)
+ELSEIF(HAVE_WINSOCK2_H)
+    MESSAGE(STATUS "  Interface address discovery supported through SIO_GET_INTERFACE_LIST.")
+    ADD_DEFINITIONS(-DHAVE_WINSOCK2_H)
+ELSE(HAVE_IFADDRS_H)
+    MESSAGE(STATUS "  Interface address discovery not supported.")
+ENDIF(HAVE_IFADDRS_H)
 
 ########################################################################
 # Setup libuhd library
