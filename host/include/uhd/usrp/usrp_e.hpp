@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_USRP1E_HPP
-#define INCLUDED_UHD_USRP_USRP1E_HPP
+#ifndef INCLUDED_UHD_USRP_USRP_E_HPP
+#define INCLUDED_UHD_USRP_USRP_E_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -24,21 +24,21 @@
 namespace uhd{ namespace usrp{
 
 /*!
- * The usrp1e device class.
+ * The USRP-Embedded device class.
  */
-class UHD_API usrp1e : public device{
+class UHD_API usrp_e : public device{
 public:
     /*!
-     * Find usrp1e devices on the system via the device node.
-     * \param hint a device addr with the usrp1e address filled in
-     * \return a vector of device addresses for all usrp1es found
+     * Find usrp_e devices on the system via the device node.
+     * \param hint a device addr with the usrp_e address filled in
+     * \return a vector of device addresses for all usrp-e's found
      */
     static device_addrs_t find(const device_addr_t &hint);
 
     /*!
-     * Make a usrp1e from a device address.
+     * Make a usrp_e from a device address.
      * \param addr the device address
-     * \return a device sptr to a new usrp1e
+     * \return a device sptr to a new usrp_e
      */
     static device::sptr make(const device_addr_t &addr);
 
@@ -51,4 +51,4 @@ public:
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_USRP1E_HPP */
+#endif /* INCLUDED_UHD_USRP_USRP_E_HPP */

@@ -16,31 +16,30 @@
 //
 
 #include <boost/bind.hpp>
-#include <uhd/utils.hpp>
-#include "usrp1e_impl.hpp"
+#include "usrp_e_impl.hpp"
 
 using namespace uhd::usrp;
 
 /***********************************************************************
  * Mboard Initialization
  **********************************************************************/
-void usrp1e_impl::mboard_init(void){
+void usrp_e_impl::mboard_init(void){
     _mboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp1e_impl::mboard_get, this, _1, _2),
-        boost::bind(&usrp1e_impl::mboard_set, this, _1, _2)
+        boost::bind(&usrp_e_impl::mboard_get, this, _1, _2),
+        boost::bind(&usrp_e_impl::mboard_set, this, _1, _2)
     );
 }
 
 /***********************************************************************
  * Mboard Get
  **********************************************************************/
-void usrp1e_impl::mboard_get(const wax::obj &, wax::obj &){
+void usrp_e_impl::mboard_get(const wax::obj &, wax::obj &){
     
 }
 
 /***********************************************************************
  * Mboard Set
  **********************************************************************/
-void usrp1e_impl::mboard_set(const wax::obj &, const wax::obj &){
+void usrp_e_impl::mboard_set(const wax::obj &, const wax::obj &){
     
 }

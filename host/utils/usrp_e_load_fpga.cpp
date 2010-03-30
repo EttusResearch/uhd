@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/usrp1e.hpp>
+#include <uhd/usrp/usrp_e.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
 
     //load the fpga
     std::string file = vm["file"].as<std::string>();
-    uhd::usrp::usrp1e::load_fpga(file);
+    uhd::usrp::usrp_e::load_fpga(file);
 
     return 0;
 }

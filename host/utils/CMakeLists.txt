@@ -19,8 +19,9 @@ ADD_EXECUTABLE(uhd_find_devices uhd_find_devices.cpp)
 TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
 INSTALL(TARGETS uhd_find_devices RUNTIME DESTINATION ${RUNTIME_DIR})
 
-ADD_EXECUTABLE(usrp1e_load_fpga usrp1e_load_fpga.cpp)
-TARGET_LINK_LIBRARIES(usrp1e_load_fpga uhd)
+ADD_EXECUTABLE(usrp_e_load_fpga usrp_e_load_fpga.cpp)
+TARGET_LINK_LIBRARIES(usrp_e_load_fpga uhd)
+INSTALL(TARGETS usrp_e_load_fpga RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
 
 ADD_EXECUTABLE(usrp2_burner usrp2_burner.cpp)
 TARGET_LINK_LIBRARIES(usrp2_burner uhd)

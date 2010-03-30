@@ -15,20 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/usrp1e.hpp>
+#include <uhd/usrp/usrp_e.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 
-#ifndef INCLUDED_USRP1E_IMPL_HPP
-#define INCLUDED_USRP1E_IMPL_HPP
+#ifndef INCLUDED_USRP_E_IMPL_HPP
+#define INCLUDED_USRP_E_IMPL_HPP
 
-class usrp1e_impl; // dummy class declaration
+class usrp_e_impl; // dummy class declaration
 
 /*!
- * Make a usrp1e dboard interface.
- * \param impl a pointer to the usrp1e impl object
+ * Make a usrp_e dboard interface.
+ * \param impl a pointer to the usrp_e impl object
  * \return a sptr to a new dboard interface
  */
-uhd::usrp::dboard_interface::sptr make_usrp1e_dboard_interface(usrp1e_impl *impl);
+uhd::usrp::dboard_interface::sptr make_usrp_e_dboard_interface(usrp_e_impl *impl);
 
 /*!
  * Simple wax obj proxy class:
@@ -73,15 +73,15 @@ private:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class usrp1e_impl : public uhd::device{
+class usrp_e_impl : public uhd::device{
 public:
     //structors
-    usrp1e_impl(const std::string &node);
-    ~usrp1e_impl(void);
+    usrp_e_impl(const std::string &node);
+    ~usrp_e_impl(void);
 
     //the io interface
-    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const std::string &);
-    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const std::string &);
+    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
+    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
 
     /*!
      * Perform an ioctl call on the device node file descriptor.
@@ -132,4 +132,4 @@ private:
     wax_obj_proxy::sptr _tx_duc_proxy;
 };
 
-#endif /* INCLUDED_USRP1E_IMPL_HPP */
+#endif /* INCLUDED_USRP_E_IMPL_HPP */

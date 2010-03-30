@@ -15,17 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
+#include <uhd/utils/assert.hpp>
 #include <algorithm> //std::copy
-#include "usrp1e_impl.hpp"
+#include "usrp_e_impl.hpp"
 #include <linux/usrp1_e.h>
 
 using namespace uhd::usrp;
 
-class usrp1e_dboard_interface : public dboard_interface{
+class usrp_e_dboard_interface : public dboard_interface{
 public:
-    usrp1e_dboard_interface(usrp1e_impl *impl);
-    ~usrp1e_dboard_interface(void);
+    usrp_e_dboard_interface(usrp_e_impl *impl);
+    ~usrp_e_dboard_interface(void);
 
     void write_aux_dac(unit_type_t, int, int);
     int read_aux_adc(unit_type_t, int);
@@ -50,61 +50,61 @@ private:
         bool readback
     );
 
-    usrp1e_impl *_impl;
+    usrp_e_impl *_impl;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_interface::sptr make_usrp1e_dboard_interface(usrp1e_impl *impl){
-    return dboard_interface::sptr(new usrp1e_dboard_interface(impl));
+dboard_interface::sptr make_usrp_e_dboard_interface(usrp_e_impl *impl){
+    return dboard_interface::sptr(new usrp_e_dboard_interface(impl));
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp1e_dboard_interface::usrp1e_dboard_interface(usrp1e_impl *impl){
+usrp_e_dboard_interface::usrp_e_dboard_interface(usrp_e_impl *impl){
     _impl = impl;
 }
 
-usrp1e_dboard_interface::~usrp1e_dboard_interface(void){
+usrp_e_dboard_interface::~usrp_e_dboard_interface(void){
     /* NOP */
 }
 
 /***********************************************************************
  * Clock Rates
  **********************************************************************/
-double usrp1e_dboard_interface::get_rx_clock_rate(void){
+double usrp_e_dboard_interface::get_rx_clock_rate(void){
     throw std::runtime_error("not implemented");
 }
 
-double usrp1e_dboard_interface::get_tx_clock_rate(void){
+double usrp_e_dboard_interface::get_tx_clock_rate(void){
     throw std::runtime_error("not implemented");
 }
 
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp1e_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
+void usrp_e_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
     throw std::runtime_error("not implemented");
 }
 
-void usrp1e_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
+void usrp_e_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
     throw std::runtime_error("not implemented");
 }
 
-boost::uint16_t usrp1e_dboard_interface::read_gpio(gpio_bank_t bank){
+boost::uint16_t usrp_e_dboard_interface::read_gpio(gpio_bank_t bank){
     throw std::runtime_error("not implemented");
 }
 
-void usrp1e_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask){
+void usrp_e_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask){
     throw std::runtime_error("not implemented");
 }
 
 /***********************************************************************
  * SPI
  **********************************************************************/
-dboard_interface::byte_vector_t usrp1e_dboard_interface::transact_spi(
+dboard_interface::byte_vector_t usrp_e_dboard_interface::transact_spi(
     spi_dev_t dev,
     spi_latch_t latch,
     spi_push_t push,
@@ -142,7 +142,7 @@ dboard_interface::byte_vector_t usrp1e_dboard_interface::transact_spi(
  **********************************************************************/
 static const size_t max_i2c_data_bytes = 10;
 
-void usrp1e_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
+void usrp_e_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     //allocate some memory for this transaction
     ASSERT_THROW(buf.size() <= max_i2c_data_bytes);
     boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
@@ -157,7 +157,7 @@ void usrp1e_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     _impl->ioctl(USRP_E_I2C_WRITE, &data);
 }
 
-dboard_interface::byte_vector_t usrp1e_dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
+dboard_interface::byte_vector_t usrp_e_dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
     //allocate some memory for this transaction
     ASSERT_THROW(num_bytes <= max_i2c_data_bytes);
     boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
@@ -180,10 +180,10 @@ dboard_interface::byte_vector_t usrp1e_dboard_interface::read_i2c(int i2c_addr, 
 /***********************************************************************
  * Aux DAX/ADC
  **********************************************************************/
-void usrp1e_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, int which, int value){
+void usrp_e_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, int which, int value){
     throw std::runtime_error("not implemented");
 }
 
-int usrp1e_dboard_interface::read_aux_adc(dboard_interface::unit_type_t unit, int which){
+int usrp_e_dboard_interface::read_aux_adc(dboard_interface::unit_type_t unit, int which){
     throw std::runtime_error("not implemented");
 }

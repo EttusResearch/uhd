@@ -29,7 +29,7 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-STATIC_BLOCK(register_usrp2_device){
+UHD_STATIC_BLOCK(register_usrp2_device){
     device::register_device(&usrp2::find, &usrp2::make);
 }
 

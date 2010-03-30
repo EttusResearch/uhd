@@ -21,7 +21,7 @@ INSTALL(FILES
     dboard_id.hpp
     dboard_interface.hpp
     dboard_manager.hpp
-    usrp1e.hpp
+    usrp_e.hpp
     usrp2.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
 )

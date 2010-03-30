@@ -51,6 +51,8 @@ LIST(APPEND libuhd_sources
 ########################################################################
 # Conditionally add the usrp1e sources
 ########################################################################
+MESSAGE(STATUS "Configuring usrp-e support...")
+
 INCLUDE(CheckIncludeFiles)
 SET(usrp1e_required_headers
     linux/ioctl.h
@@ -63,19 +65,19 @@ CHECK_INCLUDE_FILES(
 )
 
 IF(HAS_USRP1E_REQUIRED_HEADERS)
-    MESSAGE(STATUS "Building usrp1e support...")
+    MESSAGE(STATUS "  Building usrp1e support.")
     LIST(APPEND libuhd_sources
-        usrp/usrp1e/dboard_impl.cpp
-        usrp/usrp1e/dboard_interface.cpp
-        usrp/usrp1e/dsp_impl.cpp
-        usrp/usrp1e/fpga-downloader.cc
-        usrp/usrp1e/mboard_impl.cpp
-        usrp/usrp1e/usrp1e_impl.cpp
+        usrp/usrp_e/dboard_impl.cpp
+        usrp/usrp_e/dboard_interface.cpp
+        usrp/usrp_e/dsp_impl.cpp
+        usrp/usrp_e/fpga-downloader.cc
+        usrp/usrp_e/mboard_impl.cpp
+        usrp/usrp_e/usrp_e_impl.cpp
     )
 ELSE(HAS_USRP1E_REQUIRED_HEADERS)
-    MESSAGE(STATUS "Skipping usrp1e support...")
+    MESSAGE(STATUS "  Skipping usrp1e support.")
     LIST(APPEND libuhd_sources
-        usrp/usrp1e/usrp1e_none.cpp
+        usrp/usrp_e/usrp_e_none.cpp
     )
 ENDIF(HAS_USRP1E_REQUIRED_HEADERS)
 

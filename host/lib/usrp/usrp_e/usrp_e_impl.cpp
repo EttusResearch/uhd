@@ -15,10 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
+#include "usrp_e_impl.hpp"
+#include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-#include "usrp1e_impl.hpp"
 #include <fcntl.h> //open
 #include <sys/ioctl.h> //ioctl
 
@@ -26,8 +27,8 @@ using namespace uhd;
 using namespace uhd::usrp;
 namespace fs = boost::filesystem;
 
-STATIC_BLOCK(register_usrp1e_device){
-    device::register_device(&usrp1e::discover, &usrp1e::make);
+UHD_STATIC_BLOCK(register_usrp_e_device){
+    device::register_device(&usrp_e::find, &usrp_e::make);
 }
 
 /***********************************************************************
@@ -40,16 +41,16 @@ static std::string abs_path(const std::string &file_path){
 /***********************************************************************
  * Discovery
  **********************************************************************/
-device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
-    device_addrs_t usrp1e_addrs;
+device_addrs_t usrp_e::find(const device_addr_t &device_addr){
+    device_addrs_t usrp_e_addrs;
 
     //if a node was provided, use it and only it
     if (device_addr.has_key("node")){
-        if (not fs::exists(device_addr["node"])) return usrp1e_addrs;
+        if (not fs::exists(device_addr["node"])) return usrp_e_addrs;
         device_addr_t new_addr;
-        new_addr["name"] = "USRP1E";
+        new_addr["name"] = "USRP-E";
         new_addr["node"] = abs_path(device_addr["node"]);
-        usrp1e_addrs.push_back(new_addr);
+        usrp_e_addrs.push_back(new_addr);
     }
 
     //otherwise look for a few nodes at small indexes
@@ -58,26 +59,26 @@ device_addrs_t usrp1e::discover(const device_addr_t &device_addr){
             std::string node = str(boost::format("/dev/usrp1_e%d") % i);
             if (not fs::exists(node)) continue;
             device_addr_t new_addr;
-            new_addr["name"] = "USRP1E";
+            new_addr["name"] = "USRP-E";
             new_addr["node"] = abs_path(node);
-            usrp1e_addrs.push_back(new_addr);
+            usrp_e_addrs.push_back(new_addr);
         }
     }
 
-    return usrp1e_addrs;
+    return usrp_e_addrs;
 }
 
 /***********************************************************************
  * Make
  **********************************************************************/
-device::sptr usrp1e::make(const device_addr_t &device_addr){
-    return sptr(new usrp1e_impl(device_addr["node"]));
+device::sptr usrp_e::make(const device_addr_t &device_addr){
+    return sptr(new usrp_e_impl(device_addr["node"]));
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp1e_impl::usrp1e_impl(const std::string &node){
+usrp_e_impl::usrp_e_impl(const std::string &node){
     //open the device node and check file descriptor
     if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
         throw std::runtime_error(str(
@@ -96,7 +97,7 @@ usrp1e_impl::usrp1e_impl(const std::string &node){
     tx_duc_init();
 }
 
-usrp1e_impl::~usrp1e_impl(void){
+usrp_e_impl::~usrp_e_impl(void){
     //close the device node file descriptor
     ::close(_node_fd);
 }
@@ -104,7 +105,7 @@ usrp1e_impl::~usrp1e_impl(void){
 /***********************************************************************
  * Misc Methods
  **********************************************************************/
-void usrp1e_impl::ioctl(int request, void *mem){
+void usrp_e_impl::ioctl(int request, void *mem){
     if (::ioctl(_node_fd, request, mem) < 0){
         throw std::runtime_error(str(
             boost::format("ioctl failed with request %d") % request
@@ -115,14 +116,14 @@ void usrp1e_impl::ioctl(int request, void *mem){
 /***********************************************************************
  * Device Get
  **********************************************************************/
-void usrp1e_impl::get(const wax::obj &key_, wax::obj &val){
+void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<device_prop_t>()){
     case DEVICE_PROP_NAME:
-        val = std::string("usrp1e device");
+        val = std::string("usrp-e device");
         return;
 
     case DEVICE_PROP_MBOARD:
@@ -148,31 +149,31 @@ void usrp1e_impl::get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * Device Set
  **********************************************************************/
-void usrp1e_impl::set(const wax::obj &, const wax::obj &){
-    throw std::runtime_error("Cannot set in usrp1e device");
+void usrp_e_impl::set(const wax::obj &, const wax::obj &){
+    throw std::runtime_error("Cannot set in usrp-e device");
 }
 
 /***********************************************************************
  * Device IO (TODO)
  **********************************************************************/
-size_t usrp1e_impl::send(
+size_t usrp_e_impl::send(
     const boost::asio::const_buffer &,
     const uhd::tx_metadata_t &,
-    const std::string &type
+    const io_type_t &
 ){
-    if (type != "16sc"){
-        throw std::runtime_error(str(boost::format("usrp1e send: cannot handle type \"%s\"") % type));
+    if (true){
+        throw std::runtime_error(str(boost::format("usrp-e send: cannot handle type \"%s\"") % ""));
     }
     return 0;
 }
 
-size_t usrp1e_impl::recv(
+size_t usrp_e_impl::recv(
     const boost::asio::mutable_buffer &,
     uhd::rx_metadata_t &,
-    const std::string &type
+    const io_type_t &
 ){
-    if (type != "16sc"){
-        throw std::runtime_error(str(boost::format("usrp1e recv: cannot handle type \"%s\"") % type));
+    if (true){
+        throw std::runtime_error(str(boost::format("usrp-e recv: cannot handle type \"%s\"") % ""));
     }
     return 0;
 }

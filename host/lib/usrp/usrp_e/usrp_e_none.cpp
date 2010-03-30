@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/usrp1e.hpp>
+#include <uhd/usrp/usrp_e.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -25,14 +25,14 @@ using namespace uhd::usrp;
  * when the required kernel module headers are not present.
  */
 
-device_addrs_t usrp1e::find(const device_addr_t &){
+device_addrs_t usrp_e::find(const device_addr_t &){
     return device_addrs_t(); //return empty list
 }
 
-device::sptr usrp1e::make(const device_addr_t &){
+device::sptr usrp_e::make(const device_addr_t &){
     throw std::runtime_error("this build has no usrp1e support");
 }
 
-void usrp1e::load_fpga(const std::string &){
+void usrp_e::load_fpga(const std::string &){
     throw std::runtime_error("this build has no usrp1e support");
 }
