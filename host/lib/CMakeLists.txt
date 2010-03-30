@@ -29,7 +29,7 @@ SET(libuhd_sources
     transport/if_addrs.cpp
     transport/udp_simple.cpp
     transport/vrt.cpp
-    usrp/dboard/basic.cpp
+    usrp/dboard/db_basic_and_lf.cpp
     usrp/dboard_base.cpp
     usrp/dboard_interface.cpp
     usrp/dboard_manager.cpp
