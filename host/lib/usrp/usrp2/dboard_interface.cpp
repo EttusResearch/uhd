@@ -29,8 +29,8 @@ public:
     int read_aux_adc(unit_type_t, int);
 
     void set_atr_reg(gpio_bank_t, boost::uint16_t, boost::uint16_t, boost::uint16_t);
-    void set_gpio_ddr(gpio_bank_t, boost::uint16_t, boost::uint16_t);
-    void write_gpio(gpio_bank_t, boost::uint16_t, boost::uint16_t);
+    void set_gpio_ddr(gpio_bank_t, boost::uint16_t);
+    void write_gpio(gpio_bank_t, boost::uint16_t);
     boost::uint16_t read_gpio(gpio_bank_t);
 
     void write_i2c(int, const byte_vector_t &);
@@ -97,26 +97,26 @@ static boost::uint8_t gpio_bank_to_otw(dboard_interface::gpio_bank_t bank){
     throw std::invalid_argument("unknown gpio bank type");
 }
 
-void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
+void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO);
     out_data.data.gpio_config.bank = gpio_bank_to_otw(bank);
     out_data.data.gpio_config.value = htons(value);
-    out_data.data.gpio_config.mask = htons(mask);
+    out_data.data.gpio_config.mask = htons(0xffff);
 
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE);
 }
 
-void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask){
+void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO);
     out_data.data.gpio_config.bank = gpio_bank_to_otw(bank);
     out_data.data.gpio_config.value = htons(value);
-    out_data.data.gpio_config.mask = htons(mask);
+    out_data.data.gpio_config.mask = htons(0xffff);
 
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);

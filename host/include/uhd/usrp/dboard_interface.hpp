@@ -104,18 +104,16 @@ public:
      *
      * \param bank      GPIO_TX_BANK or GPIO_RX_BANK
      * \param value     16-bits, 0=FPGA input, 1=FPGA output
-     * \param mask      16-bits, 0=ignore, 1=set
      */
-    virtual void set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask) = 0;
+    virtual void set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value) = 0;
 
     /*!
      * Set daughterboard GPIO pin values.
      *
      * \param bank     GPIO_TX_BANK or GPIO_RX_BANK
      * \param value    16 bits, 0=low, 1=high
-     * \param mask     16 bits, 0=ignore, 1=set
      */
-    virtual void write_gpio(gpio_bank_t bank, boost::uint16_t value, boost::uint16_t mask) = 0;
+    virtual void write_gpio(gpio_bank_t bank, boost::uint16_t value) = 0;
 
     /*!
      * Read daughterboard GPIO pin values
