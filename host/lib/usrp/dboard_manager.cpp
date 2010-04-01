@@ -275,12 +275,9 @@ wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
 void dboard_manager_impl::set_nice_gpio_pins(void){
     //std::cout << "Set nice GPIO pins" << std::endl;
 
-    _interface->set_gpio_ddr(dboard_interface::GPIO_RX_BANK, 0x0000); //all inputs
-    _interface->set_gpio_ddr(dboard_interface::GPIO_TX_BANK, 0x0000);
+    _interface->set_gpio_ddr(dboard_interface::GPIO_BANK_RX, 0x0000); //all inputs
+    _interface->set_atr_reg(dboard_interface::GPIO_BANK_RX, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
 
-    _interface->write_gpio(dboard_interface::GPIO_RX_BANK, 0x0000); //all zeros
-    _interface->write_gpio(dboard_interface::GPIO_TX_BANK, 0x0000);
-
-    _interface->set_atr_reg(dboard_interface::GPIO_RX_BANK, 0x0000, 0x0000, 0x0000); //software controlled
-    _interface->set_atr_reg(dboard_interface::GPIO_TX_BANK, 0x0000, 0x0000, 0x0000);
+    _interface->set_gpio_ddr(dboard_interface::GPIO_BANK_TX, 0x0000); //all inputs
+    _interface->set_atr_reg(dboard_interface::GPIO_BANK_TX, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
 }

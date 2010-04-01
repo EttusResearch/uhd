@@ -102,6 +102,10 @@ public:
     //performs a control transaction
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
 
+    //peek and poke registers
+    void poke(boost::uint32_t addr, boost::uint32_t data);
+    boost::uint32_t peek(boost::uint32_t addr);
+
     //misc access methods
     double get_master_clock_freq(void);
 

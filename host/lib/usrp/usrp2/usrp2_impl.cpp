@@ -173,6 +173,30 @@ double usrp2_impl::get_master_clock_freq(void){
     return 100e6;
 }
 
+void usrp2_impl::poke(boost::uint32_t addr, boost::uint32_t data){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO);
+    out_data.data.poke_args.addr = htonl(addr);
+    out_data.data.poke_args.data = htonl(data);
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
+}
+
+boost::uint32_t usrp2_impl::peek(boost::uint32_t addr){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO);
+    out_data.data.poke_args.addr = htonl(addr);
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
+    return ntohl(out_data.data.poke_args.data);
+}
+
 /***********************************************************************
  * Control Send/Recv
  **********************************************************************/

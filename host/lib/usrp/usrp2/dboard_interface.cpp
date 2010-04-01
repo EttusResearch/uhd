@@ -15,8 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/assert.hpp>
 #include "usrp2_impl.hpp"
+#include "usrp2_regs.hpp"
+#include <uhd/types/dict.hpp>
+#include <uhd/utils/assert.hpp>
+#include <boost/assign/list_of.hpp>
+#include <cstddef>
 
 using namespace uhd::usrp;
 
@@ -28,9 +32,8 @@ public:
     void write_aux_dac(unit_type_t, int, int);
     int read_aux_adc(unit_type_t, int);
 
-    void set_atr_reg(gpio_bank_t, boost::uint16_t, boost::uint16_t, boost::uint16_t);
+    void set_atr_reg(gpio_bank_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(gpio_bank_t, boost::uint16_t);
-    void write_gpio(gpio_bank_t, boost::uint16_t);
     boost::uint16_t read_gpio(gpio_bank_t);
 
     void write_i2c(int, const byte_vector_t &);
@@ -41,14 +44,21 @@ public:
 
 private:
     byte_vector_t transact_spi(
-        spi_dev_t dev,
-        spi_latch_t latch,
-        spi_push_t push,
-        const byte_vector_t &buf,
-        bool readback
+        spi_dev_t, spi_edge_t, const byte_vector_t &, bool
     );
 
     usrp2_impl *_impl;
+
+    //shadows
+    boost::uint32_t _ddr_shadow;
+    uhd::dict<atr_reg_t, uint32_t> _atr_reg_shadows;
+
+    //utilities
+    static int bank_to_shift(gpio_bank_t bank){
+        static const uhd::dict<gpio_bank_t, int> _bank_to_shift = \
+        boost::assign::map_list_of(GPIO_BANK_RX, 0)(GPIO_BANK_TX, 16);
+        return _bank_to_shift[bank];
+    }
 };
 
 /***********************************************************************
@@ -63,6 +73,7 @@ dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
  **********************************************************************/
 usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
     _impl = impl;
+    _ddr_shadow = 0;
 }
 
 usrp2_dboard_interface::~usrp2_dboard_interface(void){
@@ -83,70 +94,43 @@ double usrp2_dboard_interface::get_tx_clock_rate(void){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-/*!
- * Static function to convert a gpio bank enum
- * to an over-the-wire value for the usrp2 control.
- * \param bank the dboard interface gpio bank enum
- * \return an over the wire representation
- */
-static boost::uint8_t gpio_bank_to_otw(dboard_interface::gpio_bank_t bank){
-    switch(bank){
-    case uhd::usrp::dboard_interface::GPIO_TX_BANK: return USRP2_DIR_TX;
-    case uhd::usrp::dboard_interface::GPIO_RX_BANK: return USRP2_DIR_RX;
-    }
-    throw std::invalid_argument("unknown gpio bank type");
-}
-
 void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO);
-    out_data.data.gpio_config.bank = gpio_bank_to_otw(bank);
-    out_data.data.gpio_config.value = htons(value);
-    out_data.data.gpio_config.mask = htons(0xffff);
+    //calculate the new 32 bit ddr value
+    int shift = bank_to_shift(bank);
+    boost::uint32_t new_ddr_val =
+        (_ddr_shadow & ~(boost::uint32_t(0xffff) << shift)) //zero out new bits
+        | (boost::uint32_t(value) << shift); //or'ed in the new bits
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE);
-}
-
-void usrp2_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO);
-    out_data.data.gpio_config.bank = gpio_bank_to_otw(bank);
-    out_data.data.gpio_config.value = htons(value);
-    out_data.data.gpio_config.mask = htons(0xffff);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE);
+    //poke in the value and shadow
+    _impl->poke(offsetof(gpio_regs_t, ddr) + 0xC800, new_ddr_val);
+    _ddr_shadow = new_ddr_val;
 }
 
 boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO);
-    out_data.data.gpio_config.bank = gpio_bank_to_otw(bank);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERE_IS_YOUR_GPIO_PIN_VALS_DUDE);
-    return ntohs(in_data.data.gpio_config.value);
+    boost::uint32_t data = _impl->peek(offsetof(gpio_regs_t, io) + 0xC800);
+    return boost::uint16_t(data >> bank_to_shift(bank));
 }
 
-void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO);
-    out_data.data.atr_config.bank = gpio_bank_to_otw(bank);
-    out_data.data.atr_config.tx_value = htons(tx_value);
-    out_data.data.atr_config.rx_value = htons(rx_value);
-    out_data.data.atr_config.mask = htons(mask);
+void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost::uint16_t value){
+    //map the atr reg to an offset in register space
+    static const uhd::dict<atr_reg_t, int> reg_to_offset = boost::assign::map_list_of
+        (ATR_REG_IDLE, ATR_IDLE) (ATR_REG_TXONLY, ATR_TX)
+        (ATR_REG_RXONLY, ATR_RX) (ATR_REG_BOTH, ATR_FULL)
+    ;
+    int offset = reg_to_offset[reg];
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE);
+    //ensure a value exists in the shadow
+    if (not _atr_reg_shadows.has_key(reg)) _atr_reg_shadows[reg] = 0;
+
+    //calculate the new 32 bit atr value
+    int shift = bank_to_shift(bank);
+    boost::uint32_t new_atr_val =
+        (_atr_reg_shadows[reg] & ~(boost::uint32_t(0xffff) << shift)) //zero out new bits
+        | (boost::uint32_t(value) << shift); //or'ed in the new bits
+
+    //poke in the value and shadow
+    _impl->poke(offsetof(atr_regs_t, v) + 0xE400 + offset, new_atr_val);
+    _atr_reg_shadows[reg] = new_atr_val;
 }
 
 /***********************************************************************
@@ -160,44 +144,29 @@ void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_va
  */
 static boost::uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
     switch(dev){
-    case uhd::usrp::dboard_interface::SPI_TX_DEV: return USRP2_DIR_TX;
-    case uhd::usrp::dboard_interface::SPI_RX_DEV: return USRP2_DIR_RX;
+    case uhd::usrp::dboard_interface::SPI_DEV_TX: return USRP2_DIR_TX;
+    case uhd::usrp::dboard_interface::SPI_DEV_RX: return USRP2_DIR_RX;
     }
     throw std::invalid_argument("unknown spi device type");
 }
 
 /*!
- * Static function to convert a spi latch enum
+ * Static function to convert a spi edge enum
  * to an over-the-wire value for the usrp2 control.
- * \param latch the dboard interface spi latch enum
+ * \param edge the dboard interface spi edge enum
  * \return an over the wire representation
  */
-static boost::uint8_t spi_latch_to_otw(dboard_interface::spi_latch_t latch){
-    switch(latch){
-    case uhd::usrp::dboard_interface::SPI_LATCH_RISE: return USRP2_CLK_EDGE_RISE;
-    case uhd::usrp::dboard_interface::SPI_LATCH_FALL: return USRP2_CLK_EDGE_FALL;
+static boost::uint8_t spi_edge_to_otw(dboard_interface::spi_edge_t edge){
+    switch(edge){
+    case uhd::usrp::dboard_interface::SPI_EDGE_RISE: return USRP2_CLK_EDGE_RISE;
+    case uhd::usrp::dboard_interface::SPI_EDGE_FALL: return USRP2_CLK_EDGE_FALL;
     }
-    throw std::invalid_argument("unknown spi latch type");
-}
-
-/*!
- * Static function to convert a spi push enum
- * to an over-the-wire value for the usrp2 control.
- * \param push the dboard interface spi push enum
- * \return an over the wire representation
- */
-static boost::uint8_t spi_push_to_otw(dboard_interface::spi_push_t push){
-    switch(push){
-    case uhd::usrp::dboard_interface::SPI_PUSH_RISE: return USRP2_CLK_EDGE_RISE;
-    case uhd::usrp::dboard_interface::SPI_PUSH_FALL: return USRP2_CLK_EDGE_FALL;
-    }
-    throw std::invalid_argument("unknown spi push type");
+    throw std::invalid_argument("unknown spi edge type");
 }
 
 dboard_interface::byte_vector_t usrp2_dboard_interface::transact_spi(
     spi_dev_t dev,
-    spi_latch_t latch,
-    spi_push_t push,
+    spi_edge_t edge,
     const byte_vector_t &buf,
     bool readback
 ){
@@ -205,8 +174,7 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::transact_spi(
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
     out_data.data.spi_args.dev = spi_dev_to_otw(dev);
-    out_data.data.spi_args.latch = spi_latch_to_otw(latch);
-    out_data.data.spi_args.push = spi_push_to_otw(push);
+    out_data.data.spi_args.edge = spi_edge_to_otw(edge);
     out_data.data.spi_args.readback = (readback)? 1 : 0;
     out_data.data.spi_args.bytes = buf.size();
 

@@ -88,7 +88,7 @@ UHD_STATIC_BLOCK(reg_dboards){
 basic_rx::basic_rx(ctor_args_t const& args, double max_freq) : rx_dboard_base(args){
     _max_freq = max_freq;
     // set the gpios to safe values (all inputs)
-    get_interface()->set_gpio_ddr(dboard_interface::GPIO_RX_BANK, 0x0000);
+    get_interface()->set_gpio_ddr(dboard_interface::GPIO_BANK_RX, 0x0000);
 }
 
 basic_rx::~basic_rx(void){
@@ -199,7 +199,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 basic_tx::basic_tx(ctor_args_t const& args, double max_freq) : tx_dboard_base(args){
     _max_freq = max_freq;
     // set the gpios to safe values (all inputs)
-    get_interface()->set_gpio_ddr(dboard_interface::GPIO_TX_BANK, 0x0000);
+    get_interface()->set_gpio_ddr(dboard_interface::GPIO_BANK_TX, 0x0000);
 }
 
 basic_tx::~basic_tx(void){

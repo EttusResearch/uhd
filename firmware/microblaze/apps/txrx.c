@@ -291,53 +291,6 @@ void handle_udp_ctrl_packet(
         break;
 
     /*******************************************************************
-     * GPIO
-     ******************************************************************/
-    case USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO:
-        if (!DEBUG_MODE) hal_gpio_set_ddr(
-            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
-            ctrl_data_in->data.gpio_config.value,
-            ctrl_data_in->data.gpio_config.mask
-        );
-        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO:
-        if (!DEBUG_MODE) hal_gpio_write(
-            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
-            ctrl_data_in->data.gpio_config.value,
-            ctrl_data_in->data.gpio_config.mask
-        );
-        ctrl_data_out.id = USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO:
-        ctrl_data_out.data.gpio_config.value = hal_gpio_read(
-            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank)
-        );
-        ctrl_data_out.id = USRP2_CTRL_ID_HERE_IS_YOUR_GPIO_PIN_VALS_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO:{
-            //setup the atr registers for this bank
-            int bank = OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.atr_config.bank);
-            if (!DEBUG_MODE) set_atr_regs(
-                bank,
-                ctrl_data_in->data.atr_config.rx_value,
-                ctrl_data_in->data.atr_config.tx_value
-            );
-
-            //setup the sels based on the atr config mask
-            int mask = ctrl_data_in->data.atr_config.mask;
-            for (int i = 0; i < 16; i++){
-                // set to either GPIO_SEL_SW or GPIO_SEL_ATR
-                if (!DEBUG_MODE) hal_gpio_set_sel(bank, i, (mask & (1 << i)) ? 'a' : 's');
-            }
-            ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE;
-        }
-        break;
-
-    /*******************************************************************
      * SPI
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
@@ -354,8 +307,8 @@ void handle_udp_ctrl_packet(
                 (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
                 (ctrl_data_in->data.spi_args.dev == USRP2_DIR_RX)? SPI_SS_RX_DB : SPI_SS_TX_DB,
                 data, num_bytes*8, //length in bits
-                (ctrl_data_in->data.spi_args.push == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
-                (ctrl_data_in->data.spi_args.latch == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
+                (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
+                (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
             );
 
             //load the result into the array of bytes
@@ -571,6 +524,24 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE;
         break;
 
+    /*******************************************************************
+     * Peek and Poke Register
+     ******************************************************************/
+    case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
+        if (ctrl_data_in->data.poke_args.addr < 0xC000){
+            printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
+        }
+        else{
+            *((uint32_t *) ctrl_data_in->data.poke_args.addr) = ctrl_data_in->data.poke_args.data;
+        }
+        ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
+        break;
+
+    case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
+        ctrl_data_in->data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
+        ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 
@@ -758,6 +729,10 @@ main(void)
   hal_gpio_set_sel(GPIO_TX_BANK, 15, 's');
   hal_gpio_set_ddr(GPIO_TX_BANK, 0x8000, 0x8000);
 #endif
+
+//set them all to the atr settings by default
+hal_gpio_set_sels(GPIO_TX_BANK, "aaaaaaaaaaaaaaaa");
+hal_gpio_set_sels(GPIO_RX_BANK, "aaaaaaaaaaaaaaaa");
 
   output_regs->debug_mux_ctrl = 1;
 #if DEBUG_MODE

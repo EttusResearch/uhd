@@ -29,26 +29,25 @@ dboard_interface::~dboard_interface(void){
 
 void dboard_interface::write_spi(
     spi_dev_t dev,
-    spi_push_t push,
+    spi_edge_t edge,
     const byte_vector_t &buf
 ){
-    transact_spi(dev, SPI_LATCH_RISE, push, buf, false); //dont readback
+    transact_spi(dev, edge, buf, false); //dont readback
 }
 
 dboard_interface::byte_vector_t dboard_interface::read_spi(
     spi_dev_t dev,
-    spi_latch_t latch,
+    spi_edge_t edge,
     size_t num_bytes
 ){
     byte_vector_t buf(num_bytes, 0x00); //dummy data
-    return transact_spi(dev, latch, SPI_PUSH_RISE, buf, true); //readback
+    return transact_spi(dev, edge, buf, true); //readback
 }
 
 dboard_interface::byte_vector_t dboard_interface::read_write_spi(
     spi_dev_t dev,
-    spi_latch_t latch,
-    spi_push_t push,
+    spi_edge_t edge,
     const byte_vector_t &buf
 ){
-    return transact_spi(dev, latch, push, buf, true); //readback
+    return transact_spi(dev, edge, buf, true); //readback
 }
