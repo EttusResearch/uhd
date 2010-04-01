@@ -49,6 +49,19 @@
 #define _SR_ADDR(sr)    (MISC_OUTPUT_BASE + (sr) * sizeof(uint32_t))
 
 /////////////////////////////////////////////////
+// SPI Slave Constants
+////////////////////////////////////////////////
+// Masks for controlling different peripherals
+#define SPI_SS_AD9510    1
+#define SPI_SS_AD9777    2
+#define SPI_SS_RX_DAC    4
+#define SPI_SS_RX_ADC    8
+#define SPI_SS_RX_DB    16
+#define SPI_SS_TX_DAC   32
+#define SPI_SS_TX_ADC   64
+#define SPI_SS_TX_DB   128
+
+/////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
 ////////////////////////////////////////////////
 

@@ -264,7 +264,7 @@ void handle_udp_ctrl_packet(
             //transact
             uint32_t result = spi_transact(
                 (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
-                (ctrl_data_in->data.spi_args.dev == USRP2_DIR_RX)? SPI_SS_RX_DB : SPI_SS_TX_DB,
+                ctrl_data_in->data.spi_args.dev,
                 data, num_bytes*8, //length in bits
                 (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
                 (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL

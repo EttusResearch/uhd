@@ -20,6 +20,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
+#include <algorithm>
 #include <cstddef>
 
 using namespace uhd::usrp;
@@ -144,8 +145,8 @@ void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost:
  */
 static boost::uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
     switch(dev){
-    case uhd::usrp::dboard_interface::SPI_DEV_TX: return USRP2_DIR_TX;
-    case uhd::usrp::dboard_interface::SPI_DEV_RX: return USRP2_DIR_RX;
+    case uhd::usrp::dboard_interface::SPI_DEV_TX: return SPI_SS_TX_DB;
+    case uhd::usrp::dboard_interface::SPI_DEV_RX: return SPI_SS_RX_DB;
     }
     throw std::invalid_argument("unknown spi device type");
 }
@@ -182,9 +183,7 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::transact_spi(
     ASSERT_THROW(buf.size() <= sizeof(out_data.data.spi_args.data));
 
     //copy in the data
-    for (size_t i = 0; i < buf.size(); i++){
-        out_data.data.spi_args.data[i] = buf[i];
-    }
+    std::copy(buf.begin(), buf.end(), out_data.data.spi_args.data);
 
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
@@ -192,10 +191,8 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::transact_spi(
     ASSERT_THROW(in_data.data.spi_args.bytes == buf.size());
 
     //copy out the data
-    byte_vector_t result;
-    for (size_t i = 0; i < buf.size(); i++){
-        result.push_back(in_data.data.spi_args.data[i]);
-    }
+    byte_vector_t result(buf.size());
+    std::copy(in_data.data.spi_args.data, in_data.data.spi_args.data + buf.size(), result.begin());
     return result;
 }
 
@@ -213,9 +210,7 @@ void usrp2_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
 
     //copy in the data
-    for (size_t i = 0; i < buf.size(); i++){
-        out_data.data.i2c_args.data[i] = buf[i];
-    }
+    std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
 
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
@@ -238,10 +233,8 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, s
     ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
 
     //copy out the data
-    byte_vector_t result;
-    for (size_t i = 0; i < num_bytes; i++){
-        result.push_back(in_data.data.i2c_args.data[i]);
-    }
+    byte_vector_t result(num_bytes);
+    std::copy(in_data.data.i2c_args.data, in_data.data.i2c_args.data + num_bytes, result.begin());
     return result;
 }
 
