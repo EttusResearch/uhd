@@ -15,10 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/assert.hpp>
-#include <uhd/types/clock_config.hpp>
-#include <boost/format.hpp>
+
 #include "usrp2_impl.hpp"
+#include "usrp2_regs.hpp"
+#include <uhd/utils/assert.hpp>
+#include <boost/format.hpp>
+#include <cstddef>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -57,11 +59,13 @@ void usrp2_impl::dboard_init(void){
 
     //init the subdevs in use (use the first subdevice)
     _rx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0));
+    update_rx_mux_config();
+
     _tx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0));
-    update_mux_config();
+    update_tx_mux_config();
 }
 
-void usrp2_impl::update_mux_config(void){
+void usrp2_impl::update_rx_mux_config(void){
     //calculate the rx mux
     boost::uint32_t rx_mux = 0;
     ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
@@ -76,6 +80,10 @@ void usrp2_impl::update_mux_config(void){
         rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
     }
 
+    this->poke(offsetof(dsp_rx_regs_t, rx_mux) + DSP_RX_BASE, rx_mux);
+}
+
+void usrp2_impl::update_tx_mux_config(void){
     //calculate the tx mux
     boost::uint32_t tx_mux = 0x10;
     ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
@@ -85,15 +93,7 @@ void usrp2_impl::update_mux_config(void){
         tx_mux = (((tx_mux >> 0) & 0x1) << 1) | (((tx_mux >> 1) & 0x1) << 0);
     }
 
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO);
-    out_data.data.mux_args.rx_mux = htonl(rx_mux);
-    out_data.data.mux_args.tx_mux = htonl(tx_mux);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE);
+    this->poke(offsetof(dsp_tx_regs_t, tx_mux) + DSP_TX_BASE, tx_mux);
 }
 
 /***********************************************************************
@@ -129,7 +129,7 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
 void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     if (key.as<dboard_prop_t>() == DBOARD_PROP_USED_SUBDEVS){
         _rx_subdevs_in_use = val.as<prop_names_t>();
-        update_mux_config(); //if the val is bad, this will throw
+        update_rx_mux_config(); //if the val is bad, this will throw
         return;
     }
 
@@ -169,7 +169,7 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 void usrp2_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     if (key.as<dboard_prop_t>() == DBOARD_PROP_USED_SUBDEVS){
         _tx_subdevs_in_use = val.as<prop_names_t>();
-        update_mux_config(); //if the val is bad, this will throw
+        update_tx_mux_config(); //if the val is bad, this will throw
         return;
     }
 

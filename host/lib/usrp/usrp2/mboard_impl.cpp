@@ -15,9 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "usrp2_impl.hpp"
+#include "usrp2_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/mac_addr.hpp>
-#include "usrp2_impl.hpp"
+#include <uhd/types/dict.hpp>
+#include <cstddef>
 
 using namespace uhd;
 
@@ -46,55 +49,36 @@ void usrp2_impl::init_clock_config(void){
 }
 
 void usrp2_impl::update_clock_config(void){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO);
-
-    //translate ref source enums
-    switch(_clock_config.ref_source){
-    case clock_config_t::REF_INT:
-        out_data.data.clock_config.ref_source = USRP2_REF_SOURCE_INT; break;
-    case clock_config_t::REF_SMA:
-        out_data.data.clock_config.ref_source = USRP2_REF_SOURCE_SMA; break;
-    case clock_config_t::REF_MIMO:
-        out_data.data.clock_config.ref_source = USRP2_REF_SOURCE_MIMO; break;
-    default: throw std::runtime_error("usrp2: unhandled clock configuration ref source");
-    }
+    boost::uint32_t pps_flags = 0;
 
     //translate pps source enums
     switch(_clock_config.pps_source){
-    case clock_config_t::PPS_SMA:
-        out_data.data.clock_config.pps_source = USRP2_PPS_SOURCE_SMA; break;
-    case clock_config_t::PPS_MIMO:
-        out_data.data.clock_config.pps_source = USRP2_PPS_SOURCE_MIMO; break;
+    case clock_config_t::PPS_SMA:  pps_flags |= PPS_FLAG_SMA;  break;
+    case clock_config_t::PPS_MIMO: pps_flags |= PPS_FLAG_MIMO; break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration pps source");
     }
 
     //translate pps polarity enums
     switch(_clock_config.pps_polarity){
-    case clock_config_t::PPS_POS:
-        out_data.data.clock_config.pps_source = USRP2_PPS_POLARITY_POS; break;
-    case clock_config_t::PPS_NEG:
-        out_data.data.clock_config.pps_source = USRP2_PPS_POLARITY_NEG; break;
+    case clock_config_t::PPS_POS: pps_flags |= PPS_FLAG_POSEDGE; break;
+    case clock_config_t::PPS_NEG: pps_flags |= PPS_FLAG_NEGEDGE; break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration pps polarity");
     }
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE);
+    //set the pps flags
+    this->poke(offsetof(sr_time64_t, flags) + TIME64_BASE, pps_flags);
+
+    //TODO clock source ref 10mhz (spi ad9510)
 }
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO);
-    out_data.data.time_args.secs  = htonl(time_spec.secs);
-    out_data.data.time_args.ticks = htonl(time_spec.ticks);
-    out_data.data.time_args.now   = (now)? 1 : 0;
+    //set ticks and seconds
+    this->poke(offsetof(sr_time64_t, secs) + TIME64_BASE, time_spec.secs);
+    this->poke(offsetof(sr_time64_t, ticks) + TIME64_BASE, time_spec.ticks);
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE);
+    //set the register to latch it all in
+    boost::uint32_t imm_flags = (now)? TIME64_LATCH_NOW : TIME64_LATCH_NEXT_PPS;
+    this->poke(offsetof(sr_time64_t, imm) + TIME64_BASE, imm_flags);
 }
 
 /***********************************************************************

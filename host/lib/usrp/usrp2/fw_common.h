@@ -60,9 +60,6 @@ typedef enum{
     USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO = 'd',
     USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE = 'D',
 
-    USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO = 'c',
-    USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE = 'C',
-
     USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO = 's',
     USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE = 'S',
 
@@ -78,20 +75,8 @@ typedef enum{
     USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO = 'y',
     USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE = 'Y',
 
-    USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO = '\\',
-    USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE = '/',
-
     USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO = '{',
     USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE = '}',
-
-    USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO = '\'',
-    USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE = '"',
-
-    USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO = '<',
-    USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE = '>',
-
-    USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO = '-',
-    USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE = '_',
 
     USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO = 'p',
     USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE = 'P',
@@ -102,22 +87,6 @@ typedef enum{
     USRP2_CTRL_ID_PEACE_OUT = '~'
 
 } usrp2_ctrl_id_t;
-
-typedef enum{
-    USRP2_PPS_SOURCE_SMA,
-    USRP2_PPS_SOURCE_MIMO
-} usrp2_pps_source_t;
-
-typedef enum{
-    USRP2_PPS_POLARITY_POS,
-    USRP2_PPS_POLARITY_NEG
-} usrp2_pps_polarity_t;
-
-typedef enum{
-    USRP2_REF_SOURCE_INT,
-    USRP2_REF_SOURCE_SMA,
-    USRP2_REF_SOURCE_MIMO
-} usrp2_ref_source_t;
 
 typedef enum{
     USRP2_DIR_RX,
@@ -140,12 +109,6 @@ typedef struct{
             _SINS_ uint16_t tx_id;
         } dboard_ids;
         struct {
-            _SINS_ uint8_t pps_source;
-            _SINS_ uint8_t pps_polarity;
-            _SINS_ uint8_t ref_source;
-            _SINS_ uint8_t _pad;
-        } clock_config;
-        struct {
             _SINS_ uint8_t dev;
             _SINS_ uint8_t edge;
             _SINS_ uint8_t readback;
@@ -164,11 +127,6 @@ typedef struct{
             _SINS_ uint32_t value;
         } aux_args;
         struct {
-            _SINS_ uint32_t freq_word;
-            _SINS_ uint32_t decim;
-            _SINS_ uint32_t scale_iq;
-        } ddc_args;
-        struct {
             _SINS_ uint8_t now; //stream now?
             _SINS_ uint8_t continuous; //auto-reload commmands?
             _SINS_ uint8_t _pad[2];
@@ -176,20 +134,6 @@ typedef struct{
             _SINS_ uint32_t ticks;
             _SINS_ uint32_t num_samps;
         } stream_cmd;
-        struct {
-            _SINS_ uint32_t freq_word;
-            _SINS_ uint32_t interp;
-            _SINS_ uint32_t scale_iq;
-        } duc_args;
-        struct {
-            _SINS_ uint32_t secs;
-            _SINS_ uint32_t ticks;
-            _SINS_ uint8_t now;
-        } time_args;
-        struct {
-            _SINS_ uint32_t rx_mux;
-            _SINS_ uint32_t tx_mux;
-        } mux_args;
         struct {
             _SINS_ uint32_t addr;
             _SINS_ uint32_t data;
