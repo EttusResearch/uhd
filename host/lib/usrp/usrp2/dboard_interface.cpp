@@ -21,7 +21,6 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <algorithm>
-#include <cstddef>
 
 using namespace uhd::usrp;
 
@@ -103,22 +102,22 @@ void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t valu
         | (boost::uint32_t(value) << shift); //or'ed in the new bits
 
     //poke in the value and shadow
-    _impl->poke(offsetof(gpio_regs_t, ddr) + 0xC800, new_ddr_val);
+    _impl->poke(FR_GPIO_DDR, new_ddr_val);
     _ddr_shadow = new_ddr_val;
 }
 
 boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
-    boost::uint32_t data = _impl->peek(offsetof(gpio_regs_t, io) + 0xC800);
+    boost::uint32_t data = _impl->peek(FR_GPIO_IO);
     return boost::uint16_t(data >> bank_to_shift(bank));
 }
 
 void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost::uint16_t value){
     //map the atr reg to an offset in register space
-    static const uhd::dict<atr_reg_t, int> reg_to_offset = boost::assign::map_list_of
-        (ATR_REG_IDLE, ATR_IDLE) (ATR_REG_TXONLY, ATR_TX)
-        (ATR_REG_RXONLY, ATR_RX) (ATR_REG_BOTH, ATR_FULL)
+    static const uhd::dict<atr_reg_t, int> reg_to_addr = boost::assign::map_list_of
+        (ATR_REG_IDLE, FR_ATR_IDLE) (ATR_REG_TXONLY, FR_ATR_TX)
+        (ATR_REG_RXONLY, FR_ATR_RX) (ATR_REG_BOTH, FR_ATR_FULL)
     ;
-    int offset = reg_to_offset[reg];
+    ASSERT_THROW(reg_to_addr.has_key(reg));
 
     //ensure a value exists in the shadow
     if (not _atr_reg_shadows.has_key(reg)) _atr_reg_shadows[reg] = 0;
@@ -130,7 +129,7 @@ void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost:
         | (boost::uint32_t(value) << shift); //or'ed in the new bits
 
     //poke in the value and shadow
-    _impl->poke(offsetof(atr_regs_t, v) + 0xE400 + offset, new_atr_val);
+    _impl->poke(reg_to_addr[reg], new_atr_val);
     _atr_reg_shadows[reg] = new_atr_val;
 }
 

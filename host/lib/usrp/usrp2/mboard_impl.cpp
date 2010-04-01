@@ -20,7 +20,6 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
-#include <cstddef>
 
 using namespace uhd;
 
@@ -53,32 +52,32 @@ void usrp2_impl::update_clock_config(void){
 
     //translate pps source enums
     switch(_clock_config.pps_source){
-    case clock_config_t::PPS_SMA:  pps_flags |= PPS_FLAG_SMA;  break;
-    case clock_config_t::PPS_MIMO: pps_flags |= PPS_FLAG_MIMO; break;
+    case clock_config_t::PPS_SMA:  pps_flags |= FRF_TIME64_PPS_SMA;  break;
+    case clock_config_t::PPS_MIMO: pps_flags |= FRF_TIME64_PPS_MIMO; break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration pps source");
     }
 
     //translate pps polarity enums
     switch(_clock_config.pps_polarity){
-    case clock_config_t::PPS_POS: pps_flags |= PPS_FLAG_POSEDGE; break;
-    case clock_config_t::PPS_NEG: pps_flags |= PPS_FLAG_NEGEDGE; break;
+    case clock_config_t::PPS_POS: pps_flags |= FRF_TIME64_PPS_POSEDGE; break;
+    case clock_config_t::PPS_NEG: pps_flags |= FRF_TIME64_PPS_NEGEDGE; break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration pps polarity");
     }
 
     //set the pps flags
-    this->poke(offsetof(sr_time64_t, flags) + TIME64_BASE, pps_flags);
+    this->poke(FR_TIME64_FLAGS, pps_flags);
 
     //TODO clock source ref 10mhz (spi ad9510)
 }
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set ticks and seconds
-    this->poke(offsetof(sr_time64_t, secs) + TIME64_BASE, time_spec.secs);
-    this->poke(offsetof(sr_time64_t, ticks) + TIME64_BASE, time_spec.ticks);
+    this->poke(FR_TIME64_SECS, time_spec.secs);
+    this->poke(FR_TIME64_TICKS, time_spec.ticks);
 
     //set the register to latch it all in
-    boost::uint32_t imm_flags = (now)? TIME64_LATCH_NOW : TIME64_LATCH_NEXT_PPS;
-    this->poke(offsetof(sr_time64_t, imm) + TIME64_BASE, imm_flags);
+    boost::uint32_t imm_flags = (now)? FRF_TIME64_LATCH_NOW : FRF_TIME64_LATCH_NEXT_PPS;
+    this->poke(FR_TIME64_IMM, imm_flags);
 }
 
 /***********************************************************************

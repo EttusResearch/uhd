@@ -21,7 +21,6 @@
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <cstddef>
 
 using namespace uhd;
 
@@ -75,14 +74,11 @@ void usrp2_impl::init_ddc_config(void){
 
 void usrp2_impl::update_ddc_config(void){
     //set the decimation
-    this->poke(
-        offsetof(dsp_rx_regs_t, decim_rate) + DSP_RX_BASE, _ddc_decim
-    );
+    this->poke(FR_DSP_RX_DECIM_RATE, _ddc_decim);
 
     //set the scaling
     static const boost::int16_t default_rx_scale_iq = 1024;
-    this->poke(
-        offsetof(dsp_rx_regs_t, scale_iq) + DSP_RX_BASE,
+    this->poke(FR_DSP_RX_SCALE_IQ,
         calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
     );
 }
@@ -174,8 +170,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _ddc_freq = new_freq; //shadow
-        this->poke( //set the cordic
-            offsetof(dsp_rx_regs_t, freq) + DSP_RX_BASE,
+        this->poke(FR_DSP_RX_FREQ,
             calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
         );
         return;
@@ -216,15 +211,10 @@ void usrp2_impl::update_duc_config(void){
     boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
     //set the interpolation
-    this->poke(
-        offsetof(dsp_tx_regs_t, interp_rate) + DSP_TX_BASE, _ddc_decim
-    );
+    this->poke(FR_DSP_TX_INTERP_RATE, _ddc_decim);
 
     //set the scaling
-    this->poke(
-        offsetof(dsp_tx_regs_t, scale_iq) + DSP_TX_BASE,
-        calculate_iq_scale_word(scale, scale)
-    );
+    this->poke(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
 }
 
 /***********************************************************************
@@ -298,8 +288,7 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _duc_freq = new_freq; //shadow
-        this->poke( //set the cordic
-            offsetof(dsp_tx_regs_t, freq) + DSP_TX_BASE,
+        this->poke(FR_DSP_TX_FREQ,
             calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
         );
         return;

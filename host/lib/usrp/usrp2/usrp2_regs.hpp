@@ -28,10 +28,10 @@
 
 
 #define MISC_OUTPUT_BASE        0xD400
-#define TX_PROTOCOL_ENGINE_BASE 0xD480
-#define RX_PROTOCOL_ENGINE_BASE 0xD4C0
-#define BUFFER_POOL_CTRL_BASE   0xD500
-#define LAST_SETTING_REG        0xD7FC  // last valid setting register
+//#define TX_PROTOCOL_ENGINE_BASE 0xD480
+//#define RX_PROTOCOL_ENGINE_BASE 0xD4C0
+//#define BUFFER_POOL_CTRL_BASE   0xD500
+//#define LAST_SETTING_REG        0xD7FC  // last valid setting register
 
 #define SR_MISC 0
 #define SR_TX_PROT_ENG 32
@@ -46,7 +46,7 @@
 #define SR_SIMTIMER 198
 #define SR_LAST 255
 
-#define _SR_ADDR(sr)    (MISC_OUTPUT_BASE + (sr) * sizeof(uint32_t))
+#define _SR_ADDR(sr)    (MISC_OUTPUT_BASE + (sr) * sizeof(boost::uint32_t))
 
 /////////////////////////////////////////////////
 // SPI Slave Constants
@@ -64,9 +64,6 @@
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
 ////////////////////////////////////////////////
-
-#define TIME64_BASE _SR_ADDR(SR_TIME64)
-
   /*!
    * \brief Time 64 flags
    *
@@ -83,34 +80,27 @@
    *
    * </pre>
    */
-typedef struct {
-    boost::uint32_t secs;   // value to set absolute secs to on next PPS
-    boost::uint32_t ticks;  // value to set absolute ticks to on next PPS
-    boost::uint32_t flags;  // flags - see chart above
-    boost::uint32_t imm;    // set immediate (0=latch on next pps, 1=latch immediate, default=0)
-} sr_time64_t;
+#define FR_TIME64_SECS  _SR_ADDR(SR_TIME64 + 0)  // value to set absolute secs to on next PPS
+#define FR_TIME64_TICKS _SR_ADDR(SR_TIME64 + 1)  // value to set absolute ticks to on next PPS
+#define FR_TIME64_FLAGS _SR_ADDR(SR_TIME64 + 2)  // flags - see chart above
+#define FR_TIME64_IMM   _SR_ADDR(SR_TIME64 + 3) // set immediate (0=latch on next pps, 1=latch immediate, default=0)
 
 //pps flags (see above)
-#define PPS_FLAG_NEGEDGE (0 << 0)
-#define PPS_FLAG_POSEDGE (1 << 0)
-#define PPS_FLAG_SMA     (0 << 1)
-#define PPS_FLAG_MIMO    (1 << 1)
+#define FRF_TIME64_PPS_NEGEDGE (0 << 0)
+#define FRF_TIME64_PPS_POSEDGE (1 << 0)
+#define FRF_TIME64_PPS_SMA     (0 << 1)
+#define FRF_TIME64_PPS_MIMO    (1 << 1)
 
-#define TIME64_LATCH_NOW 1
-#define TIME64_LATCH_NEXT_PPS 0
+#define FRF_TIME64_LATCH_NOW 1
+#define FRF_TIME64_LATCH_NEXT_PPS 0
 
 /////////////////////////////////////////////////
 // DSP TX Regs
 ////////////////////////////////////////////////
+#define FR_DSP_TX_FREQ         _SR_ADDR(SR_TX_DSP + 0)
+#define FR_DSP_TX_SCALE_IQ     _SR_ADDR(SR_TX_DSP + 1) // {scale_i,scale_q}
+#define FR_DSP_TX_INTERP_RATE  _SR_ADDR(SR_TX_DSP + 2)
 
-#define DSP_TX_BASE _SR_ADDR(SR_TX_DSP)
-
-typedef struct {
-    boost::int32_t      freq;
-    boost::uint32_t     scale_iq;       // {scale_i,scale_q}
-    boost::uint32_t     interp_rate;
-    boost::uint32_t     _padding0;      // padding for the tx_mux
-                                        //   NOT freq, scale, interp
   /*!
    * \brief output mux configuration.
    *
@@ -145,24 +135,17 @@ typedef struct {
    * The default value is 0x10
    * </pre>
    */
-    boost::uint32_t tx_mux;
-
-} dsp_tx_regs_t;
+#define FR_DSP_TX_MUX  _SR_ADDR(SR_TX_DSP + 4)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
-
-#define DSP_RX_BASE _SR_ADDR(SR_RX_DSP)
-
-typedef struct {
-    boost::int32_t      freq;
-    boost::uint32_t     scale_iq;       // {scale_i,scale_q}
-    boost::uint32_t     decim_rate;
-    boost::uint32_t     dcoffset_i;     // Bit 31 high sets fixed offset mode, using lower 14 bits,
-                                        // otherwise it is automatic 
-    boost::uint32_t     dcoffset_q;     // Bit 31 high sets fixed offset mode, using lower 14 bits
-
+#define FR_DSP_RX_FREQ         _SR_ADDR(SR_RX_DSP + 0)
+#define FR_DSP_RX_SCALE_IQ     _SR_ADDR(SR_RX_DSP + 1) // {scale_i,scale_q}
+#define FR_DSP_RX_DECIM_RATE   _SR_ADDR(SR_RX_DSP + 2)
+#define FR_DSP_RX_DCOFFSET_I   _SR_ADDR(SR_RX_DSP + 3) // Bit 31 high sets fixed offset mode, using lower 14 bits,
+                                                       // otherwise it is automatic 
+#define FR_DSP_RX_DCOFFSET_Q   _SR_ADDR(SR_RX_DSP + 4) // Bit 31 high sets fixed offset mode, using lower 14 bits
   /*!
    * \brief input mux configuration.
    *
@@ -184,42 +167,33 @@ typedef struct {
    * The default value is 0x4
    * </pre>
    */
-    boost::uint32_t     rx_mux;        // called adc_mux in dsp_core_rx.v
-
-} dsp_rx_regs_t;
+#define FR_DSP_RX_MUX  _SR_ADDR(SR_RX_DSP + 5)         // called adc_mux in dsp_core_rx.v
 
 ////////////////////////////////////////////////
 // GPIO, Slave 4
+////////////////////////////////////////////////
 //
 // These go to the daughterboard i/o pins
-
-#define GPIO_BASE 0xC800
-
-typedef struct {
-    boost::uint32_t    io;       // tx data in high 16, rx in low 16
-    boost::uint32_t    ddr;      // 32 bits, 1 means output. tx in high 16, rx in low 16
-    boost::uint32_t    tx_sel;   // 16 2-bit fields select which source goes to TX DB
-    boost::uint32_t    rx_sel;   // 16 2-bit fields select which source goes to RX DB
-} gpio_regs_t;
+//
+#define _FR_GPIO_ADDR(off) (0xC800 + (off) * sizeof(boost::uint32_t))
+#define FR_GPIO_IO     _FR_GPIO_ADDR(0)       // tx data in high 16, rx in low 16
+#define FR_GPIO_DDR    _FR_GPIO_ADDR(1)       // 32 bits, 1 means output. tx in high 16, rx in low 16
+#define FR_GPIO_TX_SEL _FR_GPIO_ADDR(2)       // 16 2-bit fields select which source goes to TX DB
+#define FR_GPIO_RX_SEL _FR_GPIO_ADDR(3)       // 16 2-bit fields select which source goes to RX DB
 
 // each 2-bit sel field is layed out this way
-#define GPIO_SEL_SW        0 // if pin is an output, set by software in the io reg
-#define GPIO_SEL_ATR       1 // if pin is an output, set by ATR logic
-#define GPIO_SEL_DEBUG_0   2 // if pin is an output, debug lines from FPGA fabric
-#define GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric
+#define FRF_GPIO_SEL_SW        0 // if pin is an output, set by software in the io reg
+#define FRF_GPIO_SEL_ATR       1 // if pin is an output, set by ATR logic
+#define FRF_GPIO_SEL_DEBUG_0   2 // if pin is an output, debug lines from FPGA fabric
+#define FRF_GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric
 
 ///////////////////////////////////////////////////
 // ATR Controller, Slave 11
-
-#define ATR_BASE  0xE400
-
-typedef struct {
-    boost::uint32_t v[16];
-} atr_regs_t;
-
-#define ATR_IDLE    0x0 // indicies into v
-#define ATR_TX      0x1
-#define ATR_RX      0x2
-#define ATR_FULL    0x3
+////////////////////////////////////////////////
+#define _FR_ATR_ADDR(off) (0xE400 + (off) * sizeof(boost::uint32_t))
+#define FR_ATR_IDLE    _FR_ATR_ADDR(0) // tx data in high 16, rx in low 16
+#define FR_ATR_TX      _FR_ATR_ADDR(1)
+#define FR_ATR_RX      _FR_ATR_ADDR(2)
+#define FR_ATR_FULL    _FR_ATR_ADDR(3)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

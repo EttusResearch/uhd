@@ -20,7 +20,6 @@
 #include "usrp2_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
-#include <cstddef>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -80,7 +79,7 @@ void usrp2_impl::update_rx_mux_config(void){
         rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
     }
 
-    this->poke(offsetof(dsp_rx_regs_t, rx_mux) + DSP_RX_BASE, rx_mux);
+    this->poke(FR_DSP_RX_MUX, rx_mux);
 }
 
 void usrp2_impl::update_tx_mux_config(void){
@@ -93,7 +92,7 @@ void usrp2_impl::update_tx_mux_config(void){
         tx_mux = (((tx_mux >> 0) & 0x1) << 1) | (((tx_mux >> 1) & 0x1) << 0);
     }
 
-    this->poke(offsetof(dsp_tx_regs_t, tx_mux) + DSP_TX_BASE, tx_mux);
+    this->poke(FR_DSP_TX_MUX, tx_mux);
 }
 
 /***********************************************************************
