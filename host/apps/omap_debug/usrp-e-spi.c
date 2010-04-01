@@ -10,23 +10,24 @@
 
 int main(int argc, char *argv[])
 {
-	int fp, slave, data, ret;
+	int fp, slave, length, data, ret;
 	struct usrp_e_spi spi_dat;
 
-	if (argc < 4) {
-		printf("Usage: usrp_e_spi w|rb slave data\n");
+	if (argc < 5) {
+		printf("Usage: usrp_e_spi w|rb slave transfer_length data\n");
 		exit(-1);
 	}
 
 	slave = atoi(argv[2]);
-	data = atoi(argv[3]);
+	length = atoi(argv[3]);
+	data = atoi(argv[4]);
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
 	spi_dat.slave = slave;
 	spi_dat.data = data;
-	spi_dat.length = 32;
+	spi_dat.length = length;
 	spi_dat.flags = 0;
 
 	if (*argv[1] == 'r') {
