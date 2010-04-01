@@ -17,7 +17,6 @@
 
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
-#include <uhd/props.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>

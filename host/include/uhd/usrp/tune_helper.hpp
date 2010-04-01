@@ -15,14 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_UTILS_TUNE_HELPER_HPP
-#define INCLUDED_UHD_UTILS_TUNE_HELPER_HPP
+#ifndef INCLUDED_UHD_USRP_TUNE_HELPER_HPP
+#define INCLUDED_UHD_USRP_TUNE_HELPER_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
 #include <uhd/types/tune_result.hpp>
 
-namespace uhd{
+namespace uhd{ namespace usrp{
 
 /*!
  * Tune a rx chain to the desired frequency:
@@ -74,6 +74,6 @@ UHD_API tune_result_t tune_tx_subdev_and_duc(
     wax::obj subdev, wax::obj duc, double target_freq
 );
 
-} //namespace uhd
+}}
 
-#endif /* INCLUDED_UHD_UTILS_TUNE_HELPER_HPP */
+#endif /* INCLUDED_UHD_USRP_TUNE_HELPER_HPP */

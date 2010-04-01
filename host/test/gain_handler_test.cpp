@@ -19,7 +19,7 @@
 #include <uhd/utils/gain_handler.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/props.hpp>
+#include <uhd/utils/props.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 

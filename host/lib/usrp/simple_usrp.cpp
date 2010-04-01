@@ -15,15 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/simple_device.hpp>
-#include <uhd/utils/tune_helper.hpp>
+#include <uhd/usrp/simple_usrp.hpp>
+#include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
-#include <uhd/props.hpp>
+#include <uhd/usrp/subdev_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/device_props.hpp>
+#include <uhd/usrp/dboard_props.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Helper Functions
@@ -39,9 +43,9 @@ static std::vector<double> get_xx_rates(wax::obj decerps, wax::obj rate){
 /***********************************************************************
  * Simple Device Implementation
  **********************************************************************/
-class simple_device_impl : public simple_device{
+class simple_usrp_impl : public simple_usrp{
 public:
-    simple_device_impl(const device_addr_t &addr){
+    simple_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr);
         _mboard = (*_dev)[DEVICE_PROP_MBOARD];
         _rx_ddc = _mboard[named_prop_t(MBOARD_PROP_RX_DSP, "ddc0")];
@@ -58,7 +62,7 @@ public:
         _tx_subdev = tx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)];
     }
 
-    ~simple_device_impl(void){
+    ~simple_usrp_impl(void){
         /* NOP */
     }
 
@@ -71,7 +75,7 @@ public:
     }
 
     /*******************************************************************
-     * Timing
+     * Misc
      ******************************************************************/
     void set_time_now(const time_spec_t &time_spec){
         _mboard[MBOARD_PROP_TIME_NOW] = time_spec;
@@ -81,11 +85,16 @@ public:
         _mboard[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
     }
 
-    /*******************************************************************
-     * Streaming
-     ******************************************************************/
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
         _rx_ddc[std::string("stream_cmd")] = stream_cmd;
+    }
+
+    void set_clock_config(const clock_config_t &clock_config){
+        _mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
+    }
+
+    double get_clock_rate(void){
+        return _mboard[MBOARD_PROP_CLOCK_RATE].as<double>();
     }
 
     /*******************************************************************
@@ -134,7 +143,7 @@ public:
     }
 
     std::vector<std::string> get_rx_antennas(void){
-        return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
+        return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
     /*******************************************************************
@@ -183,7 +192,7 @@ public:
     }
 
     std::vector<std::string> get_tx_antennas(void){
-        return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
+        return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
 private:
@@ -198,6 +207,6 @@ private:
 /***********************************************************************
  * The Make Function
  **********************************************************************/
-simple_device::sptr simple_device::make(const std::string &args){
-    return sptr(new simple_device_impl(device_addr_t::from_args_str(args)));
+simple_usrp::sptr simple_usrp::make(const std::string &args){
+    return sptr(new simple_usrp_impl(device_addr_t::from_args_str(args)));
 }

@@ -17,11 +17,26 @@
 
 
 INSTALL(FILES
+    #### props headers ###
+    dboard_props.hpp
+    device_props.hpp
+    dsp_props.hpp
+    mboard_props.hpp
+    subdev_props.hpp
+
+    #### dboard headers ###
     dboard_base.hpp
     dboard_id.hpp
     dboard_interface.hpp
     dboard_manager.hpp
+
+    ### usrp headers ###
     usrp_e.hpp
     usrp2.hpp
+
+    ### utilities ###
+    tune_helper.hpp
+    simple_usrp.hpp
+
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
 )

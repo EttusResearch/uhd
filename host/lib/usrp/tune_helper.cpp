@@ -15,12 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/tune_helper.hpp>
+#include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/props.hpp>
+#include <uhd/usrp/subdev_props.hpp>
 #include <cmath>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Tune Helper Function
@@ -81,7 +82,7 @@ static tune_result_t tune_xx_subdev_and_dxc(
 /***********************************************************************
  * RX Tune
  **********************************************************************/
-tune_result_t uhd::tune_rx_subdev_and_ddc(
+tune_result_t uhd::usrp::tune_rx_subdev_and_ddc(
     wax::obj subdev, wax::obj ddc,
     double target_freq, double lo_offset
 ){
@@ -89,7 +90,7 @@ tune_result_t uhd::tune_rx_subdev_and_ddc(
     return tune_xx_subdev_and_dxc(is_tx, subdev, ddc, target_freq, lo_offset);
 }
 
-tune_result_t uhd::tune_rx_subdev_and_ddc(
+tune_result_t uhd::usrp::tune_rx_subdev_and_ddc(
     wax::obj subdev, wax::obj ddc,
     double target_freq
 ){
@@ -104,7 +105,7 @@ tune_result_t uhd::tune_rx_subdev_and_ddc(
 /***********************************************************************
  * TX Tune
  **********************************************************************/
-tune_result_t uhd::tune_tx_subdev_and_duc(
+tune_result_t uhd::usrp::tune_tx_subdev_and_duc(
     wax::obj subdev, wax::obj duc,
     double target_freq, double lo_offset
 ){
@@ -112,7 +113,7 @@ tune_result_t uhd::tune_tx_subdev_and_duc(
     return tune_xx_subdev_and_dxc(is_tx, subdev, duc, target_freq, lo_offset);
 }
 
-tune_result_t uhd::tune_tx_subdev_and_duc(
+tune_result_t uhd::usrp::tune_tx_subdev_and_duc(
     wax::obj subdev, wax::obj duc,
     double target_freq
 ){

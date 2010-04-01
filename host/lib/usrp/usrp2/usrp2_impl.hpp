@@ -102,6 +102,10 @@ public:
     //performs a control transaction
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
 
+    //peek and poke registers
+    void poke(boost::uint32_t addr, boost::uint32_t data);
+    boost::uint32_t peek(boost::uint32_t addr);
+
     //misc access methods
     double get_master_clock_freq(void);
 
@@ -168,7 +172,8 @@ private:
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dboards;
     uhd::prop_names_t _tx_subdevs_in_use;
-    void update_mux_config(void);
+    void update_rx_mux_config(void);
+    void update_tx_mux_config(void);
 
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;

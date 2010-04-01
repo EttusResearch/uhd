@@ -22,8 +22,6 @@ SET(libuhd_sources
     device.cpp
     gain_handler.cpp
     load_modules.cpp
-    simple_device.cpp
-    tune_helper.cpp
     types.cpp
     wax.cpp
     transport/if_addrs.cpp
@@ -32,7 +30,9 @@ SET(libuhd_sources
     usrp/dboard/db_basic_and_lf.cpp
     usrp/dboard_base.cpp
     usrp/dboard_interface.cpp
+    usrp/simple_usrp.cpp
     usrp/dboard_manager.cpp
+    usrp/tune_helper.cpp
     usrp/usrp2/dboard_impl.cpp
     usrp/usrp2/dboard_interface.cpp
     usrp/usrp2/dsp_impl.cpp

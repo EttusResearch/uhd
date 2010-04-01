@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/props.hpp>
+#include <uhd/utils/props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <boost/utility.hpp>

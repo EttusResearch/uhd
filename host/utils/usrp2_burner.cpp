@@ -17,7 +17,7 @@
 
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/usrp2.hpp>
-#include <uhd/props.hpp>
+#include <uhd/usrp/device_props.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -56,7 +56,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp2 device
     uhd::device::sptr u2_dev = uhd::usrp::usrp2::make(device_addr);
     //FIXME usees the default mboard for now (until the mimo link is supported)
-    wax::obj u2_mb = (*u2_dev)[uhd::DEVICE_PROP_MBOARD];
+    wax::obj u2_mb = (*u2_dev)[uhd::usrp::DEVICE_PROP_MBOARD];
     std::cout << std::endl;
 
     //fetch and print current settings

@@ -250,94 +250,6 @@ void handle_udp_ctrl_packet(
         break;
 
     /*******************************************************************
-     * Clock Config
-     ******************************************************************/
-    case USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO:
-        //TODO handle MC_PROVIDE_CLK_TO_MIMO when we do MIMO setup
-        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE;
-
-        //handle the 10 mhz ref source
-        uint32_t ref_flags = 0;
-        switch(ctrl_data_out.data.clock_config.ref_source){
-        case USRP2_REF_SOURCE_INT:
-            ref_flags = MC_WE_DONT_LOCK; break;
-        case USRP2_REF_SOURCE_SMA:
-            ref_flags = MC_WE_LOCK_TO_SMA; break;
-        case USRP2_REF_SOURCE_MIMO:
-            ref_flags = MC_WE_LOCK_TO_MIMO; break;
-        }
-        clocks_mimo_config(ref_flags & MC_REF_CLK_MASK);
-
-        //handle the pps config
-        uint32_t pps_flags = 0;
-
-        //fill in the pps polarity flags
-        switch(ctrl_data_out.data.clock_config.pps_polarity){
-        case USRP2_PPS_POLARITY_POS:
-            pps_flags |= 0x01 << 0; break;
-        case USRP2_PPS_POLARITY_NEG:
-            pps_flags |= 0x00 << 0; break;
-        }
-
-        //fill in the pps source flags
-        switch(ctrl_data_out.data.clock_config.pps_source){
-        case USRP2_PPS_SOURCE_SMA:
-            pps_flags |= 0x00 << 1; break;
-        case USRP2_PPS_SOURCE_MIMO:
-            pps_flags |= 0x01 << 1; break;
-        }
-        sr_time64->flags = pps_flags;
-
-        break;
-
-    /*******************************************************************
-     * GPIO
-     ******************************************************************/
-    case USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO:
-        if (!DEBUG_MODE) hal_gpio_set_ddr(
-            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
-            ctrl_data_in->data.gpio_config.value,
-            ctrl_data_in->data.gpio_config.mask
-        );
-        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO:
-        if (!DEBUG_MODE) hal_gpio_write(
-            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank),
-            ctrl_data_in->data.gpio_config.value,
-            ctrl_data_in->data.gpio_config.mask
-        );
-        ctrl_data_out.id = USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO:
-        ctrl_data_out.data.gpio_config.value = hal_gpio_read(
-            OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.gpio_config.bank)
-        );
-        ctrl_data_out.id = USRP2_CTRL_ID_HERE_IS_YOUR_GPIO_PIN_VALS_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO:{
-            //setup the atr registers for this bank
-            int bank = OTW_GPIO_BANK_TO_NUM(ctrl_data_in->data.atr_config.bank);
-            if (!DEBUG_MODE) set_atr_regs(
-                bank,
-                ctrl_data_in->data.atr_config.rx_value,
-                ctrl_data_in->data.atr_config.tx_value
-            );
-
-            //setup the sels based on the atr config mask
-            int mask = ctrl_data_in->data.atr_config.mask;
-            for (int i = 0; i < 16; i++){
-                // set to either GPIO_SEL_SW or GPIO_SEL_ATR
-                if (!DEBUG_MODE) hal_gpio_set_sel(bank, i, (mask & (1 << i)) ? 'a' : 's');
-            }
-            ctrl_data_out.id = USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE;
-        }
-        break;
-
-    /*******************************************************************
      * SPI
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
@@ -352,10 +264,10 @@ void handle_udp_ctrl_packet(
             //transact
             uint32_t result = spi_transact(
                 (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
-                (ctrl_data_in->data.spi_args.dev == USRP2_DIR_RX)? SPI_SS_RX_DB : SPI_SS_TX_DB,
+                ctrl_data_in->data.spi_args.dev,
                 data, num_bytes*8, //length in bits
-                (ctrl_data_in->data.spi_args.push == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
-                (ctrl_data_in->data.spi_args.latch == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
+                (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
+                (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
             );
 
             //load the result into the array of bytes
@@ -433,34 +345,6 @@ void handle_udp_ctrl_packet(
         break;
 
     /*******************************************************************
-     * DDC
-     ******************************************************************/
-    case USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO:
-        dsp_rx_regs->freq = ctrl_data_in->data.ddc_args.freq_word;
-        dsp_rx_regs->scale_iq = ctrl_data_in->data.ddc_args.scale_iq;
-
-        //setup the interp and half band filters
-        {
-            uint32_t decim = ctrl_data_in->data.ddc_args.decim;
-            uint32_t hb1 = 0;
-            uint32_t hb2 = 0;
-            if (!(decim & 1)){
-              hb2 = 1;
-              decim = decim >> 1;
-            }
-            if (!(decim & 1)){
-              hb1 = 1;
-              decim = decim >> 1;
-            }
-            uint32_t decim_word = (hb1<<9) | (hb2<<8) | decim;
-            dsp_rx_regs->decim_rate = decim_word;
-            printf("Decim: %d, register %d\n", ctrl_data_in->data.ddc_args.decim, decim_word);
-        }
-
-        ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE;
-        break;
-
-    /*******************************************************************
      * Streaming
      ******************************************************************/
     case USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO:{
@@ -525,50 +409,21 @@ void handle_udp_ctrl_packet(
     }
 
     /*******************************************************************
-     * DUC
+     * Peek and Poke Register
      ******************************************************************/
-    case USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO:
-        dsp_tx_regs->freq = ctrl_data_in->data.duc_args.freq_word;
-        dsp_tx_regs->scale_iq = ctrl_data_in->data.duc_args.scale_iq;
-
-        //setup the interp and half band filters
-        {
-            uint32_t interp = ctrl_data_in->data.duc_args.interp;
-            uint32_t hb1 = 0;
-            uint32_t hb2 = 0;
-            if (!(interp & 1)){
-              hb2 = 1;
-              interp = interp >> 1;
-            }
-            if (!(interp & 1)){
-              hb1 = 1;
-              interp = interp >> 1;
-            }
-            uint32_t interp_word = (hb1<<9) | (hb2<<8) | interp;
-            dsp_tx_regs->interp_rate = interp_word;
-            printf("Interp: %d, register %d\n", ctrl_data_in->data.duc_args.interp, interp_word);
+    case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
+        if (ctrl_data_in->data.poke_args.addr < 0xC000){
+            printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
         }
-
-        ctrl_data_out.id = USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE;
+        else{
+            *((uint32_t *) ctrl_data_in->data.poke_args.addr) = ctrl_data_in->data.poke_args.data;
+        }
+        ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
         break;
 
-    /*******************************************************************
-     * Time Config
-     ******************************************************************/
-    case USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO:
-        sr_time64->imm = (ctrl_data_in->data.time_args.now == 0)? 0 : 1;
-        sr_time64->ticks = ctrl_data_in->data.time_args.ticks;
-        sr_time64->secs = ctrl_data_in->data.time_args.secs; //set this last to latch the regs
-        ctrl_data_out.id = USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE;
-        break;
-
-    /*******************************************************************
-     * MUX Config
-     ******************************************************************/
-    case USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO:
-        dsp_rx_regs->rx_mux = ctrl_data_in->data.mux_args.rx_mux;
-        dsp_tx_regs->tx_mux = ctrl_data_in->data.mux_args.tx_mux;
-        ctrl_data_out.id = USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE;
+    case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
+        ctrl_data_in->data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
+        ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
         break;
 
     default:
@@ -758,6 +613,10 @@ main(void)
   hal_gpio_set_sel(GPIO_TX_BANK, 15, 's');
   hal_gpio_set_ddr(GPIO_TX_BANK, 0x8000, 0x8000);
 #endif
+
+//set them all to the atr settings by default
+hal_gpio_set_sels(GPIO_TX_BANK, "aaaaaaaaaaaaaaaa");
+hal_gpio_set_sels(GPIO_RX_BANK, "aaaaaaaaaaaaaaaa");
 
   output_regs->debug_mux_ctrl = 1;
 #if DEBUG_MODE

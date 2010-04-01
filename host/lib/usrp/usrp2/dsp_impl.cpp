@@ -15,13 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "usrp2_impl.hpp"
+#include "usrp2_regs.hpp"
+#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include "usrp2_impl.hpp"
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 static const size_t default_decim = 16;
 static const size_t default_interp = 16;
@@ -64,25 +67,22 @@ void usrp2_impl::init_ddc_config(void){
     update_ddc_config();
 
     //initial command that kills streaming (in case if was left on)
-    //issue_ddc_stream_cmd(TODO)
+    stream_cmd_t stream_cmd_off;
+    stream_cmd_off.stream_now = true;
+    stream_cmd_off.continuous = false;
+    stream_cmd_off.num_samps = 0;
+    issue_ddc_stream_cmd(stream_cmd_off);
 }
 
 void usrp2_impl::update_ddc_config(void){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO);
-    out_data.data.ddc_args.freq_word = htonl(
-        calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
-    );
-    out_data.data.ddc_args.decim = htonl(_ddc_decim);
+    //set the decimation
+    this->poke(FR_DSP_RX_DECIM_RATE, _ddc_decim);
+
+    //set the scaling
     static const boost::int16_t default_rx_scale_iq = 1024;
-    out_data.data.ddc_args.scale_iq = htonl(
+    this->poke(FR_DSP_RX_SCALE_IQ,
         calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
     );
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE);
 }
 
 void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
@@ -172,7 +172,9 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _ddc_freq = new_freq; //shadow
-        update_ddc_config();
+        this->poke(FR_DSP_RX_FREQ,
+            calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
+        );
         return;
     }
     else if (key_name == "stream_cmd"){
@@ -210,20 +212,11 @@ void usrp2_impl::update_duc_config(void){
     double interp_cubed = std::pow(double(tmp_interp), 3);
     boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO);
-    out_data.data.duc_args.freq_word = htonl(
-        calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
-    );
-    out_data.data.duc_args.interp = htonl(_duc_interp);
-    out_data.data.duc_args.scale_iq = htonl(
-        calculate_iq_scale_word(scale, scale)
-    );
+    //set the interpolation
+    this->poke(FR_DSP_TX_INTERP_RATE, _ddc_decim);
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE);
+    //set the scaling
+    this->poke(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
 }
 
 /***********************************************************************
@@ -297,7 +290,9 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
         ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
         ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
         _duc_freq = new_freq; //shadow
-        update_duc_config();
+        this->poke(FR_DSP_TX_FREQ,
+            calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
+        );
         return;
     }
 

@@ -45,85 +45,48 @@ extern "C" {
 #define USRP2_UDP_DATA_PORT 49153
 
 typedef enum{
-    USRP2_CTRL_ID_HUH_WHAT,
+    USRP2_CTRL_ID_HUH_WHAT = ' ',
     //USRP2_CTRL_ID_FOR_SURE, //TODO error condition enums
     //USRP2_CTRL_ID_SUX_MAN,
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO,
-    USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE,
-    USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO,
+    USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO = 'a',
+    USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE = 'A',
+    USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO = 'b',
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO,
-    USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE,
-    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO,
+    USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO = 'm',
+    USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE = 'M',
+    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO = 'n',
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO,
-    USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE,
+    USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO = 'd',
+    USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE = 'D',
 
-    USRP2_CTRL_ID_HERES_A_NEW_CLOCK_CONFIG_BRO,
-    USRP2_CTRL_ID_GOT_THE_NEW_CLOCK_CONFIG_DUDE,
+    USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO = 's',
+    USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE = 'S',
 
-    USRP2_CTRL_ID_USE_THESE_GPIO_DDR_SETTINGS_BRO,
-    USRP2_CTRL_ID_GOT_THE_GPIO_DDR_SETTINGS_DUDE,
+    USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO = 'i',
+    USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE = 'I',
 
-    USRP2_CTRL_ID_SET_YOUR_GPIO_PIN_OUTS_BRO,
-    USRP2_CTRL_ID_I_SET_THE_GPIO_PIN_OUTS_DUDE,
+    USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO = 'h',
+    USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE = 'H',
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_GPIO_PIN_VALS_BRO,
-    USRP2_CTRL_ID_HERE_IS_YOUR_GPIO_PIN_VALS_DUDE,
+    USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO = 'x',
+    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE = 'X',
 
-    USRP2_CTRL_ID_USE_THESE_ATR_SETTINGS_BRO,
-    USRP2_CTRL_ID_GOT_THE_ATR_SETTINGS_DUDE,
+    USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO = 'y',
+    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE = 'Y',
 
-    USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO,
-    USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE,
+    USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO = '{',
+    USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE = '}',
 
-    USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO,
-    USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE,
+    USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO = 'p',
+    USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE = 'P',
 
-    USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO,
-    USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE,
+    USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO = 'r',
+    USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE = 'R',
 
-    USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO,
-    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE,
-
-    USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO,
-    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE,
-
-    USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO,
-    USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE,
-
-    USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO,
-    USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE,
-
-    USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO,
-    USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE,
-
-    USRP2_CTRL_ID_GOT_A_NEW_TIME_FOR_YOU_BRO,
-    USRP2_CTRL_ID_SWEET_I_GOT_THAT_TIME_DUDE,
-
-    USRP2_CTRL_ID_UPDATE_THOSE_MUX_SETTINGS_BRO,
-    USRP2_CTRL_ID_UPDATED_THE_MUX_SETTINGS_DUDE,
-
-    USRP2_CTRL_ID_PEACE_OUT
+    USRP2_CTRL_ID_PEACE_OUT = '~'
 
 } usrp2_ctrl_id_t;
-
-typedef enum{
-    USRP2_PPS_SOURCE_SMA,
-    USRP2_PPS_SOURCE_MIMO
-} usrp2_pps_source_t;
-
-typedef enum{
-    USRP2_PPS_POLARITY_POS,
-    USRP2_PPS_POLARITY_NEG
-} usrp2_pps_polarity_t;
-
-typedef enum{
-    USRP2_REF_SOURCE_INT,
-    USRP2_REF_SOURCE_SMA,
-    USRP2_REF_SOURCE_MIMO
-} usrp2_ref_source_t;
 
 typedef enum{
     USRP2_DIR_RX,
@@ -146,28 +109,8 @@ typedef struct{
             _SINS_ uint16_t tx_id;
         } dboard_ids;
         struct {
-            _SINS_ uint8_t pps_source;
-            _SINS_ uint8_t pps_polarity;
-            _SINS_ uint8_t ref_source;
-            _SINS_ uint8_t _pad;
-        } clock_config;
-        struct {
-            _SINS_ uint8_t bank;
-            _SINS_ uint8_t _pad[3];
-            _SINS_ uint16_t value;
-            _SINS_ uint16_t mask;
-        } gpio_config;
-        struct {
-            _SINS_ uint8_t bank;
-            _SINS_ uint8_t _pad[3];
-            _SINS_ uint16_t tx_value;
-            _SINS_ uint16_t rx_value;
-            _SINS_ uint16_t mask;
-        } atr_config;
-        struct {
             _SINS_ uint8_t dev;
-            _SINS_ uint8_t latch;
-            _SINS_ uint8_t push;
+            _SINS_ uint8_t edge;
             _SINS_ uint8_t readback;
             _SINS_ uint8_t bytes;
             _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
@@ -184,11 +127,6 @@ typedef struct{
             _SINS_ uint32_t value;
         } aux_args;
         struct {
-            _SINS_ uint32_t freq_word;
-            _SINS_ uint32_t decim;
-            _SINS_ uint32_t scale_iq;
-        } ddc_args;
-        struct {
             _SINS_ uint8_t now; //stream now?
             _SINS_ uint8_t continuous; //auto-reload commmands?
             _SINS_ uint8_t _pad[2];
@@ -197,19 +135,9 @@ typedef struct{
             _SINS_ uint32_t num_samps;
         } stream_cmd;
         struct {
-            _SINS_ uint32_t freq_word;
-            _SINS_ uint32_t interp;
-            _SINS_ uint32_t scale_iq;
-        } duc_args;
-        struct {
-            _SINS_ uint32_t secs;
-            _SINS_ uint32_t ticks;
-            _SINS_ uint8_t now;
-        } time_args;
-        struct {
-            _SINS_ uint32_t rx_mux;
-            _SINS_ uint32_t tx_mux;
-        } mux_args;
+            _SINS_ uint32_t addr;
+            _SINS_ uint32_t data;
+        } poke_args;
     } data;
 } usrp2_ctrl_data_t;
 
