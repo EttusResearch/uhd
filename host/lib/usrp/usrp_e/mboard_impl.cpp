@@ -17,7 +17,7 @@
 
 #include "usrp_e_impl.hpp"
 #include <uhd/utils/assert.hpp>
-#include <uhd/props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
 
 using namespace uhd;

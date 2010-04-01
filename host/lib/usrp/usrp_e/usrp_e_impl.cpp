@@ -16,12 +16,14 @@
 //
 
 #include "usrp_e_impl.hpp"
+#include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <fcntl.h> //open
 #include <sys/ioctl.h> //ioctl
+#include <linux/usrp_e.h>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -111,6 +113,52 @@ void usrp_e_impl::ioctl(int request, void *mem){
             boost::format("ioctl failed with request %d") % request
         ));
     }
+}
+
+void usrp_e_impl::poke32(boost::uint32_t addr, boost::uint32_t value){
+    //load the data struct
+    usrp_e_ctl32 data;
+    data.offset = addr;
+    data.count = 1;
+    data.buf[0] = value;
+
+    //call the ioctl
+    this->ioctl(USRP_E_WRITE_CTL32, &data);
+}
+
+void usrp_e_impl::poke16(boost::uint32_t addr, boost::uint16_t value){
+    //load the data struct
+    usrp_e_ctl16 data;
+    data.offset = addr;
+    data.count = 1;
+    data.buf[0] = value;
+
+    //call the ioctl
+    this->ioctl(USRP_E_WRITE_CTL16, &data);
+}
+
+boost::uint32_t usrp_e_impl::peek32(boost::uint32_t addr){
+    //load the data struct
+    usrp_e_ctl32 data;
+    data.offset = addr;
+    data.count = 1;
+
+    //call the ioctl
+    this->ioctl(USRP_E_READ_CTL32, &data);
+
+    return data.buf[0];
+}
+
+boost::uint16_t usrp_e_impl::peek16(boost::uint32_t addr){
+    //load the data struct
+    usrp_e_ctl16 data;
+    data.offset = addr;
+    data.count = 1;
+
+    //call the ioctl
+    this->ioctl(USRP_E_READ_CTL16, &data);
+
+    return data.buf[0];
 }
 
 /***********************************************************************

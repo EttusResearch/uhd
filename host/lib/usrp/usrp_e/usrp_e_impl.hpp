@@ -92,6 +92,12 @@ public:
      */
     void ioctl(int request, void *mem);
 
+    //peekers and pokers
+    void poke32(boost::uint32_t addr, boost::uint32_t value);
+    void poke16(boost::uint32_t addr, boost::uint16_t value);
+    boost::uint32_t peek32(boost::uint32_t addr);
+    boost::uint16_t peek16(boost::uint32_t addr);
+
 private:
     static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
     int _node_fd;

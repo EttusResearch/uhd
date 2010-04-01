@@ -22,7 +22,6 @@
 #include <boost/assign/list_of.hpp>
 #include <algorithm> //std::copy
 #include <linux/usrp_e.h>
-#include <cstddef>
 
 using namespace uhd::usrp;
 
@@ -34,9 +33,8 @@ public:
     void write_aux_dac(unit_type_t, int, int);
     int read_aux_adc(unit_type_t, int);
 
-    void set_atr_reg(gpio_bank_t, boost::uint16_t, boost::uint16_t, boost::uint16_t);
+    void set_atr_reg(gpio_bank_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(gpio_bank_t, boost::uint16_t);
-    void write_gpio(gpio_bank_t, boost::uint16_t);
     boost::uint16_t read_gpio(gpio_bank_t);
 
     void write_i2c(int, const byte_vector_t &);
@@ -48,8 +46,7 @@ public:
 private:
     byte_vector_t transact_spi(
         spi_dev_t dev,
-        spi_latch_t latch,
-        spi_push_t push,
+        spi_edge_t edge,
         const byte_vector_t &buf,
         bool readback
     );
@@ -92,82 +89,40 @@ double usrp_e_dboard_interface::get_tx_clock_rate(void){
 void usrp_e_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
     //define mapping of gpio bank to register address
     static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_ddr))
-        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_ddr))
+        (GPIO_BANK_RX, UE_REG_GPIO_RX_DDR)
+        (GPIO_BANK_TX, UE_REG_GPIO_TX_DDR)
     ;
-
-    //load the data struct
-    usrp_e_ctl16 data;
-    data.offset = bank_to_addr[bank];
-    data.count = 1;
-    data.buf[0] = value;
-
-    //call the ioctl
-    _impl->ioctl(USRP_E_WRITE_CTL16, &data);
-}
-
-void usrp_e_dboard_interface::write_gpio(gpio_bank_t bank, boost::uint16_t value){
-    //define mapping of gpio bank to register address
-    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_io))
-        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_io))
-    ;
-
-    //load the data struct
-    usrp_e_ctl16 data;
-    data.offset = bank_to_addr[bank];
-    data.count = 1;
-    data.buf[0] = value;
-
-    //call the ioctl
-    _impl->ioctl(USRP_E_WRITE_CTL16, &data);
+    _impl->poke16(bank_to_addr[bank], value);
 }
 
 boost::uint16_t usrp_e_dboard_interface::read_gpio(gpio_bank_t bank){
     //define mapping of gpio bank to register address
     static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_io))
-        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_io))
+        (GPIO_BANK_RX, UE_REG_GPIO_RX_IO)
+        (GPIO_BANK_TX, UE_REG_GPIO_TX_IO)
     ;
-
-    //load the data struct
-    usrp_e_ctl16 data;
-    data.offset = bank_to_addr[bank];
-    data.count = 1;
-
-    //call the ioctl
-    _impl->ioctl(USRP_E_READ_CTL16, &data);
-
-    return data.buf[0];
+    return _impl->peek16(bank_to_addr[bank]);
 }
 
-void usrp_e_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_value, boost::uint16_t rx_value, boost::uint16_t mask){
-    //define mapping of gpio bank to register address
-    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_RX_BANK, GPIO_BASE + offsetof(gpio_regs_t, rx_sel_low))
-        (GPIO_TX_BANK, GPIO_BASE + offsetof(gpio_regs_t, tx_sel_low))
+void usrp_e_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost::uint16_t value){
+    //define mapping of bank to atr regs to register address
+    static const uhd::dict<
+        gpio_bank_t, uhd::dict<atr_reg_t, boost::uint32_t>
+    > bank_to_atr_to_addr = boost::assign::map_list_of
+        (GPIO_BANK_RX, boost::assign::map_list_of
+            (ATR_REG_IDLE,        UE_REG_ATR_IDLE_RXSIDE)
+            (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_RXSIDE)
+            (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_RXSIDE)
+            (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_RXSIDE)
+        )
+        (GPIO_BANK_TX, boost::assign::map_list_of
+            (ATR_REG_IDLE,        UE_REG_ATR_IDLE_TXSIDE)
+            (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_TXSIDE)
+            (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_TXSIDE)
+            (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_TXSIDE)
+        )
     ;
-
-    //set the gpio selection mux to atr or software controlled
-    boost::uint16_t low_sel = 0, high_sel = 0;
-    for(size_t i = 0; i < 16; i++){
-        boost::uint16_t code = (mask & (1 << i))? GPIO_SEL_ATR : GPIO_SEL_SW;
-        if(i < 8) low_sel  |= code << (2*i-0);
-        else      high_sel |= code << (2*i-8);
-    }
-
-    //load the data struct
-    usrp_e_ctl16 data;
-    data.offset = bank_to_addr[bank];
-    data.count = 2;
-    data.buf[0] = low_sel;
-    data.buf[1] = high_sel;
-
-    //call the ioctl
-    _impl->ioctl(USRP_E_READ_CTL16, &data);
-
-    //----------------------------------------> TODO
-    //TODO set the atr regs
+    _impl->poke16(bank_to_atr_to_addr[bank][atr], value);
 }
 
 /***********************************************************************
@@ -175,15 +130,14 @@ void usrp_e_dboard_interface::set_atr_reg(gpio_bank_t bank, boost::uint16_t tx_v
  **********************************************************************/
 dboard_interface::byte_vector_t usrp_e_dboard_interface::transact_spi(
     spi_dev_t dev,
-    spi_latch_t latch,
-    spi_push_t push,
+    spi_edge_t edge,
     const byte_vector_t &buf,
     bool readback
 ){
     //load data struct
     usrp_e_spi data;
     data.readback = (readback)? UE_SPI_TXRX : UE_SPI_TXONLY;
-    data.slave = (dev == SPI_RX_DEV)? UE_SPI_CTRL_RXNEG : UE_SPI_CTRL_TXNEG;
+    data.slave = (dev == SPI_DEV_RX)? UE_SPI_CTRL_RXNEG : UE_SPI_CTRL_TXNEG;
     data.length = buf.size() * 8; //bytes to bits
     boost::uint8_t *data_bytes = reinterpret_cast<boost::uint8_t*>(&data.data);
 
@@ -193,8 +147,8 @@ dboard_interface::byte_vector_t usrp_e_dboard_interface::transact_spi(
 
     //load the flags
     data.flags = 0;
-    data.flags |= (latch == SPI_LATCH_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
-    data.flags |= (push ==  SPI_PUSH_RISE)?  UE_SPI_PUSH_RISE  : UE_SPI_PUSH_FALL;
+    data.flags |= (edge == SPI_EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
+    data.flags |= (edge == SPI_EDGE_RISE)? UE_SPI_PUSH_RISE  : UE_SPI_PUSH_FALL;
 
     //call the spi ioctl
     _impl->ioctl(USRP_E_SPI, &data);
