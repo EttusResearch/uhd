@@ -33,5 +33,10 @@ INSTALL(FILES
     ### usrp headers ###
     usrp1e.hpp
     usrp2.hpp
+
+    ### utilities ###
+    tune_helper.hpp
+    simple_usrp.hpp
+
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
 )

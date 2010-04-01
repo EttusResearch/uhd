@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_PROPS_COMMON_HPP
-#define INCLUDED_UHD_USRP_PROPS_COMMON_HPP
+#ifndef INCLUDED_UHD_UTILS_PROPS_HPP
+#define INCLUDED_UHD_UTILS_PROPS_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
@@ -45,4 +45,4 @@ namespace uhd{
 
 } //namespace uhd
 
-#endif /* INCLUDED_UHD_USRP_PROPS_COMMON_HPP */
+#endif /* INCLUDED_UHD_UTILS_PROPS_HPP */

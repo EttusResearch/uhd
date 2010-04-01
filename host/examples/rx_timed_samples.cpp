@@ -16,7 +16,7 @@
 //
 
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/simple_device.hpp>
+#include <uhd/usrp/simple_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -52,7 +52,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...")
         % transport_args << std::endl;
-    uhd::simple_device::sptr sdev = uhd::simple_device::make(transport_args);
+    uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(transport_args);
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
 

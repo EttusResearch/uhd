@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/simple_device.hpp>
-#include <uhd/utils/tune_helper.hpp>
+#include <uhd/usrp/simple_usrp.hpp>
+#include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -43,9 +43,9 @@ static std::vector<double> get_xx_rates(wax::obj decerps, wax::obj rate){
 /***********************************************************************
  * Simple Device Implementation
  **********************************************************************/
-class simple_device_impl : public simple_device{
+class simple_usrp_impl : public simple_usrp{
 public:
-    simple_device_impl(const device_addr_t &addr){
+    simple_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr);
         _mboard = (*_dev)[DEVICE_PROP_MBOARD];
         _rx_ddc = _mboard[named_prop_t(MBOARD_PROP_RX_DSP, "ddc0")];
@@ -62,7 +62,7 @@ public:
         _tx_subdev = tx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)];
     }
 
-    ~simple_device_impl(void){
+    ~simple_usrp_impl(void){
         /* NOP */
     }
 
@@ -202,6 +202,6 @@ private:
 /***********************************************************************
  * The Make Function
  **********************************************************************/
-simple_device::sptr simple_device::make(const std::string &args){
-    return sptr(new simple_device_impl(device_addr_t::from_args_str(args)));
+simple_usrp::sptr simple_usrp::make(const std::string &args){
+    return sptr(new simple_usrp_impl(device_addr_t::from_args_str(args)));
 }

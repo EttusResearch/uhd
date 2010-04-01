@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_SIMPLE_DEVICE_HPP
-#define INCLUDED_UHD_SIMPLE_DEVICE_HPP
+#ifndef INCLUDED_UHD_USRP_SIMPLE_USRP_HPP
+#define INCLUDED_UHD_USRP_SIMPLE_USRP_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -27,17 +27,17 @@
 #include <boost/utility.hpp>
 #include <vector>
 
-namespace uhd{
+namespace uhd{ namespace usrp{
 
 /*!
- * The simple UHD device class:
- * A simple device facilitates ease-of-use for most use-case scenarios.
+ * The simple USRP device class:
+ * A simple usrp facilitates ease-of-use for most use-case scenarios.
  * The wrapper provides convenience functions to tune the devices
  * as well as to set the dboard gains, antennas, and other properties.
  */
-class UHD_API simple_device : boost::noncopyable{
+class UHD_API simple_usrp : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<simple_device> sptr;
+    typedef boost::shared_ptr<simple_usrp> sptr;
     static sptr make(const std::string &args);
 
     virtual device::sptr get_device(void) = 0;
@@ -92,6 +92,6 @@ public:
     virtual std::vector<std::string> get_tx_antennas(void) = 0;
 };
 
-} //namespace uhd
+}}
 
-#endif /* INCLUDED_UHD_SIMPLE_DEVICE_HPP */
+#endif /* INCLUDED_UHD_USRP_SIMPLE_USRP_HPP */
