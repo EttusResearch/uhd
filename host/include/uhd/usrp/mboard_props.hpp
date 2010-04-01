@@ -29,20 +29,20 @@ namespace uhd{ namespace usrp{
      *   and discovered though the others property.
      */
     enum mboard_prop_t{
-        MBOARD_PROP_NAME,              //ro, std::string
-        MBOARD_PROP_OTHERS,            //ro, prop_names_t
-        MBOARD_PROP_CLOCK_RATE,        //ro, double
-        MBOARD_PROP_RX_DSP,            //ro, wax::obj
-        MBOARD_PROP_RX_DSP_NAMES,      //ro, prop_names_t
-        MBOARD_PROP_TX_DSP,            //ro, wax::obj
-        MBOARD_PROP_TX_DSP_NAMES,      //ro, prop_names_t
-        MBOARD_PROP_RX_DBOARD,         //ro, wax::obj
-        MBOARD_PROP_RX_DBOARD_NAMES,   //ro, prop_names_t
-        MBOARD_PROP_TX_DBOARD,         //ro, wax::obj
-        MBOARD_PROP_TX_DBOARD_NAMES,   //ro, prop_names_t
-        MBOARD_PROP_CLOCK_CONFIG,      //rw, clock_config_t
-        MBOARD_PROP_TIME_NOW,          //wo, time_spec_t
-        MBOARD_PROP_TIME_NEXT_PPS      //wo, time_spec_t
+        MBOARD_PROP_NAME            = 'n', //ro, std::string
+        MBOARD_PROP_OTHERS          = 'o', //ro, prop_names_t
+        MBOARD_PROP_CLOCK_RATE      = 'c', //ro, double
+        MBOARD_PROP_RX_DSP          = 'd', //ro, wax::obj
+        MBOARD_PROP_RX_DSP_NAMES    = 'D', //ro, prop_names_t
+        MBOARD_PROP_TX_DSP          = 'u', //ro, wax::obj
+        MBOARD_PROP_TX_DSP_NAMES    = 'U', //ro, prop_names_t
+        MBOARD_PROP_RX_DBOARD       = 'e', //ro, wax::obj
+        MBOARD_PROP_RX_DBOARD_NAMES = 'E', //ro, prop_names_t
+        MBOARD_PROP_TX_DBOARD       = 'v', //ro, wax::obj
+        MBOARD_PROP_TX_DBOARD_NAMES = 'V', //ro, prop_names_t
+        MBOARD_PROP_CLOCK_CONFIG    = 'C', //rw, clock_config_t
+        MBOARD_PROP_TIME_NOW        = 't', //wo, time_spec_t
+        MBOARD_PROP_TIME_NEXT_PPS   = 'T'  //wo, time_spec_t
     };
 
 }} //namespace

@@ -26,20 +26,20 @@ namespace uhd{ namespace usrp{
      * Possible device subdev properties
      */
     enum subdev_prop_t{
-        SUBDEV_PROP_NAME,              //ro, std::string
-        SUBDEV_PROP_OTHERS,            //ro, prop_names_t
-        SUBDEV_PROP_GAIN,              //rw, float
-        SUBDEV_PROP_GAIN_RANGE,        //ro, gain_range_t
-        SUBDEV_PROP_GAIN_NAMES,        //ro, prop_names_t
-        SUBDEV_PROP_FREQ,              //rw, double
-        SUBDEV_PROP_FREQ_RANGE,        //ro, freq_range_t
-        SUBDEV_PROP_ANTENNA,           //rw, std::string
-        SUBDEV_PROP_ANTENNA_NAMES,     //ro, prop_names_t
-        SUBDEV_PROP_ENABLED,           //rw, bool
-        SUBDEV_PROP_QUADRATURE,        //ro, bool
-        SUBDEV_PROP_IQ_SWAPPED,        //ro, bool
-        SUBDEV_PROP_SPECTRUM_INVERTED, //ro, bool
-        SUBDEV_PROP_LO_INTERFERES      //ro, bool
+        SUBDEV_PROP_NAME              = 'n', //ro, std::string
+        SUBDEV_PROP_OTHERS            = 'o', //ro, prop_names_t
+        SUBDEV_PROP_GAIN              = 'g', //rw, float
+        SUBDEV_PROP_GAIN_RANGE        = 'r', //ro, gain_range_t
+        SUBDEV_PROP_GAIN_NAMES        = 'G', //ro, prop_names_t
+        SUBDEV_PROP_FREQ              = 'f', //rw, double
+        SUBDEV_PROP_FREQ_RANGE        = 'F', //ro, freq_range_t
+        SUBDEV_PROP_ANTENNA           = 'a', //rw, std::string
+        SUBDEV_PROP_ANTENNA_NAMES     = 'A', //ro, prop_names_t
+        SUBDEV_PROP_ENABLED           = 'e', //rw, bool
+        SUBDEV_PROP_QUADRATURE        = 'q', //ro, bool
+        SUBDEV_PROP_IQ_SWAPPED        = 'i', //ro, bool
+        SUBDEV_PROP_SPECTRUM_INVERTED = 's', //ro, bool
+        SUBDEV_PROP_LO_INTERFERES     = 'l'  //ro, bool
         //SUBDEV_PROP_RSSI,              //ro, float //----> not on all boards, use named prop
         //SUBDEV_PROP_BANDWIDTH          //rw, double //----> not on all boards, use named prop
     };

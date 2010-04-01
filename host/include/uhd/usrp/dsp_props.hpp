@@ -31,8 +31,8 @@ namespace uhd{ namespace usrp{
      *   and a property to get list of other possible properties.
      */
     enum dsp_prop_t{
-        DSP_PROP_NAME,                 //ro, std::string
-        DSP_PROP_OTHERS                //ro, prop_names_t
+        DSP_PROP_NAME   = 'n', //ro, std::string
+        DSP_PROP_OTHERS = 'o'  //ro, prop_names_t
     };
 
 }} //namespace

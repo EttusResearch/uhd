@@ -75,7 +75,7 @@ public:
     }
 
     /*******************************************************************
-     * Timing
+     * Misc
      ******************************************************************/
     void set_time_now(const time_spec_t &time_spec){
         _mboard[MBOARD_PROP_TIME_NOW] = time_spec;
@@ -85,11 +85,16 @@ public:
         _mboard[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
     }
 
-    /*******************************************************************
-     * Streaming
-     ******************************************************************/
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
         _rx_ddc[std::string("stream_cmd")] = stream_cmd;
+    }
+
+    void set_clock_config(const clock_config_t &clock_config){
+        _mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
+    }
+
+    double get_clock_rate(void){
+        return _mboard[MBOARD_PROP_CLOCK_RATE].as<double>();
     }
 
     /*******************************************************************
@@ -138,7 +143,7 @@ public:
     }
 
     std::vector<std::string> get_rx_antennas(void){
-        return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
+        return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
     /*******************************************************************
@@ -187,7 +192,7 @@ public:
     }
 
     std::vector<std::string> get_tx_antennas(void){
-        return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
+        return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
 private:

@@ -29,11 +29,11 @@ namespace uhd{ namespace usrp{
      *   will be present in the interface for configuration.
      */
     enum device_prop_t{
-        DEVICE_PROP_NAME,              //ro, std::string
-        DEVICE_PROP_MBOARD,            //ro, wax::obj
-        DEVICE_PROP_MBOARD_NAMES,      //ro, prop_names_t
-        DEVICE_PROP_MAX_RX_SAMPLES,    //ro, size_t
-        DEVICE_PROP_MAX_TX_SAMPLES     //ro, size_t
+        DEVICE_PROP_NAME           = 'n', //ro, std::string
+        DEVICE_PROP_MBOARD         = 'm', //ro, wax::obj
+        DEVICE_PROP_MBOARD_NAMES   = 'M', //ro, prop_names_t
+        DEVICE_PROP_MAX_RX_SAMPLES = 'r', //ro, size_t
+        DEVICE_PROP_MAX_TX_SAMPLES = 't'  //ro, size_t
     };
 
     ////////////////////////////////////////////////////////////////////////

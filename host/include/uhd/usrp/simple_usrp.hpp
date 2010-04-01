@@ -22,6 +22,7 @@
 #include <uhd/device.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/clock_config.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -45,15 +46,13 @@ public:
     virtual std::string get_name(void) = 0;
 
     /*******************************************************************
-     * Timing
+     * Misc
      ******************************************************************/
     virtual void set_time_now(const time_spec_t &time_spec) = 0;
     virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
-
-    /*******************************************************************
-     * Streaming
-     ******************************************************************/
     virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+    virtual void set_clock_config(const clock_config_t &clock_config) = 0;
+    virtual double get_clock_rate(void) = 0;
 
     /*******************************************************************
      * RX methods
