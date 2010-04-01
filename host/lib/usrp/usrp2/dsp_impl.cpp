@@ -17,12 +17,14 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 static const size_t default_decim = 16;
 static const size_t default_interp = 16;

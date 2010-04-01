@@ -17,11 +17,13 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Helper Methods

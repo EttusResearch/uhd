@@ -18,6 +18,8 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/subdev_props.hpp>
+#include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
 

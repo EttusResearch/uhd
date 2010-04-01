@@ -16,6 +16,7 @@
 //
 
 #include <uhd/transport/if_addrs.hpp>
+#include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/format.hpp>

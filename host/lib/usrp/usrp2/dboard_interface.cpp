@@ -114,8 +114,8 @@ boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
 void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost::uint16_t value){
     //map the atr reg to an offset in register space
     static const uhd::dict<atr_reg_t, int> reg_to_addr = boost::assign::map_list_of
-        (ATR_REG_IDLE, FR_ATR_IDLE) (ATR_REG_TXONLY, FR_ATR_TX)
-        (ATR_REG_RXONLY, FR_ATR_RX) (ATR_REG_BOTH, FR_ATR_FULL)
+        (ATR_REG_IDLE, FR_ATR_IDLE) (ATR_REG_TX_ONLY, FR_ATR_TX)
+        (ATR_REG_RX_ONLY, FR_ATR_RX) (ATR_REG_FULL_DUPLEX, FR_ATR_FULL)
     ;
     ASSERT_THROW(reg_to_addr.has_key(reg));
 

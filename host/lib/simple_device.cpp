@@ -18,12 +18,16 @@
 #include <uhd/simple_device.hpp>
 #include <uhd/utils/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
-#include <uhd/props.hpp>
+#include <uhd/usrp/subdev_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/device_props.hpp>
+#include <uhd/usrp/dboard_props.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Helper Functions

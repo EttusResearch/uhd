@@ -18,7 +18,7 @@
 #include <uhd/utils/gain_handler.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhd/props.hpp>
+#include <uhd/utils/props.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>

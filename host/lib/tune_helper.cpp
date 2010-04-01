@@ -17,10 +17,11 @@
 
 #include <uhd/utils/tune_helper.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/props.hpp>
+#include <uhd/usrp/subdev_props.hpp>
 #include <cmath>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * Tune Helper Function

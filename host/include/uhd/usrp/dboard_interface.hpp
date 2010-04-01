@@ -62,10 +62,10 @@ public:
 
     //possible atr registers
     enum atr_reg_t{
-        ATR_REG_IDLE   = 'i',
-        ATR_REG_TXONLY = 't',
-        ATR_REG_RXONLY = 'r',
-        ATR_REG_BOTH   = 'b'
+        ATR_REG_IDLE        = 'i',
+        ATR_REG_TX_ONLY     = 't',
+        ATR_REG_RX_ONLY     = 'r',
+        ATR_REG_FULL_DUPLEX = 'f'
     };
 
     //structors
