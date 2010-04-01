@@ -6,21 +6,25 @@ The hardware driver for Ettus Research products.
 ########################################################################
 # Supported USRP Motherboards
 ########################################################################
-USRP2 - gigabit ethernet
+USRP2 - udp over gigabit ethernet
 
 ########################################################################
 # Supported USRP Daughterboards
 ########################################################################
 Basic RX
 Basic TX
+LF RX
+LF TX
 
 ########################################################################
 # CMake Instructions
 ########################################################################
-cd <uhd_src_dir>
+cd uhd/host
 mkdir build
 cd build
 cmake ../
 make
 make test
 sudo make install
+
+For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<myprefix> ../

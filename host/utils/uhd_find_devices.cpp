@@ -1,0 +1,71 @@
+//
+// Copyright 2010 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include <uhd/utils/safe_main.hpp>
+#include <uhd/device.hpp>
+#include <uhd/props.hpp>
+#include <boost/program_options.hpp>
+#include <boost/format.hpp>
+#include <iostream>
+
+namespace po = boost::program_options;
+
+int UHD_SAFE_MAIN(int argc, char *argv[]){
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "help message")
+        ("addr", po::value<std::string>(), "resolvable network address")
+        ("node", po::value<std::string>(), "path to linux device node")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    //print the help message
+    if (vm.count("help")){
+        std::cout << boost::format("UHD Find Devices %s") % desc << std::endl;
+        return ~0;
+    }
+
+    //load the options into the address
+    uhd::device_addr_t device_addr;
+    if (vm.count("addr")){
+        device_addr["addr"] = vm["addr"].as<std::string>();
+    }
+    if (vm.count("node")){
+        device_addr["node"] = vm["node"].as<std::string>();
+    }
+
+    //discover the usrps and print the results
+    uhd::device_addrs_t device_addrs = uhd::device::find(device_addr);
+
+    if (device_addrs.size() == 0){
+        std::cerr << "No UHD Devices Found" << std::endl;
+        return ~0;
+    }
+
+    for (size_t i = 0; i < device_addrs.size(); i++){
+        std::cout << "--------------------------------------------------" << std::endl;
+        std::cout << "-- UHD Device " << i << std::endl;
+        std::cout << "--------------------------------------------------" << std::endl;
+        std::cout << device_addrs[i].to_string() << std::endl << std::endl;
+        uhd::device::make(device_addrs[i]); //test make
+    }
+
+    return 0;
+}

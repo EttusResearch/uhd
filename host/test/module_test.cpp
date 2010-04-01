@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
+#include <uhd/utils/static.hpp>
 #include <iostream>
 
-STATIC_BLOCK(module_test){
+UHD_STATIC_BLOCK(module_test){
     std::cout << "---------------------------------------" << std::endl;
     std::cout << "-- Good news, everyone!" << std::endl;
     std::cout << "-- The test module has been loaded." << std::endl;

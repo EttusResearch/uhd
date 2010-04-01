@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
@@ -40,8 +40,8 @@ static void load_module(const std::string &file_name){
     }
 }
 
-#elif HAVE_WINBASE_H
-#include <Winbase.h>
+#elif HAVE_WINDOWS_H
+#include <windows.h>
 
 static void load_module(const std::string &file_name){
     if (LoadLibrary(file_name.c_str()) == NULL){
@@ -101,7 +101,7 @@ static void load_path(const fs::path &path){
  * Load all the modules given by the module path enviroment variable.
  * The path variable may be several paths split by path separators.
  */
-STATIC_BLOCK(load_modules){
+UHD_STATIC_BLOCK(load_modules){
     //get the environment variable module path
     char *env_module_path = std::getenv("UHD_MODULE_PATH");
     if (env_module_path == NULL) return;

@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_TRANSPORT_VRT_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/metadata.hpp>
+#include <uhd/types/metadata.hpp>
 #include <cstddef>
 
 namespace uhd{ namespace transport{

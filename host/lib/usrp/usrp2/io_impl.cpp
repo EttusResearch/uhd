@@ -16,7 +16,6 @@
 //
 
 #include <complex>
-#include <algorithm>
 #include <boost/format.hpp>
 #include "usrp2_impl.hpp"
 
@@ -42,20 +41,22 @@ void usrp2_impl::io_init(void){
     _rx_copy_buff = asio::buffer("", 0);
 
     //send a small data packet so the usrp2 knows the udp source port
-    boost::uint32_t zero_data = 0;
-    _data_transport->send(asio::buffer(&zero_data, sizeof(zero_data)));
+    //and the maximum number of lines (32 bit words) per packet
+    boost::uint32_t data[2] = {
+        htonl(USRP2_INVALID_VRT_HEADER),
+        htonl(_max_rx_samples_per_packet)
+    };
+    _data_transport->send(asio::buffer(&data, sizeof(data)));
 }
 
-#define unrolled_loop(__i, __len, __inst) {\
+#define unrolled_loop(__inst, __len){ \
     size_t __i = 0; \
-    while(__i < (__len & ~0x7)){ \
-        __inst; __i++; __inst; __i++; \
-        __inst; __i++; __inst; __i++; \
-        __inst; __i++; __inst; __i++; \
-        __inst; __i++; __inst; __i++; \
+    for(; __i < (__len & ~0x3); __i+= 4){ \
+        __inst(__i+0); __inst(__i+1); \
+        __inst(__i+2); __inst(__i+3); \
     } \
-    while(__i < __len){ \
-        __inst; __i++;\
+    for(; __i < __len; __i++){ \
+        __inst(__i); \
     } \
 }
 
@@ -71,11 +72,12 @@ static inline void host_floats_to_usrp2_items(
     const fc32_t *host_floats,
     size_t num_samps
 ){
-    unrolled_loop(i, num_samps,{
-        boost::uint16_t real = boost::int16_t(host_floats[i].real()*shorts_per_float);
-        boost::uint16_t imag = boost::int16_t(host_floats[i].imag()*shorts_per_float);
-        usrp2_items[i] = htonl((real << 16) | (imag << 0));
-    });
+    #define host_floats_to_usrp2_items_i(i){ \
+        boost::uint16_t real = boost::int16_t(host_floats[i].real()*shorts_per_float); \
+        boost::uint16_t imag = boost::int16_t(host_floats[i].imag()*shorts_per_float); \
+        usrp2_items[i] = htonl((real << 16) | (imag << 0)); \
+    }
+    unrolled_loop(host_floats_to_usrp2_items_i, num_samps);
 }
 
 static inline void usrp2_items_to_host_floats(
@@ -83,12 +85,13 @@ static inline void usrp2_items_to_host_floats(
     const boost::uint32_t *usrp2_items,
     size_t num_samps
 ){
-    unrolled_loop(i, num_samps,{
-        boost::uint32_t item = ntohl(usrp2_items[i]);
-        boost::int16_t real = boost::uint16_t(item >> 16);
-        boost::int16_t imag = boost::uint16_t(item >> 0);
-        host_floats[i] = fc32_t(float(real*floats_per_short), float(imag*floats_per_short));
-    });
+    #define usrp2_items_to_host_floats_i(i){ \
+        boost::uint32_t item = ntohl(usrp2_items[i]); \
+        boost::int16_t real = boost::uint16_t(item >> 16); \
+        boost::int16_t imag = boost::uint16_t(item >> 0); \
+        host_floats[i] = fc32_t(float(real*floats_per_short), float(imag*floats_per_short)); \
+    }
+    unrolled_loop(usrp2_items_to_host_floats_i, num_samps);
 }
 
 static inline void host_items_to_usrp2_items(
@@ -96,11 +99,12 @@ static inline void host_items_to_usrp2_items(
     const boost::uint32_t *host_items,
     size_t num_samps
 ){
+    #define host_items_to_usrp2_items_i(i) usrp2_items[i] = htonl(host_items[i])
     if (is_big_endian){
         std::memcpy(usrp2_items, host_items, num_samps*sizeof(boost::uint32_t));
     }
     else{
-        unrolled_loop(i, num_samps, usrp2_items[i] = htonl(host_items[i]));
+        unrolled_loop(host_items_to_usrp2_items_i, num_samps);
     }
 }
 
@@ -109,11 +113,12 @@ static inline void usrp2_items_to_host_items(
     const boost::uint32_t *usrp2_items,
     size_t num_samps
 ){
+    #define usrp2_items_to_host_items_i(i) host_items[i] = ntohl(usrp2_items[i])
     if (is_big_endian){
         std::memcpy(host_items, usrp2_items, num_samps*sizeof(boost::uint32_t));
     }
     else{
-        unrolled_loop(i, num_samps, host_items[i] = ntohl(usrp2_items[i]));
+        unrolled_loop(usrp2_items_to_host_items_i, num_samps);
     }
 }
 
@@ -167,46 +172,43 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
 size_t usrp2_impl::send(
     const asio::const_buffer &buff,
     const tx_metadata_t &metadata,
-    const std::string &type
+    const io_type_t &io_type
 ){
     boost::uint32_t tx_mem[_mtu/sizeof(boost::uint32_t)];
-    boost::uint32_t *items = tx_mem + vrt::max_header_words32; //offset for data
-    size_t num_samps = _max_tx_samples_per_packet;
+    size_t num_samps = std::min(
+        asio::buffer_size(buff)/io_type.size,
+        size_t(_max_tx_samples_per_packet)
+    );
 
-    //calculate the number of samples to be copied
-    //and copy the samples into the send buffer
-    if (type == "32fc"){
-        num_samps = std::min(asio::buffer_size(buff)/sizeof(fc32_t), num_samps);
-        host_floats_to_usrp2_items(items, asio::buffer_cast<const fc32_t*>(buff), num_samps);
-    }
-    else if (type == "16sc"){
-        num_samps = std::min(asio::buffer_size(buff)/sizeof(sc16_t), num_samps);
-        host_items_to_usrp2_items(items, asio::buffer_cast<const boost::uint32_t*>(buff), num_samps);
-    }
-    else{
-        throw std::runtime_error(str(boost::format("usrp2 send: cannot handle type \"%s\"") % type));
-    }
-
-    boost::uint32_t vrt_hdr[vrt::max_header_words32];
     size_t num_header_words32, num_packet_words32;
     size_t packet_count = _tx_stream_id_to_packet_seq[metadata.stream_id]++;
 
     //pack metadata into a vrt header
     vrt::pack(
         metadata,            //input
-        vrt_hdr,             //output
+        tx_mem,              //output
         num_header_words32,  //output
         num_samps,           //input
         num_packet_words32,  //output
         packet_count         //input
     );
 
-    //copy in the vrt header (yes we left space)
-    items -= num_header_words32;
-    std::memcpy(items, vrt_hdr, num_header_words32*sizeof(boost::uint32_t));
+    boost::uint32_t *items = tx_mem + num_header_words32; //offset for data
+
+    //copy the samples into the send buffer
+    switch(io_type.tid){
+    case io_type_t::COMPLEX_FLOAT32:
+        host_floats_to_usrp2_items(items, asio::buffer_cast<const fc32_t*>(buff), num_samps);
+        break;
+    case io_type_t::COMPLEX_INT16:
+        host_items_to_usrp2_items(items, asio::buffer_cast<const boost::uint32_t*>(buff), num_samps);
+        break;
+    default:
+        throw std::runtime_error(str(boost::format("usrp2 send: cannot handle type \"%c\"") % io_type.tid));
+    }
 
     //send and return number of samples
-    _data_transport->send(asio::buffer(items, num_packet_words32*sizeof(boost::uint32_t)));
+    _data_transport->send(asio::buffer(tx_mem, num_packet_words32*sizeof(boost::uint32_t)));
     return num_samps;
 }
 
@@ -216,7 +218,7 @@ size_t usrp2_impl::send(
 size_t usrp2_impl::recv(
     const asio::mutable_buffer &buff,
     rx_metadata_t &metadata,
-    const std::string &type
+    const io_type_t &io_type
 ){
     //perform a receive if no rx data is waiting to be copied
     if (asio::buffer_size(_rx_copy_buff) == 0){
@@ -232,21 +234,22 @@ size_t usrp2_impl::recv(
     //and a pointer into the usrp2 received items memory
     size_t bytes_to_copy = asio::buffer_size(_rx_copy_buff);
     if (bytes_to_copy == 0) return 0; //nothing to receive
-    size_t num_samps = bytes_to_copy/sizeof(boost::uint32_t);
+    size_t num_samps = std::min(
+        asio::buffer_size(buff)/io_type.size,
+        bytes_to_copy/sizeof(boost::uint32_t)
+    );
     const boost::uint32_t *items = asio::buffer_cast<const boost::uint32_t*>(_rx_copy_buff);
 
-    //calculate the number of samples to be copied
-    //and copy the samples from the recv buffer
-    if (type == "32fc"){
-        num_samps = std::min(asio::buffer_size(buff)/sizeof(fc32_t), num_samps);
+    //copy the samples from the recv buffer
+    switch(io_type.tid){
+    case io_type_t::COMPLEX_FLOAT32:
         usrp2_items_to_host_floats(asio::buffer_cast<fc32_t*>(buff), items, num_samps);
-    }
-    else if (type == "16sc"){
-        num_samps = std::min(asio::buffer_size(buff)/sizeof(sc16_t), num_samps);
+        break;
+    case io_type_t::COMPLEX_INT16:
         usrp2_items_to_host_items(asio::buffer_cast<boost::uint32_t*>(buff), items, num_samps);
-    }
-    else{
-        throw std::runtime_error(str(boost::format("usrp2 recv: cannot handle type \"%s\"") % type));
+        break;
+    default:
+        throw std::runtime_error(str(boost::format("usrp2 recv: cannot handle type \"%c\"") % io_type.tid));
     }
 
     //update the rx copy buffer to reflect the bytes copied

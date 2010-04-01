@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
 
 #include <uhd/config.hpp>
-#include <boost/asio.hpp>
+#include <boost/asio/buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 

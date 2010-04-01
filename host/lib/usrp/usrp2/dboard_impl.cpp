@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils.hpp>
+#include <uhd/utils/assert.hpp>
+#include <uhd/types/clock_config.hpp>
 #include <boost/format.hpp>
 #include "usrp2_impl.hpp"
 

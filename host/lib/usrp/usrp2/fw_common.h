@@ -32,6 +32,9 @@ extern "C" {
 #define _SINS_
 #endif
 
+//used to differentiate control packets over data port
+#define USRP2_INVALID_VRT_HEADER 0
+
 // size of the vrt header and trailer to the host
 #define USRP2_HOST_RX_VRT_HEADER_WORDS32 5
 #define USRP2_HOST_RX_VRT_TRAILER_WORDS32 1 //FIXME fpga sets wrong header size when no trailer present
@@ -90,8 +93,8 @@ typedef enum{
     USRP2_CTRL_ID_SETUP_THIS_DDC_FOR_ME_BRO,
     USRP2_CTRL_ID_TOTALLY_SETUP_THE_DDC_DUDE,
 
-    USRP2_CTRL_ID_CONFIGURE_STREAMING_FOR_ME_BRO,
-    USRP2_CTRL_ID_CONFIGURED_THAT_STREAMING_DUDE,
+    USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO,
+    USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE,
 
     USRP2_CTRL_ID_SETUP_THIS_DUC_FOR_ME_BRO,
     USRP2_CTRL_ID_TOTALLY_SETUP_THE_DUC_DUDE,
@@ -186,12 +189,13 @@ typedef struct{
             _SINS_ uint32_t scale_iq;
         } ddc_args;
         struct {
-            _SINS_ uint8_t enabled;
-            _SINS_ uint8_t _pad[3];
+            _SINS_ uint8_t now; //stream now?
+            _SINS_ uint8_t continuous; //auto-reload commmands?
+            _SINS_ uint8_t _pad[2];
             _SINS_ uint32_t secs;
             _SINS_ uint32_t ticks;
-            _SINS_ uint32_t samples;
-        } streaming;
+            _SINS_ uint32_t num_samps;
+        } stream_cmd;
         struct {
             _SINS_ uint32_t freq_word;
             _SINS_ uint32_t interp;

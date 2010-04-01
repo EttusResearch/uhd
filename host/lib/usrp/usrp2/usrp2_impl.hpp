@@ -19,9 +19,10 @@
 #define INCLUDED_USRP2_IMPL_HPP
 
 #include <uhd/usrp/usrp2.hpp>
-#include <uhd/dict.hpp>
-#include <uhd/types.hpp>
-#include <uhd/time_spec.hpp>
+#include <uhd/types/dict.hpp>
+#include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/clock_config.hpp>
+#include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -105,8 +106,8 @@ public:
     double get_master_clock_freq(void);
 
     //the io interface
-    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const std::string &);
-    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const std::string &);
+    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
+    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
 
 private:
     //device properties interface
@@ -146,11 +147,6 @@ private:
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
-    //mappings from clock config strings to over the wire enums
-    uhd::dict<std::string, usrp2_ref_source_t> _ref_source_dict;
-    uhd::dict<std::string, usrp2_pps_source_t> _pps_source_dict;
-    uhd::dict<uhd::clock_config_t::polarity_t, usrp2_pps_polarity_t> _pps_polarity_dict;
-
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     void dboard_init(void);
@@ -177,16 +173,14 @@ private:
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;
     size_t _ddc_decim;
-    uhd::freq_t _ddc_freq;
-    bool _ddc_enabled;
-    uhd::time_spec_t _ddc_stream_at;
+    double _ddc_freq;
     void init_ddc_config(void);
     void update_ddc_config(void);
-    void update_ddc_enabled(void);
+    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
 
     //methods and shadows for the duc dsp
     size_t _duc_interp;
-    uhd::freq_t _duc_freq;
+    double _duc_freq;
     void init_duc_config(void);
     void update_duc_config(void);
 

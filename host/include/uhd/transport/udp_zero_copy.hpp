@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/smart_buffer.hpp>
-#include <boost/asio.hpp>
+#include <boost/asio/buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 

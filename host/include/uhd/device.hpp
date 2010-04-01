@@ -19,9 +19,9 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/device_addr.hpp>
-#include <uhd/props.hpp>
-#include <uhd/metadata.hpp>
+#include <uhd/types/device_addr.hpp>
+#include <uhd/types/metadata.hpp>
+#include <uhd/types/io_type.hpp>
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -38,22 +38,22 @@ class UHD_API device : boost::noncopyable, public wax::obj{
 
 public:
     typedef boost::shared_ptr<device> sptr;
-    typedef boost::function<device_addrs_t(const device_addr_t &)> discover_t;
+    typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
     typedef boost::function<sptr(const device_addr_t &)> make_t;
 
     /*!
      * Register a device into the discovery and factory system.
      *
-     * \param discover a function that discovers devices
+     * \param find a function that discovers devices
      * \param make a factory function that makes a device
      */
     static void register_device(
-        const discover_t &discover,
+        const find_t &find,
         const make_t &make
     );
 
     /*!
-     * \brief Discover usrp devices attached to the host.
+     * \brief Find usrp devices attached to the host.
      *
      * The hint device address should be used to narrow down the search
      * to particular transport types and/or transport arguments.
@@ -61,17 +61,17 @@ public:
      * \param hint a partially (or fully) filled in device address
      * \return a vector of device addresses for all usrps on the system
      */
-    static device_addrs_t discover(const device_addr_t &hint);
+    static device_addrs_t find(const device_addr_t &hint);
 
     /*!
      * \brief Create a new usrp device from the device address hint.
      *
-     * The make routine will call discover and pick one of the results.
+     * The make routine will call find and pick one of the results.
      * By default, the first result will be used to create a new device.
      * Use the which parameter as an index into the list of results.
      *
      * \param hint a partially (or fully) filled in device address
-     * \param which which address to use when multiple are discovered
+     * \param which which address to use when multiple are found
      * \return a shared pointer to a new device instance
      */
     static sptr make(const device_addr_t &hint, size_t which = 0);
@@ -91,13 +91,13 @@ public:
      *
      * \param buff a buffer pointing to some read-only memory
      * \param metadata data describing the buffer's contents
-     * \param the type of data loaded in the buffer (32fc, 16sc)
+     * \param io_type the type of data loaded in the buffer
      * \return the number of samples sent
      */
     virtual size_t send(
         const boost::asio::const_buffer &buff,
         const tx_metadata_t &metadata,
-        const std::string &type = "32fc"
+        const io_type_t &io_type
     ) = 0;
 
     /*!
@@ -123,13 +123,13 @@ public:
      *
      * \param buff the buffer to fill with IF data
      * \param metadata data to fill describing the buffer
-     * \param the type of data to fill into the buffer (32fc, 16sc)
+     * \param io_type the type of data to fill into the buffer
      * \return the number of samples received
      */
     virtual size_t recv(
         const boost::asio::mutable_buffer &buff,
         rx_metadata_t &metadata,
-        const std::string &type = "32fc"
+        const io_type_t &io_type
     ) = 0;
 };
 
