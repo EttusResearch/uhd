@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
 	spi_dat.slave = slave;
 	spi_dat.data = data;
-	spi_dat.length = 2;
+	spi_dat.length = 32;
 	spi_dat.flags = 0;
 
 	if (*argv[1] == 'r') {
