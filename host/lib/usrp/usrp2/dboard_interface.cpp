@@ -51,7 +51,7 @@ private:
 
     //shadows
     boost::uint32_t _ddr_shadow;
-    uhd::dict<atr_reg_t, uint32_t> _atr_reg_shadows;
+    uhd::dict<atr_reg_t, boost::uint32_t> _atr_reg_shadows;
 
     //utilities
     static int bank_to_shift(gpio_bank_t bank){
