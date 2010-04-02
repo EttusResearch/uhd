@@ -10,7 +10,8 @@
 
 int main(int argc, char *argv[])
 {
-	int fp, slave, length, data, ret;
+	int fp, slave, length, ret;
+	unsigned int data;
 	struct usrp_e_spi spi_dat;
 
 	if (argc < 5) {
@@ -20,7 +21,9 @@ int main(int argc, char *argv[])
 
 	slave = atoi(argv[2]);
 	length = atoi(argv[3]);
-	data = atoi(argv[4]);
+	data = atoll(argv[4]);
+
+	printf("Data = %X\n", data);
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
