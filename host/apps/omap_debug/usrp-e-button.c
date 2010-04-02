@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	d.offset = 6;
+	d.offset = UE_REG_MISC_SW;
 	d.count = 1;
 
 	do {

@@ -6,10 +6,10 @@
 #include <sys/ioctl.h>
 
 #include "usrp_e.h"
+#include "usrp_e_regs.hpp"
 
 // Usage: usrp_e_uart <string>
 
-#define UART_WRITE_ADDR (0x80 + 12) 
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	printf("fp = %d\n", fp);
 
 	for (i=0; i<strlen(str); i++) {
-		d.offset = UART_WRITE_ADDR;
+		d.offset = UE_REG_UART_TXCHAR;
 		d.count = 1;
 		d.buf[0] = str[i];
 		ret = ioctl(fp, USRP_E_WRITE_CTL16, &d);

@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	d.offset = 4;
+	d.offset = UE_REG_MISC_BASE;
 	d.count = 1;
 
 	while (1) {
