@@ -43,10 +43,7 @@ module nsgpio16LE
    inout [31:0] gpio
    );
 
-   reg [63:0] 	ctrl;
-   reg [31:0] 	line;
-   reg [31:0] 	lgpio;               // LatchedGPIO pins
-   reg [31:0] 	ddr;
+   reg [31:0] 	ctrl, line, ddr, dbg, lgpio;
    
    wire 	wb_acc = cyc_i & stb_i;            // WISHBONE access
    wire 	wb_wr  = wb_acc & we_i;            // WISHBONE write access
@@ -54,8 +51,10 @@ module nsgpio16LE
    always @(posedge clk_i or posedge rst_i)
      if (rst_i)
        begin
-          ctrl <= 64'h0;
-          line <= 0;
+          ctrl <= 32'h0;
+          line <= 32'h0;
+	  ddr <= 32'h0;
+	  dbg <= 32'h0;
        end
      else if (wb_wr)
        case( adr_i[3:1] )
@@ -72,9 +71,9 @@ module nsgpio16LE
 	 3'b101 :
 	   ctrl[31:16] <= dat_i;
 	 3'b110 :
-	   ctrl[47:32] <= dat_i;
+	   dbg[15:0] <= dat_i;
 	 3'b111 :
-	   ctrl[63:48] <= dat_i;
+	   dbg[31:16] <= dat_i;
        endcase // case ( adr_i[3:1] )
    
    always @(posedge clk_i)
@@ -92,9 +91,9 @@ module nsgpio16LE
        3'b101 :
 	 dat_o <= ctrl[31:16];
        3'b110 :
-	 dat_o <= ctrl[47:32];
+	 dat_o <= dbg[15:0];
        3'b111 :
-	 dat_o <= ctrl[63:48];
+	 dat_o <= dbg[31:16];
      endcase // case (adr_i[3:1])
    
    
@@ -114,8 +113,8 @@ module nsgpio16LE
    
    always @(ctrl or line or debug_1 or debug_0 or atr)
      for(n=0;n<32;n=n+1)
-       igpio[n] <= ddr[n] ? (ctrl[2*n+1] ? (ctrl[2*n] ? debug_1[n] : debug_0[n]) : 
-			     (ctrl[2*n] ?  atr[n] : line[n]) )
+       igpio[n] <= ddr[n] ? (dbg[n] ? (ctrl[n] ? debug_1[n] : debug_0[n]) : 
+			     (ctrl[n] ?  atr[n] : line[n]) )
 	 : 1'bz;
    
    assign     gpio = igpio;

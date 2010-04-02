@@ -54,7 +54,7 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 export SOURCE_ROOT := ../../../
 export SOURCES := \
 control_lib/CRC16_D16.v \
-control_lib/atr_controller.v \
+control_lib/atr_controller16.v \
 control_lib/bin2gray.v \
 control_lib/dcache.v \
 control_lib/decoder_3_8.v \

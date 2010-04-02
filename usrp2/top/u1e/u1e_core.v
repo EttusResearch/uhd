@@ -147,47 +147,51 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s6_ack = 0;   assign s7_ack = 0;
+   assign s7_ack = 0;
    assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 0, Misc LEDs, Switches, controls
    
-   reg [15:0] 	 reg_fast, reg_slow;
-   localparam REG_FAST = 7'd4;
-   localparam REG_SWITCHES = 7'd6;
-   localparam REG_GPIOS = 7'd8;
-   localparam REG_CGEN_ST = 7'd9;
-   localparam REG_CGEN_CTRL = 7'd10;
+   reg [15:0] 	 reg_leds, reg_cgen_ctrl, reg_test;
    
-   reg [3:0] 	 reg_gpios;
-   
-   always @(posedge wb_clk)
-     if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_FAST))
-       reg_fast <= s0_dat_mosi;
-
-   always @(posedge wb_clk)
-     if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_GPIOS))
-       reg_gpios <= s0_dat_mosi;
-
-   reg [1:0] 	 reg_cgen_ctrls;
+   localparam REG_LEDS = 7'd0;      // out
+   localparam REG_SWITCHES = 7'd2;  // in
+   localparam REG_CGEN_CTRL = 7'd4; // out
+   localparam REG_CGEN_ST = 7'd6;   // in
+   localparam REG_TEST = 7'd8;      // out
    
    always @(posedge wb_clk)
      if(wb_rst)
-       reg_cgen_ctrls <= 2'b11;
-     else if(s0_cyc & s0_stb & s0_we & (s0_adr[6:0] == REG_CGEN_CTRL))
-       reg_cgen_ctrls <= s0_dat_mosi;
+       begin
+	  reg_leds <= 0;
+	  reg_cgen_ctrl <= 2'b11;
+	  reg_test <= 0;
+       end
+     else
+       if(s0_cyc & s0_stb & s0_we) 
+	 case(s0_adr[6:0])
+	   REG_LEDS :
+	     reg_leds <= s0_dat_mosi;
+	   REG_CGEN_CTRL :
+	     reg_cgen_ctrl <= s0_dat_mosi;
+	   REG_TEST :
+	     reg_test <= s0_dat_mosi;
+	 endcase // case (s0_adr[6:0])
    
-   assign {cgen_sync_b, cgen_ref_sel} = reg_cgen_ctrls;
+   assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
+   assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
+   assign { rx_overrun, tx_undderun } = reg_test;
    
-   assign s0_dat_miso = (s0_adr[6:0] == REG_FAST) ? reg_fast : 
+   assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
+			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
+			(s0_adr[6:0] == REG_TEST) ? reg_test :
 			16'hBEEF;
+   
    assign s0_ack = s0_stb & s0_cyc;
-
-   assign { rx_overrun, tx_underrun } = reg_gpios;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 1, UART
@@ -196,7 +200,7 @@ module u1e_core
    simple_uart #(.TXDEPTH(3),.RXDEPTH(3), .CLKDIV_DEFAULT(278)) uart 
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .we_i(s1_we),.stb_i(s1_stb),.cyc_i(s1_cyc),.ack_o(s1_ack),
-      .adr_i(s1_adr[4:2]),.dat_i({16'd0,s1_dat_mosi}),.dat_o(s1_dat_miso),
+      .adr_i(s1_adr[3:1]),.dat_i({16'd0,s1_dat_mosi}),.dat_o(s1_dat_miso),
       .rx_int_o(),.tx_int_o(),
       .tx_o(debug_txd),.rx_i(debug_rxd),.baud_o());
 
@@ -246,23 +250,30 @@ module u1e_core
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
    wire 	set_stb;
-   
-   settings_bus_16LE settings_bus_16LE
+
+   // only have 32 regs, 32 bits each with current setup...
+   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(11-4-2)) settings_bus_16LE
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s5_adr),.wb_dat_i(s5_dat_mosi),
       .wb_stb_i(s5_stb),.wb_we_i(s5_we),.wb_ack_o(s5_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
    
-   // /////////////////////////////////////////////////////////////////////////////////////
-   // Debug Pins
+   // /////////////////////////////////////////////////////////////////////////
+   // ATR Controller -- Slave #6
+
+   atr_controller16 atr_controller16
+     (.clk_i(wb_clk), .rst_i(wb_rst),
+      .adr_i(s6_adr), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
+      .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
+      .run_rx(), .run_tx(), .master_time(0), .ctrl_lines(atr_lines));
    
+   // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
+
    assign debug_clk = { EM_CLK, clk_fpga };
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
 
    assign debug_gpio_0 = { debug_gpmc };
    assign debug_gpio_1 = { debug_txd, debug_rxd };
-   
-   assign { debug_led[2],debug_led[0],debug_led[1] } = reg_fast;  // LEDs are arranged funny on board
    
 endmodule // u1e_core

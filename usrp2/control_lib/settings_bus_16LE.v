@@ -5,7 +5,7 @@
 // The setting regs are strobed when the high 16 bits are written
 
 module settings_bus_16LE
-  #(parameter AWIDTH=16)
+  #(parameter AWIDTH=16, RWIDTH=8)
     (input wb_clk, 
      input wb_rst, 
      input [AWIDTH-1:0] wb_adr_i,
@@ -28,7 +28,7 @@ module settings_bus_16LE
        end
      else if(wb_we_i & wb_stb_i)
        begin
-	  addr <= wb_adr_i[9:2];
+	  addr <= wb_adr_i[RWIDTH+1:2];  // Zero pad high bits
 	  if(wb_adr_i[1])
 	    begin
 	       stb_int <= 1'b1;     // We now have both halves
