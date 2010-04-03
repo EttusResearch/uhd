@@ -29,83 +29,113 @@ using namespace uhd::usrp;
 using namespace boost::assign;
 
 /***********************************************************************
- * The basic and lf boards:
- *   They share a common class because only the frequency bounds differ.
+ * The RFX series of dboards
  **********************************************************************/
-class basic_rx : public rx_dboard_base{
+class rfx_xcvr : public xcvr_dboard_base{
 public:
-    basic_rx(ctor_args_t const& args, double max_freq);
-    ~basic_rx(void);
+    rfx_xcvr(ctor_args_t const& args, const freq_range_t &freq_range);
+    ~rfx_xcvr(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
     void rx_set(const wax::obj &key, const wax::obj &val);
-
-private:
-    double _max_freq;
-};
-
-class basic_tx : public tx_dboard_base{
-public:
-    basic_tx(ctor_args_t const& args, double max_freq);
-    ~basic_tx(void);
 
     void tx_get(const wax::obj &key, wax::obj &val);
     void tx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    double _max_freq;
+    freq_range_t _freq_range;
+    double       _lo_freq;
+    std::string  _rx_ant;
+    float        _rx_pga0_gain;
+
+    void set_lo_freq(double freq);
+    void set_rx_ant(const std::string &ant);
+    void set_rx_pga0_gain(float gain);
 };
 
 /***********************************************************************
- * Register the basic and LF dboards
+ * Register the RFX dboards
  **********************************************************************/
-static dboard_base::sptr make_basic_rx(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new basic_rx(args, 90e9));
+static dboard_base::sptr make_rfx_flex400(dboard_base::ctor_args_t const& args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(400e6, 500e6)));
 }
 
-static dboard_base::sptr make_basic_tx(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new basic_tx(args, 90e9));
+static dboard_base::sptr make_rfx_flex900(dboard_base::ctor_args_t const& args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(750e6, 1050e6)));
 }
 
-static dboard_base::sptr make_lf_rx(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new basic_rx(args, 32e6));
+static dboard_base::sptr make_rfx_flex1200(dboard_base::ctor_args_t const& args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1150e6, 1450e6)));
 }
 
-static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new basic_tx(args, 32e6));
+static dboard_base::sptr make_rfx_flex1800(dboard_base::ctor_args_t const& args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1500e6, 2100e6)));
 }
 
-UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
-    dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX");
-    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
-    dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX");
-    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("ab")("a")("b"));
+static dboard_base::sptr make_rfx_flex2400(dboard_base::ctor_args_t const& args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(2300e6, 2900e6)));
+}
+
+UHD_STATIC_BLOCK(reg_rfx_dboards){
+    dboard_manager::register_dboard(0x0024, &make_rfx_flex400, "Flex 400 Rx MIMO B");
+    dboard_manager::register_dboard(0x0028, &make_rfx_flex400, "Flex 400 Tx MIMO B");
+
+    dboard_manager::register_dboard(0x0025, &make_rfx_flex900, "Flex 900 Rx MIMO B");
+    dboard_manager::register_dboard(0x0029, &make_rfx_flex900, "Flex 900 Tx MIMO B");
+
+    dboard_manager::register_dboard(0x0026, &make_rfx_flex1200, "Flex 1200 Rx MIMO B");
+    dboard_manager::register_dboard(0x002a, &make_rfx_flex1200, "Flex 1200 Tx MIMO B");
+
+    dboard_manager::register_dboard(0x0034, &make_rfx_flex1800, "Flex 1800 Rx MIMO B");
+    dboard_manager::register_dboard(0x0035, &make_rfx_flex1800, "Flex 1800 Tx MIMO B");
+
+    dboard_manager::register_dboard(0x0027, &make_rfx_flex2400, "Flex 2400 Rx MIMO B");
+    dboard_manager::register_dboard(0x002b, &make_rfx_flex2400, "Flex 2400 Tx MIMO B");
 }
 
 /***********************************************************************
- * Basic and LF RX dboard
+ * Structors
  **********************************************************************/
-basic_rx::basic_rx(ctor_args_t const& args, double max_freq) : rx_dboard_base(args){
-    _max_freq = max_freq;
-    // set the gpios to safe values (all inputs)
-    get_interface()->set_gpio_ddr(dboard_interface::GPIO_BANK_RX, 0x0000);
+rfx_xcvr::rfx_xcvr(
+    ctor_args_t const& args,
+    const freq_range_t &freq_range
+) : xcvr_dboard_base(args){
+    _freq_range = freq_range;
+    set_lo_freq((_freq_range.min + _freq_range.max)/2.0);
+    set_rx_ant("rx2");
+    set_rx_pga0_gain(0);
 }
 
-basic_rx::~basic_rx(void){
+rfx_xcvr::~rfx_xcvr(void){
     /* NOP */
 }
 
-void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
+/***********************************************************************
+ * Helper Methods
+ **********************************************************************/
+void rfx_xcvr::set_lo_freq(double freq){
+    /* NOP */
+}
+
+void rfx_xcvr::set_rx_ant(const std::string &ant){
+    /* NOP */
+}
+
+void rfx_xcvr::set_rx_pga0_gain(float gain){
+    /* NOP */
+}
+
+/***********************************************************************
+ * RX Get and Set
+ **********************************************************************/
+void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = std::string(str(boost::format("%s - %s")
-            % dboard_id::to_string(get_rx_id())
-            % get_subdev_name()
-        ));
+        val = dboard_id::to_string(get_rx_id());
         return;
 
     case SUBDEV_PROP_OTHERS:
@@ -113,46 +143,54 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        val = float(0);
+        val = _rx_pga0_gain;
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        val = gain_range_t(0, 0, 0);
+        val = gain_range_t(0, 45, float(0.022));
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(); //empty
+        val = prop_names_t(1, "pga0");
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = double(0);
+        val = _lo_freq;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(+_max_freq, -_max_freq);
+        val = _freq_range;
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
+        val = _rx_ant;
         return;
 
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
+    case SUBDEV_PROP_ANTENNA_NAMES:{
+            prop_names_t ants = list_of("tx/rx")("rx2");
+            val = ants;
+        }
         return;
 
     case SUBDEV_PROP_QUADRATURE:
-        val = (get_subdev_name() == "ab"); //only quadrature in ab mode
+        val = true;
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
+        val = true;
+        return;
+
     case SUBDEV_PROP_SPECTRUM_INVERTED:
+        val = false;
+        return;
+
     case SUBDEV_PROP_LO_INTERFERES:
         val = false;
         return;
     }
 }
 
-void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
+void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
@@ -160,26 +198,15 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<float>() == float(0));
+        ASSERT_THROW(name == "pga0");
+        set_rx_pga0_gain(val.as<float>());
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(val.as<std::string>() == std::string(""));
+        set_rx_ant(val.as<std::string>());
         return;
 
-    case SUBDEV_PROP_FREQ:
-        return; // it wont do you much good, but you can set it
-
-    case SUBDEV_PROP_NAME:
-    case SUBDEV_PROP_OTHERS:
-    case SUBDEV_PROP_GAIN_RANGE:
-    case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ_RANGE:
-    case SUBDEV_PROP_ANTENNA_NAMES:
-    case SUBDEV_PROP_QUADRATURE:
-    case SUBDEV_PROP_IQ_SWAPPED:
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
+    default:
         throw std::runtime_error(str(boost::format(
             "Error: trying to set read-only property on %s subdev"
         ) % dboard_id::to_string(get_rx_id())));
@@ -187,20 +214,10 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 }
 
 /***********************************************************************
- * Basic and LF TX dboard
+ * TX Get and Set
  **********************************************************************/
-basic_tx::basic_tx(ctor_args_t const& args, double max_freq) : tx_dboard_base(args){
-    _max_freq = max_freq;
-    // set the gpios to safe values (all inputs)
-    get_interface()->set_gpio_ddr(dboard_interface::GPIO_BANK_TX, 0x0000);
-}
-
-basic_tx::~basic_tx(void){
-    /* NOP */
-}
-
-void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
+void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
+        wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
@@ -226,19 +243,19 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = double(0);
+        val = _lo_freq;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(+_max_freq, -_max_freq);
+        val = _freq_range;
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
+        val = std::string("tx/rx");
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
+        val = prop_names_t(1, "tx/rx");
         return;
 
     case SUBDEV_PROP_QUADRATURE:
@@ -246,14 +263,20 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
         val = false;
+        return;
+
+    case SUBDEV_PROP_SPECTRUM_INVERTED:
+        val = false;
+        return;
+
+    case SUBDEV_PROP_LO_INTERFERES:
+        val = true;
         return;
     }
 }
 
-void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
+void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
@@ -261,26 +284,15 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<float>() == float(0));
+        //no gains to set!
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(val.as<std::string>() == std::string(""));
+        //its always set to tx/rx, so we only allow this value
+        ASSERT_THROW(val.as<std::string>() == "tx/rx");
         return;
 
-    case SUBDEV_PROP_FREQ:
-        return; // it wont do you much good, but you can set it
-
-    case SUBDEV_PROP_NAME:
-    case SUBDEV_PROP_OTHERS:
-    case SUBDEV_PROP_GAIN_RANGE:
-    case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ_RANGE:
-    case SUBDEV_PROP_ANTENNA_NAMES:
-    case SUBDEV_PROP_QUADRATURE:
-    case SUBDEV_PROP_IQ_SWAPPED:
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
+    default:
         throw std::runtime_error(str(boost::format(
             "Error: trying to set read-only property on %s subdev"
         ) % dboard_id::to_string(get_tx_id())));

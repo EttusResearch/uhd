@@ -28,6 +28,7 @@ SET(libuhd_sources
     transport/udp_simple.cpp
     transport/vrt.cpp
     usrp/dboard/db_basic_and_lf.cpp
+    usrp/dboard/db_rfx.cpp
     usrp/dboard_base.cpp
     usrp/dboard_interface.cpp
     usrp/simple_usrp.cpp
