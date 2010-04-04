@@ -222,12 +222,12 @@ size_t usrp2_impl::recv(
 ){
     //perform a receive if no rx data is waiting to be copied
     if (asio::buffer_size(_rx_copy_buff) == 0){
+        _fragment_offset_in_samps = 0;
         recv_raw(metadata);
     }
     //otherwise flag the metadata to show that is is a fragment
     else{
         metadata = rx_metadata_t();
-        metadata.is_fragment = true;
     }
 
     //extract the number of samples available to copy
@@ -239,6 +239,11 @@ size_t usrp2_impl::recv(
         bytes_to_copy/sizeof(boost::uint32_t)
     );
     const boost::uint32_t *items = asio::buffer_cast<const boost::uint32_t*>(_rx_copy_buff);
+
+    //setup the fragment flags and offset
+    metadata.more_fragments = asio::buffer_size(buff)/io_type.size < num_samps;
+    metadata.fragment_offset = _fragment_offset_in_samps;
+    _fragment_offset_in_samps += num_samps; //set for next time
 
     //copy the samples from the recv buffer
     switch(io_type.tid){

@@ -112,6 +112,7 @@ public:
      * and will flag the metadata to show that this is a fragment.
      * The next call to receive, after the remainder becomes exahausted,
      * will perform an over-the-wire receive as usual.
+     * See the rx metadata fragment flags and offset fields for details.
      *
      * This is a blocking call and will not return until the number
      * of samples returned have been written into the buffer.

@@ -71,9 +71,9 @@ clock_config_t::clock_config_t(void){
 /***********************************************************************
  * stream command
  **********************************************************************/
-stream_cmd_t::stream_cmd_t(void){
+stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode_){
+    stream_mode = stream_mode_;
     stream_now = true;
-    continuous = false;
     num_samps = 0;
 }
 
@@ -85,7 +85,8 @@ rx_metadata_t::rx_metadata_t(void){
     has_stream_id = false;
     time_spec = time_spec_t();
     has_time_spec = false;
-    is_fragment = false;
+    more_fragments = false;
+    fragment_offset = 0;
 }
 
 tx_metadata_t::tx_metadata_t(void){

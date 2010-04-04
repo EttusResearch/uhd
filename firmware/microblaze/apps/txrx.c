@@ -385,7 +385,7 @@ void handle_udp_ctrl_packet(
             issue_stream_command(
                 (chain)? streaming_items_per_frame : num_samps, //nsamps
                 (ctrl_data_in->data.stream_cmd.now == 0)? false : true, //now
-                chain, //chain
+                (ctrl_data_in->data.stream_cmd.chain == 0)? chain : true, //chain
                 ctrl_data_in->data.stream_cmd.secs,
                 ctrl_data_in->data.stream_cmd.ticks,
                 false
@@ -398,7 +398,7 @@ void handle_udp_ctrl_packet(
                 issue_stream_command(
                     (chain)? streaming_items_per_frame : num_samps, //nsamps
                     true, //now
-                    chain, //chain
+                    (ctrl_data_in->data.stream_cmd.chain == 0)? chain : true, //chain
                     0, 0, //time does not matter
                     false
                 );

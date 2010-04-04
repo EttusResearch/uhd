@@ -67,11 +67,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Begin streaming %u samples, %d seconds in the future...")
         % total_num_samps % seconds_in_future << std::endl;
-    uhd::stream_cmd_t stream_cmd;
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
-    stream_cmd.continuous = false;
-    stream_cmd.num_samps = total_num_samps;
     sdev->issue_stream_cmd(stream_cmd);
 
     //loop until total number of samples reached

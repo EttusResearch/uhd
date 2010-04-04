@@ -135,6 +135,7 @@ private:
     ;
     uhd::transport::smart_buffer::sptr _rx_smart_buff;
     boost::asio::const_buffer _rx_copy_buff;
+    size_t _fragment_offset_in_samps;
     void io_init(void);
 
     //udp transports for control and data

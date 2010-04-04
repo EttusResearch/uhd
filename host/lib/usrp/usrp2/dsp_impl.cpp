@@ -67,11 +67,7 @@ void usrp2_impl::init_ddc_config(void){
     update_ddc_config();
 
     //initial command that kills streaming (in case if was left on)
-    stream_cmd_t stream_cmd_off;
-    stream_cmd_off.stream_now = true;
-    stream_cmd_off.continuous = false;
-    stream_cmd_off.num_samps = 0;
-    issue_ddc_stream_cmd(stream_cmd_off);
+    issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 void usrp2_impl::update_ddc_config(void){
@@ -90,10 +86,32 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
     out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
-    out_data.data.stream_cmd.continuous = (stream_cmd.continuous)? 1 : 0;
     out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
     out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.ticks);
+
+    //set these to defaults, then change in the switch statement
+    out_data.data.stream_cmd.continuous = 0;
+    out_data.data.stream_cmd.chain = 0;
     out_data.data.stream_cmd.num_samps = htonl(stream_cmd.num_samps);
+
+    //setup chain, num samps, and continuous below
+    switch(stream_cmd.stream_mode){
+    case stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
+        out_data.data.stream_cmd.continuous = 1;
+        break;
+
+    case stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS:
+        out_data.data.stream_cmd.num_samps = htonl(0);
+        break;
+
+    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
+        //all set by defaults above
+        break;
+
+    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
+        out_data.data.stream_cmd.chain = 1;
+        break;
+    }
 
     //send and recv
     usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);

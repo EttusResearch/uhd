@@ -129,7 +129,8 @@ typedef struct{
         struct {
             _SINS_ uint8_t now; //stream now?
             _SINS_ uint8_t continuous; //auto-reload commmands?
-            _SINS_ uint8_t _pad[2];
+            _SINS_ uint8_t chain;
+            _SINS_ uint8_t _pad[1];
             _SINS_ uint32_t secs;
             _SINS_ uint32_t ticks;
             _SINS_ uint32_t num_samps;
