@@ -67,19 +67,19 @@ void usrp2_impl::update_clock_config(void){
     }
 
     //set the pps flags
-    this->poke(FR_TIME64_FLAGS, pps_flags);
+    this->poke32(FR_TIME64_FLAGS, pps_flags);
 
     //TODO clock source ref 10mhz (spi ad9510)
 }
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set ticks and seconds
-    this->poke(FR_TIME64_SECS, time_spec.secs);
-    this->poke(FR_TIME64_TICKS, time_spec.ticks);
+    this->poke32(FR_TIME64_SECS, time_spec.secs);
+    this->poke32(FR_TIME64_TICKS, time_spec.ticks);
 
     //set the register to latch it all in
     boost::uint32_t imm_flags = (now)? FRF_TIME64_LATCH_NOW : FRF_TIME64_LATCH_NEXT_PPS;
-    this->poke(FR_TIME64_IMM, imm_flags);
+    this->poke32(FR_TIME64_IMM, imm_flags);
 }
 
 /***********************************************************************

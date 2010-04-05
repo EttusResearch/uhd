@@ -48,17 +48,6 @@ private:
     );
 
     usrp2_impl *_impl;
-
-    //shadows
-    boost::uint32_t _ddr_shadow;
-    uhd::dict<atr_reg_t, boost::uint32_t> _atr_reg_shadows;
-
-    //utilities
-    static int bank_to_shift(gpio_bank_t bank){
-        static const uhd::dict<gpio_bank_t, int> _bank_to_shift = \
-        boost::assign::map_list_of(GPIO_BANK_RX, 0)(GPIO_BANK_TX, 16);
-        return _bank_to_shift[bank];
-    }
 };
 
 /***********************************************************************
@@ -73,7 +62,6 @@ dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
  **********************************************************************/
 usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
     _impl = impl;
-    _ddr_shadow = 0;
 }
 
 usrp2_dboard_interface::~usrp2_dboard_interface(void){
@@ -95,42 +83,40 @@ double usrp2_dboard_interface::get_tx_clock_rate(void){
  * GPIO
  **********************************************************************/
 void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
-    //calculate the new 32 bit ddr value
-    int shift = bank_to_shift(bank);
-    boost::uint32_t new_ddr_val =
-        (_ddr_shadow & ~(boost::uint32_t(0xffff) << shift)) //zero out new bits
-        | (boost::uint32_t(value) << shift); //or'ed in the new bits
-
-    //poke in the value and shadow
-    _impl->poke(FR_GPIO_DDR, new_ddr_val);
-    _ddr_shadow = new_ddr_val;
+    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (GPIO_BANK_RX, FR_GPIO_RX_DDR)
+        (GPIO_BANK_TX, FR_GPIO_TX_DDR)
+    ;
+    _impl->poke16(bank_to_addr[bank], value);
 }
 
 boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
-    boost::uint32_t data = _impl->peek(FR_GPIO_IO);
-    return boost::uint16_t(data >> bank_to_shift(bank));
+    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (GPIO_BANK_RX, FR_GPIO_RX_IO)
+        (GPIO_BANK_TX, FR_GPIO_TX_IO)
+    ;
+    return _impl->peek16(bank_to_addr[bank]);
 }
 
-void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost::uint16_t value){
-    //map the atr reg to an offset in register space
-    static const uhd::dict<atr_reg_t, int> reg_to_addr = boost::assign::map_list_of
-        (ATR_REG_IDLE, FR_ATR_IDLE) (ATR_REG_TX_ONLY, FR_ATR_TX)
-        (ATR_REG_RX_ONLY, FR_ATR_RX) (ATR_REG_FULL_DUPLEX, FR_ATR_FULL)
+void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost::uint16_t value){
+    //define mapping of bank to atr regs to register address
+    static const uhd::dict<
+        gpio_bank_t, uhd::dict<atr_reg_t, boost::uint32_t>
+    > bank_to_atr_to_addr = boost::assign::map_list_of
+        (GPIO_BANK_RX, boost::assign::map_list_of
+            (ATR_REG_IDLE,        FR_ATR_IDLE_RXSIDE)
+            (ATR_REG_TX_ONLY,     FR_ATR_INTX_RXSIDE)
+            (ATR_REG_RX_ONLY,     FR_ATR_INRX_RXSIDE)
+            (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_RXSIDE)
+        )
+        (GPIO_BANK_TX, boost::assign::map_list_of
+            (ATR_REG_IDLE,        FR_ATR_IDLE_TXSIDE)
+            (ATR_REG_TX_ONLY,     FR_ATR_INTX_TXSIDE)
+            (ATR_REG_RX_ONLY,     FR_ATR_INRX_TXSIDE)
+            (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_TXSIDE)
+        )
     ;
-    ASSERT_THROW(reg_to_addr.has_key(reg));
-
-    //ensure a value exists in the shadow
-    if (not _atr_reg_shadows.has_key(reg)) _atr_reg_shadows[reg] = 0;
-
-    //calculate the new 32 bit atr value
-    int shift = bank_to_shift(bank);
-    boost::uint32_t new_atr_val =
-        (_atr_reg_shadows[reg] & ~(boost::uint32_t(0xffff) << shift)) //zero out new bits
-        | (boost::uint32_t(value) << shift); //or'ed in the new bits
-
-    //poke in the value and shadow
-    _impl->poke(reg_to_addr[reg], new_atr_val);
-    _atr_reg_shadows[reg] = new_atr_val;
+    _impl->poke16(bank_to_atr_to_addr[bank][atr], value);
 }
 
 /***********************************************************************

@@ -415,14 +415,38 @@ void handle_udp_ctrl_packet(
         if (ctrl_data_in->data.poke_args.addr < 0xC000){
             printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
         }
-        else{
-            *((uint32_t *) ctrl_data_in->data.poke_args.addr) = ctrl_data_in->data.poke_args.data;
+        else switch(ctrl_data_in->data.poke_args.num_bytes){
+        case sizeof(uint32_t):
+            *((uint32_t *) ctrl_data_in->data.poke_args.addr) = (uint32_t)ctrl_data_in->data.poke_args.data;
+            break;
+
+        case sizeof(uint16_t):
+            *((uint16_t *) ctrl_data_in->data.poke_args.addr) = (uint16_t)ctrl_data_in->data.poke_args.data;
+            break;
+
+        case sizeof(uint8_t):
+            *((uint8_t *) ctrl_data_in->data.poke_args.addr) = (uint8_t)ctrl_data_in->data.poke_args.data;
+            break;
+
         }
         ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
         break;
 
     case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
-        ctrl_data_in->data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
+        switch(ctrl_data_in->data.poke_args.num_bytes){
+        case sizeof(uint32_t):
+            ctrl_data_in->data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
+            break;
+
+        case sizeof(uint16_t):
+            ctrl_data_in->data.poke_args.data = *((uint16_t *) ctrl_data_in->data.poke_args.addr);
+            break;
+
+        case sizeof(uint8_t):
+            ctrl_data_in->data.poke_args.data = *((uint8_t *) ctrl_data_in->data.poke_args.addr);
+            break;
+
+        }
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
         break;
 

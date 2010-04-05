@@ -32,11 +32,11 @@ namespace uhd{
      * achieved through submission of multiple (carefully-crafted) commands.
      *
      * The mode parameter controls how streaming is issued to the device:
-     *   * "Start continuous" tells the device to stream samples indefinitely.
-     *   * "Stop continuous" tells the device to end continuous streaming.
-     *   * "Num samps and done" tells the device to stream num samps and
+     *   - "Start continuous" tells the device to stream samples indefinitely.
+     *   - "Stop continuous" tells the device to end continuous streaming.
+     *   - "Num samps and done" tells the device to stream num samps and
      *      to not expect a future stream command for contiguous samples.
-     *   * "Num samps and more" tells the device to stream num samps and
+     *   - "Num samps and more" tells the device to stream num samps and
      *      to expect a future stream command for contiguous samples.
      *
      * The stream now parameter controls when the stream begins.

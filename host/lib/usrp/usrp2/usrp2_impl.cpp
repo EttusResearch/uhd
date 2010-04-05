@@ -174,28 +174,47 @@ double usrp2_impl::get_master_clock_freq(void){
     return 100e6;
 }
 
-void usrp2_impl::poke(boost::uint32_t addr, boost::uint32_t data){
+template <class T> void impl_poke(usrp2_impl *impl, boost::uint32_t addr, T data){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO);
     out_data.data.poke_args.addr = htonl(addr);
-    out_data.data.poke_args.data = htonl(data);
+    out_data.data.poke_args.data = htonl(boost::uint32_t(data));
+    out_data.data.poke_args.num_bytes = sizeof(T);
 
     //send and recv
-    usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = impl->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
 }
 
-boost::uint32_t usrp2_impl::peek(boost::uint32_t addr){
+template <class T> T impl_peek(usrp2_impl *impl, boost::uint32_t addr){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO);
     out_data.data.poke_args.addr = htonl(addr);
+    out_data.data.poke_args.num_bytes = sizeof(T);
 
     //send and recv
-    usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = impl->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
-    return ntohl(out_data.data.poke_args.data);
+    return T(ntohl(out_data.data.poke_args.data));
+}
+
+
+void usrp2_impl::poke32(boost::uint32_t addr, boost::uint32_t data){
+    return impl_poke<boost::uint32_t>(this, addr, data);
+}
+
+boost::uint32_t usrp2_impl::peek32(boost::uint32_t addr){
+    return impl_peek<boost::uint32_t>(this, addr);
+}
+
+void usrp2_impl::poke16(boost::uint32_t addr, boost::uint16_t data){
+    return impl_poke<boost::uint16_t>(this, addr, data);
+}
+
+boost::uint16_t usrp2_impl::peek16(boost::uint32_t addr){
+    return impl_peek<boost::uint16_t>(this, addr);
 }
 
 /***********************************************************************

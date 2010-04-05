@@ -138,6 +138,7 @@ typedef struct{
         struct {
             _SINS_ uint32_t addr;
             _SINS_ uint32_t data;
+            _SINS_ uint8_t num_bytes; //1, 2, 4
         } poke_args;
     } data;
 } usrp2_ctrl_data_t;
