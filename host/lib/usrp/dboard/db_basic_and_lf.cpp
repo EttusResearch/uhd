@@ -150,7 +150,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_IQ_SWAPPED:
     case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
+    case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
     }
@@ -186,7 +186,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_QUADRATURE:
     case SUBDEV_PROP_IQ_SWAPPED:
     case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
+    case SUBDEV_PROP_USE_LO_OFFSET:
         throw std::runtime_error(str(boost::format(
             "Error: trying to set read-only property on %s subdev"
         ) % dboard_id::to_string(get_rx_id())));
@@ -258,7 +258,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_IQ_SWAPPED:
     case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
+    case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
     }
@@ -294,7 +294,7 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_QUADRATURE:
     case SUBDEV_PROP_IQ_SWAPPED:
     case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_LO_INTERFERES:
+    case SUBDEV_PROP_USE_LO_OFFSET:
         throw std::runtime_error(str(boost::format(
             "Error: trying to set read-only property on %s subdev"
         ) % dboard_id::to_string(get_tx_id())));

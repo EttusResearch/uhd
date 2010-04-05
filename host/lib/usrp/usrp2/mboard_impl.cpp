@@ -82,6 +82,43 @@ void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     this->poke32(FR_TIME64_IMM, imm_flags);
 }
 
+void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
+    out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
+    out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
+    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.ticks);
+
+    //set these to defaults, then change in the switch statement
+    out_data.data.stream_cmd.continuous = 0;
+    out_data.data.stream_cmd.chain = 0;
+    out_data.data.stream_cmd.num_samps = htonl(stream_cmd.num_samps);
+
+    //setup chain, num samps, and continuous below
+    switch(stream_cmd.stream_mode){
+    case stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
+        out_data.data.stream_cmd.continuous = 1;
+        break;
+
+    case stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS:
+        out_data.data.stream_cmd.num_samps = htonl(0);
+        break;
+
+    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
+        //all set by defaults above
+        break;
+
+    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
+        out_data.data.stream_cmd.chain = 1;
+        break;
+    }
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
+}
+
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
@@ -179,8 +216,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    case MBOARD_PROP_TIME_NOW:
-    case MBOARD_PROP_TIME_NEXT_PPS:
+    default:
         throw std::runtime_error("Error: trying to get write-only property on usrp2 mboard");
 
     }
@@ -226,27 +262,19 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         update_clock_config();
         return;
 
-    case MBOARD_PROP_TIME_NOW:{
+    case MBOARD_PROP_TIME_NOW:
         set_time_spec(val.as<time_spec_t>(), true);
         return;
-    }
 
-    case MBOARD_PROP_TIME_NEXT_PPS:{
+    case MBOARD_PROP_TIME_NEXT_PPS:
         set_time_spec(val.as<time_spec_t>(), false);
         return;
-    }
 
-    case MBOARD_PROP_NAME:
-    case MBOARD_PROP_OTHERS:
-    case MBOARD_PROP_CLOCK_RATE:
-    case MBOARD_PROP_RX_DSP:
-    case MBOARD_PROP_RX_DSP_NAMES:
-    case MBOARD_PROP_TX_DSP:
-    case MBOARD_PROP_TX_DSP_NAMES:
-    case MBOARD_PROP_RX_DBOARD:
-    case MBOARD_PROP_RX_DBOARD_NAMES:
-    case MBOARD_PROP_TX_DBOARD:
-    case MBOARD_PROP_TX_DBOARD_NAMES:
+    case MBOARD_PROP_STREAM_CMD:
+        issue_ddc_stream_cmd(val.as<stream_cmd_t>());
+        return;
+
+    default:
         throw std::runtime_error("Error: trying to set read-only property on usrp2 mboard");
 
     }

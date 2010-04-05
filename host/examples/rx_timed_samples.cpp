@@ -57,7 +57,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
 
     //set properties on the device
-    double rx_rate = sdev->get_rx_rates()[4]; //pick some rate
+    double rx_rate = 100e6/16; //FIXME get this from somewhere
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rx_rate/1e6) << std::endl;
     sdev->set_rx_rate(rx_rate);
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
