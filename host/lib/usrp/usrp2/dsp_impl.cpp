@@ -66,7 +66,7 @@ pick_closest_rate(double exact_rate, const std::vector<rate_t> &rates){
 
 void usrp2_impl::init_ddc_config(void){
     //create the ddc in the rx dsp dict
-    _rx_dsps["ddc0"] = wax_obj_proxy::make(
+    _rx_dsp_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::ddc_get, this, _1, _2),
         boost::bind(&usrp2_impl::ddc_set, this, _1, _2)
     );
@@ -149,7 +149,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
  **********************************************************************/
 void usrp2_impl::init_duc_config(void){
     //create the duc in the tx dsp dict
-    _tx_dsps["duc0"] = wax_obj_proxy::make(
+    _tx_dsp_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::duc_get, this, _1, _2),
         boost::bind(&usrp2_impl::duc_set, this, _1, _2)
     );

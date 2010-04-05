@@ -255,12 +255,12 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
-        ASSERT_THROW(_mboards.has_key(name));
-        val = _mboards[name]->get_link();
+        ASSERT_THROW(name == "");
+        val = _mboard_proxy->get_link();
         return;
 
     case DEVICE_PROP_MBOARD_NAMES:
-        val = prop_names_t(_mboards.get_keys());
+        val = prop_names_t(1, "");
         return;
 
     case DEVICE_PROP_MAX_RX_SAMPLES:

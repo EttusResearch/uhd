@@ -62,6 +62,14 @@ dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
  **********************************************************************/
 usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
     _impl = impl;
+
+    //set the selection mux to use atr
+    boost::uint32_t new_sels = 0x0;
+    for(size_t i = 0; i < 16; i++){
+        new_sels |= FRF_GPIO_SEL_ATR << (i*2);
+    }
+    _impl->poke32(FR_GPIO_TX_SEL, new_sels);
+    _impl->poke32(FR_GPIO_RX_SEL, new_sels);
 }
 
 usrp2_dboard_interface::~usrp2_dboard_interface(void){

@@ -38,8 +38,8 @@ public:
     simple_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr);
         _mboard = (*_dev)[DEVICE_PROP_MBOARD];
-        _rx_dsp = _mboard[named_prop_t(MBOARD_PROP_RX_DSP, "ddc0")]; //FIX string crap
-        _tx_dsp = _mboard[named_prop_t(MBOARD_PROP_TX_DSP, "duc0")]; //FIX string crap
+        _rx_dsp = _mboard[MBOARD_PROP_RX_DSP];
+        _tx_dsp = _mboard[MBOARD_PROP_TX_DSP];
 
         //extract rx subdevice
         wax::obj rx_dboard = _mboard[MBOARD_PROP_RX_DBOARD];

@@ -29,6 +29,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string transport_args;
     int seconds_in_future;
     size_t total_num_samps;
+    double rx_rate;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -37,6 +38,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&transport_args)->default_value(""), "simple uhd transport args")
         ("secs", po::value<int>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
+        ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -57,9 +59,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
 
     //set properties on the device
-    double rx_rate = 100e6/16; //FIXME get this from somewhere
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rx_rate/1e6) << std::endl;
     sdev->set_rx_rate(rx_rate);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl;
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_time_now(uhd::time_spec_t(0));
 

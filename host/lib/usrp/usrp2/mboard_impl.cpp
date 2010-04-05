@@ -29,7 +29,7 @@ using namespace uhd::usrp;
  * Helper Methods
  **********************************************************************/
 void usrp2_impl::mboard_init(void){
-    _mboards[""] = wax_obj_proxy::make(
+    _mboard_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
@@ -173,21 +173,21 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        ASSERT_THROW(_rx_dboards.has_key(name));
-        val = _rx_dboards[name]->get_link();
+        ASSERT_THROW(name == "");
+        val = _rx_dboard_proxy->get_link();
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
-        val = prop_names_t(_rx_dboards.get_keys());
+        val = prop_names_t(1, "");
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        ASSERT_THROW(_tx_dboards.has_key(name));
-        val = _tx_dboards[name]->get_link();
+        ASSERT_THROW(name == "");
+        val = _tx_dboard_proxy->get_link();
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
-        val = prop_names_t(_tx_dboards.get_keys());
+        val = prop_names_t(1, "");
         return;
 
     case MBOARD_PROP_CLOCK_RATE:
@@ -195,21 +195,21 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        ASSERT_THROW(_rx_dsps.has_key(name));
-        val = _rx_dsps[name]->get_link();
+        ASSERT_THROW(name == "");
+        val = _rx_dsp_proxy->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
-        val = prop_names_t(_rx_dsps.get_keys());
+        val = prop_names_t(1, "");
         return;
 
     case MBOARD_PROP_TX_DSP:
-        ASSERT_THROW(_tx_dsps.has_key(name));
-        val = _tx_dsps[name]->get_link();
+        ASSERT_THROW(name == "");
+        val = _tx_dsp_proxy->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
-        val = prop_names_t(_tx_dsps.get_keys());
+        val = prop_names_t(1, "");
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:

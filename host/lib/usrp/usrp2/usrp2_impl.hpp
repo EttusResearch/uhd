@@ -163,18 +163,18 @@ private:
     void mboard_init(void);
     void mboard_get(const wax::obj &, wax::obj &);
     void mboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _mboards;
+    wax_obj_proxy::sptr _mboard_proxy;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dboards;
+    wax_obj_proxy::sptr _rx_dboard_proxy;
     uhd::prop_names_t _rx_subdevs_in_use;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dboards;
+    wax_obj_proxy::sptr _tx_dboard_proxy;
     uhd::prop_names_t _tx_subdevs_in_use;
     void update_rx_mux_config(void);
     void update_tx_mux_config(void);
@@ -196,12 +196,12 @@ private:
     //properties interface for ddc
     void ddc_get(const wax::obj &, wax::obj &);
     void ddc_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsps;
+    wax_obj_proxy::sptr _rx_dsp_proxy;
 
     //properties interface for duc
     void duc_get(const wax::obj &, wax::obj &);
     void duc_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsps;
+    wax_obj_proxy::sptr _tx_dsp_proxy;
 
 };
 
