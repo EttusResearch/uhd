@@ -32,7 +32,7 @@ namespace uhd{
      *
      * To narrow down the discovery process to a particular device,
      * specify a transport key/value pair specific to your device.
-     * Ex, to find a usrp2: my_dev_addr["addr"] = <resolvable_hostname_or_ip>
+     * Ex, to find a usrp2: my_dev_addr["addr"] = [resolvable_hostname_or_ip]
      *
      * The device address can also be used to pass arguments into
      * the transport layer control to set (for example) buffer sizes.
