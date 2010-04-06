@@ -103,8 +103,11 @@ public:
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
 
     //peek and poke registers
-    void poke(boost::uint32_t addr, boost::uint32_t data);
-    boost::uint32_t peek(boost::uint32_t addr);
+    void poke32(boost::uint32_t addr, boost::uint32_t data);
+    boost::uint32_t peek32(boost::uint32_t addr);
+
+    void poke16(boost::uint32_t addr, boost::uint16_t data);
+    boost::uint16_t peek16(boost::uint32_t addr);
 
     //misc access methods
     double get_master_clock_freq(void);
@@ -135,6 +138,7 @@ private:
     ;
     uhd::transport::smart_buffer::sptr _rx_smart_buff;
     boost::asio::const_buffer _rx_copy_buff;
+    size_t _fragment_offset_in_samps;
     void io_init(void);
 
     //udp transports for control and data
@@ -159,18 +163,18 @@ private:
     void mboard_init(void);
     void mboard_get(const wax::obj &, wax::obj &);
     void mboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _mboards;
+    wax_obj_proxy::sptr _mboard_proxy;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dboards;
+    wax_obj_proxy::sptr _rx_dboard_proxy;
     uhd::prop_names_t _rx_subdevs_in_use;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dboards;
+    wax_obj_proxy::sptr _tx_dboard_proxy;
     uhd::prop_names_t _tx_subdevs_in_use;
     void update_rx_mux_config(void);
     void update_tx_mux_config(void);
@@ -192,12 +196,12 @@ private:
     //properties interface for ddc
     void ddc_get(const wax::obj &, wax::obj &);
     void ddc_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsps;
+    wax_obj_proxy::sptr _rx_dsp_proxy;
 
     //properties interface for duc
     void duc_get(const wax::obj &, wax::obj &);
     void duc_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsps;
+    wax_obj_proxy::sptr _tx_dsp_proxy;
 
 };
 

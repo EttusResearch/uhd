@@ -24,15 +24,24 @@ namespace uhd{ namespace usrp{
 
     /*!
      * Possible device dsp properties:
-     *   A dsp can have a wide range of possible properties.
-     *   A ddc would have a properties "decim", "freq", "taps"...
-     *   Other properties could be gains, complex scalars, enables...
-     *   For this reason the only required properties of a dsp is a name
-     *   and a property to get list of other possible properties.
+     *   A dsp is a black box fpga component found between
+     *   the over-the-wire data and the codec pins.
+     *
+     *   The host rate can be modified to control resampling.
+     *   Resampling can take the form of decimation, interpolation,
+     *   or more complex fractional resampling techniques.
+     *   As usual, read back the host rate after setting it
+     *   to get the actual rate that was set (implementation dependent).
+     *
+     *   A dsp can also shift the digital stream in frequency.
+     *   Set the shift property and read it back to get actual shift.
      */
     enum dsp_prop_t{
-        DSP_PROP_NAME   = 'n', //ro, std::string
-        DSP_PROP_OTHERS = 'o'  //ro, prop_names_t
+        DSP_PROP_NAME         = 'n', //ro, std::string
+        DSP_PROP_OTHERS       = 'o', //ro, prop_names_t
+        DSP_PROP_FREQ_SHIFT   = 'f', //rw, double Hz
+        DSP_PROP_CODEC_RATE   = 'c', //ro, double Sps
+        DSP_PROP_HOST_RATE    = 'h'  //rw, double Sps
     };
 
 }} //namespace
