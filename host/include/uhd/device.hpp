@@ -83,6 +83,7 @@ public:
      * If the buffer has more samples than the maximum supported,
      * the send method will send the maximum number of samples
      * as supported by the transport and return the number sent.
+     * In this case, the end of burst flag will be forced to false.
      * It is up to the caller to call send again on the un-sent
      * portions of the buffer, until the buffer is exhausted.
      *
