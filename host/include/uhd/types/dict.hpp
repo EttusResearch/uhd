@@ -73,7 +73,7 @@ namespace uhd{
          * Key order depends on insertion precedence.
          * \return vector of keys
          */
-        std::vector<Key> get_keys(void) const{
+        const std::vector<Key> keys(void) const{
             std::vector<Key> keys;
             BOOST_FOREACH(const pair_t &p, _map){
                 keys.push_back(p.first);
@@ -86,7 +86,7 @@ namespace uhd{
          * Value order depends on insertion precedence.
          * \return vector of values
          */
-        std::vector<Val> get_vals(void) const{
+        const std::vector<Val> vals(void) const{
             std::vector<Val> vals;
             BOOST_FOREACH(const pair_t &p, _map){
                 vals.push_back(p.second);
