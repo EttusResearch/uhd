@@ -50,16 +50,16 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
     BOOST_CHECK_EQUAL(dev_addr.size(), new_dev_addr.size());
 
     //the keys should match
-    std::vector<std::string> old_dev_addr_keys = dev_addr.get_keys();
-    std::vector<std::string> new_dev_addr_keys = new_dev_addr.get_keys();
+    std::vector<std::string> old_dev_addr_keys = dev_addr.keys();
+    std::vector<std::string> new_dev_addr_keys = new_dev_addr.keys();
     BOOST_CHECK_EQUAL_COLLECTIONS(
         old_dev_addr_keys.begin(), old_dev_addr_keys.end(),
         new_dev_addr_keys.begin(), new_dev_addr_keys.end()
     );
 
     //the vals should match
-    std::vector<std::string> old_dev_addr_vals = dev_addr.get_vals();
-    std::vector<std::string> new_dev_addr_vals = new_dev_addr.get_vals();
+    std::vector<std::string> old_dev_addr_vals = dev_addr.vals();
+    std::vector<std::string> new_dev_addr_vals = new_dev_addr.vals();
     BOOST_CHECK_EQUAL_COLLECTIONS(
         old_dev_addr_vals.begin(), old_dev_addr_vals.end(),
         new_dev_addr_vals.begin(), new_dev_addr_vals.end()

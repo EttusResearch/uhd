@@ -54,9 +54,19 @@ static boost::uint32_t calculate_iq_scale_word(boost::int16_t i, boost::int16_t 
     return (boost::uint16_t(i) << 16) | (boost::uint16_t(q) << 0);
 }
 
+template <class rate_t> static rate_t
+pick_closest_rate(double exact_rate, const std::vector<rate_t> &rates){
+    rate_t closest_match = rates.at(0);
+    BOOST_FOREACH(rate_t possible_rate, rates){
+        if(std::abs(exact_rate - possible_rate) < std::abs(exact_rate - closest_match))
+            closest_match = possible_rate;
+    }
+    return closest_match;
+}
+
 void usrp2_impl::init_ddc_config(void){
     //create the ddc in the rx dsp dict
-    _rx_dsps["ddc0"] = wax_obj_proxy::make(
+    _rx_dsp_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::ddc_get, this, _1, _2),
         boost::bind(&usrp2_impl::ddc_set, this, _1, _2)
     );
@@ -67,124 +77,71 @@ void usrp2_impl::init_ddc_config(void){
     update_ddc_config();
 
     //initial command that kills streaming (in case if was left on)
-    stream_cmd_t stream_cmd_off;
-    stream_cmd_off.stream_now = true;
-    stream_cmd_off.continuous = false;
-    stream_cmd_off.num_samps = 0;
-    issue_ddc_stream_cmd(stream_cmd_off);
+    issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 void usrp2_impl::update_ddc_config(void){
     //set the decimation
-    this->poke(FR_DSP_RX_DECIM_RATE, _ddc_decim);
+    this->poke32(FR_DSP_RX_DECIM_RATE, _ddc_decim);
 
     //set the scaling
     static const boost::int16_t default_rx_scale_iq = 1024;
-    this->poke(FR_DSP_RX_SCALE_IQ,
+    this->poke32(FR_DSP_RX_SCALE_IQ,
         calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
     );
-}
-
-void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
-    out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
-    out_data.data.stream_cmd.continuous = (stream_cmd.continuous)? 1 : 0;
-    out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
-    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.ticks);
-    out_data.data.stream_cmd.num_samps = htonl(stream_cmd.num_samps);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
 }
 
 /***********************************************************************
  * DDC Properties
  **********************************************************************/
 void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
-    //handle the case where the key is an expected dsp property
-    if (key.type() == typeid(dsp_prop_t)){
-        switch(key.as<dsp_prop_t>()){
-        case DSP_PROP_NAME:
-            val = std::string("usrp2 ddc0");
-            return;
+    switch(key.as<dsp_prop_t>()){
+    case DSP_PROP_NAME:
+        val = std::string("usrp2 ddc0");
+        return;
 
-        case DSP_PROP_OTHERS:{
-                prop_names_t others = boost::assign::list_of
-                    ("if_rate")
-                    ("bb_rate")
-                    ("decim")
-                    ("decims")
-                    ("freq")
-                    ("stream_cmd")
-                ;
-                val = others;
-            }
-            return;
-        }
-    }
+    case DSP_PROP_OTHERS:
+        val = prop_names_t(); //empty
+        return;
 
-    //handle string-based properties specific to this dsp
-    std::string key_name = key.as<std::string>();
-    if (key_name == "if_rate"){
+    case DSP_PROP_FREQ_SHIFT:
+        val = _ddc_freq;
+        return;
+
+    case DSP_PROP_CODEC_RATE:
         val = get_master_clock_freq();
         return;
-    }
-    else if (key_name == "bb_rate"){
+
+    case DSP_PROP_HOST_RATE:
         val = get_master_clock_freq()/_ddc_decim;
         return;
     }
-    else if (key_name == "decim"){
-        val = _ddc_decim;
-        return;
-    }
-    else if (key_name == "decims"){
-        val = _allowed_decim_and_interp_rates;
-        return;
-    }
-    else if (key_name == "freq"){
-        val = _ddc_freq;
-        return;
-    }
-
-    throw std::invalid_argument(str(
-        boost::format("error getting: unknown key with name %s") % key_name
-    ));
 }
 
 void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
-    //handle string-based properties specific to this dsp
-    std::string key_name = key.as<std::string>();
-    if (key_name == "decim"){
-        size_t new_decim = val.as<size_t>();
-        assert_has(
-            _allowed_decim_and_interp_rates,
-            new_decim, "usrp2 decimation"
-        );
-        _ddc_decim = new_decim; //shadow
-        update_ddc_config();
-        return;
-    }
-    else if (key_name == "freq"){
-        double new_freq = val.as<double>();
-        ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
-        ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
-        _ddc_freq = new_freq; //shadow
-        this->poke(FR_DSP_RX_FREQ,
-            calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
-        );
-        return;
-    }
-    else if (key_name == "stream_cmd"){
-        issue_ddc_stream_cmd(val.as<stream_cmd_t>());
-        return;
-    }
+    switch(key.as<dsp_prop_t>()){
 
-    throw std::invalid_argument(str(
-        boost::format("error setting: unknown key with name %s") % key_name
-    ));
+    case DSP_PROP_FREQ_SHIFT:{
+            double new_freq = val.as<double>();
+            ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
+            ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
+            _ddc_freq = new_freq; //shadow
+            this->poke32(FR_DSP_RX_FREQ,
+                calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
+            );
+        }
+        return;
+
+    case DSP_PROP_HOST_RATE:{
+            double extact_rate = get_master_clock_freq()/val.as<double>();
+            _ddc_decim = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
+            update_ddc_config();
+        }
+        return;
+
+    default:
+        throw std::runtime_error("Error: trying to set read-only property on usrp2 ddc0");
+    }
 }
 
 /***********************************************************************
@@ -192,7 +149,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
  **********************************************************************/
 void usrp2_impl::init_duc_config(void){
     //create the duc in the tx dsp dict
-    _tx_dsps["duc0"] = wax_obj_proxy::make(
+    _tx_dsp_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::duc_get, this, _1, _2),
         boost::bind(&usrp2_impl::duc_set, this, _1, _2)
     );
@@ -213,90 +170,61 @@ void usrp2_impl::update_duc_config(void){
     boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
     //set the interpolation
-    this->poke(FR_DSP_TX_INTERP_RATE, _ddc_decim);
+    this->poke32(FR_DSP_TX_INTERP_RATE, _ddc_decim);
 
     //set the scaling
-    this->poke(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
+    this->poke32(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
 }
 
 /***********************************************************************
  * DUC Properties
  **********************************************************************/
 void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
-    //handle the case where the key is an expected dsp property
-    if (key.type() == typeid(dsp_prop_t)){
-        switch(key.as<dsp_prop_t>()){
-        case DSP_PROP_NAME:
-            val = std::string("usrp2 duc0");
-            return;
+    switch(key.as<dsp_prop_t>()){
+    case DSP_PROP_NAME:
+        val = std::string("usrp2 duc0");
+        return;
 
-        case DSP_PROP_OTHERS:{
-                prop_names_t others = boost::assign::list_of
-                    ("if_rate")
-                    ("bb_rate")
-                    ("interp")
-                    ("interps")
-                    ("freq")
-                ;
-                val = others;
-            }
-            return;
-        }
-    }
+    case DSP_PROP_OTHERS:
+        val = prop_names_t(); //empty
+        return;
 
-    //handle string-based properties specific to this dsp
-    std::string key_name = key.as<std::string>();
-    if (key_name == "if_rate"){
+    case DSP_PROP_FREQ_SHIFT:
+        val = _duc_freq;
+        return;
+
+    case DSP_PROP_CODEC_RATE:
         val = get_master_clock_freq();
         return;
-    }
-    else if (key_name == "bb_rate"){
+
+    case DSP_PROP_HOST_RATE:
         val = get_master_clock_freq()/_duc_interp;
         return;
     }
-    else if (key_name == "interp"){
-        val = _duc_interp;
-        return;
-    }
-    else if (key_name == "interps"){
-        val = _allowed_decim_and_interp_rates;
-        return;
-    }
-    else if (key_name == "freq"){
-        val = _duc_freq;
-        return;
-    }
-
-    throw std::invalid_argument(str(
-        boost::format("error getting: unknown key with name %s") % key_name
-    ));
 }
 
 void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
-    //handle string-based properties specific to this dsp
-    std::string key_name = key.as<std::string>();
-    if (key_name == "interp"){
-        size_t new_interp = val.as<size_t>();
-        assert_has(
-            _allowed_decim_and_interp_rates,
-            new_interp, "usrp2 interpolation"
-        );
-        _duc_interp = new_interp; //shadow
-        update_duc_config();
-        return;
-    }
-    else if (key_name == "freq"){
-        double new_freq = val.as<double>();
-        ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
-        ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
-        _duc_freq = new_freq; //shadow
-        this->poke(FR_DSP_TX_FREQ,
-            calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
-        );
-        return;
-    }
+    switch(key.as<dsp_prop_t>()){
 
-    throw std::invalid_argument(str(
-        boost::format("error setting: unknown key with name %s") % key_name
-    ));
+    case DSP_PROP_FREQ_SHIFT:{
+            double new_freq = val.as<double>();
+            ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
+            ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
+            _duc_freq = new_freq; //shadow
+            this->poke32(FR_DSP_TX_FREQ,
+                calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
+            );
+        }
+        return;
+
+    case DSP_PROP_HOST_RATE:{
+            double extact_rate = get_master_clock_freq()/val.as<double>();
+            _duc_interp = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
+            update_duc_config();
+        }
+        return;
+
+    default:
+        throw std::runtime_error("Error: trying to set read-only property on usrp2 duc0");
+    }
 }

@@ -83,6 +83,7 @@ public:
      * If the buffer has more samples than the maximum supported,
      * the send method will send the maximum number of samples
      * as supported by the transport and return the number sent.
+     * In this case, the end of burst flag will be forced to false.
      * It is up to the caller to call send again on the un-sent
      * portions of the buffer, until the buffer is exhausted.
      *
@@ -112,6 +113,7 @@ public:
      * and will flag the metadata to show that this is a fragment.
      * The next call to receive, after the remainder becomes exahausted,
      * will perform an over-the-wire receive as usual.
+     * See the rx metadata fragment flags and offset fields for details.
      *
      * This is a blocking call and will not return until the number
      * of samples returned have been written into the buffer.

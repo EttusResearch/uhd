@@ -171,14 +171,20 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
  **********************************************************************/
 size_t usrp2_impl::send(
     const asio::const_buffer &buff,
-    const tx_metadata_t &metadata,
+    const tx_metadata_t &metadata_,
     const io_type_t &io_type
 ){
+    tx_metadata_t metadata = metadata_; //rw copy to change later
+
     boost::uint32_t tx_mem[_mtu/sizeof(boost::uint32_t)];
     size_t num_samps = std::min(
         asio::buffer_size(buff)/io_type.size,
         size_t(_max_tx_samples_per_packet)
     );
+
+    //kill the end of burst flag if this is a fragment
+    if (asio::buffer_size(buff)/io_type.size < num_samps)
+        metadata.end_of_burst = false;
 
     size_t num_header_words32, num_packet_words32;
     size_t packet_count = _tx_stream_id_to_packet_seq[metadata.stream_id]++;
@@ -222,12 +228,12 @@ size_t usrp2_impl::recv(
 ){
     //perform a receive if no rx data is waiting to be copied
     if (asio::buffer_size(_rx_copy_buff) == 0){
+        _fragment_offset_in_samps = 0;
         recv_raw(metadata);
     }
     //otherwise flag the metadata to show that is is a fragment
     else{
         metadata = rx_metadata_t();
-        metadata.is_fragment = true;
     }
 
     //extract the number of samples available to copy
@@ -239,6 +245,11 @@ size_t usrp2_impl::recv(
         bytes_to_copy/sizeof(boost::uint32_t)
     );
     const boost::uint32_t *items = asio::buffer_cast<const boost::uint32_t*>(_rx_copy_buff);
+
+    //setup the fragment flags and offset
+    metadata.more_fragments = asio::buffer_size(buff)/io_type.size < num_samps;
+    metadata.fragment_offset = _fragment_offset_in_samps;
+    _fragment_offset_in_samps += num_samps; //set for next time
 
     //copy the samples from the recv buffer
     switch(io_type.tid){

@@ -42,7 +42,7 @@ static size_t hash_device_addr(
     const device_addr_t &dev_addr
 ){
     //sort the keys of the device address
-    std::vector<std::string> keys = dev_addr.get_keys();
+    std::vector<std::string> keys = dev_addr.keys();
     std::sort(keys.begin(), keys.end());
 
     //combine the hashes of sorted keys/value pairs
@@ -99,7 +99,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
         BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
             //copy keys that were in hint but not in dev_addr
             //this way, we can pass additional transport arguments
-            BOOST_FOREACH(const std::string &key, hint.get_keys()){
+            BOOST_FOREACH(const std::string &key, hint.keys()){
                 if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
             }
             //append the discovered address and its factory function
