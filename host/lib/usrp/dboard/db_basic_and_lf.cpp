@@ -87,8 +87,6 @@ UHD_STATIC_BLOCK(reg_dboards){
  **********************************************************************/
 basic_rx::basic_rx(ctor_args_t const& args, double max_freq) : rx_dboard_base(args){
     _max_freq = max_freq;
-    // set the gpios to safe values (all inputs)
-    get_interface()->set_gpio_ddr(dboard_interface::GPIO_BANK_RX, 0x0000);
 }
 
 basic_rx::~basic_rx(void){
@@ -149,7 +147,13 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
+        val = false;
+        return;
+
     case SUBDEV_PROP_SPECTRUM_INVERTED:
+        val = false;
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -177,17 +181,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    case SUBDEV_PROP_NAME:
-    case SUBDEV_PROP_OTHERS:
-    case SUBDEV_PROP_GAIN_RANGE:
-    case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ_RANGE:
-    case SUBDEV_PROP_ANTENNA_NAMES:
-    case SUBDEV_PROP_QUADRATURE:
-    case SUBDEV_PROP_IQ_SWAPPED:
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        throw std::runtime_error(str(boost::format(
+    default: throw std::runtime_error(str(boost::format(
             "Error: trying to set read-only property on %s subdev"
         ) % dboard_id::to_string(get_rx_id())));
     }
@@ -198,8 +192,6 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
  **********************************************************************/
 basic_tx::basic_tx(ctor_args_t const& args, double max_freq) : tx_dboard_base(args){
     _max_freq = max_freq;
-    // set the gpios to safe values (all inputs)
-    get_interface()->set_gpio_ddr(dboard_interface::GPIO_BANK_TX, 0x0000);
 }
 
 basic_tx::~basic_tx(void){
@@ -257,7 +249,13 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
+        val = false;
+        return;
+
     case SUBDEV_PROP_SPECTRUM_INVERTED:
+        val = false;
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -285,17 +283,7 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    case SUBDEV_PROP_NAME:
-    case SUBDEV_PROP_OTHERS:
-    case SUBDEV_PROP_GAIN_RANGE:
-    case SUBDEV_PROP_GAIN_NAMES:
-    case SUBDEV_PROP_FREQ_RANGE:
-    case SUBDEV_PROP_ANTENNA_NAMES:
-    case SUBDEV_PROP_QUADRATURE:
-    case SUBDEV_PROP_IQ_SWAPPED:
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        throw std::runtime_error(str(boost::format(
+    default: throw std::runtime_error(str(boost::format(
             "Error: trying to set read-only property on %s subdev"
         ) % dboard_id::to_string(get_tx_id())));
     }

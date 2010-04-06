@@ -177,10 +177,8 @@
 //
 #define FR_GPIO_BASE 0xC800
 
-#define FR_GPIO_RX_IO      FR_GPIO_BASE + 0  // 16 io data pins
-#define FR_GPIO_TX_IO      FR_GPIO_BASE + 2  // 16 io data pins
-#define FR_GPIO_RX_DDR     FR_GPIO_BASE + 4  // 16 ddr pins, 1 means output
-#define FR_GPIO_TX_DDR     FR_GPIO_BASE + 6  // 16 ddr pins, 1 means output
+#define FR_GPIO_IO         FR_GPIO_BASE + 0  // 32 bits, gpio io pins (tx high 16 bits, rx low 16 bits)
+#define FR_GPIO_DDR        FR_GPIO_BASE + 4  // 32 bits, gpio ddr, 1 means output (tx high 16 bits, rx low 16 bits)
 #define FR_GPIO_TX_SEL     FR_GPIO_BASE + 8  // 16 2-bit fields select which source goes to TX DB
 #define FR_GPIO_RX_SEL     FR_GPIO_BASE + 12 // 16 2-bit fields select which source goes to RX DB
 
@@ -195,13 +193,13 @@
 ////////////////////////////////////////////////
 #define FR_ATR_BASE  0xE400
 
-#define FR_ATR_IDLE_RXSIDE  FR_ATR_BASE + 0
-#define FR_ATR_IDLE_TXSIDE  FR_ATR_BASE + 2
-#define FR_ATR_INTX_RXSIDE  FR_ATR_BASE + 4
-#define FR_ATR_INTX_TXSIDE  FR_ATR_BASE + 6
-#define FR_ATR_INRX_RXSIDE  FR_ATR_BASE + 8
-#define FR_ATR_INRX_TXSIDE  FR_ATR_BASE + 10
-#define FR_ATR_FULL_RXSIDE  FR_ATR_BASE + 12
-#define FR_ATR_FULL_TXSIDE  FR_ATR_BASE + 14
+#define FR_ATR_IDLE_TXSIDE  FR_ATR_BASE + 0
+#define FR_ATR_IDLE_RXSIDE  FR_ATR_BASE + 2
+#define FR_ATR_INTX_TXSIDE  FR_ATR_BASE + 4
+#define FR_ATR_INTX_RXSIDE  FR_ATR_BASE + 6
+#define FR_ATR_INRX_TXSIDE  FR_ATR_BASE + 8
+#define FR_ATR_INRX_RXSIDE  FR_ATR_BASE + 10
+#define FR_ATR_FULL_TXSIDE  FR_ATR_BASE + 12
+#define FR_ATR_FULL_RXSIDE  FR_ATR_BASE + 14
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

@@ -48,6 +48,7 @@ private:
     );
 
     usrp2_impl *_impl;
+    boost::uint32_t _ddr_shadow;
 };
 
 /***********************************************************************
@@ -62,6 +63,7 @@ dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
  **********************************************************************/
 usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
     _impl = impl;
+    _ddr_shadow = 0;
 
     //set the selection mux to use atr
     boost::uint32_t new_sels = 0x0;
@@ -90,20 +92,23 @@ double usrp2_dboard_interface::get_tx_clock_rate(void){
 /***********************************************************************
  * GPIO
  **********************************************************************/
+static int bank_to_shift(dboard_interface::gpio_bank_t bank){
+    switch(bank){
+    case dboard_interface::GPIO_BANK_RX: return 0;
+    case dboard_interface::GPIO_BANK_TX: return 16;
+    }
+    throw std::runtime_error("unknown gpio bank type");
+}
+
 void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
-    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_BANK_RX, FR_GPIO_RX_DDR)
-        (GPIO_BANK_TX, FR_GPIO_TX_DDR)
-    ;
-    _impl->poke16(bank_to_addr[bank], value);
+    _ddr_shadow = \
+        (_ddr_shadow & ~(0xffff << bank_to_shift(bank))) |
+        (boost::uint32_t(value) << bank_to_shift(bank));
+    _impl->poke32(FR_GPIO_DDR, _ddr_shadow);
 }
 
 boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
-    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_BANK_RX, FR_GPIO_RX_IO)
-        (GPIO_BANK_TX, FR_GPIO_TX_IO)
-    ;
-    return _impl->peek16(bank_to_addr[bank]);
+    return boost::uint16_t(_impl->peek32(FR_GPIO_IO) >> bank_to_shift(bank));
 }
 
 void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost::uint16_t value){
