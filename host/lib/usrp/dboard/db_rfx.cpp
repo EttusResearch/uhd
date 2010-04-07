@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "adf4360_regs.hpp"
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert.hpp>
@@ -47,10 +48,12 @@ private:
     double       _lo_freq;
     std::string  _rx_ant;
     float        _rx_pga0_gain;
+    adf4360_regs_t _adf4360_regs;
 
     void set_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_rx_pga0_gain(float gain);
+    void reload_adf4360_regs(void);
 };
 
 /***********************************************************************
@@ -115,6 +118,7 @@ rfx_xcvr::~rfx_xcvr(void){
  **********************************************************************/
 void rfx_xcvr::set_lo_freq(double freq){
     /* NOP */
+    reload_adf4360_regs();
 }
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
@@ -123,6 +127,27 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
 
 void rfx_xcvr::set_rx_pga0_gain(float gain){
     /* NOP */
+}
+
+void rfx_xcvr::reload_adf4360_regs(void){
+    std::vector<adf4360_regs_t::addr_t> addrs = list_of
+        (adf4360_regs_t::ADDR_CONTROL)
+        (adf4360_regs_t::ADDR_NCOUNTER)
+        (adf4360_regs_t::ADDR_RCOUNTER)
+    ;
+    BOOST_FOREACH(adf4360_regs_t::addr_t addr, addrs){
+        boost::uint32_t reg = _adf4360_regs.get_reg(addr);
+        dboard_interface::byte_vector_t spi_bytes = list_of
+            ((reg >> 16) & 0xff)
+            ((reg >>  8) & 0xff)
+            ((reg >>  0) & 0xff)
+        ;
+        //this->get_interface.write_spi(
+        //    dboard_interface::SPI_DEV_TX,
+        //    dboard_interface::SPI_EDGE_FALL,
+        //    spi_bytes
+        //);
+    }
 }
 
 /***********************************************************************
@@ -184,7 +209,7 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_INTERFERES:
+    case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
     }
@@ -270,7 +295,7 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_INTERFERES:
+    case SUBDEV_PROP_USE_LO_OFFSET:
         val = true;
         return;
     }
