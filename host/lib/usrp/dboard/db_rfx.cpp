@@ -136,17 +136,11 @@ void rfx_xcvr::reload_adf4360_regs(void){
         (adf4360_regs_t::ADDR_RCOUNTER)
     ;
     BOOST_FOREACH(adf4360_regs_t::addr_t addr, addrs){
-        boost::uint32_t reg = _adf4360_regs.get_reg(addr);
-        dboard_interface::byte_vector_t spi_bytes = list_of
-            ((reg >> 16) & 0xff)
-            ((reg >>  8) & 0xff)
-            ((reg >>  0) & 0xff)
-        ;
-        //this->get_interface.write_spi(
-        //    dboard_interface::SPI_DEV_TX,
-        //    dboard_interface::SPI_EDGE_FALL,
-        //    spi_bytes
-        //);
+        this->get_interface()->write_spi(
+            dboard_interface::UNIT_TYPE_TX,
+            dboard_interface::spi_config_t::EDGE_RISE,
+            _adf4360_regs.get_reg(addr), 24
+        );
     }
 }
 

@@ -30,7 +30,6 @@ SET(libuhd_sources
     usrp/dboard/db_basic_and_lf.cpp
     usrp/dboard/db_rfx.cpp
     usrp/dboard_base.cpp
-    usrp/dboard_interface.cpp
     usrp/simple_usrp.cpp
     usrp/dboard_manager.cpp
     usrp/tune_helper.cpp

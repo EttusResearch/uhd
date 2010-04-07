@@ -110,10 +110,11 @@ typedef struct{
         } dboard_ids;
         struct {
             _SINS_ uint8_t dev;
-            _SINS_ uint8_t edge;
+            _SINS_ uint8_t miso_edge;
+            _SINS_ uint8_t mosi_edge;
             _SINS_ uint8_t readback;
-            _SINS_ uint8_t bytes;
-            _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
+            _SINS_ uint32_t data;
+            _SINS_ uint8_t num_bits;
         } spi_args;
         struct {
             _SINS_ uint8_t addr;

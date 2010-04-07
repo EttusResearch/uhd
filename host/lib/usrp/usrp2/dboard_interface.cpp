@@ -42,9 +42,35 @@ public:
     double get_rx_clock_rate(void);
     double get_tx_clock_rate(void);
 
+    void write_spi(
+        unit_type_t unit,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits
+    ){
+        transact_spi(unit, config, data, num_bits, false /*no rb*/);
+    }
+
+    boost::uint32_t read_spi(
+        unit_type_t unit,
+        const spi_config_t &config,
+        size_t num_bits
+    ){
+        return transact_spi(unit, config, 0, num_bits, true /*rb*/);
+    }
+
+    boost::uint32_t read_write_spi(
+        unit_type_t unit,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits
+    ){
+        return transact_spi(unit, config, data, num_bits, true /*rb*/);
+    }
+
 private:
-    byte_vector_t transact_spi(
-        spi_dev_t, spi_edge_t, const byte_vector_t &, bool
+    boost::uint32_t transact_spi(
+        unit_type_t, const spi_config_t &, boost::uint32_t, size_t, bool
     );
 
     usrp2_impl *_impl;
@@ -136,17 +162,17 @@ void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost:
  * SPI
  **********************************************************************/
 /*!
- * Static function to convert a spi dev enum
- * to an over-the-wire value for the usrp2 control.
- * \param dev the dboard interface spi dev enum
+ * Static function to convert a unit type enum
+ * to an over-the-wire value for the spi device.
+ * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static boost::uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
-    switch(dev){
-    case uhd::usrp::dboard_interface::SPI_DEV_TX: return SPI_SS_TX_DB;
-    case uhd::usrp::dboard_interface::SPI_DEV_RX: return SPI_SS_RX_DB;
+static boost::uint8_t unit_to_otw_dev(dboard_interface::unit_type_t unit){
+    switch(unit){
+    case dboard_interface::UNIT_TYPE_TX: return SPI_SS_TX_DB;
+    case dboard_interface::UNIT_TYPE_RX: return SPI_SS_RX_DB;
     }
-    throw std::invalid_argument("unknown spi device type");
+    throw std::invalid_argument("unknown unit type type");
 }
 
 /*!
@@ -155,43 +181,36 @@ static boost::uint8_t spi_dev_to_otw(dboard_interface::spi_dev_t dev){
  * \param edge the dboard interface spi edge enum
  * \return an over the wire representation
  */
-static boost::uint8_t spi_edge_to_otw(dboard_interface::spi_edge_t edge){
+static boost::uint8_t spi_edge_to_otw(dboard_interface::spi_config_t::edge_t edge){
     switch(edge){
-    case uhd::usrp::dboard_interface::SPI_EDGE_RISE: return USRP2_CLK_EDGE_RISE;
-    case uhd::usrp::dboard_interface::SPI_EDGE_FALL: return USRP2_CLK_EDGE_FALL;
+    case dboard_interface::spi_config_t::EDGE_RISE: return USRP2_CLK_EDGE_RISE;
+    case dboard_interface::spi_config_t::EDGE_FALL: return USRP2_CLK_EDGE_FALL;
     }
     throw std::invalid_argument("unknown spi edge type");
 }
 
-dboard_interface::byte_vector_t usrp2_dboard_interface::transact_spi(
-    spi_dev_t dev,
-    spi_edge_t edge,
-    const byte_vector_t &buf,
+boost::uint32_t usrp2_dboard_interface::transact_spi(
+    unit_type_t unit,
+    const spi_config_t &config,
+    boost::uint32_t data,
+    size_t num_bits,
     bool readback
 ){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
-    out_data.data.spi_args.dev = spi_dev_to_otw(dev);
-    out_data.data.spi_args.edge = spi_edge_to_otw(edge);
+    out_data.data.spi_args.dev = unit_to_otw_dev(unit);
+    out_data.data.spi_args.miso_edge = spi_edge_to_otw(config.miso_edge);
+    out_data.data.spi_args.mosi_edge = spi_edge_to_otw(config.mosi_edge);
     out_data.data.spi_args.readback = (readback)? 1 : 0;
-    out_data.data.spi_args.bytes = buf.size();
-
-    //limitation of spi transaction size
-    ASSERT_THROW(buf.size() <= sizeof(out_data.data.spi_args.data));
-
-    //copy in the data
-    std::copy(buf.begin(), buf.end(), out_data.data.spi_args.data);
+    out_data.data.spi_args.num_bits = num_bits;
+    out_data.data.spi_args.data = htonl(data);
 
     //send and recv
     usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
-    ASSERT_THROW(in_data.data.spi_args.bytes == buf.size());
 
-    //copy out the data
-    byte_vector_t result(buf.size());
-    std::copy(in_data.data.spi_args.data, in_data.data.spi_args.data + buf.size(), result.begin());
-    return result;
+    return ntohl(out_data.data.spi_args.data);
 }
 
 /***********************************************************************
@@ -245,19 +264,19 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, s
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static boost::uint8_t spi_dev_to_otw(dboard_interface::unit_type_t unit){
+static boost::uint8_t unit_to_otw(dboard_interface::unit_type_t unit){
     switch(unit){
-    case uhd::usrp::dboard_interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
-    case uhd::usrp::dboard_interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
+    case dboard_interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
+    case dboard_interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
     }
     throw std::invalid_argument("unknown unit type type");
 }
 
-void usrp2_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, int which, int value){
+void usrp2_dboard_interface::write_aux_dac(unit_type_t unit, int which, int value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
-    out_data.data.aux_args.dir = spi_dev_to_otw(unit);
+    out_data.data.aux_args.dir = unit_to_otw(unit);
     out_data.data.aux_args.which = which;
     out_data.data.aux_args.value = htonl(value);
 
@@ -266,11 +285,11 @@ void usrp2_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, i
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
 }
 
-int usrp2_dboard_interface::read_aux_adc(dboard_interface::unit_type_t unit, int which){
+int usrp2_dboard_interface::read_aux_adc(unit_type_t unit, int which){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);
-    out_data.data.aux_args.dir = spi_dev_to_otw(unit);
+    out_data.data.aux_args.dir = unit_to_otw(unit);
     out_data.data.aux_args.which = which;
 
     //send and recv

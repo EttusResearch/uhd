@@ -42,16 +42,31 @@ public:
         UNIT_TYPE_TX = 't'
     };
 
-    //tells the host which device to use
-    enum spi_dev_t{
-        SPI_DEV_RX = 'r',
-        SPI_DEV_TX = 't'
-    };
+    //spi configuration struct
+    struct UHD_API spi_config_t{
+        /*!
+         * The edge type specifies when data is valid
+         * relative to the edge of the serial clock.
+         */
+        enum edge_t{
+            EDGE_RISE = 'r',
+            EDGE_FALL = 'f'
+        };
 
-    //args for spi format
-    enum spi_edge_t{
-        SPI_EDGE_RISE = 'r',
-        SPI_EDGE_FALL = 'f'
+        //! on what edge is the mosi data valid?
+        edge_t mosi_edge;
+
+        //! on what edge is the miso data valid?
+        edge_t miso_edge;
+
+        /*!
+         * Create a new spi config.
+         * \param edge the default edge for mosi and miso
+         */
+        spi_config_t(edge_t edge = EDGE_RISE){
+            mosi_edge = edge;
+            miso_edge = edge;
+        }
     };
 
     //tell the host which gpio bank
@@ -67,10 +82,6 @@ public:
         ATR_REG_RX_ONLY     = 'r',
         ATR_REG_FULL_DUPLEX = 'f'
     };
-
-    //structors
-    dboard_interface(void);
-    virtual ~dboard_interface(void);
 
     /*!
      * Write to an aux dac.
@@ -131,61 +142,60 @@ public:
     /*!
      * \brief Write data to SPI bus peripheral.
      *
-     * \param dev which spi device
-     * \param edge args for format
-     * \param buf the data to write
+     * \param unit which unit, rx or tx
+     * \param config configuration settings
+     * \param data the bits to write LSB first
+     * \param num_bits the number of bits in data
      */
-    void write_spi(spi_dev_t dev, spi_edge_t edge, const byte_vector_t &buf);
+    virtual void write_spi(
+        unit_type_t unit,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits
+    ) = 0;
 
     /*!
      * \brief Read data to SPI bus peripheral.
      *
-     * \param dev which spi device
-     * \param edge args for format
-     * \param num_bytes number of bytes to read
+     * \param unit which unit, rx or tx
+     * \param config configuration settings
+     * \param num_bits the number of bits
      * \return the data that was read
      */
-    byte_vector_t read_spi(spi_dev_t dev, spi_edge_t edge, size_t num_bytes);
+    virtual boost::uint32_t read_spi(
+        unit_type_t unit,
+        const spi_config_t &config,
+        size_t num_bits
+    ) = 0;
 
     /*!
      * \brief Read and write data to SPI bus peripheral.
      * The data read back will be the same length as the input buffer.
      *
-     * \param dev which spi device
-     * \param edge args for format
-     * \param buf the data to write
+     * \param unit which unit, rx or tx
+     * \param config configuration settings
+     * \param data the bits to write LSB first
+     * \param num_bits the number of bits in data
      * \return the data that was read
      */
-    byte_vector_t read_write_spi(spi_dev_t dev, spi_edge_t edge, const byte_vector_t &buf);
+    virtual boost::uint32_t read_write_spi(
+        unit_type_t unit,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits
+    ) = 0;
 
     /*!
      * \brief Get the rate of the rx dboard clock.
-     * \return the clock rate
+     * \return the clock rate in Hz
      */
     virtual double get_rx_clock_rate(void) = 0;
 
     /*!
      * \brief Get the rate of the tx dboard clock.
-     * \return the clock rate
+     * \return the clock rate in Hz
      */
     virtual double get_tx_clock_rate(void) = 0;
-
-private:
-    /*!
-     * \brief Read and write data to SPI bus peripheral.
-     *
-     * \param dev which spi device
-     * \param edge args for format
-     * \param buf the data to write
-     * \param readback false for write only
-     * \return the data that was read
-     */
-    virtual byte_vector_t transact_spi(
-        spi_dev_t dev,
-        spi_edge_t edge,
-        const byte_vector_t &buf,
-        bool readback
-    ) = 0;
 };
 
 }} //namespace
