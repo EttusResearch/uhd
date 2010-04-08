@@ -54,7 +54,8 @@ void vrt::pack(
     size_t &num_header_words32,    //output
     size_t num_payload_words32,    //input
     size_t &num_packet_words32,    //output
-    size_t packet_count            //input
+    size_t packet_count,           //input
+    double tick_rate               //input
 ){
     boost::uint32_t vrt_hdr_flags;
 
@@ -91,7 +92,7 @@ void vrt::pack(
         #if $pred & $tsf_p
             header_buff[$num_header_words] = htonl(0);
             #set $num_header_words += 1
-            header_buff[$num_header_words] = htonl(metadata.time_spec.ticks);
+            header_buff[$num_header_words] = htonl(metadata.time_spec.get_ticks(tick_rate));
             #set $num_header_words += 1
             #set $flags |= (0x1 << 20);
         #end if
@@ -127,7 +128,8 @@ void vrt::unpack(
     size_t &num_header_words32,         //output
     size_t &num_payload_words32,        //output
     size_t num_packet_words32,          //input
-    size_t &packet_count                //output
+    size_t &packet_count,               //output
+    double tick_rate                    //input
 ){
     //clear the metadata
     metadata = rx_metadata_t();
@@ -180,7 +182,7 @@ void vrt::unpack(
                 #set $set_has_time_spec = True
             #end if
             #set $num_header_words += 1
-            metadata.time_spec.ticks = ntohl(header_buff[$num_header_words]);
+            metadata.time_spec.set_ticks(ntohl(header_buff[$num_header_words]), tick_rate);
             #set $num_header_words += 1
         #end if
         ########## Trailer ##########

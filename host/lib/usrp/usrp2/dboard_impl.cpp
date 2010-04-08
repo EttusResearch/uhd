@@ -22,6 +22,7 @@
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;

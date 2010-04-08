@@ -36,7 +36,8 @@ static void pack_and_unpack(
         num_header_words32,  //output
         num_payload_words32, //input
         num_packet_words32,  //output
-        packet_count         //input
+        packet_count,        //input
+        100e6
     );
 
     uhd::rx_metadata_t metadata_out;
@@ -51,7 +52,8 @@ static void pack_and_unpack(
         num_header_words32_out,  //output
         num_payload_words32_out, //output
         num_packet_words32,      //input
-        packet_count_out         //output
+        packet_count_out,        //output
+        100e6
     );
 
     //check the the unpacked metadata is the same
@@ -65,7 +67,7 @@ static void pack_and_unpack(
     BOOST_CHECK_EQUAL(metadata.has_time_spec, metadata_out.has_time_spec);
     if (metadata.has_time_spec and metadata_out.has_time_spec){
         BOOST_CHECK_EQUAL(metadata.time_spec.secs, metadata_out.time_spec.secs);
-        BOOST_CHECK_EQUAL(metadata.time_spec.ticks, metadata_out.time_spec.ticks);
+        BOOST_CHECK_EQUAL(metadata.time_spec.nsecs, metadata_out.time_spec.nsecs);
     }
 }
 
@@ -85,7 +87,7 @@ BOOST_AUTO_TEST_CASE(test_with_time_spec){
     uhd::tx_metadata_t metadata;
     metadata.has_time_spec = true;
     metadata.time_spec.secs = 7;
-    metadata.time_spec.ticks = 2000;
+    metadata.time_spec.nsecs = 2000;
     pack_and_unpack(metadata, 500, 3);
 }
 
@@ -95,6 +97,6 @@ BOOST_AUTO_TEST_CASE(test_with_sid_and_time_spec){
     metadata.stream_id = 2;
     metadata.has_time_spec = true;
     metadata.time_spec.secs = 5;
-    metadata.time_spec.ticks = 1000;
+    metadata.time_spec.nsecs = 1000;
     pack_and_unpack(metadata, 600, 4);
 }

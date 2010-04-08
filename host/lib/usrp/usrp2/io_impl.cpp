@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <complex>
-#include <boost/format.hpp>
 #include "usrp2_impl.hpp"
+#include <boost/format.hpp>
+#include <complex>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -144,7 +145,8 @@ void usrp2_impl::recv_raw(rx_metadata_t &metadata){
             num_header_words32_out,  //output
             num_payload_words32_out, //output
             num_packet_words32,      //input
-            packet_count_out         //output
+            packet_count_out,        //output
+            get_master_clock_freq()
         );
     }catch(const std::exception &e){
         std::cerr << "bad vrt header: " << e.what() << std::endl;
@@ -196,7 +198,8 @@ size_t usrp2_impl::send(
         num_header_words32,  //output
         num_samps,           //input
         num_packet_words32,  //output
-        packet_count         //input
+        packet_count,        //input
+        get_master_clock_freq()
     );
 
     boost::uint32_t *items = tx_mem + num_header_words32; //offset for data
