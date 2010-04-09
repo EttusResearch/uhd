@@ -17,6 +17,14 @@
 
 
 ########################################################################
+# Library Includes (not part of API)
+########################################################################
+INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/include #generated includes
+)
+
+########################################################################
 # Setup Python
 ########################################################################
 INCLUDE(FindPythonInterp)
@@ -70,19 +78,23 @@ SET(libuhd_sources
 ########################################################################
 # Generate Files
 ########################################################################
-MACRO(UHD_PYTHON_GEN_FILE pyfile outfile)
+MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
     ADD_CUSTOM_COMMAND(
         OUTPUT ${outfile} DEPENDS ${pyfile}
         COMMAND ${PYTHON_EXECUTABLE} ${pyfile} ${outfile}
         COMMENT "Calling ${pyfile} to generate ${outfile}"
     )
-ENDMACRO(UHD_PYTHON_GEN_FILE)
-UHD_PYTHON_GEN_FILE(
+    LIST(APPEND libuhd_sources ${outfile})
+ENDMACRO(UHD_PYTHON_GEN_SOURCE_FILE)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/transport/gen_vrt.py
     ${CMAKE_CURRENT_BINARY_DIR}/transport/vrt.cpp
 )
-LIST(APPEND libuhd_sources
-    ${CMAKE_CURRENT_BINARY_DIR}/transport/vrt.cpp
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/gen_adf4360_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/include/adf4360_regs.hpp
 )
 
 ########################################################################

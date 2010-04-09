@@ -20,6 +20,7 @@
 # Boston, MA 02110-1301, USA.
 
 import re
+import sys
 from Cheetah.Template import Template
 def parse_tmpl(_tmpl_text, **kwargs):
     return str(Template(_tmpl_text, kwargs))
@@ -165,4 +166,4 @@ class reg:
 
 if __name__ == '__main__':
     regs = map(reg, parse_tmpl(REGS_DATA_TMPL).splitlines())
-    print parse_tmpl(HEADER_TEXT, regs=regs, file=__file__)
+    open(sys.argv[1], 'w').write(parse_tmpl(HEADER_TEXT, regs=regs, file=__file__))
