@@ -3,12 +3,12 @@
 import os
 
 # Memory Map
-misc_base = 0 << 7
-uart_base = 1 << 7
-spi_base = 2 << 7
-i2c_base = 3 << 7
-gpio_base = 4 << 7
-settings_base = 5 << 7
+misc_base = 0
+uart_base = 1
+spi_base = 2
+i2c_base = 3
+gpio_base = 4 * 128
+settings_base = 5
 
 # GPIO offset
 gpio_pins = 0
@@ -32,3 +32,4 @@ set_reg(gpio_base+gpio_ctrl_lo, 0xAAAA)
 set_reg(gpio_base+gpio_ctrl_lo+2, 0xAAAA)
 set_reg(gpio_base+gpio_ctrl_hi, 0xAAAA)
 set_reg(gpio_base+gpio_ctrl_hi+2, 0xAAAA)
+
