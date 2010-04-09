@@ -200,9 +200,10 @@ void vrt::unpack(
 }
 """
 
+import sys
 from Cheetah import Template
 def parse_str(_tmpl_text, **kwargs): return str(Template.Template(_tmpl_text, kwargs))
 
 if __name__ == '__main__':
     from Cheetah import Template
-    print parse_str(TMPL_TEXT, file=__file__)
+    open(sys.argv[1], 'w').write(parse_str(TMPL_TEXT, file=__file__))
