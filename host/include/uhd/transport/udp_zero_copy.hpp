@@ -19,24 +19,22 @@
 #define INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/transport/smart_buffer.hpp>
-#include <boost/asio/buffer.hpp>
-#include <boost/utility.hpp>
+#include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace uhd{ namespace transport{
 
 /*!
  * A zero copy udp transport provides an efficient way to handle data.
- * by avoiding the extra copy when recv() is called on the socket.
- * Rather, the zero copy transport gives the caller a memory reference.
+ * by avoiding the extra copy when recv() or send() is called on the socket.
+ * Rather, the zero copy transport gives the caller memory references.
  * The caller informs the transport when it is finished with the reference.
  *
  * On linux systems, the zero copy transport can use a kernel packet ring.
  * If no platform specific solution is available, make returns a boost asio
- * implementation that wraps the functionality around a standard recv() call.
+ * implementation that wraps the functionality around a standard send/recv calls.
  */
-class UHD_API udp_zero_copy : boost::noncopyable{
+class UHD_API udp_zero_copy : public zero_copy_if{
 public:
     typedef boost::shared_ptr<udp_zero_copy> sptr;
 
@@ -54,22 +52,6 @@ public:
      * \param port a string representing the destination port
      */
     static sptr make(const std::string &addr, const std::string &port);
-
-    /*!
-     * Send a single buffer.
-     * Blocks until the data is sent.
-     * \param buff single asio buffer
-     * \return the number of bytes sent
-     */
-    virtual size_t send(const boost::asio::const_buffer &buff) = 0;
-
-    /*!
-     * Receive a buffer.
-     * Blocks until data is received or a timeout occurs.
-     * The memory is managed by the implementation.
-     * \return a smart buffer (empty on timeout)
-     */
-    virtual smart_buffer::sptr recv(void) = 0;
 };
 
 }} //namespace

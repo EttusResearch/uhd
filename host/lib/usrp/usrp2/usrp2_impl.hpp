@@ -136,7 +136,7 @@ private:
         (_mtu - _hdrs)/sizeof(boost::uint32_t) -
         uhd::transport::vrt::max_header_words32
     ;
-    uhd::transport::smart_buffer::sptr _rx_smart_buff;
+    uhd::transport::managed_recv_buffer::sptr _rx_smart_buff;
     boost::asio::const_buffer _rx_copy_buff;
     size_t _fragment_offset_in_samps;
     void io_init(void);

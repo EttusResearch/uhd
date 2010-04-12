@@ -42,11 +42,13 @@ void usrp2_impl::io_init(void){
 
     //send a small data packet so the usrp2 knows the udp source port
     //and the maximum number of lines (32 bit words) per packet
+    managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
     boost::uint32_t data[2] = {
         htonl(USRP2_INVALID_VRT_HEADER),
         htonl(_max_rx_samples_per_packet)
     };
-    _data_transport->send(asio::buffer(&data, sizeof(data)));
+    memcpy(send_buff->cast<void*>(), data, sizeof(data));
+    send_buff->done(sizeof(data));
 }
 
 #define unrolled_loop(__inst, __len){ \
@@ -127,15 +129,15 @@ static inline void usrp2_items_to_host_items(
  **********************************************************************/
 void usrp2_impl::recv_raw(rx_metadata_t &metadata){
     //do a receive
-    _rx_smart_buff = _data_transport->recv();
+    _rx_smart_buff = _data_transport->get_recv_buff();
 
     //unpack the vrt header
-    size_t num_packet_words32 = asio::buffer_size(_rx_smart_buff->get())/sizeof(boost::uint32_t);
+    size_t num_packet_words32 = _rx_smart_buff->size()/sizeof(boost::uint32_t);
     if (num_packet_words32 == 0){
         _rx_copy_buff = boost::asio::buffer("", 0);
         return; //must exit here after setting the buffer
     }
-    const boost::uint32_t *vrt_hdr = asio::buffer_cast<const boost::uint32_t *>(_rx_smart_buff->get());
+    const boost::uint32_t *vrt_hdr = _rx_smart_buff->cast<const boost::uint32_t *>();
     size_t num_header_words32_out, num_payload_words32_out, packet_count_out;
     try{
         vrt::unpack(
@@ -176,11 +178,12 @@ size_t usrp2_impl::send(
 ){
     tx_metadata_t metadata = metadata_; //rw copy to change later
 
-    boost::uint32_t tx_mem[_mtu/sizeof(boost::uint32_t)];
+    transport::managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
+    boost::uint32_t *tx_mem = send_buff->cast<boost::uint32_t *>();
     size_t num_samps = std::min(
-        asio::buffer_size(buff)/io_type.size,
-        size_t(_max_tx_samples_per_packet)
-    );
+        asio::buffer_size(buff),
+        send_buff->size()
+    )/io_type.size;
 
     //kill the end of burst flag if this is a fragment
     if (asio::buffer_size(buff)/io_type.size < num_samps)
@@ -214,7 +217,7 @@ size_t usrp2_impl::send(
     }
 
     //send and return number of samples
-    _data_transport->send(asio::buffer(tx_mem, num_packet_words32*sizeof(boost::uint32_t)));
+    send_buff->done(num_packet_words32*sizeof(boost::uint32_t));
     return num_samps;
 }
 
