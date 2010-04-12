@@ -18,7 +18,6 @@
 #include "usrp2_impl.hpp"
 #include <uhd/transport/convert_types.hpp>
 #include <boost/format.hpp>
-#include <complex>
 #include <iostream>
 
 using namespace uhd;

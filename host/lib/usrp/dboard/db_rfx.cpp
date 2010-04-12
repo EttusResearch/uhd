@@ -137,7 +137,7 @@ void rfx_xcvr::reload_adf4360_regs(void){
     ;
     BOOST_FOREACH(adf4360_regs_t::addr_t addr, addrs){
         this->get_interface()->write_spi(
-            dboard_interface::UNIT_TYPE_TX,
+            dboard_interface::UNIT_TX,
             spi_config_t::EDGE_RISE,
             _adf4360_regs.get_reg(addr), 24
         );

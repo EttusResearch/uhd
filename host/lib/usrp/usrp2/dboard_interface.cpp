@@ -29,28 +29,29 @@ public:
     usrp2_dboard_interface(usrp2_impl *impl);
     ~usrp2_dboard_interface(void);
 
-    void write_aux_dac(unit_type_t, int, int);
-    int read_aux_adc(unit_type_t, int);
+    void write_aux_dac(unit_t, int, int);
+    int read_aux_adc(unit_t, int);
 
-    void set_atr_reg(gpio_bank_t, atr_reg_t, boost::uint16_t);
-    void set_gpio_ddr(gpio_bank_t, boost::uint16_t);
-    boost::uint16_t read_gpio(gpio_bank_t);
+    void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
+    void set_gpio_ddr(unit_t, boost::uint16_t);
+    boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(int, const byte_vector_t &);
     byte_vector_t read_i2c(int, size_t);
 
-    double get_rx_clock_rate(void);
-    double get_tx_clock_rate(void);
+    double get_clock_rate(unit_t);
+    void set_clock_enabled(unit_t, bool);
+    bool get_clock_enabled(unit_t);
 
     void write_spi(
-        unit_type_t unit,
+        unit_t unit,
         const spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits
     );
 
     boost::uint32_t read_write_spi(
-        unit_type_t unit,
+        unit_t unit,
         const spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits
@@ -89,57 +90,61 @@ usrp2_dboard_interface::~usrp2_dboard_interface(void){
 }
 
 /***********************************************************************
- * Clock Rates
+ * Clocks
  **********************************************************************/
-double usrp2_dboard_interface::get_rx_clock_rate(void){
+double usrp2_dboard_interface::get_clock_rate(unit_t){
     return _impl->get_master_clock_freq();
 }
 
-double usrp2_dboard_interface::get_tx_clock_rate(void){
-    return _impl->get_master_clock_freq();
+void usrp2_dboard_interface::set_clock_enabled(unit_t, bool){
+    //TODO
+}
+
+bool usrp2_dboard_interface::get_clock_enabled(unit_t){
+    return false; //TODO
 }
 
 /***********************************************************************
  * GPIO
  **********************************************************************/
-static int bank_to_shift(dboard_interface::gpio_bank_t bank){
-    switch(bank){
-    case dboard_interface::GPIO_BANK_RX: return 0;
-    case dboard_interface::GPIO_BANK_TX: return 16;
+static int unit_to_shift(dboard_interface::unit_t unit){
+    switch(unit){
+    case dboard_interface::UNIT_RX: return 0;
+    case dboard_interface::UNIT_TX: return 16;
     }
-    throw std::runtime_error("unknown gpio bank type");
+    throw std::runtime_error("unknown unit type");
 }
 
-void usrp2_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
+void usrp2_dboard_interface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
     _ddr_shadow = \
-        (_ddr_shadow & ~(0xffff << bank_to_shift(bank))) |
-        (boost::uint32_t(value) << bank_to_shift(bank));
+        (_ddr_shadow & ~(0xffff << unit_to_shift(unit))) |
+        (boost::uint32_t(value) << unit_to_shift(unit));
     _impl->poke32(FR_GPIO_DDR, _ddr_shadow);
 }
 
-boost::uint16_t usrp2_dboard_interface::read_gpio(gpio_bank_t bank){
-    return boost::uint16_t(_impl->peek32(FR_GPIO_IO) >> bank_to_shift(bank));
+boost::uint16_t usrp2_dboard_interface::read_gpio(unit_t unit){
+    return boost::uint16_t(_impl->peek32(FR_GPIO_IO) >> unit_to_shift(unit));
 }
 
-void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost::uint16_t value){
-    //define mapping of bank to atr regs to register address
+void usrp2_dboard_interface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
+    //define mapping of unit to atr regs to register address
     static const uhd::dict<
-        gpio_bank_t, uhd::dict<atr_reg_t, boost::uint32_t>
-    > bank_to_atr_to_addr = boost::assign::map_list_of
-        (GPIO_BANK_RX, boost::assign::map_list_of
+        unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
+    > unit_to_atr_to_addr = boost::assign::map_list_of
+        (UNIT_RX, boost::assign::map_list_of
             (ATR_REG_IDLE,        FR_ATR_IDLE_RXSIDE)
             (ATR_REG_TX_ONLY,     FR_ATR_INTX_RXSIDE)
             (ATR_REG_RX_ONLY,     FR_ATR_INRX_RXSIDE)
             (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_RXSIDE)
         )
-        (GPIO_BANK_TX, boost::assign::map_list_of
+        (UNIT_TX, boost::assign::map_list_of
             (ATR_REG_IDLE,        FR_ATR_IDLE_TXSIDE)
             (ATR_REG_TX_ONLY,     FR_ATR_INTX_TXSIDE)
             (ATR_REG_RX_ONLY,     FR_ATR_INRX_TXSIDE)
             (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_TXSIDE)
         )
     ;
-    _impl->poke16(bank_to_atr_to_addr[bank][atr], value);
+    _impl->poke16(unit_to_atr_to_addr[unit][atr], value);
 }
 
 /***********************************************************************
@@ -151,30 +156,30 @@ void usrp2_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost:
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static boost::uint8_t unit_to_otw_dev(dboard_interface::unit_type_t unit){
+static boost::uint8_t unit_to_otw_spi_dev(dboard_interface::unit_t unit){
     switch(unit){
-    case dboard_interface::UNIT_TYPE_TX: return SPI_SS_TX_DB;
-    case dboard_interface::UNIT_TYPE_RX: return SPI_SS_RX_DB;
+    case dboard_interface::UNIT_TX: return SPI_SS_TX_DB;
+    case dboard_interface::UNIT_RX: return SPI_SS_RX_DB;
     }
-    throw std::invalid_argument("unknown unit type type");
+    throw std::invalid_argument("unknown unit type");
 }
 
 void usrp2_dboard_interface::write_spi(
-    unit_type_t unit,
+    unit_t unit,
     const spi_config_t &config,
     boost::uint32_t data,
     size_t num_bits
 ){
-    _impl->transact_spi(unit_to_otw_dev(unit), config, data, num_bits, false /*no rb*/);
+    _impl->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
 }
 
 boost::uint32_t usrp2_dboard_interface::read_write_spi(
-    unit_type_t unit,
+    unit_t unit,
     const spi_config_t &config,
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _impl->transact_spi(unit_to_otw_dev(unit), config, data, num_bits, true /*rb*/);
+    return _impl->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
 }
 
 /***********************************************************************
@@ -228,15 +233,15 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, s
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static boost::uint8_t unit_to_otw(dboard_interface::unit_type_t unit){
+static boost::uint8_t unit_to_otw(dboard_interface::unit_t unit){
     switch(unit){
-    case dboard_interface::UNIT_TYPE_TX: return USRP2_DIR_TX;
-    case dboard_interface::UNIT_TYPE_RX: return USRP2_DIR_RX;
+    case dboard_interface::UNIT_TX: return USRP2_DIR_TX;
+    case dboard_interface::UNIT_RX: return USRP2_DIR_RX;
     }
-    throw std::invalid_argument("unknown unit type type");
+    throw std::invalid_argument("unknown unit type");
 }
 
-void usrp2_dboard_interface::write_aux_dac(unit_type_t unit, int which, int value){
+void usrp2_dboard_interface::write_aux_dac(unit_t unit, int which, int value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
@@ -249,7 +254,7 @@ void usrp2_dboard_interface::write_aux_dac(unit_type_t unit, int which, int valu
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
 }
 
-int usrp2_dboard_interface::read_aux_adc(unit_type_t unit, int which){
+int usrp2_dboard_interface::read_aux_adc(unit_t unit, int which){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);

@@ -56,7 +56,7 @@ struct UHD_API spi_config_t{
  * The daughter board dboard_interface to be subclassed.
  * A dboard instance dboard_interfaces with the mboard though this api. 
  * This dboard_interface provides i2c, spi, gpio, atr, aux dac/adc access.
- * Each mboard should have a specially tailored dboard dboard_interface.
+ * Each mboard should have a specially tailored interface for its dboard.
  */
 class UHD_API dboard_interface{
 public:
@@ -64,15 +64,9 @@ public:
     typedef std::vector<boost::uint8_t> byte_vector_t;
 
     //tells the host which unit to use
-    enum unit_type_t{
-        UNIT_TYPE_RX = 'r',
-        UNIT_TYPE_TX = 't'
-    };
-
-    //tell the host which gpio bank
-    enum gpio_bank_t{
-        GPIO_BANK_RX = 'r',
-        GPIO_BANK_TX = 't'
+    enum unit_t{
+        UNIT_RX = 'r',
+        UNIT_TX = 't'
     };
 
     //possible atr registers
@@ -85,54 +79,58 @@ public:
 
     /*!
      * Write to an aux dac.
+     *
      * \param unit which unit rx or tx
      * \param which_dac the dac index 0, 1, 2, 3...
      * \param value the value to write
      */
-    virtual void write_aux_dac(unit_type_t unit, int which_dac, int value) = 0;
+    virtual void write_aux_dac(unit_t unit, int which_dac, int value) = 0;
 
     /*!
      * Read from an aux adc.
+     *
      * \param unit which unit rx or tx
      * \param which_adc the adc index 0, 1, 2, 3...
      * \return the value that was read
      */
-    virtual int read_aux_adc(unit_type_t unit, int which_adc) = 0;
+    virtual int read_aux_adc(unit_t unit, int which_adc) = 0;
 
     /*!
      * Set a daughterboard ATR register.
      *
-     * \param bank   GPIO_TX_BANK or GPIO_RX_BANK
-     * \param reg    which ATR register to set
-     * \param value  16-bits, 0=FPGA output low, 1=FPGA output high
+     * \param unit which unit rx or tx
+     * \param reg which ATR register to set
+     * \param value 16-bits, 0=FPGA output low, 1=FPGA output high
      */
-    virtual void set_atr_reg(gpio_bank_t bank, atr_reg_t reg, boost::uint16_t value) = 0;
+    virtual void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint16_t value) = 0;
 
     /*!
      * Set daughterboard GPIO data direction register.
      *
-     * \param bank      GPIO_TX_BANK or GPIO_RX_BANK
-     * \param value     16-bits, 0=FPGA input, 1=FPGA output
+     * \param unit which unit rx or tx
+     * \param value 16-bits, 0=FPGA input, 1=FPGA output
      */
-    virtual void set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value) = 0;
+    virtual void set_gpio_ddr(unit_t unit, boost::uint16_t value) = 0;
 
     /*!
-     * Read daughterboard GPIO pin values
+     * Read daughterboard GPIO pin values.
      *
-     * \param bank GPIO_TX_BANK or GPIO_RX_BANK
-     * \return the value of the gpio bank
+     * \param unit which unit rx or tx
+     * \return the value of the gpio unit
      */
-    virtual boost::uint16_t read_gpio(gpio_bank_t bank) = 0;
+    virtual boost::uint16_t read_gpio(unit_t unit) = 0;
 
     /*!
-     * \brief Write to I2C peripheral
+     * Write to an I2C peripheral.
+     *
      * \param i2c_addr I2C bus address (7-bits)
      * \param buf the data to write
      */
     virtual void write_i2c(int i2c_addr, const byte_vector_t &buf) = 0;
 
     /*!
-     * \brief Read from I2C peripheral
+     * Read from an I2C peripheral.
+     *
      * \param i2c_addr I2C bus address (7-bits)
      * \param num_bytes number of bytes to read
      * \return the data read if successful, else a zero length string.
@@ -140,7 +138,7 @@ public:
     virtual byte_vector_t read_i2c(int i2c_addr, size_t num_bytes) = 0;
 
     /*!
-     * \brief Write data to SPI bus peripheral.
+     * Write data to SPI bus peripheral.
      *
      * \param unit which unit, rx or tx
      * \param config configuration settings
@@ -148,15 +146,14 @@ public:
      * \param num_bits the number of bits in data
      */
     virtual void write_spi(
-        unit_type_t unit,
+        unit_t unit,
         const spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits
     ) = 0;
 
     /*!
-     * \brief Read and write data to SPI bus peripheral.
-     * The data read back will be the same length as the input buffer.
+     * Read and write data to SPI bus peripheral.
      *
      * \param unit which unit, rx or tx
      * \param config configuration settings
@@ -165,23 +162,35 @@ public:
      * \return the data that was read
      */
     virtual boost::uint32_t read_write_spi(
-        unit_type_t unit,
+        unit_t unit,
         const spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits
     ) = 0;
 
     /*!
-     * \brief Get the rate of the rx dboard clock.
+     * Get the rate of a dboard clock.
+     *
+     * \param unit which unit rx or tx
      * \return the clock rate in Hz
      */
-    virtual double get_rx_clock_rate(void) = 0;
+    virtual double get_clock_rate(unit_t unit) = 0;
 
     /*!
-     * \brief Get the rate of the tx dboard clock.
-     * \return the clock rate in Hz
+     * Enable or disable a dboard clock.
+     *
+     * \param unit which unit rx or tx
+     * \param enb true for enabled
      */
-    virtual double get_tx_clock_rate(void) = 0;
+    virtual void set_clock_enabled(unit_t unit, bool enb) = 0;
+
+    /*!
+     * Get the enabled status of a dboard block.
+     *
+     * \param unit which unit rx or tx
+     * \return true for enabled
+     */
+    virtual bool get_clock_enabled(unit_t unit) = 0;
 };
 
 }} //namespace
