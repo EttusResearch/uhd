@@ -15,6 +15,33 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
+########################################################################
+# Setup Python
+########################################################################
+INCLUDE(FindPythonInterp)
+
+MACRO(PYTHON_CHECK_MODULE module have)
+    MESSAGE(STATUS "Checking for python module ${module}")
+    EXECUTE_PROCESS(
+        COMMAND ${PYTHON_EXECUTABLE} -c "import ${module}"
+        RESULT_VARIABLE ${have}
+    )
+    IF(${have} EQUAL 0)
+        MESSAGE(STATUS "Checking for python module ${module} - found")
+        SET(${have} TRUE)
+    ELSE(${have} EQUAL 0)
+        MESSAGE(STATUS "Checking for python module ${module} - not found")
+        SET(${have} FALSE)
+    ENDIF(${have} EQUAL 0)
+ENDMACRO(PYTHON_CHECK_MODULE)
+
+PYTHON_CHECK_MODULE("Cheetah" HAVE_PYTHON_MODULE_CHEETAH)
+
+IF(NOT HAVE_PYTHON_MODULE_CHEETAH)
+    MESSAGE(FATAL_ERROR "Error: Cheetah Templates needed for pre-build generation.")
+ENDIF(NOT HAVE_PYTHON_MODULE_CHEETAH)
+
 ########################################################################
 # Create a list of libuhd sources
 ########################################################################
@@ -27,10 +54,9 @@ SET(libuhd_sources
     transport/convert_types.cpp
     transport/if_addrs.cpp
     transport/udp_simple.cpp
-    transport/vrt.cpp
     usrp/dboard/db_basic_and_lf.cpp
+    usrp/dboard/db_rfx.cpp
     usrp/dboard_base.cpp
-    usrp/dboard_interface.cpp
     usrp/simple_usrp.cpp
     usrp/dboard_manager.cpp
     usrp/tune_helper.cpp
@@ -40,6 +66,30 @@ SET(libuhd_sources
     usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
     usrp/usrp2/usrp2_impl.cpp
+)
+
+########################################################################
+# Generate Files
+########################################################################
+MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
+    ADD_CUSTOM_COMMAND(
+        OUTPUT ${outfile} DEPENDS ${pyfile}
+        COMMAND ${PYTHON_EXECUTABLE} ${pyfile} ${outfile}
+        COMMENT "Calling ${pyfile} to generate ${outfile}"
+    )
+    LIST(APPEND libuhd_sources ${outfile})
+ENDMACRO(UHD_PYTHON_GEN_SOURCE_FILE)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/transport/gen_vrt.py
+    ${CMAKE_CURRENT_BINARY_DIR}/transport/vrt.cpp
+)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_adf4360_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/adf4360_regs.hpp
 )
 
 ########################################################################

@@ -253,29 +253,18 @@ void handle_udp_ctrl_packet(
      * SPI
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
-            uint8_t num_bytes = ctrl_data_in->data.spi_args.bytes;
-
-            //load the data from the array of bytes
-            uint32_t data = 0x0;
-            for (size_t i = 0; i < num_bytes; i++){
-                data = (data << 8) | ctrl_data_in->data.spi_args.data[i];
-            }
-
             //transact
             uint32_t result = spi_transact(
                 (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
-                ctrl_data_in->data.spi_args.dev,
-                data, num_bytes*8, //length in bits
-                (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_RISE : SPIF_PUSH_FALL |
-                (ctrl_data_in->data.spi_args.edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
+                ctrl_data_in->data.spi_args.dev,      //which device
+                ctrl_data_in->data.spi_args.data,     //32 bit data
+                ctrl_data_in->data.spi_args.num_bits, //length in bits
+                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE |
+                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
             );
 
-            //load the result into the array of bytes
-            for (size_t i = 0; i < num_bytes; i++){
-                uint8_t byte_shift = num_bytes - i - 1;
-                ctrl_data_out.data.spi_args.data[i] = (result >> (byte_shift*8)) & 0xff;
-            }
-            ctrl_data_out.data.spi_args.bytes = num_bytes;
+            //load output
+            ctrl_data_out.data.spi_args.data = result;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
         }
         break;

@@ -54,7 +54,8 @@ void vrt::pack(
     size_t &num_header_words32,    //output
     size_t num_payload_words32,    //input
     size_t &num_packet_words32,    //output
-    size_t packet_count            //input
+    size_t packet_count,           //input
+    double tick_rate               //input
 ){
     boost::uint32_t vrt_hdr_flags;
 
@@ -91,7 +92,7 @@ void vrt::pack(
         #if $pred & $tsf_p
             header_buff[$num_header_words] = htonl(0);
             #set $num_header_words += 1
-            header_buff[$num_header_words] = htonl(metadata.time_spec.ticks);
+            header_buff[$num_header_words] = htonl(metadata.time_spec.get_ticks(tick_rate));
             #set $num_header_words += 1
             #set $flags |= (0x1 << 20);
         #end if
@@ -127,7 +128,8 @@ void vrt::unpack(
     size_t &num_header_words32,         //output
     size_t &num_payload_words32,        //output
     size_t num_packet_words32,          //input
-    size_t &packet_count                //output
+    size_t &packet_count,               //output
+    double tick_rate                    //input
 ){
     //clear the metadata
     metadata = rx_metadata_t();
@@ -180,7 +182,7 @@ void vrt::unpack(
                 #set $set_has_time_spec = True
             #end if
             #set $num_header_words += 1
-            metadata.time_spec.ticks = ntohl(header_buff[$num_header_words]);
+            metadata.time_spec.set_ticks(ntohl(header_buff[$num_header_words]), tick_rate);
             #set $num_header_words += 1
         #end if
         ########## Trailer ##########
@@ -198,9 +200,15 @@ void vrt::unpack(
 }
 """
 
-from Cheetah import Template
-def parse_str(_tmpl_text, **kwargs): return str(Template.Template(_tmpl_text, kwargs))
+import os
+import sys
+
+from Cheetah.Template import Template
+def parse_tmpl(_tmpl_text, **kwargs):
+    return str(Template(_tmpl_text, kwargs))
+def safe_makedirs(path):
+    not os.path.isdir(path) and os.makedirs(path)
 
 if __name__ == '__main__':
-    from Cheetah import Template
-    print parse_str(TMPL_TEXT, file=__file__)
+    safe_makedirs(os.path.dirname(sys.argv[1]))
+    open(sys.argv[1], 'w').write(parse_tmpl(TMPL_TEXT, file=__file__))

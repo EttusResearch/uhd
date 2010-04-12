@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_METADATA_HPP
 
 #include <uhd/config.hpp>
+#include <boost/cstdint.hpp>
 #include <uhd/types/time_spec.hpp>
 
 namespace uhd{

@@ -75,7 +75,7 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
     return dboard_base::sptr(new basic_tx(args, 32e6));
 }
 
-UHD_STATIC_BLOCK(reg_dboards){
+UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
     dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX");
     dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
     dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX");
@@ -138,10 +138,6 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
     case SUBDEV_PROP_QUADRATURE:
         val = (get_subdev_name() == "ab"); //only quadrature in ab mode
         return;
@@ -174,9 +170,6 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ANTENNA:
         ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; // it wont do you much good, but you can set it
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
@@ -240,10 +233,6 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
     case SUBDEV_PROP_QUADRATURE:
         val = true;
         return;
@@ -276,9 +265,6 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ANTENNA:
         ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; // it wont do you much good, but you can set it
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it

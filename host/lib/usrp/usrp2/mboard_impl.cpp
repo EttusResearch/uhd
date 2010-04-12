@@ -33,10 +33,6 @@ void usrp2_impl::mboard_init(void){
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
-
-    //set the time on the usrp2 as close as possible to the system utc time
-    boost::posix_time::ptime now(boost::posix_time::microsec_clock::universal_time());
-    set_time_spec(time_spec_t(now, get_master_clock_freq()), true);
 }
 
 void usrp2_impl::init_clock_config(void){
@@ -75,7 +71,7 @@ void usrp2_impl::update_clock_config(void){
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set ticks and seconds
     this->poke32(FR_TIME64_SECS, time_spec.secs);
-    this->poke32(FR_TIME64_TICKS, time_spec.ticks);
+    this->poke32(FR_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
 
     //set the register to latch it all in
     boost::uint32_t imm_flags = (now)? FRF_TIME64_LATCH_NOW : FRF_TIME64_LATCH_NEXT_PPS;
@@ -88,7 +84,7 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
     out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
     out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
-    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.ticks);
+    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
 
     //set these to defaults, then change in the switch statement
     out_data.data.stream_cmd.continuous = 0;
