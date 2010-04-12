@@ -49,6 +49,13 @@ LIST(APPEND libuhd_sources
 )
 
 ########################################################################
+# Conditionally add the usrp1e sources
+########################################################################
+LIST(APPEND libuhd_sources
+    usrp/usrp1e/usrp1e_none.cpp
+)
+
+########################################################################
 # Setup defines for module loading
 ########################################################################
 MESSAGE(STATUS "Configuring module loading...")
