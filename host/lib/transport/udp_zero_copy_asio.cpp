@@ -110,9 +110,6 @@ private:
 
     size_t get_recv_buff_size(void);
     void set_recv_buff_size(size_t);
-
-    static const size_t _mtu = 1500; //FIXME we have no idea
-    static const size_t _hdrs = (2 + 14 + 20 + 8); //size of headers (pad, eth, ip, udp)
 };
 
 udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port){
@@ -146,8 +143,6 @@ udp_zero_copy_impl::~udp_zero_copy_impl(void){
 }
 
 managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
-    boost::uint32_t *buff_mem = new boost::uint32_t[_mtu/sizeof(boost::uint32_t)];
-
     //implement timeout through polling and sleeping
     size_t available = 0;
     boost::asio::deadline_timer timer(_socket->get_io_service());
@@ -157,8 +152,9 @@ managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
     }
 
     //receive only if data is available
+    boost::uint32_t *buff_mem = new boost::uint32_t[available/sizeof(boost::uint32_t)];
     if (available){
-        available = _socket->receive(boost::asio::buffer(buff_mem, _mtu));
+        available = _socket->receive(boost::asio::buffer(buff_mem, available));
     }
 
     //create a new managed buffer to house the data
@@ -168,9 +164,9 @@ managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
 }
 
 managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
-    boost::uint32_t *buff_mem = new boost::uint32_t[_mtu/sizeof(boost::uint32_t)];
+    boost::uint32_t *buff_mem = new boost::uint32_t[2000/sizeof(boost::uint32_t)];
     return managed_send_buffer::sptr(
-        new managed_send_buffer_impl(boost::asio::buffer(buff_mem, _mtu-_hdrs), _socket)
+        new managed_send_buffer_impl(boost::asio::buffer(buff_mem, 2000), _socket)
     );
 }
 

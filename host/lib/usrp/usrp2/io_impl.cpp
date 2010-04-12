@@ -104,10 +104,11 @@ size_t usrp2_impl::send(
 
     transport::managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
     boost::uint32_t *tx_mem = send_buff->cast<boost::uint32_t *>();
-    size_t num_samps = std::min(
-        asio::buffer_size(buff),
-        send_buff->size()-vrt::max_header_words32*sizeof(boost::uint32_t)
-    )/io_type.size;
+    size_t num_samps = std::min(std::min(
+        asio::buffer_size(buff)/io_type.size,
+        size_t(_max_tx_samples_per_packet)),
+        send_buff->size()/io_type.size
+    );
 
     //kill the end of burst flag if this is a fragment
     if (asio::buffer_size(buff)/io_type.size < num_samps)
