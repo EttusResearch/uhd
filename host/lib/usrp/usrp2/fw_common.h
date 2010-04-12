@@ -129,7 +129,8 @@ typedef struct{
         struct {
             _SINS_ uint8_t now; //stream now?
             _SINS_ uint8_t continuous; //auto-reload commmands?
-            _SINS_ uint8_t _pad[2];
+            _SINS_ uint8_t chain;
+            _SINS_ uint8_t _pad[1];
             _SINS_ uint32_t secs;
             _SINS_ uint32_t ticks;
             _SINS_ uint32_t num_samps;
@@ -137,6 +138,7 @@ typedef struct{
         struct {
             _SINS_ uint32_t addr;
             _SINS_ uint32_t data;
+            _SINS_ uint8_t num_bytes; //1, 2, 4
         } poke_args;
     } data;
 } usrp2_ctrl_data_t;

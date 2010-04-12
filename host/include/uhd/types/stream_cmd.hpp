@@ -31,24 +31,32 @@ namespace uhd{
      * Granular control over what the device streams to the host can be
      * achieved through submission of multiple (carefully-crafted) commands.
      *
-     * The stream_now parameter controls when the stream begins.
+     * The mode parameter controls how streaming is issued to the device:
+     *   - "Start continuous" tells the device to stream samples indefinitely.
+     *   - "Stop continuous" tells the device to end continuous streaming.
+     *   - "Num samps and done" tells the device to stream num samps and
+     *      to not expect a future stream command for contiguous samples.
+     *   - "Num samps and more" tells the device to stream num samps and
+     *      to expect a future stream command for contiguous samples.
+     *
+     * The stream now parameter controls when the stream begins.
      * When true, the device will begin streaming ASAP. When false,
      * the device will begin streaming at a time specified by time_spec.
-     *
-     * The continuous parameter controls the number of samples received.
-     * When true, the device continues streaming indefinitely. When false,
-     * the device will stream the number of samples specified by num_samps.
-     *
-     * Standard usage case:
-     * To start continuous streaming, set stream_now to true and continuous to true.
-     * To end continuous streaming, set stream_now to true and continuous to false.
      */
     struct UHD_API stream_cmd_t{
+
+        enum stream_mode_t {
+            STREAM_MODE_START_CONTINUOUS   = 'a',
+            STREAM_MODE_STOP_CONTINUOUS    = 'o',
+            STREAM_MODE_NUM_SAMPS_AND_DONE = 'd',
+            STREAM_MODE_NUM_SAMPS_AND_MORE = 'm'
+        } stream_mode;
+        size_t num_samps;
+
         bool stream_now;
         time_spec_t time_spec;
-        bool continuous;
-        size_t num_samps;
-        stream_cmd_t(void);
+
+        stream_cmd_t(const stream_mode_t &stream_mode);
     };
 
 } //namespace uhd

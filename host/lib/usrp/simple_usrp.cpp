@@ -22,23 +22,13 @@
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
+#include <uhd/usrp/dsp_props.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-/***********************************************************************
- * Helper Functions
- **********************************************************************/
-static std::vector<double> get_xx_rates(wax::obj decerps, wax::obj rate){
-    std::vector<double> rates;
-    BOOST_FOREACH(size_t decerp, decerps.as<std::vector<size_t> >()){
-        rates.push_back(rate.as<double>()/decerp);
-    }
-    return rates;
-}
 
 /***********************************************************************
  * Simple Device Implementation
@@ -48,8 +38,8 @@ public:
     simple_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr);
         _mboard = (*_dev)[DEVICE_PROP_MBOARD];
-        _rx_ddc = _mboard[named_prop_t(MBOARD_PROP_RX_DSP, "ddc0")];
-        _tx_duc = _mboard[named_prop_t(MBOARD_PROP_TX_DSP, "duc0")];
+        _rx_dsp = _mboard[MBOARD_PROP_RX_DSP];
+        _tx_dsp = _mboard[MBOARD_PROP_TX_DSP];
 
         //extract rx subdevice
         wax::obj rx_dboard = _mboard[MBOARD_PROP_RX_DBOARD];
@@ -86,7 +76,7 @@ public:
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
-        _rx_ddc[std::string("stream_cmd")] = stream_cmd;
+        _mboard[MBOARD_PROP_STREAM_CMD] = stream_cmd;
     }
 
     void set_clock_config(const clock_config_t &clock_config){
@@ -101,21 +91,15 @@ public:
      * RX methods
      ******************************************************************/
     void set_rx_rate(double rate){
-        double samp_rate = _rx_ddc[std::string("if_rate")].as<double>();
-        assert_has(get_rx_rates(), rate, "simple device rx rate");
-        _rx_ddc[std::string("decim")] = size_t(samp_rate/rate);
+        _rx_dsp[DSP_PROP_HOST_RATE] = rate;
     }
 
     double get_rx_rate(void){
-        return _rx_ddc[std::string("bb_rate")].as<double>();
-    }
-
-    std::vector<double> get_rx_rates(void){
-        return get_xx_rates(_rx_ddc[std::string("decims")], _rx_ddc[std::string("if_rate")]);
+        return _rx_dsp[DSP_PROP_HOST_RATE].as<double>();
     }
 
     tune_result_t set_rx_freq(double target_freq){
-        return tune_rx_subdev_and_ddc(_rx_subdev, _rx_ddc, target_freq);
+        return tune_rx_subdev_and_ddc(_rx_subdev, _rx_dsp, target_freq);
     }
 
     freq_range_t get_rx_freq_range(void){
@@ -150,21 +134,15 @@ public:
      * TX methods
      ******************************************************************/
     void set_tx_rate(double rate){
-        double samp_rate = _tx_duc[std::string("if_rate")].as<double>();
-        assert_has(get_tx_rates(), rate, "simple device tx rate");
-        _tx_duc[std::string("interp")] = size_t(samp_rate/rate);
+        _tx_dsp[DSP_PROP_HOST_RATE] = rate;
     }
 
     double get_tx_rate(void){
-        return _tx_duc[std::string("bb_rate")].as<double>();
-    }
-
-    std::vector<double> get_tx_rates(void){
-        return get_xx_rates(_tx_duc[std::string("interps")], _tx_duc[std::string("if_rate")]);
+        return _tx_dsp[DSP_PROP_HOST_RATE].as<double>();
     }
 
     tune_result_t set_tx_freq(double target_freq){
-        return tune_tx_subdev_and_duc(_tx_subdev, _tx_duc, target_freq);
+        return tune_tx_subdev_and_duc(_tx_subdev, _tx_dsp, target_freq);
     }
 
     freq_range_t get_tx_freq_range(void){
@@ -198,8 +176,8 @@ public:
 private:
     device::sptr _dev;
     wax::obj _mboard;
-    wax::obj _rx_ddc;
-    wax::obj _tx_duc;
+    wax::obj _rx_dsp;
+    wax::obj _tx_dsp;
     wax::obj _rx_subdev;
     wax::obj _tx_subdev;
 };

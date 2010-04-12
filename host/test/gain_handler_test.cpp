@@ -70,7 +70,7 @@ private:
             return;
 
         case PROP_GAIN_NAMES:
-            val = _gain_values.get_keys();
+            val = _gain_values.keys();
             return;
         }
     }

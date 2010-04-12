@@ -42,7 +42,8 @@ namespace uhd{ namespace usrp{
         MBOARD_PROP_TX_DBOARD_NAMES = 'V', //ro, prop_names_t
         MBOARD_PROP_CLOCK_CONFIG    = 'C', //rw, clock_config_t
         MBOARD_PROP_TIME_NOW        = 't', //wo, time_spec_t
-        MBOARD_PROP_TIME_NEXT_PPS   = 'T'  //wo, time_spec_t
+        MBOARD_PROP_TIME_NEXT_PPS   = 'T', //wo, time_spec_t
+        MBOARD_PROP_STREAM_CMD      = 's'  //wo, stream_cmd_t
     };
 
 }} //namespace

@@ -39,7 +39,7 @@ namespace uhd{ namespace usrp{
         SUBDEV_PROP_QUADRATURE        = 'q', //ro, bool
         SUBDEV_PROP_IQ_SWAPPED        = 'i', //ro, bool
         SUBDEV_PROP_SPECTRUM_INVERTED = 's', //ro, bool
-        SUBDEV_PROP_LO_INTERFERES     = 'l'  //ro, bool
+        SUBDEV_PROP_USE_LO_OFFSET     = 'l'  //ro, bool
         //SUBDEV_PROP_RSSI,              //ro, float //----> not on all boards, use named prop
         //SUBDEV_PROP_BANDWIDTH          //rw, double //----> not on all boards, use named prop
     };

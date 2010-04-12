@@ -59,7 +59,6 @@ public:
      ******************************************************************/
     virtual void set_rx_rate(double rate) = 0;
     virtual double get_rx_rate(void) = 0;
-    virtual std::vector<double> get_rx_rates(void) = 0;
 
     virtual tune_result_t set_rx_freq(double freq) = 0;
     virtual freq_range_t get_rx_freq_range(void) = 0;
@@ -77,7 +76,6 @@ public:
      ******************************************************************/
     virtual void set_tx_rate(double rate) = 0;
     virtual double get_tx_rate(void) = 0;
-    virtual std::vector<double> get_tx_rates(void) = 0;
 
     virtual tune_result_t set_tx_freq(double freq) = 0;
     virtual freq_range_t get_tx_freq_range(void) = 0;
