@@ -47,32 +47,16 @@ public:
         const spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits
-    ){
-        transact_spi(unit, config, data, num_bits, false /*no rb*/);
-    }
-
-    boost::uint32_t read_spi(
-        unit_type_t unit,
-        const spi_config_t &config,
-        size_t num_bits
-    ){
-        return transact_spi(unit, config, 0, num_bits, true /*rb*/);
-    }
+    );
 
     boost::uint32_t read_write_spi(
         unit_type_t unit,
         const spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits
-    ){
-        return transact_spi(unit, config, data, num_bits, true /*rb*/);
-    }
-
-private:
-    boost::uint32_t transact_spi(
-        unit_type_t, const spi_config_t &, boost::uint32_t, size_t, bool
     );
 
+private:
     usrp2_impl *_impl;
     boost::uint32_t _ddr_shadow;
 };
@@ -175,42 +159,22 @@ static boost::uint8_t unit_to_otw_dev(dboard_interface::unit_type_t unit){
     throw std::invalid_argument("unknown unit type type");
 }
 
-/*!
- * Static function to convert a spi edge enum
- * to an over-the-wire value for the usrp2 control.
- * \param edge the dboard interface spi edge enum
- * \return an over the wire representation
- */
-static boost::uint8_t spi_edge_to_otw(dboard_interface::spi_config_t::edge_t edge){
-    switch(edge){
-    case dboard_interface::spi_config_t::EDGE_RISE: return USRP2_CLK_EDGE_RISE;
-    case dboard_interface::spi_config_t::EDGE_FALL: return USRP2_CLK_EDGE_FALL;
-    }
-    throw std::invalid_argument("unknown spi edge type");
-}
-
-boost::uint32_t usrp2_dboard_interface::transact_spi(
+void usrp2_dboard_interface::write_spi(
     unit_type_t unit,
     const spi_config_t &config,
     boost::uint32_t data,
-    size_t num_bits,
-    bool readback
+    size_t num_bits
 ){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
-    out_data.data.spi_args.dev = unit_to_otw_dev(unit);
-    out_data.data.spi_args.miso_edge = spi_edge_to_otw(config.miso_edge);
-    out_data.data.spi_args.mosi_edge = spi_edge_to_otw(config.mosi_edge);
-    out_data.data.spi_args.readback = (readback)? 1 : 0;
-    out_data.data.spi_args.num_bits = num_bits;
-    out_data.data.spi_args.data = htonl(data);
+    _impl->transact_spi(unit_to_otw_dev(unit), config, data, num_bits, false /*no rb*/);
+}
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
-
-    return ntohl(out_data.data.spi_args.data);
+boost::uint32_t usrp2_dboard_interface::read_write_spi(
+    unit_type_t unit,
+    const spi_config_t &config,
+    boost::uint32_t data,
+    size_t num_bits
+){
+    return _impl->transact_spi(unit_to_otw_dev(unit), config, data, num_bits, true /*rb*/);
 }
 
 /***********************************************************************

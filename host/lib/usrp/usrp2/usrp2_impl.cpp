@@ -15,15 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "usrp2_impl.hpp"
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
-#include "usrp2_impl.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -215,6 +216,35 @@ void usrp2_impl::poke16(boost::uint32_t addr, boost::uint16_t data){
 
 boost::uint16_t usrp2_impl::peek16(boost::uint32_t addr){
     return impl_peek<boost::uint16_t>(this, addr);
+}
+
+boost::uint32_t usrp2_impl::transact_spi(
+    int which_slave,
+    const spi_config_t &config,
+    boost::uint32_t data,
+    size_t num_bits,
+    bool readback
+){
+    static const uhd::dict<spi_config_t::edge_t, int> spi_edge_to_otw = boost::assign::map_list_of
+        (spi_config_t::EDGE_RISE, USRP2_CLK_EDGE_RISE)
+        (spi_config_t::EDGE_FALL, USRP2_CLK_EDGE_FALL)
+    ;
+
+    //setup the out data
+    usrp2_ctrl_data_t out_data;
+    out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
+    out_data.data.spi_args.dev = which_slave;
+    out_data.data.spi_args.miso_edge = spi_edge_to_otw[config.miso_edge];
+    out_data.data.spi_args.mosi_edge = spi_edge_to_otw[config.mosi_edge];
+    out_data.data.spi_args.readback = (readback)? 1 : 0;
+    out_data.data.spi_args.num_bits = num_bits;
+    out_data.data.spi_args.data = htonl(data);
+
+    //send and recv
+    usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
+
+    return ntohl(out_data.data.spi_args.data);
 }
 
 /***********************************************************************

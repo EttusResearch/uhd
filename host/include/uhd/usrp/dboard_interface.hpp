@@ -25,6 +25,33 @@
 
 namespace uhd{ namespace usrp{
 
+//spi configuration struct
+struct UHD_API spi_config_t{
+    /*!
+     * The edge type specifies when data is valid
+     * relative to the edge of the serial clock.
+     */
+    enum edge_t{
+        EDGE_RISE = 'r',
+        EDGE_FALL = 'f'
+    };
+
+    //! on what edge is the mosi data valid?
+    edge_t mosi_edge;
+
+    //! on what edge is the miso data valid?
+    edge_t miso_edge;
+
+    /*!
+     * Create a new spi config.
+     * \param edge the default edge for mosi and miso
+     */
+    spi_config_t(edge_t edge = EDGE_RISE){
+        mosi_edge = edge;
+        miso_edge = edge;
+    }
+};
+
 /*!
  * The daughter board dboard_interface to be subclassed.
  * A dboard instance dboard_interfaces with the mboard though this api. 
@@ -40,33 +67,6 @@ public:
     enum unit_type_t{
         UNIT_TYPE_RX = 'r',
         UNIT_TYPE_TX = 't'
-    };
-
-    //spi configuration struct
-    struct UHD_API spi_config_t{
-        /*!
-         * The edge type specifies when data is valid
-         * relative to the edge of the serial clock.
-         */
-        enum edge_t{
-            EDGE_RISE = 'r',
-            EDGE_FALL = 'f'
-        };
-
-        //! on what edge is the mosi data valid?
-        edge_t mosi_edge;
-
-        //! on what edge is the miso data valid?
-        edge_t miso_edge;
-
-        /*!
-         * Create a new spi config.
-         * \param edge the default edge for mosi and miso
-         */
-        spi_config_t(edge_t edge = EDGE_RISE){
-            mosi_edge = edge;
-            miso_edge = edge;
-        }
     };
 
     //tell the host which gpio bank
@@ -151,20 +151,6 @@ public:
         unit_type_t unit,
         const spi_config_t &config,
         boost::uint32_t data,
-        size_t num_bits
-    ) = 0;
-
-    /*!
-     * \brief Read data to SPI bus peripheral.
-     *
-     * \param unit which unit, rx or tx
-     * \param config configuration settings
-     * \param num_bits the number of bits
-     * \return the data that was read
-     */
-    virtual boost::uint32_t read_spi(
-        unit_type_t unit,
-        const spi_config_t &config,
         size_t num_bits
     ) = 0;
 

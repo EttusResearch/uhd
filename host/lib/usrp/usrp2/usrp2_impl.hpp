@@ -110,6 +110,15 @@ public:
     void poke16(boost::uint32_t addr, boost::uint16_t data);
     boost::uint16_t peek16(boost::uint32_t addr);
 
+    //spi read and write
+    boost::uint32_t transact_spi(
+        int which_slave,
+        const uhd::usrp::spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits,
+        bool readback
+    );
+
     //misc access methods
     double get_master_clock_freq(void);
 
