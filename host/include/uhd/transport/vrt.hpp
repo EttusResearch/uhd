@@ -26,7 +26,7 @@ namespace uhd{ namespace transport{
 
 namespace vrt{
 
-    static const size_t max_header_words32 = 7;
+    static const size_t max_header_words32 = 5; //hdr+sid+tsi+tsf (no class id supported)
 
     /*!
      * Pack a vrt header from metadata.

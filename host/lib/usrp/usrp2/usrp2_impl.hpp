@@ -20,6 +20,7 @@
 
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/types/otw_type.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <boost/asio.hpp>
@@ -139,6 +140,7 @@ private:
     uhd::transport::managed_recv_buffer::sptr _rx_smart_buff;
     boost::asio::const_buffer _rx_copy_buff;
     size_t _fragment_offset_in_samps;
+    uhd::otw_type_t _otw_type;
     void io_init(void);
 
     //udp transports for control and data

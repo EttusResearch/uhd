@@ -17,6 +17,7 @@
 
 
 INSTALL(FILES
+    convert_types.hpp
     if_addrs.hpp
     udp_simple.hpp
     udp_zero_copy.hpp

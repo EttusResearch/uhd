@@ -24,6 +24,7 @@ SET(libuhd_sources
     load_modules.cpp
     types.cpp
     wax.cpp
+    transport/convert_types.cpp
     transport/if_addrs.cpp
     transport/udp_simple.cpp
     transport/vrt.cpp
