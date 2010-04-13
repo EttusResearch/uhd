@@ -33,6 +33,12 @@ void usrp2_impl::mboard_init(void){
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
+
+    _clock_control = clock_control::make_ad9510(this);
+}
+
+clock_control::sptr usrp2_impl::get_clock_control(void){
+    return _clock_control;
 }
 
 void usrp2_impl::init_clock_config(void){

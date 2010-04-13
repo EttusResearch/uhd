@@ -18,6 +18,7 @@
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
+#include "clock_control.hpp"
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
@@ -110,6 +111,9 @@ public:
     void poke16(boost::uint32_t addr, boost::uint16_t data);
     boost::uint16_t peek16(boost::uint32_t addr);
 
+    //clock control
+    clock_control::sptr get_clock_control(void);
+
     //spi read and write
     boost::uint32_t transact_spi(
         int which_slave,
@@ -130,6 +134,7 @@ private:
     //device properties interface
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
+    clock_control::sptr _clock_control;
 
     //the raw io interface (samples are in the usrp2 native format)
     void recv_raw(uhd::rx_metadata_t &);

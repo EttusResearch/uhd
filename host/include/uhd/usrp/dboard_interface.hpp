@@ -183,14 +183,6 @@ public:
      * \param enb true for enabled
      */
     virtual void set_clock_enabled(unit_t unit, bool enb) = 0;
-
-    /*!
-     * Get the enabled status of a dboard block.
-     *
-     * \param unit which unit rx or tx
-     * \return true for enabled
-     */
-    virtual bool get_clock_enabled(unit_t unit) = 0;
 };
 
 }} //namespace

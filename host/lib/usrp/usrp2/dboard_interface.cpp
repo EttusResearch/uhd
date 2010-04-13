@@ -17,7 +17,6 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include "ad9510_regs.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
@@ -61,8 +60,6 @@ public:
 private:
     usrp2_impl *_impl;
     boost::uint32_t _ddr_shadow;
-    ad9510_regs_t _ad9510_regs;
-    uhd::dict<unit_t, bool> _clock_enb_shadow;
 };
 
 /***********************************************************************
@@ -100,30 +97,14 @@ double usrp2_dboard_interface::get_clock_rate(unit_t){
 }
 
 void usrp2_dboard_interface::set_clock_enabled(unit_t unit, bool enb){
-    uint16_t data = 0;
     switch(unit){
     case UNIT_RX:
-        _ad9510_regs.power_down_lvds_cmos_out7 = enb? 0 : 1;
-        _ad9510_regs.lvds_cmos_select_out7 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT7_CMOS;
-        _ad9510_regs.output_level_lvds_out7 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT7_1_75MA;
-        data = _ad9510_regs.get_write_reg(0x43);
-        break;
+        _impl->get_clock_control()->enable_rx_dboard_clock(enb);
+        return;
     case UNIT_TX:
-        _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
-        _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
-        _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
-        data = _ad9510_regs.get_write_reg(0x42);
-        break;
+        _impl->get_clock_control()->enable_tx_dboard_clock(enb);
+        return;
     }
-    _impl->transact_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24, false /*no rb*/);
-
-    _ad9510_regs.update_registers = 1;
-    _impl->transact_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, _ad9510_regs.get_write_reg(0x5a), 24, false /*no rb*/);
-    _clock_enb_shadow[unit] = unit;
-}
-
-bool usrp2_dboard_interface::get_clock_enabled(unit_t unit){
-    return _clock_enb_shadow[unit];
 }
 
 /***********************************************************************

@@ -60,12 +60,6 @@ SET(libuhd_sources
     usrp/simple_usrp.cpp
     usrp/dboard_manager.cpp
     usrp/tune_helper.cpp
-    usrp/usrp2/dboard_impl.cpp
-    usrp/usrp2/dboard_interface.cpp
-    usrp/usrp2/dsp_impl.cpp
-    usrp/usrp2/io_impl.cpp
-    usrp/usrp2/mboard_impl.cpp
-    usrp/usrp2/usrp2_impl.cpp
 )
 
 ########################################################################
@@ -95,6 +89,19 @@ UHD_PYTHON_GEN_SOURCE_FILE(
 UHD_PYTHON_GEN_SOURCE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9510_regs.py
     ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9510_regs.hpp
+)
+
+########################################################################
+# Add usrp2 sources
+########################################################################
+LIST(APPEND libuhd_sources
+    usrp/usrp2/clock_control.cpp
+    usrp/usrp2/dboard_impl.cpp
+    usrp/usrp2/dboard_interface.cpp
+    usrp/usrp2/dsp_impl.cpp
+    usrp/usrp2/io_impl.cpp
+    usrp/usrp2/mboard_impl.cpp
+    usrp/usrp2/usrp2_impl.cpp
 )
 
 ########################################################################
