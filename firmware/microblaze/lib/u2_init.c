@@ -26,7 +26,6 @@
 #include "hal_uart.h"
 #include "i2c.h"
 #include "mdelay.h"
-#include "ad9777.h"
 #include "clocks.h"
 #include "db.h"
 #include "usrp2_i2c_addr.h"
@@ -75,21 +74,6 @@ u2_init(void)
 
   // Enable ADCs
   output_regs->adc_ctrl = ADC_CTRL_ON;
-
-  // Set up AD9777 DAC
-  ad9777_write_reg(0, R0_1R);
-  ad9777_write_reg(1, R1_INTERP_4X | R1_REAL_MIX);
-  ad9777_write_reg(2, 0);
-  ad9777_write_reg(3, R3_PLL_DIV_1);
-  ad9777_write_reg(4, R4_PLL_ON | R4_CP_AUTO);
-  ad9777_write_reg(5, R5_I_FINE_GAIN(0));
-  ad9777_write_reg(6, R6_I_COARSE_GAIN(0xf));
-  ad9777_write_reg(7, 0);	// I dac offset
-  ad9777_write_reg(8, 0);
-  ad9777_write_reg(9,  R9_Q_FINE_GAIN(0));
-  ad9777_write_reg(10, R10_Q_COARSE_GAIN(0xf));
-  ad9777_write_reg(11, 0);	// Q dac offset
-  ad9777_write_reg(12, 0);
   
   // Initial values for tx and rx mux registers
   dsp_tx_regs->tx_mux = 0x10;

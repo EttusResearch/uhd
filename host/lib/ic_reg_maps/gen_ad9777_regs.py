@@ -49,7 +49,7 @@ pll_lock_indicator      0[1]     0
 filter_interp_rate      1[6:7]   0      1x, 2x, 4x, 8x
 modulation_mode         1[4:5]   0      none, fs_2, fs_4, fs_8
 zero_stuff_mode         1[3]     0
-real_mix_mode           1[2]     0
+mix_mode                1[2]     1      complex, real
 modulation_form         1[1]     0      e_minus_jwt, e_plus_jwt
 data_clk_pll_lock_sel   1[0]     0      pll_lock, data_clk
 ########################################################################
@@ -70,7 +70,7 @@ pll_divide_ratio        3[0:1]   0      div1, div2, div4, div8
 ########################################################################
 ## address 4
 ########################################################################
-pll_off                 4[7]     0      off, on
+pll_state               4[7]     0      off, on
 auto_cp_control         4[6]     0      dis, enb
 pll_cp_control          4[0:2]   0      50ua=0, 100ua=1, 200ua=2, 400ua=3, 800ua=7
 ########################################################################
@@ -81,8 +81,8 @@ qdac_fine_gain_adjust   9[0:7]   0
 ########################################################################
 ## address 6 and A
 ########################################################################
-idac_fine_coarse_adjust 6[0:3]   0
-qdac_fine_coarse_adjust A[0:3]   0
+idac_coarse_gain_adjust 6[0:3]   0
+qdac_coarse_gain_adjust A[0:3]   0
 ########################################################################
 ## address 7, 8 and B, C
 ########################################################################

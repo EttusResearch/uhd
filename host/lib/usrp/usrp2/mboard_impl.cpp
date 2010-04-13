@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include "ad9777_regs.hpp"
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/mac_addr.hpp>
@@ -35,6 +36,30 @@ void usrp2_impl::mboard_init(void){
     );
 
     _clock_control = clock_control::make_ad9510(this);
+
+    //setup the ad9777 dac
+    ad9777_regs_t ad9777_regs;
+    ad9777_regs.x_1r_2r_mode = ad9777_regs_t::X_1R_2R_MODE_1R;
+    ad9777_regs.filter_interp_rate = ad9777_regs_t::FILTER_INTERP_RATE_4X;
+    ad9777_regs.mix_mode = ad9777_regs_t::MIX_MODE_REAL;
+    ad9777_regs.pll_divide_ratio = ad9777_regs_t::PLL_DIVIDE_RATIO_DIV1;
+    ad9777_regs.pll_state = ad9777_regs_t::PLL_STATE_OFF;
+    ad9777_regs.auto_cp_control = ad9777_regs_t::AUTO_CP_CONTROL_ENB;
+    //I dac values
+    ad9777_regs.idac_fine_gain_adjust = 0;
+    ad9777_regs.idac_coarse_gain_adjust = 0xf;
+    ad9777_regs.idac_offset_adjust_lsb = 0;
+    ad9777_regs.idac_offset_adjust_msb = 0;
+    //Q dac values
+    ad9777_regs.qdac_fine_gain_adjust = 0;
+    ad9777_regs.qdac_coarse_gain_adjust = 0xf;
+    ad9777_regs.qdac_offset_adjust_lsb = 0;
+    ad9777_regs.qdac_offset_adjust_msb = 0;
+    //write all regs
+    for(boost::uint8_t addr = 0; addr <= 0xC; addr++){
+        boost::uint16_t data = ad9777_regs.get_write_reg(addr);
+        this->transact_spi(SPI_SS_AD9777, spi_config_t::EDGE_RISE, data, 16, false /*no rb*/);
+    }
 }
 
 clock_control::sptr usrp2_impl::get_clock_control(void){
