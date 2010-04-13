@@ -31,7 +31,6 @@ INSTALL(FILES
     dboard_manager.hpp
 
     ### usrp headers ###
-    usrp1e.hpp
     usrp2.hpp
 
     ### utilities ###
