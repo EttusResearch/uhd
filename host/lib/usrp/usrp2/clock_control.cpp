@@ -30,6 +30,32 @@ class clock_control_ad9510 : public clock_control{
 public:
     clock_control_ad9510(usrp2_impl *impl){
         _impl = impl;
+
+        _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
+        this->write_reg(0x09);
+
+        //100mhz = 10mhz/R * (P*B + A)
+
+        _ad9510_regs.pll_power_down = ad9510_regs_t::PLL_POWER_DOWN_NORMAL;
+        _ad9510_regs.prescaler_value = ad9510_regs_t::PRESCALER_VALUE_DIV2;
+        this->write_reg(0x0A);
+
+        _ad9510_regs.acounter = 0;
+        this->write_reg(0x04);
+
+        _ad9510_regs.bcounter_msb = 0;
+        _ad9510_regs.bcounter_lsb = 5;
+        this->write_reg(0x05);
+        this->write_reg(0x06);
+
+        _ad9510_regs.ref_counter_msb = 0;
+        _ad9510_regs.ref_counter_lsb = 1; // r divider = 1
+        this->write_reg(0x0B);
+        this->write_reg(0x0C);
+
+        /* regs will be updated in commands below */
+
+        this->enable_external_ref(false);
         this->enable_rx_dboard_clock(false);
         this->enable_tx_dboard_clock(false);
     }
@@ -51,6 +77,20 @@ public:
         _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
         _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
         this->write_reg(0x42);
+        this->update_regs();
+    }
+
+    /*!
+     * If we are to use an external reference, enable the charge pump.
+     * \param enb true to enable the CP
+     */
+    void enable_external_ref(bool enb){
+        _ad9510_regs.charge_pump_mode = (enb)?
+            ad9510_regs_t::CHARGE_PUMP_MODE_NORMAL :
+            ad9510_regs_t::CHARGE_PUMP_MODE_3STATE ;
+        _ad9510_regs.pll_mux_control = ad9510_regs_t::PLL_MUX_CONTROL_DLD_HIGH;
+        _ad9510_regs.pfd_polarity = ad9510_regs_t::PFD_POLARITY_POS;
+        this->write_reg(0x08);
         this->update_regs();
     }
 

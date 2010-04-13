@@ -71,7 +71,16 @@ void usrp2_impl::update_clock_config(void){
     //set the pps flags
     this->poke32(FR_TIME64_FLAGS, pps_flags);
 
-    //TODO clock source ref 10mhz (spi ad9510)
+    //clock source ref 10mhz
+    switch(_clock_config.ref_source){
+    case clock_config_t::REF_INT : this->poke32(FR_CLOCK_CONTROL, 0x10); break;
+    case clock_config_t::REF_SMA : this->poke32(FR_CLOCK_CONTROL, 0x1C); break;
+    case clock_config_t::REF_MIMO: this->poke32(FR_CLOCK_CONTROL, 0x15); break;
+    }
+
+    //clock source ref 10mhz
+    bool use_external = _clock_config.ref_source != clock_config_t::REF_INT;
+    this->get_clock_control()->enable_external_ref(use_external);
 }
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){

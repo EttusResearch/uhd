@@ -47,6 +47,12 @@ public:
     virtual void enable_tx_dboard_clock(bool enb) = 0;
 
     /*!
+     * Enable/disable external reference.
+     * \param enb true to enable
+     */
+    virtual void enable_external_ref(bool enb) = 0;
+
+    /*!
      * TODO other clock control api here....
      */
 
