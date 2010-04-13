@@ -36,6 +36,7 @@ SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib)
 SET(INCLUDE_DIR include)
 SET(PKG_DATA_DIR share/uhd)
+SET(PKG_DOC_DIR share/doc/uhd)
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 ########################################################################
@@ -101,27 +102,50 @@ ENDIF(HAVE_BIG_ENDIAN)
 # Create Uninstall Target
 ########################################################################
 CONFIGURE_FILE(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    @ONLY
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
+@ONLY)
 
 ADD_CUSTOM_TARGET(uninstall
-  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 )
 
 ########################################################################
 # Create Pkg Config File
 ########################################################################
 CONFIGURE_FILE(
-    "${CMAKE_SOURCE_DIR}/uhd.pc.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/uhd.pc"
-    @ONLY
-)
+    ${CMAKE_SOURCE_DIR}/uhd.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+@ONLY)
 
 INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
     DESTINATION ${LIBRARY_DIR}/pkgconfig
+)
+
+########################################################################
+# Setup Docs
+########################################################################
+INCLUDE(FindDoxygen)
+
+IF(DOXYGEN_FOUND)
+    SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+    CONFIGURE_FILE(
+        ${CMAKE_SOURCE_DIR}/Doxyfile.in
+        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    @ONLY)
+    ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN}
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        COMMENT "Generating documentation with doxygen"
+    )
+    ADD_CUSTOM_TARGET(docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
+    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
+ENDIF(DOXYGEN_FOUND)
+
+INSTALL(FILES
+    ${CMAKE_SOURCE_DIR}/README
+    ${CMAKE_SOURCE_DIR}/LICENSE
+    DESTINATION ${PKG_DOC_DIR}
 )
 
 ########################################################################

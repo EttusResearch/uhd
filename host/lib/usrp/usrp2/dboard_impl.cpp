@@ -49,11 +49,11 @@ void usrp2_impl::dboard_init(void){
     );
 
     //load dboards
-    _rx_dboards[""] = wax_obj_proxy::make(
+    _rx_dboard_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::rx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::rx_dboard_set, this, _1, _2)
     );
-    _tx_dboards[""] = wax_obj_proxy::make(
+    _tx_dboard_proxy = wax_obj_proxy::make(
         boost::bind(&usrp2_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::tx_dboard_set, this, _1, _2)
     );
@@ -81,7 +81,7 @@ void usrp2_impl::update_rx_mux_config(void){
         rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
     }
 
-    this->poke(FR_DSP_RX_MUX, rx_mux);
+    this->poke32(FR_DSP_RX_MUX, rx_mux);
 }
 
 void usrp2_impl::update_tx_mux_config(void){
@@ -94,7 +94,7 @@ void usrp2_impl::update_tx_mux_config(void){
         tx_mux = (((tx_mux >> 0) & 0x1) << 1) | (((tx_mux >> 1) & 0x1) << 0);
     }
 
-    this->poke(FR_DSP_TX_MUX, tx_mux);
+    this->poke32(FR_DSP_TX_MUX, tx_mux);
 }
 
 /***********************************************************************

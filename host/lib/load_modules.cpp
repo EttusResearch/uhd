@@ -31,6 +31,7 @@ namespace fs = boost::filesystem;
  **********************************************************************/
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
+static const std::string env_path_sep = ":";
 
 static void load_module(const std::string &file_name){
     if (dlopen(file_name.c_str(), RTLD_LAZY) == NULL){
@@ -42,6 +43,7 @@ static void load_module(const std::string &file_name){
 
 #elif HAVE_WINDOWS_H
 #include <windows.h>
+static const std::string env_path_sep = ";";
 
 static void load_module(const std::string &file_name){
     if (LoadLibrary(file_name.c_str()) == NULL){
@@ -52,6 +54,7 @@ static void load_module(const std::string &file_name){
 }
 
 #else
+static const std::string env_path_sep = ":";
 
 static void load_module(const std::string &file_name){
     throw std::runtime_error(str(
@@ -108,7 +111,7 @@ UHD_STATIC_BLOCK(load_modules){
 
     //split the path at the path separators
     std::vector<std::string> module_paths;
-    boost::split(module_paths, env_module_path, boost::is_any_of(":;"));
+    boost::split(module_paths, env_module_path, boost::is_any_of(env_path_sep));
 
     //load modules in each path
     BOOST_FOREACH(const std::string &module_path, module_paths){

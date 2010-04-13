@@ -175,11 +175,12 @@
 //
 // These go to the daughterboard i/o pins
 //
-#define _FR_GPIO_ADDR(off) (0xC800 + (off) * sizeof(boost::uint32_t))
-#define FR_GPIO_IO     _FR_GPIO_ADDR(0)       // tx data in high 16, rx in low 16
-#define FR_GPIO_DDR    _FR_GPIO_ADDR(1)       // 32 bits, 1 means output. tx in high 16, rx in low 16
-#define FR_GPIO_TX_SEL _FR_GPIO_ADDR(2)       // 16 2-bit fields select which source goes to TX DB
-#define FR_GPIO_RX_SEL _FR_GPIO_ADDR(3)       // 16 2-bit fields select which source goes to RX DB
+#define FR_GPIO_BASE 0xC800
+
+#define FR_GPIO_IO         FR_GPIO_BASE + 0  // 32 bits, gpio io pins (tx high 16 bits, rx low 16 bits)
+#define FR_GPIO_DDR        FR_GPIO_BASE + 4  // 32 bits, gpio ddr, 1 means output (tx high 16 bits, rx low 16 bits)
+#define FR_GPIO_TX_SEL     FR_GPIO_BASE + 8  // 16 2-bit fields select which source goes to TX DB
+#define FR_GPIO_RX_SEL     FR_GPIO_BASE + 12 // 16 2-bit fields select which source goes to RX DB
 
 // each 2-bit sel field is layed out this way
 #define FRF_GPIO_SEL_SW        0 // if pin is an output, set by software in the io reg
@@ -190,10 +191,15 @@
 ///////////////////////////////////////////////////
 // ATR Controller, Slave 11
 ////////////////////////////////////////////////
-#define _FR_ATR_ADDR(off) (0xE400 + (off) * sizeof(boost::uint32_t))
-#define FR_ATR_IDLE    _FR_ATR_ADDR(0) // tx data in high 16, rx in low 16
-#define FR_ATR_TX      _FR_ATR_ADDR(1)
-#define FR_ATR_RX      _FR_ATR_ADDR(2)
-#define FR_ATR_FULL    _FR_ATR_ADDR(3)
+#define FR_ATR_BASE  0xE400
+
+#define FR_ATR_IDLE_TXSIDE  FR_ATR_BASE + 0
+#define FR_ATR_IDLE_RXSIDE  FR_ATR_BASE + 2
+#define FR_ATR_INTX_TXSIDE  FR_ATR_BASE + 4
+#define FR_ATR_INTX_RXSIDE  FR_ATR_BASE + 6
+#define FR_ATR_INRX_TXSIDE  FR_ATR_BASE + 8
+#define FR_ATR_INRX_RXSIDE  FR_ATR_BASE + 10
+#define FR_ATR_FULL_TXSIDE  FR_ATR_BASE + 12
+#define FR_ATR_FULL_RXSIDE  FR_ATR_BASE + 14
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

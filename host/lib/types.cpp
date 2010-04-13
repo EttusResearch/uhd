@@ -71,9 +71,9 @@ clock_config_t::clock_config_t(void){
 /***********************************************************************
  * stream command
  **********************************************************************/
-stream_cmd_t::stream_cmd_t(void){
+stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode_){
+    stream_mode = stream_mode_;
     stream_now = true;
-    continuous = false;
     num_samps = 0;
 }
 
@@ -85,7 +85,8 @@ rx_metadata_t::rx_metadata_t(void){
     has_stream_id = false;
     time_spec = time_spec_t();
     has_time_spec = false;
-    is_fragment = false;
+    more_fragments = false;
+    fragment_offset = 0;
 }
 
 tx_metadata_t::tx_metadata_t(void){
@@ -121,7 +122,7 @@ time_spec_t::time_spec_t(boost::posix_time::ptime time, double tick_rate){
 std::string device_addr_t::to_string(void) const{
     const device_addr_t &device_addr = *this;
     std::stringstream ss;
-    BOOST_FOREACH(std::string key, device_addr.get_keys()){
+    BOOST_FOREACH(std::string key, device_addr.keys()){
         ss << boost::format("%s: %s") % key % device_addr[key] << std::endl;
     }
     return ss.str();
@@ -137,7 +138,7 @@ static std::string trim(const std::string &in){
 std::string device_addr_t::to_args_str(void) const{
     std::string args_str;
     const device_addr_t &device_addr = *this;
-    BOOST_FOREACH(const std::string &key, device_addr.get_keys()){
+    BOOST_FOREACH(const std::string &key, device_addr.keys()){
         args_str += key + pair_delim + device_addr[key] + arg_delim;
     }
     return args_str;

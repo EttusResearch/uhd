@@ -250,11 +250,11 @@ dboard_manager_impl::~dboard_manager_impl(void){
 }
 
 prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
-    return _rx_dboards.get_keys();
+    return _rx_dboards.keys();
 }
 
 prop_names_t dboard_manager_impl::get_tx_subdev_names(void){
-    return _tx_dboards.get_keys();
+    return _tx_dboards.keys();
 }
 
 wax::obj dboard_manager_impl::get_rx_subdev(const std::string &subdev_name){
