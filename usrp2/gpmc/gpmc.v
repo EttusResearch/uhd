@@ -10,13 +10,14 @@ module gpmc
    
    // Wishbone signals
    input wb_clk, input wb_rst,
-   output reg [10:0] wb_adr_o, output reg [15:0] wb_dat_mosi, input [15:0] wb_dat_miso,
-   output reg [1:0] wb_sel_o, output wb_cyc_o, output reg wb_stb_o, output reg wb_we_o, input wb_ack_i,
+   output [10:0] wb_adr_o, output [15:0] wb_dat_mosi, input [15:0] wb_dat_miso,
+   output [1:0] wb_sel_o, output wb_cyc_o, output wb_stb_o, output wb_we_o, input wb_ack_i,
 
-   // RAM Interface signals
-   input ram_clk, 
-   input read_en, input [8:0] read_addr, output [31:0] read_data, output read_ready, input read_done,
-   input write_en, input [8:0] write_addr, input [31:0] write_data, output write_ready, input write_done,
+   // FIFO interface
+   input fifo_clk, input fifo_rst,
+   output [35:0] tx_data_o, output tx_src_rdy_o, input tx_dst_rdy_i,
+   input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
+   
    output [31:0] debug
    );
 
@@ -26,94 +27,64 @@ module gpmc
 
    assign EM_D = ~EM_output_enable ? 16'bz : ~EM_NCS4 ? EM_D_ram : EM_D_wb;
 
-   // CS4 is RAM_2PORT for high-speed data
-   // Writes go into one RAM, reads come from the other
-
+   // CS4 is RAM_2PORT for DATA PATH (high-speed data)
+   //    Writes go into one RAM, reads come from the other
+   // CS6 is for CONTROL PATH (wishbone)
 
    // ////////////////////////////////////////////
-   // Write path
-   wire 	read_sel_in, write_sel_in, clear_in;
-   wire 	write_done_in;
-   
-   edge_sync #(.POSEDGE(0)) 
-   edge_sync_wdi(.clk(wb_clk), .rst(wb_rst), 
-		 .sig(~EM_NCS4 & ~EM_NWE & (EM_A == 10'h3FF)), .trig(write_done_in));
-   
-   ram_2port_mixed_width buffer_in
-     (.clk16(wb_clk), .en16(~EM_NCS4), .we16(~EM_NWE), .addr16({write_sel_in,EM_A}), .di16(EM_D), .do16(),
-      .clk32(ram_clk), .en32(read_en), .we32(0), .addr32({read_sel_in,read_addr}), .di32(0), .do32(read_data));
+   // TX Data Path
 
-   dbsm dbsm_in(.clk(wb_clk), .reset(wb_rst), .clear(clear_in),
-		.read_sel(read_sel_in), .read_ready(read_ready), .read_done(read_done),
-		.write_sel(write_sel_in), .write_ready(tx_have_space), .write_done(write_done_in));
+   wire [17:0] 	tx18_data, tx18b_data;
+   wire 	tx18_src_rdy, tx18_dst_rdy, tx18b_src_rdy, tx18b_dst_rdy;
+   wire [15:0] 	tx_fifo_space, tx_frame_len;
 
+   assign tx_frame_len = 10;
    
+   gpmc_to_fifo gpmc_to_fifo
+     (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
+      .fifo_clk(fifo_clk), .fifo_rst(fifo_rst),
+      .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
+      .frame_len(tx_frame_len), .fifo_space(tx_fifo_space), .fifo_ready(tx_have_space));
    
+   fifo_cascade #(.WIDTH(18), .SIZE(10)) tx_fifo
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .datain(tx18_data), .src_rdy_i(tx18_src_rdy), .dst_rdy_o(tx18_dst_rdy), .space(tx_fifo_space),
+      .dataout(tx18b_data), .src_rdy_o(tx18b_src_rdy), .dst_rdy_i(tx18b_dst_rdy));
+
+   fifo19_to_fifo36 f19_to_f36
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .f19_datain({1'b0,tx18b_data}), .f19_src_rdy_i(tx18b_src_rdy), .f19_dst_rdy_o(tx18b_dst_rdy),
+      .f36_dataout(tx_data_o), .f36_src_rdy_o(tx_src_rdy_o), .f36_dst_rdy_i(tx_dst_rdy_i));
+   
+
    // ////////////////////////////////////////////
-   // Read path
-   wire 	read_sel_out, write_sel_out, clear_out;
-   wire 	read_done_out;
+   // RX Data Path
+   wire 	read_sel_rx, write_sel_rx, clear_rx;
+   wire 	read_done_rx;
       
    edge_sync #(.POSEDGE(0)) 
-   edge_sync_rdo(.clk(wb_clk), .rst(wb_rst), 
-		 .sig(~EM_NCS4 & ~EM_NOE & (EM_A == 10'h3FF)), .trig(read_done_out));
+   edge_sync_rx(.clk(wb_clk), .rst(wb_rst), 
+		.sig(~EM_NCS4 & ~EM_NOE & (EM_A == 10'h3FF)), .trig(read_done_rx));
    
-   ram_2port_mixed_width buffer_out
-     (.clk16(wb_clk), .en16(~EM_NCS4), .we16(0), .addr16({read_sel_out,EM_A}), .di16(0), .do16(EM_D_ram),
-      .clk32(ram_clk), .en32(write_en), .we32(write_en), .addr32({write_sel_out,write_addr}), .di32(write_data), .do32());
+   ram_2port_mixed_width buffer_rx
+     (.clk16(wb_clk), .en16(~EM_NCS4), .we16(0), .addr16({read_sel_rx,EM_A}), .di16(0), .do16(EM_D_ram),
+      .clk32(ram_clk), .en32(write_en), .we32(write_en), .addr32({write_sel_rx,write_addr}), .di32(write_data), .do32());
 
-   dbsm dbsm_out(.clk(wb_clk), .reset(wb_rst), .clear(clear_out),
-		 .read_sel(read_sel_out), .read_ready(rx_have_data), .read_done(read_done_out),
-		 .write_sel(write_sel_out), .write_ready(write_ready), .write_done(write_done));
+   dbsm dbsm_rx(.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
+		 .read_sel(read_sel_rx), .read_ready(rx_have_data), .read_done(read_done_rx),
+		 .write_sel(write_sel_rx), .write_ready(write_ready), .write_done(write_done));
 
-
-   assign debug = { { 2'b00, write_done_in, write_sel_in, read_en, read_sel_in, read_ready, read_done},
-		    { 2'b00, read_sel_out, write_en, write_sel_out, read_done_out, write_ready, write_done },
-		    { 8'd0 }, 
-		    { 8'd0 } };
+   // ////////////////////////////////////////////
+   // Control path on CS6
    
-   // CS6 is Control, Wishbone bus bridge (wb master)
-   // Sync version
-   reg [1:0] 	cs_del, we_del, oe_del;
-
-   // Synchronize the async control signals
-   always @(posedge wb_clk)
-     begin
-	cs_del <= { cs_del[0], EM_NCS6 };
-	we_del <= { we_del[0], EM_NWE };
-	oe_del <= { oe_del[0], EM_NOE };
-     end
-
-   always @(posedge wb_clk)
-     if(cs_del == 2'b10)  // Falling Edge
-       wb_adr_o <= { EM_A, 1'b0 };
-
-   always @(posedge wb_clk)
-     if(we_del == 2'b10)  // Falling Edge
-       begin
-	  wb_dat_mosi <= EM_D;
-	  wb_sel_o <= ~EM_NBE;
-       end
-
-   reg [15:0] EM_D_wb_reg;
-   always @(posedge wb_clk)
-     if(wb_ack_i)
-       EM_D_wb_reg <= wb_dat_miso;
-
-   assign EM_D_wb = wb_ack_i ? wb_dat_miso : EM_D_wb_reg;
+   gpmc_wb gpmc_wb
+     (.EM_CLK(EM_CLK), .EM_D(EM_D_wb), .EM_A(EM_A), .EM_NBE(EM_NBE),
+      .EM_NCS(EM_NCS6), .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
+      .wb_clk(wb_clk), .wb_rst(wb_rst),
+      .wb_adr_o(wb_adr_o), .wb_dat_mosi(wb_dat_mosi), .wb_dat_miso(wb_dat_miso),
+      .wb_sel_o(wb_sel_o), .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o),
+      .wb_ack_i(wb_ack_i) );
    
-   assign wb_cyc_o = wb_stb_o;
-
-   always @(posedge wb_clk)
-     if(~cs_del[0] & (we_del == 2'b10) )
-       wb_we_o <= 1;
-     else if(wb_ack_i)  // Turn off we when done.  Could also use we_del[0], others...
-       wb_we_o <= 0;
-
-   always @(posedge wb_clk)
-     if(~cs_del[0] & ((we_del == 2'b10) | (oe_del == 2'b10)))
-       wb_stb_o <= 1;
-     else if(wb_ack_i)
-       wb_stb_o <= 0;
+      assign debug = 0;
    
 endmodule // gpmc

@@ -30,15 +30,8 @@ module u1e_core
    wire [sw-1:0] m0_sel;
    wire 	 m0_cyc, m0_stb, m0_we, m0_ack, m0_err, m0_rty;
 
-   // FIFO buffers
-   wire [31:0] 	 read_data, write_data;
-   wire [8:0] 	 read_addr, write_addr;
-   reg [8:0] 	 addr;
-   
-   wire 	 read_done, write_done, read_en, write_en, read_ready, write_ready;
-
    wire [31:0] 	 debug_gpmc;
-   
+
    gpmc gpmc (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 	      .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
 	      .EM_NOE(EM_NOE),
@@ -50,36 +43,11 @@ module u1e_core
 	      .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
 	      .wb_ack_i(m0_ack),
 
-	      .ram_clk(wb_clk),
-	      .read_en(read_en), .read_addr(read_addr), .read_data(read_data), 
-	      .read_ready(read_ready), .read_done(read_done),
-	      .write_en(write_en), .write_addr(write_addr), .write_data(write_data), 
-	      .write_ready(write_ready), .write_done(write_done),
+	      .fifo_clk(wb_clk), .fifo_rst(wb_rst),
+	      .tx_data_o(), .tx_src_rdy_o(), .tx_dst_rdy_i(0),
+	      .rx_data_i(0), .rx_src_rdy_i(0), .rx_dst_rdy_o(),
+	      
 	      .debug(debug_gpmc));
-   
-   // Loopback
-   assign write_data = read_data;
-   
-   reg [10:0] 	 counter;
-   assign write_addr = counter[10:2];
-   assign read_addr = counter[10:2];   
-
-   assign read_done = (counter == 11'h7FF);
-   assign write_done = (counter == 11'h7FF);
-   
-   always @(posedge wb_clk)
-     if(wb_rst)
-       counter <= 0;
-     else 
-       if(counter == 0)
-	 counter <= write_ready & read_ready;
-       else if(counter == 11'h7FF)
-	 counter <= 0;
-       else
-	 counter <= counter + 1;
-   
-   assign read_en = (counter[1:0] == 1);
-   assign write_en = (counter[1:0] == 2);
    
 	      
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +150,7 @@ module u1e_core
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
-   assign { rx_overrun, tx_undderun } = reg_test;
+   assign { rx_overrun, tx_underrun } = reg_test;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
@@ -210,7 +178,7 @@ module u1e_core
    spi_top16 shared_spi
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(s2_adr[4:0]),.wb_dat_i(s2_dat_mosi),
       .wb_dat_o(s2_dat_miso),.wb_sel_i(s2_sel),.wb_we_i(s2_we),.wb_stb_i(s2_stb),
-      .wb_cyc_i(s2_cyc),.wb_ack_o(s2_ack),.wb_err_o(),.wb_int_o(spi_int),
+      .wb_cyc_i(s2_cyc),.wb_ack_o(s2_ack),.wb_err_o(),.wb_int_o(),
       .ss_pad_o(sen), .sclk_pad_o(sclk), .mosi_pad_o(mosi), .miso_pad_i(miso) );
    
    // /////////////////////////////////////////////////////////////////////////
