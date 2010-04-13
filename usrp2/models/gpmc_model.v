@@ -41,7 +41,7 @@ module gpmc_model
 	 EM_NCS6 <= 1;
 	 //#1.5;
 	 EM_NWE <= 1;
-	 #6;
+	 #60;
 	 EM_A <= 10'bz;
 	 EM_D_int <= 16'bz;
       end
@@ -82,7 +82,12 @@ module gpmc_model
 	GPMC_Write(0,38,16'h5678);
 	GPMC_Write(0,40,16'h9abc);
 	GPMC_Write(0,11'h2F4,16'hF00D);
-	GPMC_Write(0,11'h7FE,16'hF00D);
+	GPMC_Write(0,11'h7FE,16'hDEAD);
+	GPMC_Write(0,11'h7FE,16'hDEAD);
+	GPMC_Write(0,11'h7FE,16'hDEAD);
+	GPMC_Write(0,11'h7FE,16'hDEAD);
+	GPMC_Write(0,11'h7FE,16'hDEAD);
+	GPMC_Write(0,11'h7FE,16'hDEAD);
 	#100000;
 	$finish;
      end
