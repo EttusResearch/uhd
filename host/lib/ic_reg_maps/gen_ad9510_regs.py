@@ -60,7 +60,7 @@ prescaler_value                A[2:4]        0      div1, div2, 2_3, 4_5, 8_9, 1
 b_counter_bypass               A[6]          0
 ref_counter_msb                B[0:5]        0
 ref_counter_lsb                C[0:7]        0
-antibacklash_pw                D[0:1]        0      1_3ns, 2_9ns, 6_0ns, 1_3ns
+antibacklash_pw                D[0:1]        0      1_3ns, 2_9ns, 6_0ns
 dld_window                     D[5]          0      9_5ns, 3_5ns
 lock_detect_disable            D[6]          0      enb, dis
 ########################################################################
@@ -69,7 +69,7 @@ lock_detect_disable            D[6]          0      enb, dis
 #for $i, $o in ((5, 0), (6, 4))
 delay_control_out$i            $hex(0x34+$o)[0]    0
 ramp_current_out$i             $hex(0x35+$o)[0:2]  0   200ua, 400ua, 600ua, 800ua, 1000ua, 1200ua, 1400ua, 1600ua
-ramp_capacitor_out$i           $hex(0x35+$o)[3:5]  0   4caps=0, 3caps=1, 2caps=3, 3caps=4, 1cap=7
+ramp_capacitor_out$i           $hex(0x35+$o)[3:5]  0   4caps=0, 3caps=1, 2caps=3, 1cap=7
 delay_fine_adjust_out$i        $hex(0x36+$o)[1:5]  0
 #end for
 ########################################################################
@@ -130,7 +130,7 @@ HEADER_TEXT="""
 
 \#include <boost/cstdint.hpp>
 
-struct adf4360_regs_t{
+struct ad9510_regs_t{
 #for $reg in $regs
     #if $reg.get_enums()
     enum $(reg.get_name())_t{
@@ -144,13 +144,13 @@ struct adf4360_regs_t{
     #end if
 #end for
 
-    adf4360_regs_t(void){
+    ad9510_regs_t(void){
 #for $reg in $regs
         $reg.get_name() = $reg.get_default();
 #end for
     }
 
-    boost::uint8_t get_reg(boost::uint8_t addr){
+    boost::uint8_t get_reg(boost::uint16_t addr){
         boost::uint8_t reg = 0;
         switch(addr){
         #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
@@ -163,6 +163,15 @@ struct adf4360_regs_t{
         }
         return reg;
     }
+
+    boost::uint32_t get_write_reg(boost::uint16_t addr){
+        return (boost::uint32_t(addr) << 8) | get_reg(addr);
+    }
+
+    boost::uint32_t get_read_reg(boost::uint16_t addr){
+        return (boost::uint32_t(addr) << 8) | (1 << 15);
+    }
+
 };
 
 \#endif /* INCLUDED_AD9510_REGS_HPP */

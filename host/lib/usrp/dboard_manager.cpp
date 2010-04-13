@@ -25,6 +25,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/assign/list_of.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -141,7 +142,7 @@ private:
     uhd::dict<std::string, subdev_proxy::sptr> _rx_dboards;
     uhd::dict<std::string, subdev_proxy::sptr> _tx_dboards;
     dboard_interface::sptr _interface;
-    void set_nice_gpio_pins(void);
+    void set_nice_dboard_if(void);
 };
 
 /***********************************************************************
@@ -200,7 +201,7 @@ dboard_manager_impl::dboard_manager_impl(
     boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(tx_dboard_id, "tx");
 
     //initialize the gpio pins before creating subdevs
-    set_nice_gpio_pins();
+    set_nice_dboard_if();
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
@@ -246,7 +247,7 @@ dboard_manager_impl::dboard_manager_impl(
 }
 
 dboard_manager_impl::~dboard_manager_impl(void){
-    set_nice_gpio_pins();
+    set_nice_dboard_if();
 }
 
 prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
@@ -273,12 +274,17 @@ wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
     return _tx_dboards[subdev_name]->get_link();
 }
 
-void dboard_manager_impl::set_nice_gpio_pins(void){
-    //std::cout << "Set nice GPIO pins" << std::endl;
+void dboard_manager_impl::set_nice_dboard_if(void){
+    //make a list of possible unit types
+    std::vector<dboard_interface::unit_t> units = boost::assign::list_of
+        (dboard_interface::UNIT_RX)
+        (dboard_interface::UNIT_TX)
+    ;
 
-    _interface->set_gpio_ddr(dboard_interface::UNIT_RX, 0x0000); //all inputs
-    _interface->set_atr_reg(dboard_interface::UNIT_RX, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
-
-    _interface->set_gpio_ddr(dboard_interface::UNIT_TX, 0x0000); //all inputs
-    _interface->set_atr_reg(dboard_interface::UNIT_TX, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
+    //set nice settings on each unit
+    BOOST_FOREACH(dboard_interface::unit_t unit, units){
+        _interface->set_gpio_ddr(unit, 0x0000); //all inputs
+        _interface->set_atr_reg(unit, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
+        _interface->set_clock_enabled(unit, false); //clock off
+    }
 }
