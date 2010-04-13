@@ -34,7 +34,11 @@ public:
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
         this->write_reg(0x09);
 
-        //100mhz = 10mhz/R * (P*B + A)
+        // Setup the clock registers to 100MHz:
+        //  This was already done by the firmware (or the host couldnt communicate).
+        //  We could remove this part, and just leave it to the firmware.
+        //  But why not leave it in for those who want to mess with clock settings?
+        //  100mhz = 10mhz/R * (P*B + A)
 
         _ad9510_regs.pll_power_down = ad9510_regs_t::PLL_POWER_DOWN_NORMAL;
         _ad9510_regs.prescaler_value = ad9510_regs_t::PRESCALER_VALUE_DIV2;
@@ -58,12 +62,20 @@ public:
         this->enable_external_ref(false);
         this->enable_rx_dboard_clock(false);
         this->enable_tx_dboard_clock(false);
+
+        /* private clock enables, must be set here */
+        this->enable_dac_clock(true);
+        this->enable_adc_clock(true);
+
     }
 
     ~clock_control_ad9510(void){
-        /* NOP */
+        /* private clock enables, must be set here */
+        //this->enable_dac_clock(false);
+        //this->enable_adc_clock(false); //FIXME cant do yet
     }
 
+    //uses output clock 7 (cmos)
     void enable_rx_dboard_clock(bool enb){
         _ad9510_regs.power_down_lvds_cmos_out7 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out7 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT7_CMOS;
@@ -72,6 +84,7 @@ public:
         this->update_regs();
     }
 
+    //uses output clock 6 (cmos)
     void enable_tx_dboard_clock(bool enb){
         _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
@@ -110,6 +123,25 @@ private:
     void update_regs(void){
         _ad9510_regs.update_registers = 1;
         this->write_reg(0x5a);
+    }
+
+    //uses output clock 3 (pecl)
+    void enable_dac_clock(bool enb){
+        _ad9510_regs.power_down_lvpecl_out3 = (enb)?
+            ad9510_regs_t::POWER_DOWN_LVPECL_OUT3_NORMAL :
+            ad9510_regs_t::POWER_DOWN_LVPECL_OUT3_SAFE_PD;
+        _ad9510_regs.output_level_lvpecl_out3 = ad9510_regs_t::OUTPUT_LEVEL_LVPECL_OUT3_810MV;
+        this->write_reg(0x3F);
+        this->update_regs();
+    }
+
+    //uses output clock 4 (lvds)
+    void enable_adc_clock(bool enb){
+        _ad9510_regs.power_down_lvds_cmos_out4 = enb? 0 : 1;
+        _ad9510_regs.lvds_cmos_select_out4 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT4_LVDS;
+        _ad9510_regs.output_level_lvds_out4 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT4_1_75MA;
+        this->write_reg(0x40);
+        this->update_regs();
     }
 
     usrp2_impl *_impl;
