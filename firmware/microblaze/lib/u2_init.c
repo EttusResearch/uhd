@@ -86,7 +86,6 @@ u2_init(void)
   bp_init();	// buffer pool
   lsadc_init();	    // low-speed ADCs
   lsdac_init();	    // low-speed DACs
-  db_init();	    // daughterboard init
   
   hal_enable_ints();
 
