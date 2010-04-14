@@ -19,7 +19,7 @@
 #define INCLUDED_USRP2_IFACE_HPP
 
 #include <uhd/transport/udp_simple.hpp>
-#include <uhd/usrp/dboard_interface.hpp> //spi config
+#include <uhd/usrp/dboard_iface.hpp> //spi config
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>

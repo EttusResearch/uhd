@@ -37,7 +37,7 @@
  * \param clk_ctrl the clock control object
  * \return a sptr to a new dboard interface
  */
-uhd::usrp::dboard_interface::sptr make_usrp2_dboard_iface(
+uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
     usrp2_iface::sptr iface,
     clock_control::sptr clk_ctrl
 );

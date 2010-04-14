@@ -26,7 +26,7 @@
 
 using namespace uhd::usrp;
 
-class usrp2_dboard_iface : public dboard_interface{
+class usrp2_dboard_iface : public dboard_iface{
 public:
     usrp2_dboard_iface(usrp2_iface::sptr iface, clock_control::sptr clk_ctrl);
     ~usrp2_dboard_iface(void);
@@ -68,11 +68,11 @@ private:
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_interface::sptr make_usrp2_dboard_iface(
+dboard_iface::sptr make_usrp2_dboard_iface(
     usrp2_iface::sptr iface,
     clock_control::sptr clk_ctrl
 ){
-    return dboard_interface::sptr(new usrp2_dboard_iface(iface, clk_ctrl));
+    return dboard_iface::sptr(new usrp2_dboard_iface(iface, clk_ctrl));
 }
 
 /***********************************************************************
@@ -117,10 +117,10 @@ void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-static int unit_to_shift(dboard_interface::unit_t unit){
+static int unit_to_shift(dboard_iface::unit_t unit){
     switch(unit){
-    case dboard_interface::UNIT_RX: return 0;
-    case dboard_interface::UNIT_TX: return 16;
+    case dboard_iface::UNIT_RX: return 0;
+    case dboard_iface::UNIT_TX: return 16;
     }
     throw std::runtime_error("unknown unit type");
 }
@@ -166,10 +166,10 @@ void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static boost::uint8_t unit_to_otw_spi_dev(dboard_interface::unit_t unit){
+static boost::uint8_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
     switch(unit){
-    case dboard_interface::UNIT_TX: return SPI_SS_TX_DB;
-    case dboard_interface::UNIT_RX: return SPI_SS_RX_DB;
+    case dboard_iface::UNIT_TX: return SPI_SS_TX_DB;
+    case dboard_iface::UNIT_RX: return SPI_SS_RX_DB;
     }
     throw std::invalid_argument("unknown unit type");
 }
@@ -213,7 +213,7 @@ void usrp2_dboard_iface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
 }
 
-dboard_interface::byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
+dboard_iface::byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
@@ -243,10 +243,10 @@ dboard_interface::byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_
  * \param unit the dboard interface unit type enum
  * \return an over the wire representation
  */
-static boost::uint8_t unit_to_otw(dboard_interface::unit_t unit){
+static boost::uint8_t unit_to_otw(dboard_iface::unit_t unit){
     switch(unit){
-    case dboard_interface::UNIT_TX: return USRP2_DIR_TX;
-    case dboard_interface::UNIT_RX: return USRP2_DIR_RX;
+    case dboard_iface::UNIT_TX: return USRP2_DIR_TX;
+    case dboard_iface::UNIT_RX: return USRP2_DIR_RX;
     }
     throw std::invalid_argument("unknown unit type");
 }

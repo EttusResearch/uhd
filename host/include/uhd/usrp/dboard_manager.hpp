@@ -59,16 +59,16 @@ public:
      * Make a new dboard manager.
      * \param rx_dboard_id the id of the rx dboard
      * \param tx_dboard_id the id of the tx dboard
-     * \param interface the custom dboard interface
+     * \param iface the custom dboard interface
      * \return an sptr to the new dboard manager
      */
     static sptr make(
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
-        dboard_interface::sptr interface
+        dboard_iface::sptr iface
     );
 
-    //dboard_interface
+    //dboard manager interface
     virtual prop_names_t get_rx_subdev_names(void) = 0;
     virtual prop_names_t get_tx_subdev_names(void) = 0;
     virtual wax::obj get_rx_subdev(const std::string &subdev_name) = 0;

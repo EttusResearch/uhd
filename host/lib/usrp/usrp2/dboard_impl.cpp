@@ -44,11 +44,11 @@ void usrp2_impl::dboard_init(void){
     dboard_id_t tx_dboard_id = ntohs(in_data.data.dboard_ids.tx_id);
 
     //create a new dboard interface and manager
-    dboard_interface::sptr _dboard_interface(
+    dboard_iface::sptr _dboard_iface(
         make_usrp2_dboard_iface(_iface, _clk_ctrl)
     );
     _dboard_manager = dboard_manager::make(
-        rx_dboard_id, tx_dboard_id, _dboard_interface
+        rx_dboard_id, tx_dboard_id, _dboard_iface
     );
 
     //load dboards

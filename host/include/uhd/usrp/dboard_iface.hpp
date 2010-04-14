@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP
-#define INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP
+#ifndef INCLUDED_UHD_USRP_DBOARD_IFACE_HPP
+#define INCLUDED_UHD_USRP_DBOARD_IFACE_HPP
 
 #include <uhd/config.hpp>
 #include <boost/shared_ptr.hpp>
@@ -53,14 +53,14 @@ struct UHD_API spi_config_t{
 };
 
 /*!
- * The daughter board dboard_interface to be subclassed.
- * A dboard instance dboard_interfaces with the mboard though this api. 
- * This dboard_interface provides i2c, spi, gpio, atr, aux dac/adc access.
- * Each mboard should have a specially tailored interface for its dboard.
+ * The daughter board dboard interface to be subclassed.
+ * A dboard instance interfaces with the mboard though this api.
+ * This interface provides i2c, spi, gpio, atr, aux dac/adc access.
+ * Each mboard should have a specially tailored iface for its dboard.
  */
-class UHD_API dboard_interface{
+class UHD_API dboard_iface{
 public:
-    typedef boost::shared_ptr<dboard_interface> sptr;
+    typedef boost::shared_ptr<dboard_iface> sptr;
     typedef std::vector<boost::uint8_t> byte_vector_t;
 
     //tells the host which unit to use
@@ -187,4 +187,4 @@ public:
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_DBOARD_INTERFACE_HPP */
+#endif /* INCLUDED_UHD_USRP_DBOARD_IFACE_HPP */
