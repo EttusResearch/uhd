@@ -83,10 +83,6 @@ public:
         _mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
     }
 
-    double get_clock_rate(void){
-        return _mboard[MBOARD_PROP_CLOCK_RATE].as<double>();
-    }
-
     /*******************************************************************
      * RX methods
      ******************************************************************/

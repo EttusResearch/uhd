@@ -52,7 +52,6 @@ public:
     virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
     virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
     virtual void set_clock_config(const clock_config_t &clock_config) = 0;
-    virtual double get_clock_rate(void) = 0;
 
     /*******************************************************************
      * RX methods

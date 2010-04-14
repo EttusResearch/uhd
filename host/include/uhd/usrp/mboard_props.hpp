@@ -31,7 +31,6 @@ namespace uhd{ namespace usrp{
     enum mboard_prop_t{
         MBOARD_PROP_NAME            = 'n', //ro, std::string
         MBOARD_PROP_OTHERS          = 'o', //ro, prop_names_t
-        MBOARD_PROP_CLOCK_RATE      = 'c', //ro, double
         MBOARD_PROP_RX_DSP          = 'd', //ro, wax::obj
         MBOARD_PROP_RX_DSP_NAMES    = 'D', //ro, prop_names_t
         MBOARD_PROP_TX_DSP          = 'u', //ro, wax::obj

@@ -225,10 +225,6 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, "");
         return;
 
-    case MBOARD_PROP_CLOCK_RATE:
-        val = double(get_master_clock_freq());
-        return;
-
     case MBOARD_PROP_RX_DSP:
         ASSERT_THROW(name == "");
         val = _rx_dsp_proxy->get_link();
