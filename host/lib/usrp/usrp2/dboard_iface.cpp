@@ -15,19 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp2_impl.hpp"
+#include "usrp2_iface.hpp"
+#include "clock_control.hpp"
 #include "usrp2_regs.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/asio.hpp> //htonl and ntohl
 #include <algorithm>
 
 using namespace uhd::usrp;
 
-class usrp2_dboard_interface : public dboard_interface{
+class usrp2_dboard_iface : public dboard_interface{
 public:
-    usrp2_dboard_interface(usrp2_impl *impl);
-    ~usrp2_dboard_interface(void);
+    usrp2_dboard_iface(usrp2_iface::sptr iface, clock_control::sptr clk_ctrl);
+    ~usrp2_dboard_iface(void);
 
     void write_aux_dac(unit_t, int, int);
     int read_aux_adc(unit_t, int);
@@ -58,22 +60,27 @@ public:
     );
 
 private:
-    usrp2_impl *_impl;
+    usrp2_iface::sptr _iface;
+    clock_control::sptr _clk_ctrl;
     boost::uint32_t _ddr_shadow;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl){
-    return dboard_interface::sptr(new usrp2_dboard_interface(impl));
+dboard_interface::sptr make_usrp2_dboard_iface(
+    usrp2_iface::sptr iface,
+    clock_control::sptr clk_ctrl
+){
+    return dboard_interface::sptr(new usrp2_dboard_iface(iface, clk_ctrl));
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
-    _impl = impl;
+usrp2_dboard_iface::usrp2_dboard_iface(usrp2_iface::sptr iface, clock_control::sptr clk_ctrl){
+    _iface = iface;
+    _clk_ctrl = clk_ctrl;
     _ddr_shadow = 0;
 
     //set the selection mux to use atr
@@ -81,28 +88,28 @@ usrp2_dboard_interface::usrp2_dboard_interface(usrp2_impl *impl){
     for(size_t i = 0; i < 16; i++){
         new_sels |= FRF_GPIO_SEL_ATR << (i*2);
     }
-    _impl->poke32(FR_GPIO_TX_SEL, new_sels);
-    _impl->poke32(FR_GPIO_RX_SEL, new_sels);
+    _iface->poke32(FR_GPIO_TX_SEL, new_sels);
+    _iface->poke32(FR_GPIO_RX_SEL, new_sels);
 }
 
-usrp2_dboard_interface::~usrp2_dboard_interface(void){
+usrp2_dboard_iface::~usrp2_dboard_iface(void){
     /* NOP */
 }
 
 /***********************************************************************
  * Clocks
  **********************************************************************/
-double usrp2_dboard_interface::get_clock_rate(unit_t){
-    return _impl->get_master_clock_freq();
+double usrp2_dboard_iface::get_clock_rate(unit_t){
+    return _iface->get_master_clock_freq();
 }
 
-void usrp2_dboard_interface::set_clock_enabled(unit_t unit, bool enb){
+void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
     switch(unit){
     case UNIT_RX:
-        _impl->get_clock_control()->enable_rx_dboard_clock(enb);
+        _clk_ctrl->enable_rx_dboard_clock(enb);
         return;
     case UNIT_TX:
-        _impl->get_clock_control()->enable_tx_dboard_clock(enb);
+        _clk_ctrl->enable_tx_dboard_clock(enb);
         return;
     }
 }
@@ -118,18 +125,18 @@ static int unit_to_shift(dboard_interface::unit_t unit){
     throw std::runtime_error("unknown unit type");
 }
 
-void usrp2_dboard_interface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
+void usrp2_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
     _ddr_shadow = \
         (_ddr_shadow & ~(0xffff << unit_to_shift(unit))) |
         (boost::uint32_t(value) << unit_to_shift(unit));
-    _impl->poke32(FR_GPIO_DDR, _ddr_shadow);
+    _iface->poke32(FR_GPIO_DDR, _ddr_shadow);
 }
 
-boost::uint16_t usrp2_dboard_interface::read_gpio(unit_t unit){
-    return boost::uint16_t(_impl->peek32(FR_GPIO_IO) >> unit_to_shift(unit));
+boost::uint16_t usrp2_dboard_iface::read_gpio(unit_t unit){
+    return boost::uint16_t(_iface->peek32(FR_GPIO_IO) >> unit_to_shift(unit));
 }
 
-void usrp2_dboard_interface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
+void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
     //define mapping of unit to atr regs to register address
     static const uhd::dict<
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
@@ -147,7 +154,7 @@ void usrp2_dboard_interface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint
             (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_TXSIDE)
         )
     ;
-    _impl->poke16(unit_to_atr_to_addr[unit][atr], value);
+    _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
 }
 
 /***********************************************************************
@@ -167,28 +174,28 @@ static boost::uint8_t unit_to_otw_spi_dev(dboard_interface::unit_t unit){
     throw std::invalid_argument("unknown unit type");
 }
 
-void usrp2_dboard_interface::write_spi(
+void usrp2_dboard_iface::write_spi(
     unit_t unit,
     const spi_config_t &config,
     boost::uint32_t data,
     size_t num_bits
 ){
-    _impl->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
+    _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
 }
 
-boost::uint32_t usrp2_dboard_interface::read_write_spi(
+boost::uint32_t usrp2_dboard_iface::read_write_spi(
     unit_t unit,
     const spi_config_t &config,
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _impl->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
+    return _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
 }
 
 /***********************************************************************
  * I2C
  **********************************************************************/
-void usrp2_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
+void usrp2_dboard_iface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
@@ -202,11 +209,11 @@ void usrp2_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
 
     //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
 }
 
-dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
+dboard_interface::byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
@@ -217,7 +224,7 @@ dboard_interface::byte_vector_t usrp2_dboard_interface::read_i2c(int i2c_addr, s
     ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
 
     //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
     ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
 
@@ -244,7 +251,7 @@ static boost::uint8_t unit_to_otw(dboard_interface::unit_t unit){
     throw std::invalid_argument("unknown unit type");
 }
 
-void usrp2_dboard_interface::write_aux_dac(unit_t unit, int which, int value){
+void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, int value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
@@ -253,11 +260,11 @@ void usrp2_dboard_interface::write_aux_dac(unit_t unit, int which, int value){
     out_data.data.aux_args.value = htonl(value);
 
     //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
 }
 
-int usrp2_dboard_interface::read_aux_adc(unit_t unit, int which){
+int usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);
@@ -265,7 +272,7 @@ int usrp2_dboard_interface::read_aux_adc(unit_t unit, int which){
     out_data.data.aux_args.which = which;
 
     //send and recv
-    usrp2_ctrl_data_t in_data = _impl->ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE);
     return ntohl(in_data.data.aux_args.value);
 }

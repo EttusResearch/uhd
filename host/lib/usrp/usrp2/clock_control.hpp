@@ -18,8 +18,7 @@
 #ifndef INCLUDED_CLOCK_CONTROL_HPP
 #define INCLUDED_CLOCK_CONTROL_HPP
 
-class usrp2_impl; //dummy class
-
+#include "usrp2_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
@@ -29,10 +28,10 @@ public:
 
     /*!
      * Make a clock config for the ad9510 ic.
-     * \param impl a pointer to the usrp2 implementation object
+     * \param _iface a pointer to the usrp2 interface object
      * \return a new clock control object
      */
-    static sptr make_ad9510(usrp2_impl *impl);
+    static sptr make_ad9510(usrp2_iface::sptr iface);
 
     /*!
      * Enable/disable the rx dboard clock.

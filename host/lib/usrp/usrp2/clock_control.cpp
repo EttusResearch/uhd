@@ -28,8 +28,8 @@ using namespace uhd::usrp;
  */
 class clock_control_ad9510 : public clock_control{
 public:
-    clock_control_ad9510(usrp2_impl *impl){
-        _impl = impl;
+    clock_control_ad9510(usrp2_iface::sptr iface){
+        _iface = iface;
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
         this->write_reg(0x09);
@@ -71,8 +71,8 @@ public:
 
     ~clock_control_ad9510(void){
         /* private clock enables, must be set here */
-        //this->enable_dac_clock(false);
-        //this->enable_adc_clock(false); //FIXME cant do yet
+        this->enable_dac_clock(false);
+        this->enable_adc_clock(false);
     }
 
     //uses output clock 7 (cmos)
@@ -114,7 +114,7 @@ private:
      */
     void write_reg(boost::uint8_t addr){
         boost::uint32_t data = _ad9510_regs.get_write_reg(addr);
-        _impl->transact_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24, false /*no rb*/);
+        _iface->transact_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24, false /*no rb*/);
     }
 
     /*!
@@ -144,13 +144,13 @@ private:
         this->update_regs();
     }
 
-    usrp2_impl *_impl;
+    usrp2_iface::sptr _iface;
     ad9510_regs_t _ad9510_regs;
 };
 
 /***********************************************************************
  * Public make function for the ad9510 clock control
  **********************************************************************/
-clock_control::sptr clock_control::make_ad9510(usrp2_impl *impl){
-    return clock_control::sptr(new clock_control_ad9510(impl));
+clock_control::sptr clock_control::make_ad9510(usrp2_iface::sptr iface){
+    return clock_control::sptr(new clock_control_ad9510(iface));
 }

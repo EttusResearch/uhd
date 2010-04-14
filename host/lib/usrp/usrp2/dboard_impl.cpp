@@ -22,6 +22,8 @@
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
+#include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
 
 using namespace uhd;
@@ -34,7 +36,7 @@ void usrp2_impl::dboard_init(void){
     //grab the dboard ids over the control line
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO);
-    usrp2_ctrl_data_t in_data = ctrl_send_and_recv(out_data);
+    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE);
 
     //extract the dboard ids an convert them
@@ -43,7 +45,7 @@ void usrp2_impl::dboard_init(void){
 
     //create a new dboard interface and manager
     dboard_interface::sptr _dboard_interface(
-        make_usrp2_dboard_interface(this)
+        make_usrp2_dboard_iface(_iface, _clk_ctrl)
     );
     _dboard_manager = dboard_manager::make(
         rx_dboard_id, tx_dboard_id, _dboard_interface
@@ -82,7 +84,7 @@ void usrp2_impl::update_rx_mux_config(void){
         rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
     }
 
-    this->poke32(FR_DSP_RX_MUX, rx_mux);
+    _iface->poke32(FR_DSP_RX_MUX, rx_mux);
 }
 
 void usrp2_impl::update_tx_mux_config(void){
@@ -95,7 +97,7 @@ void usrp2_impl::update_tx_mux_config(void){
         tx_mux = (((tx_mux >> 0) & 0x1) << 1) | (((tx_mux >> 1) & 0x1) << 0);
     }
 
-    this->poke32(FR_DSP_TX_MUX, tx_mux);
+    _iface->poke32(FR_DSP_TX_MUX, tx_mux);
 }
 
 /***********************************************************************

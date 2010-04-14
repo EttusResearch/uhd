@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include <uhd/transport/if_addrs.hpp>
+#include <uhd/transport/udp_simple.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
@@ -24,6 +25,7 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
 
 using namespace uhd;
@@ -61,7 +63,6 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
     }
 
     //create a udp transport to communicate
-    //TODO if an addr is not provided, search all interfaces?
     std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
     udp_simple::sptr udp_transport = udp_simple::make_broadcast(
         hint["addr"], ctrl_port
@@ -128,8 +129,10 @@ usrp2_impl::usrp2_impl(
     udp_simple::sptr ctrl_transport,
     udp_zero_copy::sptr data_transport
 ){
-    _ctrl_transport = ctrl_transport;
     _data_transport = data_transport;
+
+    //make a new interface for usrp2 stuff
+    _iface = usrp2_iface::make(ctrl_transport);
 
     //load the allowed decim/interp rates
     //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
@@ -166,109 +169,6 @@ usrp2_impl::usrp2_impl(
 
 usrp2_impl::~usrp2_impl(void){
     /* NOP */
-}
-
-/***********************************************************************
- * Misc Access Methods
- **********************************************************************/
-double usrp2_impl::get_master_clock_freq(void){
-    return 100e6;
-}
-
-template <class T> void impl_poke(usrp2_impl *impl, boost::uint32_t addr, T data){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO);
-    out_data.data.poke_args.addr = htonl(addr);
-    out_data.data.poke_args.data = htonl(boost::uint32_t(data));
-    out_data.data.poke_args.num_bytes = sizeof(T);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
-}
-
-template <class T> T impl_peek(usrp2_impl *impl, boost::uint32_t addr){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO);
-    out_data.data.poke_args.addr = htonl(addr);
-    out_data.data.poke_args.num_bytes = sizeof(T);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = impl->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
-    return T(ntohl(out_data.data.poke_args.data));
-}
-
-
-void usrp2_impl::poke32(boost::uint32_t addr, boost::uint32_t data){
-    return impl_poke<boost::uint32_t>(this, addr, data);
-}
-
-boost::uint32_t usrp2_impl::peek32(boost::uint32_t addr){
-    return impl_peek<boost::uint32_t>(this, addr);
-}
-
-void usrp2_impl::poke16(boost::uint32_t addr, boost::uint16_t data){
-    return impl_poke<boost::uint16_t>(this, addr, data);
-}
-
-boost::uint16_t usrp2_impl::peek16(boost::uint32_t addr){
-    return impl_peek<boost::uint16_t>(this, addr);
-}
-
-boost::uint32_t usrp2_impl::transact_spi(
-    int which_slave,
-    const spi_config_t &config,
-    boost::uint32_t data,
-    size_t num_bits,
-    bool readback
-){
-    static const uhd::dict<spi_config_t::edge_t, int> spi_edge_to_otw = boost::assign::map_list_of
-        (spi_config_t::EDGE_RISE, USRP2_CLK_EDGE_RISE)
-        (spi_config_t::EDGE_FALL, USRP2_CLK_EDGE_FALL)
-    ;
-
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
-    out_data.data.spi_args.dev = which_slave;
-    out_data.data.spi_args.miso_edge = spi_edge_to_otw[config.miso_edge];
-    out_data.data.spi_args.mosi_edge = spi_edge_to_otw[config.mosi_edge];
-    out_data.data.spi_args.readback = (readback)? 1 : 0;
-    out_data.data.spi_args.num_bits = num_bits;
-    out_data.data.spi_args.data = htonl(data);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
-
-    return ntohl(out_data.data.spi_args.data);
-}
-
-/***********************************************************************
- * Control Send/Recv
- **********************************************************************/
-usrp2_ctrl_data_t usrp2_impl::ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data){
-    boost::mutex::scoped_lock lock(_ctrl_mutex);
-
-    //fill in the seq number and send
-    usrp2_ctrl_data_t out_copy = out_data;
-    out_copy.seq = htonl(++_ctrl_seq_num);
-    _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
-
-    //loop until we get the packet or timeout
-    while(true){
-        usrp2_ctrl_data_t in_data;
-        size_t len = _ctrl_transport->recv(asio::buffer(&in_data, sizeof(in_data)));
-        if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(in_data.seq) == _ctrl_seq_num){
-            return in_data;
-        }
-        if (len == 0) break; //timeout
-        //didnt get seq or bad packet, continue looking...
-    }
-    throw std::runtime_error("usrp2 no control response");
 }
 
 /***********************************************************************

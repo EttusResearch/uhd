@@ -103,10 +103,11 @@ UHD_PYTHON_GEN_SOURCE_FILE(
 LIST(APPEND libuhd_sources
     usrp/usrp2/clock_control.cpp
     usrp/usrp2/dboard_impl.cpp
-    usrp/usrp2/dboard_interface.cpp
+    usrp/usrp2/dboard_iface.cpp
     usrp/usrp2/dsp_impl.cpp
     usrp/usrp2/io_impl.cpp
     usrp/usrp2/mboard_impl.cpp
+    usrp/usrp2/usrp2_iface.cpp
     usrp/usrp2/usrp2_impl.cpp
 )
 

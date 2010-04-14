@@ -18,6 +18,7 @@
 #include "usrp2_impl.hpp"
 #include <uhd/transport/convert_types.hpp>
 #include <boost/format.hpp>
+#include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
 
 using namespace uhd;

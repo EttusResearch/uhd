@@ -18,31 +18,29 @@
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
+#include "usrp2_iface.hpp"
 #include "clock_control.hpp"
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
-#include <boost/asio.hpp>
-#include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <boost/assign/list_of.hpp>
 #include <uhd/transport/vrt.hpp>
-#include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include "fw_common.h"
-
-class usrp2_impl; //dummy class declaration
 
 /*!
  * Make a usrp2 dboard interface.
- * \param impl a pointer to the usrp2 impl object
+ * \param iface the usrp2 interface object
+ * \param clk_ctrl the clock control object
  * \return a sptr to a new dboard interface
  */
-uhd::usrp::dboard_interface::sptr make_usrp2_dboard_interface(usrp2_impl *impl);
+uhd::usrp::dboard_interface::sptr make_usrp2_dboard_iface(
+    usrp2_iface::sptr iface,
+    clock_control::sptr clk_ctrl
+);
 
 /*!
  * Simple wax obj proxy class:
@@ -101,40 +99,22 @@ public:
 
     ~usrp2_impl(void);
 
-    //performs a control transaction
-    usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &);
-
-    //peek and poke registers
-    void poke32(boost::uint32_t addr, boost::uint32_t data);
-    boost::uint32_t peek32(boost::uint32_t addr);
-
-    void poke16(boost::uint32_t addr, boost::uint16_t data);
-    boost::uint16_t peek16(boost::uint32_t addr);
-
-    //clock control
-    clock_control::sptr get_clock_control(void);
-
-    //spi read and write
-    boost::uint32_t transact_spi(
-        int which_slave,
-        const uhd::usrp::spi_config_t &config,
-        boost::uint32_t data,
-        size_t num_bits,
-        bool readback
-    );
-
-    //misc access methods
-    double get_master_clock_freq(void);
-
     //the io interface
     size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
     size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
 
 private:
+    double get_master_clock_freq(void){
+        return _iface->get_master_clock_freq();
+    }
+
     //device properties interface
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
-    clock_control::sptr _clock_control;
+
+    //interfaces
+    clock_control::sptr _clk_ctrl;
+    usrp2_iface::sptr _iface;
 
     //the raw io interface (samples are in the usrp2 native format)
     void recv_raw(uhd::rx_metadata_t &);
@@ -158,12 +138,7 @@ private:
     void io_init(void);
 
     //udp transports for control and data
-    uhd::transport::udp_simple::sptr _ctrl_transport;
     uhd::transport::udp_zero_copy::sptr _data_transport;
-
-    //private vars for dealing with send/recv control
-    boost::uint32_t _ctrl_seq_num;
-    boost::mutex _ctrl_mutex;
 
     //methods and shadows for clock configuration
     uhd::clock_config_t _clock_config;
