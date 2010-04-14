@@ -15,6 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+// IO Pin functions
+#define POWER_UP     (1 << 7)   // Low enables power supply
+#define ANT_SW       (1 << 6)   // On TX DB, 0 = TX, 1 = RX, on RX DB 0 = main ant, 1 = RX2
+#define MIX_EN       (1 << 5)   // Enable appropriate mixer
+#define LOCKDET_MASK (1 << 2)   // Input pin
+
 #include "adf4360_regs.hpp"
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
@@ -104,6 +110,23 @@ rfx_xcvr::rfx_xcvr(
     const freq_range_t &freq_range
 ) : xcvr_dboard_base(args){
     _freq_range = freq_range;
+
+    //enable the clocks that we need
+    this->get_interface()->set_clock_enabled(dboard_interface::UNIT_TX, true);
+    this->get_interface()->set_clock_enabled(dboard_interface::UNIT_RX, true);
+
+    //set the gpio directions
+    boost::uint16_t output_enables = POWER_UP | ANT_SW | MIX_EN;
+    this->get_interface()->set_gpio_ddr(dboard_interface::UNIT_TX, output_enables);
+    this->get_interface()->set_gpio_ddr(dboard_interface::UNIT_RX, output_enables);
+
+    //setup the tx atr (this does not change with antenna)
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_TX, dboard_interface::ATR_REG_IDLE,        POWER_UP | ANT_SW);
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_TX, dboard_interface::ATR_REG_RX_ONLY,     POWER_UP | ANT_SW);
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_TX, dboard_interface::ATR_REG_TX_ONLY,     POWER_UP | MIX_EN);
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_TX, dboard_interface::ATR_REG_FULL_DUPLEX, POWER_UP | MIX_EN);
+
+    //set some default values
     set_lo_freq((_freq_range.min + _freq_range.max)/2.0);
     set_rx_ant("rx2");
     set_rx_pga0_gain(0);
@@ -122,7 +145,13 @@ void rfx_xcvr::set_lo_freq(double freq){
 }
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
-    /* NOP */
+    boost::uint16_t ant_val = (ant == "tx/rx")? 0 : ANT_SW;
+
+    //set the rx atr regs
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_RX, dboard_interface::ATR_REG_IDLE,        POWER_UP | ant_val);
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_RX, dboard_interface::ATR_REG_RX_ONLY,     POWER_UP | ant_val | MIX_EN);
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_RX, dboard_interface::ATR_REG_TX_ONLY,     POWER_UP | ant_val);
+    this->get_interface()->set_atr_reg(dboard_interface::UNIT_RX, dboard_interface::ATR_REG_FULL_DUPLEX, POWER_UP | ant_val | MIX_EN);
 }
 
 void rfx_xcvr::set_rx_pga0_gain(float gain){
