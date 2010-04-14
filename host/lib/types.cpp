@@ -55,8 +55,8 @@ freq_range_t::freq_range_t(double min_, double max_){
 tune_result_t::tune_result_t(void){
     target_inter_freq = 0.0;
     actual_inter_freq = 0.0;
-    target_dxc_freq = 0.0;
-    actual_dxc_freq = 0.0;
+    target_dsp_freq = 0.0;
+    actual_dsp_freq = 0.0;
     spectrum_inverted = false;
 }
 
