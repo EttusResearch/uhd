@@ -21,6 +21,13 @@
 #define MIX_EN       (1 << 5)   // Enable appropriate mixer
 #define LOCKDET_MASK (1 << 2)   // Input pin
 
+// Antenna constants
+#define ANT_TX       0          //the tx line is transmitting
+#define ANT_RX       ANT_SW     //the tx line is receiving
+#define ANT_TXRX     0          //the rx line is on txrx
+#define ANT_RX2      ANT_SW     //the rx line in on rx2
+#define ANT_XX       0          //dont care how the antenna is set
+
 #include "adf4360_regs.hpp"
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
@@ -121,10 +128,15 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, output_enables);
 
     //setup the tx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_SW);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP | ANT_SW);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | MIX_EN);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | MIX_EN);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP | ANT_RX);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_TX | MIX_EN);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_TX | MIX_EN);
+
+    //setup the rx atr (this does not change with antenna)
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_XX);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_RX2 | MIX_EN);
 
     //set some default values
     set_lo_freq((_freq_range.min + _freq_range.max)/2.0);
@@ -145,13 +157,11 @@ void rfx_xcvr::set_lo_freq(double freq){
 }
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
-    boost::uint16_t ant_val = (ant == "tx/rx")? 0 : ANT_SW;
-
-    //set the rx atr regs
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ant_val);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP | ant_val | MIX_EN);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ant_val);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ant_val | MIX_EN);
+    //set the rx atr regs that change with antenna setting
+    this->get_iface()->set_atr_reg(
+        dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
+        POWER_UP | MIX_EN | ((ant == "tx/rx")? ANT_TXRX : ANT_RX2)
+    );
 }
 
 void rfx_xcvr::set_rx_pga0_gain(float gain){
