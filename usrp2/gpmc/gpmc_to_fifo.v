@@ -8,6 +8,7 @@ module gpmc_to_fifo
 
    input [15:0] frame_len, input [15:0] fifo_space, output fifo_ready);
 
+   reg [10:0] counter;
    // Synchronize the async control signals
    reg [1:0] 	cs_del, we_del;
    always @(posedge fifo_clk)
@@ -43,7 +44,6 @@ module gpmc_to_fifo
      else
        src_rdy_o <= 0;    // Assume it was taken
 
-   reg [10:0] counter;
    always @(posedge fifo_clk)
      if(fifo_rst)
        counter <= 0;
