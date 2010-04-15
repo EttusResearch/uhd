@@ -77,11 +77,11 @@ module gpmc
      (.wclk(fifo_clk), .datain(rx18_data), 
       .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy), .space(rx_fifo_space),
       .rclk(EM_CLK), .dataout(rx18b_data), 
-      .src_rdy_o(tx18b_src_rdy), .dst_rdy_i(tx18b_dst_rdy), .occupied(), .arst(arst));
+      .src_rdy_o(rx18b_src_rdy), .dst_rdy_i(rx18b_dst_rdy), .occupied(), .arst(arst));
 
    fifo_to_gpmc_sync fifo_to_gpmc_sync
      (.arst(arst),
-      .data_i(tx18b_data), .src_rdy_i(tx18b_src_rdy), .dst_rdy_o(tx18b_dst_rdy),
+      .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
       .EM_CLK(EM_CLK), .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
       .fifo_ready(rx_have_data) );
    
@@ -89,7 +89,7 @@ module gpmc
    // Control path on CS6
    
    gpmc_wb gpmc_wb
-     (.EM_CLK(EM_CLK), .EM_D(EM_D_wb), .EM_A(EM_A), .EM_NBE(EM_NBE),
+     (.EM_CLK(EM_CLK), .EM_D_in(EM_D), .EM_D_out(EM_D_wb), .EM_A(EM_A), .EM_NBE(EM_NBE),
       .EM_NCS(EM_NCS6), .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
       .wb_clk(wb_clk), .wb_rst(wb_rst),
       .wb_adr_o(wb_adr_o), .wb_dat_mosi(wb_dat_mosi), .wb_dat_miso(wb_dat_miso),

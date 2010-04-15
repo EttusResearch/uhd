@@ -1,7 +1,7 @@
 
 
 module gpmc_wb
-  (input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
+  (input EM_CLK, input [15:0] EM_D_in, output [15:0] EM_D_out, input [10:1] EM_A, input [1:0] EM_NBE,
    input EM_NCS, input EM_NWE, input EM_NOE,
 
    input wb_clk, input wb_rst,
@@ -27,7 +27,7 @@ module gpmc_wb
    always @(posedge wb_clk)
      if(we_del == 2'b10)  // Falling Edge
        begin
-	  wb_dat_mosi <= EM_D;
+	  wb_dat_mosi <= EM_D_in;
 	  wb_sel_o <= ~EM_NBE;
        end
 
@@ -37,7 +37,7 @@ module gpmc_wb
      if(wb_ack_i)
        EM_D_hold <= wb_dat_miso;
 
-   assign EM_D = wb_ack_i ? wb_dat_miso : EM_D_hold;
+   assign EM_D_out = wb_ack_i ? wb_dat_miso : EM_D_hold;
    
    assign wb_cyc_o = wb_stb_o;
 

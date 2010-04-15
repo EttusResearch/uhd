@@ -109,6 +109,7 @@ control_lib/newfifo/fifo_short.v \
 control_lib/newfifo/fifo_long.v \
 control_lib/newfifo/fifo_cascade.v \
 control_lib/newfifo/fifo36_to_ll8.v \
+control_lib/newfifo/fifo36_to_fifo18.v \
 control_lib/newfifo/fifo19_to_fifo36.v \
 control_lib/longfifo.v \
 control_lib/shortfifo.v \
@@ -180,6 +181,7 @@ gpmc/edge_sync.v \
 gpmc/dbsm.v \
 gpmc/gpmc_to_fifo_async.v \
 gpmc/gpmc_to_fifo_sync.v \
+gpmc/fifo_to_gpmc_sync.v \
 gpmc/gpmc_wb.v \
 top/u1e/u1e_core.v \
 top/u1e/u1e.ucf \
