@@ -32,6 +32,9 @@ module u1e_core
 
    wire [31:0] 	 debug_gpmc;
 
+   wire [35:0] 	 tx_data, rx_data;
+   wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
+   
    gpmc gpmc (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 	      .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
 	      .EM_NOE(EM_NOE),
@@ -44,12 +47,16 @@ module u1e_core
 	      .wb_ack_i(m0_ack),
 
 	      .fifo_clk(wb_clk), .fifo_rst(wb_rst),
-	      .tx_data_o(), .tx_src_rdy_o(), .tx_dst_rdy_i(0),
-	      .rx_data_i(0), .rx_src_rdy_i(0), .rx_dst_rdy_o(),
+	      .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
+	      .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	      
 	      .debug(debug_gpmc));
-   
-	      
+
+   fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+      .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
+      .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
