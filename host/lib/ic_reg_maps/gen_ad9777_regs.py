@@ -129,13 +129,13 @@ struct ad9777_regs_t{
 #end for
     }
 
-    boost::uint32_t get_reg(boost::uint8_t addr){
-        boost::uint32_t reg = 0;
+    boost::uint8_t get_reg(boost::uint8_t addr){
+        boost::uint8_t reg = 0;
         switch(addr){
         #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
         case $addr:
             #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-            reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
+            reg |= (boost::uint8_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
             #end for
             break;
         #end for

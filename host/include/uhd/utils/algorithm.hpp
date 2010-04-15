@@ -55,8 +55,8 @@ namespace std{
         return 0;
     }
 
-    template<class T, class T1, class T2> T clip(T val, T1 minVal, T2 maxVal){
-        return std::min<T>(std::max<T>(val, minVal), maxVal);
+    template<class T> T clip(T val, T minVal, T maxVal){
+        return std::min(std::max(val, minVal), maxVal);
     }
 
 }//namespace std

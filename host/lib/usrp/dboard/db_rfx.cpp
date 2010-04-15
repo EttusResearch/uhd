@@ -175,10 +175,10 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
 
 void rfx_xcvr::set_rx_pga0_gain(float gain){
     //clip the input
-    gain = std::clip(gain, 0, _max_rx_pga0_gain);
+    gain = std::clip<float>(gain, 0, _max_rx_pga0_gain);
 
     //voltage level constants
-    static const float max_volts = .2, min_volts = 1.2;
+    static const float max_volts = float(.2), min_volts = float(1.2);
     static const float slope = (max_volts-min_volts)/_max_rx_pga0_gain;
 
     //calculate the voltage for the aux dac
