@@ -37,14 +37,14 @@ REGS_DATA_TMPL="""\
 ## address 0
 ########################################################################
 core_power_level         0[2:3]     0          5ma, 10ma, 15ma, 20ma
-counter_reset            0[4]       0          normal, reset
+counter_operation        0[4]       0          normal, reset
 muxout_control           0[5:7]     0          3state, dld, ndiv, dvdd, rdiv, nchan_od_ld, sdo, dgnd
 phase_detector_polarity  0[8]       0          neg, pos
-cp_three_state           0[9]       0          normal, 3state
+charge_pump_output       0[9]       0          normal, 3state
 cp_gain_0                0[10]      0          set1, set2
 mute_till_ld             0[11]      0          dis, enb
 output_power_level       0[12:13]   0          3_5ma, 5_0ma, 7_5ma, 11_0ma
-#set $current_setting_enums = "0_31, 0_62, 0_93, 1_25, 1_56, 1_87, 2_18, 2_50"
+#set $current_setting_enums = ', '.join(map(lambda x: x+"ma", "0_31 0_62 0_93 1_25 1_56 1_87 2_18 2_50".split()))
 current_setting1         0[14:16]   0          $current_setting_enums
 current_setting2         0[17:19]   0          $current_setting_enums
 power_down               0[20:21]   0          normal_op=0, async_pd=1, sync_pd=3

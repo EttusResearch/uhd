@@ -15,6 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+static const bool rfx_debug = true;
+
 // IO Pin functions
 #define POWER_UP     (1 << 7)   // Low enables power supply
 #define ANT_SW       (1 << 6)   // On TX DB, 0 = TX, 1 = RX, on RX DB 0 = main ant, 1 = RX2
@@ -39,6 +41,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
+#include <boost/math/special_functions/round.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -215,25 +218,85 @@ double rfx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
+    if (rfx_debug) std::cerr << boost::format(
+        "RFX tune: target frequency %f Mhz"
+    ) % (target_freq/100e6) << std::endl;
+
     //clip the input
     target_freq = std::clip(target_freq, _freq_range.min, _freq_range.max);
-
-    //load the registers
-    adf4360_regs_t regs;
-
     if (_div2[unit]) target_freq *= 2;
-    regs.divide_by_2_output = (_div2[unit])?
-        adf4360_regs_t::DIVIDE_BY_2_OUTPUT_DIV2 :
-        adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND ;
 
-    //TODO
+    //map prescalers to the register enums
+    static const uhd::dict<int, adf4360_regs_t::prescaler_value_t> prescaler_to_enum = map_list_of
+        (8,  adf4360_regs_t::PRESCALER_VALUE_8_9)
+        (16, adf4360_regs_t::PRESCALER_VALUE_16_17)
+        (32, adf4360_regs_t::PRESCALER_VALUE_32_33)
+    ;
 
+    //calculate the following values
+    // fvco = [P*B + A] * fref/R
+    // fvco*R/fref = P*B + A = N
+    int A, B, P, R; double N;
+    static const int
+        B_min = 3, B_max = 8191,
+        A_min = 0, A_max = 31,
+        P_min = 8, P_max = 32;
+    static const int
+        N_min = P_min*B_min + A_min,
+        N_max = P_max*B_max + A_max;
+    double ref_freq = this->get_iface()->get_clock_rate(unit);
+    double ratio = target_freq/ref_freq;
+
+    for(R = 1; R < 11; R++){
+        //increment R and see if this allows for a large enough N
+        N = ratio*R;
+        if (N < N_min) continue;
+        N = std::clip<double>(N, N_min, N_max);
+        break;
+    }
+
+    //discover the best value for P, B, and A
+    BOOST_FOREACH(P, prescaler_to_enum.keys()){
+        B = int(std::floor(N/P));
+        if (B > B_max) continue;
+        B = std::clip(B, B_min, B_max);
+        A = boost::math::iround(N - P*B);
+        A = std::clip(A, A_min, A_max);
+        break;
+    }
+
+    //load the register values
+    adf4360_regs_t regs;
+    regs.core_power_level        = adf4360_regs_t::CORE_POWER_LEVEL_10MA;
+    regs.counter_operation       = adf4360_regs_t::COUNTER_OPERATION_NORMAL;
+    regs.muxout_control          = adf4360_regs_t::MUXOUT_CONTROL_DLD;
+    regs.phase_detector_polarity = adf4360_regs_t::PHASE_DETECTOR_POLARITY_POS;
+    regs.charge_pump_output      = adf4360_regs_t::CHARGE_PUMP_OUTPUT_NORMAL;
+    regs.cp_gain_0               = adf4360_regs_t::CP_GAIN_0_SET1;
+    regs.mute_till_ld            = adf4360_regs_t::MUTE_TILL_LD_ENB;
+    regs.output_power_level      = adf4360_regs_t::OUTPUT_POWER_LEVEL_3_5MA;
+    regs.current_setting1        = adf4360_regs_t::CURRENT_SETTING1_0_31MA;
+    regs.current_setting2        = adf4360_regs_t::CURRENT_SETTING2_0_31MA;
+    regs.power_down              = adf4360_regs_t::POWER_DOWN_NORMAL_OP;
+    regs.prescaler_value         = prescaler_to_enum[P];
+    regs.a_counter               = A;
+    regs.b_counter               = B;
+    regs.cp_gain_1               = adf4360_regs_t::CP_GAIN_1_SET1;
+    regs.divide_by_2_output      = (_div2[unit])?
+                                    adf4360_regs_t::DIVIDE_BY_2_OUTPUT_DIV2 :
+                                    adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND ;
+    regs.divide_by_2_prescaler   = adf4360_regs_t::DIVIDE_BY_2_PRESCALER_FUND;
+    regs.r_counter               = R;
+    regs.ablpw                   = adf4360_regs_t::ABLPW_3_0NS;
+    regs.lock_detect_precision   = adf4360_regs_t::LOCK_DETECT_PRECISION_5CYCLES;
+    regs.test_mode_bit           = 0;
+    regs.band_select_clock_div   = adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8;
 
     //write the registers
-    std::vector<adf4360_regs_t::addr_t> addrs = list_of
+    std::vector<adf4360_regs_t::addr_t> addrs = list_of //correct power-up sequence to write registers (R, C, N)
+        (adf4360_regs_t::ADDR_RCOUNTER)
         (adf4360_regs_t::ADDR_CONTROL)
         (adf4360_regs_t::ADDR_NCOUNTER)
-        (adf4360_regs_t::ADDR_RCOUNTER)
     ;
     BOOST_FOREACH(adf4360_regs_t::addr_t addr, addrs){
         this->get_iface()->write_spi(
@@ -243,7 +306,12 @@ double rfx_xcvr::set_lo_freq(
     }
 
     //return the actual frequency
-    return target_freq; //TODO... and remember to check div2
+    double actual_freq = double(P*B + A) * ref_freq / double(R);
+    if (_div2[unit]) actual_freq /= 2;
+    if (rfx_debug) std::cerr << boost::format(
+        "RFX tune: actual frequency %f Mhz"
+    ) % (actual_freq/100e6) << std::endl;
+    return actual_freq;
 }
 
 /***********************************************************************
