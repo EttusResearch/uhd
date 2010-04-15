@@ -1,4 +1,4 @@
-
+`timescale 1ps/1ps
 
 module gpmc_model_async
   (output EM_CLK, inout [15:0] EM_D, output reg [10:1] EM_A, output reg [1:0] EM_NBE,
@@ -26,22 +26,22 @@ module gpmc_model_async
       input [10:0] addr;
       input [15:0] data;
       begin
-	 #2.3;
+	 #23000;
 	 EM_A <= addr[10:1];
 	 EM_D_int <= data;
-	 #2.01;
+	 #20100;
 	 if(ctrl)
 	   EM_NCS6 <= 0;
 	 else
 	   EM_NCS4 <= 0;
-	 #14;
+	 #14000;
 	 EM_NWE <= 0;
-	 #77.5;
+	 #77500;
 	 EM_NCS4 <= 1;
 	 EM_NCS6 <= 1;
 	 //#1.5;
 	 EM_NWE <= 1;
-	 #60;
+	 #60000;
 	 EM_A <= 10'bz;
 	 EM_D_int <= 16'bz;
       end
@@ -51,33 +51,33 @@ module gpmc_model_async
       input ctrl;
       input [10:0] addr;
       begin
-	 #1.3;
+	 #13000;
 	 EM_A <= addr[10:1];
-	 #3;
+	 #3000;
 	 if(ctrl)
 	   EM_NCS6 <= 0;
 	 else
 	   EM_NCS4 <= 0;
-	 #14;
+	 #14000;
 	 EM_NOE <= 0;
-	 #77.5;
+	 #77500;
 	 EM_NCS4 <= 1;
 	 EM_NCS6 <= 1;
 	 //#1.5;
 	 $display("Data Read from GPMC: %X",EM_D);
 	 EM_NOE <= 1;
-	 #254;
+	 #254000;
 	 EM_A <= 10'bz;
       end
    endtask // GPMC_Read
    
    initial
      begin
-	#1000;
+	#1000000;
 	GPMC_Write(1,36,16'hF00D);
-	#1000;
+	#1000000;
 	GPMC_Read(1,36);
-	#1000;
+	#1000000;
 	GPMC_Write(0,36,16'h1234);
 	GPMC_Write(0,38,16'h5678);
 	GPMC_Write(0,40,16'h9abc);
@@ -89,6 +89,19 @@ module gpmc_model_async
 	GPMC_Write(0,11'h7FE,16'hDEAD);
 	GPMC_Write(0,11'h7FE,16'hDEAD);
 	#100000;
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	GPMC_Read(0,0);
+	#100000;
+	GPMC_Read(0,0);
+	#100000000;
 	$finish;
      end
    
