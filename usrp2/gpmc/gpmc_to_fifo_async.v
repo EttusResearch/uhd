@@ -1,5 +1,5 @@
 
-module gpmc_to_fifo
+module gpmc_to_fifo_async
   (input EM_CLK, input [15:0] EM_D, input [1:0] EM_NBE,
    input EM_NCS, input EM_NWE,
 
@@ -55,4 +55,4 @@ module gpmc_to_fifo
 
    assign fifo_ready = first_write & (fifo_space > frame_len);
    
-endmodule // gpmc_to_fifo
+endmodule // gpmc_to_fifo_async
