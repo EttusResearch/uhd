@@ -2,12 +2,12 @@
 
 module gpmc
   (// GPMC signals
+   input arst,
    input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
    input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
-   output bus_error,
    
    // GPIOs for FIFO signalling
-   output rx_have_data, output tx_have_space,
+   output rx_have_data, output tx_have_space, output bus_error, input bus_reset,
    
    // Wishbone signals
    input wb_clk, input wb_rst,
@@ -28,6 +28,9 @@ module gpmc
 
    assign EM_D = ~EM_output_enable ? 16'bz : ~EM_NCS4 ? EM_D_fifo : EM_D_wb;
 
+   wire 	bus_error_tx, bus_error_rx;
+   assign bus_error = bus_error_tx | bus_error_rx;
+   
    // CS4 is RAM_2PORT for DATA PATH (high-speed data)
    //    Writes go into one RAM, reads come from the other
    // CS6 is for CONTROL PATH (wishbone)
@@ -40,16 +43,15 @@ module gpmc
    wire [15:0] 	tx_fifo_space, tx_frame_len;
    
    assign tx_frame_len = 10;
-   wire 	arst;
    
    gpmc_to_fifo_sync gpmc_to_fifo_sync
      (.arst(arst),
       .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
       .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
       .frame_len(tx_frame_len), .fifo_space(tx_fifo_space), .fifo_ready(tx_have_space),
-      .bus_error(bus_error) );
+      .bus_error(bus_error_tx) );
    
-   fifo_2clock_cascade #(.WIDTH(18), .SIZE(10)) tx_fifo
+   fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) tx_fifo
      (.wclk(EM_CLK), .datain(tx18_data), 
       .src_rdy_i(tx18_src_rdy), .dst_rdy_o(tx18_dst_rdy), .space(tx_fifo_space),
       .rclk(fifo_clk), .dataout(tx18b_data), 
@@ -60,7 +62,6 @@ module gpmc
       .f19_datain({1'b0,tx18b_data}), .f19_src_rdy_i(tx18b_src_rdy), .f19_dst_rdy_o(tx18b_dst_rdy),
       .f36_dataout(tx_data_o), .f36_src_rdy_o(tx_src_rdy_o), .f36_dst_rdy_i(tx_dst_rdy_i));
    
-
    // ////////////////////////////////////////////
    // RX Data Path
 
@@ -84,6 +85,11 @@ module gpmc
       .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
       .EM_CLK(EM_CLK), .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
       .fifo_ready(rx_have_data) );
+
+   fifo_watcher fifo_watcher
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .src_rdy(rx18_src_rdy), .dst_rdy(rx18_dst_rdy), .sof(rx18_data[16]), .eof(rx18_data[17]),
+      .have_packet(), .length(), .next() );
    
    // ////////////////////////////////////////////
    // Control path on CS6
