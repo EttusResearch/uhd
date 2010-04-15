@@ -21,9 +21,9 @@ module tb_u1e();
    wire [1:0]  EM_NBE;
    
    reg  clk_fpga = 0, rst_fpga = 1;
-   always #15.625 clk_fpga = ~clk_fpga;
+   always #15625 clk_fpga = ~clk_fpga;
 
-   initial #200
+   initial #200000
      @(posedge clk_fpga)
        rst_fpga <= 0;
    

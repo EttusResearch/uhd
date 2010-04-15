@@ -35,22 +35,24 @@ module u1e_core
    wire [35:0] 	 tx_data, rx_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
    
-   gpmc gpmc (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
-	      .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
-	      .EM_NOE(EM_NOE),
-
-	      .rx_have_data(rx_have_data), .tx_have_space(tx_have_space),
-	      
-	      .wb_clk(wb_clk), .wb_rst(wb_rst),
-	      .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
-	      .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
-	      .wb_ack_i(m0_ack),
-
-	      .fifo_clk(wb_clk), .fifo_rst(wb_rst),
-	      .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
-	      .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
-	      
-	      .debug(debug_gpmc));
+   gpmc_async gpmc (.arst(wb_rst),
+		    .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
+		    .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
+		    .EM_NOE(EM_NOE),
+		    
+		    .rx_have_data(rx_have_data), .tx_have_space(tx_have_space),
+		    .bus_error(), .bus_reset(0),
+		    
+		    .wb_clk(wb_clk), .wb_rst(wb_rst),
+		    .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
+		    .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
+		    .wb_ack_i(m0_ack),
+		    
+		    .fifo_clk(wb_clk), .fifo_rst(wb_rst),
+		    .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
+		    .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
+		    
+		    .debug(debug_gpmc));
 
    fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
