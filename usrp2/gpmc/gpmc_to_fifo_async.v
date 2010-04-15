@@ -1,6 +1,6 @@
 
 module gpmc_to_fifo_async
-  (input EM_CLK, input [15:0] EM_D, input [1:0] EM_NBE,
+  (input [15:0] EM_D, input [1:0] EM_NBE,
    input EM_NCS, input EM_NWE,
 
    input fifo_clk, input fifo_rst,
