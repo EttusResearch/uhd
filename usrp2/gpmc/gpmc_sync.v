@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 
-module gpmc
+module gpmc_sync
   (// GPMC signals
    input arst,
    input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
@@ -104,4 +104,4 @@ module gpmc
    
       assign debug = 0;
    
-endmodule // gpmc
+endmodule // gpmc_sync
