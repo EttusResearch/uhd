@@ -1,12 +1,12 @@
 
 module gpmc_to_fifo_async
-  (input [15:0] EM_D, input [1:0] EM_NBE,
-   input EM_NCS, input EM_NWE,
+  (input [15:0] EM_D, input [1:0] EM_NBE, input EM_NCS, input EM_NWE,
 
    input fifo_clk, input fifo_rst,
    output reg [17:0] data_o, output reg src_rdy_o, input dst_rdy_i,
 
-   input [15:0] frame_len, input [15:0] fifo_space, output fifo_ready);
+   input [15:0] frame_len, input [15:0] fifo_space, output fifo_ready,
+   output reg bus_error );
 
    reg [10:0] counter;
    // Synchronize the async control signals
@@ -54,5 +54,11 @@ module gpmc_to_fifo_async
 	 counter <= counter + 1;
 
    assign fifo_ready = first_write & (fifo_space > frame_len);
+
+   always @(posedge fifo_clk)
+     if(fifo_rst)
+       bus_error <= 0;
+     else if(src_rdy_o & ~dst_rdy_i)
+       bus_error <= 1;
    
 endmodule // gpmc_to_fifo_async
