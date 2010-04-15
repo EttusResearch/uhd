@@ -33,6 +33,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -45,6 +46,8 @@ using namespace boost::assign;
 /***********************************************************************
  * The RFX series of dboards
  **********************************************************************/
+static const float _max_rx_pga0_gain = 45;
+
 class rfx_xcvr : public xcvr_dboard_base{
 public:
     rfx_xcvr(ctor_args_t const& args, const freq_range_t &freq_range);
@@ -140,7 +143,7 @@ rfx_xcvr::rfx_xcvr(
 
     //set some default values
     set_lo_freq((_freq_range.min + _freq_range.max)/2.0);
-    set_rx_ant("rx2");
+    set_rx_ant("RX2");
     set_rx_pga0_gain(0);
 }
 
@@ -152,20 +155,40 @@ rfx_xcvr::~rfx_xcvr(void){
  * Helper Methods
  **********************************************************************/
 void rfx_xcvr::set_lo_freq(double freq){
-    /* NOP */
+    //TODO !!!
     reload_adf4360_regs();
 }
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
+    //validate input
+    ASSERT_THROW(ant == "TX/RX" or ant == "RX2");
+
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(
         dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        POWER_UP | MIX_EN | ((ant == "tx/rx")? ANT_TXRX : ANT_RX2)
+        POWER_UP | MIX_EN | ((ant == "TX/RX")? ANT_TXRX : ANT_RX2)
     );
+
+    //shadow the setting
+    _rx_ant = ant;
 }
 
 void rfx_xcvr::set_rx_pga0_gain(float gain){
-    /* NOP */
+    //clip the input
+    gain = std::clip(gain, 0, _max_rx_pga0_gain);
+
+    //voltage level constants
+    static const float max_volts = .2, min_volts = 1.2;
+    static const float slope = (max_volts-min_volts)/_max_rx_pga0_gain;
+
+    //calculate the voltage for the aux dac
+    float dac_volts = gain*slope + min_volts;
+
+    //write the new voltage to the aux dac
+    this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, 1, dac_volts);
+
+    //shadow the setting (does not account for precision loss)
+    _rx_pga0_gain = gain;
 }
 
 void rfx_xcvr::reload_adf4360_regs(void){
@@ -201,15 +224,17 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
+        ASSERT_THROW(name == "PGA0");
         val = _rx_pga0_gain;
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        val = gain_range_t(0, 45, float(0.022));
+        ASSERT_THROW(name == "PGA0");
+        val = gain_range_t(0, _max_rx_pga0_gain, float(0.022));
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(1, "pga0");
+        val = prop_names_t(1, "PGA0");
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -225,7 +250,7 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:{
-            prop_names_t ants = list_of("tx/rx")("rx2");
+            prop_names_t ants = list_of("TX/RX")("RX2");
             val = ants;
         }
         return;
@@ -256,7 +281,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(name == "pga0");
+        ASSERT_THROW(name == "PGA0");
         set_rx_pga0_gain(val.as<float>());
         return;
 
@@ -309,11 +334,11 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        val = std::string("tx/rx");
+        val = std::string("TX/RX");
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, "tx/rx");
+        val = prop_names_t(1, "TX/RX");
         return;
 
     case SUBDEV_PROP_QUADRATURE:
@@ -347,7 +372,7 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         //its always set to tx/rx, so we only allow this value
-        ASSERT_THROW(val.as<std::string>() == "tx/rx");
+        ASSERT_THROW(val.as<std::string>() == "TX/RX");
         return;
 
     default:

@@ -49,10 +49,14 @@ namespace std{
         return has(iterable.begin(), iterable.end(), elem);
     }
 
-    template<typename T> T signum(T n){
+    template<class T> T signum(T n){
         if (n < 0) return -1;
         if (n > 0) return 1;
         return 0;
+    }
+
+    template<class T, class T1, class T2> T clip(T val, T1 minVal, T2 maxVal){
+        return std::min<T>(std::max<T>(val, minVal), maxVal);
     }
 
 }//namespace std

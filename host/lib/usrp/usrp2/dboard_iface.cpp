@@ -22,6 +22,7 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
+#include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 
 using namespace uhd::usrp;
@@ -31,8 +32,8 @@ public:
     usrp2_dboard_iface(usrp2_iface::sptr iface, clock_control::sptr clk_ctrl);
     ~usrp2_dboard_iface(void);
 
-    void write_aux_dac(unit_t, int, int);
-    int read_aux_adc(unit_t, int);
+    void write_aux_dac(unit_t, int, float);
+    float read_aux_adc(unit_t, int);
 
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(unit_t, boost::uint16_t);
@@ -251,20 +252,20 @@ static boost::uint8_t unit_to_otw(dboard_iface::unit_t unit){
     throw std::invalid_argument("unknown unit type");
 }
 
-void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, int value){
+void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
     out_data.data.aux_args.dir = unit_to_otw(unit);
     out_data.data.aux_args.which = which;
-    out_data.data.aux_args.value = htonl(value);
+    out_data.data.aux_args.value = htonl(boost::math::iround(4095*value/3.3));
 
     //send and recv
     usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
 }
 
-int usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
+float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);
@@ -274,5 +275,5 @@ int usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
     //send and recv
     usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE);
-    return ntohl(in_data.data.aux_args.value);
+    return float(3.3*ntohl(in_data.data.aux_args.value)/4095);
 }

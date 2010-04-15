@@ -82,18 +82,18 @@ public:
      *
      * \param unit which unit rx or tx
      * \param which_dac the dac index 0, 1, 2, 3...
-     * \param value the value to write
+     * \param value the value in volts
      */
-    virtual void write_aux_dac(unit_t unit, int which_dac, int value) = 0;
+    virtual void write_aux_dac(unit_t unit, int which_dac, float value) = 0;
 
     /*!
      * Read from an aux adc.
      *
      * \param unit which unit rx or tx
      * \param which_adc the adc index 0, 1, 2, 3...
-     * \return the value that was read
+     * \return the value in volts
      */
-    virtual int read_aux_adc(unit_t unit, int which_adc) = 0;
+    virtual float read_aux_adc(unit_t unit, int which_adc) = 0;
 
     /*!
      * Set a daughterboard ATR register.

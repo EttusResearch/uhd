@@ -77,9 +77,9 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
 
 UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
     dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX");
-    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("ab")("a")("b"));
+    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("AB")("A")("B"));
     dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX");
-    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("ab")("a")("b"));
+    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("AB")("A")("B"));
 }
 
 /***********************************************************************
@@ -139,7 +139,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_QUADRATURE:
-        val = (get_subdev_name() == "ab"); //only quadrature in ab mode
+        val = (get_subdev_name() == "AB"); //only quadrature in ab mode
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
