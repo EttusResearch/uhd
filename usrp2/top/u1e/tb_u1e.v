@@ -33,7 +33,7 @@ module tb_u1e();
 		     .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), 
 		     .EM_NWE(EM_NWE), .EM_NOE(EM_NOE) );
 
-   gpmc_model gpmc_model
+   gpmc_model_async gpmc_model_async
      (.EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
       .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), 
       .EM_NWE(EM_NWE), .EM_NOE(EM_NOE) );
