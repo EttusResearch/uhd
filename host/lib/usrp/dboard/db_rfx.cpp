@@ -29,6 +29,7 @@
 #define ANT_XX       0          //dont care how the antenna is set
 
 #include "adf4360_regs.hpp"
+#include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert.hpp>
@@ -50,7 +51,11 @@ static const float _max_rx_pga0_gain = 45;
 
 class rfx_xcvr : public xcvr_dboard_base{
 public:
-    rfx_xcvr(ctor_args_t const& args, const freq_range_t &freq_range);
+    rfx_xcvr(
+        ctor_args_t const& args,
+        const freq_range_t &freq_range,
+        bool rx_div2, bool tx_div2
+    );
     ~rfx_xcvr(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
@@ -61,38 +66,46 @@ public:
 
 private:
     freq_range_t _freq_range;
-    double       _lo_freq;
+    uhd::dict<dboard_iface::unit_t, bool> _div2;
+    double       _rx_lo_freq, _tx_lo_freq;
     std::string  _rx_ant;
     float        _rx_pga0_gain;
-    adf4360_regs_t _adf4360_regs;
 
-    void set_lo_freq(double freq);
+    void set_rx_lo_freq(double freq);
+    void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_rx_pga0_gain(float gain);
-    void reload_adf4360_regs(void);
+
+    /*!
+     * Set the LO frequency for the particular dboard unit.
+     * \param unit which unit rx or tx
+     * \param target_freq the desired frequency in Hz
+     * \return the actual frequency in Hz
+     */
+    double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
 };
 
 /***********************************************************************
- * Register the RFX dboards
+ * Register the RFX dboards (min freq, max freq, rx div2, tx div2)
  **********************************************************************/
 static dboard_base::sptr make_rfx_flex400(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(400e6, 500e6)));
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(400e6, 500e6), false, true));
 }
 
 static dboard_base::sptr make_rfx_flex900(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(750e6, 1050e6)));
-}
-
-static dboard_base::sptr make_rfx_flex1200(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1150e6, 1450e6)));
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(750e6, 1050e6), true, true));
 }
 
 static dboard_base::sptr make_rfx_flex1800(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1500e6, 2100e6)));
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1500e6, 2100e6), false, false));
+}
+
+static dboard_base::sptr make_rfx_flex1200(dboard_base::ctor_args_t const& args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1150e6, 1450e6), true, true));
 }
 
 static dboard_base::sptr make_rfx_flex2400(dboard_base::ctor_args_t const& args){
-    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(2300e6, 2900e6)));
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(2300e6, 2900e6), false, false));
 }
 
 UHD_STATIC_BLOCK(reg_rfx_dboards){
@@ -102,11 +115,11 @@ UHD_STATIC_BLOCK(reg_rfx_dboards){
     dboard_manager::register_dboard(0x0025, &make_rfx_flex900, "Flex 900 Rx MIMO B");
     dboard_manager::register_dboard(0x0029, &make_rfx_flex900, "Flex 900 Tx MIMO B");
 
-    dboard_manager::register_dboard(0x0026, &make_rfx_flex1200, "Flex 1200 Rx MIMO B");
-    dboard_manager::register_dboard(0x002a, &make_rfx_flex1200, "Flex 1200 Tx MIMO B");
-
     dboard_manager::register_dboard(0x0034, &make_rfx_flex1800, "Flex 1800 Rx MIMO B");
     dboard_manager::register_dboard(0x0035, &make_rfx_flex1800, "Flex 1800 Tx MIMO B");
+
+    dboard_manager::register_dboard(0x0026, &make_rfx_flex1200, "Flex 1200 Rx MIMO B");
+    dboard_manager::register_dboard(0x002a, &make_rfx_flex1200, "Flex 1200 Tx MIMO B");
 
     dboard_manager::register_dboard(0x0027, &make_rfx_flex2400, "Flex 2400 Rx MIMO B");
     dboard_manager::register_dboard(0x002b, &make_rfx_flex2400, "Flex 2400 Tx MIMO B");
@@ -117,9 +130,12 @@ UHD_STATIC_BLOCK(reg_rfx_dboards){
  **********************************************************************/
 rfx_xcvr::rfx_xcvr(
     ctor_args_t const& args,
-    const freq_range_t &freq_range
+    const freq_range_t &freq_range,
+    bool rx_div2, bool tx_div2
 ) : xcvr_dboard_base(args){
     _freq_range = freq_range;
+    _div2[dboard_iface::UNIT_RX] = rx_div2;
+    _div2[dboard_iface::UNIT_TX] = tx_div2;
 
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
@@ -142,7 +158,8 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_RX2 | MIX_EN);
 
     //set some default values
-    set_lo_freq((_freq_range.min + _freq_range.max)/2.0);
+    set_rx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
+    set_tx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
     set_rx_ant("RX2");
     set_rx_pga0_gain(0);
 }
@@ -154,9 +171,12 @@ rfx_xcvr::~rfx_xcvr(void){
 /***********************************************************************
  * Helper Methods
  **********************************************************************/
-void rfx_xcvr::set_lo_freq(double freq){
-    //TODO !!!
-    reload_adf4360_regs();
+void rfx_xcvr::set_rx_lo_freq(double freq){
+    _rx_lo_freq = set_lo_freq(dboard_iface::UNIT_RX, freq);
+}
+
+void rfx_xcvr::set_tx_lo_freq(double freq){
+    _tx_lo_freq = set_lo_freq(dboard_iface::UNIT_TX, freq);
 }
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
@@ -191,7 +211,25 @@ void rfx_xcvr::set_rx_pga0_gain(float gain){
     _rx_pga0_gain = gain;
 }
 
-void rfx_xcvr::reload_adf4360_regs(void){
+double rfx_xcvr::set_lo_freq(
+    dboard_iface::unit_t unit,
+    double target_freq
+){
+    //clip the input
+    target_freq = std::clip(target_freq, _freq_range.min, _freq_range.max);
+
+    //load the registers
+    adf4360_regs_t regs;
+
+    if (_div2[unit]) target_freq *= 2;
+    regs.divide_by_2_output = (_div2[unit])?
+        adf4360_regs_t::DIVIDE_BY_2_OUTPUT_DIV2 :
+        adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND ;
+
+    //TODO
+
+
+    //write the registers
     std::vector<adf4360_regs_t::addr_t> addrs = list_of
         (adf4360_regs_t::ADDR_CONTROL)
         (adf4360_regs_t::ADDR_NCOUNTER)
@@ -199,11 +237,13 @@ void rfx_xcvr::reload_adf4360_regs(void){
     ;
     BOOST_FOREACH(adf4360_regs_t::addr_t addr, addrs){
         this->get_iface()->write_spi(
-            dboard_iface::UNIT_TX,
-            spi_config_t::EDGE_RISE,
-            _adf4360_regs.get_reg(addr), 24
+            unit, spi_config_t::EDGE_RISE,
+            regs.get_reg(addr), 24
         );
     }
+
+    //return the actual frequency
+    return target_freq; //TODO... and remember to check div2
 }
 
 /***********************************************************************
@@ -238,7 +278,7 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
+        val = _rx_lo_freq;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
@@ -279,6 +319,10 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
+
+    case SUBDEV_PROP_FREQ:
+        set_rx_lo_freq(val.as<double>());
+        return;
 
     case SUBDEV_PROP_GAIN:
         ASSERT_THROW(name == "PGA0");
@@ -326,7 +370,7 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
+        val = _tx_lo_freq;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
@@ -365,6 +409,10 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
+
+    case SUBDEV_PROP_FREQ:
+        set_tx_lo_freq(val.as<double>());
+        return;
 
     case SUBDEV_PROP_GAIN:
         //no gains to set!
