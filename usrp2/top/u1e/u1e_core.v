@@ -34,6 +34,8 @@ module u1e_core
 
    wire [35:0] 	 tx_data, rx_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
+   reg [15:0] 	 tx_frame_len;
+   wire [15:0] 	 rx_frame_len;
    
    gpmc_async gpmc (.arst(wb_rst),
 		    .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
@@ -51,7 +53,8 @@ module u1e_core
 		    .fifo_clk(wb_clk), .fifo_rst(wb_rst),
 		    .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 		    .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
-		    
+
+		    .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
 		    .debug(debug_gpmc));
 
    fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
@@ -133,11 +136,13 @@ module u1e_core
    
    reg [15:0] 	 reg_leds, reg_cgen_ctrl, reg_test;
    
-   localparam REG_LEDS = 7'd0;      // out
-   localparam REG_SWITCHES = 7'd2;  // in
-   localparam REG_CGEN_CTRL = 7'd4; // out
-   localparam REG_CGEN_ST = 7'd6;   // in
-   localparam REG_TEST = 7'd8;      // out
+   localparam REG_LEDS = 7'd0;         // out
+   localparam REG_SWITCHES = 7'd2;     // in
+   localparam REG_CGEN_CTRL = 7'd4;    // out
+   localparam REG_CGEN_ST = 7'd6;      // in
+   localparam REG_TEST = 7'd8;         // out
+   localparam REG_RX_FRAMELEN = 7'd10; // out
+   localparam REG_TX_FRAMELEN = 7'd12; // in
    
    always @(posedge wb_clk)
      if(wb_rst)
@@ -155,6 +160,8 @@ module u1e_core
 	     reg_cgen_ctrl <= s0_dat_mosi;
 	   REG_TEST :
 	     reg_test <= s0_dat_mosi;
+	   REG_TX_FRAMELEN :
+	     tx_frame_len <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
@@ -166,6 +173,7 @@ module u1e_core
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
+			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;

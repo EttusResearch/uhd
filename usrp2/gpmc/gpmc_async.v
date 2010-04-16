@@ -19,6 +19,8 @@ module gpmc_async
    output [35:0] tx_data_o, output tx_src_rdy_o, input tx_dst_rdy_i,
    input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
 
+   input [15:0] tx_frame_len, output [15:0] rx_frame_len,
+   
    output [31:0] debug
    );
 
@@ -40,9 +42,7 @@ module gpmc_async
 
    wire [17:0] 	tx18_data, tx18b_data;
    wire 	tx18_src_rdy, tx18_dst_rdy, tx18b_src_rdy, tx18b_dst_rdy;
-   wire [15:0] 	tx_fifo_space, tx_frame_len;
-   
-   assign tx_frame_len = 10;
+   wire [15:0] 	tx_fifo_space;
    
    gpmc_to_fifo_async gpmc_to_fifo_async
      (.EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
@@ -66,7 +66,7 @@ module gpmc_async
 
    wire [17:0] 	rx18_data, rx18b_data;
    wire 	rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy;
-   wire [15:0] 	rx_fifo_space, rx_frame_len;
+   wire [15:0] 	rx_fifo_space;
    
    fifo36_to_fifo18 f18_to_f36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
