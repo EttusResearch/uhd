@@ -100,6 +100,7 @@ void usrp2_impl::update_clock_config(void){
     case clock_config_t::REF_INT : _iface->poke32(FR_CLOCK_CONTROL, 0x10); break;
     case clock_config_t::REF_SMA : _iface->poke32(FR_CLOCK_CONTROL, 0x1C); break;
     case clock_config_t::REF_MIMO: _iface->poke32(FR_CLOCK_CONTROL, 0x15); break;
+    default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 
     //clock source ref 10mhz
