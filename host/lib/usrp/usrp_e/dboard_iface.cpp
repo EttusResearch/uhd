@@ -15,149 +15,155 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_impl.hpp"
+#include "usrp_e_iface.hpp"
 #include "usrp_e_regs.hpp"
+#include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
-#include <algorithm> //std::copy
-#include <linux/usrp_e.h>
+#include <linux/usrp_e.h> //i2c and spi constants
 
 using namespace uhd::usrp;
 
-class usrp_e_dboard_interface : public dboard_interface{
+class usrp_e_dboard_iface : public dboard_iface{
 public:
-    usrp_e_dboard_interface(usrp_e_impl *impl);
-    ~usrp_e_dboard_interface(void);
+    usrp_e_dboard_iface(usrp_e_iface::sptr iface);
+    ~usrp_e_dboard_iface(void);
 
-    void write_aux_dac(unit_type_t, int, int);
-    int read_aux_adc(unit_type_t, int);
+    void write_aux_dac(unit_t, int, float);
+    float read_aux_adc(unit_t, int);
 
-    void set_atr_reg(gpio_bank_t, atr_reg_t, boost::uint16_t);
-    void set_gpio_ddr(gpio_bank_t, boost::uint16_t);
-    boost::uint16_t read_gpio(gpio_bank_t);
+    void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
+    void set_gpio_ddr(unit_t, boost::uint16_t);
+    boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(int, const byte_vector_t &);
     byte_vector_t read_i2c(int, size_t);
 
-    double get_rx_clock_rate(void);
-    double get_tx_clock_rate(void);
-
-private:
-    byte_vector_t transact_spi(
-        spi_dev_t dev,
-        spi_edge_t edge,
-        const byte_vector_t &buf,
-        bool readback
+    void write_spi(
+        unit_t unit,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits
     );
 
-    usrp_e_impl *_impl;
+    boost::uint32_t read_write_spi(
+        unit_t unit,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits
+    );
+
+    double get_clock_rate(unit_t);
+    void set_clock_enabled(unit_t, bool);
+
+private:
+    usrp_e_iface::sptr _iface;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_interface::sptr make_usrp_e_dboard_interface(usrp_e_impl *impl){
-    return dboard_interface::sptr(new usrp_e_dboard_interface(impl));
+dboard_iface::sptr make_usrp_e_dboard_iface(usrp_e_iface::sptr iface){
+    return dboard_iface::sptr(new usrp_e_dboard_iface(iface));
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp_e_dboard_interface::usrp_e_dboard_interface(usrp_e_impl *impl){
-    _impl = impl;
+usrp_e_dboard_iface::usrp_e_dboard_iface(usrp_e_iface::sptr iface){
+    _iface = iface;
 }
 
-usrp_e_dboard_interface::~usrp_e_dboard_interface(void){
+usrp_e_dboard_iface::~usrp_e_dboard_iface(void){
     /* NOP */
 }
 
 /***********************************************************************
  * Clock Rates
  **********************************************************************/
-double usrp_e_dboard_interface::get_rx_clock_rate(void){
+double usrp_e_dboard_iface::get_clock_rate(unit_t){
     throw std::runtime_error("not implemented");
 }
 
-double usrp_e_dboard_interface::get_tx_clock_rate(void){
+void usrp_e_dboard_iface::set_clock_enabled(unit_t, bool){
     throw std::runtime_error("not implemented");
 }
 
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp_e_dboard_interface::set_gpio_ddr(gpio_bank_t bank, boost::uint16_t value){
+void usrp_e_dboard_iface::set_gpio_ddr(unit_t bank, boost::uint16_t value){
     //define mapping of gpio bank to register address
-    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_BANK_RX, UE_REG_GPIO_RX_DDR)
-        (GPIO_BANK_TX, UE_REG_GPIO_TX_DDR)
+    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (UNIT_RX, UE_REG_GPIO_RX_DDR)
+        (UNIT_TX, UE_REG_GPIO_TX_DDR)
     ;
-    _impl->poke16(bank_to_addr[bank], value);
+    _iface->poke16(bank_to_addr[bank], value);
 }
 
-boost::uint16_t usrp_e_dboard_interface::read_gpio(gpio_bank_t bank){
+boost::uint16_t usrp_e_dboard_iface::read_gpio(unit_t bank){
     //define mapping of gpio bank to register address
-    static const uhd::dict<gpio_bank_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
-        (GPIO_BANK_RX, UE_REG_GPIO_RX_IO)
-        (GPIO_BANK_TX, UE_REG_GPIO_TX_IO)
+    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+        (UNIT_RX, UE_REG_GPIO_RX_IO)
+        (UNIT_TX, UE_REG_GPIO_TX_IO)
     ;
-    return _impl->peek16(bank_to_addr[bank]);
+    return _iface->peek16(bank_to_addr[bank]);
 }
 
-void usrp_e_dboard_interface::set_atr_reg(gpio_bank_t bank, atr_reg_t atr, boost::uint16_t value){
+void usrp_e_dboard_iface::set_atr_reg(unit_t bank, atr_reg_t atr, boost::uint16_t value){
     //define mapping of bank to atr regs to register address
     static const uhd::dict<
-        gpio_bank_t, uhd::dict<atr_reg_t, boost::uint32_t>
+        unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
     > bank_to_atr_to_addr = boost::assign::map_list_of
-        (GPIO_BANK_RX, boost::assign::map_list_of
+        (UNIT_RX, boost::assign::map_list_of
             (ATR_REG_IDLE,        UE_REG_ATR_IDLE_RXSIDE)
             (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_RXSIDE)
             (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_RXSIDE)
             (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_RXSIDE)
         )
-        (GPIO_BANK_TX, boost::assign::map_list_of
+        (UNIT_TX, boost::assign::map_list_of
             (ATR_REG_IDLE,        UE_REG_ATR_IDLE_TXSIDE)
             (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_TXSIDE)
             (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_TXSIDE)
             (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_TXSIDE)
         )
     ;
-    _impl->poke16(bank_to_atr_to_addr[bank][atr], value);
+    _iface->poke16(bank_to_atr_to_addr[bank][atr], value);
 }
 
 /***********************************************************************
  * SPI
  **********************************************************************/
-dboard_interface::byte_vector_t usrp_e_dboard_interface::transact_spi(
-    spi_dev_t dev,
-    spi_edge_t edge,
-    const byte_vector_t &buf,
-    bool readback
+/*!
+ * Static function to convert a unit type to a spi slave device number.
+ * \param unit the dboard interface unit type enum
+ * \return the slave device number
+ */
+static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
+    switch(unit){
+    case dboard_iface::UNIT_TX: return UE_SPI_CTRL_TXNEG;
+    case dboard_iface::UNIT_RX: return UE_SPI_CTRL_RXNEG;
+    }
+    throw std::invalid_argument("unknown unit type");
+}
+
+void usrp_e_dboard_iface::write_spi(
+    unit_t unit,
+    const spi_config_t &config,
+    boost::uint32_t data,
+    size_t num_bits
 ){
-    //load data struct
-    usrp_e_spi data;
-    data.readback = (readback)? UE_SPI_TXRX : UE_SPI_TXONLY;
-    data.slave = (dev == SPI_DEV_RX)? UE_SPI_CTRL_RXNEG : UE_SPI_CTRL_TXNEG;
-    data.length = buf.size() * 8; //bytes to bits
-    boost::uint8_t *data_bytes = reinterpret_cast<boost::uint8_t*>(&data.data);
+    _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
+}
 
-    //load the data
-    ASSERT_THROW(buf.size() <= sizeof(data.data));
-    std::copy(buf.begin(), buf.end(), data_bytes);
-
-    //load the flags
-    data.flags = 0;
-    data.flags |= (edge == SPI_EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
-    data.flags |= (edge == SPI_EDGE_RISE)? UE_SPI_PUSH_RISE  : UE_SPI_PUSH_FALL;
-
-    //call the spi ioctl
-    _impl->ioctl(USRP_E_SPI, &data);
-
-    //unload the data
-    byte_vector_t ret(data.length/8); //bits to bytes
-    ASSERT_THROW(ret.size() <= sizeof(data.data));
-    std::copy(data_bytes, data_bytes+ret.size(), ret.begin());
-    return ret;
+boost::uint32_t usrp_e_dboard_iface::read_write_spi(
+    unit_t unit,
+    const spi_config_t &config,
+    boost::uint32_t data,
+    size_t num_bits
+){
+    return _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
 }
 
 /***********************************************************************
@@ -165,7 +171,7 @@ dboard_interface::byte_vector_t usrp_e_dboard_interface::transact_spi(
  **********************************************************************/
 static const size_t max_i2c_data_bytes = 10;
 
-void usrp_e_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
+void usrp_e_dboard_iface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     //allocate some memory for this transaction
     ASSERT_THROW(buf.size() <= max_i2c_data_bytes);
     boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
@@ -177,10 +183,10 @@ void usrp_e_dboard_interface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     std::copy(buf.begin(), buf.end(), data.data);
 
     //call the spi ioctl
-    _impl->ioctl(USRP_E_I2C_WRITE, &data);
+    _iface->ioctl(USRP_E_I2C_WRITE, &data);
 }
 
-dboard_interface::byte_vector_t usrp_e_dboard_interface::read_i2c(int i2c_addr, size_t num_bytes){
+dboard_iface::byte_vector_t usrp_e_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
     //allocate some memory for this transaction
     ASSERT_THROW(num_bytes <= max_i2c_data_bytes);
     boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
@@ -191,7 +197,7 @@ dboard_interface::byte_vector_t usrp_e_dboard_interface::read_i2c(int i2c_addr, 
     data.len = num_bytes;
 
     //call the spi ioctl
-    _impl->ioctl(USRP_E_I2C_READ, &data);
+    _iface->ioctl(USRP_E_I2C_READ, &data);
 
     //unload the data
     byte_vector_t ret(data.len);
@@ -203,10 +209,10 @@ dboard_interface::byte_vector_t usrp_e_dboard_interface::read_i2c(int i2c_addr, 
 /***********************************************************************
  * Aux DAX/ADC
  **********************************************************************/
-void usrp_e_dboard_interface::write_aux_dac(dboard_interface::unit_type_t unit, int which, int value){
+void usrp_e_dboard_iface::write_aux_dac(dboard_iface::unit_t unit, int which, float value){
     throw std::runtime_error("not implemented");
 }
 
-int usrp_e_dboard_interface::read_aux_adc(dboard_interface::unit_type_t unit, int which){
+float usrp_e_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, int which){
     throw std::runtime_error("not implemented");
 }

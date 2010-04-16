@@ -75,8 +75,8 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of size 1 with empty string
         return;
 
-    case MBOARD_PROP_CLOCK_RATE:
-        //val = TODO probably remove this property
+    case MBOARD_PROP_STREAM_CMD:
+        //val = TODO
         return;
 
     case MBOARD_PROP_RX_DSP:

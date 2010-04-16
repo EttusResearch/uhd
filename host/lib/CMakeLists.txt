@@ -138,11 +138,12 @@ IF(HAVE_USRP_E_REQUIRED_HEADERS)
     MESSAGE(STATUS "  Building usrp-e support.")
     LIST(APPEND libuhd_sources
         usrp/usrp_e/dboard_impl.cpp
-        usrp/usrp_e/dboard_interface.cpp
+        usrp/usrp_e/dboard_iface.cpp
         usrp/usrp_e/dsp_impl.cpp
         usrp/usrp_e/fpga-downloader.cc
         usrp/usrp_e/mboard_impl.cpp
         usrp/usrp_e/usrp_e_impl.cpp
+        usrp/usrp_e/usrp_e_iface.cpp
     )
 ELSE(HAVE_USRP_E_REQUIRED_HEADERS)
     MESSAGE(STATUS "  Skipping usrp-e support.")

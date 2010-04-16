@@ -28,11 +28,11 @@ void usrp_e_impl::dboard_init(void){
     dboard_id_t tx_dboard_id = dboard_id::NONE;
 
     //create a new dboard interface and manager
-    dboard_interface::sptr dboard_interface(
-        make_usrp_e_dboard_interface(this)
+    dboard_iface::sptr dboard_iface(
+        make_usrp_e_dboard_iface(_iface)
     );
     _dboard_manager = dboard_manager::make(
-        rx_dboard_id, tx_dboard_id, dboard_interface
+        rx_dboard_id, tx_dboard_id, dboard_iface
     );
 
     //setup the dboard proxies

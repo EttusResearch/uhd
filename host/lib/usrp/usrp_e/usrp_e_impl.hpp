@@ -15,21 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/types/clock_config.hpp>
+#include "usrp_e_iface.hpp"
 #include <uhd/usrp/usrp_e.hpp>
+#include <uhd/types/clock_config.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 
 #ifndef INCLUDED_USRP_E_IMPL_HPP
 #define INCLUDED_USRP_E_IMPL_HPP
 
-class usrp_e_impl; // dummy class declaration
-
 /*!
- * Make a usrp_e dboard interface.
- * \param impl a pointer to the usrp_e impl object
+ * Make a usrp-e dboard interface.
+ * \param iface the usrp-e interface object
  * \return a sptr to a new dboard interface
  */
-uhd::usrp::dboard_interface::sptr make_usrp_e_dboard_interface(usrp_e_impl *impl);
+uhd::usrp::dboard_iface::sptr make_usrp_e_dboard_iface(usrp_e_iface::sptr iface);
 
 /*!
  * Simple wax obj proxy class:
@@ -84,22 +83,9 @@ public:
     size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
     size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
 
-    /*!
-     * Perform an ioctl call on the device node file descriptor.
-     * This will throw when the internal ioctl call fails.
-     * \param request the control word
-     * \param mem pointer to some memory
-     */
-    void ioctl(int request, void *mem);
-
-    //peekers and pokers
-    void poke32(boost::uint32_t addr, boost::uint32_t value);
-    void poke16(boost::uint32_t addr, boost::uint16_t value);
-    boost::uint32_t peek32(boost::uint32_t addr);
-    boost::uint16_t peek16(boost::uint32_t addr);
-
 private:
     static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
+    usrp_e_iface::sptr _iface;
     int _node_fd;
 
     uhd::clock_config_t _clock_config;

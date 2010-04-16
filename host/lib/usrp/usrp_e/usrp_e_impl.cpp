@@ -22,8 +22,6 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <fcntl.h> //open
-#include <sys/ioctl.h> //ioctl
-#include <linux/usrp_e.h>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -43,28 +41,22 @@ static std::string abs_path(const std::string &file_path){
 /***********************************************************************
  * Discovery
  **********************************************************************/
-device_addrs_t usrp_e::find(const device_addr_t &device_addr){
+device_addrs_t usrp_e::find(const device_addr_t &hint){
     device_addrs_t usrp_e_addrs;
 
-    //if a node was provided, use it and only it
-    if (device_addr.has_key("node")){
-        if (not fs::exists(device_addr["node"])) return usrp_e_addrs;
-        device_addr_t new_addr;
-        new_addr["name"] = "USRP-E";
-        new_addr["node"] = abs_path(device_addr["node"]);
-        usrp_e_addrs.push_back(new_addr);
+    //device node not provided, assume its 0
+    if (not hint.has_key("node")){
+        device_addr_t new_addr = hint;
+        new_addr["node"] = "/dev/usrp_e0";
+        return usrp_e::find(new_addr);
     }
 
-    //otherwise look for a few nodes at small indexes
-    else{
-        for(size_t i = 0; i < 5; i++){
-            std::string node = str(boost::format("/dev/usrp1_e%d") % i);
-            if (not fs::exists(node)) continue;
-            device_addr_t new_addr;
-            new_addr["name"] = "USRP-E";
-            new_addr["node"] = abs_path(node);
-            usrp_e_addrs.push_back(new_addr);
-        }
+    //use the given device node name
+    if (fs::exists(hint["node"])){
+        device_addr_t new_addr;
+        new_addr["name"] = "USRP-E";
+        new_addr["node"] = abs_path(hint["node"]);
+        usrp_e_addrs.push_back(new_addr);
     }
 
     return usrp_e_addrs;
@@ -88,6 +80,8 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
         ));
     }
 
+    _iface = usrp_e_iface::make(_node_fd);
+
     //initialize the mboard
     mboard_init();
 
@@ -102,63 +96,6 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
 usrp_e_impl::~usrp_e_impl(void){
     //close the device node file descriptor
     ::close(_node_fd);
-}
-
-/***********************************************************************
- * Misc Methods
- **********************************************************************/
-void usrp_e_impl::ioctl(int request, void *mem){
-    if (::ioctl(_node_fd, request, mem) < 0){
-        throw std::runtime_error(str(
-            boost::format("ioctl failed with request %d") % request
-        ));
-    }
-}
-
-void usrp_e_impl::poke32(boost::uint32_t addr, boost::uint32_t value){
-    //load the data struct
-    usrp_e_ctl32 data;
-    data.offset = addr;
-    data.count = 1;
-    data.buf[0] = value;
-
-    //call the ioctl
-    this->ioctl(USRP_E_WRITE_CTL32, &data);
-}
-
-void usrp_e_impl::poke16(boost::uint32_t addr, boost::uint16_t value){
-    //load the data struct
-    usrp_e_ctl16 data;
-    data.offset = addr;
-    data.count = 1;
-    data.buf[0] = value;
-
-    //call the ioctl
-    this->ioctl(USRP_E_WRITE_CTL16, &data);
-}
-
-boost::uint32_t usrp_e_impl::peek32(boost::uint32_t addr){
-    //load the data struct
-    usrp_e_ctl32 data;
-    data.offset = addr;
-    data.count = 1;
-
-    //call the ioctl
-    this->ioctl(USRP_E_READ_CTL32, &data);
-
-    return data.buf[0];
-}
-
-boost::uint16_t usrp_e_impl::peek16(boost::uint32_t addr){
-    //load the data struct
-    usrp_e_ctl16 data;
-    data.offset = addr;
-    data.count = 1;
-
-    //call the ioctl
-    this->ioctl(USRP_E_READ_CTL16, &data);
-
-    return data.buf[0];
 }
 
 /***********************************************************************
