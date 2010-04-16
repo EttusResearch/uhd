@@ -176,12 +176,12 @@ timing/time_receiver.v \
 timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
-gpmc/gpmc.v \
+gpmc/gpmc_async.v \
 gpmc/edge_sync.v \
 gpmc/dbsm.v \
 gpmc/gpmc_to_fifo_async.v \
-gpmc/gpmc_to_fifo_sync.v \
-gpmc/fifo_to_gpmc_sync.v \
+gpmc/fifo_to_gpmc_async.v \
+gpmc/fifo_watcher.v \
 gpmc/gpmc_wb.v \
 top/u1e/u1e_core.v \
 top/u1e/u1e.ucf \

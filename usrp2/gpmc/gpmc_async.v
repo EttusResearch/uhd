@@ -67,7 +67,6 @@ module gpmc_async
    wire [17:0] 	rx18_data, rx18b_data;
    wire 	rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy;
    wire [15:0] 	rx_fifo_space, rx_frame_len;
-   assign rx_frame_len = tx_frame_len;
    
    fifo36_to_fifo18 f18_to_f36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
@@ -83,15 +82,14 @@ module gpmc_async
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
       .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
-      .frame_len(rx_frame_len), .bus_error(bus_error_rx) );
+      .frame_len(rx_frame_len) );
 
    fifo_watcher fifo_watcher
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .src_rdy(rx18_src_rdy), .dst_rdy(rx18_dst_rdy), .sof(rx18_data[16]), .eof(rx18_data[17]),
-      .have_packet(), .length(), .next() );
+      .src_rdy1(rx18_src_rdy), .dst_rdy1(rx18_dst_rdy), .sof1(rx18_data[16]), .eof1(rx18_data[17]),
+      .src_rdy2(rx18b_src_rdy), .dst_rdy2(rx18b_dst_rdy), .sof2(rx18b_data[16]), .eof2(rx18b_data[17]),
+      .have_packet(rx_have_data), .length(rx_frame_len), .bus_error(bus_error_rx) );
 
-   assign rx_have_data = 0;
-   
    // ////////////////////////////////////////////
    // Control path on CS6
    

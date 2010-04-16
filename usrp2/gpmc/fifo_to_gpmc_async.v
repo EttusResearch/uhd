@@ -8,7 +8,7 @@ module fifo_to_gpmc_async
   (input clk, input reset, input clear,
    input [17:0] data_i, input src_rdy_i, output dst_rdy_o,
    output [15:0] EM_D, input EM_NCS, input EM_NOE,
-   input [15:0] frame_len, output reg bus_error);
+   input [15:0] frame_len);
 
    // Synchronize the async control signals
    reg [1:0] 	cs_del, oe_del;
@@ -34,12 +34,5 @@ module fifo_to_gpmc_async
    assign EM_D = data_i[15:0];
 
    assign dst_rdy_o = do_read;
-
-   always @(posedge clk)
-     if(reset)
-       bus_error <= 0;
-     else if(dst_rdy_o & ~src_rdy_i)
-       bus_error <= 1;
-   
 
 endmodule // fifo_to_gpmc_async
