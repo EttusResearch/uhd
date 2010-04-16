@@ -25,7 +25,7 @@ using namespace uhd::usrp;
  * dboard_base dboard dboard_base class
  **********************************************************************/
 dboard_base::dboard_base(ctor_args_t const& args){
-    boost::tie(_subdev_name, _dboard_interface, _rx_id, _tx_id) = args;
+    boost::tie(_subdev_name, _dboard_iface, _rx_id, _tx_id) = args;
 }
 
 dboard_base::~dboard_base(void){
@@ -36,8 +36,8 @@ std::string dboard_base::get_subdev_name(void){
     return _subdev_name;
 }
 
-dboard_interface::sptr dboard_base::get_interface(void){
-    return _dboard_interface;
+dboard_iface::sptr dboard_base::get_iface(void){
+    return _dboard_iface;
 }
 
 dboard_id_t dboard_base::get_rx_id(void){

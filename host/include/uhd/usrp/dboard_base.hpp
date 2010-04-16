@@ -24,7 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <uhd/usrp/dboard_id.hpp>
-#include <uhd/usrp/dboard_interface.hpp>
+#include <uhd/usrp/dboard_iface.hpp>
 
 namespace uhd{ namespace usrp{
 
@@ -35,10 +35,10 @@ namespace uhd{ namespace usrp{
 class UHD_API dboard_base : boost::noncopyable{
 public:
     typedef boost::shared_ptr<dboard_base> sptr;
-    //the constructor args consist of a subdev name and an interface
+    //the constructor args consist of a subdev name, interface, and ids
     //derived classes should pass the args into the dboard_base class ctor
     //but should not have to deal with the internals of the args
-    typedef boost::tuple<std::string, dboard_interface::sptr, dboard_id_t, dboard_id_t> ctor_args_t;
+    typedef boost::tuple<std::string, dboard_iface::sptr, dboard_id_t, dboard_id_t> ctor_args_t;
 
     //structors
     dboard_base(ctor_args_t const&);
@@ -52,13 +52,13 @@ public:
 
 protected:
     std::string get_subdev_name(void);
-    dboard_interface::sptr get_interface(void);
+    dboard_iface::sptr get_iface(void);
     dboard_id_t get_rx_id(void);
     dboard_id_t get_tx_id(void);
 
 private:
     std::string               _subdev_name;
-    dboard_interface::sptr    _dboard_interface;
+    dboard_iface::sptr        _dboard_iface;
     dboard_id_t               _rx_id, _tx_id;
 };
 

@@ -26,7 +26,7 @@ namespace uhd{ namespace transport{
 
 namespace vrt{
 
-    static const size_t max_header_words32 = 7;
+    static const size_t max_header_words32 = 5; //hdr+sid+tsi+tsf (no class id supported)
 
     /*!
      * Pack a vrt header from metadata.
@@ -36,6 +36,7 @@ namespace vrt{
      * \param num_payload_words32 the length of the payload
      * \param num_packet_words32 the length of the packet
      * \param packet_count the packet count sequence number
+     * \param tick_rate ticks per second used in time conversion
      */
     UHD_API void pack(
         const tx_metadata_t &metadata, //input
@@ -43,7 +44,8 @@ namespace vrt{
         size_t &num_header_words32,    //output
         size_t num_payload_words32,    //input
         size_t &num_packet_words32,    //output
-        size_t packet_count            //input
+        size_t packet_count,           //input
+        double tick_rate               //input
     );
 
     /*!
@@ -54,6 +56,7 @@ namespace vrt{
      * \param num_payload_words32 the length of the payload
      * \param num_packet_words32 the length of the packet
      * \param packet_count the packet count sequence number
+     * \param tick_rate ticks per second used in time conversion
      */
     UHD_API void unpack(
         rx_metadata_t &metadata,            //output
@@ -61,7 +64,8 @@ namespace vrt{
         size_t &num_header_words32,         //output
         size_t &num_payload_words32,        //output
         size_t num_packet_words32,          //input
-        size_t &packet_count                //output
+        size_t &packet_count,               //output
+        double tick_rate                    //input
     );
 
 } //namespace vrt

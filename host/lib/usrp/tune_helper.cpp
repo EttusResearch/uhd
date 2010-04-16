@@ -74,8 +74,8 @@ static tune_result_t tune_xx_subdev_and_dxc(
     tune_result_t tune_result;
     tune_result.target_inter_freq = target_inter_freq;
     tune_result.actual_inter_freq = actual_inter_freq;
-    tune_result.target_dxc_freq = target_dxc_freq;
-    tune_result.actual_dxc_freq = actual_dxc_freq;
+    tune_result.target_dsp_freq = target_dxc_freq;
+    tune_result.actual_dsp_freq = actual_dxc_freq;
     tune_result.spectrum_inverted = inverted;
     return tune_result;
 }

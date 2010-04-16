@@ -25,7 +25,6 @@ noinst_LIBRARIES = \
 libu2fw_a_SOURCES = \
 	abort.c \
 	ad9510.c \
-	ad9777.c \
 	bsm12.c \
 	buffer_pool.c \
 	clocks.c \
@@ -60,8 +59,6 @@ libu2fw_a_SOURCES = \
 
 noinst_HEADERS = \
 	ad9510.h \
-	ad9777.h \
-	ad9777_regs.h \
 	bsm12.h \
 	buffer_pool.h \
 	clocks.h \

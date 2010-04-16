@@ -25,8 +25,8 @@ ENABLE_TESTING()
 SET(CPACK_PACKAGE_VERSION_MAJOR 0)
 SET(CPACK_PACKAGE_VERSION_MINOR 0)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
-SET(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/README)
-SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+SET(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README)
+SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 INCLUDE(CPack) #include after setting vars
 
 ########################################################################
@@ -42,18 +42,18 @@ MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 ########################################################################
 # Local Include Dir
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ########################################################################
 # Optional Compiler Flags
 ########################################################################
 INCLUDE(CheckCXXCompilerFlag)
-FUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
+MACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     CHECK_CXX_COMPILER_FLAG(${flag} ${have})
     IF(${have})
         ADD_DEFINITIONS(${flag})
     ENDIF(${have})
-ENDFUNCTION(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
+ENDMACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
 IF(UNIX)
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
@@ -114,7 +114,7 @@ ADD_CUSTOM_TARGET(uninstall
 # Create Pkg Config File
 ########################################################################
 CONFIGURE_FILE(
-    ${CMAKE_SOURCE_DIR}/uhd.pc.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
 @ONLY)
 
@@ -131,7 +131,7 @@ INCLUDE(FindDoxygen)
 IF(DOXYGEN_FOUND)
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     CONFIGURE_FILE(
-        ${CMAKE_SOURCE_DIR}/Doxyfile.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
         ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     @ONLY)
     ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN}
@@ -143,8 +143,9 @@ IF(DOXYGEN_FOUND)
 ENDIF(DOXYGEN_FOUND)
 
 INSTALL(FILES
-    ${CMAKE_SOURCE_DIR}/README
-    ${CMAKE_SOURCE_DIR}/LICENSE
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+    ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS
     DESTINATION ${PKG_DOC_DIR}
 )
 

@@ -27,7 +27,7 @@ INSTALL(FILES
     #### dboard headers ###
     dboard_base.hpp
     dboard_id.hpp
-    dboard_interface.hpp
+    dboard_iface.hpp
     dboard_manager.hpp
 
     ### usrp headers ###

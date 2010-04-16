@@ -26,6 +26,7 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/io_type.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/cstdint.hpp>
@@ -54,8 +55,8 @@ freq_range_t::freq_range_t(double min_, double max_){
 tune_result_t::tune_result_t(void){
     target_inter_freq = 0.0;
     actual_inter_freq = 0.0;
-    target_dxc_freq = 0.0;
-    actual_dxc_freq = 0.0;
+    target_dsp_freq = 0.0;
+    actual_dsp_freq = 0.0;
     spectrum_inverted = false;
 }
 
@@ -101,29 +102,26 @@ tx_metadata_t::tx_metadata_t(void){
 /***********************************************************************
  * time spec
  **********************************************************************/
-time_spec_t::time_spec_t(boost::uint32_t new_secs, boost::uint32_t new_ticks){
+time_spec_t::time_spec_t(boost::uint32_t new_secs, double new_nsecs){
     secs = new_secs;
-    ticks = new_ticks;
+    nsecs = new_nsecs;
 }
 
-static const boost::posix_time::ptime epoch(boost::gregorian::date(1970,1,1));
-static double time_tick_rate = double(boost::posix_time::time_duration::ticks_per_second());
+boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
+    return boost::math::iround(nsecs*tick_rate*1e-9);
+}
 
-time_spec_t::time_spec_t(boost::posix_time::ptime time, double tick_rate){
-    boost::posix_time::time_duration td = time - epoch;
-    secs = boost::uint32_t(td.total_seconds());
-    double time_ticks_per_device_ticks = time_tick_rate/tick_rate;
-    ticks = boost::uint32_t(td.fractional_seconds()/time_ticks_per_device_ticks);
+void time_spec_t::set_ticks(boost::uint32_t ticks, double tick_rate){
+    nsecs = double(ticks)*1e9/tick_rate;
 }
 
 /***********************************************************************
  * device addr
  **********************************************************************/
 std::string device_addr_t::to_string(void) const{
-    const device_addr_t &device_addr = *this;
     std::stringstream ss;
-    BOOST_FOREACH(std::string key, device_addr.keys()){
-        ss << boost::format("%s: %s") % key % device_addr[key] << std::endl;
+    BOOST_FOREACH(std::string key, this->keys()){
+        ss << boost::format("%s: %s") % key % (*this)[key] << std::endl;
     }
     return ss.str();
 }
@@ -137,9 +135,8 @@ static std::string trim(const std::string &in){
 
 std::string device_addr_t::to_args_str(void) const{
     std::string args_str;
-    const device_addr_t &device_addr = *this;
-    BOOST_FOREACH(const std::string &key, device_addr.keys()){
-        args_str += key + pair_delim + device_addr[key] + arg_delim;
+    BOOST_FOREACH(const std::string &key, this->keys()){
+        args_str += key + pair_delim + (*this)[key] + arg_delim;
     }
     return args_str;
 }

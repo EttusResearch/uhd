@@ -86,8 +86,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         );
         if (num_rx_samps == 0) continue; //wait for packets with contents
 
-        std::cout << boost::format("Got packet: %u samples, %u secs, %u ticks")
-            % num_rx_samps % md.time_spec.secs % md.time_spec.ticks << std::endl;
+        std::cout << boost::format("Got packet: %u samples, %u secs, %u nsecs")
+            % num_rx_samps % md.time_spec.secs % md.time_spec.nsecs << std::endl;
 
         num_acc_samps += num_rx_samps;
     }

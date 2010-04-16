@@ -20,6 +20,7 @@
 #include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
 
@@ -39,7 +40,8 @@ template <class T> T log2(T num){
  * DDC Helper Methods
  **********************************************************************/
 static boost::uint32_t calculate_freq_word_and_update_actual_freq(double &freq, double clock_freq){
-    double scale_factor = std::pow(2.0, 32);
+    ASSERT_THROW(std::abs(freq) < clock_freq/2.0);
+    static const double scale_factor = std::pow(2.0, 32);
 
     //calculate the freq register word
     boost::uint32_t freq_word = rint((freq / clock_freq) * scale_factor);
@@ -82,11 +84,11 @@ void usrp2_impl::init_ddc_config(void){
 
 void usrp2_impl::update_ddc_config(void){
     //set the decimation
-    this->poke32(FR_DSP_RX_DECIM_RATE, _ddc_decim);
+    _iface->poke32(FR_DSP_RX_DECIM_RATE, _ddc_decim);
 
     //set the scaling
     static const boost::int16_t default_rx_scale_iq = 1024;
-    this->poke32(FR_DSP_RX_SCALE_IQ,
+    _iface->poke32(FR_DSP_RX_SCALE_IQ,
         calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
     );
 }
@@ -123,12 +125,10 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
-            ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
-            _ddc_freq = new_freq; //shadow
-            this->poke32(FR_DSP_RX_FREQ,
-                calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
+            _iface->poke32(FR_DSP_RX_FREQ,
+                calculate_freq_word_and_update_actual_freq(new_freq, get_master_clock_freq())
             );
+            _ddc_freq = new_freq; //shadow
         }
         return;
 
@@ -170,10 +170,10 @@ void usrp2_impl::update_duc_config(void){
     boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
     //set the interpolation
-    this->poke32(FR_DSP_TX_INTERP_RATE, _ddc_decim);
+    _iface->poke32(FR_DSP_TX_INTERP_RATE, _ddc_decim);
 
     //set the scaling
-    this->poke32(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
+    _iface->poke32(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
 }
 
 /***********************************************************************
@@ -208,12 +208,10 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
-            ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
-            _duc_freq = new_freq; //shadow
-            this->poke32(FR_DSP_TX_FREQ,
-                calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
+            _iface->poke32(FR_DSP_TX_FREQ,
+                calculate_freq_word_and_update_actual_freq(new_freq, get_master_clock_freq())
             );
+            _duc_freq = new_freq; //shadow
         }
         return;
 

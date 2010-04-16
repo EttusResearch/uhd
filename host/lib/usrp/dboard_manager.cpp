@@ -25,6 +25,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/assign/list_of.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -124,11 +125,11 @@ public:
     dboard_manager_impl(
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
-        dboard_interface::sptr interface
+        dboard_iface::sptr iface
     );
     ~dboard_manager_impl(void);
 
-    //dboard_interface
+    //dboard_iface
     prop_names_t get_rx_subdev_names(void);
     prop_names_t get_tx_subdev_names(void);
     wax::obj get_rx_subdev(const std::string &subdev_name);
@@ -140,8 +141,8 @@ private:
     //the subdevice proxy is internal to the cpp file
     uhd::dict<std::string, subdev_proxy::sptr> _rx_dboards;
     uhd::dict<std::string, subdev_proxy::sptr> _tx_dboards;
-    dboard_interface::sptr _interface;
-    void set_nice_gpio_pins(void);
+    dboard_iface::sptr _iface;
+    void set_nice_dboard_if(void);
 };
 
 /***********************************************************************
@@ -150,10 +151,10 @@ private:
 dboard_manager::sptr dboard_manager::make(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
-    dboard_interface::sptr interface
+    dboard_iface::sptr iface
 ){
     return dboard_manager::sptr(
-        new dboard_manager_impl(rx_dboard_id, tx_dboard_id, interface)
+        new dboard_manager_impl(rx_dboard_id, tx_dboard_id, iface)
     );
 }
 
@@ -189,9 +190,9 @@ static args_t get_dboard_args(
 dboard_manager_impl::dboard_manager_impl(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
-    dboard_interface::sptr interface
+    dboard_iface::sptr iface
 ){
-    _interface = interface;
+    _iface = iface;
 
     dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
     boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(rx_dboard_id, "rx");
@@ -200,14 +201,14 @@ dboard_manager_impl::dboard_manager_impl(
     boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(tx_dboard_id, "tx");
 
     //initialize the gpio pins before creating subdevs
-    set_nice_gpio_pins();
+    set_nice_dboard_if();
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
         ASSERT_THROW(rx_subdevs == tx_subdevs);
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr xcvr_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, tx_dboard_id)
+                dboard_base::ctor_args_t(subdev, iface, rx_dboard_id, tx_dboard_id)
             );
             //create a rx proxy for this xcvr board
             _rx_dboards[subdev] = subdev_proxy::sptr(
@@ -225,7 +226,7 @@ dboard_manager_impl::dboard_manager_impl(
         //make the rx subdevs
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr rx_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, rx_dboard_id, dboard_id::NONE)
+                dboard_base::ctor_args_t(subdev, iface, rx_dboard_id, dboard_id::NONE)
             );
             //create a rx proxy for this rx board
             _rx_dboards[subdev] = subdev_proxy::sptr(
@@ -235,7 +236,7 @@ dboard_manager_impl::dboard_manager_impl(
         //make the tx subdevs
         BOOST_FOREACH(const std::string &subdev, tx_subdevs){
             dboard_base::sptr tx_dboard = tx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, interface, dboard_id::NONE, tx_dboard_id)
+                dboard_base::ctor_args_t(subdev, iface, dboard_id::NONE, tx_dboard_id)
             );
             //create a tx proxy for this tx board
             _tx_dboards[subdev] = subdev_proxy::sptr(
@@ -246,7 +247,7 @@ dboard_manager_impl::dboard_manager_impl(
 }
 
 dboard_manager_impl::~dboard_manager_impl(void){
-    set_nice_gpio_pins();
+    set_nice_dboard_if();
 }
 
 prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
@@ -273,12 +274,17 @@ wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
     return _tx_dboards[subdev_name]->get_link();
 }
 
-void dboard_manager_impl::set_nice_gpio_pins(void){
-    //std::cout << "Set nice GPIO pins" << std::endl;
+void dboard_manager_impl::set_nice_dboard_if(void){
+    //make a list of possible unit types
+    std::vector<dboard_iface::unit_t> units = boost::assign::list_of
+        (dboard_iface::UNIT_RX)
+        (dboard_iface::UNIT_TX)
+    ;
 
-    _interface->set_gpio_ddr(dboard_interface::GPIO_BANK_RX, 0x0000); //all inputs
-    _interface->set_atr_reg(dboard_interface::GPIO_BANK_RX, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
-
-    _interface->set_gpio_ddr(dboard_interface::GPIO_BANK_TX, 0x0000); //all inputs
-    _interface->set_atr_reg(dboard_interface::GPIO_BANK_TX, dboard_interface::ATR_REG_IDLE, 0x0000); //all low
+    //set nice settings on each unit
+    BOOST_FOREACH(dboard_iface::unit_t unit, units){
+        _iface->set_gpio_ddr(unit, 0x0000); //all inputs
+        _iface->set_atr_reg(unit, dboard_iface::ATR_REG_IDLE, 0x0000); //all low
+        _iface->set_clock_enabled(unit, false); //clock off
+    }
 }
