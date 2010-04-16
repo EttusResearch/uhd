@@ -19,6 +19,7 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/asio.hpp> //endianness conversion
 #include <boost/cstdint.hpp>
+#include <complex>
 
 using namespace uhd;
 
