@@ -40,7 +40,8 @@ template <class T> T log2(T num){
  * DDC Helper Methods
  **********************************************************************/
 static boost::uint32_t calculate_freq_word_and_update_actual_freq(double &freq, double clock_freq){
-    double scale_factor = std::pow(2.0, 32);
+    ASSERT_THROW(std::abs(freq) < clock_freq/2.0);
+    static const double scale_factor = std::pow(2.0, 32);
 
     //calculate the freq register word
     boost::uint32_t freq_word = rint((freq / clock_freq) * scale_factor);
@@ -124,12 +125,10 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
-            ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
-            _ddc_freq = new_freq; //shadow
             _iface->poke32(FR_DSP_RX_FREQ,
-                calculate_freq_word_and_update_actual_freq(_ddc_freq, get_master_clock_freq())
+                calculate_freq_word_and_update_actual_freq(new_freq, get_master_clock_freq())
             );
+            _ddc_freq = new_freq; //shadow
         }
         return;
 
@@ -209,12 +208,10 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            ASSERT_THROW(new_freq <= get_master_clock_freq()/2.0);
-            ASSERT_THROW(new_freq >= -get_master_clock_freq()/2.0);
-            _duc_freq = new_freq; //shadow
             _iface->poke32(FR_DSP_TX_FREQ,
-                calculate_freq_word_and_update_actual_freq(_duc_freq, get_master_clock_freq())
+                calculate_freq_word_and_update_actual_freq(new_freq, get_master_clock_freq())
             );
+            _duc_freq = new_freq; //shadow
         }
         return;
 

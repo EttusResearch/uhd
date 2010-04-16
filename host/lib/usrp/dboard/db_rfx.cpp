@@ -15,19 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-static const bool rfx_debug = true;
+static const bool rfx_debug = false;
 
 // IO Pin functions
-#define POWER_UP     (1 << 7)   // Low enables power supply
-#define ANT_SW       (1 << 6)   // On TX DB, 0 = TX, 1 = RX, on RX DB 0 = main ant, 1 = RX2
-#define MIX_EN       (1 << 5)   // Enable appropriate mixer
+#define POWER_IO     (1 << 7)   // Low enables power supply
+#define ANTSW_IO     (1 << 6)   // On TX DB, 0 = TX, 1 = RX, on RX DB 0 = main ant, 1 = RX2
+#define MIXER_IO     (1 << 5)   // Enable appropriate mixer
 #define LOCKDET_MASK (1 << 2)   // Input pin
+
+// Mixer constants
+#define MIXER_ENB    MIXER_IO
+#define MIXER_DIS    0
+
+// Power constants
+#define POWER_UP     0
+#define POWER_DOWN   POWER_IO
 
 // Antenna constants
 #define ANT_TX       0          //the tx line is transmitting
-#define ANT_RX       ANT_SW     //the tx line is receiving
+#define ANT_RX       ANTSW_IO   //the tx line is receiving
 #define ANT_TXRX     0          //the rx line is on txrx
-#define ANT_RX2      ANT_SW     //the rx line in on rx2
+#define ANT_RX2      ANTSW_IO   //the rx line in on rx2
 #define ANT_XX       0          //dont care how the antenna is set
 
 #include "adf4360_regs.hpp"
@@ -145,20 +153,20 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions
-    boost::uint16_t output_enables = POWER_UP | ANT_SW | MIX_EN;
+    boost::uint16_t output_enables = POWER_IO | ANTSW_IO | MIXER_IO;
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, output_enables);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, output_enables);
 
     //setup the tx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP | ANT_RX);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_TX | MIX_EN);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_TX | MIX_EN);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP | ANT_RX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_TX | MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_TX | MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_XX);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_RX2 | MIX_EN);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_RX2| MIXER_ENB);
 
     //set some default values
     set_rx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
@@ -189,7 +197,7 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(
         dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        POWER_UP | MIX_EN | ((ant == "TX/RX")? ANT_TXRX : ANT_RX2)
+        POWER_UP | MIXER_ENB | ((ant == "TX/RX")? ANT_TXRX : ANT_RX2)
     );
 
     //shadow the setting
@@ -220,7 +228,7 @@ double rfx_xcvr::set_lo_freq(
 ){
     if (rfx_debug) std::cerr << boost::format(
         "RFX tune: target frequency %f Mhz"
-    ) % (target_freq/100e6) << std::endl;
+    ) % (target_freq/1e6) << std::endl;
 
     //clip the input
     target_freq = std::clip(target_freq, _freq_range.min, _freq_range.max);
@@ -233,37 +241,48 @@ double rfx_xcvr::set_lo_freq(
         (32, adf4360_regs_t::PRESCALER_VALUE_32_33)
     ;
 
-    //calculate the following values
-    // fvco = [P*B + A] * fref/R
-    // fvco*R/fref = P*B + A = N
-    int A, B, P, R; double N;
-    static const int
-        B_min = 3, B_max = 8191,
-        A_min = 0, A_max = 31,
-        P_min = 8, P_max = 32;
-    static const int
-        N_min = P_min*B_min + A_min,
-        N_max = P_max*B_max + A_max;
-    double ref_freq = this->get_iface()->get_clock_rate(unit);
-    double ratio = target_freq/ref_freq;
+    //map band select clock dividers to enums
+    static const uhd::dict<int, adf4360_regs_t::band_select_clock_div_t> bandsel_to_enum = map_list_of
+        (1, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_1)
+        (2, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_2)
+        (4, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_4)
+        (8, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8)
+    ;
 
-    for(R = 1; R < 11; R++){
-        //increment R and see if this allows for a large enough N
-        N = ratio*R;
-        if (N < N_min) continue;
-        N = std::clip<double>(N, N_min, N_max);
-        break;
-    }
+    double actual_freq, ref_freq = this->get_iface()->get_clock_rate(unit);
+    int R, BS, P, B, A;
 
-    //discover the best value for P, B, and A
-    BOOST_FOREACH(P, prescaler_to_enum.keys()){
-        B = int(std::floor(N/P));
-        if (B > B_max) continue;
-        B = std::clip(B, B_min, B_max);
-        A = boost::math::iround(N - P*B);
-        A = std::clip(A, A_min, A_max);
-        break;
-    }
+    /*
+     * The goal here to to loop though possible R dividers,
+     * band select clock dividers, and prescaler values.
+     * Calculate the A and B counters for each set of values.
+     * The loop exists when it meets all of the constraints.
+     * The resulting loop values are loaded into the registers.
+     *
+     * fvco = [P*B + A] * fref/R
+     * fvco*R/fref = P*B + A = N
+     */
+    for(R = 2; R <= 32; R+=2){
+        BOOST_FOREACH(BS, bandsel_to_enum.keys()){
+            if (ref_freq/R/BS > 1e6) continue; //constraint on band select clock
+            BOOST_FOREACH(P, prescaler_to_enum.keys()){
+                //calculate B and A from N
+                double N = target_freq*R/ref_freq;
+                B = int(std::floor(N/P));
+                A = boost::math::iround(N - P*B);
+                if (B < A or B > 8191 or B < 3 or A > 31) continue; //constraints on A, B
+                //calculate the actual frequency
+                actual_freq = double(P*B + A)*ref_freq/R;
+                if (actual_freq/P > 300e6) continue; //constraint on prescaler output
+                //constraints met: exit loop
+                goto done_loop;
+            }
+        }
+    } done_loop:
+
+    if (rfx_debug) std::cerr << boost::format(
+        "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d"
+    ) % R % BS % P % B % A << std::endl;
 
     //load the register values
     adf4360_regs_t regs;
@@ -290,7 +309,7 @@ double rfx_xcvr::set_lo_freq(
     regs.ablpw                   = adf4360_regs_t::ABLPW_3_0NS;
     regs.lock_detect_precision   = adf4360_regs_t::LOCK_DETECT_PRECISION_5CYCLES;
     regs.test_mode_bit           = 0;
-    regs.band_select_clock_div   = adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8;
+    regs.band_select_clock_div   = bandsel_to_enum[BS];
 
     //write the registers
     std::vector<adf4360_regs_t::addr_t> addrs = list_of //correct power-up sequence to write registers (R, C, N)
@@ -306,11 +325,10 @@ double rfx_xcvr::set_lo_freq(
     }
 
     //return the actual frequency
-    double actual_freq = double(P*B + A) * ref_freq / double(R);
     if (_div2[unit]) actual_freq /= 2;
     if (rfx_debug) std::cerr << boost::format(
         "RFX tune: actual frequency %f Mhz"
-    ) % (actual_freq/100e6) << std::endl;
+    ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }
 
