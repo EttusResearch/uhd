@@ -20,7 +20,8 @@ module u1e
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,
    
    output overo_gpio144, output overo_gpio145, output overo_gpio146, output overo_gpio147,  // Fifo controls
-   inout [15:0] io_tx, inout [15:0] io_rx
+   inout [15:0] io_tx, inout [15:0] io_rx,
+   input PPS_IN
    );
 
    // FPGA-specific pins connections
@@ -50,6 +51,7 @@ module u1e
 		     .cgen_sync_b(cgen_sync_b), .cgen_ref_sel(cgen_ref_sel),
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
 		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
-		     .io_tx(io_tx), .io_rx(io_rx) );
+		     .io_tx(io_tx), .io_rx(io_rx),
+		     .pps_in(PPS_IN) );
    
 endmodule // u1e

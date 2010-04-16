@@ -208,7 +208,7 @@ NET "dip_sw<0>"  LOC = "J7"  ;
 #NET "TXSYNC"  LOC = "U18"  ;
 #NET "TXBLANK"  LOC = "U19"  ;
 
-#NET "PPS_IN"  LOC = "M17"  ;
+NET "PPS_IN"  LOC = "M17"  ;
 
 NET "io_tx<0>"  LOC = "AB20"  ;
 NET "io_tx<1>"  LOC = "Y17"  ;

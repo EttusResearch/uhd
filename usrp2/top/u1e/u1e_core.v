@@ -13,7 +13,9 @@ module u1e_core
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
-   inout [15:0] io_tx, inout [15:0] io_rx
+   inout [15:0] io_tx, inout [15:0] io_rx,
+
+   input pps_in
    );
    
    wire 	wb_clk = clk_fpga;
@@ -249,7 +251,19 @@ module u1e_core
      (.clk_i(wb_clk), .rst_i(wb_rst),
       .adr_i(s6_adr), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(), .run_tx(), .master_time(0), .ctrl_lines(atr_lines));
+      .run_rx(0), .run_tx(0), .ctrl_lines(atr_lines));
+
+
+   // /////////////////////////////////////////////////////////////////////////
+   // VITA Timing
+
+   localparam SR_TIME64 = 0;
+   wire 	pps_int;
+   wire [63:0] 	vita_time;
+   
+   time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
+     (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int));
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
