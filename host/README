@@ -15,6 +15,7 @@ Basic RX
 Basic TX
 LF RX
 LF TX
+RFX Series
 
 ########################################################################
 # Dependencies
@@ -29,7 +30,8 @@ Windows Notes:
 
 Git:
     Required to check out the repository (not needed for source downloads).
-    On windows, install cygwin with git support to checkout the repository.
+    On windows, install cygwin with git support to checkout the repository,
+    or install msysgit from http://code.google.com/p/msysgit/downloads/list
 
 C++:
     On unix, this is GCC 4.0 and above. On windows, this is MSVC 2008.
