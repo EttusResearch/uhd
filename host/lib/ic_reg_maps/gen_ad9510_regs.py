@@ -19,14 +19,9 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 
-import re
 import os
 import sys
-from Cheetah.Template import Template
-def parse_tmpl(_tmpl_text, **kwargs):
-    return str(Template(_tmpl_text, kwargs))
-def safe_makedirs(path):
-    not os.path.isdir(path) and os.makedirs(path)
+from common import *
 
 ########################################################################
 # Template for raw text data describing registers
@@ -176,47 +171,6 @@ struct ad9510_regs_t{
 
 \#endif /* INCLUDED_AD9510_REGS_HPP */
 """
-
-class reg:
-    def __init__(self, reg_des):
-        x = re.match('^(\w*)\s*(\w*)\[(.*)\]\s*(\w*)\s*(.*)$', reg_des)
-        name, addr, bit_range, default, enums = x.groups()
-
-        #store variables
-        self._name = name
-        self._addr = int(addr, 16)
-        if ':' in bit_range: self._addr_spec = map(int, bit_range.split(':'))
-        else: self._addr_spec = int(bit_range), int(bit_range)
-        self._default = int(default, 16)
-
-        #extract enum
-        self._enums = list()
-        if enums:
-            enum_val = 0
-            for enum_str in map(str.strip, enums.split(',')):
-                if '=' in enum_str:
-                    enum_name, enum_val = enum_str.split('=')
-                    enum_val = int(enum_val)
-                else: enum_name = enum_str
-                self._enums.append((enum_name, enum_val))
-                enum_val += 1
-
-    def get_addr(self): return self._addr
-    def get_enums(self): return self._enums
-    def get_name(self): return self._name
-    def get_default(self):
-        for key, val in self.get_enums():
-            if val == self._default: return str.upper('%s_%s'%(self.get_name(), key))
-        return self._default
-    def get_stdint_type(self):
-        if self.get_bit_width() <=  8: return 'uint8_t'
-        if self.get_bit_width() <= 16: return 'uint16_t'
-        if self.get_bit_width() <= 32: return 'uint32_t'
-        if self.get_bit_width() <= 64: return 'uint64_t'
-        raise Exception, 'too damn big'
-    def get_shift(self): return self._addr_spec[0]
-    def get_mask(self): return hex(int('1'*self.get_bit_width(), 2))
-    def get_bit_width(self): return self._addr_spec[1] - self._addr_spec[0] + 1
 
 if __name__ == '__main__':
     regs = map(reg, parse_tmpl(REGS_DATA_TMPL).splitlines())
