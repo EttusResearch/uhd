@@ -17,7 +17,8 @@
 
 #include "usrp2_iface.hpp"
 #include "clock_control.hpp"
-#include "usrp2_regs.hpp"
+#include "usrp2_regs.hpp" //wishbone address constants
+#include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
@@ -25,6 +26,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 
+using namespace uhd;
 using namespace uhd::usrp;
 
 class usrp2_dboard_iface : public dboard_iface{
@@ -214,7 +216,7 @@ void usrp2_dboard_iface::write_i2c(int i2c_addr, const byte_vector_t &buf){
     ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
 }
 
-dboard_iface::byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
+byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
     //setup the out data
     usrp2_ctrl_data_t out_data;
     out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);

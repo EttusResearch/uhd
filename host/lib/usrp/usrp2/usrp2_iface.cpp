@@ -24,7 +24,6 @@
 #include <stdexcept>
 
 using namespace uhd;
-using namespace uhd::usrp;
 
 class usrp2_iface_impl : public usrp2_iface{
 public:

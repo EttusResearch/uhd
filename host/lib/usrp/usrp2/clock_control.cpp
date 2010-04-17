@@ -21,6 +21,7 @@
 #include "usrp2_regs.hpp" //spi slave constants
 #include <boost/cstdint.hpp>
 
+using namespace uhd;
 using namespace uhd::usrp;
 
 /*!

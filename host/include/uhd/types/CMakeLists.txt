@@ -25,6 +25,7 @@ INSTALL(FILES
     metadata.hpp
     otw_type.hpp
     ranges.hpp
+    serial.hpp
     stream_cmd.hpp
     time_spec.hpp
     tune_result.hpp

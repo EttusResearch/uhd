@@ -25,6 +25,7 @@
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/io_type.hpp>
+#include <uhd/types/serial.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
@@ -242,4 +243,12 @@ io_type_t::io_type_t(tid_t tid)
 io_type_t::io_type_t(size_t size)
 : size(size), tid(CUSTOM_TYPE){
     /* NOP */
+}
+
+/***********************************************************************
+ * serial
+ **********************************************************************/
+spi_config_t::spi_config_t(edge_t edge){
+    mosi_edge = edge;
+    miso_edge = edge;
 }
