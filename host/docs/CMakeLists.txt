@@ -31,16 +31,24 @@ MESSAGE(STATUS "Checking for rst2html (docutils)")
 FIND_PROGRAM(RST2HTML rst2html)
 IF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
     MESSAGE(STATUS "Checking for rst2html (docutils) - not found")
+    MESSAGE(STATUS "  Disabled generation of HTML manual.")
 ELSE(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
     MESSAGE(STATUS "Checking for rst2html (docutils) - found")
+    MESSAGE(STATUS "  Enabled generation of HTML manual.")
+    SET(stylesheet ${CMAKE_CURRENT_SOURCE_DIR}/style.css)
+    SET(rst2html_options
+        --stylesheet=${stylesheet}
+        --no-toc-backlinks
+        --date
+        --time
+    )
     FOREACH(rstfile ${manual_sources})
         SET(rstfile ${CMAKE_CURRENT_SOURCE_DIR}/${rstfile})
         GET_FILENAME_COMPONENT(rstfile_we ${rstfile} NAME_WE)
         SET(htmlfile ${CMAKE_CURRENT_BINARY_DIR}/${rstfile_we}.html)
         ADD_CUSTOM_COMMAND(
-            OUTPUT ${htmlfile} DEPENDS ${rstfile} ${CMAKE_CURRENT_SOURCE_DIR}/style.css
-            COMMAND ${RST2HTML} ${rstfile} ${htmlfile}
-                --stylesheet=${CMAKE_CURRENT_SOURCE_DIR}/style.css --no-toc-backlinks
+            OUTPUT ${htmlfile} DEPENDS ${rstfile} ${stylesheet}
+            COMMAND ${RST2HTML} ${rstfile} ${htmlfile} ${rst2html_options}
             COMMENT "Generating ${htmlfile}"
         )
         LIST(APPEND manual_html_files ${htmlfile})
@@ -57,6 +65,7 @@ INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst)
 INCLUDE(FindDoxygen)
 
 IF(DOXYGEN_FOUND)
+    MESSAGE(STATUS "  Enabled generation of Doxygen documentation.")
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     CONFIGURE_FILE(
         ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
@@ -68,4 +77,6 @@ IF(DOXYGEN_FOUND)
     )
     ADD_CUSTOM_TARGET(doxygen_html ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
+ELSE(DOXYGEN_FOUND)
+    MESSAGE(STATUS "  Disabled generation of Doxygen documentation.")
 ENDIF(DOXYGEN_FOUND)
