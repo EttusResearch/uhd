@@ -124,24 +124,8 @@ INSTALL(
 )
 
 ########################################################################
-# Setup Docs
+# Install Package Docs
 ########################################################################
-INCLUDE(FindDoxygen)
-
-IF(DOXYGEN_FOUND)
-    SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
-    CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    @ONLY)
-    ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN}
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-        COMMENT "Generating documentation with doxygen"
-    )
-    ADD_CUSTOM_TARGET(docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
-    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
-ENDIF(DOXYGEN_FOUND)
-
 INSTALL(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
@@ -152,6 +136,7 @@ INSTALL(FILES
 ########################################################################
 # Add the subdirectories
 ########################################################################
+ADD_SUBDIRECTORY(docs)
 ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(include)
 ADD_SUBDIRECTORY(lib)

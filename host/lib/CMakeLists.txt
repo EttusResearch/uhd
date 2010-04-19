@@ -69,7 +69,7 @@ MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
     ADD_CUSTOM_COMMAND(
         OUTPUT ${outfile} DEPENDS ${pyfile}
         COMMAND ${PYTHON_EXECUTABLE} ${pyfile} ${outfile}
-        COMMENT "Calling ${pyfile} to generate ${outfile}"
+        COMMENT "Generating ${outfile}"
     )
     LIST(APPEND libuhd_sources ${outfile})
 ENDMACRO(UHD_PYTHON_GEN_SOURCE_FILE)
