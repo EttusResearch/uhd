@@ -25,6 +25,8 @@
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/math/special_functions/round.hpp>
 #include <algorithm>
+#include "ad7922_regs.hpp" //aux adc
+#include "ad5624_regs.hpp" //aux dac
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -66,6 +68,9 @@ private:
     usrp2_iface::sptr _iface;
     clock_control::sptr _clk_ctrl;
     boost::uint32_t _ddr_shadow;
+
+    uhd::dict<unit_t, ad5624_regs_t> _dac_regs;
+    void _write_aux_dac(unit_t);
 };
 
 /***********************************************************************
@@ -93,6 +98,16 @@ usrp2_dboard_iface::usrp2_dboard_iface(usrp2_iface::sptr iface, clock_control::s
     }
     _iface->poke32(FR_GPIO_TX_SEL, new_sels);
     _iface->poke32(FR_GPIO_RX_SEL, new_sels);
+
+    //reset the aux dacs
+    _dac_regs[UNIT_RX] = ad5624_regs_t();
+    _dac_regs[UNIT_TX] = ad5624_regs_t();
+    BOOST_FOREACH(unit_t unit, _dac_regs.keys()){
+        _dac_regs[unit].data = 1;
+        _dac_regs[unit].addr = ad5624_regs_t::ADDR_ALL;
+        _dac_regs[unit].cmd  = ad5624_regs_t::CMD_RESET;
+        this->_write_aux_dac(unit);
+    }
 }
 
 usrp2_dboard_iface::~usrp2_dboard_iface(void){
@@ -240,42 +255,63 @@ byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
 /***********************************************************************
  * Aux DAX/ADC
  **********************************************************************/
-/*!
- * Static function to convert a unit type enum
- * to an over-the-wire value for the usrp2 control.
- * \param unit the dboard interface unit type enum
- * \return an over the wire representation
- */
-static boost::uint8_t unit_to_otw(dboard_iface::unit_t unit){
-    switch(unit){
-    case dboard_iface::UNIT_TX: return USRP2_DIR_TX;
-    case dboard_iface::UNIT_RX: return USRP2_DIR_RX;
-    }
-    throw std::invalid_argument("unknown unit type");
+void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
+    static const uhd::dict<unit_t, int> unit_to_spi_dac = boost::assign::map_list_of
+        (UNIT_RX, SPI_SS_RX_DAC)
+        (UNIT_TX, SPI_SS_TX_DAC)
+    ;
+    _iface->transact_spi(
+        unit_to_spi_dac[unit], spi_config_t::EDGE_FALL, 
+        _dac_regs[unit].get_reg(), 24, false /*no rb*/
+    );
 }
 
 void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO);
-    out_data.data.aux_args.dir = unit_to_otw(unit);
-    out_data.data.aux_args.which = which;
-    out_data.data.aux_args.value = htonl(boost::math::iround(4095*value/3.3));
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE);
+    _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
+    _dac_regs[unit].cmd = ad5624_regs_t::CMD_WR_UP_DAC_CHAN_N;
+    switch(which){
+    case 0: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_A; break;
+    case 1: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_B; break;
+    case 2: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_C; break;
+    case 3: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_D; break;
+    default: throw std::runtime_error("not a possible aux dac, must be 0, 1, 2, or 3");
+    }
+    this->_write_aux_dac(unit);
 }
 
 float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO);
-    out_data.data.aux_args.dir = unit_to_otw(unit);
-    out_data.data.aux_args.which = which;
+    static const uhd::dict<unit_t, int> unit_to_spi_adc = boost::assign::map_list_of
+        (UNIT_RX, SPI_SS_RX_ADC)
+        (UNIT_TX, SPI_SS_TX_ADC)
+    ;
 
-    //send and recv
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE);
-    return float(3.3*ntohl(in_data.data.aux_args.value)/4095);
+    //setup spi config args
+    spi_config_t config;
+    config.mosi_edge = spi_config_t::EDGE_FALL;
+    config.miso_edge = spi_config_t::EDGE_RISE;
+
+    //setup the spi registers
+    ad7922_regs_t ad7922_regs;
+    ad7922_regs.mod = which; //normal mode: mod == chn
+    ad7922_regs.chn = which;
+
+    //write and read spi
+    _iface->transact_spi(
+        unit_to_spi_adc[unit], config,
+        ad7922_regs.get_reg(), 16, false /*no rb*/
+    );
+    boost::uint16_t reg = _iface->transact_spi(
+        unit_to_spi_adc[unit], config,
+        ad7922_regs.get_reg(), 16, true /*rb*/
+    );
+    ad7922_regs.set_reg(reg);
+
+    //convert to voltage and return
+    return float(3.3*ad7922_regs.result/4095);
+
+
+
+
+
+
 }

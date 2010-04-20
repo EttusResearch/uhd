@@ -96,6 +96,15 @@ UHD_PYTHON_GEN_SOURCE_FILE(
     ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9777_regs.hpp
 )
 
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad5624_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad5624_regs.hpp
+)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad7922_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad7922_regs.hpp
+)
 
 ########################################################################
 # Add usrp2 sources
