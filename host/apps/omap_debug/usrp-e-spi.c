@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	spi_dat.slave = slave;
 	spi_dat.data = data;
 	spi_dat.length = length;
-	spi_dat.flags = 0;
+	spi_dat.flags = UE_SPI_PUSH_FALL | UE_SPI_LATCH_RISE;
 
 	if (*argv[1] == 'r') {
 		spi_dat.readback = 1;
