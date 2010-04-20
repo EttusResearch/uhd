@@ -27,8 +27,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("addr", po::value<std::string>(), "resolvable network address")
-        ("node", po::value<std::string>(), "path to linux device node")
+        ("args", po::value<std::string>()->default_value(""), "device address args")
     ;
 
     po::variables_map vm;
@@ -41,17 +40,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
-    //load the options into the address
-    uhd::device_addr_t device_addr;
-    if (vm.count("addr")){
-        device_addr["addr"] = vm["addr"].as<std::string>();
-    }
-    if (vm.count("node")){
-        device_addr["node"] = vm["node"].as<std::string>();
-    }
-
     //discover the usrps and print the results
-    uhd::device_addrs_t device_addrs = uhd::device::find(device_addr);
+    uhd::device_addrs_t device_addrs = uhd::device::find(vm["args"].as<std::string>());
 
     if (device_addrs.size() == 0){
         std::cerr << "No UHD Devices Found" << std::endl;

@@ -119,19 +119,36 @@ void time_spec_t::set_ticks(boost::uint32_t ticks, double tick_rate){
 /***********************************************************************
  * device addr
  **********************************************************************/
+static const std::string arg_delim = ",";
+static const std::string pair_delim = "=";
+
+static std::string trim(const std::string &in){
+    return boost::algorithm::trim_copy(in);
+}
+
+device_addr_t::device_addr_t(const std::string &args){
+    //split the args at the semi-colons
+    std::vector<std::string> pairs;
+    boost::split(pairs, args, boost::is_any_of(arg_delim));
+    BOOST_FOREACH(const std::string &pair, pairs){
+        if (trim(pair) == "") continue;
+
+        //split the key value pairs at the equals
+        std::vector<std::string> key_val;
+        boost::split(key_val, pair, boost::is_any_of(pair_delim));
+        if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args);
+        (*this)[trim(key_val[0])] = trim(key_val[1]);
+    }
+}
+
 std::string device_addr_t::to_string(void) const{
+    if (this->size() == 0) return "Empty Device Address";
+
     std::stringstream ss;
     BOOST_FOREACH(std::string key, this->keys()){
         ss << boost::format("%s: %s") % key % (*this)[key] << std::endl;
     }
     return ss.str();
-}
-
-static const std::string arg_delim = ";";
-static const std::string pair_delim = "=";
-
-static std::string trim(const std::string &in){
-    return boost::algorithm::trim_copy(in);
 }
 
 std::string device_addr_t::to_args_str(void) const{
@@ -140,25 +157,6 @@ std::string device_addr_t::to_args_str(void) const{
         args_str += key + pair_delim + (*this)[key] + arg_delim;
     }
     return args_str;
-}
-
-device_addr_t device_addr_t::from_args_str(const std::string &args_str){
-    device_addr_t addr;
-
-    //split the args at the semi-colons
-    std::vector<std::string> pairs;
-    boost::split(pairs, args_str, boost::is_any_of(arg_delim));
-    BOOST_FOREACH(const std::string &pair, pairs){
-        if (trim(pair) == "") continue;
-
-        //split the key value pairs at the equals
-        std::vector<std::string> key_val;
-        boost::split(key_val, pair, boost::is_any_of(pair_delim));
-        if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args_str);
-        addr[trim(key_val[0])] = trim(key_val[1]);
-    }
-
-    return addr;
 }
 
 /***********************************************************************

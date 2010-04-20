@@ -39,18 +39,63 @@ namespace uhd{ namespace usrp{
 class UHD_API simple_usrp : boost::noncopyable{
 public:
     typedef boost::shared_ptr<simple_usrp> sptr;
-    static sptr make(const std::string &args);
 
+    /*!
+     * Make a new simple usrp from the device address.
+     * \param dev_addr the device address
+     * \return a new simple usrp object
+     */
+    static sptr make(const device_addr_t &dev_addr);
+
+    /*!
+     * Get the underlying device object.
+     * This is needed to get access to the streaming API and properties.
+     * \return the device object within this simple usrp
+     */
     virtual device::sptr get_device(void) = 0;
 
+    /*!
+     * Get a printable name for this simple usrp.
+     * \return a printable string
+     */
     virtual std::string get_name(void) = 0;
 
     /*******************************************************************
      * Misc
      ******************************************************************/
+    /*!
+     * Sets the time registers on the usrp immediately.
+     * \param time_spec the time to latch into the usrp device
+     */
     virtual void set_time_now(const time_spec_t &time_spec) = 0;
+
+    /*!
+     * Set the time registers on the usrp at the next pps tick.
+     * The values will not be latched in until the pulse occurs.
+     * It is recommended that the user sleep(1) after calling to ensure
+     * that the time registers will be in a known state prior to use.
+     *
+     * Note: Because this call sets the time on the "next" pps,
+     * the seconds in the time spec should be current seconds + 1.
+     *
+     * \param time_spec the time to latch into the usrp device
+     */
     virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
+
+    /*!
+     * Issue a stream command to the usrp device.
+     * This tells the usrp to send samples into the host.
+     * See the documentation for stream_cmd_t for more info.
+     * \param stream_cmd the stream command to issue
+     */
     virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+
+    /*!
+     * Set the clock configuration for the usrp device.
+     * This tells the usrp how to get a 10Mhz reference and PPS clock.
+     * See the documentation for clock_config_t for more info.
+     * \param clock_config the clock configuration to set
+     */
     virtual void set_clock_config(const clock_config_t &clock_config) = 0;
 
     /*******************************************************************
