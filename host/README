@@ -16,3 +16,13 @@ Basic TX
 LF RX
 LF TX
 RFX Series
+
+########################################################################
+# Documentation
+########################################################################
+Online documentation available at:
+http://ettus-apps.sourcerepo.com/redmine/ettus/projects/uhd/wiki/
+
+The build system can generate the html for the manual and Doxygen.
+Docutils and Doxygen are required to build the html docs.
+See the docs directory for the manual source (reStructuredText).
