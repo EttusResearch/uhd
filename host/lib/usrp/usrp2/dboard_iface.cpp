@@ -300,11 +300,10 @@ float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
         unit_to_spi_adc[unit], config,
         ad7922_regs.get_reg(), 16, false /*no rb*/
     );
-    boost::uint16_t reg = _iface->transact_spi(
+    ad7922_regs.set_reg(boost::uint16_t(_iface->transact_spi(
         unit_to_spi_adc[unit], config,
         ad7922_regs.get_reg(), 16, true /*rb*/
-    );
-    ad7922_regs.set_reg(reg);
+    )));
 
     //convert to voltage and return
     return float(3.3*ad7922_regs.result/4095);
