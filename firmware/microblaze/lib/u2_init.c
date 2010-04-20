@@ -20,8 +20,6 @@
 #include "spi.h"
 #include "pic.h"
 #include "hal_io.h"
-#include "lsadc.h"
-#include "lsdac.h"
 #include "buffer_pool.h"
 #include "hal_uart.h"
 #include "i2c.h"
@@ -84,8 +82,6 @@ u2_init(void)
 
   pic_init();	// progammable interrupt controller
   bp_init();	// buffer pool
-  lsadc_init();	    // low-speed ADCs
-  lsdac_init();	    // low-speed DACs
   
   hal_enable_ints();
 

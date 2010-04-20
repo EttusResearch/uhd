@@ -47,8 +47,6 @@
 #include "usrp2/fw_common.h"
 #include <db.h>
 #include <i2c.h>
-#include <lsdac.h>
-#include <lsadc.h>
 #include <ethertype.h>
 #include <arp_cache.h>
 
@@ -294,43 +292,6 @@ void handle_udp_ctrl_packet(
             ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
-        break;
-
-    /*******************************************************************
-     * AUX DAC/ADC
-     ******************************************************************/
-    case USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO:
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_RX){
-            lsdac_write_rx(
-                ctrl_data_in->data.aux_args.which,
-                ctrl_data_in->data.aux_args.value
-            );
-        }
-
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_TX){
-            lsdac_write_tx(
-                ctrl_data_in->data.aux_args.which,
-                ctrl_data_in->data.aux_args.value
-            );
-        }
-
-        ctrl_data_out.id = USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO:
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_RX){
-            ctrl_data_out.data.aux_args.value = lsadc_read_rx(
-                ctrl_data_in->data.aux_args.which
-            );
-        }
-
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_TX){
-            ctrl_data_out.data.aux_args.value = lsadc_read_tx(
-                ctrl_data_in->data.aux_args.which
-            );
-        }
-
-        ctrl_data_out.id = USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE;
         break;
 
     /*******************************************************************

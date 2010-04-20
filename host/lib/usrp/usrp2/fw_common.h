@@ -69,12 +69,6 @@ typedef enum{
     USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO = 'h',
     USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE = 'H',
 
-    USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO = 'x',
-    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE = 'X',
-
-    USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO = 'y',
-    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE = 'Y',
-
     USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO = '{',
     USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE = '}',
 
@@ -121,12 +115,6 @@ typedef struct{
             _SINS_ uint8_t bytes;
             _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
         } i2c_args;
-        struct {
-            _SINS_ uint8_t dir;
-            _SINS_ uint8_t which;
-            _SINS_ uint8_t _pad[2];
-            _SINS_ uint32_t value;
-        } aux_args;
         struct {
             _SINS_ uint8_t now; //stream now?
             _SINS_ uint8_t continuous; //auto-reload commmands?

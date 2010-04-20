@@ -38,8 +38,6 @@ libu2fw_a_SOURCES = \
 	hal_io.c \
 	hal_uart.c \
 	i2c.c \
-	lsadc.c \
-	lsdac.c \
 	mdelay.c \
 	memcpy_wa.c \
 	memset_wa.c \
@@ -71,8 +69,6 @@ noinst_HEADERS = \
 	hal_io.h \
 	hal_uart.h \
 	i2c.h \
-	lsadc.h \
-	lsdac.h \
 	mdelay.h \
 	memcpy_wa.h \
 	memory_map.h \
