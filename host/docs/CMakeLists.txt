@@ -21,6 +21,7 @@
 SET(manual_sources
     index.rst
     build.rst
+    coding.rst
     usrp2.rst
 )
 

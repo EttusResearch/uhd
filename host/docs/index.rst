@@ -16,6 +16,7 @@ Contents
 API Documentation
 ^^^^^^^^^^^^^^^^^^^^^
 * `Doxygen <./../../doxygen/html/index.html>`_
+* `Using the API <./coding.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 Supported Devices
