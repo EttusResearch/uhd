@@ -176,6 +176,7 @@ timing/time_receiver.v \
 timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
+timing/time_64bit.v \
 gpmc/gpmc_async.v \
 gpmc/edge_sync.v \
 gpmc/dbsm.v \
