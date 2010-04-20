@@ -12,13 +12,14 @@
 
 int main(int argc, char *argv[])
 {
-	int fp, ret, i;
+	int fp, ret, i, tmp;
 	struct usrp_e_i2c *i2c_msg;
 	int direction, address, count;
 
 	if (argc < 3) {
-		printf("Usage: usrp_e_i2c w address data0 data1 data2 ...\n");
-		printf("Usage: usrp_e_i2c r address count\n");
+		printf("Usage: usrp-e-i2c w address data0 data1 data2 ...\n");
+		printf("Usage: usrp-e-i2c r address count\n");
+		printf("All addresses and data in hex.\n");
 		exit(-1);
 	}
 
@@ -30,7 +31,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	address = atoi(argv[2]);
+	sscanf(argv[2], "%X", &address);
+	printf("Address = %X\n", address);
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
@@ -38,8 +40,9 @@ int main(int argc, char *argv[])
 	if (direction) {
 		count = argc - 3;
 	} else {
-		count = atoi(argv[3]);
+		sscanf(argv[3], "%X", &count);
 	}
+	printf("Count = %X\n", count);
 
 	i2c_msg = malloc(sizeof(i2c_msg) + count * sizeof(char));
 
@@ -50,7 +53,8 @@ int main(int argc, char *argv[])
 		// Write
 
 		for (i=0; i<count; i++) {
-			i2c_msg->data[i] = atoi(argv[3+i]);
+			sscanf(argv[3+i], "%X", &tmp);
+			i2c_msg->data[i] = tmp;
 		}
 
 		ret = ioctl(fp, USRP_E_I2C_WRITE, i2c_msg);
