@@ -66,11 +66,18 @@ SET(libuhd_sources
 # Generate Files
 ########################################################################
 MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
+    #ensure that the directory exists for outfile
+    GET_FILENAME_COMPONENT(outfile_dir ${outfile} PATH)
+    FILE(MAKE_DIRECTORY ${outfile_dir})
+
+    #make the outfile depend on the python script
     ADD_CUSTOM_COMMAND(
         OUTPUT ${outfile} DEPENDS ${pyfile}
         COMMAND ${PYTHON_EXECUTABLE} ${pyfile} ${outfile}
         COMMENT "Generating ${outfile}"
     )
+
+    #make libuhd depend on the outfile
     LIST(APPEND libuhd_sources ${outfile})
 ENDMACRO(UHD_PYTHON_GEN_SOURCE_FILE)
 

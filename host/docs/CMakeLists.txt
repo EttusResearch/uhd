@@ -35,25 +35,33 @@ IF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
 ELSE(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
     MESSAGE(STATUS "Checking for rst2html (docutils) - found")
     MESSAGE(STATUS "  Enabled generation of HTML manual.")
-    SET(stylesheet ${CMAKE_CURRENT_SOURCE_DIR}/style.css)
+
+    #setup rst2html options
     SET(rst2html_options
-        --stylesheet=${stylesheet}
-        --no-toc-backlinks
-        --date
-        --time
+        --stylesheet=${CMAKE_CURRENT_SOURCE_DIR}/style.css
+        --no-toc-backlinks --date --time
     )
+
+    #create generation rule for each source
     FOREACH(rstfile ${manual_sources})
+        #set input and output file names
         SET(rstfile ${CMAKE_CURRENT_SOURCE_DIR}/${rstfile})
         GET_FILENAME_COMPONENT(rstfile_we ${rstfile} NAME_WE)
         SET(htmlfile ${CMAKE_CURRENT_BINARY_DIR}/${rstfile_we}.html)
+
+        #make the html file depend on the rst file
         ADD_CUSTOM_COMMAND(
             OUTPUT ${htmlfile} DEPENDS ${rstfile} ${stylesheet}
             COMMAND ${RST2HTML} ${rstfile} ${htmlfile} ${rst2html_options}
             COMMENT "Generating ${htmlfile}"
         )
+
+        #make the manual target depend on the html file
         LIST(APPEND manual_html_files ${htmlfile})
         INSTALL(FILES ${htmlfile} DESTINATION ${PKG_DOC_DIR}/manual/html)
     ENDFOREACH(rstfile ${manual_sources})
+
+    #make the html manual a build-time dependency
     ADD_CUSTOM_TARGET(manual_html ALL DEPENDS ${manual_html_files})
 ENDIF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
 
@@ -66,16 +74,24 @@ INCLUDE(FindDoxygen)
 
 IF(DOXYGEN_FOUND)
     MESSAGE(STATUS "  Enabled generation of Doxygen documentation.")
+
+    #generate the doxygen configuration file
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     CONFIGURE_FILE(
         ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
         ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     @ONLY)
-    ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN}
+
+    #make doxygen directory depend on the header files
+    FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    ADD_CUSTOM_COMMAND(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${header_files}
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         COMMENT "Generating documentation with doxygen"
     )
-    ADD_CUSTOM_TARGET(doxygen_html ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
+
+    #make the doxygen generation a built-time dependency
+    ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
 ELSE(DOXYGEN_FOUND)
     MESSAGE(STATUS "  Disabled generation of Doxygen documentation.")

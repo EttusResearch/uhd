@@ -19,15 +19,11 @@
 # Boston, MA 02110-1301, USA.
 
 import re
-import os
 import math
 from Cheetah.Template import Template
 
 def parse_tmpl(_tmpl_text, **kwargs):
     return str(Template(_tmpl_text, kwargs))
-
-def safe_makedirs(path):
-    not os.path.isdir(path) and os.makedirs(path)
 
 class reg:
     def __init__(self, reg_des):

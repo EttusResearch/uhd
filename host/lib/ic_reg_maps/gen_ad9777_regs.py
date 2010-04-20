@@ -19,7 +19,6 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 
-import os
 import sys
 from common import *
 
@@ -152,5 +151,4 @@ struct ad9777_regs_t{
 
 if __name__ == '__main__':
     regs = map(reg, parse_tmpl(REGS_DATA_TMPL).splitlines())
-    safe_makedirs(os.path.dirname(sys.argv[1]))
     open(sys.argv[1], 'w').write(parse_tmpl(HEADER_TEXT, regs=regs, file=__file__))
