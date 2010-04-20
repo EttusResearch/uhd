@@ -49,6 +49,10 @@ int main(int argc, char *argv[])
 	i2c_msg->addr = address;
 	i2c_msg->len = count;
 
+	for (i = 0; i < count; i++) {
+		i2c_msg->data[i] = i;
+	}
+
 	if (direction) {
 		// Write
 
@@ -63,6 +67,7 @@ int main(int argc, char *argv[])
 		// Read
 
 		ret = ioctl(fp, USRP_E_I2C_READ, i2c_msg);
+		printf("Return value from i2c_read ioctl: %d\n", ret);
 
 		printf("Ioctl: %d Data read :", ret);
 		for (i=0; i<count; i++) {
