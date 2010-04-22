@@ -1,5 +1,5 @@
 ========================================================================
-UHD - USRP2 App Notes
+UHD - USRP2 Application Notes
 ========================================================================
 
 .. contents:: Table of Contents
@@ -36,7 +36,7 @@ Run the following commands:
 
     cd <uhd-repo-path>/firmware/microblaze
     ./boostrap
-    ./configure host=mb
+    ./configure --host=mb
     make
 
 *The image file will be ./apps/txrx.bin*
@@ -112,7 +112,7 @@ Run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp2 recovery.py --ifc=eth0 --new-ip=192.168.10.3
+    ./usrp2_recovery.py --ifc=eth0 --new-ip=192.168.10.3
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Debugging networking problems
@@ -125,4 +125,4 @@ The microcontroller prints useful information about IP addresses,
 MAC addresses, control packets, and fast-path settings.
 
 **Monitor the host network traffic:**
-Use wireshark to monitor packets send to and received from the USRP2.
+Use wireshark to monitor packets sent to and received from the USRP2.

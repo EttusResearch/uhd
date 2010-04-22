@@ -22,6 +22,7 @@ SET(manual_sources
     index.rst
     build.rst
     coding.rst
+    dboards.rst
     usrp2.rst
 )
 
@@ -38,8 +39,9 @@ ELSE(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
     MESSAGE(STATUS "  Enabled generation of HTML manual.")
 
     #setup rst2html options
+    SET(stylesheet ${CMAKE_CURRENT_SOURCE_DIR}/style.css)
     SET(rst2html_options
-        --stylesheet=${CMAKE_CURRENT_SOURCE_DIR}/style.css
+        --stylesheet=${stylesheet}
         --no-toc-backlinks --date --time
     )
 
