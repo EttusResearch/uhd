@@ -69,4 +69,17 @@ struct usrp_e_i2c {
 #define USRP_E_I2C_READ		_IOR(USRP_E_IOC_MAGIC, 0x25, struct usrp_e_i2c)
 #define USRP_E_I2C_WRITE	_IOW(USRP_E_IOC_MAGIC, 0x26, struct usrp_e_i2c)
 
+// Data transfer frame definition
+
+struct usrp_transfer_frame {
+	__u32 flags;
+	__u32 len;
+	__u8  buf[];
+};
+
+struct ring_buffer_entry {
+	unsigned long dma_addr;
+	struct usrp_transfer_frame *frame_addr;
+};
+
 #endif
