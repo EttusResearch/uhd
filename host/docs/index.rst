@@ -13,17 +13,19 @@ Contents
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^
-API Documentation
+Building the UHD
 ^^^^^^^^^^^^^^^^^^^^^
-* `Doxygen <./../../doxygen/html/index.html>`_
-* `Using the API <./coding.html>`_
+* `Build Guide <./build.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 Supported Devices
 ^^^^^^^^^^^^^^^^^^^^^
 * `USRP2 App Notes <./usrp2.html>`_
+* `Daughterboard App Notes <./dboards.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
-Building the UHD
+API Documentation
 ^^^^^^^^^^^^^^^^^^^^^
-* `Build Guide <./build.html>`_
+* `Doxygen <./../../doxygen/html/index.html>`_
+* `Using the API <./coding.html>`_
+
