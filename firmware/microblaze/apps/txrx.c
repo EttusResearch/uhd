@@ -50,6 +50,8 @@
 #include <ethertype.h>
 #include <arp_cache.h>
 
+#define LEDS_SW LED_A
+
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
  *
@@ -317,6 +319,7 @@ void handle_udp_ctrl_packet(
         if (ctrl_data_in->data.stream_cmd.continuous){
             printf("Setting up continuous streaming...\n");
             printf("items per frame: %d\n", (int)streaming_items_per_frame);
+            hal_set_leds(LED_A, LEDS_SW);
             auto_reload_command = true;
             streaming_frame_count = FRAMES_PER_CMD;
 
@@ -341,6 +344,7 @@ void handle_udp_ctrl_packet(
 
         //issue regular stream commands (split commands if too large)
         else{
+            hal_set_leds(0, LEDS_SW);
             auto_reload_command = false;
             size_t num_samps = ctrl_data_in->data.stream_cmd.num_samps;
             if (num_samps == 0) num_samps = 1; //FIXME hack, zero is used when stopping continuous streaming but it somehow makes it inifinite
@@ -605,6 +609,8 @@ main(void)
 
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+
+  hal_set_led_src(0, LEDS_SW);
 
 #if 0
   // make bit 15 of Tx gpio's be a s/w output
