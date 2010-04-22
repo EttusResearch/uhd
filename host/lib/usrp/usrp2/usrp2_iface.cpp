@@ -97,6 +97,7 @@ public:
 
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
+        out_copy.proto_ver = htonl(USRP2_PROTO_VERSION);
         out_copy.seq = htonl(++_ctrl_seq_num);
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
@@ -104,6 +105,13 @@ public:
         while(true){
             usrp2_ctrl_data_t in_data;
             size_t len = _ctrl_transport->recv(boost::asio::buffer(&in_data, sizeof(in_data)));
+            if(len >= sizeof(boost::uint32_t) and ntohl(in_data.proto_ver) != USRP2_PROTO_VERSION){
+                throw std::runtime_error(str(
+                    boost::format("Expected protocol version %d, but got %d\n"
+                    "The firmware build does not match the host code build."
+                    ) % int(USRP2_PROTO_VERSION) % ntohl(in_data.proto_ver)
+                ));
+            }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(in_data.seq) == _ctrl_seq_num){
                 return in_data;
             }

@@ -32,6 +32,10 @@ extern "C" {
 #define _SINS_
 #endif
 
+//defines the protocol version in this shared header
+//increment this value when the protocol is changed
+#define USRP2_PROTO_VERSION 1
+
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
 
@@ -78,21 +82,25 @@ typedef enum{
     USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO = 'r',
     USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE = 'R',
 
+    USRP2_CTRL_ID_WHATS_THE_HARDWARE_REV_NOS_BRO = 'y',
+    USRP2_CTRL_ID_TAKE_THE_HARDWARE_REV_NOS_DUDE = 'Y',
+
     USRP2_CTRL_ID_PEACE_OUT = '~'
 
 } usrp2_ctrl_id_t;
 
 typedef enum{
-    USRP2_DIR_RX,
-    USRP2_DIR_TX
+    USRP2_DIR_RX = 'r',
+    USRP2_DIR_TX = 't'
 } usrp2_dir_which_t;
 
 typedef enum{
-    USRP2_CLK_EDGE_RISE,
-    USRP2_CLK_EDGE_FALL
+    USRP2_CLK_EDGE_RISE = 'r',
+    USRP2_CLK_EDGE_FALL = 'f'
 } usrp2_clk_edge_t;
 
 typedef struct{
+    _SINS_ uint32_t proto_ver;
     _SINS_ uint32_t id;
     _SINS_ uint32_t seq;
     union{
@@ -129,6 +137,11 @@ typedef struct{
             _SINS_ uint32_t data;
             _SINS_ uint8_t num_bytes; //1, 2, 4
         } poke_args;
+        struct {
+            _SINS_ uint8_t major;
+            _SINS_ uint8_t minor;
+            _SINS_ uint8_t _pad[2];
+        } hw_rev;
     } data;
 } usrp2_ctrl_data_t;
 

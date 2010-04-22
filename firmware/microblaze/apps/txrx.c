@@ -201,20 +201,34 @@ void handle_udp_ctrl_packet(
     unsigned char *payload, int payload_len
 ){
     //printf("Got ctrl packet #words: %d\n", (int)payload_len);
-    if (payload_len < sizeof(usrp2_ctrl_data_t)){
-        //TODO send err packet
-        return;
+    usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
+    uint32_t ctrl_data_in_id = ctrl_data_in->id;
+
+    //ensure that the protocol versions match
+    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_PROTO_VERSION){
+        printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
+            USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
+        );
+        ctrl_data_in_id = USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO;
     }
 
-    //setup the input and output data
-    usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
+    //ensure that this is not a short packet
+    if (payload_len < sizeof(usrp2_ctrl_data_t)){
+        printf("!Error in control packet handler: Expected payload length %d, but got %d\n",
+            (int)sizeof(usrp2_ctrl_data_t), payload_len
+        );
+        ctrl_data_in_id = USRP2_CTRL_ID_HUH_WHAT;
+    }
+
+    //setup the output data
     usrp2_ctrl_data_t ctrl_data_out = {
+        .proto_ver = USRP2_PROTO_VERSION,
         .id=USRP2_CTRL_ID_HUH_WHAT,
         .seq=ctrl_data_in->seq
     };
 
     //handle the data based on the id
-    switch(ctrl_data_in->id){
+    switch(ctrl_data_in_id){
 
     /*******************************************************************
      * Addressing
@@ -400,6 +414,15 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
         break;
 
+    /*******************************************************************
+     * Hardware Rev Numbers
+     ******************************************************************/
+    case USRP2_CTRL_ID_WHATS_THE_HARDWARE_REV_NOS_BRO:
+        ctrl_data_out.data.hw_rev.major = u2_hw_rev_major;
+        ctrl_data_out.data.hw_rev.minor = u2_hw_rev_minor;
+        ctrl_data_out.id = USRP2_CTRL_ID_TAKE_THE_HARDWARE_REV_NOS_DUDE;
+        break;
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 
@@ -572,6 +595,7 @@ main(void)
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
   print_ip_addr(get_ip_addr()); newline();
+  printf("Control protocol version: %d\n", USRP2_PROTO_VERSION);
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
