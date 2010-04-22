@@ -47,6 +47,7 @@
 #define RX_ENB_RXIO              RX_EN_RXIO
 #define RX_DIS_RXIO              0
 
+#include "max2829_regs.hpp"
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -65,10 +66,23 @@ using namespace uhd::usrp;
 using namespace boost::assign;
 
 /***********************************************************************
- * The XCVR 2450 dboard
+ * The XCVR 2450 constants
  **********************************************************************/
 static const freq_range_t xcvr_freq_range(2.4e9, 6.0e9);
 
+static const prop_names_t xcvr_antennas = list_of("J1")("J2");
+
+static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list_of
+    ("VGA", gain_range_t(0, 30, 0.5))
+;
+static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list_of
+    ("RF LNA", gain_range_t(0, 30.5, 15))
+    ("BB VGA", gain_range_t(0, 62, 2.0))
+;
+
+/***********************************************************************
+ * The XCVR 2450 dboard class
+ **********************************************************************/
 class xcvr2450 : public xcvr_dboard_base{
 public:
     xcvr2450(ctor_args_t const& args);
@@ -85,6 +99,7 @@ private:
     uhd::dict<std::string, float> _tx_gains, _rx_gains;
     std::string _tx_ant, _rx_ant;
     int _ad9515div;
+    max2829_regs_t _max2829_regs;
 
     void set_lo_freq(double target_freq);
     void set_tx_ant(const std::string &ant);
@@ -96,7 +111,7 @@ private:
 };
 
 /***********************************************************************
- * Register the XCVR dboard
+ * Register the XCVR 2450 dboard
  **********************************************************************/
 static dboard_base::sptr make_xcvr2450(dboard_base::ctor_args_t const& args){
     return dboard_base::sptr(new xcvr2450(args));
@@ -164,8 +179,6 @@ void xcvr2450::set_lo_freq(double target_freq){
 /***********************************************************************
  * Antenna Handling
  **********************************************************************/
-static const prop_names_t xcvr_antennas = list_of("J1")("J2");
-
 void xcvr2450::set_tx_ant(const std::string &ant){
     assert_has(xcvr_antennas, ant, "xcvr antenna name");
     //TODO
@@ -179,14 +192,6 @@ void xcvr2450::set_rx_ant(const std::string &ant){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list_of
-    ("VGA", gain_range_t(0, 30, 0.5))
-;
-static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list_of
-    ("RF LNA", gain_range_t(0, 30.5, 15))
-    ("BB VGA", gain_range_t(0, 62, 2.0))
-;
-
 /*!
  * Convert a requested gain for the tx vga into the integer register value.
  * The gain passed into the function will be set to the actual value.
