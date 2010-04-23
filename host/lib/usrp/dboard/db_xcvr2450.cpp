@@ -35,15 +35,15 @@
 
 // RX IO Pins
 #define LOCKDET_RXIO (1 << 15)           // This is an INPUT!!!
-#define EN_RXIO      (1 << 14)
+#define POWER_RXIO   (1 << 14)           // 1 = power on, 0 = shutdown
 #define RX_EN_RXIO   (1 << 13)           // 1 = RX on, 0 = RX off
 #define RX_HP_RXIO   (1 << 12)           // 0 = Fc set by rx_hpf, 1 = 600 KHz
 
-#define RXIO_MASK (EN_RXIO | RX_EN_RXIO | RX_HP_RXIO)
+#define RXIO_MASK (POWER_RXIO | RX_EN_RXIO | RX_HP_RXIO)
 
 // RX IO Functions
-#define ALL_ENB_RXIO             EN_RXIO
-#define ALL_DIS_RXIO             0
+#define POWER_UP_RXIO            POWER_RXIO
+#define POWER_DOWN_RXIO          0
 #define RX_ENB_RXIO              RX_EN_RXIO
 #define RX_DIS_RXIO              0
 
@@ -187,7 +187,7 @@ xcvr2450::~xcvr2450(void){
 void xcvr2450::spi_reset(void){
     //spi reset mode: global enable = off, tx and rx enable = on
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE, TX_ENB_TXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_ENB_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_ENB_RXIO | POWER_DOWN_RXIO);
 }
 
 void xcvr2450::update_atr(void){
@@ -205,24 +205,27 @@ void xcvr2450::update_atr(void){
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, band_sel | ad9515div | TX_ENB_TXIO | xx_ant_sel);
 
     //set the rx registers
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        ALL_ENB_RXIO | RX_DIS_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     ALL_ENB_RXIO | RX_ENB_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     ALL_ENB_RXIO | RX_DIS_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, ALL_ENB_RXIO | RX_ENB_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP_RXIO | RX_DIS_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP_RXIO | RX_ENB_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP_RXIO | RX_DIS_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP_RXIO | RX_ENB_RXIO);
 }
 
 /***********************************************************************
  * Tuning
  **********************************************************************/
 void xcvr2450::set_lo_freq(double target_freq){
+    target_freq = std::clip(target_freq, xcvr_freq_range.min, xcvr_freq_range.max);
+    //TODO: clip for highband and lowband
+
     //variables used in the calculation below
-    double scaler = (_lo_freq > 3e9)? (4.0/5.0) : (4.0/3.0);
+    double scaler = (target_freq > 3e9)? (4.0/5.0) : (4.0/3.0);
     double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_TX);
     int R, intdiv, fracdiv;
 
     //loop through values until we get a match
-    for(R = 1; R <= 7; R++){
-        for(_ad9515div = 2; _ad9515div <= 3; _ad9515div++){
+    for(_ad9515div = 2; _ad9515div <= 3; _ad9515div++){
+        for(R = 1; R <= 7; R++){
             double N = (target_freq*scaler*R*_ad9515div)/ref_freq;
             intdiv = int(std::floor(N));
             fracdiv = (N - intdiv)*double(1 << 16);
@@ -235,12 +238,15 @@ void xcvr2450::set_lo_freq(double target_freq){
 
     //calculate the actual freq from the values above
     double N = double(intdiv) + double(fracdiv)/double(1 << 16);
-    _lo_freq = (scaler*R*_ad9515div)/(N*ref_freq);
+    _lo_freq = (N*ref_freq)/(scaler*R*_ad9515div);
 
-    if (xcvr2450_debug) std::cerr << boost::format(
-        "XCVR2450 tune: R=%d, N=%f, ad9515=%d, scaler=%f\n"
-        "               Target Freq=%fMHz, Actual Freq=%fMHz"
-    ) % R % N % _ad9515div % scaler % (target_freq/1e6) % (_lo_freq/1e6) << std::endl;
+    if (xcvr2450_debug) std::cerr
+        << boost::format("XCVR2450 tune:\n")
+        << boost::format("    R=%d, N=%f, ad9515=%d, scaler=%f\n") % R % N % _ad9515div % scaler
+        << boost::format("    Ref    Freq=%fMHz\n") % (ref_freq/1e6)
+        << boost::format("    Target Freq=%fMHz\n") % (target_freq/1e6)
+        << boost::format("    Actual Freq=%fMHz\n") % (_lo_freq/1e6)
+        << std::endl;
 
     //high-high band or low-high band?
     if(_lo_freq > (5.35e9 + 4.47e9)/2.0){
