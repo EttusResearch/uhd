@@ -5,10 +5,10 @@ module gpmc_to_fifo_async
    input fifo_clk, input fifo_rst,
    output reg [17:0] data_o, output reg src_rdy_o, input dst_rdy_i,
 
-   input [15:0] frame_len, input [15:0] fifo_space, output fifo_ready,
+   input [15:0] frame_len, input [15:0] fifo_space, output reg fifo_ready,
    output reg bus_error );
 
-   reg [10:0] counter;
+   reg [15:0] counter;
    // Synchronize the async control signals
    reg [1:0] 	cs_del, we_del;
    always @(posedge fifo_clk)
@@ -53,7 +53,11 @@ module gpmc_to_fifo_async
        else
 	 counter <= counter + 1;
 
-   assign fifo_ready = first_write & (fifo_space > frame_len);
+   always @(posedge fifo_clk)
+     if(fifo_rst)
+       fifo_ready <= 0;
+     else
+       fifo_ready <= first_write & (fifo_space > frame_len);
 
    always @(posedge fifo_clk)
      if(fifo_rst)

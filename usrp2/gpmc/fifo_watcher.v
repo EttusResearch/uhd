@@ -4,7 +4,7 @@ module fifo_watcher
   (input clk, input reset, input clear,
    input src_rdy1, input dst_rdy1, input sof1, input eof1,
    input src_rdy2, input dst_rdy2, input sof2, input eof2,
-   output have_packet, output [15:0] length, output reg bus_error);
+   output reg have_packet, output [15:0] length, output reg bus_error);
 
    wire   write = src_rdy1 & dst_rdy1 & eof1;
    wire   read = src_rdy2 & dst_rdy2 & eof2;
@@ -34,7 +34,11 @@ module fifo_watcher
        bus_error <= 1;
 
    reg 	      in_packet;
-   assign have_packet = have_packet_int & ~in_packet;
+   always @(posedge clk)
+     if(reset | clear)
+       have_packet <= 0;
+     else 
+       have_packet <= have_packet_int & ~in_packet;
    
    always @(posedge clk)
      if(reset | clear)

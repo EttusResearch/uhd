@@ -7,7 +7,7 @@ module gpmc_async
    input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
    
    // GPIOs for FIFO signalling
-   output rx_have_data, output tx_have_space, output bus_error, input bus_reset,
+   output rx_have_data, output tx_have_space, output reg bus_error, input bus_reset,
    
    // Wishbone signals
    input wb_clk, input wb_rst,
@@ -31,7 +31,12 @@ module gpmc_async
    assign EM_D = ~EM_output_enable ? 16'bz : ~EM_NCS4 ? EM_D_fifo : EM_D_wb;
 
    wire 	bus_error_tx, bus_error_rx;
-   assign bus_error = bus_error_tx | bus_error_rx;
+
+   always @(posedge fifo_clk)
+     if(fifo_rst)
+       bus_error <= 0;
+     else
+       bus_error <= bus_error_tx | bus_error_rx;
    
    // CS4 is RAM_2PORT for DATA PATH (high-speed data)
    //    Writes go into one RAM, reads come from the other
