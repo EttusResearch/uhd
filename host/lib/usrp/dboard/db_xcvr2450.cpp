@@ -58,6 +58,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <utility>
 
@@ -68,7 +69,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The XCVR 2450 constants
  **********************************************************************/
-static const bool xcvr2450_debug = true;
+static const bool xcvr2450_debug = false;
 
 static const freq_range_t xcvr_freq_range(2.4e9, 6.0e9);
 
@@ -178,12 +179,14 @@ xcvr2450::xcvr2450(ctor_args_t const& args) : xcvr_dboard_base(args){
 
     //set defaults for LO, gains, antennas
     set_lo_freq(2.45e9);
-    set_rx_ant("J1");
-    set_tx_ant("J2");
-    set_rx_gain(0, "LNA");
-    set_rx_gain(0, "VGA");
-    set_tx_gain(0, "VGA");
-    set_tx_gain(0, "BB");
+    set_rx_ant(xcvr_antennas.at(0));
+    set_tx_ant(xcvr_antennas.at(1));
+    BOOST_FOREACH(const std::string &name, xcvr_tx_gain_ranges.keys()){
+        set_tx_gain(xcvr_tx_gain_ranges[name].min, name);
+    }
+    BOOST_FOREACH(const std::string &name, xcvr_rx_gain_ranges.keys()){
+        set_rx_gain(xcvr_rx_gain_ranges[name].min, name);
+    }
 }
 
 xcvr2450::~xcvr2450(void){
@@ -194,6 +197,11 @@ void xcvr2450::spi_reset(void){
     //spi reset mode: global enable = off, tx and rx enable = on
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE, TX_ENB_TXIO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_ENB_RXIO | POWER_DOWN_RXIO);
+    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+
+    //take it back out of spi reset mode and wait a bit
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_DIS_RXIO | POWER_UP_RXIO);
+    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
 }
 
 void xcvr2450::update_atr(void){
