@@ -7,12 +7,13 @@
 #include <stddef.h>
 #include "usrp_e.h"
 
-// max length #define PKT_DATA_LENGTH 1016
+// max length #define PKT_DATA_LENGTH 1014
 static int packet_data_length;
 
 struct pkt {
 	int checksum;
 	int seq_num;
+	int len;
 	short data[];
 };
 
@@ -25,12 +26,21 @@ static int calc_checksum(struct pkt *p)
 	i = 0;
 	sum = 0;
 
-	for (i=0; i < packet_data_length; i++)
+	for (i=0; i < p->len; i++)
 		sum += p->data[i];
 
 	sum += p->seq_num;
 
 	return sum;
+}
+
+int randN(int n)
+{
+	long tmp;
+
+	tmp = rand()  % n;
+
+	return tmp;
 }
 
 static void *read_thread(void *threadid)
@@ -42,7 +52,8 @@ static void *read_thread(void *threadid)
 	printf("Greetings from the reading thread!\n");
 
 	// IMPORTANT: must assume max length packet from fpga
-	rx_data = malloc(sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + (1016 * 2));
+	rx_data = malloc(sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + (1014 * 2));
+	rx_data = malloc(2048);
 	p = (struct pkt *) ((void *)rx_data + offsetof(struct usrp_transfer_frame, buf));
 	//p = &(rx_data->buf[0]);
 	printf("Address of rx_data = %p, p = %p\n", rx_data, p);
@@ -54,19 +65,16 @@ static void *read_thread(void *threadid)
 	while (1) {
 
 		cnt = read(fp, rx_data, 2048);
-		if (cnt < 0)
-			printf("Error returned from read: %d\n", cnt);
-
 //		printf("Packet received, flags = %X, len = %d\n", rx_data->flags, rx_data->len);
 //		printf("p->seq_num = %d\n", p->seq_num);
 
 		if (p->seq_num != prev_seq_num + 1)
-			printf("Sequence number fail, current = %X, previous = %X\n",
+			printf("Sequence number fail, current = %d, previous = %d\n",
 				p->seq_num, prev_seq_num);
 		prev_seq_num = p->seq_num;
 
 		if (calc_checksum(p) != p->checksum)
-			printf("Checksum fail packet = %X, expected = %X\n",
+			printf("Checksum fail packet = %d, expected = %d\n",
 				calc_checksum(p), p->checksum);
 //		printf("\n");
 	}
@@ -75,19 +83,20 @@ static void *read_thread(void *threadid)
 
 static void *write_thread(void *threadid)
 {
-	int seq_number, i, cnt;
+	int seq_number, i, cnt, pkt_cnt;
 	struct usrp_transfer_frame *tx_data;
 	struct pkt *p;
 
 	printf("Greetings from the write thread!\n");
 
-	tx_data = malloc(sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + (packet_data_length * 2));
+	// Allocate max length buffer for frame
+	tx_data = malloc(2048);
 	p = (struct pkt *) ((void *)tx_data + offsetof(struct usrp_transfer_frame, buf));
 	printf("Address of tx_data = %p, p = %p\n", tx_data, p);
 
 	printf("sizeof rp_transfer_frame = %d, sizeof pkt = %d\n", sizeof(struct usrp_transfer_frame), sizeof(struct pkt));
 
-	for (i=0; i < packet_data_length; i++)
+	for (i=0; i < 1014; i++)
 //		p->data[i] = random() >> 16;
 		p->data[i] = i;
 
@@ -99,13 +108,15 @@ static void *write_thread(void *threadid)
 	seq_number = 1;
 
 	while (1) {
-//		printf("tx flags = %X, len = %d\n", tx_data->flags, tx_data->len);
-		p->seq_num = seq_number++;
-		p->checksum = calc_checksum(p);
-		cnt = write(fp, tx_data, 2048);
-		if (cnt < 0)
-			printf("Error returned from write: %d\n", cnt);
-	//	sleep(1);
+		pkt_cnt = randN(16);
+		for (i = 0; i < pkt_cnt; i++) {
+			p->seq_num = seq_number++;
+			p->len = randN(1013) + 1;
+			p->checksum = calc_checksum(p);
+			tx_data->len = 12 + p->len * 2;
+			cnt = write(fp, tx_data, 2048);
+		}
+		sleep(random() >> 31);
 	}
 }
 
@@ -114,13 +125,6 @@ int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
 	long int t;
-
-	if (argc < 2) {
-		printf("%s data_size\n", argv[0]);
-		return -1;
-	}
-
-	packet_data_length = atoi(argv[1]);
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
