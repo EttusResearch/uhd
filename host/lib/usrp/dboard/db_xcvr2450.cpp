@@ -68,16 +68,19 @@ using namespace boost::assign;
 /***********************************************************************
  * The XCVR 2450 constants
  **********************************************************************/
+static const bool xcvr2450_debug = true;
+
 static const freq_range_t xcvr_freq_range(2.4e9, 6.0e9);
 
 static const prop_names_t xcvr_antennas = list_of("J1")("J2");
 
 static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list_of
     ("VGA", gain_range_t(0, 30, 0.5))
+    ("BB", gain_range_t(0, 5, 1.5))
 ;
 static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list_of
-    ("RF LNA", gain_range_t(0, 30.5, 15))
-    ("BB VGA", gain_range_t(0, 62, 2.0))
+    ("LNA", gain_range_t(0, 30.5, 15))
+    ("VGA", gain_range_t(0, 62, 2.0))
 ;
 
 /***********************************************************************
@@ -108,6 +111,14 @@ private:
     void set_rx_gain(float gain, const std::string &name);
 
     void update_atr(void);
+    void spi_reset(void);
+    void send_reg(boost::uint8_t addr){
+        this->get_iface()->write_spi(
+            dboard_iface::UNIT_RX,
+            spi_config_t::EDGE_RISE,
+            _max2829_regs.get_reg(addr), 24
+        );
+    }
 };
 
 /***********************************************************************
@@ -134,22 +145,54 @@ xcvr2450::xcvr2450(ctor_args_t const& args) : xcvr_dboard_base(args){
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
 
+    spi_reset(); //prepare the spi
+
+    //setup the misc max2829 registers
+    _max2829_regs.mimo_select         = max2829_regs_t::MIMO_SELECT_MIMO;
+    _max2829_regs.band_sel_mimo       = max2829_regs_t::BAND_SEL_MIMO_MIMO;
+    _max2829_regs.pll_cp_select       = max2829_regs_t::PLL_CP_SELECT_4MA;
+    _max2829_regs.rssi_high_bw        = max2829_regs_t::RSSI_HIGH_BW_6MHZ;
+    _max2829_regs.tx_lpf_coarse_adj   = max2829_regs_t::TX_LPF_COARSE_ADJ_12MHZ;
+    _max2829_regs.rx_lpf_coarse_adj   = max2829_regs_t::RX_LPF_COARSE_ADJ_9_5MHZ;
+    _max2829_regs.rx_lpf_fine_adj     = max2829_regs_t::RX_LPF_FINE_ADJ_95;
+    _max2829_regs.rx_vga_gain_spi     = max2829_regs_t::RX_VGA_GAIN_SPI_SPI;
+    _max2829_regs.rssi_output_range   = max2829_regs_t::RSSI_OUTPUT_RANGE_HIGH;
+    _max2829_regs.rssi_op_mode        = max2829_regs_t::RSSI_OP_MODE_ENABLED;
+    _max2829_regs.rssi_pin_fcn        = max2829_regs_t::RSSI_PIN_FCN_RSSI;
+    _max2829_regs.rx_highpass         = max2829_regs_t::RX_HIGHPASS_100HZ;
+    _max2829_regs.tx_vga_gain_spi     = max2829_regs_t::TX_VGA_GAIN_SPI_SPI;
+    _max2829_regs.pa_driver_linearity = max2829_regs_t::PA_DRIVER_LINEARITY_78;
+    _max2829_regs.tx_vga_linearity    = max2829_regs_t::TX_VGA_LINEARITY_78;
+    _max2829_regs.tx_upconv_linearity = max2829_regs_t::TX_UPCONV_LINEARITY_78;
+
+    //send initial register settings
+    for(boost::uint8_t reg = 0; reg <= 0xC; reg++){
+        this->send_reg(reg);
+    }
+
     //set defaults for LO, gains, antennas
     set_lo_freq(2.45e9);
     set_rx_ant("J1");
     set_tx_ant("J2");
-    set_rx_gain(0, "RF LNA");
-    set_rx_gain(0, "BB VGA");
+    set_rx_gain(0, "LNA");
+    set_rx_gain(0, "VGA");
     set_tx_gain(0, "VGA");
+    set_tx_gain(0, "BB");
 }
 
 xcvr2450::~xcvr2450(void){
-    /* NOP */
+    spi_reset();
+}
+
+void xcvr2450::spi_reset(void){
+    //spi reset mode: global enable = off, tx and rx enable = on
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE, TX_ENB_TXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_ENB_RXIO);
 }
 
 void xcvr2450::update_atr(void){
     //calculate tx atr pins
-    int band_sel   = (_lo_freq > 4e9)? HB_PA_TXIO : LB_PA_TXIO;
+    int band_sel   = (_lo_freq > 3e9)? HB_PA_TXIO : LB_PA_TXIO;
     int tx_ant_sel = (_tx_ant == "J1")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
     int rx_ant_sel = (_rx_ant == "J1")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
     int xx_ant_sel = tx_ant_sel; //prefer the tx antenna selection for full duplex (rx will get the other antenna)
@@ -172,8 +215,57 @@ void xcvr2450::update_atr(void){
  * Tuning
  **********************************************************************/
 void xcvr2450::set_lo_freq(double target_freq){
-    //TODO
-    //set _ad9515div
+    //variables used in the calculation below
+    double scaler = (_lo_freq > 3e9)? (4.0/5.0) : (4.0/3.0);
+    double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_TX);
+    int R, intdiv, fracdiv;
+
+    //loop through values until we get a match
+    for(R = 1; R <= 7; R++){
+        for(_ad9515div = 2; _ad9515div <= 3; _ad9515div++){
+            double N = (target_freq*scaler*R*_ad9515div)/ref_freq;
+            intdiv = int(std::floor(N));
+            fracdiv = (N - intdiv)*double(1 << 16);
+            //actual minimum is 128, but most chips seems to require higher to lock
+            if (intdiv < 131 or intdiv > 255) continue;
+            //constraints met: exit loop
+            goto done_loop;
+        }
+    } done_loop:
+
+    //calculate the actual freq from the values above
+    double N = double(intdiv) + double(fracdiv)/double(1 << 16);
+    _lo_freq = (scaler*R*_ad9515div)/(N*ref_freq);
+
+    if (xcvr2450_debug) std::cerr << boost::format(
+        "XCVR2450 tune: R=%d, N=%f, ad9515=%d, scaler=%f\n"
+        "               Target Freq=%fMHz, Actual Freq=%fMHz"
+    ) % R % N % _ad9515div % scaler % (target_freq/1e6) % (_lo_freq/1e6) << std::endl;
+
+    //high-high band or low-high band?
+    if(_lo_freq > (5.35e9 + 4.47e9)/2.0){
+        _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_5_47GHZ_TO_5_875GHZ;
+    }else{
+        _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_4_9GHZ_TO_5_35GHZ;
+    }
+
+    //new band select settings and ad9515 divider
+    this->update_atr();
+
+    //load new counters into registers
+    _max2829_regs.int_div_ratio_word = intdiv;
+    _max2829_regs.frac_div_ratio_lsb = fracdiv & 0x3;
+    _max2829_regs.frac_div_ratio_msb = fracdiv >> 2;
+    this->send_reg(0x3); //integer
+    this->send_reg(0x4); //fractional
+
+    //load the reference divider and band select into registers
+    //toggle the bandswitch from off to automatic (which really means start)
+    _max2829_regs.ref_divider = R;
+    _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_DISABLE;
+    this->send_reg(0x5);
+    _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_AUTOMATIC;;
+    this->send_reg(0x5);
 }
 
 /***********************************************************************
@@ -181,12 +273,14 @@ void xcvr2450::set_lo_freq(double target_freq){
  **********************************************************************/
 void xcvr2450::set_tx_ant(const std::string &ant){
     assert_has(xcvr_antennas, ant, "xcvr antenna name");
-    //TODO
+   _tx_ant = ant;
+    this->update_atr(); //sets the atr to the new antenna setting
 }
 
 void xcvr2450::set_rx_ant(const std::string &ant){
     assert_has(xcvr_antennas, ant, "xcvr antenna name");
-    //TODO
+    _rx_ant = ant;
+    this->update_atr(); //sets the atr to the new antenna setting
 }
 
 /***********************************************************************
@@ -212,12 +306,37 @@ static int gain_to_tx_vga_reg(float &gain){
 }
 
 /*!
+ * Convert a requested gain for the tx bb into the integer register value.
+ * The gain passed into the function will be set to the actual value.
+ * \param gain the requested gain in dB
+ * \return gain enum value
+ */
+static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
+    int reg = std::clip(boost::math::iround(gain*3/5.0), 0, 3);
+    switch(reg){
+    case 0:
+        gain = 0;
+        return max2829_regs_t::TX_BASEBAND_GAIN_0DB;
+    case 1:
+        gain = 2;
+        return max2829_regs_t::TX_BASEBAND_GAIN_2DB;
+    case 2:
+        gain = 3.5;
+        return max2829_regs_t::TX_BASEBAND_GAIN_3_5DB;
+    case 3:
+        gain = 5;
+        return max2829_regs_t::TX_BASEBAND_GAIN_5DB;
+    }
+    ASSERT_THROW(false);
+}
+
+/*!
  * Convert a requested gain for the rx vga into the integer register value.
  * The gain passed into the function will be set to the actual value.
  * \param gain the requested gain in dB
  * \return 5 bit the register value
  */
-static int gain_to_rx_bb_vga_reg(float &gain){
+static int gain_to_rx_vga_reg(float &gain){
     int reg = std::clip(boost::math::iround(gain/2.0), 0, 31);
     gain = reg*2;
     return reg;
@@ -229,7 +348,7 @@ static int gain_to_rx_bb_vga_reg(float &gain){
  * \param gain the requested gain in dB
  * \return 2 bit the register value
  */
-static int gain_to_rx_rf_lna_reg(float &gain){
+static int gain_to_rx_lna_reg(float &gain){
     int reg = std::clip(boost::math::iround(gain*2/30.5) + 1, 0, 3);
     switch(reg){
     case 0:
@@ -242,12 +361,30 @@ static int gain_to_rx_rf_lna_reg(float &gain){
 
 void xcvr2450::set_tx_gain(float gain, const std::string &name){
     assert_has(xcvr_tx_gain_ranges.keys(), name, "xcvr tx gain name");
-    //TODO
+    if (name == "VGA"){
+        _max2829_regs.tx_vga_gain = gain_to_tx_vga_reg(gain);
+        send_reg(0xC);
+    }
+    else if(name == "BB"){
+        _max2829_regs.tx_baseband_gain = gain_to_tx_bb_reg(gain);
+        send_reg(0x9);
+    }
+    else ASSERT_THROW(false);
+    _tx_gains[name] = gain;
 }
 
 void xcvr2450::set_rx_gain(float gain, const std::string &name){
     assert_has(xcvr_rx_gain_ranges.keys(), name, "xcvr rx gain name");
-    //TODO
+    if (name == "VGA"){
+        _max2829_regs.rx_vga_gain = gain_to_rx_vga_reg(gain);
+        send_reg(0xB);
+    }
+    else if(name == "LNA"){
+        _max2829_regs.rx_lna_gain = gain_to_rx_lna_reg(gain);
+        send_reg(0xB);
+    }
+    else ASSERT_THROW(false);
+    _rx_gains[name] = gain;
 }
 
 /***********************************************************************
