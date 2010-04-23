@@ -430,7 +430,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
  * TX Get and Set
  **********************************************************************/
 void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
-        wax::obj key; std::string name;
+    wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
