@@ -113,12 +113,18 @@ private:
     void update_atr(void);
     void spi_reset(void);
     void send_reg(boost::uint8_t addr){
+        boost::uint32_t value = _max2829_regs.get_reg(addr);
+        if(xcvr2450_debug) std::cerr << boost::format(
+            "XCVR2450: send reg 0x%02x, value 0x%05x"
+        ) % int(addr) % value << std::endl;
         this->get_iface()->write_spi(
             dboard_iface::UNIT_RX,
             spi_config_t::EDGE_RISE,
-            _max2829_regs.get_reg(addr), 24
+            value, 24
         );
     }
+
+    static bool is_highband(double freq){return freq > 3e9;}
 };
 
 /***********************************************************************
@@ -166,7 +172,7 @@ xcvr2450::xcvr2450(ctor_args_t const& args) : xcvr_dboard_base(args){
     _max2829_regs.tx_upconv_linearity = max2829_regs_t::TX_UPCONV_LINEARITY_78;
 
     //send initial register settings
-    for(boost::uint8_t reg = 0; reg <= 0xC; reg++){
+    for(boost::uint8_t reg = 0x2; reg <= 0xC; reg++){
         this->send_reg(reg);
     }
 
@@ -192,9 +198,9 @@ void xcvr2450::spi_reset(void){
 
 void xcvr2450::update_atr(void){
     //calculate tx atr pins
-    int band_sel   = (_lo_freq > 3e9)? HB_PA_TXIO : LB_PA_TXIO;
+    int band_sel   = (xcvr2450::is_highband(_lo_freq))? HB_PA_TXIO : LB_PA_TXIO;
     int tx_ant_sel = (_tx_ant == "J1")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
-    int rx_ant_sel = (_rx_ant == "J1")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
+    int rx_ant_sel = (_rx_ant == "J2")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
     int xx_ant_sel = tx_ant_sel; //prefer the tx antenna selection for full duplex (rx will get the other antenna)
     int ad9515div  = (_ad9515div == 3)? AD9515DIV_3_TXIO : AD9515DIV_2_TXIO;
 
@@ -219,7 +225,7 @@ void xcvr2450::set_lo_freq(double target_freq){
     //TODO: clip for highband and lowband
 
     //variables used in the calculation below
-    double scaler = (target_freq > 3e9)? (4.0/5.0) : (4.0/3.0);
+    double scaler = xcvr2450::is_highband(target_freq)? (4.0/5.0) : (4.0/3.0);
     double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_TX);
     int R, intdiv, fracdiv;
 
@@ -249,9 +255,11 @@ void xcvr2450::set_lo_freq(double target_freq){
         << std::endl;
 
     //high-high band or low-high band?
-    if(_lo_freq > (5.35e9 + 4.47e9)/2.0){
+    if(_lo_freq > (5.35e9 + 5.47e9)/2.0){
+        if (xcvr2450_debug) std::cerr << "XCVR2450 tune: Using  high-high band" << std::endl;
         _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_5_47GHZ_TO_5_875GHZ;
     }else{
+        if (xcvr2450_debug) std::cerr << "XCVR2450 tune: Using  low-high band" << std::endl;
         _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_4_9GHZ_TO_5_35GHZ;
     }
 
@@ -268,6 +276,9 @@ void xcvr2450::set_lo_freq(double target_freq){
     //load the reference divider and band select into registers
     //toggle the bandswitch from off to automatic (which really means start)
     _max2829_regs.ref_divider = R;
+    _max2829_regs.band_select = (xcvr2450::is_highband(_lo_freq))?
+                                max2829_regs_t::BAND_SELECT_5GHZ   :
+                                max2829_regs_t::BAND_SELECT_2_4GHZ ;
     _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_DISABLE;
     this->send_reg(0x5);
     _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_AUTOMATIC;;

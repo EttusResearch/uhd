@@ -94,7 +94,7 @@ void usrp2_impl::update_tx_mux_config(void){
     wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
     std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
     if (tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()){
-        tx_mux = (((tx_mux >> 0) & 0x1) << 1) | (((tx_mux >> 1) & 0x1) << 0);
+        tx_mux = (((tx_mux >> 0) & 0xf) << 4) | (((tx_mux >> 4) & 0xf) << 0);
     }
 
     _iface->poke32(FR_DSP_TX_MUX, tx_mux);
