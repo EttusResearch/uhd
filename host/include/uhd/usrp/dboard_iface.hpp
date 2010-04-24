@@ -95,19 +95,19 @@ public:
     /*!
      * Write to an I2C peripheral.
      *
-     * \param i2c_addr I2C bus address (7-bits)
-     * \param buf the data to write
+     * \param addr I2C bus address (7-bits)
+     * \param bytes the data to write
      */
-    virtual void write_i2c(int i2c_addr, const byte_vector_t &buf) = 0;
+    virtual void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes) = 0;
 
     /*!
      * Read from an I2C peripheral.
      *
-     * \param i2c_addr I2C bus address (7-bits)
+     * \param addr I2C bus address (7-bits)
      * \param num_bytes number of bytes to read
      * \return the data read if successful, else a zero length string.
      */
-    virtual byte_vector_t read_i2c(int i2c_addr, size_t num_bytes) = 0;
+    virtual byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes) = 0;
 
     /*!
      * Write data to SPI bus peripheral.

@@ -32,20 +32,25 @@ struct UHD_API dboard_eeprom_t{
     dboard_id_t id;
 
     /*!
-     * Create a dboard eeprom struct from the bytes read out of eeprom
-     * \param buf the vector of bytes
+     * Create a dboard eeprom struct from the bytes read out of eeprom.
+     * The constructor will parse out the dboard id from a vector of bytes.
+     * To be valid, the bytes vector should be at least num_bytes() long.
+     * If the parsing fails due to bad checksum or incomplete length,
+     * the dboard id in this struct will be set to dboard_id::NONE.
+     * \param bytes the vector of bytes
      */
-    dboard_eeprom_t(const uhd::byte_vector_t &buf = uhd::byte_vector_t(0));
+    dboard_eeprom_t(const uhd::byte_vector_t &bytes = uhd::byte_vector_t(0));
 
     /*!
-     * Get the bytes that would be written to dboard eeprom
+     * Get the bytes that would be written to dboard eeprom.
      * \return a vector of bytes
      */
     uhd::byte_vector_t get_eeprom_bytes(void);
 
     /*!
-     * Get the number of bytes to read out of eeprom.
-     * \return the number of bytes we are interested in
+     * Get the number of bytes in the dboard eeprom segment.
+     * Use this value when reading out of the dboard eeprom.
+     * \return the number of bytes used by dboard eeprom
      */
     static size_t num_bytes(void);
 };

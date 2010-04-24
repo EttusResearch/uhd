@@ -53,26 +53,37 @@ using namespace uhd::usrp;
                                                //   daughterboard specific use
 ////////////////////////////////////////////////////////////////////////
 
-dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &buf){
+//negative sum of bytes excluding checksum byte
+static boost::uint8_t checksum(const byte_vector_t &bytes){
+    int sum;
+    for (size_t i = 0; i < DB_EEPROM_CHKSUM; i++){
+        sum += int(bytes.at(i));
+    }
+    return (-sum) & 0xff;
+}
+
+dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
     try{
-        ASSERT_THROW(buf.size() >= num_bytes());
-        ASSERT_THROW(buf[DB_EEPROM_MAGIC] == DB_EEPROM_MAGIC_VALUE);
+        ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);
+        ASSERT_THROW(bytes[DB_EEPROM_MAGIC] == DB_EEPROM_MAGIC_VALUE);
+        ASSERT_THROW(bytes[DB_EEPROM_CHKSUM] == checksum(bytes));
         id = \
-            (boost::uint16_t(buf[DB_EEPROM_ID_LSB]) << 0) |
-            (boost::uint16_t(buf[DB_EEPROM_ID_MSB]) << 8) ;
+            (boost::uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0) |
+            (boost::uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8) ;
     }catch(const uhd::assert_error &e){
         id = dboard_id::NONE;
     }
 }
 
 byte_vector_t dboard_eeprom_t::get_eeprom_bytes(void){
-    byte_vector_t bytes(3);
+    byte_vector_t bytes(DB_EEPROM_CLEN, 0); //defaults to all zeros
     bytes[DB_EEPROM_MAGIC] = DB_EEPROM_MAGIC_VALUE;
     bytes[DB_EEPROM_ID_LSB] = boost::uint8_t(id >> 0);
     bytes[DB_EEPROM_ID_MSB] = boost::uint8_t(id >> 8);
+    bytes[DB_EEPROM_CHKSUM] = checksum(bytes);
     return bytes;
 }
 
 size_t dboard_eeprom_t::num_bytes(void){
-    return 3;
+    return DB_EEPROM_CLEN;
 }

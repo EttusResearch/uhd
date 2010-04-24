@@ -18,7 +18,6 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
@@ -34,16 +33,16 @@ using namespace uhd::usrp;
  * Helper Methods
  **********************************************************************/
 void usrp2_impl::dboard_init(void){
-    //extract the dboard ids
-    dboard_eeprom_t db_rx_eeprom(_iface->read_eeprom(I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
-    dboard_eeprom_t db_tx_eeprom(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
+    //read the dboard eeprom to extract the dboard ids
+    _rx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
+    _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
 
     //create a new dboard interface and manager
     dboard_iface::sptr _dboard_iface(
         make_usrp2_dboard_iface(_iface, _clk_ctrl)
     );
     _dboard_manager = dboard_manager::make(
-        db_rx_eeprom.id, db_tx_eeprom.id, _dboard_iface
+        _rx_db_eeprom.id, _tx_db_eeprom.id, _dboard_iface
     );
 
     //load dboards
@@ -120,19 +119,29 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _rx_subdevs_in_use;
         return;
 
+    case DBOARD_PROP_DBOARD_ID:
+        val = _rx_db_eeprom.id;
+        return;
+
     //case DBOARD_PROP_CODEC:
     //    throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 
 void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
-    if (key.as<dboard_prop_t>() == DBOARD_PROP_USED_SUBDEVS){
+    switch(key.as<dboard_prop_t>()){
+    case DBOARD_PROP_USED_SUBDEVS:
         _rx_subdevs_in_use = val.as<prop_names_t>();
         update_rx_mux_config(); //if the val is bad, this will throw
         return;
-    }
 
-    throw std::runtime_error("Cannot set on usrp2 dboard");
+    case DBOARD_PROP_DBOARD_ID:
+        _rx_db_eeprom.id = val.as<dboard_id_t>();
+        _iface->write_eeprom(I2C_ADDR_RX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
+        return;
+
+    default: throw std::runtime_error("Cannot set read-only property on usrp2 dboard");
+    }
 }
 
 /***********************************************************************
@@ -160,17 +169,27 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _tx_subdevs_in_use;
         return;
 
+    case DBOARD_PROP_DBOARD_ID:
+        val = _tx_db_eeprom.id;
+        return;
+
     //case DBOARD_PROP_CODEC:
     //    throw std::runtime_error("unhandled prop in usrp2 dboard");
     }
 }
 
 void usrp2_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
-    if (key.as<dboard_prop_t>() == DBOARD_PROP_USED_SUBDEVS){
+    switch(key.as<dboard_prop_t>()){
+    case DBOARD_PROP_USED_SUBDEVS:
         _tx_subdevs_in_use = val.as<prop_names_t>();
         update_tx_mux_config(); //if the val is bad, this will throw
         return;
-    }
 
-    throw std::runtime_error("Cannot set on usrp2 dboard");
+    case DBOARD_PROP_DBOARD_ID:
+        _tx_db_eeprom.id = val.as<dboard_id_t>();
+        _iface->write_eeprom(I2C_ADDR_TX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
+        return;
+
+    default: throw std::runtime_error("Cannot set read-only property on usrp2 dboard");
+    }
 }
