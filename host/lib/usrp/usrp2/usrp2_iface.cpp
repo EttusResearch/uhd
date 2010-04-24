@@ -19,9 +19,11 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
+#include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <stdexcept>
+#include <algorithm>
 
 using namespace uhd;
 
@@ -87,6 +89,65 @@ public:
         ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
         return ntohl(out_data.data.spi_args.data);
+    }
+
+/***********************************************************************
+ * I2C
+ **********************************************************************/
+    void write_i2c(boost::uint8_t addr, const byte_vector_t &buf){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
+        out_data.data.i2c_args.addr = addr;
+        out_data.data.i2c_args.bytes = buf.size();
+
+        //limitation of i2c transaction size
+        ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
+
+        //copy in the data
+        std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+    }
+
+    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
+        out_data.data.i2c_args.addr = addr;
+        out_data.data.i2c_args.bytes = num_bytes;
+
+        //limitation of i2c transaction size
+        ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
+        ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
+
+        //copy out the data
+        byte_vector_t result(num_bytes);
+        std::copy(in_data.data.i2c_args.data, in_data.data.i2c_args.data + num_bytes, result.begin());
+        return result;
+    }
+
+/***********************************************************************
+ * EEPROM
+ **********************************************************************/
+    void write_eeprom(boost::uint8_t addr, boost::uint8_t offset, const byte_vector_t &buf){
+        BOOST_FOREACH(boost::uint8_t byte, buf){
+            //write a byte at a time, its easy that way
+            byte_vector_t cmd = boost::assign::list_of(offset)(byte);
+            this->write_i2c(addr, cmd);
+        }
+    }
+
+    byte_vector_t read_eeprom(boost::uint8_t addr, boost::uint8_t offset, size_t num_bytes){
+        //do a zero byte write to start read cycle
+        write_i2c(addr, byte_vector_t(1, offset));
+        return read_i2c(addr, num_bytes);
     }
 
 /***********************************************************************

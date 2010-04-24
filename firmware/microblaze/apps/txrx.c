@@ -45,7 +45,6 @@
 #include "clocks.h"
 #include <vrt/bits.h>
 #include "usrp2/fw_common.h"
-#include <db.h>
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
@@ -257,12 +256,6 @@ void handle_udp_ctrl_packet(
         memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
         break;
 
-    case USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO:
-        ctrl_data_out.id = USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE;
-        ctrl_data_out.data.dboard_ids.tx_id = read_dboard_eeprom(I2C_ADDR_TX_A);
-        ctrl_data_out.data.dboard_ids.rx_id = read_dboard_eeprom(I2C_ADDR_RX_A);
-        break;
-
     /*******************************************************************
      * SPI
      ******************************************************************/
@@ -416,15 +409,6 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
-        break;
-
-    /*******************************************************************
-     * Hardware Rev Numbers
-     ******************************************************************/
-    case USRP2_CTRL_ID_WHATS_THE_HARDWARE_REV_NOS_BRO:
-        ctrl_data_out.data.hw_rev.major = u2_hw_rev_major;
-        ctrl_data_out.data.hw_rev.minor = u2_hw_rev_minor;
-        ctrl_data_out.id = USRP2_CTRL_ID_TAKE_THE_HARDWARE_REV_NOS_DUDE;
         break;
 
     default:

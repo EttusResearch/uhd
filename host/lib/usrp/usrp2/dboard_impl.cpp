@@ -18,6 +18,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
@@ -33,22 +34,16 @@ using namespace uhd::usrp;
  * Helper Methods
  **********************************************************************/
 void usrp2_impl::dboard_init(void){
-    //grab the dboard ids over the control line
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO);
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE);
-
-    //extract the dboard ids an convert them
-    dboard_id_t rx_dboard_id = ntohs(in_data.data.dboard_ids.rx_id);
-    dboard_id_t tx_dboard_id = ntohs(in_data.data.dboard_ids.tx_id);
+    //extract the dboard ids
+    dboard_eeprom_t db_rx_eeprom(_iface->read_eeprom(I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
+    dboard_eeprom_t db_tx_eeprom(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
 
     //create a new dboard interface and manager
     dboard_iface::sptr _dboard_iface(
         make_usrp2_dboard_iface(_iface, _clk_ctrl)
     );
     _dboard_manager = dboard_manager::make(
-        rx_dboard_id, tx_dboard_id, _dboard_iface
+        db_rx_eeprom.id, db_tx_eeprom.id, _dboard_iface
     );
 
     //load dboards

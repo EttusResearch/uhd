@@ -25,7 +25,6 @@
 #include "i2c.h"
 #include "mdelay.h"
 #include "clocks.h"
-#include "db.h"
 #include "usrp2_i2c_addr.h"
 
 //#include "nonstdio.h"

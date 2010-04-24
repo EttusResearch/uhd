@@ -28,7 +28,6 @@ libu2fw_a_SOURCES = \
 	bsm12.c \
 	buffer_pool.c \
 	clocks.c \
-	db_init.c \
 	dbsm.c \
 	eeprom.c \
 	ethernet.c \
@@ -60,7 +59,6 @@ noinst_HEADERS = \
 	bsm12.h \
 	buffer_pool.h \
 	clocks.h \
-	db.h \
 	dbsm.h \
 	eth_mac.h \
 	eth_mac_regs.h \

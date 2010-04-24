@@ -25,6 +25,15 @@
 #include <boost/cstdint.hpp>
 #include "fw_common.h"
 
+////////////////////////////////////////////////////////////////////////
+// I2C addresses
+////////////////////////////////////////////////////////////////////////
+#define I2C_DEV_EEPROM  0x50 // 24LC02[45]:  7-bits 1010xxx
+#define	I2C_ADDR_MBOARD (I2C_DEV_EEPROM | 0x0)
+#define	I2C_ADDR_TX_DB  (I2C_DEV_EEPROM | 0x4)
+#define	I2C_ADDR_RX_DB  (I2C_DEV_EEPROM | 0x5)
+////////////////////////////////////////////////////////////////////////
+
 /*!
  * The usrp2 interface class:
  * Provides a set of functions to implementation layer.
@@ -91,6 +100,52 @@ public:
         boost::uint32_t data,
         size_t num_bits,
         bool readback
+    ) = 0;
+
+    /*!
+     * Write bytes over the i2c.
+     * \param addr the address
+     * \param buf the vector of bytes
+     */
+    virtual void write_i2c(
+        boost::uint8_t addr,
+        const uhd::byte_vector_t &buf
+    ) = 0;
+
+    /*!
+     * Read bytes over the i2c.
+     * \param addr the address
+     * \param num_bytes number of bytes to read
+     * \return a vector of bytes
+     */
+    virtual uhd::byte_vector_t read_i2c(
+        boost::uint8_t addr,
+        size_t num_bytes
+    ) = 0;
+
+    /*!
+     * Write bytes to an eeprom.
+     * \param addr the address
+     * \param offset byte offset
+     * \param buf the vector of bytes
+     */
+    virtual void write_eeprom(
+        boost::uint8_t addr,
+        boost::uint8_t offset,
+        const uhd::byte_vector_t &buf
+    ) = 0;
+
+    /*!
+     * Read bytes from an eeprom.
+     * \param addr the address
+     * \param offset byte offset
+     * \param num_bytes number of bytes to read
+     * \return a vector of bytes
+     */
+    virtual uhd::byte_vector_t read_eeprom(
+        boost::uint8_t addr,
+        boost::uint8_t offset,
+        size_t num_bytes
     ) = 0;
 
     /*!
