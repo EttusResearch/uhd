@@ -38,6 +38,8 @@ static void *read_thread(void *threadid)
 	int cnt, prev_seq_num;
 	struct usrp_transfer_frame *rx_data;
 	struct pkt *p;
+	int rx_pkt_cnt;
+	int i;
 
 	printf("Greetings from the reading thread!\n");
 
@@ -51,23 +53,39 @@ static void *read_thread(void *threadid)
 
 	prev_seq_num = 0;
 
+	rx_pkt_cnt = 0;
+
 	while (1) {
 
 		cnt = read(fp, rx_data, 2048);
 		if (cnt < 0)
 			printf("Error returned from read: %d\n", cnt);
+		rx_pkt_cnt++;
 
+		if (rx_pkt_cnt  == 512) {
+			printf(".");
+			fflush(stdout);
+			rx_pkt_cnt = 0;
+		}
+
+		if (rx_data->flags & RB_OVERRUN)
+			printf("RX ring buffer overrun occurred at packet %d\n", rx_pkt_cnt);
+
+//		for (i = 0; i < 10; i++)
+//			printf(" %d", p->data[i]);
+//		printf("\n");
+	
 //		printf("Packet received, flags = %X, len = %d\n", rx_data->flags, rx_data->len);
 //		printf("p->seq_num = %d\n", p->seq_num);
 
-		if (p->seq_num != prev_seq_num + 1)
-			printf("Sequence number fail, current = %X, previous = %X\n",
-				p->seq_num, prev_seq_num);
-		prev_seq_num = p->seq_num;
+//		if (p->seq_num != prev_seq_num + 1)
+//			printf("Sequence number fail, current = %X, previous = %X\n",
+//				p->seq_num, prev_seq_num);
+//		prev_seq_num = p->seq_num;
 
-		if (calc_checksum(p) != p->checksum)
-			printf("Checksum fail packet = %X, expected = %X\n",
-				calc_checksum(p), p->checksum);
+//		if (calc_checksum(p) != p->checksum)
+//			printf("Checksum fail packet = %X, expected = %X\n",
+//				calc_checksum(p), p->checksum);
 //		printf("\n");
 	}
 
