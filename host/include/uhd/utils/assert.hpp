@@ -28,6 +28,10 @@
 #include <stdexcept>
 #include <string>
 
+#ifndef BOOST_THROW_EXCEPTION
+#define BOOST_THROW_EXCEPTION(x) throw std::runtime_error("")
+#endif
+
 namespace uhd{
 
     //! The exception to throw when assertions fail
