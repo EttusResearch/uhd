@@ -20,6 +20,10 @@ module u1e
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,
    
    output overo_gpio144, output overo_gpio145, output overo_gpio146, output overo_gpio147,  // Fifo controls
+   input overo_gpio0, input overo_gpio14, input overo_gpio21, input overo_gpio22,  // Misc GPIO
+   input overo_gpio23, input overo_gpio64, input overo_gpio65, input overo_gpio127, // Misc GPIO
+   input overo_gpio128, input overo_gpio163, input overo_gpio170, input overo_gpio176, // Misc GPIO
+   
    inout [15:0] io_tx, inout [15:0] io_rx,
    input PPS_IN
    );
@@ -52,6 +56,9 @@ module u1e
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
 		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
 		     .io_tx(io_tx), .io_rx(io_rx),
+		     .misc_gpio( {{overo_gpio128,overo_gpio163,overo_gpio170,overo_gpio176},
+				  {overo_gpio0,overo_gpio14,overo_gpio21,overo_gpio22},
+				  {overo_gpio23,overo_gpio64,overo_gpio65,overo_gpio127}}),
 		     .pps_in(PPS_IN) );
    
 endmodule // u1e

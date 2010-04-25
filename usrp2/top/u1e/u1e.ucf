@@ -47,22 +47,22 @@ NET "EM_NOE"  LOC = "A14"  ;
 #NET "EM_NWP"  LOC = "F13"  ;
 
 ## Overo GPIO
-#NET "overo_gpio0"  LOC = "F9"  ;
-#NET "overo_gpio14"  LOC = "C4"  ;
-#NET "overo_gpio21"  LOC = "D5"  ;
-#NET "overo_gpio22"  LOC = "A3"  ;
-#NET "overo_gpio23"  LOC = "B3"  ;
-#NET "overo_gpio64"  LOC = "A4"  ;
-#NET "overo_gpio65"  LOC = "F8"  ;
-#NET "overo_gpio127"  LOC = "C8"  ;
-#NET "overo_gpio128"  LOC = "G8"  ;
+NET "overo_gpio0"  LOC = "F9"  ;  # MISC GPIO for debug
+NET "overo_gpio14"  LOC = "C4"  ;  # MISC GPIO for debug
+NET "overo_gpio21"  LOC = "D5"  ;  # MISC GPIO for debug
+NET "overo_gpio22"  LOC = "A3"  ;  # MISC GPIO for debug
+NET "overo_gpio23"  LOC = "B3"  ;  # MISC GPIO for debug
+NET "overo_gpio64"  LOC = "A4"  ;  # MISC GPIO for debug
+NET "overo_gpio65"  LOC = "F8"  ;  # MISC GPIO for debug
+NET "overo_gpio127"  LOC = "C8"  ;  # MISC GPIO for debug
+NET "overo_gpio128"  LOC = "G8"  ;  # MISC GPIO for debug
 NET "overo_gpio144"  LOC = "A5"  ;  # tx_have_space
 NET "overo_gpio145"  LOC = "C7"  ;  # tx_underrun
 NET "overo_gpio146"  LOC = "A6"  ;  # rx_have_data
 NET "overo_gpio147"  LOC = "B6"  ;  # rx_overrun
-#NET "overo_gpio163"  LOC = "D7"  ;
-#NET "overo_gpio170"  LOC = "E8"  ;
-#NET "overo_gpio176"  LOC = "B4"  ;
+NET "overo_gpio163"  LOC = "D7"  ;  # MISC GPIO for debug
+NET "overo_gpio170"  LOC = "E8"  ;  # MISC GPIO for debug
+NET "overo_gpio176"  LOC = "B4"  ;  # MISC GPIO for debug
 
 ## Overo UART
 #NET "overo_txd1"  LOC = "C6"  ;

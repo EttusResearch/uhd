@@ -13,9 +13,7 @@ module u1e_core
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
-   inout [15:0] io_tx, inout [15:0] io_rx,
-
-   input pps_in
+   inout [15:0] io_tx, inout [15:0] io_rx, input [11:0] misc_gpio, input pps_in
    );
    
    wire 	wb_clk = clk_fpga;
@@ -273,6 +271,6 @@ module u1e_core
 		    { EM_D } };
 
    assign debug_gpio_0 = { debug_gpmc };
-   assign debug_gpio_1 = { debug_txd, debug_rxd };
+   assign debug_gpio_1 = { misc_gpio };
    
 endmodule // u1e_core
