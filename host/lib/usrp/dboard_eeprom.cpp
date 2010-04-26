@@ -77,9 +77,9 @@ dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
         }
     }
     try{
-        ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);
-        ASSERT_THROW(bytes[DB_EEPROM_MAGIC] == DB_EEPROM_MAGIC_VALUE);
-        ASSERT_THROW(bytes[DB_EEPROM_CHKSUM] == checksum(bytes));
+        UHD_ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);
+        UHD_ASSERT_THROW(bytes[DB_EEPROM_MAGIC] == DB_EEPROM_MAGIC_VALUE);
+        UHD_ASSERT_THROW(bytes[DB_EEPROM_CHKSUM] == checksum(bytes));
         id = \
             (boost::uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0) |
             (boost::uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8) ;

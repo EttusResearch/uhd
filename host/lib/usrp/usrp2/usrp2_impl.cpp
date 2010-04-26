@@ -186,7 +186,7 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _mboard_proxy->get_link();
         return;
 

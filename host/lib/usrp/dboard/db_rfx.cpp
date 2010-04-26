@@ -192,7 +192,7 @@ void rfx_xcvr::set_tx_lo_freq(double freq){
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
     //validate input
-    ASSERT_THROW(ant == "TX/RX" or ant == "RX2");
+    UHD_ASSERT_THROW(ant == "TX/RX" or ant == "RX2");
 
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(
@@ -350,12 +350,12 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(name == "PGA0");
+        UHD_ASSERT_THROW(name == "PGA0");
         val = _rx_pga0_gain;
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        ASSERT_THROW(name == "PGA0");
+        UHD_ASSERT_THROW(name == "PGA0");
         val = gain_range_t(0, _max_rx_pga0_gain, float(0.022));
         return;
 
@@ -413,7 +413,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(name == "PGA0");
+        UHD_ASSERT_THROW(name == "PGA0");
         set_rx_pga0_gain(val.as<float>());
         return;
 
@@ -507,7 +507,7 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         //its always set to tx/rx, so we only allow this value
-        ASSERT_THROW(val.as<std::string>() == "TX/RX");
+        UHD_ASSERT_THROW(val.as<std::string>() == "TX/RX");
         return;
 
     default: UHD_THROW_PROP_READ_ONLY();

@@ -37,7 +37,7 @@ namespace uhd{
     typedef boost::error_info<struct tag_assert_info, std::string> assert_info;
 
     //! Throw an assert error with throw-site information
-    #define ASSERT_THROW(_x) if (not (_x)) \
+    #define UHD_ASSERT_THROW(_x) if (not (_x)) \
         BOOST_THROW_EXCEPTION(uhd::assert_error() << uhd::assert_info(#_x))
 
     /*!

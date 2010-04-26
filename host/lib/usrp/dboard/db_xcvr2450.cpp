@@ -395,7 +395,7 @@ void xcvr2450::set_tx_gain(float gain, const std::string &name){
         _max2829_regs.tx_baseband_gain = gain_to_tx_bb_reg(gain);
         send_reg(0x9);
     }
-    else ASSERT_THROW(false);
+    else UHD_ASSERT_THROW(false);
     _tx_gains[name] = gain;
 }
 
@@ -409,7 +409,7 @@ void xcvr2450::set_rx_gain(float gain, const std::string &name){
         _max2829_regs.rx_lna_gain = gain_to_rx_lna_reg(gain);
         send_reg(0xB);
     }
-    else ASSERT_THROW(false);
+    else UHD_ASSERT_THROW(false);
     _rx_gains[name] = gain;
 }
 

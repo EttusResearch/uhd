@@ -86,7 +86,7 @@ public:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
         return ntohl(out_data.data.spi_args.data);
     }
@@ -102,14 +102,14 @@ public:
         out_data.data.i2c_args.bytes = buf.size();
 
         //limitation of i2c transaction size
-        ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
+        UHD_ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
 
         //copy in the data
         std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
     }
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
@@ -120,12 +120,12 @@ public:
         out_data.data.i2c_args.bytes = num_bytes;
 
         //limitation of i2c transaction size
-        ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
+        UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
-        ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
+        UHD_ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
 
         //copy out the data
         byte_vector_t result(num_bytes);
@@ -193,7 +193,7 @@ private:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
     }
 
     template <class T> T peek(boost::uint32_t addr){
@@ -205,7 +205,7 @@ private:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
         return T(ntohl(out_data.data.poke_args.data));
     }
 

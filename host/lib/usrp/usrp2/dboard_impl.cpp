@@ -66,7 +66,7 @@ void usrp2_impl::dboard_init(void){
 void usrp2_impl::update_rx_mux_config(void){
     //calculate the rx mux
     boost::uint32_t rx_mux = 0;
-    ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
+    UHD_ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
     wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
     std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
     if (rx_subdev[SUBDEV_PROP_QUADRATURE].as<bool>()){
@@ -84,7 +84,7 @@ void usrp2_impl::update_rx_mux_config(void){
 void usrp2_impl::update_tx_mux_config(void){
     //calculate the tx mux
     boost::uint32_t tx_mux = 0x10;
-    ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
+    UHD_ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
     wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
     std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
     if (tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()){

@@ -166,11 +166,11 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<float>() == float(0));
+        UHD_ASSERT_THROW(val.as<float>() == float(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(val.as<std::string>() == std::string(""));
+        UHD_ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -261,11 +261,11 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<float>() == float(0));
+        UHD_ASSERT_THROW(val.as<float>() == float(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(val.as<std::string>() == std::string(""));
+        UHD_ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
 
     case SUBDEV_PROP_FREQ:

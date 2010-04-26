@@ -132,8 +132,8 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
 
     //try to find an existing device
     try{
-        ASSERT_THROW(hash_to_device.has_key(dev_hash));
-        ASSERT_THROW(not hash_to_device[dev_hash].expired());
+        UHD_ASSERT_THROW(hash_to_device.has_key(dev_hash));
+        UHD_ASSERT_THROW(not hash_to_device[dev_hash].expired());
         return hash_to_device[dev_hash].lock();
     }
     //create and register a new device

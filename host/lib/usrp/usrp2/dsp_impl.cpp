@@ -40,7 +40,7 @@ template <class T> T log2(T num){
  * DDC Helper Methods
  **********************************************************************/
 static boost::uint32_t calculate_freq_word_and_update_actual_freq(double &freq, double clock_freq){
-    ASSERT_THROW(std::abs(freq) < clock_freq/2.0);
+    UHD_ASSERT_THROW(std::abs(freq) < clock_freq/2.0);
     static const double scale_factor = std::pow(2.0, 32);
 
     //calculate the freq register word
