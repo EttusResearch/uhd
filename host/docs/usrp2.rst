@@ -39,7 +39,7 @@ Run the following commands:
     ./configure --host=mb
     make
 
-*The image file will be ./apps/txrx.bin*
+*The image file will be ./apps/txrx_uhd.bin*
 
 ------------------------------------------------------------------------
 Load the images onto the SD card
