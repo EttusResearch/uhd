@@ -275,10 +275,4 @@ float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
 
     //convert to voltage and return
     return float(3.3*ad7922_regs.result/4095);
-
-
-
-
-
-
 }

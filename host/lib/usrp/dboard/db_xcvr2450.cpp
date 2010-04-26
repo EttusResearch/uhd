@@ -134,6 +134,19 @@ private:
     bool get_locked(void){
         return (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & LOCKDET_RXIO) != 0;
     }
+
+    /*!
+     * Read the RSSI from the aux adc
+     * \return the rssi in dB
+     */
+    float get_rssi(void){
+        //constants for the rssi calculation
+        static const float min_v = float(0.5), max_v = float(2.5);
+        static const float rssi_dyn_range = 60;
+        //calculate the rssi from the voltage
+        float voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, 1);
+        return rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+    }
 };
 
 /***********************************************************************
@@ -486,6 +499,10 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_LO_LOCKED:
         val = this->get_locked();
+        return;
+
+    case SUBDEV_PROP_RSSI:
+        val = this->get_rssi();
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

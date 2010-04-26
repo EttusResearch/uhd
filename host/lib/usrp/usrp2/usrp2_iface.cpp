@@ -88,7 +88,7 @@ public:
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
         UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
-        return ntohl(out_data.data.spi_args.data);
+        return ntohl(in_data.data.spi_args.data);
     }
 
 /***********************************************************************
