@@ -94,6 +94,15 @@ private:
      * \return the actual frequency in Hz
      */
     double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
+
+    /*!
+     * Get the lock detect status of the LO.
+     * \param unit which unit rx or tx
+     * \return true for locked
+     */
+    bool get_locked(dboard_iface::unit_t unit){
+        return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+    }
 };
 
 /***********************************************************************
@@ -397,6 +406,10 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
+    case SUBDEV_PROP_LO_LOCKED:
+        val = this->get_locked(dboard_iface::UNIT_RX);
+        return;
+
     default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
@@ -484,6 +497,10 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = true;
+        return;
+
+    case SUBDEV_PROP_LO_LOCKED:
+        val = this->get_locked(dboard_iface::UNIT_TX);
         return;
 
     default: UHD_THROW_PROP_WRITE_ONLY();

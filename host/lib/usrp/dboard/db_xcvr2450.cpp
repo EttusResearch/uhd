@@ -126,6 +126,14 @@ private:
     }
 
     static bool is_highband(double freq){return freq > 3e9;}
+
+    /*!
+     * Is the LO locked?
+     * \return true for locked
+     */
+    bool get_locked(void){
+        return (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & LOCKDET_RXIO) != 0;
+    }
 };
 
 /***********************************************************************
@@ -476,6 +484,10 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
+    case SUBDEV_PROP_LO_LOCKED:
+        val = this->get_locked();
+        return;
+
     default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
@@ -564,6 +576,10 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
+        return;
+
+    case SUBDEV_PROP_LO_LOCKED:
+        val = this->get_locked();
         return;
 
     default: UHD_THROW_PROP_WRITE_ONLY();
