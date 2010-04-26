@@ -199,7 +199,7 @@ top/u2_rev3/u2_rev3.v
 # Process Properties
 ##################################################
 export SYNTHESIZE_PROPERTIES := \
-"Number of Clock Buffers" 6 \
+"Number of Clock Buffers" 8 \
 "Pack I/O Registers into IOBs" Yes \
 "Optimization Effort" High \
 "Optimize Instantiated Primitives" TRUE \

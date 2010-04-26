@@ -331,3 +331,5 @@ NET "cpld_clk" CLOCK_DEDICATED_ROUTE = FALSE;
 
 #NET "adc_a<*>" OFFSET = IN 1 ns VALID 5 ns BEFORE "clk_fpga_p" RISING;
 #NET "adc_b<*>" OFFSET = IN 1 ns VALID 5 ns BEFORE "clk_fpga_p" RISING;
+
+TIMESPEC "TS_clk_div_to_dsp_clk" = FROM "clk_div" TO "dcm_out" 10 ns;

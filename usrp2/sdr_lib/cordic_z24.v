@@ -45,30 +45,30 @@ module cordic_z24(clock, reset, enable, xi, yi, zi, xo, yo, zo );
    // see gen_cordic_consts.py
 
    // constants for 24 bit wide phase
-   localparam 	       c00 = 24'd2097152;
-   localparam 	       c01 = 24'd1238021;
-   localparam 	       c02 = 24'd654136;
-   localparam 	       c03 = 24'd332050;
-   localparam 	       c04 = 24'd166669;
-   localparam 	       c05 = 24'd83416;
-   localparam 	       c06 = 24'd41718;
-   localparam 	       c07 = 24'd20860;
-   localparam 	       c08 = 24'd10430;
-   localparam 	       c09 = 24'd5215;
-   localparam 	       c10 = 24'd2608;
-   localparam 	       c11 = 24'd1304;
-   localparam 	       c12 = 24'd652;
-   localparam 	       c13 = 24'd326;
-   localparam 	       c14 = 24'd163;
-   localparam 	       c15 = 24'd81;
-   localparam 	       c16 = 24'd41;
-   localparam 	       c17 = 24'd20;
-   localparam 	       c18 = 24'd10;
-   localparam 	       c19 = 24'd5;
-   localparam 	       c20 = 24'd3;
-   localparam 	       c21 = 24'd1;
-   localparam 	       c22 = 24'd1;
-   localparam 	       c23 = 24'd0;
+   localparam 	       c00 = 23'd2097152;
+   localparam 	       c01 = 23'd1238021;
+   localparam 	       c02 = 23'd654136;
+   localparam 	       c03 = 23'd332050;
+   localparam 	       c04 = 23'd166669;
+   localparam 	       c05 = 23'd83416;
+   localparam 	       c06 = 23'd41718;
+   localparam 	       c07 = 23'd20860;
+   localparam 	       c08 = 23'd10430;
+   localparam 	       c09 = 23'd5215;
+   localparam 	       c10 = 23'd2608;
+   localparam 	       c11 = 23'd1304;
+   localparam 	       c12 = 23'd652;
+   localparam 	       c13 = 23'd326;
+   localparam 	       c14 = 23'd163;
+   localparam 	       c15 = 23'd81;
+   localparam 	       c16 = 23'd41;
+   localparam 	       c17 = 23'd20;
+   localparam 	       c18 = 23'd10;
+   localparam 	       c19 = 23'd5;
+   localparam 	       c20 = 23'd3;
+   localparam 	       c21 = 23'd1;
+   localparam 	       c22 = 23'd1;
+   localparam 	       c23 = 23'd0;
 
    always @(posedge clock)
      if(reset)
