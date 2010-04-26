@@ -202,9 +202,10 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         val = size_t(_max_tx_samples_per_packet);
         return;
 
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
 void usrp2_impl::set(const wax::obj &, const wax::obj &){
-    throw std::runtime_error("Cannot set in usrp2 device");
+    UHD_THROW_PROP_READ_ONLY();
 }
