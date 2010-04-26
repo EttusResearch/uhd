@@ -17,9 +17,13 @@
 
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/assert.hpp>
+#include <boost/format.hpp>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
+
+static const bool _dboard_eeprom_debug = false;
 
 ////////////////////////////////////////////////////////////////////////
 // format of daughterboard EEPROM
@@ -55,14 +59,23 @@ using namespace uhd::usrp;
 
 //negative sum of bytes excluding checksum byte
 static boost::uint8_t checksum(const byte_vector_t &bytes){
-    int sum;
-    for (size_t i = 0; i < DB_EEPROM_CHKSUM; i++){
-        sum += int(bytes.at(i));
+    int sum = 0;
+    for (size_t i = 0; i < std::min(bytes.size(), size_t(DB_EEPROM_CHKSUM)); i++){
+        sum -= int(bytes.at(i));
     }
-    return (-sum) & 0xff;
+    if (_dboard_eeprom_debug)
+        std::cout << boost::format("sum: 0x%02x") % sum << std::endl;
+    return boost::uint8_t(sum);
 }
 
 dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
+    if (_dboard_eeprom_debug){
+        for (size_t i = 0; i < bytes.size(); i++){
+            std::cout << boost::format(
+                "eeprom byte[0x%02x] = 0x%02x") % i % int(bytes.at(i)
+            ) << std::endl;
+        }
+    }
     try{
         ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);
         ASSERT_THROW(bytes[DB_EEPROM_MAGIC] == DB_EEPROM_MAGIC_VALUE);

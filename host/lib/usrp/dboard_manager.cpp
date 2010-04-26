@@ -177,10 +177,11 @@ static args_t get_dboard_args(
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
-        throw std::runtime_error(str(
+        /*throw std::runtime_error(str(
             boost::format("Unregistered %s dboard id: %s")
             % xx_type % dboard_id::to_string(dboard_id)
-        ));
+        ));*/
+        return get_dboard_args(dboard_id::NONE, xx_type);
     }
 
     //return the dboard args for this id

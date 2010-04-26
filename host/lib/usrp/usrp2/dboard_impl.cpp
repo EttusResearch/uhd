@@ -136,7 +136,7 @@ void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
 
     case DBOARD_PROP_DBOARD_ID:
         _rx_db_eeprom.id = val.as<dboard_id_t>();
-        _iface->write_eeprom(I2C_ADDR_RX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
+        _iface->write_eeprom(I2C_ADDR_RX_DB, 0, _rx_db_eeprom.get_eeprom_bytes());
         return;
 
     default: UHD_THROW_PROP_READ_ONLY();
