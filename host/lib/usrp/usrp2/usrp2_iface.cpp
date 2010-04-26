@@ -134,27 +134,6 @@ public:
     }
 
 /***********************************************************************
- * EEPROM
- **********************************************************************/
-    void write_eeprom(boost::uint8_t addr, boost::uint8_t offset, const byte_vector_t &bytes){
-        BOOST_FOREACH(boost::uint8_t byte, bytes){
-            //write a byte at a time, its easy that way
-            byte_vector_t cmd = boost::assign::list_of(offset)(byte);
-            this->write_i2c(addr, cmd);
-        }
-    }
-
-    byte_vector_t read_eeprom(boost::uint8_t addr, boost::uint8_t offset, size_t num_bytes){
-        byte_vector_t bytes;
-        for (size_t i = 0; i < num_bytes; i++){
-            //do a zero byte write to start read cycle
-            write_i2c(addr, byte_vector_t(1, offset));
-            bytes.push_back(read_i2c(addr, 1).at(0));
-        }
-        return bytes;
-    }
-
-/***********************************************************************
  * Send/Recv over control
  **********************************************************************/
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data){
