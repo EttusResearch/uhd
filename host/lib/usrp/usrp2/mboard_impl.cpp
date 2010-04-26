@@ -248,7 +248,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -304,6 +304,6 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         issue_ddc_stream_cmd(val.as<stream_cmd_t>());
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

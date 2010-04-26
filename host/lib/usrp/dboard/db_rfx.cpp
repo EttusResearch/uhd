@@ -410,7 +410,7 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked(dboard_iface::UNIT_RX);
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -434,7 +434,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         set_rx_ant(val.as<std::string>());
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -503,7 +503,7 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked(dboard_iface::UNIT_TX);
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -527,6 +527,6 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         UHD_ASSERT_THROW(val.as<std::string>() == "TX/RX");
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

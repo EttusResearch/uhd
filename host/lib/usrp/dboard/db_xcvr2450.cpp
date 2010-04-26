@@ -488,7 +488,7 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked();
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -511,7 +511,7 @@ void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
         this->set_rx_ant(val.as<std::string>());
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -582,7 +582,7 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked();
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -605,6 +605,6 @@ void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
         this->set_tx_ant(val.as<std::string>());
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

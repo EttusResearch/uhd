@@ -202,10 +202,10 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         val = size_t(_max_tx_samples_per_packet);
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
 void usrp2_impl::set(const wax::obj &, const wax::obj &){
-    UHD_THROW_PROP_READ_ONLY();
+    UHD_THROW_PROP_SET_ERROR();
 }

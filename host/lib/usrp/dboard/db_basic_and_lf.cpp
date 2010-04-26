@@ -158,7 +158,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = true; //there is no LO, so it must be true!
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -180,7 +180,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -257,7 +257,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = true; //there is no LO, so it must be true!
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -279,6 +279,6 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

@@ -118,7 +118,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
         val = get_master_clock_freq()/_ddc_decim;
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -141,7 +141,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         }
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -202,7 +202,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
         val = get_master_clock_freq()/_duc_interp;
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -225,6 +225,6 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
         }
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

@@ -73,7 +73,7 @@ private:
             val = _gain_values.keys();
             return;
 
-        default: UHD_THROW_PROP_WRITE_ONLY();
+        default: UHD_THROW_PROP_GET_ERROR();
         }
     }
 
@@ -89,7 +89,7 @@ private:
             _gain_values[name] = val.as<float>();
             return;
 
-        default: UHD_THROW_PROP_READ_ONLY();
+        default: UHD_THROW_PROP_SET_ERROR();
         }
     }
 

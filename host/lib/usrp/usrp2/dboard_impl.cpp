@@ -123,7 +123,7 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _rx_db_eeprom.id;
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -139,7 +139,7 @@ void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
         _iface->write_eeprom(I2C_ADDR_RX_DB, 0, _rx_db_eeprom.get_eeprom_bytes());
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -172,7 +172,7 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _tx_db_eeprom.id;
         return;
 
-    default: UHD_THROW_PROP_WRITE_ONLY();
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -188,6 +188,6 @@ void usrp2_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
         _iface->write_eeprom(I2C_ADDR_TX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
         return;
 
-    default: UHD_THROW_PROP_READ_ONLY();
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

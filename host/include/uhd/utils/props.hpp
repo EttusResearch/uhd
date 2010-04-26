@@ -66,18 +66,18 @@ namespace uhd{
     typedef boost::error_info<struct tag_prop_info, std::string> prop_info;
 
     /*!
-     * Throw an error when trying to get a write only property.
+     * Throw when getting a not-implemented or write-only property.
      * Throw-site information will be included with this error.
      */
-    #define UHD_THROW_PROP_WRITE_ONLY() \
-        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot get write-only property"))
+    #define UHD_THROW_PROP_GET_ERROR() \
+        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot get this property"))
 
     /*!
-     * Throw an error when trying to set a read only property.
+     * Throw when setting a not-implemented or read-only property.
      * Throw-site information will be included with this error.
      */
-    #define UHD_THROW_PROP_READ_ONLY() \
-        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot set read-only property"))
+    #define UHD_THROW_PROP_SET_ERROR() \
+        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot set this property"))
 
 } //namespace uhd
 
