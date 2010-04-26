@@ -117,6 +117,8 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     case DSP_PROP_HOST_RATE:
         val = get_master_clock_freq()/_ddc_decim;
         return;
+
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -139,8 +141,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
         }
         return;
 
-    default:
-        throw std::runtime_error("Error: trying to set read-only property on usrp2 ddc0");
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }
 
@@ -200,6 +201,8 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
     case DSP_PROP_HOST_RATE:
         val = get_master_clock_freq()/_duc_interp;
         return;
+
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -222,7 +225,6 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
         }
         return;
 
-    default:
-        throw std::runtime_error("Error: trying to set read-only property on usrp2 duc0");
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }

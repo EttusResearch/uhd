@@ -50,11 +50,13 @@ SET(libuhd_sources
     gain_handler.cpp
     load_modules.cpp
     types.cpp
+    utils.cpp
     wax.cpp
     transport/convert_types.cpp
     transport/if_addrs.cpp
     transport/udp_simple.cpp
     usrp/dboard_base.cpp
+    usrp/dboard_eeprom.cpp
     usrp/simple_usrp.cpp
     usrp/dboard_manager.cpp
     usrp/tune_helper.cpp

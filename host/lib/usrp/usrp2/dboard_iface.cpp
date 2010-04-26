@@ -24,7 +24,6 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/math/special_functions/round.hpp>
-#include <algorithm>
 #include "ad7922_regs.hpp" //aux adc
 #include "ad5624_regs.hpp" //aux dac
 
@@ -43,8 +42,8 @@ public:
     void set_gpio_ddr(unit_t, boost::uint16_t);
     boost::uint16_t read_gpio(unit_t);
 
-    void write_i2c(int, const byte_vector_t &);
-    byte_vector_t read_i2c(int, size_t);
+    void write_i2c(boost::uint8_t, const byte_vector_t &);
+    byte_vector_t read_i2c(boost::uint8_t, size_t);
 
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
@@ -213,43 +212,12 @@ boost::uint32_t usrp2_dboard_iface::read_write_spi(
 /***********************************************************************
  * I2C
  **********************************************************************/
-void usrp2_dboard_iface::write_i2c(int i2c_addr, const byte_vector_t &buf){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
-    out_data.data.i2c_args.addr = i2c_addr;
-    out_data.data.i2c_args.bytes = buf.size();
-
-    //limitation of i2c transaction size
-    ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
-
-    //copy in the data
-    std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+void usrp2_dboard_iface::write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+    return _iface->write_i2c(addr, bytes);
 }
 
-byte_vector_t usrp2_dboard_iface::read_i2c(int i2c_addr, size_t num_bytes){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
-    out_data.data.i2c_args.addr = i2c_addr;
-    out_data.data.i2c_args.bytes = num_bytes;
-
-    //limitation of i2c transaction size
-    ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
-    ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
-
-    //copy out the data
-    byte_vector_t result(num_bytes);
-    std::copy(in_data.data.i2c_args.data, in_data.data.i2c_args.data + num_bytes, result.begin());
-    return result;
+byte_vector_t usrp2_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_bytes){
+    return _iface->read_i2c(addr, num_bytes);
 }
 
 /***********************************************************************

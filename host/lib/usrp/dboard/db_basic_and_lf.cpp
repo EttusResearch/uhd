@@ -153,6 +153,8 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -174,9 +176,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    default: throw std::runtime_error(str(boost::format(
-            "Error: trying to set read-only property on %s subdev"
-        ) % dboard_id::to_string(get_rx_id())));
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }
 
@@ -248,6 +248,8 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -269,8 +271,6 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    default: throw std::runtime_error(str(boost::format(
-            "Error: trying to set read-only property on %s subdev"
-        ) % dboard_id::to_string(get_tx_id())));
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }

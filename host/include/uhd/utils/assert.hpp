@@ -18,27 +18,27 @@
 #ifndef INCLUDED_UHD_UTILS_ASSERT_HPP
 #define INCLUDED_UHD_UTILS_ASSERT_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/current_function.hpp>
+#include <boost/throw_exception.hpp>
+#include <boost/exception/info.hpp>
 #include <stdexcept>
+#include <string>
 
 namespace uhd{
 
-    class assert_error : public std::logic_error{
-    public:
-        explicit assert_error(const std::string& what_arg) : logic_error(what_arg){
-            /* NOP */
-        }
-    };
+    //! The exception to throw when assertions fail
+    struct UHD_API assert_error : virtual std::exception, virtual boost::exception{};
 
-    #define ASSERT_THROW(_x) if (not (_x)) { \
-        throw uhd::assert_error(str(boost::format( \
-            "Assertion Failed:\n  %s:%d\n  %s\n  ---> %s <---" \
-        ) % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % std::string(#_x))); \
-    }
+    //! The assertion info, the code that failed
+    typedef boost::error_info<struct tag_assert_info, std::string> assert_info;
+
+    //! Throw an assert error with throw-site information
+    #define ASSERT_THROW(_x) if (not (_x)) \
+        BOOST_THROW_EXCEPTION(uhd::assert_error() << uhd::assert_info(#_x))
 
     /*!
      * Check that an element is found in a container.
@@ -58,17 +58,18 @@ namespace uhd{
     ){
         if (std::has(iterable, elem)) return;
         std::string possible_values = "";
-        BOOST_FOREACH(T e, iterable){
-            if (e != iterable.begin()[0]) possible_values += ", ";
+        size_t i = 0;
+        BOOST_FOREACH(const T &e, iterable){
+            if (i++ > 0) possible_values += ", ";
             possible_values += boost::lexical_cast<std::string>(e);
         }
-        throw uhd::assert_error(str(boost::format(
+        boost::throw_exception(uhd::assert_error() << assert_info(str(boost::format(
                 "Error: %s is not a valid %s. "
                 "Possible values are: [%s]."
             )
             % boost::lexical_cast<std::string>(elem)
             % what % possible_values
-        ));
+        )));
     }
 
 }//namespace uhd

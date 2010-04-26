@@ -248,9 +248,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    default:
-        throw std::runtime_error("Error: trying to get write-only property on usrp2 mboard");
-
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -306,8 +304,6 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         issue_ddc_stream_cmd(val.as<stream_cmd_t>());
         return;
 
-    default:
-        throw std::runtime_error("Error: trying to set read-only property on usrp2 mboard");
-
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }

@@ -34,7 +34,7 @@ extern "C" {
 
 //defines the protocol version in this shared header
 //increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 1
+#define USRP2_PROTO_VERSION 2
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -61,9 +61,6 @@ typedef enum{
     USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE = 'M',
     USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO = 'n',
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO = 'd',
-    USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE = 'D',
-
     USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO = 's',
     USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE = 'S',
 
@@ -81,9 +78,6 @@ typedef enum{
 
     USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO = 'r',
     USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE = 'R',
-
-    USRP2_CTRL_ID_WHATS_THE_HARDWARE_REV_NOS_BRO = 'y',
-    USRP2_CTRL_ID_TAKE_THE_HARDWARE_REV_NOS_DUDE = 'Y',
 
     USRP2_CTRL_ID_PEACE_OUT = '~'
 
@@ -106,10 +100,6 @@ typedef struct{
     union{
         _SINS_ uint32_t ip_addr;
         _SINS_ uint8_t mac_addr[6];
-        struct {
-            _SINS_ uint16_t rx_id;
-            _SINS_ uint16_t tx_id;
-        } dboard_ids;
         struct {
             _SINS_ uint8_t dev;
             _SINS_ uint8_t miso_edge;
@@ -137,11 +127,6 @@ typedef struct{
             _SINS_ uint32_t data;
             _SINS_ uint8_t num_bytes; //1, 2, 4
         } poke_args;
-        struct {
-            _SINS_ uint8_t major;
-            _SINS_ uint8_t minor;
-            _SINS_ uint8_t _pad[2];
-        } hw_rev;
     } data;
 } usrp2_ctrl_data_t;
 

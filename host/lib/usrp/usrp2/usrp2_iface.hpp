@@ -25,12 +25,21 @@
 #include <boost/cstdint.hpp>
 #include "fw_common.h"
 
+////////////////////////////////////////////////////////////////////////
+// I2C addresses
+////////////////////////////////////////////////////////////////////////
+#define I2C_DEV_EEPROM  0x50 // 24LC02[45]:  7-bits 1010xxx
+#define	I2C_ADDR_MBOARD (I2C_DEV_EEPROM | 0x0)
+#define	I2C_ADDR_TX_DB  (I2C_DEV_EEPROM | 0x4)
+#define	I2C_ADDR_RX_DB  (I2C_DEV_EEPROM | 0x5)
+////////////////////////////////////////////////////////////////////////
+
 /*!
  * The usrp2 interface class:
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp2_iface : boost::noncopyable{
+class usrp2_iface : public uhd::i2c_iface, boost::noncopyable{
 public:
     typedef boost::shared_ptr<usrp2_iface> sptr;
 

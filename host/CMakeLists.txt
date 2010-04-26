@@ -76,7 +76,7 @@ ENDIF(WIN32)
 # Setup Boost
 ########################################################################
 SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42")
-FIND_PACKAGE(Boost 1.36 REQUIRED COMPONENTS
+FIND_PACKAGE(Boost 1.37 REQUIRED COMPONENTS
     date_time
     filesystem
     program_options

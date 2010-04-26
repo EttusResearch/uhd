@@ -352,7 +352,8 @@ static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
         gain = 5;
         return max2829_regs_t::TX_BASEBAND_GAIN_5DB;
     }
-    ASSERT_THROW(false);
+    BOOST_THROW_EXCEPTION(std::runtime_error("should not get here"));
+    return max2829_regs_t::TX_BASEBAND_GAIN_0DB;
 }
 
 /*!
@@ -474,6 +475,8 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -496,9 +499,7 @@ void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
         this->set_rx_ant(val.as<std::string>());
         return;
 
-    default: throw std::runtime_error(str(boost::format(
-        "Error: trying to set read-only property on %s subdev"
-    ) % dboard_id::to_string(get_rx_id())));
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }
 
@@ -564,6 +565,8 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    default: UHD_THROW_PROP_WRITE_ONLY();
     }
 }
 
@@ -586,8 +589,6 @@ void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
         this->set_tx_ant(val.as<std::string>());
         return;
 
-    default: throw std::runtime_error(str(boost::format(
-        "Error: trying to set read-only property on %s subdev"
-    ) % dboard_id::to_string(get_tx_id())));
+    default: UHD_THROW_PROP_READ_ONLY();
     }
 }

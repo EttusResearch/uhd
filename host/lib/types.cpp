@@ -31,6 +31,8 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/thread.hpp>
 #include <stdexcept>
 #include <complex>
 
@@ -249,4 +251,31 @@ io_type_t::io_type_t(size_t size)
 spi_config_t::spi_config_t(edge_t edge){
     mosi_edge = edge;
     miso_edge = edge;
+}
+
+void i2c_iface::write_eeprom(
+    boost::uint8_t addr,
+    boost::uint8_t offset,
+    const byte_vector_t &bytes
+){
+    for (size_t i = 0; i < bytes.size(); i++){
+        //write a byte at a time, its easy that way
+        byte_vector_t cmd = boost::assign::list_of(offset+i)(bytes[i]);
+        this->write_i2c(addr, cmd);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //worst case write
+    }
+}
+
+byte_vector_t i2c_iface::read_eeprom(
+    boost::uint8_t addr,
+    boost::uint8_t offset,
+    size_t num_bytes
+){
+    byte_vector_t bytes;
+    for (size_t i = 0; i < num_bytes; i++){
+        //do a zero byte write to start read cycle
+        this->write_i2c(addr, byte_vector_t(1, offset+i));
+        bytes.push_back(this->read_i2c(addr, 1).at(0));
+    }
+    return bytes;
 }

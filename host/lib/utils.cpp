@@ -15,25 +15,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DBOARD_PROPS_HPP
-#define INCLUDED_UHD_USRP_DBOARD_PROPS_HPP
-
 #include <uhd/utils/props.hpp>
 
-namespace uhd{ namespace usrp{
+using namespace uhd;
 
-    /*!
-     * Possible device dboard properties
-     */
-    enum dboard_prop_t{
-        DBOARD_PROP_NAME         = 'n', //ro, std::string
-        DBOARD_PROP_SUBDEV       = 's', //ro, wax::obj
-        DBOARD_PROP_SUBDEV_NAMES = 'S', //ro, prop_names_t
-        DBOARD_PROP_USED_SUBDEVS = 'u', //ro, prop_names_t
-        DBOARD_PROP_DBOARD_ID    = 'i'  //rw, dboard_id_t
-        //DBOARD_PROP_CODEC              //ro, wax::obj //----> not sure, dont have to deal with yet
-    }; 
+/***********************************************************************
+ * Props
+ **********************************************************************/
+named_prop_t::named_prop_t(
+    const wax::obj &key_,
+    const std::string &name_
+){
+    key = key_;
+    name = name_;
+}
 
-}} //namespace
+typedef boost::tuple<wax::obj, std::string> named_prop_tuple;
 
-#endif /* INCLUDED_UHD_USRP_DBOARD_PROPS_HPP */
+named_prop_tuple uhd::extract_named_prop(
+    const wax::obj &key,
+    const std::string &name
+){
+    if (key.type() == typeid(named_prop_t)){
+        named_prop_t np = key.as<named_prop_t>();
+        return named_prop_tuple(np.key, np.name);
+    }
+    return named_prop_tuple(key, name);
+}

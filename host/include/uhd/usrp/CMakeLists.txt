@@ -26,6 +26,7 @@ INSTALL(FILES
 
     #### dboard headers ###
     dboard_base.hpp
+    dboard_eeprom.hpp
     dboard_id.hpp
     dboard_iface.hpp
     dboard_manager.hpp
