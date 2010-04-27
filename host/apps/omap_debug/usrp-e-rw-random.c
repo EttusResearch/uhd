@@ -114,7 +114,7 @@ static void *write_thread(void *threadid)
 			p->len = randN(1013) + 1;
 			p->checksum = calc_checksum(p);
 			tx_data->len = 12 + p->len * 2;
-			cnt = write(fp, tx_data, 2048);
+			cnt = write(fp, tx_data, tx_data->len + 8);
 		}
 		sleep(random() >> 31);
 	}
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	sleep(10000);
+	sleep(1000000000);
 
 	printf("Done sleeping\n");
 }
