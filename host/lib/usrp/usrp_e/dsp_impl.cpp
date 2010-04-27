@@ -34,14 +34,14 @@ void usrp_e_impl::rx_ddc_init(void){
  * RX DDC Get
  **********************************************************************/
 void usrp_e_impl::rx_ddc_get(const wax::obj &, wax::obj &){
-    
+    UHD_THROW_PROP_GET_ERROR();
 }
 
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
 void usrp_e_impl::rx_ddc_set(const wax::obj &, const wax::obj &){
-    
+    UHD_THROW_PROP_SET_ERROR();
 }
 
 /***********************************************************************
@@ -58,12 +58,12 @@ void usrp_e_impl::tx_duc_init(void){
  * TX DUC Get
  **********************************************************************/
 void usrp_e_impl::tx_duc_get(const wax::obj &, wax::obj &){
-    
+    UHD_THROW_PROP_GET_ERROR();
 }
 
 /***********************************************************************
  * TX DUC Set
  **********************************************************************/
 void usrp_e_impl::tx_duc_set(const wax::obj &, const wax::obj &){
-    
+    UHD_THROW_PROP_SET_ERROR();
 }

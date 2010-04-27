@@ -15,86 +15,15 @@ Basic RX
 Basic TX
 LF RX
 LF TX
+RFX Series
+XCVR 2450
 
 ########################################################################
-# Dependencies
+# Documentation
 ########################################################################
-Unix Notes:
-    These dependencies can be acquired through the package manager.
-Windows Notes:
-    These dependencies can be acquired through installable exe files.
-    Usually, the windows installer can be found on the project's website.
-    Some projects do not host windows installers, and if this is the case,
-    follow the auxiliary download url for the windows installer (below).
+Online documentation available at:
+http://ettus-apps.sourcerepo.com/redmine/ettus/projects/uhd/wiki/
 
-Git:
-    Required to check out the repository (not needed for source downloads).
-    On windows, install cygwin with git support to checkout the repository.
-
-C++:
-    On unix, this is GCC 4.0 and above. On windows, this is MSVC 2008.
-    Other compilers have not been tested yet or confirmed working.
-
-CMake:
-    Version: at least 2.8
-    Required for: build time
-    Download URL: http://www.cmake.org/cmake/resources/software.html
-
-Boost:
-    Version: at least 3.6 unix, at least 4.0 windows
-    Required for: build time + run time
-    Download URL: http://www.boost.org/users/download/
-    Download URL (windows installer): http://www.boostpro.com/download
-
-Python:
-    Version: at least 2.6
-    Required for: build time
-    Download URL: http://www.python.org/download/
-
-Cheetah:
-    Version: at least 2.0
-    Required for: build time
-    Download URL: http://www.cheetahtemplate.org/download.html
-    Download URL (windows installer): http://feisley.com/python/cheetah/
-
-Doxygen:
-    Required for: build time (optional)
-    Download URL: http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
-
-########################################################################
-# Build Instructions (unix)
-########################################################################
-cd <uhd-repo-path>/host
-mkdir build
-cd build
-cmake ../
-make
-make test
-sudo make install
-
-For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<myprefix> ../
-
-########################################################################
-# Build Instructions (windows)
-########################################################################
-
-##### Generate the project with cmake #####
-Open the cmake gui program.
-Set the path to the source code: <uhd-repo-path>/host
-Set the path to the build directory: <uhd-repo-path>/host/build
-Make sure that the paths do not contain spaces.
-Click configure and select the MSVC compiler.
-Set the build variables and click configure again.
-Click generate and a project file will be created in the build directory.
-
-##### Build the project in MSVC #####
-Open the generated project file in MSVC.
-Select the build all target, right click, and choose build.
-Select the install target, right click, and choose build.
-    Note: you may not have permission to build the install target.
-    You need to be an administrator or to run MSVC as administrator.
-
-##### Setup the PATH environment variable #####
-Add the boost library path and uhd library path to your %PATH%.
-Usually c:\program files\boost\<version>\lib and c:\program files\uhd\lib
-
+The build system can generate the html for the manual and Doxygen.
+Docutils and Doxygen are required to build the html docs.
+See the docs directory for the manual source (reStructuredText).

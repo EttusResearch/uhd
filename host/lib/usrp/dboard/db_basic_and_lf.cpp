@@ -153,6 +153,12 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    case SUBDEV_PROP_LO_LOCKED:
+        val = true; //there is no LO, so it must be true!
+        return;
+
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -164,19 +170,17 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<float>() == float(0));
+        UHD_ASSERT_THROW(val.as<float>() == float(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(val.as<std::string>() == std::string(""));
+        UHD_ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    default: throw std::runtime_error(str(boost::format(
-            "Error: trying to set read-only property on %s subdev"
-        ) % dboard_id::to_string(get_rx_id())));
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -248,6 +252,12 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    case SUBDEV_PROP_LO_LOCKED:
+        val = true; //there is no LO, so it must be true!
+        return;
+
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -259,18 +269,16 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(val.as<float>() == float(0));
+        UHD_ASSERT_THROW(val.as<float>() == float(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        ASSERT_THROW(val.as<std::string>() == std::string(""));
+        UHD_ASSERT_THROW(val.as<std::string>() == std::string(""));
         return;
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
-    default: throw std::runtime_error(str(boost::format(
-            "Error: trying to set read-only property on %s subdev"
-        ) % dboard_id::to_string(get_tx_id())));
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

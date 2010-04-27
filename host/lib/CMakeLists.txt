@@ -50,13 +50,13 @@ SET(libuhd_sources
     gain_handler.cpp
     load_modules.cpp
     types.cpp
+    utils.cpp
     wax.cpp
     transport/convert_types.cpp
     transport/if_addrs.cpp
     transport/udp_simple.cpp
-    usrp/dboard/db_basic_and_lf.cpp
-    usrp/dboard/db_rfx.cpp
     usrp/dboard_base.cpp
+    usrp/dboard_eeprom.cpp
     usrp/simple_usrp.cpp
     usrp/dboard_manager.cpp
     usrp/tune_helper.cpp
@@ -66,11 +66,18 @@ SET(libuhd_sources
 # Generate Files
 ########################################################################
 MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
+    #ensure that the directory exists for outfile
+    GET_FILENAME_COMPONENT(outfile_dir ${outfile} PATH)
+    FILE(MAKE_DIRECTORY ${outfile_dir})
+
+    #make the outfile depend on the python script
     ADD_CUSTOM_COMMAND(
         OUTPUT ${outfile} DEPENDS ${pyfile}
         COMMAND ${PYTHON_EXECUTABLE} ${pyfile} ${outfile}
-        COMMENT "Calling ${pyfile} to generate ${outfile}"
+        COMMENT "Generating ${outfile}"
     )
+
+    #make libuhd depend on the outfile
     LIST(APPEND libuhd_sources ${outfile})
 ENDMACRO(UHD_PYTHON_GEN_SOURCE_FILE)
 
@@ -96,6 +103,29 @@ UHD_PYTHON_GEN_SOURCE_FILE(
     ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9777_regs.hpp
 )
 
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad5624_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad5624_regs.hpp
+)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad7922_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad7922_regs.hpp
+)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_max2829_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/max2829_regs.hpp
+)
+
+########################################################################
+# Add dboard sources
+########################################################################
+LIST(APPEND libuhd_sources
+    usrp/dboard/db_basic_and_lf.cpp
+    usrp/dboard/db_rfx.cpp
+    usrp/dboard/db_xcvr2450.cpp
+)
 
 ########################################################################
 # Add usrp2 sources

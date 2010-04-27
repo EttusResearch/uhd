@@ -45,12 +45,11 @@
 #include "clocks.h"
 #include <vrt/bits.h>
 #include "usrp2/fw_common.h"
-#include <db.h>
 #include <i2c.h>
-#include <lsdac.h>
-#include <lsadc.h>
 #include <ethertype.h>
 #include <arp_cache.h>
+
+#define LEDS_SW LED_A
 
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
@@ -203,20 +202,34 @@ void handle_udp_ctrl_packet(
     unsigned char *payload, int payload_len
 ){
     //printf("Got ctrl packet #words: %d\n", (int)payload_len);
-    if (payload_len < sizeof(usrp2_ctrl_data_t)){
-        //TODO send err packet
-        return;
+    usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
+    uint32_t ctrl_data_in_id = ctrl_data_in->id;
+
+    //ensure that the protocol versions match
+    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_PROTO_VERSION){
+        printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
+            USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
+        );
+        ctrl_data_in_id = USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO;
     }
 
-    //setup the input and output data
-    usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
+    //ensure that this is not a short packet
+    if (payload_len < sizeof(usrp2_ctrl_data_t)){
+        printf("!Error in control packet handler: Expected payload length %d, but got %d\n",
+            (int)sizeof(usrp2_ctrl_data_t), payload_len
+        );
+        ctrl_data_in_id = USRP2_CTRL_ID_HUH_WHAT;
+    }
+
+    //setup the output data
     usrp2_ctrl_data_t ctrl_data_out = {
+        .proto_ver = USRP2_PROTO_VERSION,
         .id=USRP2_CTRL_ID_HUH_WHAT,
         .seq=ctrl_data_in->seq
     };
 
     //handle the data based on the id
-    switch(ctrl_data_in->id){
+    switch(ctrl_data_in_id){
 
     /*******************************************************************
      * Addressing
@@ -241,12 +254,6 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
         ethernet_set_mac_addr((eth_mac_addr_t *)&ctrl_data_in->data.mac_addr);
         memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
-        break;
-
-    case USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO:
-        ctrl_data_out.id = USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE;
-        ctrl_data_out.data.dboard_ids.tx_id = read_dboard_eeprom(I2C_ADDR_TX_A);
-        ctrl_data_out.data.dboard_ids.rx_id = read_dboard_eeprom(I2C_ADDR_RX_A);
         break;
 
     /*******************************************************************
@@ -297,43 +304,6 @@ void handle_udp_ctrl_packet(
         break;
 
     /*******************************************************************
-     * AUX DAC/ADC
-     ******************************************************************/
-    case USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO:
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_RX){
-            lsdac_write_rx(
-                ctrl_data_in->data.aux_args.which,
-                ctrl_data_in->data.aux_args.value
-            );
-        }
-
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_TX){
-            lsdac_write_tx(
-                ctrl_data_in->data.aux_args.which,
-                ctrl_data_in->data.aux_args.value
-            );
-        }
-
-        ctrl_data_out.id = USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE;
-        break;
-
-    case USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO:
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_RX){
-            ctrl_data_out.data.aux_args.value = lsadc_read_rx(
-                ctrl_data_in->data.aux_args.which
-            );
-        }
-
-        if (ctrl_data_in->data.aux_args.dir == USRP2_DIR_TX){
-            ctrl_data_out.data.aux_args.value = lsadc_read_tx(
-                ctrl_data_in->data.aux_args.which
-            );
-        }
-
-        ctrl_data_out.id = USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE;
-        break;
-
-    /*******************************************************************
      * Streaming
      ******************************************************************/
     case USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO:{
@@ -342,6 +312,7 @@ void handle_udp_ctrl_packet(
         if (ctrl_data_in->data.stream_cmd.continuous){
             printf("Setting up continuous streaming...\n");
             printf("items per frame: %d\n", (int)streaming_items_per_frame);
+            hal_set_leds(LED_A, LEDS_SW);
             auto_reload_command = true;
             streaming_frame_count = FRAMES_PER_CMD;
 
@@ -366,6 +337,7 @@ void handle_udp_ctrl_packet(
 
         //issue regular stream commands (split commands if too large)
         else{
+            hal_set_leds(0, LEDS_SW);
             auto_reload_command = false;
             size_t num_samps = ctrl_data_in->data.stream_cmd.num_samps;
             if (num_samps == 0) num_samps = 1; //FIXME hack, zero is used when stopping continuous streaming but it somehow makes it inifinite
@@ -611,6 +583,7 @@ main(void)
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
   print_ip_addr(get_ip_addr()); newline();
+  printf("Control protocol version: %d\n", USRP2_PROTO_VERSION);
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
@@ -620,6 +593,8 @@ main(void)
 
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+
+  hal_set_led_src(0, LEDS_SW);
 
 #if 0
   // make bit 15 of Tx gpio's be a s/w output

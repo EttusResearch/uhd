@@ -23,6 +23,7 @@
 namespace uhd{
 
     /*!
+     * The Input/Output configuration struct:
      * Used to specify the IO type with device send/recv.
      */
     class UHD_API io_type_t{

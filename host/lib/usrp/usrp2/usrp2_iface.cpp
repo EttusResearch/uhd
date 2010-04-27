@@ -19,12 +19,13 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
+#include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <stdexcept>
+#include <algorithm>
 
 using namespace uhd;
-using namespace uhd::usrp;
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
@@ -85,9 +86,51 @@ public:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
-        return ntohl(out_data.data.spi_args.data);
+        return ntohl(in_data.data.spi_args.data);
+    }
+
+/***********************************************************************
+ * I2C
+ **********************************************************************/
+    void write_i2c(boost::uint8_t addr, const byte_vector_t &buf){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
+        out_data.data.i2c_args.addr = addr;
+        out_data.data.i2c_args.bytes = buf.size();
+
+        //limitation of i2c transaction size
+        UHD_ASSERT_THROW(buf.size() <= sizeof(out_data.data.i2c_args.data));
+
+        //copy in the data
+        std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+    }
+
+    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
+        out_data.data.i2c_args.addr = addr;
+        out_data.data.i2c_args.bytes = num_bytes;
+
+        //limitation of i2c transaction size
+        UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
+        UHD_ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
+
+        //copy out the data
+        byte_vector_t result(num_bytes);
+        std::copy(in_data.data.i2c_args.data, in_data.data.i2c_args.data + num_bytes, result.begin());
+        return result;
     }
 
 /***********************************************************************
@@ -98,6 +141,7 @@ public:
 
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
+        out_copy.proto_ver = htonl(USRP2_PROTO_VERSION);
         out_copy.seq = htonl(++_ctrl_seq_num);
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
@@ -105,6 +149,13 @@ public:
         while(true){
             usrp2_ctrl_data_t in_data;
             size_t len = _ctrl_transport->recv(boost::asio::buffer(&in_data, sizeof(in_data)));
+            if(len >= sizeof(boost::uint32_t) and ntohl(in_data.proto_ver) != USRP2_PROTO_VERSION){
+                throw std::runtime_error(str(
+                    boost::format("Expected protocol version %d, but got %d\n"
+                    "The firmware build does not match the host code build."
+                    ) % int(USRP2_PROTO_VERSION) % ntohl(in_data.proto_ver)
+                ));
+            }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(in_data.seq) == _ctrl_seq_num){
                 return in_data;
             }
@@ -142,7 +193,7 @@ private:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
     }
 
     template <class T> T peek(boost::uint32_t addr){
@@ -154,7 +205,7 @@ private:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
+        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
         return T(ntohl(out_data.data.poke_args.data));
     }
 

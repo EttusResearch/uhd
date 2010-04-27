@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
     std::cout << "Pretty Print: " << std::endl << dev_addr.to_string();
     std::string args_str = dev_addr.to_args_str();
     std::cout << "Args String: " << args_str << std::endl;
-    uhd::device_addr_t new_dev_addr = uhd::device_addr_t::from_args_str(args_str);
+    uhd::device_addr_t new_dev_addr(args_str);
 
     //they should be the same size
     BOOST_CHECK_EQUAL(dev_addr.size(), new_dev_addr.size());

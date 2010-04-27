@@ -19,7 +19,7 @@
 #define INCLUDED_USRP_E_IFACE_HPP
 
 #include <uhd/transport/udp_simple.hpp>
-#include <uhd/usrp/dboard_iface.hpp> //spi config
+#include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
@@ -29,7 +29,7 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp_e_iface : boost::noncopyable{
+class usrp_e_iface : boost::noncopyable, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<usrp_e_iface> sptr;
 
@@ -87,7 +87,7 @@ public:
      */
     virtual boost::uint32_t transact_spi(
         int which_slave,
-        const uhd::usrp::spi_config_t &config,
+        const uhd::spi_config_t &config,
         boost::uint32_t data,
         size_t num_bits,
         bool readback

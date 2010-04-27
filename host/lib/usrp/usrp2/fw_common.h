@@ -32,6 +32,10 @@ extern "C" {
 #define _SINS_
 #endif
 
+//defines the protocol version in this shared header
+//increment this value when the protocol is changed
+#define USRP2_PROTO_VERSION 2
+
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
 
@@ -57,9 +61,6 @@ typedef enum{
     USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE = 'M',
     USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO = 'n',
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_DBOARD_IDS_BRO = 'd',
-    USRP2_CTRL_ID_THESE_ARE_MY_DBOARD_IDS_DUDE = 'D',
-
     USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO = 's',
     USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE = 'S',
 
@@ -68,12 +69,6 @@ typedef enum{
 
     USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO = 'h',
     USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE = 'H',
-
-    USRP2_CTRL_ID_WRITE_THIS_TO_THE_AUX_DAC_BRO = 'x',
-    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_DAC_DUDE = 'X',
-
-    USRP2_CTRL_ID_READ_FROM_THIS_AUX_ADC_BRO = 'y',
-    USRP2_CTRL_ID_DONE_WITH_THAT_AUX_ADC_DUDE = 'Y',
 
     USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO = '{',
     USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE = '}',
@@ -89,25 +84,22 @@ typedef enum{
 } usrp2_ctrl_id_t;
 
 typedef enum{
-    USRP2_DIR_RX,
-    USRP2_DIR_TX
+    USRP2_DIR_RX = 'r',
+    USRP2_DIR_TX = 't'
 } usrp2_dir_which_t;
 
 typedef enum{
-    USRP2_CLK_EDGE_RISE,
-    USRP2_CLK_EDGE_FALL
+    USRP2_CLK_EDGE_RISE = 'r',
+    USRP2_CLK_EDGE_FALL = 'f'
 } usrp2_clk_edge_t;
 
 typedef struct{
+    _SINS_ uint32_t proto_ver;
     _SINS_ uint32_t id;
     _SINS_ uint32_t seq;
     union{
         _SINS_ uint32_t ip_addr;
         _SINS_ uint8_t mac_addr[6];
-        struct {
-            _SINS_ uint16_t rx_id;
-            _SINS_ uint16_t tx_id;
-        } dboard_ids;
         struct {
             _SINS_ uint8_t dev;
             _SINS_ uint8_t miso_edge;
@@ -121,12 +113,6 @@ typedef struct{
             _SINS_ uint8_t bytes;
             _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
         } i2c_args;
-        struct {
-            _SINS_ uint8_t dir;
-            _SINS_ uint8_t which;
-            _SINS_ uint8_t _pad[2];
-            _SINS_ uint32_t value;
-        } aux_args;
         struct {
             _SINS_ uint8_t now; //stream now?
             _SINS_ uint8_t continuous; //auto-reload commmands?

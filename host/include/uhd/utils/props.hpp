@@ -21,27 +21,63 @@
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/throw_exception.hpp>
+#include <boost/exception/info.hpp>
+#include <stdexcept>
 #include <vector>
 #include <string>
 
 namespace uhd{
 
-    //typedef for handling named properties
+    //! The type for a vector of property names
     typedef std::vector<std::string> prop_names_t;
-    typedef boost::tuple<wax::obj, std::string> named_prop_t;
+
+    /*!
+     * A named prop struct holds a key and a name.
+     * Allows properties to be sub-sectioned by name.
+     */
+    struct UHD_API named_prop_t{
+        wax::obj key;
+        std::string name;
+
+        /*!
+         * Create a new named prop from key and name.
+         * \param key the property key
+         * \param name the string name
+         */
+        named_prop_t(const wax::obj &key, const std::string &name);
+    };
 
     /*!
      * Utility function to separate a named property into its components.
      * \param key a reference to the prop object
      * \param name a reference to the name object
+     * \return a tuple that can be used with boost::tie
      */
-    inline UHD_API named_prop_t //must be exported as part of the api to work (TODO move guts to cpp file)
-    extract_named_prop(const wax::obj &key, const std::string &name = ""){
-        if (key.type() == typeid(named_prop_t)){
-            return key.as<named_prop_t>();
-        }
-        return named_prop_t(key, name);
-    }
+    UHD_API boost::tuple<wax::obj, std::string> extract_named_prop(
+        const wax::obj &key,
+        const std::string &name = ""
+    );
+
+    //! The exception to throw for property errors
+    struct UHD_API prop_error : virtual std::exception, virtual boost::exception{};
+
+    //! The property error info (verbose or message)
+    typedef boost::error_info<struct tag_prop_info, std::string> prop_info;
+
+    /*!
+     * Throw when getting a not-implemented or write-only property.
+     * Throw-site information will be included with this error.
+     */
+    #define UHD_THROW_PROP_GET_ERROR() \
+        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot get this property"))
+
+    /*!
+     * Throw when setting a not-implemented or read-only property.
+     * Throw-site information will be included with this error.
+     */
+    #define UHD_THROW_PROP_SET_ERROR() \
+        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot set this property"))
 
 } //namespace uhd
 

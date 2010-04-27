@@ -177,10 +177,11 @@ static args_t get_dboard_args(
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
-        throw std::runtime_error(str(
+        /*throw std::runtime_error(str(
             boost::format("Unregistered %s dboard id: %s")
             % xx_type % dboard_id::to_string(dboard_id)
-        ));
+        ));*/
+        return get_dboard_args(dboard_id::NONE, xx_type);
     }
 
     //return the dboard args for this id
@@ -205,7 +206,7 @@ dboard_manager_impl::dboard_manager_impl(
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
-        ASSERT_THROW(rx_subdevs == tx_subdevs);
+        UHD_ASSERT_THROW(rx_subdevs == tx_subdevs);
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             dboard_base::sptr xcvr_dboard = rx_dboard_ctor(
                 dboard_base::ctor_args_t(subdev, iface, rx_dboard_id, tx_dboard_id)

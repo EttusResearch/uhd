@@ -70,7 +70,10 @@ namespace uhd{
          * Timed-out on receive?
          */
 
-        //default constructor
+        /*!
+         * The default constructor:
+         * Sets the fields to default values (flags set to false).
+         */
         rx_metadata_t(void);
     };
 
@@ -103,7 +106,10 @@ namespace uhd{
         bool start_of_burst;
         bool end_of_burst;
 
-        //default constructor
+        /*!
+         * The default constructor:
+         * Sets the fields to default values (flags set to false).
+         */
         tx_metadata_t(void);
     };
 
