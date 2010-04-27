@@ -36,6 +36,8 @@ module u1e_core
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
    reg [15:0] 	 tx_frame_len;
    wire [15:0] 	 rx_frame_len;
+
+   wire 	 bus_error;
    
    gpmc_async gpmc (.arst(wb_rst),
 		    .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
@@ -43,7 +45,7 @@ module u1e_core
 		    .EM_NOE(EM_NOE),
 		    
 		    .rx_have_data(rx_have_data), .tx_have_space(tx_have_space),
-		    .bus_error(), .bus_reset(0),
+		    .bus_error(bus_error), .bus_reset(0),
 		    
 		    .wb_clk(wb_clk), .wb_rst(wb_rst),
 		    .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
@@ -271,6 +273,6 @@ module u1e_core
 		    { EM_D } };
 
    assign debug_gpio_0 = { debug_gpmc };
-   assign debug_gpio_1 = { misc_gpio };
+   assign debug_gpio_1 = { bus_error, misc_gpio[11:0] };
    
 endmodule // u1e_core
