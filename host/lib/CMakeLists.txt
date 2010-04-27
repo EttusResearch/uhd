@@ -89,6 +89,11 @@ UHD_PYTHON_GEN_SOURCE_FILE(
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps)
 
 UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_adf4350_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/adf4350_regs.hpp
+)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_adf4360_regs.py
     ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/adf4360_regs.hpp
 )
