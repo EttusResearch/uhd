@@ -98,6 +98,13 @@ public:
      */
     virtual void set_clock_config(const clock_config_t &clock_config) = 0;
 
+    /*!
+     * Read the RSSI value from a usrp device.
+     * Or throw if the dboard does not support an RSSI readback.
+     * \return the rssi in dB
+     */
+    virtual float read_rssi(void) = 0;
+
     /*******************************************************************
      * RX methods
      ******************************************************************/
@@ -115,6 +122,8 @@ public:
     virtual std::string get_rx_antenna(void) = 0;
     virtual std::vector<std::string> get_rx_antennas(void) = 0;
 
+    virtual bool get_rx_lo_locked(void) = 0;
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -131,6 +140,8 @@ public:
     virtual void set_tx_antenna(const std::string &ant) = 0;
     virtual std::string get_tx_antenna(void) = 0;
     virtual std::vector<std::string> get_tx_antennas(void) = 0;
+
+    virtual bool get_tx_lo_locked(void) = 0;
 };
 
 }}

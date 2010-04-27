@@ -102,6 +102,10 @@ public:
         _mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
     }
 
+    float read_rssi(void){
+        return _rx_subdev[SUBDEV_PROP_RSSI].as<float>();
+    }
+
     /*******************************************************************
      * RX methods
      ******************************************************************/
@@ -145,6 +149,10 @@ public:
         return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
+    bool get_rx_lo_locked(void){
+        return _rx_subdev[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -186,6 +194,10 @@ public:
 
     std::vector<std::string> get_tx_antennas(void){
         return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+    }
+
+    bool get_tx_lo_locked(void){
+        return _tx_subdev[SUBDEV_PROP_LO_LOCKED].as<bool>();
     }
 
 private:
