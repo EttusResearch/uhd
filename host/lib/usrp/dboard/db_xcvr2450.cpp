@@ -263,7 +263,7 @@ void xcvr2450::set_lo_freq(double target_freq){
         for(R = 1; R <= 7; R++){
             double N = (target_freq*scaler*R*_ad9515div)/ref_freq;
             intdiv = int(std::floor(N));
-            fracdiv = (N - intdiv)*double(1 << 16);
+            fracdiv = boost::math::iround((N - intdiv)*double(1 << 16));
             //actual minimum is 128, but most chips seems to require higher to lock
             if (intdiv < 131 or intdiv > 255) continue;
             //constraints met: exit loop
@@ -344,8 +344,8 @@ static int gain_to_tx_vga_reg(float &gain){
 
     //calculate the actual gain value
     if (reg < 4)       gain = 0;
-    else if (reg < 48) gain = reg/2 - 1;
-    else               gain = reg/2.0 - 1.5;
+    else if (reg < 48) gain = float(reg/2 - 1);
+    else               gain = float(reg/2.0 - 1.5);
 
     //return register value
     return reg;
@@ -385,7 +385,7 @@ static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
  */
 static int gain_to_rx_vga_reg(float &gain){
     int reg = std::clip(boost::math::iround(gain/2.0), 0, 31);
-    gain = reg*2;
+    gain = float(reg*2);
     return reg;
 }
 

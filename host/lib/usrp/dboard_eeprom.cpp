@@ -83,7 +83,7 @@ dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
         id = \
             (boost::uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0) |
             (boost::uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8) ;
-    }catch(const uhd::assert_error &e){
+    }catch(const uhd::assert_error &){
         id = dboard_id::NONE;
     }
 }
