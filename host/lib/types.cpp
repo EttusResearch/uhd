@@ -105,9 +105,9 @@ tx_metadata_t::tx_metadata_t(void){
 /***********************************************************************
  * time spec
  **********************************************************************/
-time_spec_t::time_spec_t(boost::uint32_t new_secs, double new_nsecs){
-    secs = new_secs;
-    nsecs = new_nsecs;
+time_spec_t::time_spec_t(boost::uint32_t secs_, double nsecs_){
+    secs = secs_;
+    nsecs = nsecs_;
 }
 
 boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
