@@ -51,7 +51,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
             if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
 
             //create a new hint with this broadcast address
-            device_addr_t new_hint = hint;
+            device_addr_t new_hint;
             new_hint["addr"] = if_addrs.bcast;
 
             //call discover with the new hint and append results
@@ -121,9 +121,9 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
     //resize the recv data transport buffers
     if (device_addr.has_key("recv_buff_size")){
         size_t num_byes = size_t(boost::lexical_cast<double>(device_addr["recv_buff_size"]));
-        size_t actual_bytes = data_transport->set_recv_buff_size(num_byes);
-        std::cout << boost::format(
-            "Target recv buffer size: %d"
+        size_t actual_bytes = data_transport->resize_recv_buff_size(num_byes);
+        if (num_byes != actual_bytes) std::cout << boost::format(
+            "Target recv buffer size: %d\n"
             "Actual recv byffer size: %d"
         ) % num_byes % actual_bytes << std::endl;
     }
@@ -131,9 +131,9 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
     //resize the send data transport buffers
     if (device_addr.has_key("send_buff_size")){
         size_t num_byes = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
-        size_t actual_bytes = data_transport->set_send_buff_size(num_byes);
-        std::cout << boost::format(
-            "Target send buffer size: %d"
+        size_t actual_bytes = data_transport->resize_send_buff_size(num_byes);
+        if (num_byes != actual_bytes) std::cout << boost::format(
+            "Target send buffer size: %d\n"
             "Actual send byffer size: %d"
         ) % num_byes % actual_bytes << std::endl;
     }

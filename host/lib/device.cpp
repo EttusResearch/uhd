@@ -97,11 +97,6 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
         BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
-            //copy keys that were in hint but not in dev_addr
-            //this way, we can pass additional transport arguments
-            BOOST_FOREACH(const std::string &key, hint.keys()){
-                if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
-            }
             //append the discovered address and its factory function
             dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
         }
@@ -126,6 +121,12 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     boost::tie(dev_addr, maker) = dev_addr_makers.at(which);
     size_t dev_hash = hash_device_addr(dev_addr);
     //std::cout << boost::format("Hash: %u") % dev_hash << std::endl;
+
+    //copy keys that were in hint but not in dev_addr
+    //this way, we can pass additional transport arguments
+    BOOST_FOREACH(const std::string &key, hint.keys()){
+        if (not dev_addr.has_key(key)) dev_addr[key] = hint[key];
+    }
 
     //map device address hash to created devices
     static uhd::dict<size_t, boost::weak_ptr<device> > hash_to_device;

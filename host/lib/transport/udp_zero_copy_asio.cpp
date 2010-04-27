@@ -103,8 +103,8 @@ public:
     managed_send_buffer::sptr get_send_buff(void);
 
     //resize
-    size_t set_recv_buff_size(size_t num_bytes);
-    size_t set_send_buff_size(size_t num_bytes);
+    size_t resize_recv_buff_size(size_t num_bytes);
+    size_t resize_send_buff_size(size_t num_bytes);
 
 private:
     boost::asio::ip::udp::socket   *_socket;
@@ -157,16 +157,14 @@ managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
     );
 }
 
-//sysctl -w net.core.rmem_max=VALUE
-size_t udp_zero_copy_impl::set_recv_buff_size(size_t num_bytes){
+size_t udp_zero_copy_impl::resize_recv_buff_size(size_t num_bytes){
     boost::asio::socket_base::receive_buffer_size option(num_bytes);
     _socket->set_option(option);
     _socket->get_option(option);
     return option.value();
 }
 
-//sysctl -w net.core.wmem_max=VALUE
-size_t udp_zero_copy_impl::set_send_buff_size(size_t num_bytes){
+size_t udp_zero_copy_impl::resize_send_buff_size(size_t num_bytes){
     boost::asio::socket_base::send_buffer_size option(num_bytes);
     _socket->set_option(option);
     _socket->get_option(option);
