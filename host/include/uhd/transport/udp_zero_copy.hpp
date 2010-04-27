@@ -52,6 +52,21 @@ public:
      * \param port a string representing the destination port
      */
     static sptr make(const std::string &addr, const std::string &port);
+
+    /*!
+     * The the rx buffer size on the socket.
+     * \param num_bytes the new size for the socket buffer
+     * \return the actual number of bytes allowed by the OS
+     */
+    virtual size_t set_recv_buff_size(size_t num_bytes) = 0;
+
+    /*!
+     * The the tx buffer size on the socket.
+     * \param num_bytes the new size for the socket buffer
+     * \return the actual number of bytes allowed by the OS
+     */
+    virtual size_t set_send_buff_size(size_t num_bytes) = 0;
+
 };
 
 }} //namespace

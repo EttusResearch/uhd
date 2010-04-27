@@ -24,6 +24,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
@@ -116,6 +117,26 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
     udp_zero_copy::sptr data_transport = udp_zero_copy::make(
         device_addr["addr"], num2str(USRP2_UDP_DATA_PORT)
     );
+
+    //resize the recv data transport buffers
+    if (device_addr.has_key("recv_buff_size")){
+        size_t num_byes = size_t(boost::lexical_cast<double>(device_addr["recv_buff_size"]));
+        size_t actual_bytes = data_transport->set_recv_buff_size(num_byes);
+        std::cout << boost::format(
+            "Target recv buffer size: %d"
+            "Actual recv byffer size: %d"
+        ) % num_byes % actual_bytes << std::endl;
+    }
+
+    //resize the send data transport buffers
+    if (device_addr.has_key("send_buff_size")){
+        size_t num_byes = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
+        size_t actual_bytes = data_transport->set_send_buff_size(num_byes);
+        std::cout << boost::format(
+            "Target send buffer size: %d"
+            "Actual send byffer size: %d"
+        ) % num_byes % actual_bytes << std::endl;
+    }
 
     //create the usrp2 implementation guts
     return device::sptr(

@@ -35,6 +35,10 @@ public:
      * hint["addr"] = address, where address is a resolvable address
      * or ip address, which may or may not be a broadcast address.
      *
+     * Other optional device address keys:
+     *   recv_buff_size: resizes the recv buffer on the data socket
+     *   send_buff_size: resizes the send buffer on the data socket
+     *
      * \param hint a device addr with the usrp2 address filled in
      * \return a vector of device addresses for all usrp2s found
      */

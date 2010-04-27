@@ -19,8 +19,6 @@
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
-#include <boost/format.hpp>
-#include <iostream>
 
 using namespace uhd::transport;
 
@@ -104,12 +102,13 @@ public:
     managed_recv_buffer::sptr get_recv_buff(void);
     managed_send_buffer::sptr get_send_buff(void);
 
+    //resize
+    size_t set_recv_buff_size(size_t num_bytes);
+    size_t set_send_buff_size(size_t num_bytes);
+
 private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::io_service        _io_service;
-
-    size_t get_recv_buff_size(void);
-    void set_recv_buff_size(size_t);
 };
 
 udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port){
@@ -124,18 +123,6 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
     _socket = new boost::asio::ip::udp::socket(_io_service);
     _socket->open(boost::asio::ip::udp::v4());
     _socket->connect(receiver_endpoint);
-
-    // set the rx socket buffer size:
-    // pick a huge size, and deal with whatever we get
-    set_recv_buff_size(size_t(54321e3)); //some big number!
-    size_t current_buff_size = get_recv_buff_size();
-    std::cout << boost::format(
-        "Current rx socket buffer size: %d\n"
-    ) % current_buff_size;
-    if (current_buff_size < size_t(.1e6)) std::cout << boost::format(
-        "Adjust max rx socket buffer size (linux only):\n"
-        "  sysctl -w net.core.rmem_max=VALUE\n"
-    );
 }
 
 udp_zero_copy_impl::~udp_zero_copy_impl(void){
@@ -170,15 +157,20 @@ managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
     );
 }
 
-size_t udp_zero_copy_impl::get_recv_buff_size(void){
-    boost::asio::socket_base::receive_buffer_size option;
+//sysctl -w net.core.rmem_max=VALUE
+size_t udp_zero_copy_impl::set_recv_buff_size(size_t num_bytes){
+    boost::asio::socket_base::receive_buffer_size option(num_bytes);
+    _socket->set_option(option);
     _socket->get_option(option);
     return option.value();
 }
 
-void udp_zero_copy_impl::set_recv_buff_size(size_t new_size){
-    boost::asio::socket_base::receive_buffer_size option(new_size);
+//sysctl -w net.core.wmem_max=VALUE
+size_t udp_zero_copy_impl::set_send_buff_size(size_t num_bytes){
+    boost::asio::socket_base::send_buffer_size option(num_bytes);
     _socket->set_option(option);
+    _socket->get_option(option);
+    return option.value();
 }
 
 /***********************************************************************
