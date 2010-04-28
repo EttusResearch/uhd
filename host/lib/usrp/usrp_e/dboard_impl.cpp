@@ -50,26 +50,26 @@ void usrp_e_impl::dboard_init(void){
  * RX Dboard Get
  **********************************************************************/
 void usrp_e_impl::rx_dboard_get(const wax::obj &, wax::obj &){
-    
+    UHD_THROW_PROP_GET_ERROR();
 }
 
 /***********************************************************************
  * RX Dboard Set
  **********************************************************************/
 void usrp_e_impl::rx_dboard_set(const wax::obj &, const wax::obj &){
-    
+    UHD_THROW_PROP_SET_ERROR();
 }
 
 /***********************************************************************
  * TX Dboard Get
  **********************************************************************/
 void usrp_e_impl::tx_dboard_get(const wax::obj &, wax::obj &){
-    
+    UHD_THROW_PROP_GET_ERROR();
 }
 
 /***********************************************************************
  * TX Dboard Set
  **********************************************************************/
 void usrp_e_impl::tx_dboard_set(const wax::obj &, const wax::obj &){
-    
+    UHD_THROW_PROP_SET_ERROR();
 }

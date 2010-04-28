@@ -100,7 +100,7 @@ public:
      ******************************************************************/
     boost::uint32_t transact_spi(
         int which_slave,
-        const uhd::usrp::spi_config_t &config,
+        const uhd::spi_config_t &config,
         boost::uint32_t bits,
         size_t num_bits,
         bool readback
@@ -114,8 +114,8 @@ public:
 
         //load the flags
         data.flags = 0;
-        data.flags |= (config.miso_edge == uhd::usrp::spi_config_t::EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
-        data.flags |= (config.mosi_edge == uhd::usrp::spi_config_t::EDGE_RISE)? UE_SPI_PUSH_FALL  : UE_SPI_PUSH_RISE;
+        data.flags |= (config.miso_edge == uhd::spi_config_t::EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
+        data.flags |= (config.mosi_edge == uhd::spi_config_t::EDGE_RISE)? UE_SPI_PUSH_FALL  : UE_SPI_PUSH_RISE;
 
         //call the spi ioctl
         this->ioctl(USRP_E_SPI, &data);

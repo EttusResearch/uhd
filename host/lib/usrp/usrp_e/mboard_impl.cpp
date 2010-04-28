@@ -58,7 +58,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _rx_dboard_proxy->get_link();
         return;
 
@@ -67,7 +67,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _tx_dboard_proxy->get_link();
         return;
 
@@ -80,7 +80,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        ASSERT_THROW(name == "ddc0");
+        UHD_ASSERT_THROW(name == "ddc0");
         val = _rx_ddc_proxy->get_link();
         return;
 
@@ -89,7 +89,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DSP:
-        ASSERT_THROW(name == "duc0");
+        UHD_ASSERT_THROW(name == "duc0");
         val = _tx_duc_proxy->get_link();
         return;
 
@@ -101,10 +101,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    case MBOARD_PROP_TIME_NOW:
-    case MBOARD_PROP_TIME_NEXT_PPS:
-        throw std::runtime_error("Error: trying to get write-only property on usrp-e mboard");
-
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -112,5 +109,5 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
  * Mboard Set
  **********************************************************************/
 void usrp_e_impl::mboard_set(const wax::obj &, const wax::obj &){
-    
+    UHD_THROW_PROP_SET_ERROR();
 }

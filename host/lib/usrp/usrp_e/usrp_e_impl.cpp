@@ -112,7 +112,7 @@ void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _mboard_proxy->get_link();
         return;
 
@@ -128,6 +128,7 @@ void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
         val = size_t(_max_num_samples);
         return;
 
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -135,7 +136,7 @@ void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
  * Device Set
  **********************************************************************/
 void usrp_e_impl::set(const wax::obj &, const wax::obj &){
-    throw std::runtime_error("Cannot set in usrp-e device");
+    UHD_THROW_PROP_SET_ERROR();
 }
 
 /***********************************************************************
