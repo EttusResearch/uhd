@@ -170,41 +170,12 @@ boost::uint32_t usrp_e_dboard_iface::read_write_spi(
 /***********************************************************************
  * I2C
  **********************************************************************/
-static const size_t max_i2c_data_bytes = 10;
-
-void usrp_e_dboard_iface::write_i2c(boost::uint8_t addr, const byte_vector_t &buf){
-    //allocate some memory for this transaction
-    UHD_ASSERT_THROW(buf.size() <= max_i2c_data_bytes);
-    boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
-
-    //load the data struct
-    usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
-    data.addr = addr;
-    data.len = buf.size();
-    std::copy(buf.begin(), buf.end(), data.data);
-
-    //call the spi ioctl
-    _iface->ioctl(USRP_E_I2C_WRITE, &data);
+void usrp_e_dboard_iface::write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+    return _iface->write_i2c(addr, bytes);
 }
 
 byte_vector_t usrp_e_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_bytes){
-    //allocate some memory for this transaction
-    UHD_ASSERT_THROW(num_bytes <= max_i2c_data_bytes);
-    boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
-
-    //load the data struct
-    usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
-    data.addr = addr;
-    data.len = num_bytes;
-
-    //call the spi ioctl
-    _iface->ioctl(USRP_E_I2C_READ, &data);
-
-    //unload the data
-    byte_vector_t ret(data.len);
-    UHD_ASSERT_THROW(ret.size() == num_bytes);
-    std::copy(data.data, data.data+ret.size(), ret.begin());
-    return ret;
+    return _iface->read_i2c(addr, num_bytes);
 }
 
 /***********************************************************************

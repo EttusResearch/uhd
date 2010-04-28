@@ -16,10 +16,13 @@
 //
 
 #include "usrp_e_iface.hpp"
+#include <uhd/utils/assert.hpp>
 #include <sys/ioctl.h> //ioctl
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/format.hpp>
 #include <stdexcept>
+
+using namespace uhd;
 
 class usrp_e_iface_impl : public usrp_e_iface{
 public:
@@ -96,11 +99,51 @@ public:
     }
 
     /*******************************************************************
+     * I2C
+     ******************************************************************/
+    static const size_t max_i2c_data_bytes = 10;
+
+    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+        //allocate some memory for this transaction
+        UHD_ASSERT_THROW(bytes.size() <= max_i2c_data_bytes);
+        boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
+
+        //load the data struct
+        usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
+        data.addr = addr;
+        data.len = bytes.size();
+        std::copy(bytes.begin(), bytes.end(), data.data);
+
+        //call the spi ioctl
+        this->ioctl(USRP_E_I2C_WRITE, &data);
+    }
+
+    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+        //allocate some memory for this transaction
+        UHD_ASSERT_THROW(num_bytes <= max_i2c_data_bytes);
+        boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
+
+        //load the data struct
+        usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
+        data.addr = addr;
+        data.len = num_bytes;
+
+        //call the spi ioctl
+        this->ioctl(USRP_E_I2C_READ, &data);
+
+        //unload the data
+        byte_vector_t bytes(data.len);
+        UHD_ASSERT_THROW(bytes.size() == num_bytes);
+        std::copy(data.data, data.data+bytes.size(), bytes.begin());
+        return bytes;
+    }
+
+    /*******************************************************************
      * SPI
      ******************************************************************/
     boost::uint32_t transact_spi(
         int which_slave,
-        const uhd::spi_config_t &config,
+        const spi_config_t &config,
         boost::uint32_t bits,
         size_t num_bits,
         bool readback
@@ -114,8 +157,8 @@ public:
 
         //load the flags
         data.flags = 0;
-        data.flags |= (config.miso_edge == uhd::spi_config_t::EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
-        data.flags |= (config.mosi_edge == uhd::spi_config_t::EDGE_RISE)? UE_SPI_PUSH_FALL  : UE_SPI_PUSH_RISE;
+        data.flags |= (config.miso_edge == spi_config_t::EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
+        data.flags |= (config.mosi_edge == spi_config_t::EDGE_RISE)? UE_SPI_PUSH_FALL  : UE_SPI_PUSH_RISE;
 
         //call the spi ioctl
         this->ioctl(USRP_E_SPI, &data);

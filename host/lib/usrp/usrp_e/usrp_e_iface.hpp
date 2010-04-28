@@ -29,7 +29,7 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp_e_iface : boost::noncopyable{
+class usrp_e_iface : boost::noncopyable, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<usrp_e_iface> sptr;
 
