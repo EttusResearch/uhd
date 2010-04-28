@@ -50,8 +50,8 @@ u2_init(void)
   hal_gpio_set_ddr(GPIO_TX_BANK, 0x0000, 0xffff);
   hal_gpio_set_ddr(GPIO_RX_BANK, 0x0000, 0xffff);
 
-  hal_gpio_write(GPIO_TX_BANK, 0x0000, 0xffff);	// init s/w output value to zero
-  hal_gpio_write(GPIO_RX_BANK, 0x0000, 0xffff);
+  //hal_gpio_write(GPIO_TX_BANK, 0x0000, 0xffff);	// init s/w output value to zero
+  //hal_gpio_write(GPIO_RX_BANK, 0x0000, 0xffff);
 
   dsp_rx_regs->gpio_stream_enable = 0; // I, Q LSBs come from DSP
 

@@ -31,13 +31,13 @@ module vita_rx_control
    
    wire [63:0] 	  rcvtime_pre;
    reg [63:0] 	  rcvtime;
-   wire [29:0] 	  numlines_pre;
-   wire 	  send_imm_pre, chain_pre;
-   reg 		  send_imm, chain;
+   wire [28:0] 	  numlines_pre;
+   wire 	  send_imm_pre, chain_pre, reload_pre;
+   reg 		  send_imm, chain, reload;
    wire 	  full_ctrl, read_ctrl, empty_ctrl, write_ctrl;
    reg 		  sc_pre2;
    wire [33:0] 	  fifo_line;
-   reg [29:0] 	  lines_left;
+   reg [28:0] 	  lines_left, lines_total;
    reg [2:0] 	  ibs_state;
    wire 	  now, early, late;
    wire 	  sample_fifo_in_rdy;
@@ -67,7 +67,7 @@ module vita_rx_control
    shortfifo #(.WIDTH(96)) commandfifo
      (.clk(clk),.rst(reset),.clear(clear_int),
       .datain({new_command,new_time}), .write(write_ctrl&~full_ctrl), .full(full_ctrl),
-      .dataout({send_imm_pre,chain_pre,numlines_pre,rcvtime_pre}), 
+      .dataout({send_imm_pre,chain_pre,reload_pre,numlines_pre,rcvtime_pre}), 
       .read(read_ctrl), .empty(empty_ctrl),
       .occupied(command_queue_len), .space() );
    
@@ -98,7 +98,7 @@ module vita_rx_control
       .src_rdy_o(sample_fifo_src_rdy_o), .dst_rdy_i(sample_fifo_dst_rdy_i),
       .space(), .occupied() );
    
-   // Inband Signalling State Machine
+   // Inband Signallling State Machine
    time_compare 
      time_compare (.time_now(vita_time), .trigger_time(rcvtime), .now(now), .early(early), .late(late));
    
@@ -111,9 +111,11 @@ module vita_rx_control
        begin
 	  ibs_state 	   <= IBS_IDLE;
 	  lines_left 	   <= 0;
+	  lines_total	   <= 0;
 	  rcvtime 	   <= 0;
 	  send_imm 	   <= 0;
 	  chain 	   <= 0;
+	  reload	   <= 0;
        end
      else
        case(ibs_state)
@@ -121,10 +123,12 @@ module vita_rx_control
 	   if(~empty_ctrl)
 	     begin
 		lines_left <= numlines_pre;
+		lines_total <= numlines_pre;
 		rcvtime <= rcvtime_pre;
 		ibs_state <= IBS_WAITING;
 		send_imm <= send_imm_pre;
 		chain <= chain_pre;
+		reload <= reload_pre;
 	     end
 	 IBS_WAITING :
 	   if(go_now)
@@ -141,14 +145,21 @@ module vita_rx_control
 		  if(lines_left == 1)
 		    if(~chain)
 		      ibs_state      <= IBS_IDLE;
+		    else if(empty_ctrl & reload)
+		      begin
+		        ibs_state      <= IBS_RUNNING;
+		        lines_left     <= lines_total;
+		      end
 		    else if(empty_ctrl)
 		      ibs_state      <= IBS_BROKENCHAIN;
 		    else
 		      begin
 			 lines_left  <= numlines_pre;
+			 lines_total <= numlines_pre;
 			 rcvtime     <= rcvtime_pre;
 			 send_imm    <= send_imm_pre;
 			 chain 	     <= chain_pre;
+			 reload      <= reload_pre;
 			 if(numlines_pre == 0)  // If we are told to stop here
 			   ibs_state <= IBS_IDLE;
 			 else
@@ -178,3 +189,4 @@ module vita_rx_control
 		       { 2'b0, overrun, chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
    
 endmodule // rx_control
+

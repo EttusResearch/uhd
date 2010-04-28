@@ -77,9 +77,6 @@ void usrp2_impl::init_ddc_config(void){
     _ddc_decim = default_decim;
     _ddc_freq = 0;
     update_ddc_config();
-
-    //initial command that kills streaming (in case if was left on)
-    issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 void usrp2_impl::update_ddc_config(void){

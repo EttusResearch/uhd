@@ -16,6 +16,7 @@
 //
 
 #include "usrp2_impl.hpp"
+#include "usrp2_regs.hpp"
 #include <uhd/transport/convert_types.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
@@ -39,14 +40,23 @@ void usrp2_impl::io_init(void){
     _rx_copy_buff = asio::buffer("", 0);
 
     //send a small data packet so the usrp2 knows the udp source port
-    //and the maximum number of lines (32 bit words) per packet
     managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
-    boost::uint32_t data[2] = {
-        htonl(USRP2_INVALID_VRT_HEADER),
-        htonl(_max_rx_samples_per_packet)
-    };
-    memcpy(send_buff->cast<void*>(), data, sizeof(data));
+    boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
+    memcpy(send_buff->cast<void*>(), &data, sizeof(data));
     send_buff->done(sizeof(data));
+
+    //setup RX DSP regs
+    _iface->poke32(FR_RX_CTRL_NSAMPS_PER_PKT, _max_rx_samples_per_packet);
+    _iface->poke32(FR_RX_CTRL_NCHANNELS, 1);
+    _iface->poke32(FR_RX_CTRL_CLEAR_OVERRUN, 1); //reset
+    _iface->poke32(FR_RX_CTRL_VRT_HEADER, 0
+        | (0x1 << 28) //if data with stream id
+        | (0x1 << 26) //has trailer
+        | (0x3 << 22) //integer time other
+        | (0x1 << 20) //fractional time sample count
+    );
+    _iface->poke32(FR_RX_CTRL_VRT_STREAM_ID, 0);
+    _iface->poke32(FR_RX_CTRL_VRT_TRAILER, 0);
 }
 
 /***********************************************************************

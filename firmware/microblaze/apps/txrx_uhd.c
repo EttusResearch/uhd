@@ -126,14 +126,7 @@ dbsm_t dsp_rx_sm;	// the state machine
 // The mac address of the host we're sending to.
 eth_mac_addr_t host_mac_addr;
 
-//controls continuous streaming...
-static bool   auto_reload_command = false;
-static size_t streaming_items_per_frame = 0;
-static int    streaming_frame_count = 0;
-#define FRAMES_PER_CMD	2
-
 static void setup_network(void);
-static void setup_vrt(void);
 
 // ----------------------------------------------------------------
 // the fast-path setup global variables
@@ -154,9 +147,6 @@ void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    //store the 2nd word as the following:
-    streaming_items_per_frame = ((uint32_t *)payload)[1];
-
     //its a tiny payload, load the fast-path variables
     fp_mac_addr_src = *ethernet_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
@@ -177,21 +167,10 @@ void handle_udp_data_packet(
 
     //setup network and vrt
     setup_network();
-    setup_vrt();
 
     // kick off the state machine
     dbsm_start(&dsp_rx_sm);
 
-}
-
-static void inline issue_stream_command(size_t nsamps, bool now, bool chain, uint32_t secs, uint32_t ticks, bool start){
-    //printf("Stream cmd: nsamps %d, now %d, chain %d, secs %u, ticks %u\n", (int)nsamps, now, chain, secs, ticks);
-    sr_rx_ctrl->cmd = MK_RX_CMD(nsamps, now, chain);
-
-    if (start) dbsm_start(&dsp_rx_sm);
-
-    sr_rx_ctrl->time_secs = secs;
-    sr_rx_ctrl->time_ticks = ticks;	// enqueue command
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \
@@ -304,72 +283,6 @@ void handle_udp_ctrl_packet(
         break;
 
     /*******************************************************************
-     * Streaming
-     ******************************************************************/
-    case USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO:{
-
-        //issue two commands and set the auto-reload flag
-        if (ctrl_data_in->data.stream_cmd.continuous){
-            printf("Setting up continuous streaming...\n");
-            printf("items per frame: %d\n", (int)streaming_items_per_frame);
-            hal_set_leds(LED_A, LEDS_SW);
-            auto_reload_command = true;
-            streaming_frame_count = FRAMES_PER_CMD;
-
-            issue_stream_command(
-                streaming_items_per_frame * FRAMES_PER_CMD,
-                (ctrl_data_in->data.stream_cmd.now == 0)? false : true, //now
-                true, //chain
-                ctrl_data_in->data.stream_cmd.secs,
-                ctrl_data_in->data.stream_cmd.ticks,
-                true //start
-            );
-
-            issue_stream_command(
-                streaming_items_per_frame * FRAMES_PER_CMD,
-                true, //now
-                true, //chain
-                0, 0, //time does not matter
-                false
-            );
-
-        }
-
-        //issue regular stream commands (split commands if too large)
-        else{
-            hal_set_leds(0, LEDS_SW);
-            auto_reload_command = false;
-            size_t num_samps = ctrl_data_in->data.stream_cmd.num_samps;
-            if (num_samps == 0) num_samps = 1; //FIXME hack, zero is used when stopping continuous streaming but it somehow makes it inifinite
-
-            bool chain = num_samps > MAX_SAMPLES_PER_CMD;
-            issue_stream_command(
-                (chain)? streaming_items_per_frame : num_samps, //nsamps
-                (ctrl_data_in->data.stream_cmd.now == 0)? false : true, //now
-                (ctrl_data_in->data.stream_cmd.chain == 0)? chain : true, //chain
-                ctrl_data_in->data.stream_cmd.secs,
-                ctrl_data_in->data.stream_cmd.ticks,
-                false
-            );
-
-            //handle rest of the samples that did not fit into one cmd
-            while(chain){
-                num_samps -= MAX_SAMPLES_PER_CMD;
-                chain = num_samps > MAX_SAMPLES_PER_CMD;
-                issue_stream_command(
-                    (chain)? streaming_items_per_frame : num_samps, //nsamps
-                    true, //now
-                    (ctrl_data_in->data.stream_cmd.chain == 0)? chain : true, //chain
-                    0, 0, //time does not matter
-                    false
-                );
-            }
-        }
-        ctrl_data_out.id = USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE;
-        break;
-    }
-
-    /*******************************************************************
      * Peek and Poke Register
      ******************************************************************/
     case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
@@ -463,25 +376,6 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
 
 //------------------------------------------------------------------
 
-static bool vrt_has_trailer(void){
-    return USRP2_HOST_RX_VRT_TRAILER_WORDS32 > 0;
-}
-
-static void setup_vrt(void){
-  // setup RX DSP regs
-  sr_rx_ctrl->nsamples_per_pkt = streaming_items_per_frame;
-  sr_rx_ctrl->nchannels = 1;
-  sr_rx_ctrl->clear_overrun = 1;			// reset
-  sr_rx_ctrl->vrt_header = (0
-     | VRTH_PT_IF_DATA_WITH_SID
-     | (vrt_has_trailer()? VRTH_HAS_TRAILER : 0)
-     | VRTH_TSI_OTHER
-     | VRTH_TSF_SAMPLE_CNT
-  );
-  sr_rx_ctrl->vrt_stream_id = 0;
-  sr_rx_ctrl->vrt_trailer = 0;
-}
-
 /*
  * 1's complement sum for IP and UDP headers
  *
@@ -553,13 +447,6 @@ fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
   size_t vrt_len = buffer_pool_status->last_line[buf_this]-1;
   buff->control_word = MK_RX_CTRL_WORD(vrt_len);
   buff->vrt_header[0] = (buff->vrt_header[0] & ~VRTH_PKT_SIZE_MASK) | (vrt_len & VRTH_PKT_SIZE_MASK);
-
-  // queue up another rx command when required
-  if (auto_reload_command && --streaming_frame_count == 0){
-    streaming_frame_count = FRAMES_PER_CMD;
-    sr_rx_ctrl->time_secs = 0;
-    sr_rx_ctrl->time_ticks = 0; //enqueue last command
-  }
 
   return false;		// we didn't handle the packet
 }
@@ -662,13 +549,6 @@ hal_gpio_set_sels(GPIO_RX_BANK, "aaaaaaaaaaaaaaaa");
       // FIXME Figure out how to handle this robustly.
       // Any buffers that are emptying should be allowed to drain...
 
-      if (auto_reload_command){
-	// restart_streaming();
-	// FIXME report error
-      }
-      else {
-	// FIXME report error
-      }
       putchar('O');
     }
   }

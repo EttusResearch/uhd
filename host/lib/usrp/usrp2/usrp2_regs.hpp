@@ -207,4 +207,25 @@
 #define FR_ATR_FULL_TXSIDE  FR_ATR_BASE + 12
 #define FR_ATR_FULL_RXSIDE  FR_ATR_BASE + 14
 
+///////////////////////////////////////////////////
+// ATR Controller, Slave 11
+///////////////////////////////////////////////////
+// The following 3 are logically a single command register.
+// They are clocked into the underlying fifo when time_ticks is written.
+#define FR_RX_CTRL_STREAM_CMD        _SR_ADDR(SR_RX_CTRL + 0) // {now, chain, num_samples(30)
+#define FR_RX_CTRL_TIME_SECS         _SR_ADDR(SR_RX_CTRL + 1)
+#define FR_RX_CTRL_TIME_TICKS        _SR_ADDR(SR_RX_CTRL + 2)
+
+#define FR_RX_CTRL_CLEAR_OVERRUN     _SR_ADDR(SR_RX_CTRL + 3) // write anything to clear overrun
+#define FR_RX_CTRL_VRT_HEADER        _SR_ADDR(SR_RX_CTRL + 4) // word 0 of packet.  FPGA fills in packet counter
+#define FR_RX_CTRL_VRT_STREAM_ID     _SR_ADDR(SR_RX_CTRL + 5) // word 1 of packet.
+#define FR_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)
+#define FR_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
+#define FR_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
+
+//helpful macros for dealing with stream cmd
+#define FR_RX_CTRL_MAX_SAMPS_PER_CMD 0x1fffffff
+#define FR_RX_CTRL_MAKE_CMD(nsamples, now, chain, reload) \
+  ((((now) & 0x1) << 31) | (((chain) & 0x1) << 30) | (((reload) & 0x1) << 29) | ((nsamples) & 0x1fffffff))
+
 #endif /* INCLUDED_USRP2_REGS_HPP */
