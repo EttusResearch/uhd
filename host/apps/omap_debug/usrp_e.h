@@ -1,3 +1,4 @@
+
 /*
  *  Copyright (C) 2010 Ettus Research, LLC
  *
@@ -76,6 +77,11 @@ struct usrp_transfer_frame {
 	__u32 len;
 	__u8  buf[];
 };
+
+// Flag defines
+#define RB_USER (1 << 0)
+#define RB_KERNEL (1 << 1)
+#define RB_OVERRUN (1 << 2)
 
 struct ring_buffer_entry {
 	unsigned long dma_addr;
