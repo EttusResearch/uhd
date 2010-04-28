@@ -19,6 +19,7 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/asio.hpp> //endianness conversion
 #include <boost/cstdint.hpp>
+#include <complex>
 
 using namespace uhd;
 
@@ -109,7 +110,7 @@ void transport::convert_io_type_to_otw_type(
     size_t num_samps
 ){
     //all we handle for now:
-    ASSERT_THROW(otw_type.width == 16 and otw_type.byteorder == otw_type_t::BO_BIG_ENDIAN);
+    UHD_ASSERT_THROW(otw_type.width == 16 and otw_type.byteorder == otw_type_t::BO_BIG_ENDIAN);
 
     switch(io_type.tid){
     case io_type_t::COMPLEX_FLOAT32:
@@ -129,7 +130,7 @@ void transport::convert_otw_type_to_io_type(
     size_t num_samps
 ){
     //all we handle for now:
-    ASSERT_THROW(otw_type.width == 16 and otw_type.byteorder == otw_type_t::BO_BIG_ENDIAN);
+    UHD_ASSERT_THROW(otw_type.width == 16 and otw_type.byteorder == otw_type_t::BO_BIG_ENDIAN);
 
     switch(io_type.tid){
     case io_type_t::COMPLEX_FLOAT32:

@@ -28,7 +28,6 @@ libu2fw_a_SOURCES = \
 	bsm12.c \
 	buffer_pool.c \
 	clocks.c \
-	db_init.c \
 	dbsm.c \
 	eeprom.c \
 	ethernet.c \
@@ -38,8 +37,6 @@ libu2fw_a_SOURCES = \
 	hal_io.c \
 	hal_uart.c \
 	i2c.c \
-	lsadc.c \
-	lsdac.c \
 	mdelay.c \
 	memcpy_wa.c \
 	memset_wa.c \
@@ -62,7 +59,6 @@ noinst_HEADERS = \
 	bsm12.h \
 	buffer_pool.h \
 	clocks.h \
-	db.h \
 	dbsm.h \
 	eth_mac.h \
 	eth_mac_regs.h \
@@ -71,8 +67,6 @@ noinst_HEADERS = \
 	hal_io.h \
 	hal_uart.h \
 	i2c.h \
-	lsadc.h \
-	lsdac.h \
 	mdelay.h \
 	memcpy_wa.h \
 	memory_map.h \

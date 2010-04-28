@@ -72,6 +72,8 @@ private:
         case PROP_GAIN_NAMES:
             val = _gain_values.keys();
             return;
+
+        default: UHD_THROW_PROP_GET_ERROR();
         }
     }
 
@@ -87,9 +89,7 @@ private:
             _gain_values[name] = val.as<float>();
             return;
 
-        case PROP_GAIN_RANGE:
-        case PROP_GAIN_NAMES:
-            throw std::runtime_error("cannot set this property");
+        default: UHD_THROW_PROP_SET_ERROR();
         }
     }
 

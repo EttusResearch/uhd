@@ -94,6 +94,15 @@ private:
      * \return the actual frequency in Hz
      */
     double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
+
+    /*!
+     * Get the lock detect status of the LO.
+     * \param unit which unit rx or tx
+     * \return true for locked
+     */
+    bool get_locked(dboard_iface::unit_t unit){
+        return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+    }
 };
 
 /***********************************************************************
@@ -192,7 +201,7 @@ void rfx_xcvr::set_tx_lo_freq(double freq){
 
 void rfx_xcvr::set_rx_ant(const std::string &ant){
     //validate input
-    ASSERT_THROW(ant == "TX/RX" or ant == "RX2");
+    UHD_ASSERT_THROW(ant == "TX/RX" or ant == "RX2");
 
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(
@@ -350,12 +359,12 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(name == "PGA0");
+        UHD_ASSERT_THROW(name == "PGA0");
         val = _rx_pga0_gain;
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        ASSERT_THROW(name == "PGA0");
+        UHD_ASSERT_THROW(name == "PGA0");
         val = gain_range_t(0, _max_rx_pga0_gain, float(0.022));
         return;
 
@@ -396,6 +405,12 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
+
+    case SUBDEV_PROP_LO_LOCKED:
+        val = this->get_locked(dboard_iface::UNIT_RX);
+        return;
+
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -411,7 +426,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        ASSERT_THROW(name == "PGA0");
+        UHD_ASSERT_THROW(name == "PGA0");
         set_rx_pga0_gain(val.as<float>());
         return;
 
@@ -419,10 +434,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         set_rx_ant(val.as<std::string>());
         return;
 
-    default:
-        throw std::runtime_error(str(boost::format(
-            "Error: trying to set read-only property on %s subdev"
-        ) % dboard_id::to_string(get_rx_id())));
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
@@ -430,7 +442,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
  * TX Get and Set
  **********************************************************************/
 void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
-        wax::obj key; std::string name;
+    wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
     //handle the get request conditioned on the key
@@ -486,6 +498,12 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = true;
         return;
+
+    case SUBDEV_PROP_LO_LOCKED:
+        val = this->get_locked(dboard_iface::UNIT_TX);
+        return;
+
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -506,12 +524,9 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         //its always set to tx/rx, so we only allow this value
-        ASSERT_THROW(val.as<std::string>() == "TX/RX");
+        UHD_ASSERT_THROW(val.as<std::string>() == "TX/RX");
         return;
 
-    default:
-        throw std::runtime_error(str(boost::format(
-            "Error: trying to set read-only property on %s subdev"
-        ) % dboard_id::to_string(get_tx_id())));
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

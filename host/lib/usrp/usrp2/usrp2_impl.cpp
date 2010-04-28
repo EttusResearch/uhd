@@ -70,6 +70,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out;
+    ctrl_data_out.proto_ver = htonl(USRP2_PROTO_VERSION);
     ctrl_data_out.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
@@ -185,7 +186,7 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _mboard_proxy->get_link();
         return;
 
@@ -201,9 +202,10 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         val = size_t(_max_tx_samples_per_packet);
         return;
 
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
 void usrp2_impl::set(const wax::obj &, const wax::obj &){
-    throw std::runtime_error("Cannot set in usrp2 device");
+    UHD_THROW_PROP_SET_ERROR();
 }

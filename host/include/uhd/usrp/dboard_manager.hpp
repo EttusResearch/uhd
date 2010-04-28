@@ -33,7 +33,6 @@ namespace uhd{ namespace usrp{
  * Provide wax::obj access to the subdevs inside.
  */
 class UHD_API dboard_manager : boost::noncopyable{
-
 public:
     typedef boost::shared_ptr<dboard_manager> sptr;
 

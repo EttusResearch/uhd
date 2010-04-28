@@ -25,11 +25,14 @@
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/io_type.hpp>
+#include <uhd/types/serial.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/thread.hpp>
 #include <stdexcept>
 #include <complex>
 
@@ -102,9 +105,9 @@ tx_metadata_t::tx_metadata_t(void){
 /***********************************************************************
  * time spec
  **********************************************************************/
-time_spec_t::time_spec_t(boost::uint32_t new_secs, double new_nsecs){
-    secs = new_secs;
-    nsecs = new_nsecs;
+time_spec_t::time_spec_t(boost::uint32_t secs_, double nsecs_){
+    secs = secs_;
+    nsecs = nsecs_;
 }
 
 boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
@@ -118,19 +121,36 @@ void time_spec_t::set_ticks(boost::uint32_t ticks, double tick_rate){
 /***********************************************************************
  * device addr
  **********************************************************************/
+static const std::string arg_delim = ",";
+static const std::string pair_delim = "=";
+
+static std::string trim(const std::string &in){
+    return boost::algorithm::trim_copy(in);
+}
+
+device_addr_t::device_addr_t(const std::string &args){
+    //split the args at the semi-colons
+    std::vector<std::string> pairs;
+    boost::split(pairs, args, boost::is_any_of(arg_delim));
+    BOOST_FOREACH(const std::string &pair, pairs){
+        if (trim(pair) == "") continue;
+
+        //split the key value pairs at the equals
+        std::vector<std::string> key_val;
+        boost::split(key_val, pair, boost::is_any_of(pair_delim));
+        if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args);
+        (*this)[trim(key_val[0])] = trim(key_val[1]);
+    }
+}
+
 std::string device_addr_t::to_string(void) const{
+    if (this->size() == 0) return "Empty Device Address";
+
     std::stringstream ss;
     BOOST_FOREACH(std::string key, this->keys()){
         ss << boost::format("%s: %s") % key % (*this)[key] << std::endl;
     }
     return ss.str();
-}
-
-static const std::string arg_delim = ";";
-static const std::string pair_delim = "=";
-
-static std::string trim(const std::string &in){
-    return boost::algorithm::trim_copy(in);
 }
 
 std::string device_addr_t::to_args_str(void) const{
@@ -139,25 +159,6 @@ std::string device_addr_t::to_args_str(void) const{
         args_str += key + pair_delim + (*this)[key] + arg_delim;
     }
     return args_str;
-}
-
-device_addr_t device_addr_t::from_args_str(const std::string &args_str){
-    device_addr_t addr;
-
-    //split the args at the semi-colons
-    std::vector<std::string> pairs;
-    boost::split(pairs, args_str, boost::is_any_of(arg_delim));
-    BOOST_FOREACH(const std::string &pair, pairs){
-        if (trim(pair) == "") continue;
-
-        //split the key value pairs at the equals
-        std::vector<std::string> key_val;
-        boost::split(key_val, pair, boost::is_any_of(pair_delim));
-        if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args_str);
-        addr[trim(key_val[0])] = trim(key_val[1]);
-    }
-
-    return addr;
 }
 
 /***********************************************************************
@@ -242,4 +243,39 @@ io_type_t::io_type_t(tid_t tid)
 io_type_t::io_type_t(size_t size)
 : size(size), tid(CUSTOM_TYPE){
     /* NOP */
+}
+
+/***********************************************************************
+ * serial
+ **********************************************************************/
+spi_config_t::spi_config_t(edge_t edge){
+    mosi_edge = edge;
+    miso_edge = edge;
+}
+
+void i2c_iface::write_eeprom(
+    boost::uint8_t addr,
+    boost::uint8_t offset,
+    const byte_vector_t &bytes
+){
+    for (size_t i = 0; i < bytes.size(); i++){
+        //write a byte at a time, its easy that way
+        byte_vector_t cmd = boost::assign::list_of(offset+i)(bytes[i]);
+        this->write_i2c(addr, cmd);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //worst case write
+    }
+}
+
+byte_vector_t i2c_iface::read_eeprom(
+    boost::uint8_t addr,
+    boost::uint8_t offset,
+    size_t num_bytes
+){
+    byte_vector_t bytes;
+    for (size_t i = 0; i < num_bytes; i++){
+        //do a zero byte write to start read cycle
+        this->write_i2c(addr, byte_vector_t(1, offset+i));
+        bytes.push_back(this->read_i2c(addr, 1).at(0));
+    }
+    return bytes;
 }

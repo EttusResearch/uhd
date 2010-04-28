@@ -25,6 +25,7 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <uhd/transport/vrt.hpp>
@@ -161,12 +162,14 @@ private:
     void rx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _rx_dboard_proxy;
     uhd::prop_names_t _rx_subdevs_in_use;
+    uhd::usrp::dboard_eeprom_t _rx_db_eeprom;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
     uhd::prop_names_t _tx_subdevs_in_use;
+    uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
     void update_rx_mux_config(void);
     void update_tx_mux_config(void);
 

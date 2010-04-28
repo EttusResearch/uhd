@@ -42,14 +42,14 @@ public:
         _tx_dsp = _mboard[MBOARD_PROP_TX_DSP];
 
         //extract rx subdevice
-        wax::obj rx_dboard = _mboard[MBOARD_PROP_RX_DBOARD];
-        std::string rx_subdev_in_use = rx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
-        _rx_subdev = rx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, rx_subdev_in_use)];
+        _rx_dboard = _mboard[MBOARD_PROP_RX_DBOARD];
+        std::string rx_subdev_in_use = _rx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
+        _rx_subdev = _rx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, rx_subdev_in_use)];
 
         //extract tx subdevice
-        wax::obj tx_dboard = _mboard[MBOARD_PROP_TX_DBOARD];
-        std::string tx_subdev_in_use = tx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
-        _tx_subdev = tx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)];
+        _tx_dboard = _mboard[MBOARD_PROP_TX_DBOARD];
+        std::string tx_subdev_in_use = _tx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
+        _tx_subdev = _tx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)];
     }
 
     ~simple_usrp_impl(void){
@@ -61,7 +61,26 @@ public:
     }
 
     std::string get_name(void){
-        return _mboard[MBOARD_PROP_NAME].as<std::string>();
+        return str(boost::format(
+            "Simple USRP:\n"
+            "  Device: %s\n"
+            "  Mboard: %s\n"
+            "  RX DSP: %s\n"
+            "  RX Dboard: %s\n"
+            "  RX Subdev: %s\n"
+            "  TX DSP: %s\n"
+            "  TX Dboard: %s\n"
+            "  TX Subdev: %s\n"
+        )
+            % (*_dev)[DEVICE_PROP_NAME].as<std::string>()
+            % _mboard[MBOARD_PROP_NAME].as<std::string>()
+            % _rx_dsp[DSP_PROP_NAME].as<std::string>()
+            % _rx_dboard[DBOARD_PROP_NAME].as<std::string>()
+            % _rx_subdev[SUBDEV_PROP_NAME].as<std::string>()
+            % _tx_dsp[DSP_PROP_NAME].as<std::string>()
+            % _tx_dboard[DBOARD_PROP_NAME].as<std::string>()
+            % _tx_subdev[SUBDEV_PROP_NAME].as<std::string>()
+        );
     }
 
     /*******************************************************************
@@ -81,6 +100,10 @@ public:
 
     void set_clock_config(const clock_config_t &clock_config){
         _mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
+    }
+
+    float read_rssi(void){
+        return _rx_subdev[SUBDEV_PROP_RSSI].as<float>();
     }
 
     /*******************************************************************
@@ -126,6 +149,10 @@ public:
         return _rx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
+    bool get_rx_lo_locked(void){
+        return _rx_subdev[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -169,11 +196,17 @@ public:
         return _tx_subdev[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
+    bool get_tx_lo_locked(void){
+        return _tx_subdev[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
 private:
     device::sptr _dev;
     wax::obj _mboard;
     wax::obj _rx_dsp;
     wax::obj _tx_dsp;
+    wax::obj _rx_dboard;
+    wax::obj _tx_dboard;
     wax::obj _rx_subdev;
     wax::obj _tx_subdev;
 };
@@ -181,6 +214,6 @@ private:
 /***********************************************************************
  * The Make Function
  **********************************************************************/
-simple_usrp::sptr simple_usrp::make(const std::string &args){
-    return sptr(new simple_usrp_impl(device_addr_t::from_args_str(args)));
+simple_usrp::sptr simple_usrp::make(const device_addr_t &dev_addr){
+    return sptr(new simple_usrp_impl(dev_addr));
 }

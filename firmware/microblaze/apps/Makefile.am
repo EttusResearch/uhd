@@ -23,7 +23,7 @@ LDADD = $(top_srcdir)/lib/libu2fw.a
 
 AM_CFLAGS += -I$(top_srcdir)/../../host/lib/usrp
 
-noinst_PROGRAMS = txrx.elf
+noinst_PROGRAMS = txrx_uhd.elf
 
 #	blink_leds \
 #	blink_leds2 \
@@ -66,7 +66,7 @@ noinst_PROGRAMS = txrx.elf
 # tx_drop_SOURCES = tx_drop.c app_common.c
 # tx_drop_rate_limited_SOURCES = tx_drop_rate_limited.c app_common.c
 # tx_drop2_SOURCES = tx_drop2.c app_common.c
-txrx_elf_SOURCES = txrx.c
+txrx_uhd_elf_SOURCES = txrx_uhd.c
 # app_common_v2.c
 #factory_test_SOURCES = factory_test.c app_common_v2.c
 #eth_serdes_SOURCES = eth_serdes.c app_passthru_v2.c

@@ -100,6 +100,7 @@ void usrp2_impl::update_clock_config(void){
     case clock_config_t::REF_INT : _iface->poke32(FR_CLOCK_CONTROL, 0x10); break;
     case clock_config_t::REF_SMA : _iface->poke32(FR_CLOCK_CONTROL, 0x1C); break;
     case clock_config_t::REF_MIMO: _iface->poke32(FR_CLOCK_CONTROL, 0x15); break;
+    default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 
     //clock source ref 10mhz
@@ -151,7 +152,7 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
 
     //send and recv
     usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
+    UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
 }
 
 /***********************************************************************
@@ -170,7 +171,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
             //send and recv
             usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
+            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
 
             //extract the address
             val = mac_addr_t::from_bytes(in_data.data.mac_addr).to_string();
@@ -184,7 +185,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
             //send and recv
             usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
+            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
 
             //extract the address
             val = boost::asio::ip::address_v4(ntohl(in_data.data.ip_addr)).to_string();
@@ -208,7 +209,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _rx_dboard_proxy->get_link();
         return;
 
@@ -217,7 +218,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _tx_dboard_proxy->get_link();
         return;
 
@@ -226,7 +227,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _rx_dsp_proxy->get_link();
         return;
 
@@ -235,7 +236,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DSP:
-        ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == "");
         val = _tx_dsp_proxy->get_link();
         return;
 
@@ -247,9 +248,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    default:
-        throw std::runtime_error("Error: trying to get write-only property on usrp2 mboard");
-
+    default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
@@ -268,7 +267,7 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
             //send and recv
             usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
+            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
             return;
         }
 
@@ -280,7 +279,7 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
             //send and recv
             usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
+            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
             return;
         }
     }
@@ -305,8 +304,6 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         issue_ddc_stream_cmd(val.as<stream_cmd_t>());
         return;
 
-    default:
-        throw std::runtime_error("Error: trying to set read-only property on usrp2 mboard");
-
+    default: UHD_THROW_PROP_SET_ERROR();
     }
 }

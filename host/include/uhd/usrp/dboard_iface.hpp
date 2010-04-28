@@ -19,38 +19,11 @@
 #define INCLUDED_UHD_USRP_DBOARD_IFACE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
-#include <vector>
 
 namespace uhd{ namespace usrp{
-
-//spi configuration struct
-struct UHD_API spi_config_t{
-    /*!
-     * The edge type specifies when data is valid
-     * relative to the edge of the serial clock.
-     */
-    enum edge_t{
-        EDGE_RISE = 'r',
-        EDGE_FALL = 'f'
-    };
-
-    //! on what edge is the mosi data valid?
-    edge_t mosi_edge;
-
-    //! on what edge is the miso data valid?
-    edge_t miso_edge;
-
-    /*!
-     * Create a new spi config.
-     * \param edge the default edge for mosi and miso
-     */
-    spi_config_t(edge_t edge = EDGE_RISE){
-        mosi_edge = edge;
-        miso_edge = edge;
-    }
-};
 
 /*!
  * The daughter board dboard interface to be subclassed.
@@ -61,7 +34,6 @@ struct UHD_API spi_config_t{
 class UHD_API dboard_iface{
 public:
     typedef boost::shared_ptr<dboard_iface> sptr;
-    typedef std::vector<boost::uint8_t> byte_vector_t;
 
     //tells the host which unit to use
     enum unit_t{
@@ -123,19 +95,19 @@ public:
     /*!
      * Write to an I2C peripheral.
      *
-     * \param i2c_addr I2C bus address (7-bits)
-     * \param buf the data to write
+     * \param addr I2C bus address (7-bits)
+     * \param bytes the data to write
      */
-    virtual void write_i2c(int i2c_addr, const byte_vector_t &buf) = 0;
+    virtual void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes) = 0;
 
     /*!
      * Read from an I2C peripheral.
      *
-     * \param i2c_addr I2C bus address (7-bits)
+     * \param addr I2C bus address (7-bits)
      * \param num_bytes number of bytes to read
      * \return the data read if successful, else a zero length string.
      */
-    virtual byte_vector_t read_i2c(int i2c_addr, size_t num_bytes) = 0;
+    virtual byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes) = 0;
 
     /*!
      * Write data to SPI bus peripheral.

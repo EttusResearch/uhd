@@ -28,10 +28,19 @@ namespace uhd{
      * The time_spec_t can be used when setting the time on devices,
      * and for dealing with time stamped samples though the metadata.
      * and for controlling the start of streaming for applicable dsps.
+     *
+     * The fractional seconds are represented in units of nanoseconds,
+     * which provide a clock-domain independent unit of time storage.
+     * The methods "get_ticks" and "set_ticks" can be used to convert
+     * the fractional seconds to and from clock-domain specific units.
+     *
+     * The nanoseconds count is stored as double precision floating point.
+     * This gives the fractional seconds enough precision to unambiguously
+     * specify a clock-tick/sample-count up to rates of several petahertz.
      */
     struct UHD_API time_spec_t{
 
-        //! whole seconds count
+        //! whole/integer seconds count in seconds
         boost::uint32_t secs;
 
         //! fractional seconds count in nano-seconds
@@ -39,24 +48,26 @@ namespace uhd{
 
         /*!
          * Convert the fractional nsecs to clock ticks.
+         * Translation into clock-domain specific units.
          * \param tick_rate the number of ticks per second
-         * \return the number of ticks in this time spec
+         * \return the fractional seconds tick count
          */
         boost::uint32_t get_ticks(double tick_rate) const;
 
         /*!
          * Set the fractional nsecs from clock ticks.
+         * Translation from clock-domain specific units.
          * \param ticks the fractional seconds tick count
          * \param tick_rate the number of ticks per second
          */
         void set_ticks(boost::uint32_t ticks, double tick_rate);
 
         /*!
-         * Create a time_spec_t from seconds and ticks.
-         * \param new_secs the new seconds (default = 0)
-         * \param new_nsecs the new nano-seconds (default = 0)
+         * Create a time_spec_t from whole and fractional seconds.
+         * \param secs the whole/integer seconds count in seconds (default = 0)
+         * \param nsecs the fractional seconds count in nanoseconds (default = 0)
          */
-        time_spec_t(boost::uint32_t new_secs = 0, double new_nsecs = 0);
+        time_spec_t(boost::uint32_t secs = 0, double nsecs = 0);
 
     };
 
