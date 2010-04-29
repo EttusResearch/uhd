@@ -58,12 +58,48 @@ module u1e_core
 
 		    .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
 		    .debug(debug_gpmc));
-
+/*
    fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+*/
+   wire 	 tx_strobe, rx_strobe, tx_enable, rx_enable;
+   wire [7:0] 	 rate;
+   wire 	 tx_fifo_rdy, rx_fifo_rdy;
+   
+   cic_strober tx_strober (.clock(wb_clk), .reset(wb_rst), .enable(tx_enable),
+			   .rate(rate), .strobe_fast(1), .strobe_slow(tx_strobe));
+   
+   fifo_cascade #(.WIDTH(36), .SIZE(11)) tx_fifo
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+      .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
+      .dataout(), .src_rdy_o(tx_fifo_rdy), .dst_rdy_i(tx_strobe));
 
+   
+   reg [15:0] 	 ctr;
+   wire [15:0] 	 rx_pkt_len = 480;
+   wire 	 rx_eof = (ctr == rx_pkt_len);
+   wire 	 rx_sof = (ctr == 0);
+   
+   cic_strober rx_strober (.clock(wb_clk), .reset(wb_rst), .enable(rx_enable),
+			   .rate(rate), .strobe_fast(1), .strobe_slow(rx_strobe));
+   
+   fifo_cascade #(.WIDTH(36), .SIZE(11)) rx_fifo
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+      .datain({2'b00,rx_eof,rx_sof,16'd0,ctr}), .src_rdy_i(rx_strobe), .dst_rdy_o(rx_fifo_rdy),
+      .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+
+   always @(posedge wb_clk)
+     if(wb_rst)
+       ctr <= 0;
+     else if(rx_strobe & rx_fifo_rdy)
+       if(ctr == rx_pkt_len)
+	 ctr <= 0;
+       else
+	 ctr <= ctr + 1;
+   
+   
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
@@ -136,7 +172,7 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 0, Misc LEDs, Switches, controls
    
-   reg [15:0] 	 reg_leds, reg_cgen_ctrl, reg_test;
+   reg [15:0] 	 reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
    
    localparam REG_LEDS = 7'd0;         // out
    localparam REG_SWITCHES = 7'd2;     // in
@@ -145,6 +181,7 @@ module u1e_core
    localparam REG_TEST = 7'd8;         // out
    localparam REG_RX_FRAMELEN = 7'd10; // out
    localparam REG_TX_FRAMELEN = 7'd12; // in
+   localparam REG_XFER_RATE = 7'd14;   // in
    
    always @(posedge wb_clk)
      if(wb_rst)
@@ -152,6 +189,8 @@ module u1e_core
 	  reg_leds <= 0;
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
+	  tx_frame_len <= 0;
+	  xfer_rate <= 0;
        end
      else
        if(s0_cyc & s0_stb & s0_we) 
@@ -164,7 +203,13 @@ module u1e_core
 	     reg_test <= s0_dat_mosi;
 	   REG_TX_FRAMELEN :
 	     tx_frame_len <= s0_dat_mosi;
+	   REG_XFER_RATE :
+	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
+
+   assign tx_enable = xfer_rate[15];
+   assign rx_enable = xfer_rate[14];
+   assign rate = xfer_rate[7:0];
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
@@ -273,6 +318,9 @@ module u1e_core
 		    { EM_D } };
 
    assign debug_gpio_0 = { debug_gpmc };
-   assign debug_gpio_1 = { bus_error, misc_gpio[11:0] };
+   assign debug_gpio_1 = { {rx_enable, rx_strobe, rx_fifo_rdy, rx_strobe & ~rx_fifo_rdy},
+			   {tx_enable, tx_strobe, tx_fifo_rdy, tx_strobe & ~tx_fifo_rdy},
+			   {rx_sof, rx_eof, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
+			   {3'b0, bus_error, misc_gpio[11:0]} };
    
 endmodule // u1e_core
