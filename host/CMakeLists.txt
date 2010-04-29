@@ -68,7 +68,6 @@ IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
     ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS) #avoid warnings from std::getenv
     ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
 ENDIF(WIN32)
 
