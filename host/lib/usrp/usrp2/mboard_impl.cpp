@@ -63,6 +63,13 @@ void usrp2_impl::mboard_init(void){
         boost::uint16_t data = ad9777_regs.get_write_reg(addr);
         _iface->transact_spi(SPI_SS_AD9777, spi_config_t::EDGE_RISE, data, 16, false /*no rb*/);
     }
+
+    //enable ADCs
+    _iface->poke32(FR_MISC_CTRL_ADC, FRF_MISC_CTRL_ADC_ON);
+
+    //set up serdes
+    _iface->poke32(FR_MISC_CTRL_SERDES, FRF_MISC_CTRL_SERDES_ENABLE | FRF_MISC_CTRL_SERDES_RXEN);
+
 }
 
 void usrp2_impl::init_clock_config(void){
@@ -97,9 +104,9 @@ void usrp2_impl::update_clock_config(void){
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
-    case clock_config_t::REF_INT : _iface->poke32(FR_CLOCK_CONTROL, 0x10); break;
-    case clock_config_t::REF_SMA : _iface->poke32(FR_CLOCK_CONTROL, 0x1C); break;
-    case clock_config_t::REF_MIMO: _iface->poke32(FR_CLOCK_CONTROL, 0x15); break;
+    case clock_config_t::REF_INT : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x10); break;
+    case clock_config_t::REF_SMA : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x1C); break;
+    case clock_config_t::REF_MIMO: _iface->poke32(FR_MISC_CTRL_CLOCK, 0x15); break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 

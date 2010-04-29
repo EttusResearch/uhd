@@ -64,7 +64,23 @@
 /////////////////////////////////////////////////
 // Misc Control
 ////////////////////////////////////////////////
-#define FR_CLOCK_CONTROL _SR_ADDR(0)
+#define FR_MISC_CTRL_CLOCK           _SR_ADDR(0)
+#define FR_MISC_CTRL_SERDES          _SR_ADDR(1)
+#define FR_MISC_CTRL_ADC             _SR_ADDR(2)
+#define FR_MISC_CTRL_LEDS            _SR_ADDR(3)
+#define FR_MISC_CTRL_PHY             _SR_ADDR(4) // LSB is reset line to eth phy
+#define FR_MISC_CTRL_DBG_MUX         _SR_ADDR(5)
+#define FR_MISC_CTRL_RAM_PAGE        _SR_ADDR(6) // FIXME should go somewhere else...
+#define FR_MISC_CTRL_FLUSH_ICACHE    _SR_ADDR(7) // Flush the icache
+#define FR_MISC_CTRL_LED_SRC         _SR_ADDR(8) // HW or SW control for LEDs
+
+#define FRF_MISC_CTRL_SERDES_ENABLE 8
+#define FRF_MISC_CTRL_SERDES_PRBSEN 4
+#define FRF_MISC_CTRL_SERDES_LOOPEN 2
+#define FRF_MISC_CTRL_SERDES_RXEN   1
+
+#define FRF_MISC_CTRL_ADC_ON  0x0F
+#define FRF_MISC_CTRL_ADC_OFF 0x00
 
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
@@ -208,7 +224,7 @@
 #define FR_ATR_FULL_RXSIDE  FR_ATR_BASE + 14
 
 ///////////////////////////////////////////////////
-// ATR Controller, Slave 11
+// VITA RX CTRL regs
 ///////////////////////////////////////////////////
 // The following 3 are logically a single command register.
 // They are clocked into the underlying fifo when time_ticks is written.

@@ -46,8 +46,6 @@ get_hw_rev(void)
 bool
 u2_init(void)
 {
-  dsp_rx_regs->gpio_stream_enable = 0; // I, Q LSBs come from DSP
-
   hal_io_init();
 
   // init spi, so that we can switch over to the high-speed clock
@@ -59,14 +57,6 @@ u2_init(void)
 
   // set up the default clocks
   clocks_init();
-
-  // clocks_enable_test_clk(true,1);
-
-  // Enable ADCs
-  output_regs->adc_ctrl = ADC_CTRL_ON;
-
-  // Set up serdes
-  output_regs->serdes_ctrl = (SERDES_ENABLE | SERDES_RXEN);
 
   pic_init();	// progammable interrupt controller
   bp_init();	// buffer pool
