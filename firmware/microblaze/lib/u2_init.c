@@ -46,13 +46,6 @@ get_hw_rev(void)
 bool
 u2_init(void)
 {
-  // Set GPIOs to inputs, disable GPIO streaming
-  hal_gpio_set_ddr(GPIO_TX_BANK, 0x0000, 0xffff);
-  hal_gpio_set_ddr(GPIO_RX_BANK, 0x0000, 0xffff);
-
-  //hal_gpio_write(GPIO_TX_BANK, 0x0000, 0xffff);	// init s/w output value to zero
-  //hal_gpio_write(GPIO_RX_BANK, 0x0000, 0xffff);
-
   dsp_rx_regs->gpio_stream_enable = 0; // I, Q LSBs come from DSP
 
   hal_io_init();
@@ -71,10 +64,6 @@ u2_init(void)
 
   // Enable ADCs
   output_regs->adc_ctrl = ADC_CTRL_ON;
-  
-  // Initial values for tx and rx mux registers
-  dsp_tx_regs->tx_mux = 0x10;
-  dsp_rx_regs->rx_mux = 0x44444444;
 
   // Set up serdes
   output_regs->serdes_ctrl = (SERDES_ENABLE | SERDES_RXEN);

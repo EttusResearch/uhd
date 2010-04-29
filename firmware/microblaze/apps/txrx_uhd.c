@@ -22,8 +22,6 @@
 #include "config.h"
 #endif
 
-#define DEBUG_MODE 0 //0 for normal operation
-
 #include <lwip/ip.h>
 #include <lwip/udp.h>
 #include "u2_init.h"
@@ -48,8 +46,6 @@
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
-
-#define LEDS_SW LED_A
 
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
@@ -480,27 +476,6 @@ main(void)
 
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
-
-  hal_set_led_src(0, LEDS_SW);
-
-#if 0
-  // make bit 15 of Tx gpio's be a s/w output
-  hal_gpio_set_sel(GPIO_TX_BANK, 15, 's');
-  hal_gpio_set_ddr(GPIO_TX_BANK, 0x8000, 0x8000);
-#endif
-
-//set them all to the atr settings by default
-hal_gpio_set_sels(GPIO_TX_BANK, "aaaaaaaaaaaaaaaa");
-hal_gpio_set_sels(GPIO_RX_BANK, "aaaaaaaaaaaaaaaa");
-
-  output_regs->debug_mux_ctrl = 1;
-#if DEBUG_MODE
-  hal_gpio_set_sels(GPIO_TX_BANK, "0000000000000000");
-  hal_gpio_set_sels(GPIO_RX_BANK, "0000000000000000");
-  hal_gpio_set_ddr(GPIO_TX_BANK, 0xffff, 0xffff);
-  hal_gpio_set_ddr(GPIO_RX_BANK, 0xffff, 0xffff);
-#endif
-
 
   // initialize double buffering state machine for ethernet -> DSP Tx
 
