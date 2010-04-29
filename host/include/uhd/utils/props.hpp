@@ -27,6 +27,10 @@
 #include <vector>
 #include <string>
 
+#ifndef BOOST_THROW_EXCEPTION
+#define BOOST_THROW_EXCEPTION(x) throw std::runtime_error("")
+#endif
+
 namespace uhd{
 
     //! The type for a vector of property names
