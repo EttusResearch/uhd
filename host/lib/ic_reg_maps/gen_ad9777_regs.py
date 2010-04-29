@@ -73,16 +73,16 @@ qdac_fine_gain_adjust   9[0:7]   0
 ## address 6 and A
 ########################################################################
 idac_coarse_gain_adjust 6[0:3]   0
-qdac_coarse_gain_adjust A[0:3]   0
+qdac_coarse_gain_adjust 0xA[0:3] 0
 ########################################################################
 ## address 7, 8 and B, C
 ########################################################################
 idac_offset_adjust_msb  7[0:7]   0
 idac_offset_adjust_lsb  8[0:1]   0
 idac_ioffset_direction  8[7]     0     out_a, out_b
-qdac_offset_adjust_msb  B[0:7]   0
-qdac_offset_adjust_lsb  C[0:1]   0
-qdac_ioffset_direction  C[7]     0     out_a, out_b
+qdac_offset_adjust_msb  0xB[0:7] 0
+qdac_offset_adjust_lsb  0xC[0:1] 0
+qdac_ioffset_direction  0xC[7]   0     out_a, out_b
 """
 
 ########################################################################

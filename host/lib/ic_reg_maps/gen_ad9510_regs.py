@@ -46,14 +46,14 @@ reset_all_counters             9[0]          0
 ncounter_reset                 9[1]          0
 rcounter_reset                 9[2]          0
 cp_current_setting             9[4:6]        0      0_60ma, 1_2ma, 1_8ma, 2_4ma, 3_0ma, 3_6ma, 4_2ma, 4_8ma
-pll_power_down                 A[0:1]        0      normal=0, async_pd=1, sync_pd=3
-prescaler_value                A[2:4]        0      div1, div2, 2_3, 4_5, 8_9, 16_17, 32_33, div3
-b_counter_bypass               A[6]          0
-ref_counter_msb                B[0:5]        0
-ref_counter_lsb                C[0:7]        0
-antibacklash_pw                D[0:1]        0      1_3ns, 2_9ns, 6_0ns
-dld_window                     D[5]          0      9_5ns, 3_5ns
-lock_detect_disable            D[6]          0      enb, dis
+pll_power_down                 0xA[0:1]      0      normal=0, async_pd=1, sync_pd=3
+prescaler_value                0xA[2:4]      0      div1, div2, 2_3, 4_5, 8_9, 16_17, 32_33, div3
+b_counter_bypass               0xA[6]        0
+ref_counter_msb                0xB[0:5]      0
+ref_counter_lsb                0xC[0:7]      0
+antibacklash_pw                0xD[0:1]      0      1_3ns, 2_9ns, 6_0ns
+dld_window                     0xD[5]        0      9_5ns, 3_5ns
+lock_detect_disable            0xD[6]        0      enb, dis
 ########################################################################
 ## fine delay adjust
 ########################################################################
@@ -103,7 +103,7 @@ soft_sync                      58[2]               0
 dist_power_down                58[3]               0
 sync_power_down                58[4]               0
 function_pin_select            58[5:6]             0    resetb, syncb, test, pdb
-update_registers               5A[0]               0
+update_registers               0x5A[0]             0
 """
 
 ########################################################################

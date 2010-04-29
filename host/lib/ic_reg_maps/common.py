@@ -22,17 +22,24 @@ from Cheetah.Template import Template
 def parse_tmpl(_tmpl_text, **kwargs):
     return str(Template(_tmpl_text, kwargs))
 
+def to_num(arg): return eval(arg)
+
 class reg:
     def __init__(self, reg_des):
+        try: self.parse(reg_des)
+        except Exception, e:
+            raise Exception, 'Error parsing register description: "%s"\nWhat: %s'%(reg_des, e)
+
+    def parse(self, reg_des):
         x = re.match('^(\w*)\s*(\w*)\[(.*)\]\s*(\w*)\s*(.*)$', reg_des)
         name, addr, bit_range, default, enums = x.groups()
 
         #store variables
         self._name = name
-        self._addr = int(addr, 16)
+        self._addr = to_num(addr)
         if ':' in bit_range: self._addr_spec = sorted(map(int, bit_range.split(':')))
         else: self._addr_spec = int(bit_range), int(bit_range)
-        self._default = int(default, 16)
+        self._default = to_num(default)
 
         #extract enum
         self._enums = list()
@@ -41,7 +48,7 @@ class reg:
             for enum_str in map(str.strip, enums.split(',')):
                 if '=' in enum_str:
                     enum_name, enum_val = enum_str.split('=')
-                    enum_val = int(enum_val)
+                    enum_val = to_num(enum_val)
                 else: enum_name = enum_str
                 self._enums.append((enum_name, enum_val))
                 enum_val += 1
