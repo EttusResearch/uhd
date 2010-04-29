@@ -143,8 +143,8 @@ void usrp_e_dboard_iface::set_atr_reg(unit_t bank, atr_reg_t atr, boost::uint16_
  */
 static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
     switch(unit){
-    case dboard_iface::UNIT_TX: return UE_SPI_CTRL_TXNEG;
-    case dboard_iface::UNIT_RX: return UE_SPI_CTRL_RXNEG;
+    case dboard_iface::UNIT_TX: return UE_SPI_SS_TX_DB;
+    case dboard_iface::UNIT_RX: return UE_SPI_SS_RX_DB;
     }
     throw std::invalid_argument("unknown unit type");
 }
