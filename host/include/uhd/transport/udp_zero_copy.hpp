@@ -50,8 +50,15 @@ public:
      *
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
+     * \param recv_buff_size size in bytes for the recv buffer, 0 for automatic
+     * \param send_buff_size size in bytes for the send buffer, 0 for automatic
      */
-    static sptr make(const std::string &addr, const std::string &port);
+    static sptr make(
+        const std::string &addr,
+        const std::string &port,
+        size_t recv_buff_size = 0,
+        size_t send_buff_size = 0
+    );
 };
 
 }} //namespace

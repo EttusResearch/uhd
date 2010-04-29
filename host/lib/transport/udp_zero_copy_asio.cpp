@@ -104,12 +104,23 @@ public:
     managed_recv_buffer::sptr get_recv_buff(void);
     managed_send_buffer::sptr get_send_buff(void);
 
+    //resize
+    size_t resize_recv_buff(size_t num_bytes){
+        boost::asio::socket_base::receive_buffer_size option(num_bytes);
+        _socket->set_option(option);
+        _socket->get_option(option);
+        return option.value();
+    }
+    size_t resize_send_buff(size_t num_bytes){
+        boost::asio::socket_base::send_buffer_size option(num_bytes);
+        _socket->set_option(option);
+        _socket->get_option(option);
+        return option.value();
+    }
+
 private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::io_service        _io_service;
-
-    size_t get_recv_buff_size(void);
-    void set_recv_buff_size(size_t);
 };
 
 udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port){
@@ -124,18 +135,6 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
     _socket = new boost::asio::ip::udp::socket(_io_service);
     _socket->open(boost::asio::ip::udp::v4());
     _socket->connect(receiver_endpoint);
-
-    // set the rx socket buffer size:
-    // pick a huge size, and deal with whatever we get
-    set_recv_buff_size(size_t(54321e3)); //some big number!
-    size_t current_buff_size = get_recv_buff_size();
-    std::cout << boost::format(
-        "Current rx socket buffer size: %d\n"
-    ) % current_buff_size;
-    if (current_buff_size < size_t(.1e6)) std::cout << boost::format(
-        "Adjust max rx socket buffer size (linux only):\n"
-        "  sysctl -w net.core.rmem_max=VALUE\n"
-    );
 }
 
 udp_zero_copy_impl::~udp_zero_copy_impl(void){
@@ -170,22 +169,34 @@ managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
     );
 }
 
-size_t udp_zero_copy_impl::get_recv_buff_size(void){
-    boost::asio::socket_base::receive_buffer_size option;
-    _socket->get_option(option);
-    return option.value();
-}
-
-void udp_zero_copy_impl::set_recv_buff_size(size_t new_size){
-    boost::asio::socket_base::receive_buffer_size option(new_size);
-    _socket->set_option(option);
-}
-
 /***********************************************************************
  * UDP zero copy make function
  **********************************************************************/
 udp_zero_copy::sptr udp_zero_copy::make(
-    const std::string &addr, const std::string &port
+    const std::string &addr,
+    const std::string &port,
+    size_t recv_buff_size,
+    size_t send_buff_size
 ){
-    return sptr(new udp_zero_copy_impl(addr, port));
+    boost::shared_ptr<udp_zero_copy_impl> udp_trans(new udp_zero_copy_impl(addr, port));
+
+    //resize the recv buffer if size was provided
+    if (recv_buff_size > 0){
+        size_t actual_bytes = udp_trans->resize_recv_buff(recv_buff_size);
+        if (recv_buff_size != actual_bytes) std::cout << boost::format(
+            "Target recv buffer size: %d\n"
+            "Actual recv byffer size: %d"
+        ) % recv_buff_size % actual_bytes << std::endl;
+    }
+
+    //resize the send buffer if size was provided
+    if (send_buff_size > 0){
+        size_t actual_bytes = udp_trans->resize_send_buff(send_buff_size);
+        if (send_buff_size != actual_bytes) std::cout << boost::format(
+            "Target send buffer size: %d\n"
+            "Actual send byffer size: %d"
+        ) % send_buff_size % actual_bytes << std::endl;
+    }
+
+    return udp_trans;
 }

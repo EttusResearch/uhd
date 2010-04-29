@@ -24,6 +24,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
@@ -50,7 +51,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
             if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
 
             //create a new hint with this broadcast address
-            device_addr_t new_hint = hint;
+            device_addr_t new_hint;
             new_hint["addr"] = if_addrs.bcast;
 
             //call discover with the new hint and append results
@@ -112,9 +113,21 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
         device_addr["addr"], num2str(USRP2_UDP_CTRL_PORT)
     );
 
+    //extract the receive and send buffer sizes
+    size_t recv_buff_size = 0, send_buff_size= 0 ;
+    if (device_addr.has_key("recv_buff_size")){
+        recv_buff_size = size_t(boost::lexical_cast<double>(device_addr["recv_buff_size"]));
+    }
+    if (device_addr.has_key("send_buff_size")){
+        send_buff_size = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
+    }
+
     //create a data transport
     udp_zero_copy::sptr data_transport = udp_zero_copy::make(
-        device_addr["addr"], num2str(USRP2_UDP_DATA_PORT)
+        device_addr["addr"],
+        num2str(USRP2_UDP_DATA_PORT),
+        recv_buff_size,
+        send_buff_size
     );
 
     //create the usrp2 implementation guts
