@@ -40,7 +40,7 @@ boost::uint16_t get_reg(void){
 
 void set_reg(boost::uint16_t reg){
     #for $reg in filter(lambda r: r.get_addr() == 0, $regs)
-    $reg.get_name() = (reg >> $reg.get_shift()) & $reg.get_mask();
+    $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
     #end for
 }
 """

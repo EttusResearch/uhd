@@ -216,18 +216,12 @@ boost::uint8_t get_reg(boost::uint8_t addr){
     return reg;
 }
 
-void set_reg(boost::uint16_t reg_word){
-    boost::uint8_t addr = (reg_word >> 8) & 0x1f;
-    boost::uint8_t reg  = (reg_word >> 0) & 0xff;
+void set_reg(boost::uint8_t addr, boost::uint16_t reg){
     switch(addr){
-    #for $addr in range(0, 63+1)
+    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
     case $addr:
         #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        #if $reg.get_enums()
         $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-        #else
-        $reg.get_name() = (reg >> $reg.get_shift()) & $reg.get_mask();
-        #end if
         #end for
         break;
     #end for

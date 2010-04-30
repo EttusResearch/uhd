@@ -126,7 +126,7 @@ boost::uint32_t get_write_reg(boost::uint16_t addr){
 }
 
 boost::uint32_t get_read_reg(boost::uint16_t addr){
-    return (boost::uint32_t(addr) << 8) | (1 << 15);
+    return (boost::uint32_t(addr) << 8) | (1 << 23);
 }
 """
 

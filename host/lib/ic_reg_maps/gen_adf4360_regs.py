@@ -68,7 +68,7 @@ enum addr_t{
 boost::uint32_t get_reg(addr_t addr){
     boost::uint32_t reg = addr & 0x3;
     switch(addr){
-    #for $addr in (0, 1, 2)
+    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
     case $addr:
         #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
         reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
