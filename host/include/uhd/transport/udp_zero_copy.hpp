@@ -50,23 +50,15 @@ public:
      *
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
+     * \param recv_buff_size size in bytes for the recv buffer, 0 for automatic
+     * \param send_buff_size size in bytes for the send buffer, 0 for automatic
      */
-    static sptr make(const std::string &addr, const std::string &port);
-
-    /*!
-     * Resize the the rx buffer size on the socket.
-     * \param num_bytes the new size for the socket buffer
-     * \return the actual number of bytes allowed by the OS
-     */
-    virtual size_t resize_recv_buff_size(size_t num_bytes) = 0;
-
-    /*!
-     * Resize the the tx buffer size on the socket.
-     * \param num_bytes the new size for the socket buffer
-     * \return the actual number of bytes allowed by the OS
-     */
-    virtual size_t resize_send_buff_size(size_t num_bytes) = 0;
-
+    static sptr make(
+        const std::string &addr,
+        const std::string &port,
+        size_t recv_buff_size = 0,
+        size_t send_buff_size = 0
+    );
 };
 
 }} //namespace

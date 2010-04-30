@@ -19,6 +19,8 @@
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <boost/format.hpp>
+#include <iostream>
 
 using namespace uhd::transport;
 
@@ -103,8 +105,18 @@ public:
     managed_send_buffer::sptr get_send_buff(void);
 
     //resize
-    size_t resize_recv_buff_size(size_t num_bytes);
-    size_t resize_send_buff_size(size_t num_bytes);
+    size_t resize_recv_buff(size_t num_bytes){
+        boost::asio::socket_base::receive_buffer_size option(num_bytes);
+        _socket->set_option(option);
+        _socket->get_option(option);
+        return option.value();
+    }
+    size_t resize_send_buff(size_t num_bytes){
+        boost::asio::socket_base::send_buffer_size option(num_bytes);
+        _socket->set_option(option);
+        _socket->get_option(option);
+        return option.value();
+    }
 
 private:
     boost::asio::ip::udp::socket   *_socket;
@@ -157,25 +169,34 @@ managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
     );
 }
 
-size_t udp_zero_copy_impl::resize_recv_buff_size(size_t num_bytes){
-    boost::asio::socket_base::receive_buffer_size option(num_bytes);
-    _socket->set_option(option);
-    _socket->get_option(option);
-    return option.value();
-}
-
-size_t udp_zero_copy_impl::resize_send_buff_size(size_t num_bytes){
-    boost::asio::socket_base::send_buffer_size option(num_bytes);
-    _socket->set_option(option);
-    _socket->get_option(option);
-    return option.value();
-}
-
 /***********************************************************************
  * UDP zero copy make function
  **********************************************************************/
 udp_zero_copy::sptr udp_zero_copy::make(
-    const std::string &addr, const std::string &port
+    const std::string &addr,
+    const std::string &port,
+    size_t recv_buff_size,
+    size_t send_buff_size
 ){
-    return sptr(new udp_zero_copy_impl(addr, port));
+    boost::shared_ptr<udp_zero_copy_impl> udp_trans(new udp_zero_copy_impl(addr, port));
+
+    //resize the recv buffer if size was provided
+    if (recv_buff_size > 0){
+        size_t actual_bytes = udp_trans->resize_recv_buff(recv_buff_size);
+        if (recv_buff_size != actual_bytes) std::cout << boost::format(
+            "Target recv buffer size: %d\n"
+            "Actual recv byffer size: %d"
+        ) % recv_buff_size % actual_bytes << std::endl;
+    }
+
+    //resize the send buffer if size was provided
+    if (send_buff_size > 0){
+        size_t actual_bytes = udp_trans->resize_send_buff(send_buff_size);
+        if (send_buff_size != actual_bytes) std::cout << boost::format(
+            "Target send buffer size: %d\n"
+            "Actual send byffer size: %d"
+        ) % send_buff_size % actual_bytes << std::endl;
+    }
+
+    return udp_trans;
 }
