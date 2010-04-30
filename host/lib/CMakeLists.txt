@@ -118,6 +118,16 @@ UHD_PYTHON_GEN_SOURCE_FILE(
     ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/max2829_regs.hpp
 )
 
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9862_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9862_regs.hpp
+)
+
+UHD_PYTHON_GEN_SOURCE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9522_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9522_regs.hpp
+)
+
 ########################################################################
 # Add dboard sources
 ########################################################################

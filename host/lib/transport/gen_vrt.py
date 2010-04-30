@@ -200,15 +200,11 @@ void vrt::unpack(
 }
 """
 
-import os
 import sys
 
 from Cheetah.Template import Template
 def parse_tmpl(_tmpl_text, **kwargs):
     return str(Template(_tmpl_text, kwargs))
-def safe_makedirs(path):
-    not os.path.isdir(path) and os.makedirs(path)
 
 if __name__ == '__main__':
-    safe_makedirs(os.path.dirname(sys.argv[1]))
     open(sys.argv[1], 'w').write(parse_tmpl(TMPL_TEXT, file=__file__))
