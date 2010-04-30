@@ -20,10 +20,11 @@
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 #include <iostream>
 #include <stdexcept>
-#include <cstdlib>
 
+namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 /***********************************************************************
@@ -100,14 +101,39 @@ static void load_path(const fs::path &path){
     }
 }
 
+//! The string constant for the module path environment variable
+static const std::string MODULE_PATH_KEY = "UHD_MODULE_PATH";
+
+/*!
+ * Name mapper function for the environment variable parser.
+ * Map environment variable names (that we use) to option names.
+ * \param the variable name
+ * \return the option name or blank string
+ */
+static std::string name_mapper(const std::string &var_name){
+    if (var_name == MODULE_PATH_KEY) return var_name;
+    return "";
+}
+
 /*!
  * Load all the modules given by the module path enviroment variable.
  * The path variable may be several paths split by path separators.
  */
 UHD_STATIC_BLOCK(load_modules){
-    //get the environment variable module path
-    char *env_module_path = std::getenv("UHD_MODULE_PATH");
-    if (env_module_path == NULL) return;
+    //register the options
+    std::string env_module_path;
+    po::options_description desc("UHD Module Options");
+    desc.add_options()
+        (MODULE_PATH_KEY.c_str(), po::value<std::string>(&env_module_path)->default_value(""))
+    ;
+
+    //parse environment variables
+    po::variables_map vm;
+    po::store(po::parse_environment(desc, &name_mapper), vm);
+    po::notify(vm);
+
+    if (env_module_path == "") return;
+    //std::cout << "env_module_path: " << env_module_path << std::endl;
 
     //split the path at the path separators
     std::vector<std::string> module_paths;
