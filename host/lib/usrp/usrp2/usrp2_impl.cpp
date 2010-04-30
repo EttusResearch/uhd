@@ -113,30 +113,22 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
         device_addr["addr"], num2str(USRP2_UDP_CTRL_PORT)
     );
 
+    //extract the receive and send buffer sizes
+    size_t recv_buff_size = 0, send_buff_size= 0 ;
+    if (device_addr.has_key("recv_buff_size")){
+        recv_buff_size = size_t(boost::lexical_cast<double>(device_addr["recv_buff_size"]));
+    }
+    if (device_addr.has_key("send_buff_size")){
+        send_buff_size = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
+    }
+
     //create a data transport
     udp_zero_copy::sptr data_transport = udp_zero_copy::make(
-        device_addr["addr"], num2str(USRP2_UDP_DATA_PORT)
+        device_addr["addr"],
+        num2str(USRP2_UDP_DATA_PORT),
+        recv_buff_size,
+        send_buff_size
     );
-
-    //resize the recv data transport buffers
-    if (device_addr.has_key("recv_buff_size")){
-        size_t num_byes = size_t(boost::lexical_cast<double>(device_addr["recv_buff_size"]));
-        size_t actual_bytes = data_transport->resize_recv_buff_size(num_byes);
-        if (num_byes != actual_bytes) std::cout << boost::format(
-            "Target recv buffer size: %d\n"
-            "Actual recv byffer size: %d"
-        ) % num_byes % actual_bytes << std::endl;
-    }
-
-    //resize the send data transport buffers
-    if (device_addr.has_key("send_buff_size")){
-        size_t num_byes = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
-        size_t actual_bytes = data_transport->resize_send_buff_size(num_byes);
-        if (num_byes != actual_bytes) std::cout << boost::format(
-            "Target send buffer size: %d\n"
-            "Actual send byffer size: %d"
-        ) % num_byes % actual_bytes << std::endl;
-    }
 
     //create the usrp2 implementation guts
     return device::sptr(
