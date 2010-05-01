@@ -130,6 +130,7 @@ LIST(APPEND libuhd_sources
     usrp/dboard/db_basic_and_lf.cpp
     usrp/dboard/db_rfx.cpp
     usrp/dboard/db_xcvr2450.cpp
+    usrp/dboard/db_wbx.cpp
 )
 
 ########################################################################

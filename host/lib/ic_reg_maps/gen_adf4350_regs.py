@@ -29,14 +29,14 @@ REGS_DATA_TMPL="""\
 ########################################################################
 frac_12_bit             0[3:14]     0
 int_16_bit              0[15:30]    23
-reserved                0[31]       0
+##reserved              0[31]       0
 ########################################################################
 ## address 1
 ########################################################################
-mod_12_bit              1[3:14]     4095
-phase_12_bit            1[15:26]    0
-prescaler               1[27]       0
-reserved                1[28:31]    0
+mod_12_bit              1[3:14]     fff
+phase_12_bit            1[15:26]    1
+prescaler               1[27]       0       4_5, 8_9
+##reserved              1[28:31]    0
 ########################################################################
 ## address 2
 ########################################################################
@@ -53,16 +53,16 @@ r_counter_10_bit        2[14:23]    0
 reference_divide_by_2   2[24]       1       disabled, enabled
 reference_doubler       2[25]       0       disabled, enabled
 muxout                  2[26:28]    3       3state, dvdd, dgnd, rdiv, ndiv, analog_ld, dld, reserved
-low_noise_and_spur      2[29:30]    3       low_noise, reserved, reserved, low_spur
+low_noise_and_spur      2[29:30]    3       low_noise, reserved0, reserved1, low_spur
 ########################################################################
 ## address 3
 ########################################################################
 clock_divider_12_bit    3[3:14]     0
 clock_div_mode          3[15:16]    0       clock_divider_off, fast_lock, resync_enable, reserved
-reserved                3[17]       0
+##reserved              3[17]       0
 cycle_slip_reduction    3[18]       0       disabled, enabled
-reserved                3[19:20]    0
-reserved                3[21:31]    0
+##reserved              3[19:20]    0
+##reserved              3[21:31]    0
 ########################################################################
 ## address 4
 ########################################################################
@@ -76,15 +76,15 @@ vco_power_down          4[11]       0       vco_powered_up, vco_powered_down
 band_select_clock_div   4[12:19]    0
 rf_divider_select       4[20:22]    0       div1, div2, div4, div8, div16
 feedback_select         4[23]       1       divided, fundamental
-reserved                4[24:31]    0
+##reserved              4[24:31]    0
 ########################################################################
 ## address 5
 ########################################################################
-reserved                5[3:18]     0
-reserved                5[19:20]    0
-reserved                5[21]       0
-ld_pin_mode             5[22:23]    1       low, dld, low, high
-reserved                5[24:31]    0
+##reserved              5[3:18]     0
+##reserved              5[19:20]    0
+##reserved              5[21]       0
+ld_pin_mode             5[22:23]    1       low0, dld, low, high
+##reserved              5[24:31]    0
 """
 
 ########################################################################
@@ -131,10 +131,10 @@ struct adf4350_regs_t{
         ADDR_R5 = 5
     };
 
-    boost::uint32_t get_reg(addr_t addr){
-        boost::uint32_t reg = addr & 0x3;
+    boost::uint32_t get_reg(boost::uint8_t addr){
+        boost::uint32_t reg = addr & 0x7;
         switch(addr){
-        #for $addr in (0, 1, 2, 3, 4, 5)
+        #for $addr in range(5+1)
         case $addr:
             #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
             reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
