@@ -18,6 +18,7 @@
 #include <boost/test/unit_test.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <algorithm>
@@ -41,8 +42,8 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
     dev_addr["key2"] = "val2";
 
     //convert to and from args string
-    std::cout << "Pretty Print: " << std::endl << dev_addr.to_string();
-    std::string args_str = dev_addr.to_args_str();
+    std::cout << "Pretty Print: " << std::endl << dev_addr.to_pp_string();
+    std::string args_str = dev_addr.to_string();
     std::cout << "Args String: " << args_str << std::endl;
     uhd::device_addr_t new_dev_addr(args_str);
 
@@ -64,4 +65,16 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
         old_dev_addr_vals.begin(), old_dev_addr_vals.end(),
         new_dev_addr_vals.begin(), new_dev_addr_vals.end()
     );
+}
+
+BOOST_AUTO_TEST_CASE(test_dboard_id){
+    std::cout << "Testing dboard id..." << std::endl;
+
+    using namespace uhd::usrp;
+
+    BOOST_CHECK(dboard_id_t() == dboard_id_t::none());
+    BOOST_CHECK_EQUAL(dboard_id_t().to_uint16(), dboard_id_t::none().to_uint16());
+    BOOST_CHECK_EQUAL(dboard_id_t::from_string("0x1234").to_uint16(), 0x1234);
+    BOOST_CHECK_EQUAL(dboard_id_t::from_string("1234").to_uint16(), 1234);
+    std::cout << "Pretty Print: " << std::endl << dboard_id_t::none().to_pp_string();
 }

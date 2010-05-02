@@ -22,7 +22,6 @@
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 
@@ -35,13 +34,15 @@ namespace uhd{ namespace usrp{
 class UHD_API dboard_base : boost::noncopyable{
 public:
     typedef boost::shared_ptr<dboard_base> sptr;
-    //the constructor args consist of a subdev name, interface, and ids
-    //derived classes should pass the args into the dboard_base class ctor
-    //but should not have to deal with the internals of the args
-    typedef boost::tuple<std::string, dboard_iface::sptr, dboard_id_t, dboard_id_t> ctor_args_t;
+    /*!
+     * An opaque type for the dboard constructor args.
+     * Derived classes should pass the args into the base class,
+     * but should not deal with the internals of the args.
+     */
+    struct ctor_args_impl; typedef ctor_args_impl* ctor_args_t;
 
     //structors
-    dboard_base(ctor_args_t const&);
+    dboard_base(ctor_args_t);
     virtual ~dboard_base(void);
 
     //interface
@@ -57,9 +58,8 @@ protected:
     dboard_id_t get_tx_id(void);
 
 private:
-    std::string               _subdev_name;
-    dboard_iface::sptr        _dboard_iface;
-    dboard_id_t               _rx_id, _tx_id;
+    struct dboard_base_impl;
+    dboard_base_impl *_impl;
 };
 
 /*!
@@ -71,7 +71,7 @@ public:
     /*!
      * Create a new xcvr dboard object, override in subclasses.
      */
-    xcvr_dboard_base(ctor_args_t const&);
+    xcvr_dboard_base(ctor_args_t);
 
     virtual ~xcvr_dboard_base(void);
 };
@@ -85,7 +85,7 @@ public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    rx_dboard_base(ctor_args_t const&);
+    rx_dboard_base(ctor_args_t);
 
     virtual ~rx_dboard_base(void);
 
@@ -103,7 +103,7 @@ public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    tx_dboard_base(ctor_args_t const&);
+    tx_dboard_base(ctor_args_t);
 
     virtual ~tx_dboard_base(void);
 

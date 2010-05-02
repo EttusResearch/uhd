@@ -24,11 +24,9 @@
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <boost/program_options.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <iostream>
-#include <sstream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -89,14 +87,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("id") == 0){
         std::cout << boost::format("Getting dbid on %s dboard...") % prefix << std::endl;
         dboard_id_t id = dboard[DBOARD_PROP_DBOARD_ID].as<dboard_id_t>();
-        std::cout << boost::format("  Current dbid: %s") % dboard_id::to_string(id) << std::endl;
+        std::cout << boost::format("  Current dbid: %s") % id.to_pp_string() << std::endl;
     }
 
     //write a new dboard id to eeprom
     else{
-        dboard_id_t id = boost::lexical_cast<to_hex<dboard_id_t> >(vm["id"].as<std::string>());
+        dboard_id_t id = dboard_id_t::from_string(vm["id"].as<std::string>());
         std::cout << boost::format("Setting dbid on %s dboard...") % prefix << std::endl;
-        std::cout << boost::format("  New dbid: %s") % dboard_id::to_string(id) << std::endl;
+        std::cout << boost::format("  New dbid: %s") % id.to_pp_string() << std::endl;
         dboard[DBOARD_PROP_DBOARD_ID] = id;
     }
 

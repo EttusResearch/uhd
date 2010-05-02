@@ -143,7 +143,7 @@ device_addr_t::device_addr_t(const std::string &args){
     }
 }
 
-std::string device_addr_t::to_string(void) const{
+std::string device_addr_t::to_pp_string(void) const{
     if (this->size() == 0) return "Empty Device Address";
 
     std::stringstream ss;
@@ -153,7 +153,7 @@ std::string device_addr_t::to_string(void) const{
     return ss.str();
 }
 
-std::string device_addr_t::to_args_str(void) const{
+std::string device_addr_t::to_string(void) const{
     std::string args_str;
     BOOST_FOREACH(const std::string &key, this->keys()){
         args_str += key + pair_delim + (*this)[key] + arg_delim;

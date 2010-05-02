@@ -19,43 +19,25 @@
 #define INCLUDED_UHD_UTILS_ALGORITHM_HPP
 
 #include <algorithm>
+#include <boost/range/functions.hpp>
 
 /*!
  * Useful templated functions and classes that I like to pretend are part of stl
  */
 namespace std{
 
-    template<class T, class InputIterator, class Function>
-    T reduce(InputIterator first, InputIterator last, Function fcn, T init = 0){
-        T tmp = init;
-        for ( ; first != last; ++first ){
-            tmp = fcn(tmp, *first);
-        }
-        return tmp;
+    template<typename Range, typename T> inline
+    bool has(const Range &range, const T &value){
+        return boost::end(range) != std::find(boost::begin(range), boost::end(range), value);
     }
 
-    template<class T, class Iterable, class Function>
-    T reduce(Iterable iterable, Function fcn, T init = 0){
-        return reduce(iterable.begin(), iterable.end(), fcn, init);
-    }
-
-    template<class T, class InputIterator>
-    bool has(InputIterator first, InputIterator last, const T &elem){
-        return last != std::find(first, last, elem);
-    }
-
-    template<class T, class Iterable>
-    bool has(const Iterable &iterable, const T &elem){
-        return has(iterable.begin(), iterable.end(), elem);
-    }
-
-    template<class T> T signum(T n){
+    template<typename T> inline T signum(T n){
         if (n < 0) return -1;
         if (n > 0) return 1;
         return 0;
     }
 
-    template<class T> T clip(T val, T minVal, T maxVal){
+    template<typename T> inline T clip(T val, T minVal, T maxVal){
         return std::min(std::max(val, minVal), maxVal);
     }
 

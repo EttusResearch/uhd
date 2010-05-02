@@ -80,19 +80,20 @@ dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
         UHD_ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);
         UHD_ASSERT_THROW(bytes[DB_EEPROM_MAGIC] == DB_EEPROM_MAGIC_VALUE);
         UHD_ASSERT_THROW(bytes[DB_EEPROM_CHKSUM] == checksum(bytes));
-        id = \
-            (boost::uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0) |
-            (boost::uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8) ;
+        id = dboard_id_t::from_uint16(0
+            | (boost::uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0)
+            | (boost::uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8)
+        );
     }catch(const uhd::assert_error &){
-        id = dboard_id::NONE;
+        id = dboard_id_t::none();
     }
 }
 
 byte_vector_t dboard_eeprom_t::get_eeprom_bytes(void){
     byte_vector_t bytes(DB_EEPROM_CLEN, 0); //defaults to all zeros
     bytes[DB_EEPROM_MAGIC] = DB_EEPROM_MAGIC_VALUE;
-    bytes[DB_EEPROM_ID_LSB] = boost::uint8_t(id >> 0);
-    bytes[DB_EEPROM_ID_MSB] = boost::uint8_t(id >> 8);
+    bytes[DB_EEPROM_ID_LSB] = boost::uint8_t(id.to_uint16() >> 0);
+    bytes[DB_EEPROM_ID_MSB] = boost::uint8_t(id.to_uint16() >> 8);
     bytes[DB_EEPROM_CHKSUM] = checksum(bytes);
     return bytes;
 }
