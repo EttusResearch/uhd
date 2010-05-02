@@ -69,7 +69,7 @@ static void *read_thread(void *threadid)
 		}
 
 		if (rx_data->flags & RB_OVERRUN)
-			printf("RX ring buffer overrun occurred at packet %d\n", rx_pkt_cnt);
+			printf("O");
 
 //		for (i = 0; i < 10; i++)
 //			printf(" %d", p->data[i]);
@@ -93,7 +93,7 @@ static void *read_thread(void *threadid)
 
 static void *write_thread(void *threadid)
 {
-	int seq_number, i, cnt;
+	int seq_number, i, cnt, tx_pkt_cnt;
 	struct usrp_transfer_frame *tx_data;
 	struct pkt *p;
 
@@ -115,8 +115,25 @@ static void *write_thread(void *threadid)
 	printf("tx_data->len = %d\n", tx_data->len);
 
 	seq_number = 1;
+	tx_pkt_cnt = 0;
 
 	while (1) {
+
+		tx_pkt_cnt++;
+		if (tx_pkt_cnt  == 512) {
+			printf(".");
+			fflush(stdout);
+		}
+		if (tx_pkt_cnt  == 1024) {
+			printf("'");
+			fflush(stdout);
+		}
+		if (tx_pkt_cnt  == 1536) {
+			printf(":");
+			fflush(stdout);
+			tx_pkt_cnt = 0;
+		}
+
 //		printf("tx flags = %X, len = %d\n", tx_data->flags, tx_data->len);
 		p->seq_num = seq_number++;
 		p->checksum = calc_checksum(p);
@@ -134,6 +151,9 @@ int main(int argc, char *argv[])
 	long int t;
 	int fpga_config_flag ,decimation;
 	struct usrp_e_ctl16 d;
+	struct sched_param s = {
+		.sched_priority = 1
+	};
 
 	if (argc < 4) {
 		printf("%s t|w|rw decimation data_size\n", argv[0]);
@@ -162,6 +182,8 @@ int main(int argc, char *argv[])
 	ioctl(fp, USRP_E_WRITE_CTL16, &d);
 
 	sleep(1); // in case the kernel threads need time to start. FIXME if so
+
+	sched_setscheduler(0, SCHED_RR, &s);
 
 	if (fpga_config_flag & (1 << 14)) {
 		if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
