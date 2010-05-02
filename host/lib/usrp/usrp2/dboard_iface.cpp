@@ -29,6 +29,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace boost::assign;
 
 class usrp2_dboard_iface : public dboard_iface{
 public:
@@ -122,49 +123,42 @@ double usrp2_dboard_iface::get_clock_rate(unit_t){
 
 void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
     switch(unit){
-    case UNIT_RX:
-        _clk_ctrl->enable_rx_dboard_clock(enb);
-        return;
-    case UNIT_TX:
-        _clk_ctrl->enable_tx_dboard_clock(enb);
-        return;
+    case UNIT_RX: _clk_ctrl->enable_rx_dboard_clock(enb); return;
+    case UNIT_TX: _clk_ctrl->enable_tx_dboard_clock(enb); return;
     }
 }
 
 /***********************************************************************
  * GPIO
  **********************************************************************/
-static int unit_to_shift(dboard_iface::unit_t unit){
-    switch(unit){
-    case dboard_iface::UNIT_RX: return 0;
-    case dboard_iface::UNIT_TX: return 16;
-    }
-    throw std::runtime_error("unknown unit type");
-}
+static const uhd::dict<dboard_iface::unit_t, int> unit_to_shift = map_list_of
+    (dboard_iface::UNIT_RX, 0)
+    (dboard_iface::UNIT_TX, 16)
+;
 
 void usrp2_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
     _ddr_shadow = \
-        (_ddr_shadow & ~(0xffff << unit_to_shift(unit))) |
-        (boost::uint32_t(value) << unit_to_shift(unit));
+        (_ddr_shadow & ~(0xffff << unit_to_shift[unit])) |
+        (boost::uint32_t(value) << unit_to_shift[unit]);
     _iface->poke32(FR_GPIO_DDR, _ddr_shadow);
 }
 
 boost::uint16_t usrp2_dboard_iface::read_gpio(unit_t unit){
-    return boost::uint16_t(_iface->peek32(FR_GPIO_IO) >> unit_to_shift(unit));
+    return boost::uint16_t(_iface->peek32(FR_GPIO_IO) >> unit_to_shift[unit]);
 }
 
 void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
     //define mapping of unit to atr regs to register address
     static const uhd::dict<
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
-    > unit_to_atr_to_addr = boost::assign::map_list_of
-        (UNIT_RX, boost::assign::map_list_of
+    > unit_to_atr_to_addr = map_list_of
+        (UNIT_RX, map_list_of
             (ATR_REG_IDLE,        FR_ATR_IDLE_RXSIDE)
             (ATR_REG_TX_ONLY,     FR_ATR_INTX_RXSIDE)
             (ATR_REG_RX_ONLY,     FR_ATR_INRX_RXSIDE)
             (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_RXSIDE)
         )
-        (UNIT_TX, boost::assign::map_list_of
+        (UNIT_TX, map_list_of
             (ATR_REG_IDLE,        FR_ATR_IDLE_TXSIDE)
             (ATR_REG_TX_ONLY,     FR_ATR_INTX_TXSIDE)
             (ATR_REG_RX_ONLY,     FR_ATR_INRX_TXSIDE)
@@ -177,19 +171,10 @@ void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t
 /***********************************************************************
  * SPI
  **********************************************************************/
-/*!
- * Static function to convert a unit type enum
- * to an over-the-wire value for the spi device.
- * \param unit the dboard interface unit type enum
- * \return an over the wire representation
- */
-static boost::uint8_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
-    switch(unit){
-    case dboard_iface::UNIT_TX: return SPI_SS_TX_DB;
-    case dboard_iface::UNIT_RX: return SPI_SS_RX_DB;
-    }
-    throw std::invalid_argument("unknown unit type");
-}
+static const uhd::dict<dboard_iface::unit_t, int> unit_to_spi_dev = map_list_of
+    (dboard_iface::UNIT_TX, SPI_SS_TX_DB)
+    (dboard_iface::UNIT_RX, SPI_SS_RX_DB)
+;
 
 void usrp2_dboard_iface::write_spi(
     unit_t unit,
@@ -197,7 +182,7 @@ void usrp2_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
+    _iface->transact_spi(unit_to_spi_dev[unit], config, data, num_bits, false /*no rb*/);
 }
 
 boost::uint32_t usrp2_dboard_iface::read_write_spi(
@@ -206,7 +191,7 @@ boost::uint32_t usrp2_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
+    return _iface->transact_spi(unit_to_spi_dev[unit], config, data, num_bits, true /*rb*/);
 }
 
 /***********************************************************************
@@ -224,7 +209,7 @@ byte_vector_t usrp2_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_bytes
  * Aux DAX/ADC
  **********************************************************************/
 void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
-    static const uhd::dict<unit_t, int> unit_to_spi_dac = boost::assign::map_list_of
+    static const uhd::dict<unit_t, int> unit_to_spi_dac = map_list_of
         (UNIT_RX, SPI_SS_RX_DAC)
         (UNIT_TX, SPI_SS_TX_DAC)
     ;
@@ -248,7 +233,7 @@ void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
 }
 
 float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
-    static const uhd::dict<unit_t, int> unit_to_spi_adc = boost::assign::map_list_of
+    static const uhd::dict<unit_t, int> unit_to_spi_adc = map_list_of
         (UNIT_RX, SPI_SS_RX_ADC)
         (UNIT_TX, SPI_SS_TX_ADC)
     ;

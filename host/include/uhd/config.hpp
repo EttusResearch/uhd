@@ -46,12 +46,12 @@
 
 // http://gcc.gnu.org/wiki/Visibility
 // Generic helper definitions for shared library support
-#if defined _WIN32 || defined __CYGWIN__
+#if BOOST_HAS_DECLSPEC
     #define UHD_HELPER_DLL_IMPORT __declspec(dllimport)
     #define UHD_HELPER_DLL_EXPORT __declspec(dllexport)
     #define UHD_HELPER_DLL_LOCAL
 #else
-    #if __GNUC__ >= 4
+    #if __GNUG__ >= 4
         #define UHD_HELPER_DLL_IMPORT __attribute__ ((visibility("default")))
         #define UHD_HELPER_DLL_EXPORT __attribute__ ((visibility("default")))
         #define UHD_HELPER_DLL_LOCAL  __attribute__ ((visibility("hidden")))
