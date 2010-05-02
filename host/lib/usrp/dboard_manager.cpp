@@ -26,6 +26,7 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/assign/list_of.hpp>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -162,26 +163,27 @@ dboard_manager::sptr dboard_manager::make(
  * implementation class methods
  **********************************************************************/
 static args_t get_dboard_args(
-    dboard_id_t dboard_id,
-    std::string const& xx_type
+    dboard_iface::unit_t unit,
+    dboard_id_t dboard_id
 ){
-    //special case, its rx and the none id (0xffff)
-    if (xx_type == "rx" and dboard_id == dboard_id::NONE){
-        return get_dboard_args(0x0001, xx_type);
-    }
-
-    //special case, its tx and the none id (0xffff)
-    if (xx_type == "tx" and dboard_id == dboard_id::NONE){
-        return get_dboard_args(0x0000, xx_type);
+    //special case, the none id was provided, use the following ids
+    if (dboard_id == dboard_id::NONE){
+        std::cerr << boost::format(
+            "Warning: unregistered dboard id: %s"
+            " -> defaulting to a basic board"
+        ) % dboard_id::to_string(dboard_id) << std::endl;
+        UHD_ASSERT_THROW(get_id_to_args_map().has_key(0x0001));
+        UHD_ASSERT_THROW(get_id_to_args_map().has_key(0x0000));
+        switch(unit){
+        case dboard_iface::UNIT_RX: return get_dboard_args(unit, 0x0001);
+        case dboard_iface::UNIT_TX: return get_dboard_args(unit, 0x0000);
+        default: UHD_ASSERT_THROW(false);
+        }
     }
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
-        /*throw std::runtime_error(str(
-            boost::format("Unregistered %s dboard id: %s")
-            % xx_type % dboard_id::to_string(dboard_id)
-        ));*/
-        return get_dboard_args(dboard_id::NONE, xx_type);
+        return get_dboard_args(unit, dboard_id::NONE);
     }
 
     //return the dboard args for this id
@@ -196,10 +198,10 @@ dboard_manager_impl::dboard_manager_impl(
     _iface = iface;
 
     dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
-    boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(rx_dboard_id, "rx");
+    boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(dboard_iface::UNIT_RX, rx_dboard_id);
 
     dboard_ctor_t tx_dboard_ctor; std::string tx_name; prop_names_t tx_subdevs;
-    boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(tx_dboard_id, "tx");
+    boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(dboard_iface::UNIT_TX, tx_dboard_id);
 
     //initialize the gpio pins before creating subdevs
     set_nice_dboard_if();

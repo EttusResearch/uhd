@@ -24,28 +24,35 @@ using namespace uhd::usrp;
 /***********************************************************************
  * dboard_base dboard dboard_base class
  **********************************************************************/
+struct dboard_base::dboard_base_impl{
+    std::string               sd_name;
+    dboard_iface::sptr        db_iface;
+    dboard_id_t               rx_id, tx_id;
+};
+
 dboard_base::dboard_base(ctor_args_t const& args){
-    boost::tie(_subdev_name, _dboard_iface, _rx_id, _tx_id) = args;
+    _impl = new dboard_base_impl;
+    boost::tie(_impl->sd_name, _impl->db_iface, _impl->rx_id, _impl->tx_id) = args;
 }
 
 dboard_base::~dboard_base(void){
-    /* NOP */
+   delete _impl;
 }
 
 std::string dboard_base::get_subdev_name(void){
-    return _subdev_name;
+    return _impl->sd_name;
 }
 
 dboard_iface::sptr dboard_base::get_iface(void){
-    return _dboard_iface;
+    return _impl->db_iface;
 }
 
 dboard_id_t dboard_base::get_rx_id(void){
-    return _rx_id;
+    return _impl->rx_id;
 }
 
 dboard_id_t dboard_base::get_tx_id(void){
-    return _tx_id;
+    return _impl->tx_id;
 }
 
 /***********************************************************************
