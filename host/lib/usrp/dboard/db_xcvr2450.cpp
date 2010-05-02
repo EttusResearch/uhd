@@ -89,7 +89,7 @@ static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list
  **********************************************************************/
 class xcvr2450 : public xcvr_dboard_base{
 public:
-    xcvr2450(ctor_args_t const& args);
+    xcvr2450(ctor_args_t args);
     ~xcvr2450(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
@@ -152,7 +152,7 @@ private:
 /***********************************************************************
  * Register the XCVR 2450 dboard
  **********************************************************************/
-static dboard_base::sptr make_xcvr2450(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_xcvr2450(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new xcvr2450(args));
 }
 
@@ -165,7 +165,7 @@ UHD_STATIC_BLOCK(reg_xcvr2450_dboard){
 /***********************************************************************
  * Structors
  **********************************************************************/
-xcvr2450::xcvr2450(ctor_args_t const& args) : xcvr_dboard_base(args){
+xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     //enable only the clocks we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
 

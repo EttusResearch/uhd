@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "dboard_ctor_args.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/gain_handler.hpp>
@@ -206,13 +207,18 @@ dboard_manager_impl::dboard_manager_impl(
     //initialize the gpio pins before creating subdevs
     set_nice_dboard_if();
 
+    //dboard constructor args
+    dboard_base::ctor_args_impl db_ctor_args;
+    db_ctor_args.db_iface = iface;
+    db_ctor_args.rx_id = rx_dboard_id;
+    db_ctor_args.tx_id = tx_dboard_id;
+
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (rx_dboard_ctor == tx_dboard_ctor){
         UHD_ASSERT_THROW(rx_subdevs == tx_subdevs);
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
-            dboard_base::sptr xcvr_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, iface, rx_dboard_id, tx_dboard_id)
-            );
+            db_ctor_args.sd_name = subdev;
+            dboard_base::sptr xcvr_dboard = rx_dboard_ctor(&db_ctor_args);
             //create a rx proxy for this xcvr board
             _rx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(xcvr_dboard, subdev_proxy::RX_TYPE)
@@ -228,9 +234,9 @@ dboard_manager_impl::dboard_manager_impl(
     else{
         //make the rx subdevs
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
-            dboard_base::sptr rx_dboard = rx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, iface, rx_dboard_id, dboard_id::NONE)
-            );
+            db_ctor_args.sd_name = subdev;
+            db_ctor_args.tx_id = dboard_id::NONE;
+            dboard_base::sptr rx_dboard = rx_dboard_ctor(&db_ctor_args);
             //create a rx proxy for this rx board
             _rx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(rx_dboard, subdev_proxy::RX_TYPE)
@@ -238,9 +244,9 @@ dboard_manager_impl::dboard_manager_impl(
         }
         //make the tx subdevs
         BOOST_FOREACH(const std::string &subdev, tx_subdevs){
-            dboard_base::sptr tx_dboard = tx_dboard_ctor(
-                dboard_base::ctor_args_t(subdev, iface, dboard_id::NONE, tx_dboard_id)
-            );
+            db_ctor_args.sd_name = subdev;
+            db_ctor_args.rx_id = dboard_id::NONE;
+            dboard_base::sptr tx_dboard = tx_dboard_ctor(&db_ctor_args);
             //create a tx proxy for this tx board
             _tx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(tx_dboard, subdev_proxy::TX_TYPE)

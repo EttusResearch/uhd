@@ -37,7 +37,7 @@ public:
     typedef boost::shared_ptr<dboard_manager> sptr;
 
     //dboard constructor (each dboard should have a ::make with this signature)
-    typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t const&);
+    typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t);
 
     /*!
      * Register a dboard into the system.

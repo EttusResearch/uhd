@@ -34,7 +34,7 @@ using namespace boost::assign;
  **********************************************************************/
 class basic_rx : public rx_dboard_base{
 public:
-    basic_rx(ctor_args_t const& args, double max_freq);
+    basic_rx(ctor_args_t args, double max_freq);
     ~basic_rx(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
@@ -46,7 +46,7 @@ private:
 
 class basic_tx : public tx_dboard_base{
 public:
-    basic_tx(ctor_args_t const& args, double max_freq);
+    basic_tx(ctor_args_t args, double max_freq);
     ~basic_tx(void);
 
     void tx_get(const wax::obj &key, wax::obj &val);
@@ -59,19 +59,19 @@ private:
 /***********************************************************************
  * Register the basic and LF dboards
  **********************************************************************/
-static dboard_base::sptr make_basic_rx(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_basic_rx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new basic_rx(args, 90e9));
 }
 
-static dboard_base::sptr make_basic_tx(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_basic_tx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new basic_tx(args, 90e9));
 }
 
-static dboard_base::sptr make_lf_rx(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_lf_rx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new basic_rx(args, 32e6));
 }
 
-static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new basic_tx(args, 32e6));
 }
 
@@ -85,7 +85,7 @@ UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
 /***********************************************************************
  * Basic and LF RX dboard
  **********************************************************************/
-basic_rx::basic_rx(ctor_args_t const& args, double max_freq) : rx_dboard_base(args){
+basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
     _max_freq = max_freq;
 }
 
@@ -187,7 +187,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 /***********************************************************************
  * Basic and LF TX dboard
  **********************************************************************/
-basic_tx::basic_tx(ctor_args_t const& args, double max_freq) : tx_dboard_base(args){
+basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
     _max_freq = max_freq;
 }
 

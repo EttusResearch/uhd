@@ -22,7 +22,6 @@
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 
@@ -36,14 +35,14 @@ class UHD_API dboard_base : boost::noncopyable{
 public:
     typedef boost::shared_ptr<dboard_base> sptr;
     /*!
-     * The constructor args consist of a subdev name, interface, and ids.
-     * Derived classes should pass the args into the dboard_base class ctor
-     * but should not have to deal with the internals of the args.
+     * An opaque type for the dboard constructor args.
+     * Derived classes should pass the args into the base class,
+     * but should not deal with the internals of the args.
      */
-    typedef boost::tuple<std::string, dboard_iface::sptr, dboard_id_t, dboard_id_t> ctor_args_t;
+    struct ctor_args_impl; typedef ctor_args_impl* ctor_args_t;
 
     //structors
-    dboard_base(ctor_args_t const&);
+    dboard_base(ctor_args_t);
     virtual ~dboard_base(void);
 
     //interface
@@ -72,7 +71,7 @@ public:
     /*!
      * Create a new xcvr dboard object, override in subclasses.
      */
-    xcvr_dboard_base(ctor_args_t const&);
+    xcvr_dboard_base(ctor_args_t);
 
     virtual ~xcvr_dboard_base(void);
 };
@@ -86,7 +85,7 @@ public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    rx_dboard_base(ctor_args_t const&);
+    rx_dboard_base(ctor_args_t);
 
     virtual ~rx_dboard_base(void);
 
@@ -104,7 +103,7 @@ public:
     /*!
      * Create a new rx dboard object, override in subclasses.
      */
-    tx_dboard_base(ctor_args_t const&);
+    tx_dboard_base(ctor_args_t);
 
     virtual ~tx_dboard_base(void);
 
