@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
+	sleep(1); // HACK HACK
+
 	spi_dat.slave = slave;
 	spi_dat.data = data;
 	spi_dat.length = length;
