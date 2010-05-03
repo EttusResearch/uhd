@@ -46,28 +46,28 @@ namespace uhd{
      * The "what" in the error will show what is
      * being set and a list of known good values.
      *
-     * \param iterable a list of possible settings
-     * \param elem an element that may be in the list
+     * \param range a list of possible settings
+     * \param value an element that may be in the list
      * \param what a description of what is being set
      * \throw assertion_error when elem not in list
      */
-    template<class T, class Iterable> void assert_has(
-        const Iterable &iterable,
-        const T &elem,
+    template<typename T, typename Range> void assert_has(
+        const Range &range,
+        const T &value,
         const std::string &what = "unknown"
     ){
-        if (std::has(iterable, elem)) return;
+        if (std::has(range, value)) return;
         std::string possible_values = "";
         size_t i = 0;
-        BOOST_FOREACH(const T &e, iterable){
+        BOOST_FOREACH(const T &v, range){
             if (i++ > 0) possible_values += ", ";
-            possible_values += boost::lexical_cast<std::string>(e);
+            possible_values += boost::lexical_cast<std::string>(v);
         }
         boost::throw_exception(uhd::assert_error() << assert_info(str(boost::format(
                 "Error: %s is not a valid %s. "
                 "Possible values are: [%s]."
             )
-            % boost::lexical_cast<std::string>(elem)
+            % boost::lexical_cast<std::string>(value)
             % what % possible_values
         )));
     }

@@ -1,0 +1,72 @@
+//
+// Copyright 2010 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include <boost/test/unit_test.hpp>
+#include <uhd/types/dict.hpp>
+#include <boost/assign/list_of.hpp>
+
+BOOST_AUTO_TEST_CASE(test_dict_init){
+    uhd::dict<int, int> d;
+    d[-1] = 3;
+    d[0] = 4;
+    d[1] = 5;
+    BOOST_CHECK(d.has_key(0));
+    BOOST_CHECK(not d.has_key(2));
+    BOOST_CHECK(d.keys()[1] == 0);
+    BOOST_CHECK(d.vals()[1] == 4);
+    BOOST_CHECK_EQUAL(d[-1], 3);
+}
+
+BOOST_AUTO_TEST_CASE(test_dict_assign){
+    uhd::dict<int, int> d = boost::assign::map_list_of
+        (-1, 3)
+        (0, 4)
+        (1, 5)
+    ;
+    BOOST_CHECK(d.has_key(0));
+    BOOST_CHECK(not d.has_key(2));
+    BOOST_CHECK(d.keys()[1] == 0);
+    BOOST_CHECK(d.vals()[1] == 4);
+    BOOST_CHECK_EQUAL(d[-1], 3);
+}
+
+BOOST_AUTO_TEST_CASE(test_const_dict){
+    const uhd::dict<int, int> d = boost::assign::map_list_of
+        (-1, 3)
+        (0, 4)
+        (1, 5)
+    ;
+    BOOST_CHECK(d.has_key(0));
+    BOOST_CHECK(not d.has_key(2));
+    BOOST_CHECK(d.keys()[1] == 0);
+    BOOST_CHECK(d.vals()[1] == 4);
+    BOOST_CHECK_EQUAL(d[-1], 3);
+    BOOST_CHECK_THROW(d[2], std::exception);
+}
+
+BOOST_AUTO_TEST_CASE(test_dict_pop){
+    uhd::dict<int, int> d = boost::assign::map_list_of
+        (-1, 3)
+        (0, 4)
+        (1, 5)
+    ;
+    BOOST_CHECK(d.has_key(0));
+    BOOST_CHECK_EQUAL(d.pop(0), 4);
+    BOOST_CHECK(not d.has_key(0));
+    BOOST_CHECK(d.keys()[0] == -1);
+    BOOST_CHECK(d.keys()[1] == 1);
+}

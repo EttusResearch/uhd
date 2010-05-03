@@ -40,7 +40,7 @@ namespace uhd{
      * An arguments string, is a way to represent a device address
      * using a single string with delimiter characters.
      * - Ex: addr=192.168.10.2
-     * - Ex: addr=192.168.10.2, rx_buff_size=1e6
+     * - Ex: addr=192.168.10.2, recv_buff_size=1e6
      */
     class UHD_API device_addr_t : public dict<std::string, std::string>{
     public:
@@ -51,17 +51,17 @@ namespace uhd{
         device_addr_t(const std::string &args = "");
 
         /*!
-         * Convert a device address into a printable string.
-         * \return string good for use with std::cout <<
+         * Convert a device address into a pretty print string.
+         * \return a printable string representing the device address
          */
-        std::string to_string(void) const;
+        std::string to_pp_string(void) const;
 
         /*!
          * Convert the device address into an args string.
          * The args string contains delimiter symbols.
          * \return a string with delimiter markup
          */
-        std::string to_args_str(void) const;
+        std::string to_string(void) const;
     };
 
     //handy typedef for a vector of device addresses

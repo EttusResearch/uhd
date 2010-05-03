@@ -63,7 +63,7 @@ static const float _max_rx_pga0_gain = 45;
 class rfx_xcvr : public xcvr_dboard_base{
 public:
     rfx_xcvr(
-        ctor_args_t const& args,
+        ctor_args_t args,
         const freq_range_t &freq_range,
         bool rx_div2, bool tx_div2
     );
@@ -108,23 +108,23 @@ private:
 /***********************************************************************
  * Register the RFX dboards (min freq, max freq, rx div2, tx div2)
  **********************************************************************/
-static dboard_base::sptr make_rfx_flex400(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_rfx_flex400(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(400e6, 500e6), false, true));
 }
 
-static dboard_base::sptr make_rfx_flex900(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_rfx_flex900(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(750e6, 1050e6), true, true));
 }
 
-static dboard_base::sptr make_rfx_flex1800(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_rfx_flex1800(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1500e6, 2100e6), false, false));
 }
 
-static dboard_base::sptr make_rfx_flex1200(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_rfx_flex1200(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1150e6, 1450e6), true, true));
 }
 
-static dboard_base::sptr make_rfx_flex2400(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_rfx_flex2400(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(2300e6, 2900e6), false, false));
 }
 
@@ -149,7 +149,7 @@ UHD_STATIC_BLOCK(reg_rfx_dboards){
  * Structors
  **********************************************************************/
 rfx_xcvr::rfx_xcvr(
-    ctor_args_t const& args,
+    ctor_args_t args,
     const freq_range_t &freq_range,
     bool rx_div2, bool tx_div2
 ) : xcvr_dboard_base(args){
@@ -351,7 +351,7 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_rx_id());
+        val = get_rx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:
@@ -448,7 +448,7 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_tx_id());
+        val = get_tx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:

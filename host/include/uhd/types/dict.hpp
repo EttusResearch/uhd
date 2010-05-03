@@ -29,7 +29,7 @@ namespace uhd{
     /*!
      * A templated dictionary class with a python-like interface.
      */
-    template <class Key, class Val> class dict{
+    template <typename Key, typename Val> class dict{
     public:
         typedef std::pair<Key, Val> pair_t;
 
@@ -130,7 +130,7 @@ namespace uhd{
             BOOST_FOREACH(pair_t &p, _map){
                 if (p.first == key) return p.second;
             }
-            _map.push_back(pair_t(key, Val()));
+            _map.push_back(std::make_pair(key, Val()));
             return _map.back().second;
         }
 
