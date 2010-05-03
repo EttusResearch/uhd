@@ -51,15 +51,18 @@ void dboard_manager::register_dboard(
     //std::cout << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_id)){
         throw std::runtime_error(str(boost::format(
-            "The dboard id 0x%04x is already registered to %s."
-        ) % dboard_id % dboard_id::to_string(dboard_id)));
+            "The dboard id %s is already registered to %s."
+        ) % dboard_id.to_string() % dboard_id.to_pp_string()));
     }
     get_id_to_args_map()[dboard_id] = args_t(dboard_ctor, name, subdev_names);
 }
 
-std::string dboard_id::to_string(const dboard_id_t &id){
-    std::string name = (get_id_to_args_map().has_key(id))? get_id_to_args_map()[id].get<1>() : "unknown";
-    return str(boost::format("%s (0x%04x)") % name % id);
+std::string dboard_id_t::to_pp_string(void) const{
+    std::string name = "unknown";
+    if (get_id_to_args_map().has_key(*this)){
+        name = get_id_to_args_map()[*this].get<1>();
+    }
+    return str(boost::format("%s (%s)") % name % this->to_string());
 }
 
 /***********************************************************************
@@ -168,11 +171,11 @@ static args_t get_dboard_args(
     dboard_id_t dboard_id
 ){
     //special case, the none id was provided, use the following ids
-    if (dboard_id == dboard_id::NONE){
+    if (dboard_id == dboard_id_t::none()){
         std::cerr << boost::format(
             "Warning: unregistered dboard id: %s"
             " -> defaulting to a basic board"
-        ) % dboard_id::to_string(dboard_id) << std::endl;
+        ) % dboard_id.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(get_id_to_args_map().has_key(0x0001));
         UHD_ASSERT_THROW(get_id_to_args_map().has_key(0x0000));
         switch(unit){
@@ -184,7 +187,7 @@ static args_t get_dboard_args(
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
-        return get_dboard_args(unit, dboard_id::NONE);
+        return get_dboard_args(unit, dboard_id_t::none());
     }
 
     //return the dboard args for this id
@@ -235,7 +238,7 @@ dboard_manager_impl::dboard_manager_impl(
         //make the rx subdevs
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             db_ctor_args.sd_name = subdev;
-            db_ctor_args.tx_id = dboard_id::NONE;
+            db_ctor_args.tx_id = dboard_id_t::none();
             dboard_base::sptr rx_dboard = rx_dboard_ctor(&db_ctor_args);
             //create a rx proxy for this rx board
             _rx_dboards[subdev] = subdev_proxy::sptr(
@@ -245,7 +248,7 @@ dboard_manager_impl::dboard_manager_impl(
         //make the tx subdevs
         BOOST_FOREACH(const std::string &subdev, tx_subdevs){
             db_ctor_args.sd_name = subdev;
-            db_ctor_args.rx_id = dboard_id::NONE;
+            db_ctor_args.rx_id = dboard_id_t::none();
             dboard_base::sptr tx_dboard = tx_dboard_ctor(&db_ctor_args);
             //create a tx proxy for this tx board
             _tx_dboards[subdev] = subdev_proxy::sptr(

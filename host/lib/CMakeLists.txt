@@ -57,8 +57,9 @@ SET(libuhd_sources
     transport/udp_simple.cpp
     usrp/dboard_base.cpp
     usrp/dboard_eeprom.cpp
-    usrp/simple_usrp.cpp
+    usrp/dboard_id.cpp
     usrp/dboard_manager.cpp
+    usrp/simple_usrp.cpp
     usrp/tune_helper.cpp
 )
 

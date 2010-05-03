@@ -101,7 +101,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
         val = std::string(str(boost::format("%s - %s")
-            % dboard_id::to_string(get_rx_id())
+            % get_rx_id().to_pp_string()
             % get_subdev_name()
         ));
         return;
@@ -202,7 +202,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_tx_id());
+        val = get_tx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:

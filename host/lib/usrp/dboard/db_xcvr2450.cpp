@@ -444,7 +444,7 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_rx_id());
+        val = get_rx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:
@@ -542,7 +542,7 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_tx_id());
+        val = get_tx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:

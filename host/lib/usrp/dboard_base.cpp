@@ -58,15 +58,15 @@ dboard_id_t dboard_base::get_tx_id(void){
  * xcvr dboard dboard_base class
  **********************************************************************/
 xcvr_dboard_base::xcvr_dboard_base(ctor_args_t args) : dboard_base(args){
-    if (get_rx_id() == dboard_id::NONE){
+    if (get_rx_id() == dboard_id_t::none()){
         throw std::runtime_error(str(boost::format(
             "cannot create xcvr board when the rx id is \"%s\""
-        ) % dboard_id::to_string(dboard_id::NONE)));
+        ) % dboard_id_t::none().to_pp_string()));
     }
-    if (get_tx_id() == dboard_id::NONE){
+    if (get_tx_id() == dboard_id_t::none()){
         throw std::runtime_error(str(boost::format(
             "cannot create xcvr board when the tx id is \"%s\""
-        ) % dboard_id::to_string(dboard_id::NONE)));
+        ) % dboard_id_t::none().to_pp_string()));
     }
 }
 
@@ -78,11 +78,11 @@ xcvr_dboard_base::~xcvr_dboard_base(void){
  * rx dboard dboard_base class
  **********************************************************************/
 rx_dboard_base::rx_dboard_base(ctor_args_t args) : dboard_base(args){
-    if (get_tx_id() != dboard_id::NONE){
+    if (get_tx_id() != dboard_id_t::none()){
         throw std::runtime_error(str(boost::format(
             "cannot create rx board when the tx id is \"%s\""
             " -> expected a tx id of \"%s\""
-        ) % dboard_id::to_string(get_tx_id()) % dboard_id::to_string(dboard_id::NONE)));
+        ) % get_tx_id().to_pp_string() % dboard_id_t::none().to_pp_string()));
     }
 }
 
@@ -102,11 +102,11 @@ void rx_dboard_base::tx_set(const wax::obj &, const wax::obj &){
  * tx dboard dboard_base class
  **********************************************************************/
 tx_dboard_base::tx_dboard_base(ctor_args_t args) : dboard_base(args){
-    if (get_rx_id() != dboard_id::NONE){
+    if (get_rx_id() != dboard_id_t::none()){
         throw std::runtime_error(str(boost::format(
             "cannot create tx board when the rx id is \"%s\""
             " -> expected a rx id of \"%s\""
-        ) % dboard_id::to_string(get_rx_id()) % dboard_id::to_string(dboard_id::NONE)));
+        ) % get_rx_id().to_pp_string() % dboard_id_t::none().to_pp_string()));
     }
 }
 
