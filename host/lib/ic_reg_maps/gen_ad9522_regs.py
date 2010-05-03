@@ -42,7 +42,7 @@ reset_all_counters          0x016[4]                 0
 b_counter_bypass            0x016[3]                 0           normal, div1
 prescaler_p                 0x016[2:0]               6           div1, div2, div2_3, div4_5, div8_9, div16_17, div32_33, div3
 status_pin_control          0x017[7:2]               0
-antibacklash_pulse_width    0x017[1:0]               0           2_9ns, 1_3ns, 6_0ns, 2_9ns
+antibacklash_pulse_width    0x017[1:0]               0           2_9ns, 1_3ns, 6_0ns
 enb_cmos_ref_input_dc_off   0x018[7]                 0
 lock_detect_counter         0x018[6:5]               0           5cyc, 16cyc, 64cyc, 255cyc
 digital_lock_detect_window  0x018[4]                 0           high_range, low_range
@@ -60,7 +60,7 @@ enable_ref2_freq_monitor    0x01B[6]                 0
 enable_ref1_freq_monitor    0x01B[5]                 0
 refmon_pin_control          0x01B[4:0]               0
 disable_switchover_deglitch 0x01C[7]                 0
-select_ref2                 0x01C[6]                 0           ref1, ref2
+select_ref                  0x01C[6]                 0           ref1, ref2
 use_ref_sel_pin             0x01C[5]                 0           register, ref_sel
 enb_auto_ref_switchover     0x01C[4]                 0           manual, auto
 stay_on_ref2                0x01C[3]                 0           return_ref1, stay_ref2
