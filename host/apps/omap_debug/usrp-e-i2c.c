@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -36,6 +37,8 @@ int main(int argc, char *argv[])
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+
+	sleep(1);
 
 	if (direction) {
 		count = argc - 3;
