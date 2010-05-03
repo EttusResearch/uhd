@@ -21,7 +21,9 @@
 #include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
+#include <iostream>
 #include <fcntl.h> //open
+#include "clock_ctrl.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -73,6 +75,8 @@ device::sptr usrp_e::make(const device_addr_t &device_addr){
  * Structors
  **********************************************************************/
 usrp_e_impl::usrp_e_impl(const std::string &node){
+    std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
+
     //open the device node and check file descriptor
     if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
         throw std::runtime_error(str(
@@ -81,6 +85,8 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
     }
 
     _iface = usrp_e_iface::make(_node_fd);
+
+    clock_ctrl::sptr my_clk_ctrl = clock_ctrl::make(_iface);
 
     //initialize the mboard
     mboard_init();

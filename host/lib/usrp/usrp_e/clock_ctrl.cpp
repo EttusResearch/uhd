@@ -22,6 +22,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <utility>
+#include <iostream>
 
 using namespace uhd;
 
@@ -97,6 +98,14 @@ clock_ctrl_impl::clock_ctrl_impl(usrp_e_iface::sptr iface){
         }
     }
     this->latch_regs();
+    //test read:
+    //boost::uint32_t reg = _ad9522_regs.get_read_reg(0x01b);
+    //boost::uint32_t result = _iface->transact_spi(
+    //    UE_SPI_SS_AD9522,
+    //    spi_config_t::EDGE_RISE,
+    //    reg, 24, true /*no*/
+    //);
+    //std::cout << "result " << std::hex << result << std::endl;
 }
 
 clock_ctrl_impl::~clock_ctrl_impl(void){
@@ -113,11 +122,12 @@ void clock_ctrl_impl::enable_tx_dboard_clock(bool enb){
 }
 
 void clock_ctrl_impl::send_reg(boost::uint16_t addr){
+    boost::uint32_t reg = _ad9522_regs.get_write_reg(addr);
+    std::cout << "clock control write reg: " << std::hex << reg << std::endl;
     _iface->transact_spi(
         UE_SPI_SS_AD9522,
         spi_config_t::EDGE_RISE,
-        _ad9522_regs.get_write_reg(addr),
-        24, false /*no rb*/
+        reg, 24, false /*no rb*/
     );
 }
 

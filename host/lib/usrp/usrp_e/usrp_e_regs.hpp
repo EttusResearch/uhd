@@ -50,15 +50,11 @@
 
 #define UE_REG_SPI_BASE UE_REG_SLAVE(2)
 
-//spi slave constants (copied from usrp2, TODO FIXME)
-#define UE_SPI_SS_AD9522    1
-#define UE_SPI_SS_AD9777    2
-#define UE_SPI_SS_RX_DAC    4
-#define UE_SPI_SS_RX_ADC    8
-#define UE_SPI_SS_RX_DB    16
-#define UE_SPI_SS_TX_DAC   32
-#define UE_SPI_SS_TX_ADC   64
-#define UE_SPI_SS_TX_DB   128
+//spi slave constants
+#define UE_SPI_SS_AD9522    (1 << 3)
+#define UE_SPI_SS_AD9862    (1 << 2)
+#define UE_SPI_SS_TX_DB     (1 << 1)
+#define UE_SPI_SS_RX_DB     (1 << 0)
 
 ////////////////////////////////////////////////
 // Slave 3 -- I2C Core

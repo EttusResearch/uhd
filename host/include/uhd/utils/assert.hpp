@@ -29,7 +29,14 @@
 #include <string>
 
 #ifndef BOOST_THROW_EXCEPTION
-#define BOOST_THROW_EXCEPTION(x) throw std::runtime_error("")
+    #include <boost/exception/exception.hpp>
+    #include <boost/current_function.hpp>
+    #define BOOST_THROW_EXCEPTION(x)\
+        ::boost::throw_exception( ::boost::enable_error_info(x) <<\
+        ::boost::throw_function(BOOST_CURRENT_FUNCTION) <<\
+        ::boost::throw_file(__FILE__) <<\
+        ::boost::throw_line((int)__LINE__) )
+
 #endif
 
 namespace uhd{
