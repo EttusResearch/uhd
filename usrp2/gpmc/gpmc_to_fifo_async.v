@@ -57,7 +57,7 @@ module gpmc_to_fifo_async
      if(fifo_rst)
        fifo_ready <= 0;
      else
-       fifo_ready <= first_write & (fifo_space > 16'd1023);
+       fifo_ready <= /* first_write & */ (fifo_space > 16'd1023);
 
    always @(posedge fifo_clk)
      if(fifo_rst)

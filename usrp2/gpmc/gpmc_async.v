@@ -78,7 +78,7 @@ module gpmc_async
       .f36_datain(rx_data_i), .f36_src_rdy_i(rx_src_rdy_i), .f36_dst_rdy_o(rx_dst_rdy_o),
       .f18_dataout(rx18_data), .f18_src_rdy_o(rx18_src_rdy), .f18_dst_rdy_i(rx18_dst_rdy) );
 
-   fifo_cascade #(.WIDTH(18), .SIZE(10)) rx_fifo
+   fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .datain(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy), .space(rx_fifo_space),
       .dataout(rx18b_data), .src_rdy_o(rx18b_src_rdy), .dst_rdy_i(rx18b_dst_rdy), .occupied());

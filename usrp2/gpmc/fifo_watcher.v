@@ -10,11 +10,13 @@ module fifo_watcher
    wire   read = src_rdy2 & dst_rdy2 & eof2;
    wire   have_packet_int;
    reg [15:0] counter;
+   wire [4:0] pkt_count;
    
    fifo_short #(.WIDTH(16)) frame_lengths
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(counter), .src_rdy_i(write), .dst_rdy_o(),
-      .dataout(length), .src_rdy_o(have_packet_int), .dst_rdy_i(read) );
+      .dataout(length), .src_rdy_o(have_packet_int), .dst_rdy_i(read),
+      .occupied(pkt_count), .space());
 
    always @(posedge clk)
      if(reset | clear)
@@ -38,7 +40,7 @@ module fifo_watcher
      if(reset | clear)
        have_packet <= 0;
      else 
-       have_packet <= have_packet_int & ~in_packet;
+       have_packet <= (have_packet_int & ~in_packet) | (pkt_count>1) ;
    
    always @(posedge clk)
      if(reset | clear)
