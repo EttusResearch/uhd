@@ -240,10 +240,10 @@ void wbx_xcvr::set_rx_pga0_gain(float gain){
 
 void wbx_xcvr::set_rx_pga0_attn(float attn)
 {
-    int attn_code = int(floor(attn/0.5));
-    _rx_pga0_attn_iobits = ((~attn_code) << RX_ATTN_SHIFT) | RX_ATTN_MASK;
+    int attn_code = int(floor(attn*2));
+    _rx_pga0_attn_iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
     if (wbx_debug) std::cerr << boost::format(
-        "Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
+        "WBX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (_rx_pga0_attn_iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 }
 
@@ -270,7 +270,7 @@ double wbx_xcvr::set_lo_freq(
     double target_freq
 ){
     if (wbx_debug) std::cerr << boost::format(
-        "RFX tune: target frequency %f Mhz"
+        "WBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
@@ -357,17 +357,19 @@ double wbx_xcvr::set_lo_freq(
 
     //Reference divide-by-2 for 50% duty cycle
     // if R even, move one divide by 2 to to regs.reference_divide_by_2
-    if(R % 2 > 0){
+    if(R % 2 == 0){
         T = adf4350_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED;
         R /= 2;
     }
 
     //actual frequency calculation
-    actual_freq = double(N + double(FRAC/MOD))*ref_freq*(1+D)/(R*(1+T))/RFdiv/2;
+    actual_freq = double((N - (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv/2);
+
+    std::cerr << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % (double(FRAC)/double(MOD)) << std::endl;
 
     if (wbx_debug) std::cerr
-        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d"
-            ) % R % BS % N % FRAC % MOD % T % D << std::endl
+        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
+            ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl
         << boost::format("WBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
             ) % (target_freq*2/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
 
@@ -397,7 +399,7 @@ double wbx_xcvr::set_lo_freq(
 
     //return the actual frequency
     if (wbx_debug) std::cerr << boost::format(
-        "RFX tune: actual frequency %f Mhz"
+        "WBX tune: actual frequency %f Mhz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }
