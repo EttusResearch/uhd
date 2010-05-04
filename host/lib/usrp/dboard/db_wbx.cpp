@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-static const bool wbx_debug = true;
+static const bool wbx_debug = false;
 
 // Common IO Pins
 #define ANTSW_IO        ((1 << 5)|(1 << 15))    // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
@@ -264,6 +264,10 @@ void wbx_xcvr::set_tx_pga0_gain(float gain){
     //calculate the voltage for the aux dac
     float dac_volts = gain*slope + min_volts;
 
+    if (wbx_debug) std::cerr << boost::format(
+        "WBX TX Gain: %f dB, dac_volts: %f V"
+    ) % gain % dac_volts << std::endl;
+
     //write the new voltage to the aux dac
     this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, 0, dac_volts);
 
@@ -344,7 +348,7 @@ double wbx_xcvr::set_lo_freq(
         if (pfd_freq > 25e6) continue;
 
         //ignore fractional part of tuning
-        N = int(std::ceil(vco_freq/pfd_freq));
+        N = int(std::floor(vco_freq/pfd_freq));
 
         //keep N > minimum int divider requirement
         if (N < prescaler_to_min_int_div[prescaler]) continue;
@@ -359,7 +363,7 @@ double wbx_xcvr::set_lo_freq(
 
     //Fractional-N calculation
     MOD = 4095; //max fractional accuracy
-    FRAC = int((N - vco_freq/pfd_freq)*MOD);
+    FRAC = int((vco_freq/pfd_freq - N)*MOD);
 
     //Reference divide-by-2 for 50% duty cycle
     // if R even, move one divide by 2 to to regs.reference_divide_by_2
@@ -369,9 +373,9 @@ double wbx_xcvr::set_lo_freq(
     }
 
     //actual frequency calculation
-    actual_freq = double((N - (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv/2);
+    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv/2);
 
-    std::cerr << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % (double(FRAC)/double(MOD)) << std::endl;
+    std::cerr << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl;
 
     if (wbx_debug) std::cerr
         << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
@@ -467,7 +471,7 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
-        val = true;
+        val = false;
         return;
 
     case SUBDEV_PROP_SPECTRUM_INVERTED:
@@ -570,7 +574,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
-        val = true;
+        val = false;
         return;
 
     case SUBDEV_PROP_LO_LOCKED:
