@@ -117,6 +117,17 @@ Run the following commands:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Debugging networking problems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Disable the firewall:**
+If uhd_find_devices gives you nothing
+but uhd_find_devices --args addr=192.168.10.2 yeilds a discovered device,
+then your firewall may be blocking replies to UDP broadcast packets.
+
+**Ping the USRP2:**
+The USRP2 will reply to icmp echo requests.
+::
+
+    ping 192.168.10.2
+
 **Monitor the USRP2:**
 You can read the serial port on the rear of the USRP2
 to get debug verbose from the embedded microcontroller.
