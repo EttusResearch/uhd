@@ -37,6 +37,7 @@ public:
 
     void enable_rx_dboard_clock(bool enb);
     void enable_tx_dboard_clock(bool enb);
+    void enable_codec_clock(bool enb);
 
 private:
     usrp_e_iface::sptr _iface;
@@ -79,9 +80,21 @@ clock_ctrl_impl::clock_ctrl_impl(usrp_e_iface::sptr iface){
     _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV5;
     _ad9522_regs.select_vco_or_clock = ad9522_regs_t::SELECT_VCO_OR_CLOCK_VCO;
 
+    //setup fpga master clock
     _ad9522_regs.out0_format = ad9522_regs_t::OUT0_FORMAT_LVDS;
     _ad9522_regs.divider0_low_cycles = 2; //3 low
     _ad9522_regs.divider0_high_cycles = 1; //2 high
+
+    //setup codec clock
+    _ad9522_regs.out3_format = ad9522_regs_t::OUT3_FORMAT_LVDS;
+    _ad9522_regs.divider1_low_cycles = 2; //3 low
+    _ad9522_regs.divider1_high_cycles = 1; //2 high
+
+    //setup test clock (same divider as codec clock)
+    _ad9522_regs.out4_format = ad9522_regs_t::OUT4_FORMAT_CMOS;
+    _ad9522_regs.out4_cmos_configuration = (true)?
+        ad9522_regs_t::OUT4_CMOS_CONFIGURATION_A_ON :
+        ad9522_regs_t::OUT4_CMOS_CONFIGURATION_OFF;
 
     //setup a list of register ranges to write
     typedef std::pair<boost::uint16_t, boost::uint16_t> range_t;
@@ -106,6 +119,8 @@ clock_ctrl_impl::clock_ctrl_impl(usrp_e_iface::sptr iface){
     //    reg, 24, true /*no*/
     //);
     //std::cout << "result " << std::hex << result << std::endl;
+    this->enable_rx_dboard_clock(false);
+    this->enable_tx_dboard_clock(false);
 }
 
 clock_ctrl_impl::~clock_ctrl_impl(void){
@@ -114,16 +129,34 @@ clock_ctrl_impl::~clock_ctrl_impl(void){
 }
 
 void clock_ctrl_impl::enable_rx_dboard_clock(bool enb){
-    
+    _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_CMOS;
+    _ad9522_regs.out9_cmos_configuration = (enb)?
+        ad9522_regs_t::OUT9_CMOS_CONFIGURATION_B_ON :
+        ad9522_regs_t::OUT9_CMOS_CONFIGURATION_OFF;
+    this->send_reg(0x0F9);
+
+    _ad9522_regs.divider3_low_cycles = 2; //3 low
+    _ad9522_regs.divider3_high_cycles = 1; //2 high
+    this->send_reg(0x199);
+    this->latch_regs();
 }
 
 void clock_ctrl_impl::enable_tx_dboard_clock(bool enb){
-    
+    _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_CMOS;
+    _ad9522_regs.out6_cmos_configuration = (enb)?
+        ad9522_regs_t::OUT6_CMOS_CONFIGURATION_B_ON :
+        ad9522_regs_t::OUT6_CMOS_CONFIGURATION_OFF;
+    this->send_reg(0x0F6);
+
+    _ad9522_regs.divider2_low_cycles = 2; //3 low
+    _ad9522_regs.divider2_high_cycles = 1; //2 high
+    this->send_reg(0x196);
+    this->latch_regs();
 }
 
 void clock_ctrl_impl::send_reg(boost::uint16_t addr){
     boost::uint32_t reg = _ad9522_regs.get_write_reg(addr);
-    std::cout << "clock control write reg: " << std::hex << reg << std::endl;
+    //std::cout << "clock control write reg: " << std::hex << reg << std::endl;
     _iface->transact_spi(
         UE_SPI_SS_AD9522,
         spi_config_t::EDGE_RISE,

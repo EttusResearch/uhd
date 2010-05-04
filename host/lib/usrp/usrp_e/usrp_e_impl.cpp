@@ -23,7 +23,6 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <fcntl.h> //open
-#include "clock_ctrl.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -84,9 +83,12 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
         ));
     }
 
-    _iface = usrp_e_iface::make(_node_fd);
+    sleep(1); //FIXME sleep here until the kernel driver stops hanging
 
-    clock_ctrl::sptr my_clk_ctrl = clock_ctrl::make(_iface);
+    //setup various interfaces into hardware
+    _iface = usrp_e_iface::make(_node_fd);
+    _clock_ctrl = clock_ctrl::make(_iface);
+    _codec_ctrl = codec_ctrl::make(_iface);
 
     //initialize the mboard
     mboard_init();

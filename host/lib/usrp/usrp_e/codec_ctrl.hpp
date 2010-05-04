@@ -1,0 +1,73 @@
+//
+// Copyright 2010 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#ifndef INCLUDED_USRP_E_CODEC_CTRL_HPP
+#define INCLUDED_USRP_E_CODEC_CTRL_HPP
+
+#include "usrp_e_iface.hpp"
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
+
+/*!
+ * The usrp-e codec control:
+ * - Init/power down codec.
+ * - Read aux adc, write aux dac.
+ */
+class codec_ctrl : boost::noncopyable{
+public:
+    typedef boost::shared_ptr<codec_ctrl> sptr;
+
+    /*!
+     * Make a new clock control object.
+     * \param iface the usrp_e iface object
+     * \return the clock control object
+     */
+    static sptr make(usrp_e_iface::sptr iface);
+
+    //! aux adc identifier constants
+    enum aux_adc_t{
+        AUX_ADC_A2 = 0xA2,
+        AUX_ADC_A1 = 0xA1,
+        AUX_ADC_B2 = 0xB2,
+        AUX_ADC_B1 = 0xB1
+    };
+
+    /*!
+     * Read the aux adc.
+     * \param which which of the 4 adcs
+     * \return a value in volts
+     */
+    virtual float read_aux_adc(aux_adc_t which) = 0;
+
+    //! aux dac identifier constants
+    enum aux_dac_t{
+        AUX_DAC_A = 0xA,
+        AUX_DAC_B = 0xB,
+        AUX_DAC_C = 0xC,
+        AUX_DAC_D = 0xD
+    };
+
+    /*!
+     * Write the aux dac.
+     * \param which which of the 4 dacs
+     * \param volts the level in in volts
+     */
+    virtual void read_aux_adc(aux_dac_t which, float volts) = 0;
+
+};
+
+#endif /* INCLUDED_USRP_E_CODEC_CTRL_HPP */

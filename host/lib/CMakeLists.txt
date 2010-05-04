@@ -185,6 +185,7 @@ IF(HAVE_USRP_E_REQUIRED_HEADERS)
     MESSAGE(STATUS "  Building usrp-e support.")
     LIST(APPEND libuhd_sources
         usrp/usrp_e/clock_ctrl.cpp
+        usrp/usrp_e/codec_ctrl.cpp
         usrp/usrp_e/dboard_impl.cpp
         usrp/usrp_e/dboard_iface.cpp
         usrp/usrp_e/dsp_impl.cpp

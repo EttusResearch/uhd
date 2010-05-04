@@ -20,6 +20,7 @@
 #include <sys/ioctl.h> //ioctl
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/format.hpp>
+#include <boost/thread.hpp> //mutex
 #include <stdexcept>
 
 using namespace uhd;
@@ -42,6 +43,8 @@ public:
      * IOCTL: provides the communication base for all other calls
      ******************************************************************/
     void ioctl(int request, void *mem){
+        boost::mutex::scoped_lock lock(_ctrl_mutex);
+
         if (::ioctl(_node_fd, request, mem) < 0){
             throw std::runtime_error(str(
                 boost::format("ioctl failed with request %d") % request
@@ -167,7 +170,9 @@ public:
         return data.data;
     }
 
-private: int _node_fd;
+private:
+    int _node_fd;
+    boost::mutex _ctrl_mutex;
 };
 
 /***********************************************************************

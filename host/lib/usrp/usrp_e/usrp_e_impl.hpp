@@ -16,6 +16,8 @@
 //
 
 #include "usrp_e_iface.hpp"
+#include "clock_ctrl.hpp"
+#include "codec_ctrl.hpp"
 #include <uhd/usrp/usrp_e.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/types/clock_config.hpp>
@@ -90,6 +92,12 @@ private:
     int _node_fd;
 
     uhd::clock_config_t _clock_config;
+
+    //ad9522 clock control
+    clock_ctrl::sptr _clock_ctrl;
+
+    //ad9862 codec control
+    codec_ctrl::sptr _codec_ctrl;
 
     //device functions and settings
     void get(const wax::obj &, wax::obj &);
