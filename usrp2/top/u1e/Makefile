@@ -186,6 +186,7 @@ gpmc/fifo_watcher.v \
 gpmc/gpmc_wb.v \
 top/u1e/u1e_core.v \
 top/u1e/u1e.ucf \
+top/u1e/timing.ucf \
 top/u1e/u1e.v 
 
 ##################################################
