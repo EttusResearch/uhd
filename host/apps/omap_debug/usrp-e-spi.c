@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
 	if (*argv[1] == 'r') {
 		spi_dat.readback = 1;
 		ret = ioctl(fp, USRP_E_SPI, &spi_dat);
-		printf("Data returned = %d\n", ret);
+		printf("Ioctl returns: %d, Data returned = %d\n", ret, spi_dat.data);
 	} else {
 		spi_dat.readback = 0;
 		ioctl(fp, USRP_E_SPI, &spi_dat);
