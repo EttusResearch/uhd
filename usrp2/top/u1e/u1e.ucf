@@ -254,7 +254,7 @@ NET "io_rx<15>"  LOC = "Y4"  ;
 #NET "fpga_cfg_cclk"  LOC = "V17"  ;
 #NET "fpga_cfg_init_b"  LOC = "W15"  ;
 
-## Unnamed, need to figure out what they do
+## Unused
 #NET "unnamed_net37"  LOC = "B1"  ;  # TMS
 #NET "unnamed_net36"  LOC = "B22"  ; # TDO
 #NET "unnamed_net35"  LOC = "D2"  ;  # TDI
