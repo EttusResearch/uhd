@@ -1,0 +1,13 @@
+
+NET "CLK_FPGA_P" TNM_NET = "CLK_FPGA_P";
+TIMESPEC "TS_clk_fpga_p" = PERIOD "CLK_FPGA_P" 15625 ps HIGH 50 %;
+
+
+
+
+#NET "adc_a<*>" TNM_NET = ADC_DATA_GRP;
+#NET "adc_b<*>" TNM_NET = ADC_DATA_GRP;
+#TIMEGRP "ADC_DATA_GRP" OFFSET = IN 1 ns VALID 5 ns BEFORE "clk_fpga_p" RISING;
+
+#NET "adc_a<*>" OFFSET = IN 1 ns VALID 5 ns BEFORE "clk_fpga_p" RISING;
+#NET "adc_b<*>" OFFSET = IN 1 ns VALID 5 ns BEFORE "clk_fpga_p" RISING;
