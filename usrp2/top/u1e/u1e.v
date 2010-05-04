@@ -25,6 +25,9 @@ module u1e
    input overo_gpio128, input overo_gpio163, input overo_gpio170, input overo_gpio176, // Misc GPIO
    
    inout [15:0] io_tx, inout [15:0] io_rx,
+
+   output [13:0] TX, output TXSYNC, output TXBLANK,
+   
    input PPS_IN
    );
 
@@ -56,6 +59,7 @@ module u1e
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
 		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
 		     .io_tx(io_tx), .io_rx(io_rx),
+		     .tx(TX), .txsync(TXSYNC), .txblank(TXBLANK),
 		     .misc_gpio( {{overo_gpio128,overo_gpio163,overo_gpio170,overo_gpio176},
 				  {overo_gpio0,overo_gpio14,overo_gpio21,overo_gpio22},
 				  {overo_gpio23,overo_gpio64,overo_gpio65,overo_gpio127}}),

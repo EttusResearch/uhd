@@ -13,7 +13,10 @@ module u1e_core
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
-   inout [15:0] io_tx, inout [15:0] io_rx, input [11:0] misc_gpio, input pps_in
+   inout [15:0] io_tx, inout [15:0] io_rx, 
+   output reg [13:0] tx, output reg txsync, output txblank,
+   
+   input [11:0] misc_gpio, input pps_in
    );
    
    wire 	wb_clk = clk_fpga;
@@ -213,7 +216,7 @@ module u1e_core
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
-   assign { rx_overrun, tx_underrun } = reg_test;
+   assign { rx_overrun, tx_underrun } = 0; // reg_test;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
@@ -309,6 +312,44 @@ module u1e_core
    time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
      (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int));
+
+   
+   // /////////////////////////////////////////////////////////////////////////
+   // TX
+
+   assign txblank = 0;
+
+   wire [23:0] 	freq = {reg_test,8'd0};
+   
+   reg [23:0] 	tx_q_hold;
+   wire [23:0] 	tx_i, tx_q;
+   
+   reg 		tx_stb;
+   always @(posedge wb_clk)
+     tx_stb <= ~tx_stb;
+      
+   always @(posedge wb_clk)
+     if(tx_stb)
+       tx <= tx_i[23:10];
+     else
+       tx <= tx_q_hold[23:10];
+
+   always @(posedge wb_clk)
+     if(tx_stb)
+       tx_q_hold <= tx_q;
+   
+   always @(posedge wb_clk)
+     txsync <= ~tx_stb;   // TX Sync low indicates first data item
+   // We invert here if we don't use inv_txsync in the 9862
+
+   reg [23:0] 	phase;
+   always @(posedge wb_clk)
+     if(tx_stb)
+       phase <= phase + freq;
+   
+   cordic_z24 #(.bitwidth(24)) tx_cordic
+     (.clock(wb_clk), .reset(wb_rst), .enable(1),
+      .xi(24'd15000), .yi(24'd0), .zi(phase), .xo(tx_i), .yo(tx_q), .zo());
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
