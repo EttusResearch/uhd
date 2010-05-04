@@ -303,7 +303,24 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
     }
     break;
 
-  case ICMP_ECHO:
+  case ICMP_ECHO:{
+    struct icmp_echo_hdr echo_reply;
+    echo_reply.type = 0;
+    echo_reply.code = 0;
+    echo_reply.chksum = 0;
+    echo_reply.id = icmp->id;
+    echo_reply.seqno = icmp->seqno;
+    echo_reply.chksum = ~chksum_buffer(
+        (unsigned short *)&echo_reply,
+        sizeof(echo_reply)/sizeof(short),
+    0);
+    send_ip_pkt(
+        src, IP_PROTO_ICMP, &echo_reply, sizeof(echo_reply),
+        ((uint8_t*)icmp) + sizeof(struct icmp_echo_hdr),
+        len - sizeof(struct icmp_echo_hdr)
+    );
+    break;
+  }
   default:
     break;
   }
