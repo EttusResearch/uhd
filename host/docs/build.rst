@@ -40,7 +40,7 @@ CMake
 ^^^^^^^^^^^^^^^^
 Boost
 ^^^^^^^^^^^^^^^^
-* **Version:** at least 3.7 unix, at least 4.0 windows
+* **Version:** at least 3.6 unix, at least 4.0 windows
 * **Required for:** build time + run time
 * **Download URL:** http://www.boost.org/users/download/
 * **Download URL (windows installer):** http://www.boostpro.com/download

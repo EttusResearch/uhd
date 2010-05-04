@@ -15,9 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/assert.hpp>
 #include <uhd/utils/props.hpp>
+#include <stdexcept>
 
 using namespace uhd;
+
+/***********************************************************************
+ * Assert
+ **********************************************************************/
+assert_error::assert_error(const std::string &what) : std::runtime_error(what){
+    /* NOP */
+}
 
 /***********************************************************************
  * Props
