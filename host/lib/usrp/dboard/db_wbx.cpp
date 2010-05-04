@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-static const bool wbx_debug = false;
+static const bool wbx_debug = true;
 
 // Common IO Pins
 #define ANTSW_IO        ((1 << 5)|(1 << 15))    // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
@@ -147,8 +147,8 @@ static dboard_base::sptr make_wbx(dboard_base::ctor_args_t const& args){
 }
 
 UHD_STATIC_BLOCK(reg_wbx_dboards){
-    dboard_manager::register_dboard(0x0052, &make_wbx, "WBX NG RX");
-    dboard_manager::register_dboard(0x0053, &make_wbx, "WBX NG TX");
+    dboard_manager::register_dboard(0x0052, &make_wbx, "WBX RX");
+    dboard_manager::register_dboard(0x0053, &make_wbx, "WBX TX");
 }
 
 /***********************************************************************
@@ -167,6 +167,9 @@ wbx_xcvr::wbx_xcvr(
     //set the gpio directions
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
+    if (wbx_debug) std::cerr << boost::format(
+        "WBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
+    ) % RXIO_MASK % TXIO_MASK << std::endl;
 
     //set some default values
     set_rx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
@@ -203,6 +206,9 @@ void wbx_xcvr::update_atr(void){
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
         _rx_pga0_attn_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+    if (wbx_debug) std::cerr << boost::format(
+        "WBX RXONLY ATR REG: 0x%08x"
+    ) % (_rx_pga0_attn_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
 }
 
 void wbx_xcvr::set_rx_lo_freq(double freq){
@@ -311,7 +317,7 @@ double wbx_xcvr::set_lo_freq(
     }
 
     //use 8/9 prescaler for vco_freq > 3 GHz (pg.18 prescaler)
-    adf4350_regs_t::prescaler_t prescaler = vco_freq > 3e9 ? adf4350_regs_t::PRESCALER_4_5 : adf4350_regs_t::PRESCALER_8_9;
+    adf4350_regs_t::prescaler_t prescaler = vco_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
 
     /*
      * The goal here is to loop though possible R dividers,
@@ -344,9 +350,9 @@ double wbx_xcvr::set_lo_freq(
         if (N < prescaler_to_min_int_div[prescaler]) continue;
 
         for(BS=1; BS <= 255; BS+=1){
-            //keep the band select frequency at or below 125KHz
+            //keep the band select frequency at or below 100KHz
             //constraint on band select clock
-            if (pfd_freq/BS > 125e3) continue;
+            if (pfd_freq/BS > 100e3) continue;
             goto done_loop;
         }
     } done_loop:
@@ -368,10 +374,10 @@ double wbx_xcvr::set_lo_freq(
     std::cerr << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % (double(FRAC)/double(MOD)) << std::endl;
 
     if (wbx_debug) std::cerr
-        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
-            ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl
+        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
+            ) % R % BS % N % FRAC % MOD % T % D % RFdiv % get_locked(unit)<< std::endl
         << boost::format("WBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
-            ) % (target_freq*2/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
+            ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
 
     //load the register values
     adf4350_regs_t regs;
@@ -391,9 +397,12 @@ double wbx_xcvr::set_lo_freq(
     int addr;
 
     for(addr=5; addr>=0; addr--){
+        if (wbx_debug) std::cerr << boost::format(
+            "WBX SPI Reg (0x%02x): 0x%08x"
+        ) % addr % regs.get_reg(addr) << std::endl;
         this->get_iface()->write_spi(
             unit, spi_config_t::EDGE_RISE,
-            regs.get_reg(addr), 24
+            regs.get_reg(addr), 32
         );
     }
 

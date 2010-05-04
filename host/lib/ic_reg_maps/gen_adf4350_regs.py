@@ -34,7 +34,7 @@ int_16_bit              0[15:30]    23
 ## address 1
 ########################################################################
 mod_12_bit              1[3:14]     fff
-phase_12_bit            1[15:26]    1
+phase_12_bit            1[15:26]    0
 prescaler               1[27]       0       4_5, 8_9
 ##reserved              1[28:31]    0
 ########################################################################
@@ -52,7 +52,7 @@ double_buffer           2[13]       0       disabled, enabled
 r_counter_10_bit        2[14:23]    0
 reference_divide_by_2   2[24]       1       disabled, enabled
 reference_doubler       2[25]       0       disabled, enabled
-muxout                  2[26:28]    3       3state, dvdd, dgnd, rdiv, ndiv, analog_ld, dld, reserved
+muxout                  2[26:28]    1       3state, dvdd, dgnd, rdiv, ndiv, analog_ld, dld, reserved
 low_noise_and_spur      2[29:30]    3       low_noise, reserved0, reserved1, low_spur
 ########################################################################
 ## address 3
