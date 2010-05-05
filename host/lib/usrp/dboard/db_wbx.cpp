@@ -92,7 +92,7 @@ static const float _max_tx_pga0_gain = 25;
 class wbx_xcvr : public xcvr_dboard_base{
 public:
     wbx_xcvr(
-        ctor_args_t const& args,
+        ctor_args_t args,
         const freq_range_t &freq_range
     );
     ~wbx_xcvr(void);
@@ -142,7 +142,7 @@ private:
 /***********************************************************************
  * Register the WBX dboard (min freq, max freq, rx div2, tx div2)
  **********************************************************************/
-static dboard_base::sptr make_wbx(dboard_base::ctor_args_t const& args){
+static dboard_base::sptr make_wbx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new wbx_xcvr(args, freq_range_t(50e6, 2220e6)));
 }
 
@@ -155,7 +155,7 @@ UHD_STATIC_BLOCK(reg_wbx_dboards){
  * Structors
  **********************************************************************/
 wbx_xcvr::wbx_xcvr(
-    ctor_args_t const& args,
+    ctor_args_t args,
     const freq_range_t &freq_range
 ) : xcvr_dboard_base(args){
     _freq_range = freq_range;
@@ -429,7 +429,7 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_rx_id());
+        val = get_rx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:
@@ -526,7 +526,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = dboard_id::to_string(get_tx_id());
+        val = get_tx_id().to_pp_string();
         return;
 
     case SUBDEV_PROP_OTHERS:
