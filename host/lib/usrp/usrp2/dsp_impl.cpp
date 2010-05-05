@@ -52,6 +52,23 @@ static boost::uint32_t calculate_freq_word_and_update_actual_freq(double &freq, 
     return freq_word;
 }
 
+// Check if requested decim/interp rate is:
+//      multiple of 4, enable two halfband filters
+//      multiple of 2, enable one halfband filter
+//      handle remainder in CIC
+static boost::uint32_t calculate_cic_word(size_t rate){
+    int hb0 = 0, hb1 = 0;
+    if (not (rate & 0x1)){
+        hb0 = 1;
+        rate /= 2;
+    }
+    if (not (rate & 0x1)){
+        hb1 = 1;
+        rate /= 2;
+    }
+    return (hb1 << 9) | (hb0 << 8) | (rate & 0xff);
+}
+
 static boost::uint32_t calculate_iq_scale_word(boost::int16_t i, boost::int16_t q){
     return (boost::uint16_t(i) << 16) | (boost::uint16_t(q) << 0);
 }
@@ -84,7 +101,7 @@ void usrp2_impl::init_ddc_config(void){
 
 void usrp2_impl::update_ddc_config(void){
     //set the decimation
-    _iface->poke32(FR_DSP_RX_DECIM_RATE, _ddc_decim);
+    _iface->poke32(FR_DSP_RX_DECIM_RATE, calculate_cic_word(_ddc_decim));
 
     //set the scaling
     static const boost::int16_t default_rx_scale_iq = 1024;
@@ -163,15 +180,14 @@ void usrp2_impl::init_duc_config(void){
 
 void usrp2_impl::update_duc_config(void){
     // Calculate CIC interpolation (i.e., without halfband interpolators)
-    size_t tmp_interp = _duc_interp;
-    while(tmp_interp > 128) tmp_interp /= 2;
+    size_t tmp_interp = calculate_cic_word(_duc_interp) & 0xff;
 
     // Calculate closest multiplier constant to reverse gain absent scale multipliers
     double interp_cubed = std::pow(double(tmp_interp), 3);
     boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
     //set the interpolation
-    _iface->poke32(FR_DSP_TX_INTERP_RATE, _ddc_decim);
+    _iface->poke32(FR_DSP_TX_INTERP_RATE, calculate_cic_word(_duc_interp));
 
     //set the scaling
     _iface->poke32(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
