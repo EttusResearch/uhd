@@ -52,13 +52,17 @@ static boost::uint32_t calculate_freq_word_and_update_actual_freq(double &freq, 
     return freq_word;
 }
 
+// Check if requested decim/interp rate is:
+//      multiple of 4, enable two halfband filters
+//      multiple of 2, enable one halfband filter
+//      handle remainder in CIC
 static boost::uint32_t calculate_cic_word(size_t rate){
     int hb0 = 0, hb1 = 0;
-    if (rate & 0x1){
+    if (not (rate & 0x1)){
         hb0 = 1;
         rate /= 2;
     }
-    if (rate & 0x1){
+    if (not (rate & 0x1)){
         hb1 = 1;
         rate /= 2;
     }
