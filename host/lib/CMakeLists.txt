@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 ########################################################################
 # Setup Python
 ########################################################################
@@ -43,30 +42,13 @@ IF(NOT HAVE_PYTHON_MODULE_CHEETAH)
 ENDIF(NOT HAVE_PYTHON_MODULE_CHEETAH)
 
 ########################################################################
-# Create a list of libuhd sources
+# Helpful Macros
 ########################################################################
-SET(libuhd_sources
-    device.cpp
-    gain_handler.cpp
-    load_modules.cpp
-    types.cpp
-    utils.cpp
-    wax.cpp
-    transport/convert_types.cpp
-    transport/if_addrs.cpp
-    transport/udp_simple.cpp
-    usrp/dboard_base.cpp
-    usrp/dboard_eeprom.cpp
-    usrp/dboard_id.cpp
-    usrp/dboard_manager.cpp
-    usrp/simple_usrp.cpp
-    usrp/tune_helper.cpp
-)
+MACRO(LIBUHD_APPEND_SOURCES)
+    LIST(APPEND libuhd_sources ${ARGV})
+ENDMACRO(LIBUHD_APPEND_SOURCES)
 
-########################################################################
-# Generate Files
-########################################################################
-MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
+MACRO(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
     #ensure that the directory exists for outfile
     GET_FILENAME_COMPONENT(outfile_dir ${outfile} PATH)
     FILE(MAKE_DIRECTORY ${outfile_dir})
@@ -79,91 +61,17 @@ MACRO(UHD_PYTHON_GEN_SOURCE_FILE pyfile outfile)
     )
 
     #make libuhd depend on the outfile
-    LIST(APPEND libuhd_sources ${outfile})
-ENDMACRO(UHD_PYTHON_GEN_SOURCE_FILE)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/transport/gen_vrt.py
-    ${CMAKE_CURRENT_BINARY_DIR}/transport/vrt.cpp
-)
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_adf4350_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/adf4350_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_adf4360_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/adf4360_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9510_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9510_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9777_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9777_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad5624_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad5624_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad7922_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad7922_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_max2829_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/max2829_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9862_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9862_regs.hpp
-)
-
-UHD_PYTHON_GEN_SOURCE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/gen_ad9522_regs.py
-    ${CMAKE_CURRENT_BINARY_DIR}/ic_reg_maps/ad9522_regs.hpp
-)
+    LIBUHD_APPEND_SOURCES(${outfile})
+ENDMACRO(LIBUHD_PYTHON_GEN_SOURCE)
 
 ########################################################################
-# Add dboard sources
+# Include CMakeLists.txt from subdirectories
 ########################################################################
-LIST(APPEND libuhd_sources
-    usrp/dboard/db_basic_and_lf.cpp
-    usrp/dboard/db_rfx.cpp
-    usrp/dboard/db_xcvr2450.cpp
-    usrp/dboard/db_wbx.cpp
-)
-
-########################################################################
-# Add usrp2 sources
-########################################################################
-LIST(APPEND libuhd_sources
-    usrp/usrp2/clock_control.cpp
-    usrp/usrp2/dboard_impl.cpp
-    usrp/usrp2/dboard_iface.cpp
-    usrp/usrp2/dsp_impl.cpp
-    usrp/usrp2/io_impl.cpp
-    usrp/usrp2/mboard_impl.cpp
-    usrp/usrp2/usrp2_iface.cpp
-    usrp/usrp2/usrp2_impl.cpp
-)
-
-########################################################################
-# Conditionally add the udp sources
-########################################################################
-LIST(APPEND libuhd_sources
-    transport/udp_zero_copy_asio.cpp
-)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/CMakeLists.txt)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/transport/CMakeLists.txt)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/CMakeLists.txt)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/dboard/CMakeLists.txt)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp2/CMakeLists.txt)
 
 ########################################################################
 # Setup defines for module loading
@@ -185,23 +93,16 @@ ELSE(HAVE_DLFCN_H)
 ENDIF(HAVE_DLFCN_H)
 
 ########################################################################
-# Setup defines for interface address discovery
+# Append to the list of sources for lib uhd
 ########################################################################
-MESSAGE(STATUS "Configuring interface address discovery...")
-
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(ifaddrs.h HAVE_IFADDRS_H)
-CHECK_INCLUDE_FILE_CXX(winsock2.h HAVE_WINSOCK2_H)
-
-IF(HAVE_IFADDRS_H)
-    MESSAGE(STATUS "  Interface address discovery supported through getifaddrs.")
-    ADD_DEFINITIONS(-DHAVE_IFADDRS_H)
-ELSEIF(HAVE_WINSOCK2_H)
-    MESSAGE(STATUS "  Interface address discovery supported through SIO_GET_INTERFACE_LIST.")
-    ADD_DEFINITIONS(-DHAVE_WINSOCK2_H)
-ELSE(HAVE_IFADDRS_H)
-    MESSAGE(STATUS "  Interface address discovery not supported.")
-ENDIF(HAVE_IFADDRS_H)
+LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gain_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
+)
 
 ########################################################################
 # Setup libuhd library
