@@ -373,8 +373,7 @@ static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
         gain = 5;
         return max2829_regs_t::TX_BASEBAND_GAIN_5DB;
     }
-    BOOST_THROW_EXCEPTION(std::runtime_error("should not get here"));
-    return max2829_regs_t::TX_BASEBAND_GAIN_0DB;
+    UHD_ASSERT_THROW(false);
 }
 
 /*!
