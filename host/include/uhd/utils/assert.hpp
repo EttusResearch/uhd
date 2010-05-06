@@ -19,26 +19,24 @@
 #define INCLUDED_UHD_UTILS_ASSERT_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/throw_exception.hpp>
-#include <boost/exception/info.hpp>
 #include <stdexcept>
 #include <string>
 
 namespace uhd{
 
     //! The exception to throw when assertions fail
-    struct UHD_API assert_error : virtual std::exception, virtual boost::exception{};
-
-    //! The assertion info, the code that failed
-    typedef boost::error_info<struct tag_assert_info, std::string> assert_info;
+    struct UHD_API assert_error : std::runtime_error{
+        assert_error(const std::string &what);
+    };
 
     //! Throw an assert error with throw-site information
     #define UHD_ASSERT_THROW(_x) if (not (_x)) \
-        BOOST_THROW_EXCEPTION(uhd::assert_error() << uhd::assert_info(#_x))
+        throw uhd::assert_error(UHD_THROW_SITE_INFO("assertion failed: " + std::string(#_x)))
 
     /*!
      * Check that an element is found in a container.
@@ -63,13 +61,14 @@ namespace uhd{
             if (i++ > 0) possible_values += ", ";
             possible_values += boost::lexical_cast<std::string>(v);
         }
-        boost::throw_exception(uhd::assert_error() << assert_info(str(boost::format(
-                "Error: %s is not a valid %s. "
-                "Possible values are: [%s]."
+        throw uhd::assert_error(str(boost::format(
+                "assertion failed:\n"
+                "  %s is not a valid %s.\n"
+                "  possible values are: [%s].\n"
             )
             % boost::lexical_cast<std::string>(value)
             % what % possible_values
-        )));
+        ));
     }
 
 }//namespace uhd

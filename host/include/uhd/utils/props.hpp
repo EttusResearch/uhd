@@ -20,9 +20,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
+#include <uhd/utils/exception.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/throw_exception.hpp>
-#include <boost/exception/info.hpp>
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -59,25 +58,19 @@ namespace uhd{
         const std::string &name = ""
     );
 
-    //! The exception to throw for property errors
-    struct UHD_API prop_error : virtual std::exception, virtual boost::exception{};
-
-    //! The property error info (verbose or message)
-    typedef boost::error_info<struct tag_prop_info, std::string> prop_info;
-
     /*!
      * Throw when getting a not-implemented or write-only property.
      * Throw-site information will be included with this error.
      */
     #define UHD_THROW_PROP_GET_ERROR() \
-        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot get this property"))
+        throw std::runtime_error(UHD_THROW_SITE_INFO("cannot get this property"))
 
     /*!
      * Throw when setting a not-implemented or read-only property.
      * Throw-site information will be included with this error.
      */
     #define UHD_THROW_PROP_SET_ERROR() \
-        BOOST_THROW_EXCEPTION(uhd::prop_error() << uhd::prop_info("cannot set this property"))
+        throw std::runtime_error(UHD_THROW_SITE_INFO("cannot set this property"))
 
 } //namespace uhd
 

@@ -17,7 +17,6 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/utils/assert.hpp>
-#include <boost/exception/diagnostic_information.hpp>
 #include <vector>
 #include <iostream>
 
@@ -34,7 +33,16 @@ BOOST_AUTO_TEST_CASE(test_assert_has){
     std::cout << "The output of the assert_has error:" << std::endl;
     try{
         uhd::assert_has(vec, 1, "prime");
-    }catch(const boost::exception &e){
-        std::cout << boost::diagnostic_information(e) << std::endl;
+    }catch(const std::exception &e){
+        std::cout << e.what() << std::endl;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_assert_throw){
+    std::cout << "The output of the assert throw error:" << std::endl;
+    try{
+        UHD_ASSERT_THROW(2 + 2 == 5);
+    }catch(const std::exception &e){
+        std::cout << e.what() << std::endl;
     }
 }

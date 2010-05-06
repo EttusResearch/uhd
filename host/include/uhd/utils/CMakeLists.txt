@@ -18,6 +18,7 @@
 INSTALL(FILES
     algorithm.hpp
     assert.hpp
+    exception.hpp
     gain_handler.hpp
     props.hpp
     safe_main.hpp

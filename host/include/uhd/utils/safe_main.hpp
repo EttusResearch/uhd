@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_UTILS_SAFE_MAIN_HPP
 
 #include <uhd/config.hpp>
-#include <boost/exception/diagnostic_information.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -34,8 +33,6 @@
 int main(int argc, char *argv[]){ \
     try { \
         return _main(argc, argv); \
-    } catch(const boost::exception &e){ \
-        std::cerr << "Error: " << boost::diagnostic_information(e) << std::endl; \
     } catch(const std::exception &e) { \
         std::cerr << "Error: " << e.what() << std::endl; \
     } catch(...) { \
