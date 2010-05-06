@@ -72,42 +72,7 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/transport/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/dboard/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp2/CMakeLists.txt)
-
-########################################################################
-# Conditionally add the usrp1e sources
-########################################################################
-MESSAGE(STATUS "Configuring usrp-e support...")
-
-INCLUDE(CheckIncludeFiles)
-SET(usrp_e_required_headers
-    linux/ioctl.h
-    linux/spi/spidev.h
-    linux/usrp_e.h
-)
-CHECK_INCLUDE_FILES(
-    "${usrp_e_required_headers}"
-    HAVE_USRP_E_REQUIRED_HEADERS
-)
-
-IF(HAVE_USRP_E_REQUIRED_HEADERS)
-    MESSAGE(STATUS "  Building usrp-e support.")
-    LIST(APPEND libuhd_sources
-        usrp/usrp_e/clock_ctrl.cpp
-        usrp/usrp_e/codec_ctrl.cpp
-        usrp/usrp_e/dboard_impl.cpp
-        usrp/usrp_e/dboard_iface.cpp
-        usrp/usrp_e/dsp_impl.cpp
-        usrp/usrp_e/fpga-downloader.cc
-        usrp/usrp_e/mboard_impl.cpp
-        usrp/usrp_e/usrp_e_impl.cpp
-        usrp/usrp_e/usrp_e_iface.cpp
-    )
-ELSE(HAVE_USRP_E_REQUIRED_HEADERS)
-    MESSAGE(STATUS "  Skipping usrp-e support.")
-    LIST(APPEND libuhd_sources
-        usrp/usrp_e/usrp_e_none.cpp
-    )
-ENDIF(HAVE_USRP_E_REQUIRED_HEADERS)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp_e/CMakeLists.txt)
 
 ########################################################################
 # Setup defines for module loading
