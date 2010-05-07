@@ -38,6 +38,9 @@ void usrp2_impl::io_init(void){
     //initially empty copy buffer
     _rx_copy_buff = asio::buffer("", 0);
 
+    //init the expected rx seq number
+    _rx_stream_id_to_packet_seq[0] = 0;
+
     //send a small data packet so the usrp2 knows the udp source port
     //and the maximum number of lines (32 bit words) per packet
     managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
