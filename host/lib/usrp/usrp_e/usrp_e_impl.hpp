@@ -29,9 +29,15 @@
 /*!
  * Make a usrp-e dboard interface.
  * \param iface the usrp-e interface object
+ * \param clock the clock control interface
+ * \param codec the codec control interface
  * \return a sptr to a new dboard interface
  */
-uhd::usrp::dboard_iface::sptr make_usrp_e_dboard_iface(usrp_e_iface::sptr iface);
+uhd::usrp::dboard_iface::sptr make_usrp_e_dboard_iface(
+    usrp_e_iface::sptr iface,
+    clock_ctrl::sptr clock,
+    codec_ctrl::sptr codec
+);
 
 /*!
  * Simple wax obj proxy class:

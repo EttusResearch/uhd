@@ -38,6 +38,10 @@ public:
     void enable_rx_dboard_clock(bool enb);
     void enable_tx_dboard_clock(bool enb);
 
+    double get_fpga_clock_rate(void){return 64e6;}
+    double get_rx_dboard_clock_rate(void){return get_fpga_clock_rate();}
+    double get_tx_dboard_clock_rate(void){return get_fpga_clock_rate();}
+
 private:
     usrp_e_iface::sptr _iface;
     ad9522_regs_t _ad9522_regs;

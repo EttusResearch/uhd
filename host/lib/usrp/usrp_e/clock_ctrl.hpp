@@ -39,6 +39,24 @@ public:
     static sptr make(usrp_e_iface::sptr iface);
 
     /*!
+     * Get the rate of the fpga clock line.
+     * \return the fpga clock rate in Hz
+     */
+    virtual double get_fpga_clock_rate(void) = 0;
+
+    /*!
+     * Get the rate of the dboard clock clock line.
+     * \return the dboard clock rate in Hz
+     */
+    virtual double get_rx_dboard_clock_rate(void) = 0;
+
+    /*!
+     * Get the rate of the dboard clock clock line.
+     * \return the dboard clock rate in Hz
+     */
+    virtual double get_tx_dboard_clock_rate(void) = 0;
+
+    /*!
      * Enable/disable the rx dboard clock.
      * \param enb true to enable
      */

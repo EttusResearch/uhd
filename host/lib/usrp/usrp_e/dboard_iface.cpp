@@ -17,6 +17,8 @@
 
 #include "usrp_e_iface.hpp"
 #include "usrp_e_regs.hpp"
+#include "clock_ctrl.hpp"
+#include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
@@ -25,11 +27,24 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace boost::assign;
 
 class usrp_e_dboard_iface : public dboard_iface{
 public:
-    usrp_e_dboard_iface(usrp_e_iface::sptr iface);
-    ~usrp_e_dboard_iface(void);
+
+    usrp_e_dboard_iface(
+        usrp_e_iface::sptr iface,
+        clock_ctrl::sptr clock,
+        codec_ctrl::sptr codec
+    ){
+        _iface = iface;
+        _clock = clock;
+        _codec = codec;
+    }
+
+    ~usrp_e_dboard_iface(void){
+        /* NOP */
+    }
 
     void write_aux_dac(unit_t, int, float);
     float read_aux_adc(unit_t, int);
@@ -60,35 +75,37 @@ public:
 
 private:
     usrp_e_iface::sptr _iface;
+    clock_ctrl::sptr _clock;
+    codec_ctrl::sptr _codec;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_iface::sptr make_usrp_e_dboard_iface(usrp_e_iface::sptr iface){
-    return dboard_iface::sptr(new usrp_e_dboard_iface(iface));
-}
-
-/***********************************************************************
- * Structors
- **********************************************************************/
-usrp_e_dboard_iface::usrp_e_dboard_iface(usrp_e_iface::sptr iface){
-    _iface = iface;
-}
-
-usrp_e_dboard_iface::~usrp_e_dboard_iface(void){
-    /* NOP */
+dboard_iface::sptr make_usrp_e_dboard_iface(
+    usrp_e_iface::sptr iface,
+    clock_ctrl::sptr clock,
+    codec_ctrl::sptr codec
+){
+    return dboard_iface::sptr(new usrp_e_dboard_iface(iface, clock, codec));
 }
 
 /***********************************************************************
  * Clock Rates
  **********************************************************************/
-double usrp_e_dboard_iface::get_clock_rate(unit_t){
-    throw std::runtime_error("not implemented");
+double usrp_e_dboard_iface::get_clock_rate(unit_t unit){
+    switch(unit){
+    case UNIT_RX: return _clock->get_rx_dboard_clock_rate();
+    case UNIT_TX: return _clock->get_tx_dboard_clock_rate();
+    }
+    UHD_ASSERT_THROW(false);
 }
 
-void usrp_e_dboard_iface::set_clock_enabled(unit_t, bool){
-    throw std::runtime_error("not implemented");
+void usrp_e_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
+    switch(unit){
+    case UNIT_RX: return _clock->enable_rx_dboard_clock(enb);
+    case UNIT_TX: return _clock->enable_tx_dboard_clock(enb);
+    }
 }
 
 /***********************************************************************
@@ -96,7 +113,7 @@ void usrp_e_dboard_iface::set_clock_enabled(unit_t, bool){
  **********************************************************************/
 void usrp_e_dboard_iface::set_gpio_ddr(unit_t bank, boost::uint16_t value){
     //define mapping of gpio bank to register address
-    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = map_list_of
         (UNIT_RX, UE_REG_GPIO_RX_DDR)
         (UNIT_TX, UE_REG_GPIO_TX_DDR)
     ;
@@ -105,7 +122,7 @@ void usrp_e_dboard_iface::set_gpio_ddr(unit_t bank, boost::uint16_t value){
 
 boost::uint16_t usrp_e_dboard_iface::read_gpio(unit_t bank){
     //define mapping of gpio bank to register address
-    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = boost::assign::map_list_of
+    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = map_list_of
         (UNIT_RX, UE_REG_GPIO_RX_IO)
         (UNIT_TX, UE_REG_GPIO_TX_IO)
     ;
@@ -116,14 +133,14 @@ void usrp_e_dboard_iface::set_atr_reg(unit_t bank, atr_reg_t atr, boost::uint16_
     //define mapping of bank to atr regs to register address
     static const uhd::dict<
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
-    > bank_to_atr_to_addr = boost::assign::map_list_of
-        (UNIT_RX, boost::assign::map_list_of
+    > bank_to_atr_to_addr = map_list_of
+        (UNIT_RX, map_list_of
             (ATR_REG_IDLE,        UE_REG_ATR_IDLE_RXSIDE)
             (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_RXSIDE)
             (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_RXSIDE)
             (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_RXSIDE)
         )
-        (UNIT_TX, boost::assign::map_list_of
+        (UNIT_TX, map_list_of
             (ATR_REG_IDLE,        UE_REG_ATR_IDLE_TXSIDE)
             (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_TXSIDE)
             (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_TXSIDE)
@@ -181,10 +198,27 @@ byte_vector_t usrp_e_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_byte
 /***********************************************************************
  * Aux DAX/ADC
  **********************************************************************/
-void usrp_e_dboard_iface::write_aux_dac(dboard_iface::unit_t unit, int which, float value){
-    throw std::runtime_error("not implemented");
+void usrp_e_dboard_iface::write_aux_dac(dboard_iface::unit_t, int which, float value){
+    //same aux dacs for each unit
+    static const uhd::dict<int, codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
+        (0, codec_ctrl::AUX_DAC_A) (1, codec_ctrl::AUX_DAC_B)
+        (2, codec_ctrl::AUX_DAC_C) (3, codec_ctrl::AUX_DAC_D)
+    ;
+    _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
 float usrp_e_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, int which){
-    throw std::runtime_error("not implemented");
+    static const uhd::dict<
+        unit_t, uhd::dict<int, codec_ctrl::aux_adc_t>
+    > unit_to_which_to_aux_adc = map_list_of
+        (UNIT_RX, map_list_of
+            (0, codec_ctrl::AUX_ADC_A1)
+            (1, codec_ctrl::AUX_ADC_B1)
+        )
+        (UNIT_TX, map_list_of
+            (0, codec_ctrl::AUX_ADC_A2)
+            (1, codec_ctrl::AUX_ADC_B2)
+        )
+    ;
+    return _codec->read_aux_adc(unit_to_which_to_aux_adc[unit][which]);
 }

@@ -83,8 +83,6 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
         ));
     }
 
-    sleep(1); //FIXME sleep here until the kernel driver stops hanging
-
     //setup various interfaces into hardware
     _iface = usrp_e_iface::make(_node_fd);
     _clock_ctrl = clock_ctrl::make(_iface);

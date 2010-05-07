@@ -17,6 +17,7 @@
 
 #include <boost/bind.hpp>
 #include "usrp_e_impl.hpp"
+#include <iostream>
 
 using namespace uhd::usrp;
 
@@ -27,9 +28,12 @@ void usrp_e_impl::dboard_init(void){
     _rx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
     _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
 
+    std::cout << _rx_db_eeprom.id.to_pp_string() << std::endl;
+    std::cout << _tx_db_eeprom.id.to_pp_string() << std::endl;
+
     //create a new dboard interface and manager
     dboard_iface::sptr dboard_iface(
-        make_usrp_e_dboard_iface(_iface)
+        make_usrp_e_dboard_iface(_iface, _clock_ctrl, _codec_ctrl)
     );
     _dboard_manager = dboard_manager::make(
         _rx_db_eeprom.id, _tx_db_eeprom.id, dboard_iface
