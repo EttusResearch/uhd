@@ -28,6 +28,13 @@ int main(int argc, char *argv[])
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+	if (fp < 0) {
+		perror("Open failed");
+		return -1;
+	}
+
+//	sleep(1);
+
 
 	spi_dat.slave = slave;
 	spi_dat.data = data;

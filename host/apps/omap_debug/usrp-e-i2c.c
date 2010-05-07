@@ -37,6 +37,12 @@ int main(int argc, char *argv[])
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+	if (fp < 0) {
+		perror("Open failed");
+		return -1;
+	}
+
+//	sleep(1);
 
 	if (direction) {
 		count = argc - 3;
