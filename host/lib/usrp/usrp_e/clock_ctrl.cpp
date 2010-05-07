@@ -37,7 +37,6 @@ public:
 
     void enable_rx_dboard_clock(bool enb);
     void enable_tx_dboard_clock(bool enb);
-    void enable_codec_clock(bool enb);
 
 private:
     usrp_e_iface::sptr _iface;

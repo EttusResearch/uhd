@@ -47,7 +47,9 @@ public:
     };
 
     /*!
-     * Read the aux adc.
+     * Read an auxiliary adc:
+     * The internals remember which aux adc was read last.
+     * Therefore, the aux adc switch is only changed as needed.
      * \param which which of the 4 adcs
      * \return a value in volts
      */
@@ -58,15 +60,15 @@ public:
         AUX_DAC_A = 0xA,
         AUX_DAC_B = 0xB,
         AUX_DAC_C = 0xC,
-        AUX_DAC_D = 0xD
+        AUX_DAC_D = 0xD //really the sigma delta output
     };
 
     /*!
-     * Write the aux dac.
+     * Write an auxiliary dac.
      * \param which which of the 4 dacs
      * \param volts the level in in volts
      */
-    virtual void read_aux_adc(aux_dac_t which, float volts) = 0;
+    virtual void write_aux_dac(aux_dac_t which, float volts) = 0;
 
 };
 

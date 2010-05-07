@@ -233,7 +233,7 @@ boost::uint16_t get_write_reg(boost::uint8_t addr){
 }
 
 boost::uint16_t get_read_reg(boost::uint8_t addr){
-    return (boost::uint16_t(addr) << 8) | (1 << 7);
+    return (boost::uint16_t(addr) << 8) | (1 << 15);
 }
 """
 
