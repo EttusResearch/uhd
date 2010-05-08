@@ -44,10 +44,10 @@ public:
 
     /*!
      * Make a new usrp-e interface with the control transport.
-     * \param node_fd the file descriptor for the kernel module node
+     * \param node the device node name
      * \return a new usrp-e interface object
      */
-    static sptr make(int node_fd);
+    static sptr make(const std::string &node);
 
     /*!
      * Perform an ioctl call on the device node file descriptor.

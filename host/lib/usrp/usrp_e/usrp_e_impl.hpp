@@ -95,7 +95,6 @@ public:
 private:
     static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
     usrp_e_iface::sptr _iface;
-    int _node_fd;
 
     uhd::clock_config_t _clock_config;
 

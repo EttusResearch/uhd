@@ -18,6 +18,7 @@
 #include "usrp_e_iface.hpp"
 #include <uhd/utils/assert.hpp>
 #include <sys/ioctl.h> //ioctl
+#include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/format.hpp>
 #include <boost/thread.hpp> //mutex
@@ -31,12 +32,18 @@ public:
     /*******************************************************************
      * Structors
      ******************************************************************/
-    usrp_e_iface_impl(int node_fd){
-        _node_fd = node_fd;
+    usrp_e_iface_impl(const std::string &node){
+        //open the device node and check file descriptor
+        if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
+            throw std::runtime_error(str(
+                boost::format("Failed to open %s") % node
+            ));
+        }
     }
 
     ~usrp_e_iface_impl(void){
-        /* NOP */
+        //close the device node file descriptor
+        ::close(_node_fd);
     }
 
     /*******************************************************************
@@ -178,6 +185,6 @@ private:
 /***********************************************************************
  * Public Make Function
  **********************************************************************/
-usrp_e_iface::sptr usrp_e_iface::make(int node_fd){
-    return sptr(new usrp_e_iface_impl(node_fd));
+usrp_e_iface::sptr usrp_e_iface::make(const std::string &node){
+    return sptr(new usrp_e_iface_impl(node));
 }

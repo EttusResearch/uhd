@@ -22,7 +22,6 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
-#include <fcntl.h> //open
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -76,15 +75,8 @@ device::sptr usrp_e::make(const device_addr_t &device_addr){
 usrp_e_impl::usrp_e_impl(const std::string &node){
     std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
 
-    //open the device node and check file descriptor
-    if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
-        throw std::runtime_error(str(
-            boost::format("Failed to open %s") % node
-        ));
-    }
-
     //setup various interfaces into hardware
-    _iface = usrp_e_iface::make(_node_fd);
+    _iface = usrp_e_iface::make(node);
     _clock_ctrl = clock_ctrl::make(_iface);
     _codec_ctrl = codec_ctrl::make(_iface);
 
@@ -100,8 +92,7 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
 }
 
 usrp_e_impl::~usrp_e_impl(void){
-    //close the device node file descriptor
-    ::close(_node_fd);
+    /* NOP */
 }
 
 /***********************************************************************
