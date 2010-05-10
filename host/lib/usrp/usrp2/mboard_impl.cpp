@@ -63,6 +63,13 @@ void usrp2_impl::mboard_init(void){
         boost::uint16_t data = ad9777_regs.get_write_reg(addr);
         _iface->transact_spi(SPI_SS_AD9777, spi_config_t::EDGE_RISE, data, 16, false /*no rb*/);
     }
+
+    //enable ADCs
+    _iface->poke32(FR_MISC_CTRL_ADC, FRF_MISC_CTRL_ADC_ON);
+
+    //set up serdes
+    _iface->poke32(FR_MISC_CTRL_SERDES, FRF_MISC_CTRL_SERDES_ENABLE | FRF_MISC_CTRL_SERDES_RXEN);
+
 }
 
 void usrp2_impl::init_clock_config(void){
@@ -97,9 +104,9 @@ void usrp2_impl::update_clock_config(void){
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
-    case clock_config_t::REF_INT : _iface->poke32(FR_CLOCK_CONTROL, 0x10); break;
-    case clock_config_t::REF_SMA : _iface->poke32(FR_CLOCK_CONTROL, 0x1C); break;
-    case clock_config_t::REF_MIMO: _iface->poke32(FR_CLOCK_CONTROL, 0x15); break;
+    case clock_config_t::REF_INT : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x10); break;
+    case clock_config_t::REF_SMA : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x1C); break;
+    case clock_config_t::REF_MIMO: _iface->poke32(FR_MISC_CTRL_CLOCK, 0x15); break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 
@@ -119,40 +126,31 @@ void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 }
 
 void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
-    out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
-    out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
-    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
+    UHD_ASSERT_THROW(stream_cmd.num_samps <= FR_RX_CTRL_MAX_SAMPS_PER_CMD);
 
-    //set these to defaults, then change in the switch statement
-    out_data.data.stream_cmd.continuous = 0;
-    out_data.data.stream_cmd.chain = 0;
-    out_data.data.stream_cmd.num_samps = htonl(stream_cmd.num_samps);
+    //setup the mode to instruction flags
+    typedef boost::tuple<bool, bool, bool> inst_t;
+    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+                                                            //reload, chain, samps
+        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false))
+        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true))
+    ;
 
-    //setup chain, num samps, and continuous below
-    switch(stream_cmd.stream_mode){
-    case stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        out_data.data.stream_cmd.continuous = 1;
-        break;
+    //setup the instruction flag values
+    bool inst_reload, inst_chain, inst_samps;
+    boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
 
-    case stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS:
-        out_data.data.stream_cmd.num_samps = htonl(0);
-        break;
-
-    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
-        //all set by defaults above
-        break;
-
-    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
-        out_data.data.stream_cmd.chain = 1;
-        break;
-    }
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
+    //issue the stream command
+    _iface->poke32(FR_RX_CTRL_STREAM_CMD, FR_RX_CTRL_MAKE_CMD(
+        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? _max_rx_samples_per_packet : 1),
+        (stream_cmd.stream_now)? 1 : 0,
+        (inst_chain)? 1 : 0,
+        (inst_reload)? 1 : 0
+    ));
+    _iface->poke32(FR_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.secs);
+    _iface->poke32(FR_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
 }
 
 /***********************************************************************

@@ -44,7 +44,6 @@ libu2fw_a_SOURCES = \
 	pic.c \
 	print_mac_addr.c \
 	print_rmon_regs.c \
-	print_fxpt.c \
 	print_buffer.c \
 	printf.c \
 	sd.c \

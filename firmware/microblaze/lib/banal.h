@@ -87,7 +87,4 @@ get_int64(const unsigned char *s)
 void
 print_ip(struct ip_addr ip);
 
-uint32_t
-divide_uint64(uint64_t dividend, uint32_t divisor);
-
 #endif /* INCLUDED_BANAL_H */

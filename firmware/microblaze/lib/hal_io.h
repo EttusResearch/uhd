@@ -24,64 +24,6 @@
 void hal_io_init(void);
 void hal_finish();
 
-
-/*
- * ------------------------------------------------------------------------
- * The GPIO pins are organized into two banks of 16-bits.
- * Bank 0 goes to the Tx daughterboard, Bank 1 goes to the Rx daughterboard.
- *
- * Each pin may be configured as an input or an output from the FPGA.
- * For output pins, there are four signals which may be routed to the
- * pin.  The four signals are the value written by s/w, the output of
- * the ATR controller, or two different sources of debug info from the
- * FPGA fabric.
- * ------------------------------------------------------------------------
- */
-
-#define GPIO_TX_BANK	0	// pins that connect to the Tx daughterboard
-#define	GPIO_RX_BANK	1	// pins that connect to the Rx daughterboard
-
-
-/*!
- * \brief Set the data direction for GPIO pins
- *
- * If the bit is set, it's an output from the FPGA.
- * \param value is a 16-bit bitmask of values
- * \param mask is a 16-bit bitmask of which bits to effect.
- */ 
-void hal_gpio_set_ddr(int bank, int value, int mask);
-
-/*!
- * \brief Select the source of the signal for an output pin.
- *
- * \param code is is one of 's', 'a', '0', '1'
- *   where 's' selects software output, 'a' selects ATR output, '0' selects
- *   debug 0, '1' selects debug 1.
- */
-void hal_gpio_set_sel(int bank, int bitno, char code);
-
-/*!
- * \brief Select the source of the signal for the output pins.
- *
- * \param codes is is a string of 16 characters composed of '.', 's',
- * 'a', '0', or '1' where '.' means "don't change", 's' selects
- * software output, 'a' selects ATR output, '0' selects debug 0, '1'
- * selects debug 1.
- */
-void hal_gpio_set_sels(int bank, char *codes);
-
-
-/*!
- * \brief write \p value to gpio pins specified by \p mask.
- */
-void hal_gpio_write(int bank, int value, int mask);
-
-/*!
- * \brief read GPIO bits
- */
-int  hal_gpio_read(int bank);
-
-
 /*
  * ------------------------------------------------------------------------
  *			   control the leds

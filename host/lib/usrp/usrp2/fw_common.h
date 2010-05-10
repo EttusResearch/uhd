@@ -34,7 +34,7 @@ extern "C" {
 
 //defines the protocol version in this shared header
 //increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 2
+#define USRP2_PROTO_VERSION 3
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -69,9 +69,6 @@ typedef enum{
 
     USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO = 'h',
     USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE = 'H',
-
-    USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO = '{',
-    USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE = '}',
 
     USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO = 'p',
     USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE = 'P',
@@ -113,15 +110,6 @@ typedef struct{
             _SINS_ uint8_t bytes;
             _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
         } i2c_args;
-        struct {
-            _SINS_ uint8_t now; //stream now?
-            _SINS_ uint8_t continuous; //auto-reload commmands?
-            _SINS_ uint8_t chain;
-            _SINS_ uint8_t _pad[1];
-            _SINS_ uint32_t secs;
-            _SINS_ uint32_t ticks;
-            _SINS_ uint32_t num_samps;
-        } stream_cmd;
         struct {
             _SINS_ uint32_t addr;
             _SINS_ uint32_t data;

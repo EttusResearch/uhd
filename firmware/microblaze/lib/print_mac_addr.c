@@ -20,11 +20,9 @@
 void
 print_mac_addr(const unsigned char addr[6])
 {
-  puthex8(addr[0]); putchar(':');
-  puthex8(addr[1]); putchar(':');
-  puthex8(addr[2]); putchar(':');
-  puthex8(addr[3]); putchar(':');
-  puthex8(addr[4]); putchar(':');
-  puthex8(addr[5]);
+  for(size_t i = 0; i < 6; i++){
+    if(i) putchar(':');
+    puthex8(addr[i]);
+  }
 }
 
