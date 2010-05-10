@@ -32,6 +32,10 @@ module dsp_core_rx
    wire        strobe_cic, strobe_hb1, strobe_hb2;
    wire        enable_hb1, enable_hb2;
    wire [7:0]  cic_decim_rate;
+
+   wire [31:10] UNUSED_1;
+   wire [31:4] 	UNUSED_2;
+   wire [31:2] 	UNUSED_3;
    
    setting_reg #(.my_addr(BASE+0)) sr_0
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
@@ -43,7 +47,7 @@ module dsp_core_rx
    
    setting_reg #(.my_addr(BASE+2)) sr_2
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({enable_hb1, enable_hb2, cic_decim_rate}),.changed());
+      .in(set_data),.out({UNUSED_1, enable_hb1, enable_hb2, cic_decim_rate}),.changed());
 
    rx_dcoffset #(.WIDTH(14),.ADDR(BASE+3)) rx_dcoffset_a
      (.clk(clk),.rst(rst),.set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -56,12 +60,12 @@ module dsp_core_rx
    wire [3:0]  muxctrl;
    setting_reg #(.my_addr(BASE+5)) sr_8
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(muxctrl),.changed());
+      .in(set_data),.out({UNUSED_2,muxctrl}),.changed());
 
    wire [1:0] gpio_ena;
    setting_reg #(.my_addr(BASE+6)) sr_9
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(gpio_ena),.changed());
+      .in(set_data),.out({UNUSED_3,gpio_ena}),.changed());
 
    // The TVRX connects to what is called adc_b, thus A and B are
    // swapped throughout the design.
