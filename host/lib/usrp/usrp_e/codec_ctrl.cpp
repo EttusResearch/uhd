@@ -82,7 +82,7 @@ codec_ctrl_impl::codec_ctrl_impl(usrp_e_iface::sptr iface){
 
     //setup tx side of codec
     _ad9862_regs.two_data_paths = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
-    _ad9862_regs.interleaved = ad9862_regs_t::INTERLEAVED_SINGLE; //FIXME should be interleaved
+    _ad9862_regs.interleaved = ad9862_regs_t::INTERLEAVED_INTERLEAVED;
     _ad9862_regs.tx_pga_gain = 199; //TODO bring under api control
     _ad9862_regs.tx_hilbert = ad9862_regs_t::TX_HILBERT_DIS;
     _ad9862_regs.interp = ad9862_regs_t::INTERP_4;
@@ -92,10 +92,19 @@ codec_ctrl_impl::codec_ctrl_impl(usrp_e_iface::sptr iface){
     _ad9862_regs.dac_a_coarse_gain = 0x3;
     _ad9862_regs.dac_b_coarse_gain = 0x3;
 
+    //setup the dll
+    _ad9862_regs.input_clk_ctrl = ad9862_regs_t::INPUT_CLK_CTRL_EXTERNAL;
+    _ad9862_regs.dll_mult = ad9862_regs_t::DLL_MULT_2;
+    _ad9862_regs.dll_mode = ad9862_regs_t::DLL_MODE_FAST;
+
     //write the register settings to the codec
-    for (uint8_t addr = 0; addr <= 50; addr++){
+    for (uint8_t addr = 0; addr <= 25; addr++){
         this->send_reg(addr);
     }
+
+    //aux adc clock
+    _ad9862_regs.clk_4 = ad9862_regs_t::CLK_4_1_4;
+    this->send_reg(34);
 }
 
 codec_ctrl_impl::~codec_ctrl_impl(void){
