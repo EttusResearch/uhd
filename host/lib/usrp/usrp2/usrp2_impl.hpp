@@ -19,7 +19,8 @@
 #define INCLUDED_USRP2_IMPL_HPP
 
 #include "usrp2_iface.hpp"
-#include "clock_control.hpp"
+#include "clock_ctrl.hpp"
+#include "codec_ctrl.hpp"
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
@@ -40,7 +41,7 @@
  */
 uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
     usrp2_iface::sptr iface,
-    clock_control::sptr clk_ctrl
+    clock_ctrl::sptr clk_ctrl
 );
 
 /*!
@@ -114,7 +115,8 @@ private:
     void set(const wax::obj &, const wax::obj &);
 
     //interfaces
-    clock_control::sptr _clk_ctrl;
+    clock_ctrl::sptr _clock_ctrl;
+    codec_ctrl::sptr _codec_ctrl;
     usrp2_iface::sptr _iface;
 
     //the raw io interface (samples are in the usrp2 native format)

@@ -39,7 +39,7 @@ void usrp2_impl::dboard_init(void){
 
     //create a new dboard interface and manager
     dboard_iface::sptr _dboard_iface(
-        make_usrp2_dboard_iface(_iface, _clk_ctrl)
+        make_usrp2_dboard_iface(_iface, _clock_ctrl)
     );
     _dboard_manager = dboard_manager::make(
         _rx_db_eeprom.id, _tx_db_eeprom.id, _dboard_iface

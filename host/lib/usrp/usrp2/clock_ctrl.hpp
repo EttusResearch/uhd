@@ -22,16 +22,16 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class clock_control : boost::noncopyable{
+class clock_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<clock_control> sptr;
+    typedef boost::shared_ptr<clock_ctrl> sptr;
 
     /*!
      * Make a clock config for the ad9510 ic.
      * \param _iface a pointer to the usrp2 interface object
      * \return a new clock control object
      */
-    static sptr make_ad9510(usrp2_iface::sptr iface);
+    static sptr make(usrp2_iface::sptr iface);
 
     /*!
      * Enable/disable the rx dboard clock.

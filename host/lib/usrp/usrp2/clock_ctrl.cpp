@@ -15,21 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp2_impl.hpp"
-#include "clock_control.hpp"
+#include "clock_ctrl.hpp"
 #include "ad9510_regs.hpp"
 #include "usrp2_regs.hpp" //spi slave constants
 #include <boost/cstdint.hpp>
 
 using namespace uhd;
-using namespace uhd::usrp;
 
 /*!
  * A usrp2 clock control specific to the ad9510 ic.
  */
-class clock_control_ad9510 : public clock_control{
+class clock_ctrl_impl : public clock_ctrl{
 public:
-    clock_control_ad9510(usrp2_iface::sptr iface){
+    clock_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
@@ -70,7 +68,7 @@ public:
 
     }
 
-    ~clock_control_ad9510(void){
+    ~clock_ctrl_impl(void){
         /* private clock enables, must be set here */
         this->enable_dac_clock(false);
         this->enable_adc_clock(false);
@@ -152,6 +150,6 @@ private:
 /***********************************************************************
  * Public make function for the ad9510 clock control
  **********************************************************************/
-clock_control::sptr clock_control::make_ad9510(usrp2_iface::sptr iface){
-    return clock_control::sptr(new clock_control_ad9510(iface));
+clock_ctrl::sptr clock_ctrl::make(usrp2_iface::sptr iface){
+    return sptr(new clock_ctrl_impl(iface));
 }
