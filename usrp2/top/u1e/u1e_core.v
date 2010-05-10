@@ -349,15 +349,20 @@ module u1e_core
    
    cordic_z24 #(.bitwidth(24)) tx_cordic
      (.clock(wb_clk), .reset(wb_rst), .enable(1),
-      .xi(24'd15000), .yi(24'd0), .zi(phase), .xo(tx_i), .yo(tx_q), .zo());
+      .xi(24'd2500000), .yi(24'd0), .zi(phase), .xo(tx_i), .yo(tx_q), .zo());
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
 
    assign debug_clk = { EM_CLK, clk_fpga };
-   assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
+/*
+    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
+*/
 
+   assign debug = { phase[23:8], txsync, txblank, tx };
+   
+   
    assign debug_gpio_0 = { debug_gpmc };
    assign debug_gpio_1 = { {rx_enable, rx_strobe, rx_fifo_rdy, rx_strobe & ~rx_fifo_rdy},
 			   {tx_enable, tx_strobe, tx_fifo_rdy, tx_strobe & ~tx_fifo_rdy},
