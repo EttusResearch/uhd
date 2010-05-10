@@ -53,7 +53,7 @@ bool clocks_lock_detect();
 /*!
  * \brief Enable or disable test clock (extra clock signal)
  */
-void clocks_enable_test_clk(bool enable, int divisor);
+//void clocks_enable_test_clk(bool enable, int divisor);
 
 /*!
  * \brief Enable or disable fpga clock.  Disabling would wedge and require a power cycle.
@@ -73,23 +73,23 @@ void clocks_enable_eth_phyclk(bool enable, int divisor);
 /*!
  * \brief Enable or disable clock to DAC
  */
-void clocks_enable_dac_clk(bool enable, int divisor);
+//void clocks_enable_dac_clk(bool enable, int divisor);
 
 /*!
  * \brief Enable or disable clock to ADC
  */
-void clocks_enable_adc_clk(bool enable, int divisor);
+//void clocks_enable_adc_clk(bool enable, int divisor);
 
 /*!
  * \brief Enable or disable clock to Rx daughterboard
  */
-void clocks_enable_rx_dboard(bool enable, int divisor);
+//void clocks_enable_rx_dboard(bool enable, int divisor);
 
 
 /*!
  * \brief Enable or disable clock to Tx daughterboard
  */
-void clocks_enable_tx_dboard(bool enable, int divisor);
+//void clocks_enable_tx_dboard(bool enable, int divisor);
 
 
 #endif /* INCLUDED_CLOCKS_H */

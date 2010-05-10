@@ -36,10 +36,6 @@ void usrp2_impl::mboard_init(void){
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
-
-    //set up serdes
-    _iface->poke32(FR_MISC_CTRL_SERDES, FRF_MISC_CTRL_SERDES_ENABLE | FRF_MISC_CTRL_SERDES_RXEN);
-
 }
 
 void usrp2_impl::init_clock_config(void){

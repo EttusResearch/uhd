@@ -149,6 +149,7 @@ usrp2_impl::usrp2_impl(
     _iface = usrp2_iface::make(ctrl_transport);
     _clock_ctrl = clock_ctrl::make(_iface);
     _codec_ctrl = codec_ctrl::make(_iface);
+    _serdes_ctrl = serdes_ctrl::make(_iface);
 
     //load the allowed decim/interp rates
     //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)

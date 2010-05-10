@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_CLOCK_CONTROL_HPP
-#define INCLUDED_CLOCK_CONTROL_HPP
+#ifndef INCLUDED_CLOCK_CTRL_HPP
+#define INCLUDED_CLOCK_CTRL_HPP
 
 #include "usrp2_iface.hpp"
 #include <boost/shared_ptr.hpp>
@@ -57,4 +57,4 @@ public:
 
 };
 
-#endif /* INCLUDED_CLOCK_CONTROL_HPP */
+#endif /* INCLUDED_CLOCK_CTRL_HPP */

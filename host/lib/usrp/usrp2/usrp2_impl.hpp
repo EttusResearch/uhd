@@ -21,6 +21,7 @@
 #include "usrp2_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include "serdes_ctrl.hpp"
 #include <uhd/usrp/usrp2.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
@@ -115,9 +116,10 @@ private:
     void set(const wax::obj &, const wax::obj &);
 
     //interfaces
+    usrp2_iface::sptr _iface;
     clock_ctrl::sptr _clock_ctrl;
     codec_ctrl::sptr _codec_ctrl;
-    usrp2_iface::sptr _iface;
+    serdes_ctrl::sptr _serdes_ctrl;
 
     //the raw io interface (samples are in the usrp2 native format)
     void recv_raw(uhd::rx_metadata_t &);

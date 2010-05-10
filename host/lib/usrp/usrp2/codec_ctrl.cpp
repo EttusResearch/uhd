@@ -53,7 +53,7 @@ public:
         _ad9777_regs.qdac_offset_adjust_msb = 0;
         //write all regs
         for(boost::uint8_t addr = 0; addr <= 0xC; addr++){
-            send_ad9777_reg(addr);
+            this->send_ad9777_reg(addr);
         }
 
         //power-up adc
@@ -63,7 +63,7 @@ public:
     ~codec_ctrl_impl(void){
         //power-down dac
         _ad9777_regs.power_down_mode = 1;
-        send_ad9777_reg(0);
+        this->send_ad9777_reg(0);
 
         //power-down adc
         _iface->poke32(FR_MISC_CTRL_ADC, FRF_MISC_CTRL_ADC_OFF);
@@ -78,7 +78,7 @@ private:
         if (codec_ctrl_debug) std::cout << "send_ad9777_reg: " << std::hex << reg << std::endl;
         _iface->transact_spi(
             SPI_SS_AD9777, spi_config_t::EDGE_RISE,
-            reg, 6, false /*no rb*/
+            reg, 16, false /*no rb*/
         );
     }
 };

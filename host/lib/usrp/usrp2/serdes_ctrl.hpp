@@ -15,24 +15,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_CODEC_CTRL_HPP
-#define INCLUDED_CODEC_CTRL_HPP
+#ifndef INCLUDED_SERDES_CTRL_HPP
+#define INCLUDED_SERDES_CTRL_HPP
 
 #include "usrp2_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class codec_ctrl : boost::noncopyable{
+class serdes_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<codec_ctrl> sptr;
+    typedef boost::shared_ptr<serdes_ctrl> sptr;
 
     /*!
-     * Make a codec control for the DAC and ADC.
+     * Make a serdes control object for the usrp2 serdes port.
      * \param _iface a pointer to the usrp2 interface object
-     * \return a new codec control object
+     * \return a new serdes control object
      */
     static sptr make(usrp2_iface::sptr iface);
 
+    //TODO fill me in with virtual methods
+
 };
 
-#endif /* INCLUDED_CODEC_CTRL_HPP */
+#endif /* INCLUDED_SERDES_CTRL_HPP */
