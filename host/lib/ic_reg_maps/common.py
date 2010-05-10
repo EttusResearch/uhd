@@ -29,30 +29,59 @@ COMMON_TMPL = """\
 \#ifndef INCLUDED_$(name.upper())_HPP
 \#define INCLUDED_$(name.upper())_HPP
 
+\#include <uhd/config.hpp>
 \#include <boost/cstdint.hpp>
+\#include <stdexcept>
+\#include <set>
 
-struct $(name)_t{
-
+class $(name)_t{
+public:
     #for $reg in $regs
-        #if $reg.get_enums()
+    #if $reg.get_enums()
     enum $reg.get_type(){
         #for $i, $enum in enumerate($reg.get_enums())
         #set $end_comma = ',' if $i < len($reg.get_enums())-1 else ''
         $(reg.get_name().upper())_$(enum[0].upper()) = $enum[1]$end_comma
         #end for
     };
-        #end if
+    #end if
     $reg.get_type() $reg.get_name();
     #end for
 
     $(name)_t(void){
-    #for $reg in $regs
+        _state = NULL;
+        #for $reg in $regs
         $reg.get_name() = $reg.get_default();
-    #end for
+        #end for
+    }
+
+    ~$(name)_t(void){
+        delete _state;
     }
 
 $body
 
+    void save_state(void){
+        if (_state == NULL) _state = new $(name)_t();
+        #for $reg in $regs
+        _state->$reg.get_name() = this->$reg.get_name();
+        #end for
+    }
+
+    template<typename T> std::set<T> get_changed_addrs(void){
+        if (_state == NULL) throw std::runtime_error("no saved state");
+        //check each register for changes
+        std::set<T> addrs;
+        #for $reg in $regs
+        if(_state->$reg.get_name() != this->$reg.get_name()){
+            addrs.insert($reg.get_addr());
+        }
+        #end for
+        return addrs;
+    }
+
+private:
+    $(name)_t *_state;
 };
 
 \#endif /* INCLUDED_$(name.upper())_HPP */
