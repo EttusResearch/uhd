@@ -1,6 +1,6 @@
 CFLAGS=-Wall -I../../lib/usrp/usrp_e/
 
-all : usrp-e-spi usrp-e-i2c usrp-e-rw usrp-e-uart usrp-e-led usrp-e-ctl usrp-e-button usrp-e-uart-rx fpga-downloader usrp-e-gpio usrp-e-debug-pins usrp-e-rw-random usrp-e-fpga-rw usrp-e-lb-test usrp-e-crc-rw
+all : usrp-e-spi usrp-e-i2c usrp-e-rw usrp-e-uart usrp-e-led usrp-e-ctl usrp-e-button usrp-e-uart-rx fpga-downloader usrp-e-gpio usrp-e-debug-pins usrp-e-rw-random usrp-e-fpga-rw usrp-e-lb-test usrp-e-crc-rw clkgen-config
 
 usrp-e-spi : usrp-e-spi.c
 
@@ -30,6 +30,8 @@ usrp-e-button : usrp-e-button.c
 
 fpga-downloader : fpga-downloader.cc
 
+clkgen-config : clkgen-config.cc
+
 usrp-e-gpio : usrp-e-gpio.c
 
 usrp-e-lb-test : usrp-e-lb-test.c
@@ -51,3 +53,4 @@ clean :
 	rm -f usrp-e-debug-pins
 	rm -f usrp-e-lb-test
 	rm -f usrp-e-crc-rw
+	rm -f clkgen-config
