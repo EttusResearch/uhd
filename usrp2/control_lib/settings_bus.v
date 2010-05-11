@@ -10,8 +10,7 @@ module settings_bus
      input wb_stb_i,
      input wb_we_i,
      output reg wb_ack_o,
-     input sys_clk,
-     output strobe,
+     output reg strobe,
      output reg [7:0] addr,
      output reg [31:0] data);
 
@@ -20,18 +19,18 @@ module settings_bus
    always @(posedge wb_clk)
      if(wb_rst)
        begin
-	  stb_int <= 1'b0;
+	  strobe <= 1'b0;
 	  addr <= 8'd0;
 	  data <= 32'd0;
        end
-     else if(wb_we_i & wb_stb_i)
+     else if(wb_we_i & wb_stb_i & ~wb_ack_o)
        begin
-	  stb_int <= 1'b1;
+	  strobe <= 1'b1;
 	  addr <= wb_adr_i[9:2];
 	  data <= wb_dat_i;
        end
      else
-       stb_int <= 1'b0;
+       strobe <= 1'b0;
 
    always @(posedge wb_clk)
      if(wb_rst)
@@ -39,11 +38,4 @@ module settings_bus
      else
        wb_ack_o <= wb_stb_i & ~wb_ack_o;
 
-   always @(posedge wb_clk)
-     stb_int_d1 <= stb_int;
-
-   //assign strobe = stb_int & ~stb_int_d1;
-   assign strobe = stb_int & wb_ack_o;
-          
 endmodule // settings_bus
-
