@@ -431,7 +431,7 @@ module u2_core
    settings_bus settings_bus
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s7_adr),.wb_dat_i(s7_dat_o),
       .wb_stb_i(s7_stb),.wb_we_i(s7_we),.wb_ack_o(s7_ack),
-      .sys_clk(dsp_clk),.strobe(set_stb),.addr(set_addr),.data(set_data));
+      .strobe(set_stb),.addr(set_addr),.data(set_data));
    
    assign 	 s7_dat_i = 32'd0;
 
