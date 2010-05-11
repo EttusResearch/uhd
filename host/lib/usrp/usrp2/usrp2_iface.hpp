@@ -32,7 +32,14 @@
 #define	I2C_ADDR_MBOARD (I2C_DEV_EEPROM | 0x0)
 #define	I2C_ADDR_TX_DB  (I2C_DEV_EEPROM | 0x4)
 #define	I2C_ADDR_RX_DB  (I2C_DEV_EEPROM | 0x5)
+
 ////////////////////////////////////////////////////////////////////////
+// EEPROM Layout
+////////////////////////////////////////////////////////////////////////
+#define EE_MBOARD_REV_LSB  0x00 //1 byte
+#define EE_MBOARD_REV_MSB  0x01 //1 byte
+#define EE_MBOARD_MAC_ADDR 0x02 //6 bytes
+#define EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
 
 /*!
  * The usrp2 interface class:

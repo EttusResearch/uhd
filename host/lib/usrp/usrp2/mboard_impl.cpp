@@ -19,10 +19,11 @@
 #include "usrp2_regs.hpp"
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/bind.hpp>
-#include <boost/asio.hpp> //htonl and ntohl
+#include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;
@@ -129,30 +130,15 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO);
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
-
-            //extract the address
-            val = mac_addr_t::from_bytes(in_data.data.mac_addr).to_string();
+            byte_vector_t bytes = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, 6);
+            val = mac_addr_t::from_bytes(bytes).to_string();
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
-
-            //extract the address
-            val = boost::asio::ip::address_v4(ntohl(in_data.data.ip_addr)).to_string();
+            boost::asio::ip::address_v4::bytes_type bytes;
+            std::copy(_iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, 4), bytes);
+            val = boost::asio::ip::address_v4(bytes).to_string();
             return;
         }
     }
@@ -223,27 +209,15 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO);
-            mac_addr_t mac_addr = mac_addr_t::from_string(val.as<std::string>());
-            std::copy(mac_addr.to_bytes(), mac_addr.to_bytes()+mac_addr_t::hlen, out_data.data.mac_addr);
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
+            byte_vector_t bytes = mac_addr_t::from_string(val.as<std::string>()).to_bytes();
+            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, bytes);
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO);
-            out_data.data.ip_addr = htonl(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_ulong());
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
+            byte_vector_t bytes(4);
+            std::copy(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_bytes(), bytes);
+            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, bytes);
             return;
         }
     }

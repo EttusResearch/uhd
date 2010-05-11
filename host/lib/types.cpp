@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/assert.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/clock_config.hpp>
@@ -164,17 +165,19 @@ std::string device_addr_t::to_string(void) const{
 /***********************************************************************
  * mac addr
  **********************************************************************/
-mac_addr_t::mac_addr_t(const boost::uint8_t *bytes){
-    std::copy(bytes, bytes+hlen, _bytes);
+mac_addr_t::mac_addr_t(const byte_vector_t &bytes){
+    UHD_ASSERT_THROW(bytes.size() == 6);
+    _bytes = bytes;
 }
 
-mac_addr_t mac_addr_t::from_bytes(const boost::uint8_t *bytes){
+mac_addr_t mac_addr_t::from_bytes(const byte_vector_t &bytes){
     return mac_addr_t(bytes);
 }
 
 mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
 
-    boost::uint8_t p[hlen] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
+    byte_vector_t bytes = boost::assign::list_of
+        (0x00)(0x50)(0xC2)(0x85)(0x30)(0x00); // Matt's IAB
 
     try{
         //only allow patterns of xx:xx or xx:xx:xx:xx:xx:xx
@@ -189,7 +192,7 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
             int hex_num;
             std::istringstream iss(hex_strs[i]);
             iss >> std::hex >> hex_num;
-            p[i] = boost::uint8_t(hex_num);
+            bytes[i] = boost::uint8_t(hex_num);
         }
 
     }
@@ -199,19 +202,19 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
         ));
     }
 
-    return from_bytes(p);
+    return mac_addr_t::from_bytes(bytes);
 }
 
-const boost::uint8_t *mac_addr_t::to_bytes(void) const{
+byte_vector_t mac_addr_t::to_bytes(void) const{
     return _bytes;
 }
 
 std::string mac_addr_t::to_string(void) const{
-    return str(
-        boost::format("%02x:%02x:%02x:%02x:%02x:%02x")
-        % int(to_bytes()[0]) % int(to_bytes()[1]) % int(to_bytes()[2])
-        % int(to_bytes()[3]) % int(to_bytes()[4]) % int(to_bytes()[5])
-    );
+    std::string addr = "";
+    BOOST_FOREACH(boost::uint8_t byte, this->to_bytes()){
+        addr += str(boost::format("%s%02x") % ((addr == "")?"":":") % int(byte));
+    }
+    return addr;
 }
 
 /***********************************************************************

@@ -185,7 +185,7 @@ void handle_udp_ctrl_packet(
         printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
             USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
         );
-        ctrl_data_in_id = USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO;
+        ctrl_data_in_id = USRP2_CTRL_ID_WAZZUP_BRO;
     }
 
     //ensure that this is not a short packet
@@ -209,26 +209,9 @@ void handle_udp_ctrl_packet(
     /*******************************************************************
      * Addressing
      ******************************************************************/
-    case USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO:
-        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
+    case USRP2_CTRL_ID_WAZZUP_BRO:
+        ctrl_data_out.id = USRP2_CTRL_ID_WAZZUP_DUDE;
         memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
-        break;
-
-    case USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO:
-        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE;
-        set_ip_addr((struct ip_addr *)&ctrl_data_in->data.ip_addr);
-        memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
-        break;
-
-    case USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO:
-        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
-        memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
-        break;
-
-    case USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO:
-        ctrl_data_out.id = USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE;
-        ethernet_set_mac_addr((eth_mac_addr_t *)&ctrl_data_in->data.mac_addr);
-        memcpy(&ctrl_data_out.data.mac_addr, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
         break;
 
     /*******************************************************************

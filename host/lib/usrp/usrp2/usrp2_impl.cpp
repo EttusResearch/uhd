@@ -72,7 +72,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out;
     ctrl_data_out.proto_ver = htonl(USRP2_PROTO_VERSION);
-    ctrl_data_out.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
+    ctrl_data_out.id = htonl(USRP2_CTRL_ID_WAZZUP_BRO);
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the timeout
@@ -83,7 +83,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
         if (len >= sizeof(usrp2_ctrl_data_t)){
             //handle the received data
             switch(ntohl(ctrl_data_in.id)){
-            case USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE:
+            case USRP2_CTRL_ID_WAZZUP_DUDE:
                 //make a boost asio ipv4 with the raw addr in host byte order
                 boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
                 device_addr_t new_addr;

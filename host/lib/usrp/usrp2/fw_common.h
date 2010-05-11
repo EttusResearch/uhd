@@ -53,13 +53,8 @@ typedef enum{
     //USRP2_CTRL_ID_FOR_SURE, //TODO error condition enums
     //USRP2_CTRL_ID_SUX_MAN,
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO = 'a',
-    USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE = 'A',
-    USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO = 'b',
-
-    USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO = 'm',
-    USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE = 'M',
-    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO = 'n',
+    USRP2_CTRL_ID_WAZZUP_BRO = 'a',
+    USRP2_CTRL_ID_WAZZUP_DUDE = 'A',
 
     USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO = 's',
     USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE = 'S',
@@ -96,7 +91,6 @@ typedef struct{
     _SINS_ uint32_t seq;
     union{
         _SINS_ uint32_t ip_addr;
-        _SINS_ uint8_t mac_addr[6];
         struct {
             _SINS_ uint8_t dev;
             _SINS_ uint8_t miso_edge;

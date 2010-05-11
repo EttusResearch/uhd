@@ -26,6 +26,11 @@
  */
 namespace std{
 
+    template<typename RangeSrc, typename RangeDst> inline
+    void copy(const RangeSrc &src, RangeDst &dst){
+        std::copy(boost::begin(src), boost::end(src), boost::begin(dst));
+    }
+
     template<typename Range, typename T> inline
     bool has(const Range &range, const T &value){
         return boost::end(range) != std::find(boost::begin(range), boost::end(range), value);
