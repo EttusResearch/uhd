@@ -44,6 +44,8 @@ static void *read_thread(void *threadid)
 	int i;
 	unsigned long crc;
 	unsigned int rx_crc;
+	unsigned long bytes_transfered, elapsed_seconds;
+	struct timeval start_time, finish_time;
 
 	printf("Greetings from the reading thread!\n");
 
@@ -51,7 +53,10 @@ static void *read_thread(void *threadid)
 	rx_data = malloc(2048);
 
 	rx_pkt_cnt = 0;
-	
+
+	bytes_transfered = 0;
+	gettimeofday(&start_time, NULL);
+
 	while (1) {
 		
 		cnt = read(fp, rx_data, 2048);
@@ -81,7 +86,20 @@ static void *read_thread(void *threadid)
 			printf("CRC Error, sent: %d, rx: %d\n",
 				rx_crc, (crc & 0xFFFFFFFF));
 		}
-		
+
+		bytes_transfered += rx_data->len;
+
+		if (bytes_transfered > (100 * 1000000)) {
+			gettimeofday(&finish_time, NULL);
+			elapsed_seconds = start_time.tv_sec - finish_time.tv_sec;
+
+			printf("RX data transfer rate = %f K Bps\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+
+
+			start_time = finish_time;
+			bytes_transfered = 0;
+		}
 	}	
 }
 	
@@ -91,11 +109,15 @@ static void *write_thread(void *threadid)
 	int tx_len;
 	unsigned long crc;
 	struct usrp_transfer_frame *tx_data;
-	struct pkt *p;
+	unsigned long bytes_transfered, elapsed_seconds;
+	struct timeval start_time, finish_time;
 
 	printf("Greetings from the write thread!\n");
 
 	tx_data = malloc(2048);
+
+	bytes_transfered = 0;
+	gettimeofday(&start_time, NULL);
 
 	while (1) {
 
@@ -115,6 +137,8 @@ static void *write_thread(void *threadid)
 		}
 
 		tx_len = 2048 - sizeof(struct usrp_transfer_frame) - sizeof(int);
+		tx_data->len = tx_len + sizeof(int);
+
 		crc = 0xFFFFFFFF;
 		for (i = 0; i < tx_len; i++) {
 			tx_data->buf[i] = rand() & 0xFF;
@@ -128,6 +152,22 @@ static void *write_thread(void *threadid)
 		cnt = write(fp, tx_data, 2048);
 		if (cnt < 0)
 			printf("Error returned from write: %d\n", cnt);
+
+
+		bytes_transfered += tx_data->len;
+
+		if (bytes_transfered > (100 * 1000000)) {
+			gettimeofday(&finish_time, NULL);
+			elapsed_seconds = start_time.tv_sec - finish_time.tv_sec;
+
+			printf("TX data transfer rate = %f K Bps\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+
+
+			start_time = finish_time;
+			bytes_transfered = 0;
+		}
+
 //		sleep(1);
 	}
 }
