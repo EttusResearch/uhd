@@ -1,9 +1,24 @@
 #!/usr/bin/env python
+#
+# Copyright 2010 Ettus Research LLC
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 ########################################################################
 # Deal with raw devices
 ########################################################################
-import glob
 import platform
 import tempfile
 import subprocess
@@ -14,6 +29,19 @@ MAX_FILE_SIZE =  1 * (2**20)      # maximum number of bytes we'll burn to a slot
 
 FPGA_OFFSET = 0                   # offset in flash to fpga image
 FIRMWARE_OFFSET = 1 * (2**20)     # offset in flash to firmware image
+
+MAX_SD_CARD_SIZE = 2048e6         # bytes (any bigger is sdhc)
+
+def command(*args):
+    p = subprocess.Popen(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    ret = p.wait()
+    verbose = p.stdout.read()
+    if ret != 0: raise Exception, verbose
+    return verbose
 
 def get_dd_path():
     if platform.system() == 'Windows':
@@ -26,26 +54,57 @@ def get_dd_path():
     return 'dd'
 
 def get_raw_device_hints():
+    ####################################################################
+    # Platform Windows: parse the output of dd.exe --list
+    ####################################################################
     if platform.system() == 'Windows':
-        output = subprocess.Popen(
-            [get_dd_path(), '--list'],#, '--filter=removable'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        ).stdout.read()
         volumes = list()
+        try: output = command(get_dd_path(), '--list')
+        except: return volumes
+
+        #coagulate info for identical links
+        link_to_info = dict()
         for info in output.replace('\r', '').split('\n\\\\'):
-            if 'removeable' not in info.lower(): continue
             if 'link to' not in info: continue
+            link = info.split('link to')[-1].split()[0].strip()
+            if not link_to_info.has_key(link): link_to_info[link] = '\n\n'
+            link_to_info[link] += info
+
+        #parse info only keeping viable volumes
+        for link, info in link_to_info.iteritems():
+            if 'removable' not in info.lower(): continue
             if 'size is' in info:
-                size = info.split('size is')[-1].split()[0]
-                if int(size) > 2048e6: continue
+                size = info.split('size is')[-1].split()[0].strip()
+                if int(size) > MAX_SD_CARD_SIZE: continue
             if 'Mounted on' in info:
                 volumes.append(info.split('Mounted on')[-1].split()[0])
                 continue
-            volumes.append(info.split('link to')[-1].split()[0])
-        return volumes
+            volumes.append(link)
+
+        return sorted(set(volumes))
+
+    ####################################################################
+    # Platform Linux: call blockdev on all the /dev/sd* devices
+    ####################################################################
     if platform.system() == 'Linux':
-        return sorted(set(filter(lambda sd: not sd[-1].isdigit(), glob.glob("/dev/sd*"))))
+        devs = list()
+        try: output = open('/proc/partitions', 'r').read()
+        except: return devs
+        for line in output.splitlines():
+            try:
+                major, minor, blocks, name = line.split()
+                if name[-1].isdigit(): assert int(minor) == 0
+                dev = os.path.join('/dev/', name)
+                size = int(command('blockdev', '--getsz', dev))*512
+                assert size <= MAX_SD_CARD_SIZE
+            except: continue
+            devs.append(dev)
+
+        return sorted(set(devs))
+
+    ####################################################################
+    # Platform Others:
+    ####################################################################
     return ()
 
 def verify_image(image_file, device_file, offset):
@@ -55,22 +114,14 @@ def verify_image(image_file, device_file, offset):
     tmp_file = tmp[1]
 
     #execute a dd subprocess
-    args = [
+    verbose = command(
         get_dd_path(),
         "of=%s"%tmp_file,
         "if=%s"%device_file,
         "skip=%d"%offset,
         "bs=%d"%SECTOR_SIZE,
         "count=%d"%(MAX_FILE_SIZE/SECTOR_SIZE),
-    ]
-    p = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
     )
-    ret = p.wait()
-    verbose = p.stdout.read()
-    if ret != 0: raise Exception, verbose
 
     #read in the image and readback
     img_data = open(image_file, 'rb').read()
@@ -81,24 +132,13 @@ def verify_image(image_file, device_file, offset):
     return 'Verification Passed:\n%s'%verbose
 
 def write_image(image_file, device_file, offset):
-    args = [
+    return command(
         get_dd_path(),
         "if=%s"%image_file,
         "of=%s"%device_file,
         "seek=%d"%offset,
         "bs=%d"%SECTOR_SIZE,
-    ]
-    p = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
     )
-    ret = p.wait()
-    verbose = p.stdout.read()
-
-    #get the verbose back to the caller
-    if ret != 0: raise Exception, verbose
-    return verbose
 
 def write_and_verify(image_file, device_file, offset):
     if os.path.getsize(image_file) > MAX_FILE_SIZE:
@@ -117,10 +157,10 @@ def write_and_verify(image_file, device_file, offset):
 
 def burn_sd_card(dev, fw, fpga):
     verbose = ''
-    if fw: verbose += 'Burn firmware image verbose:\n%s\n'%write_and_verify(
+    if fw: verbose += 'Burn firmware image:\n%s\n'%write_and_verify(
         image_file=fw, device_file=dev, offset=FIRMWARE_OFFSET
     )
-    if fpga: verbose += 'Burn fpga image verbose:\n%s\n'%write_and_verify(
+    if fpga: verbose += 'Burn fpga image:\n%s\n'%write_and_verify(
         image_file=fpga, device_file=dev, offset=FPGA_OFFSET
     )
     return verbose
@@ -171,10 +211,11 @@ class DeviceEntryWidget(Tkinter.Frame):
     def __init__(self, root, text=''):
         Tkinter.Frame.__init__(self, root)
 
+        Tkinter.Button(self, text="Reload Possible Devices", command=self._reload_cb).pack()
+
         self._hints = Tkinter.Listbox(self)
         self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
-        for hint in get_raw_device_hints():
-            self._hints.insert(Tkinter.END, hint)
+        self._reload_cb()
         self._hints.pack(expand=Tkinter.YES, fill=Tkinter.X)
 
         frame = Tkinter.Frame(self)
@@ -184,6 +225,11 @@ class DeviceEntryWidget(Tkinter.Frame):
         self._entry = Tkinter.Entry(frame, width=50)
         self._entry.insert(Tkinter.END, text)
         self._entry.pack(side=Tkinter.LEFT)
+
+    def _reload_cb(self):
+        self._hints.delete(0, Tkinter.END)
+        for hint in get_raw_device_hints():
+            self._hints.insert(Tkinter.END, hint)
 
     def _listbox_cb(self, event):
         try:
