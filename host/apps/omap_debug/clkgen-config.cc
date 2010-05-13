@@ -50,6 +50,7 @@ static const unsigned int config_data[] = {
 	0x001704,
 	0x001807,
 	0x001900,
+	//0x001a00,//for debug
 	0x001a32,
 	0x001b12,
 	0x001c44,
@@ -117,7 +118,7 @@ static const unsigned int config_data[] = {
 };
 
 
-const unsigned int CLKGEN_SELECT = 127;
+const unsigned int CLKGEN_SELECT = 145;
 
 
 enum gpio_direction {IN, OUT};
@@ -238,7 +239,7 @@ spidev::spidev(std::string fname)
 {
 	int ret;
 	int mode = 0;
-	int speed = 12000000;
+	int speed = 12000;
 	int bits = 24;
 
 	fd = open(fname.c_str(), O_RDWR);
@@ -277,9 +278,10 @@ static void send_config_to_clkgen(gpio &chip_select, const unsigned int data[], 
 
 	for (unsigned int i = 0; i < data_size; i++) {
 
-		chip_select.set_value(1);
-		spi.send((char *)&data[i], (char *)&rbuf, 4);
+		std::cout << "sending " << std::hex << data[i] << std::endl;
 		chip_select.set_value(0);
+		spi.send((char *)&data[i], (char *)&rbuf, 4);
+		chip_select.set_value(1);
 
 	};
 }
