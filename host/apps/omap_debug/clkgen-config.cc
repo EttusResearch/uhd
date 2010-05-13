@@ -239,7 +239,7 @@ spidev::spidev(std::string fname)
 	int ret;
 	int mode = 0;
 	int speed = 12000000;
-	int bits = 32;
+	int bits = 24;
 
 	fd = open(fname.c_str(), O_RDWR);
 
@@ -264,7 +264,7 @@ void spidev::send(char *buf, char *rbuf, unsigned int nbytes)
 	tr.len = nbytes;
 	tr.delay_usecs = 0;
 	tr.speed_hz = 12000000;
-	tr.bits_per_word = 32;
+	tr.bits_per_word = 24;
 
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);	
 
