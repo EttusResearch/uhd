@@ -76,6 +76,8 @@ static void *read_thread(void *threadid)
 		if (calc_checksum(p) != p->checksum)
 			printf("Checksum fail packet = %d, expected = %d\n",
 				calc_checksum(p), p->checksum);
+		printf(".");
+		fflush(stdout);
 //		printf("\n");
 	}
 
