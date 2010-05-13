@@ -132,13 +132,19 @@ def verify_image(image_file, device_file, offset):
     return 'Verification Passed:\n%s'%verbose
 
 def write_image(image_file, device_file, offset):
-    return command(
+    verbose = command(
         get_dd_path(),
         "if=%s"%image_file,
         "of=%s"%device_file,
         "seek=%d"%offset,
         "bs=%d"%SECTOR_SIZE,
     )
+
+    try: #exec the sync command (only works on linux)
+        if platform.system() == 'Linux': command('sync')
+    except: pass
+
+    return verbose
 
 def write_and_verify(image_file, device_file, offset):
     if os.path.getsize(image_file) > MAX_FILE_SIZE:
@@ -211,7 +217,7 @@ class DeviceEntryWidget(Tkinter.Frame):
     def __init__(self, root, text=''):
         Tkinter.Frame.__init__(self, root)
 
-        Tkinter.Button(self, text="Reload Possible Devices", command=self._reload_cb).pack()
+        Tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
 
         self._hints = Tkinter.Listbox(self)
         self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
@@ -278,6 +284,7 @@ class USRP2CardBurnerApp(Tkinter.Frame):
 
         #the do it button
         SectionLabel(self, text="").pack(pady=5)
+        Tkinter.Label(self, text="Warning! This tool can overwrite your hard drive. Use with caution.").pack()
         Tkinter.Button(self, text="Burn SD Card", command=self._burn).pack()
 
     def _burn(self):
@@ -314,11 +321,17 @@ import optparse
 
 if __name__=='__main__':
     parser = optparse.OptionParser()
-    parser.add_option("--gui", action="store_true", default=False, help="run in gui mode")
-    parser.add_option("--dev", type="string", help="raw device path", default='')
-    parser.add_option("--fw", type="string", help="firmware image path (optional)", default='')
-    parser.add_option("--fpga", type="string", help="fpga image path (optional)", default='')
+    parser.add_option("--dev",  type="string",       help="raw device path",                default='')
+    parser.add_option("--fw",   type="string",       help="firmware image path (optional)", default='')
+    parser.add_option("--fpga", type="string",       help="fpga image path (optional)",     default='')
+    parser.add_option("--list", action="store_true", help="list possible raw devices",      default=False)
+    parser.add_option("--gui",  action="store_true", help="run in gui mode",                default=False)
     (options, args) = parser.parse_args()
+
+    if options.list:
+        print 'Possible raw devices:'
+        print '  ' + '\n  '.join(get_raw_device_hints())
+        exit()
 
     if options.gui:
         root = Tkinter.Tk()
