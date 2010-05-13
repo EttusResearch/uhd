@@ -117,7 +117,7 @@ static const unsigned int config_data[] = {
 };
 
 
-const unsigned int CLKGEN_SELECT = 145;
+const unsigned int CLKGEN_SELECT = 127;
 
 
 enum gpio_direction {IN, OUT};
