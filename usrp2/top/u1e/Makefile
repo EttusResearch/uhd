@@ -111,6 +111,10 @@ control_lib/newfifo/fifo_cascade.v \
 control_lib/newfifo/fifo36_to_ll8.v \
 control_lib/newfifo/fifo36_to_fifo18.v \
 control_lib/newfifo/fifo19_to_fifo36.v \
+control_lib/newfifo/packet_generator.v \
+control_lib/newfifo/packet_verifier.v \
+control_lib/newfifo/packet_generator32.v \
+control_lib/newfifo/packet_verifier32.v \
 control_lib/longfifo.v \
 control_lib/shortfifo.v \
 control_lib/medfifo.v \

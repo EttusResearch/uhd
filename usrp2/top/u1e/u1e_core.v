@@ -1,4 +1,9 @@
 
+
+//`define LOOPBACK 1
+//`define TIMED 1
+`define CRC 1
+
 module u1e_core
   (input clk_fpga, input rst_fpga,
    output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
@@ -61,47 +66,59 @@ module u1e_core
 
 		    .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
 		    .debug(debug_gpmc));
-/*
+
+`ifdef LOOPBACK
    fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-*/
-   wire 	 tx_strobe, rx_strobe, tx_enable, rx_enable;
-   wire [7:0] 	 rate;
-   wire 	 tx_fifo_rdy, rx_fifo_rdy;
-   
-   cic_strober tx_strober (.clock(wb_clk), .reset(wb_rst), .enable(tx_enable),
-			   .rate(rate), .strobe_fast(1), .strobe_slow(tx_strobe));
-   
-   fifo_cascade #(.WIDTH(36), .SIZE(11)) tx_fifo
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .dataout(), .src_rdy_o(tx_fifo_rdy), .dst_rdy_i(tx_strobe));
+   wire 	 rx_sof = rx_data[32];
+   wire 	 rx_eof = rx_data[33];
+`endif // LOOPBACK
 
-   
+`ifdef TIMED
+   wire [7:0] 	 rate;
+
+   // TX side
+   wire 	 tx_enable;
+   cic_strober tx_strober (.clock(wb_clk), .reset(wb_rst), .enable(tx_enable),
+			   .rate(rate), .strobe_fast(1), .strobe_slow(tx_dst_rdy));
+
+   // RX side
+   wire 	 rx_enable;
    reg [15:0] 	 ctr;
    wire [15:0] 	 rx_pkt_len = 480;
    wire 	 rx_eof = (ctr == rx_pkt_len);
    wire 	 rx_sof = (ctr == 0);
    
    cic_strober rx_strober (.clock(wb_clk), .reset(wb_rst), .enable(rx_enable),
-			   .rate(rate), .strobe_fast(1), .strobe_slow(rx_strobe));
+			   .rate(rate), .strobe_fast(1), .strobe_slow(rx_src_rdy));
    
-   fifo_cascade #(.WIDTH(36), .SIZE(11)) rx_fifo
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .datain({2'b00,rx_eof,rx_sof,16'd0,ctr}), .src_rdy_i(rx_strobe), .dst_rdy_o(rx_fifo_rdy),
-      .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-
    always @(posedge wb_clk)
      if(wb_rst)
        ctr <= 0;
-     else if(rx_strobe & rx_fifo_rdy)
+     else if(rx_dst_rdy & rx_src_rdy)
        if(ctr == rx_pkt_len)
 	 ctr <= 0;
        else
 	 ctr <= ctr + 1;
-   
+
+   assign rx_data = {2'b00,rx_eof,rx_sof,~ctr,ctr};   
+`endif // TIMED
+
+`ifdef CRC
+   packet_generator32 pktgen32
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
+      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+
+   packet_verifier32 pktver32
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
+      .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
+      .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
+
+   wire 	 rx_sof = rx_data[32];
+   wire 	 rx_eof = rx_data[33];
+`endif // CRC   
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
@@ -364,8 +381,8 @@ module u1e_core
    
    
    assign debug_gpio_0 = { debug_gpmc };
-   assign debug_gpio_1 = { {rx_enable, rx_strobe, rx_fifo_rdy, rx_strobe & ~rx_fifo_rdy},
-			   {tx_enable, tx_strobe, tx_fifo_rdy, tx_strobe & ~tx_fifo_rdy},
+   assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
+			   {tx_enable, tx_src_rdy, tx_dst_rdy, tx_dst_rdy & ~tx_src_rdy},
 			   {rx_sof, rx_eof, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
 			   {3'b0, bus_error, misc_gpio[11:0]} };
    

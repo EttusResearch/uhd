@@ -7,28 +7,26 @@
 
 module packet_verifier
   (input clk, input reset, input clear,
-   input [7:0] data_i, input sof_i, output eof_i, input src_rdy_i, output dst_rdy_o,
+   input [7:0] data_i, input sof_i, input eof_i, input src_rdy_i, output dst_rdy_o,
 
    output reg [31:0] total, 
    output reg [31:0] crc_err, 
    output reg [31:0] seq_err, 
    output reg [31:0] len_err);
 
-   assign dst_rdy_o = ~last_byte_d1;
-
    reg [31:0] 	     seq_num;
    reg [31:0] 	     length;
+   wire 	     first_byte, last_byte;
+   reg 		     second_byte, last_byte_d1;
 
    wire 	     calc_crc = src_rdy_i & dst_rdy_o;
    
    crc crc(.clk(clk), .reset(reset), .clear(last_byte_d1), .data(data_i), 
 	   .calc(calc_crc), .crc_out(), .match(match_crc));
 
-   wire 	     first_byte, last_byte;
-   reg 		     second_byte, last_byte_d1;
-
    assign first_byte = src_rdy_i & dst_rdy_o & sof_i;
    assign last_byte = src_rdy_i & dst_rdy_o & eof_i;
+   assign dst_rdy_o = ~last_byte_d1;
 
    // stubs for now
    wire 	     match_seq = 1;
