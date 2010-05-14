@@ -48,14 +48,26 @@ Load the images onto the SD card
 Use the usrp2_card_burner.py with caution. If you specify the wrong device node,
 you could overwrite your hard drive. Make sure that --dev= specifies the SD card.
 
-Use the card burner tool (linux):
+Use the *--list* option to get a list of possible raw devices.
+The list result will filter out disk partitions and devices too large to be the sd card.
+The list option has not yet been implemented on macosx.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the card burner tool (unix)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
+
+    sudo <prefix>/share/uhd/utils/usrp2_card_burner.py --gui
+
+    -- OR --
 
     cd <prefix>/share/uhd/utils
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fpga=<path_to_fpga_image>
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fw=<path_to_firmware_image>
 
-Use the card burner tool (windows):
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the card burner tool (windows)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
     <path_to_python.exe> <prefix>/share/uhd/utils/usrp2_card_burner.py --gui
