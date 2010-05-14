@@ -121,6 +121,10 @@ public:
         return tune_rx_subdev_and_ddc(_rx_subdev, _rx_dsp, target_freq);
     }
 
+    tune_result_t set_rx_freq(double target_freq, double lo_off){
+        return tune_rx_subdev_and_ddc(_rx_subdev, _rx_dsp, target_freq, lo_off);
+    }
+
     freq_range_t get_rx_freq_range(void){
         return _rx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
     }
@@ -166,6 +170,10 @@ public:
 
     tune_result_t set_tx_freq(double target_freq){
         return tune_tx_subdev_and_duc(_tx_subdev, _tx_dsp, target_freq);
+    }
+
+    tune_result_t set_tx_freq(double target_freq, double lo_off){
+        return tune_tx_subdev_and_duc(_tx_subdev, _tx_dsp, target_freq, lo_off);
     }
 
     freq_range_t get_tx_freq_range(void){
