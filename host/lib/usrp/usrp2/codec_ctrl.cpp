@@ -39,8 +39,8 @@ public:
         _ad9777_regs.filter_interp_rate = ad9777_regs_t::FILTER_INTERP_RATE_4X;
         _ad9777_regs.mix_mode = ad9777_regs_t::MIX_MODE_REAL;
         _ad9777_regs.pll_divide_ratio = ad9777_regs_t::PLL_DIVIDE_RATIO_DIV1;
-        _ad9777_regs.pll_state = ad9777_regs_t::PLL_STATE_OFF;
-        _ad9777_regs.auto_cp_control = ad9777_regs_t::AUTO_CP_CONTROL_ENB;
+        _ad9777_regs.pll_state = ad9777_regs_t::PLL_STATE_ON;
+        _ad9777_regs.auto_cp_control = ad9777_regs_t::AUTO_CP_CONTROL_AUTO;
         //I dac values
         _ad9777_regs.idac_fine_gain_adjust = 0;
         _ad9777_regs.idac_coarse_gain_adjust = 0xf;
