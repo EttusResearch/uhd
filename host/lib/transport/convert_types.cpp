@@ -115,10 +115,13 @@ void transport::convert_io_type_to_otw_type(
     switch(io_type.tid){
     case io_type_t::COMPLEX_FLOAT32:
         host_floats_to_usrp2_items((boost::uint32_t *)otw_buff, (const fc32_t*)io_buff, num_samps);
-        break;
+        return;
     case io_type_t::COMPLEX_INT16:
         host_items_to_usrp2_items((boost::uint32_t *)otw_buff, (const boost::uint32_t*)io_buff, num_samps);
-        break;
+        return;
+     case io_type_t::CUSTOM_TYPE:
+        std::memcpy(otw_buff, io_buff, num_samps*io_type.size);
+        return;
     default:
         throw std::runtime_error(str(boost::format("convert_types: cannot handle type \"%c\"") % io_type.tid));
     }
@@ -135,10 +138,13 @@ void transport::convert_otw_type_to_io_type(
     switch(io_type.tid){
     case io_type_t::COMPLEX_FLOAT32:
         usrp2_items_to_host_floats((fc32_t*)io_buff, (const boost::uint32_t *)otw_buff, num_samps);
-        break;
+        return;
     case io_type_t::COMPLEX_INT16:
         usrp2_items_to_host_items((boost::uint32_t*)io_buff, (const boost::uint32_t *)otw_buff, num_samps);
-        break;
+        return;
+    case io_type_t::CUSTOM_TYPE:
+        std::memcpy(io_buff, otw_buff, num_samps*io_type.size);
+        return;
     default:
         throw std::runtime_error(str(boost::format("convert_types: cannot handle type \"%c\"") % io_type.tid));
     }
