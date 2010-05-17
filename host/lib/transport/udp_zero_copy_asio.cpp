@@ -146,7 +146,7 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
     UHD_ASSERT_THROW(setsockopt(
         _socket->native(),
         SOL_SOCKET, SO_RCVTIMEO,
-        (timeval *)&tv, sizeof(timeval)
+        (const char *)&tv, sizeof(timeval)
     ) == 0);
 }
 
