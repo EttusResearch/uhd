@@ -31,10 +31,16 @@ namespace asio = boost::asio;
  * Helper Functions
  **********************************************************************/
 void usrp2_impl::io_init(void){
-    //setup otw type
-    _otw_type.width = 16;
-    _otw_type.shift = 0;
-    _otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
+    //setup rx otw type
+    _rx_otw_type.width = 16;
+    _rx_otw_type.shift = 0;
+    _rx_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
+
+    //setup tx otw type
+    _tx_otw_type.width = 16;
+    _tx_otw_type.shift = 0;
+    _tx_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
+
 
     //initially empty copy buffer
     _rx_copy_buff = asio::buffer("", 0);
@@ -49,7 +55,8 @@ void usrp2_impl::io_init(void){
     send_buff->done(sizeof(data));
 
     //setup RX DSP regs
-    _iface->poke32(FR_RX_CTRL_NSAMPS_PER_PKT, _max_rx_samples_per_packet);
+    std::cout << "RX samples per packet: " << max_rx_samps_per_packet() << std::endl;
+    _iface->poke32(FR_RX_CTRL_NSAMPS_PER_PKT, max_rx_samps_per_packet());
     _iface->poke32(FR_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(FR_RX_CTRL_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(FR_RX_CTRL_VRT_HEADER, 0
@@ -121,7 +128,7 @@ size_t usrp2_impl::send(
     boost::uint32_t *tx_mem = send_buff->cast<boost::uint32_t *>();
     size_t num_samps = std::min(std::min(
         asio::buffer_size(buff)/io_type.size,
-        size_t(_max_tx_samples_per_packet)),
+        size_t(max_tx_samps_per_packet())),
         send_buff->size()/io_type.size
     );
 
@@ -148,7 +155,7 @@ size_t usrp2_impl::send(
     //copy-convert the samples into the send buffer
     convert_io_type_to_otw_type(
         asio::buffer_cast<const void*>(buff), io_type,
-        (void*)items, _otw_type,
+        (void*)items, _tx_otw_type,
         num_samps
     );
 
@@ -192,7 +199,7 @@ size_t usrp2_impl::recv(
 
     //copy-convert the samples from the recv buffer
     convert_otw_type_to_io_type(
-        (const void*)items, _otw_type,
+        (const void*)items, _rx_otw_type,
         asio::buffer_cast<void*>(buff), io_type,
         num_samps
     );

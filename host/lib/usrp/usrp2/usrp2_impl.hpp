@@ -125,21 +125,32 @@ private:
     void recv_raw(uhd::rx_metadata_t &);
     uhd::dict<boost::uint32_t, size_t> _tx_stream_id_to_packet_seq;
     uhd::dict<boost::uint32_t, size_t> _rx_stream_id_to_packet_seq;
+
+    /*******************************************************************
+     * Deal with the rx and tx packet sizes
+     ******************************************************************/
     static const size_t _mtu = 1500; //FIXME we have no idea
     static const size_t _hdrs = (2 + 14 + 20 + 8); //size of headers (pad, eth, ip, udp)
-    static const size_t _max_rx_samples_per_packet =
-        (_mtu - _hdrs)/sizeof(boost::uint32_t) -
-        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32
+    static const size_t _max_rx_bytes_per_packet =
+        _mtu - _hdrs -
+        USRP2_HOST_RX_VRT_HEADER_WORDS32*sizeof(boost::uint32_t) -
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32*sizeof(boost::uint32_t)
     ;
-    static const size_t _max_tx_samples_per_packet =
-        (_mtu - _hdrs)/sizeof(boost::uint32_t) -
-        uhd::transport::vrt::max_header_words32
+    static const size_t _max_tx_bytes_per_packet =
+        _mtu - _hdrs -
+        uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
+    size_t max_rx_samps_per_packet(void){
+        return _max_rx_bytes_per_packet/(_rx_otw_type.width*2/8);
+    }
+    size_t max_tx_samps_per_packet(void){
+        return _max_tx_bytes_per_packet/(_tx_otw_type.width*2/8);
+    }
+
     uhd::transport::managed_recv_buffer::sptr _rx_smart_buff;
     boost::asio::const_buffer _rx_copy_buff;
     size_t _fragment_offset_in_samps;
-    uhd::otw_type_t _otw_type;
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     void io_init(void);
 
     //udp transports for control and data
