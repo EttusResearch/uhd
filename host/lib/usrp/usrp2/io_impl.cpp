@@ -41,13 +41,6 @@ void usrp2_impl::io_init(void){
     _tx_otw_type.shift = 0;
     _tx_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
 
-
-    //initially empty copy buffer
-    _rx_copy_buff = asio::buffer("", 0);
-
-    //init the expected rx seq number
-    _rx_stream_id_to_packet_seq[0] = 0;
-
     //send a small data packet so the usrp2 knows the udp source port
     managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
     boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
@@ -67,51 +60,6 @@ void usrp2_impl::io_init(void){
     );
     _iface->poke32(FR_RX_CTRL_VRT_STREAM_ID, 0);
     _iface->poke32(FR_RX_CTRL_VRT_TRAILER, 0);
-}
-
-/***********************************************************************
- * Receive Raw Data
- **********************************************************************/
-void usrp2_impl::recv_raw(rx_metadata_t &metadata){
-    //do a receive
-    _rx_smart_buff = _data_transport->get_recv_buff();
-
-    //unpack the vrt header
-    size_t num_packet_words32 = _rx_smart_buff->size()/sizeof(boost::uint32_t);
-    if (num_packet_words32 == 0){
-        _rx_copy_buff = boost::asio::buffer("", 0);
-        return; //must exit here after setting the buffer
-    }
-    const boost::uint32_t *vrt_hdr = _rx_smart_buff->cast<const boost::uint32_t *>();
-    size_t num_header_words32_out, num_payload_words32_out, packet_count_out;
-    try{
-        vrt::unpack(
-            metadata,                //output
-            vrt_hdr,                 //input
-            num_header_words32_out,  //output
-            num_payload_words32_out, //output
-            num_packet_words32,      //input
-            packet_count_out,        //output
-            get_master_clock_freq()
-        );
-    }catch(const std::exception &e){
-        std::cerr << "bad vrt header: " << e.what() << std::endl;
-        _rx_copy_buff = boost::asio::buffer("", 0);
-        return; //must exit here after setting the buffer
-    }
-
-    //handle the packet count / sequence number
-    size_t expected_packet_count = _rx_stream_id_to_packet_seq[metadata.stream_id];
-    if (packet_count_out != expected_packet_count){
-        std::cerr << "S" << (packet_count_out - expected_packet_count)%16;
-    }
-    _rx_stream_id_to_packet_seq[metadata.stream_id] = (packet_count_out+1)%16;
-
-    //setup the rx buffer to point to the data
-    _rx_copy_buff = asio::buffer(
-        vrt_hdr + num_header_words32_out,
-        num_payload_words32_out*sizeof(boost::uint32_t)
-    );
 }
 
 /***********************************************************************
@@ -172,42 +120,11 @@ size_t usrp2_impl::recv(
     rx_metadata_t &metadata,
     const io_type_t &io_type
 ){
-    //perform a receive if no rx data is waiting to be copied
-    if (asio::buffer_size(_rx_copy_buff) == 0){
-        _fragment_offset_in_samps = 0;
-        recv_raw(metadata);
-    }
-    //otherwise flag the metadata to show that is is a fragment
-    else{
-        metadata = rx_metadata_t();
-    }
-
-    //extract the number of samples available to copy
-    //and a pointer into the usrp2 received items memory
-    size_t bytes_to_copy = asio::buffer_size(_rx_copy_buff);
-    if (bytes_to_copy == 0) return 0; //nothing to receive
-    size_t num_samps = std::min(
-        asio::buffer_size(buff)/io_type.size,
-        bytes_to_copy/sizeof(boost::uint32_t)
+    return vrt_packet_handler::recv(
+        _packet_handler_recv_state, //last state of the recv handler
+        buff, metadata,             //buffer to fill and samples metadata
+        io_type, _rx_otw_type,      //input and output types to convert
+        get_master_clock_freq(),    //master clock tick rate
+        _data_transport             //zero copy interface
     );
-    const boost::uint32_t *items = asio::buffer_cast<const boost::uint32_t*>(_rx_copy_buff);
-
-    //setup the fragment flags and offset
-    metadata.more_fragments = asio::buffer_size(buff)/io_type.size < num_samps;
-    metadata.fragment_offset = _fragment_offset_in_samps;
-    _fragment_offset_in_samps += num_samps; //set for next time
-
-    //copy-convert the samples from the recv buffer
-    convert_otw_type_to_io_type(
-        (const void*)items, _rx_otw_type,
-        asio::buffer_cast<void*>(buff), io_type,
-        num_samps
-    );
-
-    //update the rx copy buffer to reflect the bytes copied
-    _rx_copy_buff = asio::buffer(
-        items + num_samps, bytes_to_copy - num_samps*sizeof(boost::uint32_t)
-    );
-
-    return num_samps;
 }

@@ -33,6 +33,7 @@
 #include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include "../../transport/vrt_packet_handler.hpp"
 
 /*!
  * Make a usrp2 dboard interface.
@@ -121,10 +122,7 @@ private:
     codec_ctrl::sptr _codec_ctrl;
     serdes_ctrl::sptr _serdes_ctrl;
 
-    //the raw io interface (samples are in the usrp2 native format)
-    void recv_raw(uhd::rx_metadata_t &);
     uhd::dict<boost::uint32_t, size_t> _tx_stream_id_to_packet_seq;
-    uhd::dict<boost::uint32_t, size_t> _rx_stream_id_to_packet_seq;
 
     /*******************************************************************
      * Deal with the rx and tx packet sizes
@@ -147,9 +145,7 @@ private:
         return _max_tx_bytes_per_packet/(_tx_otw_type.width*2/8);
     }
 
-    uhd::transport::managed_recv_buffer::sptr _rx_smart_buff;
-    boost::asio::const_buffer _rx_copy_buff;
-    size_t _fragment_offset_in_samps;
+    vrt_packet_handler::recv_state _packet_handler_recv_state;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     void io_init(void);
 
