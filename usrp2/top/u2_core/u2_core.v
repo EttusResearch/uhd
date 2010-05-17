@@ -136,9 +136,9 @@ module u2_core
    input [3:0] clock_divider
    );
    
-   wire [7:0] 	set_addr;
-   wire [31:0] 	set_data;
-   wire 	set_stb;
+   wire [7:0] 	set_addr, set_addr_dsp;
+   wire [31:0] 	set_data, set_data_dsp;
+   wire 	set_stb, set_stb_dsp;
    
    wire 	ram_loader_done;
    wire 	ram_loader_rst, wb_rst, dsp_rst;
@@ -339,7 +339,7 @@ module u2_core
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
    
       .stream_clk(dsp_clk), .stream_rst(dsp_rst),
-      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .status(status),.sys_int_o(buffer_int),
 
       .s0(status_b0),.s1(status_b1),.s2(status_b2),.s3(status_b3),
@@ -435,6 +435,10 @@ module u2_core
    
    assign 	 s7_dat_i = 32'd0;
 
+   settings_bus_crossclock settings_bus_crossclock
+     (.clk_i(wb_clk), .rst_i(wb_rst), .set_stb_i(set_stb), .set_addr_i(set_addr), .set_data_i(set_data),
+      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp), .set_addr_o(set_addr_dsp), .set_data_o(set_data_dsp));
+   
    // Output control lines
    wire [7:0] 	 clock_outs, serdes_outs, adc_outs;
    assign 	 {clock_ready, clk_en[1:0], clk_sel[1:0]} = clock_outs[4:0];
@@ -553,7 +557,7 @@ module u2_core
 
    rx_control #(.FIFOSIZE(10)) rx_control
      (.clk(dsp_clk), .rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .master_time(master_time),.overrun(overrun),
       .wr_dat_o(wr1_dat), .wr_flags_o(wr1_flags), .wr_ready_o(wr1_ready_i), .wr_ready_i(wr1_ready_o),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
@@ -563,14 +567,14 @@ module u2_core
    // dummy_rx dsp_core_rx
    dsp_core_rx dsp_core_rx
      (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
       .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
    tx_control #(.FIFOSIZE(10)) tx_control
      (.clk(dsp_clk), .rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .master_time(master_time),.underrun(underrun),
       .rd_dat_i(rd1_dat), .rd_flags_i(rd1_flags), .rd_ready_i(rd1_ready_o), .rd_ready_o(rd1_ready_i),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
@@ -579,7 +583,7 @@ module u2_core
    
    dsp_core_tx dsp_core_tx
      (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .dac_a(dac_a),.dac_b(dac_b),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx), .debug(debug_tx_dsp) );
 
