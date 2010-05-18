@@ -114,6 +114,7 @@ static void *write_thread(void *threadid)
 
 	printf("Greetings from the write thread!\n");
 
+	tx_pkt_cnt = 0;
 	tx_data = malloc(2048);
 
 	bytes_transfered = 0;
@@ -141,7 +142,7 @@ static void *write_thread(void *threadid)
 
 		crc = 0xFFFFFFFF;
 		for (i = 0; i < tx_len; i++) {
-			tx_data->buf[i] = rand() & 0xFF;
+			tx_data->buf[i] = i & 0xFF;
 
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ tx_data->buf[i]) & 0xFF];
@@ -158,8 +159,9 @@ static void *write_thread(void *threadid)
 
 		if (bytes_transfered > (100 * 1000000)) {
 			gettimeofday(&finish_time, NULL);
-			elapsed_seconds = start_time.tv_sec - finish_time.tv_sec;
+			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
+			printf("%d bytes transfered in %d seconds.\n", bytes_transfered, elapsed_seconds);
 			printf("TX data transfer rate = %f K Bps\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 1000);
 
