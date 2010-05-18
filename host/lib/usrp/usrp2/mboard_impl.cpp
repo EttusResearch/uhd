@@ -111,7 +111,7 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
 
     //issue the stream command
     _iface->poke32(FR_RX_CTRL_STREAM_CMD, FR_RX_CTRL_MAKE_CMD(
-        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? max_rx_samps_per_packet() : 1),
+        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? get_max_recv_samps_per_packet() : 1),
         (stream_cmd.stream_now)? 1 : 0,
         (inst_chain)? 1 : 0,
         (inst_reload)? 1 : 0

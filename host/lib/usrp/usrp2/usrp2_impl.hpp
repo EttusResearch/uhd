@@ -104,12 +104,18 @@ public:
     ~usrp2_impl(void);
 
     //the io interface
+    size_t get_max_send_samps_per_packet(void) const{
+        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
+    }
     size_t send(
         const boost::asio::const_buffer &,
         const uhd::tx_metadata_t &,
         const uhd::io_type_t &,
         uhd::device::send_mode_t
     );
+    size_t get_max_recv_samps_per_packet(void) const{
+        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
+    }
     size_t recv(
         const boost::asio::mutable_buffer &,
         uhd::rx_metadata_t &,
@@ -146,12 +152,6 @@ private:
         _mtu - _hdrs -
         uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
-    size_t max_rx_samps_per_packet(void){
-        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
-    }
-    size_t max_tx_samps_per_packet(void){
-        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
-    }
 
     vrt_packet_handler::recv_state _packet_handler_recv_state;
     vrt_packet_handler::send_state _packet_handler_send_state;

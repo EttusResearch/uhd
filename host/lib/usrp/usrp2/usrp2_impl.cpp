@@ -210,14 +210,6 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, "");
         return;
 
-    case DEVICE_PROP_MAX_RX_SAMPLES:
-        val = max_rx_samps_per_packet();
-        return;
-
-    case DEVICE_PROP_MAX_TX_SAMPLES:
-        val = max_tx_samps_per_packet();
-        return;
-
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }

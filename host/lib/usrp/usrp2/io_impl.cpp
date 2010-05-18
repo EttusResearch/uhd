@@ -48,8 +48,8 @@ void usrp2_impl::io_init(void){
     send_buff->done(sizeof(data));
 
     //setup RX DSP regs
-    std::cout << "RX samples per packet: " << max_rx_samps_per_packet() << std::endl;
-    _iface->poke32(FR_RX_CTRL_NSAMPS_PER_PKT, max_rx_samps_per_packet());
+    std::cout << "RX samples per packet: " << get_max_recv_samps_per_packet() << std::endl;
+    _iface->poke32(FR_RX_CTRL_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
     _iface->poke32(FR_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(FR_RX_CTRL_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(FR_RX_CTRL_VRT_HEADER, 0
@@ -77,7 +77,7 @@ size_t usrp2_impl::send(
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
         _data_transport,            //zero copy interface
-        max_tx_samps_per_packet()
+        get_max_send_samps_per_packet()
     );
 }
 

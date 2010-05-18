@@ -87,6 +87,16 @@ public:
     };
 
     /*!
+     * Recv modes for the device recv routine.
+     */
+    enum recv_mode_t{
+        //! Tells the recv routine to recv the entire buffer
+        RECV_MODE_FULL_BUFF = 0,
+        //! Tells the recv routine to return after one packet
+        RECV_MODE_ONE_PACKET = 1
+    };
+
+    /*!
      * Send a buffer containing IF data with its metadata.
      *
      * Send handles fragmentation as follows:
@@ -112,16 +122,6 @@ public:
         const io_type_t &io_type,
         send_mode_t send_mode = SEND_MODE_ONE_PACKET
     ) = 0;
-
-    /*!
-     * Recv modes for the device recv routine.
-     */
-    enum recv_mode_t{
-        //! Tells the recv routine to recv the entire buffer
-        RECV_MODE_FULL_BUFF = 0,
-        //! Tells the recv routine to return after one packet
-        RECV_MODE_ONE_PACKET = 1
-    };
 
     /*!
      * Receive a buffer containing IF data and its metadata.
@@ -161,6 +161,19 @@ public:
         const io_type_t &io_type,
         recv_mode_t recv_mode = RECV_MODE_ONE_PACKET
     ) = 0;
+
+    /*!
+     * Get the maximum number of samples per packet on send.
+     * \return the number of samples
+     */
+    virtual size_t get_max_send_samps_per_packet(void) const = 0;
+
+    /*!
+     * Get the maximum number of samples per packet on recv.
+     * \return the number of samples
+     */
+    virtual size_t get_max_recv_samps_per_packet(void) const = 0;
+
 };
 
 } //namespace uhd
