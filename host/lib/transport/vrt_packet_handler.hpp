@@ -18,6 +18,7 @@
 #ifndef INCLUDED_LIBUHD_TRANSPORT_VRT_PACKET_HANDLER_HPP
 #define INCLUDED_LIBUHD_TRANSPORT_VRT_PACKET_HANDLER_HPP
 
+#include <uhd/config.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
@@ -53,7 +54,7 @@ namespace vrt_packet_handler{
 
     typedef boost::function<void(uhd::transport::managed_recv_buffer::sptr)> recv_cb_t;
 
-    static inline void recv_cb_nop(uhd::transport::managed_recv_buffer::sptr){
+    static UHD_INLINE void recv_cb_nop(uhd::transport::managed_recv_buffer::sptr){
         /* NOP */
     }
 
@@ -61,7 +62,7 @@ namespace vrt_packet_handler{
      * Unpack a received vrt header and set the copy buffer.
      *  - helper function for vrt_packet_handler::recv
      ******************************************************************/
-    static inline void _recv_helper(
+    static UHD_INLINE void _recv_helper(
         recv_state &state,
         uhd::rx_metadata_t &metadata,
         double tick_rate,
@@ -100,7 +101,7 @@ namespace vrt_packet_handler{
     /*******************************************************************
      * Recv vrt packets and copy convert the samples into the buffer.
      ******************************************************************/
-    static inline size_t recv(
+    static UHD_INLINE size_t recv(
         recv_state &state,
         const boost::asio::mutable_buffer &buff,
         uhd::rx_metadata_t &metadata,
@@ -168,7 +169,7 @@ namespace vrt_packet_handler{
 
     typedef boost::function<void(uhd::transport::managed_send_buffer::sptr)> send_cb_t;
 
-    static inline void send_cb_nop(uhd::transport::managed_send_buffer::sptr){
+    static UHD_INLINE void send_cb_nop(uhd::transport::managed_send_buffer::sptr){
         /* NOP */
     }
 
@@ -176,7 +177,7 @@ namespace vrt_packet_handler{
      * Pack a vrt header, copy-convert the data, and send it.
      *  - helper function for vrt_packet_handler::send
      ******************************************************************/
-    static inline void _send_helper(
+    static UHD_INLINE void _send_helper(
         send_state &state,
         const void *send_mem,
         size_t num_samps,
@@ -222,7 +223,7 @@ namespace vrt_packet_handler{
     /*******************************************************************
      * Send vrt packets and copy convert the samples into the buffer.
      ******************************************************************/
-    static inline size_t send(
+    static UHD_INLINE size_t send(
         send_state &state,
         const boost::asio::const_buffer &buff,
         const uhd::tx_metadata_t &metadata,
