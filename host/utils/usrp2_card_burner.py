@@ -118,7 +118,7 @@ def verify_image(image_file, device_file, offset):
         get_dd_path(),
         "of=%s"%tmp_file,
         "if=%s"%device_file,
-        "skip=%d"%offset,
+        "skip=%d"%(offset/SECTOR_SIZE),
         "bs=%d"%SECTOR_SIZE,
         "count=%d"%(MAX_FILE_SIZE/SECTOR_SIZE),
     )
@@ -136,7 +136,7 @@ def write_image(image_file, device_file, offset):
         get_dd_path(),
         "if=%s"%image_file,
         "of=%s"%device_file,
-        "seek=%d"%offset,
+        "seek=%d"%(offset/SECTOR_SIZE),
         "bs=%d"%SECTOR_SIZE,
     )
 
