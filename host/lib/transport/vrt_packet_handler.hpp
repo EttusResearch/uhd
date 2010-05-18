@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_TRANSPORT_VRT_PACKET_HANDLER_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/device.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
@@ -60,9 +61,9 @@ namespace vrt_packet_handler{
 
     /*******************************************************************
      * Unpack a received vrt header and set the copy buffer.
-     *  - helper function for vrt_packet_handler::recv
+     *  - helper function for vrt_packet_handler::_recv1
      ******************************************************************/
-    static UHD_INLINE void _recv_helper(
+    static UHD_INLINE void _recv1_helper(
         recv_state &state,
         uhd::rx_metadata_t &metadata,
         double tick_rate,
@@ -99,28 +100,28 @@ namespace vrt_packet_handler{
     }
 
     /*******************************************************************
-     * Recv vrt packets and copy convert the samples into the buffer.
+     * Recv data, unpack a vrt header, and copy-convert the data.
+     *  - helper function for vrt_packet_handler::recv
      ******************************************************************/
-    static UHD_INLINE size_t recv(
+    static UHD_INLINE size_t _recv1(
         recv_state &state,
-        const boost::asio::mutable_buffer &buff,
+        void *recv_mem,
+        size_t total_samps,
         uhd::rx_metadata_t &metadata,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
         uhd::transport::zero_copy_if::sptr zc_iface,
         //use these two params to handle a layer above vrt
-        size_t vrt_header_offset_words32 = 0,
-        const recv_cb_t& recv_cb = &recv_cb_nop
+        size_t vrt_header_offset_words32,
+        const recv_cb_t& recv_cb
     ){
-        metadata = uhd::rx_metadata_t(); //init the metadata
-
         //perform a receive if no rx data is waiting to be copied
         if (boost::asio::buffer_size(state.copy_buff) == 0){
             state.fragment_offset_in_samps = 0;
             state.managed_buff = zc_iface->get_recv_buff();
             recv_cb(state.managed_buff); //callback before vrt unpack
-            _recv_helper(
+            _recv1_helper(
                 state, metadata, tick_rate, vrt_header_offset_words32
             );
         }
@@ -128,21 +129,17 @@ namespace vrt_packet_handler{
         //extract the number of samples available to copy
         size_t bytes_per_item = otw_type.get_sample_size();
         size_t bytes_available = boost::asio::buffer_size(state.copy_buff);
-        size_t num_samps = std::min(
-            boost::asio::buffer_size(buff)/io_type.size,
-            bytes_available/bytes_per_item
-        );
+        size_t num_samps = std::min(total_samps, bytes_available/bytes_per_item);
 
         //setup the fragment flags and offset
-        metadata.more_fragments = boost::asio::buffer_size(buff)/io_type.size < num_samps;
+        metadata.more_fragments = total_samps < num_samps;
         metadata.fragment_offset = state.fragment_offset_in_samps;
         state.fragment_offset_in_samps += num_samps; //set for next call
 
         //copy-convert the samples from the recv buffer
         uhd::transport::convert_otw_type_to_io_type(
             boost::asio::buffer_cast<const void*>(state.copy_buff), otw_type,
-            boost::asio::buffer_cast<void*>(buff), io_type,
-            num_samps
+            recv_mem, io_type, num_samps
         );
 
         //update the rx copy buffer to reflect the bytes copied
@@ -153,6 +150,66 @@ namespace vrt_packet_handler{
         );
 
         return num_samps;
+    }
+
+    /*******************************************************************
+     * Recv vrt packets and copy convert the samples into the buffer.
+     ******************************************************************/
+    static UHD_INLINE size_t recv(
+        recv_state &state,
+        const boost::asio::mutable_buffer &buff,
+        uhd::rx_metadata_t &metadata,
+        uhd::device::recv_mode_t recv_mode,
+        const uhd::io_type_t &io_type,
+        const uhd::otw_type_t &otw_type,
+        double tick_rate,
+        uhd::transport::zero_copy_if::sptr zc_iface,
+        //use these two params to handle a layer above vrt
+        size_t vrt_header_offset_words32 = 0,
+        const recv_cb_t& recv_cb = &recv_cb_nop
+    ){
+        metadata = uhd::rx_metadata_t(); //init the metadata
+        const size_t total_num_samps = boost::asio::buffer_size(buff)/io_type.size;
+
+        switch(recv_mode){
+
+        ////////////////////////////////////////////////////////////////
+        case uhd::device::RECV_MODE_ONE_PACKET:{
+        ////////////////////////////////////////////////////////////////
+            return _recv1(
+                state,
+                boost::asio::buffer_cast<void *>(buff),
+                total_num_samps,
+                metadata,
+                io_type, otw_type,
+                tick_rate,
+                zc_iface,
+                vrt_header_offset_words32,
+                recv_cb
+            );
+        }
+
+        ////////////////////////////////////////////////////////////////
+        case uhd::device::RECV_MODE_FULL_BUFF:{
+        ////////////////////////////////////////////////////////////////
+            size_t num_samps = 0;
+            uhd::rx_metadata_t tmp_md;
+            while(num_samps < total_num_samps){
+                num_samps += _recv1(
+                    state,
+                    boost::asio::buffer_cast<boost::uint8_t *>(buff) + (num_samps*io_type.size),
+                    total_num_samps - num_samps,
+                    (num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
+                    io_type, otw_type,
+                    tick_rate,
+                    zc_iface,
+                    vrt_header_offset_words32,
+                    recv_cb
+                );
+            }
+            return total_num_samps;
+        }
+        }//switch(recv_mode)
     }
 
 /***********************************************************************
@@ -177,7 +234,7 @@ namespace vrt_packet_handler{
      * Pack a vrt header, copy-convert the data, and send it.
      *  - helper function for vrt_packet_handler::send
      ******************************************************************/
-    static UHD_INLINE void _send_helper(
+    static UHD_INLINE void _send1(
         send_state &state,
         const void *send_mem,
         size_t num_samps,
@@ -227,6 +284,7 @@ namespace vrt_packet_handler{
         send_state &state,
         const boost::asio::const_buffer &buff,
         const uhd::tx_metadata_t &metadata,
+        uhd::device::send_mode_t send_mode,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
@@ -236,15 +294,17 @@ namespace vrt_packet_handler{
         size_t vrt_header_offset_words32 = 0,
         const send_cb_t& send_cb = &send_cb_nop
     ){
+        const size_t total_num_samps = boost::asio::buffer_size(buff)/io_type.size;
+        switch(send_mode){
 
-        size_t total_num_samps = boost::asio::buffer_size(buff)/io_type.size;
-
-        //special case: no fragmentation needed
-        if (total_num_samps <= max_samples_per_packet){
-            _send_helper(
+        ////////////////////////////////////////////////////////////////
+        case uhd::device::SEND_MODE_ONE_PACKET:{
+        ////////////////////////////////////////////////////////////////
+            size_t num_samps = std::min(total_num_samps, max_samples_per_packet);
+            _send1(
                 state,
                 boost::asio::buffer_cast<const void *>(buff),
-                total_num_samps,
+                num_samps,
                 metadata,
                 io_type, otw_type,
                 tick_rate,
@@ -252,41 +312,45 @@ namespace vrt_packet_handler{
                 vrt_header_offset_words32,
                 send_cb
             );
+            return num_samps;
+        }
+
+        ////////////////////////////////////////////////////////////////
+        case uhd::device::SEND_MODE_FULL_BUFF:{
+        ////////////////////////////////////////////////////////////////
+            //calculate constants for fragmentation
+            const size_t final_packet_samps = total_num_samps%max_samples_per_packet;
+            const size_t num_fragments = (total_num_samps+max_samples_per_packet-1)/max_samples_per_packet;
+            static const size_t first_fragment_index = 0;
+            const size_t final_fragment_index = num_fragments-1;
+
+            //make a rw copy of the metadata to re-flag below
+            uhd::tx_metadata_t md(metadata);
+
+            //loop through the following fragment indexes
+            for (size_t n = first_fragment_index; n <= final_fragment_index; n++){
+
+                //calculate new flags for the fragments
+                md.has_time_spec  = md.has_time_spec  and (n == first_fragment_index);
+                md.start_of_burst = md.start_of_burst and (n == first_fragment_index);
+                md.end_of_burst   = md.end_of_burst   and (n == final_fragment_index);
+
+                //send the fragment with the helper function
+                _send1(
+                    state,
+                    boost::asio::buffer_cast<const boost::uint8_t *>(buff) + (n*max_samples_per_packet*io_type.size),
+                    (n == final_fragment_index)?final_packet_samps:max_samples_per_packet,
+                    md,
+                    io_type, otw_type,
+                    tick_rate,
+                    zc_iface,
+                    vrt_header_offset_words32,
+                    send_cb
+                );
+            }
             return total_num_samps;
         }
-
-        //calculate constants for fragmentation
-        const size_t final_packet_samps = total_num_samps%max_samples_per_packet;
-        const size_t num_fragments = (total_num_samps+max_samples_per_packet-1)/max_samples_per_packet;
-        static const size_t first_fragment_index = 0;
-        const size_t final_fragment_index = num_fragments-1;
-
-        //make a rw copy of the metadata to re-flag below
-        uhd::tx_metadata_t md(metadata);
-
-        //loop through the following fragment indexes
-        for (size_t n = first_fragment_index; n <= final_fragment_index; n++){
-
-            //calculate new flags for the fragments
-            md.has_time_spec  = md.has_time_spec  and (n == first_fragment_index);
-            md.start_of_burst = md.start_of_burst and (n == first_fragment_index);
-            md.end_of_burst   = md.end_of_burst   and (n == final_fragment_index);
-
-            //send the fragment with the helper function
-            _send_helper(
-                state,
-                boost::asio::buffer_cast<const boost::uint8_t *>(buff) + (n*max_samples_per_packet*io_type.size),
-                (n == final_fragment_index)?final_packet_samps:max_samples_per_packet,
-                md,
-                io_type, otw_type,
-                tick_rate,
-                zc_iface,
-                vrt_header_offset_words32,
-                send_cb
-            );
-        }
-
-        return total_num_samps;
+        }//switch(send_mode)
     }
 
 } //namespace vrt_packet_handler

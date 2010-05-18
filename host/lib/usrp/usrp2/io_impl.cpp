@@ -68,11 +68,12 @@ void usrp2_impl::io_init(void){
 size_t usrp2_impl::send(
     const asio::const_buffer &buff,
     const tx_metadata_t &metadata,
-    const io_type_t &io_type
+    const io_type_t &io_type,
+    send_mode_t send_mode
 ){
     return vrt_packet_handler::send(
         _packet_handler_send_state, //last state of the send handler
-        buff, metadata,             //buffer to empty and samples metadata
+        buff, metadata, send_mode,  //buffer to empty and samples metadata
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
         _data_transport,            //zero copy interface
@@ -86,11 +87,12 @@ size_t usrp2_impl::send(
 size_t usrp2_impl::recv(
     const asio::mutable_buffer &buff,
     rx_metadata_t &metadata,
-    const io_type_t &io_type
+    const io_type_t &io_type,
+    recv_mode_t recv_mode
 ){
     return vrt_packet_handler::recv(
         _packet_handler_recv_state, //last state of the recv handler
-        buff, metadata,             //buffer to fill and samples metadata
+        buff, metadata, recv_mode,  //buffer to fill and samples metadata
         io_type, _rx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
         _data_transport             //zero copy interface

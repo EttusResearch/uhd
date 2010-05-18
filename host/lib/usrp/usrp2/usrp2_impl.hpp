@@ -104,8 +104,18 @@ public:
     ~usrp2_impl(void);
 
     //the io interface
-    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
-    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
+    size_t send(
+        const boost::asio::const_buffer &,
+        const uhd::tx_metadata_t &,
+        const uhd::io_type_t &,
+        uhd::device::send_mode_t
+    );
+    size_t recv(
+        const boost::asio::mutable_buffer &,
+        uhd::rx_metadata_t &,
+        const uhd::io_type_t &,
+        uhd::device::recv_mode_t
+    );
 
 private:
     double get_master_clock_freq(void){
