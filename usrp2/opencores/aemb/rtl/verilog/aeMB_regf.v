@@ -146,9 +146,12 @@ module aeMB_regf (/*AUTOARG*/
    // LUT RAM implementation is smaller and faster. R0 gets written
    // during reset with 0x00 and doesn't change after.
    
-   reg [31:0] 	 mARAM[0:31],
-		 mBRAM[0:31],
-		 mDRAM[0:31];
+   //synthesis attribute ram_style of mARAM is distributed
+   reg [31:0] 	 mARAM[0:31]; 
+   //synthesis attribute ram_style of mBRAM is distributed
+   reg [31:0] 	 mBRAM[0:31];
+   //synthesis attribute ram_style of mDRAM is distributed
+   reg [31:0] 	 mDRAM[0:31];
 
    wire [31:0] 	 rREGW = mDRAM[rRW];   
    wire [31:0] 	 rREGD = mDRAM[rRD];   
