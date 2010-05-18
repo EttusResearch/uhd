@@ -64,13 +64,15 @@ static void *read_thread(void *threadid)
 			printf("Error returned from read: %d\n", cnt);
 
 		rx_pkt_cnt++;
-		
+
+#if 0
 		if (rx_pkt_cnt  == 512) {
 			printf(".");
 			fflush(stdout);
 			rx_pkt_cnt = 0;
 		}
-		
+#endif
+
 		if (rx_data->flags & RB_OVERRUN)
 			printf("O");
 		
@@ -91,7 +93,7 @@ static void *read_thread(void *threadid)
 
 		if (bytes_transfered > (100 * 1000000)) {
 			gettimeofday(&finish_time, NULL);
-			elapsed_seconds = start_time.tv_sec - finish_time.tv_sec;
+			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
 			printf("RX data transfer rate = %f K Bps\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 1000);
@@ -123,6 +125,8 @@ static void *write_thread(void *threadid)
 	while (1) {
 
 		tx_pkt_cnt++;
+
+#if 0
 		if (tx_pkt_cnt  == 512) {
 			printf(".");
 			fflush(stdout);
@@ -136,6 +140,7 @@ static void *write_thread(void *threadid)
 			fflush(stdout);
 			tx_pkt_cnt = 0;
 		}
+#endif
 
 		tx_len = 2048 - sizeof(struct usrp_transfer_frame) - sizeof(int);
 		tx_data->len = tx_len + sizeof(int);
@@ -161,7 +166,6 @@ static void *write_thread(void *threadid)
 			gettimeofday(&finish_time, NULL);
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("%d bytes transfered in %d seconds.\n", bytes_transfered, elapsed_seconds);
 			printf("TX data transfer rate = %f K Bps\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 1000);
 
