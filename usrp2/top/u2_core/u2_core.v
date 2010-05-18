@@ -448,13 +448,13 @@ module u2_core
    wire 	 phy_reset;
    assign 	 PHY_RESETn = ~phy_reset;
    
-   setting_reg #(.my_addr(0)) sr_clk (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),
+   setting_reg #(.my_addr(0),.width(8)) sr_clk (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),
 				      .in(set_data),.out(clock_outs),.changed());
-   setting_reg #(.my_addr(1)) sr_ser (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(1),.width(8)) sr_ser (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(serdes_outs),.changed());
-   setting_reg #(.my_addr(2)) sr_adc (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(2),.width(8)) sr_adc (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(adc_outs),.changed());
-   setting_reg #(.my_addr(4)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(phy_reset),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
@@ -466,9 +466,9 @@ module u2_core
    wire [7:0] 	 led_src, led_sw;
    wire [7:0] 	 led_hw = {clk_status,serdes_link_up};
    
-   setting_reg #(.my_addr(3)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
-   setting_reg #(.my_addr(8)) sr_led_src (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(8),.width(8)) sr_led_src (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 					  .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
@@ -481,7 +481,7 @@ module u2_core
 		{4'b0, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
 		{pps_int,overrun,underrun,PHY_INTn,i2c_int,spi_int,timer_int,buffer_int}};
    
-   pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[3:2]),
+   pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
 	   .we_i(s8_we),.dat_i(s8_dat_o),.dat_o(s8_dat_i),.ack_o(s8_ack),.int_o(proc_int),
 	   .irq(irq) );
  	 
@@ -614,7 +614,7 @@ module u2_core
    
    wire [19:0] page;
    wire [19:0] wb_ram_adr = {page[19:PAGE_SIZE],bridge_adr[PAGE_SIZE-1:0]};
-   setting_reg #(.my_addr(6)) sr_page (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(6),.width(20)) sr_page (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				       .in(set_data),.out(page),.changed());
 
    wb_bridge_16_32 bridge
