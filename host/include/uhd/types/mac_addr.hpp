@@ -58,7 +58,7 @@ namespace uhd{
 
     private:
         mac_addr_t(const byte_vector_t &bytes); //private constructor
-        byte_vector_t _bytes; //internal representation
+        const byte_vector_t _bytes; //internal representation
     };
 
 } //namespace uhd

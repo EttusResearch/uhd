@@ -42,73 +42,89 @@ using namespace uhd;
 /***********************************************************************
  * ranges
  **********************************************************************/
-gain_range_t::gain_range_t(float min_, float max_, float step_){
-    min = min_;
-    max = max_;
-    step = step_;
+gain_range_t::gain_range_t(float min, float max, float step):
+    min(min),
+    max(max),
+    step(step)
+{
+    /* NOP */
 }
 
-freq_range_t::freq_range_t(double min_, double max_){
-    min = min_;
-    max = max_;
+freq_range_t::freq_range_t(double min, double max):
+    min(min),
+    max(max)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * tune result
  **********************************************************************/
-tune_result_t::tune_result_t(void){
-    target_inter_freq = 0.0;
-    actual_inter_freq = 0.0;
-    target_dsp_freq = 0.0;
-    actual_dsp_freq = 0.0;
-    spectrum_inverted = false;
+tune_result_t::tune_result_t(void):
+    target_inter_freq(0.0),
+    actual_inter_freq(0.0),
+    target_dsp_freq(0.0),
+    actual_dsp_freq(0.0),
+    spectrum_inverted(false)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * clock config
  **********************************************************************/
-clock_config_t::clock_config_t(void){
-    ref_source = REF_INT,
-    pps_source = PPS_INT,
-    pps_polarity = PPS_NEG;
+clock_config_t::clock_config_t(void):
+    ref_source(REF_INT),
+    pps_source(PPS_INT),
+    pps_polarity(PPS_NEG)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * stream command
  **********************************************************************/
-stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode_){
-    stream_mode = stream_mode_;
-    stream_now = true;
-    num_samps = 0;
+stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
+    stream_mode(stream_mode),
+    num_samps(0),
+    stream_now(true)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * metadata
  **********************************************************************/
-rx_metadata_t::rx_metadata_t(void){
-    stream_id = 0;
-    has_stream_id = false;
-    time_spec = time_spec_t();
-    has_time_spec = false;
-    more_fragments = false;
-    fragment_offset = 0;
+rx_metadata_t::rx_metadata_t(void):
+    has_stream_id(false),
+    stream_id(0),
+    has_time_spec(false),
+    time_spec(time_spec_t()),
+    more_fragments(false),
+    fragment_offset(0)
+{
+    /* NOP */
 }
 
-tx_metadata_t::tx_metadata_t(void){
-    stream_id = 0;
-    has_stream_id = false;
-    time_spec = time_spec_t();
-    has_time_spec = false;
-    start_of_burst = false;
-    end_of_burst = false;
+tx_metadata_t::tx_metadata_t(void):
+    has_stream_id(false),
+    stream_id(0),
+    has_time_spec(false),
+    time_spec(time_spec_t()),
+    start_of_burst(false),
+    end_of_burst(false)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * time spec
  **********************************************************************/
-time_spec_t::time_spec_t(boost::uint32_t secs_, double nsecs_){
-    secs = secs_;
-    nsecs = nsecs_;
+time_spec_t::time_spec_t(boost::uint32_t secs, double nsecs):
+    secs(secs),
+    nsecs(nsecs)
+{
+    /* NOP */
 }
 
 boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
@@ -165,9 +181,8 @@ std::string device_addr_t::to_string(void) const{
 /***********************************************************************
  * mac addr
  **********************************************************************/
-mac_addr_t::mac_addr_t(const byte_vector_t &bytes){
-    UHD_ASSERT_THROW(bytes.size() == 6);
-    _bytes = bytes;
+mac_addr_t::mac_addr_t(const byte_vector_t &bytes) : _bytes(bytes){
+    UHD_ASSERT_THROW(_bytes.size() == 6);
 }
 
 mac_addr_t mac_addr_t::from_bytes(const byte_vector_t &bytes){
@@ -224,10 +239,12 @@ size_t otw_type_t::get_sample_size(void) const{
     return (this->width * 2) / 8;
 }
 
-otw_type_t::otw_type_t(void){
-    width = 0;
-    shift = 0;
-    byteorder = BO_NATIVE;
+otw_type_t::otw_type_t(void):
+    width(0),
+    shift(0),
+    byteorder(BO_NATIVE)
+{
+    /* NOP */
 }
 
 /***********************************************************************
@@ -255,9 +272,11 @@ io_type_t::io_type_t(size_t size)
 /***********************************************************************
  * serial
  **********************************************************************/
-spi_config_t::spi_config_t(edge_t edge){
-    mosi_edge = edge;
-    miso_edge = edge;
+spi_config_t::spi_config_t(edge_t edge):
+    mosi_edge(edge),
+    miso_edge(edge)
+{
+    /* NOP */
 }
 
 void i2c_iface::write_eeprom(
