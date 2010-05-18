@@ -220,6 +220,10 @@ std::string mac_addr_t::to_string(void) const{
 /***********************************************************************
  * otw type
  **********************************************************************/
+size_t otw_type_t::get_sample_size(void) const{
+    return (this->width * 2) / 8;
+}
+
 otw_type_t::otw_type_t(void){
     width = 0;
     shift = 0;

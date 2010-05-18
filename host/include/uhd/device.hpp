@@ -80,12 +80,11 @@ public:
      * Send a buffer containing IF data with its metadata.
      *
      * Send handles fragmentation as follows:
-     * If the buffer has more samples than the maximum supported,
-     * the send method will send the maximum number of samples
-     * as supported by the transport and return the number sent.
-     * In this case, the end of burst flag will be forced to false.
-     * It is up to the caller to call send again on the un-sent
-     * portions of the buffer, until the buffer is exhausted.
+     * If the buffer has more samples than the maximum per packet,
+     * the send method will fragment the samples across several packets.
+     * Send will respect the burst flags when fragmenting to ensure
+     * that start of burst can only be set on the first fragment and
+     * that end of burst can only be set on the final fragment.
      *
      * This is a blocking call and will not return until the number
      * of samples returned have been read out of the buffer.

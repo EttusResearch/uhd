@@ -67,49 +67,17 @@ void usrp2_impl::io_init(void){
  **********************************************************************/
 size_t usrp2_impl::send(
     const asio::const_buffer &buff,
-    const tx_metadata_t &metadata_,
+    const tx_metadata_t &metadata,
     const io_type_t &io_type
 ){
-    tx_metadata_t metadata = metadata_; //rw copy to change later
-
-    transport::managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
-    boost::uint32_t *tx_mem = send_buff->cast<boost::uint32_t *>();
-    size_t num_samps = std::min(std::min(
-        asio::buffer_size(buff)/io_type.size,
-        size_t(max_tx_samps_per_packet())),
-        send_buff->size()/io_type.size
+    return vrt_packet_handler::send(
+        _packet_handler_send_state, //last state of the send handler
+        buff, metadata,             //buffer to empty and samples metadata
+        io_type, _tx_otw_type,      //input and output types to convert
+        get_master_clock_freq(),    //master clock tick rate
+        _data_transport,            //zero copy interface
+        max_tx_samps_per_packet()
     );
-
-    //kill the end of burst flag if this is a fragment
-    if (asio::buffer_size(buff)/io_type.size < num_samps)
-        metadata.end_of_burst = false;
-
-    size_t num_header_words32, num_packet_words32;
-    size_t packet_count = _tx_stream_id_to_packet_seq[metadata.stream_id]++;
-
-    //pack metadata into a vrt header
-    vrt::pack(
-        metadata,            //input
-        tx_mem,              //output
-        num_header_words32,  //output
-        num_samps,           //input
-        num_packet_words32,  //output
-        packet_count,        //input
-        get_master_clock_freq()
-    );
-
-    boost::uint32_t *items = tx_mem + num_header_words32; //offset for data
-
-    //copy-convert the samples into the send buffer
-    convert_io_type_to_otw_type(
-        asio::buffer_cast<const void*>(buff), io_type,
-        (void*)items, _tx_otw_type,
-        num_samps
-    );
-
-    //send and return number of samples
-    send_buff->done(num_packet_words32*sizeof(boost::uint32_t));
-    return num_samps;
 }
 
 /***********************************************************************

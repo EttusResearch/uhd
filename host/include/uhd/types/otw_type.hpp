@@ -55,6 +55,12 @@ namespace uhd{
             BO_NOT_APPLICABLE = '|'
         } byteorder;
 
+        /*!
+         * Get the sample size of this otw type.
+         * \return the size of a sample in bytes
+         */
+        size_t get_sample_size(void) const;
+
         otw_type_t(void);
     };
 

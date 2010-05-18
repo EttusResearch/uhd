@@ -122,8 +122,6 @@ private:
     codec_ctrl::sptr _codec_ctrl;
     serdes_ctrl::sptr _serdes_ctrl;
 
-    uhd::dict<boost::uint32_t, size_t> _tx_stream_id_to_packet_seq;
-
     /*******************************************************************
      * Deal with the rx and tx packet sizes
      ******************************************************************/
@@ -139,13 +137,14 @@ private:
         uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
     size_t max_rx_samps_per_packet(void){
-        return _max_rx_bytes_per_packet/(_rx_otw_type.width*2/8);
+        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
     }
     size_t max_tx_samps_per_packet(void){
-        return _max_tx_bytes_per_packet/(_tx_otw_type.width*2/8);
+        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
     }
 
     vrt_packet_handler::recv_state _packet_handler_recv_state;
+    vrt_packet_handler::send_state _packet_handler_send_state;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     void io_init(void);
 
