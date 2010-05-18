@@ -177,42 +177,43 @@ int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
 	long int t;
+	int fpga_config_flag ,decimation;
 	struct usrp_e_ctl16 d;
 	struct sched_param s = {
 		.sched_priority = 1
 	};
-	int read, write;
 
-	if (argc < 2) {
-		printf("%s  r|w|rw tx_data_size\n", argv[0]);
+	if (argc < 4) {
+		printf("%s t|w|rw decimation data_size\n", argv[0]);
 		return -1;
 	}
 
-	packet_data_length = atoi(argv[2]);
-
-	if (strcmp(argv[1], "r") == 0) {
-		read = 1;
-		write = 0;
-	}
-
-	if (strcmp(argv[1], "w") == 0) {
-		read = 0;
-		write = 1;
-	}
-
-	if (strcmp(argv[1], "rw") == 0) {
-		read = 1;
-		write = 1;
-	}
+	decimation = atoi(argv[2]);
+	packet_data_length = atoi(argv[3]);
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+
+	fpga_config_flag = 0;
+	if (strcmp(argv[1], "w") == 0)
+		fpga_config_flag |= (1 << 15);
+	else if (strcmp(argv[1], "r") == 0)
+		fpga_config_flag |= (1 << 14);
+	else if (strcmp(argv[1], "rw") == 0)
+		fpga_config_flag |= ((1 << 15) | (1 << 14));
+
+	fpga_config_flag |= decimation;
+
+	d.offset = 14;
+	d.count = 1;
+	d.buf[0] = fpga_config_flag;
+	ioctl(fp, USRP_E_WRITE_CTL16, &d);
 
 	sleep(1); // in case the kernel threads need time to start. FIXME if so
 
 	sched_setscheduler(0, SCHED_RR, &s);
 
-	if (read) {
+	if (fpga_config_flag & (1 << 14)) {
 		if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
 			printf("Failed to create rx thread\n");
 			exit(-1);
@@ -221,7 +222,7 @@ int main(int argc, char *argv[])
 
 	sleep(1);
 
-	if (write) {
+	if (fpga_config_flag & (1 << 15)) {
 		if (pthread_create(&tx, NULL, write_thread, (void *) t)) {
 			printf("Failed to create tx thread\n");
 			exit(-1);
