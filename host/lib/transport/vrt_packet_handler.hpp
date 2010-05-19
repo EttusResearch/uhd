@@ -198,8 +198,8 @@ namespace vrt_packet_handler{
             while(accum_num_samps < total_num_samps){
                 size_t num_samps = _recv1(
                     state,
-                    boost::asio::buffer_cast<boost::uint8_t *>(buff) + (num_samps*io_type.size),
-                    total_num_samps - num_samps,
+                    boost::asio::buffer_cast<boost::uint8_t *>(buff) + (accum_num_samps*io_type.size),
+                    total_num_samps - accum_num_samps,
                     (accum_num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
                     io_type, otw_type,
                     tick_rate,
@@ -300,6 +300,7 @@ namespace vrt_packet_handler{
         const send_cb_t& send_cb = &send_cb_nop
     ){
         const size_t total_num_samps = boost::asio::buffer_size(buff)/io_type.size;
+        if (total_num_samps <= max_samples_per_packet) send_mode = uhd::device::SEND_MODE_ONE_PACKET;
         switch(send_mode){
 
         ////////////////////////////////////////////////////////////////
@@ -324,7 +325,6 @@ namespace vrt_packet_handler{
         case uhd::device::SEND_MODE_FULL_BUFF:{
         ////////////////////////////////////////////////////////////////
             //calculate constants for fragmentation
-            const size_t final_packet_samps = total_num_samps%max_samples_per_packet;
             const size_t num_fragments = (total_num_samps+max_samples_per_packet-1)/max_samples_per_packet;
             static const size_t first_fragment_index = 0;
             const size_t final_fragment_index = num_fragments-1;
@@ -336,15 +336,15 @@ namespace vrt_packet_handler{
             for (size_t n = first_fragment_index; n <= final_fragment_index; n++){
 
                 //calculate new flags for the fragments
-                md.has_time_spec  = md.has_time_spec  and (n == first_fragment_index);
-                md.start_of_burst = md.start_of_burst and (n == first_fragment_index);
-                md.end_of_burst   = md.end_of_burst   and (n == final_fragment_index);
+                md.has_time_spec  = metadata.has_time_spec  and (n == first_fragment_index);
+                md.start_of_burst = metadata.start_of_burst and (n == first_fragment_index);
+                md.end_of_burst   = metadata.end_of_burst   and (n == final_fragment_index);
 
                 //send the fragment with the helper function
                 _send1(
                     state,
                     boost::asio::buffer_cast<const boost::uint8_t *>(buff) + (n*max_samples_per_packet*io_type.size),
-                    (n == final_fragment_index)?final_packet_samps:max_samples_per_packet,
+                    (n == final_fragment_index)?(total_num_samps%max_samples_per_packet):max_samples_per_packet,
                     md,
                     io_type, otw_type,
                     tick_rate,
