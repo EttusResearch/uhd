@@ -49,4 +49,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/transport/if_addrs.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/udp_simple.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/udp_zero_copy_asio.cpp
+    ${CMAKE_SOURCE_DIR}/lib/transport/vrt_packet_handler.hpp
 )

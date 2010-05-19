@@ -33,6 +33,7 @@
 #include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include "../../transport/vrt_packet_handler.hpp"
 
 /*!
  * Make a usrp2 dboard interface.
@@ -103,8 +104,24 @@ public:
     ~usrp2_impl(void);
 
     //the io interface
-    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
-    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
+    size_t get_max_send_samps_per_packet(void) const{
+        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
+    }
+    size_t send(
+        const boost::asio::const_buffer &,
+        const uhd::tx_metadata_t &,
+        const uhd::io_type_t &,
+        uhd::device::send_mode_t
+    );
+    size_t get_max_recv_samps_per_packet(void) const{
+        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
+    }
+    size_t recv(
+        const boost::asio::mutable_buffer &,
+        uhd::rx_metadata_t &,
+        const uhd::io_type_t &,
+        uhd::device::recv_mode_t
+    );
 
 private:
     double get_master_clock_freq(void){
@@ -121,25 +138,24 @@ private:
     codec_ctrl::sptr _codec_ctrl;
     serdes_ctrl::sptr _serdes_ctrl;
 
-    //the raw io interface (samples are in the usrp2 native format)
-    void recv_raw(uhd::rx_metadata_t &);
-    uhd::dict<boost::uint32_t, size_t> _tx_stream_id_to_packet_seq;
-    uhd::dict<boost::uint32_t, size_t> _rx_stream_id_to_packet_seq;
+    /*******************************************************************
+     * Deal with the rx and tx packet sizes
+     ******************************************************************/
     static const size_t _mtu = 1500; //FIXME we have no idea
     static const size_t _hdrs = (2 + 14 + 20 + 8); //size of headers (pad, eth, ip, udp)
-    static const size_t _max_rx_samples_per_packet =
-        (_mtu - _hdrs)/sizeof(boost::uint32_t) -
-        USRP2_HOST_RX_VRT_HEADER_WORDS32 -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32
+    static const size_t _max_rx_bytes_per_packet =
+        _mtu - _hdrs -
+        USRP2_HOST_RX_VRT_HEADER_WORDS32*sizeof(boost::uint32_t) -
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32*sizeof(boost::uint32_t)
     ;
-    static const size_t _max_tx_samples_per_packet =
-        (_mtu - _hdrs)/sizeof(boost::uint32_t) -
-        uhd::transport::vrt::max_header_words32
+    static const size_t _max_tx_bytes_per_packet =
+        _mtu - _hdrs -
+        uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
-    uhd::transport::managed_recv_buffer::sptr _rx_smart_buff;
-    boost::asio::const_buffer _rx_copy_buff;
-    size_t _fragment_offset_in_samps;
-    uhd::otw_type_t _otw_type;
+
+    vrt_packet_handler::recv_state _packet_handler_recv_state;
+    vrt_packet_handler::send_state _packet_handler_send_state;
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     void io_init(void);
 
     //udp transports for control and data
