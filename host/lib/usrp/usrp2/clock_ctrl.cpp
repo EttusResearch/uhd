@@ -79,7 +79,9 @@ public:
         _ad9510_regs.power_down_lvds_cmos_out7 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out7 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT7_CMOS;
         _ad9510_regs.output_level_lvds_out7 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT7_1_75MA;
+        _ad9510_regs.bypass_divider_out7 = 1;
         this->write_reg(0x43);
+        this->write_reg(0x57);
         this->update_regs();
     }
 
@@ -88,7 +90,9 @@ public:
         _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
         _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
+        _ad9510_regs.bypass_divider_out6 = 1;
         this->write_reg(0x42);
+        this->write_reg(0x55);
         this->update_regs();
     }
 
@@ -130,7 +134,9 @@ private:
             ad9510_regs_t::POWER_DOWN_LVPECL_OUT3_NORMAL :
             ad9510_regs_t::POWER_DOWN_LVPECL_OUT3_SAFE_PD;
         _ad9510_regs.output_level_lvpecl_out3 = ad9510_regs_t::OUTPUT_LEVEL_LVPECL_OUT3_810MV;
+        _ad9510_regs.bypass_divider_out3 = 1;
         this->write_reg(0x3F);
+        this->write_reg(0x4F);
         this->update_regs();
     }
 
@@ -139,7 +145,9 @@ private:
         _ad9510_regs.power_down_lvds_cmos_out4 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out4 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT4_LVDS;
         _ad9510_regs.output_level_lvds_out4 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT4_1_75MA;
+        _ad9510_regs.bypass_divider_out4 = 1;
         this->write_reg(0x40);
+        this->write_reg(0x51);
         this->update_regs();
     }
 
