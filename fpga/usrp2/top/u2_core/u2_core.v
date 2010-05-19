@@ -154,9 +154,9 @@ module u2_core
    localparam SERDES_TX_FIFOSIZE = 9;
    localparam SERDES_RX_FIFOSIZE = 9;  // RX currently doesn't use a fifo?
    
-   wire [7:0] 	set_addr;
-   wire [31:0] 	set_data;
-   wire 	set_stb;
+   wire [7:0] 	set_addr, set_addr_dsp;
+   wire [31:0] 	set_data, set_data_dsp;
+   wire 	set_stb, set_stb_dsp;
    
    wire 	ram_loader_done;
    wire 	ram_loader_rst, wb_rst, dsp_rst;
@@ -359,7 +359,7 @@ module u2_core
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
    
       .stream_clk(dsp_clk), .stream_rst(dsp_rst),
-      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .status(status),.sys_int_o(buffer_int),
 
       .s0(status_b0),.s1(status_b1),.s2(status_b2),.s3(status_b3),
@@ -454,7 +454,7 @@ module u2_core
    
    udp_wrapper #(.BASE(SR_UDP_SM)) udp_wrapper
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .rx_f19_data(rx_f19_data), .rx_f19_src_rdy_i(rx_f19_src_rdy), .rx_f19_dst_rdy_o(rx_f19_dst_rdy),
       .tx_f19_data(tx_f19_data), .tx_f19_src_rdy_o(tx_f19_src_rdy), .tx_f19_dst_rdy_i(tx_f19_dst_rdy),
       .rx_f36_data(udp_rx_data), .rx_f36_src_rdy_o(udp_rx_src_rdy), .rx_f36_dst_rdy_i(udp_rx_dst_rdy),
@@ -476,10 +476,14 @@ module u2_core
    settings_bus settings_bus
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s7_adr),.wb_dat_i(s7_dat_o),
       .wb_stb_i(s7_stb),.wb_we_i(s7_we),.wb_ack_o(s7_ack),
-      .sys_clk(dsp_clk),.strobe(set_stb),.addr(set_addr),.data(set_data));
+      .strobe(set_stb),.addr(set_addr),.data(set_data));
    
    assign 	 s7_dat_i = 32'd0;
 
+   settings_bus_crossclock settings_bus_crossclock
+     (.clk_i(wb_clk), .rst_i(wb_rst), .set_stb_i(set_stb), .set_addr_i(set_addr), .set_data_i(set_data),
+      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp), .set_addr_o(set_addr_dsp), .set_data_o(set_data_dsp));
+      
    // Output control lines
    wire [7:0] 	 clock_outs, serdes_outs, adc_outs;
    assign 	 {clock_ready, clk_en[1:0], clk_sel[1:0]} = clock_outs[4:0];
@@ -600,7 +604,7 @@ module u2_core
    
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
       .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
@@ -609,7 +613,7 @@ module u2_core
    
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx_data), .sample_fifo_dst_rdy_i(rx_dst_rdy), .sample_fifo_src_rdy_o(rx_src_rdy),
@@ -619,7 +623,7 @@ module u2_core
    
    vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .sample_fifo_i(rx_data), .sample_fifo_dst_rdy_o(rx_dst_rdy), .sample_fifo_src_rdy_i(rx_src_rdy),
       .data_o(rx1_data), .dst_rdy_i(rx1_dst_rdy), .src_rdy_o(rx1_src_rdy),
       .fifo_occupied(), .fifo_full(), .fifo_empty(),
@@ -646,14 +650,14 @@ module u2_core
 
    vita_tx_deframer #(.BASE(SR_TX_CTRL), .MAXCHAN(1)) vita_tx_deframer
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
       .debug(debug_vtd) );
 
    vita_tx_control #(.BASE(SR_TX_CTRL), .WIDTH(32)) vita_tx_control
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time),.underrun(underrun),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
@@ -663,7 +667,7 @@ module u2_core
    
    dsp_core_tx #(.BASE(SR_TX_DSP)) dsp_core_tx
      (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
       .dac_a(dac_a),.dac_b(dac_b),
       .debug(debug_tx_dsp) );
@@ -720,7 +724,7 @@ module u2_core
    // VITA Timing
 
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
-     (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+     (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int));
    
    // /////////////////////////////////////////////////////////////////////////////////////////
