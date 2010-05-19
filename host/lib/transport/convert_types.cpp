@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/config.hpp>
 #include <uhd/transport/convert_types.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/asio.hpp> //endianness conversion
@@ -49,7 +50,7 @@ static const bool is_big_endian = true;
 static const bool is_big_endian = false;
 #endif
 
-static inline void host_floats_to_usrp2_items(
+static UHD_INLINE void host_floats_to_usrp2_items(
     boost::uint32_t *usrp2_items,
     const fc32_t *host_floats,
     size_t num_samps
@@ -62,7 +63,7 @@ static inline void host_floats_to_usrp2_items(
     unrolled_loop(host_floats_to_usrp2_items_i, num_samps);
 }
 
-static inline void usrp2_items_to_host_floats(
+static UHD_INLINE void usrp2_items_to_host_floats(
     fc32_t *host_floats,
     const boost::uint32_t *usrp2_items,
     size_t num_samps
@@ -76,7 +77,7 @@ static inline void usrp2_items_to_host_floats(
     unrolled_loop(usrp2_items_to_host_floats_i, num_samps);
 }
 
-static inline void host_items_to_usrp2_items(
+static UHD_INLINE void host_items_to_usrp2_items(
     boost::uint32_t *usrp2_items,
     const boost::uint32_t *host_items,
     size_t num_samps
@@ -90,7 +91,7 @@ static inline void host_items_to_usrp2_items(
     }
 }
 
-static inline void usrp2_items_to_host_items(
+static UHD_INLINE void usrp2_items_to_host_items(
     boost::uint32_t *host_items,
     const boost::uint32_t *usrp2_items,
     size_t num_samps
