@@ -45,6 +45,9 @@ static void *read_thread(void *threadid)
 
 	printf("Greetings from the reading thread!\n");
 
+	bytes_transfered = 0;
+	gettimeofday(&start_time, NULL);
+
 	// IMPORTANT: must assume max length packet from fpga
 	rx_data = malloc(sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + (1016 * 2));
 	p = (struct pkt *) ((void *)rx_data + offsetof(struct usrp_transfer_frame, buf));
@@ -101,6 +104,9 @@ static void *write_thread(void *threadid)
 	struct timeval start_time, finish_time;
 
 	printf("Greetings from the write thread!\n");
+
+	bytes_transfered = 0;
+	gettimeofday(&start_time, NULL);
 
 	tx_data = malloc(sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + (packet_data_length * 2));
 	p = (struct pkt *) ((void *)tx_data + offsetof(struct usrp_transfer_frame, buf));
