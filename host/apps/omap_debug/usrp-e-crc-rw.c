@@ -211,12 +211,13 @@ int main(int argc, char *argv[])
 		write = 1;
 	}
 
+	printf("About to open /dev/usrp_e0");
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
 	sleep(1); // in case the kernel threads need time to start. FIXME if so
 
-	sched_setscheduler(0, SCHED_RR, &s);
+//	sched_setscheduler(0, SCHED_RR, &s);
 
 	if (read) {
 		if (pthread_create(&rx, NULL, read_thread, (void *) t)) {

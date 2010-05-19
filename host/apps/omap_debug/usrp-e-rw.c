@@ -35,7 +35,7 @@ static int calc_checksum(struct pkt *p)
 
 static void *read_thread(void *threadid)
 {
-	int cnt, prev_seq_num;
+	int cnt, prev_seq_num, pkt_count;
 	struct usrp_transfer_frame *rx_data;
 	struct pkt *p;
 
@@ -50,6 +50,7 @@ static void *read_thread(void *threadid)
 	printf("sizeof rx data = %d\n", sizeof(struct usrp_transfer_frame) + sizeof(struct pkt));
 
 	prev_seq_num = 0;
+	pkt_count = 0;
 
 	while (1) {
 
@@ -60,14 +61,17 @@ static void *read_thread(void *threadid)
 //		printf("Packet received, flags = %X, len = %d\n", rx_data->flags, rx_data->len);
 //		printf("p->seq_num = %d\n", p->seq_num);
 
+
+		pkt_count++;
+
 		if (p->seq_num != prev_seq_num + 1)
-			printf("Sequence number fail, current = %X, previous = %X\n",
-				p->seq_num, prev_seq_num);
+			printf("Sequence number fail, current = %X, previous = %X, pkt_count = %d\n",
+				p->seq_num, prev_seq_num, pkt_count);
 		prev_seq_num = p->seq_num;
 
 		if (calc_checksum(p) != p->checksum)
-			printf("Checksum fail packet = %X, expected = %X\n",
-				calc_checksum(p), p->checksum);
+			printf("Checksum fail packet = %X, expected = %X, pkt_count = %d\n",
+				calc_checksum(p), p->checksum, pkt_count);
 
 		printf(".");
 		fflush(stdout);
@@ -108,7 +112,7 @@ static void *write_thread(void *threadid)
 		cnt = write(fp, tx_data, 2048);
 		if (cnt < 0)
 			printf("Error returned from write: %d\n", cnt);
-	//	sleep(1);
+		sleep(1);
 	}
 }
 
