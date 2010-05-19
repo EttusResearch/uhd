@@ -258,8 +258,8 @@ double rfx_xcvr::set_lo_freq(
         (8, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8)
     ;
 
-    double actual_freq, ref_freq = this->get_iface()->get_clock_rate(unit);
-    int R, BS, P, B, A;
+    double actual_freq=0, ref_freq = this->get_iface()->get_clock_rate(unit);
+    int R=0, BS=0, P=0, B=0, A=0;
 
     /*
      * The goal here to to loop though possible R dividers,
