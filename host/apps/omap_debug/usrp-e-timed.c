@@ -84,8 +84,8 @@ static void *read_thread(void *threadid)
 			gettimeofday(&finish_time, NULL);
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("RX data transfer rate = %f K Bps\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+			printf("RX data transfer rate = %f K Samples/second\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
 			start_time = finish_time;
@@ -159,8 +159,8 @@ static void *write_thread(void *threadid)
 			gettimeofday(&finish_time, NULL);
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("TX data transfer rate = %f K Bps\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+			printf("TX data transfer rate = %f K Samples/second\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
 			start_time = finish_time;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 	};
 
 	if (argc < 4) {
-		printf("%s t|w|rw decimation data_size\n", argv[0]);
+		printf("%s r|w|rw decimation data_size\n", argv[0]);
 		return -1;
 	}
 
