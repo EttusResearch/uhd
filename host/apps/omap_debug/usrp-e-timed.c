@@ -40,6 +40,8 @@ static void *read_thread(void *threadid)
 	struct pkt *p;
 	int rx_pkt_cnt;
 	int i;
+	unsigned long bytes_transfered, elapsed_seconds;
+	struct timeval start_time, finish_time;
 
 	printf("Greetings from the reading thread!\n");
 
@@ -62,31 +64,30 @@ static void *read_thread(void *threadid)
 			printf("Error returned from read: %d\n", cnt);
 		rx_pkt_cnt++;
 
+#if 0
 		if (rx_pkt_cnt  == 512) {
 			printf(".");
 			fflush(stdout);
 			rx_pkt_cnt = 0;
 		}
+#endif
 
 		if (rx_data->flags & RB_OVERRUN)
 			printf("O");
 
-//		for (i = 0; i < 10; i++)
-//			printf(" %d", p->data[i]);
-//		printf("\n");
-	
-//		printf("Packet received, flags = %X, len = %d\n", rx_data->flags, rx_data->len);
-//		printf("p->seq_num = %d\n", p->seq_num);
+		bytes_transfered += rx_data->len;
 
-//		if (p->seq_num != prev_seq_num + 1)
-//			printf("Sequence number fail, current = %X, previous = %X\n",
-//				p->seq_num, prev_seq_num);
-//		prev_seq_num = p->seq_num;
+		if (bytes_transfered > (100 * 1000000)) {
+			gettimeofday(&finish_time, NULL);
+			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-//		if (calc_checksum(p) != p->checksum)
-//			printf("Checksum fail packet = %X, expected = %X\n",
-//				calc_checksum(p), p->checksum);
-//		printf("\n");
+			printf("RX data transfer rate = %f K Bps\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+
+
+			start_time = finish_time;
+			bytes_transfered = 0;
+                }
 	}
 
 }
@@ -96,6 +97,8 @@ static void *write_thread(void *threadid)
 	int seq_number, i, cnt, tx_pkt_cnt;
 	struct usrp_transfer_frame *tx_data;
 	struct pkt *p;
+	unsigned long bytes_transfered, elapsed_seconds;
+	struct timeval start_time, finish_time;
 
 	printf("Greetings from the write thread!\n");
 
@@ -120,6 +123,8 @@ static void *write_thread(void *threadid)
 	while (1) {
 
 		tx_pkt_cnt++;
+
+#if 0
 		if (tx_pkt_cnt  == 512) {
 			printf(".");
 			fflush(stdout);
@@ -133,6 +138,7 @@ static void *write_thread(void *threadid)
 			fflush(stdout);
 			tx_pkt_cnt = 0;
 		}
+#endif
 
 //		printf("tx flags = %X, len = %d\n", tx_data->flags, tx_data->len);
 		p->seq_num = seq_number++;
@@ -140,6 +146,20 @@ static void *write_thread(void *threadid)
 		cnt = write(fp, tx_data, 2048);
 		if (cnt < 0)
 			printf("Error returned from write: %d\n", cnt);
+
+		bytes_transfered += tx_data->len;
+
+		if (bytes_transfered > (100 * 1000000)) {
+			gettimeofday(&finish_time, NULL);
+			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
+
+			printf("TX data transfer rate = %f K Bps\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+
+
+			start_time = finish_time;
+			bytes_transfered = 0;
+                }
 //		sleep(1);
 	}
 }
