@@ -120,7 +120,7 @@ public:
         const boost::asio::const_buffer &buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
-        send_mode_t send_mode = SEND_MODE_ONE_PACKET
+        send_mode_t send_mode
     ) = 0;
 
     /*!
@@ -159,7 +159,7 @@ public:
         const boost::asio::mutable_buffer &buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode = RECV_MODE_ONE_PACKET
+        recv_mode_t recv_mode
     ) = 0;
 
     /*!
