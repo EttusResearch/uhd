@@ -1,4 +1,5 @@
-CFLAGS=-Wall -I../../lib/usrp/usrp_e/
+CFLAGS=-Wall -I../../lib/usrp/usrp_e/ -march=armv7-a -mtune=cortex-a8 -mfpu=neon -O3
+CXXFLAGS=-Wall -I../../lib/usrp/usrp_e/ -march=armv7-a -mtune=cortex-a8 -mfpu=neon -O3
 
 all : usrp-e-spi usrp-e-i2c usrp-e-rw usrp-e-uart usrp-e-led usrp-e-ctl usrp-e-button usrp-e-uart-rx fpga-downloader usrp-e-gpio usrp-e-debug-pins usrp-e-rw-random usrp-e-timed usrp-e-lb-test usrp-e-crc-rw clkgen-config
 
@@ -7,16 +8,16 @@ usrp-e-spi : usrp-e-spi.c
 usrp-e-i2c : usrp-e-i2c.c
 
 usrp-e-rw : usrp-e-rw.c
-	gcc -o $@ $< -lpthread
+	gcc -o $@ $< -lpthread ${CFLAGS}
 
 usrp-e-timed : usrp-e-timed.c
-	gcc -o $@ $< -lpthread
+	gcc -o $@ $< -lpthread ${CFLAGS}
 
 usrp-e-rw-random : usrp-e-rw-random.c
-	gcc -o $@ $< -lpthread
+	gcc -o $@ $< -lpthread ${CFLAGS}
 
 usrp-e-crc-rw : usrp-e-crc-rw.c
-	gcc -o $@ $< -lpthread
+	gcc -o $@ $< -lpthread ${CFLAGS}
 
 usrp-e-uart : usrp-e-uart.c
 
