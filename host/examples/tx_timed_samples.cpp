@@ -41,7 +41,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
-        ("ampl", po::value<float>(&ampl)->default_value(0.3), "amplitude of each sample")
+        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

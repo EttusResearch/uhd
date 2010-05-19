@@ -28,6 +28,7 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/function.hpp>
+#include <stdexcept>
 #include <iostream>
 
 namespace vrt_packet_handler{
@@ -209,6 +210,8 @@ namespace vrt_packet_handler{
             }
             return total_num_samps;
         }
+
+        default: throw std::runtime_error("unknown recv mode");
         }//switch(recv_mode)
     }
 
@@ -350,6 +353,8 @@ namespace vrt_packet_handler{
             }
             return total_num_samps;
         }
+
+        default: throw std::runtime_error("unknown send mode");
         }//switch(send_mode)
     }
 
