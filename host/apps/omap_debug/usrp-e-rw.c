@@ -38,8 +38,13 @@ static void *read_thread(void *threadid)
 	int cnt, prev_seq_num, pkt_count;
 	struct usrp_transfer_frame *rx_data;
 	struct pkt *p;
+	unsigned long bytes_transfered, elapsed_seconds;
+	struct timeval start_time, finish_time;
 
 	printf("Greetings from the reading thread!\n");
+
+	bytes_transfered = 0;
+	gettimeofday(&start_time, NULL);
 
 	// IMPORTANT: must assume max length packet from fpga
 	rx_data = malloc(sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + (1016 * 2));
@@ -73,8 +78,24 @@ static void *read_thread(void *threadid)
 			printf("Checksum fail packet = %X, expected = %X, pkt_count = %d\n",
 				calc_checksum(p), p->checksum, pkt_count);
 
-		printf(".");
-		fflush(stdout);
+
+		bytes_transfered += rx_data->len;
+
+		if (bytes_transfered > (100 * 1000000)) {
+			gettimeofday(&finish_time, NULL);
+			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
+
+			printf("RX data transfer rate = %f K Samples/second\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 250);
+
+
+			start_time = finish_time;
+			bytes_transfered = 0;
+		}
+
+
+//		printf(".");
+//		fflush(stdout);
 //		printf("\n");
 	}
 
@@ -112,7 +133,7 @@ static void *write_thread(void *threadid)
 		cnt = write(fp, tx_data, 2048);
 		if (cnt < 0)
 			printf("Error returned from write: %d\n", cnt);
-		sleep(1);
+//		sleep(1);
 	}
 }
 
