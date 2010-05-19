@@ -193,22 +193,24 @@ namespace vrt_packet_handler{
         ////////////////////////////////////////////////////////////////
         case uhd::device::RECV_MODE_FULL_BUFF:{
         ////////////////////////////////////////////////////////////////
-            size_t num_samps = 0;
+            size_t accum_num_samps = 0;
             uhd::rx_metadata_t tmp_md;
-            while(num_samps < total_num_samps){
-                num_samps += _recv1(
+            while(accum_num_samps < total_num_samps){
+                size_t num_samps = _recv1(
                     state,
                     boost::asio::buffer_cast<boost::uint8_t *>(buff) + (num_samps*io_type.size),
                     total_num_samps - num_samps,
-                    (num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
+                    (accum_num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
                     io_type, otw_type,
                     tick_rate,
                     zc_iface,
                     vrt_header_offset_words32,
                     recv_cb
                 );
+                if (num_samps == 0) break; //had a recv timeout or error, break loop
+                accum_num_samps += num_samps;
             }
-            return total_num_samps;
+            return accum_num_samps;
         }
 
         default: throw std::runtime_error("unknown recv mode");
