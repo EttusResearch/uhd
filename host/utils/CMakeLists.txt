@@ -30,5 +30,6 @@ INSTALL(TARGETS uhd_burn_db_eeprom RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
 INSTALL(PROGRAMS
     usrp2_recovery.py
     usrp2_card_burner.py
+    usrp2_card_burner_gui.py
     DESTINATION ${PKG_DATA_DIR}/utils
 )

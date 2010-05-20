@@ -57,7 +57,7 @@ Use the card burner tool (unix)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    sudo <prefix>/share/uhd/utils/usrp2_card_burner.py --gui
+    sudo <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
 
     -- OR --
 
@@ -70,7 +70,7 @@ Use the card burner tool (windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <path_to_python.exe> <prefix>/share/uhd/utils/usrp2_card_burner.py --gui
+    <path_to_python.exe> <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
 
 
 ------------------------------------------------------------------------

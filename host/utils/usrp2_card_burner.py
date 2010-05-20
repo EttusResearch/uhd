@@ -16,14 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-########################################################################
-# Deal with raw devices
-########################################################################
 import platform
 import tempfile
 import subprocess
 import urllib
+import optparse
+import os
 
+########################################################################
+# constants
+########################################################################
 SECTOR_SIZE = 512                 # bytes
 MAX_FILE_SIZE =  1 * (2**20)      # maximum number of bytes we'll burn to a slot
 
@@ -32,6 +34,9 @@ FIRMWARE_OFFSET = 1 * (2**20)     # offset in flash to firmware image
 
 MAX_SD_CARD_SIZE = 2048e6         # bytes (any bigger is sdhc)
 
+########################################################################
+# helper functions
+########################################################################
 def command(*args):
     p = subprocess.Popen(
         args,
@@ -53,6 +58,9 @@ def get_dd_path():
         return dd_path
     return 'dd'
 
+########################################################################
+# list possible devices
+########################################################################
 def get_raw_device_hints():
     ####################################################################
     # Platform Windows: parse the output of dd.exe --list
@@ -84,7 +92,7 @@ def get_raw_device_hints():
         return sorted(set(volumes))
 
     ####################################################################
-    # Platform Linux: call blockdev on all the /dev/sd* devices
+    # Platform Linux: call blockdev on all the dev0 devices
     ####################################################################
     if platform.system() == 'Linux':
         devs = list()
@@ -107,6 +115,9 @@ def get_raw_device_hints():
     ####################################################################
     return ()
 
+########################################################################
+# write and verify with dd
+########################################################################
 def verify_image(image_file, device_file, offset):
     #create a temporary file to store the readback
     tmp = tempfile.mkstemp()
@@ -172,160 +183,14 @@ def burn_sd_card(dev, fw, fpga):
     return verbose
 
 ########################################################################
-# Graphical Tk stuff
+# command line options
 ########################################################################
-import Tkinter, Tkconstants, tkFileDialog, tkFont, tkMessageBox
-import os
-
-class BinFileEntry(Tkinter.Frame):
-    """
-    Simple file entry widget for getting the file path of bin files.
-    Combines a label, entry, and button with file dialog callback.
-    """
-
-    def __init__(self, root, what, def_path=''):
-        self._what = what
-        Tkinter.Frame.__init__(self, root)
-        Tkinter.Label(self, text=what+":").pack(side=Tkinter.LEFT)
-        self._entry = Tkinter.Entry(self, width=50)
-        self._entry.insert(Tkinter.END, def_path)
-        self._entry.pack(side=Tkinter.LEFT)
-        Tkinter.Button(self, text="...", command=self._button_cb).pack(side=Tkinter.LEFT)
-
-    def _button_cb(self):
-        filename = tkFileDialog.askopenfilename(
-            parent=self,
-            filetypes=[('bin files', '*.bin'), ('all files', '*.*')],
-            title="Select bin file for %s"%self._what,
-            initialdir=os.path.dirname(self.get_filename()),
-        )
-
-        # open file on your own
-        if filename:
-            self._entry.delete(0, Tkinter.END)
-            self._entry.insert(0, filename)
-
-    def get_filename(self):
-        return self._entry.get()
-
-class DeviceEntryWidget(Tkinter.Frame):
-    """
-    Simple  entry widget for getting the raw device name.
-    Combines a label, entry, and helpful text box with hints.
-    """
-
-    def __init__(self, root, text=''):
-        Tkinter.Frame.__init__(self, root)
-
-        Tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
-
-        self._hints = Tkinter.Listbox(self)
-        self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
-        self._reload_cb()
-        self._hints.pack(expand=Tkinter.YES, fill=Tkinter.X)
-
-        frame = Tkinter.Frame(self)
-        frame.pack()
-
-        Tkinter.Label(frame, text="Raw Device:").pack(side=Tkinter.LEFT)
-        self._entry = Tkinter.Entry(frame, width=50)
-        self._entry.insert(Tkinter.END, text)
-        self._entry.pack(side=Tkinter.LEFT)
-
-    def _reload_cb(self):
-        self._hints.delete(0, Tkinter.END)
-        for hint in get_raw_device_hints():
-            self._hints.insert(Tkinter.END, hint)
-
-    def _listbox_cb(self, event):
-        try:
-            sel = self._hints.get(self._hints.curselection()[0])
-            self._entry.delete(0, Tkinter.END)
-            self._entry.insert(0, sel)
-        except Exception, e: print e
-
-    def get_devname(self):
-        return self._entry.get()
-
-class SectionLabel(Tkinter.Label):
-    """
-    Make a text label with bold font.
-    """
-
-    def __init__(self, root, text):
-        Tkinter.Label.__init__(self, root, text=text)
-
-        #set the font bold
-        f = tkFont.Font(font=self['font'])
-        f['weight'] = 'bold'
-        self['font'] = f.name
-
-class USRP2CardBurnerApp(Tkinter.Frame):
-    """
-    The top level gui application for the usrp2 sd card burner.
-    Creates entry widgets and button with callback to write images.
-    """
-
-    def __init__(self, root, dev, fw, fpga):
-
-        Tkinter.Frame.__init__(self, root)
-
-        #pack the file entry widgets
-        SectionLabel(self, text="Select Images").pack(pady=5)
-        self._fw_img_entry = BinFileEntry(self, "Firmware Image", def_path=fw)
-        self._fw_img_entry.pack()
-        self._fpga_img_entry = BinFileEntry(self, "FPGA Image", def_path=fpga)
-        self._fpga_img_entry.pack()
-
-        #pack the destination entry widget
-        SectionLabel(self, text="Select Device").pack(pady=5)
-        self._raw_dev_entry = DeviceEntryWidget(self, text=dev)
-        self._raw_dev_entry.pack()
-
-        #the do it button
-        SectionLabel(self, text="").pack(pady=5)
-        Tkinter.Label(self, text="Warning! This tool can overwrite your hard drive. Use with caution.").pack()
-        Tkinter.Button(self, text="Burn SD Card", command=self._burn).pack()
-
-    def _burn(self):
-        #grab strings from the gui
-        fw = self._fw_img_entry.get_filename()
-        fpga = self._fpga_img_entry.get_filename()
-        dev = self._raw_dev_entry.get_devname()
-
-        #check input
-        if not dev:
-            tkMessageBox.showerror('Error:', 'No device specified!')
-            return
-        if not fw and not fpga:
-            tkMessageBox.showerror('Error:', 'No images specified!')
-            return
-        if fw and not os.path.exists(fw):
-            tkMessageBox.showerror('Error:', 'Firmware image not found!')
-            return
-        if fpga and not os.path.exists(fpga):
-            tkMessageBox.showerror('Error:', 'FPGA image not found!')
-            return
-
-        #burn the sd card
-        try:
-            verbose = burn_sd_card(dev=dev, fw=fw, fpga=fpga)
-            tkMessageBox.showinfo('Verbose:', verbose)
-        except Exception, e:
-            tkMessageBox.showerror('Verbose:', 'Error: %s'%str(e))
-
-########################################################################
-# Main
-########################################################################
-import optparse
-
-if __name__=='__main__':
+def get_options():
     parser = optparse.OptionParser()
     parser.add_option("--dev",  type="string",       help="raw device path",                default='')
     parser.add_option("--fw",   type="string",       help="firmware image path (optional)", default='')
     parser.add_option("--fpga", type="string",       help="fpga image path (optional)",     default='')
     parser.add_option("--list", action="store_true", help="list possible raw devices",      default=False)
-    parser.add_option("--gui",  action="store_true", help="run in gui mode",                default=False)
     (options, args) = parser.parse_args()
 
     if options.list:
@@ -333,12 +198,12 @@ if __name__=='__main__':
         print '  ' + '\n  '.join(get_raw_device_hints())
         exit()
 
-    if options.gui:
-        root = Tkinter.Tk()
-        root.title('USRP2 SD Card Burner')
-        USRP2CardBurnerApp(root, dev=options.dev, fw=options.fw, fpga=options.fpga).pack()
-        root.mainloop()
-        exit()
+    return options
 
+########################################################################
+# main
+########################################################################
+if __name__=='__main__':
+    options = get_options()
     if not options.dev: raise Exception, 'no raw device path specified'
     print burn_sd_card(dev=options.dev, fw=options.fw, fpga=options.fpga)
