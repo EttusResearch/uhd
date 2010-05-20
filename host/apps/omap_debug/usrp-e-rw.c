@@ -142,6 +142,9 @@ int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
 	long int t;
+	struct sched_param s = {
+		.sched_priority = 1
+	};
 
 	if (argc < 2) {
 		printf("%s data_size\n", argv[0]);
@@ -152,6 +155,8 @@ int main(int argc, char *argv[])
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+
+	sched_setscheduler(0, SCHED_RR, &s);
 
 	if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
 		printf("Failed to create rx thread\n");
