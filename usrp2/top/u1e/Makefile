@@ -115,6 +115,7 @@ control_lib/newfifo/packet_generator.v \
 control_lib/newfifo/packet_verifier.v \
 control_lib/newfifo/packet_generator32.v \
 control_lib/newfifo/packet_verifier32.v \
+control_lib/newfifo/fifo_pacer.v \
 control_lib/longfifo.v \
 control_lib/shortfifo.v \
 control_lib/medfifo.v \

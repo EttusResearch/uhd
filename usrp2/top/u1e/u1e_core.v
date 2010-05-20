@@ -1,8 +1,7 @@
 
 
 //`define LOOPBACK 1
-//`define TIMED 1
-`define CRC 1
+`define TIMED 1
 
 module u1e_core
   (input clk_fpga, input rst_fpga,
@@ -80,45 +79,35 @@ module u1e_core
    wire [7:0] 	 rate;
 
    // TX side
-   wire 	 tx_enable;
-   cic_strober tx_strober (.clock(wb_clk), .reset(wb_rst), .enable(tx_enable),
-			   .rate(rate), .strobe_fast(1), .strobe_slow(tx_dst_rdy));
-
-   // RX side
-   wire 	 rx_enable;
-   reg [15:0] 	 ctr;
-   wire [15:0] 	 rx_pkt_len = 480;
-   wire 	 rx_eof = (ctr == rx_pkt_len);
-   wire 	 rx_sof = (ctr == 0);
+   wire 	 tx_enable, tx_src_rdy_int, tx_dst_rdy_int;
    
-   cic_strober rx_strober (.clock(wb_clk), .reset(wb_rst), .enable(rx_enable),
-			   .rate(rate), .strobe_fast(1), .strobe_slow(rx_src_rdy));
+   fifo_pacer tx_pacer
+     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(tx_enable),
+      .src1_rdy_i(tx_src_rdy), .dst1_rdy_o(tx_dst_rdy),
+      .src2_rdy_o(tx_src_rdy_int), .dst2_rdy_i(tx_dst_rdy_int),
+      .underrun(tx_underrun), .overrun());
    
-   always @(posedge wb_clk)
-     if(wb_rst)
-       ctr <= 0;
-     else if(rx_dst_rdy & rx_src_rdy)
-       if(ctr == rx_pkt_len)
-	 ctr <= 0;
-       else
-	 ctr <= ctr + 1;
-
-   assign rx_data = {2'b00,rx_eof,rx_sof,~ctr,ctr};   
-`endif // TIMED
-
-`ifdef CRC
-   packet_generator32 pktgen32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
-      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-
    packet_verifier32 pktver32
      (.clk(wb_clk), .reset(wb_rst), .clear(clear),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
+      .data_i(tx_data), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int),
       .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
 
+   // RX side
+   wire 	 rx_enable, rx_src_rdy_int, rx_dst_rdy_int;
    wire 	 rx_sof = rx_data[32];
    wire 	 rx_eof = rx_data[33];
-`endif // CRC   
+
+   packet_generator32 pktgen32
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
+      .data_o(rx_data), .src_rdy_o(rx_src_rdy_int), .dst_rdy_i(rx_dst_rdy_int));
+
+   fifo_pacer rx_pacer
+     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(rx_enable),
+      .src1_rdy_i(rx_src_rdy_int), .dst1_rdy_o(rx_dst_rdy_int),
+      .src2_rdy_o(rx_src_rdy), .dst2_rdy_i(rx_dst_rdy),
+      .underrun(), .overrun(rx_overrun));
+   
+`endif //  `ifdef TIMED
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
@@ -233,7 +222,7 @@ module u1e_core
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
-   assign { rx_overrun, tx_underrun } = 0; // reg_test;
+   //assign { rx_overrun, tx_underrun } = 0; // reg_test;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
