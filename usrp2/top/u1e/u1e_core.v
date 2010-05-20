@@ -361,12 +361,10 @@ module u1e_core
    // Debug circuitry
 
    assign debug_clk = { EM_CLK, clk_fpga };
-/*
-    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
+   assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, EM_A[10:1] },
 		    { EM_D } };
-*/
 
-   assign debug = { phase[23:8], txsync, txblank, tx };
+   //assign debug = { phase[23:8], txsync, txblank, tx };
    
    
    assign debug_gpio_0 = { debug_gpmc };
