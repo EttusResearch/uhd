@@ -43,6 +43,7 @@ module u1e_core
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
    reg [15:0] 	 tx_frame_len;
    wire [15:0] 	 rx_frame_len;
+   wire [7:0] 	 rate;
 
    wire 	 bus_error;
    
@@ -76,7 +77,6 @@ module u1e_core
 `endif // LOOPBACK
 
 `ifdef TIMED
-   wire [7:0] 	 rate;
 
    // TX side
    wire 	 tx_enable, tx_src_rdy_int, tx_dst_rdy_int;
@@ -362,7 +362,7 @@ module u1e_core
 
    assign debug_clk = { EM_CLK, clk_fpga };
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, rx_overrun, tx_underrun },
-		    { EM_A[8:1] },
+		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
 
    //assign debug = { phase[23:8], txsync, txblank, tx };

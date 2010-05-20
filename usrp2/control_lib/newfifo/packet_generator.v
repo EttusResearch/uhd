@@ -5,7 +5,7 @@ module packet_generator
    output reg [7:0] data_o, output sof_o, output eof_o, 
    output src_rdy_o, input dst_rdy_i);
 
-   localparam len = 32'd100;
+   localparam len = 32'd2000;
 
    reg [31:0] state;
    reg [31:0] seq;
