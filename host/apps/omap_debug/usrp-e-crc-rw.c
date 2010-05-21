@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/time.h>
+#include <sys/ioctl.h>
+#include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -34,6 +37,8 @@ static u_int32_t chksum_crc32_gentab(void)
 		}
 		crc_tab[i] = crc;
 	}
+
+	return 0;
 }
 
 static void *read_thread(void *threadid)
@@ -46,6 +51,9 @@ static void *read_thread(void *threadid)
 	unsigned int rx_crc;
 	unsigned long bytes_transfered, elapsed_seconds;
 	struct timeval start_time, finish_time;
+
+	__u8 *p;
+	__u32 *pi;
 
 	printf("Greetings from the reading thread!\n");
 
@@ -81,12 +89,24 @@ static void *read_thread(void *threadid)
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ rx_data->buf[i]) & 0xFF];
 		}
-		
-		rx_crc = *((int *) &rx_data[rx_data->len - 4]);
-	
+
+		p = &rx_data->buf[rx_data->len - 4];
+		pi = (__u32 *) p;
+		rx_crc = *pi;
+
+#if 1
+		printf("rx_data->len = %d\n", rx_data->len);
+		printf("rx_data->flags = %d\n", rx_data->flags);
+		for (i = 0; i < rx_data->len; i++)
+			printf("idx = %d, data = %X\n", i, rx_data->buf[i]);
+		printf("calc crc = %lX, rx crc = %X\n", crc, rx_crc); 
+		fflush(stdout);
+		break;
+#endif
+
 		if (rx_crc != (crc & 0xFFFFFFFF)) {
-			printf("CRC Error, sent: %d, rx: %d\n",
-				rx_crc, (crc & 0xFFFFFFFF));
+			printf("CRC Error, calc crc: %X, rx_crc: %X\n",
+				(crc & 0xFFFFFFFF), rx_crc);
 		}
 
 		bytes_transfered += rx_data->len;
@@ -95,8 +115,9 @@ static void *read_thread(void *threadid)
 			gettimeofday(&finish_time, NULL);
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("RX data transfer rate = %f K Bps\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+			printf("Bytes transfered = %ld, elapsed seconds = %ld\n", bytes_transfered, elapsed_seconds);
+			printf("RX data transfer rate = %f K Samples/second\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 250);
 
 
 			start_time = finish_time;
@@ -166,8 +187,9 @@ static void *write_thread(void *threadid)
 			gettimeofday(&finish_time, NULL);
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("TX data transfer rate = %f K Bps\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 1000);
+			printf("Bytes transfered = %d, elapsed seconds = %d\n", bytes_transfered, elapsed_seconds);
+			printf("TX data transfer rate = %f K Samples/second\n",
+				(float) bytes_transfered / (float) elapsed_seconds / 250);
 
 
 			start_time = finish_time;
@@ -194,6 +216,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	chksum_crc32_gentab();
+
 	decimation = atoi(argv[2]);
 	packet_data_length = atoi(argv[3]);
 
@@ -217,7 +241,7 @@ int main(int argc, char *argv[])
 
 	sleep(1); // in case the kernel threads need time to start. FIXME if so
 
-//	sched_setscheduler(0, SCHED_RR, &s);
+	sched_setscheduler(0, SCHED_RR, &s);
 
 	if (fpga_config_flag & (1 << 14)) {
 		if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
@@ -238,4 +262,6 @@ int main(int argc, char *argv[])
 	sleep(10000);
 
 	printf("Done sleeping\n");
+
+	return 0;
 }
