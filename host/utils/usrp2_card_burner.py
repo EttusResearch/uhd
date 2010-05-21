@@ -92,7 +92,7 @@ def get_raw_device_hints():
         return sorted(set(volumes))
 
     ####################################################################
-    # Platform Linux: call blockdev on all the dev0 devices
+    # Platform Linux: parse procfs /proc/partitions
     ####################################################################
     if platform.system() == 'Linux':
         devs = list()
@@ -101,12 +101,10 @@ def get_raw_device_hints():
         for line in output.splitlines():
             try:
                 major, minor, blocks, name = line.split()
-                if name[-1].isdigit(): assert int(minor) == 0
-                dev = os.path.join('/dev/', name)
-                size = int(command('blockdev', '--getsz', dev))*512
-                assert size <= MAX_SD_CARD_SIZE
+                assert not name[-1].isdigit() or int(minor) == 0
+                assert int(blocks)*1024 <= MAX_SD_CARD_SIZE
             except: continue
-            devs.append(dev)
+            devs.append(os.path.join('/dev', name))
 
         return sorted(set(devs))
 

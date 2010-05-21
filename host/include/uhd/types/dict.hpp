@@ -46,7 +46,7 @@ namespace uhd{
          * \param first the begin iterator
          * \param last the end iterator
          */
-        template <class InputIterator>
+        template <typename InputIterator>
         dict(InputIterator first, InputIterator last){
             for(InputIterator it = first; it != last; it++){
                 _map.push_back(*it);
