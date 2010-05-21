@@ -66,30 +66,28 @@ def get_raw_device_hints():
     # Platform Windows: parse the output of dd.exe --list
     ####################################################################
     if platform.system() == 'Windows':
-        volumes = list()
-        try: output = command(get_dd_path(), '--list')
-        except: return volumes
+        def extract_info_value(info, key):
+            return info.split(key)[-1].split()[0]
+        def get_info_list(output):
+            in_info = False
+            for line in output.splitlines():
+                if line.startswith('\\\\'): in_info = True; info = ''
+                elif in_info and not line.strip(): in_info = False; yield info
+                if in_info: info += '\n'+line.strip()
+        def is_info_valid(info):
+            try:
+                assert 'link to' in info
+                #handles two spellings of remov(e)able:
+                assert 'remov' in info.lower()
+                if 'size is' in info: assert int(extract_info_value(info, 'size is')) <= MAX_SD_CARD_SIZE
+                return True
+            except: return False
+        def extract_info_name(info):
+            for key in ('Mounted on', 'link to'):
+                if key in info: return extract_info_value(info, key)
+            return info.splitlines()[0].strip()
 
-        #coagulate info for identical links
-        link_to_info = dict()
-        for info in output.replace('\r', '').split('\n\\\\'):
-            if 'link to' not in info: continue
-            link = info.split('link to')[-1].split()[0].strip()
-            if not link_to_info.has_key(link): link_to_info[link] = '\n\n'
-            link_to_info[link] += info
-
-        #parse info only keeping viable volumes
-        for link, info in link_to_info.iteritems():
-            if 'removable' not in info.lower(): continue
-            if 'size is' in info:
-                size = info.split('size is')[-1].split()[0].strip()
-                if int(size) > MAX_SD_CARD_SIZE: continue
-            if 'Mounted on' in info:
-                volumes.append(info.split('Mounted on')[-1].split()[0])
-                continue
-            volumes.append(link)
-
-        return sorted(set(volumes))
+        return sorted(set(map(extract_info_name, filter(is_info_valid, get_info_list(command(get_dd_path(), '--list'))))))
 
     ####################################################################
     # Platform Linux: parse procfs /proc/partitions
