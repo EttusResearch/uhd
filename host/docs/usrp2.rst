@@ -50,7 +50,7 @@ you could overwrite your hard drive. Make sure that --dev= specifies the SD card
 
 Use the *--list* option to get a list of possible raw devices.
 The list result will filter out disk partitions and devices too large to be the sd card.
-The list option has not yet been implemented on macosx.
+The list option has been implemented on Linux, Mac OS X, and Windows.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the card burner tool (unix)

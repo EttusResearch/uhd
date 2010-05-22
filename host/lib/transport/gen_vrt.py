@@ -57,7 +57,7 @@ void vrt::pack(
     size_t packet_count,           //input
     double tick_rate               //input
 ){
-    boost::uint32_t vrt_hdr_flags;
+    boost::uint32_t vrt_hdr_flags = 0;
 
     boost::uint8_t pred = 0;
     if (metadata.has_stream_id) pred |= $hex($sid_p);

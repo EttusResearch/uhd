@@ -22,6 +22,7 @@ import subprocess
 import urllib
 import optparse
 import os
+import re
 
 ########################################################################
 # constants
@@ -105,6 +106,26 @@ def get_raw_device_hints():
             devs.append(os.path.join('/dev', name))
 
         return sorted(set(devs))
+
+    ####################################################################
+    # Platform Mac OS X: parse diskutil list and info commands
+    ####################################################################
+    if platform.system() == 'Darwin':
+        devs = map(lambda d: d.split()[0], filter(lambda l: l.startswith('/dev'), command('diskutil', 'list').splitlines()))
+        def output_to_info(output):
+            return dict([map(str.strip, pair.lower().split(':')) for pair in filter(lambda l: ':' in l, output.splitlines())])
+        def is_dev_valid(dev):
+            info = output_to_info(command('diskutil', 'info', dev))
+            try:
+                if info.has_key('internal'): assert info['internal'] == 'no'
+                if info.has_key('ejectable'): assert info['ejectable'] == 'yes'
+                if info.has_key('total size'):
+                    size_match = re.match('^.*\((\d+)\s*bytes\).*$', info['total size'])
+                    if size_match: assert int(size_match.groups()[0]) <= MAX_SD_CARD_SIZE
+                return True
+            except: return False
+
+        return sorted(set(filter(is_dev_valid, devs)))
 
     ####################################################################
     # Platform Others:
