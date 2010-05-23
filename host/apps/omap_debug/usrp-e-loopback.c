@@ -86,7 +86,7 @@ static void *read_thread(void *threadid)
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
 			printf("RX data transfer rate = %f K Samples/second\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 250);
+				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
 			start_time = finish_time;
