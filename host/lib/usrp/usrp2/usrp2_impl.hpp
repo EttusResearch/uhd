@@ -169,6 +169,7 @@ private:
 
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;
+    uhd::usrp::dboard_iface::sptr _dboard_iface;
     void dboard_init(void);
 
     //properties for the mboard

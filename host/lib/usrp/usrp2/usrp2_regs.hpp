@@ -204,7 +204,7 @@
 #define FR_GPIO_RX_SEL     FR_GPIO_BASE + 12 // 16 2-bit fields select which source goes to RX DB
 
 // each 2-bit sel field is layed out this way
-#define FRF_GPIO_SEL_SW        0 // if pin is an output, set by software in the io reg
+#define FRF_GPIO_SEL_GPIO      0 // if pin is an output, set by GPIO register
 #define FRF_GPIO_SEL_ATR       1 // if pin is an output, set by ATR logic
 #define FRF_GPIO_SEL_DEBUG_0   2 // if pin is an output, debug lines from FPGA fabric
 #define FRF_GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric

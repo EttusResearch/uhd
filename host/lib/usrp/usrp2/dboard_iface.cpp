@@ -39,8 +39,10 @@ public:
     void write_aux_dac(unit_t, int, float);
     float read_aux_adc(unit_t, int);
 
+    void set_pin_ctrl(unit_t, boost::uint16_t);
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(unit_t, boost::uint16_t);
+    void write_gpio(unit_t, boost::uint16_t);
     boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(boost::uint8_t, const byte_vector_t &);
@@ -68,6 +70,7 @@ private:
     usrp2_iface::sptr _iface;
     clock_ctrl::sptr _clock_ctrl;
     boost::uint32_t _ddr_shadow;
+    boost::uint32_t _gpio_shadow;
 
     uhd::dict<unit_t, ad5624_regs_t> _dac_regs;
     void _write_aux_dac(unit_t);
@@ -90,14 +93,7 @@ usrp2_dboard_iface::usrp2_dboard_iface(usrp2_iface::sptr iface, clock_ctrl::sptr
     _iface = iface;
     _clock_ctrl = clock_ctrl;
     _ddr_shadow = 0;
-
-    //set the selection mux to use atr
-    boost::uint32_t new_sels = 0x0;
-    for(size_t i = 0; i < 16; i++){
-        new_sels |= FRF_GPIO_SEL_ATR << (i*2);
-    }
-    _iface->poke32(FR_GPIO_TX_SEL, new_sels);
-    _iface->poke32(FR_GPIO_RX_SEL, new_sels);
+    _gpio_shadow = 0;
 
     //reset the aux dacs
     _dac_regs[UNIT_RX] = ad5624_regs_t();
@@ -136,11 +132,33 @@ static const uhd::dict<dboard_iface::unit_t, int> unit_to_shift = map_list_of
     (dboard_iface::UNIT_TX, 16)
 ;
 
+void usrp2_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value){
+    //calculate the new selection mux setting
+    boost::uint32_t new_sels = 0x0;
+    for(size_t i = 0; i < 16; i++){
+        bool is_bit_set = bool(value & (0x1 << i));
+        new_sels |= ((is_bit_set)? FRF_GPIO_SEL_ATR : FRF_GPIO_SEL_GPIO) << (i*2);
+    }
+
+    //write the selection mux value to register
+    switch(unit){
+    case UNIT_RX: _iface->poke32(FR_GPIO_RX_SEL, new_sels); return;
+    case UNIT_TX: _iface->poke32(FR_GPIO_TX_SEL, new_sels); return;
+    }
+}
+
 void usrp2_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
     _ddr_shadow = \
         (_ddr_shadow & ~(0xffff << unit_to_shift[unit])) |
         (boost::uint32_t(value) << unit_to_shift[unit]);
     _iface->poke32(FR_GPIO_DDR, _ddr_shadow);
+}
+
+void usrp2_dboard_iface::write_gpio(unit_t unit, boost::uint16_t value){
+    _gpio_shadow = \
+        (_gpio_shadow & ~(0xffff << unit_to_shift[unit])) |
+        (boost::uint32_t(value) << unit_to_shift[unit]);
+    _iface->poke32(FR_GPIO_IO, _gpio_shadow);
 }
 
 boost::uint16_t usrp2_dboard_iface::read_gpio(unit_t unit){

@@ -68,21 +68,39 @@ public:
     virtual float read_aux_adc(unit_t unit, int which_adc) = 0;
 
     /*!
+     * Set a daughterboard output pin control source.
+     * By default, the outputs are all GPIO controlled.
+     *
+     * \param unit which unit rx or tx
+     * \param value 16-bits, 0=GPIO controlled, 1=ATR controlled
+     */
+    virtual void set_pin_ctrl(unit_t unit, boost::uint16_t value) = 0;
+
+    /*!
      * Set a daughterboard ATR register.
      *
      * \param unit which unit rx or tx
      * \param reg which ATR register to set
-     * \param value 16-bits, 0=FPGA output low, 1=FPGA output high
+     * \param value 16-bits, 0=ATR output low, 1=ATR output high
      */
     virtual void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint16_t value) = 0;
 
     /*!
      * Set daughterboard GPIO data direction register.
+     * By default, the GPIO pins are all inputs.
      *
      * \param unit which unit rx or tx
-     * \param value 16-bits, 0=FPGA input, 1=FPGA output
+     * \param value 16-bits, 0=GPIO input, 1=GPIO output
      */
     virtual void set_gpio_ddr(unit_t unit, boost::uint16_t value) = 0;
+
+    /*!
+     * Read daughterboard GPIO pin values.
+     *
+     * \param unit which unit rx or tx
+     * \param value 16-bits, 0=GPIO output low, 1=GPIO output high
+     */
+    virtual void write_gpio(unit_t unit, boost::uint16_t value) = 0;
 
     /*!
      * Read daughterboard GPIO pin values.

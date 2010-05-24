@@ -176,8 +176,10 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
-    //set the gpio directions
+    //set the gpio directions and atr controls (identically)
     boost::uint16_t output_enables = POWER_IO | ANTSW_IO | MIXER_IO;
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, output_enables);
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, output_enables);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, output_enables);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, output_enables);
 
