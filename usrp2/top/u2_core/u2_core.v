@@ -259,8 +259,9 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////
    // RAM Loader
 
-   wire [31:0] 	 ram_loader_dat, iwb_dat;
-   wire [15:0] 	 ram_loader_adr, iwb_adr;
+   wire [31:0] 	 ram_loader_dat, if_dat;
+   wire [15:0] 	 ram_loader_adr;
+   wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
    wire 	 ram_loader_stb, ram_loader_we, ram_loader_ack;
    wire 	 iwb_ack, iwb_stb;

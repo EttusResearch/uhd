@@ -36,6 +36,8 @@ module ram_harvard
    reg 	   stb_d1;
    
    
+   assign 	 ram_loader_ack_o = ram_loader_stb_i;
+
    dpram32 #(.AWIDTH(AWIDTH),.RAM_SIZE(RAM_SIZE)) 
    sys_ram
      (.clk(wb_clk_i),
