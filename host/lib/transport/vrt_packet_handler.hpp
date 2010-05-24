@@ -122,9 +122,14 @@ namespace vrt_packet_handler{
             state.fragment_offset_in_samps = 0;
             state.managed_buff = zc_iface->get_recv_buff();
             recv_cb(state.managed_buff); //callback before vrt unpack
-            _recv1_helper(
-                state, metadata, tick_rate, vrt_header_offset_words32
-            );
+            try{
+                _recv1_helper(
+                    state, metadata, tick_rate, vrt_header_offset_words32
+                );
+            }catch(const std::exception &e){
+                std::cerr << "Error (recv): " << e.what() << std::endl;
+                return 0;
+            }
         }
 
         //extract the number of samples available to copy

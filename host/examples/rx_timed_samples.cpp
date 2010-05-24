@@ -86,6 +86,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             md, uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );
+        if (num_rx_samps == 0 and num_acc_samps > 0){
+            std::cout << "Got timeout before all samples received, possible packet loss, exiting loop..." << std::endl;
+            break;
+        }
         if (num_rx_samps == 0) continue; //wait for packets with contents
 
         std::cout << boost::format("Got packet: %u samples, %u secs, %u nsecs")
