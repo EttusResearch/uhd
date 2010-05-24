@@ -83,13 +83,15 @@ void usrp2_impl::update_clock_config(void){
 }
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
-    //set ticks and seconds
-    _iface->poke32(FR_TIME64_SECS, time_spec.secs);
+    //set the ticks
     _iface->poke32(FR_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
 
-    //set the register to latch it all in
+    //set the flags register
     boost::uint32_t imm_flags = (now)? FRF_TIME64_LATCH_NOW : FRF_TIME64_LATCH_NEXT_PPS;
     _iface->poke32(FR_TIME64_IMM, imm_flags);
+
+    //set the seconds (latches in all 3 registers)
+    _iface->poke32(FR_TIME64_SECS, time_spec.secs);
 }
 
 void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
