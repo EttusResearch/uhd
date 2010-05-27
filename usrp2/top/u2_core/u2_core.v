@@ -263,23 +263,22 @@ module u2_core
    wire [15:0] 	 ram_loader_adr;
    wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
-   wire 	 ram_loader_stb, ram_loader_we, ram_loader_ack;
+   wire 	 ram_loader_stb, ram_loader_we;
    wire 	 iwb_ack, iwb_stb;
    ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
-     ram_loader (.clk_i(wb_clk),.rst_i(ram_loader_rst),
+     ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
+		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
+		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
+		 .wb_we(ram_loader_we),
+		 .ram_loader_done(ram_loader_done),
 		 // CPLD Interface
-		 .cfg_clk_i(cpld_clk),
-		 .cfg_data_i(cpld_din),
-		 .start_o(cpld_start_int),
-		 .mode_o(cpld_mode_int),
-		 .done_o(cpld_done_int),
-		 .detached_i(cpld_detached),
-		 // Wishbone Interface
-		 .wb_dat_o(ram_loader_dat),.wb_adr_o(ram_loader_adr),
-		 .wb_stb_o(ram_loader_stb),.wb_cyc_o(),.wb_sel_o(ram_loader_sel),
-		 .wb_we_o(ram_loader_we),.wb_ack_i(ram_loader_ack),
-		 .ram_loader_done_o(ram_loader_done));
-
+		 .cpld_clk(cpld_clk),
+		 .cpld_din(cpld_din),
+		 .cpld_start(cpld_start_int),
+		 .cpld_mode(cpld_mode_int),
+		 .cpld_done(cpld_done_int),
+		 .cpld_detached(cpld_detached));
+   
    // /////////////////////////////////////////////////////////////////////////
    // Processor
    aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
@@ -305,7 +304,7 @@ module u2_core
 	     
 	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
-	     .ram_loader_we_i(ram_loader_we), .ram_loader_ack_o(ram_loader_ack),
+	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
 	     .if_adr(if_adr), 

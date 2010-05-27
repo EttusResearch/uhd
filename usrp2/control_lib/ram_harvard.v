@@ -13,10 +13,9 @@ module ram_harvard
      // Firmware download port.
      input [AWIDTH-1:0] ram_loader_adr_i,
      input [31:0] ram_loader_dat_i,
-     input ram_loader_stb_i,
      input [3:0] ram_loader_sel_i,
+     input ram_loader_stb_i,
      input ram_loader_we_i,
-     output ram_loader_ack_o,
      input ram_loader_done_i,    
      // Instruction fetch port.
      input [AWIDTH-1:0] if_adr,
@@ -35,9 +34,6 @@ module ram_harvard
    reg 	   ack_d1;
    reg 	   stb_d1;
    
-   
-   assign 	 ram_loader_ack_o = ram_loader_stb_i;
-
    dpram32 #(.AWIDTH(AWIDTH),.RAM_SIZE(RAM_SIZE)) 
    sys_ram
      (.clk(wb_clk_i),
@@ -46,7 +42,8 @@ module ram_harvard
       .dat1_o(if_data),
       .we1_i(ram_loader_done_i ? 1'b0 : ram_loader_we_i),
       .en1_i(ram_loader_done_i ? 1'b1 : ram_loader_stb_i),
-      .sel1_i(ram_loader_done_i ? 4'hF : ram_loader_sel_i),
+      //.sel1_i(ram_loader_done_i ? 4'hF : ram_loader_sel_i),
+      .sel1_i(ram_loader_sel_i), // Sel is only for writes anyway
       .adr2_i(dwb_adr_i),
       .dat2_i(dwb_dat_i),
       .dat2_o(dwb_dat_o),
@@ -68,6 +65,5 @@ module ram_harvard
        stb_d1 <= 0;
      else
        stb_d1 <= dwb_stb_i;
-   
 
-endmodule // ram_harv_cache
+endmodule // ram_harvard
