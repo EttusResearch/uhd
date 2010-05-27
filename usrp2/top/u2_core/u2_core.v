@@ -683,7 +683,8 @@ module u2_core
 			     { wr2_flags, rd2_flags },
 			     { GMII_TX_EN,3'd0, wr2_ready_i, wr2_ready_o, rd2_ready_i, rd2_ready_o } };
           
-   assign  debug_gpio_0 = debug_mac; //eth_mac_debug;
+   assign  debug_gpio_0 = 0;
+ //debug_mac; //eth_mac_debug;
    assign  debug_gpio_1 = 0;
    
 endmodule // u2_core
