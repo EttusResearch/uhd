@@ -1,9 +1,11 @@
 
 
 module setting_reg
-  #(parameter my_addr = 0, parameter at_reset=32'd0)
+  #(parameter my_addr = 0, 
+    parameter width = 32,
+    parameter at_reset=32'd0)
     (input clk, input rst, input strobe, input wire [7:0] addr,
-     input wire [31:0] in, output reg [31:0] out, output reg changed);
+     input wire [31:0] in, output reg [width-1:0] out, output reg changed);
    
    always @(posedge clk)
      if(rst)
