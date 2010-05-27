@@ -17,6 +17,8 @@
 
 
 INSTALL(FILES
+    alignment_buffer.hpp
+    bounded_buffer.hpp
     convert_types.hpp
     if_addrs.hpp
     udp_simple.hpp
