@@ -28,7 +28,7 @@ module vita_tx_deframer
 
    reg [3:0] vita_state;
    wire      has_streamid, has_classid, has_secs, has_tics, has_trailer;
-   assign has_streamid 	= (data_i[31:28]==4'b001);
+   assign has_streamid 	= (data_i[31:28]==4'b0001);
    assign has_classid 	= data_i[27];
    assign has_secs 	= ~(data_i[23:22]==2'b00);
    assign has_tics 	= ~(data_i[21:20]==2'b00);
