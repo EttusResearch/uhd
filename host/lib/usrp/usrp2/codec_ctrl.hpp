@@ -15,46 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_CLOCK_CONTROL_HPP
-#define INCLUDED_CLOCK_CONTROL_HPP
+#ifndef INCLUDED_CODEC_CTRL_HPP
+#define INCLUDED_CODEC_CTRL_HPP
 
 #include "usrp2_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class clock_control : boost::noncopyable{
+class codec_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<clock_control> sptr;
+    typedef boost::shared_ptr<codec_ctrl> sptr;
 
     /*!
-     * Make a clock config for the ad9510 ic.
+     * Make a codec control for the DAC and ADC.
      * \param _iface a pointer to the usrp2 interface object
-     * \return a new clock control object
+     * \return a new codec control object
      */
-    static sptr make_ad9510(usrp2_iface::sptr iface);
-
-    /*!
-     * Enable/disable the rx dboard clock.
-     * \param enb true to enable
-     */
-    virtual void enable_rx_dboard_clock(bool enb) = 0;
-
-    /*!
-     * Enable/disable the tx dboard clock.
-     * \param enb true to enable
-     */
-    virtual void enable_tx_dboard_clock(bool enb) = 0;
-
-    /*!
-     * Enable/disable external reference.
-     * \param enb true to enable
-     */
-    virtual void enable_external_ref(bool enb) = 0;
-
-    /*!
-     * TODO other clock control api here....
-     */
+    static sptr make(usrp2_iface::sptr iface);
 
 };
 
-#endif /* INCLUDED_CLOCK_CONTROL_HPP */
+#endif /* INCLUDED_CODEC_CTRL_HPP */

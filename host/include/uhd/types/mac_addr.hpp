@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_TYPES_MAC_ADDR_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <uhd/types/serial.hpp>
 #include <string>
 
 namespace uhd{
@@ -30,14 +30,12 @@ namespace uhd{
     */
     class UHD_API mac_addr_t{
     public:
-        static const size_t hlen = 6;
-
         /*!
          * Create a mac address a byte array.
-         * \param bytes a pointer for the byte array
+         * \param bytes a vector of bytes
          * \return a new mac address
          */
-        static mac_addr_t from_bytes(const boost::uint8_t *bytes);
+        static mac_addr_t from_bytes(const byte_vector_t &bytes);
 
         /*!
          * Create a mac address from a string.
@@ -48,9 +46,9 @@ namespace uhd{
 
         /*!
          * Get the byte representation of the mac address.
-         * \return a pointer to the internal byte array
+         * \return a vector of bytes
          */
-        const boost::uint8_t *to_bytes(void) const;
+        byte_vector_t to_bytes(void) const;
 
         /*!
          * Get the string representation of this mac address.
@@ -59,8 +57,8 @@ namespace uhd{
         std::string to_string(void) const;
 
     private:
-        mac_addr_t(const boost::uint8_t *bytes); //private constructor
-        boost::uint8_t _bytes[hlen]; //internal representation
+        mac_addr_t(const byte_vector_t &bytes); //private constructor
+        const byte_vector_t _bytes; //internal representation
     };
 
 } //namespace uhd

@@ -38,9 +38,7 @@ void usrp2_impl::dboard_init(void){
     _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
 
     //create a new dboard interface and manager
-    dboard_iface::sptr _dboard_iface(
-        make_usrp2_dboard_iface(_iface, _clk_ctrl)
-    );
+    _dboard_iface = make_usrp2_dboard_iface(_iface, _clock_ctrl);
     _dboard_manager = dboard_manager::make(
         _rx_db_eeprom.id, _tx_db_eeprom.id, _dboard_iface
     );
@@ -123,6 +121,10 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _rx_db_eeprom.id;
         return;
 
+    case DBOARD_PROP_DBOARD_IFACE:
+        val = _dboard_iface;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -170,6 +172,10 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_DBOARD_ID:
         val = _tx_db_eeprom.id;
+        return;
+
+    case DBOARD_PROP_DBOARD_IFACE:
+        val = _dboard_iface;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

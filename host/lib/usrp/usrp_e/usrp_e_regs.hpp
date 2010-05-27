@@ -78,11 +78,13 @@
 #define UE_REG_GPIO_RX_DBG     UE_REG_GPIO_BASE + 12
 #define UE_REG_GPIO_TX_DBG     UE_REG_GPIO_BASE + 14
 
-// each 2-bit sel field is layed out this way
-#define GPIO_SEL_SW	   0 // if pin is an output, set by software in the io reg
-#define	GPIO_SEL_ATR	   1 // if pin is an output, set by ATR logic
-#define	GPIO_SEL_DEBUG_0   0 // if pin is an output, debug lines from FPGA fabric
-#define	GPIO_SEL_DEBUG_1   1 // if pin is an output, debug lines from FPGA fabric
+//possible bit values for sel when dbg is 0:
+#define GPIO_SEL_SW    0 // if pin is an output, set by software in the io reg
+#define GPIO_SEL_ATR   1 // if pin is an output, set by ATR logic
+
+//possible bit values for sel when dbg is 1:
+#define GPIO_SEL_DEBUG_0   0 // if pin is an output, debug lines from FPGA fabric
+#define GPIO_SEL_DEBUG_1   1 // if pin is an output, debug lines from FPGA fabric
 
 
 ////////////////////////////////////////////////////

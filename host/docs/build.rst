@@ -8,8 +8,13 @@ UHD - Build Guide
 Build Dependencies
 ------------------------------------------------------------------------
 
-**Unix Notes:**
+**Linux Notes:**
 The dependencies can be acquired through the package manager.
+
+**Mac OS X Notes:**
+Install the "Xcode Developer Tools" to get the build tools (gcc and make).
+Use MacPorts to get the Boost and Cheetah dependencies.
+Other dependencies can be downloaded as dmg installers from the web.
 
 **Windows Notes:**
 The dependencies can be acquired through installable exe files.
@@ -27,12 +32,13 @@ or install msysgit from http://code.google.com/p/msysgit/downloads/list
 ^^^^^^^^^^^^^^^^
 C++
 ^^^^^^^^^^^^^^^^
-On unix, this is GCC 4.0 and above. On windows, this is MSVC 2008.
+On Unix, this is GCC 4.0 and above. On Windows, this is MSVC 2008.
 Other compilers have not been tested yet or confirmed working.
 
 ^^^^^^^^^^^^^^^^
 CMake
 ^^^^^^^^^^^^^^^^
+* **Purpose:** generates project build files
 * **Version:** at least 2.8
 * **Required for:** build time
 * **Download URL:** http://www.cmake.org/cmake/resources/software.html
@@ -40,6 +46,7 @@ CMake
 ^^^^^^^^^^^^^^^^
 Boost
 ^^^^^^^^^^^^^^^^
+* **Purpose:** C++ library
 * **Version:** at least 3.6 unix, at least 4.0 windows
 * **Required for:** build time + run time
 * **Download URL:** http://www.boost.org/users/download/
@@ -48,13 +55,15 @@ Boost
 ^^^^^^^^^^^^^^^^
 Python
 ^^^^^^^^^^^^^^^^
+* **Purpose:** used by Cheetah and utility scripts
 * **Version:** at least 2.6
-* **Required for:** build time
+* **Required for:** build time + run time utility scripts
 * **Download URL:** http://www.python.org/download/
 
 ^^^^^^^^^^^^^^^^
 Cheetah
 ^^^^^^^^^^^^^^^^
+* **Purpose:** source code generation
 * **Version:** at least 2.0
 * **Required for:** build time
 * **Download URL:** http://www.cheetahtemplate.org/download.html
@@ -63,8 +72,16 @@ Cheetah
 ^^^^^^^^^^^^^^^^
 Doxygen
 ^^^^^^^^^^^^^^^^
+* **Purpose:** generates html api documentation
 * **Required for:** build time (optional)
 * **Download URL:** http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
+
+^^^^^^^^^^^^^^^^
+Docutils
+^^^^^^^^^^^^^^^^
+* **Purpose:** generates html user manual
+* **Required for:** build time (optional)
+* **Download URL:** http://docutils.sourceforge.net/
 
 ------------------------------------------------------------------------
 Build Instructions (Unix)
@@ -80,7 +97,7 @@ Generate Makefiles with cmake
     cd build
     cmake ../
 
-For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<myprefix> ../
+For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<prefix> ../
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build and install
@@ -92,11 +109,15 @@ Build and install
     sudo make install
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Setup the library path
+Setup the library path (Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Make sure that libuhd.so is in your LD_LIBRARY_PATH
 or add it to /etc/ld.so.conf and make sure to run sudo ldconfig
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setup the library path (Mac OS X)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Make sure that libuhd.dylib is in your DYLD_LIBRARY_PATH
 
 ------------------------------------------------------------------------
 Build Instructions (Windows)

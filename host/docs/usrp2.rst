@@ -45,22 +45,33 @@ Run the following commands:
 Load the images onto the SD card
 ------------------------------------------------------------------------
 **Warning!**
-Use the u2_flash_tool with caution. If you specify the wrong device node,
+Use the usrp2_card_burner.py with caution. If you specify the wrong device node,
 you could overwrite your hard drive. Make sure that --dev= specifies the SD card.
 
-Load the FPGA image:
+Use the *--list* option to get a list of possible raw devices.
+The list result will filter out disk partitions and devices too large to be the sd card.
+The list option has been implemented on Linux, Mac OS X, and Windows.
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the card burner tool (unix)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    cd <uhd-repo-path>/firmware/microblaze
-    sudo ./u2_flash_tool --dev=/dev/sd<XXX> -t fpga -w <path_to_fpga_image>
+    sudo <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
 
-Load the firmware image:
+    -- OR --
 
+    cd <prefix>/share/uhd/utils
+    sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fpga=<path_to_fpga_image>
+    sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fw=<path_to_firmware_image>
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the card burner tool (windows)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    cd <uhd-repo-path>/firmware/microblaze directory
-    sudo ./u2_flash_tool --dev=/dev/sd<XXX> -t s/w -w <path_to_firmware_image>
+    <path_to_python.exe> <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
+
 
 ------------------------------------------------------------------------
 Setup networking
@@ -103,7 +114,7 @@ Run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp_burner --addr=192.168.10.2 --new-ip=192.168.10.3
+    ./usrp_addr_burner --addr=192.168.10.2 --new-ip=192.168.10.3
 
 **Method 2 (Linux Only):**
 This method assumes that you do not know the IP address of your USRP2.

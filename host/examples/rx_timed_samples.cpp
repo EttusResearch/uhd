@@ -29,7 +29,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     int seconds_in_future;
     size_t total_num_samps;
-    double rx_rate;
+    double rx_rate, freq;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -39,10 +39,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("secs", po::value<int>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
         ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
+        ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm); 
+    po::notify(vm);
 
     //print the help message
     if (vm.count("help")){
@@ -62,6 +63,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_rx_rate(rx_rate);
     std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl;
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
+    sdev->set_rx_freq(freq);
     sdev->set_time_now(uhd::time_spec_t(0));
 
     //setup streaming
@@ -78,11 +80,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_acc_samps = 0; //number of accumulated samples
     while(num_acc_samps < total_num_samps){
         uhd::rx_metadata_t md;
-        std::complex<float> buff[1000];
+        std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
         size_t num_rx_samps = dev->recv(
-            boost::asio::buffer(buff, sizeof(buff)),
-            md, uhd::io_type_t::COMPLEX_FLOAT32
+            boost::asio::buffer(buff),
+            md, uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::device::RECV_MODE_ONE_PACKET
         );
+        if (num_rx_samps == 0 and num_acc_samps > 0){
+            std::cout << "Got timeout before all samples received, possible packet loss, exiting loop..." << std::endl;
+            break;
+        }
         if (num_rx_samps == 0) continue; //wait for packets with contents
 
         std::cout << boost::format("Got packet: %u samples, %u secs, %u nsecs")

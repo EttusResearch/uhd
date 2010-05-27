@@ -10,7 +10,6 @@ module settings_bus
      input wb_stb_i,
      input wb_we_i,
      output reg wb_ack_o,
-     input sys_clk,
      output strobe,
      output reg [7:0] addr,
      output reg [31:0] data);

@@ -39,7 +39,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("USRP2 Burner %s") % desc << std::endl;
+        std::cout << boost::format("USRP2 Address Burner %s") % desc << std::endl;
         return ~0;
     }
 

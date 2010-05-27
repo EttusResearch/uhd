@@ -525,10 +525,6 @@ typedef struct {
   volatile uint32_t     pad[7];         // Make each structure 16 elements long
 } sr_rx_ctrl_t;
 
-#define MAX_SAMPLES_PER_CMD 0x3fffffff
-#define	MK_RX_CMD(nsamples, now, chain) \
-  ((((now) & 0x1) << 31) | (((chain) & 0x1) << 30) | ((nsamples) & 0x3fffffff))
-
 #define sr_rx_ctrl ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL))
 
 // --- dsp rx regs ---

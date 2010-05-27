@@ -77,15 +77,35 @@ public:
     static sptr make(const device_addr_t &hint, size_t which = 0);
 
     /*!
+     * Send modes for the device send routine.
+     */
+    enum send_mode_t{
+        //! Tells the send routine to send the entire buffer
+        SEND_MODE_FULL_BUFF = 0,
+        //! Tells the send routine to return after one packet
+        SEND_MODE_ONE_PACKET = 1
+    };
+
+    /*!
+     * Recv modes for the device recv routine.
+     */
+    enum recv_mode_t{
+        //! Tells the recv routine to recv the entire buffer
+        RECV_MODE_FULL_BUFF = 0,
+        //! Tells the recv routine to return after one packet
+        RECV_MODE_ONE_PACKET = 1
+    };
+
+    /*!
      * Send a buffer containing IF data with its metadata.
      *
      * Send handles fragmentation as follows:
-     * If the buffer has more samples than the maximum supported,
-     * the send method will send the maximum number of samples
-     * as supported by the transport and return the number sent.
-     * In this case, the end of burst flag will be forced to false.
-     * It is up to the caller to call send again on the un-sent
-     * portions of the buffer, until the buffer is exhausted.
+     * If the buffer has more samples than the maximum per packet,
+     * the send method will fragment the samples across several packets.
+     * Send will respect the burst flags when fragmenting to ensure
+     * that start of burst can only be set on the first fragment and
+     * that end of burst can only be set on the final fragment.
+     * Fragmentation only applies in the full buffer send mode.
      *
      * This is a blocking call and will not return until the number
      * of samples returned have been read out of the buffer.
@@ -93,12 +113,14 @@ public:
      * \param buff a buffer pointing to some read-only memory
      * \param metadata data describing the buffer's contents
      * \param io_type the type of data loaded in the buffer
+     * \param send_mode tells send how to unload the buffer
      * \return the number of samples sent
      */
     virtual size_t send(
         const boost::asio::const_buffer &buff,
         const tx_metadata_t &metadata,
-        const io_type_t &io_type
+        const io_type_t &io_type,
+        send_mode_t send_mode
     ) = 0;
 
     /*!
@@ -123,16 +145,35 @@ public:
      * immediately when no packets are available to the transport layer,
      * and that the timeout duration is reasonably tuned for performance.
      *
+     * When using the full buffer recv mode, the metadata only applies
+     * to the first packet received and written into the recv buffer.
+     * Use the one packet recv mode to get per packet metadata.
+     *
      * \param buff the buffer to fill with IF data
      * \param metadata data to fill describing the buffer
      * \param io_type the type of data to fill into the buffer
+     * \param recv_mode tells recv how to load the buffer
      * \return the number of samples received
      */
     virtual size_t recv(
         const boost::asio::mutable_buffer &buff,
         rx_metadata_t &metadata,
-        const io_type_t &io_type
+        const io_type_t &io_type,
+        recv_mode_t recv_mode
     ) = 0;
+
+    /*!
+     * Get the maximum number of samples per packet on send.
+     * \return the number of samples
+     */
+    virtual size_t get_max_send_samps_per_packet(void) const = 0;
+
+    /*!
+     * Get the maximum number of samples per packet on recv.
+     * \return the number of samples
+     */
+    virtual size_t get_max_recv_samps_per_packet(void) const = 0;
+
 };
 
 } //namespace uhd

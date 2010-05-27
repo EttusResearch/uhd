@@ -117,14 +117,6 @@ void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of size 1 with empty string
         return;
 
-    case DEVICE_PROP_MAX_RX_SAMPLES:
-        val = size_t(_max_num_samples);
-        return;
-
-    case DEVICE_PROP_MAX_TX_SAMPLES:
-        val = size_t(_max_num_samples);
-        return;
-
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -142,7 +134,8 @@ void usrp_e_impl::set(const wax::obj &, const wax::obj &){
 size_t usrp_e_impl::send(
     const boost::asio::const_buffer &,
     const uhd::tx_metadata_t &,
-    const io_type_t &
+    const io_type_t &,
+    send_mode_t
 ){
     if (true){
         throw std::runtime_error(str(boost::format("usrp-e send: cannot handle type \"%s\"") % ""));
@@ -153,7 +146,8 @@ size_t usrp_e_impl::send(
 size_t usrp_e_impl::recv(
     const boost::asio::mutable_buffer &,
     uhd::rx_metadata_t &,
-    const io_type_t &
+    const io_type_t &,
+    recv_mode_t
 ){
     if (true){
         throw std::runtime_error(str(boost::format("usrp-e recv: cannot handle type \"%s\"") % ""));

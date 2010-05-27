@@ -17,13 +17,13 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include "ad9777_regs.hpp"
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/bind.hpp>
-#include <boost/asio.hpp> //htonl and ntohl
+#include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;
@@ -37,32 +37,6 @@ void usrp2_impl::mboard_init(void){
         boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
         boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
     );
-
-    _clk_ctrl = clock_control::make_ad9510(_iface);
-
-    //setup the ad9777 dac
-    ad9777_regs_t ad9777_regs;
-    ad9777_regs.x_1r_2r_mode = ad9777_regs_t::X_1R_2R_MODE_1R;
-    ad9777_regs.filter_interp_rate = ad9777_regs_t::FILTER_INTERP_RATE_4X;
-    ad9777_regs.mix_mode = ad9777_regs_t::MIX_MODE_REAL;
-    ad9777_regs.pll_divide_ratio = ad9777_regs_t::PLL_DIVIDE_RATIO_DIV1;
-    ad9777_regs.pll_state = ad9777_regs_t::PLL_STATE_OFF;
-    ad9777_regs.auto_cp_control = ad9777_regs_t::AUTO_CP_CONTROL_ENB;
-    //I dac values
-    ad9777_regs.idac_fine_gain_adjust = 0;
-    ad9777_regs.idac_coarse_gain_adjust = 0xf;
-    ad9777_regs.idac_offset_adjust_lsb = 0;
-    ad9777_regs.idac_offset_adjust_msb = 0;
-    //Q dac values
-    ad9777_regs.qdac_fine_gain_adjust = 0;
-    ad9777_regs.qdac_coarse_gain_adjust = 0xf;
-    ad9777_regs.qdac_offset_adjust_lsb = 0;
-    ad9777_regs.qdac_offset_adjust_msb = 0;
-    //write all regs
-    for(boost::uint8_t addr = 0; addr <= 0xC; addr++){
-        boost::uint16_t data = ad9777_regs.get_write_reg(addr);
-        _iface->transact_spi(SPI_SS_AD9777, spi_config_t::EDGE_RISE, data, 16, false /*no rb*/);
-    }
 }
 
 void usrp2_impl::init_clock_config(void){
@@ -97,62 +71,55 @@ void usrp2_impl::update_clock_config(void){
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
-    case clock_config_t::REF_INT : _iface->poke32(FR_CLOCK_CONTROL, 0x10); break;
-    case clock_config_t::REF_SMA : _iface->poke32(FR_CLOCK_CONTROL, 0x1C); break;
-    case clock_config_t::REF_MIMO: _iface->poke32(FR_CLOCK_CONTROL, 0x15); break;
+    case clock_config_t::REF_INT : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x10); break;
+    case clock_config_t::REF_SMA : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x1C); break;
+    case clock_config_t::REF_MIMO: _iface->poke32(FR_MISC_CTRL_CLOCK, 0x15); break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 
     //clock source ref 10mhz
     bool use_external = _clock_config.ref_source != clock_config_t::REF_INT;
-    _clk_ctrl->enable_external_ref(use_external);
+    _clock_ctrl->enable_external_ref(use_external);
 }
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
-    //set ticks and seconds
-    _iface->poke32(FR_TIME64_SECS, time_spec.secs);
+    //set the ticks
     _iface->poke32(FR_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
 
-    //set the register to latch it all in
+    //set the flags register
     boost::uint32_t imm_flags = (now)? FRF_TIME64_LATCH_NOW : FRF_TIME64_LATCH_NEXT_PPS;
     _iface->poke32(FR_TIME64_IMM, imm_flags);
+
+    //set the seconds (latches in all 3 registers)
+    _iface->poke32(FR_TIME64_SECS, time_spec.secs);
 }
 
 void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    //setup the out data
-    usrp2_ctrl_data_t out_data;
-    out_data.id = htonl(USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO);
-    out_data.data.stream_cmd.now = (stream_cmd.stream_now)? 1 : 0;
-    out_data.data.stream_cmd.secs = htonl(stream_cmd.time_spec.secs);
-    out_data.data.stream_cmd.ticks = htonl(stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
+    UHD_ASSERT_THROW(stream_cmd.num_samps <= FR_RX_CTRL_MAX_SAMPS_PER_CMD);
 
-    //set these to defaults, then change in the switch statement
-    out_data.data.stream_cmd.continuous = 0;
-    out_data.data.stream_cmd.chain = 0;
-    out_data.data.stream_cmd.num_samps = htonl(stream_cmd.num_samps);
+    //setup the mode to instruction flags
+    typedef boost::tuple<bool, bool, bool> inst_t;
+    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+                                                            //reload, chain, samps
+        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false))
+        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true))
+    ;
 
-    //setup chain, num samps, and continuous below
-    switch(stream_cmd.stream_mode){
-    case stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        out_data.data.stream_cmd.continuous = 1;
-        break;
+    //setup the instruction flag values
+    bool inst_reload, inst_chain, inst_samps;
+    boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
 
-    case stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS:
-        out_data.data.stream_cmd.num_samps = htonl(0);
-        break;
-
-    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
-        //all set by defaults above
-        break;
-
-    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
-        out_data.data.stream_cmd.chain = 1;
-        break;
-    }
-
-    //send and recv
-    usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-    UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE);
+    //issue the stream command
+    _iface->poke32(FR_RX_CTRL_STREAM_CMD, FR_RX_CTRL_MAKE_CMD(
+        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? get_max_recv_samps_per_packet() : 1),
+        (stream_cmd.stream_now)? 1 : 0,
+        (inst_chain)? 1 : 0,
+        (inst_reload)? 1 : 0
+    ));
+    _iface->poke32(FR_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.secs);
+    _iface->poke32(FR_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
 }
 
 /***********************************************************************
@@ -165,30 +132,15 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO);
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
-
-            //extract the address
-            val = mac_addr_t::from_bytes(in_data.data.mac_addr).to_string();
+            byte_vector_t bytes = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, 6);
+            val = mac_addr_t::from_bytes(bytes).to_string();
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO);
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
-
-            //extract the address
-            val = boost::asio::ip::address_v4(ntohl(in_data.data.ip_addr)).to_string();
+            boost::asio::ip::address_v4::bytes_type bytes;
+            std::copy(_iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, 4), bytes);
+            val = boost::asio::ip::address_v4(bytes).to_string();
             return;
         }
     }
@@ -259,27 +211,15 @@ void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO);
-            mac_addr_t mac_addr = mac_addr_t::from_string(val.as<std::string>());
-            std::copy(mac_addr.to_bytes(), mac_addr.to_bytes()+mac_addr_t::hlen, out_data.data.mac_addr);
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE);
+            byte_vector_t bytes = mac_addr_t::from_string(val.as<std::string>()).to_bytes();
+            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, bytes);
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
-            //setup the out data
-            usrp2_ctrl_data_t out_data;
-            out_data.id = htonl(USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO);
-            out_data.data.ip_addr = htonl(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_ulong());
-
-            //send and recv
-            usrp2_ctrl_data_t in_data = _iface->ctrl_send_and_recv(out_data);
-            UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE);
+            byte_vector_t bytes(4);
+            std::copy(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_bytes(), bytes);
+            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, bytes);
             return;
         }
     }

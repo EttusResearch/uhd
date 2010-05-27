@@ -62,3 +62,14 @@ not doing so will yeild undefined results.
 The XCVR2450 uses a common LO for both receive and transmit.
 Even though the API allows the RX and TX LOs to be individually set,
 a change of one LO setting will be reflected in the other LO setting.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WBX Series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Transmit Antennas: **TX/RX**
+
+Receive Antennas: **TX/RX** or **RX2**
+
+The user may set the receive antenna to be TX/RX or RX2.
+However, when using an RFX board in full-duplex mode,
+the receive antenna will always be set to RX2, regardless of the settings.

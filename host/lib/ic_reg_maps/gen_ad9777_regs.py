@@ -59,7 +59,7 @@ pll_divide_ratio        3[0:1]   0      div1, div2, div4, div8
 ## address 4
 ########################################################################
 pll_state               4[7]     0      off, on
-auto_cp_control         4[6]     0      dis, enb
+auto_cp_control         4[6]     0      auto, manual
 pll_cp_control          4[0:2]   0      50ua=0, 100ua=1, 200ua=2, 400ua=3, 800ua=7
 ########################################################################
 ## address 5 and 9

@@ -64,7 +64,23 @@
 /////////////////////////////////////////////////
 // Misc Control
 ////////////////////////////////////////////////
-#define FR_CLOCK_CONTROL _SR_ADDR(0)
+#define FR_MISC_CTRL_CLOCK           _SR_ADDR(0)
+#define FR_MISC_CTRL_SERDES          _SR_ADDR(1)
+#define FR_MISC_CTRL_ADC             _SR_ADDR(2)
+#define FR_MISC_CTRL_LEDS            _SR_ADDR(3)
+#define FR_MISC_CTRL_PHY             _SR_ADDR(4) // LSB is reset line to eth phy
+#define FR_MISC_CTRL_DBG_MUX         _SR_ADDR(5)
+#define FR_MISC_CTRL_RAM_PAGE        _SR_ADDR(6) // FIXME should go somewhere else...
+#define FR_MISC_CTRL_FLUSH_ICACHE    _SR_ADDR(7) // Flush the icache
+#define FR_MISC_CTRL_LED_SRC         _SR_ADDR(8) // HW or SW control for LEDs
+
+#define FRF_MISC_CTRL_SERDES_ENABLE 8
+#define FRF_MISC_CTRL_SERDES_PRBSEN 4
+#define FRF_MISC_CTRL_SERDES_LOOPEN 2
+#define FRF_MISC_CTRL_SERDES_RXEN   1
+
+#define FRF_MISC_CTRL_ADC_ON  0x0F
+#define FRF_MISC_CTRL_ADC_OFF 0x00
 
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
@@ -188,7 +204,7 @@
 #define FR_GPIO_RX_SEL     FR_GPIO_BASE + 12 // 16 2-bit fields select which source goes to RX DB
 
 // each 2-bit sel field is layed out this way
-#define FRF_GPIO_SEL_SW        0 // if pin is an output, set by software in the io reg
+#define FRF_GPIO_SEL_GPIO      0 // if pin is an output, set by GPIO register
 #define FRF_GPIO_SEL_ATR       1 // if pin is an output, set by ATR logic
 #define FRF_GPIO_SEL_DEBUG_0   2 // if pin is an output, debug lines from FPGA fabric
 #define FRF_GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric
@@ -206,5 +222,26 @@
 #define FR_ATR_INRX_RXSIDE  FR_ATR_BASE + 10
 #define FR_ATR_FULL_TXSIDE  FR_ATR_BASE + 12
 #define FR_ATR_FULL_RXSIDE  FR_ATR_BASE + 14
+
+///////////////////////////////////////////////////
+// VITA RX CTRL regs
+///////////////////////////////////////////////////
+// The following 3 are logically a single command register.
+// They are clocked into the underlying fifo when time_ticks is written.
+#define FR_RX_CTRL_STREAM_CMD        _SR_ADDR(SR_RX_CTRL + 0) // {now, chain, num_samples(30)
+#define FR_RX_CTRL_TIME_SECS         _SR_ADDR(SR_RX_CTRL + 1)
+#define FR_RX_CTRL_TIME_TICKS        _SR_ADDR(SR_RX_CTRL + 2)
+
+#define FR_RX_CTRL_CLEAR_OVERRUN     _SR_ADDR(SR_RX_CTRL + 3) // write anything to clear overrun
+#define FR_RX_CTRL_VRT_HEADER        _SR_ADDR(SR_RX_CTRL + 4) // word 0 of packet.  FPGA fills in packet counter
+#define FR_RX_CTRL_VRT_STREAM_ID     _SR_ADDR(SR_RX_CTRL + 5) // word 1 of packet.
+#define FR_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)
+#define FR_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
+#define FR_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
+
+//helpful macros for dealing with stream cmd
+#define FR_RX_CTRL_MAX_SAMPS_PER_CMD 0x1fffffff
+#define FR_RX_CTRL_MAKE_CMD(nsamples, now, chain, reload) \
+  ((((now) & 0x1) << 31) | (((chain) & 0x1) << 30) | (((reload) & 0x1) << 29) | ((nsamples) & 0x1fffffff))
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

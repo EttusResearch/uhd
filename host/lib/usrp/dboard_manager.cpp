@@ -298,7 +298,8 @@ void dboard_manager_impl::set_nice_dboard_if(void){
     //set nice settings on each unit
     BOOST_FOREACH(dboard_iface::unit_t unit, units){
         _iface->set_gpio_ddr(unit, 0x0000); //all inputs
-        _iface->set_atr_reg(unit, dboard_iface::ATR_REG_IDLE, 0x0000); //all low
+        _iface->write_gpio(unit, 0x0000); //all low
+        _iface->set_pin_ctrl(unit, 0x0000); //all gpio
         _iface->set_clock_enabled(unit, false); //clock off
     }
 }

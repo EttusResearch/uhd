@@ -70,6 +70,7 @@ control_lib/ram_harv_cache.v \
 control_lib/ram_loader.v \
 control_lib/setting_reg.v \
 control_lib/settings_bus.v \
+control_lib/settings_bus_crossclock.v \
 control_lib/srl.v \
 control_lib/system_control.v \
 control_lib/wb_1master.v \
@@ -134,6 +135,8 @@ coregen/fifo_xlnx_64x36_2clk.v \
 coregen/fifo_xlnx_64x36_2clk.xco \
 coregen/fifo_xlnx_16x19_2clk.v \
 coregen/fifo_xlnx_16x19_2clk.xco \
+coregen/fifo_xlnx_16x40_2clk.v \
+coregen/fifo_xlnx_16x40_2clk.xco \
 extram/wb_zbt16_b.v \
 opencores/8b10b/decode_8b10b.v \
 opencores/8b10b/encode_8b10b.v \
@@ -199,7 +202,7 @@ top/u2_rev3/u2_rev3.v
 # Process Properties
 ##################################################
 export SYNTHESIZE_PROPERTIES := \
-"Number of Clock Buffers" 6 \
+"Number of Clock Buffers" 8 \
 "Pack I/O Registers into IOBs" Yes \
 "Optimization Effort" High \
 "Optimize Instantiated Primitives" TRUE \

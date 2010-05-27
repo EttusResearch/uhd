@@ -18,12 +18,20 @@
 #This file will be included by cmake, use absolute paths!
 
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_control.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.hpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_ctrl.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_iface.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dsp_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/io_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/mboard_impl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/serdes_ctrl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/serdes_ctrl.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_iface.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_iface.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_impl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_impl.hpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.hpp
 )

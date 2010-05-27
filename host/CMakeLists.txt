@@ -62,6 +62,7 @@ IF(UNIX)
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
+    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-O3 HAVE_O3) #have some optimizations
 ENDIF(UNIX)
 
 IF(WIN32)

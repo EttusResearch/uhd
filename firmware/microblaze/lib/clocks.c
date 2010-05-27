@@ -48,14 +48,14 @@ clocks_init(void)
   clocks_mimo_config(MC_WE_DONT_LOCK);
 
   // Set up other clocks
-  clocks_enable_test_clk(false, 0);
-  clocks_enable_tx_dboard(false, 0);
-  clocks_enable_rx_dboard(false, 0);
+  //clocks_enable_test_clk(false, 0);
+  //clocks_enable_tx_dboard(false, 0);
+  //clocks_enable_rx_dboard(false, 0);
   clocks_enable_eth_phyclk(false, 0);
 
   // Enable clock to ADCs and DACs
-  clocks_enable_dac_clk(true, 1);
-  clocks_enable_adc_clk(true, 1);
+  //clocks_enable_dac_clk(true, 1);
+  //clocks_enable_adc_clk(true, 1);
 }
 
 
@@ -168,11 +168,11 @@ clocks_enable_XXX_clk(bool enable, int divisor, int reg_en, int reg_div, int mod
 }
 
 // Clock 0
-void
+/*void
 clocks_enable_test_clk(bool enable, int divisor)
 {
   clocks_enable_XXX_clk(enable,divisor,0x3C,0x48,CLOCK_MODE_PECL);
-}
+}*/
 
 // Clock 1
 void
@@ -211,29 +211,29 @@ clocks_enable_eth_phyclk(bool enable, int divisor)
 }
 
 // Clock 3
-void
+/*void
 clocks_enable_dac_clk(bool enable, int divisor)
 {
   clocks_enable_XXX_clk(enable,divisor,0x3F,0x4E,CLOCK_MODE_PECL);
-}
+}*/
 
 // Clock 4
-void
+/*void
 clocks_enable_adc_clk(bool enable, int divisor)
 {
   clocks_enable_XXX_clk(enable,divisor,0x40,0x50,CLOCK_MODE_LVDS);
-}
+}*/
 
 // Clock 6
-void
+/*void
 clocks_enable_tx_dboard(bool enable, int divisor)
 {
   clocks_enable_XXX_clk(enable,divisor,0x42,0x54,CLOCK_MODE_CMOS);
-}
+}*/
 
 // Clock 7
-void
+/*void
 clocks_enable_rx_dboard(bool enable, int divisor)
 {
   clocks_enable_XXX_clk(enable,divisor,0x43,0x56,CLOCK_MODE_CMOS);
-}
+}*/

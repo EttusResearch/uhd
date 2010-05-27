@@ -35,17 +35,18 @@ public:
     typedef boost::shared_ptr<managed_recv_buffer> sptr;
 
     /*!
+     * Managed recv buffer destructor:
      * Signal to the transport that we are done with the buffer.
      * This should be called to release the buffer to the transport.
      * After calling, the referenced memory should be considered invalid.
      */
-    virtual void done(void) = 0;
+    virtual ~managed_recv_buffer(void){};
 
     /*!
      * Get the size of the underlying buffer.
      * \return the number of bytes
      */
-    size_t size(void){
+    size_t size(void) const{
         return boost::asio::buffer_size(this->get());
     }
 
@@ -53,7 +54,7 @@ public:
      * Get a pointer to the underlying buffer.
      * \return a pointer into memory
      */
-    template <class T> T cast(void){
+    template <class T> T cast(void) const{
         return boost::asio::buffer_cast<T>(this->get());
     }
 
@@ -63,7 +64,7 @@ private:
      * The buffer has a reference to memory and a size.
      * \return a boost asio const buffer
      */
-    virtual const boost::asio::const_buffer &get(void) = 0;
+    virtual const boost::asio::const_buffer &get(void) const = 0;
 };
 
 /*!
@@ -81,13 +82,13 @@ public:
      * After calling, the referenced memory should be considered invalid.
      * \param num_bytes the number of bytes written into the buffer
      */
-    virtual void done(size_t num_bytes) = 0;
+    virtual void commit(size_t num_bytes) = 0;
 
     /*!
      * Get the size of the underlying buffer.
      * \return the number of bytes
      */
-    size_t size(void){
+    size_t size(void) const{
         return boost::asio::buffer_size(this->get());
     }
 
@@ -95,7 +96,7 @@ public:
      * Get a pointer to the underlying buffer.
      * \return a pointer into memory
      */
-    template <class T> T cast(void){
+    template <class T> T cast(void) const{
         return boost::asio::buffer_cast<T>(this->get());
     }
 
@@ -105,7 +106,7 @@ private:
      * The buffer has a reference to memory and a size.
      * \return a boost asio mutable buffer
      */
-    virtual const boost::asio::mutable_buffer &get(void) = 0;
+    virtual const boost::asio::mutable_buffer &get(void) const = 0;
 };
 
 /*!

@@ -34,7 +34,7 @@ extern "C" {
 
 //defines the protocol version in this shared header
 //increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 2
+#define USRP2_PROTO_VERSION 3
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -53,13 +53,8 @@ typedef enum{
     //USRP2_CTRL_ID_FOR_SURE, //TODO error condition enums
     //USRP2_CTRL_ID_SUX_MAN,
 
-    USRP2_CTRL_ID_GIVE_ME_YOUR_IP_ADDR_BRO = 'a',
-    USRP2_CTRL_ID_THIS_IS_MY_IP_ADDR_DUDE = 'A',
-    USRP2_CTRL_ID_HERE_IS_A_NEW_IP_ADDR_BRO = 'b',
-
-    USRP2_CTRL_ID_GIVE_ME_YOUR_MAC_ADDR_BRO = 'm',
-    USRP2_CTRL_ID_THIS_IS_MY_MAC_ADDR_DUDE = 'M',
-    USRP2_CTRL_ID_HERE_IS_A_NEW_MAC_ADDR_BRO = 'n',
+    USRP2_CTRL_ID_WAZZUP_BRO = 'a',
+    USRP2_CTRL_ID_WAZZUP_DUDE = 'A',
 
     USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO = 's',
     USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE = 'S',
@@ -69,9 +64,6 @@ typedef enum{
 
     USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO = 'h',
     USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE = 'H',
-
-    USRP2_CTRL_ID_SEND_STREAM_COMMAND_FOR_ME_BRO = '{',
-    USRP2_CTRL_ID_GOT_THAT_STREAM_COMMAND_DUDE = '}',
 
     USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO = 'p',
     USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE = 'P',
@@ -99,7 +91,6 @@ typedef struct{
     _SINS_ uint32_t seq;
     union{
         _SINS_ uint32_t ip_addr;
-        _SINS_ uint8_t mac_addr[6];
         struct {
             _SINS_ uint8_t dev;
             _SINS_ uint8_t miso_edge;
@@ -113,15 +104,6 @@ typedef struct{
             _SINS_ uint8_t bytes;
             _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
         } i2c_args;
-        struct {
-            _SINS_ uint8_t now; //stream now?
-            _SINS_ uint8_t continuous; //auto-reload commmands?
-            _SINS_ uint8_t chain;
-            _SINS_ uint8_t _pad[1];
-            _SINS_ uint32_t secs;
-            _SINS_ uint32_t ticks;
-            _SINS_ uint32_t num_samps;
-        } stream_cmd;
         struct {
             _SINS_ uint32_t addr;
             _SINS_ uint32_t data;

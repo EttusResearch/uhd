@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/assert.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/clock_config.hpp>
@@ -41,73 +42,89 @@ using namespace uhd;
 /***********************************************************************
  * ranges
  **********************************************************************/
-gain_range_t::gain_range_t(float min_, float max_, float step_){
-    min = min_;
-    max = max_;
-    step = step_;
+gain_range_t::gain_range_t(float min, float max, float step):
+    min(min),
+    max(max),
+    step(step)
+{
+    /* NOP */
 }
 
-freq_range_t::freq_range_t(double min_, double max_){
-    min = min_;
-    max = max_;
+freq_range_t::freq_range_t(double min, double max):
+    min(min),
+    max(max)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * tune result
  **********************************************************************/
-tune_result_t::tune_result_t(void){
-    target_inter_freq = 0.0;
-    actual_inter_freq = 0.0;
-    target_dsp_freq = 0.0;
-    actual_dsp_freq = 0.0;
-    spectrum_inverted = false;
+tune_result_t::tune_result_t(void):
+    target_inter_freq(0.0),
+    actual_inter_freq(0.0),
+    target_dsp_freq(0.0),
+    actual_dsp_freq(0.0),
+    spectrum_inverted(false)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * clock config
  **********************************************************************/
-clock_config_t::clock_config_t(void){
-    ref_source = REF_INT,
-    pps_source = PPS_INT,
-    pps_polarity = PPS_NEG;
+clock_config_t::clock_config_t(void):
+    ref_source(REF_INT),
+    pps_source(PPS_INT),
+    pps_polarity(PPS_NEG)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * stream command
  **********************************************************************/
-stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode_){
-    stream_mode = stream_mode_;
-    stream_now = true;
-    num_samps = 0;
+stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
+    stream_mode(stream_mode),
+    num_samps(0),
+    stream_now(true)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * metadata
  **********************************************************************/
-rx_metadata_t::rx_metadata_t(void){
-    stream_id = 0;
-    has_stream_id = false;
-    time_spec = time_spec_t();
-    has_time_spec = false;
-    more_fragments = false;
-    fragment_offset = 0;
+rx_metadata_t::rx_metadata_t(void):
+    has_stream_id(false),
+    stream_id(0),
+    has_time_spec(false),
+    time_spec(time_spec_t()),
+    more_fragments(false),
+    fragment_offset(0)
+{
+    /* NOP */
 }
 
-tx_metadata_t::tx_metadata_t(void){
-    stream_id = 0;
-    has_stream_id = false;
-    time_spec = time_spec_t();
-    has_time_spec = false;
-    start_of_burst = false;
-    end_of_burst = false;
+tx_metadata_t::tx_metadata_t(void):
+    has_stream_id(false),
+    stream_id(0),
+    has_time_spec(false),
+    time_spec(time_spec_t()),
+    start_of_burst(false),
+    end_of_burst(false)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * time spec
  **********************************************************************/
-time_spec_t::time_spec_t(boost::uint32_t secs_, double nsecs_){
-    secs = secs_;
-    nsecs = nsecs_;
+time_spec_t::time_spec_t(boost::uint32_t secs, double nsecs):
+    secs(secs),
+    nsecs(nsecs)
+{
+    /* NOP */
 }
 
 boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
@@ -164,17 +181,18 @@ std::string device_addr_t::to_string(void) const{
 /***********************************************************************
  * mac addr
  **********************************************************************/
-mac_addr_t::mac_addr_t(const boost::uint8_t *bytes){
-    std::copy(bytes, bytes+hlen, _bytes);
+mac_addr_t::mac_addr_t(const byte_vector_t &bytes) : _bytes(bytes){
+    UHD_ASSERT_THROW(_bytes.size() == 6);
 }
 
-mac_addr_t mac_addr_t::from_bytes(const boost::uint8_t *bytes){
+mac_addr_t mac_addr_t::from_bytes(const byte_vector_t &bytes){
     return mac_addr_t(bytes);
 }
 
 mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
 
-    boost::uint8_t p[hlen] = {0x00, 0x50, 0xC2, 0x85, 0x30, 0x00}; // Matt's IAB
+    byte_vector_t bytes = boost::assign::list_of
+        (0x00)(0x50)(0xC2)(0x85)(0x30)(0x00); // Matt's IAB
 
     try{
         //only allow patterns of xx:xx or xx:xx:xx:xx:xx:xx
@@ -189,7 +207,7 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
             int hex_num;
             std::istringstream iss(hex_strs[i]);
             iss >> std::hex >> hex_num;
-            p[i] = boost::uint8_t(hex_num);
+            bytes[i] = boost::uint8_t(hex_num);
         }
 
     }
@@ -199,28 +217,34 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
         ));
     }
 
-    return from_bytes(p);
+    return mac_addr_t::from_bytes(bytes);
 }
 
-const boost::uint8_t *mac_addr_t::to_bytes(void) const{
+byte_vector_t mac_addr_t::to_bytes(void) const{
     return _bytes;
 }
 
 std::string mac_addr_t::to_string(void) const{
-    return str(
-        boost::format("%02x:%02x:%02x:%02x:%02x:%02x")
-        % int(to_bytes()[0]) % int(to_bytes()[1]) % int(to_bytes()[2])
-        % int(to_bytes()[3]) % int(to_bytes()[4]) % int(to_bytes()[5])
-    );
+    std::string addr = "";
+    BOOST_FOREACH(boost::uint8_t byte, this->to_bytes()){
+        addr += str(boost::format("%s%02x") % ((addr == "")?"":":") % int(byte));
+    }
+    return addr;
 }
 
 /***********************************************************************
  * otw type
  **********************************************************************/
-otw_type_t::otw_type_t(void){
-    width = 0;
-    shift = 0;
-    byteorder = BO_NATIVE;
+size_t otw_type_t::get_sample_size(void) const{
+    return (this->width * 2) / 8;
+}
+
+otw_type_t::otw_type_t(void):
+    width(0),
+    shift(0),
+    byteorder(BO_NATIVE)
+{
+    /* NOP */
 }
 
 /***********************************************************************
@@ -248,9 +272,11 @@ io_type_t::io_type_t(size_t size)
 /***********************************************************************
  * serial
  **********************************************************************/
-spi_config_t::spi_config_t(edge_t edge){
-    mosi_edge = edge;
-    miso_edge = edge;
+spi_config_t::spi_config_t(edge_t edge):
+    mosi_edge(edge),
+    miso_edge(edge)
+{
+    /* NOP */
 }
 
 void i2c_iface::write_eeprom(

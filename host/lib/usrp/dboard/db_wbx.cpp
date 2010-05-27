@@ -164,7 +164,9 @@ wbx_xcvr::wbx_xcvr(
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
-    //set the gpio directions
+    //set the gpio directions and atr controls (identically)
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
     if (wbx_debug) std::cerr << boost::format(
@@ -303,7 +305,7 @@ double wbx_xcvr::set_lo_freq(
 
     double actual_freq, pfd_freq;
     double ref_freq = this->get_iface()->get_clock_rate(unit);
-    int R, BS, N, FRAC, MOD;
+    int R=0, BS=0, N=0, FRAC=0, MOD=0;
     int RFdiv = 1;
     adf4350_regs_t::reference_divide_by_2_t T     = adf4350_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
     adf4350_regs_t::reference_doubler_t     D     = adf4350_regs_t::REFERENCE_DOUBLER_DISABLED;    

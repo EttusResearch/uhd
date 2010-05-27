@@ -169,7 +169,9 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     //enable only the clocks we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
 
-    //set the gpio directions
+    //set the gpio directions and atr controls (identically)
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
 

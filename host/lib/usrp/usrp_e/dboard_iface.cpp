@@ -49,8 +49,10 @@ public:
     void write_aux_dac(unit_t, int, float);
     float read_aux_adc(unit_t, int);
 
+    void set_pin_ctrl(unit_t, boost::uint16_t);
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(unit_t, boost::uint16_t);
+    void write_gpio(unit_t, boost::uint16_t);
     boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(boost::uint8_t, const byte_vector_t &);
@@ -111,29 +113,41 @@ void usrp_e_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp_e_dboard_iface::set_gpio_ddr(unit_t bank, boost::uint16_t value){
-    //define mapping of gpio bank to register address
-    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = map_list_of
-        (UNIT_RX, UE_REG_GPIO_RX_DDR)
-        (UNIT_TX, UE_REG_GPIO_TX_DDR)
-    ;
-    _iface->poke16(bank_to_addr[bank], value);
+void usrp_e_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value){
+    UHD_ASSERT_THROW(GPIO_SEL_ATR == 1); //make this assumption
+    switch(unit){
+    case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_SEL, value); return;
+    case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_SEL, value); return;
+    }
 }
 
-boost::uint16_t usrp_e_dboard_iface::read_gpio(unit_t bank){
-    //define mapping of gpio bank to register address
-    static const uhd::dict<unit_t, boost::uint32_t> bank_to_addr = map_list_of
-        (UNIT_RX, UE_REG_GPIO_RX_IO)
-        (UNIT_TX, UE_REG_GPIO_TX_IO)
-    ;
-    return _iface->peek16(bank_to_addr[bank]);
+void usrp_e_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
+    switch(unit){
+    case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_DDR, value); return;
+    case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_DDR, value); return;
+    }
 }
 
-void usrp_e_dboard_iface::set_atr_reg(unit_t bank, atr_reg_t atr, boost::uint16_t value){
-    //define mapping of bank to atr regs to register address
+void usrp_e_dboard_iface::write_gpio(unit_t unit, boost::uint16_t value){
+    switch(unit){
+    case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_IO, value); return;
+    case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_IO, value); return;
+    }
+}
+
+boost::uint16_t usrp_e_dboard_iface::read_gpio(unit_t unit){
+    switch(unit){
+    case UNIT_RX: return _iface->peek16(UE_REG_GPIO_RX_IO);
+    case UNIT_TX: return _iface->peek16(UE_REG_GPIO_TX_IO);
+    }
+    UHD_ASSERT_THROW(false);
+}
+
+void usrp_e_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
+    //define mapping of unit to atr regs to register address
     static const uhd::dict<
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
-    > bank_to_atr_to_addr = map_list_of
+    > unit_to_atr_to_addr = map_list_of
         (UNIT_RX, map_list_of
             (ATR_REG_IDLE,        UE_REG_ATR_IDLE_RXSIDE)
             (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_RXSIDE)
@@ -147,7 +161,7 @@ void usrp_e_dboard_iface::set_atr_reg(unit_t bank, atr_reg_t atr, boost::uint16_
             (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_TXSIDE)
         )
     ;
-    _iface->poke16(bank_to_atr_to_addr[bank][atr], value);
+    _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
 }
 
 /***********************************************************************

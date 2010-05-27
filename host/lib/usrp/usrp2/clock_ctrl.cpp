@@ -15,21 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp2_impl.hpp"
-#include "clock_control.hpp"
+#include "clock_ctrl.hpp"
 #include "ad9510_regs.hpp"
 #include "usrp2_regs.hpp" //spi slave constants
 #include <boost/cstdint.hpp>
 
 using namespace uhd;
-using namespace uhd::usrp;
 
 /*!
  * A usrp2 clock control specific to the ad9510 ic.
  */
-class clock_control_ad9510 : public clock_control{
+class clock_ctrl_impl : public clock_ctrl{
 public:
-    clock_control_ad9510(usrp2_iface::sptr iface){
+    clock_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
@@ -70,7 +68,7 @@ public:
 
     }
 
-    ~clock_control_ad9510(void){
+    ~clock_ctrl_impl(void){
         /* private clock enables, must be set here */
         this->enable_dac_clock(false);
         this->enable_adc_clock(false);
@@ -81,7 +79,9 @@ public:
         _ad9510_regs.power_down_lvds_cmos_out7 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out7 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT7_CMOS;
         _ad9510_regs.output_level_lvds_out7 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT7_1_75MA;
+        _ad9510_regs.bypass_divider_out7 = 1;
         this->write_reg(0x43);
+        this->write_reg(0x57);
         this->update_regs();
     }
 
@@ -90,7 +90,9 @@ public:
         _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
         _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
+        _ad9510_regs.bypass_divider_out6 = 1;
         this->write_reg(0x42);
+        this->write_reg(0x55);
         this->update_regs();
     }
 
@@ -132,7 +134,9 @@ private:
             ad9510_regs_t::POWER_DOWN_LVPECL_OUT3_NORMAL :
             ad9510_regs_t::POWER_DOWN_LVPECL_OUT3_SAFE_PD;
         _ad9510_regs.output_level_lvpecl_out3 = ad9510_regs_t::OUTPUT_LEVEL_LVPECL_OUT3_810MV;
+        _ad9510_regs.bypass_divider_out3 = 1;
         this->write_reg(0x3F);
+        this->write_reg(0x4F);
         this->update_regs();
     }
 
@@ -141,7 +145,9 @@ private:
         _ad9510_regs.power_down_lvds_cmos_out4 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out4 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT4_LVDS;
         _ad9510_regs.output_level_lvds_out4 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT4_1_75MA;
+        _ad9510_regs.bypass_divider_out4 = 1;
         this->write_reg(0x40);
+        this->write_reg(0x51);
         this->update_regs();
     }
 
@@ -152,6 +158,6 @@ private:
 /***********************************************************************
  * Public make function for the ad9510 clock control
  **********************************************************************/
-clock_control::sptr clock_control::make_ad9510(usrp2_iface::sptr iface){
-    return clock_control::sptr(new clock_control_ad9510(iface));
+clock_ctrl::sptr clock_ctrl::make(usrp2_iface::sptr iface){
+    return sptr(new clock_ctrl_impl(iface));
 }

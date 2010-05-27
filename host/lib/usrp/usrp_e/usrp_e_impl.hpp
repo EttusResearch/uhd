@@ -89,8 +89,10 @@ public:
     ~usrp_e_impl(void);
 
     //the io interface
-    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &);
-    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &);
+    size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t);
+    size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t);
+    size_t get_max_send_samps_per_packet(void) const{return _max_num_samples;}
+    size_t get_max_recv_samps_per_packet(void) const{return _max_num_samples;}
 
 private:
     static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
