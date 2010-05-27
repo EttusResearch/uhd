@@ -25,6 +25,13 @@
 using namespace uhd::transport;
 
 /***********************************************************************
+ * Constants
+ **********************************************************************/
+static const size_t MIN_SOCK_BUFF_SIZE = size_t(100e3);
+static const size_t MAX_DGRAM_SIZE = 2048; //assume max size on send and recv
+static const double RECV_TIMEOUT = 0.1; // 100 ms
+
+/***********************************************************************
  * Managed receive buffer implementation for udp zero-copy asio:
  **********************************************************************/
 class managed_recv_buffer_impl : public managed_recv_buffer{
@@ -34,11 +41,7 @@ public:
     }
 
     ~managed_recv_buffer_impl(void){
-        /* NOP */
-    }
-
-    void done(void){
-        /* NOP */
+        delete [] this->cast<const boost::uint8_t *>();
     }
 
 private:
@@ -65,7 +68,7 @@ public:
         /* NOP */
     }
 
-    void done(size_t num_bytes){
+    void commit(size_t num_bytes){
         _socket->send(boost::asio::buffer(_buff, num_bytes));
     }
 
@@ -85,8 +88,6 @@ private:
  *   However, it is not a true zero copy implementation as each
  *   send and recv requires a copy operation to/from userspace.
  **********************************************************************/
-static const size_t max_buff_size = 2000; //assume max size on send and recv
-
 class udp_zero_copy_impl : public udp_zero_copy{
 public:
     typedef boost::shared_ptr<udp_zero_copy_impl> sptr;
@@ -117,7 +118,7 @@ private:
     boost::asio::io_service        _io_service;
 
     //send and recv buffer memory (allocated once)
-    boost::uint8_t _send_mem[max_buff_size], _recv_mem[max_buff_size];
+    boost::uint8_t _send_mem[MIN_SOCK_BUFF_SIZE];
 
     managed_send_buffer::sptr _send_buff;
 };
@@ -137,13 +138,13 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
 
     // create the managed send buff (just once)
     _send_buff = managed_send_buffer::sptr(new managed_send_buffer_impl(
-        boost::asio::buffer(_send_mem, max_buff_size), _socket
+        boost::asio::buffer(_send_mem, MIN_SOCK_BUFF_SIZE), _socket
     ));
 
     // set recv timeout
     timeval tv;
     tv.tv_sec = 0;
-    tv.tv_usec = 100*1000; //100 ms
+    tv.tv_usec = size_t(RECV_TIMEOUT*1e6);
     UHD_ASSERT_THROW(setsockopt(
         _socket->native(),
         SOL_SOCKET, SO_RCVTIMEO,
@@ -156,17 +157,20 @@ udp_zero_copy_impl::~udp_zero_copy_impl(void){
 }
 
 managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
+    //allocate memory
+    boost::uint8_t *recv_mem = new boost::uint8_t[MAX_DGRAM_SIZE];
+
     //call recv() with timeout option
-    size_t num_bytes = _socket->receive(boost::asio::buffer(_recv_mem, max_buff_size));
+    size_t num_bytes = _socket->receive(boost::asio::buffer(recv_mem, MIN_SOCK_BUFF_SIZE));
 
     //create a new managed buffer to house the data
     return managed_recv_buffer::sptr(
-        new managed_recv_buffer_impl(boost::asio::buffer(_recv_mem, num_bytes))
+        new managed_recv_buffer_impl(boost::asio::buffer(recv_mem, num_bytes))
     );
 }
 
 managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
-    return _send_buff;
+    return _send_buff; //FIXME there is only ever one send buff, we assume that the caller doesnt hang onto these
 }
 
 /***********************************************************************
@@ -177,8 +181,6 @@ template<typename Opt> static inline void resize_buff_helper(
     size_t target_size,
     const std::string &name
 ){
-    static const size_t min_buff_size = size_t(100e3);
-
     //resize the buffer if size was provided
     if (target_size > 0){
         size_t actual_size = udp_trans->resize_buff<Opt>(target_size);
@@ -189,8 +191,8 @@ template<typename Opt> static inline void resize_buff_helper(
     }
 
     //otherwise, ensure that the buffer is at least the minimum size
-    else if (udp_trans->get_buff_size<Opt>() < min_buff_size){
-        resize_buff_helper<Opt>(udp_trans, min_buff_size, name);
+    else if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
+        resize_buff_helper<Opt>(udp_trans, MIN_SOCK_BUFF_SIZE, name);
     }
 }
 

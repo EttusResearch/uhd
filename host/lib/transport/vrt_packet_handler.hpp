@@ -284,7 +284,7 @@ namespace vrt_packet_handler{
         send_cb(send_buff); //callback after memory filled
 
         //commit the samples to the zero-copy interface
-        send_buff->done(num_packet_words32*sizeof(boost::uint32_t));
+        send_buff->commit(num_packet_words32*sizeof(boost::uint32_t));
     }
 
     /*******************************************************************

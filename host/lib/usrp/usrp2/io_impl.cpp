@@ -45,7 +45,7 @@ void usrp2_impl::io_init(void){
     managed_send_buffer::sptr send_buff = _data_transport->get_send_buff();
     boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
     memcpy(send_buff->cast<void*>(), &data, sizeof(data));
-    send_buff->done(sizeof(data));
+    send_buff->commit(sizeof(data));
 
     //setup RX DSP regs
     std::cout << "RX samples per packet: " << get_max_recv_samps_per_packet() << std::endl;

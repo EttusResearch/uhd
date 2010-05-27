@@ -35,11 +35,12 @@ public:
     typedef boost::shared_ptr<managed_recv_buffer> sptr;
 
     /*!
+     * Managed recv buffer destructor:
      * Signal to the transport that we are done with the buffer.
      * This should be called to release the buffer to the transport.
      * After calling, the referenced memory should be considered invalid.
      */
-    virtual void done(void) = 0;
+    virtual ~managed_recv_buffer(void){};
 
     /*!
      * Get the size of the underlying buffer.
@@ -81,7 +82,7 @@ public:
      * After calling, the referenced memory should be considered invalid.
      * \param num_bytes the number of bytes written into the buffer
      */
-    virtual void done(size_t num_bytes) = 0;
+    virtual void commit(size_t num_bytes) = 0;
 
     /*!
      * Get the size of the underlying buffer.
