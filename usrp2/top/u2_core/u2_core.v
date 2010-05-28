@@ -135,6 +135,24 @@ module u2_core
    input sim_mode,
    input [3:0] clock_divider
    );
+
+   localparam SR_BUF_POOL = 64;   // Uses 1 reg
+   localparam SR_UDP_SM   = 96;   // 64 regs
+   localparam SR_RX_DSP   = 160;  // 16
+   localparam SR_RX_CTRL  = 176;  // 16
+   localparam SR_TIME64   = 192;  //  3
+   localparam SR_SIMTIMER = 198;  //  2
+   localparam SR_TX_DSP   = 208;  // 16
+   localparam SR_TX_CTRL  = 224;  // 16
+
+   // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
+   // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
+   localparam DSP_TX_FIFOSIZE = 10;
+   localparam DSP_RX_FIFOSIZE = 10;
+   localparam ETH_TX_FIFOSIZE = 10;
+   localparam ETH_RX_FIFOSIZE = 11;
+   localparam SERDES_TX_FIFOSIZE = 9;
+   localparam SERDES_RX_FIFOSIZE = 9;  // RX currently doesn't use a fifo?
    
    wire [7:0] 	set_addr, set_addr_dsp;
    wire [31:0] 	set_data, set_data_dsp;
@@ -333,7 +351,7 @@ module u2_core
    wire [3:0] 	 wr0_flags, wr1_flags, wr2_flags, wr3_flags;
    wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
    
-   buffer_pool #(.BUF_SIZE(9), .SET_ADDR(64)) buffer_pool
+   buffer_pool #(.BUF_SIZE(9), .SET_ADDR(SR_BUF_POOL)) buffer_pool
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
       .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),   
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
@@ -581,18 +599,19 @@ module u2_core
       .fifo_occupied(dsp_tx_occ),.fifo_full(dsp_tx_full),.fifo_empty(dsp_tx_empty),
       .debug(debug_txc) );
    
-   dsp_core_tx dsp_core_tx
+   dsp_core_tx #(.BASE(SR_TX_DSP)) dsp_core_tx
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
       .dac_a(dac_a),.dac_b(dac_b),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx), .debug(debug_tx_dsp) );
+      .debug(debug_tx_dsp) );
 
    assign dsp_rst = wb_rst;
 
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
-   serdes #(.TXFIFOSIZE(9),.RXFIFOSIZE(9)) serdes
+   serdes #(.TXFIFOSIZE(SERDES_TX_FIFOSIZE),.RXFIFOSIZE(SERDES_RX_FIFOSIZE)) serdes
      (.clk(dsp_clk),.rst(dsp_rst),
       .ser_tx_clk(ser_tx_clk),.ser_t(ser_t),.ser_tklsb(ser_tklsb),.ser_tkmsb(ser_tkmsb),
       .rd_dat_i(rd0_dat),.rd_flags_i(rd0_flags),.rd_ready_o(rd0_ready_i),.rd_ready_i(rd0_ready_o),
