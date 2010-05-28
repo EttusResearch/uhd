@@ -63,7 +63,7 @@ static void *read_thread(void *threadid)
 		if (cnt < 0)
 			printf("Error returned from read: %d\n", cnt);
 
-//		printf("Packet received, flags = %X, len = %d\n", rx_data->flags, rx_data->len);
+//		printf("Packet received, status = %X, len = %d\n", rx_data->status, rx_data->len);
 //		printf("p->seq_num = %d\n", p->seq_num);
 
 
@@ -119,7 +119,7 @@ static void *write_thread(void *threadid)
 //		p->data[i] = random() >> 16;
 		p->data[i] = i;
 
-	tx_data->flags = 0xdeadbeef;
+	tx_data->status = 0xdeadbeef;
 	tx_data->len = 8 + packet_data_length * 2;
 
 	printf("tx_data->len = %d\n", tx_data->len);
@@ -127,7 +127,7 @@ static void *write_thread(void *threadid)
 	seq_number = 1;
 
 	while (1) {
-//		printf("tx flags = %X, len = %d\n", tx_data->flags, tx_data->len);
+//		printf("tx status = %X, len = %d\n", tx_data->status, tx_data->len);
 		p->seq_num = seq_number++;
 		p->checksum = calc_checksum(p);
 		cnt = write(fp, tx_data, 2048);

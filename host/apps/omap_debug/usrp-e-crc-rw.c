@@ -81,13 +81,20 @@ static void *read_thread(void *threadid)
 		}
 #endif
 
-		if (rx_data->flags & RB_OVERRUN)
+		if (rx_data->status & RB_OVERRUN)
 			printf("O");
-		
+
+		printf("rx_data->len = %d\n", rx_data->len);
+
+	
 		crc = 0xFFFFFFFF;
-		for (i = 0; i < rx_data->len - 4; i++) {
+		for (i = 0; i < rx_data->len - 4; i+=2) {
+			crc = ((crc >> 8) & 0x00FFFFFF) ^
+				crc_tab[(crc ^ rx_data->buf[i+1]) & 0xFF];
+printf("idx = %d, data = %X, crc = %X\n", i, rx_data->buf[i+1],crc);
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ rx_data->buf[i]) & 0xFF];
+printf("idx = %d, data = %X, crc = %X\n", i, rx_data->buf[i],crc);
 		}
 
 		p = &rx_data->buf[rx_data->len - 4];
@@ -96,7 +103,7 @@ static void *read_thread(void *threadid)
 
 #if 1
 		printf("rx_data->len = %d\n", rx_data->len);
-		printf("rx_data->flags = %d\n", rx_data->flags);
+		printf("rx_data->status = %d\n", rx_data->status);
 		for (i = 0; i < rx_data->len; i++)
 			printf("idx = %d, data = %X\n", i, rx_data->buf[i]);
 		printf("calc crc = %lX, rx crc = %X\n", crc, rx_crc); 

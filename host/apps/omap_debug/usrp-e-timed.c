@@ -75,7 +75,7 @@ static void *read_thread(void *threadid)
 		}
 #endif
 
-		if (rx_data->flags & RB_OVERRUN)
+		if (rx_data->status & RB_OVERRUN)
 			printf("O");
 
 		bytes_transfered += rx_data->len;
@@ -118,7 +118,7 @@ static void *write_thread(void *threadid)
 //		p->data[i] = random() >> 16;
 		p->data[i] = i;
 
-	tx_data->flags = 0;
+	tx_data->status = 0;
 	tx_data->len = 8 + packet_data_length * 2;
 
 	printf("tx_data->len = %d\n", tx_data->len);
@@ -146,7 +146,7 @@ static void *write_thread(void *threadid)
 		}
 #endif
 
-//		printf("tx flags = %X, len = %d\n", tx_data->flags, tx_data->len);
+//		printf("tx status = %X, len = %d\n", tx_data->status, tx_data->len);
 		p->seq_num = seq_number++;
 		p->checksum = calc_checksum(p);
 		cnt = write(fp, tx_data, 2048);

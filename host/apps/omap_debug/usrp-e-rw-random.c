@@ -65,7 +65,7 @@ static void *read_thread(void *threadid)
 	while (1) {
 
 		cnt = read(fp, rx_data, 2048);
-//		printf("Packet received, flags = %X, len = %d\n", rx_data->flags, rx_data->len);
+//		printf("Packet received, status = %X, len = %d\n", rx_data->status, rx_data->len);
 //		printf("p->seq_num = %d\n", p->seq_num);
 
 		if (p->seq_num != prev_seq_num + 1)
@@ -102,7 +102,7 @@ static void *write_thread(void *threadid)
 //		p->data[i] = random() >> 16;
 		p->data[i] = i;
 
-	tx_data->flags = 0xdeadbeef;
+	tx_data->status = 0xdeadbeef;
 	tx_data->len = 8 + packet_data_length * 2;
 
 	printf("tx_data->len = %d\n", tx_data->len);

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	tx_data = malloc(2048);
 	rx_data = malloc(2048);
 
-	tx_data->flags = 0;
+	tx_data->status = 0;
 	tx_data->len = sizeof(struct usrp_transfer_frame) + packet_data_length;
 
 	while (1) {
