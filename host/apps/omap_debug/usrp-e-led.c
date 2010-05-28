@@ -20,16 +20,16 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	d.offset = UE_REG_MISC_BASE+14;
+	d.offset = UE_REG_MISC_BASE;
 	d.count = 1;
 
-	d.buf[0] = 0x4020;
-	ret = ioctl(fp, USRP_E_WRITE_CTL16, &d);
-
-	sleep(10);
-
-	d.buf[0] = 0x0;
-	ret = ioctl(fp, USRP_E_WRITE_CTL16, &d);
+	while (1) {
+		for (i=0; i<8; i++) {
+			d.buf[0] = i;
+			ret = ioctl(fp, USRP_E_WRITE_CTL16, &d);
+			sleep(1);
+		}
+	}
 
 	return 0;
 }
