@@ -161,7 +161,7 @@ managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
     boost::uint8_t *recv_mem = new boost::uint8_t[MAX_DGRAM_SIZE];
 
     //call recv() with timeout option
-    size_t num_bytes = _socket->receive(boost::asio::buffer(recv_mem, MIN_SOCK_BUFF_SIZE));
+    size_t num_bytes = _socket->receive(boost::asio::buffer(recv_mem, MAX_DGRAM_SIZE));
 
     //create a new managed buffer to house the data
     return managed_recv_buffer::sptr(
