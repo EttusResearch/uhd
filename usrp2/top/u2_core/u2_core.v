@@ -142,7 +142,7 @@ module u2_core
    localparam SR_RX_CTRL  = 176;  // 16
    localparam SR_TIME64   = 192;  //  3
    localparam SR_SIMTIMER = 198;  //  2
-   localparam SR_TX_DSP   = 208;  // 16
+   localparam SR_TX_DSP   = 128;  // 16
    localparam SR_TX_CTRL  = 224;  // 16
 
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
