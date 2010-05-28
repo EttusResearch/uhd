@@ -17,13 +17,16 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/transport/alignment_buffer.hpp>
+#include <boost/assign/list_of.hpp>
 
+using namespace boost::assign;
 using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds timeout(10);
 
 BOOST_AUTO_TEST_CASE(test_bounded_buffer_with_timed_wait){
-    bounded_buffer<int>::sptr bb(new bounded_buffer<int>(3));
+    bounded_buffer<int>::sptr bb(bounded_buffer<int>::make(3));
 
     //push elements, check for timeout
     BOOST_CHECK(bb->push_with_timed_wait(0, timeout));
@@ -43,7 +46,7 @@ BOOST_AUTO_TEST_CASE(test_bounded_buffer_with_timed_wait){
 }
 
 BOOST_AUTO_TEST_CASE(test_bounded_buffer_with_pop_on_full){
-    bounded_buffer<int>::sptr bb(new bounded_buffer<int>(3));
+    bounded_buffer<int>::sptr bb(bounded_buffer<int>::make(3));
 
     //push elements, check for timeout
     BOOST_CHECK(bb->push_with_pop_on_full(0));
@@ -61,13 +64,8 @@ BOOST_AUTO_TEST_CASE(test_bounded_buffer_with_pop_on_full){
     BOOST_CHECK_EQUAL(val, 3);
 }
 
-#include <uhd/transport/alignment_buffer.hpp>
-#include <boost/assign/list_of.hpp>
-
-using namespace boost::assign;
-
-BOOST_AUTO_TEST_CASE(test_alignment_buffer_tmp){
-    alignment_buffer<int, size_t>::sptr ab(new alignment_buffer<int, size_t>(5, 3));
+BOOST_AUTO_TEST_CASE(test_alignment_buffer){
+    alignment_buffer<int, size_t>::sptr ab(alignment_buffer<int, size_t>::make(7, 3));
     //load index 0 with all good seq numbers
     BOOST_CHECK(ab->push_with_pop_on_full(0, 0, 0));
     BOOST_CHECK(ab->push_with_pop_on_full(1, 1, 0));
@@ -92,14 +90,14 @@ BOOST_AUTO_TEST_CASE(test_alignment_buffer_tmp){
     //readback aligned values
     std::vector<int> aligned_elems(3);
 
-    std::vector<int> expected_elems0 = list_of(0)(10)(20);
+    static const std::vector<int> expected_elems0 = list_of(0)(10)(20);
     BOOST_CHECK(ab->pop_elems_with_timed_wait(aligned_elems, timeout));
     BOOST_CHECK_EQUAL_COLLECTIONS(
         aligned_elems.begin(), aligned_elems.end(),
         expected_elems0.begin(), expected_elems0.end()
     );
 
-    std::vector<int> expected_elems1 = list_of(1)(11)(21);
+    static const std::vector<int> expected_elems1 = list_of(1)(11)(21);
     BOOST_CHECK(ab->pop_elems_with_timed_wait(aligned_elems, timeout));
     BOOST_CHECK_EQUAL_COLLECTIONS(
         aligned_elems.begin(), aligned_elems.end(),
@@ -108,7 +106,7 @@ BOOST_AUTO_TEST_CASE(test_alignment_buffer_tmp){
 
     //there was a skip now find 4
 
-    std::vector<int> expected_elems4 = list_of(4)(14)(24);
+    static const std::vector<int> expected_elems4 = list_of(4)(14)(24);
     BOOST_CHECK(ab->pop_elems_with_timed_wait(aligned_elems, timeout));
     BOOST_CHECK_EQUAL_COLLECTIONS(
         aligned_elems.begin(), aligned_elems.end(),

@@ -38,18 +38,11 @@ namespace uhd{ namespace transport{
         typedef boost::shared_ptr<bounded_buffer<elem_type> > sptr;
 
         /*!
-         * Create a new bounded_buffer of a given size.
+         * Make a new bounded buffer object.
          * \param capacity the bounded_buffer capacity
          */
-        bounded_buffer(size_t capacity) : _buffer(capacity){
-            /* NOP */
-        }
-
-        /*!
-         * Destroy this bounded_buffer.
-         */
-        ~bounded_buffer(void){
-            /* NOP */
+        static sptr make(size_t capacity){
+            return sptr(new bounded_buffer(capacity));
         }
 
         /*!
@@ -139,6 +132,9 @@ namespace uhd{ namespace transport{
 
         bool not_full(void) const{return not _buffer.full();}
         bool not_empty(void) const{return not _buffer.empty();}
+
+        //private constructor
+        bounded_buffer(size_t capacity) : _buffer(capacity){}
     };
 
 }} //namespace

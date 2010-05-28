@@ -36,22 +36,12 @@ namespace uhd{ namespace transport{
         typedef boost::shared_ptr<alignment_buffer<elem_type, seq_type> > sptr;
 
         /*!
-         * Create the alignment buffer.
+         * Make a new alignment buffer object.
          * \param capacity the maximum elements per index
          * \param width the number of elements to align
          */
-        alignment_buffer(size_t capacity, size_t width){
-            for (size_t i = 0; i < width; i++){
-                _buffs.push_back(bounded_buffer_sptr(new bounded_buffer_type(capacity)));
-                _all_indexes.push_back(i);
-            }
-        }
-
-        /*!
-         * Destroy this alignment buffer.
-         */
-        ~alignment_buffer(void){
-            /* NOP */
+        static sptr make(size_t capacity, size_t width){
+            return sptr(new alignment_buffer(capacity, width));
         }
 
         /*!
@@ -80,29 +70,25 @@ namespace uhd{ namespace transport{
             buff_contents_type buff_contents_tmp;
             std::list<size_t> indexes_to_do(_all_indexes);
 
-            //the seq identifier to align with
-            seq_type expected_seq_id = seq_type();
-            bool expected_seq_id_valid = false;
+            //do an initial pop to load an initial sequence id
+            size_t index = indexes_to_do.front();
+            if (not _buffs[index]->pop_with_timed_wait(buff_contents_tmp, time)) return false;
+            elems[index] = buff_contents_tmp.first;
+            seq_type expected_seq_id = buff_contents_tmp.second;
+            indexes_to_do.pop_front();
 
             //get an aligned set of elements from the buffers:
             while(indexes_to_do.size() != 0){
-                size_t index = indexes_to_do.back();
-
                 //pop an element off for this index
+                index = indexes_to_do.front();
                 if (not _buffs[index]->pop_with_timed_wait(buff_contents_tmp, time)) return false;
-
-                //grab the current sequence id if not valid
-                if (not expected_seq_id_valid){
-                    expected_seq_id_valid = true;
-                    expected_seq_id = buff_contents_tmp.second;
-                }
 
                 //if the sequence id matches:
                 //  store the popped element into the output,
                 //  remove this index from the list and continue
                 if (buff_contents_tmp.second == expected_seq_id){
                     elems[index] = buff_contents_tmp.first;
-                    indexes_to_do.pop_back();
+                    indexes_to_do.pop_front();
                     continue;
                 }
 
@@ -113,10 +99,13 @@ namespace uhd{ namespace transport{
                 }
 
                 //if the sequence id is newer:
-                //  start from scratch at the new sequence number
+                //  store the popped element into the output,
+                //  add all other indexes back into the list
                 if (buff_contents_tmp.second > expected_seq_id){
+                    elems[index] = buff_contents_tmp.first;
                     expected_seq_id = buff_contents_tmp.second;
                     indexes_to_do = _all_indexes;
+                    indexes_to_do.remove(index);
                     continue;
                 }
             }
@@ -130,6 +119,14 @@ namespace uhd{ namespace transport{
         typedef boost::shared_ptr<bounded_buffer_type> bounded_buffer_sptr;
         std::vector<bounded_buffer_sptr> _buffs;
         std::list<size_t> _all_indexes;
+
+        //private constructor
+        alignment_buffer(size_t capacity, size_t width){
+            for (size_t i = 0; i < width; i++){
+                _buffs.push_back(bounded_buffer_type::make(capacity));
+                _all_indexes.push_back(i);
+            }
+        }
     };
 
 }} //namespace
