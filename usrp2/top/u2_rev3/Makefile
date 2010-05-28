@@ -85,7 +85,16 @@ control_lib/wb_bridge_16_32.v \
 control_lib/reset_sync.v \
 control_lib/priority_enc.v \
 control_lib/pic.v \
+vrt/vita_rx_control.v \
+vrt/vita_rx_framer.v \
+vrt/vita_tx_control.v \
+vrt/vita_tx_deframer.v \
+udp/udp_wrapper.v \
+udp/fifo19_rxrealign.v \
+udp/prot_eng_tx.v \
+udp/add_onescomp.v \
 simple_gemac/simple_gemac_wrapper.v \
+simple_gemac/simple_gemac_wrapper19.v \
 simple_gemac/simple_gemac.v \
 simple_gemac/simple_gemac_wb.v \
 simple_gemac/simple_gemac_tx.v \
@@ -106,11 +115,15 @@ control_lib/newfifo/buffer_pool.v \
 control_lib/newfifo/fifo_2clock.v \
 control_lib/newfifo/fifo_2clock_cascade.v \
 control_lib/newfifo/ll8_shortfifo.v \
-control_lib/newfifo/ll8_to_fifo36.v \
 control_lib/newfifo/fifo_short.v \
 control_lib/newfifo/fifo_long.v \
 control_lib/newfifo/fifo_cascade.v \
 control_lib/newfifo/fifo36_to_ll8.v \
+control_lib/newfifo/ll8_to_fifo36.v \
+control_lib/newfifo/fifo19_to_ll8.v \
+control_lib/newfifo/ll8_to_fifo19.v \
+control_lib/newfifo/fifo36_to_fifo19.v \
+control_lib/newfifo/fifo19_to_fifo36.v \
 control_lib/longfifo.v \
 control_lib/shortfifo.v \
 control_lib/medfifo.v \
@@ -120,6 +133,8 @@ coregen/fifo_xlnx_512x36_2clk.v \
 coregen/fifo_xlnx_512x36_2clk.xco \
 coregen/fifo_xlnx_64x36_2clk.v \
 coregen/fifo_xlnx_64x36_2clk.xco \
+coregen/fifo_xlnx_16x19_2clk.v \
+coregen/fifo_xlnx_16x19_2clk.xco \
 coregen/fifo_xlnx_16x40_2clk.v \
 coregen/fifo_xlnx_16x40_2clk.xco \
 extram/wb_zbt16_b.v \
@@ -174,10 +189,13 @@ serdes/serdes_fc_rx.v \
 serdes/serdes_fc_tx.v \
 serdes/serdes_rx.v \
 serdes/serdes_tx.v \
+timing/time_64bit.v \
+timing/time_compare.v \
 timing/time_receiver.v \
 timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
+timing/simple_timer.v \
 top/u2_core/u2_core.v \
 top/u2_rev3/u2_rev3.ucf \
 top/u2_rev3/u2_rev3.v 
