@@ -22,7 +22,7 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/circular_buffer.hpp>
-#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/condition.hpp>
 
 namespace uhd{ namespace transport{
 
@@ -41,7 +41,7 @@ namespace uhd{ namespace transport{
          * Create a new bounded_buffer of a given size.
          * \param capacity the bounded_buffer capacity
          */
-        bounded_buffer(size_t capacity) : _buffer(capacity), _size(0){
+        bounded_buffer(size_t capacity) : _buffer(capacity){
             /* NOP */
         }
 
@@ -53,19 +53,23 @@ namespace uhd{ namespace transport{
         }
 
         /*!
-         * Is the bounded_buffer buffer not full?
-         * \return true for not full
+         * Push a new element into the bounded buffer.
+         * If the buffer is full prior to the push,
+         * make room by poping the oldest element.
+         * \param elem the new element to push
+         * \return true if the element fit without popping for space
          */
-        bool is_not_full(void) const{
-            return _size != _buffer.capacity();
-        }
-
-        /*!
-         * Is the bounded_buffer buffer not empty?
-         * \return true for not empty
-         */
-        bool is_not_empty(void) const{
-            return _size != 0;
+        UHD_INLINE bool push_with_pop_on_full(const elem_type &elem){
+            boost::unique_lock<boost::mutex> lock(_mutex);
+            if(_buffer.full()){
+                _buffer.pop_back();
+                _buffer.push_front(elem);
+                return false;
+            }
+            else{
+                _buffer.push_front(elem);
+                return true;
+            }
         }
 
         /*!
@@ -75,8 +79,8 @@ namespace uhd{ namespace transport{
          */
         UHD_INLINE void push_with_wait(const elem_type &elem){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            _full_cond.wait(lock, boost::bind(&bounded_buffer<elem_type>::is_not_full, this));
-            _buffer.push_front(elem); ++_size;
+            _full_cond.wait(lock, boost::bind(&bounded_buffer<elem_type>::not_full, this));
+            _buffer.push_front(elem);
             lock.unlock();
             _empty_cond.notify_one();
         }
@@ -91,8 +95,8 @@ namespace uhd{ namespace transport{
         template<typename time_type> UHD_INLINE
         bool push_with_timed_wait(const elem_type &elem, const time_type &time){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            if (not _full_cond.timed_wait(lock, time, boost::bind(&bounded_buffer<elem_type>::is_not_full, this))) return false;
-            _buffer.push_front(elem); ++_size;
+            if (not _full_cond.timed_wait(lock, time, boost::bind(&bounded_buffer<elem_type>::not_full, this))) return false;
+            _buffer.push_front(elem);
             lock.unlock();
             _empty_cond.notify_one();
             return true;
@@ -105,8 +109,8 @@ namespace uhd{ namespace transport{
          */
         UHD_INLINE void pop_with_wait(elem_type &elem){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            _empty_cond.wait(lock, boost::bind(&bounded_buffer<elem_type>::is_not_empty, this));
-            elem = _buffer[--_size];
+            _empty_cond.wait(lock, boost::bind(&bounded_buffer<elem_type>::not_empty, this));
+            elem = _buffer.back(); _buffer.pop_back();
             lock.unlock();
             _full_cond.notify_one();
         }
@@ -121,8 +125,8 @@ namespace uhd{ namespace transport{
         template<typename time_type> UHD_INLINE
         bool pop_with_timed_wait(elem_type &elem, const time_type &time){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            if (not _empty_cond.timed_wait(lock, time, boost::bind(&bounded_buffer<elem_type>::is_not_empty, this))) return false;
-            elem = _buffer[--_size];
+            if (not _empty_cond.timed_wait(lock, time, boost::bind(&bounded_buffer<elem_type>::not_empty, this))) return false;
+            elem = _buffer.back(); _buffer.pop_back();
             lock.unlock();
             _full_cond.notify_one();
             return true;
@@ -130,10 +134,11 @@ namespace uhd{ namespace transport{
 
     private:
         boost::mutex _mutex;
-        boost::condition_variable _empty_cond, _full_cond;
+        boost::condition _empty_cond, _full_cond;
         boost::circular_buffer<elem_type> _buffer;
-        size_t _size;
 
+        bool not_full(void) const{return not _buffer.full();}
+        bool not_empty(void) const{return not _buffer.empty();}
     };
 
 }} //namespace

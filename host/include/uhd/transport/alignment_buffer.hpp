@@ -41,10 +41,9 @@ namespace uhd{ namespace transport{
          * \param width the number of elements to align
          */
         alignment_buffer(size_t capacity, size_t width){
-            _buffs.resize(width);
             for (size_t i = 0; i < width; i++){
-                _buffs[i].buff = bounded_buffer_sptr(new bounded_buffer_type(capacity));
-                _buffs[i].has_popped_element = false;
+                _buffs.push_back(bounded_buffer_sptr(new bounded_buffer_type(capacity)));
+                _all_indexes.push_back(i);
             }
         }
 
@@ -56,60 +55,72 @@ namespace uhd{ namespace transport{
         }
 
         /*!
-         * Push a single element into the buffer specified by index.
-         * Notify the condition variable for a thread blocked in pop.
+         * Push an element with sequence id into the buffer at index.
          * \param elem the element to push
          * \param seq the sequence identifier
          * \param index the buffer index
+         * \return true if the element fit without popping for space
          */
-        void push_elem_with_wait(const elem_type &elem, const seq_type &seq, size_t index){
-            _buffs[index].buff.push_with_wait(buff_contents_type(elem, seq));
-            _pushed_cond.notify_one();
+        UHD_INLINE bool push_with_pop_on_full(
+            const elem_type &elem,
+            const seq_type &seq,
+            size_t index
+        ){
+            return _buffs[index]->push_with_pop_on_full(buff_contents_type(elem, seq));
         }
 
         /*!
          * Pop an aligned set of elements from this alignment buffer.
          * \param elems a collection to store the aligned elements
+         * \param time the timeout time
+         * \return false when the operation times out
          */
-        template <typename elems_type>
-        void pop_elems_with_wait(elems_type &elems){
-            //TODO................................
+        template <typename elems_type, typename time_type>
+        bool pop_elems_with_timed_wait(elems_type &elems, const time_type &time){
             buff_contents_type buff_contents_tmp;
-            for (size_t i = 0; i < _buffs.size();){
-                if (_buffs[i].has_popped_element){
-                    i++:
-                    continue;
+            std::list<size_t> indexes_to_do(_all_indexes);
+
+            //the seq identifier to align with
+            seq_type expected_seq_id = seq_type();
+            bool expected_seq_id_valid = false;
+
+            //get an aligned set of elements from the buffers:
+            while(indexes_to_do.size() != 0){
+                size_t index = indexes_to_do.back();
+
+                //pop an element off for this index
+                if (not _buffs[index]->pop_with_timed_wait(buff_contents_tmp, time)) return false;
+
+                //grab the current sequence id if not valid
+                if (not expected_seq_id_valid){
+                    expected_seq_id_valid = true;
+                    expected_seq_id = buff_contents_tmp.second;
                 }
-                _buffs[i].pop_with_wait(buff_contents_tmp);
-                if (buff_contents_tmp.second == _expected_seq_id){
-                    _buffs[i].has_popped_element = true;
-                    i++;
+
+                //if the sequence id matches:
+                //  store the popped element into the output,
+                //  remove this index from the list and continue
+                if (buff_contents_tmp.second == expected_seq_id){
+                    elems[index] = buff_contents_tmp.first;
+                    indexes_to_do.pop_back();
                     continue;
                 }
 
-                //if the sequence number is older, pop until we get the current sequence number
-                //do this by setting has popped element false and continuing on the same condition
-                if (buff_contents_tmp.second < _expected_seq_id){
-                    _buffs[i].has_popped_element = false;
+                //if the sequence id is older:
+                //  continue with the same index to try again
+                if (buff_contents_tmp.second < expected_seq_id){
                     continue;
                 }
 
-                //if the sequence number is newer, start from scratch at the new sequence number
-                //do this by setting all has popped elements false and restarting on index zero
-                if (buff_contents_tmp.second > _expected_seq_id){
-                    _expected_seq_id = buff_contents_tmp.second;
-                    for (size_t j = 0; j < i; j++){
-                        _buffs[j].has_popped_element = false;
-                    }
-                    i = 0;
+                //if the sequence id is newer:
+                //  start from scratch at the new sequence number
+                if (buff_contents_tmp.second > expected_seq_id){
+                    expected_seq_id = buff_contents_tmp.second;
+                    indexes_to_do = _all_indexes;
                     continue;
                 }
             }
-            //if aligned
-            for (size_t i = 0; i < _buffs.size(); i++){
-                elems[i] = _buffs[i].popped_element;
-                _buffs[i].has_popped_element = false;
-            }
+            return true;
         }
 
     private:
@@ -117,18 +128,8 @@ namespace uhd{ namespace transport{
         typedef std::pair<elem_type, seq_type> buff_contents_type;
         typedef bounded_buffer<buff_contents_type> bounded_buffer_type;
         typedef boost::shared_ptr<bounded_buffer_type> bounded_buffer_sptr;
-        struct buff_type{
-            bounded_buffer_sptr buff;
-            elem_type popped_element;
-            bool has_popped_element;
-        };
-        std::vector<buff_type> _buffs;
-
-        //the seq identifier to align with
-        seq_type _expected_seq_id;
-
-        //a condition to notify when a new element is pushed
-        boost::condition_variable _pushed_cond;
+        std::vector<bounded_buffer_sptr> _buffs;
+        std::list<size_t> _all_indexes;
     };
 
 }} //namespace
