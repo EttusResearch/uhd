@@ -10,12 +10,10 @@ module aeMB_core_BE
     parameter MUL=0, parameter BSF=0)
     (input sys_clk_i,
      input sys_rst_i,
-
-     output iwb_stb_o,
-     output [ISIZ-1:0] iwb_adr_o,
-     input [31:0] iwb_dat_i,
-     input iwb_ack_i,
-
+     // Instruction port
+     output [14:0] if_adr,
+     input [31:0] if_dat,
+     // Data port
      output dwb_we_o,
      output dwb_stb_o,
      output [DSIZ-1:0] dwb_adr_o,
@@ -28,17 +26,28 @@ module aeMB_core_BE
      input sys_int_i, 
      input sys_exc_i);
 
-   assign  dwb_cyc_o = dwb_stb_o;
 
+   wire [ISIZ-1:0] iwb_adr_o;
+   wire [31:0] 	   iwb_dat_i;
+   wire 	   iwb_ack_i;
+   wire 	   iwb_stb_o;
+   
+   assign dwb_cyc_o = dwb_stb_o;
+   assign iwb_ack_i = 1'b1;
+   assign if_adr = iwb_adr_o[14:0];
+   assign iwb_dat_i = if_dat;
+
+   // Note some "wishbone" instruction fetch signals pruned on external interface
+   // but not propogated change deep into aeMB.
    aeMB_edk32 #(.IW(ISIZ),.DW(DSIZ),.MUL(MUL),.BSF(BSF))
      aeMB_edk32 (.sys_clk_i(sys_clk_i), 
 		 .sys_rst_i(sys_rst_i),
-		 
+		 // Instruction Port
 		 .iwb_stb_o(iwb_stb_o),
 		 .iwb_adr_o(iwb_adr_o[ISIZ-1:2]),
 		 .iwb_ack_i(iwb_ack_i),
 		 .iwb_dat_i(iwb_dat_i),
-		 
+		 // Data port
 		 .dwb_wre_o(dwb_we_o),
 		 .dwb_stb_o(dwb_stb_o),
 		 .dwb_adr_o(dwb_adr_o[DSIZ-1:2]),
