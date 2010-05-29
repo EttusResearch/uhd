@@ -46,12 +46,42 @@ class udp_zero_copy_impl:
 public:
     typedef boost::shared_ptr<udp_zero_copy_impl> sptr;
 
-    //structors
-    udp_zero_copy_impl(const std::string &addr, const std::string &port);
-    ~udp_zero_copy_impl(void);
+    udp_zero_copy_impl(
+        const std::string &addr,
+        const std::string &port
+    ):
+        phony_zero_copy_recv_if(MAX_DGRAM_SIZE),
+        phony_zero_copy_send_if(MAX_DGRAM_SIZE)
+    {
+        //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
+
+        // resolve the address
+        boost::asio::ip::udp::resolver resolver(_io_service);
+        boost::asio::ip::udp::resolver::query query(boost::asio::ip::udp::v4(), addr, port);
+        boost::asio::ip::udp::endpoint receiver_endpoint = *resolver.resolve(query);
+
+        // create, open, and connect the socket
+        _socket = new boost::asio::ip::udp::socket(_io_service);
+        _socket->open(boost::asio::ip::udp::v4());
+        _socket->connect(receiver_endpoint);
+
+        // set recv timeout
+        timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = size_t(RECV_TIMEOUT*1e6);
+        UHD_ASSERT_THROW(setsockopt(
+            _socket->native(),
+            SOL_SOCKET, SO_RCVTIMEO,
+            (const char *)&tv, sizeof(timeval)
+        ) == 0);
+    }
+
+    ~udp_zero_copy_impl(void){
+        delete _socket;
+    }
 
     //get size for internal socket buffer
-    template <typename Opt> size_t get_buff_size(void){
+    template <typename Opt> size_t get_buff_size(void) const{
         Opt option;
         _socket->get_option(option);
         return option.value();
@@ -62,6 +92,20 @@ public:
         Opt option(num_bytes);
         _socket->set_option(option);
         return get_buff_size<Opt>();
+    }
+
+
+    //The number of frames is approximately the buffer size divided by the max datagram size.
+    //In reality, this is a phony zero-copy interface and the number of frames is infinite.
+    //However, its sensible to advertise a frame count that is approximate to buffer size.
+    //This way, the transport caller will have an idea about how much buffering to create.
+
+    size_t get_num_recv_frames(void) const{
+        return this->get_buff_size<boost::asio::socket_base::receive_buffer_size>()/MAX_DGRAM_SIZE;
+    }
+
+    size_t get_num_send_frames(void) const{
+        return this->get_buff_size<boost::asio::socket_base::send_buffer_size>()/MAX_DGRAM_SIZE;
     }
 
 private:
@@ -77,41 +121,10 @@ private:
     }
 };
 
-udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port):
-    phony_zero_copy_recv_if(MAX_DGRAM_SIZE),
-    phony_zero_copy_send_if(MAX_DGRAM_SIZE)
-{
-    //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
-
-    // resolve the address
-    boost::asio::ip::udp::resolver resolver(_io_service);
-    boost::asio::ip::udp::resolver::query query(boost::asio::ip::udp::v4(), addr, port);
-    boost::asio::ip::udp::endpoint receiver_endpoint = *resolver.resolve(query);
-
-    // create, open, and connect the socket
-    _socket = new boost::asio::ip::udp::socket(_io_service);
-    _socket->open(boost::asio::ip::udp::v4());
-    _socket->connect(receiver_endpoint);
-
-    // set recv timeout
-    timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = size_t(RECV_TIMEOUT*1e6);
-    UHD_ASSERT_THROW(setsockopt(
-        _socket->native(),
-        SOL_SOCKET, SO_RCVTIMEO,
-        (const char *)&tv, sizeof(timeval)
-    ) == 0);
-}
-
-udp_zero_copy_impl::~udp_zero_copy_impl(void){
-    delete _socket;
-}
-
 /***********************************************************************
  * UDP zero copy make function
  **********************************************************************/
-template<typename Opt> static inline void resize_buff_helper(
+template<typename Opt> static void resize_buff_helper(
     udp_zero_copy_impl::sptr udp_trans,
     size_t target_size,
     const std::string &name
