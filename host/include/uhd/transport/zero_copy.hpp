@@ -25,109 +25,169 @@
 
 namespace uhd{ namespace transport{
 
-/*!
- * A managed receive buffer:
- * Contains a reference to transport-managed memory,
- * and a method to release the memory after reading.
- */
-class UHD_API managed_recv_buffer : boost::noncopyable{
-public:
-    typedef boost::shared_ptr<managed_recv_buffer> sptr;
+    /*!
+     * A managed receive buffer:
+     * Contains a reference to transport-managed memory,
+     * and a method to release the memory after reading.
+     */
+    class UHD_API managed_recv_buffer : boost::noncopyable{
+    public:
+        typedef boost::shared_ptr<managed_recv_buffer> sptr;
+
+        /*!
+         * Managed recv buffer destructor:
+         * Signal to the transport that we are done with the buffer.
+         * This should be called to release the buffer to the transport.
+         * After calling, the referenced memory should be considered invalid.
+         */
+        virtual ~managed_recv_buffer(void) = 0;
+
+        /*!
+         * Get the size of the underlying buffer.
+         * \return the number of bytes
+         */
+        size_t size(void) const{
+            return boost::asio::buffer_size(this->get());
+        }
+
+        /*!
+         * Get a pointer to the underlying buffer.
+         * \return a pointer into memory
+         */
+        template <class T> T cast(void) const{
+            return boost::asio::buffer_cast<T>(this->get());
+        }
+
+    private:
+        /*!
+         * Get a reference to the internal const buffer.
+         * The buffer has a reference to memory and a size.
+         * \return a boost asio const buffer
+         */
+        virtual const boost::asio::const_buffer &get(void) const = 0;
+    };
 
     /*!
-     * Managed recv buffer destructor:
-     * Signal to the transport that we are done with the buffer.
-     * This should be called to release the buffer to the transport.
-     * After calling, the referenced memory should be considered invalid.
+     * A managed send buffer:
+     * Contains a reference to transport-managed memory,
+     * and a method to release the memory after writing.
      */
-    virtual ~managed_recv_buffer(void){};
+    class UHD_API managed_send_buffer : boost::noncopyable{
+    public:
+        typedef boost::shared_ptr<managed_send_buffer> sptr;
+
+        /*!
+         * Signal to the transport that we are done with the buffer.
+         * This should be called to commit the write to the transport object.
+         * After calling, the referenced memory should be considered invalid.
+         * \param num_bytes the number of bytes written into the buffer
+         */
+        virtual void commit(size_t num_bytes) = 0;
+
+        /*!
+         * Get the size of the underlying buffer.
+         * \return the number of bytes
+         */
+        size_t size(void) const{
+            return boost::asio::buffer_size(this->get());
+        }
+
+        /*!
+         * Get a pointer to the underlying buffer.
+         * \return a pointer into memory
+         */
+        template <class T> T cast(void) const{
+            return boost::asio::buffer_cast<T>(this->get());
+        }
+
+    private:
+        /*!
+         * Get a reference to the internal mutable buffer.
+         * The buffer has a reference to memory and a size.
+         * \return a boost asio mutable buffer
+         */
+        virtual const boost::asio::mutable_buffer &get(void) const = 0;
+    };
 
     /*!
-     * Get the size of the underlying buffer.
-     * \return the number of bytes
+     * A zero-copy interface for transport objects.
+     * Provides a way to get send and receive buffers
+     * with memory managed by the transport object.
      */
-    size_t size(void) const{
-        return boost::asio::buffer_size(this->get());
-    }
+    class UHD_API zero_copy_if : boost::noncopyable{
+    public:
+        typedef boost::shared_ptr<zero_copy_if> sptr;
+
+        /*!
+         * Get a new receive buffer from this transport object.
+         */
+        virtual managed_recv_buffer::sptr get_recv_buff(void) = 0;
+
+        /*!
+         * Get a new send buffer from this transport object.
+         */
+        virtual managed_send_buffer::sptr get_send_buff(void) = 0;
+    };
 
     /*!
-     * Get a pointer to the underlying buffer.
-     * \return a pointer into memory
+     * A phony-zero-copy interface for transport objects that
+     * provides a zero-copy interface on top of copying transport.
+     * This interface implements the get managed recv buffer,
+     * the base class must implement the private recv method.
      */
-    template <class T> T cast(void) const{
-        return boost::asio::buffer_cast<T>(this->get());
-    }
+    class UHD_API phony_zero_copy_recv_if : public virtual zero_copy_if{
+    public:
 
-private:
-    /*!
-     * Get a reference to the internal const buffer.
-     * The buffer has a reference to memory and a size.
-     * \return a boost asio const buffer
-     */
-    virtual const boost::asio::const_buffer &get(void) const = 0;
-};
+        //! structors
+        phony_zero_copy_recv_if(size_t max_buff_size);
+        ~phony_zero_copy_recv_if(void);
 
-/*!
- * A managed send buffer:
- * Contains a reference to transport-managed memory,
- * and a method to release the memory after writing.
- */
-class UHD_API managed_send_buffer : boost::noncopyable{
-public:
-    typedef boost::shared_ptr<managed_send_buffer> sptr;
+        /*!
+         * Get a new receive buffer from this transport object.
+         */
+        managed_recv_buffer::sptr get_recv_buff(void);
 
-    /*!
-     * Signal to the transport that we are done with the buffer.
-     * This should be called to commit the write to the transport object.
-     * After calling, the referenced memory should be considered invalid.
-     * \param num_bytes the number of bytes written into the buffer
-     */
-    virtual void commit(size_t num_bytes) = 0;
+    private:
+
+        /*!
+         * Perform a private copying recv.
+         * \param buff the buffer to write data into
+         * \return the number of bytes written to buff
+         */
+        virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
+
+        struct impl; impl *_impl; //private implementation details
+    };
 
     /*!
-     * Get the size of the underlying buffer.
-     * \return the number of bytes
+     * A phony-zero-copy interface for transport objects that
+     * provides a zero-copy interface on top of copying transport.
+     * This interface implements the get managed send buffer,
+     * the base class must implement the private send method.
      */
-    size_t size(void) const{
-        return boost::asio::buffer_size(this->get());
-    }
+    class UHD_API phony_zero_copy_send_if : public virtual zero_copy_if{
+    public:
 
-    /*!
-     * Get a pointer to the underlying buffer.
-     * \return a pointer into memory
-     */
-    template <class T> T cast(void) const{
-        return boost::asio::buffer_cast<T>(this->get());
-    }
+        //! structors
+        phony_zero_copy_send_if(size_t max_buff_size);
+        ~phony_zero_copy_send_if(void);
 
-private:
-    /*!
-     * Get a reference to the internal mutable buffer.
-     * The buffer has a reference to memory and a size.
-     * \return a boost asio mutable buffer
-     */
-    virtual const boost::asio::mutable_buffer &get(void) const = 0;
-};
+        /*!
+         * Get a new send buffer from this transport object.
+         */
+        managed_send_buffer::sptr get_send_buff(void);
 
-/*!
- * A zero-copy interface for transport objects.
- * Provides a way to get send and receive buffers
- * with memory managed by the transport object.
- */
-class UHD_API zero_copy_if : boost::noncopyable{
-public:
-    typedef boost::shared_ptr<zero_copy_if> sptr;
+    private:
 
-    /*!
-     * Get a new receive buffer from this transport object.
-     */
-    virtual managed_recv_buffer::sptr get_recv_buff(void) = 0;
+        /*!
+         * Perform a private copying send.
+         * \param buff the buffer to read data from
+         * \return the number of bytes read from buff
+         */
+        virtual size_t send(const boost::asio::const_buffer &buff) = 0;
 
-    /*!
-     * Get a new send buffer from this transport object.
-     */
-    virtual managed_send_buffer::sptr get_send_buff(void) = 0;
-};
+        struct impl; impl *_impl; //private implementation details
+    };
 
 }} //namespace
 

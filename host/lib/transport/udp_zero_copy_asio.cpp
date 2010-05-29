@@ -32,63 +32,17 @@ static const size_t MAX_DGRAM_SIZE = 2048; //assume max size on send and recv
 static const double RECV_TIMEOUT = 0.1; // 100 ms
 
 /***********************************************************************
- * Managed receive buffer implementation for udp zero-copy asio:
- **********************************************************************/
-class managed_recv_buffer_impl : public managed_recv_buffer{
-public:
-    managed_recv_buffer_impl(const boost::asio::const_buffer &buff) : _buff(buff){
-        /* NOP */
-    }
-
-    ~managed_recv_buffer_impl(void){
-        delete [] this->cast<const boost::uint8_t *>();
-    }
-
-private:
-    const boost::asio::const_buffer &get(void) const{
-        return _buff;
-    }
-
-    const boost::asio::const_buffer _buff;
-};
-
-/***********************************************************************
- * Managed send buffer implementation for udp zero-copy asio:
- **********************************************************************/
-class managed_send_buffer_impl : public managed_send_buffer{
-public:
-    managed_send_buffer_impl(
-        const boost::asio::mutable_buffer &buff,
-        boost::asio::ip::udp::socket *socket
-    ) : _buff(buff), _socket(socket){
-        /* NOP */
-    }
-
-    ~managed_send_buffer_impl(void){
-        /* NOP */
-    }
-
-    void commit(size_t num_bytes){
-        _socket->send(boost::asio::buffer(_buff, num_bytes));
-    }
-
-private:
-    const boost::asio::mutable_buffer &get(void) const{
-        return _buff;
-    }
-
-    const boost::asio::mutable_buffer _buff;
-    boost::asio::ip::udp::socket      *_socket;
-};
-
-/***********************************************************************
  * Zero Copy UDP implementation with ASIO:
  *   This is the portable zero copy implementation for systems
  *   where a faster, platform specific solution is not available.
  *   However, it is not a true zero copy implementation as each
  *   send and recv requires a copy operation to/from userspace.
  **********************************************************************/
-class udp_zero_copy_impl : public udp_zero_copy{
+class udp_zero_copy_impl:
+    public virtual phony_zero_copy_recv_if,
+    public virtual phony_zero_copy_send_if,
+    public virtual udp_zero_copy
+{
 public:
     typedef boost::shared_ptr<udp_zero_copy_impl> sptr;
 
@@ -96,17 +50,14 @@ public:
     udp_zero_copy_impl(const std::string &addr, const std::string &port);
     ~udp_zero_copy_impl(void);
 
-    //send/recv
-    managed_recv_buffer::sptr get_recv_buff(void);
-    managed_send_buffer::sptr get_send_buff(void);
-
-    //manage buffer
+    //get size for internal socket buffer
     template <typename Opt> size_t get_buff_size(void){
         Opt option;
         _socket->get_option(option);
         return option.value();
     }
 
+    //set size for internal socket buffer
     template <typename Opt> size_t resize_buff(size_t num_bytes){
         Opt option(num_bytes);
         _socket->set_option(option);
@@ -117,13 +68,19 @@ private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::io_service        _io_service;
 
-    //send and recv buffer memory (allocated once)
-    boost::uint8_t _send_mem[MIN_SOCK_BUFF_SIZE];
+    size_t recv(const boost::asio::mutable_buffer &buff){
+        return _socket->receive(boost::asio::buffer(buff));
+    }
 
-    managed_send_buffer::sptr _send_buff;
+    size_t send(const boost::asio::const_buffer &buff){
+        return _socket->send(boost::asio::buffer(buff));
+    }
 };
 
-udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port){
+udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port):
+    phony_zero_copy_recv_if(MAX_DGRAM_SIZE),
+    phony_zero_copy_send_if(MAX_DGRAM_SIZE)
+{
     //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
     // resolve the address
@@ -135,11 +92,6 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
     _socket = new boost::asio::ip::udp::socket(_io_service);
     _socket->open(boost::asio::ip::udp::v4());
     _socket->connect(receiver_endpoint);
-
-    // create the managed send buff (just once)
-    _send_buff = managed_send_buffer::sptr(new managed_send_buffer_impl(
-        boost::asio::buffer(_send_mem, MIN_SOCK_BUFF_SIZE), _socket
-    ));
 
     // set recv timeout
     timeval tv;
@@ -154,23 +106,6 @@ udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::strin
 
 udp_zero_copy_impl::~udp_zero_copy_impl(void){
     delete _socket;
-}
-
-managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
-    //allocate memory
-    boost::uint8_t *recv_mem = new boost::uint8_t[MAX_DGRAM_SIZE];
-
-    //call recv() with timeout option
-    size_t num_bytes = _socket->receive(boost::asio::buffer(recv_mem, MAX_DGRAM_SIZE));
-
-    //create a new managed buffer to house the data
-    return managed_recv_buffer::sptr(
-        new managed_recv_buffer_impl(boost::asio::buffer(recv_mem, num_bytes))
-    );
-}
-
-managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
-    return _send_buff; //FIXME there is only ever one send buff, we assume that the caller doesnt hang onto these
 }
 
 /***********************************************************************

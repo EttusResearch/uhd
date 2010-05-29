@@ -34,7 +34,7 @@ namespace uhd{ namespace transport{
  * If no platform specific solution is available, make returns a boost asio
  * implementation that wraps the functionality around a standard send/recv calls.
  */
-class UHD_API udp_zero_copy : public zero_copy_if{
+class UHD_API udp_zero_copy : public virtual zero_copy_if{
 public:
     typedef boost::shared_ptr<udp_zero_copy> sptr;
 
