@@ -33,7 +33,7 @@
 #include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include "../../transport/vrt_packet_handler.hpp"
+#include "../../transport/vrt_packet_handler_state.hpp"
 
 /*!
  * Make a usrp2 dboard interface.

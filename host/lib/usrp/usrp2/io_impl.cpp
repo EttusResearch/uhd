@@ -15,11 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "../../transport/vrt_packet_handler.hpp"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
 #include <uhd/transport/convert_types.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
+#include <boost/bind.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -65,6 +67,10 @@ void usrp2_impl::io_init(void){
 /***********************************************************************
  * Send Data
  **********************************************************************/
+static inline managed_send_buffer::sptr get_send_buff(zero_copy_if::sptr zc_if){
+    return zc_if->get_send_buff();
+}
+
 size_t usrp2_impl::send(
     const asio::const_buffer &buff,
     const tx_metadata_t &metadata,
@@ -76,7 +82,7 @@ size_t usrp2_impl::send(
         buff, metadata, send_mode,  //buffer to empty and samples metadata
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
-        _data_transport,            //zero copy interface
+        boost::bind(get_send_buff, _data_transport),
         get_max_send_samps_per_packet()
     );
 }
@@ -84,6 +90,10 @@ size_t usrp2_impl::send(
 /***********************************************************************
  * Receive Data
  **********************************************************************/
+static inline managed_recv_buffer::sptr get_recv_buff(zero_copy_if::sptr zc_if){
+    return zc_if->get_recv_buff();
+}
+
 size_t usrp2_impl::recv(
     const asio::mutable_buffer &buff,
     rx_metadata_t &metadata,
@@ -95,6 +105,6 @@ size_t usrp2_impl::recv(
         buff, metadata, recv_mode,  //buffer to fill and samples metadata
         io_type, _rx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
-        _data_transport             //zero copy interface
+        boost::bind(get_recv_buff, _data_transport)
     );
 }
