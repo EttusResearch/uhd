@@ -26,18 +26,46 @@ module u1e
    
    inout [15:0] io_tx, inout [15:0] io_rx,
 
-   output [13:0] TX, output TXSYNC, output TXBLANK,
-   
+   output reg [13:0] TX, output reg TXSYNC, output TXBLANK,
+   input [11:0] DA, input [11:0] DB, input RXSYNC,
+  
    input PPS_IN
    );
 
-   // FPGA-specific pins connections
-   wire  clk_fpga;
+   // /////////////////////////////////////////////////////////////////////////
+   // Clocking
+   wire  clk_fpga, clk_fpga_in, clk_2x, dcm_rst, dcm_locked;
    
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
-   clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
+   clk_fpga_pin (.O(clk_fpga_in),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
 
-   // SPI pins
+   DCM #(.CLK_FEEDBACK ( "1X" ),
+	 .CLKDV_DIVIDE ( 2.0 ),
+	 .CLKFX_DIVIDE ( 1 ),
+	 .CLKFX_MULTIPLY ( 2 ),
+	 .CLKIN_DIVIDE_BY_2 ( "FALSE" ),
+	 .CLKIN_PERIOD ( 15.625 ),
+	 .CLKOUT_PHASE_SHIFT ( "NONE" ),
+	 .DESKEW_ADJUST ( "SYSTEM_SYNCHRONOUS" ),
+	 .DFS_FREQUENCY_MODE ( "LOW" ),
+	 .DLL_FREQUENCY_MODE ( "LOW" ),
+	 .DUTY_CYCLE_CORRECTION ( "TRUE" ),
+	 .FACTORY_JF ( 16'h8080 ),
+	 .PHASE_SHIFT ( 0 ),
+	 .STARTUP_WAIT ( "FALSE" ))
+   clk_doubler (.CLKFB(clk_fpga), .CLKIN(clk_fpga_in), .RST(dcm_rst), 
+                .DSSEN(0), .PSCLK(0), .PSEN(0), .PSINCDEC(0), .PSDONE(), 
+		.CLKDV(), .CLKFX(), .CLKFX180(), 
+                .CLK2X(clk_2x), .CLK2X180(), 
+                .CLK0(clk_fpga), .CLK90(), .CLK180(), .CLK270(), 
+                .LOCKED(dcm_locked), .STATUS());
+
+   //BUFG dspclk_BUFG (.I(dcm_out), .O(dsp_clk));
+   //BUFG wbclk_BUFG (.I(clk_div), .O(wb_clk));
+
+
+   // /////////////////////////////////////////////////////////////////////////
+   // SPI
    wire  mosi, sclk, miso;
    assign { db_sclk_tx, db_mosi_tx } = ~db_sen_tx ? {sclk,mosi} : 2'b0;
    assign { db_sclk_rx, db_mosi_rx } = ~db_sen_rx ? {sclk,mosi} : 2'b0;
@@ -45,7 +73,27 @@ module u1e
    assign { cgen_sclk, cgen_mosi } = ~cgen_sen_b ? {sclk,mosi} : 2'b0;
    assign miso = (~db_sen_tx & db_miso_tx) | (~db_sen_rx & db_miso_rx) |
 		 (~sen_codec & miso_codec) | (~cgen_sen_b & cgen_miso);
+
+   // /////////////////////////////////////////////////////////////////////////
+   // TX DAC -- handle the interleaved data bus to DAC, with clock doubling DLL
+
+   assign TXBLANK = 0;
+   wire [13:0] tx_i, tx_q;
    
+   always @(posedge clk_2x)
+     if(clk_fpga)
+       begin
+	  TX <= tx_i;
+	  TXSYNC <= 0;  // Low indicates first data item
+       end
+     else
+       begin
+	  TX <= tx_q;
+	  TXSYNC <= 1;
+       end
+
+   // /////////////////////////////////////////////////////////////////////////
+   // Main U1E Core
    u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(~debug_pb[2]),
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_pb(~debug_pb), .dip_sw(dip_sw), .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
@@ -59,10 +107,16 @@ module u1e
 		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
 		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
 		     .io_tx(io_tx), .io_rx(io_rx),
-		     .tx(TX), .txsync(TXSYNC), .txblank(TXBLANK),
+		     .tx_i(tx_i), .tx_q(tx_q), 
+		     .rx_i(DA), .rx_q(DB),
 		     .misc_gpio( {{overo_gpio128,overo_gpio163,overo_gpio170,overo_gpio176},
 				  {overo_gpio0,overo_gpio14,overo_gpio21,overo_gpio22},
 				  {overo_gpio23,overo_gpio64,overo_gpio65,overo_gpio127}}),
 		     .pps_in(PPS_IN) );
+
+   // /////////////////////////////////////////////////////////////////////////
+   // Local Debug
+   // assign debug_clk = {clk_fpga, clk_2x };
+   // assign debug = { TXSYNC, TXBLANK, TX };
    
 endmodule // u1e

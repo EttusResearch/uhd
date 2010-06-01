@@ -189,6 +189,11 @@ gpmc/gpmc_to_fifo_async.v \
 gpmc/fifo_to_gpmc_async.v \
 gpmc/fifo_watcher.v \
 gpmc/gpmc_wb.v \
+vrt/vita_rx_control.v \
+vrt/vita_rx_framer.v \
+vrt/vita_tx_control.v \
+vrt/vita_tx_deframer.v \
+timing/time_compare.v \
 top/u1e/u1e_core.v \
 top/u1e/u1e.ucf \
 top/u1e/timing.ucf \
