@@ -729,7 +729,15 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
+
+   assign debug_clk[1:0] = 2'b00;
+   assign debug = 32'd0;
+   assign debug_gpio_0 = 32'd0;
+   assign debug_gpio_1 = 32'd0;
    
+endmodule // u2_core
+
+   /*
    // FIFO Level Debugging
    reg [31:0]  host_to_dsp_fifo,dsp_to_host_fifo,eth_mac_debug,serdes_to_dsp_fifo,dsp_to_serdes_fifo;
    
@@ -756,15 +764,12 @@ module u2_core
    assign  debug_clk[0]  = GMII_RX_CLK; // wb_clk;
    assign  debug_clk[1]  = dsp_clk;
 
-/*
- 
    wire        mdio_cpy  = MDIO;
    assign  debug 	 = { { 1'b0, s6_stb, s6_ack, s6_we, s6_sel[3:0] },
 			     { s6_adr[15:8] },
 			     { s6_adr[7:0] },
 			     { 6'd0, mdio_cpy, MDC } };
-*/
-/*
+
    assign debug 	 = { { GMII_TXD },
 			     { 5'd0, GMII_TX_EN, GMII_TX_ER, GMII_GTX_CLK },
 			     { wr2_flags, rd2_flags },
@@ -773,9 +778,8 @@ module u2_core
 			     { 5'd0, GMII_RX_DV, GMII_RX_ER, GMII_RX_CLK },
 			     { wr2_flags, rd2_flags },
 			     { GMII_TX_EN,3'd0, wr2_ready_i, wr2_ready_o, rd2_ready_i, rd2_ready_o } };
- */
 
-//   assign debug = debug_udp;
+   assign debug = debug_udp;
    assign debug = vrc_debug;
    assign debug_gpio_0 = { {pps_in, pps_int, 2'd0, vita_state},
 			   {2'd0, rx_dst_rdy, rx_src_rdy, rx_data[99:96]},
@@ -784,14 +788,12 @@ module u2_core
 
    assign debug_gpio_1 = {vita_time[63:32] };
    
-/*
-    assign debug_gpio_1 = { { tx_f19_data[15:8] },
+   assign debug_gpio_1 = { { tx_f19_data[15:8] },
 			   { tx_f19_data[7:0] },
 			   { 3'd0, tx_f19_src_rdy, tx_f19_dst_rdy, tx_f19_data[18:16] },
 			   { 2'b0, rd2_ready_i, rd2_ready_o, rd2_flags } };
  */  
    
-endmodule // u2_core
 
 //   wire        debug_mux;
 //   setting_reg #(.my_addr(5)) sr_debug (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
