@@ -27,11 +27,12 @@ module u1e_core
 
    localparam TXFIFOSIZE = 11;
    localparam RXFIFOSIZE = 11;
-   localparam SR_TIME64 = 0;
-   localparam SR_RX_DSP = 0;
-   localparam SR_RX_CTRL = 0;
-   localparam SR_TX_DSP = 0;
-   localparam SR_TX_CTRL = 0;
+
+   localparam SR_RX_DSP = 0;    // 7 regs
+   localparam SR_RX_CTRL = 8;   // 9 regs
+   localparam SR_TX_DSP = 17;   // 5 regs
+   localparam SR_TX_CTRL = 24;  // 2 regs
+   localparam SR_TIME64 = 28;    // 4 regs
       
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst = rst_fpga;
