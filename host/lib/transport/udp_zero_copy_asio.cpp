@@ -39,9 +39,9 @@ static const double RECV_TIMEOUT = 0.1; //100 ms
  *   send and recv requires a copy operation to/from userspace.
  **********************************************************************/
 class udp_zero_copy_impl:
-    public virtual phony_zero_copy_recv_if,
-    public virtual phony_zero_copy_send_if,
-    public virtual udp_zero_copy
+    public phony_zero_copy_recv_if,
+    public phony_zero_copy_send_if,
+    public udp_zero_copy
 {
 public:
     typedef boost::shared_ptr<udp_zero_copy_impl> sptr;
