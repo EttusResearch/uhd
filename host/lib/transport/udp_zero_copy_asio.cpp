@@ -20,7 +20,6 @@
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 
 using namespace uhd::transport;
@@ -30,6 +29,7 @@ using namespace uhd::transport;
  **********************************************************************/
 static const size_t MIN_SOCK_BUFF_SIZE = size_t(100e3);
 static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
+static const double RECV_TIMEOUT = 0.1; //100 ms
 
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
@@ -64,6 +64,7 @@ public:
         _socket = new boost::asio::ip::udp::socket(_io_service);
         _socket->open(boost::asio::ip::udp::v4());
         _socket->connect(receiver_endpoint);
+        _sock_fd = _socket->native();
     }
 
     ~udp_zero_copy_impl(void){
@@ -101,20 +102,37 @@ public:
 private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::io_service        _io_service;
+    int                            _sock_fd;
 
     size_t recv(const boost::asio::mutable_buffer &buff){
-        boost::asio::deadline_timer timer(_socket->get_io_service());
-        timer.expires_from_now(boost::posix_time::milliseconds(100));
-        while (not (_socket->available() or timer.expires_from_now().is_negative())){
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-        }
+        //setup timeval for timeout
+        timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = int(RECV_TIMEOUT*1e6);
 
-        if (_socket->available()) return _socket->receive(boost::asio::buffer(buff));
-        return 0; //no bytes available, timeout...
+        //setup rset for timeout
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(_sock_fd, &rset);
+
+        //call select to perform timed wait
+        if (::select(_sock_fd+1, &rset, NULL, NULL, &tv) <= 0) return 0;
+
+        return ::recv(
+            _sock_fd,
+            boost::asio::buffer_cast<char *>(buff),
+            boost::asio::buffer_size(buff),
+            0
+        );
     }
 
     size_t send(const boost::asio::const_buffer &buff){
-        return _socket->send(boost::asio::buffer(buff));
+        return ::send(
+            _sock_fd,
+            boost::asio::buffer_cast<const char *>(buff),
+            boost::asio::buffer_size(buff),
+            0
+        );
     }
 };
 
