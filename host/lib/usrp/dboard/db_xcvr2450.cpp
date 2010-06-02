@@ -375,7 +375,7 @@ static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
         gain = 5;
         return max2829_regs_t::TX_BASEBAND_GAIN_5DB;
     }
-    UHD_ASSERT_THROW(false);
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 /*!
@@ -417,7 +417,7 @@ void xcvr2450::set_tx_gain(float gain, const std::string &name){
         _max2829_regs.tx_baseband_gain = gain_to_tx_bb_reg(gain);
         send_reg(0x9);
     }
-    else UHD_ASSERT_THROW(false);
+    else UHD_THROW_INVALID_CODE_PATH();
     _tx_gains[name] = gain;
 }
 
@@ -431,7 +431,7 @@ void xcvr2450::set_rx_gain(float gain, const std::string &name){
         _max2829_regs.rx_lna_gain = gain_to_rx_lna_reg(gain);
         send_reg(0xB);
     }
-    else UHD_ASSERT_THROW(false);
+    else UHD_THROW_INVALID_CODE_PATH();
     _rx_gains[name] = gain;
 }
 

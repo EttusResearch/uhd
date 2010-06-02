@@ -247,7 +247,7 @@ static float rx_pga0_gain_to_dac_volts(float &gain){
 
 void rfx_xcvr::set_tx_gain(float, const std::string &name){
     assert_has(rfx_tx_gain_ranges.keys(), name, "rfx tx gain name");
-    UHD_ASSERT_THROW(false); //no gains to set
+    UHD_THROW_INVALID_CODE_PATH(); //no gains to set
 }
 
 void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
@@ -259,7 +259,7 @@ void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
         //write the new voltage to the aux dac
         this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, 1, dac_volts);
     }
-    else UHD_ASSERT_THROW(false);
+    else UHD_THROW_INVALID_CODE_PATH();
 }
 
 /***********************************************************************

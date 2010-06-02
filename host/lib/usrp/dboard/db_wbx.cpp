@@ -248,7 +248,7 @@ void wbx_xcvr::set_tx_gain(float gain, const std::string &name){
         //write the new voltage to the aux dac
         this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, 0, dac_volts);
     }
-    else UHD_ASSERT_THROW(false);
+    else UHD_THROW_INVALID_CODE_PATH();
 }
 
 void wbx_xcvr::set_rx_gain(float gain, const std::string &name){
@@ -260,7 +260,7 @@ void wbx_xcvr::set_rx_gain(float gain, const std::string &name){
         //write the new gain to atr regs
         update_atr();
     }
-    else UHD_ASSERT_THROW(false);
+    else UHD_THROW_INVALID_CODE_PATH();
 }
 
 /***********************************************************************
