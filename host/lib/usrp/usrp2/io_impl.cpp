@@ -72,9 +72,9 @@ usrp2_impl::io_impl::~io_impl(void){
 
 managed_recv_buffer::sptr usrp2_impl::io_impl::get_recv_buff(void){
     managed_recv_buffer::sptr buff;
+    boost::this_thread::disable_interruption di; //disable because the wait can throw
     recv_pirate_booty->pop_with_timed_wait(buff, boost::posix_time::milliseconds(100));
-    //timeout means a null sptr...
-    return buff;
+    return buff; //a timeout means that we return a null sptr...
 }
 
 void usrp2_impl::io_impl::recv_pirate_loop(zero_copy_if::sptr zc_if){
@@ -118,6 +118,8 @@ void usrp2_impl::io_init(void){
     );
     _iface->poke32(FR_RX_CTRL_VRT_STREAM_ID, 0);
     _iface->poke32(FR_RX_CTRL_VRT_TRAILER, 0);
+
+    std::cout << "TX samples per packet: " << get_max_send_samps_per_packet() << std::endl;
 
     //create new io impl
     _io_impl = new io_impl(_data_transport);
