@@ -28,7 +28,7 @@ module u1e_core
    localparam TXFIFOSIZE = 11;
    localparam RXFIFOSIZE = 11;
 
-   localparam SR_RX_DSP = 0;    // 7 regs
+   localparam SR_RX_DSP = 0;    // 5 regs
    localparam SR_RX_CTRL = 8;   // 9 regs
    localparam SR_TX_DSP = 17;   // 5 regs
    localparam SR_TX_CTRL = 24;  // 2 regs

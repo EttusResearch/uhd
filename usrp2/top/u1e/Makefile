@@ -160,7 +160,7 @@ sdr_lib/clip_reg.v \
 sdr_lib/cordic.v \
 sdr_lib/cordic_z24.v \
 sdr_lib/cordic_stage.v \
-sdr_lib/dsp_core_rx.v \
+sdr_lib/dsp_core_rx_udp.v \
 sdr_lib/dsp_core_tx.v \
 sdr_lib/hb_dec.v \
 sdr_lib/hb_interp.v \
