@@ -20,6 +20,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 
 using namespace uhd::transport;
@@ -29,7 +30,6 @@ using namespace uhd::transport;
  **********************************************************************/
 static const size_t MIN_SOCK_BUFF_SIZE = size_t(100e3);
 static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
-static const double RECV_TIMEOUT = 0.1; // 100 ms
 
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
@@ -64,16 +64,6 @@ public:
         _socket = new boost::asio::ip::udp::socket(_io_service);
         _socket->open(boost::asio::ip::udp::v4());
         _socket->connect(receiver_endpoint);
-
-        // set recv timeout
-        timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = size_t(RECV_TIMEOUT*1e6);
-        UHD_ASSERT_THROW(setsockopt(
-            _socket->native(),
-            SOL_SOCKET, SO_RCVTIMEO,
-            (const char *)&tv, sizeof(timeval)
-        ) == 0);
     }
 
     ~udp_zero_copy_impl(void){
@@ -113,7 +103,14 @@ private:
     boost::asio::io_service        _io_service;
 
     size_t recv(const boost::asio::mutable_buffer &buff){
-        return _socket->receive(boost::asio::buffer(buff));
+        boost::asio::deadline_timer timer(_socket->get_io_service());
+        timer.expires_from_now(boost::posix_time::milliseconds(100));
+        while (not (_socket->available() or timer.expires_from_now().is_negative())){
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        }
+
+        if (_socket->available()) return _socket->receive(boost::asio::buffer(buff));
+        return 0; //no bytes available, timeout...
     }
 
     size_t send(const boost::asio::const_buffer &buff){
