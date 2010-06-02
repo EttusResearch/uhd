@@ -19,15 +19,71 @@
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
 #include <uhd/transport/convert_types.hpp>
+#include <uhd/transport/bounded_buffer.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
+
+/***********************************************************************
+ * io impl details (internal to this file)
+ **********************************************************************/
+struct usrp2_impl::io_impl{
+
+    io_impl(zero_copy_if::sptr zc_if);
+    ~io_impl(void);
+
+    managed_recv_buffer::sptr get_recv_buff(void);
+
+    //state management for the vrt packet handler code
+    vrt_packet_handler::recv_state packet_handler_recv_state;
+    vrt_packet_handler::send_state packet_handler_send_state;
+
+    //methods and variables for the recv pirate
+    void recv_pirate_loop(zero_copy_if::sptr zc_if);
+    boost::thread *recv_pirate_thread; bool recv_pirate_running;
+    bounded_buffer<managed_recv_buffer::sptr>::sptr recv_pirate_booty;
+};
+
+usrp2_impl::io_impl::io_impl(zero_copy_if::sptr zc_if){
+    //create a large enough booty
+    size_t num_frames = zc_if->get_num_recv_frames();
+    std::cout << "Recv pirate num frames: " << num_frames << std::endl;
+    recv_pirate_booty = bounded_buffer<managed_recv_buffer::sptr>::make(num_frames);
+
+    //create a new pirate thread (yarr!!)
+    recv_pirate_thread = new boost::thread(
+        boost::bind(&usrp2_impl::io_impl::recv_pirate_loop, this, zc_if)
+    );
+}
+
+usrp2_impl::io_impl::~io_impl(void){
+    recv_pirate_running = false;
+    recv_pirate_thread->interrupt();
+    recv_pirate_thread->join();
+    delete recv_pirate_thread;
+}
+
+managed_recv_buffer::sptr usrp2_impl::io_impl::get_recv_buff(void){
+    managed_recv_buffer::sptr buff;
+    recv_pirate_booty->pop_with_timed_wait(buff, boost::posix_time::milliseconds(100));
+    //timeout means a null sptr...
+    return buff;
+}
+
+void usrp2_impl::io_impl::recv_pirate_loop(zero_copy_if::sptr zc_if){
+    recv_pirate_running = true;
+    while(recv_pirate_running){
+        managed_recv_buffer::sptr buff = zc_if->get_recv_buff();
+        if (buff->size()) recv_pirate_booty->push_with_pop_on_full(buff);
+    }
+}
 
 /***********************************************************************
  * Helper Functions
@@ -62,6 +118,13 @@ void usrp2_impl::io_init(void){
     );
     _iface->poke32(FR_RX_CTRL_VRT_STREAM_ID, 0);
     _iface->poke32(FR_RX_CTRL_VRT_TRAILER, 0);
+
+    //create new io impl
+    _io_impl = new io_impl(_data_transport);
+}
+
+void usrp2_impl::io_done(void){
+    delete _io_impl;
 }
 
 /***********************************************************************
@@ -78,7 +141,7 @@ size_t usrp2_impl::send(
     send_mode_t send_mode
 ){
     return vrt_packet_handler::send(
-        _packet_handler_send_state, //last state of the send handler
+        _io_impl->packet_handler_send_state, //last state of the send handler
         buff, metadata, send_mode,  //buffer to empty and samples metadata
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
@@ -90,10 +153,6 @@ size_t usrp2_impl::send(
 /***********************************************************************
  * Receive Data
  **********************************************************************/
-static inline managed_recv_buffer::sptr get_recv_buff(zero_copy_if::sptr zc_if){
-    return zc_if->get_recv_buff();
-}
-
 size_t usrp2_impl::recv(
     const asio::mutable_buffer &buff,
     rx_metadata_t &metadata,
@@ -101,10 +160,10 @@ size_t usrp2_impl::recv(
     recv_mode_t recv_mode
 ){
     return vrt_packet_handler::recv(
-        _packet_handler_recv_state, //last state of the recv handler
+        _io_impl->packet_handler_recv_state, //last state of the recv handler
         buff, metadata, recv_mode,  //buffer to fill and samples metadata
         io_type, _rx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
-        boost::bind(get_recv_buff, _data_transport)
+        boost::bind(&usrp2_impl::io_impl::get_recv_buff, _io_impl)
     );
 }

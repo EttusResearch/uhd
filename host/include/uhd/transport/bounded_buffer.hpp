@@ -57,10 +57,14 @@ namespace uhd{ namespace transport{
             if(_buffer.full()){
                 _buffer.pop_back();
                 _buffer.push_front(elem);
+                lock.unlock();
+                _empty_cond.notify_one();
                 return false;
             }
             else{
                 _buffer.push_front(elem);
+                lock.unlock();
+                _empty_cond.notify_one();
                 return true;
             }
         }

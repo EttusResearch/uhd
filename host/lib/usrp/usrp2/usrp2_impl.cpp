@@ -185,7 +185,8 @@ usrp2_impl::usrp2_impl(
 }
 
 usrp2_impl::~usrp2_impl(void){
-    /* NOP */
+    //cleanup the send and recv io
+    io_done();
 }
 
 /***********************************************************************

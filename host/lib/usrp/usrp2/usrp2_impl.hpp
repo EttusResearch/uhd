@@ -33,7 +33,6 @@
 #include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include "../../transport/vrt_packet_handler_state.hpp"
 
 /*!
  * Make a usrp2 dboard interface.
@@ -153,10 +152,10 @@ private:
         uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
 
-    vrt_packet_handler::recv_state _packet_handler_recv_state;
-    vrt_packet_handler::send_state _packet_handler_send_state;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
+    struct io_impl; io_impl *_io_impl;
     void io_init(void);
+    void io_done(void);
 
     //udp transports for control and data
     uhd::transport::udp_zero_copy::sptr _data_transport;

@@ -28,7 +28,7 @@ using namespace uhd::transport;
  * Constants
  **********************************************************************/
 static const size_t MIN_SOCK_BUFF_SIZE = size_t(100e3);
-static const size_t MAX_DGRAM_SIZE = 2048; //assume max size on send and recv
+static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
 static const double RECV_TIMEOUT = 0.1; // 100 ms
 
 /***********************************************************************
