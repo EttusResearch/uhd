@@ -122,20 +122,12 @@ void usrp2_impl::io_init(void){
     std::cout << "TX samples per packet: " << get_max_send_samps_per_packet() << std::endl;
 
     //create new io impl
-    _io_impl = new io_impl(_data_transport);
-}
-
-void usrp2_impl::io_done(void){
-    delete _io_impl;
+    _io_impl = boost::shared_ptr<io_impl>(new io_impl(_data_transport));
 }
 
 /***********************************************************************
  * Send Data
  **********************************************************************/
-static inline managed_send_buffer::sptr get_send_buff(zero_copy_if::sptr zc_if){
-    return zc_if->get_send_buff();
-}
-
 size_t usrp2_impl::send(
     const asio::const_buffer &buff,
     const tx_metadata_t &metadata,
@@ -147,7 +139,7 @@ size_t usrp2_impl::send(
         buff, metadata, send_mode,  //buffer to empty and samples metadata
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
-        boost::bind(get_send_buff, _data_transport),
+        boost::bind(&zero_copy_if::get_send_buff, _data_transport),
         get_max_send_samps_per_packet()
     );
 }

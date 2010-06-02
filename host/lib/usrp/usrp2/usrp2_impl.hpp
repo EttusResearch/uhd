@@ -153,9 +153,8 @@ private:
     ;
 
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    struct io_impl; io_impl *_io_impl;
+    struct io_impl; boost::shared_ptr<io_impl> _io_impl;
     void io_init(void);
-    void io_done(void);
 
     //udp transports for control and data
     uhd::transport::udp_zero_copy::sptr _data_transport;
