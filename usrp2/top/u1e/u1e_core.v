@@ -138,12 +138,14 @@ module u1e_core
    wire 	 strobe_rx, strobe_tx;
    wire 	 rx1_dst_rdy, rx1_src_rdy;
    wire [99:0] 	 rx1_data;
+   wire 	 run_rx;
+   
    
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_a({rx_i,2'b0}),.adc_ovf_a(0),.adc_b({rx_q,2'b0}),.adc_ovf_b(0),
-      .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
+      .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
@@ -169,6 +171,7 @@ module u1e_core
    wire 	 tx1_src_rdy, tx1_dst_rdy;
    wire [15:0] 	 tx_i_int, tx_q_int;
    wire [31:0] 	 debug_vtc, debug_vtd, debug_vt;
+   wire 	 run_tx;
    
    vita_tx_deframer #(.BASE(SR_TX_CTRL), .MAXCHAN(1)) vita_tx_deframer
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
