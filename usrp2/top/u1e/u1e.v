@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
+//`define DCM 1
+
 module u1e
   (input CLK_FPGA_P, input CLK_FPGA_N,  // Diff
    output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
@@ -26,7 +28,7 @@ module u1e
    
    inout [15:0] io_tx, inout [15:0] io_rx,
 
-   output reg [13:0] TX, output reg TXSYNC, output TXBLANK,
+   output [13:0] TX, output TXSYNC, output TXBLANK,
    input [11:0] DA, input [11:0] DB, input RXSYNC,
   
    input PPS_IN
@@ -34,11 +36,13 @@ module u1e
 
    // /////////////////////////////////////////////////////////////////////////
    // Clocking
-   wire  clk_fpga, clk_fpga_in, clk_2x, dcm_rst, dcm_locked;
+   wire  clk_fpga, clk_fpga_in;
    
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clk_fpga_pin (.O(clk_fpga_in),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
 
+`ifdef DCM
+   wire  clk_2x, dcm_rst, dcm_locked;
    DCM #(.CLK_FEEDBACK ( "1X" ),
 	 .CLKDV_DIVIDE ( 2.0 ),
 	 .CLKFX_DIVIDE ( 1 ),
@@ -59,11 +63,10 @@ module u1e
                 .CLK2X(clk_2x), .CLK2X180(), 
                 .CLK0(clk_fpga), .CLK90(), .CLK180(), .CLK270(), 
                 .LOCKED(dcm_locked), .STATUS());
-
-   //BUFG dspclk_BUFG (.I(dcm_out), .O(dsp_clk));
-   //BUFG wbclk_BUFG (.I(clk_div), .O(wb_clk));
-
-
+`else // !`ifdef DCM
+   BUFG clk_fpga_BUFG (.I(clk_fpga_in), .O(clk_fpga));
+`endif // !`ifdef DCM
+   
    // /////////////////////////////////////////////////////////////////////////
    // SPI
    wire  mosi, sclk, miso;
@@ -79,6 +82,10 @@ module u1e
 
    assign TXBLANK = 0;
    wire [13:0] tx_i, tx_q;
+
+`ifdef DCM
+   reg [13:0]  TX;
+   reg 	       TXSYNC;
    
    always @(posedge clk_2x)
      if(clk_fpga)
@@ -91,7 +98,38 @@ module u1e
 	  TX <= tx_q;
 	  TXSYNC <= 1;
        end
-
+`else // !`ifdef DCM
+   genvar i;
+   generate
+      for(i=0;i<14;i=i+1)
+	begin : gen_dacout
+	   ODDR2 #(.DDR_ALIGNMENT("NONE"), // Sets output alignment to "NONE", "C0" or "C1" 
+		   .INIT(1'b0),            // Sets initial state of the Q output to 1'b0 or 1'b1
+		   .SRTYPE("SYNC"))        // Specifies "SYNC" or "ASYNC" set/reset
+	   ODDR2_inst (.Q(TX[i]),      // 1-bit DDR output data
+		       .C0(clk_fpga),  // 1-bit clock input
+		       .C1(~clk_fpga), // 1-bit clock input
+		       .CE(1'b1),      // 1-bit clock enable input
+		       .D0(tx_i[i]),   // 1-bit data input (associated with C0)
+		       .D1(tx_q[i]),   // 1-bit data input (associated with C1)
+		       .R(1'b0),       // 1-bit reset input
+		       .S(1'b0));      // 1-bit set input
+	end // block: gen_dacout
+      endgenerate
+   ODDR2 #(.DDR_ALIGNMENT("NONE"), // Sets output alignment to "NONE", "C0" or "C1" 
+	   .INIT(1'b0),            // Sets initial state of the Q output to 1'b0 or 1'b1
+	   .SRTYPE("SYNC"))        // Specifies "SYNC" or "ASYNC" set/reset
+   ODDR2_txsnc (.Q(TXSYNC),      // 1-bit DDR output data
+		.C0(clk_fpga),  // 1-bit clock input
+		.C1(~clk_fpga), // 1-bit clock input
+		.CE(1'b1),      // 1-bit clock enable input
+		.D0(1'b0),   // 1-bit data input (associated with C0)
+		.D1(1'b1),   // 1-bit data input (associated with C1)
+		.R(1'b0),       // 1-bit reset input
+		.S(1'b0));      // 1-bit set input
+   
+`endif // !`ifdef DCM
+   
    // /////////////////////////////////////////////////////////////////////////
    // Main U1E Core
    u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(~debug_pb[2]),
