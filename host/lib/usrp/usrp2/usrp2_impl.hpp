@@ -23,6 +23,7 @@
 #include "codec_ctrl.hpp"
 #include "serdes_ctrl.hpp"
 #include <uhd/usrp/usrp2.hpp>
+#include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -153,7 +154,7 @@ private:
     ;
 
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    struct io_impl; boost::shared_ptr<io_impl> _io_impl;
+    UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
 
     //udp transports for control and data

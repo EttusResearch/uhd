@@ -122,7 +122,7 @@ void usrp2_impl::io_init(void){
     std::cout << "TX samples per packet: " << get_max_send_samps_per_packet() << std::endl;
 
     //create new io impl
-    _io_impl = boost::shared_ptr<io_impl>(new io_impl(_data_transport));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
 }
 
 /***********************************************************************

@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TRANSPORT_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/pimpl.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -156,10 +157,14 @@ namespace uhd{ namespace transport{
      */
     class UHD_API phony_zero_copy_recv_if : public virtual zero_copy_if{
     public:
-
-        //! structors
+        /*!
+         * Create a phony zero copy recv interface.
+         * \param max_buff_size max buffer size in bytes
+         */
         phony_zero_copy_recv_if(size_t max_buff_size);
-        ~phony_zero_copy_recv_if(void);
+
+        //! destructor
+        virtual ~phony_zero_copy_recv_if(void);
 
         /*!
          * Get a new receive buffer from this transport object.
@@ -167,7 +172,6 @@ namespace uhd{ namespace transport{
         managed_recv_buffer::sptr get_recv_buff(void);
 
     private:
-
         /*!
          * Perform a private copying recv.
          * \param buff the buffer to write data into
@@ -175,7 +179,7 @@ namespace uhd{ namespace transport{
          */
         virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
 
-        struct impl; impl *_impl; //private implementation details
+        UHD_PIMPL_DECL(impl) _impl;
     };
 
     /*!
@@ -186,10 +190,14 @@ namespace uhd{ namespace transport{
      */
     class UHD_API phony_zero_copy_send_if : public virtual zero_copy_if{
     public:
-
-        //! structors
+        /*!
+         * Create a phony zero copy send interface.
+         * \param max_buff_size max buffer size in bytes
+         */
         phony_zero_copy_send_if(size_t max_buff_size);
-        ~phony_zero_copy_send_if(void);
+
+        //! destructor
+        virtual ~phony_zero_copy_send_if(void);
 
         /*!
          * Get a new send buffer from this transport object.
@@ -197,7 +205,6 @@ namespace uhd{ namespace transport{
         managed_send_buffer::sptr get_send_buff(void);
 
     private:
-
         /*!
          * Perform a private copying send.
          * \param buff the buffer to read data from
@@ -205,7 +212,7 @@ namespace uhd{ namespace transport{
          */
         virtual size_t send(const boost::asio::const_buffer &buff) = 0;
 
-        struct impl; impl *_impl; //private implementation details
+        UHD_PIMPL_DECL(impl) _impl;
     };
 
 }} //namespace

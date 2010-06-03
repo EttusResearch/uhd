@@ -58,12 +58,12 @@ struct phony_zero_copy_recv_if::impl{
 };
 
 phony_zero_copy_recv_if::phony_zero_copy_recv_if(size_t max_buff_size){
-    _impl = new impl;
+    _impl = UHD_PIMPL_MAKE(impl, ());
     _impl->max_buff_size = max_buff_size;
 }
 
 phony_zero_copy_recv_if::~phony_zero_copy_recv_if(void){
-    delete _impl;
+    /* NOP */
 }
 
 managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(void){
@@ -122,7 +122,7 @@ struct phony_zero_copy_send_if::impl{
 };
 
 phony_zero_copy_send_if::phony_zero_copy_send_if(size_t max_buff_size){
-    _impl = new impl;
+    _impl = UHD_PIMPL_MAKE(impl, ());
     _impl->send_mem = new boost::uint8_t[max_buff_size];
     _impl->send_buff = managed_send_buffer::sptr(new managed_send_buffer_impl(
         boost::asio::buffer(_impl->send_mem, max_buff_size),
@@ -132,7 +132,6 @@ phony_zero_copy_send_if::phony_zero_copy_send_if(size_t max_buff_size){
 
 phony_zero_copy_send_if::~phony_zero_copy_send_if(void){
     delete [] _impl->send_mem;
-    delete _impl;
 }
 
 managed_send_buffer::sptr phony_zero_copy_send_if::get_send_buff(void){

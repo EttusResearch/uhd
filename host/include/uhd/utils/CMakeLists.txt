@@ -20,6 +20,7 @@ INSTALL(FILES
     assert.hpp
     exception.hpp
     gain_handler.hpp
+    pimpl.hpp
     props.hpp
     safe_main.hpp
     static.hpp
