@@ -35,4 +35,11 @@
     "  at " + std::string(__FILE__) + ":" + BOOST_STRINGIZE(__LINE__) + "\n" \
 )
 
+/*!
+ * Throws an invalid code path exception with throw-site information.
+ * Use this macro in places that code execution is not supposed to go.
+ */
+#define UHD_THROW_INVALID_CODE_PATH() \
+    throw std::runtime_error(UHD_THROW_SITE_INFO("invalid code path"))
+
 #endif /* INCLUDED_UHD_UTILS_EXCEPTION_HPP */

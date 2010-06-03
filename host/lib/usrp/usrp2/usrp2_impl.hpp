@@ -23,6 +23,7 @@
 #include "codec_ctrl.hpp"
 #include "serdes_ctrl.hpp"
 #include <uhd/usrp/usrp2.hpp>
+#include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -33,7 +34,6 @@
 #include <uhd/transport/vrt.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include "../../transport/vrt_packet_handler.hpp"
 
 /*!
  * Make a usrp2 dboard interface.
@@ -153,9 +153,8 @@ private:
         uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
 
-    vrt_packet_handler::recv_state _packet_handler_recv_state;
-    vrt_packet_handler::send_state _packet_handler_send_state;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
+    UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
 
     //udp transports for control and data

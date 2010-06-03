@@ -136,7 +136,7 @@ void usrp2_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value){
     //calculate the new selection mux setting
     boost::uint32_t new_sels = 0x0;
     for(size_t i = 0; i < 16; i++){
-        bool is_bit_set = bool(value & (0x1 << i));
+        bool is_bit_set = (value & (0x1 << i)) != 0;
         new_sels |= ((is_bit_set)? FRF_GPIO_SEL_ATR : FRF_GPIO_SEL_GPIO) << (i*2);
     }
 

@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
+#include <uhd/utils/pimpl.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/usrp/dboard_id.hpp>
@@ -58,8 +59,7 @@ protected:
     dboard_id_t get_tx_id(void);
 
 private:
-    struct dboard_base_impl;
-    dboard_base_impl *_impl;
+    UHD_PIMPL_DECL(impl) _impl;
 };
 
 /*!

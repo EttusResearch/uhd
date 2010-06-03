@@ -181,7 +181,7 @@ static args_t get_dboard_args(
         switch(unit){
         case dboard_iface::UNIT_RX: return get_dboard_args(unit, 0x0001);
         case dboard_iface::UNIT_TX: return get_dboard_args(unit, 0x0000);
-        default: UHD_ASSERT_THROW(false);
+        default: UHD_THROW_INVALID_CODE_PATH();
         }
     }
 

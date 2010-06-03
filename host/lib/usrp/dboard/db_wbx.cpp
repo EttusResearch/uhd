@@ -15,8 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-static const bool wbx_debug = false;
-
 // Common IO Pins
 #define ANTSW_IO        ((1 << 5)|(1 << 15))    // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
 #define ADF4350_CE      (1 << 3)
@@ -84,17 +82,30 @@ using namespace uhd::usrp;
 using namespace boost::assign;
 
 /***********************************************************************
+ * The WBX dboard constants
+ **********************************************************************/
+static const bool wbx_debug = false;
+
+static const freq_range_t wbx_freq_range(50e6, 2.22e9);
+
+static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
+
+static const prop_names_t wbx_rx_antennas = list_of("TX/RX")("RX2");
+
+static const uhd::dict<std::string, gain_range_t> wbx_tx_gain_ranges = map_list_of
+    ("PGA0", gain_range_t(0, 25, float(0.05)))
+;
+
+static const uhd::dict<std::string, gain_range_t> wbx_rx_gain_ranges = map_list_of
+    ("PGA0", gain_range_t(0, 31.5, float(0.5)))
+;
+
+/***********************************************************************
  * The WBX dboard
  **********************************************************************/
-static const float _max_rx_pga0_gain = 31.5;
-static const float _max_tx_pga0_gain = 25;
-
 class wbx_xcvr : public xcvr_dboard_base{
 public:
-    wbx_xcvr(
-        ctor_args_t args,
-        const freq_range_t &freq_range
-    );
+    wbx_xcvr(ctor_args_t args);
     ~wbx_xcvr(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
@@ -104,20 +115,16 @@ public:
     void tx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    freq_range_t _freq_range;
-    uhd::dict<dboard_iface::unit_t, bool> _div2;
+    uhd::dict<std::string, float> _tx_gains, _rx_gains;
     double       _rx_lo_freq, _tx_lo_freq;
-    std::string  _rx_ant;
-    int          _rx_pga0_attn_iobits;
-    float        _rx_pga0_gain;
-    float        _tx_pga0_gain;
+    std::string  _tx_ant, _rx_ant;
 
     void set_rx_lo_freq(double freq);
     void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
-    void set_rx_pga0_gain(float gain);
-    void set_rx_pga0_attn(float attn);
-    void set_tx_pga0_gain(float gain);
+    void set_tx_ant(const std::string &ant);
+    void set_rx_gain(float gain, const std::string &name);
+    void set_tx_gain(float gain, const std::string &name);
 
     void update_atr(void);
 
@@ -143,7 +150,7 @@ private:
  * Register the WBX dboard (min freq, max freq, rx div2, tx div2)
  **********************************************************************/
 static dboard_base::sptr make_wbx(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new wbx_xcvr(args, freq_range_t(50e6, 2220e6)));
+    return dboard_base::sptr(new wbx_xcvr(args));
 }
 
 UHD_STATIC_BLOCK(reg_wbx_dboards){
@@ -154,11 +161,7 @@ UHD_STATIC_BLOCK(reg_wbx_dboards){
 /***********************************************************************
  * Structors
  **********************************************************************/
-wbx_xcvr::wbx_xcvr(
-    ctor_args_t args,
-    const freq_range_t &freq_range
-) : xcvr_dboard_base(args){
-    _freq_range = freq_range;
+wbx_xcvr::wbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
 
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
@@ -174,11 +177,16 @@ wbx_xcvr::wbx_xcvr(
     ) % RXIO_MASK % TXIO_MASK << std::endl;
 
     //set some default values
-    set_rx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
-    set_tx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
+    set_rx_lo_freq((wbx_freq_range.min + wbx_freq_range.max)/2.0);
+    set_tx_lo_freq((wbx_freq_range.min + wbx_freq_range.max)/2.0);
     set_rx_ant("RX2");
-    set_rx_pga0_gain(0);
-    set_tx_pga0_gain(0);
+
+    BOOST_FOREACH(const std::string &name, wbx_tx_gain_ranges.keys()){
+        set_tx_gain(wbx_tx_gain_ranges[name].min, name);
+    }
+    BOOST_FOREACH(const std::string &name, wbx_rx_gain_ranges.keys()){
+        set_rx_gain(wbx_rx_gain_ranges[name].min, name);
+    }
 }
 
 wbx_xcvr::~wbx_xcvr(void){
@@ -186,10 +194,81 @@ wbx_xcvr::~wbx_xcvr(void){
 }
 
 /***********************************************************************
- * Helper Methods
+ * Gain Handling
+ **********************************************************************/
+static int rx_pga0_gain_to_iobits(float &gain){
+    //clip the input
+    gain = std::clip<float>(gain, wbx_rx_gain_ranges["PGA0"].min, wbx_rx_gain_ranges["PGA0"].max);
+
+    //convert to attenuation and update iobits for atr
+    float attn = wbx_rx_gain_ranges["PGA0"].max - gain;
+
+    //calculate the attenuation
+    int attn_code = int(floor(attn*2));
+    int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
+
+    
+    if (wbx_debug) std::cerr << boost::format(
+        "WBX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
+    ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
+
+    //the actual gain setting
+    gain = wbx_rx_gain_ranges["PGA0"].max - float(attn_code)/2;
+
+    return iobits;
+}
+
+static float tx_pga0_gain_to_dac_volts(float &gain){
+    //clip the input
+    gain = std::clip<float>(gain, wbx_tx_gain_ranges["PGA0"].min, wbx_tx_gain_ranges["PGA0"].max);
+
+    //voltage level constants
+    static const float max_volts = float(0.5), min_volts = float(1.4);
+    static const float slope = (max_volts-min_volts)/wbx_tx_gain_ranges["PGA0"].max;
+
+    //calculate the voltage for the aux dac
+    float dac_volts = gain*slope + min_volts;
+
+    if (wbx_debug) std::cerr << boost::format(
+        "WBX TX Gain: %f dB, dac_volts: %f V"
+    ) % gain % dac_volts << std::endl;
+
+    //the actual gain setting
+    gain = (dac_volts - min_volts)/slope;
+
+    return dac_volts;
+}
+
+void wbx_xcvr::set_tx_gain(float gain, const std::string &name){
+    assert_has(wbx_tx_gain_ranges.keys(), name, "wbx tx gain name");
+    if(name == "PGA0"){
+        float dac_volts = tx_pga0_gain_to_dac_volts(gain);
+        _tx_gains[name] = gain;
+
+        //write the new voltage to the aux dac
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, 0, dac_volts);
+    }
+    else UHD_THROW_INVALID_CODE_PATH();
+}
+
+void wbx_xcvr::set_rx_gain(float gain, const std::string &name){
+    assert_has(wbx_rx_gain_ranges.keys(), name, "wbx rx gain name");
+    if(name == "PGA0"){
+        rx_pga0_gain_to_iobits(gain);
+        _rx_gains[name] = gain;
+
+        //write the new gain to atr regs
+        update_atr();
+    }
+    else UHD_THROW_INVALID_CODE_PATH();
+}
+
+/***********************************************************************
+ * Antenna Handling
  **********************************************************************/
 void wbx_xcvr::update_atr(void){
     //calculate atr pins
+    int pga0_iobits = rx_pga0_gain_to_iobits(_rx_gains["PGA0"]);
 
     //setup the tx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
@@ -199,31 +278,23 @@ void wbx_xcvr::update_atr(void){
 
     //setup the rx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,
-        _rx_pga0_attn_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
+        pga0_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
-        _rx_pga0_attn_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
+        pga0_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        _rx_pga0_attn_iobits | RX_POWER_UP | ANT_RX2| RX_MIXER_ENB);
+        pga0_iobits | RX_POWER_UP | ANT_RX2| RX_MIXER_ENB);
 
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        _rx_pga0_attn_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+        pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
     if (wbx_debug) std::cerr << boost::format(
         "WBX RXONLY ATR REG: 0x%08x"
-    ) % (_rx_pga0_attn_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
-}
-
-void wbx_xcvr::set_rx_lo_freq(double freq){
-    _rx_lo_freq = set_lo_freq(dboard_iface::UNIT_RX, freq);
-}
-
-void wbx_xcvr::set_tx_lo_freq(double freq){
-    _tx_lo_freq = set_lo_freq(dboard_iface::UNIT_TX, freq);
+    ) % (pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
 }
 
 void wbx_xcvr::set_rx_ant(const std::string &ant){
     //validate input
-    UHD_ASSERT_THROW(ant == "TX/RX" or ant == "RX2");
+    assert_has(wbx_rx_antennas, ant, "wbx rx antenna name");
 
     //shadow the setting
     _rx_ant = ant;
@@ -232,49 +303,20 @@ void wbx_xcvr::set_rx_ant(const std::string &ant){
     update_atr();
 }
 
-void wbx_xcvr::set_rx_pga0_gain(float gain){
-    //clip the input
-    gain = std::clip<float>(gain, 0, _max_rx_pga0_gain);
-
-    //shadow the setting (does not account for precision loss)
-    _rx_pga0_gain = gain;
-
-    //convert to attenuation and update iobits for atr
-    set_rx_pga0_attn(_max_rx_pga0_gain - gain);
-
-    //write the new gain to atr regs
-    update_atr();
+void wbx_xcvr::set_tx_ant(const std::string &ant){
+    assert_has(wbx_tx_antennas, ant, "wbx tx antenna name");
+    //only one antenna option, do nothing
 }
 
-void wbx_xcvr::set_rx_pga0_attn(float attn)
-{
-    int attn_code = int(floor(attn*2));
-    _rx_pga0_attn_iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
-    ) % attn % attn_code % (_rx_pga0_attn_iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
+/***********************************************************************
+ * Tuning
+ **********************************************************************/
+void wbx_xcvr::set_rx_lo_freq(double freq){
+    _rx_lo_freq = set_lo_freq(dboard_iface::UNIT_RX, freq);
 }
 
-void wbx_xcvr::set_tx_pga0_gain(float gain){
-    //clip the input
-    gain = std::clip<float>(gain, 0, _max_tx_pga0_gain);
-
-    //voltage level constants
-    static const float max_volts = float(0.5), min_volts = float(1.4);
-    static const float slope = (max_volts-min_volts)/_max_rx_pga0_gain;
-
-    //calculate the voltage for the aux dac
-    float dac_volts = gain*slope + min_volts;
-
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX TX Gain: %f dB, dac_volts: %f V"
-    ) % gain % dac_volts << std::endl;
-
-    //write the new voltage to the aux dac
-    this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, 0, dac_volts);
-
-    //shadow the setting (does not account for precision loss)
-    _tx_pga0_gain = gain;
+void wbx_xcvr::set_tx_lo_freq(double freq){
+    _tx_lo_freq = set_lo_freq(dboard_iface::UNIT_TX, freq);
 }
 
 double wbx_xcvr::set_lo_freq(
@@ -286,7 +328,7 @@ double wbx_xcvr::set_lo_freq(
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = std::clip(target_freq, _freq_range.min, _freq_range.max);
+    target_freq = std::clip(target_freq, wbx_freq_range.min, wbx_freq_range.max);
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of
@@ -439,17 +481,17 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(name == "PGA0");
-        val = _rx_pga0_gain;
+        assert_has(_rx_gains.keys(), name, "wbx rx gain name");
+        val = _rx_gains[name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        UHD_ASSERT_THROW(name == "PGA0");
-        val = gain_range_t(0, _max_rx_pga0_gain, float(0.5));
+        assert_has(wbx_rx_gain_ranges.keys(), name, "wbx rx gain name");
+        val = wbx_rx_gain_ranges[name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(1, "PGA0");
+        val = prop_names_t(wbx_rx_gain_ranges.keys());
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -457,17 +499,15 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = _freq_range;
+        val = wbx_freq_range;
         return;
 
     case SUBDEV_PROP_ANTENNA:
         val = _rx_ant;
         return;
 
-    case SUBDEV_PROP_ANTENNA_NAMES:{
-            prop_names_t ants = list_of("TX/RX")("RX2");
-            val = ants;
-        }
+    case SUBDEV_PROP_ANTENNA_NAMES:
+        val = wbx_rx_antennas;
         return;
 
     case SUBDEV_PROP_QUADRATURE:
@@ -502,16 +542,15 @@ void wbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_FREQ:
-        set_rx_lo_freq(val.as<double>());
+        this->set_rx_lo_freq(val.as<double>());
         return;
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(name == "PGA0");
-        set_rx_pga0_gain(val.as<float>());
+        this->set_rx_gain(val.as<float>(), name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        set_rx_ant(val.as<std::string>());
+        this->set_rx_ant(val.as<std::string>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -536,17 +575,17 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(name == "PGA0");
-        val = _tx_pga0_gain;
+        assert_has(_tx_gains.keys(), name, "wbx tx gain name");
+        val = _tx_gains[name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        UHD_ASSERT_THROW(name == "PGA0");
-        val = gain_range_t(0, _max_tx_pga0_gain, float(0.05));
+        assert_has(wbx_tx_gain_ranges.keys(), name, "wbx tx gain name");
+        val = wbx_tx_gain_ranges[name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(1, "PGA0");
+        val = prop_names_t(wbx_tx_gain_ranges.keys());
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -554,7 +593,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = _freq_range;
+        val = wbx_freq_range;
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -562,7 +601,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, "TX/RX");
+        val = wbx_tx_antennas;
         return;
 
     case SUBDEV_PROP_QUADRATURE:
@@ -597,17 +636,15 @@ void wbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_FREQ:
-        set_tx_lo_freq(val.as<double>());
+        this->set_tx_lo_freq(val.as<double>());
         return;
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(name == "PGA0");
-        set_tx_pga0_gain(val.as<float>());
+        this->set_tx_gain(val.as<float>(), name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        //its always set to tx/rx, so we only allow this value
-        UHD_ASSERT_THROW(val.as<std::string>() == "TX/RX");
+        this->set_tx_ant(val.as<std::string>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

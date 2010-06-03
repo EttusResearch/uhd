@@ -54,6 +54,8 @@ namespace vrt_packet_handler{
         }
     };
 
+    typedef boost::function<uhd::transport::managed_recv_buffer::sptr(void)> get_recv_buff_t;
+
     typedef boost::function<void(uhd::transport::managed_recv_buffer::sptr)> recv_cb_t;
 
     static UHD_INLINE void recv_cb_nop(uhd::transport::managed_recv_buffer::sptr){
@@ -112,15 +114,16 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        uhd::transport::zero_copy_if::sptr zc_iface,
+        const get_recv_buff_t &get_recv_buff,
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32,
-        const recv_cb_t& recv_cb
+        const recv_cb_t &recv_cb
     ){
         //perform a receive if no rx data is waiting to be copied
         if (boost::asio::buffer_size(state.copy_buff) == 0){
             state.fragment_offset_in_samps = 0;
-            state.managed_buff = zc_iface->get_recv_buff();
+            state.managed_buff = get_recv_buff();
+            if (state.managed_buff.get() == NULL) return 0;
             recv_cb(state.managed_buff); //callback before vrt unpack
             try{
                 _recv1_helper(
@@ -169,7 +172,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        uhd::transport::zero_copy_if::sptr zc_iface,
+        const get_recv_buff_t &get_recv_buff,
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32 = 0,
         const recv_cb_t& recv_cb = &recv_cb_nop
@@ -189,7 +192,7 @@ namespace vrt_packet_handler{
                 metadata,
                 io_type, otw_type,
                 tick_rate,
-                zc_iface,
+                get_recv_buff,
                 vrt_header_offset_words32,
                 recv_cb
             );
@@ -208,7 +211,7 @@ namespace vrt_packet_handler{
                     (accum_num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
                     io_type, otw_type,
                     tick_rate,
-                    zc_iface,
+                    get_recv_buff,
                     vrt_header_offset_words32,
                     recv_cb
                 );
@@ -234,6 +237,8 @@ namespace vrt_packet_handler{
         }
     };
 
+    typedef boost::function<uhd::transport::managed_send_buffer::sptr(void)> get_send_buff_t;
+
     typedef boost::function<void(uhd::transport::managed_send_buffer::sptr)> send_cb_t;
 
     static UHD_INLINE void send_cb_nop(uhd::transport::managed_send_buffer::sptr){
@@ -252,12 +257,12 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        uhd::transport::zero_copy_if::sptr zc_iface,
+        const get_send_buff_t &get_send_buff,
         size_t vrt_header_offset_words32,
         const send_cb_t& send_cb
     ){
         //get a new managed send buffer
-        uhd::transport::managed_send_buffer::sptr send_buff = zc_iface->get_send_buff();
+        uhd::transport::managed_send_buffer::sptr send_buff = get_send_buff();
         boost::uint32_t *tx_mem = send_buff->cast<boost::uint32_t *>() + vrt_header_offset_words32;
 
         size_t num_header_words32, num_packet_words32;
@@ -298,7 +303,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        uhd::transport::zero_copy_if::sptr zc_iface,
+        const get_send_buff_t &get_send_buff,
         size_t max_samples_per_packet,
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32 = 0,
@@ -319,7 +324,7 @@ namespace vrt_packet_handler{
                 metadata,
                 io_type, otw_type,
                 tick_rate,
-                zc_iface,
+                get_send_buff,
                 vrt_header_offset_words32,
                 send_cb
             );
@@ -353,7 +358,7 @@ namespace vrt_packet_handler{
                     md,
                     io_type, otw_type,
                     tick_rate,
-                    zc_iface,
+                    get_send_buff,
                     vrt_header_offset_words32,
                     send_cb
                 );

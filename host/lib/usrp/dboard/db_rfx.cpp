@@ -91,7 +91,7 @@ private:
     uhd::dict<dboard_iface::unit_t, bool> _div2;
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _rx_ant;
-    float        _rx_pga0_gain;
+    uhd::dict<std::string, float> _rx_gains;
 
     void set_rx_lo_freq(double freq);
     void set_tx_lo_freq(double freq);
@@ -99,8 +99,6 @@ private:
     void set_tx_ant(const std::string &ant);
     void set_rx_gain(float gain, const std::string &name);
     void set_tx_gain(float gain, const std::string &name);
-
-    void set_rx_pga0_gain(float gain);
 
     /*!
      * Set the LO frequency for the particular dboard unit.
@@ -198,7 +196,10 @@ rfx_xcvr::rfx_xcvr(
     set_rx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
     set_tx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
     set_rx_ant("RX2");
-    set_rx_pga0_gain(0);
+
+    BOOST_FOREACH(const std::string &name, rfx_rx_gain_ranges.keys()){
+        set_rx_gain(rfx_rx_gain_ranges[name].min, name);
+    }
 }
 
 rfx_xcvr::~rfx_xcvr(void){
@@ -230,20 +231,7 @@ void rfx_xcvr::set_tx_ant(const std::string &ant){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-void rfx_xcvr::set_tx_gain(float, const std::string &name){
-    assert_has(rfx_tx_gain_ranges.keys(), name, "rfx tx gain name");
-    UHD_ASSERT_THROW(false); //no gains to set
-}
-
-void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
-    assert_has(rfx_rx_gain_ranges.keys(), name, "rfx rx gain name");
-    if(name == "PGA0"){
-        this->set_rx_pga0_gain(gain);
-    }
-    else UHD_ASSERT_THROW(false);
-}
-
-void rfx_xcvr::set_rx_pga0_gain(float gain){
+static float rx_pga0_gain_to_dac_volts(float &gain){
     //voltage level constants (negative slope)
     static const float max_volts = float(.2), min_volts = float(1.2);
     static const float slope = (max_volts-min_volts)/45;
@@ -251,11 +239,27 @@ void rfx_xcvr::set_rx_pga0_gain(float gain){
     //calculate the voltage for the aux dac
     float dac_volts = std::clip<float>(gain*slope + min_volts, max_volts, min_volts);
 
-    //write the new voltage to the aux dac
-    this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, 1, dac_volts);
+    //the actual gain setting
+    gain = (dac_volts - min_volts)/slope;
 
-    //shadow the actual gain setting
-    _rx_pga0_gain = (dac_volts - min_volts)/slope;
+    return dac_volts;
+}
+
+void rfx_xcvr::set_tx_gain(float, const std::string &name){
+    assert_has(rfx_tx_gain_ranges.keys(), name, "rfx tx gain name");
+    UHD_THROW_INVALID_CODE_PATH(); //no gains to set
+}
+
+void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
+    assert_has(rfx_rx_gain_ranges.keys(), name, "rfx rx gain name");
+    if(name == "PGA0"){
+        float dac_volts = rx_pga0_gain_to_dac_volts(gain);
+        _rx_gains[name] = gain;
+
+        //write the new voltage to the aux dac
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, 1, dac_volts);
+    }
+    else UHD_THROW_INVALID_CODE_PATH();
 }
 
 /***********************************************************************
@@ -397,8 +401,8 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(name == "PGA0");
-        val = _rx_pga0_gain;
+        assert_has(_rx_gains.keys(), name, "rfx rx gain name");
+        val = _rx_gains[name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:

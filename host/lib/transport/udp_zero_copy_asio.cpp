@@ -28,58 +28,8 @@ using namespace uhd::transport;
  * Constants
  **********************************************************************/
 static const size_t MIN_SOCK_BUFF_SIZE = size_t(100e3);
-static const size_t MAX_DGRAM_SIZE = 2048; //assume max size on send and recv
-static const double RECV_TIMEOUT = 0.1; // 100 ms
-
-/***********************************************************************
- * Managed receive buffer implementation for udp zero-copy asio:
- **********************************************************************/
-class managed_recv_buffer_impl : public managed_recv_buffer{
-public:
-    managed_recv_buffer_impl(const boost::asio::const_buffer &buff) : _buff(buff){
-        /* NOP */
-    }
-
-    ~managed_recv_buffer_impl(void){
-        delete [] this->cast<const boost::uint8_t *>();
-    }
-
-private:
-    const boost::asio::const_buffer &get(void) const{
-        return _buff;
-    }
-
-    const boost::asio::const_buffer _buff;
-};
-
-/***********************************************************************
- * Managed send buffer implementation for udp zero-copy asio:
- **********************************************************************/
-class managed_send_buffer_impl : public managed_send_buffer{
-public:
-    managed_send_buffer_impl(
-        const boost::asio::mutable_buffer &buff,
-        boost::asio::ip::udp::socket *socket
-    ) : _buff(buff), _socket(socket){
-        /* NOP */
-    }
-
-    ~managed_send_buffer_impl(void){
-        /* NOP */
-    }
-
-    void commit(size_t num_bytes){
-        _socket->send(boost::asio::buffer(_buff, num_bytes));
-    }
-
-private:
-    const boost::asio::mutable_buffer &get(void) const{
-        return _buff;
-    }
-
-    const boost::asio::mutable_buffer _buff;
-    boost::asio::ip::udp::socket      *_socket;
-};
+static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
+static const double RECV_TIMEOUT = 0.1; //100 ms
 
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
@@ -88,95 +38,108 @@ private:
  *   However, it is not a true zero copy implementation as each
  *   send and recv requires a copy operation to/from userspace.
  **********************************************************************/
-class udp_zero_copy_impl : public udp_zero_copy{
+class udp_zero_copy_impl:
+    public phony_zero_copy_recv_if,
+    public phony_zero_copy_send_if,
+    public udp_zero_copy
+{
 public:
     typedef boost::shared_ptr<udp_zero_copy_impl> sptr;
 
-    //structors
-    udp_zero_copy_impl(const std::string &addr, const std::string &port);
-    ~udp_zero_copy_impl(void);
+    udp_zero_copy_impl(
+        const std::string &addr,
+        const std::string &port
+    ):
+        phony_zero_copy_recv_if(MAX_DGRAM_SIZE),
+        phony_zero_copy_send_if(MAX_DGRAM_SIZE)
+    {
+        //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
-    //send/recv
-    managed_recv_buffer::sptr get_recv_buff(void);
-    managed_send_buffer::sptr get_send_buff(void);
+        // resolve the address
+        boost::asio::ip::udp::resolver resolver(_io_service);
+        boost::asio::ip::udp::resolver::query query(boost::asio::ip::udp::v4(), addr, port);
+        boost::asio::ip::udp::endpoint receiver_endpoint = *resolver.resolve(query);
 
-    //manage buffer
-    template <typename Opt> size_t get_buff_size(void){
+        // create, open, and connect the socket
+        _socket = new boost::asio::ip::udp::socket(_io_service);
+        _socket->open(boost::asio::ip::udp::v4());
+        _socket->connect(receiver_endpoint);
+        _sock_fd = _socket->native();
+    }
+
+    ~udp_zero_copy_impl(void){
+        delete _socket;
+    }
+
+    //get size for internal socket buffer
+    template <typename Opt> size_t get_buff_size(void) const{
         Opt option;
         _socket->get_option(option);
         return option.value();
     }
 
+    //set size for internal socket buffer
     template <typename Opt> size_t resize_buff(size_t num_bytes){
         Opt option(num_bytes);
         _socket->set_option(option);
         return get_buff_size<Opt>();
     }
 
+
+    //The number of frames is approximately the buffer size divided by the max datagram size.
+    //In reality, this is a phony zero-copy interface and the number of frames is infinite.
+    //However, its sensible to advertise a frame count that is approximate to buffer size.
+    //This way, the transport caller will have an idea about how much buffering to create.
+
+    size_t get_num_recv_frames(void) const{
+        return this->get_buff_size<boost::asio::socket_base::receive_buffer_size>()/MAX_DGRAM_SIZE;
+    }
+
+    size_t get_num_send_frames(void) const{
+        return this->get_buff_size<boost::asio::socket_base::send_buffer_size>()/MAX_DGRAM_SIZE;
+    }
+
 private:
     boost::asio::ip::udp::socket   *_socket;
     boost::asio::io_service        _io_service;
+    int                            _sock_fd;
 
-    //send and recv buffer memory (allocated once)
-    boost::uint8_t _send_mem[MIN_SOCK_BUFF_SIZE];
+    size_t recv(const boost::asio::mutable_buffer &buff){
+        //setup timeval for timeout
+        timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = int(RECV_TIMEOUT*1e6);
 
-    managed_send_buffer::sptr _send_buff;
+        //setup rset for timeout
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(_sock_fd, &rset);
+
+        //call select to perform timed wait
+        if (::select(_sock_fd+1, &rset, NULL, NULL, &tv) <= 0) return 0;
+
+        return ::recv(
+            _sock_fd,
+            boost::asio::buffer_cast<char *>(buff),
+            boost::asio::buffer_size(buff),
+            0
+        );
+    }
+
+    size_t send(const boost::asio::const_buffer &buff){
+        return ::send(
+            _sock_fd,
+            boost::asio::buffer_cast<const char *>(buff),
+            boost::asio::buffer_size(buff),
+            0
+        );
+    }
 };
-
-udp_zero_copy_impl::udp_zero_copy_impl(const std::string &addr, const std::string &port){
-    //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
-
-    // resolve the address
-    boost::asio::ip::udp::resolver resolver(_io_service);
-    boost::asio::ip::udp::resolver::query query(boost::asio::ip::udp::v4(), addr, port);
-    boost::asio::ip::udp::endpoint receiver_endpoint = *resolver.resolve(query);
-
-    // create, open, and connect the socket
-    _socket = new boost::asio::ip::udp::socket(_io_service);
-    _socket->open(boost::asio::ip::udp::v4());
-    _socket->connect(receiver_endpoint);
-
-    // create the managed send buff (just once)
-    _send_buff = managed_send_buffer::sptr(new managed_send_buffer_impl(
-        boost::asio::buffer(_send_mem, MIN_SOCK_BUFF_SIZE), _socket
-    ));
-
-    // set recv timeout
-    timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = size_t(RECV_TIMEOUT*1e6);
-    UHD_ASSERT_THROW(setsockopt(
-        _socket->native(),
-        SOL_SOCKET, SO_RCVTIMEO,
-        (const char *)&tv, sizeof(timeval)
-    ) == 0);
-}
-
-udp_zero_copy_impl::~udp_zero_copy_impl(void){
-    delete _socket;
-}
-
-managed_recv_buffer::sptr udp_zero_copy_impl::get_recv_buff(void){
-    //allocate memory
-    boost::uint8_t *recv_mem = new boost::uint8_t[MAX_DGRAM_SIZE];
-
-    //call recv() with timeout option
-    size_t num_bytes = _socket->receive(boost::asio::buffer(recv_mem, MIN_SOCK_BUFF_SIZE));
-
-    //create a new managed buffer to house the data
-    return managed_recv_buffer::sptr(
-        new managed_recv_buffer_impl(boost::asio::buffer(recv_mem, num_bytes))
-    );
-}
-
-managed_send_buffer::sptr udp_zero_copy_impl::get_send_buff(void){
-    return _send_buff; //FIXME there is only ever one send buff, we assume that the caller doesnt hang onto these
-}
 
 /***********************************************************************
  * UDP zero copy make function
  **********************************************************************/
-template<typename Opt> static inline void resize_buff_helper(
+template<typename Opt> static void resize_buff_helper(
     udp_zero_copy_impl::sptr udp_trans,
     size_t target_size,
     const std::string &name

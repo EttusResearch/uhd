@@ -25,17 +25,17 @@ using namespace uhd::usrp;
 /***********************************************************************
  * dboard_base dboard dboard_base class
  **********************************************************************/
-struct dboard_base::dboard_base_impl{
+struct dboard_base::impl{
     ctor_args_impl args;
-    dboard_base_impl(ctor_args_t args) : args(*args){}
+    impl(ctor_args_t args) : args(*args){}
 };
 
 dboard_base::dboard_base(ctor_args_t args){
-    _impl = new dboard_base_impl(args);
+    _impl = UHD_PIMPL_MAKE(impl, (args));
 }
 
 dboard_base::~dboard_base(void){
-   delete _impl;
+   /* NOP */
 }
 
 std::string dboard_base::get_subdev_name(void){
