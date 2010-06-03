@@ -42,14 +42,19 @@ IF(HAVE_USRP_E_REQUIRED_HEADERS)
     MESSAGE(STATUS "  Building usrp-e support.")
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/clock_ctrl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/clock_ctrl.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/codec_ctrl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/codec_ctrl.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dboard_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dboard_iface.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dsp_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/fpga-downloader.cc
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/mboard_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_impl.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_iface.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_iface.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_regs.hpp
     )
 ELSE(HAVE_USRP_E_REQUIRED_HEADERS)
     MESSAGE(STATUS "  Skipping usrp-e support.")
