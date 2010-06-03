@@ -50,6 +50,12 @@ public:
     static sptr make(const std::string &node);
 
     /*!
+     * Get the underlying file descriptor.
+     * \return the file descriptor
+     */
+    virtual int get_file_descriptor(void) = 0;
+
+    /*!
      * Perform an ioctl call on the device node file descriptor.
      * This will throw when the internal ioctl call fails.
      * \param request the control word

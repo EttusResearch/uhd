@@ -18,6 +18,7 @@
 #include "usrp_e_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include <uhd/utils/pimpl.hpp>
 #include <uhd/usrp/usrp_e.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/types/clock_config.hpp>
@@ -55,26 +56,11 @@ public:
         return sptr(new wax_obj_proxy(get, set));
     }
 
-    ~wax_obj_proxy(void){
-        /* NOP */
-    }
-
 private:
-    get_t _get;
-    set_t _set;
-
-    wax_obj_proxy(const get_t &get, const set_t &set){
-        _get = get;
-        _set = set;
-    };
-
-    void get(const wax::obj &key, wax::obj &val){
-        return _get(key, val);
-    }
-
-    void set(const wax::obj &key, const wax::obj &val){
-        return _set(key, val);
-    }
+    get_t _get; set_t _set;
+    wax_obj_proxy(const get_t &get, const set_t &set): _get(get), _set(set){};
+    void get(const wax::obj &key, wax::obj &val){return _get(key, val);}
+    void set(const wax::obj &key, const wax::obj &val){return _set(key, val);}
 };
 
 /*!
@@ -95,10 +81,19 @@ public:
     size_t get_max_recv_samps_per_packet(void) const{return _max_num_samples;}
 
 private:
-    static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
+    //interface to ioctls and file descriptor
     usrp_e_iface::sptr _iface;
 
+    //FIXME fetch from ioctl?
+    static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
+
+    //handle io stuff
+    UHD_PIMPL_DECL(io_impl) _io_impl;
+    void io_init(void);
+
+    //configuration shadows
     uhd::clock_config_t _clock_config;
+    //TODO otw type recv/send
 
     //ad9522 clock control
     clock_ctrl::sptr _clock_ctrl;

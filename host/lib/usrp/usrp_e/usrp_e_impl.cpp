@@ -89,6 +89,9 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
     //initialize the dsps
     rx_ddc_init();
     tx_duc_init();
+
+    //init the io send/recv
+    io_init();
 }
 
 usrp_e_impl::~usrp_e_impl(void){
@@ -126,31 +129,4 @@ void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
  **********************************************************************/
 void usrp_e_impl::set(const wax::obj &, const wax::obj &){
     UHD_THROW_PROP_SET_ERROR();
-}
-
-/***********************************************************************
- * Device IO (TODO)
- **********************************************************************/
-size_t usrp_e_impl::send(
-    const boost::asio::const_buffer &,
-    const uhd::tx_metadata_t &,
-    const io_type_t &,
-    send_mode_t
-){
-    if (true){
-        throw std::runtime_error(str(boost::format("usrp-e send: cannot handle type \"%s\"") % ""));
-    }
-    return 0;
-}
-
-size_t usrp_e_impl::recv(
-    const boost::asio::mutable_buffer &,
-    uhd::rx_metadata_t &,
-    const io_type_t &,
-    recv_mode_t
-){
-    if (true){
-        throw std::runtime_error(str(boost::format("usrp-e recv: cannot handle type \"%s\"") % ""));
-    }
-    return 0;
 }

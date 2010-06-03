@@ -49,6 +49,7 @@ IF(HAVE_USRP_E_REQUIRED_HEADERS)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dboard_iface.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dsp_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/fpga-downloader.cc
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/io_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/mboard_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_impl.hpp

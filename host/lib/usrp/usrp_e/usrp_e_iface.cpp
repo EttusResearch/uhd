@@ -29,6 +29,10 @@ using namespace uhd;
 class usrp_e_iface_impl : public usrp_e_iface{
 public:
 
+    int get_file_descriptor(void){
+        return _node_fd;
+    }
+
     /*******************************************************************
      * Structors
      ******************************************************************/
