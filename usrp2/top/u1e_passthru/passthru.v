@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module passthru
-  (input overo_gpio127,
+  (input overo_gpio145,
    output cgen_sclk,
    output cgen_sen_b,
    output cgen_mosi,
@@ -11,7 +11,7 @@ module passthru
    );
    
    assign cgen_sclk = fpga_cfg_cclk;
-   assign cgen_sen_b = overo_gpio127;
+   assign cgen_sen_b = overo_gpio145;
    assign cgen_mosi = fpga_cfg_din;
    
    
