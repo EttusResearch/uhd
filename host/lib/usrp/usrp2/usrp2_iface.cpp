@@ -146,18 +146,19 @@ public:
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
         //loop until we get the packet or timeout
+        boost::uint8_t usrp2_ctrl_data_in_mem[1500]; //allocate MTU bytes for recv
+        usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
-            usrp2_ctrl_data_t in_data;
-            size_t len = _ctrl_transport->recv(boost::asio::buffer(&in_data, sizeof(in_data)));
-            if(len >= sizeof(boost::uint32_t) and ntohl(in_data.proto_ver) != USRP2_PROTO_VERSION){
+            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem));
+            if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_PROTO_VERSION){
                 throw std::runtime_error(str(
                     boost::format("Expected protocol version %d, but got %d\n"
                     "The firmware build does not match the host code build."
-                    ) % int(USRP2_PROTO_VERSION) % ntohl(in_data.proto_ver)
+                    ) % int(USRP2_PROTO_VERSION) % ntohl(ctrl_data_in->proto_ver)
                 ));
             }
-            if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(in_data.seq) == _ctrl_seq_num){
-                return in_data;
+            if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(ctrl_data_in->seq) == _ctrl_seq_num){
+                return *ctrl_data_in;
             }
             if (len == 0) break; //timeout
             //didnt get seq or bad packet, continue looking...
