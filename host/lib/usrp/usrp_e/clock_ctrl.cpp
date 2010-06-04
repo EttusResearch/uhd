@@ -29,11 +29,11 @@ using namespace uhd;
 /***********************************************************************
  * Clock Control Implementation
  **********************************************************************/
-class clock_ctrl_impl : public clock_ctrl{
+class usrp_e_clock_ctrl_impl : public clock_ctrl{
 public:
     //structors
-    clock_ctrl_impl(usrp_e_iface::sptr iface);
-    ~clock_ctrl_impl(void);
+    usrp_e_clock_ctrl_impl(usrp_e_iface::sptr iface);
+    ~usrp_e_clock_ctrl_impl(void);
 
     void enable_rx_dboard_clock(bool enb);
     void enable_tx_dboard_clock(bool enb);
@@ -56,7 +56,7 @@ private:
 /***********************************************************************
  * Clock Control Methods
  **********************************************************************/
-clock_ctrl_impl::clock_ctrl_impl(usrp_e_iface::sptr iface){
+usrp_e_clock_ctrl_impl::usrp_e_clock_ctrl_impl(usrp_e_iface::sptr iface){
     _iface = iface;
 
     //init the clock gen registers
@@ -126,12 +126,12 @@ clock_ctrl_impl::clock_ctrl_impl(usrp_e_iface::sptr iface){
     this->enable_tx_dboard_clock(false);
 }
 
-clock_ctrl_impl::~clock_ctrl_impl(void){
+usrp_e_clock_ctrl_impl::~usrp_e_clock_ctrl_impl(void){
     this->enable_rx_dboard_clock(false);
     this->enable_tx_dboard_clock(false);
 }
 
-void clock_ctrl_impl::enable_rx_dboard_clock(bool enb){
+void usrp_e_clock_ctrl_impl::enable_rx_dboard_clock(bool enb){
     _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_CMOS;
     _ad9522_regs.out9_cmos_configuration = (enb)?
         ad9522_regs_t::OUT9_CMOS_CONFIGURATION_B_ON :
@@ -144,7 +144,7 @@ void clock_ctrl_impl::enable_rx_dboard_clock(bool enb){
     this->latch_regs();
 }
 
-void clock_ctrl_impl::enable_tx_dboard_clock(bool enb){
+void usrp_e_clock_ctrl_impl::enable_tx_dboard_clock(bool enb){
     _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_CMOS;
     _ad9522_regs.out6_cmos_configuration = (enb)?
         ad9522_regs_t::OUT6_CMOS_CONFIGURATION_B_ON :
@@ -157,7 +157,7 @@ void clock_ctrl_impl::enable_tx_dboard_clock(bool enb){
     this->latch_regs();
 }
 
-void clock_ctrl_impl::send_reg(boost::uint16_t addr){
+void usrp_e_clock_ctrl_impl::send_reg(boost::uint16_t addr){
     boost::uint32_t reg = _ad9522_regs.get_write_reg(addr);
     //std::cout << "clock control write reg: " << std::hex << reg << std::endl;
     _iface->transact_spi(
@@ -171,5 +171,5 @@ void clock_ctrl_impl::send_reg(boost::uint16_t addr){
  * Clock Control Make
  **********************************************************************/
 clock_ctrl::sptr clock_ctrl::make(usrp_e_iface::sptr iface){
-    return sptr(new clock_ctrl_impl(iface));
+    return sptr(new usrp_e_clock_ctrl_impl(iface));
 }

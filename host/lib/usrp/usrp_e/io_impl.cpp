@@ -24,6 +24,8 @@
 
 using namespace uhd;
 
+static const size_t MAX_BUFF_SIZE = 2048;
+
 /***********************************************************************
  * Data Transport (phony zero-copy with read/write)
  **********************************************************************/
@@ -33,8 +35,8 @@ class data_transport:
 {
 public:
     data_transport(int fd):
-        transport::phony_zero_copy_recv_if(2048), //FIXME magic #
-        transport::phony_zero_copy_send_if(2048), //FIXME magic #
+        transport::phony_zero_copy_recv_if(MAX_BUFF_SIZE),
+        transport::phony_zero_copy_send_if(MAX_BUFF_SIZE),
         _fd(fd)
     {
         /* NOP */
@@ -51,6 +53,13 @@ public:
 private:
     int _fd;
     size_t send(const boost::asio::const_buffer &buff){
+        //Set the frame length in the frame header.
+        //This is technically bad to write to a const buffer,
+        //but this will go away when the ring gets implemented,
+        //and the send buffer commit method will set the length.
+        const_cast<usrp_transfer_frame *>(
+            boost::asio::buffer_cast<const usrp_transfer_frame *>(buff)
+        )->len = boost::asio::buffer_size(buff);
         return write(
             _fd,
             boost::asio::buffer_cast<const void *>(buff),
@@ -103,9 +112,8 @@ size_t usrp_e_impl::send(
         send_otw_type, //TODO
         64e6, //TODO
         boost::bind(&data_transport::get_send_buff, &_io_impl->transport),
-        _max_num_samples, //TODO
+        (MAX_BUFF_SIZE - sizeof(usrp_transfer_frame))/send_otw_type.get_sample_size(),
         offsetof(usrp_transfer_frame, buf)
-        //TODO probably need callback to fill in frame size
     );
 }
 

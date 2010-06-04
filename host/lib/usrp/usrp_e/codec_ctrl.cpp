@@ -34,11 +34,11 @@ static const bool codec_debug = true;
 /***********************************************************************
  * Codec Control Implementation
  **********************************************************************/
-class codec_ctrl_impl : public codec_ctrl{
+class usrp_e_codec_ctrl_impl : public codec_ctrl{
 public:
     //structors
-    codec_ctrl_impl(usrp_e_iface::sptr iface);
-    ~codec_ctrl_impl(void);
+    usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface);
+    ~usrp_e_codec_ctrl_impl(void);
 
     //aux adc and dac control
     float read_aux_adc(aux_adc_t which);
@@ -55,7 +55,7 @@ private:
 /***********************************************************************
  * Codec Control Structors
  **********************************************************************/
-codec_ctrl_impl::codec_ctrl_impl(usrp_e_iface::sptr iface){
+usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     _iface = iface;
 
     //FIXME temp poke !!!
@@ -107,7 +107,7 @@ codec_ctrl_impl::codec_ctrl_impl(usrp_e_iface::sptr iface){
     this->send_reg(34);
 }
 
-codec_ctrl_impl::~codec_ctrl_impl(void){
+usrp_e_codec_ctrl_impl::~usrp_e_codec_ctrl_impl(void){
     return; //FIXME remove this later
 
     //set aux dacs to zero
@@ -131,7 +131,7 @@ static float aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low){
     return float((boost::uint16_t(high) << 2) | low)*3.3/0x3ff;
 }
 
-float codec_ctrl_impl::read_aux_adc(aux_adc_t which){
+float usrp_e_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
     //check to see if the switch needs to be set
     bool write_switch = false;
     switch(which){
@@ -184,7 +184,7 @@ float codec_ctrl_impl::read_aux_adc(aux_adc_t which){
 /***********************************************************************
  * Codec Control AUX DAC Methods
  **********************************************************************/
-void codec_ctrl_impl::write_aux_dac(aux_dac_t which, float volts){
+void usrp_e_codec_ctrl_impl::write_aux_dac(aux_dac_t which, float volts){
     //special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D){
         boost::uint16_t dac_word = std::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);
@@ -217,7 +217,7 @@ void codec_ctrl_impl::write_aux_dac(aux_dac_t which, float volts){
 /***********************************************************************
  * Codec Control SPI Methods
  **********************************************************************/
-void codec_ctrl_impl::send_reg(boost::uint8_t addr){
+void usrp_e_codec_ctrl_impl::send_reg(boost::uint8_t addr){
     boost::uint32_t reg = _ad9862_regs.get_write_reg(addr);
     if (codec_debug) std::cout << "codec control write reg: " << std::hex << reg << std::endl;
     _iface->transact_spi(
@@ -227,7 +227,7 @@ void codec_ctrl_impl::send_reg(boost::uint8_t addr){
     );
 }
 
-void codec_ctrl_impl::recv_reg(boost::uint8_t addr){
+void usrp_e_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
     boost::uint32_t reg = _ad9862_regs.get_read_reg(addr);
     if (codec_debug) std::cout << "codec control read reg: " << std::hex << reg << std::endl;
     boost::uint32_t ret = _iface->transact_spi(
@@ -243,5 +243,5 @@ void codec_ctrl_impl::recv_reg(boost::uint8_t addr){
  * Codec Control Make
  **********************************************************************/
 codec_ctrl::sptr codec_ctrl::make(usrp_e_iface::sptr iface){
-    return sptr(new codec_ctrl_impl(iface));
+    return sptr(new usrp_e_codec_ctrl_impl(iface));
 }
