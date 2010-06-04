@@ -77,8 +77,8 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
 
     //setup various interfaces into hardware
     _iface = usrp_e_iface::make(node);
-    _clock_ctrl = clock_ctrl::make(_iface);
-    _codec_ctrl = codec_ctrl::make(_iface);
+    _clock_ctrl = usrp_e_clock_ctrl::make(_iface);
+    _codec_ctrl = usrp_e_codec_ctrl::make(_iface);
 
     //initialize the mboard
     mboard_init();

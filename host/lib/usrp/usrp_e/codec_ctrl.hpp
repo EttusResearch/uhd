@@ -27,9 +27,9 @@
  * - Init/power down codec.
  * - Read aux adc, write aux dac.
  */
-class codec_ctrl : boost::noncopyable{
+class usrp_e_codec_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<codec_ctrl> sptr;
+    typedef boost::shared_ptr<usrp_e_codec_ctrl> sptr;
 
     /*!
      * Make a new clock control object.

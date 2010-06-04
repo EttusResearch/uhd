@@ -36,8 +36,8 @@
  */
 uhd::usrp::dboard_iface::sptr make_usrp_e_dboard_iface(
     usrp_e_iface::sptr iface,
-    clock_ctrl::sptr clock,
-    codec_ctrl::sptr codec
+    usrp_e_clock_ctrl::sptr clock,
+    usrp_e_codec_ctrl::sptr codec
 );
 
 /*!
@@ -96,10 +96,10 @@ private:
     //TODO otw type recv/send
 
     //ad9522 clock control
-    clock_ctrl::sptr _clock_ctrl;
+    usrp_e_clock_ctrl::sptr _clock_ctrl;
 
     //ad9862 codec control
-    codec_ctrl::sptr _codec_ctrl;
+    usrp_e_codec_ctrl::sptr _codec_ctrl;
 
     //device functions and settings
     void get(const wax::obj &, wax::obj &);

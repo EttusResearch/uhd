@@ -34,8 +34,8 @@ public:
 
     usrp_e_dboard_iface(
         usrp_e_iface::sptr iface,
-        clock_ctrl::sptr clock,
-        codec_ctrl::sptr codec
+        usrp_e_clock_ctrl::sptr clock,
+        usrp_e_codec_ctrl::sptr codec
     ){
         _iface = iface;
         _clock = clock;
@@ -77,8 +77,8 @@ public:
 
 private:
     usrp_e_iface::sptr _iface;
-    clock_ctrl::sptr _clock;
-    codec_ctrl::sptr _codec;
+    usrp_e_clock_ctrl::sptr _clock;
+    usrp_e_codec_ctrl::sptr _codec;
 };
 
 /***********************************************************************
@@ -86,8 +86,8 @@ private:
  **********************************************************************/
 dboard_iface::sptr make_usrp_e_dboard_iface(
     usrp_e_iface::sptr iface,
-    clock_ctrl::sptr clock,
-    codec_ctrl::sptr codec
+    usrp_e_clock_ctrl::sptr clock,
+    usrp_e_codec_ctrl::sptr codec
 ){
     return dboard_iface::sptr(new usrp_e_dboard_iface(iface, clock, codec));
 }
@@ -214,24 +214,24 @@ byte_vector_t usrp_e_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_byte
  **********************************************************************/
 void usrp_e_dboard_iface::write_aux_dac(dboard_iface::unit_t, int which, float value){
     //same aux dacs for each unit
-    static const uhd::dict<int, codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
-        (0, codec_ctrl::AUX_DAC_A) (1, codec_ctrl::AUX_DAC_B)
-        (2, codec_ctrl::AUX_DAC_C) (3, codec_ctrl::AUX_DAC_D)
+    static const uhd::dict<int, usrp_e_codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
+        (0, usrp_e_codec_ctrl::AUX_DAC_A) (1, usrp_e_codec_ctrl::AUX_DAC_B)
+        (2, usrp_e_codec_ctrl::AUX_DAC_C) (3, usrp_e_codec_ctrl::AUX_DAC_D)
     ;
     _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
 float usrp_e_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, int which){
     static const uhd::dict<
-        unit_t, uhd::dict<int, codec_ctrl::aux_adc_t>
+        unit_t, uhd::dict<int, usrp_e_codec_ctrl::aux_adc_t>
     > unit_to_which_to_aux_adc = map_list_of
         (UNIT_RX, map_list_of
-            (0, codec_ctrl::AUX_ADC_A1)
-            (1, codec_ctrl::AUX_ADC_B1)
+            (0, usrp_e_codec_ctrl::AUX_ADC_A1)
+            (1, usrp_e_codec_ctrl::AUX_ADC_B1)
         )
         (UNIT_TX, map_list_of
-            (0, codec_ctrl::AUX_ADC_A2)
-            (1, codec_ctrl::AUX_ADC_B2)
+            (0, usrp_e_codec_ctrl::AUX_ADC_A2)
+            (1, usrp_e_codec_ctrl::AUX_ADC_B2)
         )
     ;
     return _codec->read_aux_adc(unit_to_which_to_aux_adc[unit][which]);

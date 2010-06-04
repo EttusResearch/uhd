@@ -27,9 +27,9 @@
  * - Setup system clocks.
  * - Disable/enable clock lines.
  */
-class clock_ctrl : boost::noncopyable{
+class usrp_e_clock_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<clock_ctrl> sptr;
+    typedef boost::shared_ptr<usrp_e_clock_ctrl> sptr;
 
     /*!
      * Make a new clock control object.

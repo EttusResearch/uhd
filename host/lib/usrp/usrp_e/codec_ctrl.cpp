@@ -34,7 +34,7 @@ static const bool codec_debug = true;
 /***********************************************************************
  * Codec Control Implementation
  **********************************************************************/
-class usrp_e_codec_ctrl_impl : public codec_ctrl{
+class usrp_e_codec_ctrl_impl : public usrp_e_codec_ctrl{
 public:
     //structors
     usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface);
@@ -242,6 +242,6 @@ void usrp_e_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
 /***********************************************************************
  * Codec Control Make
  **********************************************************************/
-codec_ctrl::sptr codec_ctrl::make(usrp_e_iface::sptr iface){
+usrp_e_codec_ctrl::sptr usrp_e_codec_ctrl::make(usrp_e_iface::sptr iface){
     return sptr(new usrp_e_codec_ctrl_impl(iface));
 }

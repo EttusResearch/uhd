@@ -29,7 +29,7 @@ using namespace uhd;
 /***********************************************************************
  * Clock Control Implementation
  **********************************************************************/
-class usrp_e_clock_ctrl_impl : public clock_ctrl{
+class usrp_e_clock_ctrl_impl : public usrp_e_clock_ctrl{
 public:
     //structors
     usrp_e_clock_ctrl_impl(usrp_e_iface::sptr iface);
@@ -170,6 +170,6 @@ void usrp_e_clock_ctrl_impl::send_reg(boost::uint16_t addr){
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-clock_ctrl::sptr clock_ctrl::make(usrp_e_iface::sptr iface){
+usrp_e_clock_ctrl::sptr usrp_e_clock_ctrl::make(usrp_e_iface::sptr iface){
     return sptr(new usrp_e_clock_ctrl_impl(iface));
 }
