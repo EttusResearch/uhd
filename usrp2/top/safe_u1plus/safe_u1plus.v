@@ -4,8 +4,11 @@
 module safe_u1plus
   (input CLK_FPGA_P, input CLK_FPGA_N,
    input reset_n,
-   output [2:0] debug_led  // LED4 is shared w/INIT_B
+   output [2:0] debug_led,  // LED4 is shared w/INIT_B
+   output fpga_cfg_init_b
    );
+
+   assign fpga_cfg_init_b = 1;
    
    // FPGA-specific pins connections
    wire 	clk_fpga, dsp_clk, clk_div, dcm_out, wb_clk, clock_ready;

@@ -5,6 +5,12 @@ NET "reset_n"  LOC = "D5"  ;
 NET "CLK_FPGA_P"  LOC = "R7"  ;
 NET "CLK_FPGA_N"  LOC = "T7"  ;
 
+#NET "fpga_cfg_prog_b"  LOC = "A2"  ;
+#NET "fpga_cfg_done"  LOC = "T15"  ;
+#NET "fpga_cfg_din"  LOC = "T14"  ;
+#NET "fpga_cfg_cclk"  LOC = "R14"  ;
+NET "fpga_cfg_init_b"  LOC = "T12"  ;
+
 
 #NET "TMS"  LOC = "B2"  ;
 #NET "TDO"  LOC = "B16"  ;
@@ -22,13 +28,8 @@ NET "CLK_FPGA_N"  LOC = "T7"  ;
 #NET "GPIF_CTL2"  LOC = "M11"  ;
 #NET "GPIF_CTL1"  LOC = "M9"  ;
 #NET "GPIF_CTL0"  LOC = "M7"  ;
-#NET "fpga_cfg_prog_b"  LOC = "A2"  ;
-#NET "fpga_cfg_done"  LOC = "T15"  ;
-#NET "fpga_cfg_din"  LOC = "T14"  ;
-#NET "fpga_cfg_cclk"  LOC = "R14"  ;
 #NET "SDA_FPGA"  LOC = "T13"  ;
 #NET "SCL_FPGA"  LOC = "R13"  ;
-#NET "fpga_cfg_init_b"  LOC = "T12"  ;
 #NET "FX2_PA7_FLAGD"  LOC = "P12"  ;
 #NET "mystery_bus_2"  LOC = "T11"  ;
 #NET "FX2_PA6_PKTEND"  LOC = "R11"  ;
