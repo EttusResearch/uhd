@@ -108,6 +108,14 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * Mboard Set
  **********************************************************************/
-void usrp_e_impl::mboard_set(const wax::obj &, const wax::obj &){
-    UHD_THROW_PROP_SET_ERROR();
+void usrp_e_impl::mboard_set(const wax::obj &key, const wax::obj &val){
+    //handle the get request conditioned on the key
+    switch(key.as<mboard_prop_t>()){
+
+    case MBOARD_PROP_STREAM_CMD:
+        issue_stream_cmd(val.as<stream_cmd_t>());
+        return;
+
+    default: UHD_THROW_PROP_SET_ERROR();
+    }
 }

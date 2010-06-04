@@ -16,6 +16,7 @@
 //
 
 #include "usrp_e_impl.hpp"
+#include "usrp_e_regs.hpp"
 #include "../../transport/vrt_packet_handler.hpp"
 #include <boost/bind.hpp>
 #include <fcntl.h> //read, write
@@ -86,7 +87,42 @@ struct usrp_e_impl::io_impl{
 };
 
 void usrp_e_impl::io_init(void){
+    //setup rx data path
+    _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, 1000); //FIXME magic number
+    _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
+    _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 1); //reset
+    _iface->poke32(UE_REG_CTRL_RX_VRT_HEADER, 0
+        | (0x1 << 28) //if data with stream id
+        | (0x1 << 26) //has trailer
+        | (0x3 << 22) //integer time other
+        | (0x1 << 20) //fractional time sample count
+    );
+    _iface->poke32(UE_REG_CTRL_RX_VRT_STREAM_ID, 0);
+    _iface->poke32(UE_REG_CTRL_RX_VRT_TRAILER, 0);
+
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface->get_file_descriptor()));
+}
+
+static boost::uint32_t make_stream_cmd(bool now, bool chain, boost::uint32_t nsamps){
+    return (((now)? 1 : 0) << 31) | (((chain)? 1 : 0) << 30) | nsamps;
+}
+
+void usrp_e_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
+    boost::uint32_t cmd = 0;
+    switch(stream_cmd.stream_mode){
+    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
+        cmd = make_stream_cmd(stream_cmd.stream_now, false, stream_cmd.num_samps);
+        break;
+
+    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
+        cmd = make_stream_cmd(stream_cmd.stream_now, true, stream_cmd.num_samps);
+        break;
+
+    default: throw std::runtime_error("stream mode not implemented");
+    }
+    _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, cmd);
+    _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  stream_cmd.time_spec.secs);
+    _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_ticks(MASTER_CLOCK_RATE));
 }
 
 /***********************************************************************
@@ -110,7 +146,7 @@ size_t usrp_e_impl::send(
         send_mode,
         io_type,
         send_otw_type, //TODO
-        64e6, //TODO
+        MASTER_CLOCK_RATE,
         boost::bind(&data_transport::get_send_buff, &_io_impl->transport),
         (MAX_BUFF_SIZE - sizeof(usrp_transfer_frame))/send_otw_type.get_sample_size(),
         offsetof(usrp_transfer_frame, buf)
@@ -138,7 +174,7 @@ size_t usrp_e_impl::recv(
         recv_mode,
         io_type,
         recv_otw_type, //TODO
-        64e6, //TODO
+        MASTER_CLOCK_RATE,
         boost::bind(&data_transport::get_recv_buff, &_io_impl->transport),
         offsetof(usrp_transfer_frame, buf)
     );

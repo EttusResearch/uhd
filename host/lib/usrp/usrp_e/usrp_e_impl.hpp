@@ -22,10 +22,13 @@
 #include <uhd/usrp/usrp_e.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/types/clock_config.hpp>
+#include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 
 #ifndef INCLUDED_USRP_E_IMPL_HPP
 #define INCLUDED_USRP_E_IMPL_HPP
+
+static const double MASTER_CLOCK_RATE = 64e6;
 
 /*!
  * Make a usrp-e dboard interface.
@@ -90,6 +93,7 @@ private:
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
+    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
 
     //configuration shadows
     uhd::clock_config_t _clock_config;
@@ -131,12 +135,14 @@ private:
     void rx_ddc_init(void);
     void rx_ddc_get(const wax::obj &, wax::obj &);
     void rx_ddc_set(const wax::obj &, const wax::obj &);
+    double _ddc_freq; size_t _ddc_decim;
     wax_obj_proxy::sptr _rx_ddc_proxy;
 
     //tx duc functions and settings
     void tx_duc_init(void);
     void tx_duc_get(const wax::obj &, wax::obj &);
     void tx_duc_set(const wax::obj &, const wax::obj &);
+    double _duc_freq; size_t _duc_interp;
     wax_obj_proxy::sptr _tx_duc_proxy;
 };
 
