@@ -23,14 +23,14 @@ using namespace uhd;
 /*!
  * A usrp2 serdes control implementation
  */
-class serdes_ctrl_impl : public serdes_ctrl{
+class usrp2_serdes_ctrl_impl : public usrp2_serdes_ctrl{
 public:
-    serdes_ctrl_impl(usrp2_iface::sptr iface){
+    usrp2_serdes_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
         _iface->poke32(FR_MISC_CTRL_SERDES, FRF_MISC_CTRL_SERDES_ENABLE | FRF_MISC_CTRL_SERDES_RXEN);
     }
 
-    ~serdes_ctrl_impl(void){
+    ~usrp2_serdes_ctrl_impl(void){
         _iface->poke32(FR_MISC_CTRL_SERDES, 0); //power-down
     }
 
@@ -41,6 +41,6 @@ private:
 /***********************************************************************
  * Public make function for the usrp2 serdes control
  **********************************************************************/
-serdes_ctrl::sptr serdes_ctrl::make(usrp2_iface::sptr iface){
-    return sptr(new serdes_ctrl_impl(iface));
+usrp2_serdes_ctrl::sptr usrp2_serdes_ctrl::make(usrp2_iface::sptr iface){
+    return sptr(new usrp2_serdes_ctrl_impl(iface));
 }

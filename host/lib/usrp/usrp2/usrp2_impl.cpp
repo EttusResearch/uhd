@@ -76,16 +76,17 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the timeout
+    boost::uint8_t usrp2_ctrl_data_in_mem[1500]; //allocate MTU bytes for recv
+    usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
     while(true){
-        usrp2_ctrl_data_t ctrl_data_in;
-        size_t len = udp_transport->recv(asio::buffer(&ctrl_data_in, sizeof(ctrl_data_in)));
+        size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
         //std::cout << len << "\n";
         if (len >= sizeof(usrp2_ctrl_data_t)){
             //handle the received data
-            switch(ntohl(ctrl_data_in.id)){
+            switch(ntohl(ctrl_data_in->id)){
             case USRP2_CTRL_ID_WAZZUP_DUDE:
                 //make a boost asio ipv4 with the raw addr in host byte order
-                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in.data.ip_addr));
+                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
                 device_addr_t new_addr;
                 new_addr["name"] = "USRP2";
                 new_addr["addr"] = ip_addr.to_string();
@@ -147,9 +148,9 @@ usrp2_impl::usrp2_impl(
 
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
-    _clock_ctrl = clock_ctrl::make(_iface);
-    _codec_ctrl = codec_ctrl::make(_iface);
-    _serdes_ctrl = serdes_ctrl::make(_iface);
+    _clock_ctrl = usrp2_clock_ctrl::make(_iface);
+    _codec_ctrl = usrp2_codec_ctrl::make(_iface);
+    _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
 
     //load the allowed decim/interp rates
     //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)

@@ -22,9 +22,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class clock_ctrl : boost::noncopyable{
+class usrp2_clock_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<clock_ctrl> sptr;
+    typedef boost::shared_ptr<usrp2_clock_ctrl> sptr;
 
     /*!
      * Make a clock config for the ad9510 ic.
@@ -32,6 +32,12 @@ public:
      * \return a new clock control object
      */
     static sptr make(usrp2_iface::sptr iface);
+
+    /*!
+     * Get the master clock frequency for the fpga.
+     * \return the clock frequency in Hz
+     */
+    virtual double get_master_clock_rate(void) = 0;
 
     /*!
      * Enable/disable the rx dboard clock.

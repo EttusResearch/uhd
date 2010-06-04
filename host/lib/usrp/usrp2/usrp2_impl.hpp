@@ -43,7 +43,7 @@
  */
 uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
     usrp2_iface::sptr iface,
-    clock_ctrl::sptr clk_ctrl
+    usrp2_clock_ctrl::sptr clk_ctrl
 );
 
 /*!
@@ -124,8 +124,8 @@ public:
     );
 
 private:
-    double get_master_clock_freq(void){
-        return _iface->get_master_clock_freq();
+    inline double get_master_clock_freq(void){
+        return _clock_ctrl->get_master_clock_rate();
     }
 
     //device properties interface
@@ -134,9 +134,9 @@ private:
 
     //interfaces
     usrp2_iface::sptr _iface;
-    clock_ctrl::sptr _clock_ctrl;
-    codec_ctrl::sptr _codec_ctrl;
-    serdes_ctrl::sptr _serdes_ctrl;
+    usrp2_clock_ctrl::sptr _clock_ctrl;
+    usrp2_codec_ctrl::sptr _codec_ctrl;
+    usrp2_serdes_ctrl::sptr _serdes_ctrl;
 
     /*******************************************************************
      * Deal with the rx and tx packet sizes

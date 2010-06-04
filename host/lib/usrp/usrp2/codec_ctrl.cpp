@@ -29,9 +29,9 @@ using namespace uhd;
 /*!
  * A usrp2 codec control specific to the ad9777 ic.
  */
-class codec_ctrl_impl : public codec_ctrl{
+class usrp2_codec_ctrl_impl : public usrp2_codec_ctrl{
 public:
-    codec_ctrl_impl(usrp2_iface::sptr iface){
+    usrp2_codec_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
 
         //setup the ad9777 dac
@@ -60,7 +60,7 @@ public:
         _iface->poke32(FR_MISC_CTRL_ADC, FRF_MISC_CTRL_ADC_ON);
     }
 
-    ~codec_ctrl_impl(void){
+    ~usrp2_codec_ctrl_impl(void){
         //power-down dac
         _ad9777_regs.power_down_mode = 1;
         this->send_ad9777_reg(0);
@@ -86,6 +86,6 @@ private:
 /***********************************************************************
  * Public make function for the usrp2 codec control
  **********************************************************************/
-codec_ctrl::sptr codec_ctrl::make(usrp2_iface::sptr iface){
-    return sptr(new codec_ctrl_impl(iface));
+usrp2_codec_ctrl::sptr usrp2_codec_ctrl::make(usrp2_iface::sptr iface){
+    return sptr(new usrp2_codec_ctrl_impl(iface));
 }
