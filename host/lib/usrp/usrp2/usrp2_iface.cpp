@@ -166,13 +166,6 @@ public:
         throw std::runtime_error("usrp2 no control response");
     }
 
-/***********************************************************************
- * Master Clock! Ahhhhh
- **********************************************************************/
-    double get_master_clock_freq(void){
-        return 100e6;
-    }
-
 private:
     //this lovely lady makes it all possible
     transport::udp_simple::sptr _ctrl_transport;

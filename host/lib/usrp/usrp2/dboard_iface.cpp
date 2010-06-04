@@ -117,7 +117,7 @@ usrp2_dboard_iface::~usrp2_dboard_iface(void){
  * Clocks
  **********************************************************************/
 double usrp2_dboard_iface::get_clock_rate(unit_t){
-    return _iface->get_master_clock_freq();
+    return _clock_ctrl->get_master_clock_rate();
 }
 
 void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){

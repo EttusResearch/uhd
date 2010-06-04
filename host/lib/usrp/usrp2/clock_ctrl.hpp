@@ -34,6 +34,12 @@ public:
     static sptr make(usrp2_iface::sptr iface);
 
     /*!
+     * Get the master clock frequency for the fpga.
+     * \return the clock frequency in Hz
+     */
+    virtual double get_master_clock_rate(void) = 0;
+
+    /*!
      * Enable/disable the rx dboard clock.
      * \param enb true to enable
      */

@@ -110,6 +110,10 @@ public:
         this->update_regs();
     }
 
+    double get_master_clock_rate(void){
+        return 100e6;
+    }
+
 private:
     /*!
      * Write a single register to the spi regs.

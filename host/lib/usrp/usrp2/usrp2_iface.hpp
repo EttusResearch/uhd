@@ -108,12 +108,6 @@ public:
         size_t num_bits,
         bool readback
     ) = 0;
-
-    /*!
-     * Get the master clock frequency.
-     * \return the frequency in Hz
-     */
-    virtual double get_master_clock_freq(void) = 0;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

@@ -124,8 +124,8 @@ public:
     );
 
 private:
-    double get_master_clock_freq(void){
-        return _iface->get_master_clock_freq();
+    inline double get_master_clock_freq(void){
+        return _clock_ctrl->get_master_clock_rate();
     }
 
     //device properties interface
