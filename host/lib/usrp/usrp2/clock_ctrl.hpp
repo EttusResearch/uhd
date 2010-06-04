@@ -22,9 +22,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class clock_ctrl : boost::noncopyable{
+class usrp2_clock_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<clock_ctrl> sptr;
+    typedef boost::shared_ptr<usrp2_clock_ctrl> sptr;
 
     /*!
      * Make a clock config for the ad9510 ic.

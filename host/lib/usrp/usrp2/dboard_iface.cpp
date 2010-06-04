@@ -33,7 +33,7 @@ using namespace boost::assign;
 
 class usrp2_dboard_iface : public dboard_iface{
 public:
-    usrp2_dboard_iface(usrp2_iface::sptr iface, clock_ctrl::sptr clock_ctrl);
+    usrp2_dboard_iface(usrp2_iface::sptr iface, usrp2_clock_ctrl::sptr clock_ctrl);
     ~usrp2_dboard_iface(void);
 
     void write_aux_dac(unit_t, int, float);
@@ -68,7 +68,7 @@ public:
 
 private:
     usrp2_iface::sptr _iface;
-    clock_ctrl::sptr _clock_ctrl;
+    usrp2_clock_ctrl::sptr _clock_ctrl;
     boost::uint32_t _ddr_shadow;
     boost::uint32_t _gpio_shadow;
 
@@ -81,7 +81,7 @@ private:
  **********************************************************************/
 dboard_iface::sptr make_usrp2_dboard_iface(
     usrp2_iface::sptr iface,
-    clock_ctrl::sptr clock_ctrl
+    usrp2_clock_ctrl::sptr clock_ctrl
 ){
     return dboard_iface::sptr(new usrp2_dboard_iface(iface, clock_ctrl));
 }
@@ -89,7 +89,10 @@ dboard_iface::sptr make_usrp2_dboard_iface(
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp2_dboard_iface::usrp2_dboard_iface(usrp2_iface::sptr iface, clock_ctrl::sptr clock_ctrl){
+usrp2_dboard_iface::usrp2_dboard_iface(
+    usrp2_iface::sptr iface,
+    usrp2_clock_ctrl::sptr clock_ctrl
+){
     _iface = iface;
     _clock_ctrl = clock_ctrl;
     _ddr_shadow = 0;

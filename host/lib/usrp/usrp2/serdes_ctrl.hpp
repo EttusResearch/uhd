@@ -22,9 +22,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class serdes_ctrl : boost::noncopyable{
+class usrp2_serdes_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<serdes_ctrl> sptr;
+    typedef boost::shared_ptr<usrp2_serdes_ctrl> sptr;
 
     /*!
      * Make a serdes control object for the usrp2 serdes port.

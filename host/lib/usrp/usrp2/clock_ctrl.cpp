@@ -25,9 +25,9 @@ using namespace uhd;
 /*!
  * A usrp2 clock control specific to the ad9510 ic.
  */
-class clock_ctrl_impl : public clock_ctrl{
+class usrp2_clock_ctrl_impl : public usrp2_clock_ctrl{
 public:
-    clock_ctrl_impl(usrp2_iface::sptr iface){
+    usrp2_clock_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
@@ -68,7 +68,7 @@ public:
 
     }
 
-    ~clock_ctrl_impl(void){
+    ~usrp2_clock_ctrl_impl(void){
         /* private clock enables, must be set here */
         this->enable_dac_clock(false);
         this->enable_adc_clock(false);
@@ -158,6 +158,6 @@ private:
 /***********************************************************************
  * Public make function for the ad9510 clock control
  **********************************************************************/
-clock_ctrl::sptr clock_ctrl::make(usrp2_iface::sptr iface){
-    return sptr(new clock_ctrl_impl(iface));
+usrp2_clock_ctrl::sptr usrp2_clock_ctrl::make(usrp2_iface::sptr iface){
+    return sptr(new usrp2_clock_ctrl_impl(iface));
 }

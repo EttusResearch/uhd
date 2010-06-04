@@ -22,9 +22,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class codec_ctrl : boost::noncopyable{
+class usrp2_codec_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<codec_ctrl> sptr;
+    typedef boost::shared_ptr<usrp2_codec_ctrl> sptr;
 
     /*!
      * Make a codec control for the DAC and ADC.
