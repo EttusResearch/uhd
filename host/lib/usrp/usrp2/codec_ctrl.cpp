@@ -57,7 +57,7 @@ public:
         }
 
         //power-up adc
-        _iface->poke32(FR_MISC_CTRL_ADC, FRF_MISC_CTRL_ADC_ON);
+        _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_ON);
     }
 
     ~usrp2_codec_ctrl_impl(void){
@@ -66,7 +66,7 @@ public:
         this->send_ad9777_reg(0);
 
         //power-down adc
-        _iface->poke32(FR_MISC_CTRL_ADC, FRF_MISC_CTRL_ADC_OFF);
+        _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_OFF);
     }
 
 private:

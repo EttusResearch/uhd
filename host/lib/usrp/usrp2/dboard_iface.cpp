@@ -140,13 +140,13 @@ void usrp2_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value){
     boost::uint32_t new_sels = 0x0;
     for(size_t i = 0; i < 16; i++){
         bool is_bit_set = (value & (0x1 << i)) != 0;
-        new_sels |= ((is_bit_set)? FRF_GPIO_SEL_ATR : FRF_GPIO_SEL_GPIO) << (i*2);
+        new_sels |= ((is_bit_set)? U2_FLAG_GPIO_SEL_ATR : U2_FLAG_GPIO_SEL_GPIO) << (i*2);
     }
 
     //write the selection mux value to register
     switch(unit){
-    case UNIT_RX: _iface->poke32(FR_GPIO_RX_SEL, new_sels); return;
-    case UNIT_TX: _iface->poke32(FR_GPIO_TX_SEL, new_sels); return;
+    case UNIT_RX: _iface->poke32(U2_REG_GPIO_RX_SEL, new_sels); return;
+    case UNIT_TX: _iface->poke32(U2_REG_GPIO_TX_SEL, new_sels); return;
     }
 }
 
@@ -154,18 +154,18 @@ void usrp2_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
     _ddr_shadow = \
         (_ddr_shadow & ~(0xffff << unit_to_shift[unit])) |
         (boost::uint32_t(value) << unit_to_shift[unit]);
-    _iface->poke32(FR_GPIO_DDR, _ddr_shadow);
+    _iface->poke32(U2_REG_GPIO_DDR, _ddr_shadow);
 }
 
 void usrp2_dboard_iface::write_gpio(unit_t unit, boost::uint16_t value){
     _gpio_shadow = \
         (_gpio_shadow & ~(0xffff << unit_to_shift[unit])) |
         (boost::uint32_t(value) << unit_to_shift[unit]);
-    _iface->poke32(FR_GPIO_IO, _gpio_shadow);
+    _iface->poke32(U2_REG_GPIO_IO, _gpio_shadow);
 }
 
 boost::uint16_t usrp2_dboard_iface::read_gpio(unit_t unit){
-    return boost::uint16_t(_iface->peek32(FR_GPIO_IO) >> unit_to_shift[unit]);
+    return boost::uint16_t(_iface->peek32(U2_REG_GPIO_IO) >> unit_to_shift[unit]);
 }
 
 void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
@@ -174,16 +174,16 @@ void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
     > unit_to_atr_to_addr = map_list_of
         (UNIT_RX, map_list_of
-            (ATR_REG_IDLE,        FR_ATR_IDLE_RXSIDE)
-            (ATR_REG_TX_ONLY,     FR_ATR_INTX_RXSIDE)
-            (ATR_REG_RX_ONLY,     FR_ATR_INRX_RXSIDE)
-            (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_RXSIDE)
+            (ATR_REG_IDLE,        U2_REG_ATR_IDLE_RXSIDE)
+            (ATR_REG_TX_ONLY,     U2_REG_ATR_INTX_RXSIDE)
+            (ATR_REG_RX_ONLY,     U2_REG_ATR_INRX_RXSIDE)
+            (ATR_REG_FULL_DUPLEX, U2_REG_ATR_FULL_RXSIDE)
         )
         (UNIT_TX, map_list_of
-            (ATR_REG_IDLE,        FR_ATR_IDLE_TXSIDE)
-            (ATR_REG_TX_ONLY,     FR_ATR_INTX_TXSIDE)
-            (ATR_REG_RX_ONLY,     FR_ATR_INRX_TXSIDE)
-            (ATR_REG_FULL_DUPLEX, FR_ATR_FULL_TXSIDE)
+            (ATR_REG_IDLE,        U2_REG_ATR_IDLE_TXSIDE)
+            (ATR_REG_TX_ONLY,     U2_REG_ATR_INTX_TXSIDE)
+            (ATR_REG_RX_ONLY,     U2_REG_ATR_INRX_TXSIDE)
+            (ATR_REG_FULL_DUPLEX, U2_REG_ATR_FULL_TXSIDE)
         )
     ;
     _iface->poke16(unit_to_atr_to_addr[unit][atr], value);

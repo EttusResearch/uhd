@@ -54,26 +54,26 @@ void usrp2_impl::update_clock_config(void){
 
     //translate pps source enums
     switch(_clock_config.pps_source){
-    case clock_config_t::PPS_SMA:  pps_flags |= FRF_TIME64_PPS_SMA;  break;
-    case clock_config_t::PPS_MIMO: pps_flags |= FRF_TIME64_PPS_MIMO; break;
+    case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
+    case clock_config_t::PPS_MIMO: pps_flags |= U2_FLAG_TIME64_PPS_MIMO; break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration pps source");
     }
 
     //translate pps polarity enums
     switch(_clock_config.pps_polarity){
-    case clock_config_t::PPS_POS: pps_flags |= FRF_TIME64_PPS_POSEDGE; break;
-    case clock_config_t::PPS_NEG: pps_flags |= FRF_TIME64_PPS_NEGEDGE; break;
+    case clock_config_t::PPS_POS: pps_flags |= U2_FLAG_TIME64_PPS_POSEDGE; break;
+    case clock_config_t::PPS_NEG: pps_flags |= U2_FLAG_TIME64_PPS_NEGEDGE; break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration pps polarity");
     }
 
     //set the pps flags
-    _iface->poke32(FR_TIME64_FLAGS, pps_flags);
+    _iface->poke32(U2_REG_TIME64_FLAGS, pps_flags);
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
-    case clock_config_t::REF_INT : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x10); break;
-    case clock_config_t::REF_SMA : _iface->poke32(FR_MISC_CTRL_CLOCK, 0x1C); break;
-    case clock_config_t::REF_MIMO: _iface->poke32(FR_MISC_CTRL_CLOCK, 0x15); break;
+    case clock_config_t::REF_INT : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10); break;
+    case clock_config_t::REF_SMA : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C); break;
+    case clock_config_t::REF_MIMO: _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15); break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 
@@ -84,18 +84,18 @@ void usrp2_impl::update_clock_config(void){
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set the ticks
-    _iface->poke32(FR_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
+    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
 
     //set the flags register
-    boost::uint32_t imm_flags = (now)? FRF_TIME64_LATCH_NOW : FRF_TIME64_LATCH_NEXT_PPS;
-    _iface->poke32(FR_TIME64_IMM, imm_flags);
+    boost::uint32_t imm_flags = (now)? U2_FLAG_TIME64_LATCH_NOW : U2_FLAG_TIME64_LATCH_NEXT_PPS;
+    _iface->poke32(U2_REG_TIME64_IMM, imm_flags);
 
     //set the seconds (latches in all 3 registers)
-    _iface->poke32(FR_TIME64_SECS, time_spec.secs);
+    _iface->poke32(U2_REG_TIME64_SECS, time_spec.secs);
 }
 
 void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    UHD_ASSERT_THROW(stream_cmd.num_samps <= FR_RX_CTRL_MAX_SAMPS_PER_CMD);
+    UHD_ASSERT_THROW(stream_cmd.num_samps <= U2_REG_RX_CTRL_MAX_SAMPS_PER_CMD);
 
     //setup the mode to instruction flags
     typedef boost::tuple<bool, bool, bool> inst_t;
@@ -112,14 +112,14 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
 
     //issue the stream command
-    _iface->poke32(FR_RX_CTRL_STREAM_CMD, FR_RX_CTRL_MAKE_CMD(
+    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, U2_REG_RX_CTRL_MAKE_CMD(
         (inst_samps)? stream_cmd.num_samps : ((inst_chain)? get_max_recv_samps_per_packet() : 1),
         (stream_cmd.stream_now)? 1 : 0,
         (inst_chain)? 1 : 0,
         (inst_reload)? 1 : 0
     ));
-    _iface->poke32(FR_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.secs);
-    _iface->poke32(FR_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
+    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.secs);
+    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
 }
 
 /***********************************************************************

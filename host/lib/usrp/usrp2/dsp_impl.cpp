@@ -98,11 +98,11 @@ void usrp2_impl::init_ddc_config(void){
 
 void usrp2_impl::update_ddc_config(void){
     //set the decimation
-    _iface->poke32(FR_DSP_RX_DECIM_RATE, calculate_cic_word(_ddc_decim));
+    _iface->poke32(U2_REG_DSP_RX_DECIM_RATE, calculate_cic_word(_ddc_decim));
 
     //set the scaling
     static const boost::int16_t default_rx_scale_iq = 1024;
-    _iface->poke32(FR_DSP_RX_SCALE_IQ,
+    _iface->poke32(U2_REG_DSP_RX_SCALE_IQ,
         calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
     );
 }
@@ -141,7 +141,7 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(FR_DSP_RX_FREQ,
+            _iface->poke32(U2_REG_DSP_RX_FREQ,
                 calculate_freq_word_and_update_actual_freq(new_freq, get_master_clock_freq())
             );
             _ddc_freq = new_freq; //shadow
@@ -184,10 +184,10 @@ void usrp2_impl::update_duc_config(void){
     boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
 
     //set the interpolation
-    _iface->poke32(FR_DSP_TX_INTERP_RATE, calculate_cic_word(_duc_interp));
+    _iface->poke32(U2_REG_DSP_TX_INTERP_RATE, calculate_cic_word(_duc_interp));
 
     //set the scaling
-    _iface->poke32(FR_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
+    _iface->poke32(U2_REG_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
 }
 
 /***********************************************************************
@@ -224,7 +224,7 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(FR_DSP_TX_FREQ,
+            _iface->poke32(U2_REG_DSP_TX_FREQ,
                 calculate_freq_word_and_update_actual_freq(new_freq, get_master_clock_freq())
             );
             _duc_freq = new_freq; //shadow

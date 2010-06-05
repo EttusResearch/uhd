@@ -76,7 +76,7 @@ void usrp2_impl::update_rx_mux_config(void){
         rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
     }
 
-    _iface->poke32(FR_DSP_RX_MUX, rx_mux);
+    _iface->poke32(U2_REG_DSP_RX_MUX, rx_mux);
 }
 
 void usrp2_impl::update_tx_mux_config(void){
@@ -89,7 +89,7 @@ void usrp2_impl::update_tx_mux_config(void){
         tx_mux = (((tx_mux >> 0) & 0xf) << 4) | (((tx_mux >> 4) & 0xf) << 0);
     }
 
-    _iface->poke32(FR_DSP_TX_MUX, tx_mux);
+    _iface->poke32(U2_REG_DSP_TX_MUX, tx_mux);
 }
 
 /***********************************************************************
