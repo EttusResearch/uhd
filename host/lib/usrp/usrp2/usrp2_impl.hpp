@@ -198,14 +198,12 @@ private:
     size_t _ddc_decim;
     double _ddc_freq;
     void init_ddc_config(void);
-    void update_ddc_config(void);
     void issue_ddc_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
 
     //methods and shadows for the duc dsp
     size_t _duc_interp;
     double _duc_freq;
     void init_duc_config(void);
-    void update_duc_config(void);
 
     //properties interface for ddc
     void ddc_get(const wax::obj &, wax::obj &);

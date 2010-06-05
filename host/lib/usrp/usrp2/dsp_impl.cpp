@@ -91,20 +91,8 @@ void usrp2_impl::init_ddc_config(void){
     );
 
     //initial config and update
-    _ddc_decim = default_decim;
-    _ddc_freq = 0;
-    update_ddc_config();
-}
-
-void usrp2_impl::update_ddc_config(void){
-    //set the decimation
-    _iface->poke32(U2_REG_DSP_RX_DECIM_RATE, calculate_cic_word(_ddc_decim));
-
-    //set the scaling
-    static const boost::int16_t default_rx_scale_iq = 1024;
-    _iface->poke32(U2_REG_DSP_RX_SCALE_IQ,
-        calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
-    );
+    ddc_set(DSP_PROP_FREQ_SHIFT, double(0));
+    ddc_set(DSP_PROP_HOST_RATE, double(get_master_clock_freq()/default_decim));
 }
 
 /***********************************************************************
@@ -151,7 +139,15 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     case DSP_PROP_HOST_RATE:{
             double extact_rate = get_master_clock_freq()/val.as<double>();
             _ddc_decim = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
-            update_ddc_config();
+
+            //set the decimation
+            _iface->poke32(U2_REG_DSP_RX_DECIM_RATE, calculate_cic_word(_ddc_decim));
+
+            //set the scaling
+            static const boost::int16_t default_rx_scale_iq = 1024;
+            _iface->poke32(U2_REG_DSP_RX_SCALE_IQ,
+                calculate_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
+            );
         }
         return;
 
@@ -170,24 +166,8 @@ void usrp2_impl::init_duc_config(void){
     );
 
     //initial config and update
-    _duc_interp = default_interp;
-    _duc_freq = 0;
-    update_duc_config();
-}
-
-void usrp2_impl::update_duc_config(void){
-    // Calculate CIC interpolation (i.e., without halfband interpolators)
-    size_t tmp_interp = calculate_cic_word(_duc_interp) & 0xff;
-
-    // Calculate closest multiplier constant to reverse gain absent scale multipliers
-    double interp_cubed = std::pow(double(tmp_interp), 3);
-    boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
-
-    //set the interpolation
-    _iface->poke32(U2_REG_DSP_TX_INTERP_RATE, calculate_cic_word(_duc_interp));
-
-    //set the scaling
-    _iface->poke32(U2_REG_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
+    duc_set(DSP_PROP_FREQ_SHIFT, double(0));
+    duc_set(DSP_PROP_HOST_RATE, double(get_master_clock_freq()/default_interp));
 }
 
 /***********************************************************************
@@ -234,7 +214,19 @@ void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
     case DSP_PROP_HOST_RATE:{
             double extact_rate = get_master_clock_freq()/val.as<double>();
             _duc_interp = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
-            update_duc_config();
+
+            // Calculate CIC interpolation (i.e., without halfband interpolators)
+            size_t tmp_interp = calculate_cic_word(_duc_interp) & 0xff;
+
+            // Calculate closest multiplier constant to reverse gain absent scale multipliers
+            double interp_cubed = std::pow(double(tmp_interp), 3);
+            boost::int16_t scale = rint((4096*std::pow(2, ceil(log2(interp_cubed))))/(1.65*interp_cubed));
+
+            //set the interpolation
+            _iface->poke32(U2_REG_DSP_TX_INTERP_RATE, calculate_cic_word(_duc_interp));
+
+            //set the scaling
+            _iface->poke32(U2_REG_DSP_TX_SCALE_IQ, calculate_iq_scale_word(scale, scale));
         }
         return;
 
