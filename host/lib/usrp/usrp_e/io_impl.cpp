@@ -73,11 +73,14 @@ private:
         std::cout << boost::format(
             "calling read on fd %d, buff size is %d"
         ) % _fd % boost::asio::buffer_size(buff) << std::endl;
-        return read(
+        ssize_t ret = read(
             _fd,
             boost::asio::buffer_cast<void *>(buff),
             boost::asio::buffer_size(buff)
         );
+        if (ret < ssize_t(sizeof(usrp_transfer_frame))) return 0;
+        std::cout << "len " << int(boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len) << std::endl;
+        return boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len;
     }
 };
 
@@ -93,7 +96,7 @@ struct usrp_e_impl::io_impl{
 
 void usrp_e_impl::io_init(void){
     //setup rx data path
-    _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, 1000); //FIXME magic number
+    _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, 300); //FIXME magic number
     _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
     _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(UE_REG_CTRL_RX_VRT_HEADER, 0
@@ -142,7 +145,7 @@ size_t usrp_e_impl::send(
     otw_type_t send_otw_type;
     send_otw_type.width = 16;
     send_otw_type.shift = 0;
-    send_otw_type.byteorder = otw_type_t::BO_NATIVE;
+    send_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
 
     return vrt_packet_handler::send(
         _io_impl->send_state,
@@ -170,7 +173,7 @@ size_t usrp_e_impl::recv(
     otw_type_t recv_otw_type;
     recv_otw_type.width = 16;
     recv_otw_type.shift = 0;
-    recv_otw_type.byteorder = otw_type_t::BO_NATIVE;
+    recv_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
 
     return vrt_packet_handler::recv(
         _io_impl->recv_state,
