@@ -22,6 +22,8 @@
 #include <fcntl.h> //read, write
 #include <linux/usrp_e.h> //transfer frame struct
 #include <stddef.h> //offsetof
+#include <boost/format.hpp>
+#include <iostream>
 
 using namespace uhd;
 
@@ -68,6 +70,9 @@ private:
         );
     }
     size_t recv(const boost::asio::mutable_buffer &buff){
+        std::cout << boost::format(
+            "calling read on fd %d, buff size is %d"
+        ) % _fd % boost::asio::buffer_size(buff) << std::endl;
         return read(
             _fd,
             boost::asio::buffer_cast<void *>(buff),

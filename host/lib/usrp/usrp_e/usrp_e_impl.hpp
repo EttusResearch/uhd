@@ -118,17 +118,20 @@ private:
     //xx dboard functions and settings
     void dboard_init(void);
     uhd::usrp::dboard_manager::sptr _dboard_manager;
+    uhd::usrp::dboard_iface::sptr _dboard_iface;
 
     //rx dboard functions and settings
     uhd::usrp::dboard_eeprom_t _rx_db_eeprom;
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
+    uhd::prop_names_t _rx_subdevs_in_use;
     wax_obj_proxy::sptr _rx_dboard_proxy;
 
     //tx dboard functions and settings
     uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
+    uhd::prop_names_t _tx_subdevs_in_use;
     wax_obj_proxy::sptr _tx_dboard_proxy;
 
     //rx ddc functions and settings

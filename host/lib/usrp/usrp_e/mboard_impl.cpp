@@ -16,6 +16,7 @@
 //
 
 #include "usrp_e_impl.hpp"
+#include "usrp_e_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
@@ -75,26 +76,22 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of size 1 with empty string
         return;
 
-    case MBOARD_PROP_STREAM_CMD:
-        //val = TODO
-        return;
-
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(name == "ddc0");
+        UHD_ASSERT_THROW(name == "");
         val = _rx_ddc_proxy->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
-        val = prop_names_t(1, "ddc0");
+        val = prop_names_t(1, "");
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(name == "duc0");
+        UHD_ASSERT_THROW(name == "");
         val = _tx_duc_proxy->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
-        val = prop_names_t(1, "duc0");
+        val = prop_names_t(1, "");
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:
@@ -114,6 +111,16 @@ void usrp_e_impl::mboard_set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_STREAM_CMD:
         issue_stream_cmd(val.as<stream_cmd_t>());
+        return;
+
+    case MBOARD_PROP_TIME_NOW:
+    case MBOARD_PROP_TIME_NEXT_PPS:{
+            time_spec_t time_spec = val.as<time_spec_t>();
+            _iface->poke32(UE_REG_TIME64_TICKS, time_spec.get_ticks(MASTER_CLOCK_RATE));
+            boost::uint32_t imm_flags = (key.as<mboard_prop_t>() == MBOARD_PROP_TIME_NOW)? 1 : 0;
+            _iface->poke32(UE_REG_TIME64_IMM, imm_flags);
+            _iface->poke32(UE_REG_TIME64_SECS, time_spec.secs);
+        }
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

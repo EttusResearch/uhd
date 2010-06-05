@@ -17,8 +17,11 @@
 
 #include <boost/bind.hpp>
 #include "usrp_e_impl.hpp"
+#include <uhd/utils/assert.hpp>
+#include <uhd/usrp/dboard_props.hpp>
 #include <iostream>
 
+using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
@@ -32,11 +35,11 @@ void usrp_e_impl::dboard_init(void){
     std::cout << _tx_db_eeprom.id.to_pp_string() << std::endl;
 
     //create a new dboard interface and manager
-    dboard_iface::sptr dboard_iface(
-        make_usrp_e_dboard_iface(_iface, _clock_ctrl, _codec_ctrl)
+    _dboard_iface = make_usrp_e_dboard_iface(
+        _iface, _clock_ctrl, _codec_ctrl
     );
     _dboard_manager = dboard_manager::make(
-        _rx_db_eeprom.id, _tx_db_eeprom.id, dboard_iface
+        _rx_db_eeprom.id, _tx_db_eeprom.id, _dboard_iface
     );
 
     //setup the dboard proxies
@@ -48,32 +51,123 @@ void usrp_e_impl::dboard_init(void){
         boost::bind(&usrp_e_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp_e_impl::tx_dboard_set, this, _1, _2)
     );
+
+    //init the subdevs in use (use the first subdevice)
+    _rx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0));
+    //TODO update_rx_mux_config();
+
+    _tx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0));
+    //TODO update_tx_mux_config();
 }
 
 /***********************************************************************
  * RX Dboard Get
  **********************************************************************/
-void usrp_e_impl::rx_dboard_get(const wax::obj &, wax::obj &){
-    UHD_THROW_PROP_GET_ERROR();
+void usrp_e_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the get request conditioned on the key
+    switch(key.as<dboard_prop_t>()){
+    case DBOARD_PROP_NAME:
+        val = std::string("usrp-e dboard (rx unit)");
+        return;
+
+    case DBOARD_PROP_SUBDEV:
+        val = _dboard_manager->get_rx_subdev(name);
+        return;
+
+    case DBOARD_PROP_SUBDEV_NAMES:
+        val = _dboard_manager->get_rx_subdev_names();
+        return;
+
+    case DBOARD_PROP_USED_SUBDEVS:
+        val = _rx_subdevs_in_use;
+        return;
+
+    case DBOARD_PROP_DBOARD_ID:
+        val = _rx_db_eeprom.id;
+        return;
+
+    case DBOARD_PROP_DBOARD_IFACE:
+        val = _dboard_iface;
+        return;
+
+    default: UHD_THROW_PROP_GET_ERROR();
+    }
 }
 
 /***********************************************************************
  * RX Dboard Set
  **********************************************************************/
-void usrp_e_impl::rx_dboard_set(const wax::obj &, const wax::obj &){
-    UHD_THROW_PROP_SET_ERROR();
+void usrp_e_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
+    switch(key.as<dboard_prop_t>()){
+    case DBOARD_PROP_USED_SUBDEVS:
+        _rx_subdevs_in_use = val.as<prop_names_t>();
+        //TODO update_rx_mux_config(); //if the val is bad, this will throw
+        return;
+
+    case DBOARD_PROP_DBOARD_ID:
+        _rx_db_eeprom.id = val.as<dboard_id_t>();
+        _iface->write_eeprom(I2C_ADDR_RX_DB, 0, _rx_db_eeprom.get_eeprom_bytes());
+        return;
+
+    default: UHD_THROW_PROP_SET_ERROR();
+    }
 }
 
 /***********************************************************************
  * TX Dboard Get
  **********************************************************************/
-void usrp_e_impl::tx_dboard_get(const wax::obj &, wax::obj &){
-    UHD_THROW_PROP_GET_ERROR();
+void usrp_e_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the get request conditioned on the key
+    switch(key.as<dboard_prop_t>()){
+    case DBOARD_PROP_NAME:
+        val = std::string("usrp-e dboard (tx unit)");
+        return;
+
+    case DBOARD_PROP_SUBDEV:
+        val = _dboard_manager->get_tx_subdev(name);
+        return;
+
+    case DBOARD_PROP_SUBDEV_NAMES:
+        val = _dboard_manager->get_tx_subdev_names();
+        return;
+
+    case DBOARD_PROP_USED_SUBDEVS:
+        val = _tx_subdevs_in_use;
+        return;
+
+    case DBOARD_PROP_DBOARD_ID:
+        val = _tx_db_eeprom.id;
+        return;
+
+    case DBOARD_PROP_DBOARD_IFACE:
+        val = _dboard_iface;
+        return;
+
+    default: UHD_THROW_PROP_GET_ERROR();
+    }
 }
 
 /***********************************************************************
  * TX Dboard Set
  **********************************************************************/
-void usrp_e_impl::tx_dboard_set(const wax::obj &, const wax::obj &){
-    UHD_THROW_PROP_SET_ERROR();
+void usrp_e_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
+        switch(key.as<dboard_prop_t>()){
+    case DBOARD_PROP_USED_SUBDEVS:
+        _tx_subdevs_in_use = val.as<prop_names_t>();
+        //TODO update_tx_mux_config(); //if the val is bad, this will throw
+        return;
+
+    case DBOARD_PROP_DBOARD_ID:
+        _tx_db_eeprom.id = val.as<dboard_id_t>();
+        _iface->write_eeprom(I2C_ADDR_TX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
+        return;
+
+    default: UHD_THROW_PROP_SET_ERROR();
+    }
 }
