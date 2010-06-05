@@ -9,6 +9,7 @@
 
 // max length #define PKT_DATA_LENGTH 1016
 static int packet_data_length;
+static int error;
 
 struct pkt {
 	int checksum;
@@ -35,7 +36,7 @@ static int calc_checksum(struct pkt *p)
 
 static void *read_thread(void *threadid)
 {
-	int cnt, prev_seq_num, pkt_count;
+	int cnt, prev_seq_num, pkt_count, seq_num_failure;
 	struct usrp_transfer_frame *rx_data;
 	struct pkt *p;
 	unsigned long bytes_transfered, elapsed_seconds;
@@ -56,12 +57,13 @@ static void *read_thread(void *threadid)
 
 	prev_seq_num = 0;
 	pkt_count = 0;
+	seq_num_failure = 0;
 
 	while (1) {
 
 		cnt = read(fp, rx_data, 2048);
 		if (cnt < 0)
-			printf("Error returned from read: %d\n", cnt);
+			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
 
 //		printf("Packet received, status = %X, len = %d\n", rx_data->status, rx_data->len);
 //		printf("p->seq_num = %d\n", p->seq_num);
@@ -69,15 +71,22 @@ static void *read_thread(void *threadid)
 
 		pkt_count++;
 
-		if (p->seq_num != prev_seq_num + 1)
+		if (p->seq_num != prev_seq_num + 1) {
 			printf("Sequence number fail, current = %X, previous = %X, pkt_count = %d\n",
 				p->seq_num, prev_seq_num, pkt_count);
+
+			seq_num_failure ++;
+			if (seq_num_failure > 2)
+				error = 1;
+		}
+
 		prev_seq_num = p->seq_num;
 
-		if (calc_checksum(p) != p->checksum)
+		if (calc_checksum(p) != p->checksum) {
 			printf("Checksum fail packet = %X, expected = %X, pkt_count = %d\n",
 				calc_checksum(p), p->checksum, pkt_count);
-
+			error = 1;
+		}
 
 		bytes_transfered += rx_data->len;
 
@@ -157,6 +166,7 @@ int main(int argc, char *argv[])
 	printf("fp = %d\n", fp);
 
 	sched_setscheduler(0, SCHED_RR, &s);
+	error = 0;
 
 	if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
 		printf("Failed to create rx thread\n");
@@ -170,7 +180,8 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	sleep(10000);
+	while (!error)
+		sleep(1);
 
 	printf("Done sleeping\n");
 }
