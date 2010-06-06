@@ -64,7 +64,7 @@ module gpmc_async
       .datain(tx18_data), .src_rdy_i(tx18_src_rdy), .dst_rdy_o(tx18_dst_rdy), .space(tx_fifo_space),
       .dataout(tx18b_data), .src_rdy_o(tx18b_src_rdy), .dst_rdy_i(tx18b_dst_rdy), .occupied());
 
-   fifo19_to_fifo36 f19_to_f36
+   fifo19_to_fifo36 #(.LE(1)) f19_to_f36   // Little endian because ARM is LE
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .f19_datain({1'b0,tx18b_data}), .f19_src_rdy_i(tx18b_src_rdy), .f19_dst_rdy_o(tx18b_dst_rdy),
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
@@ -89,7 +89,7 @@ module gpmc_async
       .datain(rx_data_i), .src_rdy_i(rx_src_rdy_i), .dst_rdy_o(rx_dst_rdy_o),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
 
-   fifo36_to_fifo19 f36_to_f19
+   fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // Little endian because ARM is LE
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
       .f19_dataout({dummy,rx18_data}), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
