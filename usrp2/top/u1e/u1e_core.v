@@ -101,7 +101,7 @@ module u1e_core
 `ifdef TIMED
 
    // TX side
-   wire 	 tx_enable, tx_src_rdy_int, tx_dst_rdy_int;
+   wire 	 tx_enable;
    
    fifo_pacer tx_pacer
      (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(tx_enable),
