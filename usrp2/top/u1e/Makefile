@@ -109,7 +109,7 @@ control_lib/newfifo/fifo_short.v \
 control_lib/newfifo/fifo_long.v \
 control_lib/newfifo/fifo_cascade.v \
 control_lib/newfifo/fifo36_to_ll8.v \
-control_lib/newfifo/fifo36_to_fifo18.v \
+control_lib/newfifo/fifo36_to_fifo19.v \
 control_lib/newfifo/fifo19_to_fifo36.v \
 control_lib/newfifo/packet_generator.v \
 control_lib/newfifo/packet_verifier.v \
