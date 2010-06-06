@@ -68,11 +68,12 @@ module gpmc_sync
    wire [17:0] 	rx18_data, rx18b_data;
    wire 	rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy;
    wire [15:0] 	rx_fifo_space, rx_frame_len;
+   wire 	dummy;
    
-   fifo36_to_fifo18 f18_to_f36
+   fifo36_to_fifo19 f36_to_f19
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .f36_datain(rx_data_i), .f36_src_rdy_i(rx_src_rdy_i), .f36_dst_rdy_o(rx_dst_rdy_o),
-      .f18_dataout(rx18_data), .f18_src_rdy_o(rx18_src_rdy), .f18_dst_rdy_i(rx18_dst_rdy) );
+      .f19_dataout({dummy,rx18_data}), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
 
    fifo_2clock_cascade #(.WIDTH(18), .SIZE(10)) rx_fifo
      (.wclk(fifo_clk), .datain(rx18_data), 

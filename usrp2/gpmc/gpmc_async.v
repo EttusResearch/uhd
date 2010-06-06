@@ -82,16 +82,17 @@ module gpmc_async
    wire [15:0] 	  rx_fifo_space;
    wire [35:0] 	  rx36_data;
    wire 	  rx36_src_rdy, rx36_dst_rdy;
+   wire 	  dummy;
    
    fifo_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_fifo36
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .datain(rx_data_i), .src_rdy_i(rx_src_rdy_i), .dst_rdy_o(rx_dst_rdy_o),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
 
-   fifo36_to_fifo18 f18_to_f36
+   fifo36_to_fifo19 f36_to_f19
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
-      .f18_dataout(rx18_data), .f18_src_rdy_o(rx18_src_rdy), .f18_dst_rdy_i(rx18_dst_rdy) );
+      .f19_dataout({dummy,rx18_data}), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
 
    fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
