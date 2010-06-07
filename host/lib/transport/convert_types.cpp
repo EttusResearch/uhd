@@ -20,6 +20,7 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/asio.hpp> //endianness conversion
 #include <boost/cstdint.hpp>
+#include <boost/detail/endian.hpp>
 #include <complex>
 
 using namespace uhd;
@@ -44,7 +45,7 @@ static const float floats_per_short = float(1.0/shorts_per_float);
 }
 
 // set a boolean flag that indicates the endianess
-#ifdef HAVE_BIG_ENDIAN
+#ifdef BOOST_BIG_ENDIAN
 static const bool is_big_endian = true;
 #else
 static const bool is_big_endian = false;

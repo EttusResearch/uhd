@@ -33,10 +33,11 @@ TMPL_TEXT = """
 
 \#include <uhd/transport/vrt.hpp>
 \#include <uhd/utils/byteswap.hpp>
+\#include <boost/detail/endian.hpp>
 \#include <stdexcept>
 
 //define the endian macros to convert integers
-\#ifdef HAVE_BIG_ENDIAN
+\#ifdef BOOST_BIG_ENDIAN
     \#define BE_MACRO(x) (x)
     \#define LE_MACRO(x) uhd::byteswap(x)
 \#else
