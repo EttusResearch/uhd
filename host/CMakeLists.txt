@@ -16,7 +16,7 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD)
+PROJECT(UHD CXX)
 ENABLE_TESTING()
 
 ########################################################################
@@ -88,15 +88,6 @@ FIND_PACKAGE(Boost 1.36 REQUIRED COMPONENTS
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-
-########################################################################
-# Setup Endianess
-########################################################################
-INCLUDE(TestBigEndian)
-TEST_BIG_ENDIAN(HAVE_BIG_ENDIAN)
-IF(HAVE_BIG_ENDIAN)
-    ADD_DEFINITIONS(-DHAVE_BIG_ENDIAN)
-ENDIF(HAVE_BIG_ENDIAN)
 
 ########################################################################
 # Create Uninstall Target
