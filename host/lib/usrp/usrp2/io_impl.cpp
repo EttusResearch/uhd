@@ -139,6 +139,7 @@ size_t usrp2_impl::send(
         buff, metadata, send_mode,  //buffer to empty and samples metadata
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
+        uhd::transport::vrt::pack_be,
         boost::bind(&zero_copy_if::get_send_buff, _data_transport),
         get_max_send_samps_per_packet()
     );
@@ -158,6 +159,7 @@ size_t usrp2_impl::recv(
         buff, metadata, recv_mode,  //buffer to fill and samples metadata
         io_type, _rx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
+        uhd::transport::vrt::unpack_be,
         boost::bind(&usrp2_impl::io_impl::get_recv_buff, _io_impl)
     );
 }

@@ -66,10 +66,12 @@ namespace vrt_packet_handler{
      * Unpack a received vrt header and set the copy buffer.
      *  - helper function for vrt_packet_handler::_recv1
      ******************************************************************/
+    template<typename vrt_unpacker_type>
     static UHD_INLINE void _recv1_helper(
         recv_state &state,
         uhd::rx_metadata_t &metadata,
         double tick_rate,
+        vrt_unpacker_type vrt_unpacker,
         size_t vrt_header_offset_words32
     ){
         size_t num_packet_words32 = state.managed_buff->size()/sizeof(boost::uint32_t);
@@ -79,7 +81,7 @@ namespace vrt_packet_handler{
         }
         const boost::uint32_t *vrt_hdr = state.managed_buff->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
         size_t num_header_words32_out, num_payload_words32_out, packet_count_out;
-        uhd::transport::vrt::unpack(
+        vrt_unpacker(
             metadata,                //output
             vrt_hdr,                 //input
             num_header_words32_out,  //output
@@ -106,6 +108,7 @@ namespace vrt_packet_handler{
      * Recv data, unpack a vrt header, and copy-convert the data.
      *  - helper function for vrt_packet_handler::recv
      ******************************************************************/
+    template<typename vrt_unpacker_type>
     static UHD_INLINE size_t _recv1(
         recv_state &state,
         void *recv_mem,
@@ -114,6 +117,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
+        vrt_unpacker_type vrt_unpacker,
         const get_recv_buff_t &get_recv_buff,
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32,
@@ -127,7 +131,7 @@ namespace vrt_packet_handler{
             recv_cb(state.managed_buff); //callback before vrt unpack
             try{
                 _recv1_helper(
-                    state, metadata, tick_rate, vrt_header_offset_words32
+                    state, metadata, tick_rate, vrt_unpacker, vrt_header_offset_words32
                 );
             }catch(const std::exception &e){
                 std::cerr << "Error (recv): " << e.what() << std::endl;
@@ -164,6 +168,7 @@ namespace vrt_packet_handler{
     /*******************************************************************
      * Recv vrt packets and copy convert the samples into the buffer.
      ******************************************************************/
+    template<typename vrt_unpacker_type>
     static UHD_INLINE size_t recv(
         recv_state &state,
         const boost::asio::mutable_buffer &buff,
@@ -172,6 +177,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
+        vrt_unpacker_type vrt_unpacker,
         const get_recv_buff_t &get_recv_buff,
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32 = 0,
@@ -192,6 +198,7 @@ namespace vrt_packet_handler{
                 metadata,
                 io_type, otw_type,
                 tick_rate,
+                vrt_unpacker,
                 get_recv_buff,
                 vrt_header_offset_words32,
                 recv_cb
@@ -211,6 +218,7 @@ namespace vrt_packet_handler{
                     (accum_num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
                     io_type, otw_type,
                     tick_rate,
+                    vrt_unpacker,
                     get_recv_buff,
                     vrt_header_offset_words32,
                     recv_cb
@@ -249,6 +257,7 @@ namespace vrt_packet_handler{
      * Pack a vrt header, copy-convert the data, and send it.
      *  - helper function for vrt_packet_handler::send
      ******************************************************************/
+    template<typename vrt_packer_type>
     static UHD_INLINE void _send1(
         send_state &state,
         const void *send_mem,
@@ -257,6 +266,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
+        vrt_packer_type vrt_packer,
         const get_send_buff_t &get_send_buff,
         size_t vrt_header_offset_words32,
         const send_cb_t& send_cb
@@ -269,7 +279,7 @@ namespace vrt_packet_handler{
         size_t packet_count = state.next_packet_seq++;
 
         //pack metadata into a vrt header
-        uhd::transport::vrt::pack(
+        vrt_packer(
             metadata,            //input
             tx_mem,              //output
             num_header_words32,  //output
@@ -295,6 +305,7 @@ namespace vrt_packet_handler{
     /*******************************************************************
      * Send vrt packets and copy convert the samples into the buffer.
      ******************************************************************/
+    template<typename vrt_packer_type>
     static UHD_INLINE size_t send(
         send_state &state,
         const boost::asio::const_buffer &buff,
@@ -303,6 +314,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
+        vrt_packer_type vrt_packer,
         const get_send_buff_t &get_send_buff,
         size_t max_samples_per_packet,
         //use these two params to handle a layer above vrt
@@ -324,6 +336,7 @@ namespace vrt_packet_handler{
                 metadata,
                 io_type, otw_type,
                 tick_rate,
+                vrt_packer,
                 get_send_buff,
                 vrt_header_offset_words32,
                 send_cb
@@ -358,6 +371,7 @@ namespace vrt_packet_handler{
                     md,
                     io_type, otw_type,
                     tick_rate,
+                    vrt_packer,
                     get_send_buff,
                     vrt_header_offset_words32,
                     send_cb
