@@ -18,6 +18,7 @@
 INSTALL(FILES
     algorithm.hpp
     assert.hpp
+    byteswap.hpp
     exception.hpp
     gain_handler.hpp
     pimpl.hpp
