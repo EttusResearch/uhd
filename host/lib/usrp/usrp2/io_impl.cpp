@@ -107,17 +107,17 @@ void usrp2_impl::io_init(void){
 
     //setup RX DSP regs
     std::cout << "RX samples per packet: " << get_max_recv_samps_per_packet() << std::endl;
-    _iface->poke32(FR_RX_CTRL_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
-    _iface->poke32(FR_RX_CTRL_NCHANNELS, 1);
-    _iface->poke32(FR_RX_CTRL_CLEAR_OVERRUN, 1); //reset
-    _iface->poke32(FR_RX_CTRL_VRT_HEADER, 0
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
+    _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
+    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
+    _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
         | (0x1 << 20) //fractional time sample count
     );
-    _iface->poke32(FR_RX_CTRL_VRT_STREAM_ID, 0);
-    _iface->poke32(FR_RX_CTRL_VRT_TRAILER, 0);
+    _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
+    _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
 
     std::cout << "TX samples per packet: " << get_max_send_samps_per_packet() << std::endl;
 
@@ -139,6 +139,7 @@ size_t usrp2_impl::send(
         buff, metadata, send_mode,  //buffer to empty and samples metadata
         io_type, _tx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
+        uhd::transport::vrt::pack_be,
         boost::bind(&zero_copy_if::get_send_buff, _data_transport),
         get_max_send_samps_per_packet()
     );
@@ -158,6 +159,7 @@ size_t usrp2_impl::recv(
         buff, metadata, recv_mode,  //buffer to fill and samples metadata
         io_type, _rx_otw_type,      //input and output types to convert
         get_master_clock_freq(),    //master clock tick rate
+        uhd::transport::vrt::unpack_be,
         boost::bind(&usrp2_impl::io_impl::get_recv_buff, _io_impl)
     );
 }

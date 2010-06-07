@@ -27,11 +27,11 @@ class usrp2_serdes_ctrl_impl : public usrp2_serdes_ctrl{
 public:
     usrp2_serdes_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
-        _iface->poke32(FR_MISC_CTRL_SERDES, FRF_MISC_CTRL_SERDES_ENABLE | FRF_MISC_CTRL_SERDES_RXEN);
+        _iface->poke32(U2_REG_MISC_CTRL_SERDES, U2_FLAG_MISC_CTRL_SERDES_ENABLE | U2_FLAG_MISC_CTRL_SERDES_RXEN);
     }
 
     ~usrp2_serdes_ctrl_impl(void){
-        _iface->poke32(FR_MISC_CTRL_SERDES, 0); //power-down
+        _iface->poke32(U2_REG_MISC_CTRL_SERDES, 0); //power-down
     }
 
 private:

@@ -22,6 +22,7 @@ ADD_EXECUTABLE(main_test
     main_test.cpp
     addr_test.cpp
     buffer_test.cpp
+    byteswap_test.cpp
     dict_test.cpp
     error_test.cpp
     gain_handler_test.cpp

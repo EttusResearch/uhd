@@ -30,7 +30,7 @@ static void pack_and_unpack(
     size_t num_packet_words32;
 
     //pack metadata into a vrt header
-    vrt::pack(
+    vrt::pack_be(
         metadata,            //input
         header_buff,         //output
         num_header_words32,  //output
@@ -46,7 +46,7 @@ static void pack_and_unpack(
     size_t packet_count_out;
 
     //unpack the vrt header back into metadata
-    vrt::unpack(
+    vrt::unpack_be(
         metadata_out,            //output
         header_buff,             //input
         num_header_words32_out,  //output
