@@ -29,7 +29,7 @@
 
 using namespace uhd;
 
-static const bool codec_debug = true;
+static const bool codec_debug = false;
 
 /***********************************************************************
  * Codec Control Implementation

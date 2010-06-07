@@ -29,6 +29,8 @@ using namespace uhd;
 
 static const size_t MAX_BUFF_SIZE = 2048;
 
+static const size_t vrt_header_offset_words32 = offsetof(usrp_transfer_frame, buf)/sizeof(boost::uint32_t);
+
 /***********************************************************************
  * Data Transport (phony zero-copy with read/write)
  **********************************************************************/
@@ -70,17 +72,26 @@ private:
         );
     }
     size_t recv(const boost::asio::mutable_buffer &buff){
-        std::cout << boost::format(
-            "calling read on fd %d, buff size is %d"
-        ) % _fd % boost::asio::buffer_size(buff) << std::endl;
+        //std::cout << boost::format(
+        //    "calling read on fd %d, buff size is %d"
+        //) % _fd % boost::asio::buffer_size(buff) << std::endl;
         ssize_t ret = read(
             _fd,
             boost::asio::buffer_cast<void *>(buff),
             boost::asio::buffer_size(buff)
         );
         if (ret < ssize_t(sizeof(usrp_transfer_frame))) return 0;
-        std::cout << "len " << int(boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len) << std::endl;
-        return boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len;
+        //overwrite the vrt header length with the transfer frame length
+        size_t frame_size = boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len;
+        boost::uint32_t *vrt_header = boost::asio::buffer_cast<boost::uint32_t *>(buff) + vrt_header_offset_words32;
+        vrt_header[0] = (vrt_header[0] & ~0xffff) | ((frame_size/sizeof(boost::uint32_t)) & 0xffff);
+
+        //std::cout << "len " << int(boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len) << std::endl;
+        //for (size_t i = 0; i < 7; i++){
+        //    std::cout << boost::format("    0x%08x") % boost::asio::buffer_cast<boost::uint32_t *>(buff)[i] << std::endl;
+        //}
+
+        return frame_size;
     }
 };
 
@@ -155,9 +166,10 @@ size_t usrp_e_impl::send(
         io_type,
         send_otw_type, //TODO
         MASTER_CLOCK_RATE,
+        uhd::transport::vrt::pack_le,
         boost::bind(&data_transport::get_send_buff, &_io_impl->transport),
         (MAX_BUFF_SIZE - sizeof(usrp_transfer_frame))/send_otw_type.get_sample_size(),
-        offsetof(usrp_transfer_frame, buf)
+        vrt_header_offset_words32
     );
 }
 
@@ -183,7 +195,8 @@ size_t usrp_e_impl::recv(
         io_type,
         recv_otw_type, //TODO
         MASTER_CLOCK_RATE,
+        uhd::transport::vrt::unpack_le,
         boost::bind(&data_transport::get_recv_buff, &_io_impl->transport),
-        offsetof(usrp_transfer_frame, buf)
+        vrt_header_offset_words32
     );
 }
