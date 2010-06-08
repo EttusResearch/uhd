@@ -44,8 +44,6 @@ TMPL_TEXT = """
     \#define LE_MACRO(x) (x)
 \#endif
 
-#set $XE_MACRO = "BE_MACRO"
-
 using namespace uhd;
 using namespace uhd::transport;
 
@@ -130,10 +128,11 @@ void vrt::pack_$(suffix)(
     if (metadata.end_of_burst)   vrt_hdr_flags |= $hex(0x1 << 24);
 
     //fill in complete header word
-    header_buff[0] = $(XE_MACRO)(vrt_hdr_flags |
-        ((packet_count & 0xf) << 16) |
-        (num_packet_words32 & 0xffff)
-    );
+    header_buff[0] = $(XE_MACRO)(boost::uint32_t(0
+        | vrt_hdr_flags
+        | ((packet_count & 0xf) << 16)
+        | (num_packet_words32 & 0xffff)
+    ));
 }
 
 void vrt::unpack_$(suffix)(
