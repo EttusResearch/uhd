@@ -29,7 +29,7 @@ ISE_HELPER := ../tcl/ise_helper.tcl
 ##################################################
 # Project Setup
 ##################################################
-BUILD_DIR := build/
+BUILD_DIR := build$(ISE)/
 export TOP_MODULE := u2_rev3
 export PROJ_FILE := $(BUILD_DIR)$(TOP_MODULE).ise
 
