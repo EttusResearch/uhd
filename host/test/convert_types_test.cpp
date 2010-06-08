@@ -84,10 +84,12 @@ typedef std::complex<float> fc32_t;
     BOOST_CHECK_CLOSE(a1.real(), a2.real(), p); \
     BOOST_CHECK_CLOSE(a1.imag(), a2.imag(), p);
 
+static const float tolerance = float(0.1);
+
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
     fc32_t in_fc32[] = {
-        fc32_t(0, -0.2), fc32_t(0.03, -0.16),
-        fc32_t(1.0, .45), fc32_t(0.09, 0)
+        fc32_t(float(0), float(-0.2)), fc32_t(float(0.03), float(-0.16)),
+        fc32_t(float(1.0), float(.45)), fc32_t(float(0.09), float(0))
     }, out_fc32[4];
 
     io_type_t io_type(io_type_t::COMPLEX_FLOAT32);
@@ -97,16 +99,16 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
 
     loopback<fc32_t, boost::uint32_t, 4>(io_type, otw_type, in_fc32, out_fc32);
 
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[0], out_fc32[0], 0.1);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[1], out_fc32[1], 0.1);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[2], out_fc32[2], 0.1);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[3], out_fc32[3], 0.1);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[0], out_fc32[0], tolerance);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[1], out_fc32[1], tolerance);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[2], out_fc32[2], tolerance);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[3], out_fc32[3], tolerance);
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
     fc32_t in_fc32[] = {
-        fc32_t(0, -0.2), fc32_t(0.03, -0.16),
-        fc32_t(1.0, .45), fc32_t(0.09, 0)
+        fc32_t(float(0), float(-0.2)), fc32_t(float(0.03), float(-0.16)),
+        fc32_t(float(1.0), float(.45)), fc32_t(float(0.09), float(0))
     }, out_fc32[4];
 
     io_type_t io_type(io_type_t::COMPLEX_FLOAT32);
@@ -116,8 +118,8 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
 
     loopback<fc32_t, boost::uint32_t, 4>(io_type, otw_type, in_fc32, out_fc32);
 
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[0], out_fc32[0], 0.1);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[1], out_fc32[1], 0.1);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[2], out_fc32[2], 0.1);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[3], out_fc32[3], 0.1);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[0], out_fc32[0], tolerance);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[1], out_fc32[1], tolerance);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[2], out_fc32[2], tolerance);
+    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[3], out_fc32[3], tolerance);
 }
