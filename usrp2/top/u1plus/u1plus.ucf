@@ -18,14 +18,14 @@ NET "cgen_ref_sel"  LOC = "T2"  ;
 NET "cgen_sync_b"  LOC = "H15"  ;
 
 ## FPGA Config
-NET "fpga_cfg_din"  LOC = "T14"  ;
-NET "fpga_cfg_cclk"  LOC = "R14"  ;
-NET "fpga_cfg_init_b"  LOC = "T12"  ;
+#NET "fpga_cfg_din"  LOC = "T14"  ;
+#NET "fpga_cfg_cclk"  LOC = "R14"  ;
+#NET "fpga_cfg_init_b"  LOC = "T12"  ;
 
 ## MISC
-NET "mystery_bus<2>"  LOC = "T11"  ;
-NET "mystery_bus<1>"  LOC = "C4"  ;
-NET "mystery_bus<0>"  LOC = "E7"  ;
+#NET "mystery_bus<2>"  LOC = "T11"  ;
+#NET "mystery_bus<1>"  LOC = "C4"  ;
+#NET "mystery_bus<0>"  LOC = "E7"  ;
 NET "reset_n"  LOC = "D5"  ;
 NET "PPS_IN"  LOC = "M14"  ;
 NET "reset_codec"  LOC = "B14"  ;
@@ -175,9 +175,9 @@ NET "io_rx<14>"  LOC = "A14"  ;
 NET "io_rx<15>"  LOC = "A13"  ;
 
 ## SPI
-NET "SEN_AUX"  LOC = "C12"  ;
-NET "SCLK_AUX"  LOC = "D12"  ;
-NET "MISO_AUX"  LOC = "J5"  ;
+#NET "SEN_AUX"  LOC = "C12"  ;
+#NET "SCLK_AUX"  LOC = "D12"  ;
+#NET "MISO_AUX"  LOC = "J5"  ;
 NET "SCLK_CODEC"  LOC = "K3"  ;
 NET "SEN_CODEC"  LOC = "D13"  ;
 NET "MOSI_CODEC"  LOC = "C13"  ;

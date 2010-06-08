@@ -54,7 +54,7 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 export SOURCE_ROOT := ../../../
 export SOURCES := \
 control_lib/CRC16_D16.v \
-control_lib/atr_controller.v \
+control_lib/atr_controller16.v \
 control_lib/bin2gray.v \
 control_lib/dcache.v \
 control_lib/decoder_3_8.v \
@@ -64,12 +64,13 @@ control_lib/gray_send.v \
 control_lib/icache.v \
 control_lib/mux4.v \
 control_lib/mux8.v \
-control_lib/nsgpio.v \
+control_lib/nsgpio16LE.v \
 control_lib/ram_2port.v \
+control_lib/ram_2port_mixed_width.v \
 control_lib/ram_harv_cache.v \
 control_lib/ram_loader.v \
 control_lib/setting_reg.v \
-control_lib/settings_bus.v \
+control_lib/settings_bus_16LE.v \
 control_lib/srl.v \
 control_lib/system_control.v \
 control_lib/wb_1master.v \
@@ -92,6 +93,13 @@ control_lib/newfifo/fifo_short.v \
 control_lib/newfifo/fifo_long.v \
 control_lib/newfifo/fifo_cascade.v \
 control_lib/newfifo/fifo36_to_ll8.v \
+control_lib/newfifo/fifo36_to_fifo19.v \
+control_lib/newfifo/fifo19_to_fifo36.v \
+control_lib/newfifo/packet_generator.v \
+control_lib/newfifo/packet_verifier.v \
+control_lib/newfifo/packet_generator32.v \
+control_lib/newfifo/packet_verifier32.v \
+control_lib/newfifo/fifo_pacer.v \
 control_lib/longfifo.v \
 control_lib/shortfifo.v \
 control_lib/medfifo.v \
@@ -122,8 +130,7 @@ opencores/simple_pic/rtl/simple_pic.v \
 opencores/spi/rtl/verilog/spi_clgen.v \
 opencores/spi/rtl/verilog/spi_defines.v \
 opencores/spi/rtl/verilog/spi_shift.v \
-opencores/spi/rtl/verilog/spi_top.v \
-opencores/spi/rtl/verilog/timescale.v \
+opencores/spi/rtl/verilog/spi_top16.v \
 sdr_lib/acc.v \
 sdr_lib/add2.v \
 sdr_lib/add2_and_round.v \
@@ -139,7 +146,7 @@ sdr_lib/clip_reg.v \
 sdr_lib/cordic.v \
 sdr_lib/cordic_z24.v \
 sdr_lib/cordic_stage.v \
-sdr_lib/dsp_core_rx.v \
+sdr_lib/dsp_core_rx_udp.v \
 sdr_lib/dsp_core_tx.v \
 sdr_lib/hb_dec.v \
 sdr_lib/hb_interp.v \
@@ -160,7 +167,13 @@ timing/time_receiver.v \
 timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
-top/u1_core/u1_core.v \
+timing/time_64bit.v \
+vrt/vita_rx_control.v \
+vrt/vita_rx_framer.v \
+vrt/vita_tx_control.v \
+vrt/vita_tx_deframer.v \
+timing/time_compare.v \
+top/u1plus/u1plus_core.v \
 top/u1plus/u1plus.ucf \
 top/u1plus/timing.ucf \
 top/u1plus/u1plus.v 
@@ -204,7 +217,8 @@ export GEN_PROG_FILE_PROPERTIES := \
 "Create Binary Configuration File" TRUE \
 "Done (Output Events)" 5 \
 "Enable Bitstream Compression" TRUE \
-"Enable Outputs (Output Events)" 6 
+"Enable Outputs (Output Events)" 6 \
+"Unused IOB Pins" "Pull Up"
 
 export SIM_MODEL_PROPERTIES := ""
 
