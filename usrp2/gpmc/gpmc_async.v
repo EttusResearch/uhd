@@ -105,11 +105,14 @@ module gpmc_async
       .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
       .frame_len(rx_frame_len) );
 
+   wire [31:0] 	pkt_count;
+   
    fifo_watcher fifo_watcher
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .src_rdy1(rx18_src_rdy), .dst_rdy1(rx18_dst_rdy), .sof1(rx18_data[16]), .eof1(rx18_data[17]),
       .src_rdy2(rx18b_src_rdy), .dst_rdy2(rx18b_dst_rdy), .sof2(rx18b_data[16]), .eof2(rx18b_data[17]),
-      .have_packet(rx_have_data), .length(rx_frame_len), .bus_error(bus_error_rx) );
+      .have_packet(rx_have_data), .length(rx_frame_len), .bus_error(bus_error_rx),
+      .debug(pkt_count));
 
    // ////////////////////////////////////////////
    // Control path on CS6
@@ -122,6 +125,6 @@ module gpmc_async
       .wb_sel_o(wb_sel_o), .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o),
       .wb_ack_i(wb_ack_i) );
    
-   assign debug = 0;
+      assign debug = pkt_count;
    
 endmodule // gpmc_async

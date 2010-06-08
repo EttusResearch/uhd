@@ -430,6 +430,7 @@ module u1e_core
    assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
 			   {tx_enable, tx_src_rdy, tx_dst_rdy, tx_dst_rdy & ~tx_src_rdy},
 			   {rx_sof, rx_eof, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
-			   {3'b0, bus_error, misc_gpio[11:0]} };
+			   {2'b0, bus_error, debug_gpmc[4:0] },
+			   {misc_gpio[7:0]} };
    
 endmodule // u1e_core

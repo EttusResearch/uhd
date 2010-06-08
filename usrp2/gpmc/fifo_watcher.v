@@ -4,13 +4,15 @@ module fifo_watcher
   (input clk, input reset, input clear,
    input src_rdy1, input dst_rdy1, input sof1, input eof1,
    input src_rdy2, input dst_rdy2, input sof2, input eof2,
-   output reg have_packet, output [15:0] length, output reg bus_error);
+   output reg have_packet, output [15:0] length, output reg bus_error,
+   output [31:0] debug);
 
    wire   write = src_rdy1 & dst_rdy1 & eof1;
    wire   read = src_rdy2 & dst_rdy2 & eof2;
    wire   have_packet_int;
    reg [15:0] counter;
    wire [4:0] pkt_count;
+   assign debug = pkt_count;
    
    fifo_short #(.WIDTH(16)) frame_lengths
      (.clk(clk), .reset(reset), .clear(clear),
