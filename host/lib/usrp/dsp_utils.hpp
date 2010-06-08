@@ -81,15 +81,14 @@ namespace dsp_type1{
 
     /*!
      * Calculate the IQ scale factor word from I and Q components.
-     * \param i the I component
-     * \param q the Q component
+     * \param i the I component of the scalar
+     * \param q the Q component of the scalar
      * \return the 32-bit scale factor control word
      */
     static inline boost::uint32_t calc_iq_scale_word(
-        boost::int16_t i,
-        boost::int16_t q
+        boost::int16_t i, boost::int16_t q
     ){
-        return (boost::uint16_t(i) << 16) | (boost::uint16_t(q) << 0);
+        return (boost::uint32_t(i) << 16) | (boost::uint32_t(q) << 0);
     }
 
     /*!
