@@ -30,14 +30,14 @@ soft_reset         0[5]              0
 ########################################################################
 ## Rx Power Down
 ########################################################################
-pd_vref_diff       1[7]              0
-pd_vref            1[6]              0
-pd_rx_digital      1[5]              0
-pd_rx_channel_b    1[4]              0
-pd_rx_channel_a    1[3]              0
-pd_buffer_b        1[2]              0
-pd_buffer_a        1[1]              0
-pd_all_rx          1[0]              0
+vref_diff_pd       1[7]              0
+vref_pd            1[6]              0
+rx_digital_pd      1[5]              0
+rx_channel_b_pd    1[4]              0
+rx_channel_a_pd    1[3]              0
+buffer_b_pd        1[2]              0
+buffer_a_pd        1[1]              0
+all_rx_pd          1[0]              0
 ########################################################################
 ## Rx A and B
 ########################################################################
@@ -123,7 +123,7 @@ ftw_23_16              23[0:7]            0
 ########################################################################
 ## DLL
 ########################################################################
-input_clk_ctrl         24[6]              0       external, internal
+input_clk_ctrl         24[6]              0       internal, external
 adc_div2               24[5]              0       normal, div2
 dll_mult               24[3:4]            0       1, 2, 4
 dll_pd                 24[2]              0
@@ -233,7 +233,7 @@ boost::uint16_t get_write_reg(boost::uint8_t addr){
 }
 
 boost::uint16_t get_read_reg(boost::uint8_t addr){
-    return (boost::uint16_t(addr) << 8) | (1 << 7);
+    return (boost::uint16_t(addr) << 8) | (1 << 15);
 }
 """
 
