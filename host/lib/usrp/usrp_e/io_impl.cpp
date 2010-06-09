@@ -156,7 +156,7 @@ size_t usrp_e_impl::send(
     otw_type_t send_otw_type;
     send_otw_type.width = 16;
     send_otw_type.shift = 0;
-    send_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
+    send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     return vrt_packet_handler::send(
         _io_impl->send_state,
@@ -185,7 +185,7 @@ size_t usrp_e_impl::recv(
     otw_type_t recv_otw_type;
     recv_otw_type.width = 16;
     recv_otw_type.shift = 0;
-    recv_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
+    recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     return vrt_packet_handler::recv(
         _io_impl->recv_state,
