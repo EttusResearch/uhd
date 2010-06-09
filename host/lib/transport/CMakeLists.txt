@@ -44,8 +44,12 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_BINARY_DIR}/lib/transport/vrt.cpp
 )
 
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_SOURCE_DIR}/lib/transport/gen_convert_types.py
+    ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp
+)
+
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/transport/convert_types.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/if_addrs.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/udp_simple.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/udp_zero_copy_asio.cpp
