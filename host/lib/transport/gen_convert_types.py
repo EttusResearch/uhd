@@ -56,30 +56,29 @@ static const float floats_per_short = float(1.0/shorts_per_float);
 /***********************************************************************
  * Single-sample converters
  **********************************************************************/
-template<typename outptr_type, typename inptr_type>
-static UHD_INLINE outptr_type conv_ptr(inptr_type inptr){
-    return reinterpret_cast<outptr_type>(inptr);
-}
-
 static UHD_INLINE item32_t sc16_to_item32(sc16_t num){
-    return *conv_ptr<item32_t*>(&num);
+    boost::uint16_t real = boost::int16_t(num.real());
+    boost::uint16_t imag = boost::int16_t(num.imag());
+    return (item32_t(real) << 16) | (item32_t(imag) << 0);
 }
 
 static UHD_INLINE sc16_t item32_to_sc16(item32_t item){
-    return *conv_ptr<sc16_t*>(&item);
+    return sc16_t(
+        boost::uint16_t(item >> 16),
+        boost::uint16_t(item >> 0)
+    );
 }
 
 static UHD_INLINE item32_t fc32_to_item32(fc32_t num){
-    return sc16_to_item32(sc16_t(
-        boost::int16_t(num.real()*shorts_per_float),
-        boost::int16_t(num.imag()*shorts_per_float)
-    ));
+    boost::uint16_t real = boost::int16_t(num.real()*shorts_per_float);
+    boost::uint16_t imag = boost::int16_t(num.imag()*shorts_per_float);
+    return (item32_t(real) << 16) | (item32_t(imag) << 0);
 }
 
 static UHD_INLINE fc32_t item32_to_fc32(item32_t item){
-    sc16_t num = item32_to_sc16(item); return fc32_t(
-        float(num.real()*floats_per_short),
-        float(num.imag()*floats_per_short)
+    return fc32_t(
+        float(boost::int16_t(item >> 16)*floats_per_short),
+        float(boost::int16_t(item >> 0)*floats_per_short)
     );
 }
 
@@ -120,7 +119,7 @@ void transport::convert_io_type_to_otw_type(
     size_t num_samps
 ){
     switch(get_pred(io_type, otw_type)){
-    #for $pred in range(4)
+    #for $pred in range(2**$ph.nbits)
     case $pred:
         #set $out_type = $ph.get_dev_type($pred)
         #set $in_type = $ph.get_host_type($pred)
@@ -166,6 +165,8 @@ class ph:
     w16_p  = 0b00000
     sc16_p = 0b00010
     fc32_p = 0b00000
+
+    nbits = 2 #see above
 
     @staticmethod
     def get_xe_macro(pred):
