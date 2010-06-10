@@ -428,13 +428,16 @@ module u1e_core
    //assign debug = { phase[23:8], txsync, txblank, tx };
    
    
-   assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, rx_i[11:0]}, 
-			   {rx1_src_rdy, rx1_dst_rdy, rx_src_rdy, rx_dst_rdy, rx_q[11:0]} };
+   assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
+			   {tx1_src_rdy, tx1_dst_rdy, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
+
+   assign debug_gpio_1 = debug_vtd | debug_vtc;
    
+/*   
    assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
 			   {tx_enable, tx_src_rdy, tx_dst_rdy, tx_dst_rdy & ~tx_src_rdy},
 			   {rx_sof, rx_eof, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
 			   {2'b0, bus_error, debug_gpmc[4:0] },
 			   {misc_gpio[7:0]} };
-   
+  */ 
 endmodule // u1e_core
