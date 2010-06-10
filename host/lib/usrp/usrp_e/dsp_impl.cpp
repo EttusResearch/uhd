@@ -34,6 +34,10 @@ void usrp_e_impl::rx_ddc_init(void){
         boost::bind(&usrp_e_impl::rx_ddc_get, this, _1, _2),
         boost::bind(&usrp_e_impl::rx_ddc_set, this, _1, _2)
     );
+
+    //initial config and update
+    rx_ddc_set(DSP_PROP_FREQ_SHIFT, double(0));
+    rx_ddc_set(DSP_PROP_HOST_RATE, double(64e6/10));
 }
 
 /***********************************************************************
@@ -105,6 +109,10 @@ void usrp_e_impl::tx_duc_init(void){
         boost::bind(&usrp_e_impl::tx_duc_get, this, _1, _2),
         boost::bind(&usrp_e_impl::tx_duc_set, this, _1, _2)
     );
+
+    //initial config and update
+    tx_duc_set(DSP_PROP_FREQ_SHIFT, double(0));
+    tx_duc_set(DSP_PROP_HOST_RATE, double(64e6/10));
 }
 
 /***********************************************************************

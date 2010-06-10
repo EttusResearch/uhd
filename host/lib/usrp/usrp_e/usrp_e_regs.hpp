@@ -174,7 +174,8 @@
 #define UE_REG_TIME64_SECS  UE_REG_SR_ADDR(28)  // value to set absolute secs to on next PPS
 #define UE_REG_TIME64_TICKS UE_REG_SR_ADDR(29)  // value to set absolute ticks to on next PPS
 #define UE_REG_TIME64_FLAGS UE_REG_SR_ADDR(30)  // flags - see chart above
-#define UE_REG_TIME64_IMM   UE_REG_SR_ADDR(31) // set immediate (0=latch on next pps, 1=latch immediate, default=0)
+#define UE_REG_TIME64_IMM   UE_REG_SR_ADDR(31)  // set immediate (0=latch on next pps, 1=latch immediate, default=0)
+#define UE_REG_TIME64_TPS   UE_REG_SR_ADDR(31)  // clock ticks per second (counter rollover)
 
 //pps flags (see above)
 #define UE_FLAG_TIME64_PPS_NEGEDGE (0 << 0)
