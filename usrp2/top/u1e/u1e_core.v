@@ -96,6 +96,9 @@ module u1e_core
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+
+   assign tx_underrun = 0;
+   assign rx_overrun = 0;
 `endif // LOOPBACK
 
 `ifdef TIMED
@@ -151,7 +154,7 @@ module u1e_core
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(overrun),
+      .vita_time(vita_time), .overrun(rx_overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
       .debug_rx(vrc_debug));
@@ -183,7 +186,7 @@ module u1e_core
    vita_tx_control #(.BASE(SR_TX_CTRL), .WIDTH(32)) vita_tx_control
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time),.underrun(underrun),
+      .vita_time(vita_time),.underrun(tx_underrun),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
       .debug(debug_vtc) );
@@ -326,7 +329,6 @@ module u1e_core
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
-   //assign { rx_overrun, tx_underrun } = 0; // reg_test;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
 			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
@@ -426,7 +428,9 @@ module u1e_core
    //assign debug = { phase[23:8], txsync, txblank, tx };
    
    
-   assign debug_gpio_0 = { debug_gpmc };
+   assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, rx_i[11:0]}, 
+			   {rx1_src_rdy, rx1_dst_rdy, rx_src_rdy, rx_dst_rdy, rx_q[11:0]} };
+   
    assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
 			   {tx_enable, tx_src_rdy, tx_dst_rdy, tx_dst_rdy & ~tx_src_rdy},
 			   {rx_sof, rx_eof, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
