@@ -25,8 +25,8 @@ module u1e_core
    input [11:0] misc_gpio, input pps_in
    );
 
-   localparam TXFIFOSIZE = 11;
-   localparam RXFIFOSIZE = 11;
+   localparam TXFIFOSIZE = 13;
+   localparam RXFIFOSIZE = 13;
 
    localparam SR_RX_DSP = 0;    // 5 regs
    localparam SR_RX_CTRL = 8;   // 9 regs
