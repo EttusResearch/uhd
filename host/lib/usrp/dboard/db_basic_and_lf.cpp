@@ -127,7 +127,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(+_max_freq, -_max_freq);
+        val = freq_range_t(-_max_freq, +_max_freq);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -226,7 +226,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(+_max_freq, -_max_freq);
+        val = freq_range_t(-_max_freq, +_max_freq);
         return;
 
     case SUBDEV_PROP_ANTENNA:

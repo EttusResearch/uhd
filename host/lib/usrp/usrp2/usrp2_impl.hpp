@@ -190,8 +190,6 @@ private:
     wax_obj_proxy::sptr _tx_dboard_proxy;
     uhd::prop_names_t _tx_subdevs_in_use;
     uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
-    void update_rx_mux_config(void);
-    void update_tx_mux_config(void);
 
     //methods and shadows for the ddc dsp
     std::vector<size_t> _allowed_decim_and_interp_rates;
