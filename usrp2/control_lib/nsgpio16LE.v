@@ -111,7 +111,7 @@ module nsgpio16LE
    integer   n;
    reg [31:0] igpio; // temporary internal signal
    
-   always @(ctrl or line or debug_1 or debug_0 or atr or ddr)
+   always @(ctrl or line or debug_1 or debug_0 or atr or ddr or dbg)
      for(n=0;n<32;n=n+1)
        igpio[n] <= ddr[n] ? (dbg[n] ? (ctrl[n] ? debug_1[n] : debug_0[n]) : 
 			     (ctrl[n] ?  atr[n] : line[n]) )
