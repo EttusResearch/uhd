@@ -407,9 +407,6 @@ TIMESPEC "TS_clk_to_mac" = PERIOD "clk_to_mac" 8 ns HIGH 50 %;
 NET "clk_fpga_p" TNM_NET = "clk_fpga_p";
 TIMESPEC "TS_clk_fpga_p" = PERIOD "clk_fpga_p" 10 ns HIGH 50 %;
 
-NET "cpld_clk" TNM_NET = "cpld_clk";
-TIMESPEC "TS_cpld_clk" = PERIOD "cpld_clk" 40 ns HIGH 50 %;
-
 NET "GMII_RX_CLK" TNM_NET = "GMII_RX_CLK";
 TIMESPEC "TS_GMII_RX_CLK" = PERIOD "GMII_RX_CLK" 8 ns HIGH 50 %;
 

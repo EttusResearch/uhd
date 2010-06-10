@@ -29,7 +29,7 @@ ISE_HELPER := ../tcl/ise_helper.tcl
 ##################################################
 # Project Setup
 ##################################################
-BUILD_DIR := build/
+BUILD_DIR := build$(ISE)/
 export TOP_MODULE := u2plus
 export PROJ_FILE := $(BUILD_DIR)$(TOP_MODULE).ise
 
@@ -172,7 +172,7 @@ sdr_lib/clip_reg.v \
 sdr_lib/cordic.v \
 sdr_lib/cordic_z24.v \
 sdr_lib/cordic_stage.v \
-sdr_lib/dsp_core_rx.v \
+sdr_lib/dsp_core_rx_udp.v \
 sdr_lib/dsp_core_tx.v \
 sdr_lib/hb_dec.v \
 sdr_lib/hb_interp.v \
@@ -196,7 +196,7 @@ timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
 timing/simple_timer.v \
-top/u2_core/u2_core.v \
+top/u2plus/u2plus_core.v \
 top/u2plus/capture_ddrlvds.v \
 top/u2plus/u2plus.ucf \
 top/u2plus/u2plus.v 

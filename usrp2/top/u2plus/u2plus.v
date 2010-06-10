@@ -286,7 +286,7 @@ module u2plus
       .S(0)       // Synchronous preset input
       );
    */
-   u2_core u2_core(.dsp_clk           (dsp_clk),
+   u2plus_core u2p_c(.dsp_clk           (dsp_clk),
 		     .wb_clk            (wb_clk),
 		     .clock_ready       (clock_ready),
 		     .clk_to_mac	(clk_to_mac),
@@ -323,12 +323,6 @@ module u2plus
 		     .ser_r		(ser_r_int[15:0]),
 		     .ser_rklsb		(ser_rklsb_int),
 		     .ser_rkmsb		(ser_rkmsb_int),
-		     .cpld_start        (cpld_start),
-		     .cpld_mode         (cpld_mode),
-		     .cpld_done         (cpld_done),
-		     .cpld_din          (cpld_din),
-		     .cpld_clk          (cpld_clk),
-		     .cpld_detached     (cpld_detached),
 		     .adc_a		(adc_a[13:0]),
 		     .adc_ovf_a		(adc_ovf_a),
 		     .adc_on_a		(adc_on_a),
@@ -374,13 +368,14 @@ module u2plus
 		     .uart_rx_i         (uart_rx_i),
 		     .uart_baud_o       (),
 		     .sim_mode          (1'b0),
-		     .clock_divider     (2)
+		     .clock_divider     (2),
+		     .spiflash_cs       (flash_cs),
+		     .spiflash_clk      (flash_clk),
+		     .spiflash_miso     (flash_miso),
+		     .spiflash_mosi     (flash_mosi)
 		     );
 
    assign RAM_ZZ = 1;
-   assign flash_clk = 0;
-   assign flash_cs = 1;
-   assign flash_mosi = 0;
    assign RAM_BWn = 4'b1111;
    assign TXD = 3'b111;
    
