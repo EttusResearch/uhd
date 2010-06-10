@@ -690,6 +690,7 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////////////////////
    // External RAM Interface
 
+   /*
    localparam PAGE_SIZE = 10;  // PAGE SIZE is in bytes, 10 = 1024 bytes
 
    wire [15:0] bus2ram, ram2bus;
@@ -719,6 +720,7 @@ module u2_core
 
    assign      RAM_CE1n = 0;
    assign      RAM_D[17:16] = 2'bzz;
+   */
    
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
@@ -729,7 +731,15 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
+  
+   assign debug_clk = 2'b00;
+   assign debug = 32'd0;
+   assign debug_gpio_0 = 32'd0;
+   assign debug_gpio_1 = 32'd0;
    
+endmodule // u2_core
+
+/*
    // FIFO Level Debugging
    reg [31:0]  host_to_dsp_fifo,dsp_to_host_fifo,eth_mac_debug,serdes_to_dsp_fifo,dsp_to_serdes_fifo;
    
@@ -755,7 +765,7 @@ module u2_core
    
    assign  debug_clk[0]  = GMII_RX_CLK; // wb_clk;
    assign  debug_clk[1]  = dsp_clk;
-
+*/
 /*
  
    wire        mdio_cpy  = MDIO;
@@ -776,13 +786,14 @@ module u2_core
  */
 
 //   assign debug = debug_udp;
-   assign debug = vrc_debug;
-   assign debug_gpio_0 = { {pps_in, pps_int, 2'd0, vita_state},
+  // assign debug = vrc_debug;
+/*
+  assign debug_gpio_0 = { {pps_in, pps_int, 2'd0, vita_state},
 			   {2'd0, rx_dst_rdy, rx_src_rdy, rx_data[99:96]},
 			   {run_rx_d1, run_rx, strobe_rx, overrun, wr1_flags[3:0]} , 
 			   {wr1_ready_i, wr1_ready_o, rx1_src_rdy, rx1_dst_rdy, rx1_data[35:32]}};
-
-   assign debug_gpio_1 = {vita_time[63:32] };
+*/
+//   assign debug_gpio_1 = {vita_time[63:32] };
    
 /*
     assign debug_gpio_1 = { { tx_f19_data[15:8] },
@@ -791,8 +802,6 @@ module u2_core
 			   { 2'b0, rd2_ready_i, rd2_ready_o, rd2_flags } };
  */  
    
-endmodule // u2_core
-
 //   wire        debug_mux;
 //   setting_reg #(.my_addr(5)) sr_debug (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 //					.in(set_data),.out(debug_mux),.changed());

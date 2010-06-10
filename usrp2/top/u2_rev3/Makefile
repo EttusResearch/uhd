@@ -196,7 +196,7 @@ timing/time_sender.v \
 timing/time_sync.v \
 timing/timer.v \
 timing/simple_timer.v \
-top/u2_core/u2_core.v \
+top/u2_rev3/u2_core.v \
 top/u2_rev3/u2_rev3.ucf \
 top/u2_rev3/u2_rev3.v 
 
