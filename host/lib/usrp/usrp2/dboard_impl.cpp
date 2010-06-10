@@ -18,6 +18,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include "../dsp_utils.hpp"
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
@@ -54,42 +55,8 @@ void usrp2_impl::dboard_init(void){
     );
 
     //init the subdevs in use (use the first subdevice)
-    _rx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0));
-    update_rx_mux_config();
-
-    _tx_subdevs_in_use = prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0));
-    update_tx_mux_config();
-}
-
-void usrp2_impl::update_rx_mux_config(void){
-    //calculate the rx mux
-    boost::uint32_t rx_mux = 0;
-    UHD_ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
-    wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
-    std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
-    if (rx_subdev[SUBDEV_PROP_QUADRATURE].as<bool>()){
-        rx_mux = (0x01 << 2) | (0x00 << 0); //Q=ADC1, I=ADC0
-    }else{
-        rx_mux = 0x00; //ADC0
-    }
-    if (rx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()){
-        rx_mux = (((rx_mux >> 0) & 0x3) << 2) | (((rx_mux >> 2) & 0x3) << 0);
-    }
-
-    _iface->poke32(U2_REG_DSP_RX_MUX, rx_mux);
-}
-
-void usrp2_impl::update_tx_mux_config(void){
-    //calculate the tx mux
-    boost::uint32_t tx_mux = 0x10;
-    UHD_ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
-    wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
-    std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
-    if (tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()){
-        tx_mux = (((tx_mux >> 0) & 0xf) << 4) | (((tx_mux >> 4) & 0xf) << 0);
-    }
-
-    _iface->poke32(U2_REG_DSP_TX_MUX, tx_mux);
+    rx_dboard_set(DBOARD_PROP_USED_SUBDEVS, prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0)));
+    tx_dboard_set(DBOARD_PROP_USED_SUBDEVS, prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0)));
 }
 
 /***********************************************************************
@@ -131,9 +98,16 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_USED_SUBDEVS:
-        _rx_subdevs_in_use = val.as<prop_names_t>();
-        update_rx_mux_config(); //if the val is bad, this will throw
+    case DBOARD_PROP_USED_SUBDEVS:{
+            _rx_subdevs_in_use = val.as<prop_names_t>();
+            UHD_ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
+            wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
+            std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
+            _iface->poke32(U2_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
+                rx_subdev[SUBDEV_PROP_QUADRATURE].as<bool>(),
+                rx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()
+            ));
+        }
         return;
 
     case DBOARD_PROP_DBOARD_ID:
@@ -184,9 +158,15 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_USED_SUBDEVS:
-        _tx_subdevs_in_use = val.as<prop_names_t>();
-        update_tx_mux_config(); //if the val is bad, this will throw
+    case DBOARD_PROP_USED_SUBDEVS:{
+            _tx_subdevs_in_use = val.as<prop_names_t>();
+            UHD_ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
+            wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
+            std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
+            _iface->poke32(U2_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
+                tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()
+            ));
+        }
         return;
 
     case DBOARD_PROP_DBOARD_ID:
