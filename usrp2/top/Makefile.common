@@ -6,15 +6,10 @@
 # Constants
 ##################################################
 BASE_DIR = $(abspath ..)
-ISE_HELPER = xtclsh /home/matt/sourcerepo/mobfleet/system_board/fpga/scripts/ise_helper.tcl
-#ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
+ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).ise
-BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
-MAKE_ACE = $(BUILD_DIR)/make_ace.cmd
-ACE_FILE = $(BUILD_DIR)/xilinx.sys
+BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
 MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
-IMPACT_CMD = $(BUILD_DIR)/impact.cmd
-IMPACT_CDF = $(BUILD_DIR)/impact.cdf
 
 ##################################################
 # Global Targets
@@ -31,18 +26,12 @@ synth: $(ISE_FILE)
 
 bin: $(BIN_FILE)
 
-ace: $(ACE_FILE)
-
 mcs: $(MCS_FILE)
 
 clean:
 	$(RM) -r $(BUILD_DIR)
 
-XIL_IMPACT_USE_LIBUSB=1
-jtag-install: $(IMPACT_CMD)
-	impact -batch $<
-
-.PHONY: all proj check synth bin ace mcs clean jtag-install
+.PHONY: all proj check synth bin mcs clean
 
 ##################################################
 # Dependency Targets
@@ -56,29 +45,7 @@ $(BIN_FILE): $(ISE_FILE)
 	$(ISE_HELPER) "Generate Programming File"
 	touch $@
 
-$(MAKE_ACE): $(BASE_DIR)/scripts/make_ace.cmd.in
-	sed \
-		-e 's|@BUILD_DIR[@]|$(BUILD_DIR)|g' \
-		-e 's|@TOP_MODULE[@]|$(TOP_MODULE)|g' \
-		-e 's|@BIN_FILE[@]|$(BIN_FILE)|g' \
-	$< > $@
-
-$(ACE_FILE): $(BIN_FILE) $(MAKE_ACE)
-	@echo $@
-	impact -batch $(MAKE_ACE)
-
 $(MCS_FILE): $(BIN_FILE)
 	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIN_FILE)
-
-$(IMPACT_CDF): $(BASE_DIR)/scripts/impact.cdf.in
-	sed \
-		-e 's|@BIN_FILE[@]|$(BIN_FILE)|g' \
-	$< > $@
-
-$(IMPACT_CMD): $(BASE_DIR)/scripts/impact.cmd.in $(IMPACT_CDF)
-	sed \
-		-e 's|@PART_NAME[@]|xc5vsx50t|g' \
-		-e 's|@CDF_FILE[@]|$(IMPACT_CDF)|g' \
-	$< > $@
 
 .EXPORT_ALL_VARIABLES:

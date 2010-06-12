@@ -2,6 +2,16 @@
 # Copyright 2008 Ettus Research LLC
 #
 
+##################################################
+# Project Setup
+##################################################
+TOP_MODULE = u2_rev3
+BUILD_DIR = $(abspath build$(ISE))
+
+##################################################
+# Include other makefiles
+##################################################
+
 include ../Makefile.common
 include ../../fifo/Makefile.srcs
 include ../../control_lib/Makefile.srcs
@@ -14,12 +24,6 @@ include ../../vrt/Makefile.srcs
 include ../../udp/Makefile.srcs
 include ../../coregen/Makefile.srcs
 include ../../extram/Makefile.srcs
-
-##################################################
-# Project Setup
-##################################################
-TOP_MODULE = u2_rev3
-BUILD_DIR = $(abspath build$(ISE))
 
 ##################################################
 # Project Properties
