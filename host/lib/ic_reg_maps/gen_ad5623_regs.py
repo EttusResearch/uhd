@@ -22,7 +22,7 @@
 ########################################################################
 REGS_TMPL="""\
 data             0[4:15]           0
-addr             0[16:18]          0       DAC_A=0, DAC_B=1, DAC_C=2, DAC_D=3, ALL=7
+addr             0[16:18]          0       DAC_A=0, DAC_B=1, ALL=7
 cmd              0[19:21]          0       wr_input_n, up_dac_n, wr_input_n_up_all, wr_up_dac_chan_n, power_down, reset, load_ldac
 """
 
@@ -41,7 +41,7 @@ boost::uint32_t get_reg(void){
 
 if __name__ == '__main__':
     import common; common.generate(
-        name='ad5624_regs',
+        name='ad5623_regs',
         regs_tmpl=REGS_TMPL,
         body_tmpl=BODY_TMPL,
         file=__file__,

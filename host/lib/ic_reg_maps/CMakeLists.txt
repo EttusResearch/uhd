@@ -40,8 +40,8 @@ LIBUHD_PYTHON_GEN_SOURCE(
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad5624_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad5624_regs.hpp
+    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad5623_regs.py
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad5623_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(

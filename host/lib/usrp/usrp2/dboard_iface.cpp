@@ -25,7 +25,7 @@
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/math/special_functions/round.hpp>
 #include "ad7922_regs.hpp" //aux adc
-#include "ad5624_regs.hpp" //aux dac
+#include "ad5623_regs.hpp" //aux dac
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -72,7 +72,7 @@ private:
     boost::uint32_t _ddr_shadow;
     boost::uint32_t _gpio_shadow;
 
-    uhd::dict<unit_t, ad5624_regs_t> _dac_regs;
+    uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
     void _write_aux_dac(unit_t);
 };
 
@@ -99,12 +99,12 @@ usrp2_dboard_iface::usrp2_dboard_iface(
     _gpio_shadow = 0;
 
     //reset the aux dacs
-    _dac_regs[UNIT_RX] = ad5624_regs_t();
-    _dac_regs[UNIT_TX] = ad5624_regs_t();
+    _dac_regs[UNIT_RX] = ad5623_regs_t();
+    _dac_regs[UNIT_TX] = ad5623_regs_t();
     BOOST_FOREACH(unit_t unit, _dac_regs.keys()){
         _dac_regs[unit].data = 1;
-        _dac_regs[unit].addr = ad5624_regs_t::ADDR_ALL;
-        _dac_regs[unit].cmd  = ad5624_regs_t::CMD_RESET;
+        _dac_regs[unit].addr = ad5623_regs_t::ADDR_ALL;
+        _dac_regs[unit].cmd  = ad5623_regs_t::CMD_RESET;
         this->_write_aux_dac(unit);
     }
 }
@@ -242,12 +242,14 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
 
 void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
-    _dac_regs[unit].cmd = ad5624_regs_t::CMD_WR_UP_DAC_CHAN_N;
+    _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
+    //standardize on USRP1 interface, A=0, B=1, C=2, D=3
+    //FIXME josh reccommends the use of a nested dictionary
     switch(which){
-    case 0: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_A; break;
-    case 1: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_B; break;
-    case 2: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_C; break;
-    case 3: _dac_regs[unit].addr = ad5624_regs_t::ADDR_DAC_D; break;
+    case 0: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_B : ad5623_regs_t::ADDR_DAC_A; break;
+    case 1: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_A : ad5623_regs_t::ADDR_DAC_B; break;
+    case 2: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_A : ad5623_regs_t::ADDR_DAC_B; break;
+    case 3: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_B : ad5623_regs_t::ADDR_DAC_A; break;
     default: throw std::runtime_error("not a possible aux dac, must be 0, 1, 2, or 3");
     }
     this->_write_aux_dac(unit);
