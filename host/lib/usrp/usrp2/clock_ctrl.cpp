@@ -85,6 +85,14 @@ public:
         this->update_regs();
     }
 
+    void set_rate_rx_dboard_clock(double rate){
+        //TODO
+    }
+
+    std::vector<double> get_rates_rx_dboard_clock(void){
+        //TODO
+    }
+
     //uses output clock 6 (cmos)
     void enable_tx_dboard_clock(bool enb){
         _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
@@ -94,6 +102,14 @@ public:
         this->write_reg(0x42);
         this->write_reg(0x55);
         this->update_regs();
+    }
+
+    void set_rate_tx_dboard_clock(double rate){
+        //TODO
+    }
+
+    std::vector<double> get_rates_tx_dboard_clock(void){
+        //TODO
     }
 
     /*!

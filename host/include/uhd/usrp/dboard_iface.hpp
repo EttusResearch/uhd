@@ -22,6 +22,7 @@
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <vector>
 
 namespace uhd{ namespace usrp{
 
@@ -159,12 +160,28 @@ public:
     ) = 0;
 
     /*!
+     * Set the rate of a dboard clock.
+     *
+     * \param unit which unit rx or tx
+     * \param rate the clock rate in Hz
+     */
+    virtual void set_clock_rate(unit_t unit, double rate) = 0;
+
+    /*!
      * Get the rate of a dboard clock.
      *
      * \param unit which unit rx or tx
      * \return the clock rate in Hz
      */
     virtual double get_clock_rate(unit_t unit) = 0;
+
+    /*!
+     * Get a list of possible rates for the dboard clock.
+     *
+     * \param unit which unit rx or tx
+     * \return a list of clock rates in Hz
+     */
+    virtual std::vector<double> get_clock_rates(unit_t unit) = 0;
 
     /*!
      * Enable or disable a dboard clock.

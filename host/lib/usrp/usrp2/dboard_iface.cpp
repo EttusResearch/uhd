@@ -48,9 +48,10 @@ public:
     void write_i2c(boost::uint8_t, const byte_vector_t &);
     byte_vector_t read_i2c(boost::uint8_t, size_t);
 
+    void set_clock_rate(unit_t, double);
     double get_clock_rate(unit_t);
+    std::vector<double> get_clock_rates(unit_t);
     void set_clock_enabled(unit_t, bool);
-    bool get_clock_enabled(unit_t);
 
     void write_spi(
         unit_t unit,
@@ -73,6 +74,7 @@ private:
     boost::uint32_t _gpio_shadow;
 
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
+    uhd::dict<unit_t, double> _clock_rates;
     void _write_aux_dac(unit_t);
 };
 
@@ -116,8 +118,24 @@ usrp2_dboard_iface::~usrp2_dboard_iface(void){
 /***********************************************************************
  * Clocks
  **********************************************************************/
-double usrp2_dboard_iface::get_clock_rate(unit_t){
-    return _clock_ctrl->get_master_clock_rate();
+void usrp2_dboard_iface::set_clock_rate(unit_t unit, double rate){
+    _clock_rates[unit] = rate; //set to shadow
+    switch(unit){
+    case UNIT_RX: _clock_ctrl->set_rate_rx_dboard_clock(rate); return;
+    case UNIT_TX: _clock_ctrl->set_rate_tx_dboard_clock(rate); return;
+    }
+}
+
+double usrp2_dboard_iface::get_clock_rate(unit_t unit){
+    return _clock_rates[unit]; //get from shadow
+}
+
+std::vector<double> usrp2_dboard_iface::get_clock_rates(unit_t unit){
+    switch(unit){
+    case UNIT_RX: return _clock_ctrl->get_rates_rx_dboard_clock();
+    case UNIT_TX: return _clock_ctrl->get_rates_tx_dboard_clock();
+    default: UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
