@@ -107,7 +107,7 @@ struct usrp_e_impl::io_impl{
 
 void usrp_e_impl::io_init(void){
     //setup rx data path
-    _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, 300); //FIXME magic number
+    _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
     _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
     _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(UE_REG_CTRL_RX_VRT_HEADER, 0
@@ -168,7 +168,7 @@ size_t usrp_e_impl::send(
         MASTER_CLOCK_RATE,
         uhd::transport::vrt::pack_le,
         boost::bind(&data_transport::get_send_buff, &_io_impl->transport),
-        (MAX_BUFF_SIZE - sizeof(usrp_transfer_frame))/send_otw_type.get_sample_size(),
+        get_max_send_samps_per_packet(),
         vrt_header_offset_words32
     );
 }

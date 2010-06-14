@@ -58,9 +58,6 @@ private:
 usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     _iface = iface;
 
-    //FIXME temp poke !!!
-    _iface->poke16(UE_REG_MISC_TEST, 0x0f00);
-
     //soft reset
     _ad9862_regs.soft_reset = 1;
     this->send_reg(0);
@@ -75,8 +72,8 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     _ad9862_regs.byp_buffer_b = 1;
     _ad9862_regs.buffer_a_pd = 1;
     _ad9862_regs.buffer_b_pd = 1;
-    _ad9862_regs.rx_pga_a = 0x1f;  //TODO bring under api control
-    _ad9862_regs.rx_pga_b = 0x1f;  //TODO bring under api control
+    _ad9862_regs.rx_pga_a = 0;//0x1f;  //TODO bring under api control
+    _ad9862_regs.rx_pga_b = 0;//0x1f;  //TODO bring under api control
     _ad9862_regs.rx_twos_comp = 1;
     _ad9862_regs.rx_hilbert = ad9862_regs_t::RX_HILBERT_DIS;
 
@@ -85,7 +82,7 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     _ad9862_regs.interleaved = ad9862_regs_t::INTERLEAVED_INTERLEAVED;
     _ad9862_regs.tx_pga_gain = 199; //TODO bring under api control
     _ad9862_regs.tx_hilbert = ad9862_regs_t::TX_HILBERT_DIS;
-    _ad9862_regs.interp = ad9862_regs_t::INTERP_4;
+    _ad9862_regs.interp = ad9862_regs_t::INTERP_2;
     _ad9862_regs.tx_twos_comp = 1;
     _ad9862_regs.fine_mode = ad9862_regs_t::FINE_MODE_BYPASS;
     _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_BYPASS;
@@ -108,8 +105,6 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
 }
 
 usrp_e_codec_ctrl_impl::~usrp_e_codec_ctrl_impl(void){
-    return; //FIXME remove this later
-
     //set aux dacs to zero
     this->write_aux_dac(AUX_DAC_A, 0);
     this->write_aux_dac(AUX_DAC_B, 0);

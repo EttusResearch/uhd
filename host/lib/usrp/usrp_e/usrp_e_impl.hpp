@@ -80,8 +80,8 @@ public:
     //the io interface
     size_t send(const boost::asio::const_buffer &, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t);
     size_t recv(const boost::asio::mutable_buffer &, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t);
-    size_t get_max_send_samps_per_packet(void) const{return _max_num_samples;}
-    size_t get_max_recv_samps_per_packet(void) const{return _max_num_samples;}
+    size_t get_max_send_samps_per_packet(void) const{return 300;}
+    size_t get_max_recv_samps_per_packet(void) const{return 300;}
 
 private:
     //interface to ioctls and file descriptor
