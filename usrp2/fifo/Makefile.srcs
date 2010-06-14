@@ -1,0 +1,23 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# FIFO Sources
+##################################################
+FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../fifo/, \
+buffer_int.v \
+buffer_pool.v \
+fifo_2clock.v \
+fifo_2clock_cascade.v \
+ll8_shortfifo.v \
+fifo_short.v \
+fifo_long.v \
+fifo_cascade.v \
+fifo36_to_ll8.v \
+ll8_to_fifo36.v \
+fifo19_to_ll8.v \
+ll8_to_fifo19.v \
+fifo36_to_fifo19.v \
+fifo19_to_fifo36.v \
+))
