@@ -1,0 +1,51 @@
+#
+# Copyright 2008, 2009, 2010 Ettus Research LLC
+#
+
+##################################################
+# Constants
+##################################################
+BASE_DIR = $(abspath ..)
+ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
+ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).ise
+BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
+MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
+
+##################################################
+# Global Targets
+##################################################
+all: bin
+
+proj: $(ISE_FILE)
+
+check: $(ISE_FILE)
+	$(ISE_HELPER) "Check Syntax"
+
+synth: $(ISE_FILE)
+	$(ISE_HELPER) "Synthesize - XST"
+
+bin: $(BIN_FILE)
+
+mcs: $(MCS_FILE)
+
+clean:
+	$(RM) -r $(BUILD_DIR)
+
+.PHONY: all proj check synth bin mcs clean
+
+##################################################
+# Dependency Targets
+##################################################
+$(ISE_FILE): $(SOURCES)
+	@echo $@
+	$(ISE_HELPER) ""
+
+$(BIN_FILE): $(ISE_FILE)
+	@echo $@
+	$(ISE_HELPER) "Generate Programming File"
+	touch $@
+
+$(MCS_FILE): $(BIN_FILE)
+	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIN_FILE)
+
+.EXPORT_ALL_VARIABLES:

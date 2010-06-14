@@ -1,0 +1,13 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# UDP Sources
+##################################################
+UDP_SRCS = $(abspath $(addprefix $(BASE_DIR)/../udp/, \
+udp_wrapper.v \
+fifo19_rxrealign.v \
+prot_eng_tx.v \
+add_onescomp.v \
+))

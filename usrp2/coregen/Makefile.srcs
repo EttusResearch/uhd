@@ -1,0 +1,19 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# Coregen Sources
+##################################################
+COREGEN_SRCS = $(abspath $(addprefix $(BASE_DIR)/../coregen/, \
+fifo_xlnx_2Kx36_2clk.v \
+fifo_xlnx_2Kx36_2clk.xco \
+fifo_xlnx_512x36_2clk.v \
+fifo_xlnx_512x36_2clk.xco \
+fifo_xlnx_64x36_2clk.v \
+fifo_xlnx_64x36_2clk.xco \
+fifo_xlnx_16x19_2clk.v \
+fifo_xlnx_16x19_2clk.xco \
+fifo_xlnx_16x40_2clk.v \
+fifo_xlnx_16x40_2clk.xco \
+))

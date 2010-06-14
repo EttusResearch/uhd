@@ -582,8 +582,7 @@ module u2_core
       .fifo_occupied(dsp_rx_occ),.fifo_full(dsp_rx_full),.fifo_empty(dsp_rx_empty),
       .debug_rx(debug_rx) );
    
-   // dummy_rx dsp_core_rx
-   dsp_core_rx dsp_core_rx
+   dsp_core_rx_old dsp_core_rx_old
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
