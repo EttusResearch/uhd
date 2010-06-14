@@ -83,7 +83,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup recv buffer, io type, and metadata for recv
     uhd::rx_metadata_t md;
-    uhd::io_type_t io_type(uhd::io_type_t::COMPLEX_INT16);
+    uhd::io_type_t io_type(uhd::io_type_t::COMPLEX_FLOAT32);
     std::vector<std::complex<float> > recv_mem(dev->get_max_recv_samps_per_packet());
     boost::asio::mutable_buffer buff(boost::asio::buffer(recv_mem));
 
