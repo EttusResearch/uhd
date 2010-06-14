@@ -5,9 +5,15 @@
 ##################################################
 # Constants
 ##################################################
+ISE_VER = $(shell xtclsh -h | head -n1 | cut -f2 -d" " | cut -f1 -d.)
+ifeq ($(ISE_VER),10)
+	ISE_EXT = ise
+else
+	ISE_EXT = xise
+endif
 BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
-ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).ise
+ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
 MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
 
