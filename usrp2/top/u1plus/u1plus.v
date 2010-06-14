@@ -24,9 +24,12 @@ module u1plus
    output [13:0] dac, output TXSYNC, output TXBLANK,
    input [11:0] adc, input RXSYNC,
   
-   input PPS_IN
+   input PPS_IN,
+   input reset_n, output reset_codec
    );
 
+   assign reset_codec = 1;  // Believed to be active low
+   
    // /////////////////////////////////////////////////////////////////////////
    // Clocking
    wire  clk_fpga, clk_fpga_in, reset;

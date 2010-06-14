@@ -33,6 +33,20 @@ BUILD_DIR := build/
 export TOP_MODULE := u1plus
 export PROJ_FILE := $(BUILD_DIR)$(TOP_MODULE).ise
 
+include ../Makefile.common
+include ../../fifo/Makefile.srcs
+include ../../control_lib/Makefile.srcs
+include ../../sdr_lib/Makefile.srcs
+include ../../serdes/Makefile.srcs
+include ../../simple_gemac/Makefile.srcs
+include ../../timing/Makefile.srcs
+include ../../opencores/Makefile.srcs
+include ../../vrt/Makefile.srcs
+include ../../udp/Makefile.srcs
+include ../../coregen/Makefile.srcs
+include ../../extram/Makefile.srcs
+include ../../gpif/Makefile.srcs
+
 ##################################################
 # Project Properties
 ##################################################
@@ -51,132 +65,17 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 ##################################################
 # Sources
 ##################################################
-export SOURCE_ROOT := ../../../
-export SOURCES := \
-control_lib/CRC16_D16.v \
-control_lib/atr_controller16.v \
-control_lib/bin2gray.v \
-control_lib/dcache.v \
-control_lib/decoder_3_8.v \
-control_lib/dpram32.v \
-control_lib/gray2bin.v \
-control_lib/gray_send.v \
-control_lib/icache.v \
-control_lib/mux4.v \
-control_lib/mux8.v \
-control_lib/nsgpio16LE.v \
-control_lib/ram_2port.v \
-control_lib/ram_2port_mixed_width.v \
-control_lib/ram_harv_cache.v \
-control_lib/ram_loader.v \
-control_lib/setting_reg.v \
-control_lib/settings_bus_16LE.v \
-control_lib/srl.v \
-control_lib/system_control.v \
-control_lib/wb_1master.v \
-control_lib/wb_readback_mux.v \
-control_lib/simple_uart.v \
-control_lib/simple_uart_tx.v \
-control_lib/simple_uart_rx.v \
-control_lib/oneshot_2clk.v \
-control_lib/sd_spi.v \
-control_lib/sd_spi_wb.v \
-control_lib/wb_bridge_16_32.v \
-control_lib/reset_sync.v \
-control_lib/newfifo/buffer_int.v \
-control_lib/newfifo/buffer_pool.v \
-control_lib/newfifo/fifo_2clock.v \
-control_lib/newfifo/fifo_2clock_cascade.v \
-control_lib/newfifo/ll8_shortfifo.v \
-control_lib/newfifo/ll8_to_fifo36.v \
-control_lib/newfifo/fifo_short.v \
-control_lib/newfifo/fifo_long.v \
-control_lib/newfifo/fifo_cascade.v \
-control_lib/newfifo/fifo36_to_ll8.v \
-control_lib/newfifo/fifo36_to_fifo19.v \
-control_lib/newfifo/fifo19_to_fifo36.v \
-control_lib/newfifo/packet_generator.v \
-control_lib/newfifo/packet_verifier.v \
-control_lib/newfifo/packet_generator32.v \
-control_lib/newfifo/packet_verifier32.v \
-control_lib/newfifo/fifo_pacer.v \
-control_lib/longfifo.v \
-control_lib/shortfifo.v \
-control_lib/medfifo.v \
-control_lib/priority_enc.v \
-control_lib/pic.v \
-coregen/fifo_xlnx_2Kx36_2clk.v \
-coregen/fifo_xlnx_2Kx36_2clk.xco \
-coregen/fifo_xlnx_512x36_2clk.v \
-coregen/fifo_xlnx_512x36_2clk.xco \
-coregen/fifo_xlnx_64x36_2clk.v \
-coregen/fifo_xlnx_64x36_2clk.xco \
-extram/wb_zbt16_b.v \
-opencores/8b10b/decode_8b10b.v \
-opencores/8b10b/encode_8b10b.v \
-opencores/aemb/rtl/verilog/aeMB_bpcu.v \
-opencores/aemb/rtl/verilog/aeMB_core_BE.v \
-opencores/aemb/rtl/verilog/aeMB_ctrl.v \
-opencores/aemb/rtl/verilog/aeMB_edk32.v \
-opencores/aemb/rtl/verilog/aeMB_ibuf.v \
-opencores/aemb/rtl/verilog/aeMB_regf.v \
-opencores/aemb/rtl/verilog/aeMB_xecu.v \
-opencores/i2c/rtl/verilog/i2c_master_bit_ctrl.v \
-opencores/i2c/rtl/verilog/i2c_master_byte_ctrl.v \
-opencores/i2c/rtl/verilog/i2c_master_defines.v \
-opencores/i2c/rtl/verilog/i2c_master_top.v \
-opencores/i2c/rtl/verilog/timescale.v \
-opencores/simple_pic/rtl/simple_pic.v \
-opencores/spi/rtl/verilog/spi_clgen.v \
-opencores/spi/rtl/verilog/spi_defines.v \
-opencores/spi/rtl/verilog/spi_shift.v \
-opencores/spi/rtl/verilog/spi_top16.v \
-sdr_lib/acc.v \
-sdr_lib/add2.v \
-sdr_lib/add2_and_round.v \
-sdr_lib/add2_and_round_reg.v \
-sdr_lib/add2_reg.v \
-sdr_lib/cic_dec_shifter.v \
-sdr_lib/cic_decim.v \
-sdr_lib/cic_int_shifter.v \
-sdr_lib/cic_interp.v \
-sdr_lib/cic_strober.v \
-sdr_lib/clip.v \
-sdr_lib/clip_reg.v \
-sdr_lib/cordic.v \
-sdr_lib/cordic_z24.v \
-sdr_lib/cordic_stage.v \
-sdr_lib/dsp_core_rx_udp.v \
-sdr_lib/dsp_core_tx.v \
-sdr_lib/hb_dec.v \
-sdr_lib/hb_interp.v \
-sdr_lib/round.v \
-sdr_lib/round_reg.v \
-sdr_lib/rx_control.v \
-sdr_lib/rx_dcoffset.v \
-sdr_lib/sign_extend.v \
-sdr_lib/small_hb_dec.v \
-sdr_lib/small_hb_int.v \
-sdr_lib/tx_control.v \
-serdes/serdes.v \
-serdes/serdes_fc_rx.v \
-serdes/serdes_fc_tx.v \
-serdes/serdes_rx.v \
-serdes/serdes_tx.v \
-timing/time_receiver.v \
-timing/time_sender.v \
-timing/time_sync.v \
-timing/timer.v \
-timing/time_64bit.v \
-vrt/vita_rx_control.v \
-vrt/vita_rx_framer.v \
-vrt/vita_tx_control.v \
-vrt/vita_tx_deframer.v \
-timing/time_compare.v \
-top/u1plus/u1plus_core.v \
-top/u1plus/u1plus.ucf \
-top/u1plus/timing.ucf \
-top/u1plus/u1plus.v 
+TOP_SRCS = \
+u1plus.v \
+u1plus_core.v \
+u1plus.ucf \
+timing.ucf
+
+SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \
+$(CONTROL_LIB_SRCS) $(SDR_LIB_SRCS) $(SERDES_SRCS) \
+$(SIMPLE_GEMAC_SRCS) $(TIMING_SRCS) $(OPENCORES_SRCS) \
+$(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) $(EXTRAM_SRCS) \
+$(GPIF_SRCS)
 
 ##################################################
 # Process Properties

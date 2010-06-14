@@ -22,6 +22,21 @@ module gpif
     output [31:0] debug
     );
 
+   wire 	  WR = gpif_ctl[0];
+   wire 	  RD = gpif_ctl[1];
+   wire 	  OE = gpif_ctl[2];
+   
+   gpif_wr gpif_wr
+     (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), 
+      .gpif_data(), .WR(WR), .have_space(gpif_rdy[0]),
+      .sys_clk(sys_clk), .sys_rst(sys_rst),
+      .data_o(data_o), .src_rdy_o(), .dst_rdy_i(),
+      .debug() );
+   
+
+endmodule // gpif
+
+/*
    wire 	  EM_output_enable = (~EM_NOE & (~EM_NCS4 | ~EM_NCS6));
    wire [15:0] 	  EM_D_fifo;
    wire [15:0] 	  EM_D_wb;
@@ -120,3 +135,4 @@ module gpif
    assign debug = 0;
    
 endmodule // gpmc_async
+*/

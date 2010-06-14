@@ -65,13 +65,8 @@ module u1plus_core
    wire 	 bus_error;
    
    gpif #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
-   gpif (.arst(wb_rst),
-	 .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
-	 .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
-	 .EM_NOE(EM_NOE),
-	 
-	 .rx_have_data(rx_have_data), .tx_have_space(tx_have_space),
-	 .bus_error(bus_error), .bus_reset(0),
+   gpif (.gpif_clk(gpif_clk), .gpif_d(gpif_d), .gpif_ctl(gpif_ctl), 
+	 .gpif_rdy(gpif_rdy), .gpif_misc(gpif_misc),
 	 
 	 .wb_clk(wb_clk), .wb_rst(wb_rst),
 	 .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
