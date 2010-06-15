@@ -244,14 +244,23 @@ void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
     //standardize on USRP1 interface, A=0, B=1, C=2, D=3
-    //FIXME josh reccommends the use of a nested dictionary
-    switch(which){
-    case 0: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_B : ad5623_regs_t::ADDR_DAC_A; break;
-    case 1: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_A : ad5623_regs_t::ADDR_DAC_B; break;
-    case 2: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_A : ad5623_regs_t::ADDR_DAC_B; break;
-    case 3: _dac_regs[unit].addr = unit == dboard_iface::UNIT_RX ? ad5623_regs_t::ADDR_DAC_B : ad5623_regs_t::ADDR_DAC_A; break;
-    default: throw std::runtime_error("not a possible aux dac, must be 0, 1, 2, or 3");
-    }
+    static const uhd::dict<
+        unit_t, uhd::dict<int, ad5623_regs_t::addr_t>
+    > unit_to_which_to_addr = map_list_of
+        (UNIT_RX, map_list_of
+            (0, ad5623_regs_t::ADDR_DAC_B)
+            (1, ad5623_regs_t::ADDR_DAC_A)
+            (2, ad5623_regs_t::ADDR_DAC_A)
+            (3, ad5623_regs_t::ADDR_DAC_B)
+        )
+        (UNIT_TX, map_list_of
+            (0, ad5623_regs_t::ADDR_DAC_A)
+            (1, ad5623_regs_t::ADDR_DAC_B)
+            (2, ad5623_regs_t::ADDR_DAC_B)
+            (3, ad5623_regs_t::ADDR_DAC_A)
+        )
+    ;
+    _dac_regs[unit].addr = unit_to_which_to_addr[unit][which];
     this->_write_aux_dac(unit);
 }
 
