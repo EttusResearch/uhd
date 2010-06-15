@@ -22,6 +22,7 @@
 #include <fcntl.h> //read, write
 #include <linux/usrp_e.h> //transfer frame struct
 #include <stddef.h> //offsetof
+#include <poll.h>
 #include <boost/format.hpp>
 #include <iostream>
 
@@ -75,12 +76,22 @@ private:
         //std::cout << boost::format(
         //    "calling read on fd %d, buff size is %d"
         //) % _fd % boost::asio::buffer_size(buff) << std::endl;
+
+        //setup and call poll on the file descriptor
+        //return 0 and do not read when poll times out
+        pollfd pfd;
+        pfd.fd = _fd;
+        pfd.events = POLLIN;
+        if (poll(&pfd, 1, 100 /*ms*/) <= 0) return 0; //timeout
+
+        //perform the blocking read(...)
         ssize_t ret = read(
             _fd,
             boost::asio::buffer_cast<void *>(buff),
             boost::asio::buffer_size(buff)
         );
         if (ret < ssize_t(sizeof(usrp_transfer_frame))) return 0;
+
         //overwrite the vrt header length with the transfer frame length
         size_t frame_size = boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len;
         boost::uint32_t *vrt_header = boost::asio::buffer_cast<boost::uint32_t *>(buff) + vrt_header_offset_words32;
