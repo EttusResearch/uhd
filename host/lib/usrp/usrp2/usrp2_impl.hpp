@@ -141,15 +141,13 @@ private:
     /*******************************************************************
      * Deal with the rx and tx packet sizes
      ******************************************************************/
-    static const size_t _mtu = 1500; //FIXME we have no idea
-    static const size_t _hdrs = (2 + 14 + 20 + 8); //size of headers (pad, eth, ip, udp)
     static const size_t _max_rx_bytes_per_packet =
-        _mtu - _hdrs -
+        USRP2_UDP_BYTES -
         USRP2_HOST_RX_VRT_HEADER_WORDS32*sizeof(boost::uint32_t) -
         USRP2_HOST_RX_VRT_TRAILER_WORDS32*sizeof(boost::uint32_t)
     ;
     static const size_t _max_tx_bytes_per_packet =
-        _mtu - _hdrs -
+        USRP2_UDP_BYTES -
         uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
     ;
 

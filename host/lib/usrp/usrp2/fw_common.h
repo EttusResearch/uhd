@@ -32,9 +32,13 @@ extern "C" {
 #define _SINS_
 #endif
 
+// define limits on bytes per udp packet
+#define USRP2_MTU_BYTES 1500
+#define USRP2_UDP_BYTES ((USRP2_MTU_BYTES) - (2 + 14 + 20 + 8)) //size of headers (pad, eth, ip, udp)
+
 //defines the protocol version in this shared header
 //increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 3
+#define USRP2_PROTO_VERSION 4
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -102,7 +106,7 @@ typedef struct{
         struct {
             _SINS_ uint8_t addr;
             _SINS_ uint8_t bytes;
-            _SINS_ uint8_t data[sizeof(_SINS_ uint32_t)];
+            _SINS_ uint8_t data[20];
         } i2c_args;
         struct {
             _SINS_ uint32_t addr;
