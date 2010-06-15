@@ -148,9 +148,12 @@ template<typename Opt> static void resize_buff_helper(
     if (target_size > 0){
         size_t actual_size = udp_trans->resize_buff<Opt>(target_size);
         if (target_size != actual_size) std::cout << boost::format(
-            "Target %s buffer size: %d\n"
-            "Actual %s byffer size: %d"
+            "Target %s sock buff size: %d bytes\n"
+            "Actual %s sock buff size: %d bytes"
         ) % name % target_size % name % actual_size << std::endl;
+        else std::cout << boost::format(
+            "Current %s sock buff size: %d bytes"
+        ) % name % actual_size << std::endl;
     }
 
     //otherwise, ensure that the buffer is at least the minimum size
