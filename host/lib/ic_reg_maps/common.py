@@ -80,6 +80,26 @@ $body
         return addrs;
     }
 
+    #for $mreg in $mregs
+    $mreg.get_type() get_$(mreg.get_name())(void){
+        return
+        #set $shift = 0
+        #for $reg in $mreg.get_regs()
+        ($(mreg.get_type())($reg.get_name() & $reg.get_mask()) << $shift) |
+            #set $shift = $shift + $reg.get_bit_width()
+        #end for
+        0;
+    }
+
+    void set_$(mreg.get_name())($mreg.get_type() reg){
+        #set $shift = 0
+        #for $reg in $mreg.get_regs()
+        $reg.get_name() = (reg >> $shift) & $reg.get_mask();
+            #set $shift = $shift + $reg.get_bit_width()
+        #end for
+    }
+
+    #end for
 private:
     $(name)_t *_state;
 };
@@ -90,7 +110,7 @@ private:
 def parse_tmpl(_tmpl_text, **kwargs):
     return str(Template(_tmpl_text, kwargs))
 
-def to_num(arg): return eval(arg)
+def to_num(arg): return int(eval(arg))
 
 class reg:
     def __init__(self, reg_des):
@@ -135,13 +155,42 @@ class reg:
     def get_mask(self): return hex(int('1'*self.get_bit_width(), 2))
     def get_bit_width(self): return self._addr_spec[1] - self._addr_spec[0] + 1
 
+class mreg:
+    def __init__(self, mreg_des, regs):
+        try: self.parse(mreg_des, regs)
+        except Exception, e:
+            raise Exception, 'Error parsing meta register description: "%s"\nWhat: %s'%(mreg_des, e)
+
+    def parse(self, mreg_des, regs):
+        x = re.match('^~(\w*)\s+(.*)\s*$', mreg_des)
+        self._name, reg_names = x.groups()
+        regs_dict = dict([(reg.get_name(), reg) for reg in regs])
+        self._regs = [regs_dict[reg_name] for reg_name in map(str.strip, reg_names.split(','))]
+
+    def get_name(self): return self._name
+    def get_regs(self): return self._regs
+    def get_bit_width(self): return sum(map(reg.get_bit_width, self._regs))
+    def get_type(self):
+        return 'boost::uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
+
 def generate(name, regs_tmpl, body_tmpl='', file=__file__):
-    regs = map(reg, parse_tmpl(regs_tmpl).splitlines())
+    #evaluate the regs template and parse each line into a register
+    regs = list(); mregs = list()
+    for entry in parse_tmpl(regs_tmpl).splitlines():
+        if entry.startswith('~'): mregs.append(mreg(entry, regs))
+        else:                     regs.append(reg(entry))
+
+    #evaluate the body template with the list of registers
     body = parse_tmpl(body_tmpl, regs=regs).replace('\n', '\n    ').strip()
+
+    #evaluate the code template with the parsed registers and arguments
     code = parse_tmpl(COMMON_TMPL,
         name=name,
         regs=regs,
+        mregs=mregs,
         body=body,
         file=file,
     )
+
+    #write the generated code to file specified by argv1
     open(sys.argv[1], 'w').write(code)
