@@ -19,13 +19,13 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <stdexcept>
-#include <algorithm>
 
 using namespace uhd;
 
@@ -41,13 +41,9 @@ using namespace uhd;
 static size_t hash_device_addr(
     const device_addr_t &dev_addr
 ){
-    //sort the keys of the device address
-    std::vector<std::string> keys = dev_addr.keys();
-    std::sort(keys.begin(), keys.end());
-
     //combine the hashes of sorted keys/value pairs
     size_t hash = 0;
-    BOOST_FOREACH(const std::string &key, keys){
+    BOOST_FOREACH(const std::string &key, std::sorted(dev_addr.keys())){
         boost::hash_combine(hash, key);
         boost::hash_combine(hash, dev_addr[key]);
     }
