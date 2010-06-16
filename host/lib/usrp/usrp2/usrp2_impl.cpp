@@ -44,6 +44,9 @@ UHD_STATIC_BLOCK(register_usrp2_device){
 uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
     device_addrs_t usrp2_addrs;
 
+    //return an empty list of addresses when type is set to non-usrp2
+    if (hint.has_key("type") and hint["type"] != "usrp2") return usrp2_addrs;
+
     //if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")){
         BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
@@ -88,7 +91,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
                 //make a boost asio ipv4 with the raw addr in host byte order
                 boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
                 device_addr_t new_addr;
-                new_addr["name"] = "USRP2";
+                new_addr["type"] = "usrp2";
                 new_addr["addr"] = ip_addr.to_string();
                 usrp2_addrs.push_back(new_addr);
                 //dont break here, it will exit the while loop
