@@ -13,21 +13,17 @@ module time_64bit
    localparam 	   NEXT_TICKS = 1;
    localparam      PPS_POLSRC = 2;
    localparam      PPS_IMM = 3;
+   localparam      TPS = 4;
    
-   localparam 	   ROLLOVER = TICKS_PER_SEC - 1;	   
-   
-   reg [31:0] 	   seconds;
-   reg [31:0] 	   ticks;
+   reg [31:0] 	   seconds, ticks;
    wire 	   end_of_second;
    assign 	   vita_time = {seconds,ticks};
    
-   wire [31:0] 	   next_ticks_preset;
-   wire [31:0] 	   next_seconds_preset;
+   wire [31:0] 	   next_ticks_preset, next_seconds_preset;
+   wire [31:0] 	   ticks_per_sec_reg;
    wire 	   set_on_pps_trig;
    reg 		   set_on_next_pps;
-   wire 	   pps_polarity;
-   wire            set_imm;
-   wire 	   pps_source;
+   wire 	   pps_polarity, pps_source, set_imm;
    
    setting_reg #(.my_addr(BASE+NEXT_TICKS)) sr_next_ticks
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
@@ -37,13 +33,17 @@ module time_64bit
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(next_seconds_preset),.changed(set_on_pps_trig));
 
-   setting_reg #(.my_addr(BASE+PPS_POLSRC)) sr_pps_polsrc
+   setting_reg #(.my_addr(BASE+PPS_POLSRC), .width(2)) sr_pps_polsrc
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({pps_source,pps_polarity}),.changed());
 
-   setting_reg #(.my_addr(BASE+PPS_IMM)) sr_pps_imm
+   setting_reg #(.my_addr(BASE+PPS_IMM), .width(1)) sr_pps_imm
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(set_imm),.changed());
+
+   setting_reg #(.my_addr(BASE+TPS), .at_reset(TICKS_PER_SEC)) sr_tps
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(ticks_per_sec_reg),.changed());
 
    reg [1:0] 	   pps_del;
    reg 		   pps_reg_p, pps_reg_n, pps_reg;
@@ -68,6 +68,8 @@ module time_64bit
        set_on_next_pps <= 1;
      else if(set_imm | pps_edge)
        set_on_next_pps <= 0;
+
+   wire [31:0] 	   ticks_plus_one = ticks + 1;
    
    always @(posedge clk)
      if(rst)
@@ -80,13 +82,13 @@ module time_64bit
 	  seconds <= next_seconds_preset;
 	  ticks <= next_ticks_preset;
        end
-     else if(ticks == ROLLOVER)
+     else if(ticks_plus_one == ticks_per_sec_reg)
        begin
 	  seconds <= seconds + 1;
 	  ticks <= 0;
        end
      else
-       ticks <= ticks + 1;
+       ticks <= ticks_plus_one;
 
    assign pps_int = pps_edge;
    
