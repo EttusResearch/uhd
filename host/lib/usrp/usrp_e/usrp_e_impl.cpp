@@ -44,6 +44,9 @@ static std::string abs_path(const std::string &file_path){
 device_addrs_t usrp_e::find(const device_addr_t &hint){
     device_addrs_t usrp_e_addrs;
 
+    //return an empty list of addresses when type is set to non-usrp-e
+    if (hint.has_key("type") and hint["type"] != "usrp-e") return usrp_e_addrs;
+
     //device node not provided, assume its 0
     if (not hint.has_key("node")){
         device_addr_t new_addr = hint;
@@ -54,7 +57,7 @@ device_addrs_t usrp_e::find(const device_addr_t &hint){
     //use the given device node name
     if (fs::exists(hint["node"])){
         device_addr_t new_addr;
-        new_addr["name"] = "USRP-E";
+        new_addr["type"] = "usrp-e";
         new_addr["node"] = abs_path(hint["node"]);
         usrp_e_addrs.push_back(new_addr);
     }
