@@ -76,9 +76,11 @@ qdac_coarse_gain_adjust 0xA[0:3] 0
 ########################################################################
 idac_offset_adjust_msb  7[0:7]   0
 idac_offset_adjust_lsb  8[0:1]   0
+~idac_offset_adjust     idac_offset_adjust_lsb, idac_offset_adjust_msb
 idac_ioffset_direction  8[7]     0     out_a, out_b
 qdac_offset_adjust_msb  0xB[0:7] 0
 qdac_offset_adjust_lsb  0xC[0:1] 0
+~qdac_offset_adjust     qdac_offset_adjust_lsb, qdac_offset_adjust_msb
 qdac_ioffset_direction  0xC[7]   0     out_a, out_b
 """
 

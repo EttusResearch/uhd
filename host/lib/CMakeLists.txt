@@ -75,6 +75,21 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp2/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp_e/CMakeLists.txt)
 
 ########################################################################
+# Setup defines for process scheduling
+########################################################################
+MESSAGE(STATUS "Configuring process scheduling...")
+
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(sched.h HAVE_SCHED_H)
+
+IF(HAVE_SCHED_H)
+    MESSAGE(STATUS "  Process scheduling supported through sched_setscheduler.")
+    ADD_DEFINITIONS(-DHAVE_SCHED_H)
+ELSE(HAVE_SCHED_H)
+    MESSAGE(STATUS "  Process scheduling not supported.")
+ENDIF(HAVE_SCHED_H)
+
+########################################################################
 # Setup defines for module loading
 ########################################################################
 MESSAGE(STATUS "Configuring module loading...")
@@ -100,6 +115,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sched.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp

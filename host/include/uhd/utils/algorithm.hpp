@@ -19,31 +19,89 @@
 #define INCLUDED_UHD_UTILS_ALGORITHM_HPP
 
 #include <algorithm>
-#include <boost/range/functions.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+#include <boost/range/size.hpp>
 
-/*!
- * Useful templated functions and classes that I like to pretend are part of stl
+/*! \file algorithm.hpp
+ * Useful templated functions and classes that I like to pretend are part of stl.
+ * Many of the range wrapper functions come with recent versions of boost (1.43).
  */
 namespace std{
 
+    /*!
+     * A wrapper around std::copy that takes ranges instead of iterators.
+     *
+     * Copy the elements of the source range into the destination range.
+     * The destination range should be at least as large as the source range.
+     *
+     * \param src the range of elements to copy from
+     * \param dst the range of elements to be filled
+     */
     template<typename RangeSrc, typename RangeDst> inline
     void copy(const RangeSrc &src, RangeDst &dst){
         std::copy(boost::begin(src), boost::end(src), boost::begin(dst));
     }
 
+    /*!
+     * A wrapper around std::sort that takes a range instead of an iterator.
+     *
+     * The elements are sorted into ascending order using the less-than operator.
+     *
+     * \param range the range of elements to be sorted
+     */
+    template<typename Range> inline void sort(Range &range){
+        return std::sort(boost::begin(range), boost::end(range));
+    }
+
+    /*!
+     * A wrapper around std::sort that takes a range instead of an iterator.
+     *
+     * The elements are sorted into ascending order using the less-than operator.
+     * This wrapper sorts the elements non-destructively into a new range.
+     * Based on the builtin python function sorted(...)
+     *
+     * \param range the range of elements to be sorted
+     * \return a new range with the elements sorted
+     */
+    template<typename Range> inline Range sorted(const Range &range){
+        Range srange(range); std::sort(srange); return srange;
+    }
+
+    /*!
+     * Is the value found within the elements in this range?
+     *
+     * Uses std::find to search the iterable for an element.
+     *
+     * \param range the elements to search through
+     * \param value the match to look for in the range
+     * \return true when the value is found in the range
+     */
     template<typename Range, typename T> inline
     bool has(const Range &range, const T &value){
         return boost::end(range) != std::find(boost::begin(range), boost::end(range), value);
     }
 
-    template<typename T> inline T signum(T n){
+    /*!
+     * A templated signum implementation.
+     * \param n the comparable to process
+     * \return -1 when n negative, +1 when n positive, otherwise 0
+     */
+    template<typename T> inline int signum(T n){
         if (n < 0) return -1;
-        if (n > 0) return 1;
+        if (n > 0) return +1;
         return 0;
     }
 
-    template<typename T> inline T clip(T val, T minVal, T maxVal){
-        return std::min(std::max(val, minVal), maxVal);
+    /*!
+     * A templated clip implementation.
+     * \param val the value to clip between an upper and lower limit
+     * \param bound1 the upper or lower bound
+     * \param bound2 the upper or lower bound
+     * \return the value clipped at the bounds
+     */
+    template<typename T> inline T clip(T val, T bound1, T bound2){
+        return std::min(std::max(val, std::min(bound1, bound2)), std::max(bound1, bound2));
     }
 
 }//namespace std
