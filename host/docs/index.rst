@@ -18,8 +18,9 @@ Building the UHD
 * `Build Guide <./build.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
-Supported Devices
+Application Notes
 ^^^^^^^^^^^^^^^^^^^^^
+* `General App Notes <./general.html>`_
 * `USRP2 App Notes <./usrp2.html>`_
 * `Daughterboard App Notes <./dboards.html>`_
 

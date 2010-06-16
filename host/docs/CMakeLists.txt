@@ -23,6 +23,7 @@ SET(manual_sources
     build.rst
     coding.rst
     dboards.rst
+    general.rst
     usrp2.rst
 )
 
