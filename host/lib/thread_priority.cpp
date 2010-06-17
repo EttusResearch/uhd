@@ -76,9 +76,15 @@ static void check_priority_range(float priority){
         if (SetPriorityClass(GetCurrentProcess(), pri_class) == 0)
             throw std::runtime_error("error in SetPriorityClass");
 
+        //scale the priority value to the constants
+        int priorities[] = {
+            THREAD_PRIORITY_IDLE, THREAD_PRIORITY_LOWEST, THREAD_PRIORITY_BELOW_NORMAL, THREAD_PRIORITY_NORMAL,
+            THREAD_PRIORITY_ABOVE_NORMAL, THREAD_PRIORITY_HIGHEST, THREAD_PRIORITY_TIME_CRITICAL
+        };
+        size_t pri_index = size_t((priority+1.0)*6/2.0); // -1 -> 0, +1 -> 6
+
         //set the thread priority on the thread
-        int pri_int = int(pri*(THREAD_PRIORITY_TIME_CRITICAL - THREAD_PRIORITY_IDLE)) + THREAD_PRIORITY_IDLE;
-        if (SetThreadPriority(GetCurrentThread(), pri_int) == 0)
+        if (SetThreadPriority(GetCurrentThread(), priorities[pri_index]) == 0)
             throw std::runtime_error("error in SetThreadPriority");
     }
 
