@@ -28,9 +28,13 @@
 
 using namespace uhd;
 
+/***********************************************************************
+ * Constants
+ **********************************************************************/
 static const size_t MAX_BUFF_SIZE = 2048;
-
 static const size_t vrt_header_offset_words32 = offsetof(usrp_transfer_frame, buf)/sizeof(boost::uint32_t);
+static const bool usrp_e_io_impl_verbose = true;
+static const size_t recv_timeout_ms = 100;
 
 /***********************************************************************
  * Data Transport (phony zero-copy with read/write)
@@ -82,15 +86,28 @@ private:
         pollfd pfd;
         pfd.fd = _fd;
         pfd.events = POLLIN;
-        if (poll(&pfd, 1, 100 /*ms*/) <= 0) return 0; //timeout
+        ssize_t poll_ret = poll(&pfd, 1, recv_timeout_ms);
+        if (poll_ret <= 0){
+            if (usrp_e_io_impl_verbose) std::cerr << boost::format(
+                "usrp-e io impl recv(): poll() returned non-positive value: %d\n"
+                "    -> return 0 for timeout"
+            ) % poll_ret << std::endl;
+            return 0; //timeout
+        }
 
         //perform the blocking read(...)
-        ssize_t ret = read(
+        ssize_t read_ret = read(
             _fd,
             boost::asio::buffer_cast<void *>(buff),
             boost::asio::buffer_size(buff)
         );
-        if (ret < ssize_t(sizeof(usrp_transfer_frame))) return 0;
+        if (read_ret < ssize_t(sizeof(usrp_transfer_frame))){
+            if (usrp_e_io_impl_verbose) std::cerr << boost::format(
+                "usrp-e io impl recv(): read() returned small value: %d\n"
+                "    -> return 0 for error"
+            ) % read_ret << std::endl;
+            return 0;
+        }
 
         //overwrite the vrt header length with the transfer frame length
         size_t frame_size = boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len;
