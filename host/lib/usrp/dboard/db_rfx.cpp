@@ -257,7 +257,7 @@ void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
         _rx_gains[name] = gain;
 
         //write the new voltage to the aux dac
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, 0, dac_volts);
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, dac_volts);
     }
     else UHD_THROW_INVALID_CODE_PATH();
 }

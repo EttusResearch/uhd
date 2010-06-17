@@ -36,18 +36,32 @@ class UHD_API dboard_iface{
 public:
     typedef boost::shared_ptr<dboard_iface> sptr;
 
-    //tells the host which unit to use
+    //! tells the host which unit to use
     enum unit_t{
         UNIT_RX = 'r',
         UNIT_TX = 't'
     };
 
-    //possible atr registers
+    //! possible atr registers
     enum atr_reg_t{
         ATR_REG_IDLE        = 'i',
         ATR_REG_TX_ONLY     = 't',
         ATR_REG_RX_ONLY     = 'r',
         ATR_REG_FULL_DUPLEX = 'f'
+    };
+
+    //! aux dac selection enums (per unit)
+    enum aux_dac_t{
+        AUX_DAC_A = 'a',
+        AUX_DAC_B = 'b',
+        AUX_DAC_C = 'c',
+        AUX_DAC_D = 'd'
+    };
+
+    //! aux adc selection enums (per unit)
+    enum aux_adc_t{
+        AUX_ADC_A = 'a',
+        AUX_ADC_B = 'b'
     };
 
     /*!
@@ -57,7 +71,7 @@ public:
      * \param which_dac the dac index 0, 1, 2, 3...
      * \param value the value in volts
      */
-    virtual void write_aux_dac(unit_t unit, int which_dac, float value) = 0;
+    virtual void write_aux_dac(unit_t unit, aux_dac_t which_dac, float value) = 0;
 
     /*!
      * Read from an aux adc.
@@ -66,7 +80,7 @@ public:
      * \param which_adc the adc index 0, 1, 2, 3...
      * \return the value in volts
      */
-    virtual float read_aux_adc(unit_t unit, int which_adc) = 0;
+    virtual float read_aux_adc(unit_t unit, aux_adc_t which_adc) = 0;
 
     /*!
      * Set a daughterboard output pin control source.

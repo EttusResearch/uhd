@@ -144,7 +144,7 @@ private:
         static const float min_v = float(0.5), max_v = float(2.5);
         static const float rssi_dyn_range = 60;
         //calculate the rssi from the voltage
-        float voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, 1);
+        float voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
         return rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
     }
 };

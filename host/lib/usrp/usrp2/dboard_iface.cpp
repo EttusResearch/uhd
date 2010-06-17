@@ -36,8 +36,8 @@ public:
     usrp2_dboard_iface(usrp2_iface::sptr iface, usrp2_clock_ctrl::sptr clock_ctrl);
     ~usrp2_dboard_iface(void);
 
-    void write_aux_dac(unit_t, int, float);
-    float read_aux_adc(unit_t, int);
+    void write_aux_dac(unit_t, aux_dac_t, float);
+    float read_aux_adc(unit_t, aux_adc_t);
 
     void set_pin_ctrl(unit_t, boost::uint16_t);
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
@@ -258,31 +258,31 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
     );
 }
 
-void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
+void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, float value){
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
     //standardize on USRP1 interface, A=0, B=1, C=2, D=3
     static const uhd::dict<
-        unit_t, uhd::dict<int, ad5623_regs_t::addr_t>
+        unit_t, uhd::dict<aux_dac_t, ad5623_regs_t::addr_t>
     > unit_to_which_to_addr = map_list_of
         (UNIT_RX, map_list_of
-            (0, ad5623_regs_t::ADDR_DAC_B)
-            (1, ad5623_regs_t::ADDR_DAC_A)
-            (2, ad5623_regs_t::ADDR_DAC_A)
-            (3, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_A, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_B, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_C, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_D, ad5623_regs_t::ADDR_DAC_B)
         )
         (UNIT_TX, map_list_of
-            (0, ad5623_regs_t::ADDR_DAC_A)
-            (1, ad5623_regs_t::ADDR_DAC_B)
-            (2, ad5623_regs_t::ADDR_DAC_B)
-            (3, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_B, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A)
         )
     ;
     _dac_regs[unit].addr = unit_to_which_to_addr[unit][which];
     this->_write_aux_dac(unit);
 }
 
-float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
+float usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
     static const uhd::dict<unit_t, int> unit_to_spi_adc = map_list_of
         (UNIT_RX, SPI_SS_RX_ADC)
         (UNIT_TX, SPI_SS_TX_ADC)
@@ -295,8 +295,10 @@ float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
 
     //setup the spi registers
     ad7922_regs_t ad7922_regs;
-    ad7922_regs.mod = which; //normal mode: mod == chn
-    ad7922_regs.chn = which;
+    switch(which){
+    case AUX_ADC_A: ad7922_regs.mod = 0; break;
+    case AUX_ADC_B: ad7922_regs.mod = 1; break;
+    } ad7922_regs.chn = ad7922_regs.mod; //normal mode: mod == chn
 
     //write and read spi
     _iface->transact_spi(
