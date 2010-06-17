@@ -28,10 +28,11 @@ module u1e_core
    localparam TXFIFOSIZE = 13;
    localparam RXFIFOSIZE = 13;
 
-   localparam SR_RX_DSP = 0;    // 5 regs
-   localparam SR_RX_CTRL = 8;   // 9 regs
-   localparam SR_TX_DSP = 17;   // 5 regs
-   localparam SR_TX_CTRL = 24;  // 2 regs
+   localparam SR_RX_DSP = 0;     // 5 regs
+   localparam SR_CLEAR_FIFO = 6; // 1 reg
+   localparam SR_RX_CTRL = 8;    // 9 regs
+   localparam SR_TX_DSP = 17;    // 5 regs
+   localparam SR_TX_CTRL = 24;   // 2 regs
    localparam SR_TIME64 = 28;    // 4 regs
       
    wire 	wb_clk = clk_fpga;
@@ -65,6 +66,14 @@ module u1e_core
    wire [7:0] 	 rate;
 
    wire 	 bus_error;
+
+   wire 	 clear_rx_int, clear_tx_int, clear_tx, clear_rx, do_clear;
+   
+   setting_reg #(.my_addr(SR_CLEAR_FIFO), .width(2)) sr_clear
+     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out({clear_tx_int,clear_rx_int}),.changed(do_clear));
+   assign clear_tx = clear_tx_int & do_clear;
+   assign clear_rx = clear_rx_int & do_clear;
    
    gpmc_async #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
    gpmc (.arst(wb_rst),
@@ -80,7 +89,7 @@ module u1e_core
 	 .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
 	 .wb_ack_i(m0_ack),
 	 
-	 .fifo_clk(wb_clk), .fifo_rst(wb_rst),
+	 .fifo_clk(wb_clk), .fifo_rst(wb_rst), .clear_tx(clear_tx), .clear_rx(clear_rx),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 
@@ -93,7 +102,7 @@ module u1e_core
    
 `ifdef LOOPBACK
    fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx | clear_rx),
       .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
 
@@ -113,7 +122,7 @@ module u1e_core
       .underrun(tx_underrun), .overrun());
    
    packet_verifier32 pktver32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
       .data_i(tx_data), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int),
       .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
 
@@ -121,7 +130,7 @@ module u1e_core
    wire 	 rx_enable;
 
    packet_generator32 pktgen32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .data_o(rx_data), .src_rdy_o(rx_src_rdy_int), .dst_rdy_i(rx_dst_rdy_int));
 
    fifo_pacer rx_pacer
@@ -152,7 +161,7 @@ module u1e_core
       .debug(debug_rx_dsp) );
 
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
@@ -160,7 +169,7 @@ module u1e_core
       .debug_rx(vrc_debug));
 
    vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
       .data_o(rx_data), .dst_rdy_i(rx_dst_rdy), .src_rdy_o(rx_src_rdy),
@@ -177,14 +186,14 @@ module u1e_core
    wire 	 run_tx;
    
    vita_tx_deframer #(.BASE(SR_TX_CTRL), .MAXCHAN(1)) vita_tx_deframer
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
       .debug(debug_vtd) );
 
    vita_tx_control #(.BASE(SR_TX_CTRL), .WIDTH(32)) vita_tx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time),.underrun(tx_underrun),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),

@@ -2,7 +2,7 @@
 module gpmc_to_fifo_async
   (input [15:0] EM_D, input [1:0] EM_NBE, input EM_NCS, input EM_NWE,
 
-   input fifo_clk, input fifo_rst,
+   input fifo_clk, input fifo_rst, input clear,
    output reg [17:0] data_o, output reg src_rdy_o, input dst_rdy_i,
 
    input [15:0] frame_len, input [15:0] fifo_space, output reg fifo_ready,
@@ -37,7 +37,7 @@ module gpmc_to_fifo_async
        end
 
    always @(posedge fifo_clk)
-     if(fifo_rst)
+     if(fifo_rst | clear)
        src_rdy_o <= 0;
      else if(do_write)
        src_rdy_o <= 1;
@@ -45,7 +45,7 @@ module gpmc_to_fifo_async
        src_rdy_o <= 0;    // Assume it was taken
 
    always @(posedge fifo_clk)
-     if(fifo_rst)
+     if(fifo_rst | clear)
        counter <= 0;
      else if(do_write)
        if(last_write)
@@ -54,13 +54,13 @@ module gpmc_to_fifo_async
 	 counter <= counter + 1;
 
    always @(posedge fifo_clk)
-     if(fifo_rst)
+     if(fifo_rst | clear)
        fifo_ready <= 0;
      else
        fifo_ready <= /* first_write & */ (fifo_space > 16'd1023);
 
    always @(posedge fifo_clk)
-     if(fifo_rst)
+     if(fifo_rst | clear)
        bus_error <= 0;
      else if(src_rdy_o & ~dst_rdy_i)
        bus_error <= 1;
