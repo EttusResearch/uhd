@@ -46,11 +46,8 @@ static void check_priority_range(float priority){
         //when realtime is not enabled, use sched other
         int policy = (realtime)? SCHED_RR : SCHED_OTHER;
 
-        //we cannot have below normal priority, set to zero and use other policy
-        if (priority < 0){
-            priority = 0;
-            policy = SCHED_OTHER;
-        }
+        //we cannot have below normal priority, set to zero
+        if (priority < 0) priority = 0;
 
         //get the priority bounds for the selected policy
         int min_pri = sched_get_priority_min(policy);
@@ -71,6 +68,8 @@ static void check_priority_range(float priority){
     #include <windows.h>
 
     void uhd::set_thread_priority(float priority, bool realtime){
+        check_priority_range(priority);
+
         //set the priority class on the process
         int pri_class = (realtime)? REALTIME_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS;
         if (SetPriorityClass(GetCurrentProcess(), pri_class) == 0)
