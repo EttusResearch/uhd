@@ -1,0 +1,93 @@
+//
+// Copyright 2010 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include <uhd/utils/thread_priority.hpp>
+#include <stdexcept>
+#include <iostream>
+
+bool uhd::set_thread_priority_safe(float priority, bool realtime){
+    try{
+        set_thread_priority(priority, realtime);
+        return true;
+    }catch(const std::exception &e){
+        std::cerr << "set_thread_priority: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+static void check_priority_range(float priority){
+    if (priority > +1.0 or priority < -1.0)
+        throw std::range_error("priority out of range [-1.0, +1.0]");
+}
+
+/***********************************************************************
+ * Pthread API to set priority
+ **********************************************************************/
+#if defined(HAVE_PTHREAD_SETSCHEDPARAM)
+    #include <pthread.h>
+
+    void uhd::set_thread_priority(float priority, bool realtime){
+        check_priority_range(priority);
+
+        //when realtime is not enabled, use sched other
+        int policy = (realtime)? SCHED_RR : SCHED_OTHER;
+
+        //we cannot have below normal priority, set to zero and use other policy
+        if (priority < 0){
+            priority = 0;
+            policy = SCHED_OTHER;
+        }
+
+        //get the priority bounds for the selected policy
+        int min_pri = sched_get_priority_min(policy);
+        int max_pri = sched_get_priority_max(policy);
+        if (min_pri == -1 or max_pri == -1) throw std::runtime_error("error in sched_get_priority_min/max");
+
+        //set the new priority and policy
+        sched_param sp;
+        sp.sched_priority = int(priority*(max_pri - min_pri)) + min_pri;
+        int ret = pthread_setschedparam(pthread_self(), policy, &sp);
+        if (ret == -1) throw std::runtime_error("error in pthread_setschedparam");
+    }
+
+/***********************************************************************
+ * Windows API to set priority
+ **********************************************************************/
+#elif defined(HAVE_WIN_SETTHREADPRIORITY)
+    #include <windows.h>
+
+    void uhd::set_thread_priority(float priority, bool realtime){
+        //set the priority class on the process
+        int pri_class = (realtime)? REALTIME_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS;
+        if (SetPriorityClass(GetCurrentProcess(), pri_class) == 0)
+            throw std::runtime_error("error in SetPriorityClass");
+
+        //set the thread priority on the thread
+        int pri_int = int(pri*(THREAD_PRIORITY_TIME_CRITICAL - THREAD_PRIORITY_IDLE)) + THREAD_PRIORITY_IDLE;
+        if (SetThreadPriority(GetCurrentThread(), pri_int) == 0)
+            throw std::runtime_error("error in SetThreadPriority");
+    }
+
+/***********************************************************************
+ * Unimplemented API to set priority
+ **********************************************************************/
+#else
+    void uhd::set_thread_priority(float, bool){
+        throw std::runtime_error("set thread priority not implemented");
+    }
+
+#endif /* HAVE_PTHREAD_SETSCHEDPARAM */

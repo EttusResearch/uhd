@@ -18,6 +18,7 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/convert_types.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/format.hpp>
@@ -78,6 +79,7 @@ managed_recv_buffer::sptr usrp2_impl::io_impl::get_recv_buff(void){
 }
 
 void usrp2_impl::io_impl::recv_pirate_loop(zero_copy_if::sptr zc_if){
+    set_thread_priority_safe();
     recv_pirate_running = true;
     while(recv_pirate_running){
         managed_recv_buffer::sptr buff = zc_if->get_recv_buff();

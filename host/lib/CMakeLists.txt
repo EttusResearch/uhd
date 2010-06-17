@@ -76,17 +76,38 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp2/CMakeLists.txt)
 ########################################################################
 # Setup defines for process scheduling
 ########################################################################
-MESSAGE(STATUS "Configuring process scheduling...")
+MESSAGE(STATUS "Configuring priority scheduling...")
 
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(sched.h HAVE_SCHED_H)
+INCLUDE(CheckCXXSourceCompiles)
+CHECK_CXX_SOURCE_COMPILES("
+    #include <pthread.h>
+    int main(){
+        struct sched_param sp;
+        pthread_setschedparam(pthread_self(), SCHED_RR, &sp);
+        return 0;
+    }
+    " HAVE_PTHREAD_SETSCHEDPARAM
+)
 
-IF(HAVE_SCHED_H)
-    MESSAGE(STATUS "  Process scheduling supported through sched_setscheduler.")
-    ADD_DEFINITIONS(-DHAVE_SCHED_H)
-ELSE(HAVE_SCHED_H)
-    MESSAGE(STATUS "  Process scheduling not supported.")
-ENDIF(HAVE_SCHED_H)
+CHECK_CXX_SOURCE_COMPILES("
+    #include <windows.h>
+    int main(){
+        SetThreadPriority(GetCurrentThread(), 0);
+        SetPriorityClass(GetCurrentProcess(), 0);
+        return 0;
+    }
+    " HAVE_WIN_SETTHREADPRIORITY
+)
+
+IF(HAVE_PTHREAD_SETSCHEDPARAM)
+    MESSAGE(STATUS "  Priority scheduling supported through pthread_setschedparam.")
+    ADD_DEFINITIONS(-DHAVE_PTHREAD_SETSCHEDPARAM)
+ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
+    MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
+    ADD_DEFINITIONS(-DHAVE_WIN_SETTHREADPRIORITY)
+ELSE(HAVE_PTHREAD_SETSCHEDPARAM)
+    MESSAGE(STATUS "  Priority scheduling not supported.")
+ENDIF(HAVE_PTHREAD_SETSCHEDPARAM)
 
 ########################################################################
 # Setup defines for module loading
@@ -114,7 +135,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sched.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp

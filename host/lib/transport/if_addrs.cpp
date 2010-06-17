@@ -27,7 +27,7 @@ uhd::transport::if_addrs_t::if_addrs_t(void){
 /***********************************************************************
  * Interface address discovery through ifaddrs api
  **********************************************************************/
-#ifdef HAVE_IFADDRS_H
+#if defined(HAVE_IFADDRS_H)
 #include <ifaddrs.h>
 
 static boost::asio::ip::address_v4 sockaddr_to_ip_addr(sockaddr *addr){
@@ -59,9 +59,9 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
 }
 
 /***********************************************************************
- * Interface address discovery through windows api (TODO)
+ * Interface address discovery through windows api
  **********************************************************************/
-#elif HAVE_WINSOCK2_H
+#elif defined(HAVE_WINSOCK2_H)
 #include <winsock2.h>
 
 std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){

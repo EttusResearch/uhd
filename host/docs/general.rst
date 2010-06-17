@@ -58,14 +58,12 @@ Misc notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Process scheduling
+Thread priority scheduling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The UHD will try to automatically boost the process's scheduling priority.
-Currently, this is only supported on platforms with *sched.h*.
-
+When the UHD spawns a new thread it may try to boost the thread's scheduling priority.
 When setting the priority fails, the UHD prints out an error.
-This error is harmless, it simply means that your process will have a normal scheduling priority.
+This error is harmless, it simply means that the thread will have a normal scheduling priority.
 
 **Linux Notes:**
 
