@@ -40,12 +40,12 @@ proc set_props {process options} {
 	}
 }
 
-if [file isfile $env(PROJ_FILE)] {
-	puts ">>> Opening project: $env(PROJ_FILE)"
-	project open $env(PROJ_FILE)
+if [file isfile $env(ISE_FILE)] {
+	puts ">>> Opening project: $env(ISE_FILE)"
+	project open $env(ISE_FILE)
 } else {	
-	puts ">>> Creating project: $env(PROJ_FILE)"
-	project new $env(PROJ_FILE)
+	puts ">>> Creating project: $env(ISE_FILE)"
+	project new $env(ISE_FILE)
 	
 	##################################################
 	# Set the project properties
@@ -56,7 +56,6 @@ if [file isfile $env(PROJ_FILE)] {
 	# Add the sources
 	##################################################
 	foreach source $env(SOURCES) {
-		set source $env(SOURCE_ROOT)$source
 		puts ">>> Adding source to project: $source"
 		xfile add $source
 	}
@@ -78,9 +77,9 @@ if [file isfile $env(PROJ_FILE)] {
 	set_props "Generate Post-Place & Route Simulation Model" $env(SIM_MODEL_PROPERTIES)
 }
 
-if [string compare $env(PROCESS_RUN) ""] {
-	puts ">>> Running Process: $env(PROCESS_RUN)"
-	process run $env(PROCESS_RUN)
+if [string compare [lindex $argv 0] ""] {
+	puts ">>> Running Process: [lindex $argv 0]"
+	process run [lindex $argv 0]
 }
 
 project close
