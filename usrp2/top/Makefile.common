@@ -42,7 +42,8 @@ clean:
 ##################################################
 # Dependency Targets
 ##################################################
-$(ISE_FILE): $(SOURCES)
+.SECONDEXPANSION:
+$(ISE_FILE): $$(SOURCES) $$(MAKEFILE_LIST)
 	@echo $@
 	$(ISE_HELPER) ""
 
