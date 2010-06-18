@@ -261,10 +261,9 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
 void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, float value){
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
-    //standardize on USRP1 interface, A=0, B=1, C=2, D=3
-    static const uhd::dict<
-        unit_t, uhd::dict<aux_dac_t, ad5623_regs_t::addr_t>
-    > unit_to_which_to_addr = map_list_of
+
+    typedef uhd::dict<aux_dac_t, ad5623_regs_t::addr_t> aux_dac_to_addr;
+    static const uhd::dict<unit_t, aux_dac_to_addr> unit_to_which_to_addr = map_list_of
         (UNIT_RX, map_list_of
             (AUX_DAC_A, ad5623_regs_t::ADDR_DAC_B)
             (AUX_DAC_B, ad5623_regs_t::ADDR_DAC_A)
