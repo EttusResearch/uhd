@@ -154,8 +154,7 @@ static dboard_base::sptr make_wbx(dboard_base::ctor_args_t args){
 }
 
 UHD_STATIC_BLOCK(reg_wbx_dboards){
-    dboard_manager::register_dboard(0x0052, &make_wbx, "WBX RX");
-    dboard_manager::register_dboard(0x0053, &make_wbx, "WBX TX");
+    dboard_manager::register_dboard(0x0052, 0x0053, &make_wbx, "WBX");
 }
 
 /***********************************************************************

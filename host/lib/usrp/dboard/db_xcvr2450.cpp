@@ -158,8 +158,7 @@ static dboard_base::sptr make_xcvr2450(dboard_base::ctor_args_t args){
 
 UHD_STATIC_BLOCK(reg_xcvr2450_dboard){
     //register the factory function for the rx and tx dbids
-    dboard_manager::register_dboard(0x0060, &make_xcvr2450, "XCVR2450 TX");
-    dboard_manager::register_dboard(0x0061, &make_xcvr2450, "XCVR2450 RX");
+    dboard_manager::register_dboard(0x0061, 0x0060, &make_xcvr2450, "XCVR2450");
 }
 
 /***********************************************************************

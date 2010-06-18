@@ -43,7 +43,7 @@ typedef uhd::dict<dboard_id_t, args_t> id_to_args_map_t;
 UHD_SINGLETON_FCN(id_to_args_map_t, get_id_to_args_map)
 
 void dboard_manager::register_dboard(
-    dboard_id_t dboard_id,
+    const dboard_id_t &dboard_id,
     dboard_ctor_t dboard_ctor,
     const std::string &name,
     const prop_names_t &subdev_names
@@ -55,6 +55,17 @@ void dboard_manager::register_dboard(
         ) % dboard_id.to_string() % dboard_id.to_pp_string()));
     }
     get_id_to_args_map()[dboard_id] = args_t(dboard_ctor, name, subdev_names);
+}
+
+void dboard_manager::register_dboard(
+    const dboard_id_t &rx_dboard_id,
+    const dboard_id_t &tx_dboard_id,
+    dboard_ctor_t dboard_ctor,
+    const std::string &name,
+    const prop_names_t &subdev_names
+){
+    register_dboard(rx_dboard_id, dboard_ctor, name, subdev_names);
+    register_dboard(tx_dboard_id, dboard_ctor, name, subdev_names);
 }
 
 std::string dboard_id_t::to_pp_string(void) const{
