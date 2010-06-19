@@ -61,9 +61,7 @@ public:
 
         this->enable_external_ref(false);
         this->enable_rx_dboard_clock(false);
-        this->set_rate_rx_dboard_clock(get_rates_rx_dboard_clock().at(0));
         this->enable_tx_dboard_clock(false);
-        this->set_rate_tx_dboard_clock(get_rates_tx_dboard_clock().at(0));
 
         /* private clock enables, must be set here */
         this->enable_dac_clock(true);

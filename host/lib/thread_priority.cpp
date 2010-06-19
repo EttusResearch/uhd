@@ -58,7 +58,7 @@ static void check_priority_range(float priority){
         sched_param sp;
         sp.sched_priority = int(priority*(max_pri - min_pri)) + min_pri;
         int ret = pthread_setschedparam(pthread_self(), policy, &sp);
-        if (ret == -1) throw std::runtime_error("error in pthread_setschedparam");
+        if (ret != 0) throw std::runtime_error("error in pthread_setschedparam");
     }
 
 /***********************************************************************

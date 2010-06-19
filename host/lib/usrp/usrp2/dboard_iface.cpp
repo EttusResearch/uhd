@@ -21,6 +21,7 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/math/special_functions/round.hpp>
@@ -109,6 +110,10 @@ usrp2_dboard_iface::usrp2_dboard_iface(
         _dac_regs[unit].cmd  = ad5623_regs_t::CMD_RESET;
         this->_write_aux_dac(unit);
     }
+
+    //init the clock rate shadows with max rate clock
+    this->set_clock_rate(UNIT_RX, sorted(this->get_clock_rates(UNIT_RX)).back());
+    this->set_clock_rate(UNIT_TX, sorted(this->get_clock_rates(UNIT_TX)).back());
 }
 
 usrp2_dboard_iface::~usrp2_dboard_iface(void){
