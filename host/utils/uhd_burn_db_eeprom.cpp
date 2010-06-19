@@ -32,16 +32,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 namespace po = boost::program_options;
 
-//used with lexical cast to parse a hex string
-template <class T> struct to_hex{
-    T value;
-    operator T() const {return value;}
-    friend std::istream& operator>>(std::istream& in, to_hex& out){
-        in >> std::hex >> out.value;
-        return in;
-    }
-};
-
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     //command line variables
     std::string args, db_name, unit;
@@ -55,7 +45,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""),    "device address args [default = \"\"]")
         ("db",   po::value<std::string>(&db_name)->default_value(""), "dboard name [default = \"\"]")
         ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX or TX]")
-        ("id",   po::value<std::string>(),                            "dboard id to burn (hex string), omit for readback")
+        ("id",   po::value<std::string>(),                            "dboard id to burn, omit for readback")
     ;
 
     po::variables_map vm;
