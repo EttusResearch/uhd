@@ -146,7 +146,7 @@ public:
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
         //loop until we get the packet or timeout
-        boost::uint8_t usrp2_ctrl_data_in_mem[1500]; //allocate MTU bytes for recv
+        boost::uint8_t usrp2_ctrl_data_in_mem[USRP2_UDP_BYTES]; //allocate max bytes for recv
         usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem));

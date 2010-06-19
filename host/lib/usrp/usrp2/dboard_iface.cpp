@@ -21,6 +21,7 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/math/special_functions/round.hpp>
@@ -36,8 +37,8 @@ public:
     usrp2_dboard_iface(usrp2_iface::sptr iface, usrp2_clock_ctrl::sptr clock_ctrl);
     ~usrp2_dboard_iface(void);
 
-    void write_aux_dac(unit_t, int, float);
-    float read_aux_adc(unit_t, int);
+    void write_aux_dac(unit_t, aux_dac_t, float);
+    float read_aux_adc(unit_t, aux_adc_t);
 
     void set_pin_ctrl(unit_t, boost::uint16_t);
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
@@ -48,9 +49,10 @@ public:
     void write_i2c(boost::uint8_t, const byte_vector_t &);
     byte_vector_t read_i2c(boost::uint8_t, size_t);
 
+    void set_clock_rate(unit_t, double);
     double get_clock_rate(unit_t);
+    std::vector<double> get_clock_rates(unit_t);
     void set_clock_enabled(unit_t, bool);
-    bool get_clock_enabled(unit_t);
 
     void write_spi(
         unit_t unit,
@@ -73,6 +75,7 @@ private:
     boost::uint32_t _gpio_shadow;
 
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
+    uhd::dict<unit_t, double> _clock_rates;
     void _write_aux_dac(unit_t);
 };
 
@@ -107,6 +110,10 @@ usrp2_dboard_iface::usrp2_dboard_iface(
         _dac_regs[unit].cmd  = ad5623_regs_t::CMD_RESET;
         this->_write_aux_dac(unit);
     }
+
+    //init the clock rate shadows with max rate clock
+    this->set_clock_rate(UNIT_RX, sorted(this->get_clock_rates(UNIT_RX)).back());
+    this->set_clock_rate(UNIT_TX, sorted(this->get_clock_rates(UNIT_TX)).back());
 }
 
 usrp2_dboard_iface::~usrp2_dboard_iface(void){
@@ -116,8 +123,24 @@ usrp2_dboard_iface::~usrp2_dboard_iface(void){
 /***********************************************************************
  * Clocks
  **********************************************************************/
-double usrp2_dboard_iface::get_clock_rate(unit_t){
-    return _clock_ctrl->get_master_clock_rate();
+void usrp2_dboard_iface::set_clock_rate(unit_t unit, double rate){
+    _clock_rates[unit] = rate; //set to shadow
+    switch(unit){
+    case UNIT_RX: _clock_ctrl->set_rate_rx_dboard_clock(rate); return;
+    case UNIT_TX: _clock_ctrl->set_rate_tx_dboard_clock(rate); return;
+    }
+}
+
+double usrp2_dboard_iface::get_clock_rate(unit_t unit){
+    return _clock_rates[unit]; //get from shadow
+}
+
+std::vector<double> usrp2_dboard_iface::get_clock_rates(unit_t unit){
+    switch(unit){
+    case UNIT_RX: return _clock_ctrl->get_rates_rx_dboard_clock();
+    case UNIT_TX: return _clock_ctrl->get_rates_tx_dboard_clock();
+    default: UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
@@ -240,31 +263,30 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
     );
 }
 
-void usrp2_dboard_iface::write_aux_dac(unit_t unit, int which, float value){
+void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, float value){
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
-    //standardize on USRP1 interface, A=0, B=1, C=2, D=3
-    static const uhd::dict<
-        unit_t, uhd::dict<int, ad5623_regs_t::addr_t>
-    > unit_to_which_to_addr = map_list_of
+
+    typedef uhd::dict<aux_dac_t, ad5623_regs_t::addr_t> aux_dac_to_addr;
+    static const uhd::dict<unit_t, aux_dac_to_addr> unit_to_which_to_addr = map_list_of
         (UNIT_RX, map_list_of
-            (0, ad5623_regs_t::ADDR_DAC_B)
-            (1, ad5623_regs_t::ADDR_DAC_A)
-            (2, ad5623_regs_t::ADDR_DAC_A)
-            (3, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_A, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_B, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_C, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_D, ad5623_regs_t::ADDR_DAC_B)
         )
         (UNIT_TX, map_list_of
-            (0, ad5623_regs_t::ADDR_DAC_A)
-            (1, ad5623_regs_t::ADDR_DAC_B)
-            (2, ad5623_regs_t::ADDR_DAC_B)
-            (3, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A)
+            (AUX_DAC_B, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B)
+            (AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A)
         )
     ;
     _dac_regs[unit].addr = unit_to_which_to_addr[unit][which];
     this->_write_aux_dac(unit);
 }
 
-float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
+float usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
     static const uhd::dict<unit_t, int> unit_to_spi_adc = map_list_of
         (UNIT_RX, SPI_SS_RX_ADC)
         (UNIT_TX, SPI_SS_TX_ADC)
@@ -277,8 +299,10 @@ float usrp2_dboard_iface::read_aux_adc(unit_t unit, int which){
 
     //setup the spi registers
     ad7922_regs_t ad7922_regs;
-    ad7922_regs.mod = which; //normal mode: mod == chn
-    ad7922_regs.chn = which;
+    switch(which){
+    case AUX_ADC_A: ad7922_regs.mod = 0; break;
+    case AUX_ADC_B: ad7922_regs.mod = 1; break;
+    } ad7922_regs.chn = ad7922_regs.mod; //normal mode: mod == chn
 
     //write and read spi
     _iface->transact_spi(

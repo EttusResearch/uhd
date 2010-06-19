@@ -21,6 +21,7 @@
 #include "usrp2_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <vector>
 
 class usrp2_clock_ctrl : boost::noncopyable{
 public:
@@ -46,10 +47,36 @@ public:
     virtual void enable_rx_dboard_clock(bool enb) = 0;
 
     /*!
+     * Set the clock rate on the rx dboard clock.
+     * \param rate the new clock rate
+     * \throw exception when rate invalid
+     */
+    virtual void set_rate_rx_dboard_clock(double rate) = 0;
+
+    /*!
+     * Get a list of possible rx dboard clock rates.
+     * \return a list of clock rates in Hz
+     */
+    virtual std::vector<double> get_rates_rx_dboard_clock(void) = 0;
+
+    /*!
      * Enable/disable the tx dboard clock.
      * \param enb true to enable
      */
     virtual void enable_tx_dboard_clock(bool enb) = 0;
+
+    /*!
+     * Set the clock rate on the tx dboard clock.
+     * \param rate the new clock rate
+     * \throw exception when rate invalid
+     */
+    virtual void set_rate_tx_dboard_clock(double rate) = 0;
+
+    /*!
+     * Get a list of possible tx dboard clock rates.
+     * \return a list of clock rates in Hz
+     */
+    virtual std::vector<double> get_rates_tx_dboard_clock(void) = 0;
 
     /*!
      * Enable/disable external reference.

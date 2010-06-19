@@ -18,6 +18,7 @@
 #include "clock_ctrl.hpp"
 #include "ad9510_regs.hpp"
 #include "usrp2_regs.hpp" //spi slave constants
+#include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
 
 using namespace uhd;
@@ -79,10 +80,31 @@ public:
         _ad9510_regs.power_down_lvds_cmos_out7 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out7 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT7_CMOS;
         _ad9510_regs.output_level_lvds_out7 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT7_1_75MA;
-        _ad9510_regs.bypass_divider_out7 = 1;
         this->write_reg(0x43);
+        this->update_regs();
+    }
+
+    void set_rate_rx_dboard_clock(double rate){
+        assert_has(get_rates_rx_dboard_clock(), rate, "rx dboard clock rate");
+        size_t divider = size_t(rate/get_master_clock_rate());
+        //bypass when the divider ratio is one
+        _ad9510_regs.bypass_divider_out7 = (divider == 1)? 1 : 0;
+        //calculate the low and high dividers
+        size_t high = divider/2;
+        size_t low = divider - high;
+        //set the registers (divider - 1)
+        _ad9510_regs.divider_low_cycles_out7 = low - 1;
+        _ad9510_regs.divider_high_cycles_out7 = high - 1;
+        //write the registers
+        this->write_reg(0x56);
         this->write_reg(0x57);
         this->update_regs();
+    }
+
+    std::vector<double> get_rates_rx_dboard_clock(void){
+        std::vector<double> rates;
+        for (size_t i = 1; i <= 16+16; i++) rates.push_back(get_master_clock_rate()/i);
+        return rates;
     }
 
     //uses output clock 6 (cmos)
@@ -90,10 +112,29 @@ public:
         _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
         _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
-        _ad9510_regs.bypass_divider_out6 = 1;
         this->write_reg(0x42);
+        this->update_regs();
+    }
+
+    void set_rate_tx_dboard_clock(double rate){
+        assert_has(get_rates_tx_dboard_clock(), rate, "tx dboard clock rate");
+        size_t divider = size_t(rate/get_master_clock_rate());
+        //bypass when the divider ratio is one
+        _ad9510_regs.bypass_divider_out6 = (divider == 1)? 1 : 0;
+        //calculate the low and high dividers
+        size_t high = divider/2;
+        size_t low = divider - high;
+        //set the registers (divider - 1)
+        _ad9510_regs.divider_low_cycles_out6 = low - 1;
+        _ad9510_regs.divider_high_cycles_out6 = high - 1;
+        //write the registers
+        this->write_reg(0x54);
         this->write_reg(0x55);
         this->update_regs();
+    }
+
+    std::vector<double> get_rates_tx_dboard_clock(void){
+        return get_rates_rx_dboard_clock(); //same master clock, same dividers...
     }
 
     /*!

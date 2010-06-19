@@ -100,7 +100,7 @@ typedef struct{
 #define MK_RX_CTRL_WORD(num_words) (((num_words)*sizeof(uint32_t)) | (1 << 16))
 
 // DSP Rx writes ethernet header words
-#define DSP_RX_FIRST_LINE 1 //1 = number of control words (see above)
+#define DSP_RX_FIRST_LINE ((offsetof(rx_dsp_buff_t, vrt_header))/sizeof(uint32_t))
 
 // receive from DSP
 buf_cmd_args_t dsp_rx_recv_args = {
@@ -423,7 +423,7 @@ fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
 {
   // insert the correct length into the control word and vrt header
   rx_dsp_buff_t *buff = (rx_dsp_buff_t*)buffer_ram(buf_this);
-  size_t vrt_len = buffer_pool_status->last_line[buf_this]-1;
+  size_t vrt_len = buffer_pool_status->last_line[buf_this]-DSP_RX_FIRST_LINE;
   buff->control_word = MK_RX_CTRL_WORD(vrt_len);
   buff->vrt_header[0] = (buff->vrt_header[0] & ~VRTH_PKT_SIZE_MASK) | (vrt_len & VRTH_PKT_SIZE_MASK);
 

@@ -30,7 +30,7 @@ namespace fs = boost::filesystem;
 /***********************************************************************
  * Module Load Function
  **********************************************************************/
-#ifdef HAVE_DLFCN_H
+#if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
 static const std::string env_path_sep = ":";
 
@@ -42,7 +42,7 @@ static void load_module(const std::string &file_name){
     }
 }
 
-#elif HAVE_WINDOWS_H
+#elif defined(HAVE_WINDOWS_H)
 #include <windows.h>
 static const std::string env_path_sep = ";";
 

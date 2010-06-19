@@ -25,5 +25,6 @@ INSTALL(FILES
     props.hpp
     safe_main.hpp
     static.hpp
+    thread_priority.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
 )

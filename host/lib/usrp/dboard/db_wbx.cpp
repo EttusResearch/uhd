@@ -154,8 +154,7 @@ static dboard_base::sptr make_wbx(dboard_base::ctor_args_t args){
 }
 
 UHD_STATIC_BLOCK(reg_wbx_dboards){
-    dboard_manager::register_dboard(0x0052, &make_wbx, "WBX RX");
-    dboard_manager::register_dboard(0x0053, &make_wbx, "WBX TX");
+    dboard_manager::register_dboard(0x0052, 0x0053, &make_wbx, "WBX");
 }
 
 /***********************************************************************
@@ -246,7 +245,7 @@ void wbx_xcvr::set_tx_gain(float gain, const std::string &name){
         _tx_gains[name] = gain;
 
         //write the new voltage to the aux dac
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, 0, dac_volts);
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, dboard_iface::AUX_DAC_A, dac_volts);
     }
     else UHD_THROW_INVALID_CODE_PATH();
 }

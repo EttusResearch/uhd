@@ -20,7 +20,7 @@ Run the following commands:
 ::
 
     cd <uhd-repo-path>/fpga/usrp2/top/u2_rev3
-    make bin
+    make -f Makefile.udp bin
 
 *The image file will be ./build/u2_rev3.bin*
 

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/simple_usrp.hpp>
 #include <boost/program_options.hpp>
@@ -26,6 +27,8 @@
 namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
+    uhd::set_thread_priority_safe();
+
     //variables to be set by po
     std::string args, file_path;
     int seconds_in_future;

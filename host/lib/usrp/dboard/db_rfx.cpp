@@ -137,25 +137,21 @@ static dboard_base::sptr make_rfx_flex1200(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(1150e6, 1450e6), true, true));
 }
 
+static dboard_base::sptr make_rfx_flex2200(dboard_base::ctor_args_t args){
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(2000e6, 2400e6), false, false));
+}
+
 static dboard_base::sptr make_rfx_flex2400(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(2300e6, 2900e6), false, false));
 }
 
 UHD_STATIC_BLOCK(reg_rfx_dboards){
-    dboard_manager::register_dboard(0x0024, &make_rfx_flex400, "Flex 400 Rx MIMO B");
-    dboard_manager::register_dboard(0x0028, &make_rfx_flex400, "Flex 400 Tx MIMO B");
-
-    dboard_manager::register_dboard(0x0025, &make_rfx_flex900, "Flex 900 Rx MIMO B");
-    dboard_manager::register_dboard(0x0029, &make_rfx_flex900, "Flex 900 Tx MIMO B");
-
-    dboard_manager::register_dboard(0x0034, &make_rfx_flex1800, "Flex 1800 Rx MIMO B");
-    dboard_manager::register_dboard(0x0035, &make_rfx_flex1800, "Flex 1800 Tx MIMO B");
-
-    dboard_manager::register_dboard(0x0026, &make_rfx_flex1200, "Flex 1200 Rx MIMO B");
-    dboard_manager::register_dboard(0x002a, &make_rfx_flex1200, "Flex 1200 Tx MIMO B");
-
-    dboard_manager::register_dboard(0x0027, &make_rfx_flex2400, "Flex 2400 Rx MIMO B");
-    dboard_manager::register_dboard(0x002b, &make_rfx_flex2400, "Flex 2400 Tx MIMO B");
+    dboard_manager::register_dboard(0x0024, 0x0028, &make_rfx_flex400,  "Flex 400 MIMO B");
+    dboard_manager::register_dboard(0x0025, 0x0029, &make_rfx_flex900,  "Flex 900 MIMO B");
+    dboard_manager::register_dboard(0x0034, 0x0035, &make_rfx_flex1800, "Flex 1800 MIMO B");
+    dboard_manager::register_dboard(0x0026, 0x002a, &make_rfx_flex1200, "Flex 1200 MIMO B");
+    dboard_manager::register_dboard(0x002c, 0x002d, &make_rfx_flex2200, "Flex 2200 MIMO B");
+    dboard_manager::register_dboard(0x0027, 0x002b, &make_rfx_flex2400, "Flex 2400 MIMO B");
 }
 
 /***********************************************************************
@@ -257,7 +253,7 @@ void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
         _rx_gains[name] = gain;
 
         //write the new voltage to the aux dac
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, 0, dac_volts);
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, dac_volts);
     }
     else UHD_THROW_INVALID_CODE_PATH();
 }
