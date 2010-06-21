@@ -21,6 +21,7 @@
 #include "usrp_e_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <vector>
 
 /*!
  * The usrp-e clock control:
@@ -45,16 +46,30 @@ public:
     virtual double get_fpga_clock_rate(void) = 0;
 
     /*!
-     * Get the rate of the dboard clock clock line.
-     * \return the dboard clock rate in Hz
+     * Get the possible rates of the rx dboard clock.
+     * \return a vector of clock rates in Hz
      */
-    virtual double get_rx_dboard_clock_rate(void) = 0;
+    virtual std::vector<double> get_rx_dboard_clock_rates(void) = 0;
 
     /*!
-     * Get the rate of the dboard clock clock line.
-     * \return the dboard clock rate in Hz
+     * Get the possible rates of the tx dboard clock.
+     * \return a vector of clock rates in Hz
      */
-    virtual double get_tx_dboard_clock_rate(void) = 0;
+    virtual std::vector<double> get_tx_dboard_clock_rates(void) = 0;
+
+    /*!
+     * Set the rx dboard clock rate to a possible rate.
+     * \param rate the new clock rate in Hz
+     * \throw exception when rate cannot be achieved
+     */
+    virtual void set_rx_dboard_clock_rate(double rate) = 0;
+
+    /*!
+     * Set the tx dboard clock rate to a possible rate.
+     * \param rate the new clock rate in Hz
+     * \throw exception when rate cannot be achieved
+     */
+    virtual void set_tx_dboard_clock_rate(double rate) = 0;
 
     /*!
      * Enable/disable the rx dboard clock.

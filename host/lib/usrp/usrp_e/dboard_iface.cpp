@@ -40,14 +40,18 @@ public:
         _iface = iface;
         _clock = clock;
         _codec = codec;
+
+        //init the clock rate shadows
+        this->set_clock_rate(UNIT_RX, _clock->get_fpga_clock_rate());
+        this->set_clock_rate(UNIT_TX, _clock->get_fpga_clock_rate());
     }
 
     ~usrp_e_dboard_iface(void){
         /* NOP */
     }
 
-    void write_aux_dac(unit_t, int, float);
-    float read_aux_adc(unit_t, int);
+    void write_aux_dac(unit_t, aux_dac_t, float);
+    float read_aux_adc(unit_t, aux_adc_t);
 
     void set_pin_ctrl(unit_t, boost::uint16_t);
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
@@ -72,6 +76,8 @@ public:
         size_t num_bits
     );
 
+    void set_clock_rate(unit_t, double);
+    std::vector<double> get_clock_rates(unit_t);
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
 
@@ -79,6 +85,7 @@ private:
     usrp_e_iface::sptr _iface;
     usrp_e_clock_ctrl::sptr _clock;
     usrp_e_codec_ctrl::sptr _codec;
+    uhd::dict<unit_t, double> _clock_rates;
 };
 
 /***********************************************************************
@@ -95,12 +102,24 @@ dboard_iface::sptr make_usrp_e_dboard_iface(
 /***********************************************************************
  * Clock Rates
  **********************************************************************/
-double usrp_e_dboard_iface::get_clock_rate(unit_t unit){
+void usrp_e_dboard_iface::set_clock_rate(unit_t unit, double rate){
+    _clock_rates[unit] = rate;
     switch(unit){
-    case UNIT_RX: return _clock->get_rx_dboard_clock_rate();
-    case UNIT_TX: return _clock->get_tx_dboard_clock_rate();
+    case UNIT_RX: return _clock->set_rx_dboard_clock_rate(rate);
+    case UNIT_TX: return _clock->set_tx_dboard_clock_rate(rate);
     }
-    UHD_ASSERT_THROW(false);
+}
+
+std::vector<double> usrp_e_dboard_iface::get_clock_rates(unit_t unit){
+    switch(unit){
+    case UNIT_RX: return _clock->get_rx_dboard_clock_rates();
+    case UNIT_TX: return _clock->get_tx_dboard_clock_rates();
+    default: UHD_THROW_INVALID_CODE_PATH();
+    }
+}
+
+double usrp_e_dboard_iface::get_clock_rate(unit_t unit){
+    return _clock_rates[unit];
 }
 
 void usrp_e_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
@@ -212,26 +231,28 @@ byte_vector_t usrp_e_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_byte
 /***********************************************************************
  * Aux DAX/ADC
  **********************************************************************/
-void usrp_e_dboard_iface::write_aux_dac(dboard_iface::unit_t, int which, float value){
+void usrp_e_dboard_iface::write_aux_dac(dboard_iface::unit_t, aux_dac_t which, float value){
     //same aux dacs for each unit
-    static const uhd::dict<int, usrp_e_codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
-        (0, usrp_e_codec_ctrl::AUX_DAC_A) (1, usrp_e_codec_ctrl::AUX_DAC_B)
-        (2, usrp_e_codec_ctrl::AUX_DAC_C) (3, usrp_e_codec_ctrl::AUX_DAC_D)
+    static const uhd::dict<aux_dac_t, usrp_e_codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
+        (AUX_DAC_A, usrp_e_codec_ctrl::AUX_DAC_A)
+        (AUX_DAC_B, usrp_e_codec_ctrl::AUX_DAC_B)
+        (AUX_DAC_C, usrp_e_codec_ctrl::AUX_DAC_C)
+        (AUX_DAC_D, usrp_e_codec_ctrl::AUX_DAC_D)
     ;
     _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
-float usrp_e_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, int which){
+float usrp_e_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, aux_adc_t which){
     static const uhd::dict<
-        unit_t, uhd::dict<int, usrp_e_codec_ctrl::aux_adc_t>
+        unit_t, uhd::dict<aux_adc_t, usrp_e_codec_ctrl::aux_adc_t>
     > unit_to_which_to_aux_adc = map_list_of
         (UNIT_RX, map_list_of
-            (0, usrp_e_codec_ctrl::AUX_ADC_A1)
-            (1, usrp_e_codec_ctrl::AUX_ADC_B1)
+            (AUX_ADC_A, usrp_e_codec_ctrl::AUX_ADC_A1)
+            (AUX_ADC_B, usrp_e_codec_ctrl::AUX_ADC_B1)
         )
         (UNIT_TX, map_list_of
-            (0, usrp_e_codec_ctrl::AUX_ADC_A2)
-            (1, usrp_e_codec_ctrl::AUX_ADC_B2)
+            (AUX_ADC_A, usrp_e_codec_ctrl::AUX_ADC_A2)
+            (AUX_ADC_B, usrp_e_codec_ctrl::AUX_ADC_B2)
         )
     ;
     return _codec->read_aux_adc(unit_to_which_to_aux_adc[unit][which]);
