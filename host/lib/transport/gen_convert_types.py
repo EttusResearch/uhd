@@ -28,46 +28,64 @@ TMPL_TEXT = """
 \#include <boost/cstdint.hpp>
 \#include <boost/detail/endian.hpp>
 \#include <stdexcept>
+\#include <cstring>
 \#include <complex>
 
-//define the endian macros to convert integers
 \#ifdef BOOST_BIG_ENDIAN
-    \#define BE_MACRO(x) x
-    \#define LE_MACRO(x) uhd::byteswap(x)
     static const bool is_big_endian = true;
 \#else
-    \#define BE_MACRO(x) uhd::byteswap(x)
-    \#define LE_MACRO(x) x
     static const bool is_big_endian = false;
 \#endif
 
 using namespace uhd;
 
 /***********************************************************************
- * Constants
+ * Typedefs
  **********************************************************************/
 typedef std::complex<float>          fc32_t;
 typedef std::complex<boost::int16_t> sc16_t;
 typedef boost::uint32_t              item32_t;
 
-static const float shorts_per_float = float(32767);
-static const float floats_per_short = float(1.0/shorts_per_float);
+/***********************************************************************
+ * Convert complex short buffer to items32
+ **********************************************************************/
+static UHD_INLINE void sc16_to_item32_nswap(
+    const sc16_t *input, item32_t *output, size_t nsamps
+){
+    std::memcpy(output, input, nsamps*sizeof(item32_t));
+}
+
+static UHD_INLINE void sc16_to_item32_bswap(
+    const sc16_t *input, item32_t *output, size_t nsamps
+){
+    const item32_t *item32_input = (const item32_t *)input;
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = uhd::byteswap(item32_input[i]);
+    }
+}
 
 /***********************************************************************
- * Single-sample converters
+ * Convert items32 buffer to complex short
  **********************************************************************/
-static UHD_INLINE item32_t sc16_to_item32(sc16_t num){
-    boost::uint16_t real = boost::int16_t(num.real());
-    boost::uint16_t imag = boost::int16_t(num.imag());
-    return (item32_t(real) << 16) | (item32_t(imag) << 0);
+static UHD_INLINE void item32_to_sc16_nswap(
+    const item32_t *input, sc16_t *output, size_t nsamps
+){
+    std::memcpy(output, input, nsamps*sizeof(item32_t));
 }
 
-static UHD_INLINE sc16_t item32_to_sc16(item32_t item){
-    return sc16_t(
-        boost::uint16_t(item >> 16),
-        boost::uint16_t(item >> 0)
-    );
+static UHD_INLINE void item32_to_sc16_bswap(
+    const item32_t *input, sc16_t *output, size_t nsamps
+){
+    item32_t *item32_output = (item32_t *)output;
+    for (size_t i = 0; i < nsamps; i++){
+        item32_output[i] = uhd::byteswap(input[i]);
+    }
 }
+
+/***********************************************************************
+ * Convert complex float buffer to items32
+ **********************************************************************/
+static const float shorts_per_float = float(32767);
 
 static UHD_INLINE item32_t fc32_to_item32(fc32_t num){
     boost::uint16_t real = boost::int16_t(num.real()*shorts_per_float);
@@ -75,11 +93,48 @@ static UHD_INLINE item32_t fc32_to_item32(fc32_t num){
     return (item32_t(real) << 16) | (item32_t(imag) << 0);
 }
 
+static UHD_INLINE void fc32_to_item32_nswap(
+    const fc32_t *input, item32_t *output, size_t nsamps
+){
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = fc32_to_item32(input[i]);
+    }
+}
+
+static UHD_INLINE void fc32_to_item32_bswap(
+    const fc32_t *input, item32_t *output, size_t nsamps
+){
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = uhd::byteswap(fc32_to_item32(input[i]));
+    }
+}
+
+/***********************************************************************
+ * Convert items32 buffer to complex float
+ **********************************************************************/
+static const float floats_per_short = float(1.0/shorts_per_float);
+
 static UHD_INLINE fc32_t item32_to_fc32(item32_t item){
     return fc32_t(
         float(boost::int16_t(item >> 16)*floats_per_short),
         float(boost::int16_t(item >> 0)*floats_per_short)
     );
+}
+
+static UHD_INLINE void item32_to_fc32_nswap(
+    const item32_t *input, fc32_t *output, size_t nsamps
+){
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = item32_to_fc32(input[i]);
+    }
+}
+
+static UHD_INLINE void item32_to_fc32_bswap(
+    const item32_t *input, fc32_t *output, size_t nsamps
+){
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = item32_to_fc32(uhd::byteswap(input[i]));
+    }
 }
 
 /***********************************************************************
@@ -92,21 +147,20 @@ UHD_INLINE boost::uint8_t get_pred(
     boost::uint8_t pred = 0;
 
     switch(otw_type.byteorder){
-    case otw_type_t::BO_BIG_ENDIAN:    pred |= $ph.be_p; break;
-    case otw_type_t::BO_LITTLE_ENDIAN: pred |= $ph.le_p; break;
-    ##let the compiler determine the native byte order (we could use python sys.byteorder)
-    case otw_type_t::BO_NATIVE:        pred |= (is_big_endian)? $ph.be_p : $ph.le_p; break;
+    case otw_type_t::BO_BIG_ENDIAN:    pred |= (is_big_endian)? $ph.nswap_p : $ph.bswap_p; break;
+    case otw_type_t::BO_LITTLE_ENDIAN: pred |= (is_big_endian)? $ph.bswap_p : $ph.nswap_p; break;
+    case otw_type_t::BO_NATIVE:        pred |= $ph.nswap_p; break;
     default: throw std::runtime_error("unhandled byteorder type");
     }
 
-    switch(otw_type.width){
-    case 16: pred |= $ph.w16_p; break;
+    switch(otw_type.get_sample_size()){
+    case sizeof(boost::uint32_t): pred |= $ph.item32_p; break;
     default: throw std::runtime_error("unhandled bit width");
     }
 
     switch(io_type.tid){
-    case io_type_t::COMPLEX_INT16:   pred |= $ph.sc16_p; break;
     case io_type_t::COMPLEX_FLOAT32: pred |= $ph.fc32_p; break;
+    case io_type_t::COMPLEX_INT16:   pred |= $ph.sc16_p; break;
     default: throw std::runtime_error("unhandled io type id");
     }
 
@@ -123,11 +177,8 @@ void transport::convert_io_type_to_otw_type(
     case $pred:
         #set $out_type = $ph.get_dev_type($pred)
         #set $in_type = $ph.get_host_type($pred)
-        #set $converter = $in_type+"_to_"+$out_type
-        #set $xe_macro = $ph.get_xe_macro($pred)
-        for (size_t i = 0; i < num_samps; i++){
-            (($(out_type)_t *)otw_buff)[i] = $(xe_macro)($(converter)(((const $(in_type)_t *)io_buff)[i]));
-        }
+        #set $converter = '_'.join([$in_type, 'to', $out_type, $ph.get_swap_type($pred)])
+        $(converter)((const $(in_type)_t *)io_buff, ($(out_type)_t *)otw_buff, num_samps);
         break;
     #end for
     }
@@ -143,11 +194,8 @@ void transport::convert_otw_type_to_io_type(
     case $pred:
         #set $out_type = $ph.get_host_type($pred)
         #set $in_type = $ph.get_dev_type($pred)
-        #set $converter = $in_type+"_to_"+$out_type
-        #set $xe_macro = $ph.get_xe_macro($pred)
-        for (size_t i = 0; i < num_samps; i++){
-            (($(out_type)_t *)io_buff)[i] = $(converter)($(xe_macro)(((const $(in_type)_t *)otw_buff)[i]));
-        }
+        #set $converter = '_'.join([$in_type, 'to', $out_type, $ph.get_swap_type($pred)])
+        $(converter)((const $(in_type)_t *)otw_buff, ($(out_type)_t *)io_buff, num_samps);
         break;
     #end for
     }
@@ -160,29 +208,32 @@ def parse_tmpl(_tmpl_text, **kwargs):
     return str(Template(_tmpl_text, kwargs))
 
 class ph:
-    be_p   = 0b00001
-    le_p   = 0b00000
-    w16_p  = 0b00000
-    sc16_p = 0b00010
-    fc32_p = 0b00000
+    bswap_p  = 0b00001
+    nswap_p  = 0b00000
+    item32_p = 0b00000
+    sc16_p   = 0b00010
+    fc32_p   = 0b00000
 
     nbits = 2 #see above
 
     @staticmethod
-    def get_xe_macro(pred):
-        if (pred & ph.be_p) == ph.be_p: return 'BE_MACRO'
-        if (pred & ph.le_p) == ph.le_p: return 'LE_MACRO'
+    def has(pred, flag): return (pred & flag) == flag
+
+    @staticmethod
+    def get_swap_type(pred):
+        if ph.has(pred, ph.bswap_p): return 'bswap'
+        if ph.has(pred, ph.nswap_p): return 'nswap'
         raise NotImplementedError
 
     @staticmethod
     def get_dev_type(pred):
-        if (pred & ph.w16_p) == ph.w16_p: return 'item32'
+        if ph.has(pred, ph.item32_p): return 'item32'
         raise NotImplementedError
 
     @staticmethod
     def get_host_type(pred):
-        if (pred & ph.sc16_p) == ph.sc16_p: return 'sc16'
-        if (pred & ph.fc32_p) == ph.fc32_p: return 'fc32'
+        if ph.has(pred, ph.sc16_p): return 'sc16'
+        if ph.has(pred, ph.fc32_p): return 'fc32'
         raise NotImplementedError
 
 if __name__ == '__main__':
