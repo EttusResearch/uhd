@@ -18,6 +18,16 @@
 #This file will be included by cmake, use absolute paths!
 
 ########################################################################
+# Check for SIMD headers
+########################################################################
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
+
+IF(HAVE_EMMINTRIN_H)
+    ADD_DEFINITIONS(-DHAVE_EMMINTRIN_H)
+ENDIF(HAVE_EMMINTRIN_H)
+
+########################################################################
 # Setup defines for interface address discovery
 ########################################################################
 MESSAGE(STATUS "Configuring interface address discovery...")

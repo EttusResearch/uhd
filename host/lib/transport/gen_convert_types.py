@@ -30,6 +30,9 @@ TMPL_TEXT = """
 \#include <stdexcept>
 \#include <cstring>
 \#include <complex>
+\#include <iostream>
+
+\#define USE_EMMINTRIN_H true
 
 \#ifdef BOOST_BIG_ENDIAN
     static const bool is_big_endian = true;
@@ -101,6 +104,39 @@ static UHD_INLINE void fc32_to_item32_nswap(
     }
 }
 
+\#if defined(HAVE_EMMINTRIN_H) && USE_EMMINTRIN_H
+\#include <emmintrin.h>
+
+static UHD_INLINE void fc32_to_item32_bswap(
+    const fc32_t *input, item32_t *output, size_t nsamps
+){
+    __m128 scalar = _mm_set_ps1(shorts_per_float);
+
+    //convert samples with intrinsics pairs at a time
+    size_t i = 0; for (; i < nsamps/4; i+=4){
+        //load from input
+        __m128 tmplo = _mm_loadu_ps(reinterpret_cast<const float *>(input+i+0));
+        __m128 tmphi = _mm_loadu_ps(reinterpret_cast<const float *>(input+i+2));
+
+        //convert and scale
+        __m128i tmpilo = _mm_cvtps_epi32(_mm_mul_ps(tmplo, scalar));
+        __m128i tmpihi = _mm_cvtps_epi32(_mm_mul_ps(tmphi, scalar));
+
+        //pack + byteswap -> byteswap 32 bit words
+        __m128i tmpi = _mm_packs_epi32(tmpilo, tmpihi);
+        tmpi =  _mm_or_si128(_mm_srli_epi16(tmpi, 8), _mm_slli_epi16(tmpi, 8));
+
+        //store to output
+        _mm_storeu_si128(reinterpret_cast<__m128i *>(output+i), tmpi);
+    }
+
+    //convert remainder
+    for (; i < nsamps; i++){
+        output[i] = uhd::byteswap(fc32_to_item32(input[i]));
+    }
+}
+
+\#else
 static UHD_INLINE void fc32_to_item32_bswap(
     const fc32_t *input, item32_t *output, size_t nsamps
 ){
@@ -108,6 +144,8 @@ static UHD_INLINE void fc32_to_item32_bswap(
         output[i] = uhd::byteswap(fc32_to_item32(input[i]));
     }
 }
+
+\#endif
 
 /***********************************************************************
  * Convert items32 buffer to complex float
@@ -129,6 +167,40 @@ static UHD_INLINE void item32_to_fc32_nswap(
     }
 }
 
+\#if defined(HAVE_EMMINTRIN_H) && USE_EMMINTRIN_H
+\#include <emmintrin.h>
+
+static UHD_INLINE void item32_to_fc32_bswap(
+    const item32_t *input, fc32_t *output, size_t nsamps
+){
+    __m128 scalar = _mm_set_ps1(floats_per_short/(1 << 16));
+
+    //convert samples with intrinsics pairs at a time
+    size_t i = 0; for (; i < nsamps/4; i+=4){
+        //load from input
+        __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i));
+
+        //byteswap + unpack -> byteswap 32 bit words
+        tmpi =  _mm_or_si128(_mm_srli_epi16(tmpi, 8), _mm_slli_epi16(tmpi, 8));
+        __m128i tmpilo = _mm_unpacklo_epi16(tmpi, tmpi);
+        __m128i tmpihi = _mm_unpackhi_epi16(tmpi, tmpi);
+
+        //convert and scale
+        __m128 tmplo = _mm_mul_ps(_mm_cvtepi32_ps(tmpilo), scalar);
+        __m128 tmphi = _mm_mul_ps(_mm_cvtepi32_ps(tmpihi), scalar);
+
+        //store to output
+        _mm_storeu_ps(reinterpret_cast<float *>(output+i+0), tmplo);
+        _mm_storeu_ps(reinterpret_cast<float *>(output+i+2), tmphi);
+    }
+
+    //convert remainder
+    for (; i < nsamps; i++){
+        output[i] = item32_to_fc32(uhd::byteswap(input[i]));
+    }
+}
+
+\#else
 static UHD_INLINE void item32_to_fc32_bswap(
     const item32_t *input, fc32_t *output, size_t nsamps
 ){
@@ -136,6 +208,8 @@ static UHD_INLINE void item32_to_fc32_bswap(
         output[i] = item32_to_fc32(uhd::byteswap(input[i]));
     }
 }
+
+\#endif
 
 /***********************************************************************
  * Sample-buffer converters
