@@ -30,8 +30,8 @@ using namespace uhd;
 template <typename div_type> static void set_clock_divider(
     size_t divider, div_type &low, div_type &high
 ){
-    high = divider/2;
-    low = divider-high;
+    high = divider/2 - 1;
+    low = divider - high - 2;
 }
 
 /***********************************************************************
