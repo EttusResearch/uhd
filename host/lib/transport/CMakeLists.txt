@@ -59,6 +59,16 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp
 )
 
+# append this directory to the include path so the generated convert types
+# can include the implementation convert types file in the source directory
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport)
+
+# make the generated convert types depend on the implementation header
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp PROPERTIES
+    OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/lib/transport/convert_types_impl.hpp
+)
+
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/transport/if_addrs.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/udp_simple.cpp
