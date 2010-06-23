@@ -32,9 +32,11 @@ cp_mode                     0x010[3:2]               3           high_imp, force
 pll_power_down              0x010[1:0]               1           normal=0, async=1, sync=3
 r_counter_lsb               0x011[7:0]               1
 r_counter_msb               0x012[5:0]               0
+~r_counter                  r_counter_lsb, r_counter_msb
 a_counter                   0x013[5:0]               0
 b_counter_lsb               0x014[7:0]               3
 b_counter_msb               0x015[4:0]               0
+~b_counter                  b_counter_lsb, b_counter_msb
 set_cp_pin_to_vcp_2         0x016[7]                 0           normal, vcp_2
 reset_r_counter             0x016[6]                 0
 reset_a_and_b_counters      0x016[5]                 0

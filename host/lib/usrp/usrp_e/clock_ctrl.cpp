@@ -27,19 +27,31 @@
 
 using namespace uhd;
 
-template <typename div_type> static void set_clock_divider(
-    size_t divider, div_type &low, div_type &high
+template <typename div_type, typename bypass_type> static void set_clock_divider(
+    size_t divider, div_type &low, div_type &high, bypass_type &bypass
 ){
     high = divider/2 - 1;
     low = divider - high - 2;
+    bypass = (divider == 1)? 1 : 0;
 }
 
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const double master_clock_rate = 320e6;
-static const size_t fpga_clock_divider = 5; //64 MHz
-static const size_t codec_clock_divider = 5; //64 MHz
+static const double ref_clock_rate = 10e6;
+
+static const size_t r_counter = 1;
+static const size_t a_counter = 0;
+static const size_t b_counter = 20;
+static const size_t prescaler = 8; //set below with enum
+static const size_t vco_divider = 5; //set below with enum
+
+static const size_t n_counter = prescaler * b_counter + a_counter;
+static const size_t vco_clock_rate = ref_clock_rate/r_counter * n_counter;
+static const double master_clock_rate = vco_clock_rate/vco_divider;
+
+static const size_t fpga_clock_divider = size_t(master_clock_rate/64e6);
+static const size_t codec_clock_divider = size_t(master_clock_rate/64e6);
 
 /***********************************************************************
  * Clock Control Implementation
@@ -59,11 +71,9 @@ public:
         _ad9522_regs.enable_ref2 = 1;
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF2;
 
-        _ad9522_regs.r_counter_lsb = 1;
-        _ad9522_regs.r_counter_msb = 0;
-        _ad9522_regs.a_counter = 0;
-        _ad9522_regs.b_counter_lsb = 20;
-        _ad9522_regs.b_counter_msb = 0;
+        _ad9522_regs.set_r_counter(r_counter);
+        _ad9522_regs.a_counter = a_counter;
+        _ad9522_regs.set_b_counter(b_counter);
         _ad9522_regs.prescaler_p = ad9522_regs_t::PRESCALER_P_DIV8_9;
 
         _ad9522_regs.pll_power_down = ad9522_regs_t::PLL_POWER_DOWN_NORMAL;
@@ -77,14 +87,16 @@ public:
         _ad9522_regs.out0_format = ad9522_regs_t::OUT0_FORMAT_LVDS;
         set_clock_divider(fpga_clock_divider,
             _ad9522_regs.divider0_low_cycles,
-            _ad9522_regs.divider0_high_cycles
+            _ad9522_regs.divider0_high_cycles,
+            _ad9522_regs.divider0_bypass
         );
 
         //setup codec clock
         _ad9522_regs.out3_format = ad9522_regs_t::OUT3_FORMAT_LVDS;
         set_clock_divider(codec_clock_divider,
             _ad9522_regs.divider1_low_cycles,
-            _ad9522_regs.divider1_high_cycles
+            _ad9522_regs.divider1_high_cycles,
+            _ad9522_regs.divider1_bypass
         );
 
         //setup test clock (same divider as codec clock)
@@ -150,15 +162,14 @@ public:
     void set_rx_dboard_clock_rate(double rate){
         assert_has(get_rx_dboard_clock_rates(), rate, "rx dboard clock rate");
         size_t divider = size_t(rate/master_clock_rate);
-        //bypass when the divider ratio is one
-        _ad9522_regs.divider3_bypass = (divider == 1)? 1 : 0;
-        this->send_reg(0x19a);
         //set the divider registers
         set_clock_divider(divider,
             _ad9522_regs.divider3_low_cycles,
-            _ad9522_regs.divider3_high_cycles
+            _ad9522_regs.divider3_high_cycles,
+            _ad9522_regs.divider3_bypass
         );
         this->send_reg(0x199);
+        this->send_reg(0x19a);
         this->latch_regs();
     }
 
@@ -181,15 +192,14 @@ public:
     void set_tx_dboard_clock_rate(double rate){
         assert_has(get_tx_dboard_clock_rates(), rate, "tx dboard clock rate");
         size_t divider = size_t(rate/master_clock_rate);
-        //bypass when the divider ratio is one
-        _ad9522_regs.divider2_bypass = (divider == 1)? 1 : 0;
-        this->send_reg(0x197);
         //set the divider registers
         set_clock_divider(divider,
             _ad9522_regs.divider2_low_cycles,
-            _ad9522_regs.divider2_high_cycles
+            _ad9522_regs.divider2_high_cycles,
+            _ad9522_regs.divider2_bypass
         );
         this->send_reg(0x196);
+        this->send_reg(0x197);
         this->latch_regs();
     }
 
