@@ -59,7 +59,7 @@ public:
         delete _state;
     }
 
-$body
+    $body
 
     void save_state(void){
         if (_state == NULL) _state = new $(name)_t();
@@ -181,7 +181,7 @@ def generate(name, regs_tmpl, body_tmpl='', file=__file__):
         else:                     regs.append(reg(entry))
 
     #evaluate the body template with the list of registers
-    body = parse_tmpl(body_tmpl, regs=regs).replace('\n', '\n    ').strip()
+    body = '\n    '.join(parse_tmpl(body_tmpl, regs=regs).splitlines())
 
     #evaluate the code template with the parsed registers and arguments
     code = parse_tmpl(COMMON_TMPL,
