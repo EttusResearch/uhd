@@ -84,14 +84,14 @@ void usrp2_impl::update_clock_config(void){
 
 void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set the ticks
-    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
+    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_tick_count(get_master_clock_freq()));
 
     //set the flags register
     boost::uint32_t imm_flags = (now)? U2_FLAG_TIME64_LATCH_NOW : U2_FLAG_TIME64_LATCH_NEXT_PPS;
     _iface->poke32(U2_REG_TIME64_IMM, imm_flags);
 
     //set the seconds (latches in all 3 registers)
-    _iface->poke32(U2_REG_TIME64_SECS, time_spec.secs);
+    _iface->poke32(U2_REG_TIME64_SECS, time_spec.get_full_secs());
 }
 
 void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
@@ -118,8 +118,8 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
         (inst_chain)? 1 : 0,
         (inst_reload)? 1 : 0
     ));
-    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.secs);
-    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
+    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.get_full_secs());
+    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }
 
 /***********************************************************************

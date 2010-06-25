@@ -30,7 +30,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    int seconds_in_future;
+    time_t seconds_in_future;
     size_t total_num_samps;
     double tx_rate, freq;
     float ampl;
@@ -40,7 +40,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
-        ("secs", po::value<int>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
+        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
@@ -69,7 +69,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl;
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_tx_freq(freq);
-    sdev->set_time_now(uhd::time_spec_t(0));
+    sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //data to send
     std::vector<std::complex<float> > buff(total_num_samps, std::complex<float>(ampl, ampl));

@@ -120,47 +120,63 @@ tx_metadata_t::tx_metadata_t(void):
 /***********************************************************************
  * time spec
  **********************************************************************/
-static inline void time_spec_normalize(time_spec_t &time_spec){
-    time_spec.secs += boost::uint32_t(std::ceil(time_spec.nsecs/1e9));
-    time_spec.nsecs = std::fmod(time_spec.nsecs, 1e9);
-}
-
-time_spec_t::time_spec_t(boost::uint32_t secs, double nsecs):
-    secs(secs),
-    nsecs(nsecs)
+time_spec_t::time_spec_t(double secs):
+    _full_secs(0),
+    _frac_secs(secs)
 {
     /* NOP */
 }
 
-time_spec_t::time_spec_t(boost::uint32_t secs, boost::uint32_t ticks, double tick_rate):
-    secs(secs),
-    nsecs(double(ticks)*1e9/tick_rate)
+time_spec_t::time_spec_t(time_t full_secs, double frac_secs):
+    _full_secs(full_secs),
+    _frac_secs(frac_secs)
 {
     /* NOP */
 }
 
-boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
-    return boost::math::iround(nsecs*tick_rate*1e-9);
+time_spec_t::time_spec_t(time_t full_secs, size_t tick_count, double tick_rate):
+    _full_secs(full_secs),
+    _frac_secs(double(tick_count)/tick_rate)
+{
+    /* NOP */
 }
 
-void time_spec_t::set_ticks(boost::uint32_t ticks, double tick_rate){
-    nsecs = double(ticks)*1e9/tick_rate;
+size_t time_spec_t::get_tick_count(double tick_rate) const{
+    return boost::math::iround(this->get_frac_secs()*tick_rate);
+}
+
+double time_spec_t::get_real_secs(void) const{
+    return this->_full_secs + this->_frac_secs;
+}
+
+time_t time_spec_t::get_full_secs(void) const{
+    return this->_full_secs + time_t(std::floor(this->_frac_secs));
+}
+
+double time_spec_t::get_frac_secs(void) const{
+    return std::fmod(this->_frac_secs, 1.0);
 }
 
 time_spec_t &time_spec_t::operator+=(const time_spec_t &rhs){
-    this->secs += rhs.secs;
-    this->nsecs += rhs.nsecs;
+    this->_full_secs += rhs.get_full_secs();
+    this->_frac_secs += rhs.get_frac_secs();
     return *this;
 }
 
 time_spec_t &time_spec_t::operator-=(const time_spec_t &rhs){
-    this->secs -= rhs.secs;
-    this->nsecs -= rhs.nsecs;
+    this->_full_secs -= rhs.get_full_secs();
+    this->_frac_secs -= rhs.get_frac_secs();
     return *this;
 }
 
 bool uhd::operator==(const time_spec_t &lhs, const time_spec_t &rhs){
-    return lhs.secs == rhs.secs and lhs.nsecs == rhs.nsecs;
+    return lhs.get_full_secs() == rhs.get_full_secs() and lhs.get_frac_secs() == rhs.get_frac_secs();
+}
+
+bool uhd::operator<(const time_spec_t &lhs, const time_spec_t &rhs){
+    if (lhs.get_full_secs() < rhs.get_full_secs()) return true;
+    if (lhs.get_full_secs() > rhs.get_full_secs()) return false;
+    return lhs.get_frac_secs() < rhs.get_frac_secs();
 }
 
 /***********************************************************************

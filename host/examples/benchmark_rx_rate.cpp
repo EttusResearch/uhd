@@ -26,15 +26,6 @@
 
 namespace po = boost::program_options;
 
-//TODO add time spec diff to API
-static inline double time_spec_diff(
-    uhd::time_spec_t time_spec_begin,
-    uhd::time_spec_t time_spec_end
-){
-    return (time_spec_end.secs - time_spec_begin.secs) + \
-        ((time_spec_end.nsecs - time_spec_begin.nsecs)*1e-9);
-}
-
 static inline void test_device(
     uhd::usrp::simple_usrp::sptr sdev,
     double rx_rate_sps,
@@ -80,10 +71,10 @@ static inline void test_device(
             got_first_packet = true;
         }
 
-        total_lost_samples += boost::math::iround(rx_rate_sps*time_spec_diff(next_expected_time_spec, md.time_spec));
+        total_lost_samples += boost::math::iround(rx_rate_sps*(md.time_spec - next_expected_time_spec).get_real_secs());
         next_expected_time_spec = md.time_spec + uhd::time_spec_t(0, num_rx_samps, rx_rate_sps);
 
-    } while(time_spec_diff(initial_time_spec, next_expected_time_spec) < duration_secs);
+    } while((next_expected_time_spec - initial_time_spec) < uhd::time_spec_t(duration_secs));
     sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
     
     //flush the buffers

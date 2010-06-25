@@ -66,8 +66,8 @@ static void pack_and_unpack(
     }
     BOOST_CHECK_EQUAL(metadata.has_time_spec, metadata_out.has_time_spec);
     if (metadata.has_time_spec and metadata_out.has_time_spec){
-        BOOST_CHECK_EQUAL(metadata.time_spec.secs, metadata_out.time_spec.secs);
-        BOOST_CHECK_EQUAL(metadata.time_spec.nsecs, metadata_out.time_spec.nsecs);
+        BOOST_CHECK_EQUAL(metadata.time_spec.get_full_secs(), metadata_out.time_spec.get_full_secs());
+        BOOST_CHECK_EQUAL(metadata.time_spec.get_frac_secs(), metadata_out.time_spec.get_frac_secs());
     }
 }
 
@@ -86,8 +86,7 @@ BOOST_AUTO_TEST_CASE(test_with_sid){
 BOOST_AUTO_TEST_CASE(test_with_time_spec){
     uhd::tx_metadata_t metadata;
     metadata.has_time_spec = true;
-    metadata.time_spec.secs = 7;
-    metadata.time_spec.nsecs = 2000;
+    metadata.time_spec = uhd::time_spec_t(7, 0.2);
     pack_and_unpack(metadata, 500, 3);
 }
 
@@ -96,7 +95,6 @@ BOOST_AUTO_TEST_CASE(test_with_sid_and_time_spec){
     metadata.has_stream_id = true;
     metadata.stream_id = 2;
     metadata.has_time_spec = true;
-    metadata.time_spec.secs = 5;
-    metadata.time_spec.nsecs = 1000;
+    metadata.time_spec = uhd::time_spec_t(5, 0.1);
     pack_and_unpack(metadata, 600, 4);
 }

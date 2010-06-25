@@ -30,7 +30,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    int seconds_in_future;
+    time_t seconds_in_future;
     size_t total_num_samps;
     double rx_rate, freq;
 
@@ -39,7 +39,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
-        ("secs", po::value<int>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
+        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
         ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
@@ -67,7 +67,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl;
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_rx_freq(freq);
-    sdev->set_time_now(uhd::time_spec_t(0));
+    sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //setup streaming
     std::cout << std::endl;
@@ -95,8 +95,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         if (num_rx_samps == 0) continue; //wait for packets with contents
 
-        std::cout << boost::format("Got packet: %u samples, %u secs, %u nsecs")
-            % num_rx_samps % md.time_spec.secs % md.time_spec.nsecs << std::endl;
+        std::cout << boost::format("Got packet: %u samples, %u full secs, %f frac secs")
+            % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
 
         num_acc_samps += num_rx_samps;
     }

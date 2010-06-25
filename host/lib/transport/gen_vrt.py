@@ -97,7 +97,7 @@ void vrt::pack_$(suffix)(
         #end if
         ########## Integer Time ##########
         #if $pred & $tsi_p
-            header_buff[$num_header_words] = $(XE_MACRO)(metadata.time_spec.secs);
+            header_buff[$num_header_words] = $(XE_MACRO)(boost::uint32_t(metadata.time_spec.get_full_secs()));
             #set $num_header_words += 1
             #set $flags |= (0x3 << 22);
         #end if
@@ -105,7 +105,7 @@ void vrt::pack_$(suffix)(
         #if $pred & $tsf_p
             header_buff[$num_header_words] = 0;
             #set $num_header_words += 1
-            header_buff[$num_header_words] = $(XE_MACRO)(metadata.time_spec.get_ticks(tick_rate));
+            header_buff[$num_header_words] = $(XE_MACRO)(boost::uint32_t(metadata.time_spec.get_tick_count(tick_rate)));
             #set $num_header_words += 1
             #set $flags |= (0x1 << 20);
         #end if
@@ -147,6 +147,7 @@ void vrt::unpack_$(suffix)(
 ){
     //clear the metadata
     metadata = rx_metadata_t();
+    boost::uint32_t secs = 0, ticks = 0;
 
     //extract vrt header
     boost::uint32_t vrt_hdr_word = $(XE_MACRO)(header_buff[0]);
@@ -185,18 +186,19 @@ void vrt::unpack_$(suffix)(
         ########## Integer Time ##########
         #if $pred & $tsi_p
             #set $has_time_spec = True
-            metadata.time_spec.secs = $(XE_MACRO)(header_buff[$num_header_words]);
+            secs = $(XE_MACRO)(header_buff[$num_header_words]);
             #set $num_header_words += 1
         #end if
         ########## Fractional Time ##########
         #if $pred & $tsf_p
             #set $has_time_spec = True
             #set $num_header_words += 1
-            metadata.time_spec.set_ticks($(XE_MACRO)(header_buff[$num_header_words]), tick_rate);
+            ticks = $(XE_MACRO)(header_buff[$num_header_words]);
             #set $num_header_words += 1
         #end if
         #if $has_time_spec
             metadata.has_time_spec = true;
+            metadata.time_spec = time_spec_t(secs, ticks, tick_rate);
         #end if
         ########## Trailer ##########
         #if $pred & $tlr_p
