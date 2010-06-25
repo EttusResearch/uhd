@@ -85,8 +85,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::rx_metadata_t md;
         std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
         size_t num_rx_samps = dev->recv(
-            boost::asio::buffer(buff),
-            md, uhd::io_type_t::COMPLEX_FLOAT32,
+            boost::asio::buffer(buff), md,
+            uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );
         if (num_rx_samps == 0 and num_acc_samps > 0){

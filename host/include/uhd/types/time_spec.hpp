@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/operators.hpp>
 
 namespace uhd{
 
@@ -38,7 +39,10 @@ namespace uhd{
      * This gives the fractional seconds enough precision to unambiguously
      * specify a clock-tick/sample-count up to rates of several petahertz.
      */
-    struct UHD_API time_spec_t{
+    struct UHD_API time_spec_t:
+        boost::addable<time_spec_t>,
+        boost::subtractable<time_spec_t>,
+        boost::equality_comparable<time_spec_t>{
 
         //! whole/integer seconds count in seconds
         boost::uint32_t secs;
@@ -69,7 +73,25 @@ namespace uhd{
          */
         time_spec_t(boost::uint32_t secs = 0, double nsecs = 0);
 
+        /*!
+         * Create a time_spec_t from whole and fractional seconds.
+         * Translation from clock-domain specific units.
+         * \param secs the whole/integer seconds count in seconds
+         * \param ticks the fractional seconds tick count
+         * \param tick_rate the number of ticks per second
+         */
+        time_spec_t(boost::uint32_t secs, boost::uint32_t ticks, double tick_rate);
+
+        //! Implement addable interface
+        time_spec_t &operator+=(const time_spec_t &);
+
+        //! Implement subtractable interface
+        time_spec_t &operator-=(const time_spec_t &);
+
     };
+
+    //! Implement equality_comparable interface
+    UHD_API bool operator==(const time_spec_t &, const time_spec_t &);
 
 } //namespace uhd
 

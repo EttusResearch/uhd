@@ -15,10 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ADD_EXECUTABLE(benchmark_rx_rate benchmark_rx_rate.cpp)
+TARGET_LINK_LIBRARIES(benchmark_rx_rate uhd)
+
 ADD_EXECUTABLE(rx_timed_samples rx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
-INSTALL(TARGETS rx_timed_samples RUNTIME DESTINATION ${PKG_DATA_DIR}/examples)
 
 ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
-INSTALL(TARGETS tx_timed_samples RUNTIME DESTINATION ${PKG_DATA_DIR}/examples)
+
+INSTALL(TARGETS
+    benchmark_rx_rate
+    rx_timed_samples
+    tx_timed_samples
+    RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
+)

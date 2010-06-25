@@ -25,7 +25,7 @@
 
 namespace uhd{ namespace usrp{
 
-    class UHD_API dboard_id_t : boost::equality_comparable1<dboard_id_t>{
+    class UHD_API dboard_id_t : boost::equality_comparable<dboard_id_t>{
     public:
         /*!
          * Create a dboard id from an integer.

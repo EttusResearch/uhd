@@ -120,9 +120,21 @@ tx_metadata_t::tx_metadata_t(void):
 /***********************************************************************
  * time spec
  **********************************************************************/
+static inline void time_spec_normalize(time_spec_t &time_spec){
+    time_spec.secs += boost::uint32_t(std::ceil(time_spec.nsecs/1e9));
+    time_spec.nsecs = std::fmod(time_spec.nsecs, 1e9);
+}
+
 time_spec_t::time_spec_t(boost::uint32_t secs, double nsecs):
     secs(secs),
     nsecs(nsecs)
+{
+    /* NOP */
+}
+
+time_spec_t::time_spec_t(boost::uint32_t secs, boost::uint32_t ticks, double tick_rate):
+    secs(secs),
+    nsecs(double(ticks)*1e9/tick_rate)
 {
     /* NOP */
 }
@@ -133,6 +145,22 @@ boost::uint32_t time_spec_t::get_ticks(double tick_rate) const{
 
 void time_spec_t::set_ticks(boost::uint32_t ticks, double tick_rate){
     nsecs = double(ticks)*1e9/tick_rate;
+}
+
+time_spec_t &time_spec_t::operator+=(const time_spec_t &rhs){
+    this->secs += rhs.secs;
+    this->nsecs += rhs.nsecs;
+    return *this;
+}
+
+time_spec_t &time_spec_t::operator-=(const time_spec_t &rhs){
+    this->secs -= rhs.secs;
+    this->nsecs -= rhs.nsecs;
+    return *this;
+}
+
+bool uhd::operator==(const time_spec_t &lhs, const time_spec_t &rhs){
+    return lhs.secs == rhs.secs and lhs.nsecs == rhs.nsecs;
 }
 
 /***********************************************************************

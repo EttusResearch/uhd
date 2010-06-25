@@ -169,7 +169,7 @@ void vrt::unpack_$(suffix)(
     switch(pred){
     #for $pred in range(2**5)
     case $pred:
-        #set $set_has_time_spec = False
+        #set $has_time_spec = False
         #set $num_header_words = 1
         ########## Stream ID ##########
         #if $pred & $sid_p
@@ -184,20 +184,19 @@ void vrt::unpack_$(suffix)(
         #end if
         ########## Integer Time ##########
         #if $pred & $tsi_p
-            metadata.has_time_spec = true;
-            #set $set_has_time_spec = True
+            #set $has_time_spec = True
             metadata.time_spec.secs = $(XE_MACRO)(header_buff[$num_header_words]);
             #set $num_header_words += 1
         #end if
         ########## Fractional Time ##########
         #if $pred & $tsf_p
-            #if not $set_has_time_spec
-            metadata.has_time_spec = true;
-                #set $set_has_time_spec = True
-            #end if
+            #set $has_time_spec = True
             #set $num_header_words += 1
             metadata.time_spec.set_ticks($(XE_MACRO)(header_buff[$num_header_words]), tick_rate);
             #set $num_header_words += 1
+        #end if
+        #if $has_time_spec
+            metadata.has_time_spec = true;
         #end if
         ########## Trailer ##########
         #if $pred & $tlr_p
