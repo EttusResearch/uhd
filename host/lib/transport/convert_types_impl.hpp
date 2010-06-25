@@ -160,6 +160,7 @@ static UHD_INLINE void item32_to_fc32_bswap(
     const item32_t *input, fc32_t *output, size_t nsamps
 ){
     __m128 scalar = _mm_set_ps1(floats_per_short/(1 << 16));
+    __m128i zeroi = _mm_setzero_si128();
 
     //convert blocks of samples with intrinsics
     size_t i = 0; for (; i < nsamps/4; i+=4){
@@ -168,8 +169,8 @@ static UHD_INLINE void item32_to_fc32_bswap(
 
         //byteswap + unpack -> byteswap 32 bit words
         tmpi = _mm_or_si128(_mm_srli_epi16(tmpi, 8), _mm_slli_epi16(tmpi, 8));
-        __m128i tmpilo = _mm_unpacklo_epi16(tmpi, tmpi);
-        __m128i tmpihi = _mm_unpackhi_epi16(tmpi, tmpi);
+        __m128i tmpilo = _mm_unpacklo_epi16(zeroi, tmpi); //value in upper 16 bits
+        __m128i tmpihi = _mm_unpackhi_epi16(zeroi, tmpi);
 
         //convert and scale
         __m128 tmplo = _mm_mul_ps(_mm_cvtepi32_ps(tmpilo), scalar);
