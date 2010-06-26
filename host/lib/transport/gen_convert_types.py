@@ -29,12 +29,6 @@ TMPL_TEXT = """
 \#include <stdexcept>
 \#include "convert_types_impl.hpp"
 
-\#ifdef BOOST_BIG_ENDIAN
-    static const bool is_big_endian = true;
-\#else
-    static const bool is_big_endian = false;
-\#endif
-
 using namespace uhd;
 
 /***********************************************************************
@@ -47,15 +41,20 @@ UHD_INLINE boost::uint8_t get_pred(
     boost::uint8_t pred = 0;
 
     switch(otw_type.byteorder){
-    case otw_type_t::BO_BIG_ENDIAN:    pred |= (is_big_endian)? $ph.nswap_p : $ph.bswap_p; break;
-    case otw_type_t::BO_LITTLE_ENDIAN: pred |= (is_big_endian)? $ph.bswap_p : $ph.nswap_p; break;
+    \#ifdef BOOST_BIG_ENDIAN
+    case otw_type_t::BO_BIG_ENDIAN:    pred |= $ph.nswap_p; break;
+    case otw_type_t::BO_LITTLE_ENDIAN: pred |= $ph.bswap_p; break;
+    \#else
+    case otw_type_t::BO_BIG_ENDIAN:    pred |= $ph.bswap_p; break;
+    case otw_type_t::BO_LITTLE_ENDIAN: pred |= $ph.nswap_p; break;
+    \#endif
     case otw_type_t::BO_NATIVE:        pred |= $ph.nswap_p; break;
-    default: throw std::runtime_error("unhandled byteorder type");
+    default: throw std::runtime_error("unhandled otw byteorder type");
     }
 
     switch(otw_type.get_sample_size()){
     case sizeof(boost::uint32_t): pred |= $ph.item32_p; break;
-    default: throw std::runtime_error("unhandled bit width");
+    default: throw std::runtime_error("unhandled otw sample size");
     }
 
     switch(io_type.tid){

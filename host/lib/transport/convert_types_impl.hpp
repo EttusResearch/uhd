@@ -99,7 +99,7 @@ static UHD_INLINE void fc32_to_item32_bswap(
     __m128 scalar = _mm_set_ps1(shorts_per_float);
 
     //convert blocks of samples with intrinsics
-    size_t i = 0; for (; i < nsamps/4; i+=4){
+    size_t i = 0; for (; i < (nsamps & ~0x3); i+=4){
         //load from input
         __m128 tmplo = _mm_loadu_ps(reinterpret_cast<const float *>(input+i+0));
         __m128 tmphi = _mm_loadu_ps(reinterpret_cast<const float *>(input+i+2));
@@ -163,7 +163,7 @@ static UHD_INLINE void item32_to_fc32_bswap(
     __m128i zeroi = _mm_setzero_si128();
 
     //convert blocks of samples with intrinsics
-    size_t i = 0; for (; i < nsamps/4; i+=4){
+    size_t i = 0; for (; i < (nsamps & ~0x3); i+=4){
         //load from input
         __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i));
 
