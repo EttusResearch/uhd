@@ -55,7 +55,7 @@ MACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     ENDIF(${have})
 ENDMACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
-IF(UNIX)
+IF(CMAKE_COMPILER_IS_GNUCXX)
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
@@ -63,14 +63,19 @@ IF(UNIX)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-O3 HAVE_O3) #have some optimizations
-ENDIF(UNIX)
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-IF(WIN32)
+IF(MSVC)
+    #Set the predefined cxx debug flags to have only the debug flags
+    #because the default flags disable optimization which we want to have.
+    #Setting CMAKE_BUILD_TYPE to "release" does not seem to fix this issue.
+    SET(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MDd") #FIXME better way to do this?
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
     ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
     ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-ENDIF(WIN32)
+    ADD_DEFINITIONS(/arch:SSE2 /G7 /O2 /fp:fast) #optimization flags
+ENDIF(MSVC)
 
 ########################################################################
 # Setup Boost
