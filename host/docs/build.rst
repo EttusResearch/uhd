@@ -138,6 +138,7 @@ Generate the project with cmake
 Build the project in MSVC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Open the generated project file in MSVC.
+* Change the build type from "Debug" to "Release".
 * Select the build all target, right click, and choose build.
 * Select the install target, right click, and choose build.
 
