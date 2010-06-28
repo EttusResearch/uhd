@@ -27,6 +27,19 @@ SET(CPACK_PACKAGE_VERSION_MINOR 0)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
 SET(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README)
 SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+SET(CPACK_PACKAGE_CONTACT "support@ettus.com")
+SET(BOOST_MIN_VERSION 1.36) #used in setup boost below
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "
+    libboost-date-time-dev          (>= ${BOOST_MIN_VERSION}),
+    libboost-filesystem-dev         (>= ${BOOST_MIN_VERSION}),
+    libboost-program-options-dev    (>= ${BOOST_MIN_VERSION}),
+    libboost-regex-dev              (>= ${BOOST_MIN_VERSION}),
+    libboost-system-dev             (>= ${BOOST_MIN_VERSION}),
+    libboost-test-dev               (>= ${BOOST_MIN_VERSION}),
+    libboost-thread-dev             (>= ${BOOST_MIN_VERSION}),
+")
+SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
+SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel >= ${BOOST_MIN_VERSION}")
 INCLUDE(CPack) #include after setting vars
 
 ########################################################################
@@ -62,10 +75,10 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
+    ADD_DEFINITIONS(-Wall)
+    ADD_DEFINITIONS(-Wextra)
+    ADD_DEFINITIONS(-pedantic)
+    ADD_DEFINITIONS(-ansi)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
@@ -82,7 +95,7 @@ ENDIF(MSVC)
 # Setup Boost
 ########################################################################
 SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42")
-FIND_PACKAGE(Boost 1.36 REQUIRED COMPONENTS
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
     date_time
     filesystem
     program_options
