@@ -19,93 +19,77 @@
 #define INCLUDED_UHD_TRANSPORT_VRT_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/metadata.hpp>
-#include <cstddef>
+#include <boost/cstdint.hpp>
+#include <cstddef> //size_t
 
 namespace uhd{ namespace transport{
 
 namespace vrt{
 
-    static const size_t max_header_words32 = 5; //hdr+sid+tsi+tsf (no class id supported)
+    //! The maximum number of 32-bit words in a vrt if packet header
+    static const size_t max_if_hdr_words32 = 7; //hdr+sid+cid+tsi+tsf
+
+    /*!
+     * Definition for fields that can be packed into a vrt if header.
+     * The size fields are used for input and output depending upon
+     * the operation used (ie the pack or unpack function call).
+     */
+    struct UHD_API if_packet_info_t{
+        //size fields
+        size_t num_payload_words32; //required in pack, derived in unpack
+        size_t num_header_words32;  //derived in pack, derived in unpack
+        size_t num_packet_words32;  //derived in pack, required in unpack
+
+        //header fields
+        size_t packet_count;
+        bool sob, eob;
+
+        //optional fields
+        bool has_sid; boost::uint32_t sid;
+        bool has_cid; boost::uint64_t cid;
+        bool has_tsi; boost::uint32_t tsi;
+        bool has_tsf; boost::uint64_t tsf;
+        bool has_tlr; boost::uint32_t tlr;
+    };
 
     /*!
      * Pack a vrt header from metadata (big endian format).
-     * \param metadata the tx metadata with flags and timestamps
-     * \param header_buff memory to write the packed vrt header
-     * \param num_header_words32 number of words in the vrt header
-     * \param num_payload_words32 the length of the payload
-     * \param num_packet_words32 the length of the packet
-     * \param packet_count the packet count sequence number
-     * \param tick_rate ticks per second used in time conversion
+     * \param packet_buff memory to write the packed vrt header
+     * \param if_packet_info the if packet info (read/write)
      */
-    UHD_API void pack_be(
-        const tx_metadata_t &metadata, //input
-        boost::uint32_t *header_buff,  //output
-        size_t &num_header_words32,    //output
-        size_t num_payload_words32,    //input
-        size_t &num_packet_words32,    //output
-        size_t packet_count,           //input
-        double tick_rate               //input
+    UHD_API void if_hdr_pack_be(
+        boost::uint32_t *packet_buff,
+        if_packet_info_t &if_packet_info
     );
 
     /*!
      * Unpack a vrt header to metadata (big endian format).
-     * \param metadata the rx metadata with flags and timestamps
-     * \param header_buff memory to read the packed vrt header
-     * \param num_header_words32 number of words in the vrt header
-     * \param num_payload_words32 the length of the payload
-     * \param num_packet_words32 the length of the packet
-     * \param packet_count the packet count sequence number
-     * \param tick_rate ticks per second used in time conversion
+     * \param packet_buff memory to read the packed vrt header
+     * \param if_packet_info the if packet info (read/write)
      */
-    UHD_API void unpack_be(
-        rx_metadata_t &metadata,            //output
-        const boost::uint32_t *header_buff, //input
-        size_t &num_header_words32,         //output
-        size_t &num_payload_words32,        //output
-        size_t num_packet_words32,          //input
-        size_t &packet_count,               //output
-        double tick_rate                    //input
+    UHD_API void if_hdr_unpack_be(
+        const boost::uint32_t *packet_buff,
+        if_packet_info_t &if_packet_info
     );
 
     /*!
      * Pack a vrt header from metadata (little endian format).
-     * \param metadata the tx metadata with flags and timestamps
-     * \param header_buff memory to write the packed vrt header
-     * \param num_header_words32 number of words in the vrt header
-     * \param num_payload_words32 the length of the payload
-     * \param num_packet_words32 the length of the packet
-     * \param packet_count the packet count sequence number
-     * \param tick_rate ticks per second used in time conversion
+     * \param packet_buff memory to write the packed vrt header
+     * \param if_packet_info the if packet info (read/write)
      */
-    UHD_API void pack_le(
-        const tx_metadata_t &metadata, //input
-        boost::uint32_t *header_buff,  //output
-        size_t &num_header_words32,    //output
-        size_t num_payload_words32,    //input
-        size_t &num_packet_words32,    //output
-        size_t packet_count,           //input
-        double tick_rate               //input
+    UHD_API void if_hdr_pack_le(
+        boost::uint32_t *packet_buff,
+        if_packet_info_t &if_packet_info
     );
 
     /*!
      * Unpack a vrt header to metadata (little endian format).
-     * \param metadata the rx metadata with flags and timestamps
-     * \param header_buff memory to read the packed vrt header
-     * \param num_header_words32 number of words in the vrt header
-     * \param num_payload_words32 the length of the payload
-     * \param num_packet_words32 the length of the packet
-     * \param packet_count the packet count sequence number
-     * \param tick_rate ticks per second used in time conversion
+     * \param packet_buff memory to read the packed vrt header
+     * \param if_packet_info the if packet info (read/write)
      */
-    UHD_API void unpack_le(
-        rx_metadata_t &metadata,            //output
-        const boost::uint32_t *header_buff, //input
-        size_t &num_header_words32,         //output
-        size_t &num_payload_words32,        //output
-        size_t num_packet_words32,          //input
-        size_t &packet_count,               //output
-        double tick_rate                    //input
+    UHD_API void if_hdr_unpack_le(
+        const boost::uint32_t *packet_buff,
+        if_packet_info_t &if_packet_info
     );
 
 } //namespace vrt

@@ -108,7 +108,7 @@ public:
         return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
     }
     size_t send(
-        const boost::asio::const_buffer &,
+        const std::vector<const void *> &, size_t,
         const uhd::tx_metadata_t &,
         const uhd::io_type_t &,
         uhd::device::send_mode_t
@@ -117,11 +117,13 @@ public:
         return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
     }
     size_t recv(
-        const boost::asio::mutable_buffer &,
+        const std::vector<void *> &, size_t,
         uhd::rx_metadata_t &,
         const uhd::io_type_t &,
         uhd::device::recv_mode_t
     );
+
+    UHD_PIMPL_DECL(io_impl) _io_impl;
 
 private:
     inline double get_master_clock_freq(void){
@@ -148,11 +150,10 @@ private:
     ;
     static const size_t _max_tx_bytes_per_packet =
         USRP2_UDP_BYTES -
-        uhd::transport::vrt::max_header_words32*sizeof(boost::uint32_t)
+        uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
     ;
 
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
 
     //udp transports for control and data

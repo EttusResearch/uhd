@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
+#include <uhd/utils/assert.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
@@ -30,37 +31,43 @@
 #include <boost/function.hpp>
 #include <stdexcept>
 #include <iostream>
+#include <vector>
 
 namespace vrt_packet_handler{
 
 /***********************************************************************
  * vrt packet handler for recv
  **********************************************************************/
+    typedef std::vector<uhd::transport::managed_recv_buffer::sptr> managed_recv_buffs_t;
+
     struct recv_state{
+        //width of the receiver in channels
+        size_t width;
+
         //init the expected seq number
-        size_t next_packet_seq;
+        std::vector<size_t> next_packet_seq;
 
         //state variables to handle fragments
-        uhd::transport::managed_recv_buffer::sptr managed_buff;
-        boost::asio::const_buffer copy_buff;
+        managed_recv_buffs_t managed_buffs;
+        std::vector<const boost::uint8_t *> copy_buffs;
+        size_t size_of_copy_buffs;
         size_t fragment_offset_in_samps;
 
-        recv_state(void){
-            //first expected seq is zero
-            next_packet_seq = 0;
-
-            //initially empty copy buffer
-            copy_buff = boost::asio::buffer("", 0);
+        recv_state(size_t width):
+            width(width),
+            next_packet_seq(width, 0),
+            managed_buffs(width),
+            copy_buffs(width, NULL),
+            size_of_copy_buffs(0),
+            fragment_offset_in_samps(0)
+        {
+            /* NOP */
         }
     };
 
-    typedef boost::function<uhd::transport::managed_recv_buffer::sptr(void)> get_recv_buff_t;
+    typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
 
-    typedef boost::function<void(uhd::transport::managed_recv_buffer::sptr)> recv_cb_t;
-
-    static UHD_INLINE void recv_cb_nop(uhd::transport::managed_recv_buffer::sptr){
-        /* NOP */
-    }
+    typedef boost::function<void(managed_recv_buffs_t &)> recv_cb_t;
 
     /*******************************************************************
      * Unpack a received vrt header and set the copy buffer.
@@ -74,33 +81,41 @@ namespace vrt_packet_handler{
         vrt_unpacker_type vrt_unpacker,
         size_t vrt_header_offset_words32
     ){
-        size_t num_packet_words32 = state.managed_buff->size()/sizeof(boost::uint32_t);
+        size_t num_packet_words32 = state.managed_buffs[0]->size()/sizeof(boost::uint32_t);
         if (num_packet_words32 <= vrt_header_offset_words32){
-            state.copy_buff = boost::asio::buffer("", 0);
+            state.size_of_copy_buffs = 0;
             return; //must exit here after setting the buffer
         }
-        const boost::uint32_t *vrt_hdr = state.managed_buff->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
-        size_t num_header_words32_out, num_payload_words32_out, packet_count_out;
-        vrt_unpacker(
-            metadata,                //output
-            vrt_hdr,                 //input
-            num_header_words32_out,  //output
-            num_payload_words32_out, //output
-            num_packet_words32,      //input
-            packet_count_out,        //output
-            tick_rate
-        );
 
-        //handle the packet count / sequence number
-        if (packet_count_out != state.next_packet_seq){
-            std::cerr << "S" << (packet_count_out - state.next_packet_seq)%16;
+        //vrt unpack each managed buffer
+        uhd::transport::vrt::if_packet_info_t if_packet_info;
+        for (size_t i = 0; i < state.width; i++){
+            const boost::uint32_t *vrt_hdr = state.managed_buffs[i]->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
+            if_packet_info.num_packet_words32 = num_packet_words32;
+            vrt_unpacker(vrt_hdr, if_packet_info);
+
+            //handle the packet count / sequence number
+            if (if_packet_info.packet_count != state.next_packet_seq[i]){
+                std::cerr << "S" << (if_packet_info.packet_count - state.next_packet_seq[i])%16;
+            }
+            state.next_packet_seq[i] = (if_packet_info.packet_count+1)%16;
+
+            //setup the buffer to point to the data
+            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(vrt_hdr + if_packet_info.num_header_words32);
+
+            //store the minimum payload length into the copy buffer length
+            size_t num_payload_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t);
+            if (i == 0 or state.size_of_copy_buffs > num_payload_bytes){
+                state.size_of_copy_buffs = num_payload_bytes;
+            }
         }
-        state.next_packet_seq = (packet_count_out+1)%16;
 
-        //setup the buffer to point to the data
-        state.copy_buff = boost::asio::buffer(
-            vrt_hdr + num_header_words32_out,
-            num_payload_words32_out*sizeof(boost::uint32_t)
+        //store the last vrt info into the metadata
+        metadata.has_time_spec = if_packet_info.has_tsi or if_packet_info.has_tsf;
+        metadata.time_spec = uhd::time_spec_t(
+            time_t((if_packet_info.has_tsi)? if_packet_info.tsi : 0),
+            size_t((if_packet_info.has_tsf)? if_packet_info.tsf : 0),
+            tick_rate
         );
     }
 
@@ -111,24 +126,22 @@ namespace vrt_packet_handler{
     template<typename vrt_unpacker_type>
     static UHD_INLINE size_t _recv1(
         recv_state &state,
-        void *recv_mem,
+        const std::vector<void *> &buffs,
+        size_t offset_bytes,
         size_t total_samps,
         uhd::rx_metadata_t &metadata,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
         vrt_unpacker_type vrt_unpacker,
-        const get_recv_buff_t &get_recv_buff,
+        const get_recv_buffs_t &get_recv_buffs,
         //use these two params to handle a layer above vrt
-        size_t vrt_header_offset_words32,
-        const recv_cb_t &recv_cb
+        size_t vrt_header_offset_words32
     ){
         //perform a receive if no rx data is waiting to be copied
-        if (boost::asio::buffer_size(state.copy_buff) == 0){
+        if (state.size_of_copy_buffs == 0){
             state.fragment_offset_in_samps = 0;
-            state.managed_buff = get_recv_buff();
-            if (state.managed_buff.get() == NULL) return 0;
-            recv_cb(state.managed_buff); //callback before vrt unpack
+            if (not get_recv_buffs(state.managed_buffs)) return 0;
             try{
                 _recv1_helper(
                     state, metadata, tick_rate, vrt_unpacker, vrt_header_offset_words32
@@ -141,26 +154,28 @@ namespace vrt_packet_handler{
 
         //extract the number of samples available to copy
         size_t bytes_per_item = otw_type.get_sample_size();
-        size_t bytes_available = boost::asio::buffer_size(state.copy_buff);
+        size_t bytes_available = state.size_of_copy_buffs;
         size_t num_samps = std::min(total_samps, bytes_available/bytes_per_item);
+        size_t bytes_to_copy = num_samps*bytes_per_item;
 
         //setup the fragment flags and offset
         metadata.more_fragments = total_samps < num_samps;
         metadata.fragment_offset = state.fragment_offset_in_samps;
         state.fragment_offset_in_samps += num_samps; //set for next call
 
-        //copy-convert the samples from the recv buffer
-        uhd::transport::convert_otw_type_to_io_type(
-            boost::asio::buffer_cast<const void*>(state.copy_buff), otw_type,
-            recv_mem, io_type, num_samps
-        );
+        for (size_t i = 0; i < state.width; i++){
+            //copy-convert the samples from the recv buffer
+            uhd::transport::convert_otw_type_to_io_type(
+                state.copy_buffs[i], otw_type,
+                reinterpret_cast<boost::uint8_t *>(buffs[i]) + offset_bytes,
+                io_type, num_samps
+            );
 
-        //update the rx copy buffer to reflect the bytes copied
-        size_t bytes_copied = num_samps*bytes_per_item;
-        state.copy_buff = boost::asio::buffer(
-            boost::asio::buffer_cast<const boost::uint8_t*>(state.copy_buff) + bytes_copied,
-            bytes_available - bytes_copied
-        );
+            //update the rx copy buffer to reflect the bytes copied
+            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(state.copy_buffs[i]) + bytes_to_copy;
+        }
+        //update the copy buffer's availability
+        state.size_of_copy_buffs -= bytes_to_copy;
 
         return num_samps;
     }
@@ -171,20 +186,19 @@ namespace vrt_packet_handler{
     template<typename vrt_unpacker_type>
     static UHD_INLINE size_t recv(
         recv_state &state,
-        const boost::asio::mutable_buffer &buff,
+        const std::vector<void *> &buffs,
+        const size_t total_num_samps,
         uhd::rx_metadata_t &metadata,
         uhd::device::recv_mode_t recv_mode,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
         vrt_unpacker_type vrt_unpacker,
-        const get_recv_buff_t &get_recv_buff,
+        const get_recv_buffs_t &get_recv_buffs,
         //use these two params to handle a layer above vrt
-        size_t vrt_header_offset_words32 = 0,
-        const recv_cb_t& recv_cb = &recv_cb_nop
+        size_t vrt_header_offset_words32 = 0
     ){
         metadata = uhd::rx_metadata_t(); //init the metadata
-        const size_t total_num_samps = boost::asio::buffer_size(buff)/io_type.size;
 
         switch(recv_mode){
 
@@ -193,15 +207,14 @@ namespace vrt_packet_handler{
         ////////////////////////////////////////////////////////////////
             return _recv1(
                 state,
-                boost::asio::buffer_cast<void *>(buff),
+                buffs, 0,
                 total_num_samps,
                 metadata,
                 io_type, otw_type,
                 tick_rate,
                 vrt_unpacker,
-                get_recv_buff,
-                vrt_header_offset_words32,
-                recv_cb
+                get_recv_buffs,
+                vrt_header_offset_words32
             );
         }
 
@@ -213,15 +226,14 @@ namespace vrt_packet_handler{
             while(accum_num_samps < total_num_samps){
                 size_t num_samps = _recv1(
                     state,
-                    boost::asio::buffer_cast<boost::uint8_t *>(buff) + (accum_num_samps*io_type.size),
+                    buffs, accum_num_samps*io_type.size,
                     total_num_samps - accum_num_samps,
                     (accum_num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
                     io_type, otw_type,
                     tick_rate,
                     vrt_unpacker,
-                    get_recv_buff,
-                    vrt_header_offset_words32,
-                    recv_cb
+                    get_recv_buffs,
+                    vrt_header_offset_words32
                 );
                 if (num_samps == 0) break; //had a recv timeout or error, break loop
                 accum_num_samps += num_samps;
@@ -236,6 +248,8 @@ namespace vrt_packet_handler{
 /***********************************************************************
  * vrt packet handler for send
  **********************************************************************/
+    typedef std::vector<uhd::transport::managed_send_buffer::sptr> managed_send_buffs_t;
+
     struct send_state{
         //init the expected seq number
         size_t next_packet_seq;
@@ -245,13 +259,9 @@ namespace vrt_packet_handler{
         }
     };
 
-    typedef boost::function<uhd::transport::managed_send_buffer::sptr(void)> get_send_buff_t;
+    typedef boost::function<bool(managed_send_buffs_t &)> get_send_buffs_t;
 
-    typedef boost::function<void(uhd::transport::managed_send_buffer::sptr)> send_cb_t;
-
-    static UHD_INLINE void send_cb_nop(uhd::transport::managed_send_buffer::sptr){
-        /* NOP */
-    }
+    typedef boost::function<void(managed_send_buffs_t &)> send_cb_t;
 
     /*******************************************************************
      * Pack a vrt header, copy-convert the data, and send it.
@@ -260,46 +270,51 @@ namespace vrt_packet_handler{
     template<typename vrt_packer_type>
     static UHD_INLINE void _send1(
         send_state &state,
-        const void *send_mem,
+        const std::vector<const void *> &buffs,
+        size_t offset_bytes,
         size_t num_samps,
         const uhd::tx_metadata_t &metadata,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
         vrt_packer_type vrt_packer,
-        const get_send_buff_t &get_send_buff,
-        size_t vrt_header_offset_words32,
-        const send_cb_t& send_cb
+        const get_send_buffs_t &get_send_buffs,
+        size_t vrt_header_offset_words32
     ){
-        //get a new managed send buffer
-        uhd::transport::managed_send_buffer::sptr send_buff = get_send_buff();
-        boost::uint32_t *tx_mem = send_buff->cast<boost::uint32_t *>() + vrt_header_offset_words32;
+        //translate the metadata to vrt if packet info
+        uhd::transport::vrt::if_packet_info_t if_packet_info;
+        if_packet_info.has_sid = false;
+        if_packet_info.has_cid = false;
+        if_packet_info.has_tsi = metadata.has_time_spec;
+        if_packet_info.tsi = boost::uint32_t(metadata.time_spec.get_full_secs());
+        if_packet_info.has_tsf = metadata.has_time_spec;
+        if_packet_info.tsf = boost::uint64_t(metadata.time_spec.get_tick_count(tick_rate));
+        if_packet_info.has_tlr = false;
+        if_packet_info.num_payload_words32 = (num_samps*io_type.size)/sizeof(boost::uint32_t);
+        if_packet_info.packet_count = state.next_packet_seq++;
 
-        size_t num_header_words32, num_packet_words32;
-        size_t packet_count = state.next_packet_seq++;
+        //get send buffers for each channel
+        managed_send_buffs_t send_buffs(buffs.size());
+        UHD_ASSERT_THROW(get_send_buffs(send_buffs));
 
-        //pack metadata into a vrt header
-        vrt_packer(
-            metadata,            //input
-            tx_mem,              //output
-            num_header_words32,  //output
-            num_samps,           //input
-            num_packet_words32,  //output
-            packet_count,        //input
-            tick_rate
-        );
+        for (size_t i = 0; i < buffs.size(); i++){
+            //calculate pointers with offsets to io and otw memory
+            const boost::uint8_t *io_mem = reinterpret_cast<const boost::uint8_t *>(buffs[i]) + offset_bytes;
+            boost::uint32_t *otw_mem = send_buffs[i]->cast<boost::uint32_t *>() + vrt_header_offset_words32;
 
-        //copy-convert the samples into the send buffer
-        uhd::transport::convert_io_type_to_otw_type(
-            send_mem, io_type,
-            tx_mem + num_header_words32, otw_type,
-            num_samps
-        );
+            //pack metadata into a vrt header
+            vrt_packer(otw_mem, if_packet_info);
 
-        send_cb(send_buff); //callback after memory filled
+            //copy-convert the samples into the send buffer
+            uhd::transport::convert_io_type_to_otw_type(
+                io_mem, io_type,
+                otw_mem + if_packet_info.num_header_words32, otw_type,
+                num_samps
+            );
 
-        //commit the samples to the zero-copy interface
-        send_buff->commit(num_packet_words32*sizeof(boost::uint32_t));
+            //commit the samples to the zero-copy interface
+            send_buffs[i]->commit(if_packet_info.num_packet_words32*sizeof(boost::uint32_t));
+        }
     }
 
     /*******************************************************************
@@ -308,20 +323,19 @@ namespace vrt_packet_handler{
     template<typename vrt_packer_type>
     static UHD_INLINE size_t send(
         send_state &state,
-        const boost::asio::const_buffer &buff,
+        const std::vector<const void *> &buffs,
+        const size_t total_num_samps,
         const uhd::tx_metadata_t &metadata,
         uhd::device::send_mode_t send_mode,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
         vrt_packer_type vrt_packer,
-        const get_send_buff_t &get_send_buff,
+        const get_send_buffs_t &get_send_buffs,
         size_t max_samples_per_packet,
         //use these two params to handle a layer above vrt
-        size_t vrt_header_offset_words32 = 0,
-        const send_cb_t& send_cb = &send_cb_nop
+        size_t vrt_header_offset_words32 = 0
     ){
-        const size_t total_num_samps = boost::asio::buffer_size(buff)/io_type.size;
         if (total_num_samps <= max_samples_per_packet) send_mode = uhd::device::SEND_MODE_ONE_PACKET;
         switch(send_mode){
 
@@ -331,15 +345,14 @@ namespace vrt_packet_handler{
             size_t num_samps = std::min(total_num_samps, max_samples_per_packet);
             _send1(
                 state,
-                boost::asio::buffer_cast<const void *>(buff),
+                buffs, 0,
                 num_samps,
                 metadata,
                 io_type, otw_type,
                 tick_rate,
                 vrt_packer,
-                get_send_buff,
-                vrt_header_offset_words32,
-                send_cb
+                get_send_buffs,
+                vrt_header_offset_words32
             );
             return num_samps;
         }
@@ -366,15 +379,14 @@ namespace vrt_packet_handler{
                 //send the fragment with the helper function
                 _send1(
                     state,
-                    boost::asio::buffer_cast<const boost::uint8_t *>(buff) + (n*max_samples_per_packet*io_type.size),
+                    buffs, n*max_samples_per_packet*io_type.size,
                     (n == final_fragment_index)?(total_num_samps%max_samples_per_packet):max_samples_per_packet,
                     md,
                     io_type, otw_type,
                     tick_rate,
                     vrt_packer,
-                    get_send_buff,
-                    vrt_header_offset_words32,
-                    send_cb
+                    get_send_buffs,
+                    vrt_header_offset_words32
                 );
             }
             return total_num_samps;

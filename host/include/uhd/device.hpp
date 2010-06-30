@@ -27,6 +27,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/asio/buffer.hpp>
+#include <vector>
 
 namespace uhd{
 
@@ -96,8 +97,22 @@ public:
         RECV_MODE_ONE_PACKET = 1
     };
 
+    //! wrapper call for single buffer recv //TODO put somewhere
+    size_t send(
+        const boost::asio::const_buffer &buff,
+        const tx_metadata_t &metadata,
+        const io_type_t &io_type,
+        send_mode_t send_mode
+    ){
+        return send(
+            std::vector<const void *>(1, boost::asio::buffer_cast<const void *>(buff)),
+            boost::asio::buffer_size(buff)/io_type.size,
+            metadata, io_type, send_mode
+        );
+    }
+
     /*!
-     * Send a buffer containing IF data with its metadata.
+     * Send buffers containing IF data described by the metadata.
      *
      * Send handles fragmentation as follows:
      * If the buffer has more samples than the maximum per packet,
@@ -108,23 +123,39 @@ public:
      * Fragmentation only applies in the full buffer send mode.
      *
      * This is a blocking call and will not return until the number
-     * of samples returned have been read out of the buffer.
+     * of samples returned have been read out of each buffer.
      *
-     * \param buff a buffer pointing to some read-only memory
+     * \param buffs a vector of read-only memory containing IF data
+     * \param nsamps_per_buff the number of samples to send, per buffer
      * \param metadata data describing the buffer's contents
      * \param io_type the type of data loaded in the buffer
      * \param send_mode tells send how to unload the buffer
      * \return the number of samples sent
      */
     virtual size_t send(
-        const boost::asio::const_buffer &buff,
+        const std::vector<const void *> &buffs,
+        size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
         send_mode_t send_mode
     ) = 0;
 
+    //! wrapper call for single buffer recv //TODO put somewhere
+    size_t recv(
+        const boost::asio::mutable_buffer &buff,
+        rx_metadata_t &metadata,
+        const io_type_t &io_type,
+        recv_mode_t recv_mode
+    ){
+        return recv(
+            std::vector<void *>(1, boost::asio::buffer_cast<void *>(buff)),
+            boost::asio::buffer_size(buff)/io_type.size,
+            metadata, io_type, recv_mode
+        );
+    }
+
     /*!
-     * Receive a buffer containing IF data and its metadata.
+     * Receive buffers containing IF data described by the metadata.
      *
      * Receive handles fragmentation as follows:
      * If the buffer has insufficient space to hold all samples
@@ -138,7 +169,7 @@ public:
      * See the rx metadata fragment flags and offset fields for details.
      *
      * This is a blocking call and will not return until the number
-     * of samples returned have been written into the buffer.
+     * of samples returned have been written into each buffer.
      * However, a call to receive may timeout and return zero samples.
      * The timeout duration is decided by the underlying transport layer.
      * The caller should assume that the call to receive will not return
@@ -146,17 +177,19 @@ public:
      * and that the timeout duration is reasonably tuned for performance.
      *
      * When using the full buffer recv mode, the metadata only applies
-     * to the first packet received and written into the recv buffer.
+     * to the first packet received and written into the recv buffers.
      * Use the one packet recv mode to get per packet metadata.
      *
-     * \param buff the buffer to fill with IF data
+     * \param buffs a vector of writable memory to fill with IF data
+     * \param nsamps_per_buff the size of each buffer in number of samples
      * \param metadata data to fill describing the buffer
      * \param io_type the type of data to fill into the buffer
      * \param recv_mode tells recv how to load the buffer
      * \return the number of samples received
      */
     virtual size_t recv(
-        const boost::asio::mutable_buffer &buff,
+        const std::vector<void *> &buffs,
+        size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
         recv_mode_t recv_mode
