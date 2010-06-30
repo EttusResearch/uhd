@@ -33,7 +33,7 @@ using namespace uhd::usrp;
 /***********************************************************************
  * Helper Methods
  **********************************************************************/
-void usrp2_impl::dboard_init(void){
+void usrp2_mboard_impl::dboard_init(void){
     //read the dboard eeprom to extract the dboard ids
     _rx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
     _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
@@ -46,12 +46,12 @@ void usrp2_impl::dboard_init(void){
 
     //load dboards
     _rx_dboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp2_impl::rx_dboard_get, this, _1, _2),
-        boost::bind(&usrp2_impl::rx_dboard_set, this, _1, _2)
+        boost::bind(&usrp2_mboard_impl::rx_dboard_get, this, _1, _2),
+        boost::bind(&usrp2_mboard_impl::rx_dboard_set, this, _1, _2)
     );
     _tx_dboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp2_impl::tx_dboard_get, this, _1, _2),
-        boost::bind(&usrp2_impl::tx_dboard_set, this, _1, _2)
+        boost::bind(&usrp2_mboard_impl::tx_dboard_get, this, _1, _2),
+        boost::bind(&usrp2_mboard_impl::tx_dboard_set, this, _1, _2)
     );
 
     //init the subdevs in use (use the first subdevice)
@@ -62,7 +62,7 @@ void usrp2_impl::dboard_init(void){
 /***********************************************************************
  * RX DBoard Properties
  **********************************************************************/
-void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
+void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
@@ -96,7 +96,7 @@ void usrp2_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
     }
 }
 
-void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_USED_SUBDEVS:{
             _rx_subdevs_in_use = val.as<prop_names_t>();
@@ -122,7 +122,7 @@ void usrp2_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
 /***********************************************************************
  * TX DBoard Properties
  **********************************************************************/
-void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
+void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
@@ -156,7 +156,7 @@ void usrp2_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
     }
 }
 
-void usrp2_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_USED_SUBDEVS:{
             _tx_subdevs_in_use = val.as<prop_names_t>();

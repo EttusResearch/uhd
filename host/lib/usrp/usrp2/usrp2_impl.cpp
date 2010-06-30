@@ -21,6 +21,7 @@
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -36,6 +37,15 @@ namespace asio = boost::asio;
 
 UHD_STATIC_BLOCK(register_usrp2_device){
     device::register_device(&usrp2::find, &usrp2::make);
+}
+
+/***********************************************************************
+ * Helper Functions
+ **********************************************************************/
+std::vector<std::string> split_addrs(const std::string &addrs_str){
+    std::vector<std::string> addrs;
+    boost::split(addrs, addrs_str, boost::is_any_of("\t "));
+    return addrs;
 }
 
 /***********************************************************************
@@ -63,6 +73,16 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
                 new_usrp2_addrs.begin(), new_usrp2_addrs.end()
             );
         }
+        return usrp2_addrs;
+    }
+
+    //if there are multiple addresses, just return good, dont test
+    std::vector<std::string> addrs = split_addrs(hint["addr"]);
+    if (addrs.size() > 1){
+        device_addr_t new_addr;
+        new_addr["type"] = "usrp2";
+        new_addr["addr"] = hint["addr"];
+        usrp2_addrs.push_back(new_addr);
         return usrp2_addrs;
     }
 
@@ -112,11 +132,6 @@ template <class T> std::string num2str(T num){
 }
 
 device::sptr usrp2::make(const device_addr_t &device_addr){
-    //create a control transport
-    udp_simple::sptr ctrl_transport = udp_simple::make_connected(
-        device_addr["addr"], num2str(USRP2_UDP_CTRL_PORT)
-    );
-
     //extract the receive and send buffer sizes
     size_t recv_buff_size = 0, send_buff_size= 0 ;
     if (device_addr.has_key("recv_buff_size")){
@@ -126,17 +141,23 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
         send_buff_size = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
     }
 
-    //create a data transport
-    udp_zero_copy::sptr data_transport = udp_zero_copy::make(
-        device_addr["addr"],
-        num2str(USRP2_UDP_DATA_PORT),
-        recv_buff_size,
-        send_buff_size
-    );
+    //create a ctrl and data transport for each address
+    std::vector<udp_simple::sptr> ctrl_transports;
+    std::vector<udp_zero_copy::sptr> data_transports;
+
+    BOOST_FOREACH(const std::string &addr, split_addrs(device_addr["addr"])){
+        ctrl_transports.push_back(udp_simple::make_connected(
+            addr, num2str(USRP2_UDP_CTRL_PORT)
+        ));
+        data_transports.push_back(udp_zero_copy::make(
+            addr, num2str(USRP2_UDP_DATA_PORT),
+            recv_buff_size, send_buff_size
+        ));
+    }
 
     //create the usrp2 implementation guts
     return device::sptr(
-        new usrp2_impl(ctrl_transport, data_transport)
+        new usrp2_impl(ctrl_transports, data_transports)
     );
 }
 
@@ -144,44 +165,20 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(
-    udp_simple::sptr ctrl_transport,
-    udp_zero_copy::sptr data_transport
-){
-    _data_transport = data_transport;
-
-    //make a new interface for usrp2 stuff
-    _iface = usrp2_iface::make(ctrl_transport);
-    _clock_ctrl = usrp2_clock_ctrl::make(_iface);
-    _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
-
-    //load the allowed decim/interp rates
-    //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
-    _allowed_decim_and_interp_rates.clear();
-    for (size_t i = 4; i <= 128; i+=1){
-        _allowed_decim_and_interp_rates.push_back(i);
+    std::vector<udp_simple::sptr> ctrl_transports,
+    std::vector<udp_zero_copy::sptr> data_transports
+):
+    _data_transports(data_transports)
+{
+    //create a new mboard handler for each control transport
+    for(size_t i = 0; i < ctrl_transports.size(); i++){
+        _mboards.push_back(usrp2_mboard_impl::sptr(
+            new usrp2_mboard_impl(i, ctrl_transports[i])
+        ));
+        //use an empty name when there is only one mboard
+        std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";
+        _mboard_dict[name] = _mboards.back();
     }
-    for (size_t i = 130; i <= 256; i+=2){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 260; i <= 512; i+=4){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-
-    //init the mboard
-    mboard_init();
-
-    //init the ddc
-    init_ddc_config();
-
-    //init the duc
-    init_duc_config();
-
-    //initialize the clock configuration
-    init_clock_config();
-
-    //init the tx and rx dboards (do last)
-    dboard_init();
 
     //init the send and recv io
     io_init();
@@ -206,12 +203,11 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DEVICE_PROP_MBOARD:
-        UHD_ASSERT_THROW(name == "");
-        val = _mboard_proxy->get_link();
+        val = _mboard_dict[name]->get_link();
         return;
 
     case DEVICE_PROP_MBOARD_NAMES:
-        val = prop_names_t(1, "");
+        val = prop_names_t(_mboard_dict.keys());
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

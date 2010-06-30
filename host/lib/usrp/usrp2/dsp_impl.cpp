@@ -41,11 +41,11 @@ pick_closest_rate(double exact_rate, const std::vector<rate_t> &rates){
     return closest_match;
 }
 
-void usrp2_impl::init_ddc_config(void){
+void usrp2_mboard_impl::init_ddc_config(void){
     //create the ddc in the rx dsp dict
     _rx_dsp_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp2_impl::ddc_get, this, _1, _2),
-        boost::bind(&usrp2_impl::ddc_set, this, _1, _2)
+        boost::bind(&usrp2_mboard_impl::ddc_get, this, _1, _2),
+        boost::bind(&usrp2_mboard_impl::ddc_set, this, _1, _2)
     );
 
     //initial config and update
@@ -56,7 +56,7 @@ void usrp2_impl::init_ddc_config(void){
 /***********************************************************************
  * DDC Properties
  **********************************************************************/
-void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
+void usrp2_mboard_impl::ddc_get(const wax::obj &key, wax::obj &val){
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
         val = std::string("usrp2 ddc0");
@@ -82,7 +82,7 @@ void usrp2_impl::ddc_get(const wax::obj &key, wax::obj &val){
     }
 }
 
-void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::ddc_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{
@@ -116,11 +116,11 @@ void usrp2_impl::ddc_set(const wax::obj &key, const wax::obj &val){
 /***********************************************************************
  * DUC Helper Methods
  **********************************************************************/
-void usrp2_impl::init_duc_config(void){
+void usrp2_mboard_impl::init_duc_config(void){
     //create the duc in the tx dsp dict
     _tx_dsp_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp2_impl::duc_get, this, _1, _2),
-        boost::bind(&usrp2_impl::duc_set, this, _1, _2)
+        boost::bind(&usrp2_mboard_impl::duc_get, this, _1, _2),
+        boost::bind(&usrp2_mboard_impl::duc_set, this, _1, _2)
     );
 
     //initial config and update
@@ -131,7 +131,7 @@ void usrp2_impl::init_duc_config(void){
 /***********************************************************************
  * DUC Properties
  **********************************************************************/
-void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
+void usrp2_mboard_impl::duc_get(const wax::obj &key, wax::obj &val){
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
         val = std::string("usrp2 duc0");
@@ -157,7 +157,7 @@ void usrp2_impl::duc_get(const wax::obj &key, wax::obj &val){
     }
 }
 
-void usrp2_impl::duc_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::duc_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{

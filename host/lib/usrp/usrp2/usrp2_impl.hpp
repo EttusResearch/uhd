@@ -62,77 +62,39 @@ public:
         return sptr(new wax_obj_proxy(get, set));
     }
 
-    ~wax_obj_proxy(void){
-        /* NOP */
-    }
-
 private:
-    get_t _get;
-    set_t _set;
-
-    wax_obj_proxy(const get_t &get, const set_t &set){
-        _get = get;
-        _set = set;
-    };
-
-    void get(const wax::obj &key, wax::obj &val){
-        return _get(key, val);
-    }
-
-    void set(const wax::obj &key, const wax::obj &val){
-        return _set(key, val);
-    }
+    get_t _get; set_t _set;
+    wax_obj_proxy(const get_t &get, const set_t &set): _get(get), _set(set){};
+    void get(const wax::obj &key, wax::obj &val){return _get(key, val);}
+    void set(const wax::obj &key, const wax::obj &val){return _set(key, val);}
 };
 
 /*!
- * USRP2 implementation guts:
+ * USRP2 mboard implementation guts:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class usrp2_impl : public uhd::device{
+class usrp2_mboard_impl : public wax::obj{
 public:
-    /*!
-     * Create a new usrp2 impl base.
-     * \param ctrl_transport the udp transport for control
-     * \param data_transport the udp transport for data
-     */
-    usrp2_impl(
-        uhd::transport::udp_simple::sptr ctrl_transport,
-        uhd::transport::udp_zero_copy::sptr data_transport
-    );
+    typedef boost::shared_ptr<usrp2_mboard_impl> sptr;
 
-    ~usrp2_impl(void);
+    //structors
+    usrp2_mboard_impl(size_t index, uhd::transport::udp_simple::sptr);
+    ~usrp2_mboard_impl(void);
 
-    //the io interface
-    size_t get_max_send_samps_per_packet(void) const{
-        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
-    }
-    size_t send(
-        const std::vector<const void *> &, size_t,
-        const uhd::tx_metadata_t &,
-        const uhd::io_type_t &,
-        uhd::device::send_mode_t
-    );
-    size_t get_max_recv_samps_per_packet(void) const{
-        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
-    }
-    size_t recv(
-        const std::vector<void *> &, size_t,
-        uhd::rx_metadata_t &,
-        const uhd::io_type_t &,
-        uhd::device::recv_mode_t
-    );
+    void setup_vrt_recv_regs(size_t num_samps);
 
-    UHD_PIMPL_DECL(io_impl) _io_impl;
-
-private:
     inline double get_master_clock_freq(void){
         return _clock_ctrl->get_master_clock_rate();
     }
 
-    //device properties interface
+    //properties for this mboard
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
+
+private:
+    size_t _index;
+    size_t _max_recv_samps_per_packet;
 
     //interfaces
     usrp2_iface::sptr _iface;
@@ -140,41 +102,16 @@ private:
     usrp2_codec_ctrl::sptr _codec_ctrl;
     usrp2_serdes_ctrl::sptr _serdes_ctrl;
 
-    /*******************************************************************
-     * Deal with the rx and tx packet sizes
-     ******************************************************************/
-    static const size_t _max_rx_bytes_per_packet =
-        USRP2_UDP_BYTES -
-        USRP2_HOST_RX_VRT_HEADER_WORDS32*sizeof(boost::uint32_t) -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32*sizeof(boost::uint32_t)
-    ;
-    static const size_t _max_tx_bytes_per_packet =
-        USRP2_UDP_BYTES -
-        uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-    ;
-
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    void io_init(void);
-
-    //udp transports for control and data
-    uhd::transport::udp_zero_copy::sptr _data_transport;
+    //rx and tx dboard methods and objects
+    uhd::usrp::dboard_manager::sptr _dboard_manager;
+    uhd::usrp::dboard_iface::sptr _dboard_iface;
+    void dboard_init(void);
 
     //methods and shadows for clock configuration
     uhd::clock_config_t _clock_config;
     void init_clock_config(void);
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
-
-    //rx and tx dboard methods and objects
-    uhd::usrp::dboard_manager::sptr _dboard_manager;
-    uhd::usrp::dboard_iface::sptr _dboard_iface;
-    void dboard_init(void);
-
-    //properties for the mboard
-    void mboard_init(void);
-    void mboard_get(const wax::obj &, wax::obj &);
-    void mboard_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy::sptr _mboard_proxy;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
@@ -212,6 +149,78 @@ private:
     void duc_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dsp_proxy;
 
+};
+
+/*!
+ * USRP2 implementation guts:
+ * The implementation details are encapsulated here.
+ * Handles device properties and streaming...
+ */
+class usrp2_impl : public uhd::device{
+public:
+    /*!
+     * Create a new usrp2 impl base.
+     * \param ctrl_transports the udp transports for control
+     * \param data_transports the udp transports for data
+     */
+    usrp2_impl(
+        std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
+        std::vector<uhd::transport::udp_zero_copy::sptr> data_transports
+    );
+
+    ~usrp2_impl(void);
+
+    //the io interface
+    size_t get_max_send_samps_per_packet(void) const{
+        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
+    }
+    size_t send(
+        const std::vector<const void *> &, size_t,
+        const uhd::tx_metadata_t &,
+        const uhd::io_type_t &,
+        uhd::device::send_mode_t
+    );
+    size_t get_max_recv_samps_per_packet(void) const{
+        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
+    }
+    size_t recv(
+        const std::vector<void *> &, size_t,
+        uhd::rx_metadata_t &,
+        const uhd::io_type_t &,
+        uhd::device::recv_mode_t
+    );
+
+private:
+    inline double get_master_clock_freq(void){
+        return _mboards.front()->get_master_clock_freq();
+    }
+
+    //device properties interface
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
+
+    //pointers to mboards on this device (think mimo setup)
+    std::vector<usrp2_mboard_impl::sptr> _mboards;
+    uhd::dict<std::string, usrp2_mboard_impl::sptr> _mboard_dict;
+
+    /*******************************************************************
+     * Deal with the rx and tx packet sizes
+     ******************************************************************/
+    static const size_t _max_rx_bytes_per_packet =
+        USRP2_UDP_BYTES -
+        USRP2_HOST_RX_VRT_HEADER_WORDS32*sizeof(boost::uint32_t) -
+        USRP2_HOST_RX_VRT_TRAILER_WORDS32*sizeof(boost::uint32_t)
+    ;
+    static const size_t _max_tx_bytes_per_packet =
+        USRP2_UDP_BYTES -
+        uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t) -
+        sizeof(uhd::transport::vrt::if_packet_info_t::cid) //no class id ever used
+    ;
+
+    std::vector<uhd::transport::udp_zero_copy::sptr> _data_transports;
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
+    UHD_PIMPL_DECL(io_impl) _io_impl;
+    void io_init(void);
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */
