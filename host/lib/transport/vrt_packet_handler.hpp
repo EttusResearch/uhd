@@ -39,6 +39,7 @@ namespace vrt_packet_handler{
  * vrt packet handler for recv
  **********************************************************************/
     typedef std::vector<uhd::transport::managed_recv_buffer::sptr> managed_recv_buffs_t;
+    typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
 
     struct recv_state{
         //width of the receiver in channels
@@ -64,10 +65,6 @@ namespace vrt_packet_handler{
             /* NOP */
         }
     };
-
-    typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
-
-    typedef boost::function<void(managed_recv_buffs_t &)> recv_cb_t;
 
     /*******************************************************************
      * Unpack a received vrt header and set the copy buffer.
@@ -136,6 +133,8 @@ namespace vrt_packet_handler{
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32
     ){
+        metadata.has_time_spec = false; //false unless set in the helper
+
         //perform a receive if no rx data is waiting to be copied
         if (state.size_of_copy_buffs == 0){
             state.fragment_offset_in_samps = 0;
@@ -196,8 +195,6 @@ namespace vrt_packet_handler{
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32 = 0
     ){
-        metadata = uhd::rx_metadata_t(); //init the metadata
-
         switch(recv_mode){
 
         ////////////////////////////////////////////////////////////////
@@ -247,19 +244,16 @@ namespace vrt_packet_handler{
  * vrt packet handler for send
  **********************************************************************/
     typedef std::vector<uhd::transport::managed_send_buffer::sptr> managed_send_buffs_t;
+    typedef boost::function<bool(managed_send_buffs_t &)> get_send_buffs_t;
 
     struct send_state{
         //init the expected seq number
         size_t next_packet_seq;
 
-        send_state(void){
-            next_packet_seq = 0;
+        send_state(void) : next_packet_seq(0){
+            /* NOP */
         }
     };
-
-    typedef boost::function<bool(managed_send_buffs_t &)> get_send_buffs_t;
-
-    typedef boost::function<void(managed_send_buffs_t &)> send_cb_t;
 
     /*******************************************************************
      * Pack a vrt header, copy-convert the data, and send it.
@@ -271,27 +265,16 @@ namespace vrt_packet_handler{
         const std::vector<const void *> &buffs,
         size_t offset_bytes,
         size_t num_samps,
-        const uhd::tx_metadata_t &metadata,
+        uhd::transport::vrt::if_packet_info_t &if_packet_info,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
-        double tick_rate,
         vrt_packer_type vrt_packer,
         const get_send_buffs_t &get_send_buffs,
         size_t vrt_header_offset_words32
     ){
-        //translate the metadata to vrt if packet info
-        uhd::transport::vrt::if_packet_info_t if_packet_info;
-        if_packet_info.has_sid = false;
-        if_packet_info.has_cid = false;
-        if_packet_info.has_tsi = metadata.has_time_spec;
-        if_packet_info.tsi = boost::uint32_t(metadata.time_spec.get_full_secs());
-        if_packet_info.has_tsf = metadata.has_time_spec;
-        if_packet_info.tsf = boost::uint64_t(metadata.time_spec.get_tick_count(tick_rate));
-        if_packet_info.has_tlr = false;
-        if_packet_info.num_payload_words32 = (num_samps*io_type.size)/sizeof(boost::uint32_t);
+        //load the rest of the if_packet_info in here
+        if_packet_info.num_payload_words32 = (num_samps*otw_type.get_sample_size())/sizeof(boost::uint32_t);
         if_packet_info.packet_count = state.next_packet_seq++;
-        if_packet_info.sob = metadata.start_of_burst;
-        if_packet_info.eob = metadata.end_of_burst;
 
         //get send buffers for each channel
         managed_send_buffs_t send_buffs(buffs.size());
@@ -336,6 +319,14 @@ namespace vrt_packet_handler{
         //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32 = 0
     ){
+        //translate the metadata to vrt if packet info
+        uhd::transport::vrt::if_packet_info_t if_packet_info;
+        if_packet_info.has_sid = false;
+        if_packet_info.has_cid = false;
+        if_packet_info.has_tlr = false;
+        if_packet_info.tsi = boost::uint32_t(metadata.time_spec.get_full_secs());
+        if_packet_info.tsf = boost::uint64_t(metadata.time_spec.get_tick_count(tick_rate));
+
         if (total_num_samps <= max_samples_per_packet) send_mode = uhd::device::SEND_MODE_ONE_PACKET;
         switch(send_mode){
 
@@ -343,13 +334,19 @@ namespace vrt_packet_handler{
         case uhd::device::SEND_MODE_ONE_PACKET:{
         ////////////////////////////////////////////////////////////////
             size_t num_samps = std::min(total_num_samps, max_samples_per_packet);
+
+            //fill in parts of the packet info overwrote in full buff mode
+            if_packet_info.has_tsi = metadata.has_time_spec;
+            if_packet_info.has_tsf = metadata.has_time_spec;
+            if_packet_info.sob = metadata.start_of_burst;
+            if_packet_info.eob = metadata.end_of_burst;
+
             _send1(
                 state,
                 buffs, 0,
                 num_samps,
-                metadata,
+                if_packet_info,
                 io_type, otw_type,
-                tick_rate,
                 vrt_packer,
                 get_send_buffs,
                 vrt_header_offset_words32
@@ -365,25 +362,22 @@ namespace vrt_packet_handler{
             static const size_t first_fragment_index = 0;
             const size_t final_fragment_index = num_fragments-1;
 
-            //make a rw copy of the metadata to re-flag below
-            uhd::tx_metadata_t md(metadata);
-
             //loop through the following fragment indexes
             for (size_t n = first_fragment_index; n <= final_fragment_index; n++){
 
                 //calculate new flags for the fragments
-                md.has_time_spec  = metadata.has_time_spec  and (n == first_fragment_index);
-                md.start_of_burst = metadata.start_of_burst and (n == first_fragment_index);
-                md.end_of_burst   = metadata.end_of_burst   and (n == final_fragment_index);
+                if_packet_info.has_tsi = metadata.has_time_spec  and (n == first_fragment_index);
+                if_packet_info.has_tsf = metadata.has_time_spec  and (n == first_fragment_index);
+                if_packet_info.sob     = metadata.start_of_burst and (n == first_fragment_index);
+                if_packet_info.eob     = metadata.end_of_burst   and (n == final_fragment_index);
 
                 //send the fragment with the helper function
                 _send1(
                     state,
                     buffs, n*max_samples_per_packet*io_type.size,
                     (n == final_fragment_index)?(total_num_samps%max_samples_per_packet):max_samples_per_packet,
-                    md,
+                    if_packet_info,
                     io_type, otw_type,
-                    tick_rate,
                     vrt_packer,
                     get_send_buffs,
                     vrt_header_offset_words32
