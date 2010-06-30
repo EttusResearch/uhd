@@ -111,11 +111,9 @@ namespace vrt_packet_handler{
         }
 
         //store the last vrt info into the metadata
-        metadata.has_time_spec = if_packet_info.has_tsi or if_packet_info.has_tsf;
+        metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
         metadata.time_spec = uhd::time_spec_t(
-            time_t((if_packet_info.has_tsi)? if_packet_info.tsi : 0),
-            size_t((if_packet_info.has_tsf)? if_packet_info.tsf : 0),
-            tick_rate
+            time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
         );
     }
 
@@ -292,6 +290,8 @@ namespace vrt_packet_handler{
         if_packet_info.has_tlr = false;
         if_packet_info.num_payload_words32 = (num_samps*io_type.size)/sizeof(boost::uint32_t);
         if_packet_info.packet_count = state.next_packet_seq++;
+        if_packet_info.sob = metadata.start_of_burst;
+        if_packet_info.eob = metadata.end_of_burst;
 
         //get send buffers for each channel
         managed_send_buffs_t send_buffs(buffs.size());

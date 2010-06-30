@@ -109,10 +109,11 @@ void vrt::if_hdr_pack_$(suffix)(
         #end if
         ########## Trailer ##########
         #if $pred & $tlr_p
-            packet_buff[$num_header_words+if_packet_info.num_payload_words32] = $(XE_MACRO)(if_packet_info.tlr);
+            //packet_buff[$num_header_words+if_packet_info.num_payload_words32] = $(XE_MACRO)(if_packet_info.tlr);
             #set $flags |= (0x1 << 26);
             #set $num_trailer_words = 1;
         #else
+            //packet_buff[$num_header_words+if_packet_info.num_payload_words32] = 0;
             #set $num_trailer_words = 0;
         #end if
         ########## Variables ##########
