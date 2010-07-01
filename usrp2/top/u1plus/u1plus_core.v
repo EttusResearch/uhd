@@ -44,7 +44,7 @@ module u1plus_core
    wire 	set_stb;
 
    // /////////////////////////////////////////////////////////////////////////////////////
-   // GPMC Slave to Wishbone Master
+   // GPIF Slave to Wishbone Master
    localparam dw = 16;
    localparam aw = 11;
    localparam sw = 2;
@@ -58,8 +58,6 @@ module u1plus_core
 
    wire [35:0] 	 tx_data, rx_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
-   reg [15:0] 	 tx_frame_len;
-   wire [15:0] 	 rx_frame_len;
    wire [7:0] 	 rate;
 
    wire 	 bus_error;
@@ -77,7 +75,6 @@ module u1plus_core
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 
-	 .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
 	 .debug(debug_gpmc));
 
    wire 	 rx_sof = rx_data[32];
@@ -295,7 +292,6 @@ module u1plus_core
 	  reg_leds <= 0;
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
-	  tx_frame_len <= 0;
 	  xfer_rate <= 0;
        end
      else
@@ -307,8 +303,6 @@ module u1plus_core
 	     reg_cgen_ctrl <= s0_dat_mosi;
 	   REG_TEST :
 	     reg_test <= s0_dat_mosi;
-	   REG_TX_FRAMELEN :
-	     tx_frame_len <= s0_dat_mosi;
 	   REG_XFER_RATE :
 	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
@@ -319,14 +313,12 @@ module u1plus_core
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
-   //assign { rx_overrun, tx_underrun } = 0; // reg_test;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
 			//(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
-			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;

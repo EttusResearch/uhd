@@ -17,122 +17,93 @@ module gpif
     output [35:0] tx_data_o, output tx_src_rdy_o, input tx_dst_rdy_i,
     input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
     
-    input [15:0] tx_frame_len, output [15:0] rx_frame_len,
-    
     output [31:0] debug
     );
 
    wire 	  WR = gpif_ctl[0];
    wire 	  RD = gpif_ctl[1];
    wire 	  OE = gpif_ctl[2];
+
+   wire [15:0] 	  gpif_dat_out;
+   assign gpif_dat = OE ? gpif_dat_out : 16'bz;
+   
+   // ////////////////////////////////////////////////////////////////////
+   // TX Side
+   
+   wire [18:0] 	  tx19_data;
+   wire 	  tx19_src_rdy, tx19_dst_rdy;
+   wire [35:0] 	  tx36_data, tx36b_data, tx36c_data;
+   wire 	  tx36_src_rdy, tx36_dst_rdy, tx36b_src_rdy, tx36b_dst_rdy, tx36c_src_rdy, tx36c_dst_rdy;
+   wire [35:0] 	  ctrl_data;
+   wire 	  ctrl_src_rdy, ctrl_dst_rdy;
    
    gpif_wr gpif_wr
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), 
-      .gpif_data(), .WR(WR), .have_space(gpif_rdy[0]),
-      .sys_clk(sys_clk), .sys_rst(sys_rst),
-      .data_o(data_o), .src_rdy_o(), .dst_rdy_i(),
+      .gpif_data(gpif_d), .gpif_wr(WR), .have_space(gpif_rdy[0]),
+      .sys_clk(fifo_clk), .sys_rst(fifo_rst),
+      .data_o(tx19_data), .src_rdy_o(tx19_src_rdy), .dst_rdy_i(tx_19_dst_rdy),
       .debug() );
-   
 
-endmodule // gpif
-
-/*
-   wire 	  EM_output_enable = (~EM_NOE & (~EM_NCS4 | ~EM_NCS6));
-   wire [15:0] 	  EM_D_fifo;
-   wire [15:0] 	  EM_D_wb;
-   
-   wire 	  bus_error_tx, bus_error_rx;
-   
-   always @(posedge fifo_clk)
-     if(fifo_rst)
-       bus_error <= 0;
-     else
-       bus_error <= bus_error_tx | bus_error_rx;
-   
-   // CS4 is RAM_2PORT for DATA PATH (high-speed data)
-   //    Writes go into one RAM, reads come from the other
-   // CS6 is for CONTROL PATH (wishbone)
-
-   // ////////////////////////////////////////////
-   // TX Data Path
-
-   wire [17:0] 	  tx18_data, tx18b_data;
-   wire 	  tx18_src_rdy, tx18_dst_rdy, tx18b_src_rdy, tx18b_dst_rdy;
-   wire [15:0] 	  tx_fifo_space;
-   wire [35:0] 	  tx36_data;
-   wire 	  tx36_src_rdy, tx36_dst_rdy;
-   
-   gpmc_to_fifo_async gpmc_to_fifo_async
-     (.EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
-      .fifo_clk(fifo_clk), .fifo_rst(fifo_rst),
-      .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
-      .frame_len(tx_frame_len), .fifo_space(tx_fifo_space), .fifo_ready(tx_have_space),
-      .bus_error(bus_error_tx) );
-   
-   fifo_cascade #(.WIDTH(18), .SIZE(10)) tx_fifo
+   fifo19_to_fifo36 #(.LE(1)) f19_to_f36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .datain(tx18_data), .src_rdy_i(tx18_src_rdy), .dst_rdy_o(tx18_dst_rdy), .space(tx_fifo_space),
-      .dataout(tx18b_data), .src_rdy_o(tx18b_src_rdy), .dst_rdy_i(tx18b_dst_rdy), .occupied());
-
-   fifo19_to_fifo36 #(.LE(1)) f19_to_f36   // Little endian because ARM is LE
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .f19_datain({1'b0,tx18b_data}), .f19_src_rdy_i(tx18b_src_rdy), .f19_dst_rdy_o(tx18b_dst_rdy),
+      .f19_datain(tx19_data), .f19_src_rdy_i(tx19_src_rdy), .f19_dst_rdy_o(tx19_dst_rdy),
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
    
-   fifo_cascade #(.WIDTH(36), .SIZE(TXFIFOSIZE)) tx_fifo36
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+   fifo_short #(.WIDTH(36)) tx_sfifo
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .datain(tx36_data), .src_rdy_i(tx36_src_rdy), .dst_rdy_o(tx36_dst_rdy),
+      .dataout(tx36b_data), .src_rdy_o(tx36b_src_rdy), .dst_rdy_i(tx36b_dst_rdy));
+
+   fifo36_demux #(.match_data(32'h1000_0000), .match_mask(32'hF000_0000)) tx_demux
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .data_i(tx36b_data), .src_rdy_i(tx36b_src_rdy), .dst_rdy_o(tx36b_dst_rdy),
+      .data0_o(ctrl_data), .src0_rdy_o(ctrl_src_rdy), .dst0_rdy_i(ctrl_dst_rdy),
+      .data1_o(tx36c_data), .src1_rdy_o(tx36c_src_rdy), .dst1_rdy_i(tx36c_dst_rdy));
+   
+   fifo_cascade #(.WIDTH(36), .SIZE(TXFIFOSIZE)) tx_fifo36
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .datain(tx36c_data), .src_rdy_i(tx36c_src_rdy), .dst_rdy_o(tx36c_dst_rdy),
       .dataout(tx_data_o), .src_rdy_o(tx_src_rdy_o), .dst_rdy_i(tx_dst_rdy_i));
 
-   // ////////////////////////////////////////////
-   // RX Data Path
-   
-   wire [17:0] 	  rx18_data, rx18b_data;
-   wire 	  rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy;
-   wire [15:0] 	  rx_fifo_space;
-   wire [35:0] 	  rx36_data;
-   wire 	  rx36_src_rdy, rx36_dst_rdy;
-   wire 	  dummy;
+   // ////////////////////////////////////////////////////////////////////
+   // RX Side
+
+   wire [35:0] 	  rx36_data, rx36b_data, rx36c_data;
+   wire 	  rx36_src_rdy, rx36_dst_rdy, rx36b_src_rdy, rx36b_dst_rdy, rx36c_src_rdy, rx36c_dst_rdy;
+   wire [18:0] 	  rx19_data;
+   wire 	  rx19_src_rdy, rx19_dst_rdy;
+   wire [35:0] 	  resp_data;
+   wire 	  resp_src_rdy, resp_dst_rdy;
    
    fifo_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_fifo36
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .datain(rx_data_i), .src_rdy_i(rx_src_rdy_i), .dst_rdy_o(rx_dst_rdy_o),
-      .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
+      .dataout(rx36c_data), .src_rdy_o(rx36c_src_rdy), .dst_rdy_i(rx36c_dst_rdy));
 
-   fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // Little endian because ARM is LE
+   fifo36_mux #(.prio(1)) rx_mux
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .data0_i(resp_data), .src0_rdy_i(resp_src_rdy), .dst0_rdy_o(resp_dst_rdy),
+      .data1_i(rx36c_data), .src1_rdy_i(rx36c_src_rdy), .dst1_rdy_o(rx36c_dst_rdy),
+      .data_o(rx36b_data), .src_rdy_o(rx36b_src_rdy), .dst_rdy_i(rx36b_dst_rdy));
+   
+   fifo_short #(.WIDTH(36)) rx_sfifo
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .datain(rx36b_data), .src_rdy_i(rx36b_src_rdy), .dst_rdy_o(rx36b_dst_rdy),
+      .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
+   
+   fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // FIXME Endianness?
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
-      .f19_dataout({dummy,rx18_data}), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
+      .f19_dataout(rx19_data), .f19_src_rdy_o(rx19_src_rdy), .f19_dst_rdy_i(rx19_dst_rdy) );
 
-   fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .datain(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy), .space(rx_fifo_space),
-      .dataout(rx18b_data), .src_rdy_o(rx18b_src_rdy), .dst_rdy_i(rx18b_dst_rdy), .occupied());
+   gpif_rd gpif_rd
+     (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst),
+      .gpif_data(gpif_dat_out), .gpif_rd(RD), .have_pkt_rdy(have_pkt_rdy),
+      .sys_clk(fifo_clk), .sys_rst(fifo_rst),
+      .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy));
 
-   fifo_to_gpmc_async fifo_to_gpmc_async
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
-      .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
-      .frame_len(rx_frame_len) );
+   // ////////////////////////////////////////////////////////////////////
+   // FIFO to Wishbone interface
 
-   fifo_watcher fifo_watcher
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .src_rdy1(rx18_src_rdy), .dst_rdy1(rx18_dst_rdy), .sof1(rx18_data[16]), .eof1(rx18_data[17]),
-      .src_rdy2(rx18b_src_rdy), .dst_rdy2(rx18b_dst_rdy), .sof2(rx18b_data[16]), .eof2(rx18b_data[17]),
-      .have_packet(rx_have_data), .length(rx_frame_len), .bus_error(bus_error_rx) );
-
-   // ////////////////////////////////////////////
-   // Control path on CS6
    
-   gpmc_wb gpmc_wb
-     (.EM_CLK(EM_CLK), .EM_D_in(EM_D), .EM_D_out(EM_D_wb), .EM_A(EM_A), .EM_NBE(EM_NBE),
-      .EM_NCS(EM_NCS6), .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
-      .wb_clk(wb_clk), .wb_rst(wb_rst),
-      .wb_adr_o(wb_adr_o), .wb_dat_mosi(wb_dat_mosi), .wb_dat_miso(wb_dat_miso),
-      .wb_sel_o(wb_sel_o), .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o),
-      .wb_ack_i(wb_ack_i) );
-   
-   assign debug = 0;
-   
-endmodule // gpmc_async
-*/
+endmodule // gpif
