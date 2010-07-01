@@ -95,27 +95,12 @@ void usrp2_impl::io_impl::recv_pirate_loop(zero_copy_if::sptr zc_if, size_t inde
  * Helper Functions
  **********************************************************************/
 void usrp2_impl::io_init(void){
-    //setup rx otw type
-    _rx_otw_type.width = 16;
-    _rx_otw_type.shift = 0;
-    _rx_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
-
-    //setup tx otw type
-    _tx_otw_type.width = 16;
-    _tx_otw_type.shift = 0;
-    _tx_otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
-
     //send a small data packet so the usrp2 knows the udp source port
     for(size_t i = 0; i < _data_transports.size(); i++){
         managed_send_buffer::sptr send_buff = _data_transports[i]->get_send_buff();
         boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
         memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
-    }
-
-    //setup VRT RX DSP regs
-    for(size_t i = 0; i < _mboards.size(); i++){
-        _mboards[i]->setup_vrt_recv_regs(get_max_recv_samps_per_packet());
     }
 
     std::cout << "RX samples per packet: " << get_max_recv_samps_per_packet() << std::endl;
@@ -147,11 +132,11 @@ size_t usrp2_impl::send(
     send_mode_t send_mode
 ){
     return vrt_packet_handler::send(
-        _io_impl->packet_handler_send_state, //last state of the send handler
-        buffs, num_samps,           //buffer to fill
-        metadata, send_mode,        //samples metadata
-        io_type, _tx_otw_type,      //input and output types to convert
-        get_master_clock_freq(),    //master clock tick rate
+        _io_impl->packet_handler_send_state,       //last state of the send handler
+        buffs, num_samps,                          //buffer to fill
+        metadata, send_mode,                       //samples metadata
+        io_type, _io_helper.get_tx_otw_type(),     //input and output types to convert
+        _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_be,
         boost::bind(&get_send_buffs, _data_transports, _1),
         get_max_send_samps_per_packet()
@@ -169,11 +154,11 @@ size_t usrp2_impl::recv(
     recv_mode_t recv_mode
 ){
     return vrt_packet_handler::recv(
-        _io_impl->packet_handler_recv_state, //last state of the recv handler
-        buffs, num_samps,           //buffer to fill
-        metadata, recv_mode,        //samples metadata
-        io_type, _rx_otw_type,      //input and output types to convert
-        get_master_clock_freq(),    //master clock tick rate
+        _io_impl->packet_handler_recv_state,       //last state of the recv handler
+        buffs, num_samps,                          //buffer to fill
+        metadata, recv_mode,                       //samples metadata
+        io_type, _io_helper.get_rx_otw_type(),     //input and output types to convert
+        _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
         boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl, _1)
     );

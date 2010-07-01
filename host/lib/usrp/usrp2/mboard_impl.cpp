@@ -33,9 +33,12 @@ using namespace uhd::usrp;
  * Structors
  **********************************************************************/
 usrp2_mboard_impl::usrp2_mboard_impl(
-    size_t index, transport::udp_simple::sptr ctrl_transport
+    size_t index,
+    transport::udp_simple::sptr ctrl_transport,
+    const usrp2_io_helper &io_helper
 ):
-    _index(index)
+    _index(index),
+    _io_helper(io_helper)
 {
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
@@ -57,6 +60,19 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
+    //setup the vrt rx registers
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _io_helper.get_max_recv_samps_per_packet());
+    _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
+    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
+    _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
+        | (0x1 << 28) //if data with stream id
+        | (0x1 << 26) //has trailer
+        | (0x3 << 22) //integer time other
+        | (0x1 << 20) //fractional time sample count
+    );
+    _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
+    _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
+
     //init the ddc
     init_ddc_config();
 
@@ -77,22 +93,6 @@ usrp2_mboard_impl::~usrp2_mboard_impl(void){
 /***********************************************************************
  * Helper Methods
  **********************************************************************/
-void usrp2_mboard_impl::setup_vrt_recv_regs(size_t num_samps){
-    _max_recv_samps_per_packet = num_samps;
-    
-    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _max_recv_samps_per_packet);
-    _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
-    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
-    _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
-        | (0x1 << 28) //if data with stream id
-        | (0x1 << 26) //has trailer
-        | (0x3 << 22) //integer time other
-        | (0x1 << 20) //fractional time sample count
-    );
-    _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
-    _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
-}
-
 void usrp2_mboard_impl::init_clock_config(void){
     //setup the clock configuration settings
     _clock_config.ref_source = clock_config_t::REF_INT;
@@ -167,7 +167,7 @@ void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
 
     //issue the stream command
     _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, U2_REG_RX_CTRL_MAKE_CMD(
-        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? _max_recv_samps_per_packet : 1),
+        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? _io_helper.get_max_recv_samps_per_packet() : 1),
         (stream_cmd.stream_now)? 1 : 0,
         (inst_chain)? 1 : 0,
         (inst_reload)? 1 : 0
