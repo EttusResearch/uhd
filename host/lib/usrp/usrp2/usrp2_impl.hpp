@@ -22,7 +22,7 @@
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include "serdes_ctrl.hpp"
-#include <uhd/usrp/usrp2.hpp>
+#include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>

@@ -35,10 +35,6 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-UHD_STATIC_BLOCK(register_usrp2_device){
-    device::register_device(&usrp2::find, &usrp2::make);
-}
-
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
@@ -48,10 +44,14 @@ std::vector<std::string> split_addrs(const std::string &addrs_str){
     return addrs;
 }
 
+template <class T> std::string num2str(T num){
+    return boost::lexical_cast<std::string>(num);
+}
+
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
-uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
+static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
     device_addrs_t usrp2_addrs;
 
     //return an empty list of addresses when type is set to non-usrp2
@@ -68,7 +68,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
             new_hint["addr"] = if_addrs.bcast;
 
             //call discover with the new hint and append results
-            device_addrs_t new_usrp2_addrs = usrp2::find(new_hint);
+            device_addrs_t new_usrp2_addrs = usrp2_find(new_hint);
             usrp2_addrs.insert(usrp2_addrs.begin(),
                 new_usrp2_addrs.begin(), new_usrp2_addrs.end()
             );
@@ -127,11 +127,7 @@ uhd::device_addrs_t usrp2::find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
-template <class T> std::string num2str(T num){
-    return boost::lexical_cast<std::string>(num);
-}
-
-device::sptr usrp2::make(const device_addr_t &device_addr){
+static device::sptr usrp2_make(const device_addr_t &device_addr){
     //extract the receive and send buffer sizes
     size_t recv_buff_size = 0, send_buff_size= 0 ;
     if (device_addr.has_key("recv_buff_size")){
@@ -159,6 +155,10 @@ device::sptr usrp2::make(const device_addr_t &device_addr){
     return device::sptr(
         new usrp2_impl(ctrl_transports, data_transports)
     );
+}
+
+UHD_STATIC_BLOCK(register_usrp2_device){
+    device::register_device(&usrp2_find, &usrp2_make);
 }
 
 /***********************************************************************
