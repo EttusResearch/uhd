@@ -31,7 +31,7 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <uhd/transport/vrt.hpp>
+#include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 

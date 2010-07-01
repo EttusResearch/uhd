@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_TRANSPORT_VRT_HPP
-#define INCLUDED_UHD_TRANSPORT_VRT_HPP
+#ifndef INCLUDED_UHD_TRANSPORT_VRT_IF_PACKET_HPP
+#define INCLUDED_UHD_TRANSPORT_VRT_IF_PACKET_HPP
 
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
@@ -96,4 +96,4 @@ namespace vrt{
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_TRANSPORT_VRT_HPP */
+#endif /* INCLUDED_UHD_TRANSPORT_VRT_IF_PACKET_HPP */

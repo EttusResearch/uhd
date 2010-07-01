@@ -24,7 +24,7 @@
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
-#include <uhd/transport/vrt.hpp>
+#include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/convert_types.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/asio/buffer.hpp>

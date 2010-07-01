@@ -23,7 +23,7 @@ INSTALL(FILES
     if_addrs.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
-    vrt.hpp
+    vrt_if_packet.hpp
     zero_copy.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/transport
 )

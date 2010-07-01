@@ -50,8 +50,8 @@ ENDIF(HAVE_IFADDRS_H)
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/transport/gen_vrt.py
-    ${CMAKE_BINARY_DIR}/lib/transport/vrt.cpp
+    ${CMAKE_SOURCE_DIR}/lib/transport/gen_vrt_if_packet.py
+    ${CMAKE_BINARY_DIR}/lib/transport/vrt_if_packet.cpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(

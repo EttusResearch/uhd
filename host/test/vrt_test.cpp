@@ -16,7 +16,7 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <uhd/transport/vrt.hpp>
+#include <uhd/transport/vrt_if_packet.hpp>
 #include <cstdlib>
 
 using namespace uhd::transport;
