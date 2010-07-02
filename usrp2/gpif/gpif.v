@@ -17,7 +17,7 @@ module gpif
     output [35:0] tx_data_o, output tx_src_rdy_o, input tx_dst_rdy_i,
     input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
     
-    output [31:0] debug
+    output [31:0] debug0, output [31:0] debug1
     );
 
    wire 	  WR = gpif_ctl[0];
@@ -105,5 +105,12 @@ module gpif
    // ////////////////////////////////////////////////////////////////////
    // FIFO to Wishbone interface
 
+   fifo_to_wb fifo_to_wb
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+      .data_i(ctrl_data), .src_rdy_i(ctrl_src_rdy), .dst_rdy_o(ctrl_dst_rdy),
+      .data_o(resp_data), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy),
+      .wb_adr_o(), .wb_dat_mosi(), .wb_dat_miso(),
+      .wb_sel_o(), .wb_cyc_o(), .wb_stb_o(), .wb_we_o(), .wb_ack_i(),
+      .debug0(), .debug1());
    
 endmodule // gpif

@@ -54,7 +54,7 @@ module u1plus_core
    wire [sw-1:0] m0_sel;
    wire 	 m0_cyc, m0_stb, m0_we, m0_ack, m0_err, m0_rty;
 
-   wire [31:0] 	 debug_gpmc;
+   wire [31:0] 	 debug_gpmc, debug0, debug1;
 
    wire [35:0] 	 tx_data, rx_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
@@ -75,7 +75,7 @@ module u1plus_core
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 
-	 .debug(debug_gpmc));
+	 .debug0(debug0), .debug1(debug1));
 
    wire 	 rx_sof = rx_data[32];
    wire 	 rx_eof = rx_data[33];
@@ -366,14 +366,14 @@ module u1plus_core
 
    wire [31:0] 	atr_lines;
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
-   
+/*   
    nsgpio16LE 
      nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
 		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
-
+*/
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #5
 
@@ -403,9 +403,11 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
 
-   assign debug_clk = { 1'b0, clk_fpga };
-   assign debug = 0;
+   assign debug_clk = { gpif_clk, clk_fpga };
+   assign debug = debug0;
    assign debug_gpio_0 = 0;
    assign debug_gpio_1 = 0;
+
+   assign {io_tx,io_rx} = debug1;
    
 endmodule // u1plus_core
