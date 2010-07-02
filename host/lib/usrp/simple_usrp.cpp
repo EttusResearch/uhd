@@ -31,7 +31,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
- * Simple Device Implementation
+ * Simple USRP Implementation
  **********************************************************************/
 class simple_usrp_impl : public simple_usrp{
 public:
@@ -60,7 +60,7 @@ public:
         return _dev;
     }
 
-    std::string get_name(void){
+    std::string get_pp_string(void){
         return str(boost::format(
             "Simple USRP:\n"
             "  Device: %s\n"
@@ -100,10 +100,6 @@ public:
 
     void set_clock_config(const clock_config_t &clock_config){
         _mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
-    }
-
-    float read_rssi(void){
-        return _rx_subdev[SUBDEV_PROP_RSSI].as<float>();
     }
 
     /*******************************************************************
@@ -155,6 +151,10 @@ public:
 
     bool get_rx_lo_locked(void){
         return _rx_subdev[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
+    float read_rssi(void){
+        return _rx_subdev[SUBDEV_PROP_RSSI].as<float>();
     }
 
     /*******************************************************************

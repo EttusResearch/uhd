@@ -58,9 +58,46 @@ public:
      * Get a printable name for this mimo usrp.
      * \return a printable string
      */
-    virtual std::string get_name(void) = 0;
+    virtual std::string get_pp_string(void) = 0;
 
-    //TODO
+    /*!
+     * Get the number of channels in this mimo configuration.
+     * The number of rx channels == the number of tx channels.
+     * \return the number of channels
+     */
+    virtual size_t get_num_channels(void) = 0;
+
+    /*******************************************************************
+     * Misc
+     ******************************************************************/
+    /*!
+     * Set the time registers on the usrp at the next pps tick.
+     * The values will not be latched in until the pulse occurs.
+     * It is recommended that the user sleep(1) after calling to ensure
+     * that the time registers will be in a known state prior to use.
+     *
+     * Note: Because this call sets the time on the "next" pps,
+     * the seconds in the time spec should be current seconds + 1.
+     *
+     * \param time_spec the time to latch into the usrp device
+     */
+    virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
+
+    /*!
+     * Issue a stream command to the usrp device.
+     * This tells the usrp to send samples into the host.
+     * See the documentation for stream_cmd_t for more info.
+     * \param stream_cmd the stream command to issue
+     */
+    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+
+    /*******************************************************************
+     * RX methods
+     ******************************************************************/
+
+    /*******************************************************************
+     * TX methods
+     ******************************************************************/
 
 };
 

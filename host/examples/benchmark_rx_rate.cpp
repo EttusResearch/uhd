@@ -124,7 +124,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
-    std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
+    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
     sdev->set_rx_rate(500e3); //initial rate
     while(true){
