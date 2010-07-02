@@ -94,10 +94,50 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
+    virtual void set_rx_rate_all(double rate) = 0;
+    virtual double get_rx_rate_all(void) = 0;
+
+    virtual tune_result_t set_rx_freq(size_t chan, double freq) = 0;
+    virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
+    virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
+
+    virtual void set_rx_gain(size_t chan, float gain) = 0;
+    virtual float get_rx_gain(size_t chan) = 0;
+    virtual gain_range_t get_rx_gain_range(size_t chan) = 0;
+
+    virtual void set_rx_antenna(size_t chan, const std::string &ant) = 0;
+    virtual std::string get_rx_antenna(size_t chan) = 0;
+    virtual std::vector<std::string> get_rx_antennas(size_t chan) = 0;
+
+    virtual bool get_rx_lo_locked(size_t chan) = 0;
+
+    /*!
+     * Read the RSSI value from a usrp device.
+     * Or throw if the dboard does not support an RSSI readback.
+     * \param chan which mimo channel 0 to N-1
+     * \return the rssi in dB
+     */
+    virtual float read_rssi(size_t chan) = 0;
 
     /*******************************************************************
      * TX methods
      ******************************************************************/
+    virtual void set_tx_rate_all(double rate) = 0;
+    virtual double get_tx_rate_all(void) = 0;
+
+    virtual tune_result_t set_tx_freq(size_t chan, double freq) = 0;
+    virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
+    virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
+
+    virtual void set_tx_gain(size_t chan, float gain) = 0;
+    virtual float get_tx_gain(size_t chan) = 0;
+    virtual gain_range_t get_tx_gain_range(size_t chan) = 0;
+
+    virtual void set_tx_antenna(size_t chan, const std::string &ant) = 0;
+    virtual std::string get_tx_antenna(size_t chan) = 0;
+    virtual std::vector<std::string> get_tx_antennas(size_t chan) = 0;
+
+    virtual bool get_tx_lo_locked(size_t chan) = 0;
 
 };
 

@@ -18,6 +18,7 @@
 #include <uhd/usrp/mimo_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/device_props.hpp>
@@ -125,10 +126,124 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
+    void set_rx_rate_all(double rate){
+        std::vector<double> _actual_rates;
+        BOOST_FOREACH(wax::obj rx_dsp, _rx_dsps){
+            rx_dsp[DSP_PROP_HOST_RATE] = rate;
+            _actual_rates.push_back(rx_dsp[DSP_PROP_HOST_RATE].as<double>());
+        }
+        _rx_rate = _actual_rates.front();
+        if (std::count(_actual_rates, _rx_rate) != _actual_rates.size()) throw std::runtime_error(
+            "MIMO configuratio error: rx rate inconsistent across mboards"
+        );
+    }
+
+    double get_rx_rate_all(void){
+        return _rx_rate;
+    }
+
+    tune_result_t set_rx_freq(size_t chan, double target_freq){
+        return tune_rx_subdev_and_ddc(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq);
+    }
+
+    tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
+        return tune_rx_subdev_and_ddc(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq, lo_off);
+    }
+
+    freq_range_t get_rx_freq_range(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
+    }
+
+    void set_rx_gain(size_t chan, float gain){
+        _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN] = gain;
+    }
+
+    float get_rx_gain(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN].as<float>();
+    }
+
+    gain_range_t get_rx_gain_range(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+    }
+
+    void set_rx_antenna(size_t chan, const std::string &ant){
+        _rx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA] = ant;
+    }
+
+    std::string get_rx_antenna(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA].as<std::string>();
+    }
+
+    std::vector<std::string> get_rx_antennas(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+    }
+
+    bool get_rx_lo_locked(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
+    float read_rssi(size_t chan){
+        return _rx_subdevs.at(chan)[SUBDEV_PROP_RSSI].as<float>();
+    }
 
     /*******************************************************************
      * TX methods
      ******************************************************************/
+    void set_tx_rate_all(double rate){
+        std::vector<double> _actual_rates;
+        BOOST_FOREACH(wax::obj tx_dsp, _tx_dsps){
+            tx_dsp[DSP_PROP_HOST_RATE] = rate;
+            _actual_rates.push_back(tx_dsp[DSP_PROP_HOST_RATE].as<double>());
+        }
+        _tx_rate = _actual_rates.front();
+        if (std::count(_actual_rates, _tx_rate) != _actual_rates.size()) throw std::runtime_error(
+            "MIMO configuratio error: tx rate inconsistent across mboards"
+        );
+    }
+
+    double get_tx_rate_all(void){
+        return _rx_rate;
+    }
+
+    tune_result_t set_tx_freq(size_t chan, double target_freq){
+        return tune_tx_subdev_and_duc(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq);
+    }
+
+    tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
+        return tune_tx_subdev_and_duc(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq, lo_off);
+    }
+
+    freq_range_t get_tx_freq_range(size_t chan){
+        return _tx_subdevs.at(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
+    }
+
+    void set_tx_gain(size_t chan, float gain){
+        _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN] = gain;
+    }
+
+    float get_tx_gain(size_t chan){
+        return _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN].as<float>();
+    }
+
+    gain_range_t get_tx_gain_range(size_t chan){
+        return _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+    }
+
+    void set_tx_antenna(size_t chan, const std::string &ant){
+        _tx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA] = ant;
+    }
+
+    std::string get_tx_antenna(size_t chan){
+        return _tx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA].as<std::string>();
+    }
+
+    std::vector<std::string> get_tx_antennas(size_t chan){
+        return _tx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+    }
+
+    bool get_tx_lo_locked(size_t chan){
+        return _tx_subdevs.at(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
 
 private:
     device::sptr _dev;
@@ -139,6 +254,9 @@ private:
     std::vector<wax::obj> _tx_dboards;
     std::vector<wax::obj> _rx_subdevs;
     std::vector<wax::obj> _tx_subdevs;
+
+    //shadows
+    double _rx_rate, _tx_rate;
 };
 
 /***********************************************************************
