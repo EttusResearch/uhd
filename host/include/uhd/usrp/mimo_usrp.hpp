@@ -75,6 +75,7 @@ public:
      * The values will not be latched in until the pulse occurs.
      * It is recommended that the user sleep(1) after calling to ensure
      * that the time registers will be in a known state prior to use.
+     * This call works across all mboards in the mimo configuration.
      *
      * Note: Because this call sets the time on the "next" pps,
      * the seconds in the time spec should be current seconds + 1.

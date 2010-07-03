@@ -64,6 +64,10 @@ public:
             mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
         }
 
+        //set the times to zero at the next pps and sleep
+        this->set_time_next_pps(time_spec_t(0, 0));
+        sleep(1);
+
     }
 
     ~mimo_usrp_impl(void){
