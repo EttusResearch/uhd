@@ -26,7 +26,6 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <boost/asio/buffer.hpp>
 #include <vector>
 
 namespace uhd{
@@ -97,20 +96,6 @@ public:
         RECV_MODE_ONE_PACKET = 1
     };
 
-    //! wrapper call for single buffer recv //TODO put somewhere
-    size_t send(
-        const boost::asio::const_buffer &buff,
-        const tx_metadata_t &metadata,
-        const io_type_t &io_type,
-        send_mode_t send_mode
-    ){
-        return send(
-            std::vector<const void *>(1, boost::asio::buffer_cast<const void *>(buff)),
-            boost::asio::buffer_size(buff)/io_type.size,
-            metadata, io_type, send_mode
-        );
-    }
-
     /*!
      * Send buffers containing IF data described by the metadata.
      *
@@ -140,17 +125,20 @@ public:
         send_mode_t send_mode
     ) = 0;
 
-    //! wrapper call for single buffer recv //TODO put somewhere
-    size_t recv(
-        const boost::asio::mutable_buffer &buff,
-        rx_metadata_t &metadata,
+    /*!
+     * Convenience wrapper for send that takes a single buffer.
+     */
+    inline size_t send(
+        const void *buff,
+        size_t nsamps_per_buff,
+        const tx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode
+        send_mode_t send_mode
     ){
-        return recv(
-            std::vector<void *>(1, boost::asio::buffer_cast<void *>(buff)),
-            boost::asio::buffer_size(buff)/io_type.size,
-            metadata, io_type, recv_mode
+        return send(
+            std::vector<const void *>(1, buff),
+            nsamps_per_buff, metadata,
+            io_type, send_mode
         );
     }
 
@@ -194,6 +182,23 @@ public:
         const io_type_t &io_type,
         recv_mode_t recv_mode
     ) = 0;
+
+    /*!
+     * Convenience wrapper for recv that takes a single buffer.
+     */
+    inline size_t recv(
+        void *buff,
+        size_t nsamps_per_buff,
+        rx_metadata_t &metadata,
+        const io_type_t &io_type,
+        recv_mode_t recv_mode
+    ){
+        return recv(
+            std::vector<void *>(1, buff),
+            nsamps_per_buff, metadata,
+            io_type, recv_mode
+        );
+    }
 
     /*!
      * Get the maximum number of samples per packet on send.

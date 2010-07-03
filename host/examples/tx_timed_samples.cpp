@@ -81,8 +81,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send the entire buffer, let the driver handle fragmentation
     size_t num_tx_samps = dev->send(
-        boost::asio::buffer(buff),
-        md, uhd::io_type_t::COMPLEX_FLOAT32,
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
     std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;

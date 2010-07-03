@@ -49,7 +49,7 @@ static inline void test_device(
     sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     do {
         size_t num_rx_samps = dev->recv(
-            boost::asio::buffer(buff), md,
+            &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );
@@ -79,7 +79,7 @@ static inline void test_device(
     
     //flush the buffers
     while(dev->recv(
-        boost::asio::buffer(buff), md,
+        &buff.front(), buff.size(), md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::RECV_MODE_ONE_PACKET
     ));

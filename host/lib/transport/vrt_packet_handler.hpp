@@ -27,7 +27,6 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/convert_types.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/asio/buffer.hpp>
 #include <boost/function.hpp>
 #include <stdexcept>
 #include <iostream>
