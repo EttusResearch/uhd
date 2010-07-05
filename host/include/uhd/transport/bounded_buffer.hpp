@@ -129,6 +129,16 @@ namespace uhd{ namespace transport{
             return true;
         }
 
+        /*!
+         * Clear all elements from the bounded_buffer.
+         */
+        UHD_INLINE void clear(void){
+            boost::unique_lock<boost::mutex> lock(_mutex);
+            while (not_empty()) _buffer.pop_back();
+            lock.unlock();
+            _full_cond.notify_one();
+        }
+
     private:
         boost::mutex _mutex;
         boost::condition _empty_cond, _full_cond;
