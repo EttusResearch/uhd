@@ -150,10 +150,10 @@ void vrt::if_hdr_unpack_$(suffix)(
     if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
 
     //failure cases
-    if (packet_words32 == 0 or if_packet_info.num_packet_words32 < packet_words32)
+    if (if_packet_info.num_packet_words32 < packet_words32)
         throw std::runtime_error("bad vrt header or packet fragment");
     if (vrt_hdr_word & (0x7 << 29))
-        throw std::runtime_error("unsupported vrt packet type");
+        throw std::runtime_error("bad vrt header or unsupported packet type");
 
     boost::uint8_t pred = 0;
     if(vrt_hdr_word & $hex(0x1 << 28)) pred |= $hex($sid_p);
@@ -209,6 +209,9 @@ void vrt::if_hdr_unpack_$(suffix)(
             #set $num_trailer_words = 0;
         #end if
         ########## Variables ##########
+            //another failure case
+            if (packet_words32 < $($num_header_words + $num_trailer_words))
+                throw std::runtime_error("bad vrt header or invalid packet length");
             if_packet_info.num_header_words32 = $num_header_words;
             if_packet_info.num_payload_words32 = packet_words32 - $($num_header_words + $num_trailer_words);
         break;

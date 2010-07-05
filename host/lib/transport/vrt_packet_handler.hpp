@@ -87,7 +87,7 @@ namespace vrt_packet_handler{
         uhd::transport::vrt::if_packet_info_t if_packet_info;
         for (size_t i = 0; i < state.width; i++){
             const boost::uint32_t *vrt_hdr = state.managed_buffs[i]->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
-            if_packet_info.num_packet_words32 = num_packet_words32;
+            if_packet_info.num_packet_words32 = num_packet_words32 - vrt_header_offset_words32;
             vrt_unpacker(vrt_hdr, if_packet_info);
 
             //handle the packet count / sequence number
@@ -163,7 +163,7 @@ namespace vrt_packet_handler{
             );
 
             //update the rx copy buffer to reflect the bytes copied
-            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(state.copy_buffs[i]) + bytes_to_copy;
+            state.copy_buffs[i] += bytes_to_copy;
         }
         //update the copy buffer's availability
         state.size_of_copy_buffs -= bytes_to_copy;

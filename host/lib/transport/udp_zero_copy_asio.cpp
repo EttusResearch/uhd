@@ -28,7 +28,7 @@ using namespace uhd::transport;
  * Constants
  **********************************************************************/
 //enough buffering for half a second of samples at full rate on usrp2
-static const size_t MIN_SOCK_BUFF_SIZE = size_t(sizeof(boost::uint32_t) * 25e6 * 0.5);
+static const size_t MIN_SOCK_BUFF_SIZE(sizeof(boost::uint32_t) * 25e6 * 0.5);
 static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
 static const double RECV_TIMEOUT = 0.1; //100 ms
 
