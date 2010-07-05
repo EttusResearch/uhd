@@ -151,20 +151,15 @@ namespace vrt_packet_handler{
         //extract the number of samples available to copy
         size_t bytes_per_item = otw_type.get_sample_size();
         size_t bytes_available = state.size_of_copy_buffs;
-        size_t num_samps = std::min(total_samps, bytes_available/bytes_per_item);
-        size_t bytes_to_copy = num_samps*bytes_per_item;
-
-        //setup the fragment flags and offset
-        metadata.more_fragments = total_samps < num_samps;
-        metadata.fragment_offset = state.fragment_offset_in_samps;
-        state.fragment_offset_in_samps += num_samps; //set for next call
+        size_t nsamps_to_copy = std::min(total_samps, bytes_available/bytes_per_item);
+        size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
 
         for (size_t i = 0; i < state.width; i++){
             //copy-convert the samples from the recv buffer
             uhd::transport::convert_otw_type_to_io_type(
                 state.copy_buffs[i], otw_type,
                 reinterpret_cast<boost::uint8_t *>(buffs[i]) + offset_bytes,
-                io_type, num_samps
+                io_type, nsamps_to_copy
             );
 
             //update the rx copy buffer to reflect the bytes copied
@@ -173,7 +168,12 @@ namespace vrt_packet_handler{
         //update the copy buffer's availability
         state.size_of_copy_buffs -= bytes_to_copy;
 
-        return num_samps;
+        //setup the fragment flags and offset
+        metadata.more_fragments = state.size_of_copy_buffs != 0;
+        metadata.fragment_offset = state.fragment_offset_in_samps;
+        state.fragment_offset_in_samps += nsamps_to_copy; //set for next call
+
+        return nsamps_to_copy;
     }
 
     /*******************************************************************

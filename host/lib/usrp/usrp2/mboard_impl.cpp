@@ -25,6 +25,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -72,6 +73,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     );
     _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
     _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
+    _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
 
     //init the ddc
     init_ddc_config();
@@ -252,6 +254,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_CLOCK_CONFIG:
         val = _clock_config;
+        return;
+
+    case MBOARD_PROP_TIME_NOW:
+        val = time_spec_t(
+            _iface->peek32(U2_REG_TIME64_SECS_RB),
+            _iface->peek32(U2_REG_TIME64_TICKS_RB),
+            get_master_clock_freq()
+        );
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

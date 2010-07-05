@@ -47,7 +47,7 @@ namespace uhd{ namespace transport{
          * Get the size of the underlying buffer.
          * \return the number of bytes
          */
-        size_t size(void) const{
+        inline size_t size(void) const{
             return boost::asio::buffer_size(this->get());
         }
 
@@ -55,7 +55,7 @@ namespace uhd{ namespace transport{
          * Get a pointer to the underlying buffer.
          * \return a pointer into memory
          */
-        template <class T> T cast(void) const{
+        template <class T> inline T cast(void) const{
             return boost::asio::buffer_cast<T>(this->get());
         }
 
@@ -89,7 +89,7 @@ namespace uhd{ namespace transport{
          * Get the size of the underlying buffer.
          * \return the number of bytes
          */
-        size_t size(void) const{
+        inline size_t size(void) const{
             return boost::asio::buffer_size(this->get());
         }
 
@@ -97,7 +97,7 @@ namespace uhd{ namespace transport{
          * Get a pointer to the underlying buffer.
          * \return a pointer into memory
          */
-        template <class T> T cast(void) const{
+        template <class T> inline T cast(void) const{
             return boost::asio::buffer_cast<T>(this->get());
         }
 
