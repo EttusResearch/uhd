@@ -260,12 +260,13 @@ module serdes_rx
 
    // Internal FIFO, size 9 is 2K, size 10 is 4K Bytes
    assign write = eop_i | (error_i & have_space) | (write_d & (state != CRC_CHECK));
-
-   fifo_2clock_cascade #(.WIDTH(35),.SIZE(FIFOSIZE)) serdes_rx_fifo
+   wire dummy; // avoid warning on unconnected pin
+   
+   fifo_2clock_cascade #(.WIDTH(36),.SIZE(FIFOSIZE)) serdes_rx_fifo
      (.arst(rst),
-      .wclk(ser_rx_clk),.datain({error_i,sop_i,eop_i,line_i}), 
+      .wclk(ser_rx_clk),.datain({1'b0,error_i,sop_i,eop_i,line_i}), 
       .src_rdy_i(write), .dst_rdy_o(have_space), .space(fifo_space), 
-      .rclk(clk),.dataout({error_o,sop_o,eop_o,line_o}), 
+      .rclk(clk),.dataout({dummy,error_o,sop_o,eop_o,line_o}), 
       .src_rdy_o(wr_ready_o), .dst_rdy_i(wr_ready_i), .occupied(fifo_occupied) );
 
    assign 	       fifo_full = ~have_space;   // Note -- in the wrong clock domain
