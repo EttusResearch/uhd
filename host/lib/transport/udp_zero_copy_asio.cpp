@@ -27,7 +27,8 @@ using namespace uhd::transport;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const size_t MIN_SOCK_BUFF_SIZE = size_t(100e3);
+//enough buffering for half a second of samples at full rate on usrp2
+static const size_t MIN_SOCK_BUFF_SIZE = size_t(sizeof(boost::uint32_t) * 25e6 * 0.5);
 static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
 static const double RECV_TIMEOUT = 0.1; //100 ms
 
@@ -159,6 +160,12 @@ template<typename Opt> static void resize_buff_helper(
     //otherwise, ensure that the buffer is at least the minimum size
     else if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
         resize_buff_helper<Opt>(udp_trans, MIN_SOCK_BUFF_SIZE, name);
+        if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
+            std::cerr << boost::format(
+                "Warning: the %s buffer size is smaller than the recommended size of %d bytes.\n"
+                "    See the USRP2 application notes on buffer resizing."
+            ) % name % MIN_SOCK_BUFF_SIZE << std::endl;
+        }
     }
 }
 

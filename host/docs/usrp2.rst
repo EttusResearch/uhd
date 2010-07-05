@@ -158,20 +158,9 @@ buffer incoming samples faster than they can be processed.
 However, if you application cannot process samples fast enough,
 no amount of buffering can save you.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Device address params
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To set the size of the buffers,
-the usrp2 will accept two optional parameters in the device address.
-Each parameter will accept a numeric value for the number of bytes.
-
-* recv_buff_size
-* send_buff_size
-
-Example, set the args string to the following:
-::
-
-    addr=192.168.10.2, recv_buff_size=100e6
+By default, the UHD will try to request a reasonably large buffer size for both send and receive.
+A warning will be printed on instantiation if the actual buffer size is insufficient.
+See the OS specific notes below:
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 OS specific notes
@@ -183,3 +172,18 @@ To change the maximum values, run the following commands:
 
     sudo sysctl -w net.core.rmem_max=<new value>
     sudo sysctl -w net.core.wmem_max=<new value>
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Device address params
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To manually set the size of the buffers,
+the usrp2 will accept two optional parameters in the device address.
+Each parameter will accept a numeric value for the number of bytes.
+
+* recv_buff_size
+* send_buff_size
+
+Example, set the args string to the following:
+::
+
+    addr=192.168.10.2, recv_buff_size=100e6

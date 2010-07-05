@@ -200,7 +200,7 @@ private:
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
         UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
-        return T(ntohl(out_data.data.poke_args.data));
+        return T(ntohl(in_data.data.poke_args.data));
     }
 
 };
