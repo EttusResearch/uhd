@@ -86,6 +86,10 @@ public:
     /*******************************************************************
      * Misc
      ******************************************************************/
+    time_spec_t get_time_now(void){
+        return _mboard[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+    }
+
     void set_time_now(const time_spec_t &time_spec){
         _mboard[MBOARD_PROP_TIME_NOW] = time_spec;
     }

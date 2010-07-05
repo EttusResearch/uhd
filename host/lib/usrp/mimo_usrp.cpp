@@ -63,11 +63,6 @@ public:
         BOOST_FOREACH(wax::obj mboard, _mboards){
             mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
         }
-
-        //set the times to zero at the next pps and sleep
-        this->set_time_next_pps(time_spec_t(0, 0));
-        sleep(1);
-
     }
 
     ~mimo_usrp_impl(void){
@@ -115,6 +110,11 @@ public:
     /*******************************************************************
      * Misc
      ******************************************************************/
+    time_spec_t get_time_now(void){
+        //the time on the first mboard better be the same on all
+        return _mboards.front()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+    }
+
     void set_time_next_pps(const time_spec_t &time_spec){
         BOOST_FOREACH(wax::obj mboard, _mboards){
             mboard[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;

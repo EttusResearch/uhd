@@ -64,6 +64,12 @@ public:
      * Misc
      ******************************************************************/
     /*!
+     * Gets the current time in the usrp time registers.
+     * \return a timespec representing current usrp time
+     */
+    virtual time_spec_t get_time_now(void) = 0;
+
+    /*!
      * Sets the time registers on the usrp immediately.
      * \param time_spec the time to latch into the usrp device
      */

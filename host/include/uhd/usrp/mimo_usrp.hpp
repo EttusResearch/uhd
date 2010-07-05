@@ -71,6 +71,12 @@ public:
      * Misc
      ******************************************************************/
     /*!
+     * Gets the current time in the usrp time registers.
+     * \return a timespec representing current usrp time
+     */
+    virtual time_spec_t get_time_now(void) = 0;
+
+    /*!
      * Set the time registers on the usrp at the next pps tick.
      * The values will not be latched in until the pulse occurs.
      * It is recommended that the user sleep(1) after calling to ensure
