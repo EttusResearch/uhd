@@ -23,9 +23,17 @@ module gpif
    wire 	  WR = gpif_ctl[0];
    wire 	  RD = gpif_ctl[1];
    wire 	  OE = gpif_ctl[2];
-
+   wire 	  have_space, have_pkt_rdy;
    wire [15:0] 	  gpif_dat_out;
    assign gpif_dat = OE ? gpif_dat_out : 16'bz;
+
+   assign gpif_rdy[0] = have_space;
+   assign gpif_rdy[1] = have_pkt_rdy;
+
+   wire [15:0] 	  gpif_d_copy = gpif_d;
+   
+   assign debug0 = {11'd0, WR, RD, OE, have_space, have_pkt_rdy, gpif_d_copy};
+   assign debug1 = 32'd0;
    
    // ////////////////////////////////////////////////////////////////////
    // TX Side
@@ -39,7 +47,7 @@ module gpif
    
    gpif_wr gpif_wr
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), 
-      .gpif_data(gpif_d), .gpif_wr(WR), .have_space(gpif_rdy[0]),
+      .gpif_data(gpif_d), .gpif_wr(WR), .have_space(have_space),
       .sys_clk(fifo_clk), .sys_rst(fifo_rst),
       .data_o(tx19_data), .src_rdy_o(tx19_src_rdy), .dst_rdy_i(tx_19_dst_rdy),
       .debug() );
