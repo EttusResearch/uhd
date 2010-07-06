@@ -26,6 +26,7 @@
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <stdexcept>
 #include <iostream>
 
@@ -125,7 +126,8 @@ public:
     void set_time_unknown_pps(const time_spec_t &time_spec){
         std::cout << "Set time with unknown pps edge:" << std::endl;
         std::cout << "  1) set times next pps (race condition)" << std::endl;
-        set_time_next_pps(time_spec); sleep(1);
+        set_time_next_pps(time_spec);
+        boost::this_thread::sleep(boost::posix_time::seconds(1));
 
         std::cout << "  2) catch seconds rollover at pps edge" << std::endl;
         time_t last_secs = 0, curr_secs = 0;
@@ -135,7 +137,8 @@ public:
         }
 
         std::cout << "  3) set times next pps (synchronously)" << std::endl;
-        set_time_next_pps(time_spec); sleep(1);
+        set_time_next_pps(time_spec);
+        boost::this_thread::sleep(boost::posix_time::seconds(1));
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
