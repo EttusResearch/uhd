@@ -37,6 +37,12 @@ namespace uhd{
     //! perform a byteswap on a 64 bit integer
     boost::uint64_t byteswap(boost::uint64_t);
 
+    //! network to host: short, long, or long-long
+    template<typename T> T ntohx(T);
+
+    //! host to network: short, long, or long-long
+    template<typename T> T htonx(T);
+
 } //namespace uhd
 
 /***********************************************************************
@@ -116,5 +122,26 @@ namespace uhd{
     }
 
 #endif
+
+/***********************************************************************
+ * Define the templated network to/from host conversions
+ **********************************************************************/
+#include <boost/detail/endian.hpp>
+
+template<typename T> UHD_INLINE T uhd::ntohx(T num){
+    #ifdef BOOST_BIG_ENDIAN
+        return num;
+    #else
+        return uhd::byteswap(num);
+    #endif
+}
+
+template<typename T> UHD_INLINE T uhd::htonx(T num){
+    #ifdef BOOST_BIG_ENDIAN
+        return num;
+    #else
+        return uhd::byteswap(num);
+    #endif
+}
 
 #endif /* INCLUDED_UHD_UTILS_BYTESWAP_HPP */

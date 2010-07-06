@@ -256,12 +256,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    case MBOARD_PROP_TIME_NOW:
-        val = time_spec_t(
-            _iface->peek32(U2_REG_TIME64_SECS_RB),
-            _iface->peek32(U2_REG_TIME64_TICKS_RB),
-            get_master_clock_freq()
-        );
+    case MBOARD_PROP_TIME_NOW:{
+            usrp2_iface::pair64 time64(
+                _iface->peek64(U2_REG_TIME64_SECS_RB, U2_REG_TIME64_TICKS_RB)
+            );
+            val = time_spec_t(
+                time64.first, time64.second, get_master_clock_freq()
+            );
+        }
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
