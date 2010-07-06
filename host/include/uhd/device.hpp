@@ -26,6 +26,7 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/asio/buffer.hpp>
 #include <vector>
 
 namespace uhd{
@@ -128,19 +129,19 @@ public:
     /*!
      * Convenience wrapper for send that takes a single buffer.
      */
-    inline size_t send(
+    size_t send(
         const void *buff,
         size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
         send_mode_t send_mode
-    ){
-        return send(
-            std::vector<const void *>(1, buff),
-            nsamps_per_buff, metadata,
-            io_type, send_mode
-        );
-    }
+    );
+
+    //! Deprecated
+    size_t send(
+        const boost::asio::const_buffer &, const tx_metadata_t &,
+        const io_type_t &, send_mode_t send_mode
+    );
 
     /*!
      * Receive buffers containing IF data described by the metadata.
@@ -186,19 +187,19 @@ public:
     /*!
      * Convenience wrapper for recv that takes a single buffer.
      */
-    inline size_t recv(
+    size_t recv(
         void *buff,
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
         recv_mode_t recv_mode
-    ){
-        return recv(
-            std::vector<void *>(1, buff),
-            nsamps_per_buff, metadata,
-            io_type, recv_mode
-        );
-    }
+    );
+
+    //! Deprecated
+    size_t recv(
+        const boost::asio::mutable_buffer &, rx_metadata_t &,
+        const io_type_t &, recv_mode_t
+    );
 
     /*!
      * Get the maximum number of samples per packet on send.
@@ -215,5 +216,7 @@ public:
 };
 
 } //namespace uhd
+
+#include <uhd/device.ipp>
 
 #endif /* INCLUDED_UHD_DEVICE_HPP */
