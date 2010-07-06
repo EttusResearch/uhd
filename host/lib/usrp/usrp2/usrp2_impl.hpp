@@ -114,7 +114,7 @@ private:
     static const size_t _max_tx_bytes_per_packet =
         USRP2_UDP_BYTES -
         uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t) -
-        sizeof(uhd::transport::vrt::if_packet_info_t::cid) //no class id ever used
+        sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
     ;
 };
 
