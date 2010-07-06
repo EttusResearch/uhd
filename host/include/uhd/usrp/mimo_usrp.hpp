@@ -91,6 +91,24 @@ public:
     virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
 
     /*!
+     * Synchronize the times across all motherboards in this configuration.
+     * Use this method to sync the times when the edge of the PPS is unknown.
+     *
+     * Ex: Host machine is not attached to serial port of GPSDO
+     * and can therefore not query the GPSDO for the PPS edge.
+     *
+     * This is a 3-step process, and will take at most 3 seconds to complete.
+     * Upon completion, the times will be synchronized to the time provided.
+     *
+     * - Step1: set the time at the next pps (potential race condition)
+     * - Step2: wait for the seconds to rollover to catch the pps edge
+     * - Step3: set the time at the next pps (synchronous for all boards)
+     *
+     * \param time_spec the time to latch into the usrp device
+     */
+    virtual void set_time_unknown_pps(const time_spec_t &time_spec) = 0;
+
+    /*!
      * Issue a stream command to the usrp device.
      * This tells the usrp to send samples into the host.
      * See the documentation for stream_cmd_t for more info.

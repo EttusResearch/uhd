@@ -27,6 +27,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -121,6 +122,22 @@ public:
         }
     }
 
+    void set_time_unknown_pps(const time_spec_t &time_spec){
+        std::cout << "Set time with unknown pps edge:" << std::endl;
+        std::cout << "  1) set times next pps (race condition)" << std::endl;
+        set_time_next_pps(time_spec); sleep(1);
+
+        std::cout << "  2) catch seconds rollover at pps edge" << std::endl;
+        time_t last_secs = 0, curr_secs = 0;
+        while(curr_secs == last_secs){
+            last_secs = curr_secs;
+            curr_secs = get_time_now().get_full_secs();
+        }
+
+        std::cout << "  3) set times next pps (synchronously)" << std::endl;
+        set_time_next_pps(time_spec); sleep(1);
+    }
+
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
         BOOST_FOREACH(wax::obj mboard, _mboards){
             mboard[MBOARD_PROP_STREAM_CMD] = stream_cmd;
@@ -206,7 +223,7 @@ public:
     }
 
     double get_tx_rate_all(void){
-        return _rx_rate;
+        return _tx_rate;
     }
 
     tune_result_t set_tx_freq(size_t chan, double target_freq){
