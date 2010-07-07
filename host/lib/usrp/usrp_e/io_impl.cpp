@@ -24,6 +24,7 @@
 #include <stddef.h> //offsetof
 #include <poll.h>
 #include <boost/format.hpp>
+#include <boost/assign.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -127,10 +128,11 @@ private:
  * IO Implementation Details
  **********************************************************************/
 struct usrp_e_impl::io_impl{
-    vrt_packet_handler::recv_state recv_state;
-    vrt_packet_handler::send_state send_state;
+    //state management for the vrt packet handler code
+    vrt_packet_handler::recv_state packet_handler_recv_state;
+    vrt_packet_handler::send_state packet_handler_send_state;
     data_transport transport;
-    io_impl(int fd): transport(fd){}
+    io_impl(int fd): packet_handler_recv_state(1), transport(fd){}
 };
 
 void usrp_e_impl::io_init(void){
@@ -150,35 +152,56 @@ void usrp_e_impl::io_init(void){
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface->get_file_descriptor()));
 }
 
-static boost::uint32_t make_stream_cmd(bool now, bool chain, boost::uint32_t nsamps){
-    return (((now)? 1 : 0) << 31) | (((chain)? 1 : 0) << 30) | nsamps;
+static boost::uint32_t make_stream_cmd(bool now, bool chain, bool reload, boost::uint32_t nsamps){
+    return (((now)? 1 : 0) << 31) | (((chain)? 1 : 0) << 30) | (((reload)? 1 : 0) << 29) | nsamps;
 }
 
 void usrp_e_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
-    boost::uint32_t cmd = 0;
-    switch(stream_cmd.stream_mode){
-    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
-        cmd = make_stream_cmd(stream_cmd.stream_now, false, stream_cmd.num_samps);
-        break;
+    UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x3fffffff);
 
-    case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
-        cmd = make_stream_cmd(stream_cmd.stream_now, true, stream_cmd.num_samps);
-        break;
+    //setup the mode to instruction flags
+    typedef boost::tuple<bool, bool, bool> inst_t;
+    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+                                                            //reload, chain, samps
+        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false))
+        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true))
+    ;
 
-    default: throw std::runtime_error("stream mode not implemented");
-    }
-    _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, cmd);
-    _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  stream_cmd.time_spec.secs);
-    _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_ticks(MASTER_CLOCK_RATE));
+    //setup the instruction flag values
+    bool inst_reload, inst_chain, inst_samps;
+    boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
+
+    //issue the stream command
+    _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, make_stream_cmd(
+        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? get_max_recv_samps_per_packet() : 1),
+        (stream_cmd.stream_now)? 1 : 0,
+        (inst_chain)? 1 : 0,
+        (inst_reload)? 1 : 0
+    ));
+    _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
+    _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(MASTER_CLOCK_RATE));
+
 }
 
 /***********************************************************************
  * Data Send
  **********************************************************************/
+bool get_send_buffs(
+    data_transport *trans,
+    vrt_packet_handler::managed_send_buffs_t &buffs
+){
+    UHD_ASSERT_THROW(buffs.size() == 1);
+    buffs[0] = trans->get_send_buff();
+    return buffs[0].get() != NULL;
+}
+
 size_t usrp_e_impl::send(
-    const boost::asio::const_buffer &buff,
-    const uhd::tx_metadata_t &metadata,
-    const io_type_t & io_type,
+    const std::vector<const void *> &buffs,
+    size_t num_samps,
+    const tx_metadata_t &metadata,
+    const io_type_t &io_type,
     send_mode_t send_mode
 ){
     otw_type_t send_otw_type;
@@ -187,15 +210,13 @@ size_t usrp_e_impl::send(
     send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     return vrt_packet_handler::send(
-        _io_impl->send_state,
-        buff,
-        metadata,
-        send_mode,
-        io_type,
-        send_otw_type, //TODO
-        MASTER_CLOCK_RATE,
-        uhd::transport::vrt::pack_le,
-        boost::bind(&data_transport::get_send_buff, &_io_impl->transport),
+        _io_impl->packet_handler_send_state,       //last state of the send handler
+        buffs, num_samps,                          //buffer to fill
+        metadata, send_mode,                       //samples metadata
+        io_type, send_otw_type,                    //input and output types to convert
+        MASTER_CLOCK_RATE,                         //master clock tick rate
+        uhd::transport::vrt::if_hdr_pack_le,
+        boost::bind(&get_send_buffs, &_io_impl->transport, _1),
         get_max_send_samps_per_packet(),
         vrt_header_offset_words32
     );
@@ -204,9 +225,19 @@ size_t usrp_e_impl::send(
 /***********************************************************************
  * Data Recv
  **********************************************************************/
+bool get_recv_buffs(
+    data_transport *trans,
+    vrt_packet_handler::managed_recv_buffs_t &buffs
+){
+    UHD_ASSERT_THROW(buffs.size() == 1);
+    buffs[0] = trans->get_recv_buff();
+    return buffs[0].get() != NULL;
+}
+
 size_t usrp_e_impl::recv(
-    const boost::asio::mutable_buffer &buff,
-    uhd::rx_metadata_t &metadata,
+    const std::vector<void *> &buffs,
+    size_t num_samps,
+    rx_metadata_t &metadata,
     const io_type_t &io_type,
     recv_mode_t recv_mode
 ){
@@ -216,15 +247,12 @@ size_t usrp_e_impl::recv(
     recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     return vrt_packet_handler::recv(
-        _io_impl->recv_state,
-        buff,
-        metadata,
-        recv_mode,
-        io_type,
-        recv_otw_type, //TODO
-        MASTER_CLOCK_RATE,
-        uhd::transport::vrt::unpack_le,
-        boost::bind(&data_transport::get_recv_buff, &_io_impl->transport),
-        vrt_header_offset_words32
+        _io_impl->packet_handler_recv_state,       //last state of the recv handler
+        buffs, num_samps,                          //buffer to fill
+        metadata, recv_mode,                       //samples metadata
+        io_type, recv_otw_type,                    //input and output types to convert
+        MASTER_CLOCK_RATE,                         //master clock tick rate
+        uhd::transport::vrt::if_hdr_unpack_le,
+        boost::bind(get_recv_buffs, &_io_impl->transport, _1)
     );
 }
