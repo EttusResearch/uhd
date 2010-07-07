@@ -43,11 +43,11 @@ static const double ref_clock_rate = 10e6;
 static const size_t r_counter = 1;
 static const size_t a_counter = 0;
 static const size_t b_counter = 20;
-static const size_t prescaler = 8; //set below with enum
-static const size_t vco_divider = 5; //set below with enum
+static const size_t prescaler = 8; //set below with enum, set to 8 when input is under 2400 MHz
+static const size_t vco_divider = 1; //set below with enum
 
 static const size_t n_counter = prescaler * b_counter + a_counter;
-static const size_t vco_clock_rate = ref_clock_rate/r_counter * n_counter;
+static const size_t vco_clock_rate = ref_clock_rate/r_counter * n_counter; //between 1400 and 1800 MHz
 static const double master_clock_rate = vco_clock_rate/vco_divider;
 
 static const size_t fpga_clock_divider = size_t(master_clock_rate/64e6);
@@ -60,15 +60,18 @@ class usrp_e_clock_ctrl_impl : public usrp_e_clock_ctrl{
 public:
     usrp_e_clock_ctrl_impl(usrp_e_iface::sptr iface){
         _iface = iface;
+        std::cout << "master_clock_rate: " << (master_clock_rate/1e6) << " MHz" << std::endl;
 
         //init the clock gen registers
         //Note: out0 should already be clocking the FPGA or this isnt going to work
         _ad9522_regs.sdo_active = ad9522_regs_t::SDO_ACTIVE_SDO_SDIO;
+        _ad9522_regs.enb_stat_eeprom_at_stat_pin = 0; //use status pin
         _ad9522_regs.status_pin_control = 0x1; //n divider
-        _ad9522_regs.ld_pin_control = 0x32; //show ref2
+        _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
 
         _ad9522_regs.enable_ref2 = 1;
+        _ad9522_regs.enable_ref1 = 0;
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF2;
 
         _ad9522_regs.set_r_counter(r_counter);
@@ -80,7 +83,7 @@ public:
         _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_3_0MA;
 
         _ad9522_regs.vco_calibration_now = 1; //calibrate it!
-        _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV5;
+        _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV1;
         _ad9522_regs.select_vco_or_clock = ad9522_regs_t::SELECT_VCO_OR_CLOCK_VCO;
 
         //setup fpga master clock
