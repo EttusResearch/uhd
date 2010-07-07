@@ -19,8 +19,12 @@
 #define INCLUDED_LIBUHD_USRP_DSP_UTILS_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/types/stream_cmd.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
 
 namespace uhd{ namespace usrp{
@@ -140,6 +144,40 @@ namespace dsp_type1{
         double rate_cubed = std::pow(double(tmp_rate), 3);
         boost::int16_t scale = boost::math::iround((4096*std::pow(2, ceil_log2(rate_cubed)))/(1.65*rate_cubed));
         return calc_iq_scale_word(scale, scale);
+    }
+
+    /*!
+     * Calculate the stream command word from the stream command struct.
+     * \param stream_cmd the requested stream command with mode, flags, timestamp
+     * \param num_samps_continuous number of samples to request in continuous mode
+     * \return the 32-bit stream command word
+     */
+    static inline boost::uint32_t calc_stream_cmd_word(
+        const stream_cmd_t &stream_cmd, size_t num_samps_continuous
+    ){
+        UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x3fffffff);
+
+        //setup the mode to instruction flags
+        typedef boost::tuple<bool, bool, bool> inst_t;
+        static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+                                                                //reload, chain, samps
+            (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false))
+            (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false))
+            (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true))
+            (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true))
+        ;
+
+        //setup the instruction flag values
+        bool inst_reload, inst_chain, inst_samps;
+        boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
+
+        //calculate the word from flags and length
+        boost::uint32_t word = 0;
+        word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
+        word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
+        word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
+        word |= (inst_samps)? stream_cmd.num_samps : ((inst_chain)? num_samps_continuous : 1);
+        return word;
     }
 
 } //namespace dsp_type1

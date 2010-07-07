@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include "../dsp_utils.hpp"
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -24,7 +25,6 @@
 #include <uhd/types/dict.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
-#include <boost/assign/list_of.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -151,28 +151,8 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 }
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    UHD_ASSERT_THROW(stream_cmd.num_samps <= U2_REG_RX_CTRL_MAX_SAMPS_PER_CMD);
-
-    //setup the mode to instruction flags
-    typedef boost::tuple<bool, bool, bool> inst_t;
-    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
-                                                            //reload, chain, samps
-        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false))
-        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false))
-        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true))
-        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true))
-    ;
-
-    //setup the instruction flag values
-    bool inst_reload, inst_chain, inst_samps;
-    boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
-
-    //issue the stream command
-    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, U2_REG_RX_CTRL_MAKE_CMD(
-        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? _io_helper.get_max_recv_samps_per_packet() : 1),
-        (stream_cmd.stream_now)? 1 : 0,
-        (inst_chain)? 1 : 0,
-        (inst_reload)? 1 : 0
+    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
+        stream_cmd, _io_helper.get_max_recv_samps_per_packet()
     ));
     _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));

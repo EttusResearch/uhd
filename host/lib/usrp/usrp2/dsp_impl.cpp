@@ -20,7 +20,6 @@
 #include "../dsp_utils.hpp"
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/bind.hpp>
-#include <boost/assign/list_of.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
