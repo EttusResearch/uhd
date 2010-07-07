@@ -58,11 +58,17 @@ public:
      * Get a printable name for this simple usrp.
      * \return a printable string
      */
-    virtual std::string get_name(void) = 0;
+    virtual std::string get_pp_string(void) = 0;
 
     /*******************************************************************
      * Misc
      ******************************************************************/
+    /*!
+     * Gets the current time in the usrp time registers.
+     * \return a timespec representing current usrp time
+     */
+    virtual time_spec_t get_time_now(void) = 0;
+
     /*!
      * Sets the time registers on the usrp immediately.
      * \param time_spec the time to latch into the usrp device
@@ -98,13 +104,6 @@ public:
      */
     virtual void set_clock_config(const clock_config_t &clock_config) = 0;
 
-    /*!
-     * Read the RSSI value from a usrp device.
-     * Or throw if the dboard does not support an RSSI readback.
-     * \return the rssi in dB
-     */
-    virtual float read_rssi(void) = 0;
-
     /*******************************************************************
      * RX methods
      ******************************************************************/
@@ -124,6 +123,13 @@ public:
     virtual std::vector<std::string> get_rx_antennas(void) = 0;
 
     virtual bool get_rx_lo_locked(void) = 0;
+
+    /*!
+     * Read the RSSI value from a usrp device.
+     * Or throw if the dboard does not support an RSSI readback.
+     * \return the rssi in dB
+     */
+    virtual float read_rssi(void) = 0;
 
     /*******************************************************************
      * TX methods

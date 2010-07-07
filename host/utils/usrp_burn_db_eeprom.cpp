@@ -54,7 +54,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("UHD Burn DB EEPROM %s") % desc << std::endl;
+        std::cout << boost::format("USRP Burn DB EEPROM %s") % desc << std::endl;
         std::cout << boost::format(
             "Omit the id argument to perform readback,\n"
             "Or specify a new id to burn into the eeprom.\n"

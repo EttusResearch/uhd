@@ -31,13 +31,6 @@ namespace uhd{
      */
     struct UHD_API rx_metadata_t{
         /*!
-         * Stream IDs may be used to identify source DSP units.
-         * --Not currently used in any known device implementation.--
-         */
-        bool has_stream_id;
-        boost::uint32_t stream_id;
-
-        /*!
          * Time specification:
          * Set from timestamps on incoming data when provided.
          */
@@ -83,13 +76,6 @@ namespace uhd{
      * The send routines will convert the metadata to IF data headers.
      */
     struct UHD_API tx_metadata_t{
-        /*!
-         * Stream IDs may be used to identify destination DSP units.
-         * --Not currently used in any known device implementation.--
-         */
-        bool has_stream_id;
-        boost::uint32_t stream_id;
-
         /*!
          * Time specification:
          * Set has time spec to false to perform a send "now".

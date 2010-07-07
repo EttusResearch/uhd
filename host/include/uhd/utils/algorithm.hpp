@@ -83,6 +83,35 @@ namespace std{
     }
 
     /*!
+     * Count the number of appearances of a value in a range.
+     *
+     * Uses std::count to count the appearances in the range.
+     *
+     * \param range the elements to iterate through
+     * \param value the value to count in the range
+     * \return the number of appearances of the value
+     */
+    template<typename Range, typename T> inline
+    size_t count(const Range &range, const T &value){
+        return std::count(boost::begin(range), boost::end(range), value);
+    }
+
+    /*!
+     * Are the ranges equal (are their elements equivalent)?
+     *
+     * Uses std::equal to search the iterable for an element.
+     *
+     * \param range1 the first range of elements
+     * \param range2 the second range of elements
+     * \return true when the elements are equivalent
+     */
+    template<typename Range> inline
+    bool equal(const Range &range1, const Range &range2){
+        return (boost::size(range1) == boost::size(range2)) and
+        std::equal(boost::begin(range1), boost::end(range1), boost::begin(range2));
+    }
+
+    /*!
      * A templated signum implementation.
      * \param n the comparable to process
      * \return -1 when n negative, +1 when n positive, otherwise 0

@@ -18,6 +18,16 @@
 #This file will be included by cmake, use absolute paths!
 
 ########################################################################
+# Check for SIMD headers
+########################################################################
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
+
+IF(HAVE_EMMINTRIN_H)
+    ADD_DEFINITIONS(-DHAVE_EMMINTRIN_H)
+ENDIF(HAVE_EMMINTRIN_H)
+
+########################################################################
 # Setup defines for interface address discovery
 ########################################################################
 MESSAGE(STATUS "Configuring interface address discovery...")
@@ -40,13 +50,23 @@ ENDIF(HAVE_IFADDRS_H)
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/transport/gen_vrt.py
-    ${CMAKE_BINARY_DIR}/lib/transport/vrt.cpp
+    ${CMAKE_SOURCE_DIR}/lib/transport/gen_vrt_if_packet.py
+    ${CMAKE_BINARY_DIR}/lib/transport/vrt_if_packet.cpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_SOURCE_DIR}/lib/transport/gen_convert_types.py
     ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp
+)
+
+# append this directory to the include path so the generated convert types
+# can include the implementation convert types file in the source directory
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport)
+
+# make the generated convert types depend on the implementation header
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp PROPERTIES
+    OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/lib/transport/convert_types_impl.hpp
 )
 
 LIBUHD_APPEND_SOURCES(

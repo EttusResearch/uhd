@@ -21,7 +21,6 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
-#include <fstream>
 #include <complex>
 
 namespace po = boost::program_options;
@@ -30,8 +29,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file_path;
-    int seconds_in_future;
+    std::string args;
+    time_t seconds_in_future;
     size_t total_num_samps;
     double rx_rate, freq;
 
@@ -40,11 +39,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
-        ("secs", po::value<int>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
+        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
         ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
-        ("file", po::value<std::string>(&file_path)->default_value(""), "write samps to output file")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -61,7 +59,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
+    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
     //set properties on the device
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rx_rate/1e6) << std::endl;
@@ -69,7 +67,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl;
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_rx_freq(freq);
-    sdev->set_time_now(uhd::time_spec_t(0));
+    sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //setup streaming
     std::cout << std::endl;
@@ -81,20 +79,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
     sdev->issue_stream_cmd(stream_cmd);
 
-    std::ofstream outfile;
-    if(file_path != "") outfile.open (file_path.c_str(), std::ios::out | std::ios::binary);
-
-    //setup recv buffer, io type, and metadata for recv
-    uhd::rx_metadata_t md;
-    uhd::io_type_t io_type(uhd::io_type_t::COMPLEX_FLOAT32);
-    std::vector<std::complex<float> > recv_mem(dev->get_max_recv_samps_per_packet());
-    boost::asio::mutable_buffer buff(boost::asio::buffer(recv_mem));
-
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
     while(num_acc_samps < total_num_samps){
+        uhd::rx_metadata_t md;
+        std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
         size_t num_rx_samps = dev->recv(
-            buff, md, io_type,
+            &buff.front(), buff.size(), md,
+            uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );
         if (num_rx_samps == 0 and num_acc_samps > 0){
@@ -103,17 +95,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         if (num_rx_samps == 0) continue; //wait for packets with contents
 
-        std::cout << boost::format("Got packet: %u samples, %u secs, %u nsecs")
-            % num_rx_samps % md.time_spec.secs % md.time_spec.nsecs << std::endl;
-
-        if(file_path != "") outfile.write(boost::asio::buffer_cast<const char *>(buff), num_rx_samps*io_type.size);
+        std::cout << boost::format("Got packet: %u samples, %u full secs, %f frac secs")
+            % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
 
         num_acc_samps += num_rx_samps;
     }
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
-    if(file_path != "") outfile.close();
 
     return 0;
 }

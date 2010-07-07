@@ -24,6 +24,7 @@ ADD_SUBDIRECTORY(utils)
 INSTALL(FILES
     config.hpp
     device.hpp
+    device.ipp
     wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
 )

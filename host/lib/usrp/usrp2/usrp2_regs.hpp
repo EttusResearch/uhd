@@ -18,8 +18,6 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
-#include <boost/cstdint.hpp>
-
 ////////////////////////////////////////////////////
 // Settings Bus, Slave #7, Not Byte Addressable!
 //
@@ -46,7 +44,7 @@
 #define SR_SIMTIMER 198
 #define SR_LAST 255
 
-#define _SR_ADDR(sr)    (MISC_OUTPUT_BASE + (sr) * sizeof(boost::uint32_t))
+#define _SR_ADDR(sr)    ((MISC_OUTPUT_BASE) + (4*(sr)))
 
 /////////////////////////////////////////////////
 // SPI Slave Constants
@@ -104,7 +102,11 @@
 #define U2_REG_TIME64_SECS  _SR_ADDR(SR_TIME64 + 0)  // value to set absolute secs to on next PPS
 #define U2_REG_TIME64_TICKS _SR_ADDR(SR_TIME64 + 1)  // value to set absolute ticks to on next PPS
 #define U2_REG_TIME64_FLAGS _SR_ADDR(SR_TIME64 + 2)  // flags - see chart above
-#define U2_REG_TIME64_IMM   _SR_ADDR(SR_TIME64 + 3) // set immediate (0=latch on next pps, 1=latch immediate, default=0)
+#define U2_REG_TIME64_IMM   _SR_ADDR(SR_TIME64 + 3)  // set immediate (0=latch on next pps, 1=latch immediate, default=0)
+#define U2_REG_TIME64_TPS   _SR_ADDR(SR_TIME64 + 4)  // the ticks per second rollover count
+
+#define U2_REG_TIME64_SECS_RB  (0xCC00 + 4*10)
+#define U2_REG_TIME64_TICKS_RB (0xCC00 + 4*11)
 
 //pps flags (see above)
 #define U2_FLAG_TIME64_PPS_NEGEDGE (0 << 0)

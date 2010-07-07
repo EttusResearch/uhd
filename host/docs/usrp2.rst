@@ -11,8 +11,7 @@ Building firmware and FPGA images
 ^^^^^^^^^^^^^^^^^^
 FPGA Image
 ^^^^^^^^^^^^^^^^^^
-Xilinx ISE 10.1 is required to build the FPGA image for the USRP2
-(newer version of ISE are known to build buggy images).
+Xilinx ISE 10.1 and up is required to build the FPGA image for the USRP2.
 The build requires that you have a unix-like environment with make.
 Make sure that xtclsh from the Xilinx ISE bin directory is in your $PATH.
 
@@ -150,6 +149,40 @@ MAC addresses, control packets, and fast-path settings.
 Use wireshark to monitor packets sent to and received from the USRP2.
 
 ------------------------------------------------------------------------
+Addressing the device
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Single device configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A USRP2 can be identified though its IPv4 address or resolvable hostname.
+The USRP2 device is referenced through the "addr" key in the device address.
+Use this addressing scheme with the *simple_usrp* interface.
+
+The device address string representation for a USRP2 with IPv4 address 192.168.10.2
+
+::
+
+    addr=192.168.10.2
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Soft-MIMO configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In a soft-mimo configuration, each USRP2 must have a unique IPv4 address (per computer)
+and be attached to its own dedicated network port.
+The value for the addr key is a white-space separated list
+of IPv4 addresses or resolvable hostnames.
+The first address in the list will represent channel 0,
+the second channel 1, and so on...
+Use this addressing scheme with the *mimo_usrp* interface.
+
+The device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 and 192.168.20.2
+::
+
+    addr=192.168.10.2 192.168.20.2
+
+
+------------------------------------------------------------------------
 Resize the send and receive buffers
 ------------------------------------------------------------------------
 It may be useful increase the size of the socket buffers to
@@ -158,20 +191,9 @@ buffer incoming samples faster than they can be processed.
 However, if you application cannot process samples fast enough,
 no amount of buffering can save you.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Device address params
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To set the size of the buffers,
-the usrp2 will accept two optional parameters in the device address.
-Each parameter will accept a numeric value for the number of bytes.
-
-* recv_buff_size
-* send_buff_size
-
-Example, set the args string to the following:
-::
-
-    addr=192.168.10.2, recv_buff_size=100e6
+By default, the UHD will try to request a reasonably large buffer size for both send and receive.
+A warning will be printed on instantiation if the actual buffer size is insufficient.
+See the OS specific notes below:
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 OS specific notes
@@ -183,3 +205,20 @@ To change the maximum values, run the following commands:
 
     sudo sysctl -w net.core.rmem_max=<new value>
     sudo sysctl -w net.core.wmem_max=<new value>
+
+Set the values permanently by editing */etc/sysctl.conf*
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Device address params
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To manually set the size of the buffers,
+the usrp2 will accept two optional parameters in the device address.
+Each parameter will accept a numeric value for the number of bytes.
+
+* recv_buff_size
+* send_buff_size
+
+Example, set the args string to the following:
+::
+
+    addr=192.168.10.2, recv_buff_size=100e6

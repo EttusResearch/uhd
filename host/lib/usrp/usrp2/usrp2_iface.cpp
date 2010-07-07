@@ -59,6 +59,20 @@ public:
         return this->peek<boost::uint16_t>(addr);
     }
 
+    pair64 peek64(boost::uint32_t addrlo, boost::uint32_t addrhi){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO);
+        out_data.data.poke_args.addr = htonl(addrlo);
+        out_data.data.poke_args.addrhi = htonl(addrhi);
+        out_data.data.poke_args.num_bytes = sizeof(boost::uint64_t);
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
+        return pair64(ntohl(in_data.data.poke_args.data), ntohl(in_data.data.poke_args.datahi));
+    }
+
 /***********************************************************************
  * SPI
  **********************************************************************/
@@ -86,7 +100,7 @@ public:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
         return ntohl(in_data.data.spi_args.data);
     }
@@ -109,7 +123,7 @@ public:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
     }
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
@@ -124,7 +138,7 @@ public:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
         UHD_ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
 
         //copy out the data
@@ -187,7 +201,7 @@ private:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
     }
 
     template <class T> T peek(boost::uint32_t addr){
@@ -199,8 +213,8 @@ private:
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        UHD_ASSERT_THROW(htonl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
-        return T(ntohl(out_data.data.poke_args.data));
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
+        return T(ntohl(in_data.data.poke_args.data));
     }
 
 };

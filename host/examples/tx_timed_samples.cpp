@@ -30,7 +30,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    int seconds_in_future;
+    time_t seconds_in_future;
     size_t total_num_samps;
     double tx_rate, freq;
     float ampl;
@@ -40,7 +40,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
-        ("secs", po::value<int>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
+        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
@@ -61,7 +61,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
+    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
     //set properties on the device
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (tx_rate/1e6) << std::endl;
@@ -69,7 +69,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl;
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_tx_freq(freq);
-    sdev->set_time_now(uhd::time_spec_t(0));
+    sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //data to send
     std::vector<std::complex<float> > buff(total_num_samps, std::complex<float>(ampl, ampl));
@@ -81,8 +81,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send the entire buffer, let the driver handle fragmentation
     size_t num_tx_samps = dev->send(
-        boost::asio::buffer(buff),
-        md, uhd::io_type_t::COMPLEX_FLOAT32,
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
     std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;

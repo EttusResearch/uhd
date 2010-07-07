@@ -97,7 +97,10 @@ Generate Makefiles with cmake
     cd build
     cmake ../
 
-For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<prefix> ../
+**Notes:**
+
+* For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<prefix> ../
+* On some Fedora 64-bit systems, cmake has trouble finding boost, use: cmake -DBOOST_LIBRARYDIR=/usr/lib64 ../
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build and install
@@ -138,6 +141,7 @@ Generate the project with cmake
 Build the project in MSVC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Open the generated project file in MSVC.
+* Change the build type from "Debug" to "Release".
 * Select the build all target, right click, and choose build.
 * Select the install target, right click, and choose build.
 

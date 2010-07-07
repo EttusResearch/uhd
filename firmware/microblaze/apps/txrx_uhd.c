@@ -177,7 +177,7 @@ void handle_udp_ctrl_packet(
     unsigned char *payload, int payload_len
 ){
     //printf("Got ctrl packet #words: %d\n", (int)payload_len);
-    usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
+    const usrp2_ctrl_data_t *ctrl_data_in = (usrp2_ctrl_data_t *)payload;
     uint32_t ctrl_data_in_id = ctrl_data_in->id;
 
     //ensure that the protocol versions match
@@ -269,6 +269,10 @@ void handle_udp_ctrl_packet(
             printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
         }
         else switch(ctrl_data_in->data.poke_args.num_bytes){
+        case sizeof(uint64_t):
+            *((uint32_t *) ctrl_data_in->data.poke_args.addrhi) = (uint32_t)ctrl_data_in->data.poke_args.datahi;
+            //continue to uint32_t for low addr:
+
         case sizeof(uint32_t):
             *((uint32_t *) ctrl_data_in->data.poke_args.addr) = (uint32_t)ctrl_data_in->data.poke_args.data;
             break;
@@ -287,16 +291,20 @@ void handle_udp_ctrl_packet(
 
     case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
         switch(ctrl_data_in->data.poke_args.num_bytes){
+        case sizeof(uint64_t):
+            ctrl_data_out.data.poke_args.datahi = *((uint32_t *) ctrl_data_in->data.poke_args.addrhi);
+            //continue to uint32_t for low addr:
+
         case sizeof(uint32_t):
-            ctrl_data_in->data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
+            ctrl_data_out.data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
             break;
 
         case sizeof(uint16_t):
-            ctrl_data_in->data.poke_args.data = *((uint16_t *) ctrl_data_in->data.poke_args.addr);
+            ctrl_data_out.data.poke_args.data = *((uint16_t *) ctrl_data_in->data.poke_args.addr);
             break;
 
         case sizeof(uint8_t):
-            ctrl_data_in->data.poke_args.data = *((uint8_t *) ctrl_data_in->data.poke_args.addr);
+            ctrl_data_out.data.poke_args.data = *((uint8_t *) ctrl_data_in->data.poke_args.addr);
             break;
 
         }

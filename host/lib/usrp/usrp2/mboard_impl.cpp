@@ -25,21 +25,77 @@
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
- * Helper Methods
+ * Structors
  **********************************************************************/
-void usrp2_impl::mboard_init(void){
-    _mboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp2_impl::mboard_get, this, _1, _2),
-        boost::bind(&usrp2_impl::mboard_set, this, _1, _2)
+usrp2_mboard_impl::usrp2_mboard_impl(
+    size_t index,
+    transport::udp_simple::sptr ctrl_transport,
+    const usrp2_io_helper &io_helper
+):
+    _index(index),
+    _io_helper(io_helper)
+{
+    //make a new interface for usrp2 stuff
+    _iface = usrp2_iface::make(ctrl_transport);
+    _clock_ctrl = usrp2_clock_ctrl::make(_iface);
+    _codec_ctrl = usrp2_codec_ctrl::make(_iface);
+    _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
+
+    //TODO move to dsp impl...
+    //load the allowed decim/interp rates
+    //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
+    _allowed_decim_and_interp_rates.clear();
+    for (size_t i = 4; i <= 128; i+=1){
+        _allowed_decim_and_interp_rates.push_back(i);
+    }
+    for (size_t i = 130; i <= 256; i+=2){
+        _allowed_decim_and_interp_rates.push_back(i);
+    }
+    for (size_t i = 260; i <= 512; i+=4){
+        _allowed_decim_and_interp_rates.push_back(i);
+    }
+
+    //setup the vrt rx registers
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _io_helper.get_max_recv_samps_per_packet());
+    _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
+    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
+    _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
+        | (0x1 << 28) //if data with stream id
+        | (0x1 << 26) //has trailer
+        | (0x3 << 22) //integer time other
+        | (0x1 << 20) //fractional time sample count
     );
+    _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
+    _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
+    _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
+
+    //init the ddc
+    init_ddc_config();
+
+    //init the duc
+    init_duc_config();
+
+    //initialize the clock configuration
+    init_clock_config();
+
+    //init the tx and rx dboards (do last)
+    dboard_init();
 }
 
-void usrp2_impl::init_clock_config(void){
+usrp2_mboard_impl::~usrp2_mboard_impl(void){
+    /* NOP */
+}
+
+/***********************************************************************
+ * Helper Methods
+ **********************************************************************/
+void usrp2_mboard_impl::init_clock_config(void){
     //setup the clock configuration settings
     _clock_config.ref_source = clock_config_t::REF_INT;
     _clock_config.pps_source = clock_config_t::PPS_SMA;
@@ -49,7 +105,7 @@ void usrp2_impl::init_clock_config(void){
     update_clock_config();
 }
 
-void usrp2_impl::update_clock_config(void){
+void usrp2_mboard_impl::update_clock_config(void){
     boost::uint32_t pps_flags = 0;
 
     //translate pps source enums
@@ -82,19 +138,19 @@ void usrp2_impl::update_clock_config(void){
     _clock_ctrl->enable_external_ref(use_external);
 }
 
-void usrp2_impl::set_time_spec(const time_spec_t &time_spec, bool now){
+void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set the ticks
-    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_ticks(get_master_clock_freq()));
+    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_tick_count(get_master_clock_freq()));
 
     //set the flags register
     boost::uint32_t imm_flags = (now)? U2_FLAG_TIME64_LATCH_NOW : U2_FLAG_TIME64_LATCH_NEXT_PPS;
     _iface->poke32(U2_REG_TIME64_IMM, imm_flags);
 
     //set the seconds (latches in all 3 registers)
-    _iface->poke32(U2_REG_TIME64_SECS, time_spec.secs);
+    _iface->poke32(U2_REG_TIME64_SECS, boost::uint32_t(time_spec.get_full_secs()));
 }
 
-void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
+void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     UHD_ASSERT_THROW(stream_cmd.num_samps <= U2_REG_RX_CTRL_MAX_SAMPS_PER_CMD);
 
     //setup the mode to instruction flags
@@ -113,19 +169,19 @@ void usrp2_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
 
     //issue the stream command
     _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, U2_REG_RX_CTRL_MAKE_CMD(
-        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? get_max_recv_samps_per_packet() : 1),
+        (inst_samps)? stream_cmd.num_samps : ((inst_chain)? _io_helper.get_max_recv_samps_per_packet() : 1),
         (stream_cmd.stream_now)? 1 : 0,
         (inst_chain)? 1 : 0,
         (inst_reload)? 1 : 0
     ));
-    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  stream_cmd.time_spec.secs);
-    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_ticks(get_master_clock_freq()));
+    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
+    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }
 
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
-void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
+void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
 
@@ -148,7 +204,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = std::string("usrp2 mboard");
+        val = str(boost::format("usrp2 mboard %d") % _index);
         return;
 
     case MBOARD_PROP_OTHERS:{
@@ -200,6 +256,16 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
+    case MBOARD_PROP_TIME_NOW:{
+            usrp2_iface::pair64 time64(
+                _iface->peek64(U2_REG_TIME64_SECS_RB, U2_REG_TIME64_TICKS_RB)
+            );
+            val = time_spec_t(
+                time64.first, time64.second, get_master_clock_freq()
+            );
+        }
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -207,7 +273,7 @@ void usrp2_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * MBoard Set Properties
  **********************************************************************/
-void usrp2_impl::mboard_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
