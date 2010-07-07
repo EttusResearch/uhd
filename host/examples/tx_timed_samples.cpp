@@ -32,6 +32,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     time_t seconds_in_future;
     size_t total_num_samps;
+    size_t samps_per_packet;
     double tx_rate, freq;
     float ampl;
 
@@ -42,9 +43,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
         ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
+        ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
         ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
+        ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -55,6 +58,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("UHD TX Timed Samples %s") % desc << std::endl;
         return ~0;
     }
+
+    bool verbose = vm.count("dilv") == 0;
 
     //create a usrp device
     std::cout << std::endl;
@@ -71,22 +76,29 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_tx_freq(freq);
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
-    //data to send
-    std::vector<std::complex<float> > buff(total_num_samps, std::complex<float>(ampl, ampl));
-    uhd::tx_metadata_t md;
-    md.start_of_burst = true;
-    md.end_of_burst = true;
-    md.has_time_spec = true;
-    md.time_spec = uhd::time_spec_t(seconds_in_future);
+    //allocate data to send
+    std::vector<std::complex<float> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
 
-    //send the entire buffer, let the driver handle fragmentation
-    size_t num_tx_samps = dev->send(
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
-    std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
+    //send the data in multiple packets
+    size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
+    for (size_t i = 0; i < num_packets; i++){
+        //setup the metadata flags and time spec
+        uhd::tx_metadata_t md;
+        md.start_of_burst = true;                  //always SOB (good for continuous streaming)
+        md.end_of_burst   = (i == num_packets-1);  //only last packet has EOB
+        md.has_time_spec  = (i == 0);              //only first packet has time
+        md.time_spec = uhd::time_spec_t(seconds_in_future);
 
+        size_t samps_to_send = std::min(total_num_samps - samps_per_packet*i, samps_per_packet);
+
+        //send the entire packet (driver fragments internally)
+        size_t num_tx_samps = dev->send(
+            &buff.front(), samps_to_send, md,
+            uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::device::SEND_MODE_FULL_BUFF
+        );
+        if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
+    }
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
