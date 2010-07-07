@@ -104,7 +104,7 @@ namespace uhd{ namespace transport{
 
     template <typename elem_type> typename bounded_buffer<elem_type>::sptr
     bounded_buffer<elem_type>::make(size_t capacity){
-        return bounded_buffer<elem_type>::sptr(new bounded_buffer_impl<elem_type>(capacity));
+        return typename bounded_buffer<elem_type>::sptr(new bounded_buffer_impl<elem_type>(capacity));
     }
 
 }} //namespace

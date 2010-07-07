@@ -130,7 +130,7 @@ namespace uhd{ namespace transport{
     template <typename elem_type, typename seq_type>
     typename alignment_buffer<elem_type, seq_type>::sptr
     alignment_buffer<elem_type, seq_type>::make(size_t capacity, size_t width){
-        return alignment_buffer<elem_type, seq_type>::sptr(
+        return typename alignment_buffer<elem_type, seq_type>::sptr(
             new alignment_buffer_impl<elem_type, seq_type>(capacity, width)
         );
     }

@@ -82,7 +82,9 @@ static inline void test_device(
         &buff.front(), buff.size(), md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::RECV_MODE_ONE_PACKET
-    ));
+    )){
+        /* NOP */
+    };
 
     //print a summary
     std::cout << std::endl; //go to newline, recv may spew SXSYSZ...
