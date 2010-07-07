@@ -31,10 +31,6 @@ INSTALL(FILES
     dboard_iface.hpp
     dboard_manager.hpp
 
-    ### usrp headers ###
-    usrp_e.hpp
-    usrp2.hpp
-
     ### utilities ###
     tune_helper.hpp
     simple_usrp.hpp

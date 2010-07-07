@@ -59,7 +59,4 @@ IF(HAVE_USRP_E_REQUIRED_HEADERS)
     )
 ELSE(HAVE_USRP_E_REQUIRED_HEADERS)
     MESSAGE(STATUS "  Skipping usrp-e support.")
-    LIBUHD_APPEND_SOURCES(
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_none.cpp
-    )
 ENDIF(HAVE_USRP_E_REQUIRED_HEADERS)

@@ -27,10 +27,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 namespace fs = boost::filesystem;
 
-UHD_STATIC_BLOCK(register_usrp_e_device){
-    device::register_device(&usrp_e::find, &usrp_e::make);
-}
-
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
@@ -41,7 +37,7 @@ static std::string abs_path(const std::string &file_path){
 /***********************************************************************
  * Discovery
  **********************************************************************/
-device_addrs_t usrp_e::find(const device_addr_t &hint){
+static device_addrs_t usrp_e_find(const device_addr_t &hint){
     device_addrs_t usrp_e_addrs;
 
     //return an empty list of addresses when type is set to non-usrp-e
@@ -51,7 +47,7 @@ device_addrs_t usrp_e::find(const device_addr_t &hint){
     if (not hint.has_key("node")){
         device_addr_t new_addr = hint;
         new_addr["node"] = "/dev/usrp_e0";
-        return usrp_e::find(new_addr);
+        return usrp_e_find(new_addr);
     }
 
     //use the given device node name
@@ -68,8 +64,12 @@ device_addrs_t usrp_e::find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
-device::sptr usrp_e::make(const device_addr_t &device_addr){
-    return sptr(new usrp_e_impl(device_addr["node"]));
+static device::sptr usrp_e_make(const device_addr_t &device_addr){
+    return device::sptr(new usrp_e_impl(device_addr["node"]));
+}
+
+UHD_STATIC_BLOCK(register_usrp_e_device){
+    device::register_device(&usrp_e_find, &usrp_e_make);
 }
 
 /***********************************************************************

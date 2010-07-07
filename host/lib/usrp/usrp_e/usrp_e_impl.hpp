@@ -18,8 +18,8 @@
 #include "usrp_e_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
-#include <uhd/usrp/usrp_e.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -28,7 +28,10 @@
 #ifndef INCLUDED_USRP_E_IMPL_HPP
 #define INCLUDED_USRP_E_IMPL_HPP
 
-static const double MASTER_CLOCK_RATE = 64e6;
+static const double MASTER_CLOCK_RATE = 64e6; //TODO get from clock control
+
+//! load an fpga image from a bin file into the usrp-e fpga
+extern void usrp_e_load_fpga(const std::string &bin_file);
 
 /*!
  * Make a usrp-e dboard interface.
