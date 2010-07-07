@@ -104,6 +104,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args;
     double duration;
+    double only_rate;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -111,6 +112,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for each test in seconds")
+        ("rate", po::value<double>(&only_rate), "specify to perform a single test as this rate (sps)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -128,12 +130,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
-    sdev->set_rx_rate(500e3); //initial rate
-    while(true){
+    if (not vm.count("rate")){
+        sdev->set_rx_rate(500e3); //initial rate
+        while(true){
+            double rate = sdev->get_rx_rate();
+            test_device(sdev, rate, duration);
+            sdev->set_rx_rate(rate*2); //double the rate
+            if (sdev->get_rx_rate() == rate) break;
+        }
+    }
+    else{
+        sdev->set_rx_rate(only_rate);
         double rate = sdev->get_rx_rate();
         test_device(sdev, rate, duration);
-        sdev->set_rx_rate(rate*2); //double the rate
-        if (sdev->get_rx_rate() == rate) break;
     }
 
     //finished
