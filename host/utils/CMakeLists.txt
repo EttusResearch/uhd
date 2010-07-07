@@ -15,21 +15,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+########################################################################
+# Utilities that get installed into the runtime path
+########################################################################
 ADD_EXECUTABLE(uhd_find_devices uhd_find_devices.cpp)
 TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
-INSTALL(TARGETS uhd_find_devices RUNTIME DESTINATION ${RUNTIME_DIR})
 
 ADD_EXECUTABLE(uhd_usrp_probe uhd_usrp_probe.cpp)
 TARGET_LINK_LIBRARIES(uhd_usrp_probe uhd)
-INSTALL(TARGETS uhd_usrp_probe RUNTIME DESTINATION ${RUNTIME_DIR})
 
+INSTALL(TARGETS
+    uhd_find_devices
+    uhd_usrp_probe
+    RUNTIME DESTINATION ${RUNTIME_DIR}
+)
+
+########################################################################
+# Utilities that get installed into the share path
+########################################################################
 ADD_EXECUTABLE(usrp2_addr_burner usrp2_addr_burner.cpp)
 TARGET_LINK_LIBRARIES(usrp2_addr_burner uhd)
-INSTALL(TARGETS usrp2_addr_burner RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
 
-ADD_EXECUTABLE(uhd_burn_db_eeprom uhd_burn_db_eeprom.cpp)
-TARGET_LINK_LIBRARIES(uhd_burn_db_eeprom uhd)
-INSTALL(TARGETS uhd_burn_db_eeprom RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
+ADD_EXECUTABLE(usrp_burn_db_eeprom usrp_burn_db_eeprom.cpp)
+TARGET_LINK_LIBRARIES(usrp_burn_db_eeprom uhd)
+
+INSTALL(TARGETS
+    usrp2_addr_burner
+    usrp_burn_db_eeprom
+    RUNTIME DESTINATION ${PKG_DATA_DIR}/utils
+)
 
 INSTALL(PROGRAMS
     usrp2_recovery.py
