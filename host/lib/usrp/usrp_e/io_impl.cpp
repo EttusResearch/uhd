@@ -22,7 +22,6 @@
 #include <boost/bind.hpp>
 #include <fcntl.h> //read, write
 #include <linux/usrp_e.h> //transfer frame struct
-#include <stddef.h> //offsetof
 #include <poll.h>
 #include <boost/format.hpp>
 #include <iostream>
@@ -34,7 +33,7 @@ using namespace uhd::usrp;
  * Constants
  **********************************************************************/
 static const size_t MAX_BUFF_SIZE = 2048;
-static const size_t vrt_header_offset_words32 = offsetof(usrp_transfer_frame, buf)/sizeof(boost::uint32_t);
+static const size_t vrt_header_offset_words32 = sizeof(usrp_transfer_frame)/sizeof(boost::uint32_t);
 static const bool usrp_e_io_impl_verbose = true;
 static const size_t recv_timeout_ms = 100;
 
@@ -71,7 +70,7 @@ private:
         //and the send buffer commit method will set the length.
         const_cast<usrp_transfer_frame *>(
             boost::asio::buffer_cast<const usrp_transfer_frame *>(buff)
-        )->len = boost::asio::buffer_size(buff);
+        )->len = boost::asio::buffer_size(buff) - sizeof(usrp_transfer_frame);
         return write(
             _fd,
             boost::asio::buffer_cast<const void *>(buff),
@@ -112,16 +111,16 @@ private:
         }
 
         //overwrite the vrt header length with the transfer frame length
-        size_t frame_size = boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len;
-        boost::uint32_t *vrt_header = boost::asio::buffer_cast<boost::uint32_t *>(buff) + vrt_header_offset_words32;
-        vrt_header[0] = (vrt_header[0] & ~0xffff) | ((frame_size/sizeof(boost::uint32_t)) & 0xffff);
+        usrp_transfer_frame *frame = boost::asio::buffer_cast<usrp_transfer_frame *>(buff);
+        boost::uint32_t *vrt_header = reinterpret_cast<boost::uint32_t *>(frame->buf);
+        vrt_header[0] = (vrt_header[0] & ~0xffff) | ((frame->len/sizeof(boost::uint32_t)) & 0xffff);
 
-        //std::cout << "len " << int(boost::asio::buffer_cast<usrp_transfer_frame *>(buff)->len) << std::endl;
+        //std::cout << "len " << int(frame->len) << std::endl;
         //for (size_t i = 0; i < 7; i++){
         //    std::cout << boost::format("    0x%08x") % boost::asio::buffer_cast<boost::uint32_t *>(buff)[i] << std::endl;
         //}
 
-        return frame_size;
+        return read_ret;
     }
 };
 
@@ -230,6 +229,7 @@ size_t usrp_e_impl::recv(
         io_type, recv_otw_type,                    //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
-        boost::bind(get_recv_buffs, &_io_impl->transport, _1)
+        boost::bind(get_recv_buffs, &_io_impl->transport, _1),
+        vrt_header_offset_words32
     );
 }
