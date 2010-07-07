@@ -61,7 +61,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
+    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
     //set properties on the device
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (tx_rate/1e6) << std::endl;
@@ -81,8 +81,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send the entire buffer, let the driver handle fragmentation
     size_t num_tx_samps = dev->send(
-        boost::asio::buffer(buff),
-        md, uhd::io_type_t::COMPLEX_FLOAT32,
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
     std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;

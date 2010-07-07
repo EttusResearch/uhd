@@ -96,8 +96,6 @@ stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
  * metadata
  **********************************************************************/
 rx_metadata_t::rx_metadata_t(void):
-    has_stream_id(false),
-    stream_id(0),
     has_time_spec(false),
     time_spec(time_spec_t()),
     more_fragments(false),
@@ -107,8 +105,6 @@ rx_metadata_t::rx_metadata_t(void):
 }
 
 tx_metadata_t::tx_metadata_t(void):
-    has_stream_id(false),
-    stream_id(0),
     has_time_spec(false),
     time_spec(time_spec_t()),
     start_of_burst(false),

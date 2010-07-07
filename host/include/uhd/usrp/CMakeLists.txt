@@ -31,12 +31,12 @@ INSTALL(FILES
     dboard_iface.hpp
     dboard_manager.hpp
 
-    ### usrp headers ###
-    usrp2.hpp
-
     ### utilities ###
     tune_helper.hpp
+
+    ### interfaces ###
     simple_usrp.hpp
+    mimo_usrp.hpp
 
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
 )

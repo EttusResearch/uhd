@@ -23,7 +23,7 @@ The Basic RX and LFRX boards have 3 subdevices:
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can down-convert signals
-greater than the nyquist rate of the ADC.
+greater than the Nyquist rate of the ADC.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
@@ -50,7 +50,7 @@ Recieve Gains: **PGA0**, Range: 0-45dB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The XCVR2450 has a non-contiguous tuning range consiting of a high band and a low band.
+The XCVR2450 has a non-contiguous tuning range consisting of a high band and a low band.
 The high band consists of frequencies between...TODO
 
 Transmit Antennas: **J1** or **J2**
@@ -65,11 +65,11 @@ The XCVR2450 uses a common LO for both receive and transmit.
 Even though the API allows the RX and TX LOs to be individually set,
 a change of one LO setting will be reflected in the other LO setting.
 
-Transmit Gains: 
+Transmit Gains:
  * **VGA**, Range: 0-30dB
  * **BB**, Range: 0-5dB
 
-Recieve Gains: 
+Receive Gains:
  * **LNA**, Range: 0-30.5dB
  * **VGA**, Range: 0-62dB
 

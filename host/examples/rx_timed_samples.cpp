@@ -59,7 +59,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_name() << std::endl;
+    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
     //set properties on the device
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rx_rate/1e6) << std::endl;
@@ -85,7 +85,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::rx_metadata_t md;
         std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
         size_t num_rx_samps = dev->recv(
-            boost::asio::buffer(buff), md,
+            &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );

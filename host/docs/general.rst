@@ -45,7 +45,7 @@ The list of discovered devices can be narrowed down by specifying device address
 Device properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Properties of devices attached to your system can be probed with the "uhd_usrp_probe" program.
-The usrp probe program contructs an instance of the device and prints out its properties;
+The usrp probe program constructs an instance of the device and prints out its properties;
 properties such as detected daughter-boards, frequency range, gain ranges, etc...
 
 **Usage:**

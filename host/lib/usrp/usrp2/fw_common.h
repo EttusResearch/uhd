@@ -38,7 +38,7 @@ extern "C" {
 
 //defines the protocol version in this shared header
 //increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 4
+#define USRP2_PROTO_VERSION 5
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -111,7 +111,9 @@ typedef struct{
         struct {
             _SINS_ uint32_t addr;
             _SINS_ uint32_t data;
-            _SINS_ uint8_t num_bytes; //1, 2, 4
+            _SINS_ uint32_t addrhi;
+            _SINS_ uint32_t datahi;
+            _SINS_ uint8_t num_bytes; //1, 2, 4, 8
         } poke_args;
     } data;
 } usrp2_ctrl_data_t;

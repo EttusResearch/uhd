@@ -78,12 +78,21 @@
 #endif // UHD_DLL
 
 // Define force inline macro
-#ifdef BOOST_MSVC
+#if defined(BOOST_MSVC)
     #define UHD_INLINE __forceinline
 #elif defined(__GNUG__) && __GNUG__ >= 4
     #define UHD_INLINE inline __attribute__((always_inline))
 #else
     #define UHD_INLINE inline
+#endif
+
+// Define deprecated attribute macro
+#if defined(BOOST_MSVC)
+    #define UHD_DEPRECATED __declspec(deprecated)
+#elif defined(__GNUG__) && __GNUG__ >= 4
+    #define UHD_DEPRECATED __attribute__ ((deprecated))
+#else
+    #define UHD_DEPRECATED
 #endif
 
 #endif /* INCLUDED_UHD_CONFIG_HPP */
