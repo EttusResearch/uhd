@@ -241,9 +241,4 @@
 #define U2_REG_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
 #define U2_REG_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
 
-//helpful macros for dealing with stream cmd
-#define U2_REG_RX_CTRL_MAX_SAMPS_PER_CMD 0x1fffffff
-#define U2_REG_RX_CTRL_MAKE_CMD(nsamples, now, chain, reload) \
-  ((((now) & 0x1) << 31) | (((chain) & 0x1) << 30) | (((reload) & 0x1) << 29) | ((nsamples) & 0x1fffffff))
-
 #endif /* INCLUDED_USRP2_REGS_HPP */
