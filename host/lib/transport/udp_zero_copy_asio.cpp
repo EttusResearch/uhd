@@ -16,6 +16,7 @@
 //
 
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
@@ -29,7 +30,6 @@ using namespace uhd::transport;
  **********************************************************************/
 //enough buffering for half a second of samples at full rate on usrp2
 static const size_t MIN_SOCK_BUFF_SIZE = size_t(sizeof(boost::uint32_t) * 25e6 * 0.5);
-static const size_t MAX_DGRAM_SIZE = 1500; //assume max size on send and recv
 static const double RECV_TIMEOUT = 0.1; //100 ms
 
 /***********************************************************************
@@ -51,8 +51,8 @@ public:
         const std::string &addr,
         const std::string &port
     ):
-        phony_zero_copy_recv_if(MAX_DGRAM_SIZE),
-        phony_zero_copy_send_if(MAX_DGRAM_SIZE)
+        phony_zero_copy_recv_if(udp_simple::mtu),
+        phony_zero_copy_send_if(udp_simple::mtu)
     {
         //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
@@ -93,11 +93,11 @@ public:
     //This way, the transport caller will have an idea about how much buffering to create.
 
     size_t get_num_recv_frames(void) const{
-        return this->get_buff_size<boost::asio::socket_base::receive_buffer_size>()/MAX_DGRAM_SIZE;
+        return this->get_buff_size<boost::asio::socket_base::receive_buffer_size>()/udp_simple::mtu;
     }
 
     size_t get_num_send_frames(void) const{
-        return this->get_buff_size<boost::asio::socket_base::send_buffer_size>()/MAX_DGRAM_SIZE;
+        return this->get_buff_size<boost::asio::socket_base::send_buffer_size>()/udp_simple::mtu;
     }
 
 private:

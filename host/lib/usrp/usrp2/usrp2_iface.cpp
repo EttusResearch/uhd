@@ -26,13 +26,14 @@
 #include <algorithm>
 
 using namespace uhd;
+using namespace uhd::transport;
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
 /***********************************************************************
  * Structors
  **********************************************************************/
-    usrp2_iface_impl(transport::udp_simple::sptr ctrl_transport){
+    usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
     }
 
@@ -160,7 +161,7 @@ public:
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
         //loop until we get the packet or timeout
-        boost::uint8_t usrp2_ctrl_data_in_mem[USRP2_UDP_BYTES]; //allocate max bytes for recv
+        boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem));
@@ -182,7 +183,7 @@ public:
 
 private:
     //this lovely lady makes it all possible
-    transport::udp_simple::sptr _ctrl_transport;
+    udp_simple::sptr _ctrl_transport;
 
     //used in send/recv
     boost::mutex _ctrl_mutex;
@@ -222,6 +223,6 @@ private:
 /***********************************************************************
  * Public make function for usrp2 interface
  **********************************************************************/
-usrp2_iface::sptr usrp2_iface::make(transport::udp_simple::sptr ctrl_transport){
+usrp2_iface::sptr usrp2_iface::make(udp_simple::sptr ctrl_transport){
     return usrp2_iface::sptr(new usrp2_iface_impl(ctrl_transport));
 }

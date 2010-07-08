@@ -32,20 +32,12 @@ extern "C" {
 #define _SINS_
 #endif
 
-// define limits on bytes per udp packet
-#define USRP2_MTU_BYTES 1500
-#define USRP2_UDP_BYTES ((USRP2_MTU_BYTES) - (2 + 14 + 20 + 8)) //size of headers (pad, eth, ip, udp)
-
 //defines the protocol version in this shared header
 //increment this value when the protocol is changed
 #define USRP2_PROTO_VERSION 5
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
-
-// size of the vrt header and trailer to the host
-#define USRP2_HOST_RX_VRT_HEADER_WORDS32 5
-#define USRP2_HOST_RX_VRT_TRAILER_WORDS32 1 //FIXME fpga sets wrong header size when no trailer present
 
 // udp ports for the usrp2 communication
 // Dynamic and/or private ports: 49152-65535

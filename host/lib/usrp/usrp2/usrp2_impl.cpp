@@ -99,8 +99,8 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the timeout
-    boost::uint8_t usrp2_ctrl_data_in_mem[USRP2_UDP_BYTES]; //allocate max bytes for recv
-    usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
+    boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
+    const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
         //std::cout << len << "\n";
