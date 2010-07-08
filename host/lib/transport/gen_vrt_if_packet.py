@@ -62,7 +62,10 @@ using namespace uhd::transport;
 #set $tlr_p = 0b10000
 
 static UHD_INLINE void pack_uint64_$(suffix)(boost::uint64_t num, boost::uint32_t *mem){
-    *(reinterpret_cast<boost::uint64_t *>(mem)) = $(XE_MACRO)(num);
+    //*(reinterpret_cast<boost::uint64_t *>(mem)) = $(XE_MACRO)(num);
+    //second word is lower 32 bits due to fpga implementation
+    mem[1] = $(XE_MACRO)(boost::uint32_t(num >> 0));
+    mem[0] = $(XE_MACRO)(boost::uint32_t(num >> 32));
 }
 
 void vrt::if_hdr_pack_$(suffix)(
@@ -137,7 +140,10 @@ void vrt::if_hdr_pack_$(suffix)(
 }
 
 static UHD_INLINE void unpack_uint64_$(suffix)(boost::uint64_t &num, const boost::uint32_t *mem){
-    num = $(XE_MACRO)(*reinterpret_cast<const boost::uint64_t *>(mem));
+    //num = $(XE_MACRO)(*reinterpret_cast<const boost::uint64_t *>(mem));
+    //second word is lower 32 bits due to fpga implementation
+    num =  boost::uint64_t($(XE_MACRO)(mem[1])) << 0;
+    num |= boost::uint64_t($(XE_MACRO)(mem[0])) << 32;
 }
 
 void vrt::if_hdr_unpack_$(suffix)(
