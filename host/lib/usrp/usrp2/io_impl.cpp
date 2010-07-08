@@ -135,7 +135,7 @@ void usrp2_impl::io_init(void){
     for (size_t i = 0; i < _data_transports.size(); i++){
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop,
-            _io_impl, _data_transports.at(i),
+            _io_impl.get(), _data_transports.at(i),
             _mboards.at(i), i
         ));
     }
@@ -195,6 +195,6 @@ size_t usrp2_impl::recv(
         io_type, _io_helper.get_rx_otw_type(),     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
-        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl, _1)
+        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1)
     );
 }
