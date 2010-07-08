@@ -24,12 +24,12 @@
  * Therefore, this header may only contain valid C code.
  */
 #ifdef __cplusplus
-#include <boost/cstdint.hpp>
-#define _SINS_ boost:://stdint namespace when in c++
+    #include <boost/cstdint.hpp>
+    #define __stdint(type) boost::type
 extern "C" {
 #else
-#include <stdint.h>
-#define _SINS_
+    #include <stdint.h>
+    #define __stdint(type) type
 #endif
 
 //defines the protocol version in this shared header
@@ -82,34 +82,35 @@ typedef enum{
 } usrp2_clk_edge_t;
 
 typedef struct{
-    _SINS_ uint32_t proto_ver;
-    _SINS_ uint32_t id;
-    _SINS_ uint32_t seq;
+    __stdint(uint32_t) proto_ver;
+    __stdint(uint32_t) id;
+    __stdint(uint32_t) seq;
     union{
-        _SINS_ uint32_t ip_addr;
+        __stdint(uint32_t) ip_addr;
         struct {
-            _SINS_ uint8_t dev;
-            _SINS_ uint8_t miso_edge;
-            _SINS_ uint8_t mosi_edge;
-            _SINS_ uint8_t readback;
-            _SINS_ uint32_t data;
-            _SINS_ uint8_t num_bits;
+            __stdint(uint8_t) dev;
+            __stdint(uint8_t) miso_edge;
+            __stdint(uint8_t) mosi_edge;
+            __stdint(uint8_t) readback;
+            __stdint(uint32_t) data;
+            __stdint(uint8_t) num_bits;
         } spi_args;
         struct {
-            _SINS_ uint8_t addr;
-            _SINS_ uint8_t bytes;
-            _SINS_ uint8_t data[20];
+            __stdint(uint8_t) addr;
+            __stdint(uint8_t) bytes;
+            __stdint(uint8_t) data[20];
         } i2c_args;
         struct {
-            _SINS_ uint32_t addr;
-            _SINS_ uint32_t data;
-            _SINS_ uint32_t addrhi;
-            _SINS_ uint32_t datahi;
-            _SINS_ uint8_t num_bytes; //1, 2, 4, 8
+            __stdint(uint32_t) addr;
+            __stdint(uint32_t) data;
+            __stdint(uint32_t) addrhi;
+            __stdint(uint32_t) datahi;
+            __stdint(uint8_t) num_bytes; //1, 2, 4, 8
         } poke_args;
     } data;
 } usrp2_ctrl_data_t;
 
+#undef __stdint
 #ifdef __cplusplus
 }
 #endif
