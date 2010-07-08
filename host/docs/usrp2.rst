@@ -88,13 +88,33 @@ Setup the host interface
 The USRP2 communicates at the IP/UDP layer over the gigabit ethernet.
 The default IP address of the USRP2 is **192.168.10.2**
 You will need to configure the host's ethernet interface with a static IP address to enable communication.
-An address of **192.168.10.1** is recommended.
+An address of **192.168.10.1** and a subnet mask of **255.255.255.0** is recommended.
 
 **Note:**
 When using the UHD, if an IP address for the USRP2 is not specified,
 the software will use UDP broadcast packets to locate the USRP2.
 On some systems, the firewall will block UDP broadcast packets.
 It is recommended that you change or disable your firewall settings. 
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Multiple device configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+As described above, you will need one ethernet interface per USRP2.
+Each ethernet interface should have its own subnet,
+and the corresponding USRP2 device should be assigned an address in that subnet.
+Example:
+
+**Configuration for USRP2 device 0:**
+
+* Ethernet interface IPv4 address: 192.168.10.1
+* Ethernet interface subnet mask: 255.255.255.0
+* USRP2 device IPv4 address: 192.168.10.2
+
+**Configuration for USRP2 device 1:**
+
+* Ethernet interface IPv4 address: 192.168.20.1
+* Ethernet interface subnet mask: 255.255.255.0
+* USRP2 device IPv4 address: 192.168.20.2
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Change the USRP2's IP address
@@ -122,7 +142,7 @@ Run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp2_recovery.py --ifc=eth0 --new-ip=192.168.10.3
+    sudo ./usrp2_recovery.py --ifc=eth0 --new-ip=192.168.10.3
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Debugging networking problems
@@ -180,7 +200,6 @@ The device address string representation for 2 USRP2s with IPv4 addresses 192.16
 ::
 
     addr=192.168.10.2 192.168.20.2
-
 
 ------------------------------------------------------------------------
 Resize the send and receive buffers

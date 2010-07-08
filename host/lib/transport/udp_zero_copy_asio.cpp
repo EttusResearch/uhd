@@ -155,17 +155,17 @@ template<typename Opt> static void resize_buff_helper(
         else std::cout << boost::format(
             "Current %s sock buff size: %d bytes"
         ) % name % actual_size << std::endl;
+        if (actual_size < target_size) std::cerr << boost::format(
+            "Warning:\n"
+            "    The %s buffer is smaller than the requested size.\n"
+            "    The minimum recommended buffer size is %d bytes.\n"
+            "    See the USRP2 application notes on buffer resizing.\n"
+        ) % name % MIN_SOCK_BUFF_SIZE << std::endl;
     }
 
     //otherwise, ensure that the buffer is at least the minimum size
     else if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
         resize_buff_helper<Opt>(udp_trans, MIN_SOCK_BUFF_SIZE, name);
-        if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
-            std::cerr << boost::format(
-                "Warning: the %s buffer size is smaller than the recommended size of %d bytes.\n"
-                "    See the USRP2 application notes on buffer resizing."
-            ) % name % MIN_SOCK_BUFF_SIZE << std::endl;
-        }
     }
 }
 
