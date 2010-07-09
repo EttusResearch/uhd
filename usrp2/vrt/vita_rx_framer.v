@@ -193,7 +193,7 @@ module vita_rx_framer
        VITA_PAYLOAD :
 	 // Write if sample ready and no error flags
      	 req_write_pkt_fifo <= (sample_fifo_src_rdy_i & ~|flags_fifo_o[3:1]);
-       VITA_ERR_HEADER, VITA_ERR_STREAMID, VITA_ERR_SECS, VITA_ERR_TICS, VITA_ERR_TICS2, VITA_ERR_PAYLOAD, VITA_ERR_TRAILER :
+       VITA_ERR_HEADER, VITA_ERR_STREAMID, VITA_ERR_SECS, VITA_ERR_TICS, VITA_ERR_TICS2, VITA_ERR_PAYLOAD :
 	 req_write_pkt_fifo <= 1;
        default :
 	 req_write_pkt_fifo <= 0;
@@ -213,7 +213,7 @@ module vita_rx_framer
 				   ( ((vita_state==VITA_PAYLOAD) & 
 				      (sample_phase == (numchan-4'd1)) & 
 				      ~|flags_fifo_o[3:1]) |
-				     (vita_state==VITA_ERR_TRAILER));
+				     (vita_state==VITA_ERR_PAYLOAD));
    
    assign debug_rx  = vita_state;
    
