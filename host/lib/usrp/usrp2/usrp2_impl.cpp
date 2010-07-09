@@ -99,8 +99,8 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the timeout
-    boost::uint8_t usrp2_ctrl_data_in_mem[USRP2_UDP_BYTES]; //allocate max bytes for recv
-    usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
+    boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
+    const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
         //std::cout << len << "\n";
@@ -127,14 +127,25 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
+template <typename out_type, typename in_type>
+out_type lexical_cast(const in_type &in){
+    try{
+        return boost::lexical_cast<out_type>(in);
+    }catch(...){
+        throw std::runtime_error(str(boost::format(
+            "failed to cast \"%s\" to type \"%s\""
+        ) % boost::lexical_cast<std::string>(in) % typeid(out_type).name()));
+    }
+}
+
 static device::sptr usrp2_make(const device_addr_t &device_addr){
     //extract the receive and send buffer sizes
     size_t recv_buff_size = 0, send_buff_size= 0 ;
     if (device_addr.has_key("recv_buff_size")){
-        recv_buff_size = size_t(boost::lexical_cast<double>(device_addr["recv_buff_size"]));
+        recv_buff_size = size_t(lexical_cast<double>(device_addr["recv_buff_size"]));
     }
     if (device_addr.has_key("send_buff_size")){
-        send_buff_size = size_t(boost::lexical_cast<double>(device_addr["send_buff_size"]));
+        send_buff_size = size_t(lexical_cast<double>(device_addr["send_buff_size"]));
     }
 
     //create a ctrl and data transport for each address

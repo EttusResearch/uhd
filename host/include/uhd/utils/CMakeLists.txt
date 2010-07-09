@@ -18,6 +18,7 @@
 INSTALL(FILES
     algorithm.hpp
     assert.hpp
+    assert.ipp
     byteswap.hpp
     byteswap.ipp
     exception.hpp

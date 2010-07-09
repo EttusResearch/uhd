@@ -32,6 +32,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 
@@ -106,15 +107,14 @@ public:
 
 private:
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    static const size_t _max_rx_bytes_per_packet =
-        USRP2_UDP_BYTES -
-        USRP2_HOST_RX_VRT_HEADER_WORDS32*sizeof(boost::uint32_t) -
-        USRP2_HOST_RX_VRT_TRAILER_WORDS32*sizeof(boost::uint32_t)
+    static const size_t _max_rx_bytes_per_packet = uhd::transport::udp_simple::mtu
+        - uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        - sizeof(uhd::transport::vrt::if_packet_info_t().tlr) //forced to have trailer
+        + sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    static const size_t _max_tx_bytes_per_packet =
-        USRP2_UDP_BYTES -
-        uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t) -
-        sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
+    static const size_t _max_tx_bytes_per_packet = uhd::transport::udp_simple::mtu
+        - uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
     ;
 };
 

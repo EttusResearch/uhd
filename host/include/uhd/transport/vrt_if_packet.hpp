@@ -35,6 +35,13 @@ namespace vrt{
      * the operation used (ie the pack or unpack function call).
      */
     struct UHD_API if_packet_info_t{
+        //packet type (pack only supports data)
+        enum packet_type_t {
+            PACKET_TYPE_DATA      = 0x0,
+            PACKET_TYPE_EXTENSION = 0x1,
+            PACKET_TYPE_CONTEXT   = 0x2
+        } packet_type;
+
         //size fields
         size_t num_payload_words32; //required in pack, derived in unpack
         size_t num_header_words32;  //derived in pack, derived in unpack

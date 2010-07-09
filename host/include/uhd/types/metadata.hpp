@@ -52,10 +52,9 @@ namespace uhd{
          * Burst flags:
          * Start of burst will be true for the first packet in the chain.
          * End of burst will be true for the last packet in the chain.
-         * --Not currently used in any known device implementation.--
          */
-        //bool start_of_burst;
-        //bool end_of_burst;
+        bool start_of_burst;
+        bool end_of_burst;
 
         /*!
          * Error conditions (TODO):

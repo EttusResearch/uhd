@@ -61,13 +61,6 @@ using namespace uhd::transport;
 #set $tsf_p = 0b01000
 #set $tlr_p = 0b10000
 
-static UHD_INLINE void pack_uint64_$(suffix)(boost::uint64_t num, boost::uint32_t *mem){
-    //*(reinterpret_cast<boost::uint64_t *>(mem)) = $(XE_MACRO)(num);
-    //second word is lower 32 bits due to fpga implementation
-    mem[1] = $(XE_MACRO)(boost::uint32_t(num >> 0));
-    mem[0] = $(XE_MACRO)(boost::uint32_t(num >> 32));
-}
-
 void vrt::if_hdr_pack_$(suffix)(
     boost::uint32_t *packet_buff,
     if_packet_info_t &if_packet_info
@@ -94,8 +87,10 @@ void vrt::if_hdr_pack_$(suffix)(
         #end if
         ########## Class ID ##########
         #if $pred & $cid_p
-            pack_uint64_$(suffix)(if_packet_info.cid, packet_buff+$num_header_words);
-            #set $num_header_words += 2
+            packet_buff[$num_header_words] = 0; //not implemented
+            #set $num_header_words += 1
+            packet_buff[$num_header_words] = 0; //not implemented
+            #set $num_header_words += 1
             #set $flags |= (0x1 << 27);
         #end if
         ########## Integer Time ##########
@@ -106,8 +101,10 @@ void vrt::if_hdr_pack_$(suffix)(
         #end if
         ########## Fractional Time ##########
         #if $pred & $tsf_p
-            pack_uint64_$(suffix)(if_packet_info.tsf, packet_buff+$num_header_words);
-            #set $num_header_words += 2
+            packet_buff[$num_header_words] = $(XE_MACRO)(boost::uint32_t(if_packet_info.tsf >> 32));
+            #set $num_header_words += 1
+            packet_buff[$num_header_words] = $(XE_MACRO)(boost::uint32_t(if_packet_info.tsf >> 0));
+            #set $num_header_words += 1
             #set $flags |= (0x1 << 20);
         #end if
         ########## Trailer ##########
@@ -116,7 +113,6 @@ void vrt::if_hdr_pack_$(suffix)(
             #set $flags |= (0x1 << 26);
             #set $num_trailer_words = 1;
         #else
-            //packet_buff[$num_header_words+if_packet_info.num_payload_words32] = 0;
             #set $num_trailer_words = 0;
         #end if
         ########## Variables ##########
@@ -139,13 +135,6 @@ void vrt::if_hdr_pack_$(suffix)(
     ));
 }
 
-static UHD_INLINE void unpack_uint64_$(suffix)(boost::uint64_t &num, const boost::uint32_t *mem){
-    //num = $(XE_MACRO)(*reinterpret_cast<const boost::uint64_t *>(mem));
-    //second word is lower 32 bits due to fpga implementation
-    num =  boost::uint64_t($(XE_MACRO)(mem[1])) << 0;
-    num |= boost::uint64_t($(XE_MACRO)(mem[0])) << 32;
-}
-
 void vrt::if_hdr_unpack_$(suffix)(
     const boost::uint32_t *packet_buff,
     if_packet_info_t &if_packet_info
@@ -153,13 +142,16 @@ void vrt::if_hdr_unpack_$(suffix)(
     //extract vrt header
     boost::uint32_t vrt_hdr_word = $(XE_MACRO)(packet_buff[0]);
     size_t packet_words32 = vrt_hdr_word & 0xffff;
-    if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
 
-    //failure cases
+    //failure case
     if (if_packet_info.num_packet_words32 < packet_words32)
         throw std::runtime_error("bad vrt header or packet fragment");
-    if (vrt_hdr_word & (0x7 << 29))
-        throw std::runtime_error("bad vrt header or unsupported packet type");
+
+    //extract fields from the header
+    if_packet_info.packet_type = if_packet_info_t::packet_type_t(vrt_hdr_word >> 29);
+    if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
+    if_packet_info.sob = bool(vrt_hdr_word & $hex(0x1 << 25));
+    if_packet_info.eob = bool(vrt_hdr_word & $hex(0x1 << 24));
 
     boost::uint8_t pred = 0;
     if(vrt_hdr_word & $hex(0x1 << 28)) pred |= $hex($sid_p);
@@ -184,7 +176,7 @@ void vrt::if_hdr_unpack_$(suffix)(
         ########## Class ID ##########
         #if $pred & $cid_p
             if_packet_info.has_cid = true;
-            unpack_uint64_$(suffix)(if_packet_info.cid, packet_buff+$num_header_words);
+            if_packet_info.cid = 0; //not implemented
             #set $num_header_words += 2
         #else
             if_packet_info.has_cid = false;
@@ -200,15 +192,17 @@ void vrt::if_hdr_unpack_$(suffix)(
         ########## Fractional Time ##########
         #if $pred & $tsf_p
             if_packet_info.has_tsf = true;
-            unpack_uint64_$(suffix)(if_packet_info.tsf, packet_buff+$num_header_words);
-            #set $num_header_words += 2
+            if_packet_info.tsf = boost::uint64_t($(XE_MACRO)(packet_buff[$num_header_words])) << 32;
+            #set $num_header_words += 1
+            if_packet_info.tsf |= boost::uint64_t($(XE_MACRO)(packet_buff[$num_header_words])) << 0;
+            #set $num_header_words += 1
         #else
             if_packet_info.has_tsf = false;
         #end if
         ########## Trailer ##########
         #if $pred & $tlr_p
             if_packet_info.has_tlr = true;
-            if_packet_info.tlr = $(XE_MACRO)(packet_buff[$num_header_words+packet_words32]);
+            if_packet_info.tlr = $(XE_MACRO)(packet_buff[packet_words32-1]);
             #set $num_trailer_words = 1;
         #else
             if_packet_info.has_tlr = false;

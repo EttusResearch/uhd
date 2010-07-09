@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
@@ -39,6 +40,9 @@ namespace vrt_packet_handler{
  **********************************************************************/
     typedef std::vector<uhd::transport::managed_recv_buffer::sptr> managed_recv_buffs_t;
     typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
+    typedef boost::function<void(size_t /*which channel*/)> handle_overrun_t;
+
+    void handle_overrun_nop(size_t){}
 
     struct recv_state{
         //width of the receiver in channels
@@ -53,7 +57,7 @@ namespace vrt_packet_handler{
         size_t size_of_copy_buffs;
         size_t fragment_offset_in_samps;
 
-        recv_state(size_t width):
+        recv_state(size_t width = 1):
             width(width),
             next_packet_seq(width, 0),
             managed_buffs(width),
@@ -75,20 +79,25 @@ namespace vrt_packet_handler{
         uhd::rx_metadata_t &metadata,
         double tick_rate,
         vrt_unpacker_type vrt_unpacker,
+        const handle_overrun_t &handle_overrun,
         size_t vrt_header_offset_words32
     ){
-        size_t num_packet_words32 = state.managed_buffs[0]->size()/sizeof(boost::uint32_t);
-        if (num_packet_words32 <= vrt_header_offset_words32){
-            state.size_of_copy_buffs = 0;
-            return; //must exit here after setting the buffer
-        }
-
         //vrt unpack each managed buffer
         uhd::transport::vrt::if_packet_info_t if_packet_info;
         for (size_t i = 0; i < state.width; i++){
+
+            //extract packet words and check thats its enough to move on
+            size_t num_packet_words32 = state.managed_buffs[i]->size()/sizeof(boost::uint32_t);
+            if (num_packet_words32 <= vrt_header_offset_words32){
+                state.size_of_copy_buffs = 0;
+                return; //must exit here after setting the buffer
+            }
+
+            //unpack the vrt header into the info struct
             const boost::uint32_t *vrt_hdr = state.managed_buffs[i]->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
             if_packet_info.num_packet_words32 = num_packet_words32 - vrt_header_offset_words32;
             vrt_unpacker(vrt_hdr, if_packet_info);
+            const boost::uint32_t *vrt_data = vrt_hdr + if_packet_info.num_header_words32;
 
             //handle the packet count / sequence number
             if (if_packet_info.packet_count != state.next_packet_seq[i]){
@@ -96,8 +105,19 @@ namespace vrt_packet_handler{
             }
             state.next_packet_seq[i] = (if_packet_info.packet_count+1)%16;
 
+            //make sure that its a data packet (TODO handle non-data packets)
+            if (if_packet_info.packet_type != uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA){
+                std::cout << "vrt packet handler _recv1_helper got non data packet" << std::endl;
+                //extract the context word (we dont know the endianness so mirror the bytes)
+                boost::uint32_t word0 = vrt_data[0] | uhd::byteswap(vrt_data[0]);
+                if (word0 & 8) handle_overrun(i);
+                // 4: broken chain, 2: late command...
+                state.size_of_copy_buffs = 0;
+                return; //must exit here after setting the buffer
+            }
+
             //setup the buffer to point to the data
-            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(vrt_hdr + if_packet_info.num_header_words32);
+            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(vrt_data);
 
             //store the minimum payload length into the copy buffer length
             size_t num_payload_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t);
@@ -111,6 +131,9 @@ namespace vrt_packet_handler{
         metadata.time_spec = uhd::time_spec_t(
             time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
         );
+        metadata.start_of_burst = if_packet_info.sob;
+        static const int tlr_eob_flags = (1 << 20) | (1 << 8); //enable and indicator bits
+        metadata.end_of_burst = if_packet_info.has_tlr and (int(if_packet_info.tlr & tlr_eob_flags) == tlr_eob_flags);
     }
 
     /*******************************************************************
@@ -129,7 +152,7 @@ namespace vrt_packet_handler{
         double tick_rate,
         vrt_unpacker_type vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
-        //use these two params to handle a layer above vrt
+        const handle_overrun_t &handle_overrun,
         size_t vrt_header_offset_words32
     ){
         metadata.has_time_spec = false; //false unless set in the helper
@@ -140,7 +163,9 @@ namespace vrt_packet_handler{
             if (not get_recv_buffs(state.managed_buffs)) return 0;
             try{
                 _recv1_helper(
-                    state, metadata, tick_rate, vrt_unpacker, vrt_header_offset_words32
+                    state, metadata, tick_rate,
+                    vrt_unpacker, handle_overrun,
+                    vrt_header_offset_words32
                 );
             }catch(const std::exception &e){
                 std::cerr << "Error (recv): " << e.what() << std::endl;
@@ -191,7 +216,7 @@ namespace vrt_packet_handler{
         double tick_rate,
         vrt_unpacker_type vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
-        //use these two params to handle a layer above vrt
+        const handle_overrun_t &handle_overrun = &handle_overrun_nop,
         size_t vrt_header_offset_words32 = 0
     ){
         switch(recv_mode){
@@ -208,6 +233,7 @@ namespace vrt_packet_handler{
                 tick_rate,
                 vrt_unpacker,
                 get_recv_buffs,
+                handle_overrun,
                 vrt_header_offset_words32
             );
         }
@@ -227,6 +253,7 @@ namespace vrt_packet_handler{
                     tick_rate,
                     vrt_unpacker,
                     get_recv_buffs,
+                    handle_overrun,
                     vrt_header_offset_words32
                 );
                 if (num_samps == 0) break; //had a recv timeout or error, break loop
@@ -315,7 +342,6 @@ namespace vrt_packet_handler{
         vrt_packer_type vrt_packer,
         const get_send_buffs_t &get_send_buffs,
         size_t max_samples_per_packet,
-        //use these two params to handle a layer above vrt
         size_t vrt_header_offset_words32 = 0
     ){
         //translate the metadata to vrt if packet info
