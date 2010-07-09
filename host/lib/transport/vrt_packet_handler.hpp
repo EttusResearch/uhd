@@ -77,15 +77,18 @@ namespace vrt_packet_handler{
         vrt_unpacker_type vrt_unpacker,
         size_t vrt_header_offset_words32
     ){
-        size_t num_packet_words32 = state.managed_buffs[0]->size()/sizeof(boost::uint32_t);
-        if (num_packet_words32 <= vrt_header_offset_words32){
-            state.size_of_copy_buffs = 0;
-            return; //must exit here after setting the buffer
-        }
-
         //vrt unpack each managed buffer
         uhd::transport::vrt::if_packet_info_t if_packet_info;
         for (size_t i = 0; i < state.width; i++){
+
+            //extract packet words and check thats its enough to move on
+            size_t num_packet_words32 = state.managed_buffs[i]->size()/sizeof(boost::uint32_t);
+            if (num_packet_words32 <= vrt_header_offset_words32){
+                state.size_of_copy_buffs = 0;
+                return; //must exit here after setting the buffer
+            }
+
+            //unpack the vrt header into the info struct
             const boost::uint32_t *vrt_hdr = state.managed_buffs[i]->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
             if_packet_info.num_packet_words32 = num_packet_words32 - vrt_header_offset_words32;
             vrt_unpacker(vrt_hdr, if_packet_info);
@@ -95,6 +98,13 @@ namespace vrt_packet_handler{
                 std::cerr << "S" << (if_packet_info.packet_count - state.next_packet_seq[i])%16;
             }
             state.next_packet_seq[i] = (if_packet_info.packet_count+1)%16;
+
+            //make sure that its a data packet (TODO handle non-data packets)
+            if (if_packet_info.packet_type != uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA){
+                std::cout << "vrt packet handler _recv1_helper got non data packet" << std::endl;
+                state.size_of_copy_buffs = 0;
+                return; //must exit here after setting the buffer
+            }
 
             //setup the buffer to point to the data
             state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(vrt_hdr + if_packet_info.num_header_words32);
@@ -111,6 +121,9 @@ namespace vrt_packet_handler{
         metadata.time_spec = uhd::time_spec_t(
             time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
         );
+        metadata.start_of_burst = if_packet_info.sob;
+        static const int tlr_eob_flags = (1 << 20) | (1 << 8); //enable and indicator bits
+        metadata.end_of_burst = if_packet_info.has_tlr and (int(if_packet_info.tlr & tlr_eob_flags) == tlr_eob_flags);
     }
 
     /*******************************************************************
