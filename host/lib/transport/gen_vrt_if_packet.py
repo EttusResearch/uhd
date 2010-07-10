@@ -150,8 +150,8 @@ void vrt::if_hdr_unpack_$(suffix)(
     //extract fields from the header
     if_packet_info.packet_type = if_packet_info_t::packet_type_t(vrt_hdr_word >> 29);
     if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
-    if_packet_info.sob = bool(vrt_hdr_word & $hex(0x1 << 25));
-    if_packet_info.eob = bool(vrt_hdr_word & $hex(0x1 << 24));
+    //if_packet_info.sob = bool(vrt_hdr_word & $hex(0x1 << 25)); //not implemented
+    //if_packet_info.eob = bool(vrt_hdr_word & $hex(0x1 << 24)); //not implemented
 
     boost::uint8_t pred = 0;
     if(vrt_hdr_word & $hex(0x1 << 28)) pred |= $hex($sid_p);

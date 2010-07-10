@@ -42,7 +42,7 @@ namespace vrt_packet_handler{
     typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
     typedef boost::function<void(size_t /*which channel*/)> handle_overrun_t;
 
-    void handle_overrun_nop(size_t){}
+    static inline void handle_overrun_nop(size_t){}
 
     struct recv_state{
         //width of the receiver in channels
@@ -89,8 +89,7 @@ namespace vrt_packet_handler{
             //extract packet words and check thats its enough to move on
             size_t num_packet_words32 = state.managed_buffs[i]->size()/sizeof(boost::uint32_t);
             if (num_packet_words32 <= vrt_header_offset_words32){
-                state.size_of_copy_buffs = 0;
-                return; //must exit here after setting the buffer
+                throw std::runtime_error("recv buffer smaller than vrt packet offset");
             }
 
             //unpack the vrt header into the info struct
@@ -105,15 +104,16 @@ namespace vrt_packet_handler{
             }
             state.next_packet_seq[i] = (if_packet_info.packet_count+1)%16;
 
-            //make sure that its a data packet (TODO handle non-data packets)
+            //handle the non-data packet case and parse its contents
             if (if_packet_info.packet_type != uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA){
-                std::cout << "vrt packet handler _recv1_helper got non data packet" << std::endl;
+
                 //extract the context word (we dont know the endianness so mirror the bytes)
                 boost::uint32_t word0 = vrt_data[0] | uhd::byteswap(vrt_data[0]);
-                if (word0 & 8) handle_overrun(i);
-                // 4: broken chain, 2: late command...
-                state.size_of_copy_buffs = 0;
-                return; //must exit here after setting the buffer
+                if (word0 & uhd::rx_metadata_t::ERROR_CODE_OVERRUN) handle_overrun(i);
+                metadata.error_code = uhd::rx_metadata_t::error_code_t(word0 & 0xf);
+
+                //break to exit loop and store metadata below
+                state.size_of_copy_buffs = 0; break;
             }
 
             //setup the buffer to point to the data
@@ -131,9 +131,10 @@ namespace vrt_packet_handler{
         metadata.time_spec = uhd::time_spec_t(
             time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
         );
-        metadata.start_of_burst = if_packet_info.sob;
+        static const int tlr_sob_flags = (1 << 21) | (1 << 9); //enable and indicator bits
+        metadata.start_of_burst = if_packet_info.has_tlr and (int(if_packet_info.tlr & tlr_sob_flags) == tlr_sob_flags);
         static const int tlr_eob_flags = (1 << 20) | (1 << 8); //enable and indicator bits
-        metadata.end_of_burst = if_packet_info.has_tlr and (int(if_packet_info.tlr & tlr_eob_flags) == tlr_eob_flags);
+        metadata.end_of_burst   = if_packet_info.has_tlr and (int(if_packet_info.tlr & tlr_eob_flags) == tlr_eob_flags);
     }
 
     /*******************************************************************
@@ -156,11 +157,15 @@ namespace vrt_packet_handler{
         size_t vrt_header_offset_words32
     ){
         metadata.has_time_spec = false; //false unless set in the helper
+        metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
 
         //perform a receive if no rx data is waiting to be copied
         if (state.size_of_copy_buffs == 0){
             state.fragment_offset_in_samps = 0;
-            if (not get_recv_buffs(state.managed_buffs)) return 0;
+            if (not get_recv_buffs(state.managed_buffs)){
+                metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_TIMEOUT;
+                return 0;
+            }
             try{
                 _recv1_helper(
                     state, metadata, tick_rate,
@@ -168,7 +173,9 @@ namespace vrt_packet_handler{
                     vrt_header_offset_words32
                 );
             }catch(const std::exception &e){
+                state.size_of_copy_buffs = 0; //reset copy buffs size
                 std::cerr << "Error (recv): " << e.what() << std::endl;
+                metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_BAD_PACKET;
                 return 0;
             }
         }

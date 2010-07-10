@@ -101,7 +101,8 @@ rx_metadata_t::rx_metadata_t(void):
     more_fragments(false),
     fragment_offset(0),
     start_of_burst(false),
-    end_of_burst(false)
+    end_of_burst(false),
+    error_code(ERROR_CODE_NONE)
 {
     /* NOP */
 }
