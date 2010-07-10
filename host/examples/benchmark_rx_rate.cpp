@@ -57,7 +57,7 @@ static inline void test_device(
             std::cerr << "Unexpected timeout on recv, exit test..." << std::endl;
             return;
         }
-        if (num_rx_samps == 0){
+        if (num_rx_samps == 0 and md.error_code != uhd::rx_metadata_t::ERROR_CODE_OVERRUN){
             std::cerr << "Unexpected error on recv, continuing..." << std::endl;
         }
         if (not md.has_time_spec){
