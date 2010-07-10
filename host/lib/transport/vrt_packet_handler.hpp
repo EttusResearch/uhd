@@ -48,9 +48,6 @@ namespace vrt_packet_handler{
         //width of the receiver in channels
         size_t width;
 
-        //init the expected seq number
-        std::vector<size_t> next_packet_seq;
-
         //state variables to handle fragments
         managed_recv_buffs_t managed_buffs;
         std::vector<const boost::uint8_t *> copy_buffs;
@@ -59,7 +56,6 @@ namespace vrt_packet_handler{
 
         recv_state(size_t width = 1):
             width(width),
-            next_packet_seq(width, 0),
             managed_buffs(width),
             copy_buffs(width, NULL),
             size_of_copy_buffs(0),
@@ -97,12 +93,6 @@ namespace vrt_packet_handler{
             if_packet_info.num_packet_words32 = num_packet_words32 - vrt_header_offset_words32;
             vrt_unpacker(vrt_hdr, if_packet_info);
             const boost::uint32_t *vrt_data = vrt_hdr + if_packet_info.num_header_words32;
-
-            //handle the packet count / sequence number
-            if (if_packet_info.packet_count != state.next_packet_seq[i]){
-                std::cerr << "S" << (if_packet_info.packet_count - state.next_packet_seq[i])%16;
-            }
-            state.next_packet_seq[i] = (if_packet_info.packet_count+1)%16;
 
             //handle the non-data packet case and parse its contents
             if (if_packet_info.packet_type != uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA){

@@ -83,6 +83,8 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 ){
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
+    size_t next_packet_seq = 0;
+
     while(recv_pirate_crew_raiding){
         managed_recv_buffer::sptr buff = zc_if->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
@@ -93,13 +95,15 @@ void usrp2_impl::io_impl::recv_pirate_loop(
             if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
             vrt::if_hdr_unpack_be(buff->cast<const boost::uint32_t *>(), if_packet_info);
 
+            //handle the packet count / sequence number
+            if (if_packet_info.packet_count != next_packet_seq){
+                //std::cerr << "S" << (if_packet_info.packet_count - next_packet_seq)%16;
+                std::cerr << "O"; //report overrun (drops in the kernel)
+            }
+            next_packet_seq = (if_packet_info.packet_count+1)%16;
+
             //extract the timespec and round to the nearest packet
             UHD_ASSERT_THROW(if_packet_info.has_tsi and if_packet_info.has_tsf);
-
-            //size_t pkt_dur_ticks = mboard->get_master_clock_freq() * 1; //TODO FIXME
-            //size_t(if_packet_info.tsf) - size_t(if_packet_info.tsf)%pkt_dur_ticks
-            //the idea is to round the time specs to packet boundaries to avoid the issue
-            //of never getting alignment when things are not locked properly
             time_spec_t time(
                 time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), mboard->get_master_clock_freq()
             );
