@@ -38,9 +38,15 @@
 # pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
 #endif
 
-//define logical operators
+// define logical operators
 #ifdef BOOST_MSVC
     #include <ciso646>
+#endif
+
+// define ssize_t
+#ifdef BOOST_MSVC
+    #include <cstddef>
+    typedef ptrdiff_t ssize_t;
 #endif
 
 // http://gcc.gnu.org/wiki/Visibility

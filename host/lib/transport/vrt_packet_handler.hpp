@@ -329,7 +329,7 @@ namespace vrt_packet_handler{
             );
 
             //commit the samples to the zero-copy interface
-            if (send_buffs[i]->commit(if_packet_info.num_packet_words32*sizeof(boost::uint32_t)) < num_samps){
+            if (send_buffs[i]->commit(if_packet_info.num_packet_words32*sizeof(boost::uint32_t)) < ssize_t(num_samps)){
                 std::cerr << "commit to send buffer returned less than commit size" << std::endl;
             }
         }
