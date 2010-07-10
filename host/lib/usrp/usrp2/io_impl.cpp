@@ -85,7 +85,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     recv_pirate_crew_raiding = true;
     while(recv_pirate_crew_raiding){
         managed_recv_buffer::sptr buff = zc_if->get_recv_buff();
-        if (buff->size() == 0) continue; //ignore timeout buffers
+        if (not buff.get()) continue; //ignore timeout/error buffers
 
         try{
             //extract the vrt header packet info

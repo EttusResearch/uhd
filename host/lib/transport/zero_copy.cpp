@@ -71,7 +71,9 @@ managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(void){
     boost::uint8_t *recv_mem = new boost::uint8_t[_impl->max_buff_size];
 
     //call recv() with timeout option
-    size_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size));
+    ssize_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size));
+
+    if (num_bytes <= 0) return managed_recv_buffer::sptr(); //NULL sptr
 
     //create a new managed buffer to house the data
     return managed_recv_buffer::sptr(
@@ -86,7 +88,7 @@ managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(void){
 //! phony zero-copy send buffer implementation
 class managed_send_buffer_impl : public managed_send_buffer{
 public:
-    typedef boost::function<size_t(const boost::asio::const_buffer &)> send_fcn_t;
+    typedef boost::function<ssize_t(const boost::asio::const_buffer &)> send_fcn_t;
 
     managed_send_buffer_impl(
         const boost::asio::mutable_buffer &buff,
@@ -102,8 +104,8 @@ public:
         /* NOP */
     }
 
-    void commit(size_t num_bytes){
-        _send_fcn(boost::asio::buffer(_buff, num_bytes));
+    ssize_t commit(size_t num_bytes){
+        return _send_fcn(boost::asio::buffer(_buff, num_bytes));
     }
 
 private:
