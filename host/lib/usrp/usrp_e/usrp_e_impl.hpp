@@ -97,6 +97,7 @@ private:
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
+    void handle_overrun(size_t);
 
     //configuration shadows
     uhd::clock_config_t _clock_config;

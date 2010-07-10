@@ -63,7 +63,7 @@ public:
 
 private:
     int _fd;
-    size_t send(const boost::asio::const_buffer &buff){
+    ssize_t send(const boost::asio::const_buffer &buff){
         //Set the frame length in the frame header.
         //This is technically bad to write to a const buffer,
         //but this will go away when the ring gets implemented,
@@ -77,7 +77,7 @@ private:
             boost::asio::buffer_size(buff)
         );
     }
-    size_t recv(const boost::asio::mutable_buffer &buff){
+    ssize_t recv(const boost::asio::mutable_buffer &buff){
         //std::cout << boost::format(
         //    "calling read on fd %d, buff size is %d"
         //) % _fd % boost::asio::buffer_size(buff) << std::endl;
@@ -105,9 +105,9 @@ private:
         if (read_ret < ssize_t(sizeof(usrp_transfer_frame))){
             if (usrp_e_io_impl_verbose) std::cerr << boost::format(
                 "usrp-e io impl recv(): read() returned small value: %d\n"
-                "    -> return 0 for error"
+                "    -> return -1 for error"
             ) % read_ret << std::endl;
-            return 0;
+            return -1;
         }
 
         //overwrite the vrt header length with the transfer frame length
@@ -116,7 +116,7 @@ private:
         vrt_header[0] = (vrt_header[0] & ~0xffff) | ((frame->len/sizeof(boost::uint32_t)) & 0xffff);
 
         //std::cout << "len " << int(frame->len) << std::endl;
-        //for (size_t i = 0; i < 7; i++){
+        //for (size_t i = 0; i < 9; i++){
         //    std::cout << boost::format("    0x%08x") % boost::asio::buffer_cast<boost::uint32_t *>(buff)[i] << std::endl;
         //}
 
@@ -132,6 +132,7 @@ struct usrp_e_impl::io_impl{
     vrt_packet_handler::recv_state packet_handler_recv_state;
     vrt_packet_handler::send_state packet_handler_send_state;
     data_transport transport;
+    bool continuous_streaming;
     io_impl(int fd): packet_handler_recv_state(1), transport(fd){}
 };
 
@@ -153,12 +154,20 @@ void usrp_e_impl::io_init(void){
 }
 
 void usrp_e_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
+    _io_impl->continuous_streaming = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
         stream_cmd, get_max_recv_samps_per_packet()
     ));
     _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(MASTER_CLOCK_RATE));
+}
 
+void usrp_e_impl::handle_overrun(size_t){
+    std::cerr << "O"; //the famous OOOOOOOOOOO
+    _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 0);
+    if (_io_impl->continuous_streaming){
+        this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    }
 }
 
 /***********************************************************************
@@ -170,7 +179,7 @@ bool get_send_buffs(
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
     buffs[0] = trans->get_send_buff();
-    return buffs[0].get() != NULL;
+    return buffs[0].get();
 }
 
 size_t usrp_e_impl::send(
@@ -207,7 +216,7 @@ bool get_recv_buffs(
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
     buffs[0] = trans->get_recv_buff();
-    return buffs[0].get() != NULL;
+    return buffs[0].get();
 }
 
 size_t usrp_e_impl::recv(
@@ -229,7 +238,8 @@ size_t usrp_e_impl::recv(
         io_type, recv_otw_type,                    //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
-        boost::bind(get_recv_buffs, &_io_impl->transport, _1),
+        boost::bind(&get_recv_buffs, &_io_impl->transport, _1),
+        boost::bind(&usrp_e_impl::handle_overrun, this, _1),
         vrt_header_offset_words32
     );
 }
