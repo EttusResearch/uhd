@@ -105,7 +105,7 @@ private:
     boost::asio::io_service        _io_service;
     int                            _sock_fd;
 
-    size_t recv(const boost::asio::mutable_buffer &buff){
+    ssize_t recv(const boost::asio::mutable_buffer &buff){
         //setup timeval for timeout
         timeval tv;
         tv.tv_sec = 0;
@@ -122,17 +122,15 @@ private:
         return ::recv(
             _sock_fd,
             boost::asio::buffer_cast<char *>(buff),
-            boost::asio::buffer_size(buff),
-            0
+            boost::asio::buffer_size(buff), 0
         );
     }
 
-    size_t send(const boost::asio::const_buffer &buff){
+    ssize_t send(const boost::asio::const_buffer &buff){
         return ::send(
             _sock_fd,
             boost::asio::buffer_cast<const char *>(buff),
-            boost::asio::buffer_size(buff),
-            0
+            boost::asio::buffer_size(buff), 0
         );
     }
 };

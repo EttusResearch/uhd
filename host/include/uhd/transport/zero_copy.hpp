@@ -82,8 +82,9 @@ namespace uhd{ namespace transport{
          * This should be called to commit the write to the transport object.
          * After calling, the referenced memory should be considered invalid.
          * \param num_bytes the number of bytes written into the buffer
+         * \return the number of bytes written, 0 for timeout, negative for error
          */
-        virtual void commit(size_t num_bytes) = 0;
+        virtual ssize_t commit(size_t num_bytes) = 0;
 
         /*!
          * Get the size of the underlying buffer.
@@ -121,6 +122,7 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new receive buffer from this transport object.
+         * \return a managed buffer, or null sptr on timeout/error
          */
         virtual managed_recv_buffer::sptr get_recv_buff(void) = 0;
 
@@ -135,6 +137,7 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new send buffer from this transport object.
+         * \return a managed buffer, or null sptr on timeout/error
          */
         virtual managed_send_buffer::sptr get_send_buff(void) = 0;
 
@@ -175,9 +178,9 @@ namespace uhd{ namespace transport{
         /*!
          * Perform a private copying recv.
          * \param buff the buffer to write data into
-         * \return the number of bytes written to buff
+         * \return the number of bytes written to buff, 0 for timeout, negative for error
          */
-        virtual size_t recv(const boost::asio::mutable_buffer &buff) = 0;
+        virtual ssize_t recv(const boost::asio::mutable_buffer &buff) = 0;
 
         UHD_PIMPL_DECL(impl) _impl;
     };
@@ -208,9 +211,9 @@ namespace uhd{ namespace transport{
         /*!
          * Perform a private copying send.
          * \param buff the buffer to read data from
-         * \return the number of bytes read from buff
+         * \return the number of bytes read from buff, 0 for timeout, negative for error
          */
-        virtual size_t send(const boost::asio::const_buffer &buff) = 0;
+        virtual ssize_t send(const boost::asio::const_buffer &buff) = 0;
 
         UHD_PIMPL_DECL(impl) _impl;
     };
