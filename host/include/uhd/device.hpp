@@ -174,7 +174,7 @@ public:
      * \param metadata data to fill describing the buffer
      * \param io_type the type of data to fill into the buffer
      * \param recv_mode tells recv how to load the buffer
-     * \return the number of samples received
+     * \return the number of samples received or 0 on error
      */
     virtual size_t recv(
         const std::vector<void *> &buffs,

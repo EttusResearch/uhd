@@ -57,10 +57,33 @@ namespace uhd{
         bool end_of_burst;
 
         /*!
-         * Error conditions (TODO):
-         * Previous packets dropped?
-         * Timed-out on receive?
+         * Error conditions:
+         * - none: no error associated with this metadata
+         * - timeout: no packet received, underlying code timed-out
+         * - late command: a stream command was issued in the past
+         * - broken chain: expected another stream command
+         * - overrun: an internal receive buffer has overrun
+         * - bad packet: the buffer was unrecognizable as a vrt packet
+         *
+         * Note: When an overrun occurs in continuous streaming mode,
+         * the device will continue to send samples to the host.
+         * For other streaming modes, streaming will discontinue
+         * until the user issues a new stream command.
+         *
+         * Note: The metadata fields have meaning for the following error codes:
+         * - none
+         * - late command
+         * - broken chain
+         * - overrun
          */
+        enum error_code_t {
+            ERROR_CODE_NONE         = 0x0,
+            ERROR_CODE_TIMEOUT      = 0x1,
+            ERROR_CODE_LATE_COMMAND = 0x2,
+            ERROR_CODE_BROKEN_CHAIN = 0x4,
+            ERROR_CODE_OVERRUN      = 0x8,
+            ERROR_CODE_BAD_PACKET   = 0xf
+        } error_code;
 
         /*!
          * The default constructor:
