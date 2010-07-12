@@ -125,7 +125,7 @@ module aeMB_bpcu (/*AUTOARG*/
    reg [31:2] 	   rPC, xPC;
    reg [31:2] 	   rPCLNK, xPCLNK;
    
-   assign 	   iwb_adr_o = rIPC[IW-1:2];
+   assign 	   iwb_adr_o = gena ? xIPC[IW-1:2] :  rIPC[IW-1:2]; //IJB
    
    always @(/*AUTOSENSE*/rBRA or rIPC or rPC or rRESULT) begin
       //xPCLNK <= (^rATOM) ? rPC : rPC;
@@ -168,7 +168,8 @@ module aeMB_bpcu (/*AUTOARG*/
 	rATOM <= 2'h0;
 	rBRA <= 1'h0;
 	rDLY <= 1'h0;
-	rIPC <= 30'h0;
+//	rIPC <= 30'h0;
+	rIPC <= 30'h3fffffff; // DWORD aligned address 
 	rPC <= 30'h0;
 	rPCLNK <= 30'h0;
 	// End of automatics
