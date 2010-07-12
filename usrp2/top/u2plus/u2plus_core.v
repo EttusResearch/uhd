@@ -252,33 +252,33 @@ module u2plus_core
    // ///////////////////////////////////////////////////////////////////
    // RAM Loader
 
-   wire [31:0] 	 ram_loader_dat, iwb_dat;
-   wire [15:0] 	 ram_loader_adr, iwb_adr;
+   wire [31:0] 	 ram_loader_dat, if_dat;
+   wire [15:0] 	 ram_loader_adr;
+   wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
-   wire 	 ram_loader_stb, ram_loader_we, ram_loader_ack;
+   wire 	 ram_loader_stb, ram_loader_we;
    wire 	 iwb_ack, iwb_stb;
    ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
-     ram_loader (.clk_i(wb_clk),.rst_i(ram_loader_rst),
+     ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
+		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
+		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
+		 .wb_we(ram_loader_we),
+		 .ram_loader_done(ram_loader_done),
 		 // CPLD Interface
-		 .cfg_clk_i(cpld_clk),
-		 .cfg_data_i(cpld_din),
-		 .start_o(cpld_start_int),
-		 .mode_o(cpld_mode_int),
-		 .done_o(cpld_done_int),
-		 .detached_i(cpld_detached),
-		 // Wishbone Interface
-		 .wb_dat_o(ram_loader_dat),.wb_adr_o(ram_loader_adr),
-		 .wb_stb_o(ram_loader_stb),.wb_cyc_o(),.wb_sel_o(ram_loader_sel),
-		 .wb_we_o(ram_loader_we),.wb_ack_i(ram_loader_ack),
-		 .ram_loader_done_o(ram_loader_done));
-
+		 .cpld_clk(cpld_clk),
+		 .cpld_din(cpld_din),
+		 .cpld_start(cpld_start_int),
+		 .cpld_mode(cpld_mode_int),
+		 .cpld_done(cpld_done_int),
+		 .cpld_detached(cpld_detached));
+   
    // /////////////////////////////////////////////////////////////////////////
    // Processor
    aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
      aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
 	   // Instruction Wishbone bus to I-RAM
-	   .iwb_stb_o(iwb_stb),.iwb_adr_o(iwb_adr),
-	   .iwb_dat_i(iwb_dat),.iwb_ack_i(iwb_ack),
+	   .if_adr(if_adr),
+	   .if_dat(if_dat),
 	   // Data Wishbone bus to system bus fabric
 	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
 	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
@@ -292,16 +292,16 @@ module u2plus_core
    // I-port connects directly to processor and ram loader
 
    wire 	 flush_icache;
-   ram_harv_cache #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
+   ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
 	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
-	     .ram_loader_we_i(ram_loader_we), .ram_loader_ack_o(ram_loader_ack),
+	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
-	     .iwb_adr_i(iwb_adr[14:0]), .iwb_stb_i(iwb_stb),
-	     .iwb_dat_o(iwb_dat), .iwb_ack_o(iwb_ack),
+	     .if_adr(if_adr), 
+	     .if_data(if_dat), 
 	     
 	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
