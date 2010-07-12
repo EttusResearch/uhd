@@ -151,8 +151,7 @@ module u2plus_core
    wire [31:0] 	set_data, set_data_dsp;
    wire 	set_stb, set_stb_dsp;
    
-   wire 	ram_loader_done;
-   wire 	ram_loader_rst, wb_rst, dsp_rst;
+   wire 	wb_rst, dsp_rst;
 
    wire [31:0] 	status, status_b0, status_b1, status_b2, status_b3, status_b4, status_b5, status_b6, status_b7;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
@@ -249,31 +248,11 @@ module u2plus_core
    //////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
    
-   // ///////////////////////////////////////////////////////////////////
-   // RAM Loader
-
-   wire [31:0] 	 ram_loader_dat, if_dat;
-   wire [15:0] 	 ram_loader_adr;
-   wire [14:0] 	 if_adr;
-   wire [3:0] 	 ram_loader_sel;
-   wire 	 ram_loader_stb, ram_loader_we;
-   wire 	 iwb_ack, iwb_stb;
-   ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
-     ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
-		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
-		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
-		 .wb_we(ram_loader_we),
-		 .ram_loader_done(ram_loader_done),
-		 // CPLD Interface
-		 .cpld_clk(cpld_clk),
-		 .cpld_din(cpld_din),
-		 .cpld_start(cpld_start_int),
-		 .cpld_mode(cpld_mode_int),
-		 .cpld_done(cpld_done_int),
-		 .cpld_detached(cpld_detached));
-   
    // /////////////////////////////////////////////////////////////////////////
    // Processor
+   wire [31:0] 	 if_dat;
+   wire [14:0] 	 if_adr;
+
    aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
      aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
 	   // Instruction Wishbone bus to I-RAM
@@ -295,10 +274,10 @@ module u2plus_core
    ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
-	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
-	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
-	     .ram_loader_we_i(ram_loader_we),
-	     .ram_loader_done_i(ram_loader_done),
+	     .ram_loader_adr_i(0), .ram_loader_dat_i(0),
+	     .ram_loader_stb_i(0), .ram_loader_sel_i(0),
+	     .ram_loader_we_i(0),
+	     .ram_loader_done_i(1'b1),
 	     
 	     .if_adr(if_adr), 
 	     .if_data(if_dat), 
