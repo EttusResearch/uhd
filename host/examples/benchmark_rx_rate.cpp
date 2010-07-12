@@ -38,6 +38,15 @@ static inline void test_device(
     uhd::rx_metadata_t md;
     std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
 
+    //flush the buffers in the recv path
+    while(dev->recv(
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
+        uhd::device::RECV_MODE_ONE_PACKET
+    )){
+        /* NOP */
+    };
+
     //declare status variables
     bool got_first_packet = false;
     size_t total_recv_packets = 0;
@@ -45,7 +54,7 @@ static inline void test_device(
     size_t total_recv_samples = 0;
     uhd::time_spec_t initial_time_spec;
     uhd::time_spec_t next_expected_time_spec;
-    
+
     sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     do {
         size_t num_rx_samps = dev->recv(
@@ -79,15 +88,6 @@ static inline void test_device(
 
     } while((next_expected_time_spec - initial_time_spec) < uhd::time_spec_t(duration_secs));
     sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-    
-    //flush the buffers
-    while(dev->recv(
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::RECV_MODE_ONE_PACKET
-    )){
-        /* NOP */
-    };
 
     //print a summary
     std::cout << std::endl; //go to newline, recv may spew SXSYSZ...

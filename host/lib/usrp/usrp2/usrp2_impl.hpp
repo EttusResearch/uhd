@@ -137,6 +137,7 @@ public:
 
 private:
     size_t _index;
+    int _rev_hi, _rev_lo;
     const usrp2_io_helper &_io_helper;
 
     //properties for this mboard

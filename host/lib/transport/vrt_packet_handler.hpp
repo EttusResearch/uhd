@@ -146,9 +146,6 @@ namespace vrt_packet_handler{
         const handle_overrun_t &handle_overrun,
         size_t vrt_header_offset_words32
     ){
-        metadata.has_time_spec = false; //false unless set in the helper
-        metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
-
         //perform a receive if no rx data is waiting to be copied
         if (state.size_of_copy_buffs == 0){
             state.fragment_offset_in_samps = 0;
@@ -169,11 +166,18 @@ namespace vrt_packet_handler{
                 return 0;
             }
         }
+        //defaults for the metadata when this is a fragment
+        else{
+            metadata.has_time_spec = false;
+            metadata.start_of_burst = false;
+            metadata.end_of_burst = false;
+            metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
+        }
 
         //extract the number of samples available to copy
         size_t bytes_per_item = otw_type.get_sample_size();
-        size_t bytes_available = state.size_of_copy_buffs;
-        size_t nsamps_to_copy = std::min(total_samps, bytes_available/bytes_per_item);
+        size_t nsamps_available = state.size_of_copy_buffs/bytes_per_item;
+        size_t nsamps_to_copy = std::min(total_samps, nsamps_available);
         size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
 
         for (size_t i = 0; i < state.width; i++){
