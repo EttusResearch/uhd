@@ -43,6 +43,12 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 {
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
+
+    //extract the mboard rev numbers
+    _rev_lo = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_LSB, 1).at(0);
+    _rev_hi = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_MSB, 1).at(0);
+
+    //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
     _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
@@ -184,7 +190,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = str(boost::format("usrp2 mboard %d") % _index);
+        val = str(boost::format("usrp2 mboard%d - rev %d:%d") % _index % _rev_hi % _rev_lo);
         return;
 
     case MBOARD_PROP_OTHERS:{
