@@ -268,27 +268,15 @@ module u2plus_core
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
-   // I-port connects directly to processor and ram loader
+   // I-port connects directly to processor
 
    wire 	 flush_icache;
-   ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
-     sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
-	     
-	     .ram_loader_adr_i(0), .ram_loader_dat_i(0),
-	     .ram_loader_stb_i(0), .ram_loader_sel_i(0),
-	     .ram_loader_we_i(0),
-	     .ram_loader_done_i(1'b1),
-	     
-	     .if_adr(if_adr), 
-	     .if_data(if_dat), 
-	     
+   ram_harvard2 #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE))
+     sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
+	     .if_adr(if_adr), .if_data(if_dat), 
 	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
-	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
-	     .flush_icache(flush_icache));
+	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
    
-   setting_reg #(.my_addr(7)) sr_icache (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-					 .in(set_data),.out(),.changed(flush_icache));
-
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool, slave #1
    wire 	 rd0_ready_i, rd0_ready_o;
@@ -486,14 +474,6 @@ module u2plus_core
    // Master Timer, Slave #9
 
    // No longer used, replaced with simple_timer below
-   /*
-   wire [31:0] 	 master_time;
-   timer timer
-     (.wb_clk_i(wb_clk),.rst_i(wb_rst),
-      .cyc_i(s9_cyc),.stb_i(s9_stb),.adr_i(s9_adr[4:2]),
-      .we_i(s9_we),.dat_i(s9_dat_o),.dat_o(s9_dat_i),.ack_o(s9_ack),
-      .sys_clk_i(dsp_clk),.master_time_i(master_time),.int_o(timer_int) );
-    */
    assign s9_ack = 0;
    
    // /////////////////////////////////////////////////////////////////////////
@@ -535,11 +515,26 @@ module u2plus_core
    assign sc_ack = 0;
    
    // /////////////////////////////////////////////////////////////////////////
-   // SD Card Reader / Writer, Slave #13
+   // ICAP for reprogramming the FPGA, Slave #13 (D)
 
-   // Not used anymore
-   assign sd_ack = 0;
-      
+   s3a_icap_wb s3a_icap_wb
+     (.clk(wb_clk), .reset(wb_rst), .cyc_i(sd_cyc), .stb_i(sd_stb), 
+      .we_i(sd_we), .ack_o(sd_ack), .dat_i(sd_dat_o), .dat_o(sd_dat_i));
+   
+   // /////////////////////////////////////////////////////////////////////////
+   // Unused -- Slave #14 (E)
+
+   assign se_ack = 0;
+   
+   // /////////////////////////////////////////////////////////////////////////
+   // SPI for Flash -- Slave #15 (F)
+   spi_top flash_spi
+     (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(sf_adr[4:0]),.wb_dat_i(sf_dat_o),
+      .wb_dat_o(sf_dat_i),.wb_sel_i(sf_sel),.wb_we_i(sf_we),.wb_stb_i(sf_stb),
+      .wb_cyc_i(sf_cyc),.wb_ack_o(sf_ack),.wb_err_o(sf_err),.wb_int_o(spiflash_int),
+      .ss_pad_o(spiflash_cs),
+      .sclk_pad_o(spiflash_clk),.mosi_pad_o(spiflash_mosi),.miso_pad_i(spiflash_miso) );
+
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX
    wire [31:0] 	 sample_rx, sample_tx;
@@ -633,50 +628,6 @@ module u2plus_core
       .rx_occupied(ser_rx_occ),.rx_full(ser_rx_full),.rx_empty(ser_rx_empty),
       .serdes_link_up(serdes_link_up),.debug0(debug_serdes0), .debug1(debug_serdes1) );
 
-   // ///////////////////////////////////////////////////////////////////////////////////
-   // External RAM Interface
-
-   /*
-   localparam PAGE_SIZE = 10;  // PAGE SIZE is in bytes, 10 = 1024 bytes
-
-   wire [15:0] bus2ram, ram2bus;
-   wire [15:0] bridge_adr;
-   wire [1:0]  bridge_sel;
-   wire        bridge_stb, bridge_cyc, bridge_we, bridge_ack;
-   
-   wire [19:0] page;
-   wire [19:0] wb_ram_adr = {page[19:PAGE_SIZE],bridge_adr[PAGE_SIZE-1:0]};
-   setting_reg #(.my_addr(6),.width(20)) sr_page (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				       .in(set_data),.out(page),.changed());
-
-   wb_bridge_16_32 bridge
-     (.wb_clk(wb_clk),.wb_rst(wb_rst),
-      .A_cyc_i(se_cyc),.A_stb_i(se_stb),.A_we_i(se_we),.A_sel_i(se_sel),
-      .A_adr_i(se_adr),.A_dat_i(se_dat_o),.A_dat_o(se_dat_i),.A_ack_o(se_ack),
-      .B_cyc_o(bridge_cyc),.B_stb_o(bridge_stb),.B_we_o(bridge_we),.B_sel_o(bridge_sel),
-      .B_adr_o(bridge_adr),.B_dat_o(bus2ram),.B_dat_i(ram2bus),.B_ack_i(bridge_ack));
-
-   wb_zbt16_b wb_zbt16_b
-     (.clk(wb_clk),.rst(wb_rst),
-      .wb_adr_i(wb_ram_adr),.wb_dat_i(bus2ram),.wb_dat_o(ram2bus),.wb_sel_i(bridge_sel),
-      .wb_cyc_i(bridge_cyc),.wb_stb_i(bridge_stb),.wb_ack_o(bridge_ack),.wb_we_i(bridge_we),
-      .sram_clk(RAM_CLK),.sram_a(RAM_A),.sram_d(RAM_D[15:0]),.sram_we(RAM_WEn),
-      .sram_bw(),.sram_adv(RAM_LDn),.sram_ce(RAM_CENn),.sram_oe(RAM_OEn),
-      .sram_mode(),.sram_zz() );
-
-   assign      RAM_CE1n = 0;
-   assign      RAM_D[17:16] = 2'bzz;
-   */
-
-   // /////////////////////////////////////////////////////////////////////////
-   // SPI for Flash -- Slave #2
-   spi_top flash_spi
-     (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(sf_adr[4:0]),.wb_dat_i(sf_dat_o),
-      .wb_dat_o(sf_dat_i),.wb_sel_i(sf_sel),.wb_we_i(sf_we),.wb_stb_i(sf_stb),
-      .wb_cyc_i(sf_cyc),.wb_ack_o(sf_ack),.wb_err_o(sf_err),.wb_int_o(spiflash_int),
-      .ss_pad_o(spiflash_cs),
-      .sclk_pad_o(spiflash_clk),.mosi_pad_o(spiflash_mosi),.miso_pad_i(spiflash_miso) );
-
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
@@ -693,143 +644,3 @@ module u2plus_core
    assign debug_gpio_1 = 32'd0;
    
 endmodule // u2_core
-
-/*
-   // FIFO Level Debugging
-   reg [31:0]  host_to_dsp_fifo,dsp_to_host_fifo,eth_mac_debug,serdes_to_dsp_fifo,dsp_to_serdes_fifo;
-   
-   always @(posedge dsp_clk)
-     serdes_to_dsp_fifo <= { {ser_rx_full,ser_rx_empty,ser_rx_occ[13:0]},
-			     {dsp_tx_full,dsp_tx_empty,dsp_tx_occ[13:0]} };
-
-   always @(posedge dsp_clk)
-     dsp_to_serdes_fifo <= { {ser_tx_full,ser_tx_empty,ser_tx_occ[13:0]},
-			     {dsp_rx_full,dsp_rx_empty,dsp_rx_occ[13:0]} };
-   
-   always @(posedge dsp_clk)
-     host_to_dsp_fifo <= { {eth_rx_full,eth_rx_empty,eth_rx_occ[13:0]},
-			   {dsp_tx_full,dsp_tx_empty,dsp_tx_occ[13:0]} };
-   
-   always @(posedge dsp_clk)
-     dsp_to_host_fifo <= { {eth_tx_full,eth_tx_empty,eth_tx_occ[13:0]},
-			   {dsp_rx_full,dsp_rx_empty,dsp_rx_occ[13:0]} };
-   
-   always @(posedge dsp_clk)
-     eth_mac_debug <= { { 6'd0, GMII_TX_EN, GMII_RX_DV, debug_mac0[7:0]},
-			{eth_rx_full2, eth_rx_empty2, eth_rx_occ2[13:0]} };
-   
-   assign  debug_clk[0]  = GMII_RX_CLK; // wb_clk;
-   assign  debug_clk[1]  = dsp_clk;
-*/
-/*
- 
-   wire        mdio_cpy  = MDIO;
-   assign  debug 	 = { { 1'b0, s6_stb, s6_ack, s6_we, s6_sel[3:0] },
-			     { s6_adr[15:8] },
-			     { s6_adr[7:0] },
-			     { 6'd0, mdio_cpy, MDC } };
-*/
-/*
-   assign debug 	 = { { GMII_TXD },
-			     { 5'd0, GMII_TX_EN, GMII_TX_ER, GMII_GTX_CLK },
-			     { wr2_flags, rd2_flags },
-			     { 4'd0, wr2_ready_i, wr2_ready_o, rd2_ready_i, rd2_ready_o } };
-   assign debug 	 = { { GMII_RXD },
-			     { 5'd0, GMII_RX_DV, GMII_RX_ER, GMII_RX_CLK },
-			     { wr2_flags, rd2_flags },
-			     { GMII_TX_EN,3'd0, wr2_ready_i, wr2_ready_o, rd2_ready_i, rd2_ready_o } };
- */
-
-//   assign debug = debug_udp;
-  // assign debug = vrc_debug;
-/*
-  assign debug_gpio_0 = { {pps_in, pps_int, 2'd0, vita_state},
-			   {2'd0, rx_dst_rdy, rx_src_rdy, rx_data[99:96]},
-			   {run_rx_d1, run_rx, strobe_rx, overrun, wr1_flags[3:0]} , 
-			   {wr1_ready_i, wr1_ready_o, rx1_src_rdy, rx1_dst_rdy, rx1_data[35:32]}};
-*/
-//   assign debug_gpio_1 = {vita_time[63:32] };
-   
-/*
-    assign debug_gpio_1 = { { tx_f19_data[15:8] },
-			   { tx_f19_data[7:0] },
-			   { 3'd0, tx_f19_src_rdy, tx_f19_dst_rdy, tx_f19_data[18:16] },
-			   { 2'b0, rd2_ready_i, rd2_ready_o, rd2_flags } };
- */  
-   
-//   wire        debug_mux;
-//   setting_reg #(.my_addr(5)) sr_debug (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-//					.in(set_data),.out(debug_mux),.changed());
-
-//assign     debug = debug_mux ? host_to_dsp_fifo : dsp_to_host_fifo;
-//assign     debug = debug_mux ? serdes_to_dsp_fifo : dsp_to_serdes_fifo;
-   
-//assign      debug = {{strobe_rx,/*adc_ovf_a*/ 1'b0,adc_a},
-//		{run_rx,/*adc_ovf_b*/ 1'b0,adc_b}};
-
-//assign      debug = debug_tx_dsp;
-//assign      debug = debug_serdes0;
-
-//assign      debug_gpio_0 = 0; //debug_serdes0;
-//assign      debug_gpio_1 = 0; //debug_serdes1;
-
-//   assign      debug={{3'b0, wb_clk, wb_rst, dsp_rst, por, config_success},
-//	      {8'b0},
-//      {3'b0,ram_loader_ack, ram_loader_stb, ram_loader_we,ram_loader_rst,ram_loader_done },
-//    {cpld_start,cpld_mode,cpld_done,cpld_din,cpld_clk,cpld_detached,cpld_misc,cpld_init_b} };
-
-//assign      debug = {dac_a,dac_b};
-
-/*
- assign      debug = {{ram_loader_done, takeover, 6'd0},
- {1'b0, cpld_start_int, cpld_mode_int, cpld_done_int, sd_clk, sd_csn, sd_miso, sd_mosi},
- {8'd0},
- {cpld_start, cpld_mode, cpld_done, cpld_din, cpld_misc, cpld_detached, cpld_clk, cpld_init_b}}; */
-
-/*assign      debug = host_to_dsp_fifo;
- assign      debug_gpio_0 = eth_mac_debug;
- assign      debug_gpio_1 = 0;
- */
-// Assign various commonly used debug buses.
-/*
- wire [31:0] debug_rx_1 = {uart_tx_o,GMII_TX_EN,strobe_rx,overrun,proc_int,buffer_int,timer_int,GMII_RX_DV,
- irq[7:0],
- GMII_RXD,
- GMII_TXD};
- 
- wire [31:0] debug_rx_2 = { 5'd0, s8_we, s8_stb, s8_ack, debug_rx[23:0] };
-   
-   wire [31:0] debug_time =  {uart_tx_o, 7'b0,
-			      irq[7:0],
-			      6'b0, GMII_RX_DV, GMII_TX_EN,
-			      4'b0, exp_pps_in, exp_pps_out, pps_in, pps_int};
-
-   wire [31:0] debug_irq =  {uart_tx_o, iwb_adr, iwb_ack,
-			     irq[7:0],
-			     proc_int,  7'b0 };
-
-   wire [31:0] debug_eth = 
-	       {{uart_tx_o,proc_int,underrun,buffer_int,wr2_ready,wr2_error,wr2_done,wr2_write},
-		{8'd0},
-		{8'd0},
-		{GMII_TX_EN,GMII_RX_DV,Rx_mac_empty,Rx_mac_rd,Rx_mac_err,Rx_mac_sop,Rx_mac_eop,wr2_full} };
-
-   assign      debug_serdes0 = { { rd0_dat[7:0] },
-				 { ser_tx_clk, ser_tkmsb, ser_tklsb, rd0_sop, rd0_eop, rd0_read, rd0_error, rd0_done },
-				 { ser_t[15:8] },
-				 { ser_t[7:0] } };
-
-   assign      debug_serdes1 = { {1'b0,proc_int,underrun,buffer_int,wr0_ready,wr0_error,wr0_done,wr0_write},
-				 { 1'b0, ser_rx_clk, ser_rkmsb, ser_rklsb, ser_enable, ser_prbsen, ser_loopen, ser_rx_en },
-				 { ser_r[15:8] },
-				 { ser_r[7:0] } };
-       
-   assign      debug_gpio_1 = {uart_tx_o,7'd0,
-			       3'd0,rd1_sop,rd1_eop,rd1_read,rd1_done,rd1_error,
-			       debug_txc[15:0]};
-   assign      debug_gpio_1 = debug_rx;
-   assign      debug_gpio_1 = debug_serdes1;
-   assign      debug_gpio_1 = debug_eth;
-      
-    */
-      
