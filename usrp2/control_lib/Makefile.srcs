@@ -21,6 +21,7 @@ nsgpio.v \
 ram_2port.v \
 ram_harv_cache.v \
 ram_harvard.v \
+ram_harvard2.v \
 ram_loader.v \
 setting_reg.v \
 settings_bus.v \
@@ -42,4 +43,5 @@ pic.v \
 longfifo.v \
 shortfifo.v \
 medfifo.v \
+s3a_icap_wb.v \
 ))
