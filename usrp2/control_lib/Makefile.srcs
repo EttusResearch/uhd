@@ -44,4 +44,5 @@ longfifo.v \
 shortfifo.v \
 medfifo.v \
 s3a_icap_wb.v \
+bootram.v \
 ))

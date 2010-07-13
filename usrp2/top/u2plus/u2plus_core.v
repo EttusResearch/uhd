@@ -3,7 +3,6 @@
 // ////////////////////////////////////////////////////////////////////////////////
 
 module u2plus_core
-  #(parameter RAM_SIZE=32768)
   (// Clocks
    input dsp_clk,
    input wb_clk,
@@ -191,23 +190,23 @@ module u2plus_core
    wire 	 m0_err, m0_rty;
    wire 	 m0_we,s0_we,s1_we,s2_we,s3_we,s4_we,s5_we,s6_we,s7_we,s8_we,s9_we,sa_we,sb_we,sc_we,sd_we,se_we,sf_we;
    
-   wb_1master #(.decode_w(6),
-		.s0_addr(6'b0000_00),.s0_mask(6'b100000),
-		.s1_addr(6'b1000_00),.s1_mask(6'b110000),
- 		.s2_addr(6'b1100_00),.s2_mask(6'b111111),
-		.s3_addr(6'b1100_01),.s3_mask(6'b111111),
-		.s4_addr(6'b1100_10),.s4_mask(6'b111111),
-		.s5_addr(6'b1100_11),.s5_mask(6'b111111),
-		.s6_addr(6'b1101_00),.s6_mask(6'b111111),
-		.s7_addr(6'b1101_01),.s7_mask(6'b111111),
-		.s8_addr(6'b1101_10),.s8_mask(6'b111111),
-		.s9_addr(6'b1101_11),.s9_mask(6'b111111),
-		.sa_addr(6'b1110_00),.sa_mask(6'b111111),
-		.sb_addr(6'b1110_01),.sb_mask(6'b111111),
-		.sc_addr(6'b1110_10),.sc_mask(6'b111111),
-		.sd_addr(6'b1110_11),.sd_mask(6'b111111),
-		.se_addr(6'b1111_00),.se_mask(6'b111111),
-		.sf_addr(6'b1111_01),.sf_mask(6'b111111),
+   wb_1master #(.decode_w(8),
+		.s0_addr(8'b0000_0000),.s0_mask(8'b1110_0000),  // 0-8K, Boot RAM
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1100_0000),  // 16K-32K, Buffer Pool
+ 		.s2_addr(8'b0011_0000),.s2_mask(8'b1111_1111),  // SPI
+		.s3_addr(8'b0011_0001),.s3_mask(8'b1111_1111),  // I2C
+		.s4_addr(8'b0011_0010),.s4_mask(8'b1111_1111),  // GPIO
+		.s5_addr(8'b0011_0011),.s5_mask(8'b1111_1111),  // Readback
+		.s6_addr(8'b0011_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
+		.s7_addr(8'b0010_0000),.s7_mask(8'b1111_0000),  // 8-12K, Settings Bus (only uses 1K)
+		.s8_addr(8'b0011_0101),.s8_mask(8'b1111_1111),  // PIC
+		.s9_addr(8'b0011_0110),.s9_mask(8'b1111_1111),  // Unused
+		.sa_addr(8'b0011_0111),.sa_mask(8'b1111_1111),  // UART
+		.sb_addr(8'b0011_1000),.sb_mask(8'b1111_1111),  // ATR
+		.sc_addr(8'b0011_1001),.sc_mask(8'b1111_1111),  // Unused
+		.sd_addr(8'b0011_1010),.sd_mask(8'b1111_1111),  // ICAP
+		.se_addr(8'b0011_1011),.se_mask(8'b1111_1111),  // SPI Flash
+		.sf_addr(8'b1000_0000),.sf_mask(8'b1000_0000),  // 32-64K, Main RAM
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
@@ -251,7 +250,7 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // Processor
    wire [31:0] 	 if_dat;
-   wire [14:0] 	 if_adr;
+   wire [15:0] 	 if_adr;
 
    aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
      aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
@@ -267,15 +266,23 @@ module u2plus_core
    assign 	 bus_error = m0_err | m0_rty;
    
    // /////////////////////////////////////////////////////////////////////////
-   // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
+   // Dual Ported Boot RAM -- D-Port is Slave #0 on main Wishbone
+   // Dual Ported Main RAM -- D-Port is Slave #F on main Wishbone
    // I-port connects directly to processor
 
-   wire 	 flush_icache;
-   ram_harvard2 #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE))
-     sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
-	     .if_adr(if_adr), .if_data(if_dat), 
-	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
-	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
+   wire [31:0] 	 if_dat_boot, if_dat_main;
+   assign if_dat = if_adr[15] ? if_dat_main : if_dat_boot;
+   
+   bootram bootram(.clk(wb_clk),
+		   .if_adr(if_adr[12:0]), .if_data(if_dat_boot), 
+		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
+   
+   ram_harvard2 #(.AWIDTH(15),.RAM_SIZE(32768))
+   sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
+	   .if_adr(if_adr[14:0]), .if_data(if_dat_main), 
+	   .dwb_adr_i(sf_adr[14:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
+	   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
    
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool, slave #1
@@ -522,16 +529,11 @@ module u2plus_core
       .we_i(sd_we), .ack_o(sd_ack), .dat_i(sd_dat_o), .dat_o(sd_dat_i));
    
    // /////////////////////////////////////////////////////////////////////////
-   // Unused -- Slave #14 (E)
-
-   assign se_ack = 0;
-   
-   // /////////////////////////////////////////////////////////////////////////
-   // SPI for Flash -- Slave #15 (F)
+   // SPI for Flash -- Slave #14 (E)
    spi_top flash_spi
-     (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(sf_adr[4:0]),.wb_dat_i(sf_dat_o),
-      .wb_dat_o(sf_dat_i),.wb_sel_i(sf_sel),.wb_we_i(sf_we),.wb_stb_i(sf_stb),
-      .wb_cyc_i(sf_cyc),.wb_ack_o(sf_ack),.wb_err_o(sf_err),.wb_int_o(spiflash_int),
+     (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(se_adr[4:0]),.wb_dat_i(se_dat_o),
+      .wb_dat_o(se_dat_i),.wb_sel_i(se_sel),.wb_we_i(se_we),.wb_stb_i(se_stb),
+      .wb_cyc_i(se_cyc),.wb_ack_o(se_ack),.wb_err_o(se_err),.wb_int_o(spiflash_int),
       .ss_pad_o(spiflash_cs),
       .sclk_pad_o(spiflash_clk),.mosi_pad_o(spiflash_mosi),.miso_pad_i(spiflash_miso) );
 
