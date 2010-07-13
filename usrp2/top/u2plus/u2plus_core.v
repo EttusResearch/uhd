@@ -277,7 +277,10 @@ module u2plus_core
 		   .if_adr(if_adr[12:0]), .if_data(if_dat_boot), 
 		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
-   
+
+defparam bootram.RAM0.INIT_00=256'hbc32fff0_aa43502b_b00000fe_30630001_80000000_10600000_a48500ff_10a00000;
+defparam bootram.RAM0.INIT_01=256'ha48500ff_b810ffd0_f880200c_30a50001_10830000_308000ff_be23000c_a4640001;
+
    ram_harvard2 #(.AWIDTH(15),.RAM_SIZE(32768))
    sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
 	   .if_adr(if_adr[14:0]), .if_data(if_dat_main), 
@@ -640,8 +643,9 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
-   assign debug_clk = 2'b00;
-   assign debug = 32'd0;
+   assign debug_clk = {dsp_clk, wb_clk};
+   assign debug = if_dat;
+   
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
    
