@@ -23,13 +23,19 @@ SET(UHD_VERSION_MINOR 0)
 SET(UHD_VERSION_PATCH 0)
 
 ########################################################################
-# Get the current YYYYMMDD timestamp
+# Get the current YYYYMMDD HHMMSS timestamp
 ########################################################################
 EXECUTE_PROCESS(
     COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d', time.gmtime())"
     OUTPUT_VARIABLE UHD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 SET(UHD_VERSION_MAJOR ${UHD_DATE})
+
+EXECUTE_PROCESS(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%H%M%S', time.gmtime())"
+    OUTPUT_VARIABLE UHD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+SET(UHD_VERSION_MINOR ${UHD_TIME})
 
 ########################################################################
 # Find GIT to get repo information
@@ -47,7 +53,7 @@ ELSE(${GIT} STREQUAL "GIT-NOTFOUND")
         OUTPUT_VARIABLE UHD_REV OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 ENDIF(${GIT} STREQUAL "GIT-NOTFOUND")
-SET(UHD_VERSION_MINOR ${UHD_REV})
+SET(UHD_VERSION_PATCH ${UHD_REV})
 
 ########################################################################
 # Setup CPack
@@ -58,8 +64,8 @@ SET(CPACK_PACKAGE_CONTACT             "support@ettus.com")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${UHD_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${UHD_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${UHD_VERSION_PATCH})
-SET(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README)
-SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+SET(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/README)
+SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
 SET(BOOST_MIN_VERSION 1.36) #used in setup for boost
 STRING(REPLACE "," ", " CPACK_DEBIAN_PACKAGE_DEPENDS
     "libboost-date-time-dev          (>= ${BOOST_MIN_VERSION}),"

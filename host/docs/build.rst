@@ -148,6 +148,12 @@ Build the project in MSVC
 **Note:** you may not have permission to build the install target.
 You need to be an administrator or to run MSVC as administrator.
 
+** alternative command line instructions **
+
+* Open the Visual Studio Command Prompt Shorcut
+* DevEnv <uhd-repo-path>\host\build\ALL_BUILD.vcproj /Build Release
+* DevEnv <uhd-repo-path>\host\build\INSTALL.vcproj /Build Release
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

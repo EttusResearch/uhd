@@ -38,7 +38,7 @@ MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 ########################################################################
 # Local Include Dir
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ########################################################################
 # Optional Compiler Flags
