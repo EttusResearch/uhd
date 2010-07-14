@@ -84,12 +84,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
+    uhd::rx_metadata_t md;
+    std::vector<std::complex<short> > buff(dev->get_max_recv_samps_per_packet());
     while(num_acc_samps < total_num_samps){
-        uhd::rx_metadata_t md;
-        std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
         size_t num_rx_samps = dev->recv(
             &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::io_type_t::COMPLEX_INT16,
             uhd::device::RECV_MODE_ONE_PACKET
         );
 
