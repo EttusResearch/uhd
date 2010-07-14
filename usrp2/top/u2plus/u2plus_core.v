@@ -273,7 +273,7 @@ module u2plus_core
    wire [31:0] 	 if_dat_boot, if_dat_main;
    assign if_dat = if_adr[15] ? if_dat_main : if_dat_boot;
    
-   bootram bootram(.clk(wb_clk),
+   bootram bootram(.clk(wb_clk), .reset(wb_rst),
 		   .if_adr(if_adr[12:0]), .if_data(if_dat_boot), 
 		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));

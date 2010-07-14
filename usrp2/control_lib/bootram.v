@@ -5,7 +5,7 @@
 //      Spartan-3A Xilinx HDL Libraries Guide, version 10.1.1
 
 module bootram
-  (input clk,
+  (input clk, input reset,
    input [12:0] if_adr,
    output [31:0] if_data,
 
