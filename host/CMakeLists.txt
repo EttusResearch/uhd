@@ -20,27 +20,10 @@ PROJECT(UHD CXX)
 ENABLE_TESTING()
 
 ########################################################################
-# Setup CPack
+# Config Files
 ########################################################################
-SET(CPACK_PACKAGE_VERSION_MAJOR 0)
-SET(CPACK_PACKAGE_VERSION_MINOR 0)
-SET(CPACK_PACKAGE_VERSION_PATCH 0)
-SET(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README)
-SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
-SET(CPACK_PACKAGE_CONTACT "support@ettus.com")
-SET(BOOST_MIN_VERSION 1.36) #used in setup boost below
-SET(CPACK_DEBIAN_PACKAGE_DEPENDS "
-    libboost-date-time-dev          (>= ${BOOST_MIN_VERSION}),
-    libboost-filesystem-dev         (>= ${BOOST_MIN_VERSION}),
-    libboost-program-options-dev    (>= ${BOOST_MIN_VERSION}),
-    libboost-regex-dev              (>= ${BOOST_MIN_VERSION}),
-    libboost-system-dev             (>= ${BOOST_MIN_VERSION}),
-    libboost-test-dev               (>= ${BOOST_MIN_VERSION}),
-    libboost-thread-dev             (>= ${BOOST_MIN_VERSION}),
-")
-SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
-SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel >= ${BOOST_MIN_VERSION}")
-INCLUDE(CPack) #include after setting vars
+INCLUDE(${CMAKE_SOURCE_DIR}/config/Python.cmake)
+INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
 
 ########################################################################
 # Install Dirs
@@ -112,7 +95,7 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 # Create Uninstall Target
 ########################################################################
 CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in
+    ${CMAKE_SOURCE_DIR}/config/cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 @ONLY)
 

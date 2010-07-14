@@ -1,1 +1,17 @@
+Matt Ettus - matt@ettus.com
+    USRP1/USRP2 FPGA code
+
 Josh Blum - josh@ettus.com
+    driver framework
+    USRP2 firmware
+    USRP2 host code
+    Basic/LF host code
+    XCVR2450 host code
+    RFX Series host code
+
+Jason Abele - jason@ettus.com
+    RFX Series host code
+    WBX host code
+
+Eric Blossom - eb@comsec.com
+    USRP2 firmware
