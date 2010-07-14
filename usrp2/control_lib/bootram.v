@@ -5,7 +5,7 @@
 //      Spartan-3A Xilinx HDL Libraries Guide, version 10.1.1
 
 module bootram
-  (input clk,
+  (input clk, input reset,
    input [12:0] if_adr,
    output [31:0] if_data,
 
@@ -23,14 +23,14 @@ module bootram
    wire [3:0]  WEB;
    
    assign if_data = if_adr[12] ? (if_adr[11] ? DOA3 : DOA2) : (if_adr[11] ? DOA1 : DOA0);
-   assign dwb_dat_o = dwb_adr_i[12] ? (dwb_adr_i[11] ? DOA3 : DOA2) : (dwb_adr_i[11] ? DOA1 : DOA0);
+   assign dwb_dat_o = dwb_adr_i[12] ? (dwb_adr_i[11] ? DOB3 : DOB2) : (dwb_adr_i[11] ? DOB1 : DOB0);
 
    always @(posedge clk)
-     if(dwb_stb_i & ~dwb_ack_o)
-       dwb_ack_o <= 1;
-     else
+     if(reset)
        dwb_ack_o <= 0;
-
+     else
+       dwb_ack_o <= dwb_stb_i & ~dwb_ack_o;
+   
    assign ENB0 = dwb_stb_i & (dwb_adr_i[12:11] == 2'b00);
    assign ENB1 = dwb_stb_i & (dwb_adr_i[12:11] == 2'b01);
    assign ENB2 = dwb_stb_i & (dwb_adr_i[12:11] == 2'b10);
