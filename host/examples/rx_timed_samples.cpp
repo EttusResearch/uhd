@@ -92,20 +92,32 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );
-        if (num_rx_samps == 0 and num_acc_samps > 0){
-            std::cout << boost::format(
-                "Got error code 0x%x before all samples received, possible packet loss, exiting loop..."
-            ) % md.error_code << std::endl;
+
+        //handle the error codes
+        switch(md.error_code){
+        case uhd::rx_metadata_t::ERROR_CODE_NONE:
             break;
+
+        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
+            if (num_acc_samps == 0) continue;
+            std::cout << boost::format(
+                "Got timeout before all samples received, possible packet loss, exiting loop..."
+            ) % md.error_code << std::endl;
+            goto done_loop;
+
+        default:
+            std::cout << boost::format(
+                "Got error code 0x%x, exiting loop..."
+            ) % md.error_code << std::endl;
+            goto done_loop;
         }
-        if (num_rx_samps == 0) continue; //wait for packets with contents
 
         if(verbose) std::cout << boost::format(
             "Got packet: %u samples, %u full secs, %f frac secs"
         ) % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
 
         num_acc_samps += num_rx_samps;
-    }
+    } done_loop:
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

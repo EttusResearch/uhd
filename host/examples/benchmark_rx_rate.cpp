@@ -62,13 +62,18 @@ static inline void test_device(
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
         );
-        if (num_rx_samps == 0 and md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT){
-            std::cerr << "Unexpected timeout on recv, exit test..." << std::endl;
+
+        //handle the error codes
+        switch(md.error_code){
+        case uhd::rx_metadata_t::ERROR_CODE_NONE:
+        case uhd::rx_metadata_t::ERROR_CODE_OVERRUN:
+            break;
+
+        default:
+            std::cerr << "Unexpected error on recv, exit test..." << std::endl;
             return;
         }
-        if (num_rx_samps == 0 and md.error_code != uhd::rx_metadata_t::ERROR_CODE_OVERRUN){
-            std::cerr << "Unexpected error on recv, continuing..." << std::endl;
-        }
+
         if (not md.has_time_spec){
             std::cerr << "Metadata missing time spec, exit test..." << std::endl;
             return;
@@ -132,6 +137,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS); //stop if left running
 
     if (not vm.count("rate")){
         sdev->set_rx_rate(500e3); //initial rate

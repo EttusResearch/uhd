@@ -100,7 +100,6 @@ Generate Makefiles with cmake
 **Notes:**
 
 * For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<prefix> ../
-* On some Fedora 64-bit systems, cmake has trouble finding boost, use: cmake -DBOOST_LIBRARYDIR=/usr/lib64 ../
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build and install

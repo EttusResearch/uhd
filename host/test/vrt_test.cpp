@@ -95,11 +95,13 @@ BOOST_AUTO_TEST_CASE(test_with_sid){
     pack_and_unpack(if_packet_info);
 }
 
+static const bool cid_enb = false;
+
 BOOST_AUTO_TEST_CASE(test_with_cid){
     vrt::if_packet_info_t if_packet_info;
     if_packet_info.packet_count = 2;
     if_packet_info.has_sid = false;
-    if_packet_info.has_cid = true;
+    if_packet_info.has_cid = cid_enb;
     if_packet_info.has_tsi = false;
     if_packet_info.has_tsf = false;
     if_packet_info.has_tlr = false;
@@ -126,7 +128,7 @@ BOOST_AUTO_TEST_CASE(test_with_all){
     vrt::if_packet_info_t if_packet_info;
     if_packet_info.packet_count = 4;
     if_packet_info.has_sid = true;
-    if_packet_info.has_cid = true;
+    if_packet_info.has_cid = cid_enb;
     if_packet_info.has_tsi = true;
     if_packet_info.has_tsf = true;
     if_packet_info.has_tlr = false;
