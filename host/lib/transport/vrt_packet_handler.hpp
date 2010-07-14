@@ -146,6 +146,8 @@ namespace vrt_packet_handler{
         const handle_overrun_t &handle_overrun,
         size_t vrt_header_offset_words32
     ){
+        metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
+
         //perform a receive if no rx data is waiting to be copied
         if (state.size_of_copy_buffs == 0){
             state.fragment_offset_in_samps = 0;
@@ -171,7 +173,6 @@ namespace vrt_packet_handler{
             metadata.has_time_spec = false;
             metadata.start_of_burst = false;
             metadata.end_of_burst = false;
-            metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
         }
 
         //extract the number of samples available to copy

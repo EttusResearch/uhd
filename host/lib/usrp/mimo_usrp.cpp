@@ -125,20 +125,33 @@ public:
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
         std::cout << "Set time with unknown pps edge:" << std::endl;
-        std::cout << "  1) set times next pps (race condition)" << std::endl;
+        std::cout << "    1) set times next pps (race condition)" << std::endl;
         set_time_next_pps(time_spec);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-        std::cout << "  2) catch seconds rollover at pps edge" << std::endl;
+        std::cout << "    2) catch seconds rollover at pps edge" << std::endl;
         time_t last_secs = 0, curr_secs = 0;
         while(curr_secs == last_secs){
             last_secs = curr_secs;
             curr_secs = get_time_now().get_full_secs();
         }
 
-        std::cout << "  3) set times next pps (synchronously)" << std::endl;
+        std::cout << "    3) set times next pps (synchronously)" << std::endl;
         set_time_next_pps(time_spec);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+        //verify that the time registers are read to be within a few RTT
+        for (size_t i = 1; i < get_num_channels(); i++){
+            time_spec_t time_0 = _mboards.front()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            time_spec_t time_i = _mboards.at(i)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
+                std::cerr << boost::format(
+                    "Error: time deviation between board %d and board 0.\n"
+                    "    Board 0 time is %f seconds.\n"
+                    "    Board %d time is %f seconds.\n"
+                ) % i % time_0.get_real_secs() % i % time_i.get_real_secs() << std::endl;
+            }
+        }
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){

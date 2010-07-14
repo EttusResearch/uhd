@@ -101,4 +101,15 @@
     #define UHD_DEPRECATED
 #endif
 
+// Platform defines for conditional parts of headers:
+// Taken from boost/config/select_platform_config.hpp,
+// however, we define macros, not strings for platforms.
+#if defined(linux) || defined(__linux) || defined(__linux__)
+    #define UHD_PLATFORM_LINUX
+#elif defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+    #define UHD_PLATFORM_WIN32
+#elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
+    #define UHD_PLATFORM_MACOS
+#endif
+
 #endif /* INCLUDED_UHD_CONFIG_HPP */
