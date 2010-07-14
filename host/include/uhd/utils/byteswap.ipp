@@ -21,7 +21,7 @@
 /***********************************************************************
  * Platform-specific implementation details for byteswap below:
  **********************************************************************/
-#ifdef BOOST_MSVC //http://msdn.microsoft.com/en-us/library/a3140177%28VS.80%29.aspx
+#if defined(UHD_PLATFORM_WIN32) //http://msdn.microsoft.com/en-us/library/a3140177%28VS.80%29.aspx
     #include <stdlib.h>
 
     UHD_INLINE boost::uint16_t uhd::byteswap(boost::uint16_t x){
@@ -50,7 +50,7 @@
         return __builtin_bswap64(x);
     }
 
-#elif defined(__FreeBSD__) || defined(__MACOSX__) || defined(__APPLE__)
+#elif defined(UHD_PLATFORM_MACOS)
     #include <libkern/OSByteOrder.h>
 
     UHD_INLINE boost::uint16_t uhd::byteswap(boost::uint16_t x){
@@ -65,7 +65,7 @@
         return OSSwapInt64(x);
     }
 
-#elif defined(linux) || defined(__linux)
+#elif defined(UHD_PLATFORM_LINUX)
     #include <byteswap.h>
 
     UHD_INLINE boost::uint16_t uhd::byteswap(boost::uint16_t x){
