@@ -278,8 +278,46 @@ module u2plus_core
 		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
 
-defparam bootram.RAM0.INIT_00=256'hbc32fff0_aa43502b_b00000fe_30630001_80000000_10600000_a48500ff_10a00000;
-defparam bootram.RAM0.INIT_01=256'ha48500ff_b810ffd0_f880200c_30a50001_10830000_308000ff_be23000c_a4640001;
+////blinkenlights v0.1
+//defparam bootram.RAM0.INIT_00=256'hbc32fff0_aa43502b_b00000fe_30630001_80000000_10600000_a48500ff_10a00000;
+//defparam bootram.RAM0.INIT_01=256'ha48500ff_b810ffd0_f880200c_30a50001_10830000_308000ff_be23000c_a4640001;
+
+////ICAP test v0.1
+defparam bootram.RAM0.INIT_00=256'h00000000_00000000_00000000_b8080234_00000000_b8080348_00000000_b8080050;
+defparam bootram.RAM0.INIT_01=256'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_b8080350;
+defparam bootram.RAM0.INIT_02=256'h3020ffe0_b0000000_304003f8_31a00430_00000000_00000000_00000000_00000000;
+defparam bootram.RAM0.INIT_03=256'h3021ffe4_e060f800_b0000000_b8000000_30a30000_b9f40198_80000000_b9f400cc;
+defparam bootram.RAM0.INIT_04=256'he8830000_e8600400_80000000_99fc2000_f8600400_b8000044_bc030014_f9e10000;
+defparam bootram.RAM0.INIT_05=256'h80000000_99fc1800_30a00428_bc030010_30600000_b0000000_30630004_be24ffec;
+defparam bootram.RAM0.INIT_06=256'h30600000_b0000000_3021001c_b60f0008_e9e10000_f060f800_b0000000_30600001;
+defparam bootram.RAM0.INIT_07=256'h80000000_99fc1800_bc03000c_30c0f804_b0000000_30a00428_f9e10000_3021ffe4;
+defparam bootram.RAM0.INIT_08=256'h80000000_99fc2000_bc04000c_30a0042c_bc030014_30800000_b0000000_e860042c;
+defparam bootram.RAM0.INIT_09=256'h06463800_20e00430_20c00430_f9e10000_2021ffec_3021001c_b60f0008_e9e10000;
+defparam bootram.RAM0.INIT_0A=256'hb0000000_20c0f800_b0000000_bc92fff4_06463800_20c60004_f8060000_bc720014;
+defparam bootram.RAM0.INIT_0B=256'hb9f401e4_bc92fff4_06463800_20c60004_f8060000_bc720014_06463800_20e0f81c;
+defparam bootram.RAM0.INIT_0C=256'h32630000_20a00000_b9f4002c_20e00000_20c00000_80000000_b9f40224_80000000;
+defparam bootram.RAM0.INIT_0D=256'h20210014_b60f0008_30730000_c9e10000_80000000_b9f401b0_80000000_b9f4022c;
+defparam bootram.RAM0.INIT_0E=256'hbc32fff0_aa434b40_b000004c_30630001_80000000_10600000_a48500ff_10a00000;
+defparam bootram.RAM0.INIT_0F=256'ha48500ff_b810ffd0_f880200c_30a50001_10830000_308000ff_be23000c_a4640001;
+defparam bootram.RAM0.INIT_10=256'hf8803500_30800012_f8603508_3060ffff_80000000_b9f4fe68_f9e10000_3021ffe4;
+defparam bootram.RAM0.INIT_11=256'hf8610020_f9e10000_3021ffac_80000000_b60f0008_f860350c_f8a03504_30a0ffef;
+defparam bootram.RAM0.INIT_12=256'hf9610040_f941003c_f9210038_f9010034_f8e10030_f8c1002c_f8a10028_f8810024;
+defparam bootram.RAM0.INIT_13=256'he8603508_e880350c_f961001c_fa610050_95608001_fa41004c_fa210048_f9810044;
+defparam bootram.RAM0.INIT_14=256'h30a50001_bc230060_84732000_32600001_84841800_a863ffff_10a00000_30c00404;
+defparam bootram.RAM0.INIT_15=256'he8810024_e8610020_e961001c_e9e10000_30c60004_be32ffec_aa450008_12739800;
+defparam bootram.RAM0.INIT_16=256'he9610040_e941003c_e9210038_e9010034_e8e10030_e8c1002c_e8a10028_940bc001;
+defparam bootram.RAM0.INIT_17=256'h99fc1800_e8660000_30210054_b62e0000_ea610050_ea41004c_ea210048_e9810044;
+defparam bootram.RAM0.INIT_18=256'h16459003_22400007_64e50402_44632c00_30600001_b800ffa8_fa60350c_80000000;
+defparam bootram.RAM0.INIT_19=256'h80000000_b60f0008_f8603508_84632000_f8c70404_e8603508_a883ffff_be520018;
+defparam bootram.RAM0.INIT_1A=256'h80000000_b60f0008_80000000_b6910000_80000000_b6110000_80000000_b60f0008;
+defparam bootram.RAM0.INIT_1B=256'haa43ffff_326003e8_f9e10000_fa61001c_3021ffe0_e86003e8_80000000_b60f0008;
+defparam bootram.RAM0.INIT_1C=256'hea61001c_e9e10000_bc32fff0_aa43ffff_e8730000_3273fffc_99fc1800_bc120018;
+defparam bootram.RAM0.INIT_1D=256'h80000000_b9f4ffb0_80000000_b9f4fd28_d9e00800_3021fff8_30210020_b60f0008;
+defparam bootram.RAM0.INIT_1E=256'hc9e00800_80000000_b9f4fca0_d9e00800_3021fff8_30210008_b60f0008_c9e00800;
+defparam bootram.RAM0.INIT_1F=256'h00000000_00000000_00000000_ffffffff_00000000_ffffffff_30210008_b60f0008;
+defparam bootram.RAM0.INIT_20=256'h00000340_00000340_00000340_00000340_00000340_00000340_00000340_000003f4;
+defparam bootram.RAM0.INIT_21=256'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000340;
+
 
    ram_harvard2 #(.AWIDTH(15),.RAM_SIZE(32768))
    sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
@@ -356,8 +394,9 @@ defparam bootram.RAM0.INIT_01=256'ha48500ff_b810ffd0_f880200c_30a50001_10830000_
    nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio( {io_tx,io_rx} ) );
+		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1)
+		 //.gpio( {io_tx,io_rx} ) 
+		 );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
@@ -644,9 +683,10 @@ defparam bootram.RAM0.INIT_01=256'ha48500ff_b810ffd0_f880200c_30a50001_10830000_
    // Debug Pins
   
    assign debug_clk = {dsp_clk, wb_clk};
-   assign debug = if_dat;
+   assign debug = m0_dat_o;
    
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
+   assign {io_tx,io_rx} = {if_adr, m0_adr};
    
 endmodule // u2_core
