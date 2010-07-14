@@ -161,10 +161,13 @@ template<typename Opt> static void resize_buff_helper(
         ) % name % MIN_SOCK_BUFF_SIZE << std::endl;
     }
 
+    //only enable on platforms that are happy with the large buffer resize
+    #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
     //otherwise, ensure that the buffer is at least the minimum size
     else if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
         resize_buff_helper<Opt>(udp_trans, MIN_SOCK_BUFF_SIZE, name);
     }
+    #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
 }
 
 udp_zero_copy::sptr udp_zero_copy::make(
