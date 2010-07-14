@@ -85,13 +85,13 @@ namespace dsp_type1{
         UHD_ASSERT_THROW(std::abs(freq) < codec_rate/2.0);
         static const double scale_factor = std::pow(2.0, 32);
 
-        //calculate the freq register word
-        boost::uint32_t freq_word = boost::math::iround((freq / codec_rate) * scale_factor);
+        //calculate the freq register word (signed)
+        boost::int32_t freq_word = boost::math::iround((freq / codec_rate) * scale_factor);
 
         //update the actual frequency
         freq = (double(freq_word) / scale_factor) * codec_rate;
 
-        return freq_word;
+        return boost::uint32_t(freq_word);
     }
 
     /*!
