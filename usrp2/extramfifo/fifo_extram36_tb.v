@@ -296,8 +296,8 @@ module fifo_extram36_tb();
 	 end
 	 src_rdy_f36i = 0;
 	 f36_data = 32'bX;
-//*	 if (put_index > 19'h3ff00)
-//*	   Verbose = 1'b1;
+//	 if (put_index > 19'h3ff00)
+//	   Verbose = 1'b1;
 	 
       end
    endtask // task_WriteFIFO36
@@ -385,7 +385,7 @@ module fifo_extram36_tb();
 	$finish;
 	
      end
-  */
+
 
    initial
      begin

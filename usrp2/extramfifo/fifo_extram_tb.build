@@ -1,1 +1,1 @@
-iverilog -y ../../models -y ../../models/CY7C1356C -y . -y ../../control_lib/ -y ../../coregen -y /opt/Xilinx/10.1/ISE/verilog/src/XilinxCoreLib -y /opt/Xilinx/10.1/ISE/verilog/src/unisims/ -o fifo_extram_tb fifo_extram_tb.v
+iverilog -y ../models -y . -y ../control_lib/ -y ../coregen -y ../fifo -y /opt/Xilinx/10.1/ISE/verilog/src/XilinxCoreLib -y /opt/Xilinx/10.1/ISE/verilog/src/unisims/ -o fifo_extram_tb fifo_extram_tb.v
