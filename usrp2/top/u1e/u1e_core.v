@@ -108,6 +108,9 @@ module u1e_core
 
    assign tx_underrun = 0;
    assign rx_overrun = 0;
+
+   wire 	 run_tx, run_rx, strobe_tx, strobe_rx, tx1_src_rdy, tx1_dst_rdy;
+   wire [31:0] 	 debug_vtd, debug_vtc;
 `endif // LOOPBACK
 
 `ifdef TIMED
