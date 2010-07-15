@@ -122,6 +122,9 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, -100e3, tolerance);
+
+    double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
+    BOOST_CHECK_CLOSE(freq_derived, 2.3451e9, tolerance);
 }
 
 BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
@@ -133,4 +136,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 100e3, tolerance);
+
+    double freq_derived = derive_freq_from_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
+    BOOST_CHECK_CLOSE(freq_derived, 2.3451e9, tolerance);
 }
