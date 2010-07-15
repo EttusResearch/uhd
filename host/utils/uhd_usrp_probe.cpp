@@ -90,7 +90,6 @@ static std::string get_subdev_pp_string(const std::string &type, wax::obj subdev
 
     ss << boost::format("Is Quadrature: %s") % (subdev[usrp::SUBDEV_PROP_QUADRATURE].as<bool>()? "Yes" : "No") << std::endl;
     ss << boost::format("Is IQ Swapped: %s") % (subdev[usrp::SUBDEV_PROP_IQ_SWAPPED].as<bool>()? "Yes" : "No") << std::endl;
-    ss << boost::format("Is Spectrum Inverted: %s") % (subdev[usrp::SUBDEV_PROP_SPECTRUM_INVERTED].as<bool>()? "Yes" : "No") << std::endl;
     ss << boost::format("Uses LO offset: %s") % (subdev[usrp::SUBDEV_PROP_USE_LO_OFFSET].as<bool>()? "Yes" : "No") << std::endl;
 
     return ss.str();

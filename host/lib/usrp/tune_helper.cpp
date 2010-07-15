@@ -30,13 +30,12 @@ using namespace uhd::usrp;
  **********************************************************************/
 static bool invert_dxc_freq(
     bool outside_of_nyquist,
-    bool subdev_spectrum_inverted,
     bool subdev_quadrature,
     dboard_iface::unit_t unit
 ){
     bool is_tx = unit == dboard_iface::UNIT_TX;
     if (subdev_quadrature) return is_tx;
-    return outside_of_nyquist xor subdev_spectrum_inverted xor is_tx;
+    return outside_of_nyquist xor is_tx;
 }
 
 static tune_result_t tune_xx_subdev_and_dxc(
@@ -46,7 +45,6 @@ static tune_result_t tune_xx_subdev_and_dxc(
 ){
     wax::obj subdev_freq_proxy = subdev[SUBDEV_PROP_FREQ];
     bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
-    bool subdev_spectrum_inverted = subdev[SUBDEV_PROP_SPECTRUM_INVERTED].as<bool>();
     wax::obj dxc_freq_proxy = dxc[DSP_PROP_FREQ_SHIFT];
     double dxc_sample_rate = dxc[DSP_PROP_CODEC_RATE].as<double>();
 
@@ -63,9 +61,7 @@ static tune_result_t tune_xx_subdev_and_dxc(
 
     //invert the sign on the dxc freq given the following conditions
     bool outside_of_nyquist = std::abs(target_freq - actual_inter_freq) > dxc_sample_rate/2.0;
-    if (invert_dxc_freq(
-        outside_of_nyquist, subdev_spectrum_inverted, subdev_quadrature, unit
-    )) target_dxc_freq *= -1.0;
+    if (invert_dxc_freq(outside_of_nyquist, subdev_quadrature, unit)) target_dxc_freq *= -1.0;
 
     dxc_freq_proxy = target_dxc_freq;
     double actual_dxc_freq = dxc_freq_proxy.as<double>();
@@ -85,16 +81,13 @@ static double derive_freq_from_xx_subdev_and_dxc(
 ){
     //extract subdev properties
     bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
-    bool subdev_spectrum_inverted = subdev[SUBDEV_PROP_SPECTRUM_INVERTED].as<bool>();
 
     //extract actual dsp and IF frequencies
     double actual_inter_freq = subdev[SUBDEV_PROP_FREQ].as<double>();
     double actual_dxc_freq = dxc[DSP_PROP_FREQ_SHIFT].as<double>();
 
     //invert the sign on the dxc freq given the following conditions
-    if (invert_dxc_freq(
-        false, subdev_spectrum_inverted, subdev_quadrature, unit
-    )) actual_dxc_freq *= -1.0;
+    if (invert_dxc_freq(false, subdev_quadrature, unit)) actual_dxc_freq *= -1.0;
 
     return actual_inter_freq - actual_dxc_freq;
 }

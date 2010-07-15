@@ -489,10 +489,6 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
-        return;
-
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -585,10 +581,6 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_IQ_SWAPPED:
         val = true;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

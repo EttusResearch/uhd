@@ -518,10 +518,6 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
-        return;
-
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -609,10 +605,6 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
         val = false;
         return;
 

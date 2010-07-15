@@ -29,9 +29,8 @@ using namespace uhd::usrp;
  **********************************************************************/
 class dummy_subdev : public wax::obj{
 public:
-    dummy_subdev(bool is_quadrature, bool is_spectrum_inverted, double resolution):
+    dummy_subdev(bool is_quadrature, double resolution):
         _is_quadrature(is_quadrature),
-        _is_spectrum_inverted(is_spectrum_inverted),
         _resolution(resolution)
     {
         /* NOP */
@@ -41,10 +40,6 @@ private:
         switch(key.as<subdev_prop_t>()){
         case SUBDEV_PROP_QUADRATURE:
             val = _is_quadrature;
-            return;
-
-        case SUBDEV_PROP_SPECTRUM_INVERTED:
-            val = _is_spectrum_inverted;
             return;
 
         case SUBDEV_PROP_FREQ:
@@ -69,7 +64,7 @@ private:
         }
     }
 
-    bool _is_quadrature, _is_spectrum_inverted;
+    bool _is_quadrature;
     double _freq, _resolution;
 };
 
@@ -114,7 +109,7 @@ private:
 static const double tolerance = 0.001;
 
 BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
-    dummy_subdev subdev(true, false, 1e6);
+    dummy_subdev subdev(true, 1e6);
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper RX automatic LO offset" << std::endl;
@@ -128,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
 }
 
 BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
-    dummy_subdev subdev(true, false, 1e6);
+    dummy_subdev subdev(true, 1e6);
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper TX automatic LO offset" << std::endl;
