@@ -481,12 +481,8 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         val = xcvr_antennas;
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
@@ -575,12 +571,8 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
         val = xcvr_antennas;
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = true;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_QI;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

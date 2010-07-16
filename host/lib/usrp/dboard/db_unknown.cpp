@@ -119,12 +119,8 @@ void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
@@ -214,12 +210,8 @@ void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

@@ -29,8 +29,7 @@ using namespace uhd::usrp;
  **********************************************************************/
 class dummy_subdev : public wax::obj{
 public:
-    dummy_subdev(bool is_quadrature, double resolution):
-        _is_quadrature(is_quadrature),
+    dummy_subdev(double resolution):
         _resolution(resolution)
     {
         /* NOP */
@@ -38,9 +37,6 @@ public:
 private:
     void get(const wax::obj &key, wax::obj &val){
         switch(key.as<subdev_prop_t>()){
-        case SUBDEV_PROP_QUADRATURE:
-            val = _is_quadrature;
-            return;
 
         case SUBDEV_PROP_FREQ:
             val = _freq;
@@ -64,8 +60,35 @@ private:
         }
     }
 
-    bool _is_quadrature;
     double _freq, _resolution;
+};
+
+class dummy_subdev_basic : public wax::obj{
+private:
+    void get(const wax::obj &key, wax::obj &val){
+        switch(key.as<subdev_prop_t>()){
+
+        case SUBDEV_PROP_FREQ:
+            val = double(0.0); //always zero
+            return;
+
+        case SUBDEV_PROP_USE_LO_OFFSET:
+            val = false;
+            return;
+
+        default: UHD_THROW_PROP_GET_ERROR();
+        }
+    }
+
+    void set(const wax::obj &key, const wax::obj &){
+        switch(key.as<subdev_prop_t>()){
+        case SUBDEV_PROP_FREQ:
+            // do nothing
+            return;
+
+        default: UHD_THROW_PROP_SET_ERROR();
+        }
+    }
 };
 
 class dummy_dsp : public wax::obj{
@@ -104,12 +127,12 @@ private:
 };
 
 /***********************************************************************
- * Tests
+ * Test cases
  **********************************************************************/
 static const double tolerance = 0.001;
 
 BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
-    dummy_subdev subdev(true, 1e6);
+    dummy_subdev subdev(1e6);
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper RX automatic LO offset" << std::endl;
@@ -123,7 +146,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
 }
 
 BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
-    dummy_subdev subdev(true, 1e6);
+    dummy_subdev subdev(1e6);
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper TX automatic LO offset" << std::endl;
@@ -134,4 +157,18 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
 
     double freq_derived = derive_freq_from_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
     BOOST_CHECK_CLOSE(freq_derived, 2.3451e9, tolerance);
+}
+
+BOOST_AUTO_TEST_CASE(test_tune_helper_rx_nyquist){
+    dummy_subdev_basic subdev;
+    dummy_dsp dsp(100e6);
+
+    std::cout << "Testing tune helper RX dummy basic board" << std::endl;
+    tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 55e6);
+    std::cout << tr.to_pp_string() << std::endl;
+    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 0, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 45e6, tolerance);
+
+    double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
+    BOOST_CHECK_CLOSE(freq_derived, -45e6, tolerance);
 }

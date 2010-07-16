@@ -22,6 +22,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/usrp/subdev_props.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -37,37 +38,36 @@ namespace dsp_type1{
 
     /*!
      * Calculate the rx mux word from properties.
-     * \param is_quadrature true if the subdev is complex
-     * \param is_iq_swapped true if the i and q are reversed
+     * \param subdev_conn the subdev connection type
      * \param the 32-bit rx mux control word
      */
     static inline boost::uint32_t calc_rx_mux_word(
-        bool is_quadrature,
-        bool is_iq_swapped
+        subdev_conn_t subdev_conn
     ){
-        boost::uint32_t rx_mux = 0;
-        if (is_quadrature){
-            rx_mux = (0x01 << 2) | (0x00 << 0); //Q=ADC1, I=ADC0
-        }else{
-            rx_mux = (0x11 << 2) | (0x00 << 0); //Q=ZERO, I=ADC0
+        switch(subdev_conn){
+        case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 2) | (0x0 << 0); //DDC0Q=ADC1, DDC0I=ADC0
+        case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 2) | (0x1 << 0); //DDC0Q=ADC0, DDC0I=ADC1
+        case SUBDEV_CONN_REAL_I:     return (0x3 << 2) | (0x0 << 0); //DDC0Q=ZERO, DDC0I=ADC0
+        case SUBDEV_CONN_REAL_Q:     return (0x1 << 2) | (0x3 << 0); //DDC0Q=ADC1, DDC0I=ZERO
+        default:                     UHD_THROW_INVALID_CODE_PATH();
         }
-        if (is_iq_swapped){
-            rx_mux = (rx_mux << 2) | (rx_mux >> 2);
-        }
-        return rx_mux;
     }
 
     /*!
      * Calculate the tx mux word from properties.
-     * \param is_iq_swapped true if the i and q are reversed
+     * \param subdev_conn the subdev connection type
      * \param the 32-bit tx mux control word
      */
-    static inline boost::uint32_t calc_tx_mux_word(bool is_iq_swapped){
-        boost::uint32_t tx_mux = 0x10;
-        if (is_iq_swapped){
-            tx_mux = (tx_mux << 4) | (tx_mux >> 4);
+    static inline boost::uint32_t calc_tx_mux_word(
+        subdev_conn_t subdev_conn
+    ){
+        switch(subdev_conn){
+        case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 4) | (0x0 << 0); //DAC1=DUC0Q, DAC0=DUC0I
+        case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 4) | (0x1 << 0); //DAC1=DUC0I, DAC0=DUC0Q
+        case SUBDEV_CONN_REAL_I:     return (0xf << 4) | (0x0 << 0); //DAC1=ZERO,  DAC0=DUC0I
+        case SUBDEV_CONN_REAL_Q:     return (0x0 << 4) | (0xf << 0); //DAC1=DUC0I, DAC0=ZERO
+        default:                     UHD_THROW_INVALID_CODE_PATH();
         }
-        return tx_mux;
     }
 
     /*!
@@ -82,7 +82,7 @@ namespace dsp_type1{
         double &freq,
         double codec_rate
     ){
-        UHD_ASSERT_THROW(std::abs(freq) < codec_rate/2.0);
+        UHD_ASSERT_THROW(freq >= -codec_rate/2.0 and freq < codec_rate/2.0);
         static const double scale_factor = std::pow(2.0, 32);
 
         //calculate the freq register word (signed)

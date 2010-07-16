@@ -104,8 +104,7 @@ void usrp2_mboard_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
             wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
             std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
             _iface->poke32(U2_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
-                rx_subdev[SUBDEV_PROP_QUADRATURE].as<bool>(),
-                rx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()
+                rx_subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
             ));
         }
         return;
@@ -164,7 +163,7 @@ void usrp2_mboard_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
             wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
             std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
             _iface->poke32(U2_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
-                tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()
+                tx_subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
             ));
         }
         return;

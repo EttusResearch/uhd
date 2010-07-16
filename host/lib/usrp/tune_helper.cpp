@@ -28,23 +28,12 @@ using namespace uhd::usrp;
 /***********************************************************************
  * Tune Helper Functions
  **********************************************************************/
-static bool invert_dxc_freq(
-    bool outside_of_nyquist,
-    bool subdev_quadrature,
-    dboard_iface::unit_t unit
-){
-    bool is_tx = unit == dboard_iface::UNIT_TX;
-    if (subdev_quadrature) return is_tx;
-    return outside_of_nyquist xor is_tx;
-}
-
 static tune_result_t tune_xx_subdev_and_dxc(
     dboard_iface::unit_t unit,
     wax::obj subdev, wax::obj dxc,
     double target_freq, double lo_offset
 ){
     wax::obj subdev_freq_proxy = subdev[SUBDEV_PROP_FREQ];
-    bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
     wax::obj dxc_freq_proxy = dxc[DSP_PROP_FREQ_SHIFT];
     double dxc_sample_rate = dxc[DSP_PROP_CODEC_RATE].as<double>();
 
@@ -54,14 +43,13 @@ static tune_result_t tune_xx_subdev_and_dxc(
     double actual_inter_freq = subdev_freq_proxy.as<double>();
 
     //perform the correction correction for dxc rates outside of nyquist
-    double target_dxc_freq = std::fmod(target_freq - actual_inter_freq, dxc_sample_rate);
-    if      (target_dxc_freq >= dxc_sample_rate/2.0) target_dxc_freq -= dxc_sample_rate;
-    else if (target_dxc_freq < -dxc_sample_rate/2.0) target_dxc_freq += dxc_sample_rate;
-    else                                             target_dxc_freq *= -1.0;
+    double delta_freq = std::fmod(target_freq - actual_inter_freq, dxc_sample_rate);
+    bool outside_of_nyquist = std::abs(delta_freq) > dxc_sample_rate/2.0;
+    double target_dxc_freq = (outside_of_nyquist)?
+        std::signum(delta_freq)*dxc_sample_rate - delta_freq : -delta_freq;
 
     //invert the sign on the dxc freq given the following conditions
-    bool outside_of_nyquist = std::abs(target_freq - actual_inter_freq) > dxc_sample_rate/2.0;
-    if (invert_dxc_freq(outside_of_nyquist, subdev_quadrature, unit)) target_dxc_freq *= -1.0;
+    if (unit == dboard_iface::UNIT_TX) target_dxc_freq *= -1.0;
 
     dxc_freq_proxy = target_dxc_freq;
     double actual_dxc_freq = dxc_freq_proxy.as<double>();
@@ -79,15 +67,12 @@ static double derive_freq_from_xx_subdev_and_dxc(
     dboard_iface::unit_t unit,
     wax::obj subdev, wax::obj dxc
 ){
-    //extract subdev properties
-    bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
-
     //extract actual dsp and IF frequencies
     double actual_inter_freq = subdev[SUBDEV_PROP_FREQ].as<double>();
     double actual_dxc_freq = dxc[DSP_PROP_FREQ_SHIFT].as<double>();
 
     //invert the sign on the dxc freq given the following conditions
-    if (invert_dxc_freq(false, subdev_quadrature, unit)) actual_dxc_freq *= -1.0;
+    if (unit == dboard_iface::UNIT_TX) actual_dxc_freq *= -1.0;
 
     return actual_inter_freq - actual_dxc_freq;
 }
