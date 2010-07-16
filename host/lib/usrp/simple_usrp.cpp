@@ -30,6 +30,11 @@
 using namespace uhd;
 using namespace uhd::usrp;
 
+static inline freq_range_t add_dsp_shift(const freq_range_t &range, wax::obj dsp){
+    double codec_rate = dsp[DSP_PROP_CODEC_RATE].as<double>();
+    return freq_range_t(range.min - codec_rate/2.0, range.max + codec_rate/2.0);
+}
+
 /***********************************************************************
  * Simple USRP Implementation
  **********************************************************************/
@@ -126,7 +131,7 @@ public:
     }
 
     freq_range_t get_rx_freq_range(void){
-        return _rx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
+        return add_dsp_shift(_rx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp);
     }
 
     void set_rx_gain(float gain){
@@ -181,7 +186,7 @@ public:
     }
 
     freq_range_t get_tx_freq_range(void){
-        return _tx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>();
+        return add_dsp_shift(_tx_subdev[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp);
     }
 
     void set_tx_gain(float gain){
