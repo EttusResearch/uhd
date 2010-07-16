@@ -110,11 +110,7 @@ private:
             return -1;
         }
 
-        //overwrite the vrt header length with the transfer frame length
-        usrp_transfer_frame *frame = boost::asio::buffer_cast<usrp_transfer_frame *>(buff);
-        boost::uint32_t *vrt_header = reinterpret_cast<boost::uint32_t *>(frame->buf);
-        vrt_header[0] = (vrt_header[0] & ~0xffff) | ((frame->len/sizeof(boost::uint32_t)) & 0xffff);
-
+        //usrp_transfer_frame *frame = boost::asio::buffer_cast<usrp_transfer_frame *>(buff);
         //std::cout << "len " << int(frame->len) << std::endl;
         //for (size_t i = 0; i < 9; i++){
         //    std::cout << boost::format("    0x%08x") % boost::asio::buffer_cast<boost::uint32_t *>(buff)[i] << std::endl;
