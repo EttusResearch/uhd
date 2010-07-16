@@ -92,15 +92,10 @@ dbsm_t dsp_tx_sm;	// the state machine
  * ================================================================
  */
 
-typedef struct{
-    uint32_t control_word;
-    uint32_t vrt_header[];
-} rx_dsp_buff_t;
-
-#define MK_RX_CTRL_WORD(num_words) (((num_words)*sizeof(uint32_t)) | (1 << 16))
+static const uint32_t rx_ctrl_word = 1 << 16;
 
 // DSP Rx writes ethernet header words
-#define DSP_RX_FIRST_LINE ((offsetof(rx_dsp_buff_t, vrt_header))/sizeof(uint32_t))
+#define DSP_RX_FIRST_LINE sizeof(rx_ctrl_word)/sizeof(uint32_t)
 
 // receive from DSP
 buf_cmd_args_t dsp_rx_recv_args = {
@@ -423,22 +418,6 @@ static void setup_network(void){
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
 }
 
-/*
- * This is called when the DSP Rx chain has filled in a packet.
- */
-bool 
-fw_sets_seqno_inspector(dbsm_t *sm, int buf_this)	// returns false
-{
-  // insert the correct length into the control word and vrt header
-  rx_dsp_buff_t *buff = (rx_dsp_buff_t*)buffer_ram(buf_this);
-  size_t vrt_len = buffer_pool_status->last_line[buf_this]-DSP_RX_FIRST_LINE;
-  buff->control_word = MK_RX_CTRL_WORD(vrt_len);
-  buff->vrt_header[0] = (buff->vrt_header[0] & ~VRTH_PKT_SIZE_MASK) | (vrt_len & VRTH_PKT_SIZE_MASK);
-
-  return false;		// we didn't handle the packet
-}
-
-
 inline static void
 buffer_irq_handler(unsigned irq)
 {
@@ -479,15 +458,14 @@ main(void)
 
     dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
 	      &dsp_rx_recv_args, &dsp_rx_send_args,
-	      fw_sets_seqno_inspector);
-
-
-  // tell app_common that this dbsm could be sending to the ethernet
-  ac_could_be_sending_to_eth = &dsp_rx_sm;
+	      dbsm_nop_inspector);
 
   sr_tx_ctrl->clear_state = 1;
   bp_clear_buf(DSP_TX_BUF_0);
   bp_clear_buf(DSP_TX_BUF_1);
+
+  buffer_ram(DSP_RX_BUF_0)[0] = rx_ctrl_word;
+  buffer_ram(DSP_RX_BUF_0)[1] = rx_ctrl_word;
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);
