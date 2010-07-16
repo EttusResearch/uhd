@@ -81,11 +81,11 @@ ENDIF(MSVC)
 ########################################################################
 # Setup Boost
 ########################################################################
-IF(EXISTS "/usr/lib64")
+IF(UNIX AND EXISTS "/usr/lib64")
     LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-ENDIF(EXISTS "/usr/lib64")
+ENDIF(UNIX AND EXISTS "/usr/lib64")
 
-SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42 1.43.0" "1.43")
+SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43")
 FIND_PACKAGE(Boost 1.36 REQUIRED COMPONENTS
     date_time
     filesystem
