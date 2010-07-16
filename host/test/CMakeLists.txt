@@ -27,6 +27,7 @@ ADD_EXECUTABLE(main_test
     dict_test.cpp
     error_test.cpp
     gain_handler_test.cpp
+    tune_helper_test.cpp
     vrt_test.cpp
     wax_test.cpp
 )

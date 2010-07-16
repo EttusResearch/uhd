@@ -185,11 +185,15 @@ public:
     }
 
     tune_result_t set_rx_freq(size_t chan, double target_freq){
-        return tune_rx_subdev_and_ddc(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq);
+        return tune_rx_subdev_and_dsp(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq);
     }
 
     tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_rx_subdev_and_ddc(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq, lo_off);
+        return tune_rx_subdev_and_dsp(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq, lo_off);
+    }
+
+    double get_rx_freq(size_t chan){
+        return derive_freq_from_rx_subdev_and_dsp(_rx_subdevs.at(chan), _rx_dsps.at(chan));
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
@@ -248,11 +252,15 @@ public:
     }
 
     tune_result_t set_tx_freq(size_t chan, double target_freq){
-        return tune_tx_subdev_and_duc(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq);
+        return tune_tx_subdev_and_dsp(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq);
     }
 
     tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_tx_subdev_and_duc(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq, lo_off);
+        return tune_tx_subdev_and_dsp(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq, lo_off);
+    }
+
+    double get_tx_freq(size_t chan){
+        return derive_freq_from_tx_subdev_and_dsp(_tx_subdevs.at(chan), _tx_dsps.at(chan));
     }
 
     freq_range_t get_tx_freq_range(size_t chan){

@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_TUNE_RESULT_HPP
 
 #include <uhd/config.hpp>
+#include <string>
 
 namespace uhd{
 
@@ -28,15 +29,18 @@ namespace uhd{
      * the target and actual intermediate frequency.
      * The struct hold the result of tuning the DSP as
      * the target and actual digital converter frequency.
-     * It also tell us weather or not the spectrum is inverted.
      */
     struct UHD_API tune_result_t{
         double target_inter_freq;
         double actual_inter_freq;
         double target_dsp_freq;
         double actual_dsp_freq;
-        bool spectrum_inverted;
-        tune_result_t(void);
+
+        /*!
+         * Create a pretty print string for this tune result struct.
+         * \return the printable string
+         */
+        std::string to_pp_string(void) const;
     };
 
 } //namespace uhd

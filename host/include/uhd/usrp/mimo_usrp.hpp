@@ -124,6 +124,7 @@ public:
 
     virtual tune_result_t set_rx_freq(size_t chan, double freq) = 0;
     virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
+    virtual double get_rx_freq(size_t chan) = 0;
     virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
 
     virtual void set_rx_gain(size_t chan, float gain) = 0;
@@ -152,6 +153,7 @@ public:
 
     virtual tune_result_t set_tx_freq(size_t chan, double freq) = 0;
     virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
+    virtual double get_tx_freq(size_t chan) = 0;
     virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
 
     virtual void set_tx_gain(size_t chan, float gain) = 0;

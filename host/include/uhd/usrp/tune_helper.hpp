@@ -24,55 +24,75 @@
 
 namespace uhd{ namespace usrp{
 
-/*!
- * Tune a rx chain to the desired frequency:
- * The IF of the subdevice is set as close as possible to
- * the given target frequency + the LO offset (when applicable).
- * The ddc cordic is setup to bring the IF down to baseband.
- * \param subdev the dboard subdevice object with properties
- * \param ddc the ddc properties object (with "if_rate", "bb_rate", "freq")
- * \param target_freq the desired center frequency
- * \param lo_offset an offset for the subdevice IF from center
- * \return a tune result struct
- */
-UHD_API tune_result_t tune_rx_subdev_and_ddc(
-    wax::obj subdev, wax::obj ddc,
-    double target_freq, double lo_offset
-);
+    /*!
+     * Tune a rx chain to the desired frequency:
+     * The IF of the subdevice is set as close as possible to
+     * the given target frequency + the LO offset (when applicable).
+     * The ddc cordic is setup to bring the IF down to baseband.
+     * \param subdev the dboard subdevice object with properties
+     * \param ddc the mboard dsp object with properties
+     * \param target_freq the desired center frequency
+     * \param lo_offset an offset for the subdevice IF from center
+     * \return a tune result struct
+     */
+    UHD_API tune_result_t tune_rx_subdev_and_dsp(
+        wax::obj subdev, wax::obj ddc,
+        double target_freq, double lo_offset
+    );
 
-/*!
- * Tune a rx chain to the desired frequency:
- * Same as the above, except the LO offset
- * is calculated based on the subdevice and BW.
- */
-UHD_API tune_result_t tune_rx_subdev_and_ddc(
-    wax::obj subdev, wax::obj ddc, double target_freq
-);
+    /*!
+     * Tune a rx chain to the desired frequency:
+     * Same as the above, except the LO offset
+     * is calculated based on the subdevice and BW.
+     */
+    UHD_API tune_result_t tune_rx_subdev_and_dsp(
+        wax::obj subdev, wax::obj ddc, double target_freq
+    );
 
-/*!
- * Tune a tx chain to the desired frequency:
- * The IF of the subdevice is set as close as possible to
- * the given target frequency + the LO offset (when applicable).
- * The duc cordic is setup to bring the baseband up to IF.
- * \param subdev the dboard subdevice object with properties
- * \param duc the duc properties object (with "if_rate", "bb_rate", "freq")
- * \param target_freq the desired center frequency
- * \param lo_offset an offset for the subdevice IF from center
- * \return a tune result struct
- */
-UHD_API tune_result_t tune_tx_subdev_and_duc(
-    wax::obj subdev, wax::obj duc,
-    double target_freq, double lo_offset
-);
+    /*!
+     * Calculate the overall frequency from the combination of dboard IF and DDC shift.
+     * \param subdev the dboard subdevice object with properties
+     * \param ddc the mboard dsp object with properties
+     * \return the overall tune frequency of the system in Hz
+     */
+    UHD_API double derive_freq_from_rx_subdev_and_dsp(
+        wax::obj subdev, wax::obj ddc
+    );
 
-/*!
- * Tune a tx chain to the desired frequency:
- * Same as the above, except the LO offset
- * is calculated based on the subdevice and BW.
- */
-UHD_API tune_result_t tune_tx_subdev_and_duc(
-    wax::obj subdev, wax::obj duc, double target_freq
-);
+    /*!
+     * Tune a tx chain to the desired frequency:
+     * The IF of the subdevice is set as close as possible to
+     * the given target frequency + the LO offset (when applicable).
+     * The duc cordic is setup to bring the baseband up to IF.
+     * \param subdev the dboard subdevice object with properties
+     * \param duc the mboard dsp object with properties
+     * \param target_freq the desired center frequency
+     * \param lo_offset an offset for the subdevice IF from center
+     * \return a tune result struct
+     */
+    UHD_API tune_result_t tune_tx_subdev_and_dsp(
+        wax::obj subdev, wax::obj duc,
+        double target_freq, double lo_offset
+    );
+
+    /*!
+     * Tune a tx chain to the desired frequency:
+     * Same as the above, except the LO offset
+     * is calculated based on the subdevice and BW.
+     */
+    UHD_API tune_result_t tune_tx_subdev_and_dsp(
+        wax::obj subdev, wax::obj duc, double target_freq
+    );
+
+    /*!
+     * Calculate the overall frequency from the combination of dboard IF and DUC shift.
+     * \param subdev the dboard subdevice object with properties
+     * \param duc the mboard dsp object with properties
+     * \return the overall tune frequency of the system in Hz
+     */
+    UHD_API double derive_freq_from_tx_subdev_and_dsp(
+        wax::obj subdev, wax::obj duc
+    );
 
 }}
 

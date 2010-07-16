@@ -19,16 +19,28 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dsp_props.hpp>
+#include <uhd/usrp/dboard_iface.hpp> //unit_t
 #include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
- * Tune Helper Function
+ * Tune Helper Functions
  **********************************************************************/
+static bool invert_dxc_freq(
+    bool outside_of_nyquist,
+    bool subdev_spectrum_inverted,
+    bool subdev_quadrature,
+    dboard_iface::unit_t unit
+){
+    bool is_tx = unit == dboard_iface::UNIT_TX;
+    if (subdev_quadrature) return is_tx;
+    return outside_of_nyquist xor subdev_spectrum_inverted xor is_tx;
+}
+
 static tune_result_t tune_xx_subdev_and_dxc(
-    bool is_tx,
+    dboard_iface::unit_t unit,
     wax::obj subdev, wax::obj dxc,
     double target_freq, double lo_offset
 ){
@@ -43,55 +55,61 @@ static tune_result_t tune_xx_subdev_and_dxc(
     subdev_freq_proxy = target_inter_freq;
     double actual_inter_freq = subdev_freq_proxy.as<double>();
 
-    // Calculate the DDC setting that will downconvert the baseband from the
-    // daughterboard to our target frequency.
-    double delta_freq = target_freq - actual_inter_freq;
-    int delta_sign = std::signum(delta_freq);
-    delta_freq *= delta_sign;
-    delta_freq = std::fmod(delta_freq, dxc_sample_rate);
-    bool inverted = delta_freq > dxc_sample_rate/2.0;
-    double target_dxc_freq = inverted? (delta_freq - dxc_sample_rate) : (-delta_freq);
-    target_dxc_freq *= delta_sign;
+    //perform the correction correction for dxc rates outside of nyquist
+    double target_dxc_freq = std::fmod(target_freq - actual_inter_freq, dxc_sample_rate);
+    if      (target_dxc_freq >= dxc_sample_rate/2.0) target_dxc_freq -= dxc_sample_rate;
+    else if (target_dxc_freq < -dxc_sample_rate/2.0) target_dxc_freq += dxc_sample_rate;
+    else                                             target_dxc_freq *= -1.0;
 
-    // If the spectrum is inverted, and the daughterboard doesn't do
-    // quadrature downconversion, we can fix the inversion by flipping the
-    // sign of the dxc_freq...  (This only happens using the basic_rx board)
-    if (subdev_spectrum_inverted){
-        inverted = not inverted;
-    }
-    if (inverted and not subdev_quadrature){
-        target_dxc_freq *= -1.0;
-        inverted = not inverted;
-    }
-    // down conversion versus up conversion, fight!
-    // your mother is ugly and your going down...
-    target_dxc_freq *= (is_tx)? -1.0 : +1.0;
+    //invert the sign on the dxc freq given the following conditions
+    bool outside_of_nyquist = std::abs(target_freq - actual_inter_freq) > dxc_sample_rate/2.0;
+    if (invert_dxc_freq(
+        outside_of_nyquist, subdev_spectrum_inverted, subdev_quadrature, unit
+    )) target_dxc_freq *= -1.0;
 
     dxc_freq_proxy = target_dxc_freq;
     double actual_dxc_freq = dxc_freq_proxy.as<double>();
 
-    //return some kind of tune result tuple/struct
+    //load and return the tune result
     tune_result_t tune_result;
     tune_result.target_inter_freq = target_inter_freq;
     tune_result.actual_inter_freq = actual_inter_freq;
     tune_result.target_dsp_freq = target_dxc_freq;
     tune_result.actual_dsp_freq = actual_dxc_freq;
-    tune_result.spectrum_inverted = inverted;
     return tune_result;
+}
+
+static double derive_freq_from_xx_subdev_and_dxc(
+    dboard_iface::unit_t unit,
+    wax::obj subdev, wax::obj dxc
+){
+    //extract subdev properties
+    bool subdev_quadrature = subdev[SUBDEV_PROP_QUADRATURE].as<bool>();
+    bool subdev_spectrum_inverted = subdev[SUBDEV_PROP_SPECTRUM_INVERTED].as<bool>();
+
+    //extract actual dsp and IF frequencies
+    double actual_inter_freq = subdev[SUBDEV_PROP_FREQ].as<double>();
+    double actual_dxc_freq = dxc[DSP_PROP_FREQ_SHIFT].as<double>();
+
+    //invert the sign on the dxc freq given the following conditions
+    if (invert_dxc_freq(
+        false, subdev_spectrum_inverted, subdev_quadrature, unit
+    )) actual_dxc_freq *= -1.0;
+
+    return actual_inter_freq - actual_dxc_freq;
 }
 
 /***********************************************************************
  * RX Tune
  **********************************************************************/
-tune_result_t uhd::usrp::tune_rx_subdev_and_ddc(
+tune_result_t usrp::tune_rx_subdev_and_dsp(
     wax::obj subdev, wax::obj ddc,
     double target_freq, double lo_offset
 ){
-    bool is_tx = false;
-    return tune_xx_subdev_and_dxc(is_tx, subdev, ddc, target_freq, lo_offset);
+    return tune_xx_subdev_and_dxc(dboard_iface::UNIT_RX, subdev, ddc, target_freq, lo_offset);
 }
 
-tune_result_t uhd::usrp::tune_rx_subdev_and_ddc(
+tune_result_t usrp::tune_rx_subdev_and_dsp(
     wax::obj subdev, wax::obj ddc,
     double target_freq
 ){
@@ -100,21 +118,24 @@ tune_result_t uhd::usrp::tune_rx_subdev_and_ddc(
     if (subdev[SUBDEV_PROP_USE_LO_OFFSET].as<bool>()){
         lo_offset = 2.0*ddc[DSP_PROP_HOST_RATE].as<double>();
     }
-    return tune_rx_subdev_and_ddc(subdev, ddc, target_freq, lo_offset);
+    return tune_rx_subdev_and_dsp(subdev, ddc, target_freq, lo_offset);
+}
+
+double usrp::derive_freq_from_rx_subdev_and_dsp(wax::obj subdev, wax::obj ddc){
+    return derive_freq_from_xx_subdev_and_dxc(dboard_iface::UNIT_RX, subdev, ddc);
 }
 
 /***********************************************************************
  * TX Tune
  **********************************************************************/
-tune_result_t uhd::usrp::tune_tx_subdev_and_duc(
+tune_result_t usrp::tune_tx_subdev_and_dsp(
     wax::obj subdev, wax::obj duc,
     double target_freq, double lo_offset
 ){
-    bool is_tx = true;
-    return tune_xx_subdev_and_dxc(is_tx, subdev, duc, target_freq, lo_offset);
+    return tune_xx_subdev_and_dxc(dboard_iface::UNIT_TX, subdev, duc, target_freq, lo_offset);
 }
 
-tune_result_t uhd::usrp::tune_tx_subdev_and_duc(
+tune_result_t usrp::tune_tx_subdev_and_dsp(
     wax::obj subdev, wax::obj duc,
     double target_freq
 ){
@@ -123,5 +144,9 @@ tune_result_t uhd::usrp::tune_tx_subdev_and_duc(
     if (subdev[SUBDEV_PROP_USE_LO_OFFSET].as<bool>()){
         lo_offset = 2.0*duc[DSP_PROP_HOST_RATE].as<double>();
     }
-    return tune_tx_subdev_and_duc(subdev, duc, target_freq, lo_offset);
+    return tune_tx_subdev_and_dsp(subdev, duc, target_freq, lo_offset);
+}
+
+double usrp::derive_freq_from_tx_subdev_and_dsp(wax::obj subdev, wax::obj duc){
+    return derive_freq_from_xx_subdev_and_dxc(dboard_iface::UNIT_TX, subdev, duc);
 }

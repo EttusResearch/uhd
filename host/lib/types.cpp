@@ -60,14 +60,17 @@ freq_range_t::freq_range_t(double min, double max):
 /***********************************************************************
  * tune result
  **********************************************************************/
-tune_result_t::tune_result_t(void):
-    target_inter_freq(0.0),
-    actual_inter_freq(0.0),
-    target_dsp_freq(0.0),
-    actual_dsp_freq(0.0),
-    spectrum_inverted(false)
-{
-    /* NOP */
+std::string tune_result_t::to_pp_string(void) const{
+    return str(boost::format(
+        "Tune Result:\n"
+        "    Target Intermediate Freq: %f (MHz)\n"
+        "    Actual Intermediate Freq: %f (MHz)\n"
+        "    Target DSP Freq Shift:    %f (MHz)\n"
+        "    Actual DSP Freq Shift:    %f (MHz)\n"
+    )
+        % (target_inter_freq/1e6) % (actual_inter_freq/1e6)
+        % (target_dsp_freq/1e6)   % (actual_dsp_freq/1e6)
+    );
 }
 
 /***********************************************************************
