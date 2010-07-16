@@ -141,11 +141,17 @@ void vrt::if_hdr_unpack_$(suffix)(
 ){
     //extract vrt header
     boost::uint32_t vrt_hdr_word = $(XE_MACRO)(packet_buff[0]);
+    /*
     size_t packet_words32 = vrt_hdr_word & 0xffff;
 
     //failure case
     if (if_packet_info.num_packet_words32 < packet_words32)
         throw std::runtime_error("bad vrt header or packet fragment");
+    */
+    //Fix for short packets sent from the fpga:
+    //  Use the num_packet_words32 passed in as input,
+    //  and do not use the header bits which could be wrong.
+    size_t packet_words32 = if_packet_info.num_packet_words32;
 
     //extract fields from the header
     if_packet_info.packet_type = if_packet_info_t::packet_type_t(vrt_hdr_word >> 29);
