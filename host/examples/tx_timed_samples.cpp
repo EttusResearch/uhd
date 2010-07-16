@@ -77,13 +77,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //allocate data to send
-    std::vector<std::complex<float> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
+    std::vector<std::complex<short> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
+    uhd::tx_metadata_t md;
 
     //send the data in multiple packets
     size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
     for (size_t i = 0; i < num_packets; i++){
         //setup the metadata flags and time spec
-        uhd::tx_metadata_t md;
         md.start_of_burst = true;                  //always SOB (good for continuous streaming)
         md.end_of_burst   = (i == num_packets-1);  //only last packet has EOB
         md.has_time_spec  = (i == 0);              //only first packet has time
@@ -94,7 +94,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         //send the entire packet (driver fragments internally)
         size_t num_tx_samps = dev->send(
             &buff.front(), samps_to_send, md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::io_type_t::COMPLEX_INT16,
             uhd::device::SEND_MODE_FULL_BUFF
         );
         if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
