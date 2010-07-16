@@ -86,7 +86,7 @@ using namespace boost::assign;
  **********************************************************************/
 static const bool wbx_debug = false;
 
-static const freq_range_t wbx_freq_range(50e6, 2.22e9);
+static const freq_range_t wbx_freq_range(68.75e6, 2.2e9);
 
 static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
 
@@ -328,6 +328,10 @@ double wbx_xcvr::set_lo_freq(
 
     //clip the input
     target_freq = std::clip(target_freq, wbx_freq_range.min, wbx_freq_range.max);
+    //return the clipped frequency
+    std::cerr << boost::format(
+        "WBX tune: target frequency %f Mhz"
+    ) % (target_freq/1e6) << std::endl;
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of
@@ -439,6 +443,7 @@ double wbx_xcvr::set_lo_freq(
     regs.reference_divide_by_2 = T;
     regs.reference_doubler = D;
     regs.band_select_clock_div = BS;
+    UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
     regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
 
     //write the registers
