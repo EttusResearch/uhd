@@ -328,10 +328,6 @@ double wbx_xcvr::set_lo_freq(
 
     //clip the input
     target_freq = std::clip(target_freq, wbx_freq_range.min, wbx_freq_range.max);
-    //return the clipped frequency
-    std::cerr << boost::format(
-        "WBX tune: target frequency %f Mhz"
-    ) % (target_freq/1e6) << std::endl;
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of
