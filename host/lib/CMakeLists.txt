@@ -16,32 +16,6 @@
 #
 
 ########################################################################
-# Setup Python
-########################################################################
-INCLUDE(FindPythonInterp)
-
-MACRO(PYTHON_CHECK_MODULE module have)
-    MESSAGE(STATUS "Checking for python module ${module}")
-    EXECUTE_PROCESS(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import ${module}"
-        RESULT_VARIABLE ${have}
-    )
-    IF(${have} EQUAL 0)
-        MESSAGE(STATUS "Checking for python module ${module} - found")
-        SET(${have} TRUE)
-    ELSE(${have} EQUAL 0)
-        MESSAGE(STATUS "Checking for python module ${module} - not found")
-        SET(${have} FALSE)
-    ENDIF(${have} EQUAL 0)
-ENDMACRO(PYTHON_CHECK_MODULE)
-
-PYTHON_CHECK_MODULE("Cheetah" HAVE_PYTHON_MODULE_CHEETAH)
-
-IF(NOT HAVE_PYTHON_MODULE_CHEETAH)
-    MESSAGE(FATAL_ERROR "Error: Cheetah Templates needed for pre-build generation.")
-ENDIF(NOT HAVE_PYTHON_MODULE_CHEETAH)
-
-########################################################################
 # Helpful Macros
 ########################################################################
 MACRO(LIBUHD_APPEND_SOURCES)

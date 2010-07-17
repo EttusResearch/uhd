@@ -20,14 +20,10 @@ PROJECT(UHD CXX)
 ENABLE_TESTING()
 
 ########################################################################
-# Setup CPack
+# Config Files
 ########################################################################
-SET(CPACK_PACKAGE_VERSION_MAJOR 0)
-SET(CPACK_PACKAGE_VERSION_MINOR 0)
-SET(CPACK_PACKAGE_VERSION_PATCH 0)
-SET(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README)
-SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
-INCLUDE(CPack) #include after setting vars
+INCLUDE(${CMAKE_SOURCE_DIR}/config/Python.cmake)
+INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
 
 ########################################################################
 # Install Dirs
@@ -42,7 +38,7 @@ MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 ########################################################################
 # Local Include Dir
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ########################################################################
 # Optional Compiler Flags
@@ -62,10 +58,10 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wall      HAVE_WALL)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-Wextra    HAVE_WEXTRA)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-pedantic  HAVE_PEDANTIC)
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-ansi      HAVE_ANSI)
+    ADD_DEFINITIONS(-Wall)
+    ADD_DEFINITIONS(-Wextra)
+    ADD_DEFINITIONS(-pedantic)
+    ADD_DEFINITIONS(-ansi)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
@@ -86,7 +82,7 @@ IF(UNIX AND EXISTS "/usr/lib64")
 ENDIF(UNIX AND EXISTS "/usr/lib64")
 
 SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43")
-FIND_PACKAGE(Boost 1.36 REQUIRED COMPONENTS
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
     date_time
     filesystem
     program_options
@@ -103,7 +99,7 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 # Create Uninstall Target
 ########################################################################
 CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in
+    ${CMAKE_SOURCE_DIR}/config/cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 @ONLY)
 
