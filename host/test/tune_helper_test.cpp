@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx_nyquist){
     std::cout << "Testing tune helper RX dummy basic board" << std::endl;
     tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 55e6);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 0, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 0.0, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 45e6, tolerance);
 
     double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
