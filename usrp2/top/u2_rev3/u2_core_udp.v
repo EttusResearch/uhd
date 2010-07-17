@@ -476,7 +476,7 @@ module u2_core
 
    fifo36_mux #(.prio(0)) mux_err_stream
      (.clk(dsp_clk), .reset(dsp_reset), .clear(0),
-      .data0_i(), .src0_rdy_i(), .dst0_rdy_o(),
+      .data0_i(udp1_tx_data), .src0_rdy_i(udp1_tx_src_rdy), .dst0_rdy_o(udp1_tx_dst_rdy),
       .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
       .data_o(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
    
