@@ -97,6 +97,12 @@ static const uint32_t rx_ctrl_word = 1 << 16;
 // DSP Rx writes ethernet header words
 #define DSP_RX_FIRST_LINE sizeof(rx_ctrl_word)/sizeof(uint32_t)
 
+static bool dbsm_rx_inspector(dbsm_t *sm, int buf_this){
+    size_t num_lines = buffer_pool_status->last_line[buf_this]-DSP_RX_FIRST_LINE;
+    ((uint32_t*)buffer_ram(buf_this))[0] = (num_lines*sizeof(uint32_t)) | (1 << 16);
+    return false;
+}
+
 // receive from DSP
 buf_cmd_args_t dsp_rx_recv_args = {
   PORT_DSP,
@@ -458,14 +464,11 @@ main(void)
 
     dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
 	      &dsp_rx_recv_args, &dsp_rx_send_args,
-	      dbsm_nop_inspector);
+	      dbsm_rx_inspector);
 
   sr_tx_ctrl->clear_state = 1;
   bp_clear_buf(DSP_TX_BUF_0);
   bp_clear_buf(DSP_TX_BUF_1);
-
-  buffer_ram(DSP_RX_BUF_0)[0] = rx_ctrl_word;
-  buffer_ram(DSP_RX_BUF_0)[1] = rx_ctrl_word;
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);
