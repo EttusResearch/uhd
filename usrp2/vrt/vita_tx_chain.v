@@ -8,7 +8,7 @@ module vita_tx_chain
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [63:0] vita_time,
     input [35:0] tx_data_i, input tx_src_rdy_i, output tx_dst_rdy_o,
-    input [35:0] err_data_i, input err_src_rdy_i, output err_dst_rdy_o,
+    output [35:0] err_data_o, output err_src_rdy_o, input err_dst_rdy_i,
     output [15:0] dac_a, output [15:0] dac_b,
     output underrun, output run,
     output [31:0] debug);

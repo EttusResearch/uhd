@@ -56,10 +56,10 @@ module gen_context_pkt
        CTXT_TICS : data_int <= { 2'b00, 32'd0 };
        CTXT_TICS2 : data_int <= { 2'b00, err_time[31:0] };
        CTXT_MESSAGE : data_int <= { 2'b10, message };
-       default : {2'b00, 32'b00};
+       default : data_int <= {2'b00, 32'b00};
      endcase // case (ctxt_state)
 
-   fifo_short (.WIDTH(34)) ctxt_fifo
+   fifo_short #(.WIDTH(34)) ctxt_fifo
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int),
       .dataout(data_o[33:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));

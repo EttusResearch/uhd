@@ -663,7 +663,7 @@ module u2_core
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
-      .tx_data_i(tx_err_data), .tx_src_rdy_i(tx_err_src_rdy), .tx_dst_rdy_o(tx_err_dst_rdy),
+      .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(dac_a),.dac_b(dac_b),
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
