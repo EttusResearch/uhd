@@ -1,7 +1,7 @@
 
 
 module gen_context_pkt
-  #(parameter PROT_ENG_FLAGS =1)
+  #(parameter PROT_ENG_FLAGS=1)
    (input clk, input reset, input clear,
     input trigger, output sent,
     input [31:0] streamid,
@@ -23,6 +23,7 @@ module gen_context_pkt
    wire 	 src_rdy_int, dst_rdy_int;
    wire [3:0] 	 seqno = 0;
    reg [3:0] 	 ctxt_state;
+   reg [63:0] 	 err_time;
    
    always @(posedge clk)
      if(reset | clear)
@@ -31,7 +32,10 @@ module gen_context_pkt
        case(ctxt_state)
 	 CTXT_IDLE :
 	   if(trigger)
-	     ctxt_state <= CTXT_HEADER;
+	     begin
+		ctxt_state <= CTXT_HEADER;
+		err_time <= vita_time;
+	     end
 	 
 	 CTXT_DONE :
 	   if(~trigger)
@@ -48,9 +52,9 @@ module gen_context_pkt
      case(ctxt_state)
        CTXT_HEADER : data_int <= { 2'b01, 12'b010100001101, seqno, 16'd6 };
        CTXT_STREAMID : data_int <= { 2'b00, streamid };
-       CTXT_SECS : data_int <= { 2'b00, vita_time[63:32] };
+       CTXT_SECS : data_int <= { 2'b00, err_time[63:32] };
        CTXT_TICS : data_int <= { 2'b00, 32'd0 };
-       CTXT_TICS2 : data_int <= { 2'b00, vita_time[31:0] };
+       CTXT_TICS2 : data_int <= { 2'b00, err_time[31:0] };
        CTXT_MESSAGE : data_int <= { 2'b10, message };
        default : {2'b00, 32'b00};
      endcase // case (ctxt_state)
