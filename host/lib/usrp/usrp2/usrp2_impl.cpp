@@ -35,6 +35,9 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
+//! wait this long for a control response when discovering devices
+static const size_t DISCOVERY_TIMEOUT_MS = 100;
+
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
@@ -102,7 +105,7 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
     boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
     const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
     while(true){
-        size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
+        size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem), DISCOVERY_TIMEOUT_MS);
         //std::cout << len << "\n";
         if (len > offsetof(usrp2_ctrl_data_t, data)){
             //handle the received data
