@@ -509,12 +509,13 @@ module u2_core
    //    In Rev3 there are only 6 leds, and the highest one is on the ETH connector
    
    wire [7:0] 	 led_src, led_sw;
-   wire [7:0] 	 led_hw = {clk_status,serdes_link_up};
+   wire [7:0] 	 led_hw = {run_tx, run_rx, clk_status, serdes_link_up, 1'b0};
    
    setting_reg #(.my_addr(3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
-   setting_reg #(.my_addr(8),.width(8)) sr_led_src (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-					  .in(set_data),.out(led_src),.changed());
+
+   setting_reg #(.my_addr(8),.width(8), .at_reset(8'b0001_1110)) 
+   sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
    
