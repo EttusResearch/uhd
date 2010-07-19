@@ -40,11 +40,16 @@ module prot_eng_tx
    // Store header values in a small dual-port (distributed) ram
    reg [HDR_WIDTH-1:0] header_ram[0:HDR_LEN-1];
    wire [HDR_WIDTH-1:0] header_word;
+   reg [15:0]  chk_precompute;
    
    always @(posedge clk)
      if(set_stb & ((set_addr & 8'hE0) == BASE))
-       header_ram[set_addr[4:0]] <= set_data;
-
+       begin
+	  header_ram[set_addr[4:0]] <= set_data;
+	  if(set_data[18])
+	    chk_precompute <= set_data[15:0];
+       end
+   
    assign header_word = header_ram[state];
 
    wire last_hdr_line  = header_word[19];
@@ -56,7 +61,7 @@ module prot_eng_tx
    reg [15:0] length;
    wire [15:0] ip_length = length + 28;  // IP HDR + UDP HDR
    wire [15:0] udp_length = length + 8;  //  UDP HDR
-
+ 
    always @(posedge clk)
      if(reset)
        begin
@@ -101,12 +106,16 @@ module prot_eng_tx
 
    wire [15:0] checksum;
    add_onescomp #(.WIDTH(16)) add_onescomp 
-     (.A(header_word[15:0]),.B(ip_length),.SUM(checksum));
+     (.A(chk_precompute),.B(ip_length),.SUM(checksum));
 
+   reg [15:0]  checksum_reg;
+   always @(posedge clk)
+     checksum_reg <= checksum;
+   
    always @*
      if(ip_chk)
        //dataout_int 	<= header_word[15:0] ^ ip_length;
-       dataout_int 	<= 16'hFFFF ^ checksum;
+       dataout_int 	<= 16'hFFFF ^ checksum_reg;
      else if(ip_len)
        dataout_int 	<= ip_length;
      else if(udp_len)

@@ -180,6 +180,11 @@ module u2_core
    wire [31:0] 	irq;
    wire [63:0] 	vita_time;
    
+   wire 	 run_rx, run_tx;
+   reg 		 run_rx_d1;
+   always @(posedge dsp_clk)
+     run_rx_d1 <= run_rx;
+   
    // ///////////////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Single Master INTERCON
    localparam 	dw = 32;  // Data bus width
@@ -279,33 +284,33 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////
    // RAM Loader
 
-   wire [31:0] 	 ram_loader_dat, iwb_dat;
-   wire [15:0] 	 ram_loader_adr, iwb_adr;
+   wire [31:0] 	 ram_loader_dat, if_dat;
+   wire [15:0] 	 ram_loader_adr;
+   wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
-   wire 	 ram_loader_stb, ram_loader_we, ram_loader_ack;
+   wire 	 ram_loader_stb, ram_loader_we;
    wire 	 iwb_ack, iwb_stb;
    ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
-     ram_loader (.clk_i(wb_clk),.rst_i(ram_loader_rst),
+     ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
+		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
+		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
+		 .wb_we(ram_loader_we),
+		 .ram_loader_done(ram_loader_done),
 		 // CPLD Interface
-		 .cfg_clk_i(cpld_clk),
-		 .cfg_data_i(cpld_din),
-		 .start_o(cpld_start_int),
-		 .mode_o(cpld_mode_int),
-		 .done_o(cpld_done_int),
-		 .detached_i(cpld_detached),
-		 // Wishbone Interface
-		 .wb_dat_o(ram_loader_dat),.wb_adr_o(ram_loader_adr),
-		 .wb_stb_o(ram_loader_stb),.wb_cyc_o(),.wb_sel_o(ram_loader_sel),
-		 .wb_we_o(ram_loader_we),.wb_ack_i(ram_loader_ack),
-		 .ram_loader_done_o(ram_loader_done));
-
+		 .cpld_clk(cpld_clk),
+		 .cpld_din(cpld_din),
+		 .cpld_start(cpld_start_int),
+		 .cpld_mode(cpld_mode_int),
+		 .cpld_done(cpld_done_int),
+		 .cpld_detached(cpld_detached));
+   
    // /////////////////////////////////////////////////////////////////////////
    // Processor
    aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
      aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
 	   // Instruction Wishbone bus to I-RAM
-	   .iwb_stb_o(iwb_stb),.iwb_adr_o(iwb_adr),
-	   .iwb_dat_i(iwb_dat),.iwb_ack_i(iwb_ack),
+	   .if_adr(if_adr),
+	   .if_dat(if_dat),
 	   // Data Wishbone bus to system bus fabric
 	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
 	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
@@ -319,16 +324,16 @@ module u2_core
    // I-port connects directly to processor and ram loader
 
    wire 	 flush_icache;
-   ram_harv_cache #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
+   ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
 	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
-	     .ram_loader_we_i(ram_loader_we), .ram_loader_ack_o(ram_loader_ack),
+	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
-	     .iwb_adr_i(iwb_adr[14:0]), .iwb_stb_i(iwb_stb),
-	     .iwb_dat_o(iwb_dat), .iwb_ack_o(iwb_ack),
+	     .if_adr(if_adr), 
+	     .if_data(if_dat), 
 	     
 	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
@@ -509,12 +514,13 @@ module u2_core
    //    In Rev3 there are only 6 leds, and the highest one is on the ETH connector
    
    wire [7:0] 	 led_src, led_sw;
-   wire [7:0] 	 led_hw = {clk_status,serdes_link_up};
+   wire [7:0] 	 led_hw = {run_tx, run_rx, clk_status, serdes_link_up, 1'b0};
    
    setting_reg #(.my_addr(3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
-   setting_reg #(.my_addr(8),.width(8)) sr_led_src (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-					  .in(set_data),.out(led_src),.changed());
+
+   setting_reg #(.my_addr(8),.width(8), .at_reset(8'b0001_1110)) 
+   sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
    
@@ -565,11 +571,6 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller, Slave #11
 
-   wire 	 run_rx, run_tx;
-   reg 		 run_rx_d1;
-   always @(posedge dsp_clk)
-     run_rx_d1 <= run_rx;
-   
    atr_controller atr_controller
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
@@ -773,8 +774,7 @@ endmodule // u2_core
 			     { s6_adr[15:8] },
 			     { s6_adr[7:0] },
 			     { 6'd0, mdio_cpy, MDC } };
-*/
-/*
+
    assign debug 	 = { { GMII_TXD },
 			     { 5'd0, GMII_TX_EN, GMII_TX_ER, GMII_GTX_CLK },
 			     { wr2_flags, rd2_flags },
@@ -783,7 +783,6 @@ endmodule // u2_core
 			     { 5'd0, GMII_RX_DV, GMII_RX_ER, GMII_RX_CLK },
 			     { wr2_flags, rd2_flags },
 			     { GMII_TX_EN,3'd0, wr2_ready_i, wr2_ready_o, rd2_ready_i, rd2_ready_o } };
- */
 
 //   assign debug = debug_udp;
   // assign debug = vrc_debug;
@@ -794,9 +793,8 @@ endmodule // u2_core
 			   {wr1_ready_i, wr1_ready_o, rx1_src_rdy, rx1_dst_rdy, rx1_data[35:32]}};
 */
 //   assign debug_gpio_1 = {vita_time[63:32] };
-   
-/*
-    assign debug_gpio_1 = { { tx_f19_data[15:8] },
+/*   
+   assign debug_gpio_1 = { { tx_f19_data[15:8] },
 			   { tx_f19_data[7:0] },
 			   { 3'd0, tx_f19_src_rdy, tx_f19_dst_rdy, tx_f19_data[18:16] },
 			   { 2'b0, rd2_ready_i, rd2_ready_o, rd2_flags } };

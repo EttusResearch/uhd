@@ -29,11 +29,11 @@ module dsp_core_tx
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({scale_i,scale_q}),.changed());
    
-   setting_reg #(.my_addr(BASE+2)) sr_2
+   setting_reg #(.my_addr(BASE+2), .width(10)) sr_2
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_hb1, enable_hb2, interp_rate}),.changed());
 
-   setting_reg #(.my_addr(BASE+4)) sr_4
+   setting_reg #(.my_addr(BASE+4), .width(8)) sr_4
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({dacmux_b,dacmux_a}),.changed());
 

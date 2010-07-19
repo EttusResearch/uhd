@@ -622,7 +622,7 @@ module u2_core
 
    // ///////////////////////////////////////////////////////////////////////////////////
    // External RAM Interface
-
+/*
    localparam PAGE_SIZE = 10;  // PAGE SIZE is in bytes, 10 = 1024 bytes
 
    wire [15:0] bus2ram, ram2bus;
@@ -650,6 +650,7 @@ module u2_core
       .sram_bw(),.sram_adv(RAM_LDn),.sram_ce(RAM_CENn),.sram_oe(RAM_OEn),
       .sram_mode(),.sram_zz() );
 
+*/
    assign      RAM_CE1n = 0;
    assign      RAM_D[17:16] = 2'bzz;
    
