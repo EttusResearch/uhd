@@ -180,6 +180,11 @@ module u2_core
    wire [31:0] 	irq;
    wire [63:0] 	vita_time;
    
+   wire 	 run_rx, run_tx;
+   reg 		 run_rx_d1;
+   always @(posedge dsp_clk)
+     run_rx_d1 <= run_rx;
+   
    // ///////////////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Single Master INTERCON
    localparam 	dw = 32;  // Data bus width
@@ -566,11 +571,6 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller, Slave #11
 
-   wire 	 run_rx, run_tx;
-   reg 		 run_rx_d1;
-   always @(posedge dsp_clk)
-     run_rx_d1 <= run_rx;
-   
    atr_controller atr_controller
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
