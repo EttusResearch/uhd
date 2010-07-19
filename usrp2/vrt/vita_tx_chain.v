@@ -21,7 +21,7 @@ module vita_tx_chain
    wire [31:0] 	  streamid, message;
    wire 	  trigger, sent;
    
-   setting_reg #(.my_addr(BASE_CTRL+1), .at_reset(0)) sr_streamid
+   setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed());
 
