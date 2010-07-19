@@ -3,8 +3,8 @@
 module vita_rx_tb;
 
    localparam DECIM  = 8'd4;
-   localparam MAXCHAN=4;
-   localparam NUMCHAN=4;
+   localparam MAXCHAN=1;
+   localparam NUMCHAN=1;
    
    reg clk 	     = 0;
    reg reset 	     = 1;
@@ -94,7 +94,7 @@ module vita_rx_tb;
 	@(posedge clk);
 	write_setting(4,32'hDEADBEEF);  // VITA header
 	write_setting(5,32'hF00D1234);  // VITA streamid
-	write_setting(6,32'h98765432);  // VITA trailer
+	write_setting(6,32'hF0000000);  // VITA trailer
 	write_setting(7,8);  // Samples per VITA packet
 	write_setting(8,NUMCHAN);  // Samples per VITA packet
 	queue_rx_cmd(1,0,8,32'h0,32'h0);  // send imm, single packet
@@ -111,7 +111,12 @@ module vita_rx_tb;
 	queue_rx_cmd(0,0,8,32'h0,32'h340);  // send at, on time
 	queue_rx_cmd(0,0,8,32'h0,32'h100);  // send at, but late
 
+	#100000;
+	$display("\nChained, break chain\n");
 	queue_rx_cmd(1,1,8,32'h0,32'h0);  // chained, but break chain
+	#100000;
+	$display("\nSingle packet\n");
+	queue_rx_cmd(1,0,8,32'h0,32'h0);  // send imm, single packet
 	#100000;
 	$display("\nEnd chain with zero samples, shouldn't error\n");
 	queue_rx_cmd(1,1,8,32'h0,32'h0);  // chained
