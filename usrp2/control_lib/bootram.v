@@ -21,8 +21,12 @@ module bootram
    wire [31:0] DOB0, DOB1, DOB2, DOB3;
    wire        ENB0, ENB1, ENB2, ENB3;
    wire [3:0]  WEB;
+
+   reg [1:0]   delayed_if_bank;
+   always @(posedge clk)
+     delayed_if_bank <= if_adr[12:11];
    
-   assign if_data = if_adr[12] ? (if_adr[11] ? DOA3 : DOA2) : (if_adr[11] ? DOA1 : DOA0);
+   assign if_data = delayed_if_bank[1] ? (delayed_if_bank[0] ? DOA3 : DOA2) : (delayed_if_bank[0] ? DOA1 : DOA0);
    assign dwb_dat_o = dwb_adr_i[12] ? (dwb_adr_i[11] ? DOB3 : DOB2) : (dwb_adr_i[11] ? DOB1 : DOB0);
 
    always @(posedge clk)
