@@ -97,6 +97,7 @@ module u2plus_core
    input miso,
    output sen_clk,
    output sen_dac,
+   output sen_adc,
    output sen_tx_db,
    output sen_tx_adc,
    output sen_tx_dac,
@@ -375,7 +376,7 @@ defparam bootram.RAM0.INIT_21=256'h00000000_00000000_00000000_00000000_00000000_
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(s2_adr[4:0]),.wb_dat_i(s2_dat_o),
       .wb_dat_o(s2_dat_i),.wb_sel_i(s2_sel),.wb_we_i(s2_we),.wb_stb_i(s2_stb),
       .wb_cyc_i(s2_cyc),.wb_ack_o(s2_ack),.wb_err_o(),.wb_int_o(spi_int),
-      .ss_pad_o({sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
+      .ss_pad_o({sen_adc, sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
       .sclk_pad_o(sclk),.mosi_pad_o(mosi),.miso_pad_i(miso) );
 
    // /////////////////////////////////////////////////////////////////////////
