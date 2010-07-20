@@ -33,8 +33,11 @@ module gen_context_pkt
 	 CTXT_IDLE :
 	   if(trigger)
 	     begin
-		ctxt_state <= CTXT_HEADER;
 		err_time <= vita_time;
+		if(PROT_ENG_FLAGS)
+		  ctxt_state <= CTXT_PROT_ENG;
+		else
+		  ctxt_state <= CTXT_HEADER;
 	     end
 	 
 	 CTXT_DONE :
@@ -50,7 +53,8 @@ module gen_context_pkt
    
    always @*
      case(ctxt_state)
-       CTXT_HEADER : data_int <= { 2'b01, 12'b010100001101, seqno, 16'd6 };
+       CTXT_PROT_ENG : data_int <= { 2'b01, 16'd1, 16'd24 };
+       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100001101, seqno, 16'd6 };
        CTXT_STREAMID : data_int <= { 2'b00, streamid };
        CTXT_SECS : data_int <= { 2'b00, err_time[63:32] };
        CTXT_TICS : data_int <= { 2'b00, 32'd0 };
