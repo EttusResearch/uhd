@@ -6,8 +6,8 @@ module vita_tx_control
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     
     input [63:0] vita_time,
-    output reg [3:0] error_code,
     output error,
+    output reg [3:0] error_code,
 
     // From vita_tx_deframer
     input [5+64+WIDTH-1:0] sample_fifo_i,
@@ -43,10 +43,8 @@ module vita_tx_control
    localparam IBS_IDLE = 0;
    localparam IBS_RUN = 1;  // FIXME do we need this?
    localparam IBS_CONT_BURST = 2;
-   localparam IBS_UNDERRUN = 3;
-   localparam IBS_TIME_ERROR = 4;
-   localparam IBS_SEQ_ERROR = 5;
-   localparam IBS_ERROR_DONE = 7;
+   localparam IBS_ERROR = 3;
+   localparam IBS_ERROR_DONE = 4;
 
    localparam CODE_UNDERRUN = 2;
    localparam CODE_SEQ_ERROR = 4;
@@ -67,16 +65,25 @@ module vita_tx_control
 	 IBS_IDLE :
 	   if(sample_fifo_src_rdy_i)
 	     if(seqnum_err)
-	       ibs_state <= IBS_SEQ_ERROR;
+	       begin
+		  ibs_state <= IBS_ERROR;
+		  error_code <= CODE_SEQ_ERROR;
+	       end
 	     else if(~send_at | now)
 	       ibs_state <= IBS_RUN;
 	     else if(late | too_early)
-	       ibs_state <= IBS_TIME_ERROR;
+	       begin
+		  ibs_state <= IBS_ERROR;
+		  error_code <= CODE_TIME_ERROR;
+	       end
 	 
 	 IBS_RUN :
 	   if(strobe)
 	     if(~sample_fifo_src_rdy_i)
-	       ibs_state <= IBS_UNDERRUN;
+	       begin
+		  ibs_state <= IBS_ERROR;
+		  error_code <= CODE_UNDERRUN;
+	       end
 	     else if(eop)
 	       if(eob)
 		 ibs_state <= IBS_IDLE;
@@ -85,35 +92,29 @@ module vita_tx_control
 
 	 IBS_CONT_BURST :
 	   if(strobe)
-	     ibs_state <= IBS_ERROR_DONE;
+	     begin
+		ibs_state <= IBS_ERROR_DONE;
+		error_code <= CODE_UNDERRUN;
+	     end
 	   else if(sample_fifo_src_rdy_i)
 	     if(seqnum_err)
-	       ibs_state <= IBS_SEQ_ERROR;
+	       begin
+		  ibs_state <= IBS_ERROR;
+		  error_code <= CODE_SEQ_ERROR;
+	       end
 	     else
 	       ibs_state <= IBS_RUN;
 	 
-	 IBS_UNDERRUN :
-	   begin
-	      error_code <= CODE_UNDERRUN;
-	      if(sample_fifo_src_rdy_i & eop)
-		ibs_state <= IBS_ERROR_DONE;
-	   end
-	 IBS_TIME_ERROR :
-	   begin
-	      error_code <= CODE_TIME_ERROR;
-	      ibs_state <= IBS_ERROR_DONE;
-	   end
-	 IBS_SEQ_ERROR :
-	   begin
-	      error_code <= CODE_SEQ_ERROR;
-	      ibs_state <= IBS_ERROR_DONE;
-	   end
+	 IBS_ERROR :
+	   if(sample_fifo_src_rdy_i & eop)
+	     ibs_state <= IBS_ERROR_DONE;
+
 	 IBS_ERROR_DONE :
 	   ;
 
        endcase // case (ibs_state)
 
-   assign sample_fifo_dst_rdy_o = (ibs_state == IBS_UNDERRUN) | (strobe & (ibs_state == IBS_RUN));  // FIXME also cleanout
+   assign sample_fifo_dst_rdy_o = (ibs_state == IBS_ERROR) | (strobe & (ibs_state == IBS_RUN));  // FIXME also cleanout
    assign run = (ibs_state == IBS_RUN) | (ibs_state == IBS_CONT_BURST);
    assign error = (ibs_state == IBS_ERROR_DONE);
 
