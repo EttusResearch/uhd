@@ -24,20 +24,39 @@ module fifo_new_tb();
    wire i1_sr, i1_dr;
    wire i2_sr, i2_dr;
    wire i3_sr, i3_dr;
+   wire i7_sr, i7_dr;
+   
    reg i4_dr = 0;
    wire i4_sr;
       
-   wire [35:0] i1, i4;
+   wire [35:0] i1, i4, i7;
    wire [18:0] i2, i3;
    
    wire [7:0] ll_data;
    wire ll_src_rdy_n, ll_dst_rdy_n, ll_sof_n, ll_eof_n;
+   wire [35:0] err_dat;
+   wire        err_src_rdy, err_dst_rdy;
+
+   reg 	       trigger = 0;
+   initial #10000 trigger = 1;
    
    fifo_short #(.WIDTH(36)) fifo_short1
      (.clk(clk),.reset(rst),.clear(clear),
       .datain(f36_in),.src_rdy_i(src_rdy_f36i),.dst_rdy_o(dst_rdy_f36i),
-      .dataout(i1),.src_rdy_o(i1_sr),.dst_rdy_i(i1_dr) );
+      .dataout(i7),.src_rdy_o(i7_sr),.dst_rdy_i(i7_dr) );
 
+   gen_context_pkt #(.PROT_ENG_FLAGS(1)) gcp
+     (.clk(clk),.reset(rst),.clear(clear),
+      .trigger(trigger), .sent(),
+      .streamid(32'hDEAD_F00D), .vita_time(64'h01234567_89ABCDEF), .message(32'hBEEF_2940),
+      .data_o(err_dat), .src_rdy_o(err_src_rdy), .dst_rdy_i(err_dst_rdy));
+   
+   fifo36_mux #(.prio(0)) fifo36_mux
+     (.clk(clk), .reset(rst), .clear(clear),
+      .data0_i(i7), .src0_rdy_i(i7_sr), .dst0_rdy_o(i7_dr),
+      .data1_i(err_dat), .src1_rdy_i(err_src_rdy), .dst1_rdy_o(err_dst_rdy),
+      .data_o(i1), .src_rdy_o(i1_sr), .dst_rdy_i(i1_dr));
+   
    fifo36_to_fifo19 fifo36_to_fifo19
      (.clk(clk),.reset(rst),.clear(clear),
       .f36_datain(i1),.f36_src_rdy_i(i1_sr),.f36_dst_rdy_o(i1_dr),
@@ -59,7 +78,7 @@ module fifo_new_tb();
      (.clk(clk),.reset(rst),.clear(clear),
       .f19_datain(i3),.f19_src_rdy_i(i3_sr),.f19_dst_rdy_o(i3_dr),
       .f36_dataout(i4),.f36_src_rdy_o(i4_sr),.f36_dst_rdy_i(i4_dr) );
-     
+
    task ReadFromFIFO36;
       begin
 	 $display("Read from FIFO36");
