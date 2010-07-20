@@ -224,8 +224,7 @@ public:
     }
     size_t send(
         const std::vector<const void *> &, size_t,
-        const uhd::tx_metadata_t &,
-        const uhd::io_type_t &,
+        const uhd::tx_metadata_t &, const uhd::io_type_t &,
         uhd::device::send_mode_t
     );
     size_t get_max_recv_samps_per_packet(void) const{
@@ -233,9 +232,8 @@ public:
     }
     size_t recv(
         const std::vector<void *> &, size_t,
-        uhd::rx_metadata_t &,
-        const uhd::io_type_t &,
-        uhd::device::recv_mode_t
+        uhd::rx_metadata_t &, const uhd::io_type_t &,
+        uhd::device::recv_mode_t, size_t
     );
 
 private:

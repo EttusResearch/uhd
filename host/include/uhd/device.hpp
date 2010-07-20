@@ -42,6 +42,9 @@ public:
     typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
     typedef boost::function<sptr(const device_addr_t &)> make_t;
 
+    //! A reasonable default timeout for receive
+    static const size_t default_recv_timeout_ms = 100;
+
     /*!
      * Register a device into the discovery and factory system.
      *
@@ -174,6 +177,7 @@ public:
      * \param metadata data to fill describing the buffer
      * \param io_type the type of data to fill into the buffer
      * \param recv_mode tells recv how to load the buffer
+     * \param timeout_ms the timeout in milliseconds to wait for a packet
      * \return the number of samples received or 0 on error
      */
     virtual size_t recv(
@@ -181,7 +185,8 @@ public:
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode
+        recv_mode_t recv_mode,
+        size_t timeout_ms = default_recv_timeout_ms
     ) = 0;
 
     /*!
@@ -192,7 +197,8 @@ public:
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode
+        recv_mode_t recv_mode,
+        size_t timeout_ms = default_recv_timeout_ms
     );
 
     //! Deprecated

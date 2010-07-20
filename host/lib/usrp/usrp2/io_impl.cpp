@@ -57,7 +57,7 @@ struct usrp2_impl::io_impl{
 
     bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty->pop_elems_with_timed_wait(buffs, boost::posix_time::milliseconds(100));
+        return recv_pirate_booty->pop_elems_with_timed_wait(buffs, boost::posix_time::milliseconds(recv_timeout_ms));
     }
 
     //state management for the vrt packet handler code
@@ -69,6 +69,7 @@ struct usrp2_impl::io_impl{
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
     alignment_buffer_type::sptr recv_pirate_booty;
+    size_t recv_timeout_ms;
 };
 
 /***********************************************************************
@@ -164,10 +165,8 @@ bool get_send_buffs(
 }
 
 size_t usrp2_impl::send(
-    const std::vector<const void *> &buffs,
-    size_t num_samps,
-    const tx_metadata_t &metadata,
-    const io_type_t &io_type,
+    const std::vector<const void *> &buffs, size_t num_samps,
+    const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode
 ){
     return vrt_packet_handler::send(
@@ -186,12 +185,11 @@ size_t usrp2_impl::send(
  * Receive Data
  **********************************************************************/
 size_t usrp2_impl::recv(
-    const std::vector<void *> &buffs,
-    size_t num_samps,
-    rx_metadata_t &metadata,
-    const io_type_t &io_type,
-    recv_mode_t recv_mode
+    const std::vector<void *> &buffs, size_t num_samps,
+    rx_metadata_t &metadata, const io_type_t &io_type,
+    recv_mode_t recv_mode, size_t timeout_ms
 ){
+    _io_impl->recv_timeout_ms = timeout_ms;
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
