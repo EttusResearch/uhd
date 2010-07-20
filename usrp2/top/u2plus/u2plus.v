@@ -343,7 +343,7 @@ module u2plus
 		     .clk_sel		(clk_sel[1:0]),
 		     .clk_func		(clk_func),
 		     .clk_status	(clk_status),
-		     .sclk		(sclk_int),
+		     .sclk		(sclk),
 		     .mosi		(mosi),
 		     .miso		(miso),
 		     .sen_clk		(SEN_CLK),
