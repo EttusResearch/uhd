@@ -369,6 +369,7 @@ module u2plus
 		     .uart_baud_o       (),
 		     .sim_mode          (1'b0),
 		     .clock_divider     (2),
+		     .button            (FPGA_RESET),
 		     .spiflash_cs       (flash_cs),
 		     .spiflash_clk      (flash_clk),
 		     .spiflash_miso     (flash_miso),

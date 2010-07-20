@@ -124,7 +124,8 @@ module u2plus_core
    output uart_baud_o,
    input sim_mode,
    input [3:0] clock_divider,
-
+   input button,
+   
    output spiflash_cs, output spiflash_clk, input spiflash_miso, output spiflash_mosi
    );
 
@@ -512,7 +513,7 @@ defparam bootram.RAM0.INIT_21=256'h00000000_00000000_00000000_00000000_00000000_
 
    assign irq= {{8'b0},
 		{8'b0},
-		{3'b0, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
+		{2'b0, button, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
 		{pps_int,overrun,underrun,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
