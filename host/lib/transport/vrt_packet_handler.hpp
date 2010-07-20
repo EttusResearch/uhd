@@ -41,6 +41,7 @@ namespace vrt_packet_handler{
     typedef std::vector<uhd::transport::managed_recv_buffer::sptr> managed_recv_buffs_t;
     typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
     typedef boost::function<void(size_t /*which channel*/)> handle_overrun_t;
+    typedef boost::function<void(const boost::uint32_t *, uhd::transport::vrt::if_packet_info_t &)> vrt_unpacker_t;
 
     static inline void handle_overrun_nop(size_t){}
 
@@ -69,12 +70,11 @@ namespace vrt_packet_handler{
      * Unpack a received vrt header and set the copy buffer.
      *  - helper function for vrt_packet_handler::_recv1
      ******************************************************************/
-    template<typename vrt_unpacker_type>
     static UHD_INLINE void _recv1_helper(
         recv_state &state,
         uhd::rx_metadata_t &metadata,
         double tick_rate,
-        vrt_unpacker_type vrt_unpacker,
+        const vrt_unpacker_t &vrt_unpacker,
         const handle_overrun_t &handle_overrun,
         size_t vrt_header_offset_words32
     ){
@@ -131,7 +131,6 @@ namespace vrt_packet_handler{
      * Recv data, unpack a vrt header, and copy-convert the data.
      *  - helper function for vrt_packet_handler::recv
      ******************************************************************/
-    template<typename vrt_unpacker_type>
     static UHD_INLINE size_t _recv1(
         recv_state &state,
         const std::vector<void *> &buffs,
@@ -141,7 +140,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        vrt_unpacker_type vrt_unpacker,
+        const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
         const handle_overrun_t &handle_overrun,
         size_t vrt_header_offset_words32
@@ -206,7 +205,6 @@ namespace vrt_packet_handler{
     /*******************************************************************
      * Recv vrt packets and copy convert the samples into the buffer.
      ******************************************************************/
-    template<typename vrt_unpacker_type>
     static UHD_INLINE size_t recv(
         recv_state &state,
         const std::vector<void *> &buffs,
@@ -216,7 +214,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        vrt_unpacker_type vrt_unpacker,
+        const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
         const handle_overrun_t &handle_overrun = &handle_overrun_nop,
         size_t vrt_header_offset_words32 = 0
@@ -273,6 +271,7 @@ namespace vrt_packet_handler{
  **********************************************************************/
     typedef std::vector<uhd::transport::managed_send_buffer::sptr> managed_send_buffs_t;
     typedef boost::function<bool(managed_send_buffs_t &)> get_send_buffs_t;
+    typedef boost::function<void(boost::uint32_t *, uhd::transport::vrt::if_packet_info_t &)> vrt_packer_t;
 
     struct send_state{
         //init the expected seq number
@@ -334,7 +333,6 @@ namespace vrt_packet_handler{
     /*******************************************************************
      * Send vrt packets and copy convert the samples into the buffer.
      ******************************************************************/
-    template<typename vrt_packer_type>
     static UHD_INLINE size_t send(
         send_state &state,
         const std::vector<const void *> &buffs,
@@ -344,7 +342,7 @@ namespace vrt_packet_handler{
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         double tick_rate,
-        vrt_packer_type vrt_packer,
+        const vrt_packer_t &vrt_packer,
         const get_send_buffs_t &get_send_buffs,
         size_t max_samples_per_packet,
         size_t vrt_header_offset_words32 = 0
