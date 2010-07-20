@@ -15,6 +15,7 @@ BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
+BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
 MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
 
 ##################################################
@@ -53,6 +54,6 @@ $(BIN_FILE): $(ISE_FILE)
 	touch $@
 
 $(MCS_FILE): $(BIN_FILE)
-	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIN_FILE)
+	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIT_FILE)
 
 .EXPORT_ALL_VARIABLES:
