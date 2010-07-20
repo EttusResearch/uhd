@@ -95,6 +95,12 @@ void usrp2_impl::io_impl::recv_pirate_loop(
             if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
             vrt::if_hdr_unpack_be(buff->cast<const boost::uint32_t *>(), if_packet_info);
 
+            //handle a tx async report message (TODO forward info)
+            if (if_packet_info.sid == 1 and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+                std::cerr << "U";
+                continue;
+            }
+
             //handle the packet count / sequence number
             if (if_packet_info.packet_count != next_packet_seq){
                 //std::cerr << "S" << (if_packet_info.packet_count - next_packet_seq)%16;

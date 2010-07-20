@@ -67,7 +67,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
-    //setup the vrt rx registers
+    //init the rx control registers
     _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _io_helper.get_max_recv_samps_per_packet());
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
@@ -80,6 +80,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
     _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
     _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
+
+    //init the tx control registers
+    _iface->poke32(U2_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
+    _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
+    _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
 
     //init the ddc
     init_ddc_config();
