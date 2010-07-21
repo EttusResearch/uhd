@@ -40,10 +40,10 @@ namespace vrt_packet_handler{
  **********************************************************************/
     typedef std::vector<uhd::transport::managed_recv_buffer::sptr> managed_recv_buffs_t;
     typedef boost::function<bool(managed_recv_buffs_t &)> get_recv_buffs_t;
-    typedef boost::function<void(size_t /*which channel*/)> handle_overrun_t;
+    typedef boost::function<void(size_t /*which channel*/)> handle_overflow_t;
     typedef boost::function<void(const boost::uint32_t *, uhd::transport::vrt::if_packet_info_t &)> vrt_unpacker_t;
 
-    static inline void handle_overrun_nop(size_t){}
+    static inline void handle_overflow_nop(size_t){}
 
     struct recv_state{
         //width of the receiver in channels
@@ -75,7 +75,7 @@ namespace vrt_packet_handler{
         uhd::rx_metadata_t &metadata,
         double tick_rate,
         const vrt_unpacker_t &vrt_unpacker,
-        const handle_overrun_t &handle_overrun,
+        const handle_overflow_t &handle_overflow,
         size_t vrt_header_offset_words32
     ){
         //vrt unpack each managed buffer
@@ -99,7 +99,7 @@ namespace vrt_packet_handler{
 
                 //extract the context word (we dont know the endianness so mirror the bytes)
                 boost::uint32_t word0 = vrt_data[0] | uhd::byteswap(vrt_data[0]);
-                if (word0 & uhd::rx_metadata_t::ERROR_CODE_OVERRUN) handle_overrun(i);
+                if (word0 & uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) handle_overflow(i);
                 metadata.error_code = uhd::rx_metadata_t::error_code_t(word0 & 0xf);
 
                 //break to exit loop and store metadata below
@@ -142,7 +142,7 @@ namespace vrt_packet_handler{
         double tick_rate,
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
-        const handle_overrun_t &handle_overrun,
+        const handle_overflow_t &handle_overflow,
         size_t vrt_header_offset_words32
     ){
         metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
@@ -157,7 +157,7 @@ namespace vrt_packet_handler{
             try{
                 _recv1_helper(
                     state, metadata, tick_rate,
-                    vrt_unpacker, handle_overrun,
+                    vrt_unpacker, handle_overflow,
                     vrt_header_offset_words32
                 );
             }catch(const std::exception &e){
@@ -216,7 +216,7 @@ namespace vrt_packet_handler{
         double tick_rate,
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
-        const handle_overrun_t &handle_overrun = &handle_overrun_nop,
+        const handle_overflow_t &handle_overflow = &handle_overflow_nop,
         size_t vrt_header_offset_words32 = 0
     ){
         switch(recv_mode){
@@ -233,7 +233,7 @@ namespace vrt_packet_handler{
                 tick_rate,
                 vrt_unpacker,
                 get_recv_buffs,
-                handle_overrun,
+                handle_overflow,
                 vrt_header_offset_words32
             );
         }
@@ -253,7 +253,7 @@ namespace vrt_packet_handler{
                     tick_rate,
                     vrt_unpacker,
                     get_recv_buffs,
-                    handle_overrun,
+                    handle_overflow,
                     vrt_header_offset_words32
                 );
                 if (num_samps == 0) break; //had a recv timeout or error, break loop

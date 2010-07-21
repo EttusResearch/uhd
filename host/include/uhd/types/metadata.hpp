@@ -26,7 +26,7 @@ namespace uhd{
 
     /*!
      * RX metadata structure for describing sent IF data.
-     * Includes stream ID, time specification, and fragmentation flags.
+     * Includes time specification, fragmentation flags, burst flags, and error codes.
      * The receive routines will convert IF data headers into metadata.
      */
     struct UHD_API rx_metadata_t{
@@ -62,7 +62,7 @@ namespace uhd{
          * - timeout: no packet received, underlying code timed-out
          * - late command: a stream command was issued in the past
          * - broken chain: expected another stream command
-         * - overrun: an internal receive buffer has overrun
+         * - overflow: an internal receive buffer has filled
          * - bad packet: the buffer was unrecognizable as a vrt packet
          *
          * Note: When an overrun occurs in continuous streaming mode,
@@ -74,27 +74,21 @@ namespace uhd{
          * - none
          * - late command
          * - broken chain
-         * - overrun
+         * - overflow
          */
         enum error_code_t {
             ERROR_CODE_NONE         = 0x0,
             ERROR_CODE_TIMEOUT      = 0x1,
             ERROR_CODE_LATE_COMMAND = 0x2,
             ERROR_CODE_BROKEN_CHAIN = 0x4,
-            ERROR_CODE_OVERRUN      = 0x8,
+            ERROR_CODE_OVERFLOW     = 0x8,
             ERROR_CODE_BAD_PACKET   = 0xf
         } error_code;
-
-        /*!
-         * The default constructor:
-         * Sets the fields to default values (flags set to false).
-         */
-        rx_metadata_t(void);
     };
 
     /*!
      * TX metadata structure for describing received IF data.
-     * Includes stream ID, time specification, and burst flags.
+     * Includes time specification, and start and stop burst flags.
      * The send routines will convert the metadata to IF data headers.
      */
     struct UHD_API tx_metadata_t{
@@ -119,6 +113,34 @@ namespace uhd{
          * Sets the fields to default values (flags set to false).
          */
         tx_metadata_t(void);
+    };
+
+    /*!
+     * Async metadata structure for describing transmit related events.
+     */
+    struct UHD_API async_metadata_t{
+        //! The channel number in a mimo configuration
+        size_t channel;
+
+        /*!
+         * Time specification: when the async event occurred.
+         */
+        bool has_time_spec;
+        time_spec_t time_spec;
+
+        /*!
+         * Event codes:
+         * - success: a packet was successfully transmitted
+         * - underflow: an internal send buffer has emptied
+         * - sequence error: packet loss between host and device
+         * - time error: packet had time that was late (or too early)
+         */
+        enum event_code_t {
+            EVENT_CODE_SUCCESS    = 0x1,
+            EVENT_CODE_UNDERFLOW  = 0x2,
+            EVENT_CODE_SEQ_ERROR  = 0x4,
+            EVENT_CODE_TIME_ERROR = 0x8
+        } event_code;
     };
 
 } //namespace uhd

@@ -235,6 +235,7 @@ public:
         uhd::rx_metadata_t &, const uhd::io_type_t &,
         uhd::device::recv_mode_t, size_t
     );
+    bool recv_async_msg(uhd::async_metadata_t &, size_t);
 
 private:
     //device properties interface
