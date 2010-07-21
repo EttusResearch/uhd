@@ -7,7 +7,7 @@ module vita_tx_control
     
     input [63:0] vita_time,
     output error,
-    output reg [3:0] error_code,
+    output reg [15:0] error_code,
 
     // From vita_tx_deframer
     input [5+64+WIDTH-1:0] sample_fifo_i,
@@ -49,6 +49,8 @@ module vita_tx_control
    localparam CODE_UNDERRUN = 2;
    localparam CODE_SEQ_ERROR = 4;
    localparam CODE_TIME_ERROR = 8;
+   localparam CODE_UNDERRUN_MIDPKT = 16;
+   localparam CODE_SEQ_ERROR_MIDBURST = 32;
    
    reg [2:0] ibs_state;
 
@@ -59,7 +61,7 @@ module vita_tx_control
    
    always @(posedge clk)
      if(reset | clear_state)
-       ibs_state <= 0;
+       ibs_state <= IBS_IDLE;
      else
        case(ibs_state)
 	 IBS_IDLE :
@@ -82,7 +84,7 @@ module vita_tx_control
 	     if(~sample_fifo_src_rdy_i)
 	       begin
 		  ibs_state <= IBS_ERROR;
-		  error_code <= CODE_UNDERRUN;
+		  error_code <= CODE_UNDERRUN_MIDPKT;
 	       end
 	     else if(eop)
 	       if(eob)
@@ -100,7 +102,7 @@ module vita_tx_control
 	     if(seqnum_err)
 	       begin
 		  ibs_state <= IBS_ERROR;
-		  error_code <= CODE_SEQ_ERROR;
+		  error_code <= CODE_SEQ_ERROR_MIDBURST;
 	       end
 	     else
 	       ibs_state <= IBS_RUN;
