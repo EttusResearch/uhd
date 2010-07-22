@@ -134,12 +134,16 @@ namespace uhd{
          * - underflow: an internal send buffer has emptied
          * - sequence error: packet loss between host and device
          * - time error: packet had time that was late (or too early)
+         * - underflow in packet: underflow occurred inside a packet
+         * - sequence error in burst: packet loss within a burst
          */
         enum event_code_t {
             EVENT_CODE_SUCCESS    = 0x1,
             EVENT_CODE_UNDERFLOW  = 0x2,
             EVENT_CODE_SEQ_ERROR  = 0x4,
-            EVENT_CODE_TIME_ERROR = 0x8
+            EVENT_CODE_TIME_ERROR = 0x8,
+            EVENT_CODE_UNDERFLOW_IN_PACKET = 0x10,
+            EVENT_CODE_SEQ_ERROR_IN_BURST  = 0x20
         } event_code;
     };
 

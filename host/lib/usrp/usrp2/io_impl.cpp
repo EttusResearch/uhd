@@ -101,9 +101,6 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
             //handle a tx async report message
             if (if_packet_info.sid == 1 and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
-                const boost::uint32_t *vrt_data = vrt_hdr + if_packet_info.num_header_words32;
-                //extract the context word (we dont know the endianness so mirror the bytes)
-                boost::uint32_t word0 = vrt_data[0] | uhd::byteswap(vrt_data[0]);
 
                 //fill in the async metadata
                 async_metadata_t metadata;
@@ -112,7 +109,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 metadata.time_spec = time_spec_t(
                     time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), mboard->get_master_clock_freq()
                 );
-                metadata.event_code = uhd::async_metadata_t::event_code_t(word0 & 0xf);
+                metadata.event_code = vrt_packet_handler::get_context_code<async_metadata_t::event_code_t>(vrt_hdr, if_packet_info);
 
                 //print the famous U, and push the metadata into the message queue
                 if (metadata.event_code == async_metadata_t::EVENT_CODE_UNDERFLOW) std::cerr << "U";

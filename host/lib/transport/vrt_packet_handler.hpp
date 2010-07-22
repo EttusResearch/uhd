@@ -35,6 +35,16 @@
 
 namespace vrt_packet_handler{
 
+template <typename T> UHD_INLINE T get_context_code(
+    const boost::uint32_t *vrt_hdr,
+    const uhd::transport::vrt::if_packet_info_t &if_packet_info
+){
+    //extract the context word (we dont know the endianness so mirror the bytes)
+    boost::uint32_t word0 = vrt_hdr[if_packet_info.num_header_words32] |
+              uhd::byteswap(vrt_hdr[if_packet_info.num_header_words32]);
+    return T(word0 & 0xff);
+}
+
 /***********************************************************************
  * vrt packet handler for recv
  **********************************************************************/
@@ -92,22 +102,19 @@ namespace vrt_packet_handler{
             const boost::uint32_t *vrt_hdr = state.managed_buffs[i]->cast<const boost::uint32_t *>() + vrt_header_offset_words32;
             if_packet_info.num_packet_words32 = num_packet_words32 - vrt_header_offset_words32;
             vrt_unpacker(vrt_hdr, if_packet_info);
-            const boost::uint32_t *vrt_data = vrt_hdr + if_packet_info.num_header_words32;
 
             //handle the non-data packet case and parse its contents
             if (if_packet_info.packet_type != uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA){
 
-                //extract the context word (we dont know the endianness so mirror the bytes)
-                boost::uint32_t word0 = vrt_data[0] | uhd::byteswap(vrt_data[0]);
-                if (word0 & uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) handle_overflow(i);
-                metadata.error_code = uhd::rx_metadata_t::error_code_t(word0 & 0xf);
+                metadata.error_code = get_context_code<uhd::rx_metadata_t::error_code_t>(vrt_hdr, if_packet_info);
+                if (metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) handle_overflow(i);
 
                 //break to exit loop and store metadata below
                 state.size_of_copy_buffs = 0; break;
             }
 
             //setup the buffer to point to the data
-            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(vrt_data);
+            state.copy_buffs[i] = reinterpret_cast<const boost::uint8_t *>(vrt_hdr + if_packet_info.num_header_words32);
 
             //store the minimum payload length into the copy buffer length
             size_t num_payload_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t);
