@@ -108,7 +108,7 @@ module vita_tx_deframer
 		else
 		  vita_state <= VITA_PAYLOAD;
 		seqnum_reg <= seqnum;
-		seqnum_err <= ~(is_sob | (seqnum == next_seqnum));
+		seqnum_err <= ~(seqnum == next_seqnum);
 	     end // case: VITA_HEADER
 	   VITA_STREAMID :
 	     if(has_classid_reg)
