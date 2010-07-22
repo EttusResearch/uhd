@@ -242,7 +242,7 @@ dboard_manager_impl::dboard_manager_impl(
     set_nice_dboard_if();
 
     //dboard constructor args
-    dboard_base::ctor_args_impl db_ctor_args;
+    dboard_ctor_args_t db_ctor_args;
     db_ctor_args.db_iface = iface;
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
