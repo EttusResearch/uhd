@@ -23,7 +23,9 @@
 namespace uhd{ namespace usrp{
 
     /*!
-     * Possible device dboard properties
+     * Possible device dboard properties:
+     *    A dboard has an id, one or more subdevices, and a codec.
+     *    A dboard is considered to be unidirectional (RX or TX).
      */
     enum dboard_prop_t{
         DBOARD_PROP_NAME         = 'n', //ro, std::string
@@ -31,8 +33,8 @@ namespace uhd{ namespace usrp{
         DBOARD_PROP_SUBDEV_NAMES = 'S', //ro, prop_names_t
         DBOARD_PROP_USED_SUBDEVS = 'u', //ro, prop_names_t
         DBOARD_PROP_DBOARD_ID    = 'i', //rw, dboard_id_t
-        DBOARD_PROP_DBOARD_IFACE = 'f'  //ro, dboard_iface::sptr
-        //DBOARD_PROP_CODEC              //ro, wax::obj //----> not sure, dont have to deal with yet
+        DBOARD_PROP_DBOARD_IFACE = 'f', //ro, dboard_iface::sptr
+        DBOARD_PROP_CODEC        = 'c'  //ro, wax::obj
     }; 
 
 }} //namespace
