@@ -55,9 +55,9 @@ struct usrp2_impl::io_impl{
         recv_pirate_crew.join_all();
     }
 
-    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs){
+    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, size_t timeout_ms){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty->pop_elems_with_timed_wait(buffs, boost::posix_time::milliseconds(recv_timeout_ms));
+        return recv_pirate_booty->pop_elems_with_timed_wait(buffs, boost::posix_time::milliseconds(timeout_ms));
     }
 
     //state management for the vrt packet handler code
@@ -69,7 +69,6 @@ struct usrp2_impl::io_impl{
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
     alignment_buffer_type::sptr recv_pirate_booty;
-    size_t recv_timeout_ms;
 };
 
 /***********************************************************************
@@ -189,7 +188,6 @@ size_t usrp2_impl::recv(
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, size_t timeout_ms
 ){
-    _io_impl->recv_timeout_ms = timeout_ms;
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
@@ -197,6 +195,6 @@ size_t usrp2_impl::recv(
         io_type, _io_helper.get_rx_otw_type(),     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
-        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1)
+        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout_ms)
     );
 }
