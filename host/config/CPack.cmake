@@ -25,17 +25,17 @@ SET(UHD_VERSION_PATCH 0)
 ########################################################################
 # Get the current YYYYMMDD HHMMSS timestamp
 ########################################################################
-EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d', time.gmtime())"
-    OUTPUT_VARIABLE UHD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-SET(UHD_VERSION_MAJOR ${UHD_DATE})
+    EXECUTE_PROCESS(
+        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d', time.gmtime())"
+        OUTPUT_VARIABLE UHD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    SET(UHD_VERSION_MAJOR ${UHD_DATE})
 
-EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%H%M%S', time.gmtime())"
-    OUTPUT_VARIABLE UHD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-SET(UHD_VERSION_MINOR ${UHD_TIME})
+    EXECUTE_PROCESS(
+        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%H%M%S', time.gmtime())"
+        OUTPUT_VARIABLE UHD_TIME OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    SET(UHD_VERSION_MINOR ${UHD_TIME})
 
 ########################################################################
 # Find GIT to get repo information
@@ -44,16 +44,46 @@ MESSAGE(STATUS "Checking for git")
 FIND_PROGRAM(GIT git)
 IF(${GIT} STREQUAL "GIT-NOTFOUND")
     MESSAGE(STATUS "Checking for git - not found")
-    SET(UHD_REV "unknown")
 ELSE(${GIT} STREQUAL "GIT-NOTFOUND")
     MESSAGE(STATUS "Checking for git - found")
+
+    #grab the git log entry for the current head
+    EXECUTE_PROCESS(
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${GIT} log HEAD~..HEAD --date=raw
+        OUTPUT_VARIABLE _git_log OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    #extract the timestamp from the git log entry
+    EXECUTE_PROCESS(
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${PYTHON_EXECUTABLE} -c "import re; print re.match('^.*Date:\\s*(\\d*).*$', '''${_git_log}''', re.MULTILINE | re.DOTALL).groups()[0]"
+        OUTPUT_VARIABLE _git_timestamp OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    #format the timestamp into YYYY-MM-DD
+    EXECUTE_PROCESS(
+        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d', time.gmtime(${_git_timestamp}))"
+        OUTPUT_VARIABLE _git_date OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    SET(UHD_VERSION_MAJOR ${_git_date})
+
+    #format the timestamp into HH-MM-SS
+    EXECUTE_PROCESS(
+        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%H%M%S', time.gmtime(${_git_timestamp}))"
+        OUTPUT_VARIABLE _git_time OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    SET(UHD_VERSION_MINOR ${_git_time})
+
+    #grab the git ref id for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND ${GIT} rev-parse --short HEAD
-        OUTPUT_VARIABLE UHD_REV OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE _git_rev OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    SET(UHD_VERSION_PATCH ${_git_rev})
+
 ENDIF(${GIT} STREQUAL "GIT-NOTFOUND")
-SET(UHD_VERSION_PATCH ${UHD_REV})
 
 ########################################################################
 # Setup CPack
@@ -79,3 +109,4 @@ STRING(REPLACE "," ", " CPACK_DEBIAN_PACKAGE_DEPENDS
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel >= ${BOOST_MIN_VERSION}")
 INCLUDE(CPack) #include after setting vars
+MESSAGE(STATUS "Version: ${CPACK_PACKAGE_VERSION}")
