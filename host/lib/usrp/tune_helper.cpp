@@ -16,10 +16,10 @@
 //
 
 #include <uhd/usrp/tune_helper.hpp>
-#include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <uhd/usrp/dboard_iface.hpp> //unit_t
+#include <boost/math/special_functions/sign.hpp>
 #include <cmath>
 
 using namespace uhd;
@@ -46,7 +46,7 @@ static tune_result_t tune_xx_subdev_and_dxc(
     double delta_freq = std::fmod(target_freq - actual_inter_freq, dxc_sample_rate);
     bool outside_of_nyquist = std::abs(delta_freq) > dxc_sample_rate/2.0;
     double target_dxc_freq = (outside_of_nyquist)?
-        std::signum(delta_freq)*dxc_sample_rate - delta_freq : -delta_freq;
+        boost::math::sign(delta_freq)*dxc_sample_rate - delta_freq : -delta_freq;
 
     //invert the sign on the dxc freq given the following conditions
     if (unit == dboard_iface::UNIT_TX) target_dxc_freq *= -1.0;
