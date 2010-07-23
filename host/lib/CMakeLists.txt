@@ -105,6 +105,11 @@ ENDIF(HAVE_DLFCN_H)
 ########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+@ONLY)
+
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_handler.cpp
@@ -112,6 +117,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )
 
