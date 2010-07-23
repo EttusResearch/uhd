@@ -20,9 +20,10 @@ PROJECT(UHD CXX)
 ENABLE_TESTING()
 
 ########################################################################
-# Config Files
+# Config Files (include order is important)
 ########################################################################
 INCLUDE(${CMAKE_SOURCE_DIR}/config/Python.cmake)
+INCLUDE(${CMAKE_SOURCE_DIR}/config/Version.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
 
 ########################################################################
