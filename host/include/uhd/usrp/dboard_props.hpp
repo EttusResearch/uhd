@@ -34,7 +34,8 @@ namespace uhd{ namespace usrp{
         DBOARD_PROP_USED_SUBDEVS = 'u', //ro, prop_names_t
         DBOARD_PROP_DBOARD_ID    = 'i', //rw, dboard_id_t
         DBOARD_PROP_DBOARD_IFACE = 'f', //ro, dboard_iface::sptr
-        DBOARD_PROP_CODEC        = 'c'  //ro, wax::obj
+        DBOARD_PROP_CODEC        = 'c', //ro, wax::obj
+        DBOARD_PROP_GAIN_GROUP   = 'g'  //ro, gain_group
     }; 
 
 }} //namespace

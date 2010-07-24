@@ -18,6 +18,7 @@
 #include <uhd/usrp/mimo_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/gain_group.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -56,11 +57,13 @@ public:
             _rx_dboards.push_back(_mboards.back()[MBOARD_PROP_RX_DBOARD]);
             std::string rx_subdev_in_use = _rx_dboards.back()[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
             _rx_subdevs.push_back(_rx_dboards.back()[named_prop_t(DBOARD_PROP_SUBDEV, rx_subdev_in_use)]);
+            _rx_gain_groups.push_back(_rx_dboards.back()[named_prop_t(DBOARD_PROP_GAIN_GROUP, rx_subdev_in_use)].as<gain_group::sptr>());
 
             //extract tx subdevice
             _tx_dboards.push_back(_mboards.back()[MBOARD_PROP_TX_DBOARD]);
             std::string tx_subdev_in_use = _tx_dboards.back()[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
             _tx_subdevs.push_back(_tx_dboards.back()[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)]);
+            _tx_gain_groups.push_back(_tx_dboards.back()[named_prop_t(DBOARD_PROP_GAIN_GROUP, tx_subdev_in_use)].as<gain_group::sptr>());
         }
 
         //set the clock config across all mboards (TODO set through api)
@@ -201,15 +204,15 @@ public:
     }
 
     void set_rx_gain(size_t chan, float gain){
-        _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN] = gain;
+        _rx_gain_groups.at(chan)->set_value(gain);
     }
 
     float get_rx_gain(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN].as<float>();
+        return _rx_gain_groups.at(chan)->get_value();
     }
 
     gain_range_t get_rx_gain_range(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _rx_gain_groups.at(chan)->get_range();
     }
 
     void set_rx_antenna(size_t chan, const std::string &ant){
@@ -268,15 +271,15 @@ public:
     }
 
     void set_tx_gain(size_t chan, float gain){
-        _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN] = gain;
+        _tx_gain_groups.at(chan)->set_value(gain);
     }
 
     float get_tx_gain(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN].as<float>();
+        return _tx_gain_groups.at(chan)->get_value();
     }
 
     gain_range_t get_tx_gain_range(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _tx_gain_groups.at(chan)->get_range();
     }
 
     void set_tx_antenna(size_t chan, const std::string &ant){
@@ -304,6 +307,8 @@ private:
     std::vector<wax::obj> _tx_dboards;
     std::vector<wax::obj> _rx_subdevs;
     std::vector<wax::obj> _tx_subdevs;
+    std::vector<gain_group::sptr> _rx_gain_groups;
+    std::vector<gain_group::sptr> _tx_gain_groups;
 
     //shadows
     double _rx_rate, _tx_rate;
