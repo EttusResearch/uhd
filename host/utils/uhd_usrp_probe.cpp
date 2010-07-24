@@ -21,6 +21,7 @@
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
+#include <uhd/usrp/codec_props.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_id.hpp>
@@ -94,6 +95,19 @@ static std::string get_subdev_pp_string(const std::string &type, wax::obj subdev
     return ss.str();
 }
 
+static std::string get_codec_pp_string(const std::string &type, wax::obj codec){
+    std::stringstream ss;
+    ss << boost::format("%s Codec: %s") % type % codec[usrp::CODEC_PROP_NAME].as<std::string>() << std::endl;
+    //ss << std::endl;
+    prop_names_t gain_names(codec[usrp::CODEC_PROP_GAIN_NAMES].as<prop_names_t>());
+    if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
+    BOOST_FOREACH(const std::string &gain_name, gain_names){
+        gain_range_t gain_range(codec[named_prop_t(usrp::CODEC_PROP_GAIN_RANGE, gain_name)].as<gain_range_t>());
+        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.min % gain_range.max % gain_range.step << std::endl;
+    }
+    return ss.str();
+}
+
 static std::string get_dboard_pp_string(const std::string &type, wax::obj dboard){
     std::stringstream ss;
     ss << boost::format("%s Dboard: %s") % type % dboard[usrp::DBOARD_PROP_NAME].as<std::string>() << std::endl;
@@ -101,6 +115,7 @@ static std::string get_dboard_pp_string(const std::string &type, wax::obj dboard
     BOOST_FOREACH(const std::string &subdev_name, dboard[usrp::DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>()){
         ss << make_border(get_subdev_pp_string(type, dboard[named_prop_t(usrp::DBOARD_PROP_SUBDEV, subdev_name)]));
     }
+    ss << make_border(get_codec_pp_string(type, dboard[usrp::DBOARD_PROP_CODEC]));
     return ss.str();
 }
 

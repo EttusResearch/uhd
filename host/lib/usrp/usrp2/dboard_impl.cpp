@@ -92,6 +92,10 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_iface;
         return;
 
+    case DBOARD_PROP_CODEC:
+        val = _rx_codec_proxy;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -149,6 +153,10 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_DBOARD_IFACE:
         val = _dboard_iface;
+        return;
+
+    case DBOARD_PROP_CODEC:
+        val = _tx_codec_proxy;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
