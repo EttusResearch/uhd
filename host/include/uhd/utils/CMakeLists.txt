@@ -22,6 +22,7 @@ INSTALL(FILES
     byteswap.hpp
     byteswap.ipp
     exception.hpp
+    gain_group.hpp
     gain_handler.hpp
     pimpl.hpp
     props.hpp
