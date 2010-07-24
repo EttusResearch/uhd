@@ -89,7 +89,7 @@ static std::string get_subdev_pp_string(const std::string &type, wax::obj subdev
         ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.min % gain_range.max % gain_range.step << std::endl;
     }
 
-    ss << boost::format("Connection Type: %c") % (subdev[usrp::SUBDEV_PROP_CONNECTION].as<usrp::subdev_conn_t>()) << std::endl;
+    ss << boost::format("Connection Type: %c") % char(subdev[usrp::SUBDEV_PROP_CONNECTION].as<usrp::subdev_conn_t>()) << std::endl;
     ss << boost::format("Uses LO offset: %s") % (subdev[usrp::SUBDEV_PROP_USE_LO_OFFSET].as<bool>()? "Yes" : "No") << std::endl;
 
     return ss.str();
