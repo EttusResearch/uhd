@@ -95,6 +95,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //initialize the clock configuration
     init_clock_config();
 
+    //init the codec before the dboard
+    codec_init();
+
     //init the tx and rx dboards (do last)
     dboard_init();
 }
