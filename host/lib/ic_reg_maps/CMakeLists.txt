@@ -63,3 +63,8 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad9522_regs.py
     ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad9522_regs.hpp
 )
+
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ads62p44_regs.py
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ads62p44_regs.hpp
+)

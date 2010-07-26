@@ -193,6 +193,19 @@ public:
         throw std::runtime_error("usrp2 no control response");
     }
 
+ /***********************************************************************
+  * Get/set hardware revision
+  **********************************************************************/
+    void set_hw_rev(int rev) {
+        hw_rev = rev;
+        regs = usrp2_get_regs(rev); //might be a better place to do this
+    }
+ 
+    int get_hw_rev(void) {
+        return hw_rev;
+    }
+
+
 private:
     //this lovely lady makes it all possible
     udp_simple::sptr _ctrl_transport;

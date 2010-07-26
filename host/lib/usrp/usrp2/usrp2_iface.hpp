@@ -25,22 +25,7 @@
 #include <boost/cstdint.hpp>
 #include <utility>
 #include "fw_common.h"
-
-////////////////////////////////////////////////////////////////////////
-// I2C addresses
-////////////////////////////////////////////////////////////////////////
-#define I2C_DEV_EEPROM  0x50 // 24LC02[45]:  7-bits 1010xxx
-#define	I2C_ADDR_MBOARD (I2C_DEV_EEPROM | 0x0)
-#define	I2C_ADDR_TX_DB  (I2C_DEV_EEPROM | 0x4)
-#define	I2C_ADDR_RX_DB  (I2C_DEV_EEPROM | 0x5)
-
-////////////////////////////////////////////////////////////////////////
-// EEPROM Layout
-////////////////////////////////////////////////////////////////////////
-#define EE_MBOARD_REV_LSB  0x00 //1 byte
-#define EE_MBOARD_REV_MSB  0x01 //1 byte
-#define EE_MBOARD_MAC_ADDR 0x02 //6 bytes
-#define EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
+#include "usrp2_regs.hpp"
 
 /*!
  * The usrp2 interface class:
@@ -118,6 +103,26 @@ public:
         size_t num_bits,
         bool readback
     ) = 0;
+
+    /*!
+     * Set the hardware revision number. Also selects the proper register set for the device.
+     * \param rev the 16-bit revision
+     */
+    virtual void set_hw_rev(int rev) = 0;
+
+    /*! Return the hardware revision number
+     * \return hardware revision
+     */
+    virtual int get_hw_rev(void) = 0;
+
+    /*!
+     * Register map selected from USRP2/USRP2+.
+     */
+    usrp2_regs_t regs;
+    /*!
+     * Hardware revision as returned by the device.
+     */
+    int hw_rev;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

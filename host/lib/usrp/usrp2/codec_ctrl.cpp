@@ -17,6 +17,7 @@
 
 #include "codec_ctrl.hpp"
 #include "ad9777_regs.hpp"
+#include "ads62p44_regs.hpp"
 #include "usrp2_regs.hpp"
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
@@ -57,7 +58,16 @@ public:
         }
 
         //power-up adc
-        _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_ON);
+        if(_iface->get_hw_rev() < USRP2P_FIRST_HW_REV) { //if we're on a USRP2
+          _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_ON);
+        } else { //we're on a USRP2+
+          _ads62p44_regs.reset = 1;
+          this->send_ads62p44_reg(0x00); //issue a reset to the ADC
+          //everything else should be pretty much default, i think
+//          _ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
+          
+
+        }
     }
 
     ~usrp2_codec_ctrl_impl(void){
@@ -66,11 +76,21 @@ public:
         this->send_ad9777_reg(0);
 
         //power-down adc
-        _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_OFF);
+        if(_iface->get_hw_rev() < USRP2P_FIRST_HW_REV) { //if we're on a USRP2
+          _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_OFF);
+        } else { //we're on a USRP2+
+//          _ads62p44_regs.reset = 1;
+//          this->send_ads62p44_reg(0x00); //issue a reset to the ADC
+          //everything else should be pretty much default, i think
+//          _ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
+          
+
+        }
     }
 
 private:
     ad9777_regs_t _ad9777_regs;
+    ads62p44_regs_t _ads62p44_regs;
     usrp2_iface::sptr _iface;
 
     void send_ad9777_reg(boost::uint8_t addr){
@@ -78,6 +98,14 @@ private:
         if (codec_ctrl_debug) std::cout << "send_ad9777_reg: " << std::hex << reg << std::endl;
         _iface->transact_spi(
             SPI_SS_AD9777, spi_config_t::EDGE_RISE,
+            reg, 16, false /*no rb*/
+        );
+    }
+
+    void send_ads62p44_reg(boost::uint8_t addr) {
+        boost::uint16_t reg = _ads62p44_regs.get_write_reg(addr);
+        _iface->transact_spi(
+            SPI_SS_ADS62P44, spi_config_t::EDGE_RISE,
             reg, 16, false /*no rb*/
         );
     }

@@ -34,4 +34,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_impl.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.hpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.cpp
 )

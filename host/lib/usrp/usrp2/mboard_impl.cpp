@@ -45,8 +45,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface = usrp2_iface::make(ctrl_transport);
 
     //extract the mboard rev numbers
-    _rev_lo = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_LSB, 1).at(0);
-    _rev_hi = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_MSB, 1).at(0);
+    _rev_lo = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_LSB, 1).at(0);
+    _rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
+
+    //set the device revision (USRP2 or USRP2+) based on the above
+    _iface->set_hw_rev((_rev_hi << 8) | _rev_lo);
 
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -68,18 +71,18 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     }
 
     //setup the vrt rx registers
-    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _io_helper.get_max_recv_samps_per_packet());
-    _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
-    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
-    _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
+    _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, _io_helper.get_max_recv_samps_per_packet());
+    _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
+    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
+    _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
         | (0x1 << 20) //fractional time sample count
     );
-    _iface->poke32(U2_REG_RX_CTRL_VRT_STREAM_ID, 0);
-    _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
-    _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
+    _iface->poke32(_iface->regs.rx_ctrl_vrt_stream_id, 0);
+    _iface->poke32(_iface->regs.rx_ctrl_vrt_trailer, 0);
+    _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
 
     //init the ddc
     init_ddc_config();
@@ -129,13 +132,13 @@ void usrp2_mboard_impl::update_clock_config(void){
     }
 
     //set the pps flags
-    _iface->poke32(U2_REG_TIME64_FLAGS, pps_flags);
+    _iface->poke32(_iface->regs.time64_flags, pps_flags);
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
-    case clock_config_t::REF_INT : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10); break;
-    case clock_config_t::REF_SMA : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C); break;
-    case clock_config_t::REF_MIMO: _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15); break;
+    case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
+    case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
+    case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
     default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
     }
 
@@ -146,22 +149,22 @@ void usrp2_mboard_impl::update_clock_config(void){
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     //set the ticks
-    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_tick_count(get_master_clock_freq()));
+    _iface->poke32(_iface->regs.time64_ticks, time_spec.get_tick_count(get_master_clock_freq()));
 
     //set the flags register
     boost::uint32_t imm_flags = (now)? U2_FLAG_TIME64_LATCH_NOW : U2_FLAG_TIME64_LATCH_NEXT_PPS;
-    _iface->poke32(U2_REG_TIME64_IMM, imm_flags);
+    _iface->poke32(_iface->regs.time64_imm, imm_flags);
 
     //set the seconds (latches in all 3 registers)
-    _iface->poke32(U2_REG_TIME64_SECS, boost::uint32_t(time_spec.get_full_secs()));
+    _iface->poke32(_iface->regs.time64_secs, boost::uint32_t(time_spec.get_full_secs()));
 }
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
+    _iface->poke32(_iface->regs.rx_ctrl_stream_cmd, dsp_type1::calc_stream_cmd_word(
         stream_cmd, _io_helper.get_max_recv_samps_per_packet()
     ));
-    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
+    _iface->poke32(_iface->regs.rx_ctrl_time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
+    _iface->poke32(_iface->regs.rx_ctrl_time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }
 
 /***********************************************************************
@@ -174,14 +177,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            byte_vector_t bytes = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, 6);
+            byte_vector_t bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, 6);
             val = mac_addr_t::from_bytes(bytes).to_string();
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
             boost::asio::ip::address_v4::bytes_type bytes;
-            std::copy(_iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, 4), bytes);
+            std::copy(_iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, 4), bytes);
             val = boost::asio::ip::address_v4(bytes).to_string();
             return;
         }
@@ -244,7 +247,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_TIME_NOW:{
             usrp2_iface::pair64 time64(
-                _iface->peek64(U2_REG_TIME64_SECS_RB, U2_REG_TIME64_TICKS_RB)
+                _iface->peek64(_iface->regs.time64_secs_rb, _iface->regs.time64_ticks_rb)
             );
             val = time_spec_t(
                 time64.first, time64.second, get_master_clock_freq()
@@ -264,14 +267,14 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
             byte_vector_t bytes = mac_addr_t::from_string(val.as<std::string>()).to_bytes();
-            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, bytes);
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, bytes);
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
             byte_vector_t bytes(4);
             std::copy(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_bytes(), bytes);
-            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, bytes);
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, bytes);
             return;
         }
     }
