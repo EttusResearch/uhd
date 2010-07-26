@@ -26,7 +26,7 @@
  */
 
 #include <stdbool.h>
-#include <usrp2_clock_bits.h>
+#include "clock_bits.h"
 
 
 /*!

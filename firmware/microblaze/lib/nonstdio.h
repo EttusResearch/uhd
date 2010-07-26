@@ -1,4 +1,6 @@
-/* -*- c -*- */
+//
+// Copyright 2010 Ettus Research LLC
+//
 /*
  * Copyright 2007 Free Software Foundation, Inc.
  *
@@ -20,7 +22,7 @@
 #define INCLUDED_NONSTDIO_H
 
 #include <stdio.h>
-#include <usrp2_types.h>
+#include <stdint.h>
 #include <stddef.h>
 
 void putstr(const char *s);		// cf puts, no added newline
@@ -37,10 +39,10 @@ void puthex32_nl(unsigned long x);
 void newline();				// putchar('\n')
 
 void print_mac_addr(const unsigned char addr[6]);
-void print_fxpt_freq(u2_fxpt_freq_t v);
-void print_fxpt_gain(u2_fxpt_gain_t v);
 void print_uint64(uint64_t v);
 
 void print_buffer(uint32_t *buf, size_t n);
+//char *itoa(signed long value, char *result, int base);
+//void reverse(char s[]);
 
 #endif /* INCLUDED_NONSTDIO_H */

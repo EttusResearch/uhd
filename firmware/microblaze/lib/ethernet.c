@@ -25,8 +25,7 @@
 #include "nonstdio.h"
 #include <stdbool.h>
 #include "i2c.h"
-#include "usrp2_i2c_addr.h"
-
+#include "usrp2/fw_common.h"
 
 #define VERBOSE 0
 
@@ -302,7 +301,7 @@ ethernet_mac_addr(void)
       return &src_mac_addr;
     
     eth_mac_addr_t tmp;
-    bool ok = eeprom_read(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, &tmp, sizeof(tmp));
+    bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, &tmp, sizeof(tmp));
     if (!ok || unprogrammed(&tmp, sizeof(tmp))){
       // use the default
     }
@@ -316,7 +315,7 @@ ethernet_mac_addr(void)
 bool
 ethernet_set_mac_addr(const eth_mac_addr_t *t)
 {
-  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_MAC_ADDR, t, sizeof(eth_mac_addr_t));
+  bool ok = eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, t, sizeof(eth_mac_addr_t));
   if (ok){
     src_mac_addr = *t;
     src_mac_addr_initialized = true;
@@ -344,7 +343,7 @@ const struct ip_addr *get_ip_addr(void)
       return &src_ip_addr;
     
     struct ip_addr tmp;
-    bool ok = eeprom_read(I2C_ADDR_MBOARD, MBOARD_IP_ADDR, &tmp, sizeof(tmp));
+    bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, &tmp, sizeof(tmp));
     if (!ok || unprogrammed(&tmp, sizeof(tmp))){
       // use the default
     }
@@ -356,7 +355,7 @@ const struct ip_addr *get_ip_addr(void)
 }
 
 bool set_ip_addr(const struct ip_addr *t){
-  bool ok = eeprom_write(I2C_ADDR_MBOARD, MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
+  bool ok = eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
   if (ok){
     src_ip_addr = *t;
     src_ip_addr_initialized = true;

@@ -32,6 +32,7 @@ m4_if(m4_defn([m4_PACKAGE_VERSION]), [2.64],
      [m4_define([_AC_LANG_IO_PROGRAM(]_GCC_LANG[)], m4_defn([AC_LANG_PROGRAM(]_GCC_LANG[)]))])]) 
 
 AC_PROG_CC([mb-gcc])
+AM_PROG_CC_C_O
 LT_INIT
 
 ##################################################
@@ -46,9 +47,8 @@ AC_PATH_PROG([HEXDUMP],    [hexdump])
 ##################################################
 AC_CONFIG_FILES([ \
     Makefile \
-    apps/Makefile \
-    include/Makefile \
-    include/net/Makefile \
-    lib/Makefile \
+    usrp2p/bootloader/Makefile \
+    usrp2/Makefile \
+    usrp2p/Makefile \
 ])
 AC_OUTPUT

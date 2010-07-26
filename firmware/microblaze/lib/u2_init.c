@@ -25,9 +25,7 @@
 #include "i2c.h"
 #include "mdelay.h"
 #include "clocks.h"
-#include "usrp2_i2c_addr.h"
-
-//#include "nonstdio.h"
+#include "usrp2/fw_common.h"
 
 unsigned char u2_hw_rev_major;
 unsigned char u2_hw_rev_minor;
@@ -35,8 +33,8 @@ unsigned char u2_hw_rev_minor;
 static inline void
 get_hw_rev(void)
 {
-  bool ok = eeprom_read(I2C_ADDR_MBOARD, MBOARD_REV_LSB, &u2_hw_rev_minor, 1);
-  ok &= eeprom_read(I2C_ADDR_MBOARD, MBOARD_REV_MSB, &u2_hw_rev_major, 1);
+  bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_LSB, &u2_hw_rev_minor, 1);
+  ok &= eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, &u2_hw_rev_major, 1);
 }
 
 /*

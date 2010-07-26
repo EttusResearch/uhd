@@ -1,0 +1,9 @@
+/Makefile
+/Makefile.in
+/*.a
+/*.bin
+/*.dump
+/*.ihx
+/*.elf
+/*.rom
+/*.map

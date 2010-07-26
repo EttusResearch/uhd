@@ -23,6 +23,7 @@
 
 void hal_io_init(void);
 void hal_finish();
+char *gets(char * const s);
 
 /*
  * ------------------------------------------------------------------------
