@@ -173,7 +173,7 @@ class mreg:
     def get_type(self):
         return 'boost::uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
 
-def generate(name, regs_tmpl, body_tmpl='', file=__file__):
+def generate(name, regs_tmpl, body_tmpl='', file=__file__, append=False):
     #evaluate the regs template and parse each line into a register
     regs = list(); mregs = list()
     for entry in parse_tmpl(regs_tmpl).splitlines():
@@ -193,4 +193,4 @@ def generate(name, regs_tmpl, body_tmpl='', file=__file__):
     )
 
     #write the generated code to file specified by argv1
-    open(sys.argv[1], 'w').write(code)
+    open(sys.argv[1], 'a' if append else 'w').write(code)

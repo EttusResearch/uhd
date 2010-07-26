@@ -22,6 +22,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_rfx.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_xcvr2450.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_wbx.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_unknown.cpp
 )
 

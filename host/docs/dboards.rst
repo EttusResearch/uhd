@@ -35,6 +35,19 @@ Though the magic of aliasing, you can up-convert signals
 greater than the nyquist rate of the DAC.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DBSRX
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The DBSRX board has 1 quadrature subdevice.
+
+Receive Antennas: **J3**
+
+The board has no user selectable antenna setting
+
+Recieve Gains: 
+    **GC1**, Range: 0-56dB
+    **GC2**, Range: 0-24dB
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transmit Antennas: **TX/RX**
