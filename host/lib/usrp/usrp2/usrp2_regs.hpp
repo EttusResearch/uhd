@@ -226,7 +226,7 @@
 #define U2_REG_ATR_FULL_RXSIDE  U2_REG_ATR_BASE + 14
 
 ///////////////////////////////////////////////////
-// VITA RX CTRL regs
+// RX CTRL regs
 ///////////////////////////////////////////////////
 // The following 3 are logically a single command register.
 // They are clocked into the underlying fifo when time_ticks is written.
@@ -240,5 +240,12 @@
 #define U2_REG_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)
 #define U2_REG_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
 #define U2_REG_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
+
+///////////////////////////////////////////////////
+// TX CTRL regs
+///////////////////////////////////////////////////
+#define U2_REG_TX_CTRL_NUM_CHAN          _SR_ADDR(SR_TX_CTRL + 0)
+#define U2_REG_TX_CTRL_CLEAR_STATE       _SR_ADDR(SR_TX_CTRL + 1)
+#define U2_REG_TX_CTRL_REPORT_SID        _SR_ADDR(SR_TX_CTRL + 2)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

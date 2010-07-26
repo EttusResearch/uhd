@@ -98,18 +98,6 @@ stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
 /***********************************************************************
  * metadata
  **********************************************************************/
-rx_metadata_t::rx_metadata_t(void):
-    has_time_spec(false),
-    time_spec(time_spec_t()),
-    more_fragments(false),
-    fragment_offset(0),
-    start_of_burst(false),
-    end_of_burst(false),
-    error_code(ERROR_CODE_NONE)
-{
-    /* NOP */
-}
-
 tx_metadata_t::tx_metadata_t(void):
     has_time_spec(false),
     time_spec(time_spec_t()),

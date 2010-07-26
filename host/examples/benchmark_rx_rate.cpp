@@ -66,7 +66,7 @@ static inline void test_device(
         //handle the error codes
         switch(md.error_code){
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
-        case uhd::rx_metadata_t::ERROR_CODE_OVERRUN:
+        case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
             break;
 
         default:
