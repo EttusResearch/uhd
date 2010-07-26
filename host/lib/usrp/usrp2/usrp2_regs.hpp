@@ -18,6 +18,88 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
+//these are used to set the 
+
+#define USRP2_MISC_OUTPUT_BASE  0xD400
+#define USRP2_GPIO_BASE         0xC800
+#define USRP2_ATR_BASE          0xE400
+#define USRP2_BP_STATUS_BASE    0xCC00
+
+#define USRP2P_MISC_OUTPUT_BASE 0x2000
+#define USRP2P_GPIO_BASE        0x3200
+#define USRP2P_ATR_BASE         0x3800
+#define USRP2P_BP_STATUS_BASE   0x3300
+
+#define USRP2P_FIRST_HW_REV     0x0A00
+
+typedef struct {
+	int sr_misc;
+	int sr_tx_prot_eng;
+	int sr_rx_prot_eng;
+	int sr_buffer_pool_ctrl;
+	int sr_udp_sm;
+	int sr_tx_dsp;
+	int sr_tx_ctrl;
+	int sr_rx_dsp;
+	int sr_rx_ctrl;
+	int sr_time64;
+	int sr_simtimer;
+	int sr_last;
+	int misc_ctrl_clock;
+	int misc_ctrl_serdes;
+	int misc_ctrl_adc;
+	int misc_ctrl_leds;
+	int misc_ctrl_phy;
+	int misc_ctrl_dbg_mux;
+	int misc_ctrl_ram_page;
+	int misc_ctrl_flush_icache;
+	int misc_ctrl_led_src;
+	int time64_secs; // value to set absolute secs to on next PPS
+	int time64_ticks; // value to set absolute ticks to on next PPS
+	int time64_flags; // flags -- see chart below
+	int time64_imm; // set immediate (0=latch on next pps, 1=latch immediate, default=0)
+	int time64_tps; // ticks per second rollover count
+	int time64_secs_rb;
+	int time64_ticks_rb;
+	int dsp_tx_freq;
+	int dsp_tx_scale_iq;
+	int dsp_tx_interp_rate;
+  int dsp_tx_mux;
+	int dsp_rx_freq;
+	int dsp_rx_scale_iq;
+	int dsp_rx_decim_rate;
+	int dsp_rx_dcoffset_i;
+	int dsp_rx_dcoffset_q;
+	int dsp_rx_mux;
+	int gpio_base;
+	int gpio_io;
+	int gpio_ddr;
+	int gpio_tx_sel;
+	int gpio_rx_sel;
+	int atr_base;
+	int atr_idle_txside;
+	int atr_idle_rxside;
+	int atr_intx_txside;
+	int atr_intx_rxside;
+	int atr_inrx_txside;
+	int atr_inrx_rxside;
+	int atr_full_txside;
+	int atr_full_rxside;
+	int rx_ctrl_stream_cmd;
+	int rx_ctrl_time_secs;
+	int rx_ctrl_time_ticks;
+	int rx_ctrl_clear_overrun;
+	int rx_ctrl_vrt_header;
+	int rx_ctrl_vrt_stream_id;
+  int rx_ctrl_vrt_trailer;
+	int rx_ctrl_nsamps_per_pkt;
+	int rx_ctrl_nchannels;
+} usrp2_regs_t;
+
+extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
+
+usrp2_regs_t usrp2_get_regs(int hw_rev);
+
 ////////////////////////////////////////////////////
 // Settings Bus, Slave #7, Not Byte Addressable!
 //
@@ -25,26 +107,11 @@
 // 1KB of address space (== 256 32-bit write-only regs)
 
 
-#define MISC_OUTPUT_BASE        0xD400
+//#define MISC_OUTPUT_BASE        0xD400
 //#define TX_PROTOCOL_ENGINE_BASE 0xD480
 //#define RX_PROTOCOL_ENGINE_BASE 0xD4C0
 //#define BUFFER_POOL_CTRL_BASE   0xD500
 //#define LAST_SETTING_REG        0xD7FC  // last valid setting register
-
-#define SR_MISC 0
-#define SR_TX_PROT_ENG 32
-#define SR_RX_PROT_ENG 48
-#define SR_BUFFER_POOL_CTRL 64
-#define SR_UDP_SM 96
-#define SR_TX_DSP 208
-#define SR_TX_CTRL 224
-#define SR_RX_DSP 160
-#define SR_RX_CTRL 176
-#define SR_TIME64 192
-#define SR_SIMTIMER 198
-#define SR_LAST 255
-
-#define _SR_ADDR(sr)    ((MISC_OUTPUT_BASE) + (4*(sr)))
 
 /////////////////////////////////////////////////
 // SPI Slave Constants
@@ -58,20 +125,11 @@
 #define SPI_SS_TX_DAC   32
 #define SPI_SS_TX_ADC   64
 #define SPI_SS_TX_DB   128
+#define SPI_SS_ADS62P44 256 //for usrp2p
 
 /////////////////////////////////////////////////
 // Misc Control
 ////////////////////////////////////////////////
-#define U2_REG_MISC_CTRL_CLOCK           _SR_ADDR(0)
-#define U2_REG_MISC_CTRL_SERDES          _SR_ADDR(1)
-#define U2_REG_MISC_CTRL_ADC             _SR_ADDR(2)
-#define U2_REG_MISC_CTRL_LEDS            _SR_ADDR(3)
-#define U2_REG_MISC_CTRL_PHY             _SR_ADDR(4) // LSB is reset line to eth phy
-#define U2_REG_MISC_CTRL_DBG_MUX         _SR_ADDR(5)
-#define U2_REG_MISC_CTRL_RAM_PAGE        _SR_ADDR(6) // FIXME should go somewhere else...
-#define U2_REG_MISC_CTRL_FLUSH_ICACHE    _SR_ADDR(7) // Flush the icache
-#define U2_REG_MISC_CTRL_LED_SRC         _SR_ADDR(8) // HW or SW control for LEDs
-
 #define U2_FLAG_MISC_CTRL_SERDES_ENABLE 8
 #define U2_FLAG_MISC_CTRL_SERDES_PRBSEN 4
 #define U2_FLAG_MISC_CTRL_SERDES_LOOPEN 2
@@ -99,14 +157,6 @@
    *
    * </pre>
    */
-#define U2_REG_TIME64_SECS  _SR_ADDR(SR_TIME64 + 0)  // value to set absolute secs to on next PPS
-#define U2_REG_TIME64_TICKS _SR_ADDR(SR_TIME64 + 1)  // value to set absolute ticks to on next PPS
-#define U2_REG_TIME64_FLAGS _SR_ADDR(SR_TIME64 + 2)  // flags - see chart above
-#define U2_REG_TIME64_IMM   _SR_ADDR(SR_TIME64 + 3)  // set immediate (0=latch on next pps, 1=latch immediate, default=0)
-#define U2_REG_TIME64_TPS   _SR_ADDR(SR_TIME64 + 4)  // the ticks per second rollover count
-
-#define U2_REG_TIME64_SECS_RB  (0xCC00 + 4*10)
-#define U2_REG_TIME64_TICKS_RB (0xCC00 + 4*11)
 
 //pps flags (see above)
 #define U2_FLAG_TIME64_PPS_NEGEDGE (0 << 0)
@@ -120,9 +170,6 @@
 /////////////////////////////////////////////////
 // DSP TX Regs
 ////////////////////////////////////////////////
-#define U2_REG_DSP_TX_FREQ         _SR_ADDR(SR_TX_DSP + 0)
-#define U2_REG_DSP_TX_SCALE_IQ     _SR_ADDR(SR_TX_DSP + 1) // {scale_i,scale_q}
-#define U2_REG_DSP_TX_INTERP_RATE  _SR_ADDR(SR_TX_DSP + 2)
 
   /*!
    * \brief output mux configuration.
@@ -158,17 +205,11 @@
    * The default value is 0x10
    * </pre>
    */
-#define U2_REG_DSP_TX_MUX  _SR_ADDR(SR_TX_DSP + 4)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
-#define U2_REG_DSP_RX_FREQ         _SR_ADDR(SR_RX_DSP + 0)
-#define U2_REG_DSP_RX_SCALE_IQ     _SR_ADDR(SR_RX_DSP + 1) // {scale_i,scale_q}
-#define U2_REG_DSP_RX_DECIM_RATE   _SR_ADDR(SR_RX_DSP + 2)
-#define U2_REG_DSP_RX_DCOFFSET_I   _SR_ADDR(SR_RX_DSP + 3) // Bit 31 high sets fixed offset mode, using lower 14 bits,
-                                                       // otherwise it is automatic 
-#define U2_REG_DSP_RX_DCOFFSET_Q   _SR_ADDR(SR_RX_DSP + 4) // Bit 31 high sets fixed offset mode, using lower 14 bits
+
   /*!
    * \brief input mux configuration.
    *
@@ -190,20 +231,10 @@
    * The default value is 0x4
    * </pre>
    */
-#define U2_REG_DSP_RX_MUX  _SR_ADDR(SR_RX_DSP + 5)         // called adc_mux in dsp_core_rx.v
 
 ////////////////////////////////////////////////
 // GPIO, Slave 4
 ////////////////////////////////////////////////
-//
-// These go to the daughterboard i/o pins
-//
-#define U2_REG_GPIO_BASE 0xC800
-
-#define U2_REG_GPIO_IO         U2_REG_GPIO_BASE + 0  // 32 bits, gpio io pins (tx high 16 bits, rx low 16 bits)
-#define U2_REG_GPIO_DDR        U2_REG_GPIO_BASE + 4  // 32 bits, gpio ddr, 1 means output (tx high 16 bits, rx low 16 bits)
-#define U2_REG_GPIO_TX_SEL     U2_REG_GPIO_BASE + 8  // 16 2-bit fields select which source goes to TX DB
-#define U2_REG_GPIO_RX_SEL     U2_REG_GPIO_BASE + 12 // 16 2-bit fields select which source goes to RX DB
 
 // each 2-bit sel field is layed out this way
 #define U2_FLAG_GPIO_SEL_GPIO      0 // if pin is an output, set by GPIO register
@@ -214,31 +245,11 @@
 ///////////////////////////////////////////////////
 // ATR Controller, Slave 11
 ////////////////////////////////////////////////
-#define U2_REG_ATR_BASE  0xE400
 
-#define U2_REG_ATR_IDLE_TXSIDE  U2_REG_ATR_BASE + 0
-#define U2_REG_ATR_IDLE_RXSIDE  U2_REG_ATR_BASE + 2
-#define U2_REG_ATR_INTX_TXSIDE  U2_REG_ATR_BASE + 4
-#define U2_REG_ATR_INTX_RXSIDE  U2_REG_ATR_BASE + 6
-#define U2_REG_ATR_INRX_TXSIDE  U2_REG_ATR_BASE + 8
-#define U2_REG_ATR_INRX_RXSIDE  U2_REG_ATR_BASE + 10
-#define U2_REG_ATR_FULL_TXSIDE  U2_REG_ATR_BASE + 12
-#define U2_REG_ATR_FULL_RXSIDE  U2_REG_ATR_BASE + 14
 
 ///////////////////////////////////////////////////
 // VITA RX CTRL regs
 ///////////////////////////////////////////////////
-// The following 3 are logically a single command register.
-// They are clocked into the underlying fifo when time_ticks is written.
-#define U2_REG_RX_CTRL_STREAM_CMD        _SR_ADDR(SR_RX_CTRL + 0) // {now, chain, num_samples(30)
-#define U2_REG_RX_CTRL_TIME_SECS         _SR_ADDR(SR_RX_CTRL + 1)
-#define U2_REG_RX_CTRL_TIME_TICKS        _SR_ADDR(SR_RX_CTRL + 2)
 
-#define U2_REG_RX_CTRL_CLEAR_OVERRUN     _SR_ADDR(SR_RX_CTRL + 3) // write anything to clear overrun
-#define U2_REG_RX_CTRL_VRT_HEADER        _SR_ADDR(SR_RX_CTRL + 4) // word 0 of packet.  FPGA fills in packet counter
-#define U2_REG_RX_CTRL_VRT_STREAM_ID     _SR_ADDR(SR_RX_CTRL + 5) // word 1 of packet.
-#define U2_REG_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)
-#define U2_REG_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
-#define U2_REG_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
 
 #endif /* INCLUDED_USRP2_REGS_HPP */
