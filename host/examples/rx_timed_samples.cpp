@@ -74,8 +74,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup streaming
     std::cout << std::endl;
-    std::cout << boost::format("Begin streaming %u samples, %d seconds in the future...")
-        % total_num_samps % seconds_in_future << std::endl;
+    std::cout << boost::format(
+        "Begin streaming %u samples, %d seconds in the future..."
+    ) % total_num_samps % seconds_in_future << std::endl;
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
@@ -102,7 +103,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             if (num_acc_samps == 0) continue;
             std::cout << boost::format(
                 "Got timeout before all samples received, possible packet loss, exiting loop..."
-            ) % md.error_code << std::endl;
+            ) << std::endl;
             goto done_loop;
 
         default:
