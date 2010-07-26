@@ -29,7 +29,11 @@ using namespace uhd::transport;
  * Constants
  **********************************************************************/
 //enough buffering for half a second of samples at full rate on usrp2
-static const size_t MIN_SOCK_BUFF_SIZE = size_t(sizeof(boost::uint32_t) * 25e6 * 0.5);
+static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(sizeof(boost::uint32_t) * 25e6 * 0.5);
+//Large buffers cause more underflow at high rates.
+//Perhaps this is due to the kernel scheduling,
+//but may change with host-based flow control.
+static const size_t MIN_SEND_SOCK_BUFF_SIZE = size_t(10e3);
 static const double RECV_TIMEOUT = 0.1; //100 ms
 
 /***********************************************************************
@@ -143,6 +147,10 @@ template<typename Opt> static void resize_buff_helper(
     size_t target_size,
     const std::string &name
 ){
+    size_t min_sock_buff_size = 0;
+    if (name == "recv") min_sock_buff_size = MIN_RECV_SOCK_BUFF_SIZE;
+    if (name == "send") min_sock_buff_size = MIN_SEND_SOCK_BUFF_SIZE;
+
     //resize the buffer if size was provided
     if (target_size > 0){
         size_t actual_size = udp_trans->resize_buff<Opt>(target_size);
@@ -158,14 +166,14 @@ template<typename Opt> static void resize_buff_helper(
             "    The %s buffer is smaller than the requested size.\n"
             "    The minimum recommended buffer size is %d bytes.\n"
             "    See the USRP2 application notes on buffer resizing.\n"
-        ) % name % MIN_SOCK_BUFF_SIZE << std::endl;
+        ) % name % min_sock_buff_size << std::endl;
     }
 
     //only enable on platforms that are happy with the large buffer resize
     #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
     //otherwise, ensure that the buffer is at least the minimum size
-    else if (udp_trans->get_buff_size<Opt>() < MIN_SOCK_BUFF_SIZE){
-        resize_buff_helper<Opt>(udp_trans, MIN_SOCK_BUFF_SIZE, name);
+    else if (udp_trans->get_buff_size<Opt>() < min_sock_buff_size){
+        resize_buff_helper<Opt>(udp_trans, min_sock_buff_size, name);
     }
     #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
 }
