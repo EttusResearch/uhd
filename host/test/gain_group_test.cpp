@@ -101,10 +101,10 @@ BOOST_AUTO_TEST_CASE(test_gain_group_overall){
 
     //test the overall stuff
     gg->set_value(80);
-    BOOST_CHECK_CLOSE(gg->get_value(), 80, tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().min, -20, tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().max, 100, tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().step, 0.1, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_value(), float(80), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().min, float(-20), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().max, float(100), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().step, float(0.1), tolerance);
 }
 
 BOOST_AUTO_TEST_CASE(test_gain_group_priority){
@@ -112,10 +112,10 @@ BOOST_AUTO_TEST_CASE(test_gain_group_priority){
 
     //test the overall stuff
     gg->set_value(80);
-    BOOST_CHECK_CLOSE(gg->get_value(), 80, tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().min, -20, tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().max, 100, tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().step, 0.1, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_value(), float(80), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().min, float(-20), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().max, float(100), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().step, float(0.1), tolerance);
 
     //test the the higher priority gain got filled first (gain 2)
     BOOST_CHECK_CLOSE(g2.get_value(), g2.get_range().max, tolerance);
