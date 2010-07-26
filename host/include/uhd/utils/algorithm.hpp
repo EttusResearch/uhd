@@ -112,17 +112,6 @@ namespace std{
     }
 
     /*!
-     * A templated signum implementation.
-     * \param n the comparable to process
-     * \return -1 when n negative, +1 when n positive, otherwise 0
-     */
-    template<typename T> inline int signum(T n){
-        if (n < 0) return -1;
-        if (n > 0) return +1;
-        return 0;
-    }
-
-    /*!
      * A templated clip implementation.
      * \param val the value to clip between an upper and lower limit
      * \param bound1 the upper or lower bound

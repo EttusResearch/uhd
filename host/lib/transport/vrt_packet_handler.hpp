@@ -286,7 +286,6 @@ namespace vrt_packet_handler{
      * Pack a vrt header, copy-convert the data, and send it.
      *  - helper function for vrt_packet_handler::send
      ******************************************************************/
-    template<typename vrt_packer_type>
     static UHD_INLINE void _send1(
         send_state &state,
         const std::vector<const void *> &buffs,
@@ -295,7 +294,7 @@ namespace vrt_packet_handler{
         uhd::transport::vrt::if_packet_info_t &if_packet_info,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
-        vrt_packer_type vrt_packer,
+        const vrt_packer_t &vrt_packer,
         const get_send_buffs_t &get_send_buffs,
         size_t vrt_header_offset_words32
     ){
