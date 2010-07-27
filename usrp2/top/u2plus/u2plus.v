@@ -23,8 +23,8 @@ module u2plus
    input ADCB_0_p, input ADCB_0_n,
    
    // DAC
-   output [15:0] DACA,
-   output [15:0] DACB,
+   output reg [15:0] DACA,
+   output reg [15:0] DACB,
    input DAC_LOCK,     // unused for now
    
    // DB IO Pins
@@ -149,9 +149,10 @@ module u2plus
 
    wire 	dcm_rst 		    = 0;
 
-   wire [13:0] 	adc_a, adc_b;
+ 
 `ifdef LVDS
-   capture_ddrlvds #(.WIDTH(14)) capture_ddrlvds
+   wire [13:0] 	adc_a, adc_b;
+     capture_ddrlvds #(.WIDTH(14)) capture_ddrlvds
      (.clk(dsp_clk), .ssclk_p(ADC_clkout_p), .ssclk_n(ADC_clkout_n), 
       .in_p({{ADCA_12_p, ADCA_10_p, ADCA_8_p, ADCA_6_p, ADCA_4_p, ADCA_2_p, ADCA_0_p},
 	     {ADCB_12_p, ADCB_10_p, ADCB_8_p, ADCB_6_p, ADCB_4_p, ADCB_2_p, ADCB_0_p}}), 
@@ -159,11 +160,14 @@ module u2plus
 	     {ADCB_12_n, ADCB_10_n, ADCB_8_n, ADCB_6_n, ADCB_4_n, ADCB_2_n, ADCB_0_n}}), 
       .out({adc_a,adc_b}));
 `else
-   assign adc_a = {ADCA_12_p,ADCA_12_n, ADCA_10_p,ADCA_10_n, ADCA_8_p,ADCA_8_n, ADCA_6_p,ADCA_6_n,
+	reg [13:0] adc_a, adc_b;
+   always @(posedge dsp_clk)
+	begin
+	adc_a <= {ADCA_12_p,ADCA_12_n, ADCA_10_p,ADCA_10_n, ADCA_8_p,ADCA_8_n, ADCA_6_p,ADCA_6_n,
 		   ADCA_4_p,ADCA_4_n, ADCA_2_p,ADCA_2_n, ADCA_0_p,ADCA_0_n };
-   assign adc_b = {ADCB_12_p,ADCB_12_n, ADCB_10_p,ADCB_10_n, ADCB_8_p,ADCB_8_n, ADCB_6_p,ADCB_6_n,
+    adc_b <= {ADCB_12_p,ADCB_12_n, ADCB_10_p,ADCB_10_n, ADCB_8_p,ADCB_8_n, ADCB_6_p,ADCB_6_n,
 		   ADCB_4_p,ADCB_4_n, ADCB_2_p,ADCB_2_n, ADCB_0_p,ADCB_0_n };
-   
+    end
 `endif // !`ifdef LVDS
    
    // Handle Clocks
@@ -286,10 +290,16 @@ module u2plus
       .S(0)       // Synchronous preset input
       );
    */
+   
+   wire [15:0] dac_a_int, dac_b_int;
+   
+   always @(negedge dsp_clk) DACA <= dac_a_int;
+   always @(negedge dsp_clk) DACB <= dac_b_int;
+	
    u2plus_core u2p_c(.dsp_clk           (dsp_clk),
 		     .wb_clk            (wb_clk),
 		     .clock_ready       (clock_ready),
-		     .clk_to_mac	(clk_to_mac),
+		     .clk_to_mac	(CLK_TO_MAC),
 		     .pps_in		(pps_in),
 		     .leds		(leds_int),
 		     .debug		(debug[31:0]),
@@ -331,8 +341,8 @@ module u2plus
 		     .adc_ovf_b		(adc_ovf_b),
 		     .adc_on_b		(adc_on_b),
 		     .adc_oe_b		(adc_oe_b),
-		     .dac_a		(DACA[15:0]),
-		     .dac_b		(DACB[15:0]),
+		     .dac_a		(dac_a_int[15:0]),
+		     .dac_b		(dac_b_int[15:0]),
 		     .scl_pad_i		(scl_pad_i),
 		     .scl_pad_o		(scl_pad_o),
 		     .scl_pad_oen_o	(scl_pad_oen_o),
