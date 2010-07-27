@@ -219,6 +219,17 @@ public:
      */
     virtual size_t get_max_recv_samps_per_packet(void) const = 0;
 
+    /*!
+     * Receive and asynchronous message from the device.
+     * \param async_metadata the metadata to be filled in
+     * \param timeout_ms the timeout in milliseconds to wait for a message
+     * \return true when the async_metadata is valid, false for timeout
+     */
+    virtual bool recv_async_msg(
+        async_metadata_t &async_metadata,
+        size_t timeout_ms = default_recv_timeout_ms
+    ) = 0;
+
 };
 
 } //namespace uhd

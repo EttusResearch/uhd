@@ -75,6 +75,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
     _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
     _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
+
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
@@ -83,6 +84,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.rx_ctrl_vrt_stream_id, 0);
     _iface->poke32(_iface->regs.rx_ctrl_vrt_trailer, 0);
     _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
+
+    //init the tx control registers
+    _iface->poke32(_iface->regs.tx_ctrl_num_chan, 0);    //1 channel
+    _iface->poke32(_iface->regs.tx_ctrl_clear_state, 1); //reset
+    _iface->poke32(_iface->regs.tx_ctrl_report_sid, 1);  //sid 1 (different from rx)
 
     //init the ddc
     init_ddc_config();

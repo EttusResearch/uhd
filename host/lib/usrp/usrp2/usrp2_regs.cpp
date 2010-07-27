@@ -89,6 +89,9 @@ usrp2_regs_t usrp2_get_regs(int hw_rev) {
   x.rx_ctrl_vrt_trailer = sr_addr(misc_output_base, x.sr_rx_ctrl + 6);
   x.rx_ctrl_nsamps_per_pkt = sr_addr(misc_output_base, x.sr_rx_ctrl + 7);
   x.rx_ctrl_nchannels = sr_addr(misc_output_base, x.sr_rx_ctrl + 8);
+  x.tx_ctrl_num_chan = sr_addr(misc_output_base, x.sr_tx_ctrl + 0);
+  x.tx_ctrl_clear_state = sr_addr(misc_output_base, x.sr_tx_ctrl + 1);
+  x.tx_ctrl_report_sid = sr_addr(misc_output_base, x.sr_tx_ctrl + 2);
 
   return x;
 }

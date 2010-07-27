@@ -94,6 +94,9 @@ typedef struct {
   int rx_ctrl_vrt_trailer;
 	int rx_ctrl_nsamps_per_pkt;
 	int rx_ctrl_nchannels;
+  int tx_ctrl_num_chan;
+  int tx_ctrl_clear_state;
+  int tx_ctrl_report_sid;
 } usrp2_regs_t;
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
@@ -248,8 +251,15 @@ usrp2_regs_t usrp2_get_regs(int hw_rev);
 
 
 ///////////////////////////////////////////////////
-// VITA RX CTRL regs
+// RX CTRL regs
 ///////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////
+// TX CTRL regs
+///////////////////////////////////////////////////
+//#define U2_REG_TX_CTRL_NUM_CHAN          _SR_ADDR(SR_TX_CTRL + 0)
+//#define U2_REG_TX_CTRL_CLEAR_STATE       _SR_ADDR(SR_TX_CTRL + 1)
+//#define U2_REG_TX_CTRL_REPORT_SID        _SR_ADDR(SR_TX_CTRL + 2)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */
