@@ -125,6 +125,10 @@ module u2plus
    input flash_miso
    );
 
+   wire  CLK_TO_MAC_int, CLK_TO_MAC_int2;
+   IBUFG phyclk (.O(CLK_TO_MAC_int), .I(CLK_TO_MAC));
+   BUFG phyclk2 (.O(CLK_TO_MAC_int2), .I(CLK_TO_MAC_int));
+      
    // FPGA-specific pins connections
    wire 	clk_fpga, dsp_clk, clk_div, dcm_out, wb_clk, clock_ready;
 
