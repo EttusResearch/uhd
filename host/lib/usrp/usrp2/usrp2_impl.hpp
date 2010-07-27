@@ -161,6 +161,15 @@ private:
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
+    //properties interface for the codec
+    void codec_init(void);
+    void rx_codec_get(const wax::obj &, wax::obj &);
+    void rx_codec_set(const wax::obj &, const wax::obj &);
+    void tx_codec_get(const wax::obj &, wax::obj &);
+    void tx_codec_set(const wax::obj &, const wax::obj &);
+    wax_obj_proxy::sptr _rx_codec_proxy;
+    wax_obj_proxy::sptr _tx_codec_proxy;
+
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);

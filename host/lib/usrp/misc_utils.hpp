@@ -15,25 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DEVICE_PROPS_HPP
-#define INCLUDED_UHD_USRP_DEVICE_PROPS_HPP
+#ifndef INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP
+#define INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP
 
-#include <uhd/utils/props.hpp>
+#include <uhd/config.hpp>
+#include <uhd/wax.hpp>
+#include <uhd/utils/gain_group.hpp>
 
 namespace uhd{ namespace usrp{
 
     /*!
-     * Possible device properties:
-     *   In general, a device will have a single mboard.
-     *   In certain mimo applications, multiple boards
-     *   will be present in the interface for configuration.
+     * Create a gain group that represents the subdevice and its codec.
      */
-    enum device_prop_t{
-        DEVICE_PROP_NAME           = 'n', //ro, std::string
-        DEVICE_PROP_MBOARD         = 'm', //ro, wax::obj
-        DEVICE_PROP_MBOARD_NAMES   = 'M'  //ro, prop_names_t
-    };
+    gain_group::sptr make_gain_group(wax::obj subdev, wax::obj codec);
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_DEVICE_PROPS_HPP */
+#endif /* INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP */
+

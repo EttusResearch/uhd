@@ -24,6 +24,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_manager.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dsp_utils.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/mimo_usrp.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/simple_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/tune_helper.cpp
 )

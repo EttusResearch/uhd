@@ -15,25 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DEVICE_PROPS_HPP
-#define INCLUDED_UHD_USRP_DEVICE_PROPS_HPP
+#ifndef INCLUDED_UHD_USRP_CODEC_PROPS_HPP
+#define INCLUDED_UHD_USRP_CODEC_PROPS_HPP
 
 #include <uhd/utils/props.hpp>
 
 namespace uhd{ namespace usrp{
 
     /*!
-     * Possible device properties:
-     *   In general, a device will have a single mboard.
-     *   In certain mimo applications, multiple boards
-     *   will be present in the interface for configuration.
-     */
-    enum device_prop_t{
-        DEVICE_PROP_NAME           = 'n', //ro, std::string
-        DEVICE_PROP_MBOARD         = 'm', //ro, wax::obj
-        DEVICE_PROP_MBOARD_NAMES   = 'M'  //ro, prop_names_t
+    * Possible device codec properties:
+    *   A codec is expected to have a rate and gain elements.
+    *   Other properties can be discovered through the others prop.
+    */
+    enum codec_prop_t{
+        CODEC_PROP_NAME           = 'n', //ro, std::string
+        CODEC_PROP_OTHERS         = 'o', //ro, prop_names_t
+        CODEC_PROP_GAIN_I         = 'i', //rw, float
+        CODEC_PROP_GAIN_Q         = 'q', //rw, float
+        CODEC_PROP_GAIN_RANGE     = 'r', //ro, gain_range_t
+        CODEC_PROP_GAIN_NAMES     = 'G'  //ro, prop_names_t
     };
+
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_DEVICE_PROPS_HPP */
+#endif /* INCLUDED_UHD_USRP_CODEC_PROPS_HPP */

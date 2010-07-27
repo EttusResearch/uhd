@@ -18,6 +18,7 @@
 #include <uhd/usrp/simple_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/device_props.hpp>
@@ -50,11 +51,13 @@ public:
         _rx_dboard = _mboard[MBOARD_PROP_RX_DBOARD];
         std::string rx_subdev_in_use = _rx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
         _rx_subdev = _rx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, rx_subdev_in_use)];
+        _rx_gain_group = _rx_dboard[named_prop_t(DBOARD_PROP_GAIN_GROUP, rx_subdev_in_use)].as<gain_group::sptr>();
 
         //extract tx subdevice
         _tx_dboard = _mboard[MBOARD_PROP_TX_DBOARD];
         std::string tx_subdev_in_use = _tx_dboard[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
         _tx_subdev = _tx_dboard[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)];
+        _tx_gain_group = _tx_dboard[named_prop_t(DBOARD_PROP_GAIN_GROUP, tx_subdev_in_use)].as<gain_group::sptr>();
     }
 
     ~simple_usrp_impl(void){
@@ -139,15 +142,15 @@ public:
     }
 
     void set_rx_gain(float gain){
-        _rx_subdev[SUBDEV_PROP_GAIN] = gain;
+        _rx_gain_group->set_value(gain);
     }
 
     float get_rx_gain(void){
-        return _rx_subdev[SUBDEV_PROP_GAIN].as<float>();
+        return _rx_gain_group->get_value();
     }
 
     gain_range_t get_rx_gain_range(void){
-        return _rx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _rx_gain_group->get_range();
     }
 
     void set_rx_antenna(const std::string &ant){
@@ -198,15 +201,15 @@ public:
     }
 
     void set_tx_gain(float gain){
-        _tx_subdev[SUBDEV_PROP_GAIN] = gain;
+        _tx_gain_group->set_value(gain);
     }
 
     float get_tx_gain(void){
-        return _tx_subdev[SUBDEV_PROP_GAIN].as<float>();
+        return _tx_gain_group->get_value();
     }
 
     gain_range_t get_tx_gain_range(void){
-        return _tx_subdev[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _tx_gain_group->get_range();
     }
 
     void set_tx_antenna(const std::string &ant){
@@ -234,6 +237,8 @@ private:
     wax::obj _tx_dboard;
     wax::obj _rx_subdev;
     wax::obj _tx_subdev;
+    gain_group::sptr _rx_gain_group;
+    gain_group::sptr _tx_gain_group;
 };
 
 /***********************************************************************
