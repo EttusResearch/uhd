@@ -112,7 +112,7 @@ CONFIGURE_FILE(
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/gain_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gain_group.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp

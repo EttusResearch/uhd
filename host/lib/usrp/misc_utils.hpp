@@ -15,27 +15,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DBOARD_PROPS_HPP
-#define INCLUDED_UHD_USRP_DBOARD_PROPS_HPP
+#ifndef INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP
+#define INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP
 
-#include <uhd/utils/props.hpp>
+#include <uhd/config.hpp>
+#include <uhd/wax.hpp>
+#include <uhd/utils/gain_group.hpp>
 
 namespace uhd{ namespace usrp{
 
     /*!
-     * Possible device dboard properties
+     * Create a gain group that represents the subdevice and its codec.
      */
-    enum dboard_prop_t{
-        DBOARD_PROP_NAME         = 'n', //ro, std::string
-        DBOARD_PROP_SUBDEV       = 's', //ro, wax::obj
-        DBOARD_PROP_SUBDEV_NAMES = 'S', //ro, prop_names_t
-        DBOARD_PROP_USED_SUBDEVS = 'u', //ro, prop_names_t
-        DBOARD_PROP_DBOARD_ID    = 'i', //rw, dboard_id_t
-        DBOARD_PROP_DBOARD_IFACE = 'f', //ro, dboard_iface::sptr
-        DBOARD_PROP_CODEC        = 'c', //ro, wax::obj
-        DBOARD_PROP_GAIN_GROUP   = 'g'  //ro, gain_group
-    }; 
+    gain_group::sptr make_gain_group(wax::obj subdev, wax::obj codec);
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_DBOARD_PROPS_HPP */
+#endif /* INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP */
+

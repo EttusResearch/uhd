@@ -15,27 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_DBOARD_PROPS_HPP
-#define INCLUDED_UHD_USRP_DBOARD_PROPS_HPP
+#ifndef INCLUDED_UHD_USRP_CODEC_PROPS_HPP
+#define INCLUDED_UHD_USRP_CODEC_PROPS_HPP
 
 #include <uhd/utils/props.hpp>
 
 namespace uhd{ namespace usrp{
 
     /*!
-     * Possible device dboard properties
-     */
-    enum dboard_prop_t{
-        DBOARD_PROP_NAME         = 'n', //ro, std::string
-        DBOARD_PROP_SUBDEV       = 's', //ro, wax::obj
-        DBOARD_PROP_SUBDEV_NAMES = 'S', //ro, prop_names_t
-        DBOARD_PROP_USED_SUBDEVS = 'u', //ro, prop_names_t
-        DBOARD_PROP_DBOARD_ID    = 'i', //rw, dboard_id_t
-        DBOARD_PROP_DBOARD_IFACE = 'f', //ro, dboard_iface::sptr
-        DBOARD_PROP_CODEC        = 'c', //ro, wax::obj
-        DBOARD_PROP_GAIN_GROUP   = 'g'  //ro, gain_group
-    }; 
+    * Possible device codec properties:
+    *   A codec is expected to have a rate and gain elements.
+    *   Other properties can be discovered through the others prop.
+    */
+    enum codec_prop_t{
+        CODEC_PROP_NAME           = 'n', //ro, std::string
+        CODEC_PROP_OTHERS         = 'o', //ro, prop_names_t
+        CODEC_PROP_GAIN_I         = 'i', //rw, float
+        CODEC_PROP_GAIN_Q         = 'q', //rw, float
+        CODEC_PROP_GAIN_RANGE     = 'r', //ro, gain_range_t
+        CODEC_PROP_GAIN_NAMES     = 'G'  //ro, prop_names_t
+    };
+
 
 }} //namespace
 
-#endif /* INCLUDED_UHD_USRP_DBOARD_PROPS_HPP */
+#endif /* INCLUDED_UHD_USRP_CODEC_PROPS_HPP */

@@ -22,6 +22,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_ctrl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_ctrl.hpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_iface.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dsp_impl.cpp
