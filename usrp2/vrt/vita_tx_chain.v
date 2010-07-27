@@ -14,7 +14,7 @@ module vita_tx_chain
     output [31:0] debug);
 
    localparam MAXCHAN = 1;
-   localparam FIFOWIDTH = 5+64+(32*MAXCHAN);
+   localparam FIFOWIDTH = 5+64+16+(32*MAXCHAN);
 
    wire [FIFOWIDTH-1:0] tx1_data;
    wire 		tx1_src_rdy, tx1_dst_rdy;
@@ -25,10 +25,10 @@ module vita_tx_chain
    wire [31:0] 		debug_vtc, debug_vtd, debug_tx_dsp;
 
    wire 		error;
-   wire [15:0] 		error_code;
+   wire [31:0] 		error_code;
    
    assign underrun = error;
-   assign message = {16'h0,error_code};
+   assign message = error_code;
       
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),

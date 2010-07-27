@@ -10,7 +10,7 @@ module vita_tx_deframer
     input src_rdy_i,
     output dst_rdy_o,
     
-    output [5+64+(32*MAXCHAN)-1:0] sample_fifo_o,
+    output [5+64+16+(32*MAXCHAN)-1:0] sample_fifo_o,
     output sample_fifo_src_rdy_o,
     input sample_fifo_dst_rdy_i,
     
@@ -21,7 +21,7 @@ module vita_tx_deframer
     output [31:0] debug
     );
 
-   localparam FIFOWIDTH = 5+64+(32*MAXCHAN);
+   localparam FIFOWIDTH = 5+64+16+(32*MAXCHAN);
    
    wire [1:0] numchan;
    setting_reg #(.my_addr(BASE), .at_reset(0), .width(2)) sr_numchan
@@ -185,7 +185,8 @@ module vita_tx_deframer
       .dataout(sample_fifo_o), .src_rdy_o(sample_fifo_src_rdy_o), .dst_rdy_i(sample_fifo_dst_rdy_i) );
 
    // sob, eob, has_secs (send_at) ignored on all lines except first
-   assign fifo_i = {sample_d,sample_c,sample_b,sample_a,seqnum_err,has_secs_reg,is_sob_reg,is_eob_reg,eop,send_time};
+   assign fifo_i = {sample_d,sample_c,sample_b,sample_a,seqnum_err,has_secs_reg,is_sob_reg,is_eob_reg,eop,
+		    12'd0,seqnum_reg,send_time};
 
    assign dst_rdy_o = ~(vita_state == VITA_PAYLOAD) & ~((vita_state==VITA_STORE)& ~fifo_space) ;
 
