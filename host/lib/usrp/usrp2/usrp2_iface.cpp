@@ -104,7 +104,7 @@ public:
         //setup the out data
         usrp2_ctrl_data_t out_data;
         out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
-        out_data.data.spi_args.dev = which_slave;
+        out_data.data.spi_args.dev = htonl(which_slave);
         out_data.data.spi_args.miso_edge = spi_edge_to_otw[config.miso_edge];
         out_data.data.spi_args.mosi_edge = spi_edge_to_otw[config.mosi_edge];
         out_data.data.spi_args.readback = (readback)? 1 : 0;

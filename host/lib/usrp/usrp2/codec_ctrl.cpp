@@ -120,7 +120,7 @@ private:
     void send_ads62p44_reg(boost::uint8_t addr) {
         boost::uint16_t reg = _ads62p44_regs.get_write_reg(addr);
         _iface->transact_spi(
-            SPI_SS_ADS62P44, spi_config_t::EDGE_RISE,
+            SPI_SS_ADS62P44, spi_config_t::EDGE_FALL,
             reg, 16, false /*no rb*/
         );
     }
