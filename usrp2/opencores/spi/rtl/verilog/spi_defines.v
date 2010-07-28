@@ -102,8 +102,8 @@
 // Number of device select signals. Use SPI_SS_NB for fine tuning the 
 // exact number.
 //
-`define SPI_SS_NB_8
-//`define SPI_SS_NB_16
+//`define SPI_SS_NB_8
+`define SPI_SS_NB_16
 //`define SPI_SS_NB_24
 //`define SPI_SS_NB_32
 
