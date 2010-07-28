@@ -29,7 +29,7 @@
 #include <i2c.h>
 #include "usrp2/fw_common.h"
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 static ethernet_t ed_state;
 static ethernet_link_changed_callback_t ed_callback = 0;
@@ -222,8 +222,12 @@ ethernet_init(void)
      | PHY_INT_RX_STATUS_CHANGE
      );
 
-  eth_mac_miim_read(PHY_INT_STATUS);
+  eth_mac_miim_read(PHY_INT_STATUS); //clear interrupts
   eth_mac_miim_write(PHY_INT_MASK, mask);	// enable the ones we want
+
+	//set the LED behavior to activity instead of link
+	unsigned led = (LED_ACTIVITY << PHY_LED_LINK_LSB);
+	eth_mac_miim_write(PHY_LED2, led);
 
   pic_register_handler(IRQ_PHY, eth_phy_irq_handler);
 

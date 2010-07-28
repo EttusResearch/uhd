@@ -42,6 +42,7 @@
 #define PHY_INT_MASK     24
 #define PHY_INT_STATUS   25
 #define PHY_PHY_STATUS   26
+#define PHY_LED2         28
 
 /* Bit definitions for some of the registers above */
 
@@ -206,5 +207,29 @@
 #define PHY_INT_AUTONEG_STATUS_CHANGE (1 << 8)
 #define PHY_INT_MDIO_SYNC_LOST (1 << 9)
 #define PHY_INT_TDR_IP_PHONE   (1 << 10)
+
+/* PHY LED status register 2 (used for controlling link LED for activity light) */
+#define PHY_LED_TXRX_LSB           12
+#define PHY_LED_LINK_LSB           8
+#define PHY_LED_100_LSB            4
+#define PHY_LED_1000_LSB           0
+
+#define LED_1000                   0
+#define LED_100_TX                 1
+#define LED_10                     2
+#define LED_1000_ON_100_BLINK      3
+#define LED_LINK                   4
+#define LED_TX                     5
+#define LED_RX                     6
+#define LED_ACTIVITY               7
+#define LED_FULLDUPLEX             8
+#define LED_COLLISION              9
+#define LED_LINK_ON_ACTIVITY_BLINK 10
+#define LED_LINK_ON_RX_BLINK       11
+#define LED_FULL_DUPLEX_ON_COLLISION_BLINK 12
+#define LED_BLINK                  13
+#define LED_ON                     14
+#define LED_OFF                    15
+
 
 #endif /* INCLUDED_ETH_PHY_H */

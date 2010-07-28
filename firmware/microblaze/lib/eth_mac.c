@@ -104,7 +104,7 @@ eth_mac_miim_write(int addr, int value)
   eth_mac->miitx_data = value;
   eth_mac->miicommand = MIIC_WCTRLDATA;
 
-  //printf("MIIM-WRITE ADDR 0x%x VAL 0x%x\n",addr,value);
+//  printf("MIIM-WRITE ADDR 0x%x VAL 0x%x\n",addr,value);
   while((eth_mac->miistatus & MIIS_BUSY) != 0)
     ;
 }
