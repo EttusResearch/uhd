@@ -218,7 +218,7 @@ module u2plus
 
    // LEDs are active low outputs
    wire [5:0] leds_int;
-   assign     {leds,ETH_LED} = ~leds_int;  // drive low to turn on leds
+   assign     {leds,ETH_LED} = {6'b111110 ^ leds_int};  // drive low to turn on leds
    
    // SPI
    wire       miso, mosi, sclk;
@@ -303,7 +303,7 @@ module u2plus
    u2plus_core u2p_c(.dsp_clk           (dsp_clk),
 		     .wb_clk            (wb_clk),
 		     .clock_ready       (clock_ready),
-		     .clk_to_mac	(CLK_TO_MAC),
+		     .clk_to_mac	(CLK_TO_MAC_int2),
 		     .pps_in		(pps_in),
 		     .leds		(leds_int),
 		     .debug		(debug[31:0]),
