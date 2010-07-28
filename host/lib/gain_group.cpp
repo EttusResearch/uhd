@@ -70,6 +70,7 @@ public:
 
     void set_value(float gain){
         std::vector<gain_fcns_t> all_fcns = get_all_fcns();
+        if (all_fcns.size() == 0) return; //nothing to set!
 
         //get the max step size among the gains
         float max_step = 0;
