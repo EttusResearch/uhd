@@ -25,8 +25,6 @@
 #include <vector>
 #include <iostream>
 
-#define rint(x) boost::math::iround(x)
-
 using namespace uhd;
 
 static const bool verbose = false;
@@ -85,7 +83,7 @@ public:
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             const gain_range_t range = fcns.get_range();
             gain_bucket.push_back(
-                max_step*rint(std::clip(gain_left_to_distribute, range.min, range.max)/max_step)
+                max_step*int(std::clip(gain_left_to_distribute, range.min, range.max)/max_step)
             );
             gain_left_to_distribute -= gain_bucket.back();
         }
