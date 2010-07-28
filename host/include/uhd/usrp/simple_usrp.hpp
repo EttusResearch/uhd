@@ -152,6 +152,12 @@ public:
     virtual std::vector<std::string> get_tx_antennas(void) = 0;
 
     virtual bool get_tx_lo_locked(void) = 0;
+
+    /*******************************************************************
+     * Interface access methods
+     ******************************************************************/
+    virtual wax::obj get_rx_dboard_iface(void) = 0;
+    virtual wax::obj get_tx_dboard_iface(void) = 0;
 };
 
 }}

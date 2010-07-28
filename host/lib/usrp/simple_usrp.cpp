@@ -228,6 +228,18 @@ public:
         return _tx_subdev[SUBDEV_PROP_LO_LOCKED].as<bool>();
     }
 
+    /*******************************************************************
+     * Interface access methods
+     ******************************************************************/
+
+    wax::obj get_rx_dboard_iface(void) {
+        return _rx_dboard;
+    }
+
+    wax::obj get_tx_dboard_iface(void) {
+        return _tx_dboard;
+    }
+
 private:
     device::sptr _dev;
     wax::obj _mboard;
