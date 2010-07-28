@@ -78,6 +78,11 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
         val = _codec_rx_gains[name];
         return;
 
+    case CODEC_PROP_GAIN_RANGE:
+	assert_has(codec_rx_gain_ranges.keys(), name, "codec rx gain range name");
+	val = codec_rx_gain_ranges[name];
+	return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
