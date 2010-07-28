@@ -86,12 +86,16 @@ public:
         }
     }
 
-    void set_rx_digital_gain(float gain) {  //combine fine/correction digital gains
+    void set_rx_digital_gain(float gain) {  //fine digital gain
       if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
-        int fine_gain = int(gain/0.5);
-        _ads62p44_regs.fine_gain = fine_gain; //hey what about when it calls for 6.5dB?
-        _ads62p44_regs.gain_correction = (gain - (double(fine_gain) * 0.5)) / 0.05;
+        _ads62p44_regs.fine_gain = int(gain/0.5);
         this->send_ads62p44_reg(0x17);
+      } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
+    }
+
+    void set_rx_digital_fine_gain(float gain) { //gain correction      
+      if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+        _ads62p44_regs.gain_correction = int(gain / 0.05);
         this->send_ads62p44_reg(0x1A);
       } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
     }

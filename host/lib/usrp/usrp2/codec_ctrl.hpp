@@ -42,10 +42,18 @@ public:
 
     /*!
      * Set the digital gain on the USRP2+ ADC (ADS62P44).
-     * \param gain from 0-6.5dB
+     * \param gain from 0-6dB
      */
 
     virtual void set_rx_digital_gain(float gain) = 0;
+
+    /*!
+     * Set the digital gain correction on the USRP2+ ADC (ADS62P44).
+     * \param gain from 0-0.5dB
+     */
+
+    virtual void set_rx_digital_fine_gain(float gain) = 0;
+
 };
 
 #endif /* INCLUDED_CODEC_CTRL_HPP */
