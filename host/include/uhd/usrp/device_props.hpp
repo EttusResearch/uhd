@@ -34,22 +34,6 @@ namespace uhd{ namespace usrp{
         DEVICE_PROP_MBOARD_NAMES   = 'M'  //ro, prop_names_t
     };
 
-    ////////////////////////////////////////////////////////////////////////
-    /*! ------ not dealing with yet, commented out ------------
-    * Possible device codec properties:
-    *   A codec is expected to have a rate and gain elements.
-    *   Other properties can be discovered through the others prop.
-    */
-    /*enum codec_prop_t{
-        CODEC_PROP_NAME,               //ro, std::string
-        CODEC_PROP_OTHERS,             //ro, prop_names_t
-        CODEC_PROP_GAIN,               //rw, gain_t
-        CODEC_PROP_GAIN_RANGE,         //ro, gain_range_t
-        CODEC_PROP_GAIN_NAMES,         //ro, prop_names_t
-        //CODEC_PROP_CLOCK_RATE          //ro, freq_t //----> not sure we care to know
-    };*/
-
-
 }} //namespace
 
 #endif /* INCLUDED_UHD_USRP_DEVICE_PROPS_HPP */

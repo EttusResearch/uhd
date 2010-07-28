@@ -33,6 +33,19 @@ public:
      */
     static sptr make(usrp2_iface::sptr iface);
 
+    /*!
+     * Set the analog preamplifier on the USRP2+ ADC (ADS62P44).
+     * \param gain enable or disable the 3.5dB preamp
+     */
+
+    virtual void set_rx_analog_gain(bool gain) = 0;
+
+    /*!
+     * Set the digital gain on the USRP2+ ADC (ADS62P44).
+     * \param gain from 0-6.5dB
+     */
+
+    virtual void set_rx_digital_gain(float gain) = 0;
 };
 
 #endif /* INCLUDED_CODEC_CTRL_HPP */

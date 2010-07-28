@@ -23,7 +23,9 @@
 namespace uhd{ namespace usrp{
 
     /*!
-     * Possible device dboard properties
+     * Possible device dboard properties:
+     *    A dboard has an id, one or more subdevices, and a codec.
+     *    A dboard is considered to be unidirectional (RX or TX).
      */
     enum dboard_prop_t{
         DBOARD_PROP_NAME         = 'n', //ro, std::string

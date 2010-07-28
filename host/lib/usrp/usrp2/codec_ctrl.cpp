@@ -22,6 +22,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
+#include <uhd/utils/exception.hpp>
 
 static const bool codec_ctrl_debug = false;
 
@@ -79,13 +80,27 @@ public:
         if(_iface->get_hw_rev() < USRP2P_FIRST_HW_REV) { //if we're on a USRP2
           _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_OFF);
         } else { //we're on a USRP2+
-//          _ads62p44_regs.reset = 1;
-//          this->send_ads62p44_reg(0x00); //issue a reset to the ADC
-          //everything else should be pretty much default, i think
-//          _ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
-          
-
+          //send a global power-down to the ADC here... it will get lifted on reset
+          _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
+          this->send_ads62p44_reg(0x14);
         }
+    }
+
+    void set_rx_digital_gain(float gain) {  //combine fine/correction digital gains
+      if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+        int fine_gain = int(gain/0.5);
+        _ads62p44_regs.fine_gain = fine_gain; //hey what about when it calls for 6.5dB?
+        _ads62p44_regs.gain_correction = (gain - (double(fine_gain) * 0.5)) / 0.05;
+        this->send_ads62p44_reg(0x17);
+        this->send_ads62p44_reg(0x1A);
+      } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
+    }
+
+    void set_rx_analog_gain(bool gain) { //turns on/off analog 3.5dB preamp
+      if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+        _ads62p44_regs.coarse_gain = gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
+        this->send_ads62p44_reg(0x14);
+      } else UHD_THROW_INVALID_CODE_PATH();
     }
 
 private:
