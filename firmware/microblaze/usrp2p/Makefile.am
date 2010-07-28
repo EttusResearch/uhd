@@ -45,7 +45,6 @@ noinst_LIBRARIES = libusrp2p.a
 
 libusrp2p_a_SOURCES = \
 	$(COMMON_SRCS) \
-	clocks.c \
 	spif.c \
 	spi_flash.c \
 	spi_flash_read.c \

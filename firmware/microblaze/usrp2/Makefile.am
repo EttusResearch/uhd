@@ -33,7 +33,6 @@ noinst_LIBRARIES = libusrp2.a
 
 libusrp2_a_SOURCES = \
 	$(COMMON_SRCS) \
-	clocks.c \
 	sd.c \
 	ethernet.c
 

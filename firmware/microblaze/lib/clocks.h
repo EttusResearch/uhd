@@ -43,12 +43,12 @@ void clocks_init(void);
  * Configure our master clock source, and whether or not we drive a
  * clock onto the mimo connector.  See MC_flags in usrp2_mimo_config.h.
  */
-void clocks_mimo_config(int flags);
+//void clocks_mimo_config(int flags);
 
 /*!
  * \brief Lock Detect -- Return True if our PLL is locked
  */
-bool clocks_lock_detect();
+//bool clocks_lock_detect();
 
 /*!
  * \brief Enable or disable test clock (extra clock signal)
@@ -63,12 +63,12 @@ void clocks_enable_fpga_clk(bool enable, int divisor);
 /*!
  * \brief Enable or disable clock output sent to MIMO connector
  */
-void clocks_enable_clkexp_out(bool enable, int divisor);
+//void clocks_enable_clkexp_out(bool enable, int divisor);
 
 /*!
  * \brief Enable or disable ethernet phyclk, should always be disabled
  */
-void clocks_enable_eth_phyclk(bool enable, int divisor);
+//void clocks_enable_eth_phyclk(bool enable, int divisor);
 
 /*!
  * \brief Enable or disable clock to DAC

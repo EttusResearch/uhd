@@ -23,6 +23,7 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/ad9510.c \
 	$(top_srcdir)/lib/bsm12.c \
 	$(top_srcdir)/lib/buffer_pool.c \
+	$(top_srcdir)/lib/clocks.c \
 	$(top_srcdir)/lib/dbsm.c \
 	$(top_srcdir)/lib/eeprom.c \
 	$(top_srcdir)/lib/eth_mac.c \

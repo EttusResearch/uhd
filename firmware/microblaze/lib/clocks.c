@@ -52,26 +52,26 @@ clocks_init(void)
 
   // Set up PLL for 10 MHz reference
   // Reg 4, A counter, Don't Care
-  ad9510_write_reg(0x05, 0x00);  // Reg 5, B counter MSBs, 0
-  ad9510_write_reg(0x06, 0x05);  // Reg 6, B counter LSBs, 5
+//  ad9510_write_reg(0x05, 0x00);  // Reg 5, B counter MSBs, 0
+//  ad9510_write_reg(0x06, 0x05);  // Reg 6, B counter LSBs, 5
   // Reg 7, Loss of reference detect, doesn't work yet, 0
-  ad9510_write_reg(0x5A, 0x01); // Update Regs
+//  ad9510_write_reg(0x5A, 0x01); // Update Regs
 
   // Primary clock configuration
-  clocks_mimo_config(MC_WE_DONT_LOCK);
+//  clocks_mimo_config(MC_WE_DONT_LOCK);
 
   // Set up other clocks
   //clocks_enable_test_clk(false, 0);
   //clocks_enable_tx_dboard(false, 0);
   //clocks_enable_rx_dboard(false, 0);
-  clocks_enable_eth_phyclk(false, 0); //PHY clk is separate now (u2r4, u2p)
+//  clocks_enable_eth_phyclk(false, 0); //PHY clk is separate now (u2r4, u2p)
 
   // Enable clock to ADCs and DACs
   //clocks_enable_dac_clk(true, 1);
   //clocks_enable_adc_clk(true, 1);
 }
 
-
+/*
 void
 clocks_mimo_config(int flags)
 {
@@ -121,7 +121,8 @@ clocks_mimo_config(int flags)
   else
     clocks_enable_clkexp_out(false,0); 
 }
-
+*/
+/*
 bool 
 clocks_lock_detect()
 {
@@ -129,7 +130,7 @@ clocks_lock_detect()
     return true;
   return false;
 }
-
+*/
 int inline
 clocks_gen_div(int divisor)
 {
@@ -195,7 +196,7 @@ clocks_enable_fpga_clk(bool enable, int divisor)
 {
   clocks_enable_XXX_clk(enable,divisor,0x3D,0x4A,CLOCK_MODE_PECL);
 }
-
+/*
 // Clock 2 on Rev 3, Clock 5 on Rev 4, Clock 6 on USRP2+
 void
 clocks_enable_clkexp_out(bool enable, int divisor)
@@ -217,7 +218,8 @@ clocks_enable_clkexp_out(bool enable, int divisor)
   else
     putstr("ERR (clocks_enable_clkexp_out): Invalid hw rev, don't know what to do!\n");
 }
-
+*/
+/*
 // Clock 5 on Rev 3, none (was 2) on Rev 4, none on USRP2+
 void
 clocks_enable_eth_phyclk(bool enable, int divisor)
@@ -229,7 +231,7 @@ clocks_enable_eth_phyclk(bool enable, int divisor)
   else
     putstr("(clocks_enable_eth_phyclk): no eth PHY clock or invalid hw rev\n"); //not really an error
 }
-
+*/
 // Clock 3
 /*void
 clocks_enable_dac_clk(bool enable, int divisor)
