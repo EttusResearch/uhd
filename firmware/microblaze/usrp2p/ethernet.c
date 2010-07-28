@@ -69,6 +69,10 @@ ed_link_up(int speed)
 
   ed_set_mac_speed(speed);
 
+	//turn on link LED for USRP2P
+	hal_set_leds((1 << 0), (1 << 0));
+
+
   if (ed_callback)		// fire link changed callback
     (*ed_callback)(speed);
 }
@@ -77,6 +81,9 @@ static void
 ed_link_down(void)
 {
   // putstr("ed_link_down\n");
+
+	//turn off link LED for USRP2P
+	hal_set_leds(0, (1 << 0));
 
   if (ed_callback)		// fire link changed callback
     (*ed_callback)(0);
@@ -226,7 +233,7 @@ ethernet_init(void)
   eth_mac_miim_write(PHY_INT_MASK, mask);	// enable the ones we want
 
 	//set the LED behavior to activity instead of link
-	unsigned led = (LED_ACTIVITY << PHY_LED_LINK_LSB);
+	unsigned led = (LED_ACTIVITY << PHY_LED_LINK_LSB) | (LED_TX << PHY_LED_TXRX_LSB);
 	eth_mac_miim_write(PHY_LED2, led);
 
   pic_register_handler(IRQ_PHY, eth_phy_irq_handler);
