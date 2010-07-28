@@ -25,7 +25,6 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/buffer_pool.c \
 	$(top_srcdir)/lib/dbsm.c \
 	$(top_srcdir)/lib/eeprom.c \
-	$(top_srcdir)/lib/ethernet.c \
 	$(top_srcdir)/lib/eth_mac.c \
 	$(top_srcdir)/lib/_exit.c \
 	$(top_srcdir)/lib/exit.c \

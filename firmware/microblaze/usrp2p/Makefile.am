@@ -49,7 +49,8 @@ libusrp2p_a_SOURCES = \
 	spif.c \
 	spi_flash.c \
 	spi_flash_read.c \
-	bootloader_utils.c
+	bootloader_utils.c \
+	ethernet.c
 
 noinst_PROGRAMS = \
 	usrp2p_txrx_uhd.elf \

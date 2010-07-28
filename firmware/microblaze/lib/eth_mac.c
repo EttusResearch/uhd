@@ -83,14 +83,6 @@ eth_mac_read_rmon(int addr)
 int
 eth_mac_miim_read(int addr)
 {
-  if (hwconfig_simulation_p()){
-    switch(addr){
-    case PHY_LINK_AN:
-      return LANSR_MASTER | LANSR_LINK_GOOD | LANSR_SPEED_1000;
-    default:
-      return 0;
-    }
-  }
 
   int phy_addr = PHY_ADDR;
   eth_mac->miiaddress = ((addr & 0x1f) << 8) | phy_addr;
