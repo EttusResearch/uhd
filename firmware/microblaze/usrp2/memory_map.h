@@ -375,6 +375,10 @@ typedef struct {
   volatile uint32_t     led_src;        // HW or SW control for LEDs
 } output_regs_t;
 
+#define CLK_RESET  (1<<4)
+#define CLK_ENABLE (1<<3) | (1<<2)
+#define CLK_SEL    (1<<1) | (1<<0)
+
 #define SERDES_ENABLE 8
 #define SERDES_PRBSEN 4
 #define SERDES_LOOPEN 2

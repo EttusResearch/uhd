@@ -26,6 +26,7 @@
 #include "mdelay.h"
 #include "clocks.h"
 #include "usrp2/fw_common.h"
+#include "nonstdio.h"
 
 unsigned char u2_hw_rev_major;
 unsigned char u2_hw_rev_minor;
@@ -66,7 +67,7 @@ u2_init(void)
   mdelay(100);
   hal_set_leds(0x1f, 0x1f);
   mdelay(100);
-  hal_set_leds(0x1, 0x1f);  // Leave the first one on
+  hal_set_leds(LED_D, 0x1f);  // Leave one on
 
 #if 0
   // test register readback

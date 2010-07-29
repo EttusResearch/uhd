@@ -25,7 +25,6 @@
 #include "ad9510.h"
 #include "spi.h"
 #include "u2_init.h"
-#include "nonstdio.h"
 
 //USRP2PLUS clocks:
 //Clock 0: testclk
@@ -46,6 +45,7 @@ clocks_init(void)
   // Set up basic clocking functions in AD9510
   ad9510_write_reg(0x45, 0x01); // CLK2 drives distribution
 
+  //enable the 100MHz clock output to the FPGA for 50MHz CPU clock
   clocks_enable_fpga_clk(true, 1);
 
   spi_wait();
@@ -58,7 +58,14 @@ clocks_init(void)
 //  ad9510_write_reg(0x5A, 0x01); // Update Regs
 
   // Primary clock configuration
-  clocks_mimo_config(MC_WE_DONT_LOCK);
+//  clocks_mimo_config(MC_WE_DONT_LOCK);
+
+
+  //wait for the clock to stabilize
+  while(!clocks_lock_detect());
+
+  //issue a reset to the DCM so it locks up to the new freq
+  output_regs->clk_ctrl |= CLK_RESET;
 
   // Set up other clocks
   //clocks_enable_test_clk(false, 0);
@@ -71,7 +78,7 @@ clocks_init(void)
   //clocks_enable_adc_clk(true, 1);
 }
 
-
+/*
 void
 clocks_mimo_config(int flags)
 {
@@ -99,7 +106,7 @@ clocks_mimo_config(int flags)
   spi_wait();
   
   // Allow for clock switchover
-  
+  // The below masks include 0x10, which issues a reset to the DCM.  
   if (flags & _MC_WE_LOCK){		// WE LOCK
     if (flags & _MC_MIMO_CLK_INPUT) {
       // Turn on ref output and choose the MIMO connector
@@ -121,16 +128,14 @@ clocks_mimo_config(int flags)
 //  else
 //    clocks_enable_clkexp_out(false,0); 
 }
+*/
 
-/*
 bool 
 clocks_lock_detect()
 {
-  if(pic_regs->pending & PIC_CLKSTATUS)
-    return true;
-  return false;
+    return (pic_regs->pending & PIC_CLKSTATUS);
 }
-*/
+
 int inline
 clocks_gen_div(int divisor)
 {

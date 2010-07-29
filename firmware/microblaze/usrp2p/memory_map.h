@@ -402,6 +402,10 @@ typedef struct {
   volatile uint32_t     led_src;        // HW or SW control for LEDs
 } output_regs_t;
 
+#define CLK_RESET  (1<<4)
+#define CLK_ENABLE (1<<3) | (1<<2)
+#define CLK_SEL    (1<<1) | (1<<0)
+
 #define SERDES_ENABLE 8
 #define SERDES_PRBSEN 4
 #define SERDES_LOOPEN 2
@@ -412,13 +416,13 @@ typedef struct {
 
 // crazy order that matches the labels on the case
 
-#define	LED_A		(1 << 4)
-#define	LED_B		(1 << 1)
-#define	LED_C		(1 << 3)
-#define	LED_D		(1 << 0)
-#define	LED_E		(1 << 2)
+#define	LED_A		(1 << 2)
+#define	LED_B		(1 << 5)
+#define	LED_E		(1 << 3)
+#define	LED_D		(1 << 1)
+#define	LED_C		(1 << 4)
 //      LED_F		// controlled by CPLD
-#define	LED_RJ45	(1 << 5)
+#define	LED_RJ45	(1 << 0)
 
 #define output_regs ((output_regs_t *) MISC_OUTPUT_BASE)
 
