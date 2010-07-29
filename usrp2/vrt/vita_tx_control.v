@@ -46,6 +46,7 @@ module vita_tx_control
    localparam IBS_CONT_BURST = 2;
    localparam IBS_ERROR = 3;
    localparam IBS_ERROR_DONE = 4;
+   localparam IBS_ERROR_WAIT = 5;
 
    wire [31:0] CODE_UNDERRUN = {seqnum,16'd2};
    wire [31:0] CODE_SEQ_ERROR = {seqnum,16'd4};
@@ -112,7 +113,12 @@ module vita_tx_control
 	 IBS_CONT_BURST :
 	   if(strobe)
 	     begin
-		ibs_state <= IBS_ERROR_DONE;
+		if(policy_next_packet)
+		  ibs_state <= IBS_ERROR_DONE;
+		else if(policy_wait)
+		  ibs_state <= IBS_ERROR_WAIT;
+		else
+		  ibs_state <= IBS_ERROR;
 		error_code <= CODE_UNDERRUN;
 		send_error <= 1;
 	     end
@@ -132,12 +138,15 @@ module vita_tx_control
 	      if(sample_fifo_src_rdy_i & eop)
 		if(policy_next_packet | (policy_next_burst & eob))
 		  ibs_state <= IBS_IDLE;
-		else
-		  ibs_state <= IBS_ERROR_DONE;
+		else if(policy_wait)
+		  ibs_state <= IBS_ERROR_WAIT;
 	   end
-	 IBS_ERROR_DONE :
-	   ;
 
+	 IBS_ERROR_DONE :
+	   send_error <= 0;
+	 
+	 IBS_ERROR_WAIT :
+	   send_error <= 0;
        endcase // case (ibs_state)
 
    assign sample_fifo_dst_rdy_o = (ibs_state == IBS_ERROR) | (strobe & (ibs_state == IBS_RUN));  // FIXME also cleanout
