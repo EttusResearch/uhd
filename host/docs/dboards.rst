@@ -45,7 +45,7 @@ The user may set the receive antenna to be TX/RX or RX2.
 However, when using an RFX board in full-duplex mode,
 the receive antenna will always be set to RX2, regardless of the settings.
 
-Recieve Gains: **PGA0**, Range: 0-45dB
+Recieve Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
