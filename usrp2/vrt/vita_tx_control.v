@@ -143,7 +143,10 @@ module vita_tx_control
 	   end
 
 	 IBS_ERROR_DONE :
-	   send_error <= 0;
+	   begin
+	      send_error <= 0;
+	      ibs_state <= IBS_IDLE;
+	   end
 	 
 	 IBS_ERROR_WAIT :
 	   send_error <= 0;
