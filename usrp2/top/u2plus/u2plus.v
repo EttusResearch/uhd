@@ -151,9 +151,11 @@ module u2plus
    OBUFDS exp_user_out_pin (.O(exp_user_out_p),.OB(exp_user_out_n),.I(exp_user_out));
    defparam 	exp_user_out_pin.IOSTANDARD  = "LVDS_25";
 
-   wire 	dcm_rst 		    = 0;
-
- 
+   reg [5:0] 	clock_ready_d;
+   always @(posedge clk_fpga)
+     clock_ready_d[5:0] <= {clock_ready_d[4:0],clock_ready};
+   wire 	dcm_rst = ~&clock_ready_d & |clock_ready_d;
+   
 `ifdef LVDS
    wire [13:0] 	adc_a, adc_b;
      capture_ddrlvds #(.WIDTH(14)) capture_ddrlvds
