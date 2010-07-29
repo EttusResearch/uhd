@@ -15,6 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
+ADD_EXECUTABLE(tx_continuous_samples tx_continuous_samples.cpp)
+TARGET_LINK_LIBRARIES(tx_continuous_samples uhd)
+
 ADD_EXECUTABLE(benchmark_rx_rate benchmark_rx_rate.cpp)
 TARGET_LINK_LIBRARIES(benchmark_rx_rate uhd)
 
@@ -25,6 +29,7 @@ ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
 
 INSTALL(TARGETS
+    tx_continuous_samples
     benchmark_rx_rate
     rx_timed_samples
     tx_timed_samples
