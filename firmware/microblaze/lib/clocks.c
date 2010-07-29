@@ -58,7 +58,7 @@ clocks_init(void)
 //  ad9510_write_reg(0x5A, 0x01); // Update Regs
 
   // Primary clock configuration
-//  clocks_mimo_config(MC_WE_DONT_LOCK);
+  clocks_mimo_config(MC_WE_DONT_LOCK);
 
   // Set up other clocks
   //clocks_enable_test_clk(false, 0);
@@ -71,7 +71,7 @@ clocks_init(void)
   //clocks_enable_adc_clk(true, 1);
 }
 
-/*
+
 void
 clocks_mimo_config(int flags)
 {
@@ -116,12 +116,12 @@ clocks_mimo_config(int flags)
   }
 
   // Do we drive a clock onto the MIMO connector?
-  if (flags & MC_PROVIDE_CLK_TO_MIMO)
-    clocks_enable_clkexp_out(true,10);
-  else
-    clocks_enable_clkexp_out(false,0); 
+//  if (flags & MC_PROVIDE_CLK_TO_MIMO)
+//    clocks_enable_clkexp_out(true,10);
+//  else
+//    clocks_enable_clkexp_out(false,0); 
 }
-*/
+
 /*
 bool 
 clocks_lock_detect()

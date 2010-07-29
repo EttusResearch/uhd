@@ -43,7 +43,7 @@ void clocks_init(void);
  * Configure our master clock source, and whether or not we drive a
  * clock onto the mimo connector.  See MC_flags in usrp2_mimo_config.h.
  */
-//void clocks_mimo_config(int flags);
+void clocks_mimo_config(int flags);
 
 /*!
  * \brief Lock Detect -- Return True if our PLL is locked
