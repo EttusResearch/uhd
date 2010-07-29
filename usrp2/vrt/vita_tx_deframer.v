@@ -2,7 +2,7 @@
 module vita_tx_deframer
   #(parameter BASE=0,
     parameter MAXCHAN=1)
-   (input clk, input reset, input clear,
+   (input clk, input reset, input clear, input clear_seqnum,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     
     // To FIFO interface of Buffer Pool
@@ -69,13 +69,19 @@ module vita_tx_deframer
    wire        fifo_space;
 
    always @(posedge clk)
+     if(reset | clear_seqnum)
+       seqnum_reg <= 4'hF;
+     else
+       if((vita_state==VITA_HEADER) & src_rdy_i)
+	 seqnum_reg <= seqnum;
+   
+   always @(posedge clk)
      if(reset | clear)
        begin
 	  vita_state 		<= VITA_HEADER;
 	  {has_streamid_reg, has_classid_reg, has_secs_reg, has_tics_reg, has_trailer_reg, is_sob_reg, is_eob_reg} 
 	    <= 0;
 	  seqnum_err <= 0;
-	  seqnum_reg <= 0;
        end
      else 
        if((vita_state == VITA_STORE) & fifo_space)
@@ -107,7 +113,6 @@ module vita_tx_deframer
 		  vita_state <= VITA_TICS;
 		else
 		  vita_state <= VITA_PAYLOAD;
-		seqnum_reg <= seqnum;
 		seqnum_err <= ~(seqnum == next_seqnum);
 	     end // case: VITA_HEADER
 	   VITA_STREAMID :

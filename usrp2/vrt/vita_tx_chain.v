@@ -26,16 +26,17 @@ module vita_tx_chain
 
    wire 		error;
    wire [31:0] 		error_code;
+   wire 		clear_seqnum;
    
    assign underrun = error;
    assign message = error_code;
       
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(streamid),.changed());
+      .in(set_data),.out(streamid),.changed(clear_seqnum));
 
    vita_tx_deframer #(.BASE(BASE_CTRL), .MAXCHAN(MAXCHAN)) vita_tx_deframer
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(clear_vita), .clear_seqnum(clear_seqnum),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
       .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
