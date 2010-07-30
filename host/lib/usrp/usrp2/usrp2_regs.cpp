@@ -92,6 +92,7 @@ usrp2_regs_t usrp2_get_regs(int hw_rev) {
   x.tx_ctrl_num_chan = sr_addr(misc_output_base, x.sr_tx_ctrl + 0);
   x.tx_ctrl_clear_state = sr_addr(misc_output_base, x.sr_tx_ctrl + 1);
   x.tx_ctrl_report_sid = sr_addr(misc_output_base, x.sr_tx_ctrl + 2);
+  x.tx_ctrl_policy = sr_addr(misc_output_base, x.sr_tx_ctrl + 3);
 
   return x;
 }

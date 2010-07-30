@@ -97,6 +97,7 @@ typedef struct {
   int tx_ctrl_num_chan;
   int tx_ctrl_clear_state;
   int tx_ctrl_report_sid;
+  int tx_ctrl_policy;
 } usrp2_regs_t;
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
@@ -261,5 +262,10 @@ usrp2_regs_t usrp2_get_regs(int hw_rev);
 //#define U2_REG_TX_CTRL_NUM_CHAN          _SR_ADDR(SR_TX_CTRL + 0)
 //#define U2_REG_TX_CTRL_CLEAR_STATE       _SR_ADDR(SR_TX_CTRL + 1)
 //#define U2_REG_TX_CTRL_REPORT_SID        _SR_ADDR(SR_TX_CTRL + 2)
+//#define U2_REG_TX_CTRL_POLICY            _SR_ADDR(SR_TX_CTRL + 3)
+
+#define U2_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
+#define U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
+#define U2_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

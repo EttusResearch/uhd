@@ -57,12 +57,15 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             std::vector<elem_type> &elems,
             const time_duration_t &time
         ){
+            boost::system_time exit_time = boost::get_system_time() + time;
             buff_contents_type buff_contents_tmp;
             std::list<size_t> indexes_to_do(_all_indexes);
 
             //do an initial pop to load an initial sequence id
             size_t index = indexes_to_do.front();
-            if (not _buffs[index]->pop_with_timed_wait(buff_contents_tmp, time)) return false;
+            if (not _buffs[index]->pop_with_timed_wait(
+                buff_contents_tmp, exit_time - boost::get_system_time()
+            )) return false;
             elems[index] = buff_contents_tmp.first;
             seq_type expected_seq_id = buff_contents_tmp.second;
             indexes_to_do.pop_front();
@@ -75,7 +78,9 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
                     _there_was_a_clear = false;
                     indexes_to_do = _all_indexes;
                     index = indexes_to_do.front();
-                    if (not _buffs[index]->pop_with_timed_wait(buff_contents_tmp, time)) return false;
+                    if (not _buffs[index]->pop_with_timed_wait(
+                        buff_contents_tmp, exit_time - boost::get_system_time()
+                    )) return false;
                     elems[index] = buff_contents_tmp.first;
                     expected_seq_id = buff_contents_tmp.second;
                     indexes_to_do.pop_front();
@@ -83,7 +88,9 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
 
                 //pop an element off for this index
                 index = indexes_to_do.front();
-                if (not _buffs[index]->pop_with_timed_wait(buff_contents_tmp, time)) return false;
+                if (not _buffs[index]->pop_with_timed_wait(
+                    buff_contents_tmp, exit_time - boost::get_system_time()
+                )) return false;
 
                 //if the sequence id matches:
                 //  store the popped element into the output,
