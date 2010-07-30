@@ -98,6 +98,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //init the tx and rx dboards (do last)
     dboard_init();
+
+    //Issue a stop streaming command (in case it was left running).
+    //Since this command is issued before the networking is setup,
+    //most if not all junk packets will never make it to the socket.
+    this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
