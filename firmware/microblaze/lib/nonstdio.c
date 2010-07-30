@@ -78,3 +78,46 @@ puthex32_nl(unsigned long x)
   puthex32(x);
   newline();
 }
+/*
+void reverse(char s[])
+{
+    int c, i, j;
+
+    for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+        c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
+}
+
+int abs(signed long value) {
+	return (value >= 0) ? value : 0-value;
+}
+
+//we'll keep the puthex functions above because they're way more lightweight. but sometimes you just want to print in decimal, you know?
+char *itoa(signed long value, char *result, int base)
+{
+	// check that the base if valid
+	if (base < 2 || base > 16) { *result = 0; return result; }
+
+	char* out = result;
+	signed long quotient = value;
+
+	do {
+		*out = hex[ abs(quotient % base) ];
+		++out;
+		quotient /= base;
+	} while ( quotient );
+
+	// Only apply negative sign for base 10
+	if ( value < 0 && base == 10) *out++ = '-';
+
+	*out = 0;
+	reverse( result );
+
+	return result;
+
+}
+*/
+
+

@@ -39,16 +39,25 @@ divisor_table[MAX_WB_DIV+1][NSPEEDS] = {
 
 #define u uart_regs
 
+static char uart_mode = UART_MODE_ONLCR;
+
+void
+hal_uart_set_mode(int mode)
+{
+  uart_mode = mode;
+}
+
 void
 hal_uart_init(void)
 {
+	hal_uart_set_mode(UART_MODE_ONLCR);
   u->clkdiv = 217;  // 230400 bps
 }
 
 void
 hal_uart_putc(int ch)
 {
-  if (ch == '\n')		// FIXME for now map \n -> \r\n
+  if (ch == '\n')// && (uart_mode == UART_MODE_ONLCR))		//map \n->\r\n if necessary
     hal_uart_putc('\r');
 
   while (u->txlevel == 0)	 // wait for fifo to have space
@@ -60,7 +69,7 @@ hal_uart_putc(int ch)
 void
 hal_uart_putc_nowait(int ch)
 {
-  if (ch == '\n')		// FIXME for now map \n -> \r\n
+  if (ch == '\n')// && (uart_mode == UART_MODE_ONLCR))		//map \n->\r\n if necessary
     hal_uart_putc('\r');
 
   if(u->txlevel)   // If fifo has space

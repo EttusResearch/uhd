@@ -17,6 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+include $(top_srcdir)/lib/Makefile.inc
+
 ########################################################################
 # lwIP header include dirs
 ########################################################################
@@ -29,20 +31,11 @@ LWIP_INCLUDES = \
 	-I$(LWIPDIR)/src/include/ipv4
 
 ########################################################################
-# local include dirs
-########################################################################
-LOCAL_INCLUDES = \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib
-
-########################################################################
 # misc flags for the mb-gcc compiler
 ########################################################################
 MBGCC_CFLAGS = \
 	--std=gnu99 -Wall -Werror-implicit-function-declaration \
 	-mxl-soft-div -msoft-float -mxl-soft-mul -mxl-barrel-shift
-
-MBGCC_LFLAGS = -Wl,-defsym -Wl,_STACK_SIZE=3072
 
 ########################################################################
 # define for the hal io (FIXME move?)
@@ -51,31 +44,39 @@ MBGCC_LFLAGS = -Wl,-defsym -Wl,_STACK_SIZE=3072
 HAL_IO = -DHAL_IO_USES_UART 
 
 ########################################################################
-# set the cflags and ldflags
+# common cflags and ldflags
 ########################################################################
-AM_CFLAGS = $(MBGCC_CFLAGS) $(LOCAL_INCLUDES) $(LWIP_INCLUDES) $(HAL_IO)
+COMMON_CFLAGS = \
+	-I$(top_srcdir)/../../host/lib/usrp \
+	-I$(top_srcdir)/lib \
+	$(MBGCC_CFLAGS) \
+	$(LWIP_INCLUDES) \
+	$(HAL_IO)
 
-AM_LDFLAGS = $(MBGCC_LFLAGS)
+COMMON_LFLAGS = \
+	-Wl,-Map -Wl,$(@:.elf=.map)
 
 ########################################################################
 # Common stuff for building top level microblaze images
 ########################################################################
-AM_LDFLAGS += -Wl,-Map -Wl,$(@:.elf=.map)
-
-%.bin : %.elf
+.elf.bin:
 	$(MB_OBJCOPY) -O binary $< $@
 
-%.dump : %.elf
+.elf.dump:
 	$(MB_OBJDUMP) -DSC $< > $@
 
-%.rom : %.bin
+.bin.rom:
 	$(HEXDUMP) -v -e'1/1 "%.2X\n"' $< > $@
+
+.elf.ihx:
+	$(MB_OBJCOPY) -O ihex $(COMMON_IHX_ARGS) $< $@
 
 _generated_from_elf = \
 	$(noinst_PROGRAMS:.elf=.map) \
 	$(noinst_PROGRAMS:.elf=.bin) \
 	$(noinst_PROGRAMS:.elf=.dump) \
-	$(noinst_PROGRAMS:.elf=.rom)
+	$(noinst_PROGRAMS:.elf=.rom) \
+	$(noinst_PROGRAMS:.elf=.ihx)
 
 noinst_DATA = $(_generated_from_elf)
 

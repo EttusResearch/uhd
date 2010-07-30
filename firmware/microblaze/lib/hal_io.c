@@ -193,3 +193,13 @@ puts(const char *s)
   putchar('\n');
   return 0;
 }
+
+char *
+gets(char * const s)
+{
+	char *x = s;
+	while((*x=(char)hal_uart_getc()) != '\n') x++;
+	*x = 0;
+	return s;
+}
+

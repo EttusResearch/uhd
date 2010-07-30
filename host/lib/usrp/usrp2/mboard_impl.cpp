@@ -45,8 +45,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface = usrp2_iface::make(ctrl_transport);
 
     //extract the mboard rev numbers
-    _rev_lo = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_LSB, 1).at(0);
-    _rev_hi = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_MSB, 1).at(0);
+    _rev_lo = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_LSB, 1).at(0);
+    _rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
 
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -185,14 +185,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            byte_vector_t bytes = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, 6);
+            byte_vector_t bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, 6);
             val = mac_addr_t::from_bytes(bytes).to_string();
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
             boost::asio::ip::address_v4::bytes_type bytes;
-            std::copy(_iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, 4), bytes);
+            std::copy(_iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, 4), bytes);
             val = boost::asio::ip::address_v4(bytes).to_string();
             return;
         }
@@ -275,14 +275,14 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
             byte_vector_t bytes = mac_addr_t::from_string(val.as<std::string>()).to_bytes();
-            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, bytes);
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, bytes);
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
             byte_vector_t bytes(4);
             std::copy(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_bytes(), bytes);
-            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, bytes);
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, bytes);
             return;
         }
     }

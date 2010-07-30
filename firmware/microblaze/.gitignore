@@ -5,6 +5,8 @@
 /*.log
 /*.rom
 /.deps
+/*.guess
+/*.sub
 /Makefile
 /Makefile.in
 /aclocal.m4

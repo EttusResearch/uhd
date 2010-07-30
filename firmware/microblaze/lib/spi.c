@@ -43,7 +43,7 @@ spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags
   spi_wait();
 
   // Tell it which SPI slave device to access
-  spi_regs->ss = slave & 0xff;
+  spi_regs->ss = slave & 0xffff;
 
   // Data we will send
   spi_regs->txrx0 = data;

@@ -48,5 +48,23 @@ void spi_wait(void);
 uint32_t
 spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags);
 
+// ----------------------------------------------------------------
+// Routines that manipulate the FLASH SPI BUS
+// ----------------------------------------------------------------
+
+/*!
+ * \brief One time call to initialize SPI
+ */
+void spif_init(void);
+
+/*! 
+ * \brief Wait for last SPI transaction to complete.
+ * Unless you need to know it completed, it's not necessary to call this.
+ */
+void spif_wait(void);
+
+uint32_t
+spif_transact(bool readback_, int slave, uint32_t data, int length, uint32_t flags);
+
 
 #endif /* INCLUDED_SPI_H */
