@@ -85,6 +85,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
     _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
     _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
+    _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
     //init the ddc
     init_ddc_config();
