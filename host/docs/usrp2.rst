@@ -161,7 +161,7 @@ The USRP2 will reply to icmp echo requests.
 **Monitor the USRP2:**
 You can read the serial port on the rear of the USRP2
 to get debug verbose from the embedded microcontroller.
-Use a standard USB to tty-level serial converter at 230400 baud.
+Use a standard USB to 3.3v-level serial converter at 230400 baud.
 The microcontroller prints useful information about IP addresses,
 MAC addresses, control packets, and fast-path settings.
 
