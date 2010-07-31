@@ -1,3 +1,9 @@
+// Since this FIFO uses a ZBT/NoBL SRAM for its storage which is a since port 
+// device it can only sustain data throughput at half the RAM clock rate.
+// Fair arbitration to ensure this occurs is included in this logic and
+// requests for transactions that can not be completed are held off by (re)using the
+// "full" and "empty" flags.
+
 module nobl_fifo
   #(parameter WIDTH=18,DEPTH=19)
     (   
@@ -17,14 +23,14 @@ module nobl_fifo
 	output reg space_avail,
 	output reg [WIDTH-1:0] read_data,
 	input read_strobe,
-	output reg data_avail
+	output reg data_avail,
+	input upstream_full // (Connect to almost full flag upstream)
 	);
 
    reg [DEPTH-1:0] capacity;
    reg [DEPTH-1:0] wr_pointer;
    reg [DEPTH-1:0] rd_pointer;
    wire [DEPTH-1:0] address;
-   
    reg 		   supress;
    reg 		   data_avail_int;   // Data available with high latency from ext FIFO flag
    wire [WIDTH-1:0] data_in;
@@ -38,7 +44,7 @@ module nobl_fifo
    assign 	   read = read_strobe_int && data_avail_int;
    assign 	   write = write_strobe && space_avail;
 
-   // When a read and write collision occur, supress availability flags next cycle
+   // When a read and write collision occur, supress the availability flags next cycle
    // and complete write followed by read over 2 cycles. This forces balanced arbitration
    // and makes for a simple logic design.
 
@@ -231,9 +237,11 @@ module nobl_fifo
 
    // Start an external FIFO read as soon as a read of the buffer reg is strobed to minimise refill latency.
    // If the buffer reg or the pending buffer reg is already empty also pre-emptively start a read. 
-   // However there must be something in ext FIFO to read.
-   // This means that there can be 2 outstanding reads to the ext FIFO active at any time helping to hide latency.
-   assign read_strobe_int = (read_strobe & data_avail & ~pending_avail) || (~data_avail && ~pending_avail);
+   // However there must be something in the main external FIFO to read for this to occur!.
+   // Pay special attention to upstream devices signalling full due to the number of potential in-flight reads\ that need
+   // to be stalled and stored somewhere.
+   // This means that there can be 3 outstanding reads to the ext FIFO active at any time helping to hide latency.
+   assign read_strobe_int = (read_strobe && data_avail && ~pending_avail && ~upstream_full) || (~data_avail && ~pending_avail && ~upstream_full);
    
 
    //

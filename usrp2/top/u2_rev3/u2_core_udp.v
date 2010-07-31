@@ -119,7 +119,9 @@ module u2_core
    inout [15:0] io_rx,
 
    // External RAM
-   inout [17:0] RAM_D,
+   input [17:0] RAM_D_pi,
+   output [17:0] RAM_D_po,   
+   output RAM_D_poe,
    output [18:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
@@ -646,10 +648,28 @@ module u2_core
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
    
-   fifo_cascade #(.WIDTH(36), .SIZE(DSP_TX_FIFOSIZE)) tx_fifo_cascade
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain({rd1_flags,rd1_dat}), .src_rdy_i(rd1_ready_o), .dst_rdy_o(rd1_ready_i),
-      .dataout(tx_data), .src_rdy_o(tx_src_rdy), .dst_rdy_i(tx_dst_rdy) );
+   ext_fifo #(.EXT_WIDTH(18),.INT_WIDTH(36),.DEPTH(19)) 
+     ext_fifo_i1
+       (
+	.int_clk(dsp_clk),
+	.ext_clk(clk_to_mac),
+	.rst(dsp_rst),
+	.RAM_D_pi(RAM_D_pi),
+	.RAM_D_po(RAM_D_po),
+	.RAM_D_poe(RAM_D_poe),
+	.RAM_A(RAM_A),
+	.RAM_WEn(RAM_WEn),
+	.RAM_CENn(RAM_CENn),
+	.RAM_LDn(RAM_LDn),
+	.RAM_OEn(RAM_OEn),
+	.RAM_CE1n(RAM_CE1n),
+	.datain({rd1_flags,rd1_dat}),
+	.src_rdy_i(rd1_ready_o),               // WRITE
+	.dst_rdy_o(rd1_ready_i),               // not FULL
+	.dataout(tx_data),
+	.src_rdy_o(tx_src_rdy),               // not EMPTY
+	.dst_rdy_i(tx_dst_rdy)
+	);
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
@@ -678,6 +698,9 @@ module u2_core
       .rx_occupied(ser_rx_occ),.rx_full(ser_rx_full),.rx_empty(ser_rx_empty),
       .serdes_link_up(serdes_link_up),.debug0(debug_serdes0), .debug1(debug_serdes1) );
 
+   assign RAM_CLK = clk_to_mac;
+   
+   
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 

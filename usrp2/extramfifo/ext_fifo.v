@@ -1,3 +1,20 @@
+//
+// FIFO backed by an off chip ZBT/NoBL SRAM.
+//
+// This module and its sub-hierarchy implment a FIFO capable of sustaining 
+// a data throughput rate of at least int_clk/2 * 36bits and bursts of int_clk * 36bits.
+//
+// This has been designed and tested for an int_clk of 100MHz and an ext_clk of 125MHz,
+// your milage may vary with other clock ratio's especially those where int_clk < ext_clk.
+// Testing has also exclusively used a rst signal synchronized to int_clk.
+//
+// Interface operation mimics a Xilinx FIFO configured as "First Word Fall Through",
+// though signal naming differs.
+//
+// For FPGA use registers interfacing directly with signals prefixed "RAM_*" should be 
+// packed into the IO ring.
+//
+
 module ext_fifo
    #(parameter INT_WIDTH=36,EXT_WIDTH=18,DEPTH=19)
     (
@@ -24,24 +41,23 @@ module ext_fifo
    wire [EXT_WIDTH-1:0] write_data;
    wire [EXT_WIDTH-1:0] read_data;
    wire 	    full1, empty1;
-   wire 	    full2, empty2;
-  
+   wire 	    almost_full2, full2, empty2;
+   wire [INT_WIDTH-1:0] data_to_fifo;
+   wire [INT_WIDTH-1:0] data_from_fifo;
 
+   
    // FIFO buffers data from UDP engine into external FIFO clock domain.
    fifo_xlnx_512x36_2clk_36to18 fifo_xlnx_512x36_2clk_36to18_i1 (
 								 .rst(rst),
 								 .wr_clk(int_clk),
 								 .rd_clk(ext_clk),
-								 .din(datain), // Bus [35 : 0] 
-								 .wr_en(src_rdy_i),
-								 .rd_en(space_avail&~empty1),
-							//	 .rd_en(~full2&~empty1),
+								 .din(datain), // Bus [35 : 0]						
+								 .wr_en(src_rdy_i),						
+								 .rd_en(space_avail&~empty1),						
 								 .dout(write_data), // Bus [17 : 0] 
 								 .full(full1),			
 							         .empty(empty1));
    assign 	    dst_rdy_o = ~full1;
-
-   
 
    // External FIFO running at ext clock rate  and 18 bit width.
    nobl_fifo  #(.WIDTH(EXT_WIDTH),.DEPTH(DEPTH))
@@ -63,10 +79,10 @@ module ext_fifo
 	   .space_avail(space_avail),
 	   .read_data(read_data),
 	   .read_strobe(data_avail & ~full2),
-	   .data_avail(data_avail)
+	   .data_avail(data_avail),
+	   .upstream_full(almost_full2)
 	   );
- 
-   
+    
  
    // FIFO buffers data read from external FIFO into DSP clk domain and to TX DSP.
    fifo_xlnx_512x36_2clk_18to36 fifo_xlnx_512x36_2clk_18to36_i1 (
@@ -74,47 +90,13 @@ module ext_fifo
 								 .wr_clk(ext_clk),
 								 .rd_clk(int_clk),
 								 .din(read_data), // Bus [17 : 0]
-							//	 .din(write_data), // Bus [17 : 0]
 								 .wr_en(data_avail & ~full2  ),
-							//	 .wr_en(~full2&~empty1),
 								 .rd_en(dst_rdy_i),
-								 .dout(dataout), // Bus [35 : 0] 
+								 .dout(dataout), // Bus [35 : 0]
 								 .full(full2),
+								 .almost_full(almost_full2),
 								 .empty(empty2));
    assign  src_rdy_o = ~empty2;
 
    
-
-   wire [35:0] CONTROL0;
-   reg [7:0]   datain_reg,write_data_reg,read_data_reg ;
-   reg 	    space_avail_reg,data_avail_reg,empty1_reg,full2_reg   ;
-
-   always @(posedge ext_clk)
-     begin
-	//datain_reg <= datain[7:0];
-	write_data_reg <= write_data[7:0];
-	read_data_reg <= read_data[7:0];
-	space_avail_reg <= space_avail;
-	data_avail_reg <= data_avail;	
-	empty1_reg <= empty1;	
-	full2_reg <= full2;	
-     end
-   
-   
-   icon icon_i1
-     (
-      .CONTROL0(CONTROL0)
-      );
-   
-   ila ila_i1
-     (    
-	  .CLK(ext_clk), 
-	  .CONTROL(CONTROL0), 
-	  //    .TRIG0(address_reg), 
-	  .TRIG0(write_data_reg[7:0]), 
-	  .TRIG1(read_data_reg[7:0]),
-	  .TRIG2(0),
-	  .TRIG3({space_avail_reg,data_avail_reg,empty1_reg,full2_reg})
-	  );
-
 endmodule // ext_fifo

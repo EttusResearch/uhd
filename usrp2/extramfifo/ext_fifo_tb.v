@@ -58,18 +58,18 @@ module ext_fifo_tb();
 	repeat (5) @(negedge int_clk);
 	rst <= 0;
 	@(negedge int_clk);
-	repeat (1000)
+	repeat (4000)
 	  begin
 	     @(negedge int_clk);
-	     datain <= datain + 1;
-	     src_rdy_i <= 1;
-	     @(negedge int_clk);
-	     src_rdy_i <= 0;
+	     datain <= datain + dst_rdy_o;
+	     src_rdy_i <= dst_rdy_o;
+//	     @(negedge int_clk);
+//	     src_rdy_i <= 0;
 //	     @(negedge int_clk);
 //	     dst_rdy_i <= src_rdy_o;
 //	     @(negedge int_clk);
 //	     dst_rdy_i <= 0;
-	     repeat (2) @(negedge int_clk);
+//	     repeat (2) @(negedge int_clk);
 	  end // repeat (1000)
 	// Fall through fifo, first output already valid
 	if (dataout !== ref_dataout)
@@ -77,16 +77,16 @@ module ext_fifo_tb();
 	repeat (1000)
 	  begin
 	     @(negedge int_clk);
-	     datain <= datain + 1;
-	     src_rdy_i <= 1;
+	     datain <= datain + dst_rdy_o ;
+	     src_rdy_i <= dst_rdy_o;
 	     @(negedge int_clk);
 	     src_rdy_i <= 0;
 	     @(negedge int_clk);
-	     ref_dataout <= ref_dataout + 1;
+	     ref_dataout <= ref_dataout + src_rdy_o ;
 	     dst_rdy_i <= src_rdy_o;
-	     @(negedge int_clk);
-	     if (dataout !== ref_dataout)
+	     if ((dataout !== ref_dataout) && src_rdy_o)
 	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	     @(negedge int_clk);
 	     dst_rdy_i <= 0;
 //	     repeat (2) @(negedge int_clk);
 	  end // repeat (1000)
@@ -98,11 +98,11 @@ module ext_fifo_tb();
 //	     @(negedge int_clk);
 //	     src_rdy_i <= 0;
 	     @(negedge int_clk);
-	     ref_dataout <= ref_dataout + 1;
+	     ref_dataout <= ref_dataout + src_rdy_o;
 	     dst_rdy_i <= src_rdy_o;
-	     @(negedge int_clk);
-	     if (dataout !== ref_dataout)
+	     if ((dataout !== ref_dataout) && src_rdy_o)
 	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	     @(negedge int_clk);
 	     dst_rdy_i <= 0;
 //	     repeat (2) @(negedge int_clk);
 	  end // repeat (1000)
@@ -210,13 +210,7 @@ module ext_fifo_tb();
 
    assign 		#2 RAM_A_ext = RAM_A;
    
-/* -----\/----- EXCLUDED -----\/-----
-   wire  		[13:0] temp1;
-   assign 		temp1 = 14'h0;
-   wire 		[3:0] temp2;
-   assign 		temp2 = 4'h0;
- -----/\----- EXCLUDED -----/\----- */
-   
+ 
    
    idt71v65603s150  idt71v65603s150_i1
      (

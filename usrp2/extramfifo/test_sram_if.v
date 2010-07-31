@@ -1,3 +1,7 @@
+// Instantiate this block at the core level to conduct closed 
+// loop testing of the AC performance of the USRP2 SRAM interface
+
+
 `define WIDTH 18
 `define DEPTH 19
 
