@@ -44,6 +44,7 @@ module fifo_xlnx_512x36_2clk_18to36(
 	rst,
 	wr_clk,
 	wr_en,
+	almost_full,
 	dout,
 	empty,
 	full);
@@ -55,6 +56,7 @@ input rd_en;
 input rst;
 input wr_clk;
 input wr_en;
+output almost_full;
 output [35 : 0] dout;
 output empty;
 output full;
@@ -73,7 +75,7 @@ output full;
 		.C_FAMILY("spartan3"),
 		.C_FULL_FLAGS_RST_VAL(0),
 		.C_HAS_ALMOST_EMPTY(0),
-		.C_HAS_ALMOST_FULL(0),
+		.C_HAS_ALMOST_FULL(1),
 		.C_HAS_BACKUP(0),
 		.C_HAS_DATA_COUNT(0),
 		.C_HAS_INT_CLK(0),
@@ -128,6 +130,7 @@ output full;
 		.RST(rst),
 		.WR_CLK(wr_clk),
 		.WR_EN(wr_en),
+		.ALMOST_FULL(almost_full),
 		.DOUT(dout),
 		.EMPTY(empty),
 		.FULL(full),
@@ -145,7 +148,6 @@ output full;
 		.SRST(),
 		.WR_RST(),
 		.ALMOST_EMPTY(),
-		.ALMOST_FULL(),
 		.DATA_COUNT(),
 		.OVERFLOW(),
 		.PROG_EMPTY(),

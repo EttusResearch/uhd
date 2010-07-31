@@ -1,3 +1,5 @@
+// Tested against an IDT 71v65603s150 in simulation and a Cypress 7C1356C in the real world.
+
 module nobl_if
   #(parameter WIDTH=18,DEPTH=19)  
     (
@@ -35,9 +37,9 @@ module nobl_if
    reg [WIDTH-1:0] data_out_pipe3;
 
    assign 	   RAM_LDn = 0;
+   // ZBT/NoBL RAM actually manages its own output enables very well.
    assign 	   RAM_OEn = 0;
    
-
    //
    // Pipeline stage 1
    //
@@ -129,8 +131,5 @@ module nobl_if
 	  else
 	    data_in_valid <= 1'b0;
        end // always @ (posedge clk)
-   
-   
-   
-   
+     
 endmodule // nobl_if

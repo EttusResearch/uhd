@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version K.39
-# Date: Thu Jul 29 23:02:41 2010
+# Date: Fri Jul 30 20:43:00 2010
 #
 ##############################################################
 #
@@ -36,7 +36,7 @@ SELECT Fifo_Generator family Xilinx,_Inc. 4.4
 # END Select
 # BEGIN Parameters
 CSET almost_empty_flag=false
-CSET almost_full_flag=false
+CSET almost_full_flag=true
 CSET component_name=fifo_xlnx_512x36_2clk_18to36
 CSET data_count=false
 CSET data_count_width=10
@@ -78,5 +78,5 @@ CSET write_data_count=false
 CSET write_data_count_width=10
 # END Parameters
 GENERATE
-# CRC: 117ae77f
+# CRC: 9b689ee4
 
