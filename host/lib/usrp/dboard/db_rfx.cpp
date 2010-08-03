@@ -241,10 +241,10 @@ void rfx_xcvr::set_tx_ant(const std::string &ant){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-static float rx_pga0_gain_to_dac_volts(float &gain){
+static float rx_pga0_gain_to_dac_volts(float &gain, float range){
     //voltage level constants (negative slope)
     static const float max_volts = float(.2), min_volts = float(1.2);
-    static const float slope = (max_volts-min_volts)/45;
+    static const float slope = (max_volts-min_volts)/(range);
 
     //calculate the voltage for the aux dac
     float dac_volts = std::clip<float>(gain*slope + min_volts, max_volts, min_volts);
@@ -263,7 +263,8 @@ void rfx_xcvr::set_tx_gain(float, const std::string &name){
 void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
     assert_has(_rx_gain_ranges.keys(), name, "rfx rx gain name");
     if(name == "PGA0"){
-        float dac_volts = rx_pga0_gain_to_dac_volts(gain);
+        float dac_volts = rx_pga0_gain_to_dac_volts(gain, 
+                              (_rx_gain_ranges["PGA0"].max - _rx_gain_ranges["PGA0"].min));
         _rx_gains[name] = gain;
 
         //write the new voltage to the aux dac
