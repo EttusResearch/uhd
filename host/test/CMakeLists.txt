@@ -29,6 +29,7 @@ ADD_EXECUTABLE(main_test
     gain_handler_test.cpp
     tune_helper_test.cpp
     vrt_test.cpp
+    warning_test.cpp
     wax_test.cpp
 )
 TARGET_LINK_LIBRARIES(main_test uhd)
