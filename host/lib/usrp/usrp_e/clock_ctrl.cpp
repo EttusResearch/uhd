@@ -164,7 +164,7 @@ public:
 
     void set_rx_dboard_clock_rate(double rate){
         assert_has(get_rx_dboard_clock_rates(), rate, "rx dboard clock rate");
-        size_t divider = size_t(rate/master_clock_rate);
+        size_t divider = size_t(master_clock_rate/rate);
         //set the divider registers
         set_clock_divider(divider,
             _ad9522_regs.divider3_low_cycles,
@@ -194,7 +194,7 @@ public:
 
     void set_tx_dboard_clock_rate(double rate){
         assert_has(get_tx_dboard_clock_rates(), rate, "tx dboard clock rate");
-        size_t divider = size_t(rate/master_clock_rate);
+        size_t divider = size_t(master_clock_rate/rate);
         //set the divider registers
         set_clock_divider(divider,
             _ad9522_regs.divider2_low_cycles,
