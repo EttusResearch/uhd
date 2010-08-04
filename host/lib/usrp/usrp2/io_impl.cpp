@@ -144,11 +144,13 @@ void usrp2_impl::io_impl::recv_pirate_loop(
  **********************************************************************/
 void usrp2_impl::io_init(void){
     //send a small data packet so the usrp2 knows the udp source port
-    for(size_t i = 0; i < _data_transports.size(); i++){
-        managed_send_buffer::sptr send_buff = _data_transports[i]->get_send_buff();
-        boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
-        memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    BOOST_FOREACH(zero_copy_if::sptr data_transport, _data_transports){
+        managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
+        static const boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
+        std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
+        //drain the recv buffers (may have junk)
+        while (data_transport->get_recv_buff().get());
     }
 
     //the number of recv frames is the number for the first transport

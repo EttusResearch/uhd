@@ -89,6 +89,7 @@ typedef struct {
 #define SPI_SS_TX_DAC   32
 #define SPI_SS_TX_ADC   64
 #define SPI_SS_TX_DB   128
+#define SPI_SS_ADS64P44 256
 
 // Masks for different parts of CTRL reg
 #define SPI_CTRL_ASS      (1<<13)
@@ -373,6 +374,10 @@ typedef struct {
   volatile uint32_t     flush_icache;   // Flush the icache
   volatile uint32_t     led_src;        // HW or SW control for LEDs
 } output_regs_t;
+
+#define CLK_RESET  (1<<4)
+#define CLK_ENABLE (1<<3) | (1<<2)
+#define CLK_SEL    (1<<1) | (1<<0)
 
 #define SERDES_ENABLE 8
 #define SERDES_PRBSEN 4

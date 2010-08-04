@@ -41,7 +41,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "clocks.h"
-#include <vrt/bits.h>
 #include "usrp2/fw_common.h"
 #include <i2c.h>
 #include <ethertype.h>
@@ -266,7 +265,7 @@ void handle_udp_ctrl_packet(
      * Peek and Poke Register
      ******************************************************************/
     case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
-        if (ctrl_data_in->data.poke_args.addr < 0xC000){
+        if (0){//ctrl_data_in->data.poke_args.addr < 0xC000){
             printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
         }
         else switch(ctrl_data_in->data.poke_args.num_bytes){
@@ -484,7 +483,7 @@ main(void)
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
-      dbsm_handle_tx_underrun(&dsp_tx_sm);
+      //dbsm_handle_tx_underrun(&dsp_tx_sm);
       pic_regs->pending = PIC_UNDERRUN_INT;	// clear interrupt
       putchar('U');
     }

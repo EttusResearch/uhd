@@ -1,8 +1,6 @@
 #
 # Copyright 2010 Ettus Research LLC
 #
-# Copyright 2008 Free Software Foundation, Inc.
-#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -17,14 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include $(top_srcdir)/Makefile.common
+#This file will be included by cmake, use absolute paths!
 
-SUBDIRS = net
-
-noinst_HEADERS = \
-    usrp2_fpga_regs.h \
-    usrp2_i2c_addr.h \
-    usrp2_clock_bits.h \
-    usrp2_types.h \
-    vrt/bits.h \
-    vrt/types.h
+LIBUHD_APPEND_SOURCES(
+    ${CMAKE_SOURCE_DIR}/lib/utils/assert.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/gain_group.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/load_modules.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/props.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/thread_priority.cpp
+)
