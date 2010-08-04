@@ -17,7 +17,27 @@
 
 include $(top_srcdir)/Makefile.common
 
-noinst_HEADERS = \
-	eth_mac_addr.h \
-	padded_eth_hdr.h \
-	socket_address.h
+AM_CFLAGS = \
+	$(COMMON_CFLAGS)
+
+AM_LDFLAGS = \
+	$(COMMON_LFLAGS) \
+	libusrp2.a \
+	-Wl,-defsym -Wl,_TEXT_START_ADDR=0x0050 \
+	-Wl,-defsym -Wl,_STACK_SIZE=3072
+
+########################################################################
+# USRP2 specific library and programs
+########################################################################
+noinst_LIBRARIES = libusrp2.a
+
+libusrp2_a_SOURCES = \
+	$(COMMON_SRCS) \
+	sd.c \
+	ethernet.c
+
+noinst_PROGRAMS = \
+	usrp2_txrx_uhd.elf
+
+usrp2_txrx_uhd_elf_SOURCES = \
+	$(top_srcdir)/apps/txrx_uhd.c

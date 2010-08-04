@@ -38,7 +38,7 @@ Run the following commands:
     ./configure --host=mb
     make
 
-*The image file will be ./apps/txrx_uhd.bin*
+*The image file will be ./usrp2/usrp2_txrx_uhd.bin*
 
 ------------------------------------------------------------------------
 Load the images onto the SD card

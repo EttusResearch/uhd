@@ -83,14 +83,6 @@ eth_mac_read_rmon(int addr)
 int
 eth_mac_miim_read(int addr)
 {
-  if (hwconfig_simulation_p()){
-    switch(addr){
-    case PHY_LINK_AN:
-      return LANSR_MASTER | LANSR_LINK_GOOD | LANSR_SPEED_1000;
-    default:
-      return 0;
-    }
-  }
 
   int phy_addr = PHY_ADDR;
   eth_mac->miiaddress = ((addr & 0x1f) << 8) | phy_addr;
@@ -112,7 +104,7 @@ eth_mac_miim_write(int addr, int value)
   eth_mac->miitx_data = value;
   eth_mac->miicommand = MIIC_WCTRLDATA;
 
-  //printf("MIIM-WRITE ADDR 0x%x VAL 0x%x\n",addr,value);
+//  printf("MIIM-WRITE ADDR 0x%x VAL 0x%x\n",addr,value);
   while((eth_mac->miistatus & MIIS_BUSY) != 0)
     ;
 }
