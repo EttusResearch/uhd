@@ -44,8 +44,7 @@ ENDMACRO(LIBUHD_PYTHON_GEN_SOURCE)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/ic_reg_maps/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/transport/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/CMakeLists.txt)
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/dboard/CMakeLists.txt)
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/usrp2/CMakeLists.txt)
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/utils/CMakeLists.txt)
 
 ########################################################################
 # Setup defines for process scheduling
@@ -112,11 +111,7 @@ CONFIGURE_FILE(
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/gain_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )

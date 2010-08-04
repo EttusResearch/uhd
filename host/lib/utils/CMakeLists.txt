@@ -18,15 +18,9 @@
 #This file will be included by cmake, use absolute paths!
 
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_base.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_eeprom.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_id.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_manager.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dsp_utils.hpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/mimo_usrp.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/simple_usrp.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/tune_helper.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/assert.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/gain_handler.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/load_modules.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/props.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/thread_priority.cpp
 )
-
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/dboard/CMakeLists.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/CMakeLists.txt)
