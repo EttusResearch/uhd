@@ -99,6 +99,10 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //init the tx and rx dboards (do last)
     dboard_init();
 
+    //set default subdev specs
+    (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
+    (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
+
     //Issue a stop streaming command (in case it was left running).
     //Since this command is issued before the networking is setup,
     //most if not all junk packets will never make it to the socket.
@@ -263,6 +267,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         }
         return;
 
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        val = _rx_subdev_spec;
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        val = _tx_subdev_spec;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -305,6 +317,40 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_STREAM_CMD:
         issue_ddc_stream_cmd(val.as<stream_cmd_t>());
+        return;
+
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        _rx_subdev_spec = val.as<subdev_spec_t>();
+        //handle automatic
+        if (_rx_subdev_spec.empty()) _rx_subdev_spec.push_back(
+            subdev_spec_t::pair_t("", _dboard_manager->get_rx_subdev_names().front())
+        );
+        std::cout << "RX " << _rx_subdev_spec.to_pp_string() << std::endl;
+        //sanity check
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
+        uhd::assert_has((*this)[MBOARD_PROP_RX_DBOARD_NAMES].as<prop_names_t>(), _rx_subdev_spec.front().first, "rx dboard names");
+        uhd::assert_has(_dboard_manager->get_rx_subdev_names(), _rx_subdev_spec.front().second, "rx subdev names");
+        //set the mux
+        _iface->poke32(U2_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
+            _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().second)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        _tx_subdev_spec = val.as<subdev_spec_t>();
+        //handle automatic
+        if (_tx_subdev_spec.empty()) _tx_subdev_spec.push_back(
+            subdev_spec_t::pair_t("", _dboard_manager->get_tx_subdev_names().front())
+        );
+        std::cout << "TX " << _tx_subdev_spec.to_pp_string() << std::endl;
+        //sanity check
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() == 1);
+        uhd::assert_has((*this)[MBOARD_PROP_TX_DBOARD_NAMES].as<prop_names_t>(), _tx_subdev_spec.front().first, "tx dboard names");
+        uhd::assert_has(_dboard_manager->get_tx_subdev_names(), _tx_subdev_spec.front().second, "tx subdev names");
+        //set the mux
+        _iface->poke32(U2_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
+            _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().second)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

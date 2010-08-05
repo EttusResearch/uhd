@@ -24,6 +24,7 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/tune_result.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -119,6 +120,8 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
+    virtual void set_rx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec) = 0;
+
     virtual void set_rx_rate_all(double rate) = 0;
     virtual double get_rx_rate_all(void) = 0;
 
@@ -148,6 +151,8 @@ public:
     /*******************************************************************
      * TX methods
      ******************************************************************/
+    virtual void set_tx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec) = 0;
+
     virtual void set_tx_rate_all(double rate) = 0;
     virtual double get_tx_rate_all(void) = 0;
 

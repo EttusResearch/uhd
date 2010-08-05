@@ -29,7 +29,6 @@ namespace uhd{ namespace usrp{
         DBOARD_PROP_NAME         = 'n', //ro, std::string
         DBOARD_PROP_SUBDEV       = 's', //ro, wax::obj
         DBOARD_PROP_SUBDEV_NAMES = 'S', //ro, prop_names_t
-        DBOARD_PROP_USED_SUBDEVS = 'u', //ro, prop_names_t
         DBOARD_PROP_DBOARD_ID    = 'i', //rw, dboard_id_t
         DBOARD_PROP_DBOARD_IFACE = 'f'  //ro, dboard_iface::sptr
         //DBOARD_PROP_CODEC              //ro, wax::obj //----> not sure, dont have to deal with yet

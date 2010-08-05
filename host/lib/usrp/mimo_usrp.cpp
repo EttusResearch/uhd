@@ -19,6 +19,7 @@
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/device_props.hpp>
@@ -46,29 +47,12 @@ public:
     mimo_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr);
 
-        //extract each mboard and its sub-devices
-        BOOST_FOREACH(const std::string &name, (*_dev)[DEVICE_PROP_MBOARD_NAMES].as<prop_names_t>()){
-            _mboards.push_back((*_dev)[named_prop_t(DEVICE_PROP_MBOARD, name)]);
-            _rx_dsps.push_back(_mboards.back()[MBOARD_PROP_RX_DSP]);
-            _tx_dsps.push_back(_mboards.back()[MBOARD_PROP_TX_DSP]);
-
-            //extract rx subdevice
-            _rx_dboards.push_back(_mboards.back()[MBOARD_PROP_RX_DBOARD]);
-            std::string rx_subdev_in_use = _rx_dboards.back()[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
-            _rx_subdevs.push_back(_rx_dboards.back()[named_prop_t(DBOARD_PROP_SUBDEV, rx_subdev_in_use)]);
-
-            //extract tx subdevice
-            _tx_dboards.push_back(_mboards.back()[MBOARD_PROP_TX_DBOARD]);
-            std::string tx_subdev_in_use = _tx_dboards.back()[DBOARD_PROP_USED_SUBDEVS].as<prop_names_t>().at(0);
-            _tx_subdevs.push_back(_tx_dboards.back()[named_prop_t(DBOARD_PROP_SUBDEV, tx_subdev_in_use)]);
-        }
-
         //set the clock config across all mboards (TODO set through api)
         clock_config_t clock_config;
         clock_config.ref_source = clock_config_t::REF_SMA;
         clock_config.pps_source = clock_config_t::PPS_SMA;
-        BOOST_FOREACH(wax::obj mboard, _mboards){
-            mboard[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
+        for (size_t chan = 0; chan < get_num_channels(); chan++){
+            _mboard(chan)[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
         }
     }
 
@@ -87,7 +71,7 @@ public:
         )
             % (*_dev)[DEVICE_PROP_NAME].as<std::string>()
         );
-        for (size_t i = 0; i < get_num_channels(); i++){
+        for (size_t chan = 0; chan < get_num_channels(); chan++){
             buff += str(boost::format(
                 "  Channel: %u\n"
                 "    Mboard: %s\n"
@@ -97,21 +81,21 @@ public:
                 "    TX DSP: %s\n"
                 "    TX Dboard: %s\n"
                 "    TX Subdev: %s\n"
-            ) % i
-                % _mboards.at(i)[MBOARD_PROP_NAME].as<std::string>()
-                % _rx_dsps.at(i)[DSP_PROP_NAME].as<std::string>()
-                % _rx_dboards.at(i)[DBOARD_PROP_NAME].as<std::string>()
-                % _rx_subdevs.at(i)[SUBDEV_PROP_NAME].as<std::string>()
-                % _tx_dsps.at(i)[DSP_PROP_NAME].as<std::string>()
-                % _tx_dboards.at(i)[DBOARD_PROP_NAME].as<std::string>()
-                % _tx_subdevs.at(i)[SUBDEV_PROP_NAME].as<std::string>()
+            ) % chan
+                % _mboard(chan)[MBOARD_PROP_NAME].as<std::string>()
+                % _rx_dsp(chan)[DSP_PROP_NAME].as<std::string>()
+                % _rx_dboard(chan)[DBOARD_PROP_NAME].as<std::string>()
+                % _rx_subdev(chan)[SUBDEV_PROP_NAME].as<std::string>()
+                % _tx_dsp(chan)[DSP_PROP_NAME].as<std::string>()
+                % _tx_dboard(chan)[DBOARD_PROP_NAME].as<std::string>()
+                % _tx_subdev(chan)[SUBDEV_PROP_NAME].as<std::string>()
             );
         }
         return buff;
     }
 
     size_t get_num_channels(void){
-        return _mboards.size();
+        return (*_dev)[DEVICE_PROP_MBOARD_NAMES].as<prop_names_t>().size();
     }
 
     /*******************************************************************
@@ -119,12 +103,12 @@ public:
      ******************************************************************/
     time_spec_t get_time_now(void){
         //the time on the first mboard better be the same on all
-        return _mboards.front()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+        return _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
 
     void set_time_next_pps(const time_spec_t &time_spec){
-        BOOST_FOREACH(wax::obj mboard, _mboards){
-            mboard[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+        for (size_t chan = 0; chan < get_num_channels(); chan++){
+            _mboard(chan)[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
         }
     }
 
@@ -146,33 +130,38 @@ public:
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 
         //verify that the time registers are read to be within a few RTT
-        for (size_t i = 1; i < get_num_channels(); i++){
-            time_spec_t time_0 = _mboards.front()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
-            time_spec_t time_i = _mboards.at(i)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+        for (size_t chan = 1; chan < get_num_channels(); chan++){
+            time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            time_spec_t time_i = _mboard(chan)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
-                std::cerr << boost::format(
-                    "Error: time deviation between board %d and board 0.\n"
-                    "    Board 0 time is %f seconds.\n"
-                    "    Board %d time is %f seconds.\n"
-                ) % i % time_0.get_real_secs() % i % time_i.get_real_secs() << std::endl;
+                uhd::print_warning(str(boost::format(
+                    "Detected time deviation between board %d and board 0.\n"
+                    "Board 0 time is %f seconds.\n"
+                    "Board %d time is %f seconds.\n"
+                ) % chan % time_0.get_real_secs() % chan % time_i.get_real_secs()));
             }
         }
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
-        BOOST_FOREACH(wax::obj mboard, _mboards){
-            mboard[MBOARD_PROP_STREAM_CMD] = stream_cmd;
+        for (size_t chan = 0; chan < get_num_channels(); chan++){
+            _mboard(chan)[MBOARD_PROP_STREAM_CMD] = stream_cmd;
         }
     }
 
     /*******************************************************************
      * RX methods
      ******************************************************************/
+    void set_rx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec){
+        UHD_ASSERT_THROW(spec.size() <= 1);
+        _mboard(chan)[MBOARD_PROP_RX_SUBDEV_SPEC] = spec;
+    }
+
     void set_rx_rate_all(double rate){
         std::vector<double> _actual_rates;
-        BOOST_FOREACH(wax::obj rx_dsp, _rx_dsps){
-            rx_dsp[DSP_PROP_HOST_RATE] = rate;
-            _actual_rates.push_back(rx_dsp[DSP_PROP_HOST_RATE].as<double>());
+        for (size_t chan = 0; chan < get_num_channels(); chan++){
+            _rx_dsp(chan)[DSP_PROP_HOST_RATE] = rate;
+            _actual_rates.push_back(_rx_dsp(chan)[DSP_PROP_HOST_RATE].as<double>());
         }
         _rx_rate = _actual_rates.front();
         if (std::count(_actual_rates, _rx_rate) != _actual_rates.size()) throw std::runtime_error(
@@ -185,61 +174,66 @@ public:
     }
 
     tune_result_t set_rx_freq(size_t chan, double target_freq){
-        return tune_rx_subdev_and_dsp(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq);
+        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), target_freq);
     }
 
     tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_rx_subdev_and_dsp(_rx_subdevs.at(chan), _rx_dsps.at(chan), target_freq, lo_off);
+        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), target_freq, lo_off);
     }
 
     double get_rx_freq(size_t chan){
-        return derive_freq_from_rx_subdev_and_dsp(_rx_subdevs.at(chan), _rx_dsps.at(chan));
+        return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan));
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
-        return add_dsp_shift(_rx_subdevs.at(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsps.at(chan));
+        return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp(chan));
     }
 
     void set_rx_gain(size_t chan, float gain){
-        _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN] = gain;
+        _rx_subdev(chan)[SUBDEV_PROP_GAIN] = gain;
     }
 
     float get_rx_gain(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN].as<float>();
+        return _rx_subdev(chan)[SUBDEV_PROP_GAIN].as<float>();
     }
 
     gain_range_t get_rx_gain_range(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _rx_subdev(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
     }
 
     void set_rx_antenna(size_t chan, const std::string &ant){
-        _rx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA] = ant;
+        _rx_subdev(chan)[SUBDEV_PROP_ANTENNA] = ant;
     }
 
     std::string get_rx_antenna(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA].as<std::string>();
+        return _rx_subdev(chan)[SUBDEV_PROP_ANTENNA].as<std::string>();
     }
 
     std::vector<std::string> get_rx_antennas(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+        return _rx_subdev(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
     bool get_rx_lo_locked(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
+        return _rx_subdev(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
     }
 
     float read_rssi(size_t chan){
-        return _rx_subdevs.at(chan)[SUBDEV_PROP_RSSI].as<float>();
+        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<float>();
     }
 
     /*******************************************************************
      * TX methods
      ******************************************************************/
+    void set_tx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec){
+        UHD_ASSERT_THROW(spec.size() <= 1);
+        _mboard(chan)[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
+    }
+
     void set_tx_rate_all(double rate){
         std::vector<double> _actual_rates;
-        BOOST_FOREACH(wax::obj tx_dsp, _tx_dsps){
-            tx_dsp[DSP_PROP_HOST_RATE] = rate;
-            _actual_rates.push_back(tx_dsp[DSP_PROP_HOST_RATE].as<double>());
+        for (size_t chan = 0; chan < get_num_channels(); chan++){
+            _tx_dsp(chan)[DSP_PROP_HOST_RATE] = rate;
+            _actual_rates.push_back(_tx_dsp(chan)[DSP_PROP_HOST_RATE].as<double>());
         }
         _tx_rate = _actual_rates.front();
         if (std::count(_actual_rates, _tx_rate) != _actual_rates.size()) throw std::runtime_error(
@@ -252,58 +246,77 @@ public:
     }
 
     tune_result_t set_tx_freq(size_t chan, double target_freq){
-        return tune_tx_subdev_and_dsp(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq);
+        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), target_freq);
     }
 
     tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_tx_subdev_and_dsp(_tx_subdevs.at(chan), _tx_dsps.at(chan), target_freq, lo_off);
+        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), target_freq, lo_off);
     }
 
     double get_tx_freq(size_t chan){
-        return derive_freq_from_tx_subdev_and_dsp(_tx_subdevs.at(chan), _tx_dsps.at(chan));
+        return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan));
     }
 
     freq_range_t get_tx_freq_range(size_t chan){
-        return add_dsp_shift(_tx_subdevs.at(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsps.at(chan));
+        return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp(chan));
     }
 
     void set_tx_gain(size_t chan, float gain){
-        _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN] = gain;
+        _tx_subdev(chan)[SUBDEV_PROP_GAIN] = gain;
     }
 
     float get_tx_gain(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN].as<float>();
+        return _tx_subdev(chan)[SUBDEV_PROP_GAIN].as<float>();
     }
 
     gain_range_t get_tx_gain_range(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _tx_subdev(chan)[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
     }
 
     void set_tx_antenna(size_t chan, const std::string &ant){
-        _tx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA] = ant;
+        _tx_subdev(chan)[SUBDEV_PROP_ANTENNA] = ant;
     }
 
     std::string get_tx_antenna(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA].as<std::string>();
+        return _tx_subdev(chan)[SUBDEV_PROP_ANTENNA].as<std::string>();
     }
 
     std::vector<std::string> get_tx_antennas(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+        return _tx_subdev(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
     bool get_tx_lo_locked(size_t chan){
-        return _tx_subdevs.at(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
+        return _tx_subdev(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
     }
 
 private:
     device::sptr _dev;
-    std::vector<wax::obj> _mboards;
-    std::vector<wax::obj> _rx_dsps;
-    std::vector<wax::obj> _tx_dsps;
-    std::vector<wax::obj> _rx_dboards;
-    std::vector<wax::obj> _tx_dboards;
-    std::vector<wax::obj> _rx_subdevs;
-    std::vector<wax::obj> _tx_subdevs;
+    wax::obj _mboard(size_t chan){
+        prop_names_t names = (*_dev)[DEVICE_PROP_MBOARD_NAMES].as<prop_names_t>();
+        return (*_dev)[named_prop_t(DEVICE_PROP_MBOARD, names.at(chan))];
+    }
+    wax::obj _rx_dsp(size_t chan){
+        return _mboard(chan)[MBOARD_PROP_RX_DSP];
+    }
+    wax::obj _tx_dsp(size_t chan){
+        return _mboard(chan)[MBOARD_PROP_TX_DSP];
+    }
+    wax::obj _rx_dboard(size_t chan){
+        std::string db_name = _mboard(chan)[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        return _mboard(chan)[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
+    }
+    wax::obj _tx_dboard(size_t chan){
+        std::string db_name = _mboard(chan)[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        return _mboard(chan)[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
+    }
+    wax::obj _rx_subdev(size_t chan){
+        std::string sd_name = _mboard(chan)[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        return _rx_dboard(chan)[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
+    }
+    wax::obj _tx_subdev(size_t chan){
+        std::string sd_name = _mboard(chan)[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        return _tx_dboard(chan)[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
+    }
 
     //shadows
     double _rx_rate, _tx_rate;
