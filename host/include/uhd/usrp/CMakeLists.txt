@@ -32,6 +32,7 @@ INSTALL(FILES
     dboard_manager.hpp
 
     ### utilities ###
+    subdev_spec.hpp
     tune_helper.hpp
 
     ### interfaces ###
