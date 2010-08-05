@@ -19,11 +19,30 @@
 #define INCLUDED_UHD_USRP_SUBDEV_SPEC_HPP
 
 #include <uhd/config.hpp>
-#include <utility> //std::pair
 #include <vector>
 #include <string>
 
 namespace uhd{ namespace usrp{
+
+    /*!
+     * A subdevice specification (daughterboard, subdevice) name pairing.
+     */
+    struct UHD_API subdev_spec_pair_t{
+        //! The daughterboard name
+        std::string db_name;
+
+        //! The subdevice name
+        std::string sd_name;
+
+        /*!
+         * Create a new subdevice specification pair from dboard and subdev names.
+         * \param db_name the name of a daughterboard slot
+         * \param sd_name the name of a subdevice on that daughterboard
+         */
+        subdev_spec_pair_t(
+            const std::string &db_name, const std::string &sd_name
+        );
+    };
 
     /*!
      * A list of (daughterboard name, subdevice name) pairs:
@@ -48,9 +67,8 @@ namespace uhd{ namespace usrp{
      * An empty subdevice specification can be used to automatically
      * select the first subdevice on the first present daughterboard.
      */
-    class UHD_API subdev_spec_t : public std::vector<std::pair<std::string, std::string> >{
+    class UHD_API subdev_spec_t : public std::vector<subdev_spec_pair_t>{
     public:
-        typedef std::pair<std::string, std::string> pair_t;
 
         /*!
          * Create a subdev specification from a markup string.

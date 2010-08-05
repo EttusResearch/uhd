@@ -232,19 +232,19 @@ private:
         return _mboard()[MBOARD_PROP_TX_DSP];
     }
     wax::obj _rx_dboard(void){
-        std::string db_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        std::string db_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().db_name;
         return _mboard()[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
     }
     wax::obj _tx_dboard(void){
-        std::string db_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        std::string db_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().db_name;
         return _mboard()[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
     }
     wax::obj _rx_subdev(void){
-        std::string sd_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        std::string sd_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
         return _rx_dboard()[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
     }
     wax::obj _tx_subdev(void){
-        std::string sd_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().first;
+        std::string sd_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
         return _tx_dboard()[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
     }
 };

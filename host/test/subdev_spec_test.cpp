@@ -25,8 +25,8 @@ BOOST_AUTO_TEST_CASE(test_subdevice_spec){
 
     //load the subdev spec with something
     uhd::usrp::subdev_spec_t sd_spec;
-    sd_spec.push_back(uhd::usrp::subdev_spec_t::pair_t("A", "AB"));
-    sd_spec.push_back(uhd::usrp::subdev_spec_t::pair_t("B", "AB"));
+    sd_spec.push_back(uhd::usrp::subdev_spec_pair_t("A", "AB"));
+    sd_spec.push_back(uhd::usrp::subdev_spec_pair_t("B", "AB"));
 
     //convert to and from args string
     std::cout << "Pretty Print: " << std::endl << sd_spec.to_pp_string();
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(test_subdevice_spec){
 
     //the contents should match
     for (size_t i = 0; i < sd_spec.size(); i++){
-        BOOST_CHECK_EQUAL(sd_spec.at(i).first, new_sd_spec.at(i).first);
-        BOOST_CHECK_EQUAL(sd_spec.at(i).second, new_sd_spec.at(i).second);
+        BOOST_CHECK_EQUAL(sd_spec.at(i).db_name, new_sd_spec.at(i).db_name);
+        BOOST_CHECK_EQUAL(sd_spec.at(i).sd_name, new_sd_spec.at(i).sd_name);
     }
 }
