@@ -26,6 +26,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -101,8 +102,9 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
-    void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    void set_rx_subdev_spec(const subdev_spec_t &spec){
         _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC] = spec;
+        std::cout << "RX " << _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().to_pp_string() << std::endl;
     }
 
     void set_rx_rate(double rate){
@@ -164,8 +166,9 @@ public:
     /*******************************************************************
      * TX methods
      ******************************************************************/
-    void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    void set_tx_subdev_spec(const subdev_spec_t &spec){
         _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
+        std::cout << "TX " << _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().to_pp_string() << std::endl;
     }
 
     void set_tx_rate(double rate){

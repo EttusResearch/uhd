@@ -152,7 +152,7 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
-    void set_rx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec){
+    void set_rx_subdev_spec(size_t chan, const subdev_spec_t &spec){
         UHD_ASSERT_THROW(spec.size() <= 1);
         _mboard(chan)[MBOARD_PROP_RX_SUBDEV_SPEC] = spec;
     }
@@ -224,7 +224,7 @@ public:
     /*******************************************************************
      * TX methods
      ******************************************************************/
-    void set_tx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec){
+    void set_tx_subdev_spec(size_t chan, const subdev_spec_t &spec){
         UHD_ASSERT_THROW(spec.size() <= 1);
         _mboard(chan)[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
     }

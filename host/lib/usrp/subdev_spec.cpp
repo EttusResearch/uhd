@@ -56,9 +56,13 @@ std::string subdev_spec_t::to_pp_string(void) const{
     size_t count = 0;
     ss << "Subdevice Specification:" << std::endl;
     BOOST_FOREACH(const subdev_spec_pair_t &pair, *this){
+        std::string db_name = pair.db_name;
+        if (db_name == "") db_name = "0";
+        std::string sd_name = pair.sd_name;
+        if (sd_name == "") sd_name = "0";
         ss << boost::format(
             "    Channel %d: Daughterboard %s, Subdevice %s"
-        ) % (count++) % pair.db_name % pair.sd_name << std::endl;
+        ) % (count++) % db_name % sd_name << std::endl;
     }
     return ss.str();
 }
