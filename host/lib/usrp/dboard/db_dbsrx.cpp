@@ -23,6 +23,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
@@ -41,7 +42,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The DBSRX constants
  **********************************************************************/
-static const bool dbsrx_debug = true;
+static const bool dbsrx_debug = false;
 
 static const freq_range_t dbsrx_freq_range(0.8e9, 2.4e9);
 
@@ -113,17 +114,6 @@ private:
         for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t)){
             int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) ? sizeof(boost::uint32_t) : stop_reg - start_addr + 1;
 
-            //create address to start reading register data
-            byte_vector_t address_vector(1);
-            address_vector[0] = start_addr;
-
-            /*
-            //send the address
-            this->get_iface()->write_i2c(
-                _max2118_addr, address_vector
-            );
-            */
-
             //create buffer for register data
             byte_vector_t regs_vector(num_bytes);
 
@@ -135,9 +125,6 @@ private:
             for(boost::uint8_t i=0; i < num_bytes; i++){
                 if (i + start_addr >= status_addr){
                     _max2118_read_regs.set_reg(i + start_addr, regs_vector[i]);
-                    if(dbsrx_debug) std::cerr << boost::format(
-                        "DBSRX: set reg 0x%02x, value 0x%04x"
-                    ) % int(i + start_addr) % int(_max2118_read_regs.get_reg(i + start_addr)) << std::endl;
                 }
                 if(dbsrx_debug) std::cerr << boost::format(
                     "DBSRX: read reg 0x%02x, value 0x%04x, start_addr = 0x%04x, num_bytes %d"
@@ -151,7 +138,7 @@ private:
      * \return true for locked
      */
     bool get_locked(void){
-        read_reg(0x0, 0x1);
+        read_reg(0x0, 0x0);
 
         //mask and return lock detect
         bool locked = 5 >= _max2118_read_regs.adc && _max2118_read_regs.adc >= 2;
@@ -174,16 +161,44 @@ static dboard_base::sptr make_dbsrx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new dbsrx(args, 0x67));
 }
 
-//FIXME different dbid for USRP1 also
+//dbid for USRP2 version
 UHD_STATIC_BLOCK(reg_dbsrx_dboard){
     //register the factory function for the rx dbid
     dboard_manager::register_dboard(0x000D, &make_dbsrx, "DBSRX");
+}
+
+//dbid for USRP1 version
+UHD_STATIC_BLOCK(reg_dbsrx_on_usrp1_dboard){
+    //register the factory function for the rx dbid
+    dboard_manager::register_dboard(0x0002, &make_dbsrx, "DBSRX");
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
 dbsrx::dbsrx(ctor_args_t args, boost::uint8_t max2118_addr) : rx_dboard_base(args){
+    //warn user about incorrect DBID on USRP1, requires R193 populated
+    if (this->get_iface()->get_mboard_name() == "usrp1" and this->get_rx_id() == 0x000D)
+        uhd::print_warning(
+            str(boost::format(
+                "DBSRX: incorrect dbid\n"
+                "%s expects dbid 0x0002 and R193\n"
+                "found dbid == %d\n"
+                "Please see the daughterboard app notes" 
+                ) % (this->get_iface()->get_mboard_name()) % (this->get_rx_id().to_pp_string()))
+        );
+
+    //warn user about incorrect DBID on non-USRP1, requires R194 populated
+    if (this->get_iface()->get_mboard_name() != "usrp1" and this->get_rx_id() == 0x0002)
+        uhd::print_warning(
+            str(boost::format(
+                "DBSRX: incorrect dbid\n"
+                "%s expects dbid 0x000D and R194\n"
+                "found dbid == %d\n"
+                "Please see the daughterboard app notes" 
+                ) % (this->get_iface()->get_mboard_name()) % (this->get_rx_id().to_pp_string()))
+        );
+
     //enable only the clocks we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
@@ -197,15 +212,15 @@ dbsrx::dbsrx(ctor_args_t args, boost::uint8_t max2118_addr) : rx_dboard_base(arg
     //send initial register settings
     this->send_reg(0x0, 0x5);
 
-    //set defaults for LO, gains
+    //set defaults for LO, gains, and filter bandwidth
+    _bandwidth = 33e6;
     set_lo_freq(dbsrx_freq_range.min);
+
     BOOST_FOREACH(const std::string &name, dbsrx_gain_ranges.keys()){
         set_gain(dbsrx_gain_ranges[name].min, name);
     }
 
-    set_bandwidth(22.27e6); // default bandwidth from datasheet
-
-    get_locked();
+    set_bandwidth(33e6); // default bandwidth from datasheet
 }
 
 dbsrx::~dbsrx(void){
@@ -219,12 +234,23 @@ void dbsrx::set_lo_freq(double target_freq){
     target_freq = std::clip(target_freq, dbsrx_freq_range.min, dbsrx_freq_range.max);
 
     double actual_freq=0.0, pfd_freq=0.0, ref_clock=0.0;
-    int R=0, N=0, r=0;
+    int R=0, N=0, r=0, m=0;
+    bool update_filter_settings = false;
 
     //choose refclock
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
     BOOST_FOREACH(ref_clock, std::reversed(std::sorted(clock_rates))){
-        if (ref_clock != 4e6) continue;
+        if (ref_clock > 27.0e6) continue;
+
+        //choose m_divider such that filter tuning constraint is met
+        m = 31;
+        while ((ref_clock/m < 1e6 or ref_clock/m > 2.5e6) and m > 0){ m--; }
+
+        if(dbsrx_debug) std::cerr << boost::format(
+            "DBSRX: trying ref_clock %f and m_divider %d"
+        ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % m << std::endl;
+
+        if (m >= 32) continue;
 
         //choose R
         for(r = 0; r <= 6; r += 1) {
@@ -249,9 +275,17 @@ void dbsrx::set_lo_freq(double target_freq){
     } 
 
     //Assert because we failed to find a suitable combination of ref_clock, R and N 
+    UHD_ASSERT_THROW(ref_clock/(1 << m) < 1e6 or ref_clock/(1 << m) > 2.5e6);
     UHD_ASSERT_THROW((pfd_freq < dbsrx_pfd_freq_range.min) or (pfd_freq > dbsrx_pfd_freq_range.max));
     UHD_ASSERT_THROW((N < 256) or (N > 32768));
     done_loop:
+
+    if(dbsrx_debug) std::cerr << boost::format(
+        "DBSRX: choose ref_clock %f and m_divider %d"
+    ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % m << std::endl;
+
+    //if ref_clock or m divider changed, we need to update the filter settings
+    if (ref_clock != this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX) or m != _max2118_write_regs.m_divider) update_filter_settings = true;
 
     //compute resulting output frequency
     actual_freq = pfd_freq * N;
@@ -259,62 +293,92 @@ void dbsrx::set_lo_freq(double target_freq){
     //apply ref_clock, R, and N settings
     this->get_iface()->set_clock_rate(dboard_iface::UNIT_RX, ref_clock);
     ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
+    _max2118_write_regs.m_divider = m;
     _max2118_write_regs.r_divider = (max2118_write_regs_t::r_divider_t) r;
     _max2118_write_regs.set_n_divider(N);
     _max2118_write_regs.ade_vco_ade_read = max2118_write_regs_t::ADE_VCO_ADE_READ_ENABLED;
-    send_reg(0x4,0x4);
-    send_reg(0x0,0x2);
     
     //compute prescaler variables
     int scaler = actual_freq > 1125e6 ? 2 : 4;
     _max2118_write_regs.div2 = scaler == 4 ? max2118_write_regs_t::DIV2_DIV4 : max2118_write_regs_t::DIV2_DIV2;
 
+    if(dbsrx_debug) std::cerr << boost::format(
+        "DBSRX: scaler %d, actual_freq %f MHz, register bit: %d"
+    ) % scaler % (actual_freq/1e6) % int(_max2118_write_regs.div2) << std::endl;
+
     //compute vco frequency and select vco
     double vco_freq = actual_freq * scaler;
-    int vco;
     if (vco_freq < 2433e6)
-        vco = 0;
+        _max2118_write_regs.osc_band = 0;
     else if (vco_freq < 2711e6)
-        vco=1;
+        _max2118_write_regs.osc_band = 1;
     else if (vco_freq < 3025e6)
-        vco=2;
+        _max2118_write_regs.osc_band = 2;
     else if (vco_freq < 3341e6)
-        vco=3;
+        _max2118_write_regs.osc_band = 3;
     else if (vco_freq < 3727e6)
-        vco=4;
+        _max2118_write_regs.osc_band = 4;
     else if (vco_freq < 4143e6)
-        vco=5;
+        _max2118_write_regs.osc_band = 5;
     else if (vco_freq < 4493e6)
-        vco=6;
+        _max2118_write_regs.osc_band = 6;
     else
-        vco=7;
+        _max2118_write_regs.osc_band = 7;
 
-    //apply vco selection
-    _max2118_write_regs.osc_band = vco;
-    send_reg(0x2, 0x2);
+    //send settings over i2c
+    send_reg(0x0, 0x4);
 
     //check vtune for lock condition
-    read_reg(0x0, 0x1);
+    read_reg(0x0, 0x0);
+
+    if(dbsrx_debug) std::cerr << boost::format(
+        "DBSRX: initial guess for vco %d, vtune adc %d"
+    ) % int(_max2118_write_regs.osc_band) % int(_max2118_read_regs.adc) << std::endl;
 
     //if we are out of lock for chosen vco, change vco
     while ((_max2118_read_regs.adc == 0) or (_max2118_read_regs.adc == 7)){
+
         //vtune is too low, try lower frequency vco
         if (_max2118_read_regs.adc == 0){
-            UHD_ASSERT_THROW(_max2118_write_regs.osc_band <= 0);
+            if (_max2118_write_regs.osc_band == 0){
+                uhd::print_warning(
+                    str(boost::format(
+                        "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
+                        ) % int(_max2118_write_regs.osc_band))
+                );
+                UHD_ASSERT_THROW(_max2118_read_regs.adc == 0);
+            }
+            if (_max2118_write_regs.osc_band <= 0) break;
             _max2118_write_regs.osc_band -= 1;
         }
 
         //vtune is too high, try higher frequency vco
         if (_max2118_read_regs.adc == 7){
-            UHD_ASSERT_THROW(_max2118_write_regs.osc_band >= 7);
+            if (_max2118_write_regs.osc_band == 7){
+                uhd::print_warning(
+                    str(boost::format(
+                        "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
+                        ) % int(_max2118_write_regs.osc_band))
+                );
+                UHD_ASSERT_THROW(_max2118_read_regs.adc == 0);
+            }
+            if (_max2118_write_regs.osc_band >= 7) break;
             _max2118_write_regs.osc_band += 1;
         }
+
+        if(dbsrx_debug) std::cerr << boost::format(
+            "DBSRX: trying vco %d, vtune adc %d"
+        ) % int(_max2118_write_regs.osc_band) % int(_max2118_read_regs.adc) << std::endl;
 
         //update vco selection and check vtune
         send_reg(0x2, 0x2);
         read_reg(0x0, 0x0);
     }
       
+    if(dbsrx_debug) std::cerr << boost::format(
+        "DBSRX: final vco %d, vtune adc %d"
+    ) % int(_max2118_write_regs.osc_band) % int(_max2118_read_regs.adc) << std::endl;
+
     //select charge pump bias current
     if (_max2118_read_regs.adc <= 2) _max2118_write_regs.cp_current = max2118_write_regs_t::CP_CURRENT_I_CP_100UA;
     else if (_max2118_read_regs.adc >= 5) _max2118_write_regs.cp_current = max2118_write_regs_t::CP_CURRENT_I_CP_400UA;
@@ -335,6 +399,9 @@ void dbsrx::set_lo_freq(double target_freq){
         << boost::format("    Target Freq=%fMHz\n") % (target_freq/1e6)
         << boost::format("    Actual Freq=%fMHz\n") % (_lo_freq/1e6)
         << std::endl;
+
+    if (update_filter_settings) set_bandwidth(_bandwidth);
+    get_locked();
 }
 
 /***********************************************************************
@@ -377,7 +444,7 @@ static float gain_to_gc1_rfvga_dac(float &gain){
     gain = std::clip<float>(gain, dbsrx_gain_ranges["GC1"].min, dbsrx_gain_ranges["GC1"].max);
 
     //voltage level constants
-    static const float max_volts = float(2.7), min_volts = float(1.2);
+    static const float max_volts = float(1.2), min_volts = float(2.7);
     static const float slope = (max_volts-min_volts)/dbsrx_gain_ranges["GC1"].max;
 
     //calculate the voltage for the aux dac
@@ -413,25 +480,22 @@ void dbsrx::set_gain(float gain, const std::string &name){
 void dbsrx::set_bandwidth(float bandwidth){
     //clip the input
     bandwidth = std::clip<float>(bandwidth, 4e6, 33e6);
+
+    double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     
-    //calculate ref_freq
-    float ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
+    //NOTE: _max2118_write_regs.m_divider set in set_lo_freq
 
-    //FIXME this contraint needs to be in the set_freq and needs to assert if it can't hit the range
-    //calculate acceptable m_divider for filter tuning
-    int m = 1;
-    while (ref_freq/m < 1e6 or ref_freq/m > 2.5e6){ m++; }
-    _max2118_write_regs.m_divider = m;
+    //compute f_dac setting
+    _max2118_write_regs.f_dac = std::clip<int>(int((((bandwidth*_max2118_write_regs.m_divider)/ref_clock) - 4)/0.145),0,127);
 
-    _bandwidth = float((ref_freq/1e6/_max2118_write_regs.m_divider)*(4+0.145*_max2118_write_regs.f_dac)*1e6);
-
-    _max2118_write_regs.f_dac = int(((bandwidth*_max2118_write_regs.m_divider/ref_freq) - 4)/0.145);
+    //determine actual bandwidth
+    _bandwidth = float((ref_clock/(_max2118_write_regs.m_divider))*(4+0.145*_max2118_write_regs.f_dac));
 
     if (dbsrx_debug) std::cerr << boost::format(
         "DBSRX Filter Bandwidth: %f MHz, m: %d, f_dac: %d\n"
-    ) % (_bandwidth/1e6) % m % int(_max2118_write_regs.f_dac) << std::endl;
+    ) % (_bandwidth/1e6) % int(_max2118_write_regs.m_divider) % int(_max2118_write_regs.f_dac) << std::endl;
 
-    this->send_reg(0x3, 0x5);
+    this->send_reg(0x3, 0x4);
 }
 
 /***********************************************************************
