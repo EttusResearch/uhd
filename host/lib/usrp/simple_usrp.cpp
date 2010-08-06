@@ -18,6 +18,7 @@
 #include <uhd/usrp/simple_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/device_props.hpp>
@@ -132,15 +133,15 @@ public:
     }
 
     void set_rx_gain(float gain){
-        _rx_subdev()[SUBDEV_PROP_GAIN] = gain;
+        return _rx_gain_group()->set_value(gain);
     }
 
     float get_rx_gain(void){
-        return _rx_subdev()[SUBDEV_PROP_GAIN].as<float>();
+        return _rx_gain_group()->get_value();
     }
 
     gain_range_t get_rx_gain_range(void){
-        return _rx_subdev()[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _rx_gain_group()->get_range();
     }
 
     void set_rx_antenna(const std::string &ant){
@@ -196,15 +197,15 @@ public:
     }
 
     void set_tx_gain(float gain){
-        _tx_subdev()[SUBDEV_PROP_GAIN] = gain;
+        return _tx_gain_group()->set_value(gain);
     }
 
     float get_tx_gain(void){
-        return _tx_subdev()[SUBDEV_PROP_GAIN].as<float>();
+        return _tx_gain_group()->get_value();
     }
 
     gain_range_t get_tx_gain_range(void){
-        return _tx_subdev()[SUBDEV_PROP_GAIN_RANGE].as<gain_range_t>();
+        return _tx_gain_group()->get_range();
     }
 
     void set_tx_antenna(const std::string &ant){
@@ -249,6 +250,14 @@ private:
     wax::obj _tx_subdev(void){
         std::string sd_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
         return _tx_dboard()[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
+    }
+    gain_group::sptr _rx_gain_group(void){
+        std::string sd_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
+        return _rx_dboard()[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
+    }
+    gain_group::sptr _tx_gain_group(void){
+        std::string sd_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
+        return _tx_dboard()[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
     }
 };
 

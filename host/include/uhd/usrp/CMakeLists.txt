@@ -18,6 +18,7 @@
 
 INSTALL(FILES
     #### props headers ###
+    codec_props.hpp
     dboard_props.hpp
     device_props.hpp
     dsp_props.hpp

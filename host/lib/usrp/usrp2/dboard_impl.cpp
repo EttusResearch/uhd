@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
 #include "../dsp_utils.hpp"
+#include "../misc_utils.hpp"
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
@@ -84,6 +84,16 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_iface;
         return;
 
+    case DBOARD_PROP_CODEC:
+        val = _rx_codec_proxy->get_link();
+        return;
+
+    case DBOARD_PROP_GAIN_GROUP:
+        val = make_gain_group(
+            _dboard_manager->get_rx_subdev(name), _rx_codec_proxy->get_link()
+        );
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -127,6 +137,16 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_DBOARD_IFACE:
         val = _dboard_iface;
+        return;
+
+    case DBOARD_PROP_CODEC:
+        val = _tx_codec_proxy->get_link();
+        return;
+
+    case DBOARD_PROP_GAIN_GROUP:
+        val = make_gain_group(
+            _dboard_manager->get_tx_subdev(name), _tx_codec_proxy->get_link()
+        );
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
