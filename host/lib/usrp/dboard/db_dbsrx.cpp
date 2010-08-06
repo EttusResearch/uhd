@@ -34,6 +34,7 @@
 #include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <utility>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -141,7 +142,7 @@ private:
         read_reg(0x0, 0x0);
 
         //mask and return lock detect
-        bool locked = 5 >= _max2118_read_regs.adc && _max2118_read_regs.adc >= 2;
+        bool locked = 5 >= _max2118_read_regs.adc and _max2118_read_regs.adc >= 2;
 
         if(dbsrx_debug) std::cerr << boost::format(
             "DBSRX: locked %d"
@@ -255,7 +256,7 @@ void dbsrx::set_lo_freq(double target_freq){
         //choose R
         for(r = 0; r <= 6; r += 1) {
             //compute divider from setting
-            R = pow(2, r+1);
+            R = 1 << (r+1);
             if (dbsrx_debug) std::cerr << boost::format("DBSRX R:%d\n") % R << std::endl;
 
             //compute PFD compare frequency = ref_clock/R
@@ -388,7 +389,7 @@ void dbsrx::set_lo_freq(double target_freq){
     send_reg(0x2, 0x2);
 
     //compute actual tuned frequency
-    _lo_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX) / pow(2,(1 + _max2118_write_regs.r_divider)) * _max2118_write_regs.get_n_divider();
+    _lo_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX) / std::pow(2.0,(1 + _max2118_write_regs.r_divider)) * _max2118_write_regs.get_n_divider();
 
     //debug output of calculated variables
     if (dbsrx_debug) std::cerr
@@ -415,12 +416,12 @@ void dbsrx::set_lo_freq(double target_freq){
  */
 static int gain_to_gc2_vga_reg(float &gain){
     int reg = 0;
-    gain = std::clip<float>(boost::math::iround(gain), dbsrx_gain_ranges["GC2"].min, dbsrx_gain_ranges["GC2"].max);
+    gain = std::clip<float>(float(boost::math::iround(gain)), dbsrx_gain_ranges["GC2"].min, dbsrx_gain_ranges["GC2"].max);
 
     // Half dB steps from 0-5dB, 1dB steps from 5-24dB
     if (gain < 5) {
         reg = boost::math::iround(31.0 - gain/0.5);
-        gain = float(boost::math::iround(gain)) * 0.5;
+        gain = float(boost::math::iround(gain) * 0.5);
     } else {
         reg = boost::math::iround(22.0 - (gain - 4.0));
         gain = float(boost::math::iround(gain));
