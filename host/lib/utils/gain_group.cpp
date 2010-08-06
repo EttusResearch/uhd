@@ -21,12 +21,9 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 #include <vector>
 #include <iostream>
-
-#define rint(x) boost::math::iround(x)
 
 using namespace uhd;
 
@@ -86,7 +83,7 @@ public:
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             const gain_range_t range = fcns.get_range();
             gain_bucket.push_back(
-                max_step*rint(std::clip(gain_left_to_distribute, range.min, range.max)/max_step)
+                max_step*int(std::clip(gain_left_to_distribute, range.min, range.max)/max_step)
             );
             gain_left_to_distribute -= gain_bucket.back();
         }
@@ -109,7 +106,7 @@ public:
         //fill in the largest step sizes first that are less than the remainder
         BOOST_FOREACH(size_t i, indexes_step_size_dec){
             const gain_range_t range = all_fcns.at(i).get_range();
-            float additional_gain = range.step*rint(
+            float additional_gain = range.step*int(
                 std::clip(gain_bucket.at(i) + gain_left_to_distribute, range.min, range.max
             )/range.step) - gain_bucket.at(i);
             gain_bucket.at(i) += additional_gain;
