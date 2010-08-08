@@ -22,6 +22,10 @@ MACRO(LIBUHD_APPEND_SOURCES)
     LIST(APPEND libuhd_sources ${ARGV})
 ENDMACRO(LIBUHD_APPEND_SOURCES)
 
+MACRO(LIBUHD_APPEND_LIBS)
+    LIST(APPEND libuhd_libs ${ARGV})
+ENDMACRO(LIBUHD_APPEND_LIBS)
+
 MACRO(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
     #ensure that the directory exists for outfile
     GET_FILENAME_COMPONENT(outfile_dir ${outfile} PATH)
@@ -47,61 +51,6 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/usrp/CMakeLists.txt)
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/utils/CMakeLists.txt)
 
 ########################################################################
-# Setup defines for process scheduling
-########################################################################
-MESSAGE(STATUS "Configuring priority scheduling...")
-
-INCLUDE(CheckCXXSourceCompiles)
-CHECK_CXX_SOURCE_COMPILES("
-    #include <pthread.h>
-    int main(){
-        struct sched_param sp;
-        pthread_setschedparam(pthread_self(), SCHED_RR, &sp);
-        return 0;
-    }
-    " HAVE_PTHREAD_SETSCHEDPARAM
-)
-
-CHECK_CXX_SOURCE_COMPILES("
-    #include <windows.h>
-    int main(){
-        SetThreadPriority(GetCurrentThread(), 0);
-        SetPriorityClass(GetCurrentProcess(), 0);
-        return 0;
-    }
-    " HAVE_WIN_SETTHREADPRIORITY
-)
-
-IF(HAVE_PTHREAD_SETSCHEDPARAM)
-    MESSAGE(STATUS "  Priority scheduling supported through pthread_setschedparam.")
-    ADD_DEFINITIONS(-DHAVE_PTHREAD_SETSCHEDPARAM)
-ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
-    MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
-    ADD_DEFINITIONS(-DHAVE_WIN_SETTHREADPRIORITY)
-ELSE(HAVE_PTHREAD_SETSCHEDPARAM)
-    MESSAGE(STATUS "  Priority scheduling not supported.")
-ENDIF(HAVE_PTHREAD_SETSCHEDPARAM)
-
-########################################################################
-# Setup defines for module loading
-########################################################################
-MESSAGE(STATUS "Configuring module loading...")
-
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILE_CXX(windows.h HAVE_WINDOWS_H)
-
-IF(HAVE_DLFCN_H)
-    MESSAGE(STATUS "  Module loading supported through dlopen.")
-    ADD_DEFINITIONS(-DHAVE_DLFCN_H)
-ELSEIF(HAVE_WINDOWS_H)
-    MESSAGE(STATUS "  Module loading supported through LoadLibrary.")
-    ADD_DEFINITIONS(-DHAVE_WINDOWS_H)
-ELSE(HAVE_DLFCN_H)
-    MESSAGE(STATUS "  Module loading not supported.")
-ENDIF(HAVE_DLFCN_H)
-
-########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################
 CONFIGURE_FILE(
@@ -120,9 +69,7 @@ LIBUHD_APPEND_SOURCES(
 # Setup libuhd library
 ########################################################################
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
-
-TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
-
+TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
 
 INSTALL(TARGETS uhd
