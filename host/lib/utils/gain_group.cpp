@@ -131,7 +131,7 @@ private:
     //! get the gain function sets in order (highest priority first)
     std::vector<gain_fcns_t> get_all_fcns(void){
         std::vector<gain_fcns_t> all_fcns;
-        BOOST_FOREACH(ssize_t key, std::sorted(_registry.keys())){
+        BOOST_FOREACH(size_t key, std::sorted(_registry.keys())){
             const std::vector<gain_fcns_t> &fcns = _registry[key];
             all_fcns.insert(all_fcns.begin(), fcns.begin(), fcns.end());
         }
