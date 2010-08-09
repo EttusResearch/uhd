@@ -15,8 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/version.hpp>
+#ifndef INCLUDED_LIBUHD_CONSTANTS_HPP
+#define INCLUDED_LIBUHD_CONSTANTS_HPP
 
-std::string uhd::get_version_string(void){
-    return "@CPACK_PACKAGE_VERSION@";
-}
+#include <uhd/config.hpp>
+#include <string>
+
+static const std::string UHD_VERSION_STRING = "@CPACK_PACKAGE_VERSION@";
+static const std::string UHD_INSTALL_PREFIX = "@CMAKE_INSTALL_PREFIX@";
+static const std::string UHD_PKG_DATA_DIR = "@PKG_DATA_DIR@";
+
+#endif /* INCLUDED_LIBUHD_CONSTANTS_HPP */

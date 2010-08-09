@@ -80,6 +80,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/utils/assert.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/gain_group.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/load_modules.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/props.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/thread_priority.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/warning.cpp

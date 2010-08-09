@@ -54,14 +54,16 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/utils/CMakeLists.txt)
 # Append to the list of sources for lib uhd
 ########################################################################
 CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
 @ONLY)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )
 

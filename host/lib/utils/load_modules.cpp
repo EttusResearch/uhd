@@ -18,13 +18,12 @@
 #include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
-namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 /***********************************************************************
@@ -32,7 +31,6 @@ namespace fs = boost::filesystem;
  **********************************************************************/
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
-static const std::string env_path_sep = ":";
 
 static void load_module(const std::string &file_name){
     if (dlopen(file_name.c_str(), RTLD_LAZY) == NULL){
@@ -44,7 +42,6 @@ static void load_module(const std::string &file_name){
 
 #elif defined(HAVE_WINDOWS_H)
 #include <windows.h>
-static const std::string env_path_sep = ";";
 
 static void load_module(const std::string &file_name){
     if (LoadLibrary(file_name.c_str()) == NULL){
@@ -55,7 +52,6 @@ static void load_module(const std::string &file_name){
 }
 
 #else
-static const std::string env_path_sep = ":";
 
 static void load_module(const std::string &file_name){
     throw std::runtime_error(str(
@@ -74,9 +70,9 @@ static void load_module(const std::string &file_name){
  * Does not throw, prints to std error.
  * \param path the filesystem path
  */
-static void load_path(const fs::path &path){
+static void load_module_path(const fs::path &path){
     if (not fs::exists(path)){
-        std::cerr << boost::format("Module path \"%s\" not found.") % path.file_string() << std::endl;
+        //std::cerr << boost::format("Module path \"%s\" not found.") % path.file_string() << std::endl;
         return;
     }
 
@@ -87,7 +83,7 @@ static void load_path(const fs::path &path){
             dir_itr != fs::directory_iterator();
             ++dir_itr
         ){
-            load_path(dir_itr->path());
+            load_module_path(dir_itr->path());
         }
         return;
     }
@@ -101,46 +97,13 @@ static void load_path(const fs::path &path){
     }
 }
 
-//! The string constant for the module path environment variable
-static const std::string MODULE_PATH_KEY = "UHD_MODULE_PATH";
+std::vector<fs::path> get_module_paths(void); //defined in paths.cpp
 
 /*!
- * Name mapper function for the environment variable parser.
- * Map environment variable names (that we use) to option names.
- * \param the variable name
- * \return the option name or blank string
- */
-static std::string name_mapper(const std::string &var_name){
-    if (var_name == MODULE_PATH_KEY) return var_name;
-    return "";
-}
-
-/*!
- * Load all the modules given by the module path enviroment variable.
- * The path variable may be several paths split by path separators.
+ * Load all the modules given in the module paths.
  */
 UHD_STATIC_BLOCK(load_modules){
-    //register the options
-    std::string env_module_path;
-    po::options_description desc("UHD Module Options");
-    desc.add_options()
-        (MODULE_PATH_KEY.c_str(), po::value<std::string>(&env_module_path)->default_value(""))
-    ;
-
-    //parse environment variables
-    po::variables_map vm;
-    po::store(po::parse_environment(desc, &name_mapper), vm);
-    po::notify(vm);
-
-    if (env_module_path == "") return;
-    //std::cout << "env_module_path: " << env_module_path << std::endl;
-
-    //split the path at the path separators
-    std::vector<std::string> module_paths;
-    boost::split(module_paths, env_module_path, boost::is_any_of(env_path_sep));
-
-    //load modules in each path
-    BOOST_FOREACH(const std::string &module_path, module_paths){
-        load_path(fs::system_complete(fs::path(module_path)));
+    BOOST_FOREACH(const fs::path &path, get_module_paths()){
+        load_module_path(path);
     }
 }
