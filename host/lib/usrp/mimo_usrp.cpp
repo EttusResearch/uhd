@@ -158,6 +158,10 @@ public:
         _mboard(chan)[MBOARD_PROP_RX_SUBDEV_SPEC] = spec;
     }
 
+    subdev_spec_t get_rx_subdev_spec(size_t chan){
+        return _mboard(chan)[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
+    }
+
     void set_rx_rate_all(double rate){
         std::vector<double> _actual_rates;
         for (size_t chan = 0; chan < get_num_channels(); chan++){
@@ -228,6 +232,10 @@ public:
     void set_tx_subdev_spec(size_t chan, const subdev_spec_t &spec){
         UHD_ASSERT_THROW(spec.size() <= 1);
         _mboard(chan)[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
+    }
+
+    subdev_spec_t get_tx_subdev_spec(size_t chan){
+        return _mboard(chan)[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
     }
 
     void set_tx_rate_all(double rate){

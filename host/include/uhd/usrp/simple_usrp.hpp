@@ -109,6 +109,7 @@ public:
      * RX methods
      ******************************************************************/
     virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
+    virtual uhd::usrp::subdev_spec_t get_rx_subdev_spec(void) = 0;
 
     virtual void set_rx_rate(double rate) = 0;
     virtual double get_rx_rate(void) = 0;
@@ -139,6 +140,7 @@ public:
      * TX methods
      ******************************************************************/
     virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
+    virtual uhd::usrp::subdev_spec_t get_tx_subdev_spec(void) = 0;
 
     virtual void set_tx_rate(double rate) = 0;
     virtual double get_tx_rate(void) = 0;

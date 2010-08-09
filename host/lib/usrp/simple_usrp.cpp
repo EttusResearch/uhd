@@ -108,6 +108,10 @@ public:
         std::cout << "RX " << _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().to_pp_string() << std::endl;
     }
 
+    subdev_spec_t get_rx_subdev_spec(void){
+        return _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
+    }
+
     void set_rx_rate(double rate){
         _rx_dsp()[DSP_PROP_HOST_RATE] = rate;
     }
@@ -170,6 +174,10 @@ public:
     void set_tx_subdev_spec(const subdev_spec_t &spec){
         _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
         std::cout << "TX " << _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().to_pp_string() << std::endl;
+    }
+
+    subdev_spec_t get_tx_subdev_spec(void){
+        return _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
     }
 
     void set_tx_rate(double rate){
