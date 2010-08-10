@@ -16,7 +16,7 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD-images)
+PROJECT(UHD-images NONE)
 
 ########################################################################
 # Config Files (include order is important)
