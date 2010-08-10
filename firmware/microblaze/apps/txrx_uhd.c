@@ -172,6 +172,25 @@ void handle_udp_data_packet(
 #define OTW_GPIO_BANK_TO_NUM(bank) \
     (((bank) == USRP2_DIR_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
 
+    //setup the output data
+static usrp2_ctrl_data_t ctrl_data_out;
+static struct socket_address i2c_src, i2c_dst;
+
+static volatile bool i2c_done = false;
+void i2c_read_done_callback(void) {
+  //printf("I2C read done callback\n");
+  i2c_async_data_ready(ctrl_data_out.data.i2c_args.data);
+  i2c_done = true;
+  i2c_register_callback(0);
+}
+
+void i2c_write_done_callback(void) {
+  //printf("I2C write done callback\n");
+  i2c_done = true;
+  i2c_register_callback(0);
+}
+
+
 void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
@@ -181,9 +200,9 @@ void handle_udp_ctrl_packet(
     uint32_t ctrl_data_in_id = ctrl_data_in->id;
 
     //ensure that the protocol versions match
-    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
-        printf("!Error in control packet handler: Expected compatibility number %d, but got %d\n",
-            USRP2_FW_COMPAT_NUM, ctrl_data_in->proto_ver
+    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_PROTO_VERSION){
+        printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
+            USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
         );
         ctrl_data_in_id = USRP2_CTRL_ID_WAZZUP_BRO;
     }
@@ -197,11 +216,9 @@ void handle_udp_ctrl_packet(
     }
 
     //setup the output data
-    usrp2_ctrl_data_t ctrl_data_out = {
-        .proto_ver = USRP2_FW_COMPAT_NUM,
-        .id=USRP2_CTRL_ID_HUH_WHAT,
-        .seq=ctrl_data_in->seq
-    };
+    ctrl_data_out.proto_ver = USRP2_PROTO_VERSION;
+    ctrl_data_out.id=USRP2_CTRL_ID_HUH_WHAT;
+    ctrl_data_out.seq=ctrl_data_in->seq;
 
     //handle the data based on the id
     switch(ctrl_data_in_id){
@@ -212,6 +229,7 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_WAZZUP_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_WAZZUP_DUDE;
         memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
+        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -232,6 +250,7 @@ void handle_udp_ctrl_packet(
             ctrl_data_out.data.spi_args.data = result;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
         }
+        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -239,26 +258,38 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_read(
+            i2c_register_callback(i2c_read_done_callback);
+            /*i2c_read(
                 ctrl_data_in->data.i2c_args.addr,
                 ctrl_data_out.data.i2c_args.data,
                 num_bytes
+            );*/
+            i2c_async_read(
+                ctrl_data_in->data.i2c_args.addr,
+                num_bytes
             );
+            i2c_src = src;
+            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
+        //send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out)); //TODO: NO
         break;
 
     case USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_write(
+            i2c_register_callback(i2c_write_done_callback);
+            i2c_async_write(
                 ctrl_data_in->data.i2c_args.addr,
                 ctrl_data_in->data.i2c_args.data,
                 num_bytes
             );
+            i2c_src = src;
+            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
+        //send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out)); //TODO: NO
         break;
 
     /*******************************************************************
@@ -287,6 +318,7 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
+        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
@@ -309,13 +341,15 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
+        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
+        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
 
     }
-    send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
+
 }
 
 /*
@@ -441,8 +475,7 @@ main(void)
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
   print_ip_addr(get_ip_addr()); newline();
-  printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
-  printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
+  printf("Control protocol version: %d\n", USRP2_PROTO_VERSION);
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
@@ -481,10 +514,16 @@ main(void)
 
     buffer_irq_handler(0);
 
+    if(i2c_done) {
+      i2c_done = false;
+      send_udp_pkt(USRP2_UDP_CTRL_PORT, i2c_src, &ctrl_data_out, sizeof(ctrl_data_out));
+      //printf("Sending UDP packet from main loop for I2C...\n");
+    }
+
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
-      //dbsm_handle_tx_underrun(&dsp_tx_sm);
+      dbsm_handle_tx_underrun(&dsp_tx_sm);
       pic_regs->pending = PIC_UNDERRUN_INT;	// clear interrupt
       putchar('U');
     }

@@ -20,20 +20,38 @@
 #define INCLUDED_I2C_H
 
 #include <stdbool.h>
+#include "stdint.h"
+
+typedef enum { I2C_STATE_IDLE, 
+               I2C_STATE_CONTROL_BYTE_SENT, 
+               I2C_STATE_DATA, 
+               I2C_STATE_LAST_BYTE, 
+               I2C_STATE_DATA_READY, 
+               I2C_STATE_ERROR 
+             } i2c_state_t;
+
+typedef enum { I2C_DIR_WRITE=0, I2C_DIR_READ=1 } i2c_dir_t;
 
 void i2c_init(void);
 bool i2c_read (unsigned char i2c_addr, unsigned char *buf, unsigned int len);
 bool i2c_write(unsigned char i2c_addr, const unsigned char *buf, unsigned int len);
 
+bool i2c_async_read(uint8_t addr, unsigned int len);
+bool i2c_async_write(uint8_t addr, const uint8_t *buf, unsigned int len);
+bool i2c_async_data_ready(const void *);
+//static void i2c_irq_handler(unsigned irq);
+void i2c_register_callback(void (*callback)(void));
 
 // Write 24LC024 / 24LC025 EEPROM on motherboard or daughterboard.
 // Which EEPROM is determined by i2c_addr.  See i2c_addr.h
 
 bool eeprom_write (int i2c_addr, int eeprom_offset, const void *buf, int len);
+bool eeprom_write_async (int i2c_addr, int eeprom_offset, const void *buf, int len, void (*callback)(void));
 
 // Read 24LC024 / 24LC025 EEPROM on motherboard or daughterboard.
 // Which EEPROM is determined by i2c_addr.  See i2c_addr.h
 
 bool eeprom_read (int i2c_addr, int eeprom_offset, void *buf, int len);
+bool eeprom_read_async(int i2c_addr, int eeprom_offset, void *buf, int len, void (*callback)(void));
 
 #endif /* INCLUDED_I2C_H */
