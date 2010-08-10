@@ -172,7 +172,7 @@ void handle_udp_data_packet(
 #define OTW_GPIO_BANK_TO_NUM(bank) \
     (((bank) == USRP2_DIR_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
 
-    //setup the output data
+//setup the output data
 static usrp2_ctrl_data_t ctrl_data_out;
 static struct socket_address i2c_src, i2c_dst;
 
@@ -190,7 +190,6 @@ void i2c_write_done_callback(void) {
   i2c_register_callback(0);
 }
 
-
 void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
@@ -200,9 +199,9 @@ void handle_udp_ctrl_packet(
     uint32_t ctrl_data_in_id = ctrl_data_in->id;
 
     //ensure that the protocol versions match
-    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_PROTO_VERSION){
-        printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
-            USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
+    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
+        printf("!Error in control packet handler: Expected compatibility number %d, but got %d\n",
+            USRP2_FW_COMPAT_NUM, ctrl_data_in->proto_ver
         );
         ctrl_data_in_id = USRP2_CTRL_ID_WAZZUP_BRO;
     }
@@ -216,7 +215,7 @@ void handle_udp_ctrl_packet(
     }
 
     //setup the output data
-    ctrl_data_out.proto_ver = USRP2_PROTO_VERSION;
+    ctrl_data_out.proto_ver = USRP2_FW_COMPAT_NUM;
     ctrl_data_out.id=USRP2_CTRL_ID_HUH_WHAT;
     ctrl_data_out.seq=ctrl_data_in->seq;
 
@@ -259,11 +258,6 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
             i2c_register_callback(i2c_read_done_callback);
-            /*i2c_read(
-                ctrl_data_in->data.i2c_args.addr,
-                ctrl_data_out.data.i2c_args.data,
-                num_bytes
-            );*/
             i2c_async_read(
                 ctrl_data_in->data.i2c_args.addr,
                 num_bytes
@@ -273,12 +267,11 @@ void handle_udp_ctrl_packet(
             ctrl_data_out.id = USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
-        //send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out)); //TODO: NO
         break;
 
     case USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_register_callback(i2c_write_done_callback);
+            i2c_register_callback(i2c_read_done_callback);
             i2c_async_write(
                 ctrl_data_in->data.i2c_args.addr,
                 ctrl_data_in->data.i2c_args.data,
@@ -289,7 +282,6 @@ void handle_udp_ctrl_packet(
             ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
-        //send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out)); //TODO: NO
         break;
 
     /*******************************************************************
@@ -347,9 +339,8 @@ void handle_udp_ctrl_packet(
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
         send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
-
     }
-
+    
 }
 
 /*
@@ -475,7 +466,8 @@ main(void)
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
   print_ip_addr(get_ip_addr()); newline();
-  printf("Control protocol version: %d\n", USRP2_PROTO_VERSION);
+  printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
+  printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
@@ -523,7 +515,7 @@ main(void)
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
-      dbsm_handle_tx_underrun(&dsp_tx_sm);
+      //dbsm_handle_tx_underrun(&dsp_tx_sm);
       pic_regs->pending = PIC_UNDERRUN_INT;	// clear interrupt
       putchar('U');
     }
