@@ -101,7 +101,7 @@ module u1e_core
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
 `ifdef LOOPBACK
-   fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
+   fifo_cascade #(.WIDTH(36), .SIZE(12)) loopback_fifo
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx | clear_rx),
       .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
       .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
@@ -437,9 +437,6 @@ module u1e_core
 		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
 
-   //assign debug = { phase[23:8], txsync, txblank, tx };
-   
-   
    assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
 			   {tx1_src_rdy, tx1_dst_rdy, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
 
