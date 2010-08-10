@@ -21,6 +21,7 @@ import tempfile
 import subprocess
 import urllib
 import optparse
+import math
 import os
 import re
 
@@ -58,6 +59,14 @@ def get_dd_path():
             open(dd_path, 'wb').write(dd_bin)
         return dd_path
     return 'dd'
+
+def int_ceil_div(num, den):
+    return int(math.ceil(float(num)/float(den)))
+
+def get_tmp_file():
+    tmp = tempfile.mkstemp()
+    os.close(tmp[0])
+    return tmp[1]
 
 ########################################################################
 # list possible devices
@@ -136,10 +145,12 @@ def get_raw_device_hints():
 # write and verify with dd
 ########################################################################
 def verify_image(image_file, device_file, offset):
-    #create a temporary file to store the readback
-    tmp = tempfile.mkstemp()
-    os.close(tmp[0])
-    tmp_file = tmp[1]
+    #create a temporary file to store the readback image
+    tmp_file = get_tmp_file()
+
+    #read the image data
+    img_data = open(image_file, 'rb').read()
+    count = int_ceil_div(len(img_data), SECTOR_SIZE)
 
     #execute a dd subprocess
     verbose = command(
@@ -148,24 +159,33 @@ def verify_image(image_file, device_file, offset):
         "if=%s"%device_file,
         "skip=%d"%(offset/SECTOR_SIZE),
         "bs=%d"%SECTOR_SIZE,
-        "count=%d"%(MAX_FILE_SIZE/SECTOR_SIZE),
+        "count=%d"%count,
     )
 
-    #read in the image and readback
-    img_data = open(image_file, 'rb').read()
-    tmp_data = open(tmp_file, 'rb').read(len(img_data))
-
     #verfy the data
+    tmp_data = open(tmp_file, 'rb').read(len(img_data))
     if img_data != tmp_data: return 'Verification Failed:\n%s'%verbose
     return 'Verification Passed:\n%s'%verbose
 
 def write_image(image_file, device_file, offset):
+    #create a temporary file to store the padded image
+    tmp_file = get_tmp_file()
+
+    #write the padded image data
+    img_data = open(image_file, 'rb').read()
+    count = int_ceil_div(len(img_data), SECTOR_SIZE)
+    pad_len = SECTOR_SIZE*count - len(img_data)
+    pad_str = ''.join([chr(0)]*pad_len) #zero-padding
+    open(tmp_file, 'wb').write(img_data + pad_str)
+
+    #execute a dd subprocess
     verbose = command(
         get_dd_path(),
-        "if=%s"%image_file,
+        "if=%s"%tmp_file,
         "of=%s"%device_file,
         "seek=%d"%(offset/SECTOR_SIZE),
         "bs=%d"%SECTOR_SIZE,
+        "count=%d"%count,
     )
 
     try: #exec the sync command (only works on linux)
