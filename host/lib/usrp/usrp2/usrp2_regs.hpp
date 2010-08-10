@@ -107,6 +107,7 @@
 
 #define U2_REG_TIME64_SECS_RB  (0xCC00 + 4*10)
 #define U2_REG_TIME64_TICKS_RB (0xCC00 + 4*11)
+#define U2_REG_COMPAT_NUM_RB   (0xCC00 + 4*12)
 
 //pps flags (see above)
 #define U2_FLAG_TIME64_PPS_NEGEDGE (0 << 0)

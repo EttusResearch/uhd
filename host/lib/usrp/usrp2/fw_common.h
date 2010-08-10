@@ -32,9 +32,9 @@ extern "C" {
     #define __stdint(type) type
 #endif
 
-//defines the protocol version in this shared header
-//increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 5
+//fpga and firmware compatibility numbers
+#define USRP2_FPGA_COMPAT_NUM 1
+#define USRP2_FW_COMPAT_NUM 5
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
