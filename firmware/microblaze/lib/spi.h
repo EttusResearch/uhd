@@ -48,6 +48,13 @@ void spi_wait(void);
 uint32_t
 spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags);
 
+bool 
+spi_async_transact(int slave, uint32_t data, int length, uint32_t flags, void (*volatile callback)(void));
+
+uint32_t spi_get_data(void);
+void spi_irq_handler(void);
+void spi_register_callback(void (*volatile callback)(void));
+
 // ----------------------------------------------------------------
 // Routines that manipulate the FLASH SPI BUS
 // ----------------------------------------------------------------

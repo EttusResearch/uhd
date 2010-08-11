@@ -174,7 +174,8 @@ void handle_udp_data_packet(
 
 //setup the output data
 static usrp2_ctrl_data_t ctrl_data_out;
-static struct socket_address i2c_src, i2c_dst;
+static struct socket_address i2c_src;
+static struct socket_address spi_src;
 
 static volatile bool i2c_done = false;
 void i2c_read_done_callback(void) {
@@ -188,6 +189,14 @@ void i2c_write_done_callback(void) {
   //printf("I2C write done callback\n");
   i2c_done = true;
   i2c_register_callback(0);
+}
+
+static volatile bool spi_done = false;
+static volatile uint32_t spi_readback_data;
+void get_spi_readback_data(void) {
+  spi_readback_data = spi_get_data();
+  spi_done = true;
+  spi_register_callback(0);
 }
 
 void handle_udp_ctrl_packet(
@@ -236,20 +245,24 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
             //transact
-            uint32_t result = spi_transact(
-                (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
+            uint32_t result;
+            void (*volatile spicall)(void) = (ctrl_data_in->data.spi_args.readback == 0) ? 0 : get_spi_readback_data; //only need a callback if we're doing readback
+            bool success = spi_async_transact(
+                //(ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
                 ctrl_data_in->data.spi_args.dev,      //which device
                 ctrl_data_in->data.spi_args.data,     //32 bit data
                 ctrl_data_in->data.spi_args.num_bits, //length in bits
-                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE |
-                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
+                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE | //flags
+                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL,
+                spicall //callback
             );
 
             //load output
             ctrl_data_out.data.spi_args.data = result;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
+            spi_src = src;
         }
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
+//        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -510,6 +523,11 @@ main(void)
       i2c_done = false;
       send_udp_pkt(USRP2_UDP_CTRL_PORT, i2c_src, &ctrl_data_out, sizeof(ctrl_data_out));
       //printf("Sending UDP packet from main loop for I2C...\n");
+    }
+
+    if(spi_done) {
+      spi_done = false;
+      send_udp_pkt(USRP2_UDP_CTRL_PORT, spi_src, &ctrl_data_out, sizeof(ctrl_data_out));
     }
 
     int pending = pic_regs->pending;		// poll for under or overrun
