@@ -40,7 +40,8 @@ namespace uhd{ namespace usrp{
          * \param sd_name the name of a subdevice on that daughterboard
          */
         subdev_spec_pair_t(
-            const std::string &db_name, const std::string &sd_name
+            const std::string &db_name = "",
+            const std::string &sd_name = ""
         );
     };
 

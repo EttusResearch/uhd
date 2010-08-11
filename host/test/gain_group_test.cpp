@@ -52,7 +52,7 @@ class gain_element2{
 public:
 
     gain_range_t get_range(void){
-        return gain_range_t(-20, 10, 0.1);
+        return gain_range_t(-20, 10, float(0.1));
     }
 
     float get_value(void){
@@ -94,7 +94,7 @@ static gain_group::sptr get_gain_group(size_t pri1 = 0, size_t pri2 = 0){
 /***********************************************************************
  * Test cases
  **********************************************************************/
-static const double tolerance = 0.001;
+static const float tolerance = float(0.001);
 
 BOOST_AUTO_TEST_CASE(test_gain_group_overall){
     gain_group::sptr gg = get_gain_group();
