@@ -70,7 +70,7 @@ module u1e_core
    wire 	 clear_rx_int, clear_tx_int, clear_tx, clear_rx, do_clear;
    
    setting_reg #(.my_addr(SR_CLEAR_FIFO), .width(2)) sr_clear
-     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({clear_tx_int,clear_rx_int}),.changed(do_clear));
    assign clear_tx = clear_tx_int & do_clear;
    assign clear_rx = clear_rx_int & do_clear;
