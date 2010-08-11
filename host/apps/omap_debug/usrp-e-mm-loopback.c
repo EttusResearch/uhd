@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stddef.h>
 #include <sys/mman.h>
+#include <poll.h>
 #include "usrp_e.h"
 
 // max length #define PKT_DATA_LENGTH 1016
@@ -16,8 +17,19 @@ struct pkt {
 	int len;
 	int checksum;
 	int seq_num;
-	short data[];
+	short data[1024-6];
 };
+
+/* delete after usrp_e.h updated */
+struct ring_buffer_info {
+	int flags;
+	int len;
+};
+
+struct ring_buffer_info (*rxi)[];
+struct ring_buffer_info (*txi)[];
+struct pkt (*rx_buf)[200];
+struct pkt (*tx_buf)[200];
 
 static int fp;
 
@@ -39,20 +51,19 @@ static int calc_checksum(struct pkt *p)
 
 static void *read_thread(void *threadid)
 {
-	char *rx_data;
 	int cnt, prev_seq_num, pkt_count, seq_num_failure;
 	struct pkt *p;
 	unsigned long bytes_transfered, elapsed_seconds;
 	struct timeval start_time, finish_time;
+	int rb_read;
 
 	printf("Greetings from the reading thread!\n");
+	printf("sizeof pkt = %d\n", sizeof(struct pkt));
+
+	rb_read = 0;
 
 	bytes_transfered = 0;
 	gettimeofday(&start_time, NULL);
-
-	// IMPORTANT: must assume max length packet from fpga
-	rx_data = malloc(2048);
-	p = (struct pkt *) ((void *)rx_data);
 
 	prev_seq_num = 0;
 	pkt_count = 0;
@@ -60,11 +71,24 @@ static void *read_thread(void *threadid)
 
 	while (1) {
 
-		cnt = read(fp, rx_data, 2048);
-		if (cnt < 0)
-			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
+		if (!((*rxi)[rb_read].flags & RB_USER)) {
+			printf("Waiting for data\n");
+			struct pollfd pfd;
+			pfd.fd = fp;
+			pfd.events = POLLIN;
+			ssize_t ret = poll(&pfd, 1, -1);
+		}
 
-//		printf("p->seq_num = %d\n", p->seq_num);
+		printf("pkt received, rb_read = %d\n", rb_read);
+
+		cnt = (*rxi)[rb_read].len;
+		p = &(*rx_buf)[rb_read];
+
+//		cnt = read(fp, rx_data, 2048);
+//		if (cnt < 0)
+//			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
+
+		printf("p = %X, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
 
 
 		pkt_count++;
@@ -85,6 +109,12 @@ static void *read_thread(void *threadid)
 				calc_checksum(p), p->checksum, pkt_count);
 			error = 1;
 		}
+
+		(*rxi)[rb_read].flags = RB_KERNEL;
+
+		rb_read++;
+		if (rb_read == 200)
+			rb_read = 0;
 
 		bytes_transfered += cnt;
 
@@ -151,7 +181,6 @@ int main(int argc, char *argv[])
 		.sched_priority = 1
 	};
 	void *rb;
-	struct usrp_transfer_frame *tx_rb, *rx_rb;
 
 	if (argc < 2) {
 		printf("%s data_size\n", argv[0]);
@@ -164,11 +193,19 @@ int main(int argc, char *argv[])
 	printf("fp = %d\n", fp);
 
 	rb = mmap(0, 202 * 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
-	if (!rb) {
-		printf("mmap failed\n");
+	if (rb == MAP_FAILED) {
+		perror("mmap failed");
 		exit;
 	}
 
+	printf("rb = %X\n", rb);
+
+	rxi = rb;
+	rx_buf = rb + 4096;
+	txi = rb + 4096 + 4096 * 200;
+	tx_buf = rb + 4096 * 2 + 4096 * 200;
+
+	printf("rxi = %X, rx_buf = %X, txi = %X, tx_buf = %X\n", rxi, rx_buf, txi, tx_buf);
 
 	sched_setscheduler(0, SCHED_RR, &s);
 	error = 0;
