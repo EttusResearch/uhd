@@ -18,6 +18,7 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/warning.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
@@ -161,12 +162,11 @@ template<typename Opt> static void resize_buff_helper(
         else std::cout << boost::format(
             "Current %s sock buff size: %d bytes"
         ) % name % actual_size << std::endl;
-        if (actual_size < target_size) std::cerr << boost::format(
-            "Warning:\n"
-            "    The %s buffer is smaller than the requested size.\n"
-            "    The minimum recommended buffer size is %d bytes.\n"
-            "    See the USRP2 application notes on buffer resizing.\n"
-        ) % name % min_sock_buff_size << std::endl;
+        if (actual_size < target_size) uhd::print_warning(str(boost::format(
+            "The %s buffer is smaller than the requested size.\n"
+            "The minimum recommended buffer size is %d bytes.\n"
+            "See the USRP2 application notes on buffer resizing.\n"
+        ) % name % min_sock_buff_size));
     }
 
     //only enable on platforms that are happy with the large buffer resize

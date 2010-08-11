@@ -161,12 +161,7 @@ public:
      * See the rx metadata fragment flags and offset fields for details.
      *
      * This is a blocking call and will not return until the number
-     * of samples returned have been written into each buffer.
-     * However, a call to receive may timeout and return zero samples.
-     * The timeout duration is decided by the underlying transport layer.
-     * The caller should assume that the call to receive will not return
-     * immediately when no packets are available to the transport layer,
-     * and that the timeout duration is reasonably tuned for performance.
+     * of samples returned have been written into each buffer or timeout.
      *
      * When using the full buffer recv mode, the metadata only applies
      * to the first packet received and written into the recv buffers.

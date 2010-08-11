@@ -16,38 +16,9 @@
 //
 
 #include <uhd/utils/assert.hpp>
-#include <uhd/utils/props.hpp>
-#include <stdexcept>
 
 using namespace uhd;
 
-/***********************************************************************
- * Assert
- **********************************************************************/
 assert_error::assert_error(const std::string &what) : std::runtime_error(what){
     /* NOP */
-}
-
-/***********************************************************************
- * Props
- **********************************************************************/
-named_prop_t::named_prop_t(
-    const wax::obj &key_,
-    const std::string &name_
-){
-    key = key_;
-    name = name_;
-}
-
-typedef boost::tuple<wax::obj, std::string> named_prop_tuple;
-
-named_prop_tuple uhd::extract_named_prop(
-    const wax::obj &key,
-    const std::string &name
-){
-    if (key.type() == typeid(named_prop_t)){
-        named_prop_t np = key.as<named_prop_t>();
-        return named_prop_tuple(np.key, np.name);
-    }
-    return named_prop_tuple(key, name);
 }

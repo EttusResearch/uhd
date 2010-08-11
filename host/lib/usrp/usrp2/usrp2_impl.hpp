@@ -35,6 +35,7 @@
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
 
 /*!
  * Make a usrp2 dboard interface.
@@ -143,6 +144,7 @@ private:
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
+    uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //interfaces
     usrp2_iface::sptr _iface;
@@ -177,14 +179,12 @@ private:
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _rx_dboard_proxy;
-    uhd::prop_names_t _rx_subdevs_in_use;
     uhd::usrp::dboard_eeprom_t _rx_db_eeprom;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
-    uhd::prop_names_t _tx_subdevs_in_use;
     uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
 
     //methods and shadows for the ddc dsp

@@ -26,3 +26,4 @@ SUBDIRS = \
 	usrp2 \
 	usrp2p \
 	usrp2p/bootloader
+

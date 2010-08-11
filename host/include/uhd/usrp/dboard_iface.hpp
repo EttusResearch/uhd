@@ -22,6 +22,7 @@
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <string>
 #include <vector>
 
 namespace uhd{ namespace usrp{
@@ -63,6 +64,12 @@ public:
         AUX_ADC_A = 'a',
         AUX_ADC_B = 'b'
     };
+
+    /*!
+     * Get the motherboard name of the form: usrp1, usrp2...
+     * \return string representing the motherboard name
+     */
+    virtual std::string get_mboard_name(void) = 0;
 
     /*!
      * Write to an aux dac.

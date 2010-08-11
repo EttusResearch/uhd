@@ -53,10 +53,6 @@ void usrp2_mboard_impl::dboard_init(void){
         boost::bind(&usrp2_mboard_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_mboard_impl::tx_dboard_set, this, _1, _2)
     );
-
-    //init the subdevs in use (use the first subdevice)
-    rx_dboard_set(DBOARD_PROP_USED_SUBDEVS, prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0)));
-    tx_dboard_set(DBOARD_PROP_USED_SUBDEVS, prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0)));
 }
 
 /***********************************************************************
@@ -78,10 +74,6 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_SUBDEV_NAMES:
         val = _dboard_manager->get_rx_subdev_names();
-        return;
-
-    case DBOARD_PROP_USED_SUBDEVS:
-        val = _rx_subdevs_in_use;
         return;
 
     case DBOARD_PROP_DBOARD_ID:
@@ -108,16 +100,6 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_mboard_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_USED_SUBDEVS:{
-            _rx_subdevs_in_use = val.as<prop_names_t>();
-            UHD_ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
-            wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
-            std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
-            _iface->poke32(_iface->regs.dsp_rx_mux, dsp_type1::calc_rx_mux_word(
-                rx_subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-            ));
-        }
-        return;
 
     case DBOARD_PROP_DBOARD_ID:
         _rx_db_eeprom.id = val.as<dboard_id_t>();
@@ -149,10 +131,6 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_tx_subdev_names();
         return;
 
-    case DBOARD_PROP_USED_SUBDEVS:
-        val = _tx_subdevs_in_use;
-        return;
-
     case DBOARD_PROP_DBOARD_ID:
         val = _tx_db_eeprom.id;
         return;
@@ -177,16 +155,6 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_mboard_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_USED_SUBDEVS:{
-            _tx_subdevs_in_use = val.as<prop_names_t>();
-            UHD_ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
-            wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
-            std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
-            _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
-                tx_subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-            ));
-        }
-        return;
 
     case DBOARD_PROP_DBOARD_ID:
         _tx_db_eeprom.id = val.as<dboard_id_t>();

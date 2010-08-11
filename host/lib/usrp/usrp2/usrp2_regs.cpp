@@ -58,6 +58,7 @@ usrp2_regs_t usrp2_get_regs(int hw_rev) {
   x.time64_tps = sr_addr(misc_output_base, x.sr_time64 + 4);
   x.time64_secs_rb = bp_base + 4*10;
   x.time64_ticks_rb = bp_base + 4*11;
+  x.compat_num_rb = bp_base + 4*12;
   x.dsp_tx_freq = sr_addr(misc_output_base, x.sr_tx_dsp + 0);
   x.dsp_tx_scale_iq = sr_addr(misc_output_base, x.sr_tx_dsp + 1);
   x.dsp_tx_interp_rate = sr_addr(misc_output_base, x.sr_tx_dsp + 2);

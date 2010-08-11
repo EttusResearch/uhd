@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "usrp2_regs.hpp"
 #include "usrp2_iface.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
@@ -22,6 +23,7 @@
 #include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
+#include <boost/format.hpp>
 #include <stdexcept>
 #include <algorithm>
 
@@ -47,6 +49,15 @@ public:
  **********************************************************************/
     usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
+
+         //check the fpga compatibility number
+        const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
+        if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
+            throw std::runtime_error(str(boost::format(
+                "Expected fpga compatibility number %d, but got %d:\n"
+                "The fpga build is not compatible with the host code build."
+            ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
+        }
     }
 
     ~usrp2_iface_impl(void){
@@ -168,7 +179,7 @@ public:
 
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
-        out_copy.proto_ver = htonl(USRP2_PROTO_VERSION);
+        out_copy.proto_ver = htonl(USRP2_FW_COMPAT_NUM);
         out_copy.seq = htonl(++_ctrl_seq_num);
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
@@ -177,12 +188,11 @@ public:
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CONTROL_TIMEOUT_MS);
-            if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_PROTO_VERSION){
-                throw std::runtime_error(str(
-                    boost::format("Expected protocol version %d, but got %d\n"
-                    "The firmware build does not match the host code build."
-                    ) % int(USRP2_PROTO_VERSION) % ntohl(ctrl_data_in->proto_ver)
-                ));
+            if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_FW_COMPAT_NUM){
+                throw std::runtime_error(str(boost::format(
+                    "Expected protocol compatibility number %d, but got %d:\n"
+                    "The firmware build is not compatible with the host code build."
+                ) % int(USRP2_FW_COMPAT_NUM) % ntohl(ctrl_data_in->proto_ver)));
             }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(ctrl_data_in->seq) == _ctrl_seq_num){
                 return *ctrl_data_in;

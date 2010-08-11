@@ -27,5 +27,9 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.hpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/simple_usrp.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/subdev_spec.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/tune_helper.cpp
 )
+
+INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/dboard/CMakeLists.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/CMakeLists.txt)

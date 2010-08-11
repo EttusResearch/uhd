@@ -61,6 +61,7 @@ typedef struct {
 	int time64_tps; // ticks per second rollover count
 	int time64_secs_rb;
 	int time64_ticks_rb;
+  int compat_num_rb;
 	int dsp_tx_freq;
 	int dsp_tx_scale_iq;
 	int dsp_tx_interp_rate;

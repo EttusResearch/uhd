@@ -55,6 +55,11 @@ LIBUHD_PYTHON_GEN_SOURCE(
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_max2118_regs.py
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/max2118_regs.hpp
+)
+
+LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad9862_regs.py
     ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad9862_regs.hpp
 )
