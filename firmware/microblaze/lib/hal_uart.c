@@ -37,28 +37,30 @@ divisor_table[MAX_WB_DIV+1][NSPEEDS] = {
   { 163,  81,  41,  27, 14,  7 },  // 4:  25 MHz
 };
 
-#define u uart_regs
+//we wrap hal_uart_putc hal_uart_putc_nowait, and hal_uart_getc to accept a UART pointer given by hal_get_uart. we modify hal_io.c to use the new versions.
 
-static char uart_mode = UART_MODE_ONLCR;
+static char uart_mode[4] = {UART_MODE_ONLCR, UART_MODE_ONLCR, UART_MODE_ONLCR, UART_MODE_ONLCR};
 
 void
-hal_uart_set_mode(int mode)
+hal_uart_set_mode(int uart, int mode)
 {
-  uart_mode = mode;
+  uart_mode[uart] = mode;
 }
 
 void
 hal_uart_init(void)
 {
-	hal_uart_set_mode(UART_MODE_ONLCR);
-  u->clkdiv = 217;  // 230400 bps
+  for(int i = 0; i < 4; i++) {
+  	hal_uart_set_mode(i, UART_MODE_ONLCR);
+    u->clkdiv = 217;  // 230400 bps TODO: change to reflect new quad UART
+  }
 }
 
 void
-hal_uart_putc(int ch)
+hal_uart_putc(uart_regs_t *u, int ch)
 {
-  if (ch == '\n')// && (uart_mode == UART_MODE_ONLCR))		//map \n->\r\n if necessary
-    hal_uart_putc('\r');
+  if (ch == '\n')// && (uart_mode[uart] == UART_MODE_ONLCR))		//map \n->\r\n if necessary
+    hal_uart_putc(u, '\r');
 
   while (u->txlevel == 0)	 // wait for fifo to have space
     ;
@@ -67,20 +69,40 @@ hal_uart_putc(int ch)
 }
 
 void
-hal_uart_putc_nowait(int ch)
+hal_uart_putc_nowait(uart_regs_t *u, int ch)
 {
-  if (ch == '\n')// && (uart_mode == UART_MODE_ONLCR))		//map \n->\r\n if necessary
-    hal_uart_putc('\r');
+  if (ch == '\n')// && (uart_mode[uart] == UART_MODE_ONLCR))		//map \n->\r\n if necessary
+    hal_uart_putc(u, '\r');
 
   if(u->txlevel)   // If fifo has space
     u->txchar = ch;
 }
 
 int
-hal_uart_getc(void)
+hal_uart_getc(uart_regs_t *u)
 {
   while ((u->rxlevel) == 0)  // wait for data to be ready
     ;
 
   return u->rxchar;
+}
+
+uart_regs_t *
+hal_get_uart(int number)
+{
+  switch(number) {
+  case 0:
+    return uart_regs_0;
+    break;
+  case 1:
+    return uart_regs_1;
+    break;
+  case 2:
+    return uart_regs_2;
+    break;
+  case 3:
+    return uart_regs_3;
+    break;
+  default:
+    return uart_regs_0; //for safety
 }

@@ -781,7 +781,10 @@ typedef struct {
   volatile uint32_t rxchar;  // Read received characters here
 } uart_regs_t;
 
-#define uart_regs ((uart_regs_t *) UART_BASE)
+#define uart_regs_0 ((uart_regs_t *) UART_BASE)
+#define uart_regs_1 ((uart_regs_t *) UART_BASE + 0x0020)
+#define uart_regs_2 ((uart_regs_t *) UART_BASE + 0x0040)
+#define uart_regs_3 ((uart_regs_t *) UART_BASE + 0x0060)
 
 ///////////////////////////////////////////////////
 // ATR Controller, Slave 11

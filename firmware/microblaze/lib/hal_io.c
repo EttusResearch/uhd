@@ -102,7 +102,7 @@ hal_finish(void)
 
 // %c
 inline int
-putchar(int ch)
+fputchar(int ch)
 {
   hal_gpio_set_rx((s << 8) | W, 0xff80);
   hal_gpio_set_rx(0, 0xff80);
@@ -124,14 +124,14 @@ hal_finish(void)
 
 // %c
 inline int
-putchar(int ch)
+fputchar(int ch)
 {
   hal_uart_putc(ch);
   return ch;
 }
 
 int
-getchar(void)
+fgetchar(void)
 {
   return hal_uart_getc();
 }
@@ -172,13 +172,13 @@ getchar(void)
 
 // \n
 inline void 
-newline(void)
+fnewline(void)
 {
   putchar('\n');
 }
 
 int
-putstr(const char *s)
+fputstr(const char *s)
 {
   while (*s)
     putchar(*s++);
@@ -187,7 +187,7 @@ putstr(const char *s)
 }
 
 int
-puts(const char *s)
+fputs(const char *s)
 {
   putstr(s);
   putchar('\n');
@@ -195,7 +195,7 @@ puts(const char *s)
 }
 
 char *
-gets(char * const s)
+fgets(char * const s)
 {
 	char *x = s;
 	while((*x=(char)hal_uart_getc()) != '\n') x++;

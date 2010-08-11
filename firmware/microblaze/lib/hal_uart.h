@@ -28,7 +28,7 @@
 /*
  * \brief Set uart mode
  */
-void hal_uart_set_mode(int flags);
+void hal_uart_set_mode(int uart, int flags);
 
 /*!
  * \brief one-time call to init
@@ -62,17 +62,17 @@ void hal_uart_get_config(hal_uart_config_t *c);
 /*!
  * \brief Enqueue \p ch for output over serial port
  */
-void hal_uart_putc(int ch);
+void hal_uart_putc(uart_regs_t *u, int ch);
 
 /*!
  * \brief Enqueue \p ch for output over serial port, silent fail if queue is full
  */
-void hal_uart_putc_nowait(int ch);
+void hal_uart_putc_nowait(uart_regs_t *u, int ch);
 
 /*
  * \brief Blocking read of next char from serial port
  */
-int hal_uart_getc(void);
+int hal_uart_getc(uart_regs_t *u);
 
 
 #endif /* INCLUDED_HAL_UART_H */
