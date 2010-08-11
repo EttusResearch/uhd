@@ -63,7 +63,7 @@ output full;
 
 // synthesis translate_off
 
-      FIFO_GENERATOR_V4_4 #(
+      FIFO_GENERATOR_V4_3 #(
 		.C_COMMON_CLOCK(0),
 		.C_COUNT_TYPE(0),
 		.C_DATA_COUNT_WIDTH(10),
