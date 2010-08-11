@@ -145,11 +145,12 @@ static void i2c_irq_handler(unsigned irq) {
 
   //printf("I2C irq handler\n");
   //first let's make sure nothing is f'ed up
-  if(((i2c_regs->cmd_status & I2C_ST_RXACK) != 0) && i2c_dir == I2C_DIR_WRITE) { //we got a NACK and we didn't send it
-    printf("\tNACK received\n");
-    i2c_async_err();
-    return;
-  }// else printf("\tACK received, proceeding\n");
+  //TODO: uncomment this error checking when we have some way to handle errors
+//  if(((i2c_regs->cmd_status & I2C_ST_RXACK) != 0) && i2c_dir == I2C_DIR_WRITE) { //we got a NACK and we didn't send it
+//    printf("\tNACK received\n");
+//    i2c_async_err();
+//    return;
+//  }// else printf("\tACK received, proceeding\n");
 
   if(i2c_regs->cmd_status & I2C_ST_AL) { 
     printf("\tArbitration lost!\n");
@@ -223,7 +224,7 @@ static void i2c_irq_handler(unsigned irq) {
 
 
   default: //terrible things have happened.
-    printf("you fail at life.\n");
+    break;
   }
 
 }
