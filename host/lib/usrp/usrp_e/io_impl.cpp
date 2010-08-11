@@ -21,7 +21,6 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include <boost/bind.hpp>
 #include <fcntl.h> //read, write
-#include <linux/usrp_e.h> //transfer frame struct
 #include <poll.h>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -34,7 +33,6 @@ using namespace uhd::usrp;
  * Constants
  **********************************************************************/
 static const size_t MAX_BUFF_SIZE = 2048;
-static const size_t vrt_header_offset_words32 = sizeof(usrp_transfer_frame)/sizeof(boost::uint32_t);
 static const bool usrp_e_io_impl_verbose = true;
 
 /***********************************************************************
@@ -66,15 +64,7 @@ public:
 private:
     int _fd;
     ssize_t send(const boost::asio::const_buffer &buff){
-        //Set the frame length in the frame header.
-        //This is technically bad to write to a const buffer,
-        //but this will go away when the ring gets implemented,
-        //and the send buffer commit method will set the length.
-        const_cast<usrp_transfer_frame *>(
-            boost::asio::buffer_cast<const usrp_transfer_frame *>(buff)
-        )->len = boost::asio::buffer_size(buff) - sizeof(usrp_transfer_frame);
-        return write(
-            _fd,
+        return write(_fd,
             boost::asio::buffer_cast<const void *>(buff),
             boost::asio::buffer_size(buff)
         );
@@ -99,12 +89,11 @@ private:
         }
 
         //perform the blocking read(...)
-        ssize_t read_ret = read(
-            _fd,
+        ssize_t read_ret = read(_fd,
             boost::asio::buffer_cast<void *>(buff),
             boost::asio::buffer_size(buff)
         );
-        if (read_ret < ssize_t(sizeof(usrp_transfer_frame))){
+        if (read_ret < 0){
             if (usrp_e_io_impl_verbose) std::cerr << boost::format(
                 "usrp-e io impl recv(): read() returned small value: %d\n"
                 "    -> return -1 for error"
@@ -112,8 +101,7 @@ private:
             return -1;
         }
 
-        //usrp_transfer_frame *frame = boost::asio::buffer_cast<usrp_transfer_frame *>(buff);
-        //std::cout << "len " << int(frame->len) << std::endl;
+        //std::cout << "len " << int(read_ret) << std::endl;
         //for (size_t i = 0; i < 9; i++){
         //    std::cout << boost::format("    0x%08x") % boost::asio::buffer_cast<boost::uint32_t *>(buff)[i] << std::endl;
         //}
@@ -200,8 +188,7 @@ size_t usrp_e_impl::send(
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_le,
         boost::bind(&get_send_buffs, &_io_impl->transport, _1),
-        get_max_send_samps_per_packet(),
-        vrt_header_offset_words32
+        get_max_send_samps_per_packet()
     );
 }
 
@@ -241,8 +228,7 @@ size_t usrp_e_impl::recv(
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
         boost::bind(&get_recv_buffs, &_io_impl->transport, _1),
-        boost::bind(&usrp_e_impl::handle_overrun, this, _1),
-        vrt_header_offset_words32
+        boost::bind(&usrp_e_impl::handle_overrun, this, _1)
     );
 }
 
