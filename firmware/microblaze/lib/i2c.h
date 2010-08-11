@@ -38,7 +38,7 @@ bool i2c_write(unsigned char i2c_addr, const unsigned char *buf, unsigned int le
 
 bool i2c_async_read(uint8_t addr, unsigned int len);
 bool i2c_async_write(uint8_t addr, const uint8_t *buf, unsigned int len);
-bool i2c_async_data_ready(const void *);
+bool i2c_async_data_ready(void *);
 //static void i2c_irq_handler(unsigned irq);
 void i2c_register_callback(void (*callback)(void));
 

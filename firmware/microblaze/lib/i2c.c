@@ -39,12 +39,12 @@ static uint16_t prescaler_values[MAX_WB_DIV+1] = {
 
 //asynchronous (interrupt-driven) i2c state variables
 volatile uint8_t i2c_buf[17]; //tx/rx data transfer buffer
-volatile uint8_t *i2c_bufptr = i2c_buf; //ptr to current position
+volatile uint8_t *volatile i2c_bufptr = i2c_buf; //ptr to current position
 volatile uint8_t i2c_len = 0; //length remaining in current transfer
 volatile i2c_state_t i2c_state = I2C_STATE_IDLE; //current I2C transfer state
 i2c_dir_t i2c_dir; //I2C transfer direction
 
-volatile void  (*i2c_callback)(void); //function pointer to i2c callback to be called when transaction is complete
+void  (*volatile i2c_callback)(void); //function pointer to i2c callback to be called when transaction is complete
 
 static void i2c_irq_handler(unsigned irq);
 inline void i2c_async_err(void);
@@ -228,7 +228,7 @@ static void i2c_irq_handler(unsigned irq) {
 
 }
 
-void i2c_register_callback(volatile void (*callback)(void)) {
+void i2c_register_callback(void (*volatile callback)(void)) {
   i2c_callback = callback;
 }
 
@@ -272,7 +272,7 @@ bool i2c_async_write(uint8_t addr, const uint8_t *buf, unsigned int len) {
   i2c_regs->cmd_status |= I2C_CMD_IACK;
 
   //copy the buffer into our own if writing
-  memcpy(i2c_buf, buf, len);
+  memcpy((void *)i2c_buf, buf, len);
 
   i2c_len = len;
   i2c_dir = I2C_DIR_WRITE;
@@ -288,10 +288,10 @@ bool i2c_async_write(uint8_t addr, const uint8_t *buf, unsigned int len) {
 }
 
 //TODO: determine if it's better to read sequentially into the user's buffer, copy on transfer complete, or copy on request (shown below). probably best to copy on request.
-bool i2c_async_data_ready(const void *buf) {
+bool i2c_async_data_ready(void *buf) {
   if(i2c_state == I2C_STATE_DATA_READY) {
     i2c_state = I2C_STATE_IDLE;
-    memcpy(buf, i2c_buf, (i2c_bufptr - i2c_buf)); //TODO: not really comfortable with this
+    memcpy(buf, (void *)i2c_buf, (i2c_bufptr - i2c_buf)); //TODO: not really comfortable with this
     //printf("Copying %d bytes to user buffer\n", i2c_bufptr-i2c_buf);
     return true;
   }
