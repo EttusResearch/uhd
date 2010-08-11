@@ -17,6 +17,7 @@
 
 #include "spi.h"
 #include "memory_map.h"
+#include "pic.h"
 #include "nonstdio.h"
 
 void (*volatile spi_callback)(void); //SPI callback when xfer complete.

@@ -276,7 +276,7 @@ void handle_udp_ctrl_packet(
                 num_bytes
             );
             i2c_src = src;
-            i2c_dst = dst;
+//            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
@@ -291,7 +291,7 @@ void handle_udp_ctrl_packet(
                 num_bytes
             );
             i2c_src = src;
-            i2c_dst = dst;
+//            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
