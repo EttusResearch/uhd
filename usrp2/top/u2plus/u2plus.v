@@ -381,8 +381,8 @@ module u2plus
 		     .RAM_WEn           (RAM_WEn),
 		     .RAM_OEn           (RAM_OEn),
 		     .RAM_LDn           (RAM_LDn), 
-		     .uart_tx_o         (TXD[1]),
-		     .uart_rx_i         (RXD[1]),
+		     .uart_tx_o         (TXD[3:1]),
+		     .uart_rx_i         ({1'b1,RXD[3:1]}),
 		     .uart_baud_o       (),
 		     .sim_mode          (1'b0),
 		     .clock_divider     (2),
@@ -395,6 +395,5 @@ module u2plus
 
    assign RAM_ZZ = 1;
    assign RAM_BWn = 4'b1111;
-   assign TXD[3:2] = 2'b11;
    
 endmodule // u2plus

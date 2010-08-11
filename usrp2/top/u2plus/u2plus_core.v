@@ -120,9 +120,9 @@ module u2plus_core
    output RAM_LDn,
    
    // Debug stuff
-   output uart_tx_o, 
-   input uart_rx_i,
-   output uart_baud_o,
+   output [3:0] uart_tx_o, 
+   input [3:0] uart_rx_i,
+   output [3:0] uart_baud_o,
    input sim_mode,
    input [3:0] clock_divider,
    input button,
@@ -156,7 +156,8 @@ module u2plus_core
 
    wire [31:0] 	status, status_b0, status_b1, status_b2, status_b3, status_b4, status_b5, status_b6, status_b7;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
-   wire 	proc_int, overrun, underrun, uart_tx_int, uart_rx_int;
+   wire 	proc_int, overrun, underrun;
+   wire [3:0] 	uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
    wire [31:0] 	atr_lines;
@@ -642,8 +643,8 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    // Interrupt Controller, Slave #8
 
    assign irq= {{8'b0},
-		{8'b0},
-		{2'b0, button, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
+		{uart_tx_int[3:0], uart_rx_int[3:0]},
+		{2'b0, button, periodic_int, clk_status, serdes_link_up, 2'b00},
 		{pps_int,overrun,underrun,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
@@ -670,7 +671,7 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    simple_uart #(.TXDEPTH(3),.RXDEPTH(3)) uart  // depth of 3 is 128 entries
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .we_i(sa_we),.stb_i(sa_stb),.cyc_i(sa_cyc),.ack_o(sa_ack),
-      .adr_i(sa_adr[4:2]),.dat_i(sa_dat_o),.dat_o(sa_dat_i),
+      .adr_i(sa_adr[6:2]),.dat_i(sa_dat_o),.dat_o(sa_dat_i),
       .rx_int_o(uart_rx_int),.tx_int_o(uart_tx_int),
       .tx_o(uart_tx_o),.rx_i(uart_rx_i),.baud_o(uart_baud_o));
    

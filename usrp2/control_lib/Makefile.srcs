@@ -30,6 +30,7 @@ srl.v \
 system_control.v \
 wb_1master.v \
 wb_readback_mux.v \
+quad_uart.v \
 simple_uart.v \
 simple_uart_tx.v \
 simple_uart_rx.v \
