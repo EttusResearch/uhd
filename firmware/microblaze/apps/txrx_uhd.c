@@ -181,9 +181,9 @@ void handle_udp_ctrl_packet(
     uint32_t ctrl_data_in_id = ctrl_data_in->id;
 
     //ensure that the protocol versions match
-    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_PROTO_VERSION){
-        printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
-            USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
+    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
+        printf("!Error in control packet handler: Expected compatibility number %d, but got %d\n",
+            USRP2_FW_COMPAT_NUM, ctrl_data_in->proto_ver
         );
         ctrl_data_in_id = USRP2_CTRL_ID_WAZZUP_BRO;
     }
@@ -198,7 +198,7 @@ void handle_udp_ctrl_packet(
 
     //setup the output data
     usrp2_ctrl_data_t ctrl_data_out = {
-        .proto_ver = USRP2_PROTO_VERSION,
+        .proto_ver = USRP2_FW_COMPAT_NUM,
         .id=USRP2_CTRL_ID_HUH_WHAT,
         .seq=ctrl_data_in->seq
     };
@@ -441,7 +441,8 @@ main(void)
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
   print_ip_addr(get_ip_addr()); newline();
-  printf("Control protocol version: %d\n", USRP2_PROTO_VERSION);
+  printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
+  printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
