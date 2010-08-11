@@ -16,8 +16,12 @@
 //
 
 #include "misc_utils.hpp"
+#include <uhd/utils/assert.hpp>
 #include <uhd/utils/gain_group.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/subdev_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/codec_props.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -111,4 +115,60 @@ gain_group::sptr usrp::make_gain_group(wax::obj subdev, wax::obj codec){
         gg->register_fcns(fcns, codec_gain_priority);
     }
     return gg;
+}
+
+/***********************************************************************
+ * verify subdev specs
+ **********************************************************************/
+static void verify_xx_subdev_spec(
+    mboard_prop_t dboard_names_prop,
+    mboard_prop_t dboard_prop,
+    subdev_spec_t &subdev_spec,
+    wax::obj mboard,
+    std::string xx_type
+){
+    //the subdevice specification is empty: handle automatic
+    if (subdev_spec.empty()){
+        BOOST_FOREACH(const std::string &db_name, mboard[dboard_names_prop].as<prop_names_t>()){
+            wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
+
+            //if the dboard slot is populated, take the first subdevice
+            if (dboard[DBOARD_PROP_DBOARD_ID].as<dboard_id_t>() != dboard_id_t::none()){
+                std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().at(0);
+                subdev_spec.push_back(subdev_spec_pair_t(db_name, sd_name));
+                break;
+            }
+        }
+
+        //didnt find any populated dboards: add the first subdevice
+        if (subdev_spec.empty()){
+            std::string db_name = mboard[dboard_names_prop].as<prop_names_t>().at(0);
+            wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
+            std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().at(0);
+            subdev_spec.push_back(subdev_spec_pair_t(db_name, sd_name));
+        }
+    }
+
+    //sanity check that the dboard/subdevice names exist for this mboard
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
+        uhd::assert_has(mboard[dboard_names_prop].as<prop_names_t>(),        pair.db_name, xx_type + " dboard name");
+        wax::obj dboard = mboard[named_prop_t(dboard_prop, pair.db_name)];
+        uhd::assert_has(dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>(), pair.sd_name, xx_type + " subdev name");
+    }
+}
+
+void usrp::verify_rx_subdev_spec(subdev_spec_t &subdev_spec, wax::obj mboard){
+    return verify_xx_subdev_spec(
+        MBOARD_PROP_RX_DBOARD_NAMES,
+        MBOARD_PROP_RX_DBOARD,
+        subdev_spec, mboard, "rx"
+    );
+}
+
+void usrp::verify_tx_subdev_spec(subdev_spec_t &subdev_spec, wax::obj mboard){
+    return verify_xx_subdev_spec(
+        MBOARD_PROP_TX_DBOARD_NAMES,
+        MBOARD_PROP_TX_DBOARD,
+        subdev_spec, mboard, "tx"
+    );
 }
