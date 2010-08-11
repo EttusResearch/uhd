@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <sys/mman.h>
 #include "usrp_e.h"
 
 // max length #define PKT_DATA_LENGTH 1016
@@ -12,9 +13,9 @@ static int packet_data_length;
 static int error;
 
 struct pkt {
+	int len;
 	int checksum;
 	int seq_num;
-	int len;
 	short data[];
 };
 
@@ -38,8 +39,8 @@ static int calc_checksum(struct pkt *p)
 
 static void *read_thread(void *threadid)
 {
+	char *rx_data;
 	int cnt, prev_seq_num, pkt_count, seq_num_failure;
-	struct usrp_transfer_frame *rx_data;
 	struct pkt *p;
 	unsigned long bytes_transfered, elapsed_seconds;
 	struct timeval start_time, finish_time;
@@ -51,32 +52,25 @@ static void *read_thread(void *threadid)
 
 	// IMPORTANT: must assume max length packet from fpga
 	rx_data = malloc(2048);
-	p = (struct pkt *) ((void *)rx_data + offsetof(struct usrp_transfer_frame, buf));
-	//p = &(rx_data->buf[0]);
-	printf("Address of rx_data = %p, p = %p\n", rx_data, p);
-	printf("offsetof = %d\n", offsetof(struct usrp_transfer_frame, buf));
-	printf("sizeof rx data = %d\n", sizeof(struct usrp_transfer_frame) + sizeof(struct pkt));
+	p = (struct pkt *) ((void *)rx_data);
 
 	prev_seq_num = 0;
 	pkt_count = 0;
 	seq_num_failure = 0;
 
 	while (1) {
+
 		cnt = read(fp, rx_data, 2048);
 		if (cnt < 0)
 			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
 
-//		printf("Packet received, status = %X, len = %d\n", rx_data->status, rx_data->len);
-//		printf("p->seq_num = %d, p->len = %d\n", p->seq_num, p->len);
+//		printf("p->seq_num = %d\n", p->seq_num);
 
-
-		if (rx_data->len != (p->len*2 + 12))
-			printf("rx_data->len = %d, p->len*2 + 12 = %d\n", rx_data->len, p->len*2 + 12);
 
 		pkt_count++;
 
 		if (p->seq_num != prev_seq_num + 1) {
-			printf("Sequence number fail, current = %X, previous = %X, pkt_count = %d\n",
+			printf("Sequence number fail, current = %d, previous = %d, pkt_count = %d\n",
 				p->seq_num, prev_seq_num, pkt_count);
 
 			seq_num_failure ++;
@@ -87,12 +81,12 @@ static void *read_thread(void *threadid)
 		prev_seq_num = p->seq_num;
 
 		if (calc_checksum(p) != p->checksum) {
-			printf("Cksum fail rx = %X, tx = %X, dif = %d, count = %d, len = %d, rx->len = %d\n",
-				calc_checksum(p), p->checksum, p->checksum - calc_checksum(p), pkt_count, p->len, rx_data->len);
+			printf("Checksum fail packet = %X, expected = %X, pkt_count = %d\n",
+				calc_checksum(p), p->checksum, pkt_count);
 			error = 1;
 		}
 
-		bytes_transfered += rx_data->len;
+		bytes_transfered += cnt;
 
 		if (bytes_transfered > (100 * 1000000)) {
 			gettimeofday(&finish_time, NULL);
@@ -116,47 +110,32 @@ static void *read_thread(void *threadid)
 
 static void *write_thread(void *threadid)
 {
-	int seq_number, i, cnt, data_length;
-	struct usrp_transfer_frame *tx_data;
+	int seq_number, i, cnt;
+	void *tx_data;
 	struct pkt *p;
 
 	printf("Greetings from the write thread!\n");
 
 	tx_data = malloc(2048);
-	p = (struct pkt *) ((void *)tx_data + offsetof(struct usrp_transfer_frame, buf));
-	printf("Address of tx_data = %p, p = %p\n", tx_data, p);
+	p = (struct pkt *) ((void *)tx_data);
 
-	printf("sizeof rp_transfer_frame = %d, sizeof pkt = %d\n", sizeof(struct usrp_transfer_frame), sizeof(struct pkt));
-
-	for (i=0; i < 2048; i++)
+	for (i=0; i < packet_data_length; i++)
 //		p->data[i] = random() >> 16;
 		p->data[i] = i;
-
-	tx_data->status = 0xdeadbeef;
-
-	printf("tx_data->len = %d\n", tx_data->len);
 
 	seq_number = 1;
 
 	while (1) {
-//		printf("tx status = %X, len = %d\n", tx_data->status, tx_data->len);
-		if (packet_data_length > 0)
-			data_length = packet_data_length;
-		else 
-			data_length = (random() & 0x1ff) + (1004 - 512);
-
-//		printf("data_length = %d\n", data_length);
-
 		p->seq_num = seq_number++;
-		p->len = data_length;
+
+		if (packet_data_length > 0)
+			p->len = packet_data_length;
+		else
+			p->len = (random() & 0x1ff) + (1004 - 512);
+
 		p->checksum = calc_checksum(p);
-		tx_data->len = 12 + p->len * 2;
 
-//		printf("tx status = %X, len = %d, p->len = %d\n", tx_data->status, tx_data->len, p->len);
-
-		cnt = write(fp, tx_data, sizeof(struct usrp_transfer_frame) + sizeof(struct pkt) + 2 * p->len);
-//		cnt = write(fp, tx_data, 2048);
-
+		cnt = write(fp, tx_data, p->len * 2 + 12);
 		if (cnt < 0)
 			printf("Error returned from write: %d\n", cnt);
 //		sleep(1);
@@ -171,6 +150,8 @@ int main(int argc, char *argv[])
 	struct sched_param s = {
 		.sched_priority = 1
 	};
+	void *rb;
+	struct usrp_transfer_frame *tx_rb, *rx_rb;
 
 	if (argc < 2) {
 		printf("%s data_size\n", argv[0]);
@@ -182,23 +163,32 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
+	rb = mmap(0, 202 * 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
+	if (!rb) {
+		printf("mmap failed\n");
+		exit;
+	}
+
+
 	sched_setscheduler(0, SCHED_RR, &s);
 	error = 0;
 
+#if 1
 	if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
 		printf("Failed to create rx thread\n");
 		exit(-1);
 	}
 
 	sleep(1);
+#endif
 
 	if (pthread_create(&tx, NULL, write_thread, (void *) t)) {
 		printf("Failed to create tx thread\n");
 		exit(-1);
 	}
 
-	while (!error)
-		sleep(1);
+//	while (!error)
+		sleep(1000000000);
 
 	printf("Done sleeping\n");
 }
