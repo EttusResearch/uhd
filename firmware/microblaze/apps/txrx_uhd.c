@@ -194,7 +194,7 @@ void i2c_write_done_callback(void) {
 static volatile bool spi_done = false;
 static volatile uint32_t spi_readback_data;
 void get_spi_readback_data(void) {
-  spi_readback_data = spi_get_data();
+  ctrl_data_out.data.spi_args.data = spi_get_data();
   spi_done = true;
   spi_register_callback(0);
 }
@@ -245,8 +245,6 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
             //transact
-            uint32_t result;
-            void (*volatile spicall)(void) = (ctrl_data_in->data.spi_args.readback == 0) ? 0 : get_spi_readback_data; //only need a callback if we're doing readback
             bool success = spi_async_transact(
                 //(ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
                 ctrl_data_in->data.spi_args.dev,      //which device
@@ -254,11 +252,10 @@ void handle_udp_ctrl_packet(
                 ctrl_data_in->data.spi_args.num_bits, //length in bits
                 (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE | //flags
                 (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL,
-                spicall //callback
+                get_spi_readback_data //callback
             );
 
             //load output
-            ctrl_data_out.data.spi_args.data = result;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
             spi_src = src;
         }
