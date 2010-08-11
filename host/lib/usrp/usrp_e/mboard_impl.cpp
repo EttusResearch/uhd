@@ -17,6 +17,8 @@
 
 #include "usrp_e_impl.hpp"
 #include "usrp_e_regs.hpp"
+#include "../dsp_utils.hpp"
+#include "../misc_utils.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
@@ -38,6 +40,10 @@ void usrp_e_impl::mboard_init(void){
     _clock_config.pps_source = clock_config_t::PPS_SMA;
 
     //TODO poke the clock config regs
+
+    //set default subdev specs
+    this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
+    this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
 /***********************************************************************
@@ -98,6 +104,14 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        val = _rx_subdev_spec;
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        val = _tx_subdev_spec;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -121,6 +135,28 @@ void usrp_e_impl::mboard_set(const wax::obj &key, const wax::obj &val){
             _iface->poke32(UE_REG_TIME64_IMM, imm_flags);
             _iface->poke32(UE_REG_TIME64_SECS, time_spec.get_full_secs());
         }
+        return;
+
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        _rx_subdev_spec = val.as<subdev_spec_t>();
+        verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
+        //sanity check
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
+        //set the mux
+        _iface->poke32(UE_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
+            _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        _tx_subdev_spec = val.as<subdev_spec_t>();
+        verify_tx_subdev_spec(_tx_subdev_spec, this->get_link());
+        //sanity check
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() == 1);
+        //set the mux
+        _iface->poke32(UE_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
+            _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

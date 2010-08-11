@@ -17,7 +17,6 @@
 
 #include "usrp_e_impl.hpp"
 #include "usrp_e_regs.hpp"
-#include "../dsp_utils.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
