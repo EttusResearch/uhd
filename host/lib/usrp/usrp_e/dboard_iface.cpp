@@ -50,6 +50,8 @@ public:
         /* NOP */
     }
 
+    std::string get_mboard_name(void){return "usrp-e";}
+
     void write_aux_dac(unit_t, aux_dac_t, float);
     float read_aux_adc(unit_t, aux_adc_t);
 

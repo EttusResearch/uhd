@@ -24,6 +24,7 @@
 #include <linux/usrp_e.h> //transfer frame struct
 #include <poll.h>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -35,7 +36,6 @@ using namespace uhd::usrp;
 static const size_t MAX_BUFF_SIZE = 2048;
 static const size_t vrt_header_offset_words32 = sizeof(usrp_transfer_frame)/sizeof(boost::uint32_t);
 static const bool usrp_e_io_impl_verbose = true;
-static const size_t recv_timeout_ms = 100;
 
 /***********************************************************************
  * Data Transport (phony zero-copy with read/write)
@@ -60,6 +60,8 @@ public:
     size_t get_num_send_frames(void) const{
         return 10; //FIXME no idea!
     }
+
+    size_t recv_timeout_ms;
 
 private:
     int _fd;
@@ -220,12 +222,16 @@ size_t usrp_e_impl::recv(
     size_t num_samps,
     rx_metadata_t &metadata,
     const io_type_t &io_type,
-    recv_mode_t recv_mode
+    recv_mode_t recv_mode,
+    size_t timeout_ms
 ){
     otw_type_t recv_otw_type;
     recv_otw_type.width = 16;
     recv_otw_type.shift = 0;
     recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
+    //hand-off the timeout to the transport
+    _io_impl->transport.recv_timeout_ms = timeout_ms;
 
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
@@ -238,4 +244,12 @@ size_t usrp_e_impl::recv(
         boost::bind(&usrp_e_impl::handle_overrun, this, _1),
         vrt_header_offset_words32
     );
+}
+
+/***********************************************************************
+ * Dummy Async Recv
+ **********************************************************************/
+bool usrp_e_impl::recv_async_msg(async_metadata_t &, size_t timeout_ms){
+    boost::this_thread::sleep(boost::posix_time::milliseconds(timeout_ms));
+    return false;
 }

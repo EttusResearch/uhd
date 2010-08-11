@@ -123,13 +123,13 @@ public:
         boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
 
         //load the data struct
-        usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
-        data.addr = addr;
-        data.len = bytes.size();
-        std::copy(bytes.begin(), bytes.end(), data.data);
+        usrp_e_i2c *data = reinterpret_cast<usrp_e_i2c*>(mem);
+        data->addr = addr;
+        data->len = bytes.size();
+        std::copy(bytes.begin(), bytes.end(), data->data);
 
         //call the spi ioctl
-        this->ioctl(USRP_E_I2C_WRITE, &data);
+        this->ioctl(USRP_E_I2C_WRITE, data);
     }
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
@@ -138,17 +138,17 @@ public:
         boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
 
         //load the data struct
-        usrp_e_i2c &data = reinterpret_cast<usrp_e_i2c&>(mem);
-        data.addr = addr;
-        data.len = num_bytes;
+        usrp_e_i2c *data = reinterpret_cast<usrp_e_i2c*>(mem);
+        data->addr = addr;
+        data->len = num_bytes;
 
         //call the spi ioctl
-        this->ioctl(USRP_E_I2C_READ, &data);
+        this->ioctl(USRP_E_I2C_READ, data);
 
         //unload the data
-        byte_vector_t bytes(data.len);
+        byte_vector_t bytes(data->len);
         UHD_ASSERT_THROW(bytes.size() == num_bytes);
-        std::copy(data.data, data.data+bytes.size(), bytes.begin());
+        std::copy(data->data, data->data+bytes.size(), bytes.begin());
         return bytes;
     }
 
