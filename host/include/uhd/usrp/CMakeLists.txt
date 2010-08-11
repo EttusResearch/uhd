@@ -18,6 +18,7 @@
 
 INSTALL(FILES
     #### props headers ###
+    codec_props.hpp
     dboard_props.hpp
     device_props.hpp
     dsp_props.hpp
@@ -32,6 +33,7 @@ INSTALL(FILES
     dboard_manager.hpp
 
     ### utilities ###
+    subdev_spec.hpp
     tune_helper.hpp
 
     ### interfaces ###

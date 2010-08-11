@@ -36,6 +36,7 @@
 #include <boost/thread.hpp>
 #include <stdexcept>
 #include <complex>
+#include <sstream>
 
 using namespace uhd;
 
@@ -60,14 +61,17 @@ freq_range_t::freq_range_t(double min, double max):
 /***********************************************************************
  * tune result
  **********************************************************************/
-tune_result_t::tune_result_t(void):
-    target_inter_freq(0.0),
-    actual_inter_freq(0.0),
-    target_dsp_freq(0.0),
-    actual_dsp_freq(0.0),
-    spectrum_inverted(false)
-{
-    /* NOP */
+std::string tune_result_t::to_pp_string(void) const{
+    return str(boost::format(
+        "Tune Result:\n"
+        "    Target Intermediate Freq: %f (MHz)\n"
+        "    Actual Intermediate Freq: %f (MHz)\n"
+        "    Target DSP Freq Shift:    %f (MHz)\n"
+        "    Actual DSP Freq Shift:    %f (MHz)\n"
+    )
+        % (target_inter_freq/1e6) % (actual_inter_freq/1e6)
+        % (target_dsp_freq/1e6)   % (actual_dsp_freq/1e6)
+    );
 }
 
 /***********************************************************************
@@ -95,18 +99,6 @@ stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
 /***********************************************************************
  * metadata
  **********************************************************************/
-rx_metadata_t::rx_metadata_t(void):
-    has_time_spec(false),
-    time_spec(time_spec_t()),
-    more_fragments(false),
-    fragment_offset(0),
-    start_of_burst(false),
-    end_of_burst(false),
-    error_code(ERROR_CODE_NONE)
-{
-    /* NOP */
-}
-
 tx_metadata_t::tx_metadata_t(void):
     has_time_spec(false),
     time_spec(time_spec_t()),
@@ -199,7 +191,7 @@ device_addr_t::device_addr_t(const std::string &args){
         std::vector<std::string> key_val;
         boost::split(key_val, pair, boost::is_any_of(pair_delim));
         if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args);
-        (*this)[trim(key_val[0])] = trim(key_val[1]);
+        (*this)[trim(key_val.front())] = trim(key_val.back());
     }
 }
 
@@ -207,16 +199,18 @@ std::string device_addr_t::to_pp_string(void) const{
     if (this->size() == 0) return "Empty Device Address";
 
     std::stringstream ss;
+    ss << "Device Address:" << std::endl;
     BOOST_FOREACH(std::string key, this->keys()){
-        ss << boost::format("%s: %s") % key % (*this)[key] << std::endl;
+        ss << boost::format("    %s: %s") % key % (*this)[key] << std::endl;
     }
     return ss.str();
 }
 
 std::string device_addr_t::to_string(void) const{
     std::string args_str;
+    size_t count = 0;
     BOOST_FOREACH(const std::string &key, this->keys()){
-        args_str += key + pair_delim + (*this)[key] + arg_delim;
+        args_str += ((count++)? arg_delim : "") + key + pair_delim + (*this)[key];
     }
     return args_str;
 }

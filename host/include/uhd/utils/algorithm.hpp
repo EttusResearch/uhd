@@ -69,6 +69,31 @@ namespace std{
     }
 
     /*!
+     * A wrapper around std::reverse that takes a range instead of an iterator.
+     *
+     * The elements are reversed into descending order using the less-than operator.
+     *
+     * \param range the range of elements to be reversed
+     */
+    template<typename Range> inline void reverse(Range &range){
+        return std::reverse(boost::begin(range), boost::end(range));
+    }
+
+    /*!
+     * A wrapper around std::reverse that takes a range instead of an iterator.
+     *
+     * The elements are reversed into descending order using the less-than operator.
+     * This wrapper reverses the elements non-destructively into a new range.
+     * Based on the builtin python function reversed(...)
+     *
+     * \param range the range of elements to be reversed
+     * \return a new range with the elements reversed
+     */
+    template<typename Range> inline Range reversed(const Range &range){
+        Range srange(range); std::reverse(srange); return srange;
+    }
+
+    /*!
      * Is the value found within the elements in this range?
      *
      * Uses std::find to search the iterable for an element.
@@ -109,17 +134,6 @@ namespace std{
     bool equal(const Range &range1, const Range &range2){
         return (boost::size(range1) == boost::size(range2)) and
         std::equal(boost::begin(range1), boost::end(range1), boost::begin(range2));
-    }
-
-    /*!
-     * A templated signum implementation.
-     * \param n the comparable to process
-     * \return -1 when n negative, +1 when n positive, otherwise 0
-     */
-    template<typename T> inline int signum(T n){
-        if (n < 0) return -1;
-        if (n > 0) return +1;
-        return 0;
     }
 
     /*!

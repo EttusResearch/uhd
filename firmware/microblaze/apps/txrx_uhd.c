@@ -41,7 +41,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "clocks.h"
-#include <vrt/bits.h>
 #include "usrp2/fw_common.h"
 #include <i2c.h>
 #include <ethertype.h>
@@ -96,6 +95,12 @@ static const uint32_t rx_ctrl_word = 1 << 16;
 
 // DSP Rx writes ethernet header words
 #define DSP_RX_FIRST_LINE sizeof(rx_ctrl_word)/sizeof(uint32_t)
+
+static bool dbsm_rx_inspector(dbsm_t *sm, int buf_this){
+    size_t num_lines = buffer_pool_status->last_line[buf_this]-DSP_RX_FIRST_LINE;
+    ((uint32_t*)buffer_ram(buf_this))[0] = (num_lines*sizeof(uint32_t)) | (1 << 16);
+    return false;
+}
 
 // receive from DSP
 buf_cmd_args_t dsp_rx_recv_args = {
@@ -176,9 +181,9 @@ void handle_udp_ctrl_packet(
     uint32_t ctrl_data_in_id = ctrl_data_in->id;
 
     //ensure that the protocol versions match
-    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_PROTO_VERSION){
-        printf("!Error in control packet handler: Expected protocol version %d, but got %d\n",
-            USRP2_PROTO_VERSION, ctrl_data_in->proto_ver
+    if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
+        printf("!Error in control packet handler: Expected compatibility number %d, but got %d\n",
+            USRP2_FW_COMPAT_NUM, ctrl_data_in->proto_ver
         );
         ctrl_data_in_id = USRP2_CTRL_ID_WAZZUP_BRO;
     }
@@ -193,7 +198,7 @@ void handle_udp_ctrl_packet(
 
     //setup the output data
     usrp2_ctrl_data_t ctrl_data_out = {
-        .proto_ver = USRP2_PROTO_VERSION,
+        .proto_ver = USRP2_FW_COMPAT_NUM,
         .id=USRP2_CTRL_ID_HUH_WHAT,
         .seq=ctrl_data_in->seq
     };
@@ -260,7 +265,7 @@ void handle_udp_ctrl_packet(
      * Peek and Poke Register
      ******************************************************************/
     case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
-        if (ctrl_data_in->data.poke_args.addr < 0xC000){
+        if (0){//ctrl_data_in->data.poke_args.addr < 0xC000){
             printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
         }
         else switch(ctrl_data_in->data.poke_args.num_bytes){
@@ -436,7 +441,8 @@ main(void)
   print_mac_addr(ethernet_mac_addr()->addr);
   newline();
   print_ip_addr(get_ip_addr()); newline();
-  printf("Control protocol version: %d\n", USRP2_PROTO_VERSION);
+  printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
+  printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
 
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
@@ -458,14 +464,11 @@ main(void)
 
     dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
 	      &dsp_rx_recv_args, &dsp_rx_send_args,
-	      dbsm_nop_inspector);
+	      dbsm_rx_inspector);
 
   sr_tx_ctrl->clear_state = 1;
   bp_clear_buf(DSP_TX_BUF_0);
   bp_clear_buf(DSP_TX_BUF_1);
-
-  buffer_ram(DSP_RX_BUF_0)[0] = rx_ctrl_word;
-  buffer_ram(DSP_RX_BUF_0)[1] = rx_ctrl_word;
 
   // kick off the state machine
   dbsm_start(&dsp_tx_sm);
@@ -481,7 +484,7 @@ main(void)
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
-      dbsm_handle_tx_underrun(&dsp_tx_sm);
+      //dbsm_handle_tx_underrun(&dsp_tx_sm);
       pic_regs->pending = PIC_UNDERRUN_INT;	// clear interrupt
       putchar('U');
     }

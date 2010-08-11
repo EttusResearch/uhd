@@ -86,7 +86,7 @@ public:
 
     void set_rate_rx_dboard_clock(double rate){
         assert_has(get_rates_rx_dboard_clock(), rate, "rx dboard clock rate");
-        size_t divider = size_t(rate/get_master_clock_rate());
+        size_t divider = size_t(get_master_clock_rate()/rate);
         //bypass when the divider ratio is one
         _ad9510_regs.bypass_divider_out7 = (divider == 1)? 1 : 0;
         //calculate the low and high dividers
@@ -118,7 +118,7 @@ public:
 
     void set_rate_tx_dboard_clock(double rate){
         assert_has(get_rates_tx_dboard_clock(), rate, "tx dboard clock rate");
-        size_t divider = size_t(rate/get_master_clock_rate());
+        size_t divider = size_t(get_master_clock_rate()/rate);
         //bypass when the divider ratio is one
         _ad9510_regs.bypass_divider_out6 = (divider == 1)? 1 : 0;
         //calculate the low and high dividers

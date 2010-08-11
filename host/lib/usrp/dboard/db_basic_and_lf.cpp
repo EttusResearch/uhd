@@ -16,6 +16,7 @@
 //
 
 #include <uhd/usrp/subdev_props.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
@@ -138,17 +139,14 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = (get_subdev_name() == "AB"); //only quadrature in ab mode
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
-        return;
+    case SUBDEV_PROP_CONNECTION:{
+            static const uhd::dict<std::string, subdev_conn_t> name_to_conn = map_list_of
+                ("A",  SUBDEV_CONN_REAL_I)
+                ("B",  SUBDEV_CONN_REAL_Q)
+                ("AB", SUBDEV_CONN_COMPLEX_IQ)
+            ;
+            val = name_to_conn[get_subdev_name()];
+        } return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
@@ -237,16 +235,8 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

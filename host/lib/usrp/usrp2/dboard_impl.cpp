@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
 #include "../dsp_utils.hpp"
+#include "../misc_utils.hpp"
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>
@@ -35,8 +35,8 @@ using namespace uhd::usrp;
  **********************************************************************/
 void usrp2_mboard_impl::dboard_init(void){
     //read the dboard eeprom to extract the dboard ids
-    _rx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
-    _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
+    _rx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(USRP2_I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
+    _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(USRP2_I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
 
     //create a new dboard interface and manager
     _dboard_iface = make_usrp2_dboard_iface(_iface, _clock_ctrl);
@@ -53,10 +53,6 @@ void usrp2_mboard_impl::dboard_init(void){
         boost::bind(&usrp2_mboard_impl::tx_dboard_get, this, _1, _2),
         boost::bind(&usrp2_mboard_impl::tx_dboard_set, this, _1, _2)
     );
-
-    //init the subdevs in use (use the first subdevice)
-    rx_dboard_set(DBOARD_PROP_USED_SUBDEVS, prop_names_t(1, _dboard_manager->get_rx_subdev_names().at(0)));
-    tx_dboard_set(DBOARD_PROP_USED_SUBDEVS, prop_names_t(1, _dboard_manager->get_tx_subdev_names().at(0)));
 }
 
 /***********************************************************************
@@ -80,10 +76,6 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_rx_subdev_names();
         return;
 
-    case DBOARD_PROP_USED_SUBDEVS:
-        val = _rx_subdevs_in_use;
-        return;
-
     case DBOARD_PROP_DBOARD_ID:
         val = _rx_db_eeprom.id;
         return;
@@ -92,27 +84,26 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_iface;
         return;
 
+    case DBOARD_PROP_CODEC:
+        val = _rx_codec_proxy->get_link();
+        return;
+
+    case DBOARD_PROP_GAIN_GROUP:
+        val = make_gain_group(
+            _dboard_manager->get_rx_subdev(name), _rx_codec_proxy->get_link()
+        );
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
 void usrp2_mboard_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_USED_SUBDEVS:{
-            _rx_subdevs_in_use = val.as<prop_names_t>();
-            UHD_ASSERT_THROW(_rx_subdevs_in_use.size() == 1);
-            wax::obj rx_subdev = _dboard_manager->get_rx_subdev(_rx_subdevs_in_use.at(0));
-            std::cout << "Using: " << rx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
-            _iface->poke32(U2_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
-                rx_subdev[SUBDEV_PROP_QUADRATURE].as<bool>(),
-                rx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()
-            ));
-        }
-        return;
 
     case DBOARD_PROP_DBOARD_ID:
         _rx_db_eeprom.id = val.as<dboard_id_t>();
-        _iface->write_eeprom(I2C_ADDR_RX_DB, 0, _rx_db_eeprom.get_eeprom_bytes());
+        _iface->write_eeprom(USRP2_I2C_ADDR_RX_DB, 0, _rx_db_eeprom.get_eeprom_bytes());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -140,10 +131,6 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_tx_subdev_names();
         return;
 
-    case DBOARD_PROP_USED_SUBDEVS:
-        val = _tx_subdevs_in_use;
-        return;
-
     case DBOARD_PROP_DBOARD_ID:
         val = _tx_db_eeprom.id;
         return;
@@ -152,26 +139,26 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_iface;
         return;
 
+    case DBOARD_PROP_CODEC:
+        val = _tx_codec_proxy->get_link();
+        return;
+
+    case DBOARD_PROP_GAIN_GROUP:
+        val = make_gain_group(
+            _dboard_manager->get_tx_subdev(name), _tx_codec_proxy->get_link()
+        );
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
 void usrp2_mboard_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_USED_SUBDEVS:{
-            _tx_subdevs_in_use = val.as<prop_names_t>();
-            UHD_ASSERT_THROW(_tx_subdevs_in_use.size() == 1);
-            wax::obj tx_subdev = _dboard_manager->get_tx_subdev(_tx_subdevs_in_use.at(0));
-            std::cout << "Using: " << tx_subdev[SUBDEV_PROP_NAME].as<std::string>() << std::endl;
-            _iface->poke32(U2_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
-                tx_subdev[SUBDEV_PROP_IQ_SWAPPED].as<bool>()
-            ));
-        }
-        return;
 
     case DBOARD_PROP_DBOARD_ID:
         _tx_db_eeprom.id = val.as<dboard_id_t>();
-        _iface->write_eeprom(I2C_ADDR_TX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
+        _iface->write_eeprom(USRP2_I2C_ADDR_TX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

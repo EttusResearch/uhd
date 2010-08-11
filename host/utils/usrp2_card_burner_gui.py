@@ -17,7 +17,7 @@
 #
 
 import usrp2_card_burner #import implementation
-import Tkinter, Tkconstants, tkFileDialog, tkFont, tkMessageBox
+import Tkinter, tkFileDialog, tkFont, tkMessageBox
 import os
 
 class BinFileEntry(Tkinter.Frame):
@@ -53,7 +53,7 @@ class BinFileEntry(Tkinter.Frame):
 
 class DeviceEntryWidget(Tkinter.Frame):
     """
-    Simple  entry widget for getting the raw device name.
+    Simple entry widget for getting the raw device name.
     Combines a label, entry, and helpful text box with hints.
     """
 

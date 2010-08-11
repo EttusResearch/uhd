@@ -40,7 +40,7 @@ public:
      * Derived classes should pass the args into the base class,
      * but should not deal with the internals of the args.
      */
-    struct ctor_args_impl; typedef ctor_args_impl* ctor_args_t;
+    typedef void * ctor_args_t;
 
     //structors
     dboard_base(ctor_args_t);

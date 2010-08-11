@@ -15,18 +15,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_DBOARD_CTOR_ARGS_HPP
-#define INCLUDED_DBOARD_CTOR_ARGS_HPP
+#ifndef INCLUDED_LIBUHD_USRP_DBOARD_CTOR_ARGS_HPP
+#define INCLUDED_LIBUHD_USRP_DBOARD_CTOR_ARGS_HPP
 
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <string>
 
-struct uhd::usrp::dboard_base::ctor_args_impl{
-    std::string               sd_name;
-    dboard_iface::sptr        db_iface;
-    dboard_id_t               rx_id, tx_id;
-};
+namespace uhd{ namespace usrp{
 
-#endif /* INCLUDED_DBOARD_CTOR_ARGS_HPP */
+    struct dboard_ctor_args_t{
+        std::string               sd_name;
+        dboard_iface::sptr        db_iface;
+        dboard_id_t               rx_id, tx_id;
+    };
+
+}} //namespace
+
+#endif /* INCLUDED_LIBUHD_USRP_DBOARD_CTOR_ARGS_HPP */

@@ -22,6 +22,5 @@ include $(top_srcdir)/Makefile.common
 EXTRA_DIST = \
 	u2_flash_tool
 
-SUBDIRS = include lib apps
-
-
+SUBDIRS = \
+	usrp2

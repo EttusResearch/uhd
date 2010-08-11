@@ -20,6 +20,7 @@ mux8.v \
 nsgpio.v \
 ram_2port.v \
 ram_harv_cache.v \
+ram_harvard.v \
 ram_loader.v \
 setting_reg.v \
 settings_bus.v \

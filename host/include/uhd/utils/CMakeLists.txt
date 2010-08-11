@@ -22,11 +22,12 @@ INSTALL(FILES
     byteswap.hpp
     byteswap.ipp
     exception.hpp
-    gain_handler.hpp
+    gain_group.hpp
     pimpl.hpp
     props.hpp
     safe_main.hpp
     static.hpp
     thread_priority.hpp
+    warning.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
 )

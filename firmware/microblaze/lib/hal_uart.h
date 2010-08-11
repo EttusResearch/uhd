@@ -19,6 +19,16 @@
 #ifndef INCLUDED_HAL_UART_H
 #define INCLUDED_HAL_UART_H
 
+/*!
+ * \brief uart mode flags
+ */
+#define	UART_MODE_RAW		0x0000	// no mapping on input or output
+#define	UART_MODE_ONLCR	0x0001	// map \n to \r\n on output (default)
+
+/*
+ * \brief Set uart mode
+ */
+void hal_uart_set_mode(int flags);
 
 /*!
  * \brief one-time call to init

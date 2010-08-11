@@ -26,12 +26,12 @@ using namespace uhd::usrp;
  * dboard_base dboard dboard_base class
  **********************************************************************/
 struct dboard_base::impl{
-    ctor_args_impl args;
-    impl(ctor_args_t args) : args(*args){}
+    dboard_ctor_args_t args;
 };
 
 dboard_base::dboard_base(ctor_args_t args){
-    _impl = UHD_PIMPL_MAKE(impl, (args));
+    _impl = UHD_PIMPL_MAKE(impl, ());
+    _impl->args = *static_cast<dboard_ctor_args_t *>(args);
 }
 
 dboard_base::~dboard_base(void){

@@ -67,7 +67,7 @@ module vita_rx_control
    shortfifo #(.WIDTH(96)) commandfifo
      (.clk(clk),.rst(reset),.clear(clear_int),
       .datain({new_command,new_time}), .write(write_ctrl&~full_ctrl), .full(full_ctrl),
-      .dataout({send_imm_pre,chain_pre,reload_pre,numlines_pre,rcvtime_pre}), 
+      .dataout({send_imm_pre,chain_pre,reload_pre,numlines_pre,rcvtime_pre}),
       .read(read_ctrl), .empty(empty_ctrl),
       .occupied(command_queue_len), .space() );
    
@@ -98,7 +98,7 @@ module vita_rx_control
       .src_rdy_o(sample_fifo_src_rdy_o), .dst_rdy_i(sample_fifo_dst_rdy_i),
       .space(), .occupied() );
    
-   // Inband Signallling State Machine
+   // Inband Signalling State Machine
    time_compare 
      time_compare (.time_now(vita_time), .trigger_time(rcvtime), .now(now), .early(early), .late(late));
    
@@ -189,4 +189,3 @@ module vita_rx_control
 		       { 2'b0, overrun, chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
    
 endmodule // rx_control
-

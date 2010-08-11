@@ -25,6 +25,7 @@ INSTALL(FILES
     config.hpp
     device.hpp
     device.ipp
+    version.hpp
     wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
 )

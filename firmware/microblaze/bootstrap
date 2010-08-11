@@ -17,6 +17,7 @@
 #
 
 rm -rf *.cache
+rm -rf libusrp2/.deps
 
 aclocal
 autoconf

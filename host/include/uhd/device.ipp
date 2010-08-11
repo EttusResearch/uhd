@@ -52,12 +52,13 @@ namespace uhd{
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode
+        recv_mode_t recv_mode,
+        size_t timeout_ms
     ){
         return this->recv(
             std::vector<void *>(1, buff),
             nsamps_per_buff, metadata,
-            io_type, recv_mode
+            io_type, recv_mode, timeout_ms
         );
     }
 

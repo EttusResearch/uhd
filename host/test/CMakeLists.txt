@@ -26,8 +26,11 @@ ADD_EXECUTABLE(main_test
     convert_types_test.cpp
     dict_test.cpp
     error_test.cpp
-    gain_handler_test.cpp
+    gain_group_test.cpp
+    subdev_spec_test.cpp
+    tune_helper_test.cpp
     vrt_test.cpp
+    warning_test.cpp
     wax_test.cpp
 )
 TARGET_LINK_LIBRARIES(main_test uhd)

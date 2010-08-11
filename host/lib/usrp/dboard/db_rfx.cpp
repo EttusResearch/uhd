@@ -43,6 +43,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -65,6 +66,10 @@ static const prop_names_t rfx_rx_antennas = list_of("TX/RX")("RX2");
 static const uhd::dict<std::string, gain_range_t> rfx_tx_gain_ranges; //empty
 
 static const uhd::dict<std::string, gain_range_t> rfx_rx_gain_ranges = map_list_of
+    ("PGA0", gain_range_t(0, 70, float(0.022)))
+;
+
+static const uhd::dict<std::string, gain_range_t> rfx400_rx_gain_ranges = map_list_of
     ("PGA0", gain_range_t(0, 45, float(0.022)))
 ;
 
@@ -88,6 +93,7 @@ public:
 
 private:
     freq_range_t _freq_range;
+    uhd::dict<std::string, gain_range_t> _rx_gain_ranges;
     uhd::dict<dboard_iface::unit_t, bool> _div2;
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _rx_ant;
@@ -166,6 +172,14 @@ rfx_xcvr::rfx_xcvr(
     _div2[dboard_iface::UNIT_RX] = rx_div2;
     _div2[dboard_iface::UNIT_TX] = tx_div2;
 
+    if(this->get_rx_id() == 0x0024) { //RFX400
+        _rx_gain_ranges = rfx400_rx_gain_ranges;
+    }
+    else {
+        _rx_gain_ranges = rfx_rx_gain_ranges;
+    }
+
+
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
@@ -193,8 +207,8 @@ rfx_xcvr::rfx_xcvr(
     set_tx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
     set_rx_ant("RX2");
 
-    BOOST_FOREACH(const std::string &name, rfx_rx_gain_ranges.keys()){
-        set_rx_gain(rfx_rx_gain_ranges[name].min, name);
+    BOOST_FOREACH(const std::string &name, _rx_gain_ranges.keys()){
+        set_rx_gain(_rx_gain_ranges[name].min, name);
     }
 }
 
@@ -227,10 +241,10 @@ void rfx_xcvr::set_tx_ant(const std::string &ant){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-static float rx_pga0_gain_to_dac_volts(float &gain){
+static float rx_pga0_gain_to_dac_volts(float &gain, float range){
     //voltage level constants (negative slope)
     static const float max_volts = float(.2), min_volts = float(1.2);
-    static const float slope = (max_volts-min_volts)/45;
+    static const float slope = (max_volts-min_volts)/(range);
 
     //calculate the voltage for the aux dac
     float dac_volts = std::clip<float>(gain*slope + min_volts, max_volts, min_volts);
@@ -247,9 +261,10 @@ void rfx_xcvr::set_tx_gain(float, const std::string &name){
 }
 
 void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
-    assert_has(rfx_rx_gain_ranges.keys(), name, "rfx rx gain name");
+    assert_has(_rx_gain_ranges.keys(), name, "rfx rx gain name");
     if(name == "PGA0"){
-        float dac_volts = rx_pga0_gain_to_dac_volts(gain);
+        float dac_volts = rx_pga0_gain_to_dac_volts(gain, 
+                              (_rx_gain_ranges["PGA0"].max - _rx_gain_ranges["PGA0"].min));
         _rx_gains[name] = gain;
 
         //write the new voltage to the aux dac
@@ -402,12 +417,12 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(rfx_rx_gain_ranges.keys(), name, "rfx rx gain name");
-        val = rfx_rx_gain_ranges[name];
+        assert_has(_rx_gain_ranges.keys(), name, "rfx rx gain name");
+        val = _rx_gain_ranges[name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(rfx_rx_gain_ranges.keys());
+        val = prop_names_t(_rx_gain_ranges.keys());
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -426,16 +441,8 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = rfx_rx_antennas;
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_QI;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
@@ -516,16 +523,8 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = rfx_tx_antennas;
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

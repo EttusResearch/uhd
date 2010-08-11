@@ -54,12 +54,14 @@ private:
 
 //! phony zero-copy recv interface implementation
 struct phony_zero_copy_recv_if::impl{
+    impl(size_t max_buff_size) : max_buff_size(max_buff_size){
+        /* NOP */
+    }
     size_t max_buff_size;
 };
 
 phony_zero_copy_recv_if::phony_zero_copy_recv_if(size_t max_buff_size){
-    _impl = UHD_PIMPL_MAKE(impl, ());
-    _impl->max_buff_size = max_buff_size;
+    _impl = UHD_PIMPL_MAKE(impl, (max_buff_size));
 }
 
 phony_zero_copy_recv_if::~phony_zero_copy_recv_if(void){

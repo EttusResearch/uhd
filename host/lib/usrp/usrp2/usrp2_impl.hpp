@@ -35,6 +35,7 @@
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
 
 /*!
  * Make a usrp2 dboard interface.
@@ -143,6 +144,7 @@ private:
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
+    uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //interfaces
     usrp2_iface::sptr _iface;
@@ -161,18 +163,25 @@ private:
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
+    //properties interface for the codec
+    void codec_init(void);
+    void rx_codec_get(const wax::obj &, wax::obj &);
+    void rx_codec_set(const wax::obj &, const wax::obj &);
+    void tx_codec_get(const wax::obj &, wax::obj &);
+    void tx_codec_set(const wax::obj &, const wax::obj &);
+    wax_obj_proxy::sptr _rx_codec_proxy;
+    wax_obj_proxy::sptr _tx_codec_proxy;
+
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
     void rx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _rx_dboard_proxy;
-    uhd::prop_names_t _rx_subdevs_in_use;
     uhd::usrp::dboard_eeprom_t _rx_db_eeprom;
 
     //properties interface for tx dboard
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
-    uhd::prop_names_t _tx_subdevs_in_use;
     uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
 
     //methods and shadows for the ddc dsp
@@ -224,8 +233,7 @@ public:
     }
     size_t send(
         const std::vector<const void *> &, size_t,
-        const uhd::tx_metadata_t &,
-        const uhd::io_type_t &,
+        const uhd::tx_metadata_t &, const uhd::io_type_t &,
         uhd::device::send_mode_t
     );
     size_t get_max_recv_samps_per_packet(void) const{
@@ -233,10 +241,10 @@ public:
     }
     size_t recv(
         const std::vector<void *> &, size_t,
-        uhd::rx_metadata_t &,
-        const uhd::io_type_t &,
-        uhd::device::recv_mode_t
+        uhd::rx_metadata_t &, const uhd::io_type_t &,
+        uhd::device::recv_mode_t, size_t
     );
+    bool recv_async_msg(uhd::async_metadata_t &, size_t);
 
 private:
     //device properties interface

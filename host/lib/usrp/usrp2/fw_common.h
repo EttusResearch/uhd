@@ -32,9 +32,9 @@ extern "C" {
     #define __stdint(type) type
 #endif
 
-//defines the protocol version in this shared header
-//increment this value when the protocol is changed
-#define USRP2_PROTO_VERSION 5
+//fpga and firmware compatibility numbers
+#define USRP2_FPGA_COMPAT_NUM 1
+#define USRP2_FW_COMPAT_NUM 5
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -43,6 +43,22 @@ extern "C" {
 // Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
 #define USRP2_UDP_DATA_PORT 49153
+
+////////////////////////////////////////////////////////////////////////
+// I2C addresses
+////////////////////////////////////////////////////////////////////////
+#define USRP2_I2C_DEV_EEPROM  0x50 // 24LC02[45]:  7-bits 1010xxx
+#define	USRP2_I2C_ADDR_MBOARD (USRP2_I2C_DEV_EEPROM | 0x0)
+#define	USRP2_I2C_ADDR_TX_DB  (USRP2_I2C_DEV_EEPROM | 0x4)
+#define	USRP2_I2C_ADDR_RX_DB  (USRP2_I2C_DEV_EEPROM | 0x5)
+
+////////////////////////////////////////////////////////////////////////
+// EEPROM Layout
+////////////////////////////////////////////////////////////////////////
+#define USRP2_EE_MBOARD_REV_LSB  0x00 //1 byte
+#define USRP2_EE_MBOARD_REV_MSB  0x01 //1 byte
+#define USRP2_EE_MBOARD_MAC_ADDR 0x02 //6 bytes
+#define USRP2_EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
 
 typedef enum{
     USRP2_CTRL_ID_HUH_WHAT = ' ',

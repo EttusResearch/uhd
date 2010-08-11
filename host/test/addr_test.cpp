@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
     uhd::device_addr_t new_dev_addr(args_str);
 
     //they should be the same size
-    BOOST_CHECK_EQUAL(dev_addr.size(), new_dev_addr.size());
+    BOOST_REQUIRE_EQUAL(dev_addr.size(), new_dev_addr.size());
 
     //the keys should match
     std::vector<std::string> old_dev_addr_keys = dev_addr.keys();

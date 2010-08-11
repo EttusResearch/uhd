@@ -18,7 +18,6 @@
 #include "dboard_ctor_args.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_props.hpp>
-#include <uhd/utils/gain_handler.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
@@ -98,33 +97,18 @@ public:
     enum type_t{RX_TYPE, TX_TYPE};
 
     //structors
-    subdev_proxy(dboard_base::sptr subdev, type_t type)
-    : _subdev(subdev), _type(type){
-        //initialize gain props struct
-        gain_handler::props_t gain_props;
-        gain_props.value = SUBDEV_PROP_GAIN;
-        gain_props.range = SUBDEV_PROP_GAIN_RANGE;
-        gain_props.names = SUBDEV_PROP_GAIN_NAMES;
-
-        //make a new gain handler
-        _gain_handler = gain_handler::make(
-            this->get_link(), gain_props,
-            boost::bind(&gain_handler::is_equal<subdev_prop_t>, _1, _2)
-        );
-    }
-
-    ~subdev_proxy(void){
+    subdev_proxy(dboard_base::sptr subdev, type_t type):
+        _subdev(subdev), _type(type)
+    {
         /* NOP */
     }
 
 private:
-    gain_handler::sptr   _gain_handler;
     dboard_base::sptr   _subdev;
     type_t              _type;
 
     //forward the get calls to the rx or tx
     void get(const wax::obj &key, wax::obj &val){
-        if (_gain_handler->intercept_get(key, val)) return;
         switch(_type){
         case RX_TYPE: return _subdev->rx_get(key, val);
         case TX_TYPE: return _subdev->tx_get(key, val);
@@ -133,7 +117,6 @@ private:
 
     //forward the set calls to the rx or tx
     void set(const wax::obj &key, const wax::obj &val){
-        if (_gain_handler->intercept_set(key, val)) return;
         switch(_type){
         case RX_TYPE: return _subdev->rx_set(key, val);
         case TX_TYPE: return _subdev->tx_set(key, val);
@@ -242,7 +225,7 @@ dboard_manager_impl::dboard_manager_impl(
     set_nice_dboard_if();
 
     //dboard constructor args
-    dboard_base::ctor_args_impl db_ctor_args;
+    dboard_ctor_args_t db_ctor_args;
     db_ctor_args.db_iface = iface;
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)

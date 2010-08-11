@@ -20,7 +20,10 @@
 
 #include <uhd/config.hpp>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 #include <stdexcept>
+#include <typeinfo>
 #include <vector>
 #include <list>
 
@@ -117,7 +120,10 @@ namespace uhd{
             BOOST_FOREACH(const pair_t &p, _map){
                 if (p.first == key) return p.second;
             }
-            throw std::invalid_argument("key not found in dict");
+            throw std::invalid_argument(str(boost::format(
+                "key \"%s\" not found in dict(%s, %s)"
+            ) % boost::lexical_cast<std::string>(key)
+            % typeid(Key).name() % typeid(Val).name()));
         }
 
         /*!

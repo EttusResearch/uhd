@@ -23,6 +23,22 @@
 namespace uhd{ namespace usrp{
 
     /*!
+     * Possible subdev connection types:
+     *
+     * A complex subdevice is physically connected to both channels,
+     * which may be connected in one of two ways: IQ or QI (swapped).
+     *
+     * A real subdevice is only physically connected one channel,
+     * either only the I channel or only the Q channel.
+     */
+    enum subdev_conn_t{
+        SUBDEV_CONN_COMPLEX_IQ = 'C',
+        SUBDEV_CONN_COMPLEX_QI = 'c',
+        SUBDEV_CONN_REAL_I     = 'R',
+        SUBDEV_CONN_REAL_Q     = 'r'
+    };
+
+    /*!
      * Possible device subdev properties
      */
     enum subdev_prop_t{
@@ -36,9 +52,7 @@ namespace uhd{ namespace usrp{
         SUBDEV_PROP_ANTENNA           = 'a', //rw, std::string
         SUBDEV_PROP_ANTENNA_NAMES     = 'A', //ro, prop_names_t
         SUBDEV_PROP_LO_LOCKED         = 'L', //ro, bool
-        SUBDEV_PROP_QUADRATURE        = 'q', //ro, bool
-        SUBDEV_PROP_IQ_SWAPPED        = 'i', //ro, bool
-        SUBDEV_PROP_SPECTRUM_INVERTED = 's', //ro, bool
+        SUBDEV_PROP_CONNECTION        = 'c', //ro, subdev_conn_t
         SUBDEV_PROP_USE_LO_OFFSET     = 'l', //ro, bool
         SUBDEV_PROP_RSSI              = 'R', //ro, float
         SUBDEV_PROP_BANDWIDTH         = 'B'  //rw, double

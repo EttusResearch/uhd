@@ -42,6 +42,9 @@ public:
     typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
     typedef boost::function<sptr(const device_addr_t &)> make_t;
 
+    //! A reasonable default timeout for receive
+    static const size_t default_recv_timeout_ms = 100;
+
     /*!
      * Register a device into the discovery and factory system.
      *
@@ -158,12 +161,7 @@ public:
      * See the rx metadata fragment flags and offset fields for details.
      *
      * This is a blocking call and will not return until the number
-     * of samples returned have been written into each buffer.
-     * However, a call to receive may timeout and return zero samples.
-     * The timeout duration is decided by the underlying transport layer.
-     * The caller should assume that the call to receive will not return
-     * immediately when no packets are available to the transport layer,
-     * and that the timeout duration is reasonably tuned for performance.
+     * of samples returned have been written into each buffer or timeout.
      *
      * When using the full buffer recv mode, the metadata only applies
      * to the first packet received and written into the recv buffers.
@@ -174,6 +172,7 @@ public:
      * \param metadata data to fill describing the buffer
      * \param io_type the type of data to fill into the buffer
      * \param recv_mode tells recv how to load the buffer
+     * \param timeout_ms the timeout in milliseconds to wait for a packet
      * \return the number of samples received or 0 on error
      */
     virtual size_t recv(
@@ -181,7 +180,8 @@ public:
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode
+        recv_mode_t recv_mode,
+        size_t timeout_ms = default_recv_timeout_ms
     ) = 0;
 
     /*!
@@ -192,7 +192,8 @@ public:
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
-        recv_mode_t recv_mode
+        recv_mode_t recv_mode,
+        size_t timeout_ms = default_recv_timeout_ms
     );
 
     //! Deprecated
@@ -212,6 +213,17 @@ public:
      * \return the number of samples
      */
     virtual size_t get_max_recv_samps_per_packet(void) const = 0;
+
+    /*!
+     * Receive and asynchronous message from the device.
+     * \param async_metadata the metadata to be filled in
+     * \param timeout_ms the timeout in milliseconds to wait for a message
+     * \return true when the async_metadata is valid, false for timeout
+     */
+    virtual bool recv_async_msg(
+        async_metadata_t &async_metadata,
+        size_t timeout_ms = default_recv_timeout_ms
+    ) = 0;
 
 };
 

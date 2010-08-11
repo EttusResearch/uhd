@@ -86,7 +86,7 @@ using namespace boost::assign;
  **********************************************************************/
 static const bool wbx_debug = false;
 
-static const freq_range_t wbx_freq_range(50e6, 2.22e9);
+static const freq_range_t wbx_freq_range(68.75e6, 2.2e9);
 
 static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
 
@@ -439,6 +439,7 @@ double wbx_xcvr::set_lo_freq(
     regs.reference_divide_by_2 = T;
     regs.reference_doubler = D;
     regs.band_select_clock_div = BS;
+    UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
     regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
 
     //write the registers
@@ -509,16 +510,8 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = wbx_rx_antennas;
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
@@ -603,16 +596,8 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = wbx_tx_antennas;
         return;
 
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
+    case SUBDEV_PROP_CONNECTION:
+        val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

@@ -45,8 +45,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface = usrp2_iface::make(ctrl_transport);
 
     //extract the mboard rev numbers
-    _rev_lo = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_LSB, 1).at(0);
-    _rev_hi = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_REV_MSB, 1).at(0);
+    _rev_lo = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_LSB, 1).at(0);
+    _rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
 
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -67,7 +67,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
-    //setup the vrt rx registers
+    //init the rx control registers
     _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _io_helper.get_max_recv_samps_per_packet());
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
@@ -81,6 +81,12 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_RX_CTRL_VRT_TRAILER, 0);
     _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
 
+    //init the tx control registers
+    _iface->poke32(U2_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
+    _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
+    _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
+    _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+
     //init the ddc
     init_ddc_config();
 
@@ -90,8 +96,20 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //initialize the clock configuration
     init_clock_config();
 
+    //init the codec before the dboard
+    codec_init();
+
     //init the tx and rx dboards (do last)
     dboard_init();
+
+    //set default subdev specs
+    (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
+    (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
+
+    //Issue a stop streaming command (in case it was left running).
+    //Since this command is issued before the networking is setup,
+    //most if not all junk packets will never make it to the socket.
+    this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
@@ -174,14 +192,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the other props
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
-            byte_vector_t bytes = _iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, 6);
+            byte_vector_t bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, 6);
             val = mac_addr_t::from_bytes(bytes).to_string();
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
             boost::asio::ip::address_v4::bytes_type bytes;
-            std::copy(_iface->read_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, 4), bytes);
+            std::copy(_iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, 4), bytes);
             val = boost::asio::ip::address_v4(bytes).to_string();
             return;
         }
@@ -252,6 +270,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         }
         return;
 
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        val = _rx_subdev_spec;
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        val = _tx_subdev_spec;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -264,14 +290,14 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
     if (key.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
             byte_vector_t bytes = mac_addr_t::from_string(val.as<std::string>()).to_bytes();
-            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_MAC_ADDR, bytes);
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, bytes);
             return;
         }
 
         if (key.as<std::string>() == "ip-addr"){
             byte_vector_t bytes(4);
             std::copy(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_bytes(), bytes);
-            _iface->write_eeprom(I2C_ADDR_MBOARD, EE_MBOARD_IP_ADDR, bytes);
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, bytes);
             return;
         }
     }
@@ -294,6 +320,38 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_STREAM_CMD:
         issue_ddc_stream_cmd(val.as<stream_cmd_t>());
+        return;
+
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        _rx_subdev_spec = val.as<subdev_spec_t>();
+        //handle automatic
+        if (_rx_subdev_spec.empty()) _rx_subdev_spec.push_back(
+            subdev_spec_pair_t("", _dboard_manager->get_rx_subdev_names().front())
+        );
+        //sanity check
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
+        uhd::assert_has((*this)[MBOARD_PROP_RX_DBOARD_NAMES].as<prop_names_t>(), _rx_subdev_spec.front().db_name, "rx dboard names");
+        uhd::assert_has(_dboard_manager->get_rx_subdev_names(), _rx_subdev_spec.front().sd_name, "rx subdev names");
+        //set the mux
+        _iface->poke32(U2_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
+            _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        _tx_subdev_spec = val.as<subdev_spec_t>();
+        //handle automatic
+        if (_tx_subdev_spec.empty()) _tx_subdev_spec.push_back(
+            subdev_spec_pair_t("", _dboard_manager->get_tx_subdev_names().front())
+        );
+        //sanity check
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() == 1);
+        uhd::assert_has((*this)[MBOARD_PROP_TX_DBOARD_NAMES].as<prop_names_t>(), _tx_subdev_spec.front().db_name, "tx dboard names");
+        uhd::assert_has(_dboard_manager->get_tx_subdev_names(), _tx_subdev_spec.front().sd_name, "tx subdev names");
+        //set the mux
+        _iface->poke32(U2_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
+            _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

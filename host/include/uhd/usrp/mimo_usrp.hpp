@@ -24,6 +24,7 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/tune_result.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -119,11 +120,15 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
+    virtual void set_rx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec) = 0;
+    virtual uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t chan) = 0;
+
     virtual void set_rx_rate_all(double rate) = 0;
     virtual double get_rx_rate_all(void) = 0;
 
     virtual tune_result_t set_rx_freq(size_t chan, double freq) = 0;
     virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
+    virtual double get_rx_freq(size_t chan) = 0;
     virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
 
     virtual void set_rx_gain(size_t chan, float gain) = 0;
@@ -147,11 +152,15 @@ public:
     /*******************************************************************
      * TX methods
      ******************************************************************/
+    virtual void set_tx_subdev_spec(size_t chan, const uhd::usrp::subdev_spec_t &spec) = 0;
+    virtual uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t chan) = 0;
+
     virtual void set_tx_rate_all(double rate) = 0;
     virtual double get_tx_rate_all(void) = 0;
 
     virtual tune_result_t set_tx_freq(size_t chan, double freq) = 0;
     virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
+    virtual double get_tx_freq(size_t chan) = 0;
     virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
 
     virtual void set_tx_gain(size_t chan, float gain) = 0;
