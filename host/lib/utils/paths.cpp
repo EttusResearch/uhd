@@ -60,12 +60,14 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
 
     //split the path at the path separators
     std::vector<std::string> path_strings;
-    boost::split(path_strings, var_value, boost::is_any_of(env_path_sep));
+    if (not var_value.empty()) boost::split(//dont split empty strings
+        path_strings, var_value, boost::is_any_of(env_path_sep)
+    );
 
     //convert to filesystem path, filter blank paths
     std::vector<fs::path> paths;
     BOOST_FOREACH(std::string &path_string, path_strings){
-        if (path_string.size() == 0) continue;
+        if (path_string.empty()) continue;
         paths.push_back(fs::system_complete(path_string));
     }
     return paths;
@@ -74,17 +76,15 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
 /***********************************************************************
  * Get a list of special purpose paths
  **********************************************************************/
-static const fs::path pkg_data_path = fs::path(UHD_INSTALL_PREFIX) / UHD_PKG_DATA_DIR;
-
 std::vector<fs::path> get_image_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_IMAGE_PATH");
-    paths.push_back(pkg_data_path / "images");
+    paths.push_back(fs::path(UHD_INSTALL_PREFIX) / UHD_PKG_DATA_DIR / "images");
     return paths;
 }
 
 std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
-    paths.push_back(pkg_data_path / "modules");
+    paths.push_back(fs::path(UHD_INSTALL_PREFIX) / UHD_PKG_DATA_DIR / "modules");
     return paths;
 }
 
