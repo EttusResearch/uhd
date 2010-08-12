@@ -17,6 +17,7 @@
 
 #include "usrp_e_impl.hpp"
 #include <uhd/usrp/device_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/format.hpp>
@@ -93,8 +94,15 @@ usrp_e_impl::usrp_e_impl(const std::string &node){
     rx_ddc_init();
     tx_duc_init();
 
+    //init the codec properties
+    codec_init();
+
     //init the io send/recv
     io_init();
+
+    //set default subdev specs
+    this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
+    this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
 usrp_e_impl::~usrp_e_impl(void){

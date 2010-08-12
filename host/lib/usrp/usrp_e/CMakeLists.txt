@@ -32,6 +32,7 @@ IF(HAVE_LINUX_USRP_E_H)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/clock_ctrl.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/codec_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/codec_ctrl.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/codec_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dboard_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dboard_iface.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/dsp_impl.cpp

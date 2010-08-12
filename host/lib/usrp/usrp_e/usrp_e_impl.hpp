@@ -152,6 +152,14 @@ private:
     void tx_duc_set(const wax::obj &, const wax::obj &);
     double _duc_freq; size_t _duc_interp;
     wax_obj_proxy::sptr _tx_duc_proxy;
+
+    //codec functions and settings
+    void codec_init(void);
+    void rx_codec_get(const wax::obj &, wax::obj &);
+    void rx_codec_set(const wax::obj &, const wax::obj &);
+    void tx_codec_get(const wax::obj &, wax::obj &);
+    void tx_codec_set(const wax::obj &, const wax::obj &);
+    wax_obj_proxy::sptr _rx_codec_proxy, _tx_codec_proxy;
 };
 
 #endif /* INCLUDED_USRP_E_IMPL_HPP */

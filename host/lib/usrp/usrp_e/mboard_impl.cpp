@@ -22,6 +22,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -40,10 +41,6 @@ void usrp_e_impl::mboard_init(void){
     _clock_config.pps_source = clock_config_t::PPS_SMA;
 
     //TODO poke the clock config regs
-
-    //set default subdev specs
-    this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
-    this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
 /***********************************************************************
