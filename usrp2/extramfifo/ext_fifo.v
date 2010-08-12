@@ -57,10 +57,18 @@ module ext_fifo
 								 .dout(write_data), // Bus [17 : 0] 
 								 .full(full1),			
 							         .empty(empty1));
-   assign 	    dst_rdy_o = ~full1;
+
+    assign 	    dst_rdy_o = ~full1;
+   
+/* -----\/----- EXCLUDED -----\/-----
+   assign 	    space_avail = ~full2;
+   assign 	    data_avail = ~empty1;
+   assign 	    read_data = write_data;
+ -----/\----- EXCLUDED -----/\----- */
+   
 
    // External FIFO running at ext clock rate  and 18 bit width.
-   nobl_fifo  #(.WIDTH(EXT_WIDTH),.DEPTH(DEPTH))
+   nobl_fifo  #(.WIDTH(EXT_WIDTH),.DEPTH(DEPTH),.FDEPTH(DEPTH))
      nobl_fifo_i1
        (   
 	   .clk(ext_clk),
@@ -94,7 +102,8 @@ module ext_fifo
 								 .rd_en(dst_rdy_i),
 								 .dout(dataout), // Bus [35 : 0]
 								 .full(full2),
-								 .almost_full(almost_full2),
+								 .almost_full(),
+								 .prog_full(almost_full2),
 								 .empty(empty2));
    assign  src_rdy_o = ~empty2;
 

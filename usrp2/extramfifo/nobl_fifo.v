@@ -5,7 +5,7 @@
 // "full" and "empty" flags.
 
 module nobl_fifo
-  #(parameter WIDTH=18,DEPTH=19)
+  #(parameter WIDTH=18,DEPTH=19,FDEPTH=10)
     (   
 	input clk,
 	input rst,
@@ -27,9 +27,9 @@ module nobl_fifo
 	input upstream_full // (Connect to almost full flag upstream)
 	);
 
-   reg [DEPTH-1:0] capacity;
-   reg [DEPTH-1:0] wr_pointer;
-   reg [DEPTH-1:0] rd_pointer;
+   reg [FDEPTH-1:0] capacity;
+   reg [FDEPTH-1:0] wr_pointer;
+   reg [FDEPTH-1:0] rd_pointer;
    wire [DEPTH-1:0] address;
    reg 		   supress;
    reg 		   data_avail_int;   // Data available with high latency from ext FIFO flag
@@ -51,7 +51,7 @@ module nobl_fifo
    always @(posedge clk)
      if (rst)
        begin
-	  capacity <= 1 << (DEPTH-1);
+	  capacity <= 1 << (FDEPTH-1);
 	  wr_pointer <= 0;
 	  rd_pointer <= 0;
 	  space_avail <= 0;
@@ -60,9 +60,11 @@ module nobl_fifo
        end
      else	  
        begin
-	  space_avail <= ~((capacity == 0) || (read&&write) || (capacity == 1 && write) );
+	  // No space available if:
+	  // Capacity is already zero; Capacity is 1 and write is asserted (lookahead); both read and write are asserted (collision)
+	  space_avail <= ~((capacity == 0) || (read&&write) || ((capacity == 1) && write) );
 	  // Capacity has 1 cycle delay so look ahead here for corner case of read of last item in FIFO.
-	  data_avail_int <= ~((capacity == (1 << (DEPTH-1))) || (read&&write)  || (capacity == ((1 << (DEPTH-1))-1) && read)  );
+	  data_avail_int <= ~((capacity == (1 << (FDEPTH-1))) || (read&&write)  || ((capacity == ((1 << (FDEPTH-1))-1)) && read)  );
 	  supress <= read && write;
 	  wr_pointer <= wr_pointer + write;
 	  rd_pointer <= rd_pointer + ((~write && read) || supress);

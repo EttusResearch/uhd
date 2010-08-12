@@ -51,6 +51,44 @@ module ext_fifo_tb();
    always
      #4 ext_clk <= ~ext_clk;
 
+   initial
+     begin
+	rst <= 1;
+	repeat (5) @(negedge int_clk);
+	rst <= 0;
+	@(negedge int_clk);
+	while (datain < 10000)
+	  begin
+	     @(negedge int_clk);
+	     datain <= datain + dst_rdy_o;
+	     src_rdy_i <= dst_rdy_o;
+	  end
+     end // initial begin
+
+   
+   initial
+     begin
+	repeat (20) @(negedge int_clk);
+	  
+	// Fall through fifo, first output already valid
+	if (dataout !== ref_dataout)
+	  $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	
+	while (ref_dataout < 10000)
+	  begin
+	     @(negedge int_clk);
+	     ref_dataout <= ref_dataout + src_rdy_o ;
+	     dst_rdy_i <= src_rdy_o;
+	     if ((dataout !== ref_dataout) && src_rdy_o)
+	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	     @(negedge int_clk);
+	     dst_rdy_i <= 0;
+	     repeat(6) @(negedge int_clk);
+	  end
+     end
+   
+
+/* -----\/----- EXCLUDED -----\/-----
  
    initial
      begin
@@ -112,6 +150,7 @@ module ext_fifo_tb();
      end // initial begin
 
 
+ -----/\----- EXCLUDED -----/\----- */
    ///////////////////////////////////////////////////////////////////////////////////
    // Simulation control                                                            //
    ///////////////////////////////////////////////////////////////////////////////////
