@@ -23,7 +23,7 @@
 *     appliances, devices, or systems. Use in such applications are            *
 *     expressly prohibited.                                                    *
 *                                                                              *
-*     (c) Copyright 1995-2007 Xilinx, Inc.                                     *
+*     (c) Copyright 1995-2009 Xilinx, Inc.                                     *
 *     All rights reserved.                                                     *
 *******************************************************************************/
 // The synthesis directives "translate_off/translate_on" specified below are
@@ -38,32 +38,34 @@
 `timescale 1ns/1ps
 
 module fifo_xlnx_512x36_2clk_18to36(
-	din,
-	rd_clk,
-	rd_en,
 	rst,
 	wr_clk,
+	rd_clk,
+	din,
 	wr_en,
-	almost_full,
+	rd_en,
 	dout,
+	full,
+	almost_full,
 	empty,
-	full);
+	prog_full);
 
 
-input [17 : 0] din;
-input rd_clk;
-input rd_en;
 input rst;
 input wr_clk;
+input rd_clk;
+input [17 : 0] din;
 input wr_en;
-output almost_full;
+input rd_en;
 output [35 : 0] dout;
-output empty;
 output full;
+output almost_full;
+output empty;
+output prog_full;
 
 // synthesis translate_off
 
-      FIFO_GENERATOR_V4_3 #(
+      FIFO_GENERATOR_V6_1 #(
 		.C_COMMON_CLOCK(0),
 		.C_COUNT_TYPE(0),
 		.C_DATA_COUNT_WIDTH(10),
@@ -72,6 +74,8 @@ output full;
 		.C_DOUT_RST_VAL("0"),
 		.C_DOUT_WIDTH(36),
 		.C_ENABLE_RLOCS(0),
+		.C_ENABLE_RST_SYNC(1),
+		.C_ERROR_INJECTION_TYPE(0),
 		.C_FAMILY("spartan3"),
 		.C_FULL_FLAGS_RST_VAL(0),
 		.C_HAS_ALMOST_EMPTY(0),
@@ -103,9 +107,9 @@ output full;
 		.C_PROG_EMPTY_THRESH_ASSERT_VAL(4),
 		.C_PROG_EMPTY_THRESH_NEGATE_VAL(5),
 		.C_PROG_EMPTY_TYPE(0),
-		.C_PROG_FULL_THRESH_ASSERT_VAL(1023),
-		.C_PROG_FULL_THRESH_NEGATE_VAL(1022),
-		.C_PROG_FULL_TYPE(0),
+		.C_PROG_FULL_THRESH_ASSERT_VAL(1017),
+		.C_PROG_FULL_THRESH_NEGATE_VAL(1016),
+		.C_PROG_FULL_TYPE(1),
 		.C_RD_DATA_COUNT_WIDTH(9),
 		.C_RD_DEPTH(512),
 		.C_RD_FREQ(1),
@@ -124,39 +128,41 @@ output full;
 		.C_WR_PNTR_WIDTH(10),
 		.C_WR_RESPONSE_LATENCY(1))
 	inst (
-		.DIN(din),
-		.RD_CLK(rd_clk),
-		.RD_EN(rd_en),
 		.RST(rst),
 		.WR_CLK(wr_clk),
+		.RD_CLK(rd_clk),
+		.DIN(din),
 		.WR_EN(wr_en),
-		.ALMOST_FULL(almost_full),
+		.RD_EN(rd_en),
 		.DOUT(dout),
-		.EMPTY(empty),
 		.FULL(full),
-		.CLK(),
-		.INT_CLK(),
+		.ALMOST_FULL(almost_full),
+		.EMPTY(empty),
+		.PROG_FULL(prog_full),
 		.BACKUP(),
 		.BACKUP_MARKER(),
+		.CLK(),
+		.SRST(),
+		.WR_RST(),
+		.RD_RST(),
 		.PROG_EMPTY_THRESH(),
 		.PROG_EMPTY_THRESH_ASSERT(),
 		.PROG_EMPTY_THRESH_NEGATE(),
 		.PROG_FULL_THRESH(),
 		.PROG_FULL_THRESH_ASSERT(),
 		.PROG_FULL_THRESH_NEGATE(),
-		.RD_RST(),
-		.SRST(),
-		.WR_RST(),
-		.ALMOST_EMPTY(),
-		.DATA_COUNT(),
-		.OVERFLOW(),
-		.PROG_EMPTY(),
-		.PROG_FULL(),
-		.VALID(),
-		.RD_DATA_COUNT(),
-		.UNDERFLOW(),
+		.INT_CLK(),
+		.INJECTDBITERR(),
+		.INJECTSBITERR(),
 		.WR_ACK(),
+		.OVERFLOW(),
+		.ALMOST_EMPTY(),
+		.VALID(),
+		.UNDERFLOW(),
+		.DATA_COUNT(),
+		.RD_DATA_COUNT(),
 		.WR_DATA_COUNT(),
+		.PROG_EMPTY(),
 		.SBITERR(),
 		.DBITERR());
 
