@@ -53,7 +53,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "-- UHD Device " << i << std::endl;
         std::cout << "--------------------------------------------------" << std::endl;
         std::cout << device_addrs[i].to_pp_string() << std::endl << std::endl;
-        uhd::device::make(device_addrs[i]); //test make
+        //uhd::device::make(device_addrs[i]); //test make
     }
 
     return 0;
