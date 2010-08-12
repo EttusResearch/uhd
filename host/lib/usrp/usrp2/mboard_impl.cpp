@@ -110,6 +110,13 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
 
+    //TODO DEBUG! this is just here to test writing to and reading from the UART.
+    std::string mystr = "PTIME:TIME?\n";
+    byte_vector_t mybuf(mystr.begin(), mystr.end());
+    _iface->write_uart(2, mybuf);
+    mybuf = _iface->read_uart(2, 15);
+    std::cout << "DEBUG: " << std::string(mybuf.begin(), mybuf.end()) << std::endl;
+
     //Issue a stop streaming command (in case it was left running).
     //Since this command is issued before the networking is setup,
     //most if not all junk packets will never make it to the socket.

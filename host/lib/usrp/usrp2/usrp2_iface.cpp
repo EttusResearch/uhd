@@ -172,6 +172,48 @@ public:
     }
 
 /***********************************************************************
+ * UART
+ **********************************************************************/
+    void write_uart(boost::uint8_t dev, const byte_vector_t &buf){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO);
+        out_data.data.uart_args.dev = dev;
+        out_data.data.uart_args.bytes = buf.size();
+
+        //limitation of uart transaction size
+        UHD_ASSERT_THROW(buf.size() <= sizeof(out_data.data.uart_args.data));
+
+        //copy in the data
+        std::copy(buf.begin(), buf.end(), out_data.data.uart_args.data);
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE);
+    }
+
+    byte_vector_t read_uart(boost::uint8_t dev, size_t num_bytes){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO);
+        out_data.data.uart_args.dev = dev;
+        out_data.data.uart_args.bytes = num_bytes;
+
+        //limitation of uart transaction size
+        UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.uart_args.data));
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE);
+        //UHD_ASSERT_THROW(in_data.data.uart_args.bytes = num_bytes);
+
+        //copy out the data
+        byte_vector_t result(num_bytes);
+        std::copy(in_data.data.uart_args.data, in_data.data.uart_args.data + num_bytes, result.begin());
+        return result;
+    }
+
+/***********************************************************************
  * Send/Recv over control
  **********************************************************************/
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data){

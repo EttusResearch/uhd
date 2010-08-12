@@ -104,6 +104,10 @@ public:
         bool readback
     ) = 0;
 
+    virtual void write_uart(boost::uint8_t dev, const uhd::byte_vector_t &buf) = 0;
+
+    virtual uhd::byte_vector_t read_uart(boost::uint8_t dev, size_t num_bytes) = 0;
+
     /*!
      * Set the hardware revision number. Also selects the proper register set for the device.
      * \param rev the 16-bit revision
