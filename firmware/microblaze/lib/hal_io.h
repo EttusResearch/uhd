@@ -20,10 +20,12 @@
 #define INCLUDED_HAL_IO_H
 
 #include "memory_map.h"
+#include "hal_uart.h"
 
 void hal_io_init(void);
 void hal_finish();
 char *gets(char * const s);
+int fputstr(hal_uart_name_t u, const char *s);
 
 /*
  * ------------------------------------------------------------------------

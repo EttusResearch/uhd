@@ -18,9 +18,9 @@
 
 // conditionalized on HAL_IO_USES_DBOARD_PINS && HAL_IO_USES_UART
 
-#include "hal_io.h"
 #include "memory_map.h"
 #include "hal_uart.h"
+#include "hal_io.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -102,7 +102,7 @@ hal_finish(void)
 
 // %c
 inline int
-fputchar(int ch)
+putchar(int ch)
 {
   hal_gpio_set_rx((s << 8) | W, 0xff80);
   hal_gpio_set_rx(0, 0xff80);
@@ -124,16 +124,29 @@ hal_finish(void)
 
 // %c
 inline int
-fputchar(int ch)
+fputchar(hal_uart_name_t u, int ch)
 {
-  hal_uart_putc(ch);
+  hal_uart_putc(u, ch);
+  return ch;
+}
+
+inline int
+putchar(int ch)
+{
+  hal_uart_putc(DEFAULT_UART, ch);
   return ch;
 }
 
 int
-fgetchar(void)
+fgetchar(hal_uart_name_t u)
 {
-  return hal_uart_getc();
+  return hal_uart_getc(u);
+}
+
+int
+getchar(void)
+{
+  return fgetchar(DEFAULT_UART);
 }
 
 #else	// nop all i/o
@@ -172,34 +185,57 @@ getchar(void)
 
 // \n
 inline void 
-fnewline(void)
+fnewline(hal_uart_name_t u)
 {
-  putchar('\n');
+  fputchar(u, '\n');
+}
+
+inline void
+newline(void)
+{
+  fnewline(DEFAULT_UART);
 }
 
 int
-fputstr(const char *s)
+fputstr(hal_uart_name_t u, const char *s)
 {
   while (*s)
-    putchar(*s++);
+    fputchar(u, *s++);
 
   return 0;
 }
 
 int
-fputs(const char *s)
+putstr(const char *s)
 {
-  putstr(s);
-  putchar('\n');
+  return fputstr(DEFAULT_UART, s);
+}
+
+int
+fputs(hal_uart_name_t u, const char *s)
+{
+  fputstr(u, s);
+  fputchar(u, '\n');
   return 0;
+}
+
+int puts(const char *s)
+{
+  return fputs(DEFAULT_UART, s);
 }
 
 char *
-fgets(char * const s)
+fgets(hal_uart_name_t u, char * const s)
 {
 	char *x = s;
-	while((*x=(char)hal_uart_getc()) != '\n') x++;
+	while((*x=(char)hal_uart_getc(u)) != '\n') x++;
 	*x = 0;
 	return s;
+}
+
+char *
+gets(char * const s)
+{
+  return fgets(DEFAULT_UART, s);
 }
 

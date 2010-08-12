@@ -16,93 +16,88 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "memory_map.h"
 #include "hal_uart.h"
 #include "hal_io.h"
-#include "memory_map.h"
 
-// First pass, no interrupts
-
-// Replaced with divisors.py which generates best divisor
-//#define CALC_DIVISOR(rate) (WISHBONE_CLK_RATE / ((rate) * 16))
+//just to save you from going insane, note that firmware/FPGA UARTs [0-2] correspond to serial ports [1-3].
+//so in software, we refer to UART_DEBUG as UART0, but it transmits on pin TXD<1>. see the UART assignments in hal_uart.h.
 
 #define NSPEEDS 6
 #define	MAX_WB_DIV 4
 
+//if you're going to recalculate the divisors, it's just uart_clock_rate / baud_rate.
+//uart_clock_rate is 50MHz for USRP2.
 static const uint16_t
-divisor_table[MAX_WB_DIV+1][NSPEEDS] = {
-  {   2,   2,   2,   2,  2,  2},   // 0: can't happen
-  { 651, 326, 163, 109, 54, 27 },  // 1: 100 MHz
-  { 326, 163,  81,  54, 27, 14 },  // 2:  50 MHz
-  { 217, 109,  54,  36, 18,  9 },  // 3:  33.3333 MHz
-  { 163,  81,  41,  27, 14,  7 },  // 4:  25 MHz
+divisor_table[NSPEEDS] = {
+  5208,	//    9600
+  2604,	//   19200
+  1302,	//   38400
+  868,	//   57600
+  434,	//  115200
+  217	//  230400
 };
 
-//we wrap hal_uart_putc hal_uart_putc_nowait, and hal_uart_getc to accept a UART pointer given by hal_get_uart. we modify hal_io.c to use the new versions.
+static char uart_mode[4] = {
+  [UART_DEBUG] = UART_MODE_ONLCR, 
+  [UART_EXP] = UART_MODE_ONLCR, 
+  [UART_GPS] = UART_MODE_ONLCR
+};
 
-static char uart_mode[4] = {UART_MODE_ONLCR, UART_MODE_ONLCR, UART_MODE_ONLCR, UART_MODE_ONLCR};
+static char uart_speeds[4] = {
+  [UART_DEBUG] = US_230400,
+  [UART_EXP] = US_230400,
+  [UART_GPS] = US_230400
+};
 
 void
-hal_uart_set_mode(int uart, int mode)
+hal_uart_set_mode(hal_uart_name_t uart, int mode)
 {
   uart_mode[uart] = mode;
+}
+
+void hal_uart_set_speed(hal_uart_name_t uart, hal_uart_speed_t speed)
+{
+  uart_regs[uart].clkdiv = divisor_table[speed];
 }
 
 void
 hal_uart_init(void)
 {
-  for(int i = 0; i < 4; i++) {
-  	hal_uart_set_mode(i, UART_MODE_ONLCR);
-    u->clkdiv = 217;  // 230400 bps TODO: change to reflect new quad UART
+  for(int i = 0; i < 2; i++) { //uart 3 is unused
+  	hal_uart_set_mode(i, uart_mode[i]);
+    hal_uart_set_speed(i, uart_speeds[i]);
   }
 }
 
 void
-hal_uart_putc(uart_regs_t *u, int ch)
+hal_uart_putc(hal_uart_name_t u, int ch)
 {
-  if (ch == '\n')// && (uart_mode[uart] == UART_MODE_ONLCR))		//map \n->\r\n if necessary
+  if ((ch == '\n') && (uart_mode[u] == UART_MODE_ONLCR))		//map \n->\r\n if necessary
     hal_uart_putc(u, '\r');
 
-  while (u->txlevel == 0)	 // wait for fifo to have space
+  while (uart_regs[u].txlevel == 0)	 // wait for fifo to have space
     ;
 
-  u->txchar = ch;
+  uart_regs[u].txchar = ch;
 }
 
 void
-hal_uart_putc_nowait(uart_regs_t *u, int ch)
+hal_uart_putc_nowait(hal_uart_name_t u, int ch)
 {
-  if (ch == '\n')// && (uart_mode[uart] == UART_MODE_ONLCR))		//map \n->\r\n if necessary
+  if ((ch == '\n') && (uart_mode[u] == UART_MODE_ONLCR))		//map \n->\r\n if necessary
     hal_uart_putc(u, '\r');
 
-  if(u->txlevel)   // If fifo has space
-    u->txchar = ch;
+  if(uart_regs[u].txlevel)   // If fifo has space
+    uart_regs[u].txchar = ch;
 }
 
 int
-hal_uart_getc(uart_regs_t *u)
+hal_uart_getc(hal_uart_name_t u)
 {
-  while ((u->rxlevel) == 0)  // wait for data to be ready
+  while ((uart_regs[u].rxlevel) == 0)  // wait for data to be ready
     ;
 
-  return u->rxchar;
+  return uart_regs[u].rxchar;
 }
 
-uart_regs_t *
-hal_get_uart(int number)
-{
-  switch(number) {
-  case 0:
-    return uart_regs_0;
-    break;
-  case 1:
-    return uart_regs_1;
-    break;
-  case 2:
-    return uart_regs_2;
-    break;
-  case 3:
-    return uart_regs_3;
-    break;
-  default:
-    return uart_regs_0; //for safety
-}
