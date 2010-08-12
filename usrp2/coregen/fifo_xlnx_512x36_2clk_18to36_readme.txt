@@ -1,5 +1,12 @@
 The following files were generated for 'fifo_xlnx_512x36_2clk_18to36' in directory 
-/home/matt/fpgapriv/usrp2/coregen/:
+/home/ianb/ettus/sram_fifo/fpgapriv/usrp2/coregen/
+
+fifo_generator_ug175.pdf:
+   Please see the core data sheet.
+
+fifo_xlnx_512x36_2clk_18to36.gise:
+   ISE Project Navigator support file. This is a generated file and should
+   not be edited directly.
 
 fifo_xlnx_512x36_2clk_18to36.ngc:
    Binary Xilinx implementation netlist file containing the information
@@ -18,12 +25,9 @@ fifo_xlnx_512x36_2clk_18to36.xco:
    CORE Generator input file containing the parameters used to
    regenerate a core.
 
-fifo_xlnx_512x36_2clk_18to36_fifo_generator_v4_3_xst_1.ngc_xst.xrpt:
-   Please see the core data sheet.
-
-fifo_xlnx_512x36_2clk_18to36_flist.txt:
-   Text file listing all of the output files produced when a customized
-   core was generated in the CORE Generator.
+fifo_xlnx_512x36_2clk_18to36.xise:
+   ISE Project Navigator support file. This is a generated file and should
+   not be edited directly.
 
 fifo_xlnx_512x36_2clk_18to36_readme.txt:
    Text file indicating the files generated and how they are used.
@@ -32,6 +36,10 @@ fifo_xlnx_512x36_2clk_18to36_xmdf.tcl:
    ISE Project Navigator interface file. ISE uses this file to determine
    how the files output by CORE Generator for the core can be integrated
    into your ISE project.
+
+fifo_xlnx_512x36_2clk_18to36_flist.txt:
+   Text file listing all of the output files produced when a customized
+   core was generated in the CORE Generator.
 
 
 Please see the Xilinx CORE Generator online help for further details on
