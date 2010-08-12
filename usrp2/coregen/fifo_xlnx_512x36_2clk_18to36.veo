@@ -40,6 +40,7 @@ fifo_xlnx_512x36_2clk_18to36 YourInstanceName (
 	.rd_en(rd_en),
 	.dout(dout), // Bus [35 : 0] 
 	.full(full),
+	.almost_full(almost_full),
 	.empty(empty),
 	.prog_full(prog_full));
 
