@@ -117,9 +117,17 @@ app_vendor_cmd (void)
       EP0BCH = 0;
       EP0BCL = wLengthL;
       break;
-      
+
     case VRQ_SPI_READ:
       if (!spi_read (wValueH, wValueL, wIndexH, wIndexL, EP0BUF, wLengthL))
+	return 0;
+
+      EP0BCH = 0;
+      EP0BCL = wLengthL;
+      break;
+
+    case VRQ_SPI_TRANSACT:
+      if (!spi_transact (wValueH, wValueL, wIndexH, wIndexL, wLengthH, EP0BUF, wLengthL))
 	return 0;
 
       EP0BCH = 0;

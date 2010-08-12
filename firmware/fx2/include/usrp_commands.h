@@ -54,6 +54,13 @@
 							// wIndexL:	format
 							// len: how much to read
 
+#define	VRQ_SPI_TRANSACT		0x83		// wValueH:  OUT byte 0
+							// wValueL:  OUT byte 1
+							// wIndexH:  OUT byte 2
+							// wIndexL:  OUT byte 3 
+							// wLengthH: enables 
+							// wLengthL: transaction length
+
 // OUT commands
 
 #define	VRQ_SET_LED			0x01		// wValueL off/on {0,1}; wIndexL: which {0,1}

@@ -97,13 +97,18 @@ count_bits8 (unsigned char v)
 static void
 write_byte_msb (unsigned char v);
 
+unsigned char
+transact_byte_msb (unsigned char v);
+
 static void
 write_bytes_msb (const xdata unsigned char *buf, unsigned char len);
 
 static void
 read_bytes_msb (xdata unsigned char *buf, unsigned char len);
 
-  
+static void
+transact_bytes_msb (xdata unsigned char *buf, unsigned char len);
+
 // returns non-zero if successful, else 0
 unsigned char
 spi_read (unsigned char header_hi, unsigned char header_lo,
@@ -214,7 +219,93 @@ spi_write (unsigned char header_hi, unsigned char header_lo,
   return 1;		// success
 }
 
-// ----------------------------------------------------------------
+unsigned char
+spi_transact (unsigned char data0, unsigned char data1,
+              unsigned char data2, unsigned char data3,
+              unsigned char enables, xdata unsigned char *buf,
+              unsigned char len)
+{
+  if (count_bits8 (enables) > 1)
+    return 0;		// error, too many enables set
+
+  if (len > 4)
+    return 0;
+
+  setup_enables (enables);
+
+  buf[0] = data0;
+  buf[1] = data1;
+  buf[2] = data2; 
+  buf[3] = data3; 
+
+  if (len != 0)
+    transact_bytes_msb(buf, len);
+
+  disable_all ();
+  return 1;		// success
+}
+
+static unsigned char 
+transact_byte_msb (unsigned char v)
+{
+  v = (v << 1) | (v >> 7);	// rotate left (MSB into bottom bit)
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;                 // read into bottom bit
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  v = (v << 1) | (v >> 7);
+  bitS_OUT = v & 0x1;
+  bitS_CLK = 1;
+  v |= bitS_IN;
+  bitS_CLK = 0;
+
+  return v;
+}
+
+static void
+transact_bytes_msb (xdata unsigned char *buf, unsigned char len)
+{
+  while (len-- != 0){
+    *buf++ = transact_byte_msb (*buf);
+  }
+}
 
 static void
 write_byte_msb (unsigned char v)
