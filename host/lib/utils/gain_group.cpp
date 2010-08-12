@@ -35,6 +35,25 @@ static bool compare_by_step_size(
     return fcns.at(rhs).get_range().step > fcns.at(lhs).get_range().step;
 }
 
+/*!
+ * Get a multiple of step with the following relation:
+ *     result = step*floor(num/step)
+ *
+ * Due to small floating-point inaccuracies:
+ *     num = n*step + e, where e is a small inaccuracy.
+ * When e is negative, floor would yeild (n-1)*step,
+ * despite that n*step is really the desired result.
+ * This function is designed to mitigate that issue.
+ *
+ * \param num the number to approximate
+ * \param step the step size to round with
+ * \param e the small inaccuracy to account for
+ * \return a multiple of step approximating num
+ */
+template <typename T> static T floor_step(T num, T step, T e = T(0.001)){
+    return step*int(num/step + e);
+}
+
 /***********************************************************************
  * gain group implementation
  **********************************************************************/
@@ -82,9 +101,9 @@ public:
         float gain_left_to_distribute = gain;
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             const gain_range_t range = fcns.get_range();
-            gain_bucket.push_back(
-                max_step*int(std::clip(gain_left_to_distribute, range.min, range.max)/max_step)
-            );
+            gain_bucket.push_back(floor_step(std::clip(
+                gain_left_to_distribute, range.min, range.max
+            ), max_step));
             gain_left_to_distribute -= gain_bucket.back();
         }
 
@@ -106,9 +125,9 @@ public:
         //fill in the largest step sizes first that are less than the remainder
         BOOST_FOREACH(size_t i, indexes_step_size_dec){
             const gain_range_t range = all_fcns.at(i).get_range();
-            float additional_gain = range.step*int(
-                std::clip(gain_bucket.at(i) + gain_left_to_distribute, range.min, range.max
-            )/range.step) - gain_bucket.at(i);
+            float additional_gain = floor_step(std::clip(
+                gain_bucket.at(i) + gain_left_to_distribute, range.min, range.max
+            ), range.step) - gain_bucket.at(i);
             gain_bucket.at(i) += additional_gain;
             gain_left_to_distribute -= additional_gain;
         }
