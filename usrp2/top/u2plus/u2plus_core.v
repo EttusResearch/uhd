@@ -668,7 +668,7 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    // /////////////////////////////////////////////////////////////////////////
    // UART, Slave #10
 
-   simple_uart #(.TXDEPTH(3),.RXDEPTH(3)) uart  // depth of 3 is 128 entries
+   quad_uart #(.TXDEPTH(3),.RXDEPTH(3)) uart  // depth of 3 is 128 entries
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .we_i(sa_we),.stb_i(sa_stb),.cyc_i(sa_cyc),.ack_o(sa_ack),
       .adr_i(sa_adr[6:2]),.dat_i(sa_dat_o),.dat_o(sa_dat_i),
