@@ -102,7 +102,6 @@ module ext_fifo
 								 .rd_en(dst_rdy_i),
 								 .dout(dataout), // Bus [35 : 0]
 								 .full(full2),
-								 .almost_full(),
 								 .prog_full(almost_full2),
 								 .empty(empty2));
    assign  src_rdy_o = ~empty2;
