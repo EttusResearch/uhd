@@ -311,6 +311,25 @@ void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
         break;
 
+    case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
+      //executes a readline()-style read, up to num_bytes long, up to and including newline
+      int num_bytes = ctrl_data_in->data.uart_args.bytes;
+      if(num_bytes > 20) num_bytes = 20;
+      num_bytes = fngets(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_in->data.uart_args.data, num_bytes);
+      ctrl_data_out.id = USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE;
+      ctrl_data_out.data.uart_args.bytes = num_bytes;
+      break;
+    }
+
+    case USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO:{
+      int num_bytes = ctrl_data_in->data.uart_args.bytes;
+      if(num_bytes > 20) num_bytes = 20;
+      fnputstr(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_in->data.uart_args.data, num_bytes);
+      ctrl_data_out.id = USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE;
+      ctrl_data_out.data.i2c_args.bytes = num_bytes;
+      break;
+    }
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
 

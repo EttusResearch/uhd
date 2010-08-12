@@ -206,6 +206,18 @@ fputstr(hal_uart_name_t u, const char *s)
 }
 
 int
+fnputstr(hal_uart_name_t u, const char *s, int len)
+{
+  int x;
+  while (*s && (len > x)) {
+    fputchar(u, *s++);
+    x++;
+  }
+
+  return x;
+}
+
+int
 putstr(const char *s)
 {
   return fputstr(DEFAULT_UART, s);
@@ -231,6 +243,15 @@ fgets(hal_uart_name_t u, char * const s)
 	while((*x=(char)hal_uart_getc(u)) != '\n') x++;
 	*x = 0;
 	return s;
+}
+
+int
+fngets(hal_uart_name_t u, char * const s, int len)
+{
+  char *x = s;
+  while(((*x=(char)hal_uart_getc(u)) != '\n') && ((x-s) < len)) x++;
+	*x = 0;
+	return (x-s)-1;
 }
 
 char *

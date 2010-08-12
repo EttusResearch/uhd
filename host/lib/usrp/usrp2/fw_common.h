@@ -83,6 +83,12 @@ typedef enum{
     USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO = 'r',
     USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE = 'R',
 
+    USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO = 'u',
+    USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE = 'U',
+
+    USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO = 'v',
+    USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE = 'V',
+
     USRP2_CTRL_ID_PEACE_OUT = '~'
 
 } usrp2_ctrl_id_t;
@@ -123,6 +129,11 @@ typedef struct{
             __stdint(uint32_t) datahi;
             __stdint(uint8_t) num_bytes; //1, 2, 4, 8
         } poke_args;
+        struct {
+            __stdint(uint8_t) dev;
+            __stdint(uint8_t) bytes;
+            __stdint(uint8_t) data[20];
+        } uart_args;
     } data;
 } usrp2_ctrl_data_t;
 
