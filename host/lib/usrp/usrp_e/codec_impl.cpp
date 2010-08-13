@@ -16,6 +16,7 @@
 //
 
 #include "usrp_e_impl.hpp"
+#include <uhd/utils/assert.hpp>
 #include <uhd/usrp/codec_props.hpp>
 #include <boost/bind.hpp>
 
@@ -40,6 +41,8 @@ void usrp_e_impl::codec_init(void){
 /***********************************************************************
  * RX Codec Properties
  **********************************************************************/
+static const std::string ad9862_pga_gain_name = "ad9862 pga";
+
 void usrp_e_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
@@ -55,15 +58,46 @@ void usrp_e_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case CODEC_PROP_GAIN_NAMES:
-        val = prop_names_t(); //no gain elements to be controlled
+        val = prop_names_t(1, ad9862_pga_gain_name);
+        return;
+
+    case CODEC_PROP_GAIN_RANGE:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        val = usrp_e_codec_ctrl::rx_pga_gain_range;
+        return;
+
+    case CODEC_PROP_GAIN_I:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        val = _codec_ctrl->get_rx_pga_gain('A');
+        return;
+
+    case CODEC_PROP_GAIN_Q:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        val = _codec_ctrl->get_rx_pga_gain('B');
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
-void usrp_e_impl::rx_codec_set(const wax::obj &, const wax::obj &){
-    UHD_THROW_PROP_SET_ERROR();
+void usrp_e_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the set request conditioned on the key
+    switch(key.as<codec_prop_t>()){
+    case CODEC_PROP_GAIN_I:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'A');
+        return;
+
+    case CODEC_PROP_GAIN_Q:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'B');
+        return;
+
+    default: UHD_THROW_PROP_SET_ERROR();
+    }
 }
 
 /***********************************************************************
@@ -84,13 +118,36 @@ void usrp_e_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case CODEC_PROP_GAIN_NAMES:
-        val = prop_names_t(); //no gain elements to be controlled
+        val = prop_names_t(1, ad9862_pga_gain_name);
+        return;
+
+    case CODEC_PROP_GAIN_RANGE:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        val = usrp_e_codec_ctrl::tx_pga_gain_range;
+        return;
+
+    case CODEC_PROP_GAIN_I: //only one gain for I and Q
+    case CODEC_PROP_GAIN_Q:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        val = _codec_ctrl->get_tx_pga_gain();
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
-void usrp_e_impl::tx_codec_set(const wax::obj &, const wax::obj &){
-    UHD_THROW_PROP_SET_ERROR();
+void usrp_e_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val){
+    wax::obj key; std::string name;
+    boost::tie(key, name) = extract_named_prop(key_);
+
+    //handle the set request conditioned on the key
+    switch(key.as<codec_prop_t>()){
+    case CODEC_PROP_GAIN_I: //only one gain for I and Q
+    case CODEC_PROP_GAIN_Q:
+        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        _codec_ctrl->set_tx_pga_gain(val.as<float>());
+        return;
+
+    default: UHD_THROW_PROP_SET_ERROR();
+    }
 }

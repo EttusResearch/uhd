@@ -60,7 +60,6 @@ class usrp_e_clock_ctrl_impl : public usrp_e_clock_ctrl{
 public:
     usrp_e_clock_ctrl_impl(usrp_e_iface::sptr iface){
         _iface = iface;
-        std::cout << "master_clock_rate: " << (master_clock_rate/1e6) << " MHz" << std::endl;
 
         //init the clock gen registers
         //Note: out0 should already be clocking the FPGA or this isnt going to work
