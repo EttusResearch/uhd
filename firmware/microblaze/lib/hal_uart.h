@@ -27,6 +27,8 @@
 
 #define DEFAULT_UART UART_DEBUG //which UART printf, gets, etc. use
 
+#define HAL_UART_TIMEOUT_MS 100
+
 typedef enum {
   US_9600   = 0,
   US_19200  = 1,
@@ -81,6 +83,11 @@ void hal_uart_putc_nowait(hal_uart_name_t u, int ch);
  * \brief Blocking read of next char from serial port
  */
 int hal_uart_getc(hal_uart_name_t u);
+
+/*
+ * \brief Blocking read of next char from serial port with timeout
+ */
+int hal_uart_getc_timeout(hal_uart_name_t u);
 
 int hal_uart_rx_flush(hal_uart_name_t u);
 

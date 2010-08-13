@@ -252,6 +252,15 @@ fngets(hal_uart_name_t u, char * const s, int len)
 	return (x-s)-1;
 }
 
+int
+fngets_timeout(hal_uart_name_t u, char * const s, int len)
+{
+  char *x = s;
+  while(((*x=(char)hal_uart_getc_timeout(u)) != '\n') && ((x-s) < len)) x++;
+	*x = 0;
+	return (x-s)-1;
+}
+
 char *
 gets(char * const s)
 {

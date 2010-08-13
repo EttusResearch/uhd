@@ -19,6 +19,7 @@
 #include "memory_map.h"
 #include "hal_uart.h"
 #include "hal_io.h"
+#include "mdelay.h"
 
 //just to save you from going insane, note that firmware/FPGA UARTs [0-2] correspond to serial ports [1-3].
 //so in software, we refer to UART_DEBUG as UART0, but it transmits on pin TXD<1>. see the UART assignments in hal_uart.h.
@@ -99,6 +100,16 @@ hal_uart_getc(hal_uart_name_t u)
     ;
 
   return uart_regs[u].rxchar;
+}
+
+int 
+hal_uart_getc_timeout(hal_uart_name_t u)
+{
+  int timeout = 0;
+  while (((uart_regs[u].rxlevel) == 0) && (timeout++ < HAL_UART_TIMEOUT_MS))
+    mdelay(1);
+
+  return (uart_regs[u].rxlevel == 0) ? 0 : uart_regs[u].rxchar;
 }
 
 int hal_uart_rx_flush(hal_uart_name_t u)

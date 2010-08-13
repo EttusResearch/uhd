@@ -315,7 +315,7 @@ void handle_udp_ctrl_packet(
       //executes a readline()-style read, up to num_bytes long, up to and including newline
       int num_bytes = ctrl_data_in->data.uart_args.bytes;
       if(num_bytes > 20) num_bytes = 20;
-      num_bytes = fngets(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_out.data.uart_args.data, num_bytes);
+      num_bytes = fngets_timeout(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_out.data.uart_args.data, num_bytes);
       ctrl_data_out.id = USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE;
       ctrl_data_out.data.uart_args.bytes = num_bytes;
       break;
