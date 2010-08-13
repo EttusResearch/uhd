@@ -64,7 +64,7 @@ void hal_uart_set_speed(hal_uart_name_t uart, hal_uart_speed_t speed)
 void
 hal_uart_init(void)
 {
-  for(int i = 0; i < 2; i++) { //uart 3 is unused
+  for(int i = 0; i < 3; i++) {
   	hal_uart_set_mode(i, uart_mode[i]);
     hal_uart_set_speed(i, uart_speeds[i]);
   }

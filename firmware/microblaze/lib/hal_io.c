@@ -208,11 +208,9 @@ fputstr(hal_uart_name_t u, const char *s)
 int
 fnputstr(hal_uart_name_t u, const char *s, int len)
 {
-  int x;
-  while (*s && (len > x)) {
+  int x = 0;
+  while (*s && (len > x++))
     fputchar(u, *s++);
-    x++;
-  }
 
   return x;
 }
