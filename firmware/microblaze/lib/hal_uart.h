@@ -27,7 +27,7 @@
 
 #define DEFAULT_UART UART_DEBUG //which UART printf, gets, etc. use
 
-#define HAL_UART_TIMEOUT_MS 100
+#define HAL_UART_TIMEOUT_MS 300
 
 typedef enum {
   US_9600   = 0,
