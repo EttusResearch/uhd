@@ -26,9 +26,11 @@
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <iostream>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace boost::posix_time;
 
 /***********************************************************************
  * Structors
@@ -56,6 +58,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
     _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
     _gps_ctrl = usrp2_gps_ctrl::make(_iface);
+
+    if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
     //TODO move to dsp impl...
     //load the allowed decim/interp rates

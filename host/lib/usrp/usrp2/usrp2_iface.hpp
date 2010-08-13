@@ -106,7 +106,7 @@ public:
 
     virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
 
-    virtual std::string read_uart(boost::uint8_t dev, size_t num_bytes) = 0;
+    virtual std::string read_uart(boost::uint8_t dev) = 0;
 
     /*!
      * Set the hardware revision number. Also selects the proper register set for the device.
