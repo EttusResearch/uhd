@@ -18,6 +18,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
@@ -26,7 +27,6 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <boost/program_options.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
@@ -43,7 +43,7 @@ static std::string make_border(const std::string &text){
     std::stringstream ss;
     ss << boost::format("  _____________________________________________________") << std::endl;
     ss << boost::format(" /") << std::endl;
-    std::vector<std::string> lines; boost::split(lines, text, boost::is_any_of("\n"));
+    std::vector<std::string> lines = std::split_string(text, "\n");
     while (lines.back() == "") lines.pop_back(); //strip trailing newlines
     if (lines.size()) lines[0] = "    " + lines[0]; //indent the title line
     BOOST_FOREACH(const std::string &line, lines){

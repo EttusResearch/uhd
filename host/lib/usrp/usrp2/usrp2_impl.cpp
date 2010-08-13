@@ -21,7 +21,7 @@
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/algorithm/string.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -41,12 +41,6 @@ static const size_t DISCOVERY_TIMEOUT_MS = 100;
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
-std::vector<std::string> split_addrs(const std::string &addrs_str){
-    std::vector<std::string> addrs;
-    boost::split(addrs, addrs_str, boost::is_any_of("\t "));
-    return addrs;
-}
-
 template <class T> std::string num2str(T num){
     return boost::lexical_cast<std::string>(num);
 }
@@ -80,7 +74,7 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
     }
 
     //if there are multiple addresses, just return good, dont test
-    std::vector<std::string> addrs = split_addrs(hint["addr"]);
+    std::vector<std::string> addrs = std::split_string(hint["addr"]);
     if (addrs.size() > 1){
         device_addr_t new_addr;
         new_addr["type"] = "usrp2";
@@ -155,7 +149,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
     std::vector<udp_simple::sptr> ctrl_transports;
     std::vector<udp_zero_copy::sptr> data_transports;
 
-    BOOST_FOREACH(const std::string &addr, split_addrs(device_addr["addr"])){
+    BOOST_FOREACH(const std::string &addr, std::split_string(device_addr["addr"])){
         ctrl_transports.push_back(udp_simple::make_connected(
             addr, num2str(USRP2_UDP_CTRL_PORT)
         ));
