@@ -51,6 +51,12 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //set the device revision (USRP2 or USRP2+) based on the above
     _iface->set_hw_rev((_rev_hi << 8) | _rev_lo);
 
+    //TODO DEBUG! this is just here to test writing to and reading from the UART.
+    std::string mystr = "PTIME:TIME?\n";
+    _iface->write_uart(2, mystr);
+    mystr = _iface->read_uart(2, 20);
+    std::cout << "what time is it? " << mystr.c_str();
+
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
@@ -109,13 +115,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //set default subdev specs
     (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
-
-    //TODO DEBUG! this is just here to test writing to and reading from the UART.
-    std::string mystr = "PTIME:TIME?\n";
-    byte_vector_t mybuf(mystr.begin(), mystr.end());
-    _iface->write_uart(2, mybuf);
-    mybuf = _iface->read_uart(2, 15);
-    std::cout << "DEBUG: " << std::string(mybuf.begin(), mybuf.end()) << std::endl;
 
     //Issue a stop streaming command (in case it was left running).
     //Since this command is issued before the networking is setup,

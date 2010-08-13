@@ -49,7 +49,7 @@ public:
  **********************************************************************/
     usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
-
+/*
          //check the fpga compatibility number
         const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
         if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
@@ -58,6 +58,7 @@ public:
                 "The fpga build is not compatible with the host code build."
             ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
         }
+*/
     }
 
     ~usrp2_iface_impl(void){
@@ -174,7 +175,7 @@ public:
 /***********************************************************************
  * UART
  **********************************************************************/
-    void write_uart(boost::uint8_t dev, const byte_vector_t &buf){
+    void write_uart(boost::uint8_t dev, const std::string &buf){
         //setup the out data
         usrp2_ctrl_data_t out_data;
         out_data.id = htonl(USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO);
@@ -192,7 +193,7 @@ public:
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE);
     }
 
-    byte_vector_t read_uart(boost::uint8_t dev, size_t num_bytes){
+    std::string read_uart(boost::uint8_t dev, size_t num_bytes){
         //setup the out data
         usrp2_ctrl_data_t out_data;
         out_data.id = htonl(USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO);
@@ -205,10 +206,9 @@ public:
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE);
-        //UHD_ASSERT_THROW(in_data.data.uart_args.bytes = num_bytes);
 
         //copy out the data
-        byte_vector_t result(num_bytes);
+        std::string result;
         std::copy(in_data.data.uart_args.data, in_data.data.uart_args.data + num_bytes, result.begin());
         return result;
     }
