@@ -95,6 +95,7 @@ GEN_PROG_FILE_PROPERTIES = \
 "Create Binary Configuration File" TRUE \
 "Done (Output Events)" 5 \
 "Enable Bitstream Compression" TRUE \
-"Enable Outputs (Output Events)" 6 
+"Enable Outputs (Output Events)" 6 \
+"Unused IOB Pins" "Pull Up"
 
 SIM_MODEL_PROPERTIES = ""
