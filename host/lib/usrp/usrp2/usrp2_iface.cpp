@@ -208,8 +208,7 @@ public:
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE);
 
         //copy out the data
-        std::string result;
-        std::copy(in_data.data.uart_args.data, in_data.data.uart_args.data + num_bytes, result.begin());
+        std::string result((const char *)in_data.data.uart_args.data, (size_t)in_data.data.uart_args.bytes);
         return result;
     }
 

@@ -42,9 +42,10 @@ public:
 
     //TODO: try multiple baud rates (many GPS's are set up for 4800bps, you're fixed at 115200bps 8N1 right now)
     //you have to poke registers in order to set baud rate, there's no dude/bro interface for it
-    _iface->write_uart(GPS_UART, "HAAAY GUYYYYS\n"); 
+    _iface->write_uart(GPS_UART, "HAAAY GUYYYYS\n");
     try {
       reply = _iface->read_uart(GPS_UART, 20);
+	//std::cerr << "Got reply from GPS: " << reply.c_str() << " with length = " << reply.length() << std::endl;
     } catch (std::runtime_error err) {
       if(err.what() != std::string("usrp2 no control response")) throw; //sorry can't cope with that
       else { //we don't actually have a GPS installed
@@ -57,6 +58,7 @@ public:
 
     switch(gps_type) {
     case GPS_TYPE_JACKSON_LABS:
+      std::cerr << "Found a Jackson Labs GPS" << std::endl;
       //issue some setup stuff so it quits spewing data out when not asked to
       //none of these should issue replies so we don't bother looking for it
       _iface->write_uart(GPS_UART, "SYST:COMM:SER:");
