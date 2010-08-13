@@ -82,5 +82,6 @@ void hal_uart_putc_nowait(hal_uart_name_t u, int ch);
  */
 int hal_uart_getc(hal_uart_name_t u);
 
+int hal_uart_rx_flush(hal_uart_name_t u);
 
 #endif /* INCLUDED_HAL_UART_H */

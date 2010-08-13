@@ -101,3 +101,10 @@ hal_uart_getc(hal_uart_name_t u)
   return uart_regs[u].rxchar;
 }
 
+int hal_uart_rx_flush(hal_uart_name_t u)
+{
+  char x;
+  while(uart_regs[u].rxlevel) x = uart_regs[u].rxchar;
+  return x;
+}
+

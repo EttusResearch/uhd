@@ -51,16 +51,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //set the device revision (USRP2 or USRP2+) based on the above
     _iface->set_hw_rev((_rev_hi << 8) | _rev_lo);
 
-    //TODO DEBUG! this is just here to test writing to and reading from the UART.
-    std::string mystr = "PTIME:TIME?\n";
-    _iface->write_uart(2, mystr);
-    mystr = _iface->read_uart(2, 20);
-    std::cout << "what time is it? " << mystr.c_str();
-
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
     _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
+    _gps_ctrl = usrp2_gps_ctrl::make(_iface);
 
     //TODO move to dsp impl...
     //load the allowed decim/interp rates

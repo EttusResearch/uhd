@@ -26,6 +26,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_iface.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dsp_impl.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/gps_ctrl.hpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/gps_ctrl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/io_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/mboard_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/serdes_ctrl.cpp

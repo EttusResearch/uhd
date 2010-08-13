@@ -324,6 +324,9 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO:{
       int num_bytes = ctrl_data_in->data.uart_args.bytes;
       if(num_bytes > 20) num_bytes = 20;
+      //before we write to the UART, we flush the receive buffer
+      //this assumes that we're interested in the reply
+      hal_uart_rx_flush(ctrl_data_in->data.uart_args.dev);
       fnputstr(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_in->data.uart_args.data, num_bytes);
       ctrl_data_out.id = USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE;
       ctrl_data_out.data.uart_args.bytes = num_bytes;
