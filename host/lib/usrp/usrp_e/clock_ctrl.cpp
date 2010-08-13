@@ -38,11 +38,13 @@ template <typename div_type, typename bypass_type> static void set_clock_divider
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const double ref_clock_rate = 10e6;
+static const bool enable_test_clock = false;
+static const double ref_clock_doubler = 2; //enabled below
+static const double ref_clock_rate = 10e6 * ref_clock_doubler;
 
 static const size_t r_counter = 1;
 static const size_t a_counter = 0;
-static const size_t b_counter = 20;
+static const size_t b_counter = 20 / ref_clock_doubler;
 static const size_t prescaler = 8; //set below with enum, set to 8 when input is under 2400 MHz
 static const size_t vco_divider = 1; //set below with enum
 
@@ -64,6 +66,7 @@ public:
         //init the clock gen registers
         //Note: out0 should already be clocking the FPGA or this isnt going to work
         _ad9522_regs.sdo_active = ad9522_regs_t::SDO_ACTIVE_SDO_SDIO;
+        _ad9522_regs.enable_clock_doubler = 1; //enable ref clock doubler
         _ad9522_regs.enb_stat_eeprom_at_stat_pin = 0; //use status pin
         _ad9522_regs.status_pin_control = 0x1; //n divider
         _ad9522_regs.ld_pin_control = 0x00; //dld
@@ -79,7 +82,7 @@ public:
         _ad9522_regs.prescaler_p = ad9522_regs_t::PRESCALER_P_DIV8_9;
 
         _ad9522_regs.pll_power_down = ad9522_regs_t::PLL_POWER_DOWN_NORMAL;
-        _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_3_0MA;
+        _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_1_2MA;
 
         _ad9522_regs.vco_calibration_now = 1; //calibrate it!
         _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV1;
@@ -103,7 +106,7 @@ public:
 
         //setup test clock (same divider as codec clock)
         _ad9522_regs.out4_format = ad9522_regs_t::OUT4_FORMAT_CMOS;
-        _ad9522_regs.out4_cmos_configuration = (true)?
+        _ad9522_regs.out4_cmos_configuration = (enable_test_clock)?
             ad9522_regs_t::OUT4_CMOS_CONFIGURATION_A_ON :
             ad9522_regs_t::OUT4_CMOS_CONFIGURATION_OFF;
 
