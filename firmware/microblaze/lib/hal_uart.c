@@ -108,8 +108,7 @@ hal_uart_getc_timeout(hal_uart_name_t u)
   int timeout = 0;
   while (((uart_regs[u].rxlevel) == 0) && (timeout++ < HAL_UART_TIMEOUT_MS))
     mdelay(1);
-
-  return (timeout == HAL_UART_TIMEOUT_MS) ? '\n' : uart_regs[u].rxchar; //return a newline if nothing there, this will trip fngets to quit
+  return (timeout == HAL_UART_TIMEOUT_MS) ? -1 : uart_regs[u].rxchar; //return -1 if nothing there, cause fngets to quit
 }
 
 int hal_uart_rx_flush(hal_uart_name_t u)

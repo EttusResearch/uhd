@@ -256,9 +256,9 @@ int
 fngets_timeout(hal_uart_name_t u, char * const s, int len)
 {
   char *x = s;
-  while(((*x=(char)hal_uart_getc_timeout(u)) != '\n') && ((x-s) < len)) x++;
+
+  while(((*x=(char)hal_uart_getc_timeout(u)) != '\n') && (*x != -1) && ((x-s) < len)) x++;
 	*x = 0;
-  if(x==s) return 0;
 	return (x-s);
 }
 
