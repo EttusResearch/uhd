@@ -65,11 +65,34 @@ public:
         AUX_ADC_B = 'b'
     };
 
+    //! Special properties that differentiate this daughterboard slot
+    struct special_props_t{
+        /*!
+         * Soft clock divider:
+         * When a motherboard cannot provided a divided dboard clock,
+         * it may provided a "soft" divided clock over an FPGA GPIO.
+         * The implementation must know the type of clock provided.
+         */
+        bool soft_clock_divider;
+
+        /*!
+         * Mangle i2c addresses:
+         * When i2c is shared across multiple daugterboard slots,
+         * the i2c addresses will be mangled on the secondary slot
+         * to avoid conflicts between slots in the i2c address space.
+         * The mangling is daguhterboard specific so the implementation
+         * needs to know whether it should use mangled addresses or not.
+         */
+        bool mangle_i2c_addrs;
+    };
+
     /*!
-     * Get the motherboard name of the form: usrp1, usrp2...
-     * \return string representing the motherboard name
+     * Get special properties information for this dboard slot.
+     * This call helps the dboard code to handle implementation
+     * differences between different motherboards and dboard slots.
+     * \return the special properties struct
      */
-    virtual std::string get_mboard_name(void) = 0;
+    virtual special_props_t get_special_props(void) = 0;
 
     /*!
      * Write to an aux dac.

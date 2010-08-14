@@ -61,7 +61,7 @@ static const uhd::dict<std::string, gain_range_t> dbsrx_gain_ranges = map_list_o
  **********************************************************************/
 class dbsrx : public rx_dboard_base{
 public:
-    dbsrx(ctor_args_t args, boost::uint8_t max2118_addr);
+    dbsrx(ctor_args_t args);
     ~dbsrx(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
@@ -73,7 +73,9 @@ private:
     uhd::dict<std::string, float> _gains;
     max2118_write_regs_t _max2118_write_regs;
     max2118_read_regs_t _max2118_read_regs;
-    boost::uint8_t _max2118_addr; //0x67 or 0x65 depending on which side
+    boost::uint8_t _max2118_addr(void){
+        return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x65 : 0x67;
+    };
 
     void set_lo_freq(double target_freq);
     void set_gain(float gain, const std::string &name);
@@ -102,7 +104,7 @@ private:
 
             //send the data
             this->get_iface()->write_i2c(
-                _max2118_addr, regs_vector
+                _max2118_addr(), regs_vector
             );
         }
     }
@@ -120,7 +122,7 @@ private:
 
             //read from i2c
             regs_vector = this->get_iface()->read_i2c(
-                _max2118_addr, num_bytes
+                _max2118_addr(), num_bytes
             );
 
             for(boost::uint8_t i=0; i < num_bytes; i++){
@@ -156,10 +158,8 @@ private:
 /***********************************************************************
  * Register the DBSRX dboard
  **********************************************************************/
-// FIXME 0x67 is the default i2c address on USRP2
-//       need to handle which side for USRP1 with different address
 static dboard_base::sptr make_dbsrx(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new dbsrx(args, 0x67));
+    return dboard_base::sptr(new dbsrx(args));
 }
 
 //dbid for USRP2 version
@@ -177,27 +177,27 @@ UHD_STATIC_BLOCK(reg_dbsrx_on_usrp1_dboard){
 /***********************************************************************
  * Structors
  **********************************************************************/
-dbsrx::dbsrx(ctor_args_t args, boost::uint8_t max2118_addr) : rx_dboard_base(args){
+dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     //warn user about incorrect DBID on USRP1, requires R193 populated
-    if (this->get_iface()->get_mboard_name() == "usrp1" and this->get_rx_id() == 0x000D)
+    if (this->get_iface()->get_special_props().soft_clock_divider and this->get_rx_id() == 0x000D)
         uhd::print_warning(
             str(boost::format(
                 "DBSRX: incorrect dbid\n"
-                "%s expects dbid 0x0002 and R193\n"
+                "Expected dbid 0x0002 and R193\n"
                 "found dbid == %d\n"
                 "Please see the daughterboard app notes" 
-                ) % (this->get_iface()->get_mboard_name()) % (this->get_rx_id().to_pp_string()))
+                ) % this->get_rx_id().to_pp_string())
         );
 
     //warn user about incorrect DBID on non-USRP1, requires R194 populated
-    if (this->get_iface()->get_mboard_name() != "usrp1" and this->get_rx_id() == 0x0002)
+    if (not this->get_iface()->get_special_props().soft_clock_divider and this->get_rx_id() == 0x0002)
         uhd::print_warning(
             str(boost::format(
                 "DBSRX: incorrect dbid\n"
-                "%s expects dbid 0x000D and R194\n"
+                "Expected dbid 0x000D and R194\n"
                 "found dbid == %d\n"
                 "Please see the daughterboard app notes" 
-                ) % (this->get_iface()->get_mboard_name()) % (this->get_rx_id().to_pp_string()))
+                ) % this->get_rx_id().to_pp_string())
         );
 
     //enable only the clocks we need
@@ -206,9 +206,6 @@ dbsrx::dbsrx(ctor_args_t args, boost::uint8_t max2118_addr) : rx_dboard_base(arg
     //set the gpio directions and atr controls (identically)
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0); // All unused in atr
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x0); // All Inputs
-
-    //set the i2c address for the max2118
-    _max2118_addr = max2118_addr;
 
     //send initial register settings
     this->send_reg(0x0, 0x5);
