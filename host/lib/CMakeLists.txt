@@ -53,6 +53,9 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/utils/CMakeLists.txt)
 ########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################
+FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} FULL_PKG_DATA_DIR)
+MESSAGE(STATUS "Full package data directory: ${FULL_PKG_DATA_DIR}")
+
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
     ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
