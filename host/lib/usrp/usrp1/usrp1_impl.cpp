@@ -165,8 +165,7 @@ usrp1_impl::~usrp1_impl(void){
  **********************************************************************/
 void usrp1_impl::get(const wax::obj &key_, wax::obj &val)
 {
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<device_prop_t>()){
@@ -175,7 +174,7 @@ void usrp1_impl::get(const wax::obj &key_, wax::obj &val)
         return;
 
     case DEVICE_PROP_MBOARD:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _mboard_proxy->get_link();
         return;
 

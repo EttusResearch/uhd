@@ -17,23 +17,41 @@
 
 #This file will be included by cmake, use absolute paths!
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/include)
+########################################################################
+# Conditionally configure the USRP1 support
+########################################################################
+MESSAGE(STATUS "Configuring usrp1 support...")
 
-LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.hpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_ctrl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_ctrl.hpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_impl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dboard_impl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dboard_iface.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dsp_impl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/io_impl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/mboard_impl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_iface.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_iface.hpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_impl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_impl.hpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.hpp
-)
+IF(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "Has USB support - found")
+ELSE(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "Has USB support - not found")
+ENDIF(HAVE_USB_SUPPORT)
+
+#TODO check for usrp1 enable/disable option flag
+
+IF(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "  Building usrp1 support.")
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/include)
+
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_ctrl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_ctrl.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dboard_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dboard_iface.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dsp_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/io_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/mboard_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_iface.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_iface.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_impl.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.hpp
+    )
+ELSE(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "  Skipping usrp1 support.")
+ENDIF(HAVE_USB_SUPPORT)

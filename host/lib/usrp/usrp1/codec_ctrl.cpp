@@ -25,12 +25,12 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/format.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/assign/list_of.hpp>
 #include <iostream>
 #include <iomanip>
-#include <cstdio>
 
 using namespace uhd;
 
@@ -335,9 +335,9 @@ unsigned int usrp1_codec_ctrl_impl::compute_freq_control_word_9862(
     int v = (int) rint (fabs (target_freq) / master_freq * pow (2.0, 24.0));
     *actual_freq = v * master_freq / pow (2.0, 24.0) * sign;
  
-    fprintf(stdout,
-       "compute_freq_control_word_9862: target = %g  actual = %g  delta = %g  v = %8d\n",
-       target_freq, *actual_freq, *actual_freq - target_freq, v);
+    std::cout << boost::format(
+       "compute_freq_control_word_9862: target = %g  actual = %g  delta = %g  v = %8d\n"
+    ) % target_freq % *actual_freq % (*actual_freq - target_freq) % v;
  
     return (unsigned int) v;
 }

@@ -19,6 +19,7 @@
 #define INCLUDED_USRP1_CODEC_CTRL_HPP
 
 #include "usrp1_iface.hpp"
+#include <uhd/types/ranges.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
@@ -30,6 +31,9 @@
 class usrp1_codec_ctrl : boost::noncopyable{
 public:
     typedef boost::shared_ptr<usrp1_codec_ctrl> sptr;
+
+    static const uhd::gain_range_t tx_pga_gain_range;
+    static const uhd::gain_range_t rx_pga_gain_range;
 
     /*!
      * Make a new clock control object.
@@ -69,6 +73,18 @@ public:
      * \param volts the level in in volts
      */
     virtual void write_aux_dac(aux_dac_t which, float volts) = 0;
+
+    //! Set the TX PGA gain
+    virtual void set_tx_pga_gain(float gain) = 0;
+
+    //! Get the TX PGA gain
+    virtual float get_tx_pga_gain(void) = 0;
+
+    //! Set the RX PGA gain ('A' or 'B')
+    virtual void set_rx_pga_gain(float gain, char which) = 0;
+
+    //! Get the RX PGA gain ('A' or 'B')
+    virtual float get_rx_pga_gain(char which) = 0;
 
     virtual bool set_duc_freq(double freq) = 0;
 };

@@ -16,10 +16,10 @@
 //
 
 #include <uhd/types/usb_descriptor.hpp>
-#include <uhd/utils/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <libusb-1.0/libusb.h>
 #include <boost/asio.hpp>
+#include <stdexcept>
 #include <iostream>
 
 using namespace uhd::transport;
@@ -61,15 +61,15 @@ libusb_control_impl::libusb_control_impl(uhd::usb_descriptor_t descriptor)
  :  _descriptor(descriptor), _ctx(NULL), _dev_handle(NULL)
 {
     if (libusb_init(&_ctx) < 0)
-        UHD_THROW_SITE_INFO("USB: failed to initialize libusb");
+        throw std::runtime_error("USB: failed to initialize libusb");
 
     libusb_set_debug(_ctx, libusb_debug_level);
 
     if (!open_device())
-        UHD_THROW_SITE_INFO("USB: failed to open device");
+        throw std::runtime_error("USB: failed to open device");
 
     if (!open_interface())
-        UHD_THROW_SITE_INFO("USB: failed to open device interface");
+        throw std::runtime_error("USB: failed to open device interface");
 }
 
 
@@ -85,7 +85,7 @@ uhd::usb_descriptor_t libusb_control_impl::create_descriptor(libusb_device *dev)
     libusb_device_descriptor desc;
 
     if (libusb_get_device_descriptor(dev, &desc) < 0)
-        UHD_THROW_SITE_INFO("USB: failed to get device descriptor");
+        throw std::runtime_error("USB: failed to get device descriptor");
 
     uhd::usb_descriptor_t descriptor;
 
@@ -217,12 +217,12 @@ uhd::usb_descriptors_t usb_control::get_device_list()
     uhd::usb_descriptors_t descriptors;
 
     if (libusb_init(NULL) < 0)
-        UHD_THROW_SITE_INFO("USB: failed to initialize libusb");
+        throw std::runtime_error("USB: failed to initialize libusb");
 
     ssize_t cnt = libusb_get_device_list(NULL, &list);
 
     if (cnt < 0)
-        UHD_THROW_SITE_INFO("USB: failed to get device list");
+        throw std::runtime_error("USB: failed to get device list");
 
     ssize_t i = 0;
     for (i = 0; i < cnt; i++) {

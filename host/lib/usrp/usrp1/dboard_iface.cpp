@@ -51,9 +51,12 @@ public:
         /* NOP */
     }
 
-    std::string get_mboard_name()
+    special_props_t get_special_props()
     {
-        return "usrp1";
+        special_props_t props;
+        props.soft_clock_divider = true;
+        props.mangle_i2c_addrs = false; //TODO true on side B
+        return props;
     }
 
     void write_aux_dac(unit_t, aux_dac_t, float);

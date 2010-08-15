@@ -30,6 +30,7 @@ IF(LIBUSB_FOUND)
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_control.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_zero_copy.cpp
     )
+    SET(HAVE_USB_SUPPORT TRUE)
 ENDIF(LIBUSB_FOUND)
 
 ########################################################################
