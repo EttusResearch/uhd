@@ -186,6 +186,8 @@ void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
+static const std::string dboard_name = "0";
+
 void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     wax::obj key; std::string name;
     boost::tie(key, name) = extract_named_prop(key_);
@@ -222,21 +224,21 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == dboard_name);
         val = _rx_dboard_proxy->get_link();
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
-        val = prop_names_t(1, "");
+        val = prop_names_t(1, dboard_name);
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(name == dboard_name);
         val = _tx_dboard_proxy->get_link();
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
-        val = prop_names_t(1, "");
+        val = prop_names_t(1, dboard_name);
         return;
 
     case MBOARD_PROP_RX_DSP:

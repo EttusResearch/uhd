@@ -51,7 +51,7 @@ public:
         const dboard_id_t &dboard_id,
         dboard_ctor_t dboard_ctor,
         const std::string &name,
-        const prop_names_t &subdev_names = prop_names_t(1, "")
+        const prop_names_t &subdev_names = prop_names_t(1, "0")
     );
 
     /*!
