@@ -16,7 +16,7 @@
 //
 
 #include <uhd/utils/warning.hpp>
-#include <boost/algorithm/string.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
 #include <vector>
@@ -24,13 +24,9 @@
 using namespace uhd;
 
 void uhd::print_warning(const std::string &msg){
-    //extract the message lines
-    std::vector<std::string> lines;
-    boost::split(lines, msg, boost::is_any_of("\n"));
-
     //print the warning message
     std::cerr << std::endl << "Warning:" << std::endl;
-    BOOST_FOREACH(const std::string &line, lines){
+    BOOST_FOREACH(const std::string &line, std::split_string(msg, "\n")){
         std::cerr << "    " << line << std::endl;
     }
 }

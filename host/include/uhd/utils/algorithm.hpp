@@ -22,12 +22,33 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/size.hpp>
+#include <boost/algorithm/string.hpp>
+#include <vector>
+#include <string>
 
 /*! \file algorithm.hpp
  * Useful templated functions and classes that I like to pretend are part of stl.
  * Many of the range wrapper functions come with recent versions of boost (1.43).
  */
 namespace std{
+
+    /*!
+     * Split a string at the separation characters.
+     * \param string the string to split
+     * \param sep the separator characters
+     * \return a range of strings
+     */
+    inline std::vector<std::string> split_string(
+        const std::string &string, const std::string &sep = "\t "
+    ){
+        std::vector<std::string> strings;
+        if (not string.empty()) boost::split(
+            // do not split an empty string:
+            // let me tell you about the time when boost::split segfaulted...
+            strings, string, boost::is_any_of(sep)
+        );
+        return strings;
+    }
 
     /*!
      * A wrapper around std::copy that takes ranges instead of iterators.

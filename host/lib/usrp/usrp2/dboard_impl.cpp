@@ -59,8 +59,7 @@ void usrp2_mboard_impl::dboard_init(void){
  * RX DBoard Properties
  **********************************************************************/
 void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<dboard_prop_t>()){
@@ -69,7 +68,7 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DBOARD_PROP_SUBDEV:
-        val = _dboard_manager->get_rx_subdev(name);
+        val = _dboard_manager->get_rx_subdev(key.name);
         return;
 
     case DBOARD_PROP_SUBDEV_NAMES:
@@ -90,7 +89,7 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_GAIN_GROUP:
         val = make_gain_group(
-            _dboard_manager->get_rx_subdev(name), _rx_codec_proxy->get_link()
+            _dboard_manager->get_rx_subdev(key.name), _rx_codec_proxy->get_link()
         );
         return;
 
@@ -114,8 +113,7 @@ void usrp2_mboard_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
  * TX DBoard Properties
  **********************************************************************/
 void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<dboard_prop_t>()){
@@ -124,7 +122,7 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DBOARD_PROP_SUBDEV:
-        val = _dboard_manager->get_tx_subdev(name);
+        val = _dboard_manager->get_tx_subdev(key.name);
         return;
 
     case DBOARD_PROP_SUBDEV_NAMES:
@@ -145,7 +143,7 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_GAIN_GROUP:
         val = make_gain_group(
-            _dboard_manager->get_tx_subdev(name), _tx_codec_proxy->get_link()
+            _dboard_manager->get_tx_subdev(key.name), _tx_codec_proxy->get_link()
         );
         return;
 

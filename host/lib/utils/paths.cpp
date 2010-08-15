@@ -17,7 +17,7 @@
 
 #include "constants.hpp"
 #include <uhd/config.hpp>
-#include <boost/algorithm/string.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -58,15 +58,9 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
     po::store(po::parse_environment(desc, boost::bind(&name_mapper, var_name, _1)), vm);
     po::notify(vm);
 
-    //split the path at the path separators
-    std::vector<std::string> path_strings;
-    if (not var_value.empty()) boost::split(//dont split empty strings
-        path_strings, var_value, boost::is_any_of(env_path_sep)
-    );
-
     //convert to filesystem path, filter blank paths
     std::vector<fs::path> paths;
-    BOOST_FOREACH(std::string &path_string, path_strings){
+    BOOST_FOREACH(const std::string &path_string, std::split_string(var_value, env_path_sep)){
         if (path_string.empty()) continue;
         paths.push_back(fs::system_complete(path_string));
     }
