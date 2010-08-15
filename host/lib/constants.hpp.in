@@ -23,7 +23,6 @@
 
 //these should be pre-processor macros to avoid static initialization issues
 #define UHD_VERSION_STRING "@CPACK_PACKAGE_VERSION@"
-#define UHD_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
-#define UHD_PKG_DATA_DIR "@PKG_DATA_DIR@"
+#define FULL_PKG_DATA_DIR "@FULL_PKG_DATA_DIR@"
 
 #endif /* INCLUDED_LIBUHD_CONSTANTS_HPP */
