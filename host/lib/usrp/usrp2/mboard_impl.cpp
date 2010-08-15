@@ -189,11 +189,10 @@ void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
 static const std::string dboard_name = "0";
 
 void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the other props
-    if (key.type() == typeid(std::string)){
+    if (key_.type() == typeid(std::string)){
         if (key.as<std::string>() == "mac-addr"){
             byte_vector_t bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, 6);
             val = mac_addr_t::from_bytes(bytes).to_string();
@@ -224,7 +223,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        UHD_ASSERT_THROW(name == dboard_name);
+        UHD_ASSERT_THROW(key.name == dboard_name);
         val = _rx_dboard_proxy->get_link();
         return;
 
@@ -233,7 +232,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        UHD_ASSERT_THROW(name == dboard_name);
+        UHD_ASSERT_THROW(key.name == dboard_name);
         val = _tx_dboard_proxy->get_link();
         return;
 
@@ -242,7 +241,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _rx_dsp_proxy->get_link();
         return;
 
@@ -251,7 +250,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _tx_dsp_proxy->get_link();
         return;
 

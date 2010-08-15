@@ -500,8 +500,7 @@ void dbsrx::set_bandwidth(float bandwidth){
  * RX Get and Set
  **********************************************************************/
 void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -514,13 +513,13 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        assert_has(_gains.keys(), name, "dbsrx gain name");
-        val = _gains[name];
+        assert_has(_gains.keys(), key.name, "dbsrx gain name");
+        val = _gains[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(dbsrx_gain_ranges.keys(), name, "dbsrx gain name");
-        val = dbsrx_gain_ranges[name];
+        assert_has(dbsrx_gain_ranges.keys(), key.name, "dbsrx gain name");
+        val = dbsrx_gain_ranges[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
@@ -543,19 +542,6 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = dbsrx_antennas;
         return;
 
-/*
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
-        return;
-*/
     case SUBDEV_PROP_CONNECTION:
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
@@ -583,8 +569,7 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
 }
 
 void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -594,7 +579,7 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<float>(), name);
+        this->set_gain(val.as<float>(), key.name);
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
