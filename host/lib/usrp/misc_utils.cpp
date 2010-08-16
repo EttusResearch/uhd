@@ -29,9 +29,6 @@
 using namespace uhd;
 using namespace uhd::usrp;
 
-static const size_t subdev_gain_priority = 1; //higher, closer to the antenna
-static const size_t codec_gain_priority = 0;
-
 /***********************************************************************
  * codec gain group helper functions:
  *    do this so we dont have to bind a templated function
@@ -80,7 +77,15 @@ static void set_subdev_gain(wax::obj subdev, const std::string &name, float gain
 /***********************************************************************
  * gain group factory function for usrp
  **********************************************************************/
-gain_group::sptr usrp::make_gain_group(wax::obj subdev, wax::obj codec){
+gain_group::sptr usrp::make_gain_group(
+    wax::obj subdev, wax::obj codec,
+    gain_group_policy_t gain_group_policy
+){
+    const size_t subdev_gain_priority = 1;
+    const size_t codec_gain_priority = (gain_group_policy == GAIN_GROUP_POLICY_RX)?
+        (subdev_gain_priority - 1): //RX policy, codec gains fill last (lower priority)
+        (subdev_gain_priority + 1); //TX policy, codec gains fill first (higher priority)
+
     gain_group::sptr gg = gain_group::make();
     gain_fcns_t fcns;
     //add all the subdev gains first (antenna to dsp order)

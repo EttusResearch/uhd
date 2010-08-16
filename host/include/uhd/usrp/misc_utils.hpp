@@ -26,9 +26,23 @@
 namespace uhd{ namespace usrp{
 
     /*!
-     * Create a gain group that represents the subdevice and its codec.
+     * Different policies for gain group prioritization.
      */
-    UHD_API gain_group::sptr make_gain_group(wax::obj subdev, wax::obj codec);
+    enum gain_group_policy_t{
+        GAIN_GROUP_POLICY_RX = 'R',
+        GAIN_GROUP_POLICY_TX = 'T'
+    };
+
+    /*!
+     * Create a gain group that represents the subdevice and its codec.
+     * \param subdev the object with subdevice properties
+     * \param codec the object with codec properties
+     * \param gain_group_policy the policy to use
+     */
+    UHD_API gain_group::sptr make_gain_group(
+        wax::obj subdev, wax::obj codec,
+        gain_group_policy_t gain_group_policy
+    );
 
     /*!
      * Verify the rx subdevice specification.
