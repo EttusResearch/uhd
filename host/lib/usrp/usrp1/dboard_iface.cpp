@@ -225,11 +225,9 @@ boost::uint16_t usrp1_dboard_iface::read_gpio(unit_t unit)
 void usrp1_dboard_iface::set_atr_reg(unit_t unit,
                                      atr_reg_t atr, boost::uint16_t value)
 {
-    if ((atr == ATR_REG_IDLE) || (atr == ATR_REG_FULL_DUPLEX)) {
-        //TODO probably just ignore these two atr settings because all dboards will try to set them
-        std::cerr << "error: set_atr_reg(): unsupported state" << std::endl;
+    // Ignore unsupported states
+    if ((atr == ATR_REG_IDLE) || (atr == ATR_REG_FULL_DUPLEX))
         return;
-    }
 
     switch(unit) {
     case UNIT_RX:
