@@ -17,8 +17,6 @@
 
 #include "codec_ctrl.hpp"
 #include "usrp_commands.h"
-#include "fpga_regs_standard.h"
-#include "usrp_spi_defs.h"
 #include "ad9862_regs.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
@@ -45,7 +43,7 @@ const gain_range_t usrp1_codec_ctrl::rx_pga_gain_range(0, 20, 1);
 class usrp1_codec_ctrl_impl : public usrp1_codec_ctrl {
 public:
     //structors
-    usrp1_codec_ctrl_impl(usrp1_iface::sptr iface);
+    usrp1_codec_ctrl_impl(usrp1_iface::sptr iface, int spi_slave);
     ~usrp1_codec_ctrl_impl(void);
 
     //aux adc and dac control
@@ -63,6 +61,7 @@ public:
 
 private:
     usrp1_iface::sptr _iface;
+    int _spi_slave;
     ad9862_regs_t _ad9862_regs;
     aux_adc_t _last_aux_adc_a, _last_aux_adc_b;
     void send_reg(boost::uint8_t addr);
@@ -78,9 +77,10 @@ private:
 /***********************************************************************
  * Codec Control Structors
  **********************************************************************/
-usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface)
+usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface, int spi_slave)
 {
     _iface = iface;
+    _spi_slave = spi_slave;
 
     //soft reset
     _ad9862_regs.soft_reset = 1;
@@ -295,7 +295,7 @@ void usrp1_codec_ctrl_impl::send_reg(boost::uint8_t addr)
         std::cout << "codec control write reg: 0x";
         std::cout << std::setw(8) << std::hex << reg << std::endl;
     }
-    _iface->transact_spi(SPI_ENABLE_CODEC_A,
+    _iface->transact_spi(_spi_slave,
                          spi_config_t::EDGE_RISE, reg, 16, false);
 }
 
@@ -309,7 +309,7 @@ void usrp1_codec_ctrl_impl::recv_reg(boost::uint8_t addr)
         std::cout << std::setw(8) << std::hex << reg << std::endl;
     }
 
-    boost::uint32_t ret = _iface->transact_spi(SPI_ENABLE_CODEC_A,
+    boost::uint32_t ret = _iface->transact_spi(_spi_slave,
                                         spi_config_t::EDGE_RISE, reg, 16, true);
 
     if (codec_debug) {
@@ -435,7 +435,7 @@ bool usrp1_codec_ctrl_impl::set_duc_freq(double freq)
 /***********************************************************************
  * Codec Control Make
  **********************************************************************/
-usrp1_codec_ctrl::sptr usrp1_codec_ctrl::make(usrp1_iface::sptr iface)
+usrp1_codec_ctrl::sptr usrp1_codec_ctrl::make(usrp1_iface::sptr iface, int spi_slave)
 {
-    return sptr(new usrp1_codec_ctrl_impl(iface));
+    return sptr(new usrp1_codec_ctrl_impl(iface, spi_slave));
 }

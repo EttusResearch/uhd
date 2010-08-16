@@ -16,6 +16,7 @@
 //
 
 #include "usrp1_iface.hpp"
+#include "usrp1_impl.hpp"
 #include "fpga_regs_common.h"
 #include "usrp_spi_defs.h"
 #include "clock_ctrl.hpp"
@@ -30,16 +31,27 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
+/***********************************************************************
+ * TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+ * TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+ * TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+ * TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+ *
+ * check the _dboard_slot and handle conditionally...
+ **********************************************************************/
+
 class usrp1_dboard_iface : public dboard_iface {
 public:
 
     usrp1_dboard_iface(usrp1_iface::sptr iface,
                        usrp1_clock_ctrl::sptr clock,
-                       usrp1_codec_ctrl::sptr codec)
-    {
+                       usrp1_codec_ctrl::sptr codec,
+                       usrp1_impl::dboard_slot_t dboard_slot
+    ){
         _iface = iface;
         _clock = clock;
         _codec = codec;
+        _dboard_slot = dboard_slot;
 
         //init the clock rate shadows
         this->set_clock_rate(UNIT_RX, _clock->get_master_clock_freq());
@@ -55,7 +67,7 @@ public:
     {
         special_props_t props;
         props.soft_clock_divider = true;
-        props.mangle_i2c_addrs = false; //TODO true on side B
+        props.mangle_i2c_addrs = (_dboard_slot == usrp1_impl::DBOARD_SLOT_B);
         return props;
     }
 
@@ -91,16 +103,18 @@ private:
     usrp1_clock_ctrl::sptr _clock;
     usrp1_codec_ctrl::sptr _codec;
     uhd::dict<unit_t, double> _clock_rates;
+    usrp1_impl::dboard_slot_t _dboard_slot;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_iface::sptr make_usrp1_dboard_iface(usrp1_iface::sptr iface,
+dboard_iface::sptr usrp1_impl::make_dboard_iface(usrp1_iface::sptr iface,
                                            usrp1_clock_ctrl::sptr clock,
-                                           usrp1_codec_ctrl::sptr codec)
-{
-    return dboard_iface::sptr(new usrp1_dboard_iface(iface, clock, codec));
+                                           usrp1_codec_ctrl::sptr codec,
+                                           usrp1_impl::dboard_slot_t dboard_slot
+){
+    return dboard_iface::sptr(new usrp1_dboard_iface(iface, clock, codec, dboard_slot));
 }
 
 /***********************************************************************

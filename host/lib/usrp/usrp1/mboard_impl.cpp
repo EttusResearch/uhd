@@ -19,6 +19,7 @@
 #include "usrp_commands.h"
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -109,6 +110,8 @@ void usrp1_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd)
 /***********************************************************************
  * Mboard Get
  **********************************************************************/
+static prop_names_t dboard_names = boost::assign::list_of("A")("B");
+
 void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
 {
     named_prop_t key = named_prop_t::extract(key_);
@@ -124,26 +127,28 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _rx_dboard_proxy->get_link();
+        uhd::assert_has(dboard_names, key.name, "dboard name");
+        if (key.name == "A") val = _rx_dboard_proxies[DBOARD_SLOT_A]->get_link();
+        if (key.name == "B") val = _rx_dboard_proxies[DBOARD_SLOT_B]->get_link();
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
-        val = prop_names_t(1, ""); //vector of size 1 with empty string
+        val = dboard_names;
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _tx_dboard_proxy->get_link();
+        uhd::assert_has(dboard_names, key.name, "dboard name");
+        if (key.name == "A") val = _tx_dboard_proxies[DBOARD_SLOT_A]->get_link();
+        if (key.name == "B") val = _tx_dboard_proxies[DBOARD_SLOT_B]->get_link();
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
-        val = prop_names_t(1, ""); //vector of size 1 with empty string
+        val = dboard_names;
         return;
 
     case MBOARD_PROP_RX_DSP:
         UHD_ASSERT_THROW(key.name == "");
-        val = _rx_ddc_proxy->get_link();
+        val = _rx_dsp_proxy->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
@@ -152,7 +157,7 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
 
     case MBOARD_PROP_TX_DSP:
         UHD_ASSERT_THROW(key.name == "");
-        val = _tx_duc_proxy->get_link();
+        val = _tx_dsp_proxy->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:

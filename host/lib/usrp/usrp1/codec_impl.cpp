@@ -19,6 +19,8 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/codec_props.hpp>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -29,13 +31,15 @@ using namespace uhd::usrp;
 void usrp1_impl::codec_init(void)
 {
     //make proxies
-    _rx_codec_proxy = wax_obj_proxy::make(
-                          boost::bind(&usrp1_impl::rx_codec_get, this, _1, _2),
-                          boost::bind(&usrp1_impl::rx_codec_set, this, _1, _2));
+    BOOST_FOREACH(dboard_slot_t dboard_slot, _dboard_slots){
+        _rx_codec_proxies[dboard_slot] = wax_obj_proxy::make(
+              boost::bind(&usrp1_impl::rx_codec_get, this, _1, _2, dboard_slot),
+              boost::bind(&usrp1_impl::rx_codec_set, this, _1, _2, dboard_slot));
 
-    _tx_codec_proxy = wax_obj_proxy::make(
-                          boost::bind(&usrp1_impl::tx_codec_get, this, _1, _2),
-                          boost::bind(&usrp1_impl::tx_codec_set, this, _1, _2));
+        _tx_codec_proxies[dboard_slot] = wax_obj_proxy::make(
+              boost::bind(&usrp1_impl::tx_codec_get, this, _1, _2, dboard_slot),
+              boost::bind(&usrp1_impl::tx_codec_set, this, _1, _2, dboard_slot));
+    }
 }    
 
 /***********************************************************************
@@ -43,14 +47,14 @@ void usrp1_impl::codec_init(void)
  **********************************************************************/
 static const std::string ad9862_pga_gain_name = "ad9862 pga";
 
-void usrp1_impl::rx_codec_get(const wax::obj &key_, wax::obj &val)
+void usrp1_impl::rx_codec_get(const wax::obj &key_, wax::obj &val, dboard_slot_t dboard_slot)
 {
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_NAME:
-        val = std::string("usrp1 adc - ad9862");
+        val = str(boost::format("usrp1 adc - ad9862 - slot %c") % dboard_slot);
         return;
 
     case CODEC_PROP_OTHERS:
@@ -68,19 +72,19 @@ void usrp1_impl::rx_codec_get(const wax::obj &key_, wax::obj &val)
 
     case CODEC_PROP_GAIN_I:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        val = _codec_ctrl->get_rx_pga_gain('A');
+        val = _codec_ctrls[dboard_slot]->get_rx_pga_gain('A');
         return;
 
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        val = _codec_ctrl->get_rx_pga_gain('B');
+        val = _codec_ctrls[dboard_slot]->get_rx_pga_gain('B');
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
-void usrp1_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val)
+void usrp1_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val, dboard_slot_t dboard_slot)
 {
     named_prop_t key = named_prop_t::extract(key_);
 
@@ -88,12 +92,12 @@ void usrp1_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val)
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_GAIN_I:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'A');
+        _codec_ctrls[dboard_slot]->set_rx_pga_gain(val.as<float>(), 'A');
         return;
 
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'B');
+        _codec_ctrls[dboard_slot]->set_rx_pga_gain(val.as<float>(), 'B');
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -103,14 +107,14 @@ void usrp1_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val)
 /***********************************************************************
  * TX Codec Properties
  **********************************************************************/
-void usrp1_impl::tx_codec_get(const wax::obj &key_, wax::obj &val)
+void usrp1_impl::tx_codec_get(const wax::obj &key_, wax::obj &val, dboard_slot_t dboard_slot)
 {
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_NAME:
-        val = std::string("usrp1 dac - ad9862");
+        val = str(boost::format("usrp1 dac - ad9862 - slot %c") % dboard_slot);
         return;
 
     case CODEC_PROP_OTHERS:
@@ -129,14 +133,14 @@ void usrp1_impl::tx_codec_get(const wax::obj &key_, wax::obj &val)
     case CODEC_PROP_GAIN_I: //only one gain for I and Q
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        val = _codec_ctrl->get_tx_pga_gain();
+        val = _codec_ctrls[dboard_slot]->get_tx_pga_gain();
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
-void usrp1_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val)
+void usrp1_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val, dboard_slot_t dboard_slot)
 {
     named_prop_t key = named_prop_t::extract(key_);
 
@@ -145,7 +149,7 @@ void usrp1_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val)
     case CODEC_PROP_GAIN_I: //only one gain for I and Q
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        _codec_ctrl->set_tx_pga_gain(val.as<float>());
+        _codec_ctrls[dboard_slot]->set_tx_pga_gain(val.as<float>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

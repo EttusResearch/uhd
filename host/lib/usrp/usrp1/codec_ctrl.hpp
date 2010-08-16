@@ -38,9 +38,10 @@ public:
     /*!
      * Make a new clock control object.
      * \param iface the usrp1 iface object
+     * \param spi_slave which spi device
      * \return the clock control object
      */
-    static sptr make(usrp1_iface::sptr iface);
+    static sptr make(usrp1_iface::sptr iface, int spi_slave);
 
     //! aux adc identifier constants
     enum aux_adc_t{
