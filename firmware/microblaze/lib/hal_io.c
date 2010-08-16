@@ -237,10 +237,10 @@ int puts(const char *s)
 char *
 fgets(hal_uart_name_t u, char * const s)
 {
-	char *x = s;
-	while((*x=(char)hal_uart_getc(u)) != '\n') x++;
-	*x = 0;
-	return s;
+  char *x = s;
+  while((*x=(char)hal_uart_getc(u)) != '\n') x++;
+  *x = 0;
+  return s;
 }
 
 int
@@ -248,8 +248,8 @@ fngets(hal_uart_name_t u, char * const s, int len)
 {
   char *x = s;
   while(((*x=(char)hal_uart_getc(u)) != '\n') && ((x-s) < len)) x++;
-	*x = 0;
-	return (x-s);
+  *x = 0;
+  return (x-s);
 }
 
 int
@@ -258,8 +258,9 @@ fngets_timeout(hal_uart_name_t u, char * const s, int len)
   char *x = s;
 
   while(((*x=(char)hal_uart_getc_timeout(u)) != '\n') && (*x != -1) && ((x-s) < len)) x++;
-	*x = 0;
-	return (x-s);
+  *x = 0;
+  //printf("Returning from fngets() with string %d of length %d\n", s[0], x-s);
+  return (x-s);
 }
 
 char *
