@@ -112,7 +112,7 @@ private:
 dboard_iface::sptr usrp1_impl::make_dboard_iface(usrp1_iface::sptr iface,
                                            usrp1_clock_ctrl::sptr clock,
                                            usrp1_codec_ctrl::sptr codec,
-                                           usrp1_impl::dboard_slot_t dboard_slot
+                                           dboard_slot_t dboard_slot
 ){
     return dboard_iface::sptr(new usrp1_dboard_iface(iface, clock, codec, dboard_slot));
 }
@@ -221,6 +221,7 @@ void usrp1_dboard_iface::set_atr_reg(unit_t unit,
                                      atr_reg_t atr, boost::uint16_t value)
 {
     if ((atr == ATR_REG_IDLE) || (atr == ATR_REG_FULL_DUPLEX)) {
+        //TODO probably just ignore these two atr settings because all dboards will try to set them
         std::cerr << "error: set_atr_reg(): unsupported state" << std::endl;
         return;
     }

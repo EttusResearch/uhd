@@ -17,6 +17,7 @@
 
 #include "usrp1_impl.hpp"
 #include "usrp_commands.h"
+#include "../misc_utils.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/assign/list_of.hpp>
@@ -168,6 +169,14 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         val = _clock_config;
         return;
 
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        val = _rx_subdev_spec;
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        val = _tx_subdev_spec;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -184,8 +193,28 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         issue_stream_cmd(val.as<stream_cmd_t>());
         return;
 
-    case MBOARD_PROP_TIME_NOW:
-    case MBOARD_PROP_TIME_NEXT_PPS:
+    case MBOARD_PROP_RX_SUBDEV_SPEC:
+        _rx_subdev_spec = val.as<subdev_spec_t>();
+        verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
+        //sanity check
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
+        //set the mux and set the number of rx channels
+        //--------------------------------------------------
+        // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+        //--------------------------------------------------
+        return;
+
+    case MBOARD_PROP_TX_SUBDEV_SPEC:
+        _tx_subdev_spec = val.as<subdev_spec_t>();
+        verify_tx_subdev_spec(_tx_subdev_spec, this->get_link());
+        //sanity check
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() <= 2);
+        //set the mux and set the number of tx channels
+        //--------------------------------------------------
+        // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+        //--------------------------------------------------
+        return;
+
     default: UHD_THROW_PROP_SET_ERROR();
     }
 }

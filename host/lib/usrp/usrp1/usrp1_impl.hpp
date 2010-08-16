@@ -25,6 +25,7 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
@@ -131,6 +132,7 @@ private:
 
     //configuration shadows
     uhd::clock_config_t _clock_config;
+    uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //clock control
     usrp1_clock_ctrl::sptr _clock_ctrl;
