@@ -182,6 +182,11 @@ module u2_core
    wire [31:0] 	irq;
    wire [63:0] 	vita_time;
    
+   wire 	 run_rx, run_tx;
+   reg 		 run_rx_d1;
+   always @(posedge dsp_clk)
+     run_rx_d1 <= run_rx;
+   
    // ///////////////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Single Master INTERCON
    localparam 	dw = 32;  // Data bus width
@@ -511,12 +516,13 @@ module u2_core
    //    In Rev3 there are only 6 leds, and the highest one is on the ETH connector
    
    wire [7:0] 	 led_src, led_sw;
-   wire [7:0] 	 led_hw = {clk_status,serdes_link_up};
+   wire [7:0] 	 led_hw = {run_tx, run_rx, clk_status, serdes_link_up, 1'b0};
    
    setting_reg #(.my_addr(3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
-   setting_reg #(.my_addr(8),.width(8)) sr_led_src (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-					  .in(set_data),.out(led_src),.changed());
+
+   setting_reg #(.my_addr(8),.width(8), .at_reset(8'b0001_1110)) 
+   sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
    
@@ -567,11 +573,6 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller, Slave #11
 
-   wire 	 run_rx, run_tx;
-   reg 		 run_rx_d1;
-   always @(posedge dsp_clk)
-     run_rx_d1 <= run_rx;
-   
    atr_controller atr_controller
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
