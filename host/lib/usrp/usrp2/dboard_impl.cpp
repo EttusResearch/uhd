@@ -17,8 +17,8 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include "../dsp_utils.hpp"
-#include "../misc_utils.hpp"
+#include <uhd/usrp/misc_utils.hpp>
+#include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/utils/assert.hpp>

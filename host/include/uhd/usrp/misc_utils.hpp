@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP
-#define INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP
+#ifndef INCLUDED_UHD_USRP_MISC_UTILS_HPP
+#define INCLUDED_UHD_USRP_MISC_UTILS_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
@@ -28,7 +28,7 @@ namespace uhd{ namespace usrp{
     /*!
      * Create a gain group that represents the subdevice and its codec.
      */
-    gain_group::sptr make_gain_group(wax::obj subdev, wax::obj codec);
+    UHD_API gain_group::sptr make_gain_group(wax::obj subdev, wax::obj codec);
 
     /*!
      * Verify the rx subdevice specification.
@@ -37,7 +37,7 @@ namespace uhd{ namespace usrp{
      * \param mboard the motherboard properties object
      * \throw exception when the subdev spec is invalid
      */
-    void verify_rx_subdev_spec(subdev_spec_t &subdev_spec, wax::obj mboard);
+    UHD_API void verify_rx_subdev_spec(subdev_spec_t &subdev_spec, wax::obj mboard);
 
     /*!
      * Verify the tx subdevice specification.
@@ -46,9 +46,9 @@ namespace uhd{ namespace usrp{
      * \param mboard the motherboard properties object
      * \throw exception when the subdev spec is invalid
      */
-    void verify_tx_subdev_spec(subdev_spec_t &subdev_spec, wax::obj mboard);
+    UHD_API void verify_tx_subdev_spec(subdev_spec_t &subdev_spec, wax::obj mboard);
 
 }} //namespace
 
-#endif /* INCLUDED_LIBUHD_USRP_MISC_UTILS_HPP */
+#endif /* INCLUDED_UHD_USRP_MISC_UTILS_HPP */
 

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "misc_utils.hpp"
+#include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_id.hpp>
