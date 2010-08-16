@@ -17,14 +17,15 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include "../misc_utils.hpp"
-#include "../dsp_utils.hpp"
+#include <uhd/usrp/misc_utils.hpp>
+#include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/bind.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <iostream>
 
