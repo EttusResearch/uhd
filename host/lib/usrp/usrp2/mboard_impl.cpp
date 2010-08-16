@@ -25,6 +25,7 @@
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/bind.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <iostream>
 
