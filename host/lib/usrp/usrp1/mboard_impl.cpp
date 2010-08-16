@@ -17,7 +17,7 @@
 
 #include "usrp1_impl.hpp"
 #include "usrp_commands.h"
-#include "../misc_utils.hpp"
+#include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/assign/list_of.hpp>

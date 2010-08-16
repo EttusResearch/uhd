@@ -17,8 +17,8 @@
 
 #include "usrp1_impl.hpp"
 #include "usrp_i2c_addr.h"
-#include "../dsp_utils.hpp"
-#include "../misc_utils.hpp"
+#include <uhd/usrp/dsp_utils.hpp>
+#include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
@@ -122,8 +122,11 @@ void usrp1_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
         return;
 
     case DBOARD_PROP_GAIN_GROUP:
-        val = make_gain_group(_dboard_managers[dboard_slot]->get_rx_subdev(key.name),
-                              _rx_codec_proxies[dboard_slot]->get_link());
+        val = make_gain_group(
+            _dboard_managers[dboard_slot]->get_rx_subdev(key.name),
+            _rx_codec_proxies[dboard_slot]->get_link(),
+            GAIN_GROUP_POLICY_RX
+        );
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -183,8 +186,11 @@ void usrp1_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
         return;
 
     case DBOARD_PROP_GAIN_GROUP:
-        val = make_gain_group(_dboard_managers[dboard_slot]->get_tx_subdev(key.name),
-                              _tx_codec_proxies[dboard_slot]->get_link());
+        val = make_gain_group(
+            _dboard_managers[dboard_slot]->get_tx_subdev(key.name),
+            _tx_codec_proxies[dboard_slot]->get_link(),
+            GAIN_GROUP_POLICY_TX
+        );
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

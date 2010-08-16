@@ -17,11 +17,12 @@
 
 #include "usrp1_impl.hpp"
 #include "fpga_regs_standard.h"
-#include "../dsp_utils.hpp"
+#include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/bind.hpp>
+#include <boost/format.hpp>
 #include <iostream>
-#include <cstdio>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -82,10 +83,9 @@ unsigned int compute_freq_word(double master, double target)
  
     double actual_freq = v * master / pow(2.0, 32.0);
  
-    if (0)
-      fprintf (stderr,
-               "compute_freq_control_word_fpga: target = %g  actual = %g  delta = %g\n",
-               target, actual_freq, actual_freq - target);
+    if (0) std::cerr << boost::format(
+        "compute_freq_control_word_fpga: target = %g  actual = %g  delta = %g\n"
+    ) % target % actual_freq % (actual_freq - target);
  
     return (unsigned int) v;
 }
