@@ -44,8 +44,7 @@ void usrp_e_impl::codec_init(void){
 static const std::string ad9862_pga_gain_name = "ad9862 pga";
 
 void usrp_e_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
@@ -62,17 +61,17 @@ void usrp_e_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case CODEC_PROP_GAIN_RANGE:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         val = usrp_e_codec_ctrl::rx_pga_gain_range;
         return;
 
     case CODEC_PROP_GAIN_I:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         val = _codec_ctrl->get_rx_pga_gain('A');
         return;
 
     case CODEC_PROP_GAIN_Q:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         val = _codec_ctrl->get_rx_pga_gain('B');
         return;
 
@@ -81,18 +80,17 @@ void usrp_e_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
 }
 
 void usrp_e_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the set request conditioned on the key
     switch(key.as<codec_prop_t>()){
     case CODEC_PROP_GAIN_I:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'A');
         return;
 
     case CODEC_PROP_GAIN_Q:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'B');
         return;
 
@@ -104,8 +102,7 @@ void usrp_e_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
  * TX Codec Properties
  **********************************************************************/
 void usrp_e_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
@@ -122,13 +119,13 @@ void usrp_e_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case CODEC_PROP_GAIN_RANGE:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         val = usrp_e_codec_ctrl::tx_pga_gain_range;
         return;
 
     case CODEC_PROP_GAIN_I: //only one gain for I and Q
     case CODEC_PROP_GAIN_Q:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         val = _codec_ctrl->get_tx_pga_gain();
         return;
 
@@ -137,14 +134,13 @@ void usrp_e_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
 }
 
 void usrp_e_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the set request conditioned on the key
     switch(key.as<codec_prop_t>()){
     case CODEC_PROP_GAIN_I: //only one gain for I and Q
     case CODEC_PROP_GAIN_Q:
-        UHD_ASSERT_THROW(name == ad9862_pga_gain_name);
+        UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
         _codec_ctrl->set_tx_pga_gain(val.as<float>());
         return;
 

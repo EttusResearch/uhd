@@ -160,7 +160,8 @@ public:
 
     std::vector<double> get_rx_dboard_clock_rates(void){
         std::vector<double> rates;
-        for(size_t div = 1; div <= 16+16; div++) rates.push_back(master_clock_rate/div);
+        for(size_t div = 2/*vco div == 1*/; div <= 16+16; div++)
+            rates.push_back(master_clock_rate/div);
         return rates;
     }
 

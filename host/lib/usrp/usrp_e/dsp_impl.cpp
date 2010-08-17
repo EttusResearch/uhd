@@ -17,8 +17,9 @@
 
 #include "usrp_e_impl.hpp"
 #include "usrp_e_regs.hpp"
-#include "../dsp_utils.hpp"
+#include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/dsp_props.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <boost/bind.hpp>
 
 #define rint boost::math::iround

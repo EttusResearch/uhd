@@ -17,7 +17,7 @@
 
 #include "usrp_e_impl.hpp"
 #include "usrp_e_regs.hpp"
-#include "../dsp_utils.hpp"
+#include <uhd/usrp/dsp_utils.hpp>
 #include "../../transport/vrt_packet_handler.hpp"
 #include <boost/bind.hpp>
 #include <fcntl.h> //read, write

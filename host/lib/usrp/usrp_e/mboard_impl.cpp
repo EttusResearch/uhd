@@ -17,8 +17,8 @@
 
 #include "usrp_e_impl.hpp"
 #include "usrp_e_regs.hpp"
-#include "../dsp_utils.hpp"
-#include "../misc_utils.hpp"
+#include <uhd/usrp/dsp_utils.hpp>
+#include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
@@ -47,9 +47,7 @@ void usrp_e_impl::mboard_init(void){
  * Mboard Get
  **********************************************************************/
 void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
-
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
@@ -62,7 +60,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _rx_dboard_proxy->get_link();
         return;
 
@@ -71,7 +69,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _tx_dboard_proxy->get_link();
         return;
 
@@ -80,7 +78,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _rx_ddc_proxy->get_link();
         return;
 
@@ -89,7 +87,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(name == "");
+        UHD_ASSERT_THROW(key.name == "");
         val = _tx_duc_proxy->get_link();
         return;
 
