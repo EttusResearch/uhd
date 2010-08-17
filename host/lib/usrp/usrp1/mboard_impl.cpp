@@ -17,15 +17,118 @@
 
 #include "usrp1_impl.hpp"
 #include "usrp_commands.h"
+#include "fpga_regs_standard.h"
 #include <uhd/usrp/misc_utils.hpp>
-#include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/dboard_props.hpp>
+#include <uhd/usrp/subdev_props.hpp>
+#include <uhd/utils/warning.hpp>
+#include <uhd/utils/assert.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
+
+/***********************************************************************
+ * Helper Functions
+ **********************************************************************/
+static boost::uint32_t calc_rx_mux(
+    const subdev_spec_t &subdev_spec, wax::obj mboard
+){
+    //create look-up-table for mapping dboard name and connection type to ADC flags
+    static const int ADC0 = 0, ADC1 = 1, ADC2 = 2, ADC3 = 3;
+    static const uhd::dict<std::string, uhd::dict<subdev_conn_t, int> > name_to_conn_to_flag = boost::assign::map_list_of
+        ("A", boost::assign::map_list_of
+            (SUBDEV_CONN_COMPLEX_IQ, (ADC0 << 0) | (ADC1 << 2)) //I and Q
+            (SUBDEV_CONN_COMPLEX_QI, (ADC1 << 0) | (ADC0 << 2)) //I and Q
+            (SUBDEV_CONN_REAL_I,     (ADC0 << 0) | (ADC0 << 2)) //I and Q (Q identical but ignored Z=1)
+            (SUBDEV_CONN_REAL_Q,     (ADC1 << 0) | (ADC1 << 2)) //I and Q (Q identical but ignored Z=1)
+        )
+        ("B", boost::assign::map_list_of
+            (SUBDEV_CONN_COMPLEX_IQ, (ADC2 << 0) | (ADC3 << 2)) //I and Q
+            (SUBDEV_CONN_COMPLEX_QI, (ADC3 << 0) | (ADC2 << 2)) //I and Q
+            (SUBDEV_CONN_REAL_I,     (ADC2 << 0) | (ADC2 << 2)) //I and Q (Q identical but ignored Z=1)
+            (SUBDEV_CONN_REAL_Q,     (ADC3 << 0) | (ADC3 << 2)) //I and Q (Q identical but ignored Z=1)
+        )
+    ;
+
+    //extract the number of channels
+    size_t nchan = subdev_spec.size();
+
+    //calculate the channel flags
+    int channel_flags = 0;
+    size_t num_reals = 0, num_quads = 0;
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
+        wax::obj dboard = mboard[named_prop_t(MBOARD_PROP_RX_DBOARD, pair.db_name)];
+        wax::obj subdev = dboard[named_prop_t(DBOARD_PROP_SUBDEV, pair.sd_name)];
+        subdev_conn_t conn = subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>();
+        switch(conn){
+        case SUBDEV_CONN_COMPLEX_IQ:
+        case SUBDEV_CONN_COMPLEX_QI: num_quads++; break;
+        case SUBDEV_CONN_REAL_I:
+        case SUBDEV_CONN_REAL_Q:     num_reals++; break;
+        }
+        channel_flags = (channel_flags << 4) | name_to_conn_to_flag[pair.db_name][conn];
+    }
+
+    //calculate Z:
+    //    for all real sources: Z = 1
+    //    for all quadrature sources: Z = 0
+    //    for mixed sources: warning + Z = 0
+    int Z = (num_quads > 0)? 0 : 1;
+    if (num_quads != 0 and num_reals != 0) uhd::print_warning(
+        "Mixing real and quadrature rx subdevices is not supported.\n"
+        "The Q input to the real source(s) will be non-zero.\n"
+    );
+
+    //calculate the rx mux value
+    return ((channel_flags & 0xffff) << 4) | ((Z & 0x1) << 3) | ((nchan & 0x7) << 0);
+}
+
+static boost::uint32_t calc_tx_mux(
+    const subdev_spec_t &subdev_spec, wax::obj mboard
+){
+    //create look-up-table for mapping channel number and connection type to flags
+    static const int ENB = 1 << 3, CHAN_I0 = 0, CHAN_Q0 = 1, CHAN_I1 = 2, CHAN_Q1 = 3;
+    static const uhd::dict<size_t, uhd::dict<subdev_conn_t, int> > chan_to_conn_to_flag = boost::assign::map_list_of
+        (0, boost::assign::map_list_of
+            (SUBDEV_CONN_COMPLEX_IQ, ((CHAN_I0 | ENB) << 0) | ((CHAN_Q0 | ENB) << 4))
+            (SUBDEV_CONN_COMPLEX_QI, ((CHAN_I0 | ENB) << 4) | ((CHAN_Q0 | ENB) << 0))
+            (SUBDEV_CONN_REAL_I,     ((CHAN_I0 | ENB) << 0))
+            (SUBDEV_CONN_REAL_Q,     ((CHAN_I0 | ENB) << 4))
+        )
+        (1, boost::assign::map_list_of
+            (SUBDEV_CONN_COMPLEX_IQ, ((CHAN_I1 | ENB) << 0) | ((CHAN_Q1 | ENB) << 4))
+            (SUBDEV_CONN_COMPLEX_QI, ((CHAN_I1 | ENB) << 4) | ((CHAN_Q1 | ENB) << 0))
+            (SUBDEV_CONN_REAL_I,     ((CHAN_I1 | ENB) << 0))
+            (SUBDEV_CONN_REAL_Q,     ((CHAN_I1 | ENB) << 4))
+        )
+    ;
+
+    //extract the number of channels
+    size_t nchan = subdev_spec.size();
+
+    //calculate the channel flags
+    int channel_flags = 0, chan = 0;
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
+        wax::obj dboard = mboard[named_prop_t(MBOARD_PROP_RX_DBOARD, pair.db_name)];
+        wax::obj subdev = dboard[named_prop_t(DBOARD_PROP_SUBDEV, pair.sd_name)];
+        subdev_conn_t conn = subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>();
+
+        //combine the channel flags: shift for slot A vs B
+        if (pair.db_name == "A") channel_flags |= chan_to_conn_to_flag[chan][conn] << 0;
+        if (pair.db_name == "B") channel_flags |= chan_to_conn_to_flag[chan][conn] << 8;
+
+        //increment for the next channel
+        chan++;
+    }
+
+    //calculate the tx mux value
+    return ((channel_flags & 0xffff) << 4) | ((nchan & 0x7) << 0);
+}
 
 /***********************************************************************
  * Mboard Initialization
@@ -199,9 +302,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         //sanity check
         UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
         //set the mux and set the number of rx channels
-        //--------------------------------------------------
-        // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-        //--------------------------------------------------
+        _iface->poke32(FR_RX_MUX, calc_rx_mux(_rx_subdev_spec, _mboard_proxy->get_link()));
         return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
@@ -210,9 +311,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         //sanity check
         UHD_ASSERT_THROW(_tx_subdev_spec.size() <= 2);
         //set the mux and set the number of tx channels
-        //--------------------------------------------------
-        // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-        //--------------------------------------------------
+        _iface->poke32(FR_TX_MUX, calc_tx_mux(_tx_subdev_spec, _mboard_proxy->get_link()));
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
