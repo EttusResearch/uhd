@@ -39,7 +39,7 @@ template <typename div_type, typename bypass_type> static void set_clock_divider
  * Constants
  **********************************************************************/
 static const bool enable_test_clock = false;
-static const double ref_clock_doubler = 2; //enabled below
+static const size_t ref_clock_doubler = 2; //enabled below
 static const double ref_clock_rate = 10e6 * ref_clock_doubler;
 
 static const size_t r_counter = 1;

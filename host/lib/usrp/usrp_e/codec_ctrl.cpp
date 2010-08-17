@@ -97,6 +97,7 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_BYPASS;
     _ad9862_regs.dac_a_coarse_gain = 0x3;
     _ad9862_regs.dac_b_coarse_gain = 0x3;
+    _ad9862_regs.edges = ad9862_regs_t::EDGES_BOTH;
 
     //setup the dll
     _ad9862_regs.input_clk_ctrl = ad9862_regs_t::INPUT_CLK_CTRL_EXTERNAL;

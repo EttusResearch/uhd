@@ -77,7 +77,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //allocate data to send
-    std::vector<std::complex<short> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
+    std::vector<std::complex<short> > buff(samps_per_packet, std::complex<short>(ampl, ampl));
     uhd::tx_metadata_t md;
 
     //send the data in multiple packets
