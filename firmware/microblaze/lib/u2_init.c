@@ -45,22 +45,26 @@ get_hw_rev(void)
 bool
 u2_init(void)
 {
+  hal_disable_ints();
   hal_io_init();
 
   // init spi, so that we can switch over to the high-speed clock
   spi_init();
 
-  // init i2c so we can read our rev
-  i2c_init();
-  get_hw_rev();
-
   // set up the default clocks
   clocks_init();
 
+  hal_uart_init();
+
+  // init i2c so we can read our rev
   pic_init();	// progammable interrupt controller
+  i2c_init();
+  hal_enable_ints();
+  get_hw_rev();
+
   bp_init();	// buffer pool
   
-  hal_enable_ints();
+
 
   // flash all leds to let us know board is alive
   hal_set_leds(0x0, 0x1f);

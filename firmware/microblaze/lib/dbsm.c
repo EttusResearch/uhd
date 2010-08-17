@@ -160,12 +160,12 @@ dbsm_process_status(dbsm_t *sm, uint32_t status)
     putchar('E');
     // Most likely an ethernet Rx error.  We just restart the transfer.
     if (status & (BPS_ERROR(sm->buf0)))
-      //dbsm_error_helper(sm, sm->buf0);
-      dbsm_process_helper(sm, sm->buf0); //forward errors
+      dbsm_error_helper(sm, sm->buf0);
+      //dbsm_process_helper(sm, sm->buf0); //forward errors
 
     if (status & (BPS_ERROR(sm->buf0 ^ 1)))
-      //dbsm_error_helper(sm, sm->buf0 ^ 1);
-      dbsm_process_helper(sm, sm->buf0 ^ 1); //forward errors
+      dbsm_error_helper(sm, sm->buf0 ^ 1);
+      //dbsm_process_helper(sm, sm->buf0 ^ 1); //forward errors
   }
 
   if (status & BPS_DONE(sm->buf0))

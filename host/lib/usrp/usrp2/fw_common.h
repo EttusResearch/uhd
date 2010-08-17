@@ -34,7 +34,7 @@ extern "C" {
 
 //fpga and firmware compatibility numbers
 #define USRP2_FPGA_COMPAT_NUM 1
-#define USRP2_FW_COMPAT_NUM 5
+#define USRP2_FW_COMPAT_NUM 6
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -104,12 +104,12 @@ typedef struct{
     union{
         __stdint(uint32_t) ip_addr;
         struct {
-            __stdint(uint8_t) dev;
+            __stdint(uint32_t) dev;
+            __stdint(uint32_t) data;
             __stdint(uint8_t) miso_edge;
             __stdint(uint8_t) mosi_edge;
-            __stdint(uint8_t) readback;
-            __stdint(uint32_t) data;
             __stdint(uint8_t) num_bits;
+            __stdint(uint8_t) readback;
         } spi_args;
         struct {
             __stdint(uint8_t) addr;
