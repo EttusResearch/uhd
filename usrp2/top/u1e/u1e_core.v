@@ -419,7 +419,7 @@ module u1e_core
      (.clk_i(wb_clk), .rst_i(wb_rst),
       .adr_i(s6_adr), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(0), .run_tx(0), .ctrl_lines(atr_lines));
+      .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
 
    // /////////////////////////////////////////////////////////////////////////
