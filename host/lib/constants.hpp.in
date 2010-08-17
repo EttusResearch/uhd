@@ -18,11 +18,9 @@
 #ifndef INCLUDED_LIBUHD_CONSTANTS_HPP
 #define INCLUDED_LIBUHD_CONSTANTS_HPP
 
-#include <uhd/config.hpp>
-#include <string>
-
 //these should be pre-processor macros to avoid static initialization issues
 #define UHD_VERSION_STRING "@CPACK_PACKAGE_VERSION@"
-#define FULL_PKG_DATA_DIR "@FULL_PKG_DATA_DIR@"
+#define LOCAL_PKG_DATA_DIR "@LOCAL_PKG_DATA_DIR@"
+#define INSTALLER_PKG_DATA_DIR "@INSTALLER_PKG_DATA_DIR@"
 
 #endif /* INCLUDED_LIBUHD_CONSTANTS_HPP */
