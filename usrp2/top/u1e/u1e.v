@@ -99,6 +99,11 @@ module u1e
 	  TXSYNC <= 1;
        end
 `else // !`ifdef DCM
+   
+   reg[13:0] delay_q;
+   always @(posedge clk_fpga)
+     delay_q <= tx_q;
+   
    genvar i;
    generate
       for(i=0;i<14;i=i+1)
@@ -111,7 +116,7 @@ module u1e
 		       .C1(~clk_fpga), // 1-bit clock input
 		       .CE(1'b1),      // 1-bit clock enable input
 		       .D0(tx_i[i]),   // 1-bit data input (associated with C0)
-		       .D1(tx_q[i]),   // 1-bit data input (associated with C1)
+		       .D1(delay_q[i]),   // 1-bit data input (associated with C1)
 		       .R(1'b0),       // 1-bit reset input
 		       .S(1'b0));      // 1-bit set input
 	end // block: gen_dacout
