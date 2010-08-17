@@ -36,7 +36,7 @@ void usrp1_impl::rx_dsp_init(void)
         boost::bind(&usrp1_impl::rx_dsp_get, this, _1, _2),
         boost::bind(&usrp1_impl::rx_dsp_set, this, _1, _2));
 
-    rx_dsp_set(DSP_PROP_HOST_RATE, double(64e6/10)); //FIXME magic number
+    rx_dsp_set(DSP_PROP_HOST_RATE, _clock_ctrl->get_master_clock_freq() / 16);
 }
 
 /***********************************************************************
@@ -95,7 +95,9 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
-            _iface->poke32(FR_RX_FREQ_0, compute_freq_word(64e6, new_freq)); //FIXME magic rate
+            boost::uint32_t hw_freq_word = compute_freq_word(
+                              _clock_ctrl->get_master_clock_freq(), new_freq);
+            _iface->poke32(FR_RX_FREQ_0, hw_freq_word);
             _tx_dsp_freq = new_freq;
             return;
         }
@@ -130,7 +132,7 @@ void usrp1_impl::tx_dsp_init(void)
                           boost::bind(&usrp1_impl::tx_dsp_set, this, _1, _2));
 
     //initial config and update
-    tx_dsp_set(DSP_PROP_HOST_RATE, double(64e6/10)); //FIXME magic number
+    tx_dsp_set(DSP_PROP_HOST_RATE, _clock_ctrl->get_master_clock_freq() * 2 / 16);
 }
 
 /***********************************************************************
@@ -152,7 +154,7 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key, wax::obj &val)
         return;
 
     case DSP_PROP_CODEC_RATE:
-        val = MASTER_CLOCK_RATE;
+        val = _clock_ctrl->get_master_clock_freq() * 2;
         return;
 
     case DSP_PROP_HOST_RATE:

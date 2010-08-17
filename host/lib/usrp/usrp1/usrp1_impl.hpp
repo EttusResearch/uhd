@@ -33,8 +33,6 @@
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
 
-static const double MASTER_CLOCK_RATE = 64e6; //TODO get from clock control
-
 /*!
  * Simple wax obj proxy class:
  * Provides a wax obj interface for a set and a get function.
