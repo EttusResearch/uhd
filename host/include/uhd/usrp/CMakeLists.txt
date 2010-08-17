@@ -33,6 +33,8 @@ INSTALL(FILES
     dboard_manager.hpp
 
     ### utilities ###
+    dsp_utils.hpp
+    misc_utils.hpp
     subdev_spec.hpp
     tune_helper.hpp
 

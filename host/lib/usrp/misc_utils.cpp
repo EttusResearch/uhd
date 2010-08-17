@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "misc_utils.hpp"
+#include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_id.hpp>
@@ -28,9 +28,6 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-static const size_t subdev_gain_priority = 1; //higher, closer to the antenna
-static const size_t codec_gain_priority = 0;
 
 /***********************************************************************
  * codec gain group helper functions:
@@ -80,7 +77,15 @@ static void set_subdev_gain(wax::obj subdev, const std::string &name, float gain
 /***********************************************************************
  * gain group factory function for usrp
  **********************************************************************/
-gain_group::sptr usrp::make_gain_group(wax::obj subdev, wax::obj codec){
+gain_group::sptr usrp::make_gain_group(
+    wax::obj subdev, wax::obj codec,
+    gain_group_policy_t gain_group_policy
+){
+    const size_t subdev_gain_priority = 1;
+    const size_t codec_gain_priority = (gain_group_policy == GAIN_GROUP_POLICY_RX)?
+        (subdev_gain_priority - 1): //RX policy, codec gains fill last (lower priority)
+        (subdev_gain_priority + 1); //TX policy, codec gains fill first (higher priority)
+
     gain_group::sptr gg = gain_group::make();
     gain_fcns_t fcns;
     //add all the subdev gains first (antenna to dsp order)
@@ -127,14 +132,17 @@ static void verify_xx_subdev_spec(
     wax::obj mboard,
     std::string xx_type
 ){
+    prop_names_t dboard_names = mboard[dboard_names_prop].as<prop_names_t>();
+    UHD_ASSERT_THROW(dboard_names.size() > 0); //well i hope there is a dboard
+
     //the subdevice specification is empty: handle automatic
     if (subdev_spec.empty()){
-        BOOST_FOREACH(const std::string &db_name, mboard[dboard_names_prop].as<prop_names_t>()){
+        BOOST_FOREACH(const std::string &db_name, dboard_names){
             wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
 
             //if the dboard slot is populated, take the first subdevice
             if (dboard[DBOARD_PROP_DBOARD_ID].as<dboard_id_t>() != dboard_id_t::none()){
-                std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().at(0);
+                std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().front();
                 subdev_spec.push_back(subdev_spec_pair_t(db_name, sd_name));
                 break;
             }
@@ -142,16 +150,23 @@ static void verify_xx_subdev_spec(
 
         //didnt find any populated dboards: add the first subdevice
         if (subdev_spec.empty()){
-            std::string db_name = mboard[dboard_names_prop].as<prop_names_t>().at(0);
+            std::string db_name = dboard_names.front();
             wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
-            std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().at(0);
+            std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().front();
             subdev_spec.push_back(subdev_spec_pair_t(db_name, sd_name));
         }
     }
 
     //sanity check that the dboard/subdevice names exist for this mboard
     BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
-        uhd::assert_has(mboard[dboard_names_prop].as<prop_names_t>(),        pair.db_name, xx_type + " dboard name");
+        //empty db name means select dboard automatically
+        if (pair.db_name.empty()){
+            if (dboard_names.size() != 1) throw std::runtime_error(
+                "A daughterboard name must be provided for multi-slot boards: " + subdev_spec.to_string()
+            );
+            pair.db_name == dboard_names.front();
+        }
+        uhd::assert_has(dboard_names, pair.db_name, xx_type + " dboard name");
         wax::obj dboard = mboard[named_prop_t(dboard_prop, pair.db_name)];
         uhd::assert_has(dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>(), pair.sd_name, xx_type + " subdev name");
     }

@@ -95,8 +95,7 @@ basic_rx::~basic_rx(void){
 }
 
 void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -161,8 +160,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
 }
 
 void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -194,8 +192,7 @@ basic_tx::~basic_tx(void){
 }
 
 void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -252,8 +249,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
 }
 
 void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
