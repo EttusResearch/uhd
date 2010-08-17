@@ -89,6 +89,7 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     //setup tx side of codec
     _ad9862_regs.two_data_paths = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
     _ad9862_regs.interleaved = ad9862_regs_t::INTERLEAVED_INTERLEAVED;
+    _ad9862_regs.tx_retime = ad9862_regs_t::TX_RETIME_CLKOUT2;
     _ad9862_regs.tx_pga_gain = 199; //TODO bring under api control
     _ad9862_regs.tx_hilbert = ad9862_regs_t::TX_HILBERT_DIS;
     _ad9862_regs.interp = ad9862_regs_t::INTERP_2;
