@@ -29,7 +29,7 @@
 
 using namespace uhd;
 
-static const bool codec_debug = false;
+static const bool codec_debug = true;
 
 const gain_range_t usrp_e_codec_ctrl::tx_pga_gain_range(-20, 0, float(0.1));
 const gain_range_t usrp_e_codec_ctrl::rx_pga_gain_range(0, 20, 1);
@@ -89,6 +89,7 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     //setup tx side of codec
     _ad9862_regs.two_data_paths = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
     _ad9862_regs.interleaved = ad9862_regs_t::INTERLEAVED_INTERLEAVED;
+    _ad9862_regs.tx_retime = ad9862_regs_t::TX_RETIME_CLKOUT2;
     _ad9862_regs.tx_pga_gain = 199; //TODO bring under api control
     _ad9862_regs.tx_hilbert = ad9862_regs_t::TX_HILBERT_DIS;
     _ad9862_regs.interp = ad9862_regs_t::INTERP_2;
@@ -97,7 +98,7 @@ usrp_e_codec_ctrl_impl::usrp_e_codec_ctrl_impl(usrp_e_iface::sptr iface){
     _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_BYPASS;
     _ad9862_regs.dac_a_coarse_gain = 0x3;
     _ad9862_regs.dac_b_coarse_gain = 0x3;
-    _ad9862_regs.edges = ad9862_regs_t::EDGES_BOTH;
+    _ad9862_regs.edges = ad9862_regs_t::EDGES_NORMAL;
 
     //setup the dll
     _ad9862_regs.input_clk_ctrl = ad9862_regs_t::INPUT_CLK_CTRL_EXTERNAL;
