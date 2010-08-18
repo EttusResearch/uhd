@@ -27,7 +27,7 @@ AM_LDFLAGS = \
 	-Wl,-defsym -Wl,_STACK_SIZE=3072
 
 #all of this here is to relocate the hardware vectors to somewhere normal.
-COMMON_IHX_ARGS = \
+RELOCATE_ARGS = \
 	--change-section-address .vectors.sw_exception+0x8000 \
 	--change-section-address .vectors.hw_exception+0x8000 \
 	--change-section-address .vectors.interrupt+0x8000 \

@@ -20,14 +20,14 @@
 
 #include "net_common.h"
 #include "usrp2/fw_common.h"
-#include "udp_fw_update.h"
 #include <nonstdio.h>
+#include "udp_fw_update.h"
 
 //Firmware update packet handler
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
                                  unsigned char *payload, int payload_len) {
 
-  udp_fw_update_data_t update_data_out;
+  usrp2_fw_update_data_t update_data_out;
   update_data_out.id = USRP2_FW_UPDATE_ID_WAT;
 
   send_udp_pkt(USRP2_UDP_UPDATE_PORT, src, &update_data_out, sizeof(update_data_out));

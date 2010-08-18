@@ -43,7 +43,6 @@ extern "C" {
 // Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
 #define USRP2_UDP_DATA_PORT 49153
-#define USRP2_UDP_UPDATE_PORT 49154 //for firmware upgrade commands
 
 ////////////////////////////////////////////////////////////////////////
 // I2C addresses
@@ -94,35 +93,6 @@ typedef enum{
 
 } usrp2_ctrl_id_t;
 
-typedef enum {
-  USRP2_FW_UPDATE_ID_WAT = ' ',
-
-  USRP2_FW_UPDATE_ID_OHAI_LOL = 'a',
-  USRP2_FW_UPDATE_ID_OHAI_OMG = 'A',
-
-  USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL = 'f',
-  USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG = 'F',
-
-  USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL = 'e',
-  USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG = 'E',
-
-  USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL = 'd',
-  USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG = 'D',
-  USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG = 'B',
-
-  USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL = 'w',
-  USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG = 'W',
-
-  USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL = 'r',
-  USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG = 'R',
-
-  USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL = 's',
-  USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG = 'S',
-
-  USRP2_FW_UPDATE_ID_KTHXBAI = '~'
-
-} usrp2_fw_update_id_t;
-
 typedef enum{
     USRP2_DIR_RX = 'r',
     USRP2_DIR_TX = 't'
@@ -166,24 +136,6 @@ typedef struct{
         } uart_args;
     } data;
 } usrp2_ctrl_data_t;
-
-typedef struct {
-  __stdint(uint32_t) proto_ver;
-  __stdint(uint32_t) id;
-  __stdint(uint32_t) seq;
-  union {
-      __stdint(uint32_t) ip_addr;
-    struct {
-      __stdint(uint32_t) flash_addr;
-      __stdint(uint32_t) length;
-      __stdint(uint8_t)  data[256];
-    } flash_args;
-    struct {
-      __stdint(uint32_t) sector_size_bytes;
-      __stdint(uint32_t) memory_size_bytes;
-    } flash_info_args;
-  } data;
-} udp_fw_update_data_t;
 
 #undef __stdint
 #ifdef __cplusplus

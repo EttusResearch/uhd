@@ -59,8 +59,13 @@ COMMON_LFLAGS = \
 ########################################################################
 # Common stuff for building top level microblaze images
 ########################################################################
+#we use COMMON_IHX_ARGS to relocate the reset and interrupt vectors to
+#just below the start of code. upon creating the BIN, any leading padding
+#is thrown out, so the .bin file is valid for uploading to USRP2P. this 
+#does not affect USRP2 because the USRP2 already starts at 0x0000, and
+#because the relocate_args are not defined for USRP2's Makefile.am.
 .elf.bin:
-	$(MB_OBJCOPY) -O binary $< $@
+	$(MB_OBJCOPY) -O binary $(RELOCATE_ARGS) $< $@
 
 .elf.dump:
 	$(MB_OBJDUMP) -DSC $< > $@
@@ -69,7 +74,7 @@ COMMON_LFLAGS = \
 	$(HEXDUMP) -v -e'1/1 "%.2X\n"' $< > $@
 
 .elf.ihx:
-	$(MB_OBJCOPY) -O ihex $(COMMON_IHX_ARGS) $< $@
+	$(MB_OBJCOPY) -O ihex $(RELOCATE_ARGS) $< $@
 
 _generated_from_elf = \
 	$(noinst_PROGRAMS:.elf=.map) \

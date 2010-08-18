@@ -22,28 +22,18 @@
 #include "usrp2/fw_common.h"
 #include "spi.h"
 #include "spi_flash.h"
-#include "udp_fw_update.h"
 #include <nonstdio.h>
 #include <string.h>
 #include "ethernet.h"
+#include "udp_fw_update.h"
 
 //Firmware update packet handler
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
                                  unsigned char *payload, int payload_len) {
-//okay, we can do this ANY NUMBER of ways. we have up to ~1500 bytes to play with -- we don't handle
-//fragmentation, so limit it to <MTU. let's say 1K. remember that SPI Flash page writes can only be up to 256B(?) long,
-//so if your SPI Flash write routine doesn't handle that, you will have to on the host side (or in here).
-//so here are your options:
 
-//IHEX -- 16 bytes at a time, relocated for you. parser is already written. possibly extra slow due to the small packet size.
-//custom struct -- addr, data, len. you can checksum this if you like, but it is already checksummed in UDP (as well as on the wire).
-//  this option needs minimal parsing on the device side and is a straight Flash write. no interpretation required. all the brains
-//  go on the host side. how is relocation handled? well, your fw images are supposed to be "fully relocated" such that you can just
-//  stick 'em anywhere, so a .bin (provided it's relocated to 0 for the wire) plus a location is good enough. let's go this route.
+  const usrp2_fw_update_data_t *update_data_in = (usrp2_fw_update_data_t *) payload;
 
-  const udp_fw_update_data_t *update_data_in = (udp_fw_update_data_t *) payload;
-
-  udp_fw_update_data_t update_data_out;
+  usrp2_fw_update_data_t update_data_out;
   usrp2_fw_update_id_t update_data_in_id = update_data_in->id;
 
   //ensure that the protocol versions match
@@ -55,9 +45,9 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
   }
 
   //ensure that this is not a short packet
-  if (payload_len < sizeof(udp_fw_update_data_t)){
+  if (payload_len < sizeof(usrp2_fw_update_data_t)){
       printf("!Error in update packet handler: Expected payload length %d, but got %d\n",
-          (int)sizeof(udp_fw_update_data_t), payload_len
+          (int)sizeof(usrp2_fw_update_data_t), payload_len
       );
       update_data_in_id = USRP2_FW_UPDATE_ID_WAT;
   }
