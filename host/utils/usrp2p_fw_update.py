@@ -198,7 +198,7 @@ def verify_image(ip, image, addr):
     addr += FLASH_DATA_PACKET_SIZE
 
   print "Read back %i bytes" % len(readdata)
-  print readdata
+#  print readdata
 
 #  for i in range(256, 512):
 #    print "out: %i in: %i" % (ord(image[i]), ord(readdata[i]))
