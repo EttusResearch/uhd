@@ -34,7 +34,8 @@ noinst_LIBRARIES = libusrp2.a
 libusrp2_a_SOURCES = \
 	$(COMMON_SRCS) \
 	sd.c \
-	ethernet.c
+	ethernet.c \
+  udp_fw_update.c
 
 noinst_PROGRAMS = \
 	usrp2_txrx_uhd.elf

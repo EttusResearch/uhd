@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2009 Ettus Research LLC
+ * Copyright 2010 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef INCLUDED_UDP_BURNER_PACKET_H
-#define INCLUDED_UDP_BURNER_PACKET_H
 
-#include <net/socket_address.h>
+//Routines to handle updating the SPI Flash firmware via UDP
 
-void
-handle_udp_burner_packet(struct socket_address src, struct socket_address dst,
-			 unsigned char *payload, int payload_len);
+#include "net_common.h"
+#include "usrp2/fw_common.h"
+#include <nonstdio.h>
+#include "udp_fw_update.h"
 
+//Firmware update packet handler
+void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
+                                 unsigned char *payload, int payload_len) {
 
-#endif /* INCLUDED_UDP_BURNER_PACKET_H */
+  usrp2_fw_update_data_t update_data_out;
+  update_data_out.id = USRP2_FW_UPDATE_ID_WAT;
+
+  send_udp_pkt(USRP2_UDP_UPDATE_PORT, src, &update_data_out, sizeof(update_data_out));
+}

@@ -20,6 +20,8 @@
 #include "spi_flash_private.h"
 #include <stdlib.h>		// abort
 
+static size_t _spi_flash_log2_memory_size;
+
 uint32_t 
 spi_flash_rdid(void)
 {
@@ -48,7 +50,24 @@ spi_flash_log2_sector_size(void)
   };
 
   _spi_flash_log2_sector_size = log2_sector_size[size - 22];
+  _spi_flash_log2_memory_size = size; //while we're at it
   return _spi_flash_log2_sector_size;
+}
+
+size_t
+spi_flash_log2_memory_size(void)
+{
+  if (_spi_flash_log2_memory_size != 0)
+    return _spi_flash_log2_memory_size;
+
+  uint32_t id = spi_flash_rdid();
+  int type = (id >> 8) & 0xff;
+  int size = id & 0xff;
+  if (type != 0x20 || size < 22 || size > 24)
+    abort();
+
+  _spi_flash_log2_memory_size = size;
+  return _spi_flash_log2_memory_size;
 }
 
 void 

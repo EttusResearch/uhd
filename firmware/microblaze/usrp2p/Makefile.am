@@ -27,11 +27,12 @@ AM_LDFLAGS = \
 	-Wl,-defsym -Wl,_STACK_SIZE=3072
 
 #all of this here is to relocate the hardware vectors to somewhere normal.
-COMMON_IHX_ARGS = \
+RELOCATE_ARGS = \
 	--change-section-address .vectors.sw_exception+0x8000 \
 	--change-section-address .vectors.hw_exception+0x8000 \
 	--change-section-address .vectors.interrupt+0x8000 \
 	--change-section-address .vectors.reset+0x8000
+
 #	$(MB_OBJCOPY) -O ihex $< $@
 # the below would work if objcopy weren't written by apes
 #	$(MB_OBJCOPY) -O ihex -w --change-section-address .vectors*+0x8000 $< $@
@@ -49,7 +50,8 @@ libusrp2p_a_SOURCES = \
 	spi_flash.c \
 	spi_flash_read.c \
 	bootloader_utils.c \
-	ethernet.c
+	ethernet.c \
+  udp_fw_update.c
 
 noinst_PROGRAMS = \
 	usrp2p_txrx_uhd.elf \
