@@ -21,6 +21,7 @@ Building the UHD
 Application Notes
 ^^^^^^^^^^^^^^^^^^^^^
 * `General App Notes <./general.html>`_
+* `Firmware and FPGA Image Notes <./images.html>`_
 * `USRP2 App Notes <./usrp2.html>`_
 * `Daughterboard App Notes <./dboards.html>`_
 

@@ -5,42 +5,6 @@ UHD - USRP2 Application Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Building firmware and FPGA images
-------------------------------------------------------------------------
-
-^^^^^^^^^^^^^^^^^^
-FPGA Image
-^^^^^^^^^^^^^^^^^^
-Xilinx ISE 10.1 and up is required to build the FPGA image for the USRP2.
-The build requires that you have a unix-like environment with make.
-Make sure that xtclsh from the Xilinx ISE bin directory is in your $PATH.
-
-Run the following commands:
-::
-
-    cd <uhd-repo-path>/fpga/usrp2/top/u2_rev3
-    make -f Makefile.udp bin
-
-*The image file will be ./build/u2_rev3.bin*
-
-^^^^^^^^^^^^^^^^^^
-Firmware Image
-^^^^^^^^^^^^^^^^^^
-The Microblaze GCC compiler from the Xilinx EDK is required to build the firmware.
-The build requires that you have a unix-like environment with autotools and make.
-Make sure that mb-gcc from the Xilinx EDK/microblaze directory is in your $PATH.
-
-Run the following commands:
-::
-
-    cd <uhd-repo-path>/firmware/microblaze
-    ./boostrap
-    ./configure --host=mb
-    make
-
-*The image file will be ./usrp2/usrp2_txrx_uhd.bin*
-
-------------------------------------------------------------------------
 Load the images onto the SD card
 ------------------------------------------------------------------------
 **Warning!**
