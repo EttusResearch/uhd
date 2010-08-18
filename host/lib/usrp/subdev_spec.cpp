@@ -16,7 +16,7 @@
 //
 
 #include <uhd/usrp/subdev_spec.hpp>
-#include <boost/algorithm/string.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <stdexcept>
@@ -35,12 +35,9 @@ subdev_spec_pair_t::subdev_spec_pair_t(
 }
 
 subdev_spec_t::subdev_spec_t(const std::string &markup){
-    std::vector<std::string> pairs;
-    boost::split(pairs, markup, boost::is_any_of("\t "));
-    BOOST_FOREACH(const std::string &pair, pairs){
+    BOOST_FOREACH(const std::string &pair, std::split_string(markup)){
         if (pair == "") continue;
-        std::vector<std::string> db_sd;
-        boost::split(db_sd, pair, boost::is_any_of(":"));
+        std::vector<std::string> db_sd = std::split_string(pair, ":");
         switch(db_sd.size()){
         case 1: this->push_back(subdev_spec_pair_t("", db_sd.front())); break;
         case 2: this->push_back(subdev_spec_pair_t(db_sd.front(), db_sd.back())); break;
@@ -56,13 +53,9 @@ std::string subdev_spec_t::to_pp_string(void) const{
     size_t count = 0;
     ss << "Subdevice Specification:" << std::endl;
     BOOST_FOREACH(const subdev_spec_pair_t &pair, *this){
-        std::string db_name = pair.db_name;
-        if (db_name == "") db_name = "0";
-        std::string sd_name = pair.sd_name;
-        if (sd_name == "") sd_name = "0";
         ss << boost::format(
             "    Channel %d: Daughterboard %s, Subdevice %s"
-        ) % (count++) % db_name % sd_name << std::endl;
+        ) % (count++) % pair.db_name % pair.sd_name << std::endl;
     }
     return ss.str();
 }

@@ -17,6 +17,12 @@
 
 #include "spi.h"
 #include "memory_map.h"
+#include "pic.h"
+#include "nonstdio.h"
+
+void (*volatile spi_callback)(void); //SPI callback when xfer complete.
+
+static void spi_irq_handler(unsigned irq);
 
 void
 spi_init(void) 
@@ -58,4 +64,45 @@ spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags
   }
   else
     return 0;
+}
+
+void spi_register_callback(void (*volatile callback)(void)) {
+  spi_callback = callback;
+}
+
+static void spi_irq_handler(unsigned irq) {
+//  printf("SPI IRQ handler\n");
+//  uint32_t wat = spi_regs->ctrl; //read a register just to clear the interrupt
+  //spi_regs->ctrl &= ~SPI_CTRL_IE;
+  if(spi_callback) spi_callback(); //we could just use the PIC to register the user's callback, but this provides the ability to do other things later
+}
+
+uint32_t spi_get_data(void) {
+  return spi_regs->txrx0;
+}
+
+bool 
+spi_async_transact(int slave, uint32_t data, int length, uint32_t flags, void (*volatile callback)(void)) {
+  flags &= (SPI_CTRL_TXNEG | SPI_CTRL_RXNEG);
+  int ctrl = SPI_CTRL_ASS | SPI_CTRL_IE | (SPI_CTRL_CHAR_LEN_MASK & length) | flags;
+
+  if(spi_regs->ctrl & SPI_CTRL_GO_BSY) {
+    printf("Async SPI busy!\n");
+    return false; //we don't wait on busy, we just return failure. we count on the host to not set up another transaction before the last one finishes.
+  }
+
+  // Tell it which SPI slave device to access
+  spi_regs->ss = slave & 0xffff;
+
+  // Data we will send
+  spi_regs->txrx0 = data;
+
+  spi_register_callback(callback);
+  pic_register_handler(IRQ_SPI, spi_irq_handler);
+
+  // Run it -- write once and rewrite with GO set
+  spi_regs->ctrl = ctrl;
+  spi_regs->ctrl = ctrl | SPI_CTRL_GO_BSY;
+
+  return true;
 }

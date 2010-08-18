@@ -398,8 +398,7 @@ double rfx_xcvr::set_lo_freq(
  * RX Get and Set
  **********************************************************************/
 void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -412,13 +411,13 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        assert_has(_rx_gains.keys(), name, "rfx rx gain name");
-        val = _rx_gains[name];
+        assert_has(_rx_gains.keys(), key.name, "rfx rx gain name");
+        val = _rx_gains[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(_rx_gain_ranges.keys(), name, "rfx rx gain name");
-        val = _rx_gain_ranges[name];
+        assert_has(_rx_gain_ranges.keys(), key.name, "rfx rx gain name");
+        val = _rx_gain_ranges[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
@@ -458,8 +457,7 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
 }
 
 void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -469,7 +467,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<float>(), name);
+        this->set_rx_gain(val.as<float>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -484,8 +482,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
  * TX Get and Set
  **********************************************************************/
 void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -499,7 +496,7 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_GAIN:
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(rfx_tx_gain_ranges.keys(), name, "rfx tx gain name");
+        assert_has(rfx_tx_gain_ranges.keys(), key.name, "rfx tx gain name");
         //no controllable tx gains, will not get here
         return;
 
@@ -540,8 +537,7 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
 }
 
 void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -551,7 +547,7 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<float>(), name);
+        this->set_tx_gain(val.as<float>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:

@@ -37,7 +37,12 @@ public:
     usrp2_dboard_iface(usrp2_iface::sptr iface, usrp2_clock_ctrl::sptr clock_ctrl);
     ~usrp2_dboard_iface(void);
 
-    std::string get_mboard_name(void){return "usrp2";}
+    special_props_t get_special_props(void){
+        special_props_t props;
+        props.soft_clock_divider = false;
+        props.mangle_i2c_addrs = false;
+        return props;
+    }
 
     void write_aux_dac(unit_t, aux_dac_t, float);
     float read_aux_adc(unit_t, aux_adc_t);
