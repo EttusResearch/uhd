@@ -17,6 +17,7 @@
 
 #include "codec_ctrl.hpp"
 #include "usrp_commands.h"
+#include "clock_ctrl.hpp"
 #include "ad9862_regs.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
@@ -43,7 +44,9 @@ const gain_range_t usrp1_codec_ctrl::rx_pga_gain_range(0, 20, 1);
 class usrp1_codec_ctrl_impl : public usrp1_codec_ctrl {
 public:
     //structors
-    usrp1_codec_ctrl_impl(usrp1_iface::sptr iface, int spi_slave);
+    usrp1_codec_ctrl_impl(usrp1_iface::sptr iface,
+                          usrp1_clock_ctrl::sptr clock,
+                          int spi_slave);
     ~usrp1_codec_ctrl_impl(void);
 
     //aux adc and dac control
@@ -51,7 +54,7 @@ public:
     void write_aux_dac(aux_dac_t which, float volts);
 
     //duc control
-    bool set_duc_freq(double freq);
+    void set_duc_freq(double freq);
 
     //pga gain control
     void set_tx_pga_gain(float);
@@ -61,25 +64,26 @@ public:
 
 private:
     usrp1_iface::sptr _iface;
+    usrp1_clock_ctrl::sptr _clock_ctrl;
     int _spi_slave;
     ad9862_regs_t _ad9862_regs;
     aux_adc_t _last_aux_adc_a, _last_aux_adc_b;
     void send_reg(boost::uint8_t addr);
     void recv_reg(boost::uint8_t addr);
 
-    //FIXME: poison
-    double _tx_freq[4];
-    unsigned int compute_freq_control_word_9862 (double master_freq,
-                                                 double target_freq,
-                                                 double *actual_freq);
+    double coarse_tune(double codec_rate, double freq);
+    double fine_tune(double codec_rate, double freq);
 };
 
 /***********************************************************************
  * Codec Control Structors
  **********************************************************************/
-usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface, int spi_slave)
+usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface,
+                                             usrp1_clock_ctrl::sptr clock,
+                                             int spi_slave)
 {
     _iface = iface;
+    _clock_ctrl = clock;
     _spi_slave = spi_slave;
 
     //soft reset
@@ -324,118 +328,102 @@ void usrp1_codec_ctrl_impl::recv_reg(boost::uint8_t addr)
 /***********************************************************************
  * DUC tuning 
  **********************************************************************/
-unsigned int usrp1_codec_ctrl_impl::compute_freq_control_word_9862(
-                    double master_freq, double target_freq, double *actual_freq)
+double usrp1_codec_ctrl_impl::coarse_tune(double codec_rate, double freq)
 {
-    double sign = 1.0;
+    double coarse_freq;
+
+    double coarse_freq_1 = codec_rate / 8;
+    double coarse_freq_2 = codec_rate / 4;
+    double coarse_limit_1 = coarse_freq_1 / 2;
+    double coarse_limit_2 = (coarse_freq_1 + coarse_freq_2) / 2;
+    double max_freq = coarse_freq_2 + .09375 * codec_rate;
  
-    if (target_freq < 0)
-        sign = -1.0;
- 
-    int v = (int) rint (fabs (target_freq) / master_freq * pow (2.0, 24.0));
-    *actual_freq = v * master_freq / pow (2.0, 24.0) * sign;
- 
-    std::cout << boost::format(
-       "compute_freq_control_word_9862: target = %g  actual = %g  delta = %g  v = %8d\n"
-    ) % target_freq % *actual_freq % (*actual_freq - target_freq) % v;
- 
-    return (unsigned int) v;
+    if (freq < -max_freq) {
+        return false;
+    }
+    else if (freq < -coarse_limit_2) {
+        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_NEG_SHIFT;
+        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_4;
+        coarse_freq = -coarse_freq_2;
+    }
+    else if (freq < -coarse_limit_1) {
+        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_NEG_SHIFT;
+        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_8;
+        coarse_freq = -coarse_freq_1;
+    }
+    else if (freq < coarse_limit_1) {
+        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_BYPASS;
+        coarse_freq = 0; 
+    }
+    else if (freq < coarse_limit_2) {
+        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_POS_SHIFT;
+        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_8;
+        coarse_freq = coarse_freq_1;
+    }
+    else if (freq <= max_freq) {
+        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_POS_SHIFT;
+        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_4;
+        coarse_freq = coarse_freq_2;
+    }
+    else {
+        return 0; 
+    }
+
+    return coarse_freq;
 }
 
-bool usrp1_codec_ctrl_impl::set_duc_freq(double freq)
+double usrp1_codec_ctrl_impl::fine_tune(double codec_rate, double target_freq)
 {
-    int channel = 0;
-    float dac_rate = 128e6;
- 
-    double coarse;
+    static const double scale_factor = std::pow(2.0, 24);
 
-    std::cout << "duc_freq: " << freq << std::endl;
+    boost::uint32_t freq_word = boost::uint32_t(
+        boost::math::round(abs((target_freq / codec_rate) * scale_factor)));
 
-    // First coarse frequency
-    double coarse_freq_1 = dac_rate / 8;
-    // Second coarse frequency
-    double coarse_freq_2 = dac_rate / 4;
-    // Midpoint of [0 , freq1] range
-    double coarse_limit_1 = coarse_freq_1 / 2;
-    // Midpoint of [freq1 , freq2] range
-    double coarse_limit_2 = (coarse_freq_1 + coarse_freq_2) / 2;
-    // Highest meaningful frequency
-    double high_limit = (double) 44e6 / 128e6 * dac_rate;
- 
-    if (freq < -high_limit) {              // too low
-        return false;
-    }
-    else if (freq < -coarse_limit_2) {     // For 64MHz: [-44, -24)
-        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_NEG_SHIFT;
-        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_4;
-        coarse = -coarse_freq_2;
-    }
-    else if (freq < -coarse_limit_1) {     // For 64MHz: [-24, -8)
-        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_NEG_SHIFT;
-        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_8;
-        coarse = -coarse_freq_1;
-    }
-    else if (freq < coarse_limit_1) {      // For 64MHz: [-8, 8)
-        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_BYPASS;
-        coarse = 0; 
-    }
-    else if (freq < coarse_limit_2) {      // For 64MHz: [8, 24)
-        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_POS_SHIFT;
-        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_8;
-        coarse = coarse_freq_1;
-    }
-    else if (freq <= high_limit) {         // For 64MHz: [24, 44]
-        _ad9862_regs.neg_coarse_tune = ad9862_regs_t::NEG_COARSE_TUNE_POS_SHIFT;
-        _ad9862_regs.coarse_mod = ad9862_regs_t::COARSE_MOD_FDAC_4;
-        coarse = coarse_freq_2;
-    }
-    else {                                 // too high
-        return false;
-    }
- 
-    double fine = freq - coarse;
- 
-    // Compute fine tuning word...
-    // This assumes we're running the 4x on-chip interpolator.
-    // (This is required to use the fine modulator.)
- 
-    unsigned int v = compute_freq_control_word_9862 (dac_rate / 4, fine,
-                                                     &_tx_freq[channel]);
+    double actual_freq = freq_word * codec_rate / scale_factor;
 
-    _tx_freq[channel] += coarse;         // adjust actual
-    
-    boost::uint8_t high;
-    boost::uint8_t mid;
-    boost::uint8_t low;
- 
-    high = (v >> 16) & 0xff;
-    mid  = (v >>  8) & 0xff;
-    low  = (v >>  0) & 0xff;
- 
-    // write the fine tuning word
-    _ad9862_regs.ftw_23_16 = high;
-    _ad9862_regs.ftw_15_8 = mid;
-    _ad9862_regs.ftw_7_0 = low;
- 
-    _ad9862_regs.fine_mode = ad9862_regs_t::FINE_MODE_NCO;
- 
-    if (fine < 0)
+    if (target_freq < 0) {
         _ad9862_regs.neg_fine_tune = ad9862_regs_t::NEG_FINE_TUNE_NEG_SHIFT;
-    else
+        actual_freq = -actual_freq; 
+    }
+    else {
         _ad9862_regs.neg_fine_tune = ad9862_regs_t::NEG_FINE_TUNE_POS_SHIFT;
- 
+    } 
+
+    _ad9862_regs.fine_mode = ad9862_regs_t::FINE_MODE_NCO;
+    _ad9862_regs.ftw_23_16 = (freq_word >> 16) & 0xff;
+    _ad9862_regs.ftw_15_8  = (freq_word >>  8) & 0xff;
+    _ad9862_regs.ftw_7_0   = (freq_word >>  0) & 0xff;
+
+    return actual_freq;
+}
+
+void usrp1_codec_ctrl_impl::set_duc_freq(double freq)
+{
+    double codec_rate = _clock_ctrl->get_master_clock_freq() * 2;
+    double coarse_freq = coarse_tune(codec_rate, freq);
+    double fine_freq = fine_tune(codec_rate / 4, freq - coarse_freq);
+
+    if (codec_debug) {
+        std::cout << "ad9862 tuning result:" << std::endl;
+        std::cout << "   requested:   " << freq << std::endl;
+        std::cout << "   actual:      " << coarse_freq + fine_freq << std::endl;
+        std::cout << "   coarse freq: " << coarse_freq << std::endl;
+        std::cout << "   fine freq:   " << fine_freq << std::endl;
+        std::cout << "   codec rate:  " << codec_rate << std::endl;
+    }    
+
     this->send_reg(20);
     this->send_reg(21);
     this->send_reg(22);
     this->send_reg(23);
- 
-    return true; 
 }
 
 /***********************************************************************
  * Codec Control Make
  **********************************************************************/
-usrp1_codec_ctrl::sptr usrp1_codec_ctrl::make(usrp1_iface::sptr iface, int spi_slave)
+usrp1_codec_ctrl::sptr usrp1_codec_ctrl::make(usrp1_iface::sptr iface,
+                                              usrp1_clock_ctrl::sptr clock,
+                                              int spi_slave)
 {
-    return sptr(new usrp1_codec_ctrl_impl(iface, spi_slave));
+    return sptr(new usrp1_codec_ctrl_impl(iface, clock, spi_slave));
 }

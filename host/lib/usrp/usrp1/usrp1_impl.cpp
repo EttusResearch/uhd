@@ -138,8 +138,12 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     _clock_ctrl = usrp1_clock_ctrl::make(_iface);
 
     //create codec interface
-    _codec_ctrls[DBOARD_SLOT_A] = usrp1_codec_ctrl::make(_iface, SPI_ENABLE_CODEC_A);
-    _codec_ctrls[DBOARD_SLOT_B] = usrp1_codec_ctrl::make(_iface, SPI_ENABLE_CODEC_B);
+    _codec_ctrls[DBOARD_SLOT_A] = usrp1_codec_ctrl::make(
+        _iface, _clock_ctrl, SPI_ENABLE_CODEC_A
+    );
+    _codec_ctrls[DBOARD_SLOT_B] = usrp1_codec_ctrl::make(
+        _iface, _clock_ctrl, SPI_ENABLE_CODEC_B
+    );
 
     //initialize the codecs
     codec_init();
