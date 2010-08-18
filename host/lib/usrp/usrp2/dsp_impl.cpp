@@ -31,9 +31,10 @@ static const size_t default_interp = 16;
 /***********************************************************************
  * DDC Helper Methods
  **********************************************************************/
-static unsigned pick_closest_rate(double exact_rate, const std::vector<unsigned> &rates){
+template <typename rate_type>
+static rate_type pick_closest_rate(double exact_rate, const std::vector<rate_type> &rates){
     unsigned closest_match = rates.front();
-    BOOST_FOREACH(unsigned possible_rate, rates){
+    BOOST_FOREACH(rate_type possible_rate, rates){
         if(std::abs(exact_rate - possible_rate) < std::abs(exact_rate - closest_match))
             closest_match = possible_rate;
     }
