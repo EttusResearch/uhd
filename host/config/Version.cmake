@@ -42,7 +42,7 @@ ELSE(${GIT} STREQUAL "GIT-NOTFOUND")
     #extract the timestamp from the git log entry
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "import re; print re.match('^.*Date:\\s*(\\d*).*$', '''${_git_log}''', re.MULTILINE | re.DOTALL).groups()[0]"
+        COMMAND ${PYTHON_EXECUTABLE} -c "import re; print re.match('^.*Date:\\s*(\\d*).*$', ''' ${_git_log} ''', re.MULTILINE | re.DOTALL).groups()[0]"
         OUTPUT_VARIABLE _git_timestamp OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
