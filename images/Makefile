@@ -31,6 +31,30 @@ CMAKE_BUILD_DIR = $(TOP_DIR)/build
 IMAGES_LIST =
 
 ########################################################################
+# USRP1 firmware
+########################################################################
+_usrp1_fw_dir = $(TOP_FW_DIR)/fx2
+_usrp1_fw_ihx = $(BUILT_IMAGES_DIR)/usrp1_fw.ihx
+IMAGES_LIST += $(_usrp1_fw_ihx)
+
+$(_usrp1_fw_ihx):
+	cd $(_usrp1_fw_dir) && ./bootstrap
+	cd $(_usrp1_fw_dir) && ./configure
+	make -C $(_usrp1_fw_dir) clean
+	make -C $(_usrp1_fw_dir) all
+	cp $(_usrp1_fw_dir)/src/usrp1/std.ihx $@
+
+########################################################################
+# USRP1 fpga
+########################################################################
+_usrp1_fpga_dir = $(TOP_FPGA_DIR)/usrp1/rbf/rev4
+_usrp1_fpga_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga.rbf
+IMAGES_LIST += $(_usrp1_fpga_rbf)
+
+$(_usrp1_fpga_rbf):
+	cp $(_usrp1_fpga_dir)/std_2rxhb_2tx.rbf $@
+
+########################################################################
 # USRP2 firmware
 ########################################################################
 _usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
