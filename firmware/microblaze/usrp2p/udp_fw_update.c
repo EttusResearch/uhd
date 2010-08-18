@@ -1,0 +1,116 @@
+/* -*- c++ -*- */
+/*
+ * Copyright 2010 Ettus Research LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+//Routines to handle updating the SPI Flash firmware via UDP
+
+#include <net_common.h>
+#include "usrp2/fw_common.h"
+#include "spi.h"
+#include "spi_flash.h"
+#include "udp_fw_update.h"
+#include <nonstdio.h>
+#include <string.h>
+#include "ethernet.h"
+
+//Firmware update packet handler
+void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
+                                 unsigned char *payload, int payload_len) {
+//okay, we can do this ANY NUMBER of ways. we have up to ~1500 bytes to play with -- we don't handle
+//fragmentation, so limit it to <MTU. let's say 1K. remember that SPI Flash page writes can only be up to 256B(?) long,
+//so if your SPI Flash write routine doesn't handle that, you will have to on the host side (or in here).
+//so here are your options:
+
+//IHEX -- 16 bytes at a time, relocated for you. parser is already written. possibly extra slow due to the small packet size.
+//custom struct -- addr, data, len. you can checksum this if you like, but it is already checksummed in UDP (as well as on the wire).
+//  this option needs minimal parsing on the device side and is a straight Flash write. no interpretation required. all the brains
+//  go on the host side. how is relocation handled? well, your fw images are supposed to be "fully relocated" such that you can just
+//  stick 'em anywhere, so a .bin (provided it's relocated to 0 for the wire) plus a location is good enough. let's go this route.
+
+  const udp_fw_update_data_t *update_data_in = (udp_fw_update_data_t *) payload;
+
+  udp_fw_update_data_t update_data_out;
+  usrp2_fw_update_id_t update_data_in_id = update_data_in->id;
+
+  //ensure that the protocol versions match
+  if (payload_len >= sizeof(uint32_t) && update_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
+    printf("!Error in update packet handler: Expected compatibility number %d, but got %d\n",
+        USRP2_FW_COMPAT_NUM, update_data_in->proto_ver
+      );
+      update_data_in_id = USRP2_FW_UPDATE_ID_OHAI_LOL; //so we can respond
+  }
+
+  //ensure that this is not a short packet
+  if (payload_len < sizeof(udp_fw_update_data_t)){
+      printf("!Error in update packet handler: Expected payload length %d, but got %d\n",
+          (int)sizeof(udp_fw_update_data_t), payload_len
+      );
+      update_data_in_id = USRP2_FW_UPDATE_ID_WAT;
+  }
+
+  spi_flash_async_state_t spi_flash_async_state;
+
+  switch(update_data_in_id) {
+  case USRP2_FW_UPDATE_ID_OHAI_LOL: //why hello there you handsome devil
+    update_data_out.id = USRP2_FW_UPDATE_ID_OHAI_OMG;
+    memcpy(&update_data_out.data.ip_addr, (void *)get_ip_addr(), sizeof(struct ip_addr));
+    break;
+
+  case USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL: //query sector size, memory size so the host can mind the boundaries
+    update_data_out.data.flash_info_args.sector_size_bytes = spi_flash_sector_size();
+    update_data_out.data.flash_info_args.memory_size_bytes = spi_flash_memory_size();
+    update_data_out.id = USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG;
+    break;
+
+  case USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL: //out with the old
+    spi_flash_async_erase_start(&spi_flash_async_state, update_data_in->data.flash_args.flash_addr, update_data_in->data.flash_args.length);
+    update_data_out.id = USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG;
+    break;
+
+  case USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL:
+    //poll for done, set something in the reply packet
+    //spi_flash_async_erase_poll() also advances the state machine, so you should call it reasonably often to get things done quicker
+    if(spi_flash_async_erase_poll(&spi_flash_async_state)) update_data_out.id = USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG;
+    else update_data_out.id = USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG;
+    break;
+
+  case USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL: //and in with the new
+    //spi_flash_program() goes pretty quick compared to page erases, so we don't bother polling -- it'll come back in some milliseconds
+    //if it doesn't come back fast enough, we'll just write smaller packets at a time until it does
+    spi_flash_program(update_data_in->data.flash_args.flash_addr, update_data_in->data.flash_args.length, update_data_in->data.flash_args.data);
+    update_data_out.id = USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG;
+    break;
+
+  case USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL: //for verify
+    spi_flash_read(update_data_in->data.flash_args.flash_addr,  update_data_in->data.flash_args.length, update_data_out.data.flash_args.data);
+    update_data_out.id = USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG;
+    break;
+
+  case USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL: //for if we ever get the ICAP working
+    //should reset via icap_reload_fpga(uint32_t flash_address);
+    update_data_out.id = USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG;
+    //you should note that if you get a reply packet to this the reset has obviously failed
+    break;
+
+//  case USRP2_FW_UPDATE_ID_KTHXBAI: //see ya
+//    break;
+
+  default: //uhhhh
+    update_data_out.id = USRP2_FW_UPDATE_ID_WAT;
+  }
+  send_udp_pkt(USRP2_UDP_UPDATE_PORT, src, &update_data_out, sizeof(update_data_out));
+}

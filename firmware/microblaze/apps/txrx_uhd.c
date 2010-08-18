@@ -45,6 +45,7 @@
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
+#include "udp_fw_update.h"
 
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
@@ -474,6 +475,7 @@ main(void)
 
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 
   // initialize double buffering state machine for ethernet -> DSP Tx
 

@@ -31,11 +31,18 @@
 uint32_t spi_flash_rdid(void);	/* Read ID */
 uint32_t spi_flash_rdsr(void);	/* Read Status Register */
 size_t spi_flash_log2_sector_size(void) __attribute__((pure));  /* either 16 or 18 */
+size_t spi_flash_log2_memory_size(void);
 
 static inline size_t
 spi_flash_sector_size(void)
 {
   return ((size_t) 1) << spi_flash_log2_sector_size();
+}
+
+static inline size_t
+spi_flash_memory_size(void)
+{
+  return ((size_t) 1) << spi_flash_log2_memory_size();
 }
 
 void spi_flash_read(uint32_t flash_addr,  size_t nbytes, void *buf);
