@@ -129,11 +129,7 @@ public:
     {
         UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 
-        byte_vector_t out_bytes;
-        byte_vector_t::iterator it = out_bytes.begin();
-
         unsigned char buff[max_i2c_data_bytes];
-
         int ret = _ctrl_transport->usrp_control_read(VRQ_I2C_READ,
                                                      addr & 0xff,
                                                      0,
@@ -142,9 +138,10 @@ public:
 
         if ((ret < 0) || (unsigned)ret < (num_bytes)) {
             std::cerr << "USRP: failed i2c read: " << ret << std::endl;
-            return out_bytes;
+            return byte_vector_t(num_bytes, 0xff); 
         }
 
+        byte_vector_t out_bytes;
         for (size_t i = 0; i < num_bytes; i++)
             out_bytes.push_back(buff[i]);
 
