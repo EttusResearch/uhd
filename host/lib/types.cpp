@@ -27,7 +27,6 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/serial.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -181,15 +180,10 @@ static std::string trim(const std::string &in){
 }
 
 device_addr_t::device_addr_t(const std::string &args){
-    //split the args at the semi-colons
-    std::vector<std::string> pairs;
-    boost::split(pairs, args, boost::is_any_of(arg_delim));
-    BOOST_FOREACH(const std::string &pair, pairs){
+    BOOST_FOREACH(const std::string &pair, std::split_string(args, arg_delim)){
         if (trim(pair) == "") continue;
 
-        //split the key value pairs at the equals
-        std::vector<std::string> key_val;
-        boost::split(key_val, pair, boost::is_any_of(pair_delim));
+        std::vector<std::string> key_val = std::split_string(pair, pair_delim);
         if (key_val.size() != 2) throw std::runtime_error("invalid args string: "+args);
         (*this)[trim(key_val.front())] = trim(key_val.back());
     }
@@ -238,13 +232,12 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
             throw std::runtime_error("expected exactly 5 or 17 characters");
 
         //split the mac addr hex string at the colons
-        std::vector<std::string> hex_strs;
-        boost::split(hex_strs, mac_addr_str, boost::is_any_of(":"));
-        for (size_t i = 0; i < hex_strs.size(); i++){
+        size_t i = 0;
+        BOOST_FOREACH(const std::string &hex_str, std::split_string(mac_addr_str, ":")){
             int hex_num;
-            std::istringstream iss(hex_strs[i]);
+            std::istringstream iss(hex_str);
             iss >> std::hex >> hex_num;
-            bytes[i] = boost::uint8_t(hex_num);
+            bytes[i++] = boost::uint8_t(hex_num);
         }
 
     }

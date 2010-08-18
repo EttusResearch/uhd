@@ -21,7 +21,6 @@
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
 #include <uhd/utils/exception.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -36,8 +35,25 @@ namespace uhd{
      * Allows properties to be sub-sectioned by name.
      */
     struct UHD_API named_prop_t{
-        wax::obj key;
-        std::string name;
+        const wax::obj key;
+        const std::string name;
+
+        //! Convert the key to the specified type
+        template<typename T> inline T as(void){
+            return key.as<T>();
+        }
+
+        /*!
+         * Utility function to convert generic key into a named prop.
+         * If the key was already a named prop, the prop will be split.
+         * Otherwise, the key will be the key, and the name will be used.
+         * \param key a reference to the prop object
+         * \param name a reference to the name object
+         * \return a named property struct with key and name
+         */
+        static named_prop_t extract(
+            const wax::obj &key, const std::string &name = ""
+        );
 
         /*!
          * Create a new named prop from key and name.
@@ -46,17 +62,6 @@ namespace uhd{
          */
         named_prop_t(const wax::obj &key, const std::string &name);
     };
-
-    /*!
-     * Utility function to separate a named property into its components.
-     * \param key a reference to the prop object
-     * \param name a reference to the name object
-     * \return a tuple that can be used with boost::tie
-     */
-    UHD_API boost::tuple<wax::obj, std::string> extract_named_prop(
-        const wax::obj &key,
-        const std::string &name = ""
-    );
 
     /*!
      * Throw when getting a not-implemented or write-only property.

@@ -17,9 +17,10 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include "../dsp_utils.hpp"
+#include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/bind.hpp>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -30,10 +31,9 @@ static const size_t default_interp = 16;
 /***********************************************************************
  * DDC Helper Methods
  **********************************************************************/
-template <class rate_t> static rate_t
-pick_closest_rate(double exact_rate, const std::vector<rate_t> &rates){
-    rate_t closest_match = rates.at(0);
-    BOOST_FOREACH(rate_t possible_rate, rates){
+static unsigned pick_closest_rate(double exact_rate, const std::vector<unsigned> &rates){
+    unsigned closest_match = rates.front();
+    BOOST_FOREACH(unsigned possible_rate, rates){
         if(std::abs(exact_rate - possible_rate) < std::abs(exact_rate - closest_match))
             closest_match = possible_rate;
     }

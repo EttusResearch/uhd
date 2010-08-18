@@ -29,15 +29,12 @@ named_prop_t::named_prop_t(
     /* NOP */
 }
 
-typedef boost::tuple<wax::obj, std::string> named_prop_tuple;
-
-named_prop_tuple uhd::extract_named_prop(
+named_prop_t named_prop_t::extract(
     const wax::obj &key,
     const std::string &name
 ){
     if (key.type() == typeid(named_prop_t)){
-        named_prop_t np = key.as<named_prop_t>();
-        return named_prop_tuple(np.key, np.name);
+        return key.as<named_prop_t>();
     }
-    return named_prop_tuple(key, name);
+    return named_prop_t(key, name);
 }

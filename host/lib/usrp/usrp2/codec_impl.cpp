@@ -40,9 +40,7 @@ void usrp2_mboard_impl::codec_init(void){
 /***********************************************************************
  * RX Codec Properties
  **********************************************************************/
-void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+void usrp2_mboard_impl::rx_codec_get(const wax::obj &key, wax::obj &val){
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
@@ -69,9 +67,7 @@ void usrp2_mboard_impl::rx_codec_set(const wax::obj &, const wax::obj &){
 /***********************************************************************
  * TX Codec Properties
  **********************************************************************/
-void usrp2_mboard_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+void usrp2_mboard_impl::tx_codec_get(const wax::obj &key, wax::obj &val){
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
