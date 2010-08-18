@@ -25,6 +25,9 @@ TARGET_LINK_LIBRARIES(benchmark_rx_rate uhd)
 ADD_EXECUTABLE(rx_timed_samples rx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
 
+ADD_EXECUTABLE(rx_to_file rx_to_file.cpp)
+TARGET_LINK_LIBRARIES(rx_to_file uhd)
+
 ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
 
