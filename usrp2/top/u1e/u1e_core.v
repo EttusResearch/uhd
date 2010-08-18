@@ -339,7 +339,7 @@ module u1e_core
    assign rx_enable = xfer_rate[14];
    assign rate = xfer_rate[7:0];
    
-   assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
+   assign { debug_led[2],debug_led[0],debug_led[1] } = {run_rx,run_tx,reg_leds[0]};  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
