@@ -44,6 +44,9 @@ public:
         //init the clock rate shadows
         this->set_clock_rate(UNIT_RX, _clock->get_fpga_clock_rate());
         this->set_clock_rate(UNIT_TX, _clock->get_fpga_clock_rate());
+
+        _iface->poke16(UE_REG_GPIO_RX_DBG, 0);
+        _iface->poke16(UE_REG_GPIO_TX_DBG, 0);
     }
 
     ~usrp_e_dboard_iface(void){
@@ -165,8 +168,8 @@ boost::uint16_t usrp_e_dboard_iface::read_gpio(unit_t unit){
     switch(unit){
     case UNIT_RX: return _iface->peek16(UE_REG_GPIO_RX_IO);
     case UNIT_TX: return _iface->peek16(UE_REG_GPIO_TX_IO);
+    default: UHD_THROW_INVALID_CODE_PATH();
     }
-    UHD_ASSERT_THROW(false);
 }
 
 void usrp_e_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){

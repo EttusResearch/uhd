@@ -20,6 +20,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
+#include <uhd/usrp/misc_utils.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -84,6 +85,14 @@ void usrp_e_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _rx_codec_proxy->get_link();
         return;
 
+    case DBOARD_PROP_GAIN_GROUP:
+        val = make_gain_group(
+            _dboard_manager->get_rx_subdev(key.name),
+            _rx_codec_proxy->get_link(),
+            GAIN_GROUP_POLICY_RX
+        );
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -132,6 +141,14 @@ void usrp_e_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 
     case DBOARD_PROP_CODEC:
         val = _tx_codec_proxy->get_link();
+        return;
+
+    case DBOARD_PROP_GAIN_GROUP:
+        val = make_gain_group(
+            _dboard_manager->get_tx_subdev(key.name),
+            _tx_codec_proxy->get_link(),
+            GAIN_GROUP_POLICY_TX
+        );
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
