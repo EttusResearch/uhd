@@ -648,11 +648,12 @@ module u2_core
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
    
-   ext_fifo #(.EXT_WIDTH(18),.INT_WIDTH(36),.DEPTH(19)) 
+   ext_fifo #(.EXT_WIDTH(18),.INT_WIDTH(36),.RAM_DEPTH(19),.FIFO_DEPTH(8)) 
      ext_fifo_i1
        (
 	.int_clk(dsp_clk),
 	.ext_clk(clk_to_mac),
+//	.ext_clk(wb_clk),
 	.rst(dsp_rst),
 	.RAM_D_pi(RAM_D_pi),
 	.RAM_D_po(RAM_D_po),
