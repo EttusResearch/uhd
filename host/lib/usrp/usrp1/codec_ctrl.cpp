@@ -100,15 +100,15 @@ usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface,
     _ad9862_regs.byp_buffer_b = 1;
     _ad9862_regs.buffer_a_pd = 1;
     _ad9862_regs.buffer_b_pd = 1;
-    _ad9862_regs.rx_pga_a = 0;//0x1f;  //TODO bring under api control
-    _ad9862_regs.rx_pga_b = 0;//0x1f;  //TODO bring under api control
+    _ad9862_regs.rx_pga_a = 0;
+    _ad9862_regs.rx_pga_b = 0;
     _ad9862_regs.rx_twos_comp = 1;
     _ad9862_regs.rx_hilbert = ad9862_regs_t::RX_HILBERT_DIS;
 
     //setup tx side of codec
     _ad9862_regs.two_data_paths = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
     _ad9862_regs.interleaved = ad9862_regs_t::INTERLEAVED_INTERLEAVED;
-    _ad9862_regs.tx_pga_gain = 199; //TODO bring under api control
+    _ad9862_regs.tx_pga_gain = 199;
     _ad9862_regs.tx_hilbert = ad9862_regs_t::TX_HILBERT_DIS;
     _ad9862_regs.interp = ad9862_regs_t::INTERP_4;
     _ad9862_regs.tx_twos_comp = 1;
