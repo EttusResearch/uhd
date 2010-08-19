@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 `define INT_WIDTH 36
 `define EXT_WIDTH 18
-`define DEPTH 19
+`define RAM_DEPTH 19
+`define FIFO_DEPTH 8
 `define DUMP_VCD_FULL
 
 module ext_fifo_tb();
@@ -17,7 +18,7 @@ module ext_fifo_tb();
    wire [`EXT_WIDTH-1:0] RAM_D_po;
    wire [`EXT_WIDTH-1:0] RAM_D;
    wire 		RAM_D_poe;
-   wire [`DEPTH-1:0] 	RAM_A;
+   wire [`RAM_DEPTH-1:0] 	RAM_A;
    wire 		RAM_WEn;
    wire 		RAM_CENn;
    wire 		RAM_LDn;
@@ -30,6 +31,7 @@ module ext_fifo_tb();
    reg [`INT_WIDTH-1:0]  ref_dataout;
    wire 		src_rdy_o;               // not EMPTY
    reg 			dst_rdy_i;
+   integer 		ether_frame;
    
 
    // Clocks
@@ -39,7 +41,6 @@ module ext_fifo_tb();
      begin
 	int_clk <= 0;
 	ext_clk <= 0;
-	datain <= 0;
 	ref_dataout <= 1;
 	src_rdy_i <= 0;
 	dst_rdy_i <= 0;
@@ -53,6 +54,9 @@ module ext_fifo_tb();
 
    initial
      begin
+	datain <= 0;
+	ether_frame <= 0;
+	
 	rst <= 1;
 	repeat (5) @(negedge int_clk);
 	rst <= 0;
@@ -62,6 +66,18 @@ module ext_fifo_tb();
 	     @(negedge int_clk);
 	     datain <= datain + dst_rdy_o;
 	     src_rdy_i <= dst_rdy_o;
+	     // Simulate inter-frame time	     
+	     if (ether_frame == 1500)
+	       begin
+		  ether_frame <= 0;
+		  repeat(1600)
+		    begin
+		       @(negedge int_clk);
+		       src_rdy_i <= 0;
+		    end
+	       end
+	     else
+	       ether_frame <= ether_frame + dst_rdy_o;
 	  end
      end // initial begin
 
@@ -73,8 +89,20 @@ module ext_fifo_tb();
 	// Fall through fifo, first output already valid
 	if (dataout !== ref_dataout)
 	  $display("Error: Expected %x, got %x",ref_dataout, dataout);
-	
-	while (ref_dataout < 10000)
+	// Decimate by 16 rate
+	while (ref_dataout < 2000)
+	  begin
+	     @(negedge int_clk);
+	     ref_dataout <= ref_dataout + src_rdy_o ;
+	     dst_rdy_i <= src_rdy_o;
+	     if ((dataout !== ref_dataout) && src_rdy_o)
+	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	     @(negedge int_clk);
+	     dst_rdy_i <= 0;
+	     repeat(14) @(negedge int_clk);
+	  end // while (ref_dataout < 10000)
+	// Decimate by 8 rate
+	while (ref_dataout < 4000)
 	  begin
 	     @(negedge int_clk);
 	     ref_dataout <= ref_dataout + src_rdy_o ;
@@ -84,7 +112,33 @@ module ext_fifo_tb();
 	     @(negedge int_clk);
 	     dst_rdy_i <= 0;
 	     repeat(6) @(negedge int_clk);
-	  end
+	  end // while (ref_dataout < 10000)
+	// Decimate by 4 rate
+	while (ref_dataout < 6000)
+	  begin
+	     @(negedge int_clk);
+	     ref_dataout <= ref_dataout + src_rdy_o ;
+	     dst_rdy_i <= src_rdy_o;
+	     if ((dataout !== ref_dataout) && src_rdy_o)
+	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	     @(negedge int_clk);
+	     dst_rdy_i <= 0;
+	     repeat(2) @(negedge int_clk);
+	  end // while (ref_dataout < 10000)
+	// Max rate
+	while (ref_dataout < 10000)
+	  begin
+	     @(negedge int_clk);
+	     ref_dataout <= ref_dataout + src_rdy_o ;
+	     dst_rdy_i <= src_rdy_o;
+	     if ((dataout !== ref_dataout) && src_rdy_o)
+	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	     
+	  end // while (ref_dataout < 10000)
+	
+	 @(negedge int_clk);
+	$finish;
+	
      end
    
 
@@ -228,7 +282,7 @@ module ext_fifo_tb();
       
    endgenerate
 
-   wire [`DEPTH-1:0] 	RAM_A_ext;
+   wire [`RAM_DEPTH-1:0] 	RAM_A_ext;
    wire 		RAM_WEn_ext,RAM_LDn_ext,RAM_CE1n_ext,RAM_OEn_ext,RAM_CENn_ext;
 
    assign 		#1 RAM_D_pi = RAM_D_pi_ext;
@@ -292,7 +346,7 @@ module ext_fifo_tb();
 
    
    ext_fifo
-     #(.INT_WIDTH(`INT_WIDTH),.EXT_WIDTH(`EXT_WIDTH),.DEPTH(`DEPTH))
+     #(.INT_WIDTH(`INT_WIDTH),.EXT_WIDTH(`EXT_WIDTH),.RAM_DEPTH(`RAM_DEPTH),.FIFO_DEPTH(`FIFO_DEPTH))
        ext_fifo_i1
 	 (
 	  .int_clk(int_clk),

@@ -70,7 +70,7 @@ module vita_tx_deframer
 	    <= 0;
        end
      else 
-       if((vita_state == VITA_STORE) & fifo_space)
+       if((vita_state == VITA_STORE) & fifo_space /* IJB & src_rdy_i*/)
 	 if(eop)  
 	   if(has_trailer_reg)
 	     vita_state <= VITA_TRAILER;
@@ -168,7 +168,7 @@ module vita_tx_deframer
 	 3: sample_d <= data_i[31:0];
        endcase // case (vector_phase)
    
-   wire 		      store = (vita_state == VITA_STORE);
+   wire 		      store = (vita_state == VITA_STORE) /* IJB */ &&  fifo_space;
    fifo_short #(.WIDTH(4+64+32*MAXCHAN)) short_tx_q
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(fifo_i), .src_rdy_i(store), .dst_rdy_o(fifo_space),

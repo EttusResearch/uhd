@@ -15,8 +15,10 @@
 // packed into the IO ring.
 //
 
+ //`define NO_EXT_FIFO
+
 module ext_fifo
-   #(parameter INT_WIDTH=36,EXT_WIDTH=18,DEPTH=19)
+   #(parameter INT_WIDTH=36,EXT_WIDTH=18,RAM_DEPTH=19,FIFO_DEPTH=19)
     (
      input int_clk,
      input ext_clk,
@@ -24,7 +26,7 @@ module ext_fifo
      input [EXT_WIDTH-1:0] RAM_D_pi,
      output [EXT_WIDTH-1:0] RAM_D_po,
      output RAM_D_poe,
-     output [DEPTH-1:0] RAM_A,
+     output [RAM_DEPTH-1:0] RAM_A,
      output RAM_WEn,
      output RAM_CENn,
      output RAM_LDn,
@@ -59,16 +61,15 @@ module ext_fifo
 							         .empty(empty1));
 
     assign 	    dst_rdy_o = ~full1;
-   
-/* -----\/----- EXCLUDED -----\/-----
+
+`ifdef NO_EXT_FIFO
    assign 	    space_avail = ~full2;
    assign 	    data_avail = ~empty1;
    assign 	    read_data = write_data;
- -----/\----- EXCLUDED -----/\----- */
+`else
    
-
    // External FIFO running at ext clock rate  and 18 bit width.
-   nobl_fifo  #(.WIDTH(EXT_WIDTH),.DEPTH(DEPTH),.FDEPTH(DEPTH))
+   nobl_fifo  #(.WIDTH(EXT_WIDTH),.RAM_DEPTH(RAM_DEPTH),.FIFO_DEPTH(FIFO_DEPTH))
      nobl_fifo_i1
        (   
 	   .clk(ext_clk),
@@ -83,14 +84,14 @@ module ext_fifo
 	   .RAM_OEn(RAM_OEn),
 	   .RAM_CE1n(RAM_CE1n),
 	   .write_data(write_data),
-	   .write_strobe(space_avail & ~empty1 ),
+	   .write_strobe(~empty1 ),
 	   .space_avail(space_avail),
 	   .read_data(read_data),
-	   .read_strobe(data_avail & ~full2),
-	   .data_avail(data_avail),
-	   .upstream_full(almost_full2)
+	   .read_strobe(~almost_full2),
+	   .data_avail(data_avail)
 	   );
-    
+`endif // !`ifdef NO_EXT_FIFO
+   
  
    // FIFO buffers data read from external FIFO into DSP clk domain and to TX DSP.
    fifo_xlnx_512x36_2clk_18to36 fifo_xlnx_512x36_2clk_18to36_i1 (
@@ -98,7 +99,7 @@ module ext_fifo
 								 .wr_clk(ext_clk),
 								 .rd_clk(int_clk),
 								 .din(read_data), // Bus [17 : 0]
-								 .wr_en(data_avail & ~full2  ),
+								 .wr_en(data_avail),
 								 .rd_en(dst_rdy_i),
 								 .dout(dataout), // Bus [35 : 0]
 								 .full(full2),
@@ -106,5 +107,5 @@ module ext_fifo
 								 .empty(empty2));
    assign  src_rdy_o = ~empty2;
 
-   
+
 endmodule // ext_fifo
