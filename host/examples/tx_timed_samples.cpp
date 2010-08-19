@@ -35,6 +35,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t samps_per_packet;
     double tx_rate, freq;
     float ampl;
+    float tx_gain;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -47,6 +48,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
+        ("gain", po::value<float>(&tx_gain)->default_value(float(0)), "TX Gain setting")
         ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
@@ -75,7 +77,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_tx_freq(freq);
     sdev->set_time_now(uhd::time_spec_t(0.0));
-    sdev->set_tx_gain(0);
+    sdev->set_tx_gain(tx_gain);
 
     //allocate data to send
     std::vector<std::complex<short> > buff(samps_per_packet, std::complex<short>(ampl, ampl));
