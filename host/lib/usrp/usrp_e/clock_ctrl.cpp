@@ -46,7 +46,7 @@ static const size_t r_counter = 1;
 static const size_t a_counter = 0;
 static const size_t b_counter = 20 / ref_clock_doubler;
 static const size_t prescaler = 8; //set below with enum, set to 8 when input is under 2400 MHz
-static const size_t vco_divider = 1; //set below with enum
+static const size_t vco_divider = 5; //set below with enum
 
 static const size_t n_counter = prescaler * b_counter + a_counter;
 static const size_t vco_clock_rate = ref_clock_rate/r_counter * n_counter; //between 1400 and 1800 MHz
@@ -85,7 +85,7 @@ public:
         _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_1_2MA;
 
         _ad9522_regs.vco_calibration_now = 1; //calibrate it!
-        _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV1;
+        _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV5;
         _ad9522_regs.select_vco_or_clock = ad9522_regs_t::SELECT_VCO_OR_CLOCK_VCO;
 
         //setup fpga master clock
@@ -160,7 +160,7 @@ public:
 
     std::vector<double> get_rx_dboard_clock_rates(void){
         std::vector<double> rates;
-        for(size_t div = 2/*vco div == 1*/; div <= 16+16; div++)
+        for(size_t div = 1; div <= 16+16; div++)
             rates.push_back(master_clock_rate/div);
         return rates;
     }
