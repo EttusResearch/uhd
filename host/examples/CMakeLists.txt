@@ -31,10 +31,15 @@ TARGET_LINK_LIBRARIES(rx_to_file uhd)
 ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
 
+ADD_EXECUTABLE(tx_from_file tx_from_file.cpp)
+TARGET_LINK_LIBRARIES(tx_from_file uhd)
+
 INSTALL(TARGETS
     tx_continuous_samples
     benchmark_rx_rate
     rx_timed_samples
     tx_timed_samples
+    tx_from_file
+    rx_to_file
     RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
 )
