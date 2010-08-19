@@ -74,6 +74,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_rx_freq(freq);
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
+    uhd::gain_range_t rx_gain = sdev->get_rx_gain_range();
+    std::cout << "Setting RX Gain to: " << rx_gain.max << std::endl;
+    sdev->set_rx_gain(rx_gain.max);
+
     sleep(1);
     std::cout << "LO Locked = " << sdev->get_rx_lo_locked() << std::endl;
 
