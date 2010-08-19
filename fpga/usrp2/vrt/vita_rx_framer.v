@@ -128,7 +128,7 @@ module vita_rx_framer
        VITA_ERR_SECS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
        VITA_ERR_TICS : pkt_fifo_line <= {2'b00,32'd0};
        VITA_ERR_TICS2 : pkt_fifo_line <= {2'b00,vita_time_fifo_o[31:0]};
-       VITA_ERR_PAYLOAD : pkt_fifo_line <= {2'b11,28'd0,flags_fifo_o};
+       VITA_ERR_PAYLOAD : pkt_fifo_line <= {2'b10,28'd0,flags_fifo_o};
        //VITA_ERR_TRAILER : pkt_fifo_line <= {2'b11,vita_trailer};
        
        default : pkt_fifo_line <= 34'h0_FFFF_FFFF;
