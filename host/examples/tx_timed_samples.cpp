@@ -75,6 +75,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_tx_freq(freq);
     sdev->set_time_now(uhd::time_spec_t(0.0));
+    sdev->set_tx_gain(0);
 
     //allocate data to send
     std::vector<std::complex<short> > buff(samps_per_packet, std::complex<short>(ampl, ampl));
