@@ -298,7 +298,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();
-        verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
+        verify_rx_subdev_spec(_rx_subdev_spec, _mboard_proxy->get_link());
         //sanity check
         UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
         //set the mux and set the number of rx channels
@@ -307,7 +307,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
-        verify_tx_subdev_spec(_tx_subdev_spec, this->get_link());
+        verify_tx_subdev_spec(_tx_subdev_spec, _mboard_proxy->get_link());
         //sanity check
         UHD_ASSERT_THROW(_tx_subdev_spec.size() <= 2);
         //set the mux and set the number of tx channels
