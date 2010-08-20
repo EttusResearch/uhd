@@ -1,5 +1,6 @@
 Matt Ettus - matt@ettus.com
-    USRP1/USRP2 FPGA code
+    USRP1 FPGA code
+    USRP2 FPGA code
 
 Josh Blum - josh@ettus.com
     driver framework
@@ -14,4 +15,11 @@ Jason Abele - jason@ettus.com
     WBX host code
 
 Eric Blossom - eb@comsec.com
+    USRP1 firmware
     USRP2 firmware
+
+Tom Tsou - ttsou@vt.edu
+    UHD-USB framework
+    LIBUSB host code
+    USRP1 host code
+    USRP1 firmware

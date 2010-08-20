@@ -93,11 +93,7 @@ public:
 
     size_t get_max_send_samps_per_packet(void) const { return 0; }
     size_t get_max_recv_samps_per_packet(void) const { return 0; }
-
-    bool recv_async_msg(uhd::async_metadata_t &, size_t) {
-        //TODO sleep the number of ms supplied (dont want to hog CPU)
-        return false;
-    }
+    bool recv_async_msg(uhd::async_metadata_t &, size_t);
 
 private:
     /*!

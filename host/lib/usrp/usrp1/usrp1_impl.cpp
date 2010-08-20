@@ -23,9 +23,11 @@
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/images.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread/thread.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -42,10 +44,15 @@ const std::vector<usrp1_impl::dboard_slot_t> usrp1_impl::_dboard_slots = boost::
 static device_addrs_t usrp1_find(const device_addr_t &hint)
 {
     device_addrs_t usrp1_addrs;
-    std::string filename = "/usr/local/share/usrp/rev4/std.ihx";
 
     //return an empty list of addresses when type is set to non-usrp1
     if (hint.has_key("type") and hint["type"] != "usrp1") return usrp1_addrs;
+
+    //extract the firmware path for the USRP1
+    std::string usrp1_fw_image = find_image_path(
+        hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
+    );
+    std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
     //see what we got on the USB bus
     usb_descriptors_t usb_descriptors;
@@ -56,12 +63,12 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         if (desc.vendor_id == 0xfffe && desc.product_id == 0x0002) {
             usb_control::sptr ctrl_transport = usb_control::make(desc);
             usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
-            usrp_ctrl->usrp_load_firmware(filename);
+            usrp_ctrl->usrp_load_firmware(usrp1_fw_image);
         }
     }
 
     //wait for things to settle
-    sleep(1);
+    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
 
     //get descriptors again with serial number
     usb_descriptors = usb_control::get_device_list();
@@ -83,14 +90,11 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
  **********************************************************************/
 static device::sptr usrp1_make(const device_addr_t &device_addr)
 {
-    std::string filename;
-
-    if (device_addr.has_key("fpga"))
-        filename = device_addr["fpga"];
-    else
-        filename = "/usr/local/share/usrp/rev4/std_2rxhb_2tx.rbf";
-
-    std::cout << "Make usrp1 with " << filename << std::endl;
+    //extract the FPGA path for the USRP1
+    std::string usrp1_fpga_image = find_image_path(
+        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp1_fpga.rbf"
+    );
+    std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
 
     //try to match the given device address with something on the USB bus
     usb_descriptors_t usb_descriptors;
@@ -106,7 +110,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr)
 
             usb_control::sptr ctrl_transport = usb_control::make(desc);
             usrp_ctrl = usrp_ctrl::make(ctrl_transport);
-            usrp_ctrl->usrp_load_fpga(filename);
+            usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
 
             data_transport = usb_zero_copy::make(desc,          // identifier
                                                  6,             // IN endpoint
@@ -165,6 +169,12 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
 
 usrp1_impl::~usrp1_impl(void){
     /* NOP */
+}
+
+bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, size_t timeout_ms){
+    //dummy fill-in for the recv_async_msg
+    boost::this_thread::sleep(boost::posix_time::milliseconds(timeout_ms));
+    return false;
 }
 
 /***********************************************************************
