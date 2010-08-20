@@ -56,7 +56,7 @@ module nobl_fifo
 	  // Capacity is already zero; Capacity is 1 and write is asserted (lookahead); both read and write are asserted (collision)
 	  space_avail <= ~((capacity == 0) || (read&&write) || ((capacity == 1) && write) );
 	  // Capacity has 1 cycle delay so look ahead here for corner case of read of last item in FIFO.
-	  data_avail_int <= ~((capacity == (1 << (FIFO_DEPTH-1)))  || ((capacity == ((1 << (FIFO_DEPTH-1))-1)) && read)  );
+	  data_avail_int <= ~((capacity == ((1 << FIFO_DEPTH)-1))  || ((capacity == ((1 << FIFO_DEPTH)-2)) && read)  );
 	  wr_pointer <= wr_pointer + write;
 	  rd_pointer <= rd_pointer + (~write && read); 
 	  capacity <= capacity - write + (~write && read) ;
