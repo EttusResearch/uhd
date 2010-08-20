@@ -37,7 +37,8 @@ module ext_fifo
      output dst_rdy_o,               // not FULL
      output [INT_WIDTH-1:0] dataout,
      output src_rdy_o,               // not EMPTY
-     input dst_rdy_i                 // READ
+     input dst_rdy_i,                 // READ
+     output reg [31:0] debug
      );
 
    wire [EXT_WIDTH-1:0] write_data;
@@ -46,7 +47,8 @@ module ext_fifo
    wire 	    almost_full2, full2, empty2;
    wire [INT_WIDTH-1:0] data_to_fifo;
    wire [INT_WIDTH-1:0] data_from_fifo;
-
+   wire [FIFO_DEPTH-1:0] capacity;
+		
    
    // FIFO buffers data from UDP engine into external FIFO clock domain.
    fifo_xlnx_512x36_2clk_36to18 fifo_xlnx_512x36_2clk_36to18_i1 (
@@ -88,7 +90,8 @@ module ext_fifo
 	   .space_avail(space_avail),
 	   .read_data(read_data),
 	   .read_strobe(~almost_full2),
-	   .data_avail(data_avail)
+	   .data_avail(data_avail),
+	   .capacity(capacity)
 	   );
 `endif // !`ifdef NO_EXT_FIFO
    
@@ -107,5 +110,10 @@ module ext_fifo
 								 .empty(empty2));
    assign  src_rdy_o = ~empty2;
 
+   always @ (posedge int_clk)
+     debug[31:16] = {12'h0,empty2,full1,dst_rdy_i,src_rdy_i };
+   
+   always @ (posedge ext_clk)
+     debug[15:0] = {3'h0,empty1,space_avail,data_avail,full2,almost_full2,capacity[7:0] };
 
 endmodule // ext_fifo

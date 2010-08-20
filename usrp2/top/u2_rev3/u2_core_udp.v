@@ -171,7 +171,7 @@ module u2_core
    wire [31:0] 	atr_lines;
 
    wire [31:0] 	debug_rx, debug_mac, debug_mac0, debug_mac1, debug_tx_dsp, debug_txc,
-		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp;
+		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp, debug_extfifo;
 
    wire [15:0] 	ser_rx_occ, ser_tx_occ, dsp_rx_occ, dsp_tx_occ, eth_rx_occ, eth_tx_occ, eth_rx_occ2;
    wire 	ser_rx_full, ser_tx_full, dsp_rx_full, dsp_tx_full, eth_rx_full, eth_tx_full, eth_rx_full2;
@@ -669,7 +669,8 @@ module u2_core
 	.dst_rdy_o(rd1_ready_i),               // not FULL
 	.dataout(tx_data),
 	.src_rdy_o(tx_src_rdy),               // not EMPTY
-	.dst_rdy_i(tx_dst_rdy)
+	.dst_rdy_i(tx_dst_rdy),
+	.debug(debug_extfifo)
 	);
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
@@ -712,8 +713,8 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
-   assign debug_clk = 2'b00;
-   assign debug = 32'd0;
+   assign debug_clk = {dsp_clk, clk_to_mac};
+   assign debug = debug_extfifo;
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
    
