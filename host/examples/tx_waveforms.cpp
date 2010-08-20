@@ -20,6 +20,7 @@
 #include <uhd/usrp/simple_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread_time.hpp> //system time
+#include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 #include <complex>
@@ -32,8 +33,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, wave_type;
-    size_t total_duration, amspb;
-    double rate, freq, wave_freq;
+    size_t total_duration, mspb;
+    double rate, freq, wave_freq, aepb;
     float ampl, gain;
 
     //setup the program options
@@ -42,7 +43,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
         ("duration", po::value<size_t>(&total_duration)->default_value(3), "number of seconds to transmit")
-        ("amspb", po::value<size_t>(&amspb)->default_value(10000), "approximate mimimum samples per buffer")
+        ("mspb", po::value<size_t>(&mspb)->default_value(10000), "mimimum samples per buffer")
+        ("aepb", po::value<double>(&aepb)->default_value(1e-5), "allowed error per buffer")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
@@ -88,33 +90,56 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //error when the waveform is not possible to generate
-    if (std::abs(wave_freq)/sdev->get_tx_rate() < 0.5/amspb){
+    if (std::abs(wave_freq)/sdev->get_tx_rate() < 0.5/mspb){
         throw std::runtime_error("wave freq/tx rate too small");
     }
     if (std::abs(wave_freq) > sdev->get_tx_rate()/2){
         throw std::runtime_error("wave freq out of Nyquist zone");
     }
 
-    //fill a buffer with one period worth of samples
-    std::vector<float> period(size_t(sdev->get_tx_rate()/std::abs(wave_freq)));
-    std::cout << boost::format("Samples per waveform period: %d") % period.size() << std::endl;
-    for (size_t n = 0; n < period.size(); n++){
-        if      (wave_type == "CONST")  period[n] = ampl;
-        else if (wave_type == "SQUARE") period[n] = (n > period.size()/2)? ampl : 0;
-        else if (wave_type == "RAMP")   period[n] = float((n/double(period.size()-1)) * 2*ampl - ampl);
-        else if (wave_type == "SINE")   period[n] = ampl*float(std::sin(2*M_PI*n/double(period.size())));
-        else throw std::runtime_error("unknown waveform type: " + wave_type);
+    //how many periods should we have per buffer to mimimize error
+    double samps_per_period = sdev->get_tx_rate()/std::abs(wave_freq);
+    std::cout << boost::format("Samples per waveform period: %d") % samps_per_period << std::endl;
+    size_t periods_per_buff = std::max<size_t>(1, mspb/samps_per_period);
+    while (true){
+        double num_samps_per_buff = periods_per_buff*samps_per_period;
+        double sample_error = num_samps_per_buff - boost::math::round(num_samps_per_buff);
+        if (std::abs(sample_error) <= aepb) break;
+        periods_per_buff++;
     }
 
     //allocate data to send (fill with several periods worth of IQ samples)
-    const size_t periods_per_buff = std::max<size_t>(1, amspb/period.size());
-    std::vector<std::complex<float> > buff(period.size()*periods_per_buff);
+    std::vector<std::complex<float> > buff(samps_per_period*periods_per_buff);
+    const double i_ahead = (wave_freq > 0)? samps_per_period/4 : 0;
+    const double q_ahead = (wave_freq < 0)? samps_per_period/4 : 0;
     std::cout << boost::format("Samples per send buffer: %d") % buff.size() << std::endl;
-    const size_t i_ahead = (wave_freq > 0)? period.size()/4 : 0;
-    const size_t q_ahead = (wave_freq < 0)? period.size()/4 : 0;
-    for (size_t n = 0; n < buff.size(); n++) buff[n] = std::complex<float>(
-        period[(n+i_ahead)%period.size()], period[(n+q_ahead)%period.size()] //I,Q
-    );
+    if (wave_type == "CONST"){
+        for (size_t n = 0; n < buff.size(); n++){
+            buff[n] = std::complex<float>(ampl, ampl);
+        }
+    }
+    else if (wave_type == "SQUARE"){
+        for (size_t n = 0; n < buff.size(); n++){
+            float I = (std::fmod(n+i_ahead, samps_per_period) > samps_per_period/2)? ampl : 0;
+            float Q = (std::fmod(n+q_ahead, samps_per_period) > samps_per_period/2)? ampl : 0;
+            buff[n] = std::complex<float>(I, Q);
+        }
+    }
+    else if (wave_type == "RAMP"){
+        for (size_t n = 0; n < buff.size(); n++){
+            float I = float(std::fmod(n+i_ahead, samps_per_period)/samps_per_period * 2*ampl - ampl);
+            float Q = float(std::fmod(n+q_ahead, samps_per_period)/samps_per_period * 2*ampl - ampl);
+            buff[n] = std::complex<float>(I, Q);
+        }
+    }
+    else if (wave_type == "SINE"){
+        for (size_t n = 0; n < buff.size(); n++){
+            float I = float(ampl*std::sin(2*M_PI*(n+i_ahead)/samps_per_period));
+            float Q = float(ampl*std::sin(2*M_PI*(n+q_ahead)/samps_per_period));
+            buff[n] = std::complex<float>(I, Q);
+        }
+    }
+    else throw std::runtime_error("unknown waveform type: " + wave_type);
 
     //setup the metadata flags
     uhd::tx_metadata_t md;
