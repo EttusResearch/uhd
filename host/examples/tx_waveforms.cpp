@@ -34,7 +34,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, wave_type;
     size_t total_duration, mspb;
-    double rate, freq, wave_freq;
+    double rate, freq, wave_freq, aepb;
     float ampl, gain;
 
     //setup the program options
@@ -44,6 +44,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
         ("duration", po::value<size_t>(&total_duration)->default_value(3), "number of seconds to transmit")
         ("mspb", po::value<size_t>(&mspb)->default_value(10000), "mimimum samples per buffer")
+        ("aepb", po::value<double>(&aepb)->default_value(1e-5), "allowed error per buffer")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
@@ -103,7 +104,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while (true){
         double num_samps_per_buff = periods_per_buff*samps_per_period;
         double sample_error = num_samps_per_buff - boost::math::round(num_samps_per_buff);
-        if (std::abs(sample_error/num_samps_per_buff) < 1e-5) break;
+        if (std::abs(sample_error) <= aepb) break;
         periods_per_buff++;
     }
 
