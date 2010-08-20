@@ -23,6 +23,7 @@ INSTALL(FILES
     byteswap.ipp
     exception.hpp
     gain_group.hpp
+    images.hpp
     pimpl.hpp
     props.hpp
     safe_main.hpp

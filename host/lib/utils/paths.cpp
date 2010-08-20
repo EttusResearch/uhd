@@ -85,17 +85,3 @@ std::vector<fs::path> get_module_paths(void){
         paths.push_back(fs::path(INSTALLER_PKG_DATA_DIR) / "modules");
     return paths;
 }
-
-/***********************************************************************
- * Find a image in the image paths
- **********************************************************************/
-std::string find_image_path(const std::string &image_name){
-    if (fs::exists(image_name)){
-        return fs::system_complete(image_name).file_string();
-    }
-    BOOST_FOREACH(const fs::path &path, get_image_paths()){
-        fs::path image_path = path / image_name;
-        if (fs::exists(image_path)) return image_path.file_string();
-    }
-    throw std::runtime_error("Could not find path for image: " + image_name);
-}
