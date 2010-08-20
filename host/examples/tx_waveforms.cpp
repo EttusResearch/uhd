@@ -37,7 +37,7 @@ float gen_const(float){
 }
 
 float gen_square(float x){
-    return (std::fmod(x, 1) < float(0.5))? 0 : 1;
+    return float((std::fmod(x, 1) < float(0.5))? 0 : 1);
 }
 
 float gen_ramp(float x){
@@ -45,7 +45,8 @@ float gen_ramp(float x){
 }
 
 float gen_sine(float x){
-    return std::sin(x*2*M_PI);
+    static const float two_pi = 2*std::acos(float(-1));
+    return std::sin(x*two_pi);
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -123,7 +124,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //allocate the buffer and precalculate values
     std::vector<std::complex<float> > buff(spb);
-    const float cps = wave_freq/sdev->get_tx_rate();
+    const float cps = float(wave_freq/sdev->get_tx_rate());
     const float i_off = (wave_freq > 0)? float(0.25) : 0;
     const float q_off = (wave_freq < 0)? float(0.25) : 0;
     float theta = 0;
