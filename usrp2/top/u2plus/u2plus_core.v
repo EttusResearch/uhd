@@ -815,7 +815,8 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    // Debug Pins
   
    assign debug_clk = {dsp_clk, wb_clk};
-   assign debug = debug_vt;
+//   assign debug = debug_vt;
+   assign debug = {wb_clk, wb_rst, sd_cyc, sd_stb, sd_we, sd_ack, sd_dat_o[7:0], sd_dat_i[7:0], 10'd0};
    
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
