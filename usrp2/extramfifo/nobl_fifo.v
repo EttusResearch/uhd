@@ -24,10 +24,11 @@ module nobl_fifo
 	output reg space_avail,
 	output  [WIDTH-1:0] read_data,
 	input read_strobe,                    // Triggers a read, result in approximately 6 cycles.
-	output  data_avail                    // Qulaifys read data available this cycle on read_data.
+	output  data_avail,                    // Qulaifys read data available this cycle on read_data.
+	output reg [FIFO_DEPTH-1:0] capacity
 	);
 
-   reg [FIFO_DEPTH-1:0] capacity;
+   //reg [FIFO_DEPTH-1:0] capacity;
    reg [FIFO_DEPTH-1:0] wr_pointer;
    reg [FIFO_DEPTH-1:0] rd_pointer;
    wire [RAM_DEPTH-1:0] address;
@@ -43,7 +44,7 @@ module nobl_fifo
    always @(posedge clk)
      if (rst)
        begin
-	  capacity <= 1 << (FIFO_DEPTH-1);
+	  capacity <= (1 << FIFO_DEPTH) - 1;
 	  wr_pointer <= 0;
 	  rd_pointer <= 0;
 	  space_avail <= 0;
