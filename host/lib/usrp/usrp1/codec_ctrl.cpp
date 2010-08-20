@@ -156,8 +156,8 @@ usrp1_codec_ctrl_impl::~usrp1_codec_ctrl_impl(void)
  **********************************************************************/
 void usrp1_codec_ctrl_impl::set_tx_pga_gain(float gain)
 {
-    int gain_word = int(63*(gain - tx_pga_gain_range.min)/(tx_pga_gain_range.max - tx_pga_gain_range.min));
-    _ad9862_regs.tx_pga_gain = std::clip(gain_word, 0, 63);
+    int gain_word = int(255*(gain - tx_pga_gain_range.min)/(tx_pga_gain_range.max - tx_pga_gain_range.min));
+    _ad9862_regs.tx_pga_gain = std::clip(gain_word, 0, 255);
     this->send_reg(16);
 }
 
