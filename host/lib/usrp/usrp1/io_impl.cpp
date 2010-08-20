@@ -33,6 +33,8 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
+static const float poll_interval = 0.1;  //100ms
+
 /*
  * The FX2 firmware bursts data to the FPGA in 512 byte chunks so
  * maintain send state to make sure that happens.
@@ -57,11 +59,15 @@ struct usrp1_impl::io_impl {
     usrp1_send_state send_state;
 
     zero_copy_if::sptr data_transport;
-    unsigned int count;
+
+    //overun-underrun values
+    unsigned int tx_underrun_count;
+    unsigned int rx_overrun_count;
 };
 
 usrp1_impl::io_impl::io_impl(zero_copy_if::sptr zc_if)
- : packet_handler_recv_state(1), data_transport(zc_if), count(0)
+ : packet_handler_recv_state(1), data_transport(zc_if),
+   tx_underrun_count(0), rx_overrun_count(0)
 {
     /* NOP */
 }
@@ -133,9 +139,10 @@ size_t usrp1_impl::send(const std::vector<const void *> &buffs,
         }
 
         total_samps_sent += copy_samps; 
+        _io_impl->tx_underrun_count += copy_samps * _tx_otw_type.get_sample_size();
  
         //check for underruns
-        if (!(_io_impl->count++ % 1000)) {
+        if (!(_io_impl->tx_underrun_count > _tx_dsp_freq * poll_interval * _tx_otw_type.get_sample_size())) {
             unsigned char underrun;
             int ret = _ctrl_transport->usrp_control_read(VRQ_GET_STATUS,
                                                          0,
@@ -145,6 +152,8 @@ size_t usrp1_impl::send(const std::vector<const void *> &buffs,
                 std::cerr << "error: underrun check failed" << std::endl;
             if (underrun)
                 std::cerr << "U" << std::endl;
+
+            _io_impl->tx_underrun_count = 0;
         }
     }
 
@@ -208,22 +217,25 @@ size_t usrp1_impl::recv(const std::vector<void *> &buffs,
  
         _io_impl->packet_handler_recv_state.copy_buffs[0] += bytes_to_copy; 
         _io_impl->packet_handler_recv_state.size_of_copy_buffs -= bytes_to_copy;
+        _io_impl->rx_overrun_count += nsamps_to_copy;
 
         sent_samps += nsamps_to_copy;
 
-        //check for overruns
-        if (!(_io_impl->count++ % 10000)) {
+        //check for overruns 
+        if (_io_impl->rx_overrun_count > (8e6 * poll_interval)) {
             unsigned char overrun;
-            int ret = _ctrl_transport->usrp_control_read(
-                                   VRQ_GET_STATUS,
-                                   0,
-                                   GS_RX_OVERRUN,
-                                   &overrun, sizeof(char));
+            int ret = _ctrl_transport->usrp_control_read(VRQ_GET_STATUS,
+                                                         0,
+                                                         GS_RX_OVERRUN,
+                                                         &overrun, sizeof(char));
             if (ret < 0)
                 std::cerr << "error: overrun check failed" << std::endl;
             if (overrun)
                 std::cerr << "O" << std::endl;
+
+            _io_impl->rx_overrun_count = 0;
         }
     }
+
     return sent_samps; 
 }
