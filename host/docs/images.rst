@@ -58,8 +58,7 @@ Where <prefix> was set by the CMAKE_INSTALL_PREFIX at configure-time.
 **Option 2:**
 
 Unpack the archive anywhere and set the UHD_IMAGE_PATH environment variable.
-The UHD_IMAGE_PATH may contain a list of directories to search for image files,
-or paths to specific image files.
+The UHD_IMAGE_PATH may contain a list of directories to search for image files.
 
 ------------------------------------------------------------------------
 Building images

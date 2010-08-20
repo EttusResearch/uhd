@@ -64,7 +64,12 @@ Integrating custom hardware
 ------------------------------------------------------------------------
 Creators of custom hardware can create drivers that use the UHD API.
 These drivers can be built as dynamically loadable modules that the UHD will load at runtime.
-For a module to be loaded at runtime, it must be found in the UHD_MODULE_PATH environment variable.
+
+For a module to be loaded at runtime, it must be:
+
+* found in the UHD_MODULE_PATH environment variable,
+* installed into the <prefix>/share/uhd/modules directory,
+* or installed into /usr/share/uhd/modules directory (unix only).
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Custom motherboard

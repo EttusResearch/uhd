@@ -16,9 +16,6 @@
 #
 
 
-ADD_EXECUTABLE(tx_continuous_samples tx_continuous_samples.cpp)
-TARGET_LINK_LIBRARIES(tx_continuous_samples uhd)
-
 ADD_EXECUTABLE(benchmark_rx_rate benchmark_rx_rate.cpp)
 TARGET_LINK_LIBRARIES(benchmark_rx_rate uhd)
 
@@ -28,10 +25,13 @@ TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
 ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
 
+ADD_EXECUTABLE(tx_waveforms tx_waveforms.cpp)
+TARGET_LINK_LIBRARIES(tx_waveforms uhd)
+
 INSTALL(TARGETS
-    tx_continuous_samples
     benchmark_rx_rate
     rx_timed_samples
     tx_timed_samples
+    tx_waveforms
     RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
 )
