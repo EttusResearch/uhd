@@ -35,41 +35,53 @@ namespace asio = boost::asio;
 
 static const float poll_interval = 0.1;  //100ms
 
-/*
- * The FX2 firmware bursts data to the FPGA in 512 byte chunks so
- * maintain send state to make sure that happens.
- */
 struct usrp1_send_state {
     uhd::transport::managed_send_buffer::sptr send_buff;
-    size_t bytes_used;
+    size_t bytes_written;
     size_t bytes_free;
+    size_t underrun_poll_samp_count;
+};
+
+struct usrp1_recv_state {
+    uhd::transport::managed_recv_buffer::sptr recv_buff;
+    size_t bytes_read;
+    size_t bytes_avail;
+    size_t overrun_poll_samp_count;
 };
 
 /***********************************************************************
  * IO Implementation Details
  **********************************************************************/
 struct usrp1_impl::io_impl {
-    io_impl(zero_copy_if::sptr zc_if);
+    io_impl();
     ~io_impl(void);
 
-    bool get_recv_buff(managed_recv_buffer::sptr buff); 
-
-    //state management for the vrt packet handler code
-    vrt_packet_handler::recv_state packet_handler_recv_state;
+    //state handling for buffer management 
+    usrp1_recv_state recv_state;
     usrp1_send_state send_state;
 
-    zero_copy_if::sptr data_transport;
+    //send transport management 
+    bool get_send_buffer(zero_copy_if::sptr zc_if);
+    size_t copy_convert_send_samps(const void *buff, size_t num_samps,
+                              size_t sample_offset, const io_type_t io_type,
+                              otw_type_t otw_type);
+    bool conditional_buff_commit(bool force);
+    bool check_underrun(usrp_ctrl::sptr ctrl_if,
+                        size_t poll_interval, bool force);
 
-    //overun-underrun values
-    unsigned int tx_underrun_count;
-    unsigned int rx_overrun_count;
+    //recv transport management 
+    bool get_recv_buffer(zero_copy_if::sptr zc_if);
+    size_t copy_convert_recv_samps(void *buff, size_t num_samps,
+                              size_t sample_offset, const io_type_t io_type,
+                              otw_type_t otw_type);
+    bool check_overrun(usrp_ctrl::sptr ctrl_if,
+                        size_t poll_interval, bool force);
 };
 
-usrp1_impl::io_impl::io_impl(zero_copy_if::sptr zc_if)
- : packet_handler_recv_state(1), data_transport(zc_if),
-   tx_underrun_count(0), rx_overrun_count(0)
+usrp1_impl::io_impl::io_impl()
 {
-    /* NOP */
+    send_state.send_buff = uhd::transport::managed_send_buffer::sptr();
+    recv_state.recv_buff = uhd::transport::managed_recv_buffer::sptr();
 }
 
 usrp1_impl::io_impl::~io_impl(void)
@@ -87,12 +99,94 @@ void usrp1_impl::io_init(void)
     _tx_otw_type.shift = 0;
     _tx_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, ());
 }
 
 /***********************************************************************
  * Data Send
  **********************************************************************/
+bool usrp1_impl::io_impl::get_send_buffer(zero_copy_if::sptr zc_if)
+{
+    if (send_state.send_buff == NULL) {
+
+        send_state.send_buff = zc_if->get_send_buff();
+        if (send_state.send_buff == NULL)
+            return false;
+
+        send_state.bytes_free = send_state.send_buff->size();
+        send_state.bytes_written = 0;
+    }
+
+    return true;
+}
+
+size_t usrp1_impl::io_impl::copy_convert_send_samps(const void *buff,
+                                                    size_t num_samps,
+                                                    size_t sample_offset,
+                                                    const io_type_t io_type,
+                                                    otw_type_t otw_type)
+{
+    UHD_ASSERT_THROW(send_state.bytes_free % otw_type.get_sample_size() == 0);
+
+    size_t samps_free = send_state.bytes_free / otw_type.get_sample_size();
+    size_t copy_samps = std::min(num_samps - sample_offset, samps_free); 
+
+    const boost::uint8_t *io_mem =
+        reinterpret_cast<const boost::uint8_t *>(buff);
+
+    boost::uint8_t *otw_mem = send_state.send_buff->cast<boost::uint8_t *>();
+
+    convert_io_type_to_otw_type(io_mem + sample_offset * io_type.size,
+                                io_type,
+                                otw_mem + send_state.bytes_written,
+                                otw_type,
+                                copy_samps);
+
+    send_state.bytes_written += copy_samps * otw_type.get_sample_size();
+    send_state.bytes_free -= copy_samps * otw_type.get_sample_size();
+    send_state.underrun_poll_samp_count += copy_samps;
+
+    return copy_samps;
+}
+
+bool usrp1_impl::io_impl::conditional_buff_commit(bool force)
+{
+    if (send_state.bytes_written % 512)
+        return false;
+
+    if (force || send_state.bytes_free == 0) {
+        send_state.send_buff->commit(send_state.bytes_written);
+        send_state.send_buff = uhd::transport::managed_send_buffer::sptr();
+        return true;
+    }
+    
+    return false;
+}
+
+bool usrp1_impl::io_impl::check_underrun(usrp_ctrl::sptr ctrl_if,
+                                         size_t poll_interval,
+                                         bool force)
+{
+    unsigned char underrun = 0;
+
+    bool ready_to_poll = send_state.underrun_poll_samp_count > poll_interval;
+
+    if (force || ready_to_poll) {
+        int ret = ctrl_if->usrp_control_read(VRQ_GET_STATUS,
+                                             0,
+                                             GS_TX_UNDERRUN,
+                                             &underrun, sizeof(char));
+        if (ret < 0)
+            std::cerr << "USRP: underrun check failed" << std::endl;
+        if (underrun)
+            std::cerr << "U" << std::endl;
+
+        send_state.underrun_poll_samp_count = 0;
+    }
+
+    return (bool) underrun;
+}
+
 size_t usrp1_impl::send(const std::vector<const void *> &buffs,
                         size_t num_samps,
                         const tx_metadata_t &,
@@ -104,57 +198,21 @@ size_t usrp1_impl::send(const std::vector<const void *> &buffs,
     size_t total_samps_sent = 0;
 
     while (total_samps_sent < num_samps) {
+        if (!_io_impl->get_send_buffer(_data_transport))
+            return 0;
 
-        if (_io_impl->send_state.send_buff == NULL) {
-            _io_impl->send_state.send_buff = _data_transport->get_send_buff();
-            if (_io_impl->send_state.send_buff == NULL) {
-                return 0;
-            }
-            _io_impl->send_state.bytes_used = 0;
-            _io_impl->send_state.bytes_free = _io_impl->send_state.send_buff->size();
-        }
+        total_samps_sent += _io_impl->copy_convert_send_samps(buffs[0],
+                                                              num_samps,
+                                                              total_samps_sent,
+                                                              io_type,
+                                                              _tx_otw_type);
+        if (total_samps_sent == num_samps)
+            _io_impl->conditional_buff_commit(true);
+        else
+            _io_impl->conditional_buff_commit(false);
 
-        size_t copy_samps =
-               std::min(num_samps - total_samps_sent, _io_impl->send_state.bytes_free / _tx_otw_type.get_sample_size());
-
-        const boost::uint8_t *io_mem =
-                             reinterpret_cast<const boost::uint8_t *>(buffs[0]);
-
-        boost::uint8_t *otw_mem = _io_impl->send_state.send_buff->cast<boost::uint8_t *>();
-
-        // Type conversion and copy 
-        convert_io_type_to_otw_type(
-                     io_mem + total_samps_sent * io_type.size,
-                     io_type,
-                     otw_mem + _io_impl->send_state.bytes_used,
-                     _tx_otw_type,
-                     copy_samps);
- 
-        _io_impl->send_state.bytes_used += copy_samps * _tx_otw_type.get_sample_size();
-        _io_impl->send_state.bytes_free -= copy_samps * _tx_otw_type.get_sample_size();
-
-        if (_io_impl->send_state.bytes_free == 0) {
-            _io_impl->send_state.send_buff->commit(_io_impl->send_state.bytes_used);
-            _io_impl->send_state.send_buff = uhd::transport::managed_send_buffer::sptr();
-        }
-
-        total_samps_sent += copy_samps; 
-        _io_impl->tx_underrun_count += copy_samps * _tx_otw_type.get_sample_size();
- 
-        //check for underruns
-        if (!(_io_impl->tx_underrun_count > _tx_dsp_freq * poll_interval * _tx_otw_type.get_sample_size())) {
-            unsigned char underrun;
-            int ret = _ctrl_transport->usrp_control_read(VRQ_GET_STATUS,
-                                                         0,
-                                                         GS_TX_UNDERRUN,
-                                                         &underrun, sizeof(char));
-            if (ret < 0)
-                std::cerr << "error: underrun check failed" << std::endl;
-            if (underrun)
-                std::cerr << "U" << std::endl;
-
-            _io_impl->tx_underrun_count = 0;
-        }
+        _io_impl->check_underrun(_ctrl_transport,
+                                 _tx_samps_per_poll_interval, false);
     }
 
     return total_samps_sent;
@@ -163,17 +221,72 @@ size_t usrp1_impl::send(const std::vector<const void *> &buffs,
 /***********************************************************************
  * Data Recv
  **********************************************************************/
-void _recv_helper(vrt_packet_handler::recv_state &state)
+bool usrp1_impl::io_impl::get_recv_buffer(zero_copy_if::sptr zc_if)
 {
-    size_t num_packet_words32 =
-                       state.managed_buffs[0]->size() / sizeof(boost::uint32_t);
+    if ((recv_state.recv_buff == NULL) || (recv_state.bytes_avail == 0)) {
 
-    const boost::uint32_t *data =
-                        state.managed_buffs[0]->cast<const boost::uint32_t *>();
+        recv_state.recv_buff = zc_if->get_recv_buff();
+        if (recv_state.recv_buff == NULL)
+            return false;
 
-    state.copy_buffs[0] = reinterpret_cast<const boost::uint8_t *>(data);
-    size_t num_payload_bytes = num_packet_words32 * sizeof(boost::uint32_t);
-    state.size_of_copy_buffs = num_payload_bytes;
+        recv_state.bytes_read = 0;
+        recv_state.bytes_avail = recv_state.recv_buff->size();
+    }
+
+    return true;
+}
+
+size_t usrp1_impl::io_impl::copy_convert_recv_samps(void *buff,
+                                                    size_t num_samps,
+                                                    size_t sample_offset,
+                                                    const io_type_t io_type,
+                                                    otw_type_t otw_type)
+{
+    UHD_ASSERT_THROW(recv_state.bytes_avail % otw_type.get_sample_size() == 0);
+
+    size_t samps_avail = recv_state.bytes_avail / otw_type.get_sample_size();
+    size_t copy_samps = std::min(num_samps - sample_offset, samps_avail); 
+
+    const boost::uint8_t *otw_mem =
+        recv_state.recv_buff->cast<const boost::uint8_t *>();
+
+    boost::uint8_t *io_mem = reinterpret_cast<boost::uint8_t *>(buff);
+
+    convert_otw_type_to_io_type(otw_mem + recv_state.bytes_read,
+                                otw_type,
+                                io_mem + sample_offset * io_type.size,
+                                io_type,
+                                copy_samps);
+
+    recv_state.bytes_read += copy_samps * otw_type.get_sample_size();
+    recv_state.bytes_avail -= copy_samps * otw_type.get_sample_size();
+    recv_state.overrun_poll_samp_count += copy_samps;
+
+    return copy_samps;
+}
+
+bool usrp1_impl::io_impl::check_overrun(usrp_ctrl::sptr ctrl_if,
+                                        size_t poll_interval,
+                                        bool force)
+{
+    unsigned char overrun = 0;
+
+    bool ready_to_poll = recv_state.overrun_poll_samp_count > poll_interval;
+
+    if (force || ready_to_poll) {
+        int ret = ctrl_if->usrp_control_read(VRQ_GET_STATUS,
+                                             0,
+                                             GS_RX_OVERRUN,
+                                             &overrun, sizeof(char));
+        if (ret < 0)
+            std::cerr << "USRP: overrrun check failed" << std::endl;
+        if (overrun)
+            std::cerr << "O" << std::endl;
+
+        recv_state.overrun_poll_samp_count = 0;
+    }
+
+    return (bool) overrun;
 }
 
 size_t usrp1_impl::recv(const std::vector<void *> &buffs,
@@ -183,59 +296,23 @@ size_t usrp1_impl::recv(const std::vector<void *> &buffs,
                         recv_mode_t,
                         size_t)
 {
-    UHD_ASSERT_THROW(_io_impl->packet_handler_recv_state.width == 1);
     UHD_ASSERT_THROW(buffs.size() == 1);
 
-    size_t sent_samps = 0;
-    size_t nsamps_to_copy = 0;; 
+    size_t total_samps_recv = 0;
 
-    while (sent_samps < num_samps) {
-        if (_io_impl->packet_handler_recv_state.size_of_copy_buffs == 0) {
-            _io_impl->packet_handler_recv_state.fragment_offset_in_samps = 0;
-            _io_impl->packet_handler_recv_state.managed_buffs[0] =
-                                          _io_impl->data_transport->get_recv_buff();
- 
-            //timeout or something bad returns zero
-            if (!_io_impl->packet_handler_recv_state.managed_buffs[0].get())
-                return 0;
- 
-            _recv_helper(_io_impl->packet_handler_recv_state);
-        }
+    while (total_samps_recv < num_samps) {
 
-        size_t bytes_per_item = _rx_otw_type.get_sample_size();
-        size_t nsamps_available =
-            _io_impl->packet_handler_recv_state.size_of_copy_buffs / bytes_per_item;
-        nsamps_to_copy = std::min(num_samps, nsamps_available);
-        size_t bytes_to_copy = nsamps_to_copy * bytes_per_item;
+        if (!_io_impl->get_recv_buffer(_data_transport))
+            return 0;
 
-        convert_otw_type_to_io_type(
-              _io_impl->packet_handler_recv_state.copy_buffs[0],
-              _rx_otw_type,
-              reinterpret_cast<boost::uint8_t *>(buffs[0]) + sent_samps * io_type.size,
-              io_type,
-              nsamps_to_copy);
- 
-        _io_impl->packet_handler_recv_state.copy_buffs[0] += bytes_to_copy; 
-        _io_impl->packet_handler_recv_state.size_of_copy_buffs -= bytes_to_copy;
-        _io_impl->rx_overrun_count += nsamps_to_copy;
-
-        sent_samps += nsamps_to_copy;
-
-        //check for overruns 
-        if (_io_impl->rx_overrun_count > (8e6 * poll_interval)) {
-            unsigned char overrun;
-            int ret = _ctrl_transport->usrp_control_read(VRQ_GET_STATUS,
-                                                         0,
-                                                         GS_RX_OVERRUN,
-                                                         &overrun, sizeof(char));
-            if (ret < 0)
-                std::cerr << "error: overrun check failed" << std::endl;
-            if (overrun)
-                std::cerr << "O" << std::endl;
-
-            _io_impl->rx_overrun_count = 0;
-        }
+        total_samps_recv += _io_impl->copy_convert_recv_samps(buffs[0],
+                                                              num_samps,
+                                                              total_samps_recv,
+                                                              io_type,
+                                                              _rx_otw_type);
+        _io_impl->check_overrun(_ctrl_transport,
+                                _rx_samps_per_poll_interval, false);
     }
 
-    return sent_samps; 
+    return total_samps_recv; 
 }

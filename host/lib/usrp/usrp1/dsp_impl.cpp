@@ -95,6 +95,8 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
             }
 
             _rx_dsp_decim = rate;
+            _rx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() / rate;
+
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
         }
         return;
@@ -175,6 +177,8 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
             }
 
             _tx_dsp_interp = rate;
+            _tx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate;
+
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
             return;
         }

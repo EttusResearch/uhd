@@ -124,6 +124,10 @@ private:
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
     void handle_overrun(size_t);
 
+    //underrun and overrun poll intervals
+    size_t _rx_samps_per_poll_interval;
+    size_t _tx_samps_per_poll_interval; 
+
     //otw types
     uhd::otw_type_t _rx_otw_type;
     uhd::otw_type_t _tx_otw_type;
