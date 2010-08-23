@@ -165,7 +165,7 @@ public:
                                  size_t num_bits,
                                  bool readback)
     {
-        UHD_ASSERT_THROW((num_bits < 32) && !(num_bits % 8));
+        UHD_ASSERT_THROW((num_bits <= 32) && !(num_bits % 8));
         size_t num_bytes = num_bits / 8;
 
         // Byteswap on num_bytes
