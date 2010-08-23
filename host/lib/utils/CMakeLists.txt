@@ -79,6 +79,7 @@ ENDIF(HAVE_DLFCN_H)
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/utils/assert.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/gain_group.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/images.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/load_modules.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/props.cpp
