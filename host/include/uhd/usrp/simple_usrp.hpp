@@ -25,6 +25,7 @@
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
+#include <uhd/usrp/dboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -136,6 +137,8 @@ public:
      */
     virtual float read_rssi(void) = 0;
 
+    virtual dboard_iface::sptr get_rx_dboard_iface(void) = 0;
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -159,6 +162,8 @@ public:
     virtual std::vector<std::string> get_tx_antennas(void) = 0;
 
     virtual bool get_tx_lo_locked(void) = 0;
+
+    virtual dboard_iface::sptr get_tx_dboard_iface(void) = 0;
 };
 
 }}

@@ -148,6 +148,14 @@ public:
     virtual void write_gpio(unit_t unit, boost::uint16_t value) = 0;
 
     /*!
+     * Setup the GPIO debug mux.
+     *
+     * \param unit which unit rx or tx
+     * \param which which debug: 0, 1
+     */
+    virtual void set_gpio_debug(unit_t unit, int which) = 0;
+
+    /*!
      * Read daughterboard GPIO pin values.
      *
      * \param unit which unit rx or tx

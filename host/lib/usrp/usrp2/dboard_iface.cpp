@@ -51,6 +51,7 @@ public:
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(unit_t, boost::uint16_t);
     void write_gpio(unit_t, boost::uint16_t);
+    void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(boost::uint8_t, const byte_vector_t &);
@@ -217,6 +218,25 @@ void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t
         )
     ;
     _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
+}
+
+void usrp2_dboard_iface::set_gpio_debug(unit_t unit, int which){
+    this->set_gpio_ddr(unit, 0xffff); //all outputs
+
+    //calculate the new selection mux setting
+    boost::uint32_t new_sels = 0x0;
+    int sel = (which == 0)?
+        U2_FLAG_GPIO_SEL_DEBUG_0:
+        U2_FLAG_GPIO_SEL_DEBUG_1;
+    for(size_t i = 0; i < 16; i++){
+        new_sels |= sel << (i*2);
+    }
+
+    //write the selection mux value to register
+    switch(unit){
+    case UNIT_RX: _iface->poke32(U2_REG_GPIO_RX_SEL, new_sels); return;
+    case UNIT_TX: _iface->poke32(U2_REG_GPIO_TX_SEL, new_sels); return;
+    }
 }
 
 /***********************************************************************

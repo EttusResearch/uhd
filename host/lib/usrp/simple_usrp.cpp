@@ -168,6 +168,10 @@ public:
         return _rx_subdev()[SUBDEV_PROP_RSSI].as<float>();
     }
 
+    dboard_iface::sptr get_rx_dboard_iface(void){
+        return _rx_dboard()[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
+    }
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -230,6 +234,10 @@ public:
 
     bool get_tx_lo_locked(void){
         return _tx_subdev()[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
+    dboard_iface::sptr get_tx_dboard_iface(void){
+        return _tx_dboard()[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
     }
 
 private:
