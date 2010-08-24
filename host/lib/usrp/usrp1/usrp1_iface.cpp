@@ -53,7 +53,8 @@ public:
 
         if (iface_debug) {
             std::cout.fill('0');
-            std::cout << "poke32(" << std::dec << addr << ", 0x";
+            std::cout << "poke32(";
+            std::cout << std::dec << std::setw(2) << addr << ", 0x";
             std::cout << std::hex << std::setw(8) << value << ")" << std::endl;
         }
 
