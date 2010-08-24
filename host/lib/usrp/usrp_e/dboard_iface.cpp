@@ -67,6 +67,7 @@ public:
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(unit_t, boost::uint16_t);
     void write_gpio(unit_t, boost::uint16_t);
+    void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(boost::uint8_t, const byte_vector_t &);
@@ -191,6 +192,29 @@ void usrp_e_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_
         )
     ;
     _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
+}
+
+void usrp_e_dboard_iface::set_gpio_debug(unit_t unit, int which){
+    //set this unit to all outputs
+    this->set_gpio_ddr(unit, 0xffff);
+
+    //calculate the debug selections
+    boost::uint32_t dbg_sels = 0x0;
+    int sel = (which == 0)? GPIO_SEL_DEBUG_0 : GPIO_SEL_DEBUG_1;
+    for(size_t i = 0; i < 16; i++) dbg_sels |= sel << i;
+
+    //set the debug on and which debug selection
+    switch(unit){
+    case UNIT_RX:
+        _iface->poke16(UE_REG_GPIO_RX_DBG, 0xffff);
+        _iface->poke16(UE_REG_GPIO_RX_SEL, dbg_sels);
+        return;
+
+    case UNIT_TX:
+        _iface->poke16(UE_REG_GPIO_TX_DBG, 0xffff);
+        _iface->poke16(UE_REG_GPIO_TX_SEL, dbg_sels);
+        return;
+    }
 }
 
 /***********************************************************************
