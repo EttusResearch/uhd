@@ -111,7 +111,6 @@ module u1e_core
    assign rx_overrun = 0;
 
    wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
-   wire [31:0] 	 debug_vtd, debug_vtc;
 `endif // LOOPBACK
 
 `ifdef TIMED
@@ -191,7 +190,7 @@ module u1e_core
    // DSP TX
 
    wire [15:0] 	 tx_i_int, tx_q_int;
-   wire [31:0] 	 debug_vtc, debug_vtd, debug_vt;
+   wire [31:0] 	 debug_vt;
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
@@ -429,6 +428,7 @@ module u1e_core
    // Debug circuitry
 
    assign debug_clk = { EM_CLK, clk_fpga };
+
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, rx_overrun, tx_underrun },
 		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
@@ -436,7 +436,7 @@ module u1e_core
    assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
 			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
 
-   assign debug_gpio_1 = debug_vtd | debug_vtc;
+   assign debug_gpio_1 = debug_vt;
    
 /*   
    assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
