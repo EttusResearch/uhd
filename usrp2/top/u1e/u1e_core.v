@@ -181,7 +181,7 @@ module u1e_core
       .debug_rx(vrf_debug) );
    
    fifo36_mux #(.prio(0)) mux_err_stream
-     (.clk(dsp_clk), .reset(dsp_reset), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .data0_i(vita_rx_data), .src0_rdy_i(vita_rx_src_rdy), .dst0_rdy_o(vita_rx_dst_rdy),
       .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
       .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
@@ -196,8 +196,8 @@ module u1e_core
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
    vita_tx_chain
-     (.clk(dsp_clk), .reset(dsp_rst),
-      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+     (.clk(wb_clk), .reset(wb_rst),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
