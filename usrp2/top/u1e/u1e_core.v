@@ -194,7 +194,7 @@ module u1e_core
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
-		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
+		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(0)) 
    vita_tx_chain
      (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
