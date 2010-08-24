@@ -250,7 +250,7 @@ NET "PHY_INTn"  LOC = "L22"  ;
 NET "MDIO"  LOC = "K21"  ;
 NET "MDC"  LOC = "J23"  ;
 NET "PHY_RESETn"  LOC = "J22"  ;
-NET "ETH_LED"  LOC = "H20"  |IOSTANDARD = LVCMOS25  |DRIVE = 12  |SLEW = FAST ;
+NET "ETH_LEd"  LOC = "H20"  |IOSTANDARD = LVCMOS25  |DRIVE = 12  |SLEW = FAST ;
 
 ## MIMO Interface
 NET "exp_time_out_p"  LOC = "Y14"  ;
