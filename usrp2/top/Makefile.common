@@ -13,6 +13,7 @@ else
 endif
 BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
+SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
 BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
@@ -26,12 +27,13 @@ all: bin
 proj: $(ISE_FILE)
 
 check: $(ISE_FILE)
+	$(SANITY_CHECKER) $(TOP_MODULE).v $(TOP_MODULE).ucf
 	$(ISE_HELPER) "Check Syntax"
 
 synth: $(ISE_FILE)
 	$(ISE_HELPER) "Synthesize - XST"
 
-bin: $(BIN_FILE)
+bin: check $(BIN_FILE)
 
 mcs: $(MCS_FILE)
 

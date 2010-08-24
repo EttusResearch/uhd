@@ -83,7 +83,7 @@ module u2plus
    output PHY_RESETn,
    output ETH_LED,
    
-   input POR,
+//   input POR,
    
    // Expansion
    input exp_time_in_p, input exp_time_in_n, // Diff
