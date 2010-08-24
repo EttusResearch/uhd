@@ -33,7 +33,7 @@ using namespace uhd::usrp;
  * Constants
  **********************************************************************/
 static const size_t MAX_BUFF_SIZE = 2048;
-static const bool usrp_e_io_impl_verbose = true;
+static const bool usrp_e_io_impl_verbose = false;
 
 /***********************************************************************
  * Data Transport (phony zero-copy with read/write)

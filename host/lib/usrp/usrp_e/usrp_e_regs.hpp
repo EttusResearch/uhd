@@ -151,6 +151,12 @@
 ////////////////////////////////////////////////
 #define UE_REG_CTRL_TX_NCHANNELS         UE_REG_SR_ADDR(24)
 #define UE_REG_CTRL_TX_CLEAR_UNDERRUN    UE_REG_SR_ADDR(25)
+#define UE_REG_CTRL_TX_REPORT_SID        UE_REG_SR_ADDR(26)
+#define UE_REG_CTRL_TX_POLICY            UE_REG_SR_ADDR(27)
+
+#define UE_FLAG_CTRL_TX_POLICY_WAIT          (0x1 << 0)
+#define UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET   (0x1 << 1)
+#define UE_FLAG_CTRL_TX_POLICY_NEXT_BURST    (0x1 << 2)
 
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)

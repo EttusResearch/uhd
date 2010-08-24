@@ -29,7 +29,7 @@
 
 using namespace uhd;
 
-static const bool codec_debug = true;
+static const bool codec_debug = false;
 
 const gain_range_t usrp_e_codec_ctrl::tx_pga_gain_range(-20, 0, float(0.1));
 const gain_range_t usrp_e_codec_ctrl::rx_pga_gain_range(0, 20, 1);
@@ -133,19 +133,23 @@ usrp_e_codec_ctrl_impl::~usrp_e_codec_ctrl_impl(void){
 /***********************************************************************
  * Codec Control Gain Control Methods
  **********************************************************************/
+static const int mtpgw = 255; //maximum tx pga gain word
+
 void usrp_e_codec_ctrl_impl::set_tx_pga_gain(float gain){
-    int gain_word = int(255*(gain - tx_pga_gain_range.min)/(tx_pga_gain_range.max - tx_pga_gain_range.min));
-    _ad9862_regs.tx_pga_gain = std::clip(gain_word, 0, 255);
+    int gain_word = int(mtpgw*(gain - tx_pga_gain_range.min)/(tx_pga_gain_range.max - tx_pga_gain_range.min));
+    _ad9862_regs.tx_pga_gain = std::clip(gain_word, 0, mtpgw);
     this->send_reg(16);
 }
 
 float usrp_e_codec_ctrl_impl::get_tx_pga_gain(void){
-    return (_ad9862_regs.tx_pga_gain*(tx_pga_gain_range.max - tx_pga_gain_range.min)/63) + tx_pga_gain_range.min;
+    return (_ad9862_regs.tx_pga_gain*(tx_pga_gain_range.max - tx_pga_gain_range.min)/mtpgw) + tx_pga_gain_range.min;
 }
 
+static const int mrpgw = 0x14; //maximum rx pga gain word
+
 void usrp_e_codec_ctrl_impl::set_rx_pga_gain(float gain, char which){
-    int gain_word = int(0x14*(gain - rx_pga_gain_range.min)/(rx_pga_gain_range.max - rx_pga_gain_range.min));
-    gain_word = std::clip(gain_word, 0, 0x14);
+    int gain_word = int(mrpgw*(gain - rx_pga_gain_range.min)/(rx_pga_gain_range.max - rx_pga_gain_range.min));
+    gain_word = std::clip(gain_word, 0, mrpgw);
     switch(which){
     case 'A':
         _ad9862_regs.rx_pga_a = gain_word;
@@ -166,7 +170,7 @@ float usrp_e_codec_ctrl_impl::get_rx_pga_gain(char which){
     case 'B': gain_word = _ad9862_regs.rx_pga_b; break;
     default: UHD_THROW_INVALID_CODE_PATH();
     }
-    return (gain_word*(rx_pga_gain_range.max - rx_pga_gain_range.min)/0x14) + rx_pga_gain_range.min;
+    return (gain_word*(rx_pga_gain_range.max - rx_pga_gain_range.min)/mrpgw) + rx_pga_gain_range.min;
 }
 
 /***********************************************************************
