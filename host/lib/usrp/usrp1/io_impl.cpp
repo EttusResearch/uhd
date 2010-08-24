@@ -33,8 +33,6 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-static const float poll_interval = 0.1;  //100ms
-
 struct usrp1_send_state {
     uhd::transport::managed_send_buffer::sptr send_buff;
     size_t bytes_written;
