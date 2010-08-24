@@ -38,15 +38,29 @@ static const float poll_interval = 0.1;  //100ms
 struct usrp1_send_state {
     uhd::transport::managed_send_buffer::sptr send_buff;
     size_t bytes_written;
-    size_t bytes_free;
     size_t underrun_poll_samp_count;
+
+    size_t bytes_free()
+    {
+        if (send_buff != NULL)
+            return send_buff->size() - bytes_written;
+        else
+            return 0;
+    }
 };
 
 struct usrp1_recv_state {
     uhd::transport::managed_recv_buffer::sptr recv_buff;
     size_t bytes_read;
-    size_t bytes_avail;
     size_t overrun_poll_samp_count;
+
+    size_t bytes_avail()
+    {
+        if (recv_buff != NULL)
+            return recv_buff->size() - bytes_read;
+        else
+            return 0;
+    }
 };
 
 /***********************************************************************
@@ -113,7 +127,6 @@ bool usrp1_impl::io_impl::get_send_buffer(zero_copy_if::sptr zc_if)
         if (send_state.send_buff == NULL)
             return false;
 
-        send_state.bytes_free = send_state.send_buff->size();
         send_state.bytes_written = 0;
     }
 
@@ -126,9 +139,9 @@ size_t usrp1_impl::io_impl::copy_convert_send_samps(const void *buff,
                                                     const io_type_t io_type,
                                                     otw_type_t otw_type)
 {
-    UHD_ASSERT_THROW(send_state.bytes_free % otw_type.get_sample_size() == 0);
+    UHD_ASSERT_THROW(send_state.bytes_free() % otw_type.get_sample_size() == 0);
 
-    size_t samps_free = send_state.bytes_free / otw_type.get_sample_size();
+    size_t samps_free = send_state.bytes_free() / otw_type.get_sample_size();
     size_t copy_samps = std::min(num_samps - sample_offset, samps_free); 
 
     const boost::uint8_t *io_mem =
@@ -143,7 +156,6 @@ size_t usrp1_impl::io_impl::copy_convert_send_samps(const void *buff,
                                 copy_samps);
 
     send_state.bytes_written += copy_samps * otw_type.get_sample_size();
-    send_state.bytes_free -= copy_samps * otw_type.get_sample_size();
     send_state.underrun_poll_samp_count += copy_samps;
 
     return copy_samps;
@@ -154,7 +166,7 @@ bool usrp1_impl::io_impl::conditional_buff_commit(bool force)
     if (send_state.bytes_written % 512)
         return false;
 
-    if (force || send_state.bytes_free == 0) {
+    if (force || send_state.bytes_free() == 0) {
         send_state.send_buff->commit(send_state.bytes_written);
         send_state.send_buff = uhd::transport::managed_send_buffer::sptr();
         return true;
@@ -223,14 +235,13 @@ size_t usrp1_impl::send(const std::vector<const void *> &buffs,
  **********************************************************************/
 bool usrp1_impl::io_impl::get_recv_buffer(zero_copy_if::sptr zc_if)
 {
-    if ((recv_state.recv_buff == NULL) || (recv_state.bytes_avail == 0)) {
+    if ((recv_state.recv_buff == NULL) || (recv_state.bytes_avail() == 0)) {
 
         recv_state.recv_buff = zc_if->get_recv_buff();
         if (recv_state.recv_buff == NULL)
             return false;
 
         recv_state.bytes_read = 0;
-        recv_state.bytes_avail = recv_state.recv_buff->size();
     }
 
     return true;
@@ -242,9 +253,9 @@ size_t usrp1_impl::io_impl::copy_convert_recv_samps(void *buff,
                                                     const io_type_t io_type,
                                                     otw_type_t otw_type)
 {
-    UHD_ASSERT_THROW(recv_state.bytes_avail % otw_type.get_sample_size() == 0);
+    UHD_ASSERT_THROW(recv_state.bytes_avail() % otw_type.get_sample_size() == 0);
 
-    size_t samps_avail = recv_state.bytes_avail / otw_type.get_sample_size();
+    size_t samps_avail = recv_state.bytes_avail() / otw_type.get_sample_size();
     size_t copy_samps = std::min(num_samps - sample_offset, samps_avail); 
 
     const boost::uint8_t *otw_mem =
@@ -259,7 +270,6 @@ size_t usrp1_impl::io_impl::copy_convert_recv_samps(void *buff,
                                 copy_samps);
 
     recv_state.bytes_read += copy_samps * otw_type.get_sample_size();
-    recv_state.bytes_avail -= copy_samps * otw_type.get_sample_size();
     recv_state.overrun_poll_samp_count += copy_samps;
 
     return copy_samps;
