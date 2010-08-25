@@ -41,10 +41,6 @@ void usrp_e_impl::mboard_init(void){
     _clock_config.pps_source = clock_config_t::PPS_SMA;
 
     //TODO poke the clock config regs
-
-    //setup the tx policy
-    _iface->poke32(UE_REG_CTRL_TX_REPORT_SID, 1);
-    _iface->poke32(UE_REG_CTRL_TX_POLICY, UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET);
 }
 
 /***********************************************************************
