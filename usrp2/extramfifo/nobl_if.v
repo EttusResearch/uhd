@@ -9,11 +9,11 @@ module nobl_if
      output [WIDTH-1:0] RAM_D_po,
      output reg RAM_D_poe,
      output [DEPTH-1:0] RAM_A,
-     output RAM_WEn,
+     output reg RAM_WEn,
      output RAM_CENn,
      output RAM_LDn,
      output RAM_OEn,
-     output RAM_CE1n,
+     output reg RAM_CE1n,
      input [DEPTH-1:0] address,
      input [WIDTH-1:0] data_out,
      output reg [WIDTH-1:0] data_in,
@@ -54,11 +54,15 @@ module nobl_if
      else
        begin
 	  enable_pipe1 <= enable;
+	  RAM_CE1n <= ~enable;  // Creates IOB flob
+	  
 	  
 	  if (enable)
 	    begin
 	       address_pipe1 <= address;
 	       write_pipe1 <= write;
+	       RAM_WEn <= ~write;  // Creates IOB flob
+	       
 	       
 	       if (write)
 		 data_out_pipe1 <= data_out;
@@ -68,8 +72,8 @@ module nobl_if
    // Pipeline 1 drives address, write_enable, chip_select on NoBL SRAM
    assign RAM_A = address_pipe1;
    assign RAM_CENn = 1'b0;
-   assign RAM_WEn = ~write_pipe1;
-   assign RAM_CE1n = ~enable_pipe1;
+ //  assign RAM_WEn = ~write_pipe1;
+//   assign RAM_CE1n = ~enable_pipe1;
 
    //
    // Pipeline stage2

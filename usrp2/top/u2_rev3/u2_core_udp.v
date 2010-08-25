@@ -171,7 +171,7 @@ module u2_core
    wire [31:0] 	atr_lines;
 
    wire [31:0] 	debug_rx, debug_mac, debug_mac0, debug_mac1, debug_tx_dsp, debug_txc,
-		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp, debug_extfifo;
+		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp, debug_extfifo, debug_extfifo2;
 
    wire [15:0] 	ser_rx_occ, ser_tx_occ, dsp_rx_occ, dsp_tx_occ, eth_rx_occ, eth_tx_occ, eth_rx_occ2;
    wire 	ser_rx_full, ser_tx_full, dsp_rx_full, dsp_tx_full, eth_rx_full, eth_tx_full, eth_rx_full2;
@@ -414,7 +414,7 @@ module u2_core
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
 		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio( {io_tx,io_rx} ) );
+		 .gpio(/* {io_tx,io_rx}*/ ) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
@@ -681,13 +681,16 @@ module u2_core
 	.RAM_LDn(RAM_LDn),
 	.RAM_OEn(RAM_OEn),
 	.RAM_CE1n(RAM_CE1n),
-	.datain({rd1_flags,rd1_dat}),
+//	.datain({rd1_flags,rd1_dat}),
+	.datain({rd1_flags[3:2],rd1_dat[31:16],rd1_flags[1:0],rd1_dat[15:0]}),
 	.src_rdy_i(rd1_ready_o),               // WRITE
 	.dst_rdy_o(rd1_ready_i),               // not FULL
-	.dataout(tx_data),
+//	.dataout(tx_data),
+	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
 	.src_rdy_o(tx_src_rdy),               // not EMPTY
 	.dst_rdy_i(tx_dst_rdy),
-	.debug(debug_extfifo)
+	.debug(debug_extfifo),
+	.debug2(debug_extfifo2)
 	);
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
@@ -789,6 +792,8 @@ module u2_core
    assign debug = debug_extfifo;
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
+   assign {io_tx,io_rx} = debug_extfifo2;
+
    
 endmodule // u2_core
 
