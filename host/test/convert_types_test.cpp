@@ -17,109 +17,144 @@
 
 #include <uhd/transport/convert_types.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/foreach.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/asio/buffer.hpp>
 #include <complex>
+#include <vector>
+#include <cstdlib>
 
 using namespace uhd;
 
-template <typename host_type, typename dev_type, size_t nsamps>
-void loopback(
+//typedefs for complex types
+typedef std::complex<boost::uint16_t> sc16_t;
+typedef std::complex<float> fc32_t;
+
+//extract pointer to POD since using &vector.front() throws in MSVC
+template <typename T> void * pod2ptr(T &pod){
+    return boost::asio::buffer_cast<void *>(boost::asio::buffer(pod));
+}
+template <typename T> const void * pod2ptr(const T &pod){
+    return boost::asio::buffer_cast<const void *>(boost::asio::buffer(pod));
+}
+
+/***********************************************************************
+ * Loopback runner:
+ *    convert input buffer into intermediate buffer
+ *    convert intermediate buffer into output buffer
+ **********************************************************************/
+template <typename Range> static void loopback(
+    size_t nsamps,
     const io_type_t &io_type,
     const otw_type_t &otw_type,
-    const host_type *input,
-    host_type *output
+    const Range &input,
+    Range &output
 ){
-    dev_type dev[nsamps];
+    //item32 is largest device type
+    std::vector<boost::uint32_t> dev(nsamps);
 
     //convert to dev type
     transport::convert_io_type_to_otw_type(
-        input, io_type,
-        dev, otw_type,
+        pod2ptr(input), io_type,
+        pod2ptr(dev), otw_type,
         nsamps
     );
 
     //convert back to host type
     transport::convert_otw_type_to_io_type(
-        dev, otw_type,
-        output, io_type,
+        pod2ptr(dev), otw_type,
+        pod2ptr(output), io_type,
         nsamps
     );
 }
 
-typedef std::complex<boost::uint16_t> sc16_t;
+/***********************************************************************
+ * Test short conversion
+ **********************************************************************/
+static void test_convert_types_sc16(
+    size_t nsamps,
+    const io_type_t &io_type,
+    const otw_type_t &otw_type
+){
+    //fill the input samples
+    std::vector<sc16_t> input(nsamps), output(nsamps);
+    BOOST_FOREACH(sc16_t &in, input) in = sc16_t(
+        std::rand()-(RAND_MAX/2),
+        std::rand()-(RAND_MAX/2)
+    );
+
+    //run the loopback and test
+    loopback(nsamps, io_type, otw_type, input, output);
+    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+}
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16){
-    sc16_t in_sc16[] = {
-        sc16_t(0, -1234), sc16_t(4321, 1234),
-        sc16_t(9876, -4567), sc16_t(8912, 0)
-    }, out_sc16[4];
-
     io_type_t io_type(io_type_t::COMPLEX_INT16);
     otw_type_t otw_type;
     otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
     otw_type.width = 16;
 
-    loopback<sc16_t, boost::uint32_t, 4>(io_type, otw_type, in_sc16, out_sc16);
-    BOOST_CHECK_EQUAL_COLLECTIONS(in_sc16, in_sc16+4, out_sc16, out_sc16+4);
+    //try various lengths to test edge cases
+    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, io_type, otw_type);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
-    sc16_t in_sc16[] = {
-        sc16_t(0, -1234), sc16_t(4321, 1234),
-        sc16_t(9876, -4567), sc16_t(8912, 0)
-    }, out_sc16[4];
-
     io_type_t io_type(io_type_t::COMPLEX_INT16);
     otw_type_t otw_type;
     otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
     otw_type.width = 16;
 
-    loopback<sc16_t, boost::uint32_t, 4>(io_type, otw_type, in_sc16, out_sc16);
-    BOOST_CHECK_EQUAL_COLLECTIONS(in_sc16, in_sc16+4, out_sc16, out_sc16+4);
+    //try various lengths to test edge cases
+    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, io_type, otw_type);
+    }
 }
 
-typedef std::complex<float> fc32_t;
+/***********************************************************************
+ * Test float conversion
+ **********************************************************************/
+static void test_convert_types_fc32(
+    size_t nsamps,
+    const io_type_t &io_type,
+    const otw_type_t &otw_type
+){
+    //fill the input samples
+    std::vector<fc32_t> input(nsamps), output(nsamps);
+    BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
+        (std::rand()/float(RAND_MAX/2)) - 1,
+        (std::rand()/float(RAND_MAX/2)) - 1
+    );
 
-#define BOOST_CHECK_CLOSE_COMPLEX(a1, a2, p) \
-    BOOST_CHECK_CLOSE(a1.real(), a2.real(), p); \
-    BOOST_CHECK_CLOSE(a1.imag(), a2.imag(), p);
-
-static const float tolerance = float(0.1);
+    //run the loopback and test
+    loopback(nsamps, io_type, otw_type, input, output);
+    for (size_t i = 0; i < nsamps; i++){
+        BOOST_CHECK_CLOSE_FRACTION(input[i].real(), output[i].real(), float(0.01));
+        BOOST_CHECK_CLOSE_FRACTION(input[i].imag(), output[i].imag(), float(0.01));
+    }
+}
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
-    fc32_t in_fc32[] = {
-        fc32_t(float(0), float(-0.2)), fc32_t(float(0.03), float(-0.16)),
-        fc32_t(float(1.0), float(.45)), fc32_t(float(0.09), float(0))
-    }, out_fc32[4];
-
     io_type_t io_type(io_type_t::COMPLEX_FLOAT32);
     otw_type_t otw_type;
     otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
     otw_type.width = 16;
 
-    loopback<fc32_t, boost::uint32_t, 4>(io_type, otw_type, in_fc32, out_fc32);
-
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[0], out_fc32[0], tolerance);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[1], out_fc32[1], tolerance);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[2], out_fc32[2], tolerance);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[3], out_fc32[3], tolerance);
+    //try various lengths to test edge cases
+    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+        test_convert_types_fc32(nsamps, io_type, otw_type);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
-    fc32_t in_fc32[] = {
-        fc32_t(float(0), float(-0.2)), fc32_t(float(0.03), float(-0.16)),
-        fc32_t(float(1.0), float(.45)), fc32_t(float(0.09), float(0))
-    }, out_fc32[4];
-
     io_type_t io_type(io_type_t::COMPLEX_FLOAT32);
     otw_type_t otw_type;
     otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
     otw_type.width = 16;
 
-    loopback<fc32_t, boost::uint32_t, 4>(io_type, otw_type, in_fc32, out_fc32);
-
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[0], out_fc32[0], tolerance);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[1], out_fc32[1], tolerance);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[2], out_fc32[2], tolerance);
-    BOOST_CHECK_CLOSE_COMPLEX(in_fc32[3], out_fc32[3], tolerance);
+    //try various lengths to test edge cases
+    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+        test_convert_types_fc32(nsamps, io_type, otw_type);
+    }
 }
