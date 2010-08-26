@@ -50,7 +50,7 @@ $(ISE_FILE): $$(SOURCES) $$(MAKEFILE_LIST)
 	@echo $@
 	$(ISE_HELPER) ""
 
-$(BIN_FILE): $(ISE_FILE)
+$(BIN_FILE): $(ISE_FILE) $$(SOURCES) $$(MAKEFILE_LIST)
 	@echo $@
 	$(ISE_HELPER) "Generate Programming File"
 	touch $@

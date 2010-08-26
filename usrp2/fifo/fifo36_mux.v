@@ -52,6 +52,6 @@ module fifo36_mux
    assign dst0_rdy_o = (state==MUX_DATA0) ? dst_rdy_i : 0;
    assign dst1_rdy_o = (state==MUX_DATA1) ? dst_rdy_i : 0;
    assign src_rdy_o = (state==MUX_DATA0) ? src0_rdy_i : (state==MUX_DATA1) ? src1_rdy_i : 0;
-   assign data_0 = (state==MUX_DATA0) ? data0_i : data1_i;
+   assign data_o = (state==MUX_DATA0) ? data0_i : data1_i;
    
 endmodule // fifo36_demux
