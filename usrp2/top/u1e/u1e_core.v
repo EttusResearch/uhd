@@ -59,8 +59,9 @@ module u1e_core
 
    wire [31:0] 	 debug_gpmc;
 
-   wire [35:0] 	 tx_data, rx_data;
-   wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
+   wire [35:0] 	 tx_data, rx_data, tx_err_data;
+   wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy, 
+		 tx_err_src_rdy, tx_err_dst_rdy;
    reg [15:0] 	 tx_frame_len;
    wire [15:0] 	 rx_frame_len;
    wire [7:0] 	 rate;
@@ -109,8 +110,7 @@ module u1e_core
    assign tx_underrun = 0;
    assign rx_overrun = 0;
 
-   wire 	 run_tx, run_rx, strobe_tx, strobe_rx, tx1_src_rdy, tx1_dst_rdy;
-   wire [31:0] 	 debug_vtd, debug_vtc;
+   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
 `endif // LOOPBACK
 
 `ifdef TIMED
@@ -154,8 +154,9 @@ module u1e_core
    wire 	 rx1_dst_rdy, rx1_src_rdy;
    wire [99:0] 	 rx1_data;
    wire 	 run_rx;
-   
-   
+   wire [35:0] 	 vita_rx_data;
+   wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
+      
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -175,41 +176,35 @@ module u1e_core
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
-      .data_o(rx_data), .dst_rdy_i(rx_dst_rdy), .src_rdy_o(rx_src_rdy),
+      .data_o(vita_rx_data), .dst_rdy_i(vita_rx_dst_rdy), .src_rdy_o(vita_rx_src_rdy),
       .fifo_occupied(), .fifo_full(), .fifo_empty(),
       .debug_rx(vrf_debug) );
-
+   
+   fifo36_mux #(.prio(0)) mux_err_stream
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+      .data0_i(vita_rx_data), .src0_rdy_i(vita_rx_src_rdy), .dst0_rdy_o(vita_rx_dst_rdy),
+      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
+      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+   
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
-   wire [99:0] 	 tx1_data;
-   wire 	 tx1_src_rdy, tx1_dst_rdy;
    wire [15:0] 	 tx_i_int, tx_q_int;
-   wire [31:0] 	 debug_vtc, debug_vtd, debug_vt;
+   wire [31:0] 	 debug_vt;
    wire 	 run_tx;
    
-   vita_tx_deframer #(.BASE(SR_TX_CTRL), .MAXCHAN(1)) vita_tx_deframer
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
+   vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
+		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(0)) 
+   vita_tx_chain
+     (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
-      .debug(debug_vtd) );
-
-   vita_tx_control #(.BASE(SR_TX_CTRL), .WIDTH(32)) vita_tx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time),.underrun(tx_underrun),
-      .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
-      .debug(debug_vtc) );
-   
-   dsp_core_tx #(.BASE(SR_TX_DSP)) dsp_core_tx
-     (.clk(wb_clk),.rst(wb_rst),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+      .vita_time(vita_time),
+      .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
+      .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .debug(debug_tx_dsp) );
-
+      .underrun(underrun), .run(run_tx),
+      .debug(debug_vt));
+   
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
    
@@ -433,14 +428,15 @@ module u1e_core
    // Debug circuitry
 
    assign debug_clk = { EM_CLK, clk_fpga };
+
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, rx_overrun, tx_underrun },
 		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
 
    assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
-			   {tx1_src_rdy, tx1_dst_rdy, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
+			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
 
-   assign debug_gpio_1 = debug_vtd | debug_vtc;
+   assign debug_gpio_1 = debug_vt;
    
 /*   
    assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
