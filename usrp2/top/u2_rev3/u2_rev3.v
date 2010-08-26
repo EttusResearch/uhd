@@ -203,9 +203,10 @@ module u2_rev3
    reg [13:0] 	 adc_a_reg1, adc_b_reg1, adc_a_reg2, adc_b_reg2;
    reg 		 adc_ovf_a_reg1, adc_ovf_a_reg2, adc_ovf_b_reg1, adc_ovf_b_reg2;
 
+    // ADC A and B are swapped in schematic to facilitate clean layout
    always @(posedge dsp_clk)
      begin
-	adc_a_reg1 <= adc_b;    // I and Q on RX are swapped in layout
+	adc_a_reg1 <= adc_b;
 	adc_b_reg1 <= adc_a;
 	adc_ovf_a_reg1 <= adc_ovf_b;
 	adc_ovf_b_reg1 <= adc_ovf_a;
@@ -327,8 +328,10 @@ module u2_rev3
      end
 
    wire [15:0] dac_a_int, dac_b_int;
-   always @(negedge dsp_clk) dac_a <= dac_a_int;
-   always @(negedge dsp_clk) dac_b <= dac_b_int;
+   // DAC A and B are swapped in schematic to facilitate clean layout
+   // DAC A is also inverted in schematic to facilitate clean layout
+   always @(negedge dsp_clk) dac_a <= ~dac_b_int;
+   always @(negedge dsp_clk) dac_b <= dac_a_int;
 
    /*
    OFDDRRSE OFDDRRSE_serdes_inst 
