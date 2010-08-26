@@ -22,19 +22,40 @@
 #include <boost/thread/thread_time.hpp> //system time
 #include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
+#include <boost/function.hpp>
 #include <iostream>
 #include <complex>
 #include <cmath>
 
 namespace po = boost::program_options;
 
+/***********************************************************************
+ * Waveform generators
+ **********************************************************************/
+float gen_const(float){
+    return 1;
+}
+
+float gen_square(float x){
+    return float((std::fmod(x, 1) < float(0.5))? 0 : 1);
+}
+
+float gen_ramp(float x){
+    return std::fmod(x, 1)*2 - 1;
+}
+
+float gen_sine(float x){
+    static const float two_pi = 2*std::acos(float(-1));
+    return std::sin(x*two_pi);
+}
+
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
     std::string args, wave_type;
-    size_t total_duration, mspb;
-    double rate, freq, wave_freq, aepb;
+    size_t total_duration, spb;
+    double rate, freq, wave_freq;
     float ampl, gain;
 
     //setup the program options
@@ -43,8 +64,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
         ("duration", po::value<size_t>(&total_duration)->default_value(3), "number of seconds to transmit")
-        ("mspb", po::value<size_t>(&mspb)->default_value(10000), "mimimum samples per buffer")
-        ("aepb", po::value<double>(&aepb)->default_value(1e-5), "allowed error per buffer")
+        ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
@@ -90,56 +110,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //error when the waveform is not possible to generate
-    if (std::abs(wave_freq)/sdev->get_tx_rate() < 0.5/mspb){
-        throw std::runtime_error("wave freq/tx rate too small");
-    }
     if (std::abs(wave_freq) > sdev->get_tx_rate()/2){
         throw std::runtime_error("wave freq out of Nyquist zone");
     }
 
-    //how many periods should we have per buffer to mimimize error
-    double samps_per_period = sdev->get_tx_rate()/std::abs(wave_freq);
-    std::cout << boost::format("Samples per waveform period: %d") % samps_per_period << std::endl;
-    size_t periods_per_buff = std::max<size_t>(1, mspb/samps_per_period);
-    while (true){
-        double num_samps_per_buff = periods_per_buff*samps_per_period;
-        double sample_error = num_samps_per_buff - boost::math::round(num_samps_per_buff);
-        if (std::abs(sample_error) <= aepb) break;
-        periods_per_buff++;
-    }
-
-    //allocate data to send (fill with several periods worth of IQ samples)
-    std::vector<std::complex<float> > buff(samps_per_period*periods_per_buff);
-    const double i_ahead = (wave_freq > 0)? samps_per_period/4 : 0;
-    const double q_ahead = (wave_freq < 0)? samps_per_period/4 : 0;
-    std::cout << boost::format("Samples per send buffer: %d") % buff.size() << std::endl;
-    if (wave_type == "CONST"){
-        for (size_t n = 0; n < buff.size(); n++){
-            buff[n] = std::complex<float>(ampl, ampl);
-        }
-    }
-    else if (wave_type == "SQUARE"){
-        for (size_t n = 0; n < buff.size(); n++){
-            float I = (std::fmod(n+i_ahead, samps_per_period) > samps_per_period/2)? ampl : 0;
-            float Q = (std::fmod(n+q_ahead, samps_per_period) > samps_per_period/2)? ampl : 0;
-            buff[n] = std::complex<float>(I, Q);
-        }
-    }
-    else if (wave_type == "RAMP"){
-        for (size_t n = 0; n < buff.size(); n++){
-            float I = float(std::fmod(n+i_ahead, samps_per_period)/samps_per_period * 2*ampl - ampl);
-            float Q = float(std::fmod(n+q_ahead, samps_per_period)/samps_per_period * 2*ampl - ampl);
-            buff[n] = std::complex<float>(I, Q);
-        }
-    }
-    else if (wave_type == "SINE"){
-        for (size_t n = 0; n < buff.size(); n++){
-            float I = float(ampl*std::sin(2*M_PI*(n+i_ahead)/samps_per_period));
-            float Q = float(ampl*std::sin(2*M_PI*(n+q_ahead)/samps_per_period));
-            buff[n] = std::complex<float>(I, Q);
-        }
-    }
+    //store the generator function for the selected waveform
+    boost::function<float(float)> wave_gen;
+    if      (wave_type == "CONST")  wave_gen = &gen_const;
+    else if (wave_type == "SQUARE") wave_gen = &gen_square;
+    else if (wave_type == "RAMP")   wave_gen = &gen_ramp;
+    else if (wave_type == "SINE")   wave_gen = &gen_sine;
     else throw std::runtime_error("unknown waveform type: " + wave_type);
+
+    //allocate the buffer and precalculate values
+    std::vector<std::complex<float> > buff(spb);
+    const float cps = float(wave_freq/sdev->get_tx_rate());
+    const float i_off = (wave_freq > 0)? float(0.25) : 0;
+    const float q_off = (wave_freq < 0)? float(0.25) : 0;
+    float theta = 0;
 
     //setup the metadata flags
     uhd::tx_metadata_t md;
@@ -148,11 +136,27 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send the data in multiple packets
     boost::system_time end_time(boost::get_system_time() + boost::posix_time::seconds(total_duration));
-    while(end_time > boost::get_system_time()) dev->send(
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    while(end_time > boost::get_system_time()){
+
+        //fill the buffer with the waveform
+        for (size_t n = 0; n < buff.size(); n++){
+            buff[n] = std::complex<float>(
+                ampl*wave_gen(i_off + theta),
+                ampl*wave_gen(q_off + theta)
+            );
+            theta += cps;
+        }
+
+        //bring the theta back into range [0, 1)
+        theta = std::fmod(theta, 1);
+
+        //send the entire contents of the buffer
+        dev->send(
+            &buff.front(), buff.size(), md,
+            uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::device::SEND_MODE_FULL_BUFF
+        );
+    }
 
     //send a mini EOB packet
     md.start_of_burst = false;
