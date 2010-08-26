@@ -155,25 +155,28 @@ module u2plus
    always @(posedge clk_fpga)
      clock_ready_d[5:0] <= {clock_ready_d[4:0],clock_ready};
    wire 	dcm_rst = ~&clock_ready_d & |clock_ready_d;
-   
+
+   // ADC A is inverted on the schematic to facilitate a clean layout
+   //  We account for that here by inverting it
 `ifdef LVDS
-   wire [13:0] 	adc_a, adc_b;
-     capture_ddrlvds #(.WIDTH(14)) capture_ddrlvds
+   wire [13:0] 	adc_a, adc_a_inv, adc_b;
+   capture_ddrlvds #(.WIDTH(14)) capture_ddrlvds
      (.clk(dsp_clk), .ssclk_p(ADC_clkout_p), .ssclk_n(ADC_clkout_n), 
       .in_p({{ADCA_12_p, ADCA_10_p, ADCA_8_p, ADCA_6_p, ADCA_4_p, ADCA_2_p, ADCA_0_p},
 	     {ADCB_12_p, ADCB_10_p, ADCB_8_p, ADCB_6_p, ADCB_4_p, ADCB_2_p, ADCB_0_p}}), 
       .in_n({{ADCA_12_n, ADCA_10_n, ADCA_8_n, ADCA_6_n, ADCA_4_n, ADCA_2_n, ADCA_0_n},
 	     {ADCB_12_n, ADCB_10_n, ADCB_8_n, ADCB_6_n, ADCB_4_n, ADCB_2_n, ADCB_0_n}}), 
-      .out({adc_a,adc_b}));
+      .out({adc_a_inv,adc_b}));
+   assign adc_a = ~adc_a_inv;
 `else
-	reg [13:0] adc_a, adc_b;
+   reg [13:0] 	adc_a, adc_b;
    always @(posedge dsp_clk)
-	begin
-	adc_a <= {ADCA_12_p,ADCA_12_n, ADCA_10_p,ADCA_10_n, ADCA_8_p,ADCA_8_n, ADCA_6_p,ADCA_6_n,
+     begin
+	adc_a <= ~{ADCA_12_p,ADCA_12_n, ADCA_10_p,ADCA_10_n, ADCA_8_p,ADCA_8_n, ADCA_6_p,ADCA_6_n,
 		   ADCA_4_p,ADCA_4_n, ADCA_2_p,ADCA_2_n, ADCA_0_p,ADCA_0_n };
-    adc_b <= {ADCB_12_p,ADCB_12_n, ADCB_10_p,ADCB_10_n, ADCB_8_p,ADCB_8_n, ADCB_6_p,ADCB_6_n,
+	adc_b <= {ADCB_12_p,ADCB_12_n, ADCB_10_p,ADCB_10_n, ADCB_8_p,ADCB_8_n, ADCB_6_p,ADCB_6_n,
 		   ADCB_4_p,ADCB_4_n, ADCB_2_p,ADCB_2_n, ADCB_0_p,ADCB_0_n };
-    end
+     end
 `endif // !`ifdef LVDS
    
    // Handle Clocks
@@ -341,13 +344,13 @@ module u2plus
 		     .ser_rklsb		(ser_rklsb_int),
 		     .ser_rkmsb		(ser_rkmsb_int),
 		     .adc_a		(adc_a[13:0]),
-		     .adc_ovf_a		(adc_ovf_a),
-		     .adc_on_a		(adc_on_a),
-		     .adc_oe_a		(adc_oe_a),
+		     .adc_ovf_a		(1'b0),
+		     .adc_on_a		(),
+		     .adc_oe_a		(),
 		     .adc_b		(adc_b[13:0]),
-		     .adc_ovf_b		(adc_ovf_b),
-		     .adc_on_b		(adc_on_b),
-		     .adc_oe_b		(adc_oe_b),
+		     .adc_ovf_b		(1'b0),
+		     .adc_on_b		(),
+		     .adc_oe_b		(),
 		     .dac_a		(dac_a_int[15:0]),
 		     .dac_b		(dac_b_int[15:0]),
 		     .scl_pad_i		(scl_pad_i),
