@@ -73,31 +73,13 @@ void usrp1_impl::rx_dsp_get(const wax::obj &key, wax::obj &val)
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
-unsigned int compute_freq_word(double master, double target)
-{
-    static const int NBITS = 14;
-    int   v = (int) rint (target / master * pow(2.0, 32.0));
- 
-    if (0)
-      v = (v >> (32 - NBITS)) << (32 - NBITS);    // keep only top NBITS
- 
-    double actual_freq = v * master / pow(2.0, 32.0);
- 
-    if (0) std::cerr << boost::format(
-        "compute_freq_control_word_fpga: target = %g  actual = %g  delta = %g\n"
-    ) % target % actual_freq % (actual_freq - target);
- 
-    return (unsigned int) v;
-}
-
 void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
 {
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
-            boost::uint32_t hw_freq_word = compute_freq_word(
-                              _clock_ctrl->get_master_clock_freq(), new_freq);
-            _iface->poke32(FR_RX_FREQ_0, hw_freq_word);
+            _iface->poke32(FR_RX_FREQ_0,
+                -dsp_type1::calc_cordic_word_and_update(new_freq, _clock_ctrl->get_master_clock_freq()));
             _tx_dsp_freq = new_freq;
             return;
         }
@@ -113,6 +95,8 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
             }
 
             _rx_dsp_decim = rate;
+            _rx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() / rate;
+
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
         }
         return;
@@ -173,14 +157,14 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
 {
     switch(key.as<dsp_prop_t>()) {
 
+    // TODO: Set both codec frequencies until we have duality properties 
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
             _codec_ctrls[DBOARD_SLOT_A]->set_duc_freq(new_freq);
+            _codec_ctrls[DBOARD_SLOT_B]->set_duc_freq(new_freq);
             _tx_dsp_freq = new_freq;
             return;
         }
-
-    //TODO freq prop secondary: DBOARD_SLOT_B codec...
 
     case DSP_PROP_HOST_RATE: {
             unsigned int rate =
@@ -193,6 +177,8 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
             }
 
             _tx_dsp_interp = rate;
+            _tx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate;
+
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
             return;
         }

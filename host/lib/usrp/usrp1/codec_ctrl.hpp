@@ -19,6 +19,7 @@
 #define INCLUDED_USRP1_CODEC_CTRL_HPP
 
 #include "usrp1_iface.hpp"
+#include "clock_ctrl.hpp"
 #include <uhd/types/ranges.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -41,7 +42,9 @@ public:
      * \param spi_slave which spi device
      * \return the clock control object
      */
-    static sptr make(usrp1_iface::sptr iface, int spi_slave);
+    static sptr make(usrp1_iface::sptr iface,
+        usrp1_clock_ctrl::sptr clock, int spi_slave
+    );
 
     //! aux adc identifier constants
     enum aux_adc_t{
@@ -87,7 +90,8 @@ public:
     //! Get the RX PGA gain ('A' or 'B')
     virtual float get_rx_pga_gain(char which) = 0;
 
-    virtual bool set_duc_freq(double freq) = 0;
+    //! Set the TX modulator frequency
+    virtual void set_duc_freq(double freq) = 0;
 };
 
 #endif /* INCLUDED_USRP1_CODEC_CTRL_HPP */

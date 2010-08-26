@@ -15,10 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
+#include "libusb1_base.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/assert.hpp>
-#include <libusb-1.0/libusb.h>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -26,7 +25,8 @@
 
 using namespace uhd::transport;
 
-static int libusb_debug_level = 3;
+const int libusb_debug_level = 3;
+const int libusb_timeout = 0;
 
 /***********************************************************************
  * Helper functions
@@ -347,7 +347,7 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut)
         std::cerr << "USB: transfer timed out" << std::endl;
         break;
     case LIBUSB_TRANSFER_STALL:
-        std::cerr << "USB: halt condition detected (endpoint stalled)" << std::endl;
+        std::cerr << "USB: halt condition detected (stalled)" << std::endl;
         break;
     case LIBUSB_TRANSFER_ERROR:
         std::cerr << "USB: transfer failed" << std::endl;
@@ -606,18 +606,9 @@ private:
     libusb_device_handle *_rx_dev_handle;
     libusb_device_handle *_tx_dev_handle;
 
-    int _rx_endpoint;
-    int _tx_endpoint;
-
     size_t _recv_buff_size;
     size_t _send_buff_size;
     size_t _num_frames;
-
-    bool open_device(uhd::usb_descriptor_t descriptor);
-    bool open_interface(libusb_device_handle *dev_handle, int interface);
-    bool compare_device(libusb_device *dev, uhd::usb_descriptor_t descriptor);
-
-    std::string get_serial(libusb_device *dev);
 
 public:
     typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
@@ -625,7 +616,7 @@ public:
     /*
      * Structors
      */
-    libusb_zero_copy_impl(uhd::usb_descriptor_t descriptor,
+    libusb_zero_copy_impl(usb_device_handle::sptr handle,
                           unsigned int rx_endpoint,
                           unsigned int tx_endpoint,
                           size_t recv_buff_size,
@@ -641,7 +632,7 @@ public:
 };
 
 
-libusb_zero_copy_impl::libusb_zero_copy_impl(uhd::usb_descriptor_t descriptor,
+libusb_zero_copy_impl::libusb_zero_copy_impl(usb_device_handle::sptr handle,
                                              unsigned int rx_endpoint,
                                              unsigned int tx_endpoint,
                                              size_t buff_size,
@@ -650,19 +641,16 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(uhd::usb_descriptor_t descriptor,
    _recv_buff_size(block_size), _send_buff_size(block_size),
    _num_frames(buff_size / block_size)
 {
-    if (libusb_init(&_rx_ctx) < 0)
-        std::cerr << "error: libusb_init" << std::endl;
+    libusb::init(&_rx_ctx, libusb_debug_level);
+    libusb::init(&_tx_ctx, libusb_debug_level);
 
-    if (libusb_init(&_tx_ctx) < 0)
-        std::cerr << "error: libusb_init" << std::endl;
+    UHD_ASSERT_THROW((_rx_ctx != NULL) && (_tx_ctx != NULL));
 
-    libusb_set_debug(_rx_ctx, libusb_debug_level);
-    libusb_set_debug(_tx_ctx, libusb_debug_level);
+    _rx_dev_handle = libusb::open_device(_rx_ctx, handle);
+    _tx_dev_handle = libusb::open_device(_tx_ctx, handle);
 
-    open_device(descriptor);
-
-    open_interface(_rx_dev_handle, 2);
-    open_interface(_tx_dev_handle, 1);
+    libusb::open_interface(_rx_dev_handle, 2);
+    libusb::open_interface(_tx_dev_handle, 1);
 
     _rx_ep = new usb_endpoint(_rx_dev_handle,
                               _rx_ctx,
@@ -690,117 +678,6 @@ libusb_zero_copy_impl::~libusb_zero_copy_impl()
 
     libusb_exit(_rx_ctx);
     libusb_exit(_tx_ctx);
-}
-
-
-bool libusb_zero_copy_impl::open_device(uhd::usb_descriptor_t descriptor)
-{
-    libusb_device **rx_list;
-    libusb_device **tx_list;
-
-    bool rx_found = false;
-    bool tx_found = false;
-
-    ssize_t rx_cnt = libusb_get_device_list(_rx_ctx, &rx_list);
-    ssize_t tx_cnt = libusb_get_device_list(_tx_ctx, &tx_list);
-
-    if ((rx_cnt < 0) | (tx_cnt < 0) | (rx_cnt != tx_cnt))
-        return false;
-
-    //find and open the receive device
-    for (ssize_t i = 0; i < rx_cnt; i++) {
-        libusb_device *dev = rx_list[i];
-
-        if (compare_device(dev, descriptor)) {
-            libusb_open(dev, &_rx_dev_handle);
-            rx_found = true;
-            break;
-        }
-    }
-
-    //find and open the transmit device
-    for (ssize_t i = 0; i < tx_cnt; i++) {
-        libusb_device *dev = tx_list[i];
-
-        if (compare_device(dev, descriptor)) {
-            libusb_open(dev, &_tx_dev_handle);
-            tx_found = true;
-        }
-    }
-
-    libusb_free_device_list(rx_list, 0);
-    libusb_free_device_list(tx_list, 0);
-
-    if (tx_found && rx_found)
-        return true;
-    else
-        return false;
-}
-
-bool libusb_zero_copy_impl::compare_device(libusb_device *dev,
-                                        uhd::usb_descriptor_t descriptor)
-{
-    std::string serial         = descriptor.serial;
-    boost::uint16_t vendor_id  = descriptor.vendor_id;
-    boost::uint16_t product_id = descriptor.product_id;
-    boost::uint8_t device_addr = descriptor.device_addr;
-
-    libusb_device_descriptor desc;
-    libusb_get_device_descriptor(dev, &desc);
-
-    if (serial.compare(get_serial(dev)))
-        return false;
-    if (vendor_id != desc.idVendor)
-        return false;
-    if (product_id != desc.idProduct)
-        return false;
-    if (device_addr != libusb_get_device_address(dev))
-        return false;
-
-    return true;
-}
-
-bool libusb_zero_copy_impl::open_interface(libusb_device_handle *dev_handle,
-                                           int interface)
-{
-    int ret = libusb_claim_interface(dev_handle, interface);
-    if (ret < 0) {
-        std::cerr << "error: libusb_claim_interface() " << ret << std::endl;
-        return false;
-    }
-    else {
-        return true;
-    }
-}
-
-std::string libusb_zero_copy_impl::get_serial(libusb_device *dev)
-{
-    unsigned char buff[32];
-
-    libusb_device_descriptor desc;
-    if (libusb_get_device_descriptor(dev, &desc) < 0) {
-        std::cerr << "error: libusb_get_device_descriptor()" << std::endl;
-        return "";
-    }
-
-    if (desc.iSerialNumber == 0)
-        return "";
-
-    //open the device because we have to
-    libusb_device_handle *dev_handle;
-    if (libusb_open(dev, &dev_handle) < 0) {
-        return "";
-    }
-
-    if (libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber,
-                                           buff, sizeof(buff)) < 0) {
-        std::cerr << "error: libusb_get_string_descriptor_ascii()" << std::endl;
-        return "";
-    }
-
-    libusb_close(dev_handle);
-
-    return (char*) buff;
 }
 
 
@@ -836,14 +713,14 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff()
 /***********************************************************************
  * USB zero_copy make functions
  **********************************************************************/
-usb_zero_copy::sptr usb_zero_copy::make(uhd::usb_descriptor_t descriptor,
+usb_zero_copy::sptr usb_zero_copy::make(usb_device_handle::sptr handle,
                                         unsigned int rx_endpoint,
                                         unsigned int tx_endpoint,
                                         size_t buff_size,
                                         size_t block_size)
 
 {
-    return sptr(new libusb_zero_copy_impl(descriptor,
+    return sptr(new libusb_zero_copy_impl(handle,
                                           rx_endpoint,
                                           tx_endpoint,
                                           buff_size, 

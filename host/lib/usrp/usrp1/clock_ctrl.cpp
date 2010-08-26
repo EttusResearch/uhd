@@ -64,7 +64,7 @@ public:
             rates.push_back(master_clock_rate / div);
         return rates;
 #else
-        return std::vector<double>(1, 64e6);
+        return std::vector<double>(1, master_clock_rate);
 #endif
     }
 

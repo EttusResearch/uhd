@@ -55,13 +55,15 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
     //see what we got on the USB bus
-    usb_descriptors_t usb_descriptors;
-    usb_descriptors = usb_control::get_device_list();
+    std::vector<usb_device_handle::sptr> device_list =
+        usb_device_handle::get_device_list();
 
     //find the usrps and load firmware
-    BOOST_FOREACH(usb_descriptor_t desc, usb_descriptors) {
-        if (desc.vendor_id == 0xfffe && desc.product_id == 0x0002) {
-            usb_control::sptr ctrl_transport = usb_control::make(desc);
+    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
+        if (handle->get_vendor_id() == 0xfffe &&
+            handle->get_product_id() == 0x0002) {
+
+            usb_control::sptr ctrl_transport = usb_control::make(handle);
             usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
             usrp_ctrl->usrp_load_firmware(usrp1_fw_image);
         }
@@ -71,13 +73,15 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     boost::this_thread::sleep(boost::posix_time::milliseconds(500));
 
     //get descriptors again with serial number
-    usb_descriptors = usb_control::get_device_list();
+    device_list = usb_device_handle::get_device_list();
 
-    BOOST_FOREACH(usb_descriptor_t desc, usb_descriptors) {
-        if (desc.vendor_id == 0xfffe && desc.product_id == 0x0002) {
+    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
+        if (handle->get_vendor_id() == 0xfffe &&
+            handle->get_product_id() == 0x0002) {
+
             device_addr_t new_addr;
             new_addr["type"] = "usrp1";
-            new_addr["serial"] = desc.serial;
+            new_addr["serial"] = handle->get_serial();
             usrp1_addrs.push_back(new_addr);
         }
     }
@@ -97,22 +101,23 @@ static device::sptr usrp1_make(const device_addr_t &device_addr)
     std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
 
     //try to match the given device address with something on the USB bus
-    usb_descriptors_t usb_descriptors;
-    usb_descriptors = usb_control::get_device_list();
+    std::vector<usb_device_handle::sptr> device_list =
+        usb_device_handle::get_device_list();
 
     //create data and control transports
     usb_zero_copy::sptr data_transport;
     usrp_ctrl::sptr usrp_ctrl;
 
-    BOOST_FOREACH(usb_descriptor_t desc, usb_descriptors) {
-        if (desc.serial == device_addr["serial"]
-            && desc.vendor_id == 0xfffe && desc.product_id == 0x0002) {
+    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
+        if (handle->get_vendor_id() == 0xfffe &&
+            handle->get_product_id() == 0x0002 &&
+            handle->get_serial() == device_addr["serial"]) {
 
-            usb_control::sptr ctrl_transport = usb_control::make(desc);
+            usb_control::sptr ctrl_transport = usb_control::make(handle);
             usrp_ctrl = usrp_ctrl::make(ctrl_transport);
             usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
 
-            data_transport = usb_zero_copy::make(desc,          // identifier
+            data_transport = usb_zero_copy::make(handle,        // identifier
                                                  6,             // IN endpoint
                                                  2,             // OUT endpoint
                                                  2 * (1 << 20), // buffer size
@@ -142,8 +147,12 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     _clock_ctrl = usrp1_clock_ctrl::make(_iface);
 
     //create codec interface
-    _codec_ctrls[DBOARD_SLOT_A] = usrp1_codec_ctrl::make(_iface, SPI_ENABLE_CODEC_A);
-    _codec_ctrls[DBOARD_SLOT_B] = usrp1_codec_ctrl::make(_iface, SPI_ENABLE_CODEC_B);
+    _codec_ctrls[DBOARD_SLOT_A] = usrp1_codec_ctrl::make(
+        _iface, _clock_ctrl, SPI_ENABLE_CODEC_A
+    );
+    _codec_ctrls[DBOARD_SLOT_B] = usrp1_codec_ctrl::make(
+        _iface, _clock_ctrl, SPI_ENABLE_CODEC_B
+    );
 
     //initialize the codecs
     codec_init();

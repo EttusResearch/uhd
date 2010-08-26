@@ -114,7 +114,7 @@ static boost::uint32_t calc_tx_mux(
     //calculate the channel flags
     int channel_flags = 0, chan = 0;
     BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
-        wax::obj dboard = mboard[named_prop_t(MBOARD_PROP_RX_DBOARD, pair.db_name)];
+        wax::obj dboard = mboard[named_prop_t(MBOARD_PROP_TX_DBOARD, pair.db_name)];
         wax::obj subdev = dboard[named_prop_t(DBOARD_PROP_SUBDEV, pair.sd_name)];
         subdev_conn_t conn = subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>();
 
@@ -298,7 +298,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();
-        verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
+        verify_rx_subdev_spec(_rx_subdev_spec, _mboard_proxy->get_link());
         //sanity check
         UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
         //set the mux and set the number of rx channels
@@ -307,7 +307,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
-        verify_tx_subdev_spec(_tx_subdev_spec, this->get_link());
+        verify_tx_subdev_spec(_tx_subdev_spec, _mboard_proxy->get_link());
         //sanity check
         UHD_ASSERT_THROW(_tx_subdev_spec.size() <= 2);
         //set the mux and set the number of tx channels

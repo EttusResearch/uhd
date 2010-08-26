@@ -29,6 +29,8 @@ IF(LIBUSB_FOUND)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_control.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_zero_copy.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_base.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_device_handle.cpp
     )
     SET(HAVE_USB_SUPPORT TRUE)
 ENDIF(LIBUSB_FOUND)

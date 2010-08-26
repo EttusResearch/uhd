@@ -18,10 +18,8 @@
 #ifndef INCLUDED_UHD_TRANSPORT_USB_ZERO_COPY_HPP
 #define INCLUDED_UHD_TRANSPORT_USB_ZERO_COPY_HPP
 
-#include <uhd/config.hpp>
-#include <uhd/types/usb_descriptor.hpp>
+#include "usb_device_handle.hpp"
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace uhd { namespace transport {
 
@@ -46,13 +44,13 @@ public:
      * The primary usage for this transport is data transactions.
      * The underlying implementation may be platform specific.
      *
-     * \param descriptor a USB descriptor identifying the device
+     * \param handle a device handle that uniquely identifying the device
      * \param rx_endpoint an integer specifiying an IN endpoint number 
      * \param tx_endpoint an integer specifiying an OUT endpoint number
      * \param buff_size total number of bytes of buffer space to allocate 
      * \param block_size number of bytes allocated for each I/O transaction 
      */
-    static sptr make(usb_descriptor_t descriptor,
+    static sptr make(usb_device_handle::sptr handle,
                      unsigned int rx_endpoint,
                      unsigned int tx_endpoint,
 		     size_t buff_size = 0, 
