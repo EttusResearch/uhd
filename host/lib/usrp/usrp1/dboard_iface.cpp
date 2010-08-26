@@ -69,6 +69,7 @@ public:
     void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void set_gpio_ddr(unit_t, boost::uint16_t);
     void write_gpio(unit_t, boost::uint16_t);
+    void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(boost::uint8_t, const byte_vector_t &);
@@ -200,6 +201,11 @@ void usrp1_dboard_iface::write_gpio(unit_t unit, boost::uint16_t value)
             _iface->poke32(FR_IO_2, 0xffff0000 | value);
         break;
     }
+}
+
+void usrp1_dboard_iface::set_gpio_debug(unit_t, int)
+{
+    /* NOP */
 }
 
 boost::uint16_t usrp1_dboard_iface::read_gpio(unit_t unit)
