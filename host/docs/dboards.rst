@@ -28,7 +28,11 @@ greater than the Nyquist rate of the ADC.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Basic TX and LFTX boards have 1 quadrature subdevice using both antennas.
+The Basic TX and LFTX boards have 3 subdevices:
+
+* **Subdevice A:** real signal on antenna TXA
+* **Subdevice B:** real signal on antenna TXB
+* **Subdevice AB:** quadrature subdevice using both antennas
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can up-convert signals
