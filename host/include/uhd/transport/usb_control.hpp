@@ -18,11 +18,7 @@
 #ifndef INCLUDED_UHD_TRANSPORT_USB_CONTROL_HPP
 #define INCLUDED_UHD_TRANSPORT_USB_CONTROL_HPP
 
-#include <uhd/config.hpp>
-#include <uhd/types/usb_descriptor.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
-#include <vector>
+#include "usb_device_handle.hpp"
 
 namespace uhd { namespace transport {
 
@@ -35,9 +31,9 @@ public:
      * This transport is for sending and receiving control information from
      * the host to device using the Default Control Pipe.
      *
-     * \param descriptor a descriptor that identifies a USB device
+     * \param handle a device handle that uniquely identifies a USB device
      */
-    static sptr make(usb_descriptor_t descriptor);
+    static sptr make(usb_device_handle::sptr handle);
 
     /*!
      * Submit a USB device request:
@@ -62,13 +58,6 @@ public:
                           boost::uint16_t index, 
                           unsigned char *buff,
                           boost::uint16_t length) = 0; 
-
-    /*!
-     * Get a vector of USB device descriptors 
-     *
-     * \return a vector of usb_descriptors
-     */
-    static usb_descriptors_t get_device_list();
 };
 
 }} //namespace

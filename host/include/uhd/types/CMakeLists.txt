@@ -29,6 +29,5 @@ INSTALL(FILES
     stream_cmd.hpp
     time_spec.hpp
     tune_result.hpp
-    usb_descriptor.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
 )
