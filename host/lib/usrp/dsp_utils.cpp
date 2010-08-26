@@ -30,22 +30,36 @@ template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
 }
 
+/*!
+ *     3                   2                   1                   0
+ *   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ *  +-------------------------------+-------+-------+-------+-------+
+ *  |                                               | DDC0Q | DDC0I |
+ *  +-------------------------------+-------+-------+-------+-------+
+ */
 boost::uint32_t dsp_type1::calc_rx_mux_word(subdev_conn_t subdev_conn){
     switch(subdev_conn){
-    case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 2) | (0x0 << 0); //DDC0Q=ADC1, DDC0I=ADC0
-    case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 2) | (0x1 << 0); //DDC0Q=ADC0, DDC0I=ADC1
-    case SUBDEV_CONN_REAL_I:     return (0x3 << 2) | (0x0 << 0); //DDC0Q=ZERO, DDC0I=ADC0
-    case SUBDEV_CONN_REAL_Q:     return (0x1 << 2) | (0x3 << 0); //DDC0Q=ADC1, DDC0I=ZERO
+    case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 4) | (0x0 << 0); //DDC0Q=ADC0Q, DDC0I=ADC0I
+    case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 4) | (0x1 << 0); //DDC0Q=ADC0I, DDC0I=ADC0Q
+    case SUBDEV_CONN_REAL_I:     return (0xf << 4) | (0x0 << 0); //DDC0Q=ZERO,  DDC0I=ADC0I
+    case SUBDEV_CONN_REAL_Q:     return (0x1 << 4) | (0xf << 0); //DDC0Q=ADC0Q, DDC0I=ZERO
     default:                     UHD_THROW_INVALID_CODE_PATH();
     }
 }
 
+/*!
+ *     3                   2                   1                   0
+ *   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ *  +-------------------------------+-------+-------+-------+-------+
+ *  |                                               | DAC0Q | DAC0I |
+ *  +-------------------------------+-------+-------+-------+-------+
+ */
 boost::uint32_t dsp_type1::calc_tx_mux_word(subdev_conn_t subdev_conn){
     switch(subdev_conn){
-    case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 4) | (0x0 << 0); //DAC1=DUC0Q, DAC0=DUC0I
-    case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 4) | (0x1 << 0); //DAC1=DUC0I, DAC0=DUC0Q
-    case SUBDEV_CONN_REAL_I:     return (0xf << 4) | (0x0 << 0); //DAC1=ZERO,  DAC0=DUC0I
-    case SUBDEV_CONN_REAL_Q:     return (0x0 << 4) | (0xf << 0); //DAC1=DUC0I, DAC0=ZERO
+    case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 4) | (0x0 << 0); //DAC0Q=DUC0Q, DAC0I=DUC0I
+    case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 4) | (0x1 << 0); //DAC0Q=DUC0I, DAC0I=DUC0Q
+    case SUBDEV_CONN_REAL_I:     return (0xf << 4) | (0x0 << 0); //DAC0Q=ZERO,  DAC0I=DUC0I
+    case SUBDEV_CONN_REAL_Q:     return (0x0 << 4) | (0xf << 0); //DAC0Q=DUC0I, DAC0I=ZERO
     default:                     UHD_THROW_INVALID_CODE_PATH();
     }
 }
