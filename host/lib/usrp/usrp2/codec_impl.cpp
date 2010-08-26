@@ -53,7 +53,8 @@ void usrp2_mboard_impl::codec_init(void){
 /***********************************************************************
  * RX Codec Properties
  **********************************************************************/
-void usrp2_mboard_impl::rx_codec_get(const wax::obj &key, wax::obj &val){
+void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
@@ -73,23 +74,21 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key, wax::obj &val){
 
     case CODEC_PROP_GAIN_I:
     case CODEC_PROP_GAIN_Q:
-        assert_has(_codec_rx_gains.keys(), name, "codec rx gain name");
-        val = _codec_rx_gains[name];
+        assert_has(_codec_rx_gains.keys(), key.name, "codec rx gain name");
+        val = _codec_rx_gains[key.name];
         return;
 
     case CODEC_PROP_GAIN_RANGE:
-	assert_has(codec_rx_gain_ranges.keys(), name, "codec rx gain range name");
-	val = codec_rx_gain_ranges[name];
-	return;
+      assert_has(codec_rx_gain_ranges.keys(), key.name, "codec rx gain range name");
+      val = codec_rx_gain_ranges[key.name];
+      return;
 
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
 
 void usrp2_mboard_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
-
+    named_prop_t key = named_prop_t::extract(key_);
     float gain;
 
   switch(key.as<codec_prop_t>()) {
@@ -98,7 +97,7 @@ void usrp2_mboard_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
       if(_iface->get_hw_rev() < USRP2P_FIRST_HW_REV) UHD_THROW_PROP_SET_ERROR();//this capability is only found in USRP2P
 
       gain = val.as<float>();
-      this->rx_codec_set_gain(gain, name);
+      this->rx_codec_set_gain(gain, key.name);
       return;
 
     default:
@@ -134,7 +133,8 @@ void usrp2_mboard_impl::rx_codec_set_gain(float gain, const std::string &name){
 /***********************************************************************
  * TX Codec Properties
  **********************************************************************/
-void usrp2_mboard_impl::tx_codec_get(const wax::obj &key, wax::obj &val){
+void usrp2_mboard_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
