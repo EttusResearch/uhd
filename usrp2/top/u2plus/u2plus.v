@@ -220,7 +220,7 @@ module u2plus
 
    // LEDs are active low outputs
    wire [5:0] leds_int;
-   assign     {leds,ETH_LED} = {6'b111110 ^ leds_int};  // drive low to turn on leds
+   assign     {ETH_LED,leds} = {6'b011111 ^ leds_int};  // drive low to turn on leds
    
    // SPI
    wire       miso, mosi, sclk;

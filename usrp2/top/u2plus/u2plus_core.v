@@ -173,6 +173,7 @@ module u2plus_core
    wire 	epoch;
    wire [31:0] 	irq;
    wire [63:0] 	vita_time;
+   wire 	run_rx, run_tx;
    
    // ///////////////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Single Master INTERCON
@@ -527,8 +528,7 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
 		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio( {io_tx,io_rx} ) 
-		 );
+		 .gpio( {io_tx,io_rx} ) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
@@ -539,7 +539,10 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
        cycle_count <= 0;
      else
        cycle_count <= cycle_count + 1;
-   
+
+   //compatibility number -> increment when the fpga has been sufficiently altered
+   localparam compat_num = 32'd2;
+
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
@@ -547,7 +550,7 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
       .word00(status_b0),.word01(status_b1),.word02(status_b2),.word03(status_b3),
       .word04(status_b4),.word05(status_b5),.word06(status_b6),.word07(status_b7),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(32'b0),.word13(irq),.word14(status_enc),.word15(cycle_count)
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(status_enc),.word15(cycle_count)
       );
 
    // /////////////////////////////////////////////////////////////////////////
@@ -582,11 +585,20 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
       .tx_f36_data(udp_tx_data), .tx_f36_src_rdy_i(udp_tx_src_rdy), .tx_f36_dst_rdy_o(udp_tx_dst_rdy),
       .debug(debug_udp) );
 
+   wire [35:0] 	 tx_err_data, udp1_tx_data;
+   wire 	 tx_err_src_rdy, tx_err_dst_rdy, udp1_tx_src_rdy, udp1_tx_dst_rdy;
+   
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
+      .dataout(udp1_tx_data), .src_rdy_o(udp1_tx_src_rdy), .dst_rdy_i(udp1_tx_dst_rdy));
 
+   fifo36_mux #(.prio(0)) mux_err_stream
+     (.clk(dsp_clk), .reset(dsp_reset), .clear(0),
+      .data0_i(udp1_tx_data), .src0_rdy_i(udp1_tx_src_rdy), .dst0_rdy_o(udp1_tx_dst_rdy),
+      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
+      .data_o(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
+   
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain(udp_rx_data), .src_rdy_i(udp_rx_src_rdy), .dst_rdy_o(udp_rx_dst_rdy),
@@ -630,12 +642,13 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    //    In Rev3 there are only 6 leds, and the highest one is on the ETH connector
    
    wire [7:0] 	 led_src, led_sw;
-   wire [7:0] 	 led_hw = {clk_status,serdes_link_up};
+   wire [7:0] 	 led_hw = {run_tx, run_rx, clk_status, serdes_link_up, 1'b0};
    
    setting_reg #(.my_addr(3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
-   setting_reg #(.my_addr(8),.width(8)) sr_led_src (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-					  .in(set_data),.out(led_src),.changed());
+
+   setting_reg #(.my_addr(8),.width(8), .at_reset(8'b0001_1110)) 
+   sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
    
@@ -678,7 +691,6 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller, Slave #11
 
-   wire 	 run_rx, run_tx;
    reg 		 run_rx_d1;
    always @(posedge dsp_clk)
      run_rx_d1 <= run_rx;
@@ -755,40 +767,26 @@ defparam bootram.RAM2.INIT_23=256'h00000000_00000000_00000000_00000000_00000000_
    // DSP TX
 
    wire [35:0] 	 tx_data;
-   wire [99:0] 	 tx1_data;
-   wire 	 tx_src_rdy, tx_dst_rdy, tx1_src_rdy, tx1_dst_rdy;
-
-   wire [31:0] 	 debug_vtc, debug_vtd, debug_vt;
+   wire 	 tx_src_rdy, tx_dst_rdy;
+   wire [31:0] 	 debug_vt;
    
    fifo_cascade #(.WIDTH(36), .SIZE(DSP_TX_FIFOSIZE)) tx_fifo_cascade
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd1_flags,rd1_dat}), .src_rdy_i(rd1_ready_o), .dst_rdy_o(rd1_ready_i),
       .dataout(tx_data), .src_rdy_o(tx_src_rdy), .dst_rdy_i(tx_dst_rdy) );
 
-   vita_tx_deframer #(.BASE(SR_TX_CTRL), .MAXCHAN(1)) vita_tx_deframer
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+   vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
+		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
+   vita_tx_chain
+     (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
-      .debug(debug_vtd) );
-
-   vita_tx_control #(.BASE(SR_TX_CTRL), .WIDTH(32)) vita_tx_control
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .vita_time(vita_time),.underrun(underrun),
-      .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
-      .debug(debug_vtc) );
-   
-   assign debug_vt = debug_vtc | debug_vtd;
-   
-   dsp_core_tx #(.BASE(SR_TX_DSP)) dsp_core_tx
-     (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+      .vita_time(vita_time),
+      .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
+      .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(dac_a),.dac_b(dac_b),
-      .debug(debug_tx_dsp) );
-
+      .underrun(underrun), .run(run_tx),
+      .debug(debug_vt));
+   
    assign dsp_rst = wb_rst;
 
    // ///////////////////////////////////////////////////////////////////////////////////
