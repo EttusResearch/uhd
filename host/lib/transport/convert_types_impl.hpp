@@ -32,9 +32,6 @@
     #include <emmintrin.h>
 #endif
 
-//! shortcut for a byteswap16 with casting
-#define BSWAP16_C(num) uhd::byteswap(boost::uint16_t(num))
-
 /***********************************************************************
  * Typedefs
  **********************************************************************/
@@ -54,10 +51,9 @@ static UHD_INLINE void sc16_to_item32_nswap(
 static UHD_INLINE void sc16_to_item32_bswap(
     const sc16_t *input, item32_t *output, size_t nsamps
 ){
+    const item32_t *item32_input = (const item32_t *)input;
     for (size_t i = 0; i < nsamps; i++){
-        boost::uint16_t real = BSWAP16_C(input[i].real());
-        boost::uint16_t imag = BSWAP16_C(input[i].imag());
-        output[i] = (item32_t(real) << 0) | (item32_t(imag) << 16);
+        output[i] = uhd::byteswap(item32_input[i]);
     }
 }
 
@@ -73,10 +69,9 @@ static UHD_INLINE void item32_to_sc16_nswap(
 static UHD_INLINE void item32_to_sc16_bswap(
     const item32_t *input, sc16_t *output, size_t nsamps
 ){
+    item32_t *item32_output = (item32_t *)output;
     for (size_t i = 0; i < nsamps; i++){
-        boost::int16_t real = BSWAP16_C(input[i] >> 0);
-        boost::int16_t imag = BSWAP16_C(input[i] >> 16);
-        output[i] = sc16_t(real, imag);
+        item32_output[i] = uhd::byteswap(input[i]);
     }
 }
 
@@ -85,7 +80,11 @@ static UHD_INLINE void item32_to_sc16_bswap(
  **********************************************************************/
 static const float shorts_per_float = float(32767);
 
-#define FC32_TO_SC16_C(num) boost::int16_t(num*shorts_per_float)
+static UHD_INLINE item32_t fc32_to_item32(fc32_t num){
+    boost::uint16_t real = boost::int16_t(num.real()*shorts_per_float);
+    boost::uint16_t imag = boost::int16_t(num.imag()*shorts_per_float);
+    return (item32_t(real) << 16) | (item32_t(imag) << 0);
+}
 
 ////////////////////////////////////
 // none-swap
@@ -106,8 +105,10 @@ static UHD_INLINE void fc32_to_item32_nswap(
         __m128i tmpilo = _mm_cvtps_epi32(_mm_mul_ps(tmplo, scalar));
         __m128i tmpihi = _mm_cvtps_epi32(_mm_mul_ps(tmphi, scalar));
 
-        //pack
+        //pack + swap 16-bit pairs
         __m128i tmpi = _mm_packs_epi32(tmpilo, tmpihi);
+        tmpi = _mm_shufflelo_epi16(tmpi, _MM_SHUFFLE(2, 3, 0, 1));
+        tmpi = _mm_shufflehi_epi16(tmpi, _MM_SHUFFLE(2, 3, 0, 1));
 
         //store to output
         _mm_storeu_si128(reinterpret_cast<__m128i *>(output+i), tmpi);
@@ -115,9 +116,7 @@ static UHD_INLINE void fc32_to_item32_nswap(
 
     //convert remainder
     for (; i < nsamps; i++){
-        boost::uint16_t real = FC32_TO_SC16_C(input[i].real());
-        boost::uint16_t imag = FC32_TO_SC16_C(input[i].imag());
-        output[i] = (item32_t(real) << 0) | (item32_t(imag) << 16);
+        output[i] = fc32_to_item32(input[i]);
     }
 }
 
@@ -126,9 +125,7 @@ static UHD_INLINE void fc32_to_item32_nswap(
     const fc32_t *input, item32_t *output, size_t nsamps
 ){
     for (size_t i = 0; i < nsamps; i++){
-        boost::uint16_t real = FC32_TO_SC16_C(input[i].real());
-        boost::uint16_t imag = FC32_TO_SC16_C(input[i].imag());
-        output[i] = (item32_t(real) << 0) | (item32_t(imag) << 16);
+        output[i] = fc32_to_item32(input[i]);
     }
 }
 
@@ -163,9 +160,7 @@ static UHD_INLINE void fc32_to_item32_bswap(
 
     //convert remainder
     for (; i < nsamps; i++){
-        boost::uint16_t real = BSWAP16_C(FC32_TO_SC16_C(input[i].real()));
-        boost::uint16_t imag = BSWAP16_C(FC32_TO_SC16_C(input[i].imag()));
-        output[i] = (item32_t(real) << 0) | (item32_t(imag) << 16);
+        output[i] = uhd::byteswap(fc32_to_item32(input[i]));
     }
 }
 
@@ -174,9 +169,7 @@ static UHD_INLINE void fc32_to_item32_bswap(
     const fc32_t *input, item32_t *output, size_t nsamps
 ){
     for (size_t i = 0; i < nsamps; i++){
-        boost::uint16_t real = BSWAP16_C(FC32_TO_SC16_C(input[i].real()));
-        boost::uint16_t imag = BSWAP16_C(FC32_TO_SC16_C(input[i].imag()));
-        output[i] = (item32_t(real) << 0) | (item32_t(imag) << 16);
+        output[i] = uhd::byteswap(fc32_to_item32(input[i]));
     }
 }
 
@@ -187,7 +180,12 @@ static UHD_INLINE void fc32_to_item32_bswap(
  **********************************************************************/
 static const float floats_per_short = float(1.0/shorts_per_float);
 
-#define I16_TO_FC32_C(num) (boost::int16_t(num)*floats_per_short)
+static UHD_INLINE fc32_t item32_to_fc32(item32_t item){
+    return fc32_t(
+        float(boost::int16_t(item >> 16)*floats_per_short),
+        float(boost::int16_t(item >> 0)*floats_per_short)
+    );
+}
 
 ////////////////////////////////////
 // none-swap
@@ -204,7 +202,9 @@ static UHD_INLINE void item32_to_fc32_nswap(
         //load from input
         __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i));
 
-        //unpack
+        //unpack + swap 16-bit pairs
+        tmpi = _mm_shufflelo_epi16(tmpi, _MM_SHUFFLE(2, 3, 0, 1));
+        tmpi = _mm_shufflehi_epi16(tmpi, _MM_SHUFFLE(2, 3, 0, 1));
         __m128i tmpilo = _mm_unpacklo_epi16(zeroi, tmpi); //value in upper 16 bits
         __m128i tmpihi = _mm_unpackhi_epi16(zeroi, tmpi);
 
@@ -219,9 +219,7 @@ static UHD_INLINE void item32_to_fc32_nswap(
 
     //convert remainder
     for (; i < nsamps; i++){
-        float real = I16_TO_FC32_C(input[i] >> 0);
-        float imag = I16_TO_FC32_C(input[i] >> 16);
-        output[i] = fc32_t(real, imag);
+        output[i] = item32_to_fc32(input[i]);
     }
 }
 
@@ -230,9 +228,7 @@ static UHD_INLINE void item32_to_fc32_nswap(
     const item32_t *input, fc32_t *output, size_t nsamps
 ){
     for (size_t i = 0; i < nsamps; i++){
-        float real = I16_TO_FC32_C(input[i] >> 0);
-        float imag = I16_TO_FC32_C(input[i] >> 16);
-        output[i] = fc32_t(real, imag);
+        output[i] = item32_to_fc32(input[i]);
     }
 }
 #endif
@@ -268,9 +264,7 @@ static UHD_INLINE void item32_to_fc32_bswap(
 
     //convert remainder
     for (; i < nsamps; i++){
-        float real = I16_TO_FC32_C(BSWAP16_C(input[i] >> 0));
-        float imag = I16_TO_FC32_C(BSWAP16_C(input[i] >> 16));
-        output[i] = fc32_t(real, imag);
+        output[i] = item32_to_fc32(uhd::byteswap(input[i]));
     }
 }
 
@@ -279,9 +273,7 @@ static UHD_INLINE void item32_to_fc32_bswap(
     const item32_t *input, fc32_t *output, size_t nsamps
 ){
     for (size_t i = 0; i < nsamps; i++){
-        float real = I16_TO_FC32_C(BSWAP16_C(input[i] >> 0));
-        float imag = I16_TO_FC32_C(BSWAP16_C(input[i] >> 16));
-        output[i] = fc32_t(real, imag);
+        output[i] = item32_to_fc32(uhd::byteswap(input[i]));
     }
 }
 
