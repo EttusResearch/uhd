@@ -205,10 +205,10 @@ module u2_rev3
 
    always @(posedge dsp_clk)
      begin
-	adc_a_reg1 <= adc_a;
-	adc_b_reg1 <= adc_b;
-	adc_ovf_a_reg1 <= adc_ovf_a;
-	adc_ovf_b_reg1 <= adc_ovf_b;
+	adc_a_reg1 <= adc_b;    // I and Q on RX are swapped in layout
+	adc_b_reg1 <= adc_a;
+	adc_ovf_a_reg1 <= adc_ovf_b;
+	adc_ovf_b_reg1 <= adc_ovf_a;
      end
    
    always @(posedge dsp_clk)
