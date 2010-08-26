@@ -168,65 +168,24 @@ void usrp1_impl::mboard_init(void)
                      boost::bind(&usrp1_impl::mboard_get, this, _1, _2),
                      boost::bind(&usrp1_impl::mboard_set, this, _1, _2));
 
-    /*
-     * Basic initialization 
-     */
-    _iface->poke32( 13, 0x00000000); //FR_MODE
-    _iface->poke32( 14, 0x00000000); //FR_DEBUG_EN
-    _iface->poke32(  1, 0x00000001); //FR_RX_SAMPLE_RATE_DEV
-    _iface->poke32(  0, 0x00000003); //FR_TX_SAMPLE_RATE_DEV
-    _iface->poke32( 15, 0x0000000f); //FR_DC_OFFSET_CL_EN
+    // Normal mode with no loopback or Rx counting
+    _iface->poke32(FR_MODE, 0x00000000);
+    _iface->poke32(FR_DEBUG_EN, 0x00000000);
+    _iface->poke32(FR_RX_SAMPLE_RATE_DIV, 0x00000001);
+    _iface->poke32(FR_TX_SAMPLE_RATE_DIV, 0x00000003);
+    _iface->poke32(FR_DC_OFFSET_CL_EN, 0x0000000f);
 
-    /*
-     * Reset codecs 
-     */
-    _iface->poke32( 16, 0x00000000); //FR_ADC_OFFSET_0
-    _iface->poke32( 17, 0x00000000); //FR_ADC_OFFSET_1
-    _iface->poke32( 18, 0x00000000); //FR_ADC_OFFSET_2
-    _iface->poke32( 19, 0x00000000); //FR_ADC_OFFSET_3
+    // Reset offset correction registers
+    _iface->poke32(FR_ADC_OFFSET_0, 0x00000000);
+    _iface->poke32(FR_ADC_OFFSET_1, 0x00000000);
+    _iface->poke32(FR_ADC_OFFSET_2, 0x00000000);
+    _iface->poke32(FR_ADC_OFFSET_3, 0x00000000);
 
-    /*
-     * Reset GPIO masks 
-     */
-    _iface->poke32(  6, 0xffff0000); //FR_OE_1
-    _iface->poke32( 10, 0xffff0000); //FR_IO_1
-    _iface->poke32(  8, 0xffff0000); //FR_OE_3
-    _iface->poke32( 12, 0xffff0000); //FR_IO_3
+    // Set default for RX format to 16-bit I&Q and no half-band filter bypass
+    _iface->poke32(FR_RX_FORMAT, 0x00000300);
 
-    /*
-     * Disable ATR masks and reset state registers
-     */
-    _iface->poke32( 23, 0x00000000); //FR_ATR_MASK_1
-    _iface->poke32( 24, 0x00000000); //FR_ATR_TXVAL_1
-    _iface->poke32( 25, 0x00000000); //FR_ATR_RXVAL_1
-    _iface->poke32( 29, 0x00000000); //FR_ATR_MASK_3
-    _iface->poke32( 30, 0x00000000); //FR_ATR_TXVAL_3
-    _iface->poke32( 31, 0x00000000); //FR_ATR_RXVAL_3
-
-    /*
-     * Set defaults for RX format, decimation, and mux 
-     */
-    _iface->poke32( 49, 0x00000300); //FR_RX_FORMAT
-    _iface->poke32( 38, 0x000e4e41); //FR_RX_MUX
-
-    /*
-     * Set defaults for TX format, interpolation, and mux 
-     */
-    _iface->poke32( 48, 0x00000000); //FR_TX_FORMAT
-    _iface->poke32( 39, 0x00000981); //FR_TX_MUX
-
-    /*
-     * Reset DDC registers 
-     */
-    _iface->poke32( 34, 0x00000000); //FR_RX_FREQ_0
-    _iface->poke32( 44, 0x00000000); //FR_RX_PHASE_0
-    _iface->poke32( 35, 0x00000000); //FR_RX_FREQ_1
-    _iface->poke32( 45, 0x00000000); //FR_RX_PHASE_1
-    _iface->poke32( 36, 0x00000000); //FR_RX_FREQ_2
-    _iface->poke32( 46, 0x00000000); //FR_RX_PHASE_2
-    _iface->poke32( 37, 0x00000000); //FR_RX_FREQ_3
-    _iface->poke32( 47, 0x00000000); //FR_RX_PHASE_3
-
+    // Set default for TX format to 16-bit I&Q
+    _iface->poke32(FR_TX_FORMAT, 0x00000000);
 }
 
 void usrp1_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd)
