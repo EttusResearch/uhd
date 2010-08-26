@@ -298,10 +298,11 @@ module u2plus
    */
    
    wire [15:0] dac_a_int, dac_b_int;
+   // DAC A and B are swapped in schematic to facilitate clean layout
+   // DAC A is also inverted in schematic to facilitate clean layout
+   always @(negedge dsp_clk) DACA <= ~dac_b_int;
+   always @(negedge dsp_clk) DACB <= dac_a_int;
    
-   always @(negedge dsp_clk) DACA <= dac_a_int;
-   always @(negedge dsp_clk) DACB <= dac_b_int;
-	
    u2plus_core u2p_c(.dsp_clk           (dsp_clk),
 		     .wb_clk            (wb_clk),
 		     .clock_ready       (clock_ready),
