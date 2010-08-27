@@ -46,6 +46,8 @@ module u1e_core
    wire [31:0] 	set_data;
    wire 	set_stb;
 
+   wire [31:0] 	debug_vt;
+
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPMC Slave to Wishbone Master
    localparam dw = 16;
@@ -190,7 +192,6 @@ module u1e_core
    // DSP TX
 
    wire [15:0] 	 tx_i_int, tx_q_int;
-   wire [31:0] 	 debug_vt;
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
