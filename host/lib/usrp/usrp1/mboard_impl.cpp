@@ -33,8 +33,21 @@ using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
- * Helper Functions
+ * Calculate the RX mux value:
+ *    The I and Q mux values are intentionally reversed to flip I and Q
+ *    to account for the reversal in the type conversion routines.
  **********************************************************************/
+static int calc_rx_mux_pair(int adc_for_i, int adc_for_q){
+    return (adc_for_i << 2) | (adc_for_q << 0); //shift reversal here
+}
+
+/*!
+ *    3                   2                   1                   0
+ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ * +-----------------------+-------+-------+-------+-------+-+-----+
+ * |      must be zero     | Q3| I3| Q2| I2| Q1| I1| Q0| I0|Z| NCH |
+ * +-----------------------+-------+-------+-------+-------+-+-----+
+ */
 static boost::uint32_t calc_rx_mux(
     const subdev_spec_t &subdev_spec, wax::obj mboard
 ){
@@ -42,16 +55,16 @@ static boost::uint32_t calc_rx_mux(
     static const int ADC0 = 0, ADC1 = 1, ADC2 = 2, ADC3 = 3;
     static const uhd::dict<std::string, uhd::dict<subdev_conn_t, int> > name_to_conn_to_flag = boost::assign::map_list_of
         ("A", boost::assign::map_list_of
-            (SUBDEV_CONN_COMPLEX_IQ, (ADC0 << 0) | (ADC1 << 2)) //I and Q
-            (SUBDEV_CONN_COMPLEX_QI, (ADC1 << 0) | (ADC0 << 2)) //I and Q
-            (SUBDEV_CONN_REAL_I,     (ADC0 << 0) | (ADC0 << 2)) //I and Q (Q identical but ignored Z=1)
-            (SUBDEV_CONN_REAL_Q,     (ADC1 << 0) | (ADC1 << 2)) //I and Q (Q identical but ignored Z=1)
+            (SUBDEV_CONN_COMPLEX_IQ, calc_rx_mux_pair(ADC0, ADC1)) //I and Q
+            (SUBDEV_CONN_COMPLEX_QI, calc_rx_mux_pair(ADC1, ADC0)) //I and Q
+            (SUBDEV_CONN_REAL_I,     calc_rx_mux_pair(ADC0, ADC0)) //I and Q (Q identical but ignored Z=1)
+            (SUBDEV_CONN_REAL_Q,     calc_rx_mux_pair(ADC1, ADC1)) //I and Q (Q identical but ignored Z=1)
         )
         ("B", boost::assign::map_list_of
-            (SUBDEV_CONN_COMPLEX_IQ, (ADC2 << 0) | (ADC3 << 2)) //I and Q
-            (SUBDEV_CONN_COMPLEX_QI, (ADC3 << 0) | (ADC2 << 2)) //I and Q
-            (SUBDEV_CONN_REAL_I,     (ADC2 << 0) | (ADC2 << 2)) //I and Q (Q identical but ignored Z=1)
-            (SUBDEV_CONN_REAL_Q,     (ADC3 << 0) | (ADC3 << 2)) //I and Q (Q identical but ignored Z=1)
+            (SUBDEV_CONN_COMPLEX_IQ, calc_rx_mux_pair(ADC2, ADC3)) //I and Q
+            (SUBDEV_CONN_COMPLEX_QI, calc_rx_mux_pair(ADC3, ADC2)) //I and Q
+            (SUBDEV_CONN_REAL_I,     calc_rx_mux_pair(ADC2, ADC2)) //I and Q (Q identical but ignored Z=1)
+            (SUBDEV_CONN_REAL_Q,     calc_rx_mux_pair(ADC3, ADC3)) //I and Q (Q identical but ignored Z=1)
         )
     ;
 
@@ -88,6 +101,22 @@ static boost::uint32_t calc_rx_mux(
     return ((channel_flags & 0xffff) << 4) | ((Z & 0x1) << 3) | ((nchan & 0x7) << 0);
 }
 
+/***********************************************************************
+ * Calculate the TX mux value:
+ *    The I and Q mux values are intentionally reversed to flip I and Q
+ *    to account for the reversal in the type conversion routines.
+ **********************************************************************/
+static int calc_tx_mux_pair(int chn_for_i, int chn_for_q){
+    return (chn_for_i << 4) | (chn_for_q << 0); //shift reversal here
+}
+
+/*!
+ *    3                   2                   1                   0
+ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ * +-----------------------+-------+-------+-------+-------+-+-----+
+ * |                       | DAC1Q | DAC1I | DAC0Q | DAC0I |0| NCH |
+ * +-----------------------------------------------+-------+-+-----+
+ */
 static boost::uint32_t calc_tx_mux(
     const subdev_spec_t &subdev_spec, wax::obj mboard
 ){
@@ -95,16 +124,16 @@ static boost::uint32_t calc_tx_mux(
     static const int ENB = 1 << 3, CHAN_I0 = 0, CHAN_Q0 = 1, CHAN_I1 = 2, CHAN_Q1 = 3;
     static const uhd::dict<size_t, uhd::dict<subdev_conn_t, int> > chan_to_conn_to_flag = boost::assign::map_list_of
         (0, boost::assign::map_list_of
-            (SUBDEV_CONN_COMPLEX_IQ, ((CHAN_I0 | ENB) << 0) | ((CHAN_Q0 | ENB) << 4))
-            (SUBDEV_CONN_COMPLEX_QI, ((CHAN_I0 | ENB) << 4) | ((CHAN_Q0 | ENB) << 0))
-            (SUBDEV_CONN_REAL_I,     ((CHAN_I0 | ENB) << 0))
-            (SUBDEV_CONN_REAL_Q,     ((CHAN_I0 | ENB) << 4))
+            (SUBDEV_CONN_COMPLEX_IQ, calc_tx_mux_pair(CHAN_I0 | ENB, CHAN_Q0 | ENB))
+            (SUBDEV_CONN_COMPLEX_QI, calc_tx_mux_pair(CHAN_Q0 | ENB, CHAN_I0 | ENB))
+            (SUBDEV_CONN_REAL_I,     calc_tx_mux_pair(CHAN_I0 | ENB, 0            ))
+            (SUBDEV_CONN_REAL_Q,     calc_tx_mux_pair(0,             CHAN_I0 | ENB))
         )
         (1, boost::assign::map_list_of
-            (SUBDEV_CONN_COMPLEX_IQ, ((CHAN_I1 | ENB) << 0) | ((CHAN_Q1 | ENB) << 4))
-            (SUBDEV_CONN_COMPLEX_QI, ((CHAN_I1 | ENB) << 4) | ((CHAN_Q1 | ENB) << 0))
-            (SUBDEV_CONN_REAL_I,     ((CHAN_I1 | ENB) << 0))
-            (SUBDEV_CONN_REAL_Q,     ((CHAN_I1 | ENB) << 4))
+            (SUBDEV_CONN_COMPLEX_IQ, calc_tx_mux_pair(CHAN_I1 | ENB, CHAN_Q1 | ENB))
+            (SUBDEV_CONN_COMPLEX_QI, calc_tx_mux_pair(CHAN_Q1 | ENB, CHAN_I1 | ENB))
+            (SUBDEV_CONN_REAL_I,     calc_tx_mux_pair(CHAN_I1 | ENB, 0            ))
+            (SUBDEV_CONN_REAL_Q,     calc_tx_mux_pair(0,             CHAN_I1 | ENB))
         )
     ;
 
