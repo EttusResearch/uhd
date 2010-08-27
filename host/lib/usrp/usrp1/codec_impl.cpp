@@ -54,7 +54,7 @@ void usrp1_impl::rx_codec_get(const wax::obj &key_, wax::obj &val, dboard_slot_t
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_NAME:
-        val = str(boost::format("usrp1 adc - ad9862 - slot %c") % dboard_slot);
+        val = str(boost::format("usrp1 adc - ad9862 - slot %c") % char(dboard_slot));
         return;
 
     case CODEC_PROP_OTHERS:
@@ -114,7 +114,7 @@ void usrp1_impl::tx_codec_get(const wax::obj &key_, wax::obj &val, dboard_slot_t
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_NAME:
-        val = str(boost::format("usrp1 dac - ad9862 - slot %c") % dboard_slot);
+        val = str(boost::format("usrp1 dac - ad9862 - slot %c") % char(dboard_slot));
         return;
 
     case CODEC_PROP_OTHERS:

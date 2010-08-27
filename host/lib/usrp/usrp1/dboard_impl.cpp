@@ -98,7 +98,7 @@ void usrp1_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
     //handle the get request conditioned on the key
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_NAME:
-        val = str(boost::format("usrp1 dboard (rx unit) - %c") % dboard_slot);
+        val = str(boost::format("usrp1 dboard (rx unit) - %c") % char(dboard_slot));
         return;
 
     case DBOARD_PROP_SUBDEV:
@@ -162,7 +162,7 @@ void usrp1_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
     //handle the get request conditioned on the key
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_NAME:
-        val = str(boost::format("usrp1 dboard (tx unit) - %c") % dboard_slot);
+        val = str(boost::format("usrp1 dboard (tx unit) - %c") % char(dboard_slot));
         return;
 
     case DBOARD_PROP_SUBDEV:
