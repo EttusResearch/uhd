@@ -78,13 +78,23 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
-            _iface->poke32(FR_RX_FREQ_0,
-                -dsp_type1::calc_cordic_word_and_update(new_freq, _clock_ctrl->get_master_clock_freq()));
-            _tx_dsp_freq = new_freq;
+            boost::uint32_t reg_word = dsp_type1::calc_cordic_word_and_update(
+                new_freq, _clock_ctrl->get_master_clock_freq());
+
+            //TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+            //
+            // Handle multiple receive channels / DDC's
+            //
+            //TODO TODO TODO TODO TODO TODO TODO TODO TODO
+            _iface->poke32(FR_RX_FREQ_0, reg_word);
+            _iface->poke32(FR_RX_FREQ_1, reg_word);
+            _iface->poke32(FR_RX_FREQ_2, reg_word);
+            _iface->poke32(FR_RX_FREQ_3, reg_word);
+
+            _rx_dsp_freq = new_freq;
             return;
         }
     case DSP_PROP_HOST_RATE: {
-            //FIXME: Stop and resume streaming during set?
             unsigned int rate =
                     _clock_ctrl->get_master_clock_freq() / val.as<double>();
 
@@ -95,6 +105,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
             }
 
             _rx_dsp_decim = rate;
+            //TODO Poll every 100ms. Make it selectable?
             _rx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() / rate;
 
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
@@ -157,7 +168,11 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
 {
     switch(key.as<dsp_prop_t>()) {
 
-    // TODO: Set both codec frequencies until we have duality properties 
+    //TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+    //
+    // Set both codec frequencies until we have duality properties 
+    //
+    //TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
             _codec_ctrls[DBOARD_SLOT_A]->set_duc_freq(new_freq);
@@ -177,6 +192,8 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
             }
 
             _tx_dsp_interp = rate;
+
+            //TODO Poll every 100ms. Make it selectable? 
             _tx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate;
 
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
