@@ -70,7 +70,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     }
 
     //wait for things to settle
-    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 
     //get descriptors again with serial number
     device_list = usb_device_handle::get_device_list();
