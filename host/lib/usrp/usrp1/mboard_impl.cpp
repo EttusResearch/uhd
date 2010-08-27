@@ -18,6 +18,7 @@
 #include "usrp1_impl.hpp"
 #include "usrp_commands.h"
 #include "fpga_regs_standard.h"
+#include "fpga_regs_common.h"
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
