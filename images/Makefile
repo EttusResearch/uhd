@@ -68,10 +68,14 @@ endif
 ########################################################################
 _usrp1_fpga_dir = $(TOP_FPGA_DIR)/usrp1/rbf/rev4
 _usrp1_fpga_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga.rbf
-IMAGES_LIST += $(_usrp1_fpga_rbf)
+_usrp1_fpga_4rx_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga_4rx.rbf
+IMAGES_LIST += $(_usrp1_fpga_rbf) $(_usrp1_fpga_4rx_rbf)
 
 $(_usrp1_fpga_rbf):
 	cp $(_usrp1_fpga_dir)/std_2rxhb_2tx.rbf $@
+
+$(_usrp1_fpga_4rx_rbf):
+	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
 
 ########################################################################
 # USRP2 firmware
