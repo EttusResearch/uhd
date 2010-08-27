@@ -20,7 +20,7 @@
 
 using namespace uhd::transport;
 
-const int libusb_debug_level = 3;
+const int libusb_debug_level = 0;
 
 class libusb1_device_handle_impl : public usb_device_handle {
 public:
@@ -88,38 +88,21 @@ usb_device_handle::sptr make_usb_device_handle(libusb_device *dev)
         device_addr));
 }
 
-bool check_fsf_device(libusb_device *dev)
-{
-    libusb_device_descriptor desc;
-
-    if (libusb_get_device_descriptor(dev, &desc) < 0) {
-        UHD_ASSERT_THROW("USB: failed to get device descriptor");
-    }
-
-    return desc.idVendor == 0xfffe;
-}
-
 std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list()
 {
     libusb_context *ctx = NULL;
-    libusb_device **list;
-    std::vector<usb_device_handle::sptr> device_list;
+    std::vector<libusb_device *> libusb_device_list;
+    std::vector<usb_device_handle::sptr> device_handle_list;
 
     libusb::init(&ctx, libusb_debug_level);
 
-    ssize_t cnt = libusb_get_device_list(ctx, &list);
+    libusb_device_list = libusb::get_fsf_device_list(ctx);
 
-    if (cnt < 0)
-        throw std::runtime_error("USB: enumeration failed");
-
-    ssize_t i = 0;
-    for (i = 0; i < cnt; i++) {
-        libusb_device *dev = list[i];
-        if (check_fsf_device(dev)) 
-            device_list.push_back(make_usb_device_handle(dev));
+    for (size_t i = 0; i < libusb_device_list.size(); i++) {
+        libusb_device *dev = libusb_device_list[i];
+        device_handle_list.push_back(make_usb_device_handle(dev));
     }
 
-    libusb_free_device_list(list, 0);
     libusb_exit(ctx);
-    return device_list; 
+    return device_handle_list; 
 }

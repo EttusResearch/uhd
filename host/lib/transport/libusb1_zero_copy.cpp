@@ -25,7 +25,7 @@
 
 using namespace uhd::transport;
 
-const int libusb_debug_level = 3;
+const int libusb_debug_level = 0;
 const int libusb_timeout = 0;
 
 /***********************************************************************
@@ -555,7 +555,7 @@ public:
     libusb_managed_send_buffer_impl(libusb_transfer *lut,
                                     usb_endpoint *endpoint,
                                     size_t buff_size)
-        : _buff(lut->buffer, buff_size)
+        : _buff(lut->buffer, buff_size), _committed(false)
     {
         _lut = lut;
         _endpoint = endpoint;
@@ -563,18 +563,32 @@ public:
 
     ~libusb_managed_send_buffer_impl()
     {
-        /* NOP */
+        if (!_committed) {
+            _lut->length = 0;
+            _lut->actual_length = 0;
+            _endpoint->submit(_lut);
+        }
     }
 
     ssize_t commit(size_t num_bytes)
     {
+        if (_committed) {
+            std::cerr << "UHD: send buffer already committed" << std::endl;
+            return 0;
+        }
+        
+        UHD_ASSERT_THROW(num_bytes <= boost::asio::buffer_size(_buff));
+
         _lut->length = num_bytes;
         _lut->actual_length = 0;
 
-        if (_endpoint->submit(_lut))
+        if (_endpoint->submit(_lut)) {
+            _committed = true;
             return num_bytes;
-        else
+        }
+        else {
             return 0;
+        }
     }
 
 private:
@@ -586,6 +600,7 @@ private:
     libusb_transfer *_lut;
     usb_endpoint *_endpoint;
     const boost::asio::mutable_buffer _buff;
+    bool _committed;
 };
 
 

@@ -19,6 +19,7 @@
 #include "usrp_commands.h" 
 #include <uhd/transport/usb_control.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/thread/thread.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -208,6 +209,9 @@ public:
                                    &reset_n, 1);
                 usrp_set_firmware_hash(hash);
                 file.close();
+
+                //wait for things to settle
+                boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 
                 return USRP_FIRMWARE_LOAD_SUCCESS; 
             }

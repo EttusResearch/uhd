@@ -16,9 +16,21 @@
 //
 
 #include "libusb1_base.hpp"
+#include <uhd/utils/assert.hpp>
 #include <iostream>
 
 using namespace uhd::transport;
+
+bool check_fsf_device(libusb_device *dev)
+{
+    libusb_device_descriptor desc;
+
+    if (libusb_get_device_descriptor(dev, &desc) < 0) {
+        UHD_ASSERT_THROW("USB: failed to get device descriptor");
+    }
+
+    return desc.idVendor == 0xfffe;
+}
 
 void libusb::init(libusb_context **ctx, int debug_level)
 {
@@ -28,26 +40,46 @@ void libusb::init(libusb_context **ctx, int debug_level)
     libusb_set_debug(*ctx, debug_level);
 }
 
+std::vector<libusb_device *> libusb::get_fsf_device_list(libusb_context *ctx)
+{
+    libusb_device **libusb_dev_list;
+    std::vector<libusb_device *> fsf_dev_list;
+
+    ssize_t dev_cnt = libusb_get_device_list(ctx, &libusb_dev_list);
+
+    //find the FSF devices 
+    for (ssize_t i = 0; i < dev_cnt; i++) {
+        libusb_device *dev = libusb_dev_list[i];
+
+        if (check_fsf_device(dev))
+            fsf_dev_list.push_back(dev);
+        else
+            libusb_unref_device(dev);
+    }
+
+    libusb_free_device_list(libusb_dev_list, 0);
+
+    return fsf_dev_list;
+}
 
 libusb_device_handle *libusb::open_device(libusb_context *ctx,
                                           usb_device_handle::sptr handle)
 {
-    libusb_device **dev_list;
-    libusb_device_handle *dev_handle;
+    libusb_device_handle *dev_handle = NULL;
+    std::vector<libusb_device *> fsf_dev_list = get_fsf_device_list(ctx);
 
-    ssize_t dev_cnt = libusb_get_device_list(ctx, &dev_list);
-
-    //find and open the receive device
-    for (ssize_t i = 0; i < dev_cnt; i++) {
-        libusb_device *dev = dev_list[i];
+    //find and open the USB device 
+    for (size_t i = 0; i < fsf_dev_list.size(); i++) {
+        libusb_device *dev = fsf_dev_list[i];
 
         if (compare_device(dev, handle)) {
             libusb_open(dev, &dev_handle);
+            libusb_unref_device(dev);
             break;
         }
+            
+        libusb_unref_device(dev);
     }
-
-    libusb_free_device_list(dev_list, 0);
 
     return dev_handle;
 }

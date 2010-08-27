@@ -27,6 +27,8 @@ namespace uhd { namespace transport {
 namespace libusb {
     void init(libusb_context **ctx, int debug_level);
 
+    std::vector<libusb_device *> get_fsf_device_list(libusb_context *ctx);
+
     libusb_device_handle *open_device(libusb_context *ctx,
                                       usb_device_handle::sptr handle);
 
