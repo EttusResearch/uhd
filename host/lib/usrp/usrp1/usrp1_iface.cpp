@@ -122,7 +122,8 @@ public:
                                                       buff,
                                                       bytes.size());
 
-        if (ret < 0)
+        // TODO throw and catch i2c failures during eeprom read
+        if (iface_debug && (ret < 0))
             std::cerr << "USRP: failed i2c write: " << ret << std::endl;
     }
 
@@ -137,7 +138,8 @@ public:
                                                      buff,
                                                      num_bytes);
 
-        if ((ret < 0) || (unsigned)ret < (num_bytes)) {
+        // TODO throw and catch i2c failures during eeprom read
+        if (iface_debug && ((ret < 0) || (unsigned)ret < (num_bytes))) {
             std::cerr << "USRP: failed i2c read: " << ret << std::endl;
             return byte_vector_t(num_bytes, 0xff); 
         }
