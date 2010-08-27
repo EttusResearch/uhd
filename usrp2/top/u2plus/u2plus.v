@@ -310,7 +310,7 @@ module u2plus
 		     .wb_clk            (wb_clk),
 		     .clock_ready       (clock_ready),
 		     .clk_to_mac	(CLK_TO_MAC_int2),
-		     .pps_in		(pps_in),
+		     .pps_in		(PPS_IN),
 		     .leds		(leds_int),
 		     .debug		(debug[31:0]),
 		     .debug_clk		(debug_clk[1:0]),
