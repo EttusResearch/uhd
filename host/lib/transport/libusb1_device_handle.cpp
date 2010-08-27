@@ -20,7 +20,7 @@
 
 using namespace uhd::transport;
 
-const int libusb_debug_level = 3;
+const int libusb_debug_level = 0;
 
 class libusb1_device_handle_impl : public usb_device_handle {
 public:

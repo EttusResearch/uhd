@@ -20,7 +20,7 @@
 
 using namespace uhd::transport;
 
-const int libusb_debug_level = 3;
+const int libusb_debug_level = 0;
 const int libusb_timeout = 0;
 
 /***********************************************************************
