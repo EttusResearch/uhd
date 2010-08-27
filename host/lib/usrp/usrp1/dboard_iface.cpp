@@ -19,6 +19,7 @@
 #include "usrp1_impl.hpp"
 #include "fpga_regs_common.h"
 #include "usrp_spi_defs.h"
+#include "fpga_regs_standard.h"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
@@ -37,12 +38,15 @@ public:
     usrp1_dboard_iface(usrp1_iface::sptr iface,
                        usrp1_clock_ctrl::sptr clock,
                        usrp1_codec_ctrl::sptr codec,
-                       usrp1_impl::dboard_slot_t dboard_slot
-    ){
+                       usrp1_impl::dboard_slot_t dboard_slot,
+                       const dboard_id_t &rx_dboard_id
+    ):
+        _dboard_slot(dboard_slot),
+        _rx_dboard_id(rx_dboard_id)
+    {
         _iface = iface;
         _clock = clock;
         _codec = codec;
-        _dboard_slot = dboard_slot;
 
         //init the clock rate shadows
         this->set_clock_rate(UNIT_RX, _clock->get_master_clock_freq());
@@ -95,7 +99,8 @@ private:
     usrp1_clock_ctrl::sptr _clock;
     usrp1_codec_ctrl::sptr _codec;
     uhd::dict<unit_t, double> _clock_rates;
-    usrp1_impl::dboard_slot_t _dboard_slot;
+    const usrp1_impl::dboard_slot_t _dboard_slot;
+    const dboard_id_t &_rx_dboard_id;
 };
 
 /***********************************************************************
@@ -104,33 +109,55 @@ private:
 dboard_iface::sptr usrp1_impl::make_dboard_iface(usrp1_iface::sptr iface,
                                            usrp1_clock_ctrl::sptr clock,
                                            usrp1_codec_ctrl::sptr codec,
-                                           dboard_slot_t dboard_slot
+                                           dboard_slot_t dboard_slot,
+                                           const dboard_id_t &rx_dboard_id
 ){
-    return dboard_iface::sptr(new usrp1_dboard_iface(iface, clock, codec, dboard_slot));
+    return dboard_iface::sptr(new usrp1_dboard_iface(
+        iface, clock, codec, dboard_slot, rx_dboard_id
+    ));
 }
 
 /***********************************************************************
  * Clock Rates
  **********************************************************************/
+static const dboard_id_t dbsrx_classic_id(0x0002);
+
+/*
+ * Daughterboard reference clock register
+ *
+ * Bit  7    - 1 turns on refclk, 0 allows IO use
+ * Bits 6:0  - Divider value
+ */
 void usrp1_dboard_iface::set_clock_rate(unit_t unit, double rate)
 {
+    assert_has(this->get_clock_rates(unit), rate, "dboard clock rate");
     _clock_rates[unit] = rate;
-    switch(unit) {
-    case UNIT_RX: return _clock->set_rx_dboard_clock_rate(rate);    
-    case UNIT_TX: return _clock->set_tx_dboard_clock_rate(rate);    
+
+    if (unit == UNIT_RX && _rx_dboard_id == dbsrx_classic_id){
+        size_t divider = size_t(rate/_clock->get_master_clock_freq());
+        switch(_dboard_slot){
+        case usrp1_impl::DBOARD_SLOT_A:
+            _iface->poke32(FR_RX_A_REFCLK, (divider & 0x7f) | 0x80);
+            break;
+
+        case usrp1_impl::DBOARD_SLOT_B:
+            _iface->poke32(FR_RX_B_REFCLK, (divider & 0x7f) | 0x80);
+            break;
+        }
     }
 }
 
-/*
- * TODO: if this is a dbsrx return the rate of 4MHZ and set FPGA magic
- */
 std::vector<double> usrp1_dboard_iface::get_clock_rates(unit_t unit)
 {
-    switch(unit) {
-    case UNIT_RX: return _clock->get_rx_dboard_clock_rates();
-    case UNIT_TX: return _clock->get_tx_dboard_clock_rates();
-    default: UHD_THROW_INVALID_CODE_PATH();
+    std::vector<double> rates;
+    if (unit == UNIT_RX && _rx_dboard_id == dbsrx_classic_id){
+        for (size_t div = 1; div <= 127; div++)
+            rates.push_back(_clock->get_master_clock_freq() / div);
     }
+    else{
+        rates.push_back(_clock->get_master_clock_freq());
+    }
+    return rates;
 }
 
 double usrp1_dboard_iface::get_clock_rate(unit_t unit)
@@ -138,12 +165,9 @@ double usrp1_dboard_iface::get_clock_rate(unit_t unit)
     return _clock_rates[unit];
 }
 
-void usrp1_dboard_iface::set_clock_enabled(unit_t unit, bool enb)
+void usrp1_dboard_iface::set_clock_enabled(unit_t, bool)
 {
-    switch(unit) {
-    case UNIT_RX: return _clock->enable_rx_dboard_clock(enb);
-    case UNIT_TX: return _clock->enable_tx_dboard_clock(enb);
-    }
+    //TODO we can only enable for special case anyway...
 }
 
 /***********************************************************************
@@ -241,7 +265,7 @@ void usrp1_dboard_iface::set_atr_reg(unit_t unit,
             _iface->poke32(FR_ATR_RXVAL_1, value);
         else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
             _iface->poke32(FR_ATR_RXVAL_3, value);
-        break; 
+        break;
     case UNIT_TX:
         if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
             _iface->poke32(FR_ATR_TXVAL_0, value);
@@ -265,14 +289,14 @@ static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit,
     switch(unit) {
     case dboard_iface::UNIT_TX:
         if (slot == usrp1_impl::DBOARD_SLOT_A)
-            return SPI_ENABLE_TX_A; 
+            return SPI_ENABLE_TX_A;
         else if (slot == usrp1_impl::DBOARD_SLOT_B)
             return SPI_ENABLE_TX_B;
         else
             break;
     case dboard_iface::UNIT_RX:
         if (slot == usrp1_impl::DBOARD_SLOT_A)
-            return SPI_ENABLE_RX_A; 
+            return SPI_ENABLE_RX_A;
         else if (slot == usrp1_impl::DBOARD_SLOT_B)
             return SPI_ENABLE_RX_B;
         else

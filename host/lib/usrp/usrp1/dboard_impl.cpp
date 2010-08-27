@@ -67,7 +67,8 @@ void usrp1_impl::dboard_init(void)
 
         //create a new dboard interface and manager
         _dboard_ifaces[dboard_slot] = make_dboard_iface(
-            _iface, _clock_ctrl, _codec_ctrls[dboard_slot], dboard_slot
+            _iface, _clock_ctrl, _codec_ctrls[dboard_slot],
+            dboard_slot, _rx_db_eeproms[dboard_slot].id
         );
 
         _dboard_managers[dboard_slot] = dboard_manager::make(

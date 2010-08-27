@@ -45,44 +45,6 @@ public:
      */
     virtual double get_master_clock_freq(void) = 0;
 
-    /*!
-     * Get the possible rates of the rx dboard clock.
-     * \return a vector of clock rates in Hz
-     */
-    virtual std::vector<double> get_rx_dboard_clock_rates(void) = 0;
-
-    /*!
-     * Get the possible rates of the tx dboard clock.
-     * \return a vector of clock rates in Hz
-     */
-    virtual std::vector<double> get_tx_dboard_clock_rates(void) = 0;
-
-    /*!
-     * Set the rx dboard clock rate to a possible rate.
-     * \param rate the new clock rate in Hz
-     * \throw exception when rate cannot be achieved
-     */
-    virtual void set_rx_dboard_clock_rate(double rate) = 0;
-
-    /*!
-     * Set the tx dboard clock rate to a possible rate.
-     * \param rate the new clock rate in Hz
-     * \throw exception when rate cannot be achieved
-     */
-    virtual void set_tx_dboard_clock_rate(double rate) = 0;
-
-    /*!
-     * Enable/disable the rx dboard clock.
-     * \param enb true to enable
-     */
-    virtual void enable_rx_dboard_clock(bool enb) = 0;
-
-    /*!
-     * Enable/disable the tx dboard clock.
-     * \param enb true to enable
-     */
-    virtual void enable_tx_dboard_clock(bool enb) = 0;
-
 };
 
 #endif /* INCLUDED_USRP1_CLOCK_CTRL_HPP */

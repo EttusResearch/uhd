@@ -25,6 +25,7 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -45,8 +46,7 @@ public:
     typedef boost::function<void(const wax::obj &, const wax::obj &)> set_t;
     typedef boost::shared_ptr<wax_obj_proxy> sptr;
 
-    static sptr make(const get_t &get, const set_t &set)
-    {
+    static sptr make(const get_t &get, const set_t &set){
         return sptr(new wax_obj_proxy(get, set));
     }
 
@@ -102,13 +102,15 @@ private:
      * \param clock the clock control interface
      * \param codec the codec control interface
      * \param dboard_slot the slot identifier
+     * \param rx_dboard_id the db id for the rx board (used for evil dbsrx purposes)
      * \return a sptr to a new dboard interface
      */
     static uhd::usrp::dboard_iface::sptr make_dboard_iface(
         usrp1_iface::sptr iface,
         usrp1_clock_ctrl::sptr clock,
         usrp1_codec_ctrl::sptr codec,
-        dboard_slot_t dboard_slot
+        dboard_slot_t dboard_slot,
+        const uhd::usrp::dboard_id_t &rx_dboard_id
     );
 
     //interface to ioctls and file descriptor
