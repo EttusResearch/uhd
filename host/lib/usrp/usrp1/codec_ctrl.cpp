@@ -33,7 +33,7 @@
 
 using namespace uhd;
 
-static const bool codec_debug = true; 
+static const bool codec_debug = false;
 
 const gain_range_t usrp1_codec_ctrl::tx_pga_gain_range(-20, 0, float(0.1));
 const gain_range_t usrp1_codec_ctrl::rx_pga_gain_range(0, 20, 1);
