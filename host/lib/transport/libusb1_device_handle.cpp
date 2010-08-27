@@ -88,6 +88,16 @@ usb_device_handle::sptr make_usb_device_handle(libusb_device *dev)
         device_addr));
 }
 
+bool check_fsf_device(libusb_device *dev)
+{
+    libusb_device_descriptor desc;
+
+    if (libusb_get_device_descriptor(dev, &desc) < 0) {
+        UHD_ASSERT_THROW("USB: failed to get device descriptor");
+    }
+
+    return desc.idVendor == 0xfffe;
+}
 
 std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list()
 {
@@ -105,7 +115,8 @@ std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list()
     ssize_t i = 0;
     for (i = 0; i < cnt; i++) {
         libusb_device *dev = list[i];
-        device_list.push_back(make_usb_device_handle(dev));
+        if (check_fsf_device(dev)) 
+            device_list.push_back(make_usb_device_handle(dev));
     }
 
     libusb_free_device_list(list, 0);
