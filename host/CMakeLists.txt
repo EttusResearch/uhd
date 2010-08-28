@@ -16,7 +16,7 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD CXX)
+PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
 ########################################################################
@@ -61,8 +61,6 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 IF(CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-Wall)
     ADD_DEFINITIONS(-Wextra)
-    ADD_DEFINITIONS(-pedantic)
-    ADD_DEFINITIONS(-ansi)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
