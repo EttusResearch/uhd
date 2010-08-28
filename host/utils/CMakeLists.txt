@@ -24,9 +24,17 @@ TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
 ADD_EXECUTABLE(uhd_usrp_probe uhd_usrp_probe.cpp)
 TARGET_LINK_LIBRARIES(uhd_usrp_probe uhd)
 
+ADD_EXECUTABLE(fpga-downloader fpga-downloader.cpp)
+TARGET_LINK_LIBRARIES(fpga-downloader)
+
+ADD_EXECUTABLE(usrp-e-loopback usrp-e-loopback.c)
+TARGET_LINK_LIBRARIES(usrp-e-loopback pthread)
+
 INSTALL(TARGETS
     uhd_find_devices
     uhd_usrp_probe
+    fpga-downloader
+    usrp-e-loopback
     RUNTIME DESTINATION ${RUNTIME_DIR}
 )
 
