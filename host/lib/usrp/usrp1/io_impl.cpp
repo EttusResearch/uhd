@@ -189,7 +189,7 @@ bool usrp1_impl::io_impl::check_underrun(usrp_ctrl::sptr ctrl_if,
         if (ret < 0)
             std::cerr << "USRP: underrun check failed" << std::endl;
         if (underrun)
-            std::cerr << "U" << std::endl;
+            std::cerr << "Uu";
 
         send_state.underrun_poll_samp_count = 0;
     }
@@ -289,7 +289,7 @@ bool usrp1_impl::io_impl::check_overrun(usrp_ctrl::sptr ctrl_if,
         if (ret < 0)
             std::cerr << "USRP: overrrun check failed" << std::endl;
         if (overrun)
-            std::cerr << "O" << std::endl;
+            std::cerr << "Oo";
 
         recv_state.overrun_poll_samp_count = 0;
     }
