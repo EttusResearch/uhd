@@ -95,12 +95,6 @@ public:
 
     ~usb_endpoint();
 
-    // Accessors 
-    int get_endpoint() const { return _endpoint; }
-    bool get_direction() const { return _input; }
-    libusb_device_handle *get_dev_handle() const { return _dev_handle; }
-    libusb_context *get_ctx() const { return _ctx; }
-
     // Exposed interface for submitting / retrieving transfer buffers
     bool submit(libusb_transfer *lut);
     libusb_transfer *get_completed_transfer();
