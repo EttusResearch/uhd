@@ -27,6 +27,7 @@
 #include <cstdlib>
 
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -239,6 +240,21 @@ int main(int argc, char *argv[])
 
 	if (argc == 2)
 		bit_file = argv[1];
+
+	bool module_found(false);
+	std::ifstream mod_file("/proc/modules");
+	while (!mod_file.eof()) {
+		std::string line;
+		getline(mod_file, line);
+		if (line.find("usrp_e") != std::string::npos)
+			module_found = true;
+	}
+	mod_file.close();
+
+	if (module_found) {
+		std::cout << "USRP Embedded kernel module loaded, not loading FPGA." << std::endl;
+		return -1;
+	}
 
 	std::cout << "FPGA config file: " << bit_file << std::endl;
 
