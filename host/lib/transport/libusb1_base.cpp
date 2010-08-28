@@ -21,6 +21,15 @@
 
 using namespace uhd::transport;
 
+/**********************************************************
+ * Helper Methods
+ **********************************************************/
+/*
+ * Check for FSF device
+ * Compare the device's descriptor Vendor ID
+ * \param dev pointer to libusb_device
+ * \return true if Vendor ID matches 0xfffe
+ */
 bool check_fsf_device(libusb_device *dev)
 {
     libusb_device_descriptor desc;
@@ -32,6 +41,9 @@ bool check_fsf_device(libusb_device *dev)
     return desc.idVendor == 0xfffe;
 }
 
+/**********************************************************
+ * libusb namespace 
+ **********************************************************/
 void libusb::init(libusb_context **ctx, int debug_level)
 {
     if (libusb_init(ctx) < 0)

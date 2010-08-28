@@ -30,9 +30,11 @@ const int libusb_timeout = 0;
 
 /***********************************************************************
  * Helper functions
- *
- * Print to stdout the values of a libusb_transfer struct
  ***********************************************************************/
+/*
+ * Print the values of a libusb_transfer struct
+ * http://libusb.sourceforge.net/api-1.0/structlibusb__transfer.html
+ */
 void pp_transfer(libusb_transfer *lut)
 {
     std::cout << "Libusb transfer"       << std::endl;
@@ -46,7 +48,7 @@ void pp_transfer(libusb_transfer *lut)
 }
 
 /***********************************************************************
- * USB asynchronous phony zero_copy endpoint
+ * USB asynchronous zero_copy endpoint
  *   This endpoint implementation provides asynchronous I/O to libusb-1.0
  *   devices. Each endpoint is directional and two can be combined to
  *   create a bidirectional interface. It is a zero copy implementation

@@ -22,6 +22,9 @@ using namespace uhd::transport;
 
 const int libusb_debug_level = 0;
 
+/****************************************************************
+ * libusb USB device handle implementation class
+ ***************************************************************/
 class libusb1_device_handle_impl : public usb_device_handle {
 public:
     libusb1_device_handle_impl(std::string serial,

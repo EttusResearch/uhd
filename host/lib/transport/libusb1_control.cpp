@@ -48,8 +48,15 @@ libusb_control_impl::libusb_control_impl(usb_device_handle::sptr handle)
 {
     libusb::init(&_ctx, libusb_debug_level);
 
+    // Find and open the libusb_device corresponding to the
+    // given handle and return the libusb_device_handle
+    // that can be used for I/O purposes.
     _dev_handle = libusb::open_device(_ctx, handle);
 
+    // Open USB interfaces for control using magic value
+    // IN interface:      2
+    // OUT interface:     1
+    // Control interface: 0
     libusb::open_interface(_dev_handle, 0);
 }
 
