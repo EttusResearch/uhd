@@ -160,6 +160,35 @@ static boost::uint32_t calc_tx_mux(
     return ((channel_flags & 0xffff) << 4) | ((nchan & 0x7) << 0);
 }
 
+/*!
+ * Capabilities Register
+ *
+ *    3                   2                   1                   0
+ *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ * +-----------------------------------------------+-+-----+-+-----+
+ * |               Reserved                        |T|DUCs |R|DDCs |
+ * +-----------------------------------------------+-+-----+-+-----+
+ */
+static int num_ddcs(boost::uint32_t regval)
+{
+    return (regval >> 0) & 0x0007;
+}
+
+static int num_ducs(boost::uint32_t regval)
+{
+    return (regval >> 4) & 0x0007;
+}
+
+static bool has_rx_halfband(boost::uint32_t regval)
+{
+    return (regval >> 3) & 0x0001;
+}
+
+static bool has_tx_halfband(boost::uint32_t regval)
+{
+    return (regval >> 7) & 0x0001;
+}
+
 /***********************************************************************
  * Mboard Initialization
  **********************************************************************/
@@ -187,6 +216,17 @@ void usrp1_impl::mboard_init(void)
 
     // Set default for TX format to 16-bit I&Q
     _iface->poke32(FR_TX_FORMAT, 0x00000000);
+
+    // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+    // 
+    // Do something useful with the capabilities register
+    //
+    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
+    std::cout << "USRP1 Capabilities" << std::endl;
+    std::cout << "    number of duc's: " << num_ddcs(regval) << std::endl;
+    std::cout << "    number of ddc's: " << num_ducs(regval) << std::endl;
+    std::cout << "    rx halfband:     " << has_rx_halfband(regval) << std::endl;
+    std::cout << "    tx halfband:     " << has_tx_halfband(regval) << std::endl;
 }
 
 void usrp1_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd)
