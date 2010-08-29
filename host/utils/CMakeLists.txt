@@ -30,11 +30,15 @@ TARGET_LINK_LIBRARIES(fpga-downloader)
 ADD_EXECUTABLE(usrp-e-loopback usrp-e-loopback.c)
 TARGET_LINK_LIBRARIES(usrp-e-loopback pthread)
 
+ADD_EXECUTABLE(usrp-e-debug-pins usrp-e-debug-pins.c)
+TARGET_LINK_LIBRARIES(usrp-e-debug-pins)
+
 INSTALL(TARGETS
     uhd_find_devices
     uhd_usrp_probe
     fpga-downloader
     usrp-e-loopback
+    usrp-e-debug-pins
     RUNTIME DESTINATION ${RUNTIME_DIR}
 )
 
