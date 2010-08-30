@@ -205,3 +205,18 @@ Example, set the args string to the following:
 ::
 
     addr=192.168.10.2, recv_buff_size=100e6
+
+------------------------------------------------------------------------
+Hardware setup notes
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ref Clock - 10MHz
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using an external 10MHz reference clock requires a signal level between +5dBm and +20dBm at 10MHz applied to the Ref Clock SMA port on the front panel.
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PPS - Pulse Per Second
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using a PPS signal for timestamp synchronization requires a 5Vpp square wave signal
