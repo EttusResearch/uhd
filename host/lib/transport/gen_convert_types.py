@@ -36,7 +36,8 @@ using namespace uhd;
  **********************************************************************/
 UHD_INLINE boost::uint8_t get_pred(
     const io_type_t &io_type,
-    const otw_type_t &otw_type
+    const otw_type_t &otw_type,
+    size_t num_chans
 ){
     boost::uint8_t pred = 0;
 
@@ -63,6 +64,14 @@ UHD_INLINE boost::uint8_t get_pred(
     default: throw std::runtime_error("unhandled io type id");
     }
 
+    switch(num_chans){
+    case 1: pred |= $ph.chan1_p; break;
+    case 2: pred |= $ph.chan2_p; break;
+    case 3: pred |= $ph.chan3_p; break;
+    case 4: pred |= $ph.chan4_p; break;
+    default: throw std::runtime_error("unhandled number of channels");
+    }
+
     return pred;
 }
 
@@ -70,17 +79,37 @@ UHD_INLINE boost::uint8_t get_pred(
  * Convert host type to device type
  **********************************************************************/
 void transport::convert_io_type_to_otw_type(
-    const void *io_buff, const io_type_t &io_type,
-    void *otw_buff, const otw_type_t &otw_type,
-    size_t num_samps
+    const std::vector<const void *> &io_buffs,
+    const io_type_t &io_type,
+    void *otw_buff,
+    const otw_type_t &otw_type,
+    size_t nsamps_per_io_buff
 ){
-    switch(get_pred(io_type, otw_type)){
+    switch(get_pred(io_type, otw_type, io_buffs.size())){
     #for $pred in range(2**$ph.nbits)
     case $pred:
         #set $out_type = $ph.get_dev_type($pred)
         #set $in_type = $ph.get_host_type($pred)
-        #set $converter = '_'.join([$in_type, 'to', $out_type, $ph.get_swap_type($pred)])
-        $(converter)((const $(in_type)_t *)io_buff, ($(out_type)_t *)otw_buff, num_samps);
+        #set $num_chans = $ph.get_num_chans($pred)
+        #set $converter = '_'.join([$in_type, 'to', $out_type])
+        #if $num_chans == 1
+        $(converter)_$ph.get_swap_type($pred)(
+            reinterpret_cast<const $(in_type)_t *>(io_buffs.front()),
+            reinterpret_cast<$(out_type)_t *>(otw_buff),
+            nsamps_per_io_buff
+        );
+        #else
+        for (size_t i = 0; i < nsamps_per_io_buff; i++){
+            #for $j in range($num_chans)
+            reinterpret_cast<$(out_type)_t *>(otw_buff)[i*$num_chans + $j] =
+                #if $ph.get_swap_type($pred) == 'bswap'
+                uhd::byteswap($(converter)(reinterpret_cast<const $(in_type)_t *>(io_buffs[$j])[i]));
+                #else
+                $(converter)(reinterpret_cast<const $(in_type)_t *>(io_buffs[$j])[i]);
+                #end if
+            #end for
+        }
+        #end if
         break;
     #end for
     }
@@ -90,17 +119,37 @@ void transport::convert_io_type_to_otw_type(
  * Convert device type to host type
  **********************************************************************/
 void transport::convert_otw_type_to_io_type(
-    const void *otw_buff, const otw_type_t &otw_type,
-    void *io_buff, const io_type_t &io_type,
-    size_t num_samps
+    const void *otw_buff,
+    const otw_type_t &otw_type,
+    std::vector<void *> &io_buffs,
+    const io_type_t &io_type,
+    size_t nsamps_per_io_buff
 ){
-    switch(get_pred(io_type, otw_type)){
+    switch(get_pred(io_type, otw_type, io_buffs.size())){
     #for $pred in range(2**$ph.nbits)
     case $pred:
         #set $out_type = $ph.get_host_type($pred)
         #set $in_type = $ph.get_dev_type($pred)
-        #set $converter = '_'.join([$in_type, 'to', $out_type, $ph.get_swap_type($pred)])
-        $(converter)((const $(in_type)_t *)otw_buff, ($(out_type)_t *)io_buff, num_samps);
+        #set $num_chans = $ph.get_num_chans($pred)
+        #set $converter = '_'.join([$in_type, 'to', $out_type])
+        #if $num_chans == 1
+        $(converter)_$ph.get_swap_type($pred)(
+            reinterpret_cast<const $(in_type)_t *>(otw_buff),
+            reinterpret_cast<$(out_type)_t *>(io_buffs.front()),
+            nsamps_per_io_buff
+        );
+        #else
+        for (size_t i = 0; i < nsamps_per_io_buff; i++){
+            #for $j in range($num_chans)
+            reinterpret_cast<$(out_type)_t *>(io_buffs[$j])[i] =
+                #if $ph.get_swap_type($pred) == 'bswap'
+                $(converter)(uhd::byteswap(reinterpret_cast<const $(in_type)_t *>(otw_buff)[i*$num_chans + $j]));
+                #else
+                $(converter)(reinterpret_cast<const $(in_type)_t *>(otw_buff)[i*$num_chans + $j]);
+                #end if
+            #end for
+        }
+        #end if
         break;
     #end for
     }
@@ -118,27 +167,43 @@ class ph:
     item32_p = 0b00000
     sc16_p   = 0b00010
     fc32_p   = 0b00000
+    chan1_p  = 0b00000
+    chan2_p  = 0b00100
+    chan3_p  = 0b01000
+    chan4_p  = 0b01100
 
-    nbits = 2 #see above
+    nbits = 4 #see above
 
     @staticmethod
-    def has(pred, flag): return (pred & flag) == flag
+    def has(pred, mask, flag): return (pred & mask) == flag
 
     @staticmethod
     def get_swap_type(pred):
-        if ph.has(pred, ph.bswap_p): return 'bswap'
-        if ph.has(pred, ph.nswap_p): return 'nswap'
+        mask = 0b1
+        if ph.has(pred, mask, ph.bswap_p): return 'bswap'
+        if ph.has(pred, mask, ph.nswap_p): return 'nswap'
         raise NotImplementedError
 
     @staticmethod
     def get_dev_type(pred):
-        if ph.has(pred, ph.item32_p): return 'item32'
+        mask = 0b0
+        if ph.has(pred, mask, ph.item32_p): return 'item32'
         raise NotImplementedError
 
     @staticmethod
     def get_host_type(pred):
-        if ph.has(pred, ph.sc16_p): return 'sc16'
-        if ph.has(pred, ph.fc32_p): return 'fc32'
+        mask = 0b10
+        if ph.has(pred, mask, ph.sc16_p): return 'sc16'
+        if ph.has(pred, mask, ph.fc32_p): return 'fc32'
+        raise NotImplementedError
+
+    @staticmethod
+    def get_num_chans(pred):
+        mask = 0b1100
+        if ph.has(pred, mask, ph.chan1_p): return 1
+        if ph.has(pred, mask, ph.chan2_p): return 2
+        if ph.has(pred, mask, ph.chan3_p): return 3
+        if ph.has(pred, mask, ph.chan4_p): return 4
         raise NotImplementedError
 
 if __name__ == '__main__':
