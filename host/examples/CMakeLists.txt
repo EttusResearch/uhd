@@ -28,10 +28,14 @@ TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
 ADD_EXECUTABLE(tx_waveforms tx_waveforms.cpp)
 TARGET_LINK_LIBRARIES(tx_waveforms uhd)
 
+ADD_EXECUTABLE(pps_test pps_test.cpp)
+TARGET_LINK_LIBRARIES(pps_test uhd)
+
 INSTALL(TARGETS
     benchmark_rx_rate
     rx_timed_samples
     tx_timed_samples
     tx_waveforms
+    pps_test
     RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
 )
