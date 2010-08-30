@@ -34,7 +34,9 @@ module u1e_core
    localparam SR_TX_DSP = 17;    // 5 regs
    localparam SR_TX_CTRL = 24;   // 2 regs
    localparam SR_TIME64 = 28;    // 4 regs
-      
+
+   wire 	COMPAT_NUM = 8'd2;
+   
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst = rst_fpga;
    
@@ -104,6 +106,8 @@ module u1e_core
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
 `ifdef LOOPBACK
+   wire [7:0] 	 WHOAMI = 1;
+   
    fifo_cascade #(.WIDTH(36), .SIZE(12)) loopback_fifo
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx | clear_rx),
       .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
@@ -116,7 +120,8 @@ module u1e_core
 `endif // LOOPBACK
 
 `ifdef TIMED
-
+   wire [7:0] 	 WHOAMI = 2;
+   
    // TX side
    wire 	 tx_enable;
    
@@ -147,6 +152,8 @@ module u1e_core
 `endif //  `ifdef TIMED
 
 `ifdef DSP
+   wire [7:0] 	 WHOAMI = 0;
+   
    wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
    
    // /////////////////////////////////////////////////////////////////////////
@@ -303,9 +310,10 @@ module u1e_core
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
-   localparam REG_RX_FRAMELEN = 7'd10; // out
-   localparam REG_TX_FRAMELEN = 7'd12; // in
-   localparam REG_XFER_RATE = 7'd14;   // in
+   localparam REG_RX_FRAMELEN = 7'd10; // in
+   localparam REG_TX_FRAMELEN = 7'd12; // out
+   localparam REG_XFER_RATE = 7'd14;   // out
+   localparam REG_COMPAT = 7'd16;      // in
    
    always @(posedge wb_clk)
      if(wb_rst)
@@ -344,6 +352,7 @@ module u1e_core
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
 			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
+			(s0_adr[6:0] == REG_COMPAT) ? { WHOAMI, COMPAT_NUM } :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;
