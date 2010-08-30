@@ -42,36 +42,51 @@ typedef boost::uint32_t              item32_t;
 /***********************************************************************
  * Convert complex short buffer to items32
  **********************************************************************/
+static UHD_INLINE item32_t sc16_to_item32(sc16_t num){
+    boost::uint16_t real = num.real();
+    boost::uint16_t imag = num.imag();
+    return (item32_t(real) << 16) | (item32_t(imag) << 0);
+}
+
 static UHD_INLINE void sc16_to_item32_nswap(
     const sc16_t *input, item32_t *output, size_t nsamps
 ){
-    std::memcpy(output, input, nsamps*sizeof(item32_t));
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = sc16_to_item32(input[i]);
+    }
 }
 
 static UHD_INLINE void sc16_to_item32_bswap(
     const sc16_t *input, item32_t *output, size_t nsamps
 ){
-    const item32_t *item32_input = (const item32_t *)input;
     for (size_t i = 0; i < nsamps; i++){
-        output[i] = uhd::byteswap(item32_input[i]);
+        output[i] = uhd::byteswap(sc16_to_item32(input[i]));
     }
 }
 
 /***********************************************************************
  * Convert items32 buffer to complex short
  **********************************************************************/
+static UHD_INLINE sc16_t item32_to_sc16(item32_t item){
+    return sc16_t(
+        boost::int16_t(item >> 16),
+        boost::int16_t(item >> 0)
+    );
+}
+
 static UHD_INLINE void item32_to_sc16_nswap(
     const item32_t *input, sc16_t *output, size_t nsamps
 ){
-    std::memcpy(output, input, nsamps*sizeof(item32_t));
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = item32_to_sc16(input[i]);
+    }
 }
 
 static UHD_INLINE void item32_to_sc16_bswap(
     const item32_t *input, sc16_t *output, size_t nsamps
 ){
-    item32_t *item32_output = (item32_t *)output;
     for (size_t i = 0; i < nsamps; i++){
-        item32_output[i] = uhd::byteswap(input[i]);
+        output[i] = item32_to_sc16(uhd::byteswap(input[i]));
     }
 }
 

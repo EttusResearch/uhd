@@ -95,7 +95,7 @@ void transport::convert_otw_type_to_io_type(
     size_t num_samps
 ){
     switch(get_pred(io_type, otw_type)){
-    #for $pred in range(4)
+    #for $pred in range(2**$ph.nbits)
     case $pred:
         #set $out_type = $ph.get_host_type($pred)
         #set $in_type = $ph.get_dev_type($pred)

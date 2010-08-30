@@ -27,7 +27,7 @@
 using namespace uhd;
 
 //typedefs for complex types
-typedef std::complex<boost::uint16_t> sc16_t;
+typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 
 //extract pointer to POD since using &vector.front() throws in MSVC
@@ -156,5 +156,87 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
     //try various lengths to test edge cases
     for (size_t nsamps = 0; nsamps < 16; nsamps++){
         test_convert_types_fc32(nsamps, io_type, otw_type);
+    }
+}
+
+/***********************************************************************
+ * Test float to short conversion loopback
+ **********************************************************************/
+BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
+    io_type_t io_type_in(io_type_t::COMPLEX_FLOAT32);
+    io_type_t io_type_out(io_type_t::COMPLEX_INT16);
+
+    otw_type_t otw_type;
+    otw_type.byteorder = otw_type_t::BO_NATIVE;
+    otw_type.width = 16;
+
+    const size_t nsamps = 13;
+    std::vector<fc32_t> input(nsamps);
+    BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
+        (std::rand()/float(RAND_MAX/2)) - 1,
+        (std::rand()/float(RAND_MAX/2)) - 1
+    );
+
+    //convert float to dev
+    std::vector<boost::uint32_t> tmp(nsamps);
+    transport::convert_io_type_to_otw_type(
+        pod2ptr(input), io_type_in,
+        pod2ptr(tmp), otw_type,
+        nsamps
+    );
+
+    //convert dev to short
+    std::vector<sc16_t> output(nsamps);
+    transport::convert_otw_type_to_io_type(
+        pod2ptr(tmp), otw_type,
+        pod2ptr(output), io_type_out,
+        nsamps
+    );
+
+    //test that the inputs and outputs match
+    for (size_t i = 0; i < nsamps; i++){
+        BOOST_CHECK_CLOSE_FRACTION(input[i].real(), output[i].real()/float(32767), float(0.01));
+        BOOST_CHECK_CLOSE_FRACTION(input[i].imag(), output[i].imag()/float(32767), float(0.01));
+    }
+}
+
+/***********************************************************************
+ * Test short to float conversion loopback
+ **********************************************************************/
+BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
+    io_type_t io_type_in(io_type_t::COMPLEX_INT16);
+    io_type_t io_type_out(io_type_t::COMPLEX_FLOAT32);
+
+    otw_type_t otw_type;
+    otw_type.byteorder = otw_type_t::BO_NATIVE;
+    otw_type.width = 16;
+
+    const size_t nsamps = 13;
+    std::vector<sc16_t> input(nsamps);
+    BOOST_FOREACH(sc16_t &in, input) in = sc16_t(
+        std::rand()-(RAND_MAX/2),
+        std::rand()-(RAND_MAX/2)
+    );
+
+    //convert short to dev
+    std::vector<boost::uint32_t> tmp(nsamps);
+    transport::convert_io_type_to_otw_type(
+        pod2ptr(input), io_type_in,
+        pod2ptr(tmp), otw_type,
+        nsamps
+    );
+
+    //convert dev to float
+    std::vector<fc32_t> output(nsamps);
+    transport::convert_otw_type_to_io_type(
+        pod2ptr(tmp), otw_type,
+        pod2ptr(output), io_type_out,
+        nsamps
+    );
+
+    //test that the inputs and outputs match
+    for (size_t i = 0; i < nsamps; i++){
+        BOOST_CHECK_CLOSE_FRACTION(input[i].real()/float(32767), output[i].real(), float(0.01));
+        BOOST_CHECK_CLOSE_FRACTION(input[i].imag()/float(32767), output[i].imag(), float(0.01));
     }
 }
