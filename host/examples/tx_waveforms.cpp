@@ -17,6 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
+#include <uhd/utils/static.hpp>
 #include <uhd/usrp/simple_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread_time.hpp> //system time
@@ -44,9 +45,16 @@ float gen_ramp(float x){
     return std::fmod(x, 1)*2 - 1;
 }
 
+#define sine_table_len 2048
+static float sine_table[sine_table_len];
+UHD_STATIC_BLOCK(gen_sine_table){
+    static const float m_pi = std::acos(float(-1));
+    for (size_t i = 0; i < sine_table_len; i++)
+        sine_table[i] = std::sin((2*m_pi*i)/sine_table_len);
+}
+
 float gen_sine(float x){
-    static const float two_pi = 2*std::acos(float(-1));
-    return std::sin(x*two_pi);
+    return sine_table[size_t(x*sine_table_len)%sine_table_len];
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -65,11 +73,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
         ("duration", po::value<size_t>(&total_duration)->default_value(3), "number of seconds to transmit")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
+        ("rate", po::value<double>(&rate)->default_value(1.5e6), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
         ("gain", po::value<float>(&gain)->default_value(float(0)), "gain for the RF chain")
-        ("wave-type", po::value<std::string>(&wave_type)->default_value("SINE"), "waveform type (CONST, SQUARE, RAMP, SINE)")
+        ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
     ;
     po::variables_map vm;
@@ -112,6 +120,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //error when the waveform is not possible to generate
     if (std::abs(wave_freq) > sdev->get_tx_rate()/2){
         throw std::runtime_error("wave freq out of Nyquist zone");
+    }
+    if (sdev->get_tx_rate()/std::abs(wave_freq) > sine_table_len/2 and wave_type == "SINE"){
+        throw std::runtime_error("sine freq too small for table");
     }
 
     //store the generator function for the selected waveform

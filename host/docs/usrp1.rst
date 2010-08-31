@@ -22,6 +22,41 @@ Change the USRP1's serial number
 TODO
 
 ------------------------------------------------------------------------
+Specifying the subdevice to use
+------------------------------------------------------------------------
+The USRP1 has multiple daughterboard slots, known as slot A and slot B.
+The subdevice specification can be used to select
+the daughterboard and subdevice for each channel.
+For daughterboards with one one subdevice,
+the subdevice name may be left blank for automatic selection.
+
+Ex: The subdev spec markup string to select a WBX on slot B.
+Notice the use of the blank subdevice name for automatic selection.
+
+::
+
+    B:
+
+    -- OR --
+
+    B:0
+
+Ex: The subdev spec markup string to select a BasicRX on slot B.
+Notice that the subdevice name is always specified in the 3 possible cases.
+
+::
+
+    B:AB
+
+    -- OR --
+
+    B:A
+
+    -- OR --
+
+    B:B
+
+------------------------------------------------------------------------
 OS Specific Notes
 ------------------------------------------------------------------------
 

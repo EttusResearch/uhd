@@ -21,6 +21,8 @@
 #include "usrp_spi_defs.h"
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -54,9 +56,19 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     if (hint.has_key("type") and hint["type"] != "usrp1") return usrp1_addrs;
 
     //extract the firmware path for the USRP1
-    std::string usrp1_fw_image = find_image_path(
-        hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
-    );
+    std::string usrp1_fw_image;
+    try{
+        usrp1_fw_image = find_image_path(
+            hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
+        );
+    }
+    catch(const std::exception &e){
+        uhd::print_warning(
+            "Could not locate USRP1 firmware.\n"
+            "Please install the images package.\n"
+        );
+        return usrp1_addrs;
+    }
     std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
     boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : USRP1_VENDOR_ID;
@@ -173,6 +185,10 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
 
     //turn on the transmitter
     _ctrl_transport->usrp_tx_enable(true);
+
+    //init the subdev specs
+    this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
+    this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
 usrp1_impl::~usrp1_impl(void){
