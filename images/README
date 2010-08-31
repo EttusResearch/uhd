@@ -18,3 +18,8 @@ To build the package (unix):
 
 The package generator types are described here:
     http://www.cmake.org/Wiki/CMake:CPackPackageGenerators
+
+Fedora note:
+    The sdcc binaries are prefixed with "sdcc-" which breaks the build.
+    However, /usr/libexec/sdcc contains properly named sdcc binaries.
+    export PATH=${PATH}:/usr/libexec/sdcc

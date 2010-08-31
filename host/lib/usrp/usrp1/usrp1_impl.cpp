@@ -22,6 +22,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -50,9 +51,19 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     if (hint.has_key("type") and hint["type"] != "usrp1") return usrp1_addrs;
 
     //extract the firmware path for the USRP1
-    std::string usrp1_fw_image = find_image_path(
-        hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
-    );
+    std::string usrp1_fw_image;
+    try{
+        usrp1_fw_image = find_image_path(
+            hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
+        );
+    }
+    catch(const std::exception &e){
+        uhd::print_warning(
+            "Could not locate USRP1 firmware.\n"
+            "Please install the images package.\n"
+        );
+        return usrp1_addrs;
+    }
     std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
     //see what we got on the USB bus
