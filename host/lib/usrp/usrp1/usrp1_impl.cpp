@@ -21,6 +21,7 @@
 #include "usrp_spi_defs.h"
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
+#include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -171,6 +172,10 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
 
     //turn on the transmitter
     _ctrl_transport->usrp_tx_enable(true);
+
+    //init the subdev specs
+    this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
+    this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
 usrp1_impl::~usrp1_impl(void){
