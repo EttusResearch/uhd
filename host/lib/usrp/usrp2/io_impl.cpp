@@ -113,7 +113,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 metadata.event_code = vrt_packet_handler::get_context_code<async_metadata_t::event_code_t>(vrt_hdr, if_packet_info);
 
                 //print the famous U, and push the metadata into the message queue
-                if (metadata.event_code & underflow_flags) std::cerr << "U";
+                if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
                 async_msg_fifo->push_with_pop_on_full(metadata);
                 continue;
             }
@@ -121,7 +121,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
             //handle the packet count / sequence number
             if (if_packet_info.packet_count != next_packet_seq){
                 //std::cerr << "S" << (if_packet_info.packet_count - next_packet_seq)%16;
-                std::cerr << "O"; //report overflow (drops in the kernel)
+                std::cerr << "O" << std::flush; //report overflow (drops in the kernel)
             }
             next_packet_seq = (if_packet_info.packet_count+1)%16;
 
