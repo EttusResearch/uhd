@@ -19,12 +19,12 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-firmware2dir = $(prefix)/share/usrp/rev2
-firmware2_DATA = std.ihx
+#firmwaredir = $(prefix)/share/uhd/images
+#firmware_DATA = usrp1_fw.ihx
 
-# we put the same stuff in the rev4 directory
-firmware4dir = $(prefix)/share/usrp/rev4
-firmware4_DATA = std.ihx
+#eepromdir = $(firmwaredir)
+#eepromfile = eeprom_boot.ihx
+#eeprom_DATA = usrp1_eeprom.bin
 
 EXTRA_DIST =			\
 	edit-gpif		\
@@ -85,11 +85,6 @@ EXECUTABLES = 			\
 
 STARTUP = _startup.rel
 
-noinst_SCRIPTS = 		\
-	burn-usrp2-eeprom	\
-	burn-usrp4-eeprom
-
-
 .c.rel:
 	$(XCC) $(FW_INCLUDES) $(DEFINES) \
 		-c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
@@ -107,34 +102,11 @@ EEPROM_BOOT_OBJS = eeprom_boot.rel eeprom_init.rel $(STARTUP)
 eeprom_boot.ihx: $(EEPROM_BOOT_OBJS) $(LIBDEP)
 	$(XCC) $(LINKOPTS) -o $@ $(EEPROM_BOOT_OBJS)
 
-burn-usrp2-eeprom: eeprom_boot.ihx
-	$(PYTHON) $(srcdir)/../common/build_eeprom.py -r2 eeprom_boot.ihx > $@
-	chmod +x $@
+usrp1_eeprom.bin: eeprom_boot.bin
+	$(PYTHON) ../common/build_eeprom.py -r4 $< $@
 
-burn-usrp4-eeprom: eeprom_boot.ihx
-	$(PYTHON) $(srcdir)/../common/build_eeprom.py -r4 eeprom_boot.ihx > $@
-	chmod +x $@
-
-
-BLINK_LEDS_OBJS = blink_leds.rel usrp_common.rel board_specific.rel spi.rel $(STARTUP)
-
-blink_leds.ihx: $(BLINK_LEDS_OBJS) $(LIBDEP)
-	$(XCC) $(LINKOPTS) -o $@ $(BLINK_LEDS_OBJS)
-
-
-CHECK_MDELAY_OBJS = check_mdelay.rel usrp_common.rel board_specific.rel spi.rel $(STARTUP)
-
-check_mdelay.ihx: $(CHECK_MDELAY_OBJS) $(LIBDEP)
-	$(XCC) $(LINKOPTS) -o $@ $(CHECK_MDELAY_OBJS)
-
-
-
-CHECK_UDELAY_OBJS = check_udelay.rel usrp_common.rel board_specific.rel spi.rel $(STARTUP)
-
-check_udelay.ihx: $(CHECK_UDELAY_OBJS) $(LIBDEP)
-	$(XCC) $(LINKOPTS) -o $@ $(CHECK_UDELAY_OBJS)
-
-
+eeprom_boot.bin: eeprom_boot.ihx
+	objcopy -I ihex -O binary $< $@
 
 USRP_OBJS = \
 	vectors.rel 						\
@@ -146,25 +118,23 @@ std.ihx: $(USRP_OBJS) $(LIBDEP)
 	$(XCC) $(LINKOPTS) -o $@ $(USRP_OBJS)
 
 CLEANFILES = 		\
-	*.ihx *.lnk *.lst *.map *.mem *.rel *.rst *.sym *.asm *.lib	\
-	usrp_gpif.c usrp_gpif_inline.h \
-	burn-usrp2-eeprom	\
-	burn-usrp4-eeprom
+	*.ihx *.lnk *.lst *.map *.mem *.rel *.rst *.sym *.asm *.lib	*.bin \
+	usrp_gpif.c usrp_gpif_inline.h
 
 DISTCLEANFILES = 	\
-	*.ihx *.lnk *.lst *.map *.mem *.rel *.rst *.sym *.asm *.lib
+	*.ihx *.lnk *.lst *.map *.mem *.rel *.rst *.sym *.asm *.lib *.bin
 
 # build gpif stuff
 
-all: usrp_gpif.c
+all: usrp_gpif.c std.ihx usrp1_eeprom.bin
 
 usrp_gpif.c usrp_gpif_inline.h : gpif.c
 	srcdir=$(srcdir) $(PYTHON) $(srcdir)/edit-gpif $(srcdir)/gpif.c usrp_gpif.c usrp_gpif_inline.h
 
-
 # dependencies
 
 usrp_main.rel: usrp_gpif_inline.h
+
 #usrp_main.rel: fpga.h usrp_common.h ../../include/usrp_commands.h usrp_gpif_inline.h  ../../include/usrp_config.h usrp_rev2_regs.h ../../include/fx2regs.h
 #usrp_common.rel: usrp_common.h ../../include/usrp_commands.h ../../include/usrp_config.h usrp_rev2_regs.h ../../include/fx2regs.h
 #fpga.rel: usrp_common.h ../../include/usrp_commands.h fpga.h ../../include/usrp_config.h usrp_rev2_regs.h ../../include/fx2regs.h

@@ -68,9 +68,9 @@ public:
 
     /*!
      * Return a vector of USB devices on this host 
-     * \return a vector of USB device handles
+     * \return a vector of USB device handles that match vid and pid
      */
-    static UHD_API std::vector<usb_device_handle::sptr> get_device_list();
+    static UHD_API std::vector<usb_device_handle::sptr> get_device_list(boost::uint16_t vid, boost::uint16_t pid);
 
 }; //namespace usb
 

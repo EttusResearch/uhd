@@ -17,6 +17,7 @@
 
 #include "libusb1_base.hpp"
 #include <uhd/utils/assert.hpp>
+#include <iostream>
 
 using namespace uhd::transport;
 
@@ -91,19 +92,24 @@ usb_device_handle::sptr make_usb_device_handle(libusb_device *dev)
         device_addr));
 }
 
-std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list()
+std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(boost::uint16_t vid, boost::uint16_t pid)
 {
     libusb_context *ctx = NULL;
-    std::vector<libusb_device *> libusb_device_list;
+    libusb_device** libusb_device_list;
     std::vector<usb_device_handle::sptr> device_handle_list;
+    libusb_device_descriptor desc;
 
     libusb::init(&ctx, libusb_debug_level);
 
-    libusb_device_list = libusb::get_fsf_device_list(ctx);
-
-    for (size_t i = 0; i < libusb_device_list.size(); i++) {
+    size_t dev_size = libusb_get_device_list(ctx, &libusb_device_list);
+    for (size_t i = 0; i < dev_size; i++) {
         libusb_device *dev = libusb_device_list[i];
-        device_handle_list.push_back(make_usb_device_handle(dev));
+        if(libusb_get_device_descriptor(dev, &desc) < 0) {
+          UHD_ASSERT_THROW("USB: failed to get device descriptor");
+        }
+        if(desc.idVendor == vid && desc.idProduct == pid) {
+          device_handle_list.push_back(make_usb_device_handle(dev));
+        }
     }
 
     libusb_exit(ctx);

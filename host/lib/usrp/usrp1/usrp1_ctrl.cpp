@@ -25,6 +25,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstring>
 
 using namespace uhd;
 
@@ -203,7 +204,7 @@ public:
                     return -1; 
                 }
             }  
-            //type 0x00 is end 
+            //type 0x01 is end 
             else if (type == 0x01) {
                 usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0,
                                    &reset_n, 1);
@@ -281,6 +282,55 @@ public:
         usrp_set_fpga_hash(hash);
         fclose(fp);
         return 0; 
+    }
+
+    int usrp_load_eeprom(std::string filestring)
+    {
+        const char *filename = filestring.c_str();
+        const uint16_t i2c_addr = 0x50;
+
+        //FIXME: verify types
+        int len;
+        unsigned int addr;
+        unsigned char data[256];
+        unsigned char sendbuf[17];
+
+        int ret;
+        std::ifstream file;
+        file.open(filename, std::ifstream::in);
+
+        if (!file.good()) {
+            std::cerr << "cannot open EEPROM input file" << std::endl;
+            return -1; 
+        }
+
+        file.read((char *)data, 256);
+        len = file.gcount();
+
+        if(len == 256) {
+          std::cerr << "error: image size too large" << std::endl;
+          file.close();
+          return -1;
+        }
+
+        const int pagesize = 16;
+        addr = 0;
+        while(len > 0) {
+          sendbuf[0] = addr;
+          memcpy(sendbuf+1, &data[addr], len > pagesize ? pagesize : len);
+          ret = usrp_i2c_write(i2c_addr, sendbuf, (len > pagesize ? pagesize : len)+1);
+          if (ret < 0) {
+            std::cerr << "error: usrp_i2c_write failed: ";
+            std::cerr << ret << std::endl;
+            file.close();
+            return -1; 
+          }
+          addr += pagesize;
+          len -= pagesize;
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        }
+        file.close();
+        return 0;
     }
 
 
@@ -370,6 +420,17 @@ public:
     {
         return usrp_control_write(request, value, index, 0, 0);
     }
+
+    int usrp_i2c_write(boost::uint16_t i2c_addr, unsigned char *buf, boost::uint16_t len)
+    {
+        return usrp_control_write(VRQ_I2C_WRITE, i2c_addr, 0, buf, len);
+    }
+
+    int usrp_i2c_read(boost::uint16_t i2c_addr, unsigned char *buf, boost::uint16_t len)
+    {
+        return usrp_control_read(VRQ_I2C_READ, i2c_addr, 0, buf, len);
+    }
+
 
 
 private:

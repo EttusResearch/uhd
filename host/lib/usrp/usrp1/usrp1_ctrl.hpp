@@ -50,6 +50,13 @@ public:
     virtual int usrp_load_fpga(std::string filename) = 0;
 
     /*!
+     * Load USB descriptor file in Intel HEX format into EEPROM
+     * \param filename name of EEPROM image 
+     * \return 0 on success, error code otherwise
+     */
+    virtual int usrp_load_eeprom(std::string filestring) = 0;
+
+    /*!
      * Set led usrp 
      * \param led_num which LED to control (0 or 1)
      * \param on turn LED on or off
@@ -126,6 +133,30 @@ public:
                                    boost::uint16_t index,
                                    unsigned char *buff,
                                    boost::uint16_t length) = 0;
+
+    /*!
+     * Perform an I2C write
+     * \param i2c_addr I2C device address
+     * \param buf data to be written 
+     * \param len length of data in bytes
+     * \return number of bytes written or error 
+     */
+
+    virtual int usrp_i2c_write(boost::uint16_t i2c_addr,
+                               unsigned char *buf, 
+                               boost::uint16_t len) = 0;
+
+    /*!
+     * Perform an I2C read
+     * \param i2c_addr I2C device address
+     * \param buf data to be read 
+     * \param len length of data in bytes
+     * \return number of bytes read or error 
+     */
+
+    virtual int usrp_i2c_read(boost::uint16_t i2c_addr,
+                               unsigned char *buf, 
+                               boost::uint16_t len) = 0;
 
 };
 

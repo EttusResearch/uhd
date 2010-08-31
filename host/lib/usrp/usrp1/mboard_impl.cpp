@@ -25,6 +25,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/images.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -318,6 +319,16 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
  **********************************************************************/
 void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 {
+    if(key.type() == typeid(std::string)) {
+      if(key.as<std::string>() == "load_eeprom") {
+        std::string usrp1_fpga_image = val.as<std::string>();
+        std::cout << "USRP1 EEPROM image: " << usrp1_fpga_image << std::endl;
+        _ctrl_transport->usrp_load_eeprom(val.as<std::string>());
+      }
+
+      return;
+   	}
+
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 

@@ -109,18 +109,19 @@ public:
      ******************************************************************/
     static const size_t max_i2c_data_bytes = 64;
 
+    //TODO: make this handle EEPROM page sizes. right now you can't write over a 16-byte boundary.
+    //to accomplish this you'll have to have addr offset as a separate parameter.
+
     void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes)
     {
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
         unsigned char buff[max_i2c_data_bytes];
-        std::copy(bytes.begin(), bytes.end(), buff); 
+        std::copy(bytes.begin(), bytes.end(), buff);
 
-        int ret = _ctrl_transport->usrp_control_write(VRQ_I2C_WRITE,
-                                                      addr & 0xff,
-                                                      0,
-                                                      buff,
-                                                      bytes.size());
+        int ret = _ctrl_transport->usrp_i2c_write(addr & 0xff,
+                                             buff,
+                                             bytes.size());
 
         // TODO throw and catch i2c failures during eeprom read
         if (iface_debug && (ret < 0))
@@ -132,11 +133,9 @@ public:
         UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 
         unsigned char buff[max_i2c_data_bytes];
-        int ret = _ctrl_transport->usrp_control_read(VRQ_I2C_READ,
-                                                     addr & 0xff,
-                                                     0,
-                                                     buff,
-                                                     num_bytes);
+        int ret = _ctrl_transport->usrp_i2c_read(addr & 0xff,
+                                            buff,
+                                            num_bytes);
 
         // TODO throw and catch i2c failures during eeprom read
         if (iface_debug && ((ret < 0) || (unsigned)ret < (num_bytes))) {

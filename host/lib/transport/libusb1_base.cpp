@@ -24,22 +24,6 @@ using namespace uhd::transport;
 /**********************************************************
  * Helper Methods
  **********************************************************/
-/*
- * Check for FSF device
- * Compare the device's descriptor Vendor ID
- * \param dev pointer to libusb_device
- * \return true if Vendor ID matches 0xfffe
- */
-bool check_fsf_device(libusb_device *dev)
-{
-    libusb_device_descriptor desc;
-
-    if (libusb_get_device_descriptor(dev, &desc) < 0) {
-        UHD_ASSERT_THROW("USB: failed to get device descriptor");
-    }
-
-    return desc.idVendor == 0xfffe;
-}
 
 /**********************************************************
  * libusb namespace 
@@ -52,37 +36,16 @@ void libusb::init(libusb_context **ctx, int debug_level)
     libusb_set_debug(*ctx, debug_level);
 }
 
-std::vector<libusb_device *> libusb::get_fsf_device_list(libusb_context *ctx)
-{
-    libusb_device **libusb_dev_list;
-    std::vector<libusb_device *> fsf_dev_list;
-
-    ssize_t dev_cnt = libusb_get_device_list(ctx, &libusb_dev_list);
-
-    //find the FSF devices 
-    for (ssize_t i = 0; i < dev_cnt; i++) {
-        libusb_device *dev = libusb_dev_list[i];
-
-        if (check_fsf_device(dev))
-            fsf_dev_list.push_back(dev);
-        else
-            libusb_unref_device(dev);
-    }
-
-    libusb_free_device_list(libusb_dev_list, 0);
-
-    return fsf_dev_list;
-}
-
 libusb_device_handle *libusb::open_device(libusb_context *ctx,
                                           usb_device_handle::sptr handle)
 {
     libusb_device_handle *dev_handle = NULL;
-    std::vector<libusb_device *> fsf_dev_list = get_fsf_device_list(ctx);
+    libusb_device **libusb_dev_list;
+    size_t dev_cnt = libusb_get_device_list(ctx, &libusb_dev_list);
 
     //find and open the USB device 
-    for (size_t i = 0; i < fsf_dev_list.size(); i++) {
-        libusb_device *dev = fsf_dev_list[i];
+    for (size_t i = 0; i < dev_cnt; i++) {
+        libusb_device *dev = libusb_dev_list[i];
 
         if (compare_device(dev, handle)) {
             libusb_open(dev, &dev_handle);
@@ -96,7 +59,8 @@ libusb_device_handle *libusb::open_device(libusb_context *ctx,
     return dev_handle;
 }
 
-
+//note: changed order of checks so it only tries to get_serial and get_device_address if vid and pid match
+//doing this so it doesn't try to open the device if it's not ours
 bool libusb::compare_device(libusb_device *dev,
                             usb_device_handle::sptr handle)
 {
@@ -108,12 +72,12 @@ bool libusb::compare_device(libusb_device *dev,
     libusb_device_descriptor libusb_desc;
     if (libusb_get_device_descriptor(dev, &libusb_desc) < 0)
         return false;
-    if (serial != get_serial(dev))
-        return false;
     if (vendor_id != libusb_desc.idVendor)
         return false;
     if (product_id != libusb_desc.idProduct)
         return false; 
+    if (serial != get_serial(dev))
+        return false;
     if (device_addr != libusb_get_device_address(dev))
         return false;
 

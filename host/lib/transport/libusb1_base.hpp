@@ -42,16 +42,6 @@ namespace libusb {
     void init(libusb_context **ctx, int debug_level);
 
     /*
-     * Get a list of Free Software Foundation devices (Vendor ID 0xfffe)
-     * As opposed to the public USB device handle interface, which returns
-     * generic identifiers, this call returns device pointers speficic
-     * to libusb.
-     * \param ctx the libusb context used for init
-     * \return a vector of libusb devices
-     */
-    std::vector<libusb_device *> get_fsf_device_list(libusb_context *ctx);
-
-    /*
      * Open the device specified by a generic handle
      * Find the libusb_device cooresponding to the generic handle
      * and open it for I/O, which returns a libusb_device_handle
