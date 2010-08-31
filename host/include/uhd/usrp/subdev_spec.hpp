@@ -56,17 +56,8 @@ namespace uhd{ namespace usrp{
      *
      * The subdevice specification can be represented as a markup-string.
      * The markup-string is a whitespace separated list of dboard:subdev pairs.
-     * The "dboard:" part is optional on boards with only one daughterboard slot.
      * The first pair represents the subdevice for channel zero,
      * the second pair represents the subdevice for channel one, and so on.
-     *
-     * Examples:
-     * - Use subdevice AB on daughterboard A (USRP1): "A:AB"
-     * - Use subdevice A on daughterboard A for channel zero and subdevice A on daughterboard B for channel one (USRP1): "A:A B:A"
-     * - Use subdevice AB (USRP2): "AB" or ":AB"
-     *
-     * An empty subdevice specification can be used to automatically
-     * select the first subdevice on the first present daughterboard.
      */
     class UHD_API subdev_spec_t : public std::vector<subdev_spec_pair_t>{
     public:

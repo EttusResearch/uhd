@@ -164,13 +164,22 @@ static void verify_xx_subdev_spec(
             //empty db name means select dboard automatically
             if (pair.db_name.empty()){
                 if (dboard_names.size() != 1) throw std::runtime_error(
-                    "A daughterboard name must be provided for multi-slot boards: " + subdev_spec.to_string()
+                    "A daughterboard name must be provided for multi-slot motherboards: " + subdev_spec.to_string()
                 );
                 pair.db_name == dboard_names.front();
             }
             uhd::assert_has(dboard_names, pair.db_name, xx_type + " dboard name");
             wax::obj dboard = mboard[named_prop_t(dboard_prop, pair.db_name)];
-            uhd::assert_has(dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>(), pair.sd_name, xx_type + " subdev name");
+            prop_names_t subdev_names = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>();
+
+            //empty sd name means select the subdev automatically
+            if (pair.sd_name.empty()){
+                if (subdev_names.size() != 1) throw std::runtime_error(
+                    "A subdevice name must be provided for multi-subdev daughterboards: " + subdev_spec.to_string()
+                );
+                pair.sd_name == subdev_names.front();
+            }
+            uhd::assert_has(subdev_names, pair.sd_name, xx_type + " subdev name");
         }
     }catch(const std::exception &e){
         throw std::runtime_error(str(boost::format(
