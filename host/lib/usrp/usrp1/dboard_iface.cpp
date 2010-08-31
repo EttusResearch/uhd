@@ -49,8 +49,8 @@ public:
         _codec = codec;
 
         //init the clock rate shadows
-        this->set_clock_rate(UNIT_RX, _clock->get_master_clock_freq());
-        this->set_clock_rate(UNIT_TX, _clock->get_master_clock_freq());
+        this->set_clock_rate(UNIT_RX, this->get_clock_rates(UNIT_RX).front());
+        this->set_clock_rate(UNIT_TX, this->get_clock_rates(UNIT_TX).front());
     }
 
     ~usrp1_dboard_iface()
@@ -134,14 +134,14 @@ void usrp1_dboard_iface::set_clock_rate(unit_t unit, double rate)
     _clock_rates[unit] = rate;
 
     if (unit == UNIT_RX && _rx_dboard_id == dbsrx_classic_id){
-        size_t divider = size_t(rate/_clock->get_master_clock_freq());
+        size_t divider = size_t(_clock->get_master_clock_freq()/rate);
         switch(_dboard_slot){
         case usrp1_impl::DBOARD_SLOT_A:
-            _iface->poke32(FR_RX_A_REFCLK, (divider & 0x7f) | 0x80);
+            _iface->poke32(FR_RX_A_REFCLK, (2*divider & 0x7f) | 0x80);
             break;
 
         case usrp1_impl::DBOARD_SLOT_B:
-            _iface->poke32(FR_RX_B_REFCLK, (divider & 0x7f) | 0x80);
+            _iface->poke32(FR_RX_B_REFCLK, (2*divider & 0x7f) | 0x80);
             break;
         }
     }
@@ -151,7 +151,7 @@ std::vector<double> usrp1_dboard_iface::get_clock_rates(unit_t unit)
 {
     std::vector<double> rates;
     if (unit == UNIT_RX && _rx_dboard_id == dbsrx_classic_id){
-        for (size_t div = 1; div <= 127; div++)
+        for (size_t div = 8; div <= 127; div++)
             rates.push_back(_clock->get_master_clock_freq() / div);
     }
     else{
