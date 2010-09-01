@@ -7,19 +7,58 @@ UHD - USRP1 Application Notes
 ------------------------------------------------------------------------
 Addressing the device
 ------------------------------------------------------------------------
-A USRP1 can be identified though its serial number,
+A USRP1 can be identified though its 8 digit serial number,
 designated by the "serial" key in the device address.
 
-The device address string representation for a USRP1 with serial 1234
+The device address string representation for a USRP1 with serial 12345678:
 
 ::
 
-    serial=1234
+    serial=12345678
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Change the USRP1's serial number
+Change the serial number
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TODO
+The USRP1 serial number can be changed to any 8 byte string. Examples:
+
+::
+
+    cd <prefix>/share/uhd/utils
+    ./usrp1_serial_burner --new=87654321
+
+    -- OR --
+
+    ./usrp1_serial_burner --new=Beatrice
+
+    -- OR --
+
+    ./usrp1_serial_burner --old=12345678 --new=87654321
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Specify a non-standard image
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The standard USRP1 images installer comes with two FPGA images:
+ * **usrp1_fpga.rbf:** 2 DDCs + 2 DUCs
+ * **usrp1_fpga_4rx.rbf:** 4 DDCs + 0 DUCs
+
+By default, the USRP1 uses the FPGA image with 2 DDCs and 2 DUCs.
+However, a device address parameter can be used to override
+the FPGA image selection to use an alternate or a custom FPGA image.
+See the images application notes for installing custom images.
+
+Example device address string representations to specify non-standard firmware and/or FPGA images:
+
+::
+
+    fpga=usrp1_fpga_4rx.rbf
+
+    -- OR --
+
+    fw=usrp1_fw_custom.ihx
+
+    -- OR --
+
+    fpga=usrp1_fpga_4rx.rbf, fw=usrp1_fw_custom.ihx
 
 ------------------------------------------------------------------------
 Specifying the subdevice to use
