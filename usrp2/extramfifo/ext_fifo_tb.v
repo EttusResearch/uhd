@@ -84,11 +84,17 @@ module ext_fifo_tb();
    
    initial
      begin
-	repeat (20) @(negedge int_clk);
+	repeat (5) @(negedge int_clk);
+	dst_rdy_i <= 1;
+
+	while (src_rdy_o !== 1)
+	  @(negedge int_clk);
 	  
 	// Fall through fifo, first output already valid
 	if (dataout !== ref_dataout)
-	  $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	  $display("Error: Expected %x, got %x @%d",ref_dataout, dataout, $time);
+	ref_dataout <= ref_dataout + src_rdy_o ;
+	
 	// Decimate by 16 rate
 	while (ref_dataout < 2000)
 	  begin
@@ -96,7 +102,7 @@ module ext_fifo_tb();
 	     ref_dataout <= ref_dataout + src_rdy_o ;
 	     dst_rdy_i <= src_rdy_o;
 	     if ((dataout !== ref_dataout) && src_rdy_o)
-	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	       $display("Error: Expected %x, got %x @%d",ref_dataout, dataout, $time);
 	     @(negedge int_clk);
 	     dst_rdy_i <= 0;
 	     repeat(14) @(negedge int_clk);
@@ -108,7 +114,7 @@ module ext_fifo_tb();
 	     ref_dataout <= ref_dataout + src_rdy_o ;
 	     dst_rdy_i <= src_rdy_o;
 	     if ((dataout !== ref_dataout) && src_rdy_o)
-	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	       $display("Error: Expected %x, got %x @%d",ref_dataout, dataout, $time);
 	     @(negedge int_clk);
 	     dst_rdy_i <= 0;
 	     repeat(6) @(negedge int_clk);
@@ -120,7 +126,7 @@ module ext_fifo_tb();
 	     ref_dataout <= ref_dataout + src_rdy_o ;
 	     dst_rdy_i <= src_rdy_o;
 	     if ((dataout !== ref_dataout) && src_rdy_o)
-	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	       $display("Error: Expected %x, got %x @%d",ref_dataout, dataout, $time);
 	     @(negedge int_clk);
 	     dst_rdy_i <= 0;
 	     repeat(2) @(negedge int_clk);
@@ -132,7 +138,7 @@ module ext_fifo_tb();
 	     ref_dataout <= ref_dataout + src_rdy_o ;
 	     dst_rdy_i <= src_rdy_o;
 	     if ((dataout !== ref_dataout) && src_rdy_o)
-	       $display("Error: Expected %x, got %x",ref_dataout, dataout);
+	       $display("Error: Expected %x, got %x @%d",ref_dataout, dataout, $time);
 	     
 	  end // while (ref_dataout < 10000)
 	
