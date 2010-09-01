@@ -125,7 +125,7 @@ module u2_core
    output [18:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
-   output RAM_CLK,
+ //  output RAM_CLK,
    output RAM_WEn,
    output RAM_OEn,
    output RAM_LDn,
@@ -704,7 +704,6 @@ module u2_core
       .serdes_link_up(serdes_link_up),.debug0(debug_serdes0), .debug1(debug_serdes1) );
 
    assign RAM_CLK = clk_to_mac;
-   
    
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
