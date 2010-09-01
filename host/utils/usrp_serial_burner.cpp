@@ -28,7 +28,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("image", po::value<std::string>(), "BIN image file")
+        ("old", po::value<std::string>(), "old USRP serial number (optional)")
+        ("new", po::value<std::string>(), "new USRP serial number")
     ;
 
     po::variables_map vm;
@@ -37,30 +38,34 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("USRP EEPROM initialization %s") % desc << std::endl;
+        std::cout << boost::format("USRP serial burner %s") % desc << std::endl;
+        return ~0;
+    }
+
+    if(vm.count("new") == 0) {
+        std::cout << "error: must input --new arg" << std::endl;
         return ~0;
     }
 
     //load the options into the address
     uhd::device_addr_t device_addr;
     device_addr["type"] = "usrp1";
-    device_addr["uninit"] = "yeah"; //tell find to look for an uninitialized FX2
+    if(vm.count("old")) device_addr["serial"] = vm["old"].as<std::string>();
 
     //find and create a control transport to do the writing.
 
     uhd::device_addrs_t found_addrs = uhd::device::find(device_addr);
 
     if (found_addrs.size() == 0){
-        std::cerr << "No uninitialized USRP devices found" << std::endl;
+        std::cerr << "No USRP devices found" << std::endl;
         return ~0;
     }
 
     for (size_t i = 0; i < found_addrs.size(); i++){
-        std::cout << "Writing EEPROM data..." << std::endl;
-        //uhd::device_addrs_t devs = uhd::device::find(found_addrs[i]);
         uhd::device::sptr dev = uhd::device::make(found_addrs[i]);
         wax::obj mb = (*dev)[uhd::usrp::DEVICE_PROP_MBOARD];
-        mb[std::string("load_eeprom")] = vm["image"].as<std::string>();
+        std::cout << "Writing serial number..." << std::endl;
+        mb[std::string("serial")] = vm["new"].as<std::string>();
     }
 
 

@@ -19,6 +19,7 @@
 #include "usrp_commands.h"
 #include "fpga_regs_standard.h"
 #include "fpga_regs_common.h"
+#include "usrp_i2c_addr.h"
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
@@ -321,9 +322,16 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 {
     if(key.type() == typeid(std::string)) {
       if(key.as<std::string>() == "load_eeprom") {
-        std::string usrp1_fpga_image = val.as<std::string>();
-        std::cout << "USRP1 EEPROM image: " << usrp1_fpga_image << std::endl;
+        std::string usrp1_eeprom_image = val.as<std::string>();
+        std::cout << "USRP1 EEPROM image: " << usrp1_eeprom_image << std::endl;
         _ctrl_transport->usrp_load_eeprom(val.as<std::string>());
+      }
+
+      if(key.as<std::string>() == "serial") {
+        std::string sernum = val.as<std::string>();
+        uhd::byte_vector_t buf(sernum.begin(), sernum.end());
+        buf.insert(buf.begin(), 248);
+        _iface->write_i2c(I2C_DEV_EEPROM, buf);
       }
 
       return;

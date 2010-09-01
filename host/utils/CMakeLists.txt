@@ -42,10 +42,14 @@ TARGET_LINK_LIBRARIES(usrp_burn_db_eeprom uhd)
 ADD_EXECUTABLE(usrp_init_eeprom usrp_init_eeprom.cpp)
 TARGET_LINK_LIBRARIES(usrp_init_eeprom uhd)
 
+ADD_EXECUTABLE(usrp_serial_burner usrp_serial_burner.cpp)
+TARGET_LINK_LIBRARIES(usrp_serial_burner uhd)
+
 INSTALL(TARGETS
     usrp2_addr_burner
     usrp_burn_db_eeprom
     usrp_init_eeprom
+    usrp_serial_burner
     RUNTIME DESTINATION ${PKG_DATA_DIR}/utils
 )
 
