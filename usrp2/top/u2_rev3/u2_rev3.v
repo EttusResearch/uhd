@@ -370,14 +370,109 @@ module u2_rev3
 		      );
 	end // block: gen_RAM_D_IO
    endgenerate
+
+   //
+   // DCM edits start here
+   //
+
+ 
+   wire RAM_CLK_buf;
+   wire clk_to_mac_buf;
+   wire clk125_ext_clk0;
+   wire clk125_ext_clk180;
+   wire clk125_ext_clk0_buf;
+   wire clk125_ext_clk180_buf;
+   wire clk125_int_buf;
+   wire clk125_int;
    
+   IBUFG clk_to_mac_buf_i1 (.I(clk_to_mac), 
+			    .O(clk_to_mac_buf));
+   
+   DCM DCM_INST1 (.CLKFB(RAM_CLK_buf), 
+                  .CLKIN(clk_to_mac_buf), 
+                  .DSSEN(1'b0), 
+                  .PSCLK(1'b0), 
+                  .PSEN(1'b0), 
+                  .PSINCDEC(1'b0), 
+                  .RST(clk125_ext_RST_IN), 
+                  .CLK0(clk125_ext_clk0), 
+                  .CLK180(clk125_ext_clk180) );
+   defparam DCM_INST1.CLK_FEEDBACK = "1X";
+   defparam DCM_INST1.CLKDV_DIVIDE = 2.0;
+   defparam DCM_INST1.CLKFX_DIVIDE = 1;
+   defparam DCM_INST1.CLKFX_MULTIPLY = 4;
+   defparam DCM_INST1.CLKIN_DIVIDE_BY_2 = "FALSE";
+   defparam DCM_INST1.CLKIN_PERIOD = 8.000;
+   defparam DCM_INST1.CLKOUT_PHASE_SHIFT = "NONE";
+   defparam DCM_INST1.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
+   defparam DCM_INST1.DFS_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST1.DLL_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST1.DUTY_CYCLE_CORRECTION = "TRUE";
+   defparam DCM_INST1.FACTORY_JF = 16'h8080;
+   defparam DCM_INST1.PHASE_SHIFT = 0;
+   defparam DCM_INST1.STARTUP_WAIT = "FALSE";
+   
+   IBUFG RAM_CLK_buf_i1 (.I(RAM_CLK), 
+			 .O(RAM_CLK_buf));
+   BUFG  clk125_ext_clk0_buf_i1 (.I(clk125_ext_clk0), 
+				   .O(clk125_ext_clk0_buf));
+   BUFG  clk125_ext_clk180_buf_i1 (.I(clk125_ext_clk180), 
+				   .O(clk125_ext_clk180_buf));
+
+   OFDDRRSE RAM_CLK_i1 (.Q(RAM_CLK),
+			.C0(clk125_ext_clk0_buf),
+			.C1(clk125_ext_clk180_buf),
+			.CE(1'b1),
+			.D0(1'b1),
+			.D1(1'b0),
+			.R(1'b0),
+			.S(1'b0));
+
+   SRL16 dcm2_rst_i1 (.D(1'b0),
+		      .CLK(clk_to_mac_buf),
+		      .Q(dcm2_rst),
+		      .A0(1'b1),
+		      .A1(1'b1),
+		      .A2(1'b1),
+		      .A3(1'b1));
+   // synthesis attribute init of dcm2_rst_i2 is "000F";
+      
+   DCM DCM_INST2 (.CLKFB(clk125_int_buf), 
+                  .CLKIN(clk_to_mac_buf), 
+                  .DSSEN(1'b0), 
+                  .PSCLK(1'b0), 
+                  .PSEN(1'b0), 
+                  .PSINCDEC(1'b0), 
+                  .RST(clk125_int_RST_IN),
+                  .CLK0(clk125_int));
+   defparam DCM_INST2.CLK_FEEDBACK = "1X";
+   defparam DCM_INST2.CLKDV_DIVIDE = 2.0;
+   defparam DCM_INST2.CLKFX_DIVIDE = 1;
+   defparam DCM_INST2.CLKFX_MULTIPLY = 4;
+   defparam DCM_INST2.CLKIN_DIVIDE_BY_2 = "FALSE";
+   defparam DCM_INST2.CLKIN_PERIOD = 8.000;
+   defparam DCM_INST2.CLKOUT_PHASE_SHIFT = "NONE";
+   defparam DCM_INST2.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
+   defparam DCM_INST2.DFS_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST2.DLL_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST2.DUTY_CYCLE_CORRECTION = "TRUE";
+   defparam DCM_INST2.FACTORY_JF = 16'h8080;
+   defparam DCM_INST2.PHASE_SHIFT = 0;
+   defparam DCM_INST2.STARTUP_WAIT = "FALSE";
+  
+   BUFG clk125_int_buf_i1 (.I(clk125_int), 
+                           .O(clk125_int_buf));
+   
+   //
+   // DCM edits end here
+   //
    
    
    u2_core #(.RAM_SIZE(32768))
      u2_core(.dsp_clk           (dsp_clk),
 	     .wb_clk            (wb_clk),
 	     .clock_ready       (clock_ready),
-	     .clk_to_mac	(clk_to_mac),
+	     .clk_to_mac	(clk125_int_buf),
 	     .pps_in		(pps_in),
 	     .leds		(leds_int),
 	     .debug		(debug[31:0]),
@@ -460,7 +555,7 @@ module u2_rev3
 	     .RAM_A             (RAM_A),
 	     .RAM_CE1n          (RAM_CE1n),
 	     .RAM_CENn          (RAM_CENn),
-	     .RAM_CLK           (RAM_CLK),
+	//     .RAM_CLK           (RAM_CLK),
 	     .RAM_WEn           (RAM_WEn),
 	     .RAM_OEn           (RAM_OEn),
 	     .RAM_LDn           (RAM_LDn), 

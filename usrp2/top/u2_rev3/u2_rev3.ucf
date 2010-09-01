@@ -324,6 +324,7 @@ NET "ser_rx_clk" TNM_NET = "ser_rx_clk";
 TIMESPEC "TS_ser_rx_clk" = PERIOD "ser_rx_clk" 10 ns HIGH 50 %;
 
 NET "cpld_clk" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "GMII_RX_CLK" CLOCK_DEDICATED_ROUTE = FALSE; 
 
 #NET "adc_a<*>" TNM_NET = ADC_DATA_GRP;
 #NET "adc_b<*>" TNM_NET = ADC_DATA_GRP;
