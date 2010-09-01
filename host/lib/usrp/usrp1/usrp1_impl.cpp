@@ -69,7 +69,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         );
         return usrp1_addrs;
     }
-    std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
+    //std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
     boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : USRP1_VENDOR_ID;
     boost::uint16_t pid = hint.has_key("uninit") ? FX2_PRODUCT_ID : USRP1_PRODUCT_ID;
@@ -111,7 +111,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr)
     std::string usrp1_fpga_image = find_image_path(
         device_addr.has_key("fpga")? device_addr["fpga"] : "usrp1_fpga.rbf"
     );
-    std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
+    //std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
 
     //try to match the given device address with something on the USB bus
     std::vector<usb_device_handle::sptr> device_list =
