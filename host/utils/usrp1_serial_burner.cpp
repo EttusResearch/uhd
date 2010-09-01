@@ -66,6 +66,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         wax::obj mb = (*dev)[uhd::usrp::DEVICE_PROP_MBOARD];
         std::cout << "Writing serial number..." << std::endl;
         mb[std::string("serial")] = vm["new"].as<std::string>();
+        std::cout << "Reading back serial number: " << mb[std::string("serial")].as<std::string>() << std::endl;
     }
 
 

@@ -30,6 +30,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread/thread.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -250,6 +251,20 @@ static prop_names_t dboard_names = boost::assign::list_of("A")("B");
 void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
 {
     named_prop_t key = named_prop_t::extract(key_);
+
+    if(key_.type() == typeid(std::string)) {
+      if(key.as<std::string>() == "serial") {
+        uhd::byte_vector_t buf;
+        buf.insert(buf.begin(), 248);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        _iface->write_i2c(I2C_DEV_EEPROM, buf);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        buf = _iface->read_i2c(I2C_DEV_EEPROM, 8);
+        val = std::string(buf.begin(), buf.end());
+      }
+
+      return;
+   	}
 
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
