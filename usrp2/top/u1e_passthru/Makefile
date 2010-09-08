@@ -1,20 +1,30 @@
 #
 # Copyright 2008 Ettus Research LLC
-# 
-
-##################################################
-# xtclsh Shell and tcl Script Path
-##################################################
-#XTCLSH := /opt/Xilinx/10.1/ISE/bin/lin/xtclsh
-XTCLSH := xtclsh
-ISE_HELPER := ../tcl/ise_helper.tcl
+#
 
 ##################################################
 # Project Setup
 ##################################################
-BUILD_DIR := build/
-export TOP_MODULE := passthru
-export PROJ_FILE := $(BUILD_DIR)$(TOP_MODULE).ise
+TOP_MODULE = passthru
+BUILD_DIR = $(abspath build$(ISE))
+
+##################################################
+# Include other makefiles
+##################################################
+
+include ../Makefile.common
+include ../../fifo/Makefile.srcs
+include ../../control_lib/Makefile.srcs
+include ../../sdr_lib/Makefile.srcs
+include ../../serdes/Makefile.srcs
+include ../../simple_gemac/Makefile.srcs
+include ../../timing/Makefile.srcs
+include ../../opencores/Makefile.srcs
+include ../../vrt/Makefile.srcs
+include ../../udp/Makefile.srcs
+include ../../coregen/Makefile.srcs
+include ../../extram/Makefile.srcs
+include ../../gpmc/Makefile.srcs
 
 ##################################################
 # Project Properties
@@ -34,16 +44,21 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 ##################################################
 # Sources
 ##################################################
-export SOURCE_ROOT := ../../../
-export SOURCES := \
-top/u1e_passthru/passthru.ucf \
-top/u1e_passthru/passthru.v 
+TOP_SRCS = \
+passthru.v \
+passthru.ucf
+
+SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \
+$(CONTROL_LIB_SRCS) $(SDR_LIB_SRCS) $(SERDES_SRCS) \
+$(SIMPLE_GEMAC_SRCS) $(TIMING_SRCS) $(OPENCORES_SRCS) \
+$(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) $(EXTRAM_SRCS) \
+$(GPMC_SRCS)
 
 ##################################################
 # Process Properties
 ##################################################
-export SYNTHESIZE_PROPERTIES := \
-"Number of Clock Buffers" 6 \
+SYNTHESIZE_PROPERTIES = \
+"Number of Clock Buffers" 8 \
 "Pack I/O Registers into IOBs" Yes \
 "Optimization Effort" High \
 "Optimize Instantiated Primitives" TRUE \
@@ -52,10 +67,10 @@ export SYNTHESIZE_PROPERTIES := \
 "Use Synchronous Reset" Auto \
 "Use Synchronous Set" Auto
 
-export TRANSLATE_PROPERTIES := \
+TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"
 
-export MAP_PROPERTIES := \
+MAP_PROPERTIES = \
 "Allow Logic Optimization Across Hierarchy" TRUE \
 "Map to Input Functions" 4 \
 "Optimization Strategy (Cover Mode)" Speed \
@@ -66,14 +81,14 @@ export MAP_PROPERTIES := \
 "Combinatorial Logic Optimization" TRUE \
 "Register Duplication" TRUE
 
-export PLACE_ROUTE_PROPERTIES := \
+PLACE_ROUTE_PROPERTIES = \
 "Place & Route Effort Level (Overall)" High 
 
-export STATIC_TIMING_PROPERTIES := \
+STATIC_TIMING_PROPERTIES = \
 "Number of Paths in Error/Verbose Report" 10 \
 "Report Type" "Error Report"
 
-export GEN_PROG_FILE_PROPERTIES := \
+GEN_PROG_FILE_PROPERTIES = \
 "Configuration Rate" 6 \
 "Create Binary Configuration File" TRUE \
 "Done (Output Events)" 5 \
@@ -81,27 +96,4 @@ export GEN_PROG_FILE_PROPERTIES := \
 "Enable Outputs (Output Events)" 6 \
 "Unused IOB Pins" "Pull Up"
 
-export SIM_MODEL_PROPERTIES := ""
-
-##################################################
-# Make Options
-##################################################
-all:
-	@echo make proj, check, synth, bin, or clean
-
-proj:
-	PROCESS_RUN="" $(XTCLSH) $(ISE_HELPER)	
-
-check:
-	PROCESS_RUN="Check Syntax" $(XTCLSH) $(ISE_HELPER)	
-
-synth:
-	PROCESS_RUN="Synthesize - XST" $(XTCLSH) $(ISE_HELPER)	
-
-bin:
-	PROCESS_RUN="Generate Programming File" $(XTCLSH) $(ISE_HELPER)		
-
-clean:
-	rm -rf $(BUILD_DIR)
-
-
+SIM_MODEL_PROPERTIES = ""
