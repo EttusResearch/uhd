@@ -27,11 +27,20 @@ TARGET_LINK_LIBRARIES(uhd_usrp_probe uhd)
 ADD_EXECUTABLE(fpga-downloader fpga-downloader.cpp)
 TARGET_LINK_LIBRARIES(fpga-downloader)
 
+ADD_EXECUTABLE(clkgen-config clkgen-config.cpp)
+TARGET_LINK_LIBRARIES(clkgen-config)
+
 ADD_EXECUTABLE(usrp-e-loopback usrp-e-loopback.c)
 TARGET_LINK_LIBRARIES(usrp-e-loopback pthread)
 
 ADD_EXECUTABLE(usrp-e-debug-pins usrp-e-debug-pins.c)
 TARGET_LINK_LIBRARIES(usrp-e-debug-pins)
+
+ADD_EXECUTABLE(usrp-e-i2c usrp-e-i2c.c)
+TARGET_LINK_LIBRARIES(usrp-e-i2c)
+
+ADD_EXECUTABLE(usrp-e-spi usrp-e-spi.c)
+TARGET_LINK_LIBRARIES(usrp-e-spi)
 
 INSTALL(TARGETS
     uhd_find_devices
@@ -39,6 +48,9 @@ INSTALL(TARGETS
     fpga-downloader
     usrp-e-loopback
     usrp-e-debug-pins
+    usrp-e-spi
+    usrp-e-i2c
+    clkgen-config
     RUNTIME DESTINATION ${RUNTIME_DIR}
 )
 
