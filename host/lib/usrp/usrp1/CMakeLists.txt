@@ -20,18 +20,26 @@
 ########################################################################
 # Conditionally configure the USRP1 support
 ########################################################################
-MESSAGE(STATUS "Configuring usrp1 support...")
+MESSAGE(STATUS "Configuring USRP1 support...")
 
-IF(HAVE_USB_SUPPORT)
-    MESSAGE(STATUS "Has USB support - found")
-ELSE(HAVE_USB_SUPPORT)
-    MESSAGE(STATUS "Has USB support - not found")
-ENDIF(HAVE_USB_SUPPORT)
+IF(DEFINED ENABLE_USRP1)
+    IF(ENABLE_USRP1)
+        MESSAGE(STATUS "USRP1 support enabled by configure flag")
+    ELSE(ENABLE_USRP1)
+        MESSAGE(STATUS "USRP1 support disabled by configure flag")
+    ENDIF(ENABLE_USRP1)
+ELSE(DEFINED ENABLE_USRP1) #not defined: automatic enabling of component
+    SET(ENABLE_USRP1 ${HAVE_USB_SUPPORT})
+ENDIF(DEFINED ENABLE_USRP1)
+SET(ENABLE_USRP1 ${ENABLE_USRP1} CACHE BOOL "enable USRP1 support")
 
-#TODO check for usrp1 enable/disable option flag
+#sanity check when USRP1 support enabled
+IF(ENABLE_USRP1 AND NOT HAVE_USB_SUPPORT)
+    MESSAGE(FATAL_ERROR "USRP1 support enabled without USB support")
+ENDIF(ENABLE_USRP1 AND NOT HAVE_USB_SUPPORT)
 
-IF(HAVE_USB_SUPPORT)
-    MESSAGE(STATUS "  Building usrp1 support.")
+IF(ENABLE_USRP1)
+    MESSAGE(STATUS "  Building USRP1 support.")
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/include)
 
     LIBUHD_APPEND_SOURCES(
@@ -52,6 +60,6 @@ IF(HAVE_USB_SUPPORT)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.hpp
     )
-ELSE(HAVE_USB_SUPPORT)
-    MESSAGE(STATUS "  Skipping usrp1 support.")
-ENDIF(HAVE_USB_SUPPORT)
+ELSE(ENABLE_USRP1)
+    MESSAGE(STATUS "  Skipping USRP1 support.")
+ENDIF(ENABLE_USRP1)
