@@ -6,8 +6,8 @@
 
 module u1e_core
   (input clk_fpga, input rst_fpga,
-   output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
-   input [2:0] debug_pb, input [7:0] dip_sw, output debug_txd, input debug_rxd,
+   output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
+   output debug_txd, input debug_rxd,
    
    // GPMC
    input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
@@ -343,11 +343,11 @@ module u1e_core
    assign rx_enable = xfer_rate[14];
    assign rate = xfer_rate[7:0];
    
-   assign { debug_led[2],debug_led[0],debug_led[1] } = {run_rx,run_tx,reg_leds[0]};  // LEDs are arranged funny on board
+   assign { debug_led[3:0] } = {run_rx,run_tx,reg_leds[1:0]};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
-			(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
+			(s0_adr[6:0] == REG_SWITCHES) ? { 16'd0 } :
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
