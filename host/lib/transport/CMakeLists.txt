@@ -45,6 +45,12 @@ IF(HAVE_EMMINTRIN_H)
     ADD_DEFINITIONS(-DHAVE_EMMINTRIN_H)
 ENDIF(HAVE_EMMINTRIN_H)
 
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
+
+IF(HAVE_ARM_NEON_H)
+    ADD_DEFINITIONS(-DHAVE_ARM_NEON_H)
+ENDIF(HAVE_ARM_NEON_H)
 ########################################################################
 # Setup defines for interface address discovery
 ########################################################################

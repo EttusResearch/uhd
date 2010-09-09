@@ -32,6 +32,14 @@
     #include <emmintrin.h>
 #endif
 
+#ifdef HAVE_ARM_NEON_H
+    #define USE_ARM_NEON_H
+#endif
+
+#if defined(USE_ARM_NEON_H)
+    #include <arm_neon.h>
+#endif
+
 /***********************************************************************
  * Typedefs
  **********************************************************************/
@@ -132,6 +140,22 @@ static UHD_INLINE void fc32_to_item32_nswap(
     //convert remainder
     for (; i < nsamps; i++){
         output[i] = fc32_to_item32(input[i]);
+    }
+}
+
+#elif defined(USE_ARM_NEON_H)
+static UHD_INLINE void fc32_to_item32_nswap(
+    const fc32_t *input, item32_t *output, size_t nsamps)
+{
+    size_t i;
+
+    float32x4_t Q0 = vdupq_n_f32(shorts_per_float);
+    for (i=0; i < (nsamps & ~0x03); i+=4) {
+        float32x4_t Q1 = vld1q_f32(reinterpret_cast<const float *>(&input[i]));
+        float32x4_t Q2 = vmulq_f32(Q1, Q0);
+        int32x4_t Q3 = vcvtq_s32_f32(Q2);
+        int16x4_t D8 = vmovn_s32(Q3);
+        vst1_s16((reinterpret_cast<int16_t *>(&output[i])), D8);
     }
 }
 
