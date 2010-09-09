@@ -31,8 +31,57 @@ CMAKE_BUILD_DIR = $(TOP_DIR)/build
 IMAGES_LIST =
 
 ########################################################################
+# Utility Checks
+########################################################################
+ifeq ($(shell sdcc --help > /dev/null 2>&1 && echo $$?),0)
+	HAS_SDCC=1
+endif
+
+ifeq ($(shell mb-gcc --help > /dev/null 2>&1 && echo $$?),0)
+	HAS_MB_GCC=1
+endif
+
+ifeq ($(shell xtclsh -h > /dev/null 2>&1 && echo $$?),0)
+	HAS_XTCLSH=1
+endif
+
+########################################################################
+# USRP1 firmware
+########################################################################
+ifdef HAS_SDCC
+
+_usrp1_fw_dir = $(TOP_FW_DIR)/fx2
+_usrp1_fw_ihx = $(BUILT_IMAGES_DIR)/usrp1_fw.ihx
+IMAGES_LIST += $(_usrp1_fw_ihx)
+
+$(_usrp1_fw_ihx):
+	cd $(_usrp1_fw_dir) && ./bootstrap
+	cd $(_usrp1_fw_dir) && ./configure
+	make -C $(_usrp1_fw_dir) clean
+	make -C $(_usrp1_fw_dir) all
+	cp $(_usrp1_fw_dir)/src/usrp1/std.ihx $@
+
+endif
+
+########################################################################
+# USRP1 fpga
+########################################################################
+_usrp1_fpga_dir = $(TOP_FPGA_DIR)/usrp1/rbf/rev4
+_usrp1_fpga_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga.rbf
+_usrp1_fpga_4rx_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga_4rx.rbf
+IMAGES_LIST += $(_usrp1_fpga_rbf) $(_usrp1_fpga_4rx_rbf)
+
+$(_usrp1_fpga_rbf):
+	cp $(_usrp1_fpga_dir)/std_2rxhb_2tx.rbf $@
+
+$(_usrp1_fpga_4rx_rbf):
+	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
+
+########################################################################
 # USRP2 firmware
 ########################################################################
+ifdef HAS_MB_GCC
+
 _usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
@@ -44,9 +93,13 @@ $(_usrp2_fw_bin):
 	make -C $(_usrp2_fw_dir) all
 	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $@
 
+endif
+
 ########################################################################
 # USRP2 fpga
 ########################################################################
+ifdef HAS_XTCLSH
+
 _usrp2_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2_rev3
 _usrp2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2_fpga.bin
 IMAGES_LIST += $(_usrp2_fpga_bin)
@@ -55,6 +108,8 @@ $(_usrp2_fpga_bin):
 	cd $(_usrp2_fpga_dir) && make -f Makefile.udp clean
 	cd $(_usrp2_fpga_dir) && make -f Makefile.udp bin
 	cp $(_usrp2_fpga_dir)/build-udp/u2_rev3.bin $@
+
+endif
 
 ########################################################################
 # Build rules

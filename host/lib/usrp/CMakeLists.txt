@@ -31,5 +31,6 @@ LIBUHD_APPEND_SOURCES(
 )
 
 INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/dboard/CMakeLists.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/CMakeLists.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/CMakeLists.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/CMakeLists.txt)

@@ -124,41 +124,6 @@
 #define U2_REG_DSP_TX_FREQ         _SR_ADDR(SR_TX_DSP + 0)
 #define U2_REG_DSP_TX_SCALE_IQ     _SR_ADDR(SR_TX_DSP + 1) // {scale_i,scale_q}
 #define U2_REG_DSP_TX_INTERP_RATE  _SR_ADDR(SR_TX_DSP + 2)
-
-  /*!
-   * \brief output mux configuration.
-   *
-   * <pre>
-   *     3                   2                   1                       
-   *   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   *  +-------------------------------+-------+-------+-------+-------+
-   *  |                                               | DAC1  |  DAC0 |
-   *  +-------------------------------+-------+-------+-------+-------+
-   * 
-   *  There are N DUCs (1 now) with complex inputs and outputs.
-   *  There are two DACs.
-   * 
-   *  Each 4-bit DACx field specifies the source for the DAC
-   *  Each subfield is coded like this: 
-   * 
-   *     3 2 1 0
-   *    +-------+
-   *    |   N   |
-   *    +-------+
-   * 
-   *  N specifies which DUC output is connected to this DAC.
-   * 
-   *   N   which interp output
-   *  ---  -------------------
-   *   0   DUC 0 I
-   *   1   DUC 0 Q
-   *   2   DUC 1 I
-   *   3   DUC 1 Q
-   *   F   All Zeros
-   *   
-   * The default value is 0x10
-   * </pre>
-   */
 #define U2_REG_DSP_TX_MUX  _SR_ADDR(SR_TX_DSP + 4)
 
 /////////////////////////////////////////////////
@@ -170,27 +135,6 @@
 #define U2_REG_DSP_RX_DCOFFSET_I   _SR_ADDR(SR_RX_DSP + 3) // Bit 31 high sets fixed offset mode, using lower 14 bits,
                                                        // otherwise it is automatic 
 #define U2_REG_DSP_RX_DCOFFSET_Q   _SR_ADDR(SR_RX_DSP + 4) // Bit 31 high sets fixed offset mode, using lower 14 bits
-  /*!
-   * \brief input mux configuration.
-   *
-   * This determines which ADC (or constant zero) is connected to 
-   * each DDC input.  There are N DDCs (1 now).  Each has two inputs.
-   *
-   * <pre>
-   * Mux value:
-   *
-   *    3                   2                   1                       
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   * |                                                       |Q0 |I0 |
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   *
-   * Each 2-bit I field is either 00 (A/D A), 01 (A/D B) or 1X (const zero)
-   * Each 2-bit Q field is either 00 (A/D A), 01 (A/D B) or 1X (const zero)
-   *
-   * The default value is 0x4
-   * </pre>
-   */
 #define U2_REG_DSP_RX_MUX  _SR_ADDR(SR_RX_DSP + 5)         // called adc_mux in dsp_core_rx.v
 
 ////////////////////////////////////////////////
