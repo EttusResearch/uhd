@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+########################################################################
 ADD_EXECUTABLE(benchmark_rx_rate benchmark_rx_rate.cpp)
 TARGET_LINK_LIBRARIES(benchmark_rx_rate uhd)
 
@@ -24,6 +24,12 @@ TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
 
 ADD_EXECUTABLE(rx_to_file rx_to_file.cpp)
 TARGET_LINK_LIBRARIES(rx_to_file uhd)
+
+ADD_EXECUTABLE(test_async_messages test_async_messages.cpp)
+TARGET_LINK_LIBRARIES(test_async_messages uhd)
+
+ADD_EXECUTABLE(test_pps_input test_pps_input.cpp)
+TARGET_LINK_LIBRARIES(test_pps_input uhd)
 
 ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
 TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
@@ -34,16 +40,14 @@ TARGET_LINK_LIBRARIES(tx_from_file uhd)
 ADD_EXECUTABLE(tx_waveforms tx_waveforms.cpp)
 TARGET_LINK_LIBRARIES(tx_waveforms uhd)
 
-ADD_EXECUTABLE(pps_test pps_test.cpp)
-TARGET_LINK_LIBRARIES(pps_test uhd)
-
 INSTALL(TARGETS
     benchmark_rx_rate
     rx_timed_samples
+    test_async_messages
+    test_pps_input
     tx_timed_samples
     tx_from_file
     rx_to_file
     tx_waveforms
-    pps_test
     RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
 )
