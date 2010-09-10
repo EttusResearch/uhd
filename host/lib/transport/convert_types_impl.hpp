@@ -155,7 +155,8 @@ static UHD_INLINE void fc32_to_item32_nswap(
         float32x4_t Q2 = vmulq_f32(Q1, Q0);
         int32x4_t Q3 = vcvtq_s32_f32(Q2);
         int16x4_t D8 = vmovn_s32(Q3);
-        vst1_s16((reinterpret_cast<int16_t *>(&output[i])), D8);
+        int16x4_t D9 = vrev32_s16(D8);
+        vst1_s16((reinterpret_cast<int16_t *>(&output[i])), D9);
     }
 
     for (; i < nsamps; i++)
