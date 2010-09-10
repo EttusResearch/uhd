@@ -25,7 +25,18 @@ MESSAGE(STATUS "Configuring usrp-e support...")
 INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(linux/usrp_e.h HAVE_LINUX_USRP_E_H)
 
-IF(HAVE_LINUX_USRP_E_H)
+IF(DEFINED ENABLE_USRP_E)
+    IF(ENABLE_USRP_E)
+        MESSAGE(STATUS "USRP-E support enabled by configure flag")
+    ELSE(ENABLE_USRP_E)
+        MESSAGE(STATUS "USRP-E support disabled by configure flag")
+    ENDIF(ENABLE_USRP_E)
+ELSE(DEFINED ENABLE_USRP_E) #not defined: automatic enabling of component
+    SET(ENABLE_USRP_E ${HAVE_LINUX_USRP_E_H})
+ENDIF(DEFINED ENABLE_USRP_E)
+SET(ENABLE_USRP_E ${ENABLE_USRP_E} CACHE BOOL "enable USRP-E support")
+
+IF(ENABLE_USRP_E)
     MESSAGE(STATUS "  Building usrp-e support.")
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/clock_ctrl.cpp
@@ -45,6 +56,6 @@ IF(HAVE_LINUX_USRP_E_H)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_iface.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_regs.hpp
     )
-ELSE(HAVE_LINUX_USRP_E_H)
+ELSE(ENABLE_USRP_E)
     MESSAGE(STATUS "  Skipping usrp-e support.")
-ENDIF(HAVE_LINUX_USRP_E_H)
+ENDIF(ENABLE_USRP_E)

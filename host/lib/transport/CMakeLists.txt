@@ -35,6 +35,12 @@ IF(LIBUSB_FOUND)
     SET(HAVE_USB_SUPPORT TRUE)
 ENDIF(LIBUSB_FOUND)
 
+IF(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "Has USB support - found")
+ELSE(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "Has USB support - not found")
+ENDIF(HAVE_USB_SUPPORT)
+
 ########################################################################
 # Check for SIMD headers
 ########################################################################

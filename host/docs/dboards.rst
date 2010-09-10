@@ -141,7 +141,7 @@ With the daughterboard plugged-in, run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --db=<db>
+    ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
 * <args> are device address arguments (optional if only one USRP is on your machine)
-* <db> is the name of the daughterboard slot (optional if the USRP has only one slot)
+* <slot> is the name of the daughterboard slot (optional if the USRP has only one slot)

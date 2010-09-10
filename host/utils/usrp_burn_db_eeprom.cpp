@@ -19,6 +19,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/utils/assert.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -34,16 +35,19 @@ namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     //command line variables
-    std::string args, db_name, unit;
+    std::string args, slot, unit;
     static const uhd::dict<std::string, mboard_prop_t> unit_to_db_prop = boost::assign::map_list_of
         ("RX", MBOARD_PROP_RX_DBOARD) ("TX", MBOARD_PROP_TX_DBOARD)
+    ;
+    static const uhd::dict<std::string, mboard_prop_t> unit_to_db_names_prop = boost::assign::map_list_of
+        ("RX", MBOARD_PROP_RX_DBOARD_NAMES) ("TX", MBOARD_PROP_TX_DBOARD_NAMES)
     ;
 
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""),    "device address args [default = \"\"]")
-        ("db",   po::value<std::string>(&db_name)->default_value(""), "dboard name [default = \"\"]")
+        ("slot", po::value<std::string>(&slot)->default_value(""),    "dboard slot name [default is blank for automatic]")
         ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX or TX]")
         ("id",   po::value<std::string>(),                            "dboard id to burn, omit for readback")
     ;
@@ -70,8 +74,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //make the device and extract the dboard w/ property
     device::sptr dev = device::make(args);
-    wax::obj dboard = (*dev)[DEVICE_PROP_MBOARD][named_prop_t(unit_to_db_prop[unit], db_name)];
-    std::string prefix = (db_name == "")? unit : (unit + ":" + db_name);
+    uhd::prop_names_t dboard_names = (*dev)[DEVICE_PROP_MBOARD][unit_to_db_names_prop[unit]].as<uhd::prop_names_t>();
+    if (dboard_names.size() == 1 and slot.empty()) slot = dboard_names.front();
+    uhd::assert_has(dboard_names, slot, "dboard slot name");
+    wax::obj dboard = (*dev)[DEVICE_PROP_MBOARD][named_prop_t(unit_to_db_prop[unit], slot)];
+    std::string prefix = unit + ":" + slot;
 
     //read the current dboard id from eeprom
     if (vm.count("id") == 0){

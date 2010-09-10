@@ -134,8 +134,8 @@ reg2eeprom                   0xB03[0]                0
 # Template for methods in the body of the struct
 ########################################################################
 BODY_TMPL="""\
-boost::uint8_t get_reg(boost::uint16_t addr){
-    boost::uint8_t reg = 0;
+boost::uint32_t get_reg(boost::uint16_t addr){
+    boost::uint32_t reg = 0;
     switch(addr){
     #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
     case $addr:
@@ -154,7 +154,7 @@ boost::uint8_t get_reg(boost::uint16_t addr){
     return reg;
 }
 
-void set_reg(boost::uint8_t addr, boost::uint32_t reg){
+void set_reg(boost::uint16_t addr, boost::uint32_t reg){
     switch(addr){
     #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
     case $addr:
