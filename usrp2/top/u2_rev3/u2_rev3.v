@@ -397,7 +397,7 @@ module u2_rev3
                   .PSCLK(1'b0), 
                   .PSEN(1'b0), 
                   .PSINCDEC(1'b0), 
-                  .RST(clk125_ext_RST_IN), 
+                  .RST(1'b0), 
                   .CLK0(clk125_ext_clk0), 
                   .CLK180(clk125_ext_clk180) );
    defparam DCM_INST1.CLK_FEEDBACK = "1X";
@@ -406,13 +406,13 @@ module u2_rev3
    defparam DCM_INST1.CLKFX_MULTIPLY = 4;
    defparam DCM_INST1.CLKIN_DIVIDE_BY_2 = "FALSE";
    defparam DCM_INST1.CLKIN_PERIOD = 8.000;
-   defparam DCM_INST1.CLKOUT_PHASE_SHIFT = "NONE";
+   defparam DCM_INST1.CLKOUT_PHASE_SHIFT = "FIXED";
    defparam DCM_INST1.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
    defparam DCM_INST1.DFS_FREQUENCY_MODE = "LOW";
    defparam DCM_INST1.DLL_FREQUENCY_MODE = "LOW";
    defparam DCM_INST1.DUTY_CYCLE_CORRECTION = "TRUE";
    defparam DCM_INST1.FACTORY_JF = 16'h8080;
-   defparam DCM_INST1.PHASE_SHIFT = 0;
+   defparam DCM_INST1.PHASE_SHIFT = -12;
    defparam DCM_INST1.STARTUP_WAIT = "FALSE";
    
    IBUFG RAM_CLK_buf_i1 (.I(RAM_CLK), 
@@ -431,14 +431,14 @@ module u2_rev3
 			.R(1'b0),
 			.S(1'b0));
 
-   SRL16 dcm2_rst_i1 (.D(1'b0),
-		      .CLK(clk_to_mac_buf),
-		      .Q(dcm2_rst),
-		      .A0(1'b1),
-		      .A1(1'b1),
-		      .A2(1'b1),
-		      .A3(1'b1));
-   // synthesis attribute init of dcm2_rst_i2 is "000F";
+//   SRL16 dcm2_rst_i1 (.D(1'b0),
+//		      .CLK(clk_to_mac_buf),
+//		      .Q(dcm2_rst),
+//		      .A0(1'b1),
+//		      .A1(1'b1),
+//		      .A2(1'b1),
+//		      .A3(1'b1));
+   // synthesis attribute init of dcm2_rst_i1 is "000F";
       
    DCM DCM_INST2 (.CLKFB(clk125_int_buf), 
                   .CLKIN(clk_to_mac_buf), 
@@ -446,7 +446,7 @@ module u2_rev3
                   .PSCLK(1'b0), 
                   .PSEN(1'b0), 
                   .PSINCDEC(1'b0), 
-                  .RST(clk125_int_RST_IN),
+                  .RST(1'b0),
                   .CLK0(clk125_int));
    defparam DCM_INST2.CLK_FEEDBACK = "1X";
    defparam DCM_INST2.CLKDV_DIVIDE = 2.0;
