@@ -205,7 +205,12 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
 
     //set the gpio directions and atr controls (identically)
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0); // All unused in atr
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x0); // All Inputs
+    if (this->get_iface()->get_special_props().soft_clock_divider){
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x1); // GPIO0 is clock
+    }
+    else{
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x0); // All Inputs
+    }
 
     //send initial register settings
     this->send_reg(0x0, 0x5);

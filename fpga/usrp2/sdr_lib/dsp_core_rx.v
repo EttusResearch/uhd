@@ -57,41 +57,32 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_in(adc_b),.adc_out(adc_b_ofs));
 
-   wire [3:0]  muxctrl;
-   setting_reg #(.my_addr(BASE+5)) sr_8
+   wire [7:0]  muxctrl;
+   setting_reg #(.my_addr(BASE+5), .width(8)) sr_8
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({UNUSED_2,muxctrl}),.changed());
 
    wire [1:0] gpio_ena;
-   setting_reg #(.my_addr(BASE+6)) sr_9
+   setting_reg #(.my_addr(BASE+6), .width(2)) sr_9
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({UNUSED_3,gpio_ena}),.changed());
 
-   // The TVRX connects to what is called adc_b, thus A and B are
-   // swapped throughout the design.
-   //
-   // In the interest of expediency and keeping the s/w sane, we just remap them here.
-   // The I & Q fields are mapped the same:
-   // 0 -> "the real A" (as determined by the TVRX)
-   // 1 -> "the real B"
-   // 2 -> const zero
-   
    always @(posedge clk)
-     case(muxctrl[1:0])		// The I mapping
-       0: adc_i <= adc_b_ofs;	// "the real A"
-       1: adc_i <= adc_a_ofs;
+     case(muxctrl[3:0])		// The I mapping
+       0: adc_i <= adc_a_ofs;
+       1: adc_i <= adc_b_ofs;
        2: adc_i <= 0;
        default: adc_i <= 0;
-     endcase // case(muxctrl[1:0])
-          
+     endcase // case (muxctrl[3:0])
+   
    always @(posedge clk)
-     case(muxctrl[3:2])		// The Q mapping
-       0: adc_q <= adc_b_ofs;	// "the real A"
-       1: adc_q <= adc_a_ofs;
+     case(muxctrl[7:4])		// The Q mapping
+       0: adc_q <= adc_a_ofs;
+       1: adc_q <= adc_b_ofs;
        2: adc_q <= 0;
        default: adc_q <= 0;
-     endcase // case(muxctrl[3:2])
-       
+     endcase // case (muxctrl[7:4])
+          
    always @(posedge clk)
      if(rst)
        phase <= 0;

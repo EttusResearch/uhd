@@ -22,9 +22,13 @@ INSTALL(FILES
     bounded_buffer.hpp
     bounded_buffer.ipp
     convert_types.hpp
+    convert_types.ipp
     if_addrs.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
+    usb_control.hpp
+    usb_zero_copy.hpp
+    usb_device_handle.hpp
     vrt_if_packet.hpp
     zero_copy.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/transport

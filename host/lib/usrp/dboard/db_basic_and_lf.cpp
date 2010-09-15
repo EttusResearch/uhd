@@ -57,6 +57,12 @@ private:
     double _max_freq;
 };
 
+static const uhd::dict<std::string, subdev_conn_t> sd_name_to_conn = map_list_of
+    ("AB", SUBDEV_CONN_COMPLEX_IQ)
+    ("A",  SUBDEV_CONN_REAL_I)
+    ("B",  SUBDEV_CONN_REAL_Q)
+;
+
 /***********************************************************************
  * Register the basic and LF dboards
  **********************************************************************/
@@ -77,10 +83,10 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t args){
 }
 
 UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
-    dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX");
-    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", list_of("AB")("A")("B"));
-    dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX");
-    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    list_of("AB")("A")("B"));
+    dboard_manager::register_dboard(0x0000, &make_basic_tx, "Basic TX", sd_name_to_conn.keys());
+    dboard_manager::register_dboard(0x0001, &make_basic_rx, "Basic RX", sd_name_to_conn.keys());
+    dboard_manager::register_dboard(0x000e, &make_lf_tx,    "LF TX",    sd_name_to_conn.keys());
+    dboard_manager::register_dboard(0x000f, &make_lf_rx,    "LF RX",    sd_name_to_conn.keys());
 }
 
 /***********************************************************************
@@ -138,14 +144,9 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
-    case SUBDEV_PROP_CONNECTION:{
-            static const uhd::dict<std::string, subdev_conn_t> name_to_conn = map_list_of
-                ("A",  SUBDEV_CONN_REAL_I)
-                ("B",  SUBDEV_CONN_REAL_Q)
-                ("AB", SUBDEV_CONN_COMPLEX_IQ)
-            ;
-            val = name_to_conn[get_subdev_name()];
-        } return;
+    case SUBDEV_PROP_CONNECTION:
+        val = sd_name_to_conn[get_subdev_name()];
+        return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
@@ -197,7 +198,10 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = get_tx_id().to_pp_string();
+        val = std::string(str(boost::format("%s - %s")
+            % get_tx_id().to_pp_string()
+            % get_subdev_name()
+        ));
         return;
 
     case SUBDEV_PROP_OTHERS:
@@ -233,7 +237,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
+        val = sd_name_to_conn[get_subdev_name()];
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:

@@ -77,12 +77,16 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
+    //Issue a stop streaming command (in case it was left running).
+    //Since this command is issued before the networking is setup,
+    //most if not all junk packets will never make it to the socket.
+    this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+
     //setup the vrt rx registers
     _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, _io_helper.get_max_recv_samps_per_packet());
     _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
     _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
     _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
-
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
@@ -116,11 +120,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //set default subdev specs
     (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
-
-    //Issue a stop streaming command (in case it was left running).
-    //Since this command is issued before the networking is setup,
-    //most if not all junk packets will never make it to the socket.
-    this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){

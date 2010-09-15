@@ -25,6 +25,7 @@ SET(manual_sources
     dboards.rst
     general.rst
     images.rst
+    usrp1.rst
     usrp2.rst
 )
 

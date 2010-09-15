@@ -53,6 +53,14 @@ Boost
 * **Download URL (windows installer):** http://www.boostpro.com/download
 
 ^^^^^^^^^^^^^^^^
+LibUSB
+^^^^^^^^^^^^^^^^
+* **Purpose:** USB userspace library
+* **Version:** at least 1.0
+* **Required for:** build time + run time (optional)
+* **Download URL:** http://www.libusb.org/
+
+^^^^^^^^^^^^^^^^
 Python
 ^^^^^^^^^^^^^^^^
 * **Purpose:** used by Cheetah and utility scripts

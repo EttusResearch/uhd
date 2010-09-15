@@ -28,7 +28,11 @@ greater than the Nyquist rate of the ADC.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Basic TX and LFTX boards have 1 quadrature subdevice using both antennas.
+The Basic TX and LFTX boards have 3 subdevices:
+
+* **Subdevice A:** real signal on antenna TXA
+* **Subdevice B:** real signal on antenna TXB
+* **Subdevice AB:** quadrature subdevice using both antennas
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can up-convert signals
@@ -137,7 +141,7 @@ With the daughterboard plugged-in, run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --db=<db>
+    ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
 * <args> are device address arguments (optional if only one USRP is on your machine)
-* <db> is the name of the daughterboard slot (optional if the USRP has only one slot)
+* <slot> is the name of the daughterboard slot (optional if the USRP has only one slot)

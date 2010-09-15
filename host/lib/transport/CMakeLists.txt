@@ -18,6 +18,30 @@
 #This file will be included by cmake, use absolute paths!
 
 ########################################################################
+# Setup libusb
+########################################################################
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/lib/transport)
+FIND_PACKAGE(USB1 REQUIRED)
+
+IF(LIBUSB_FOUND)
+    INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIR})
+    LIBUHD_APPEND_LIBS(${LIBUSB_LIBRARIES})
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_control.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_zero_copy.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_base.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_device_handle.cpp
+    )
+    SET(HAVE_USB_SUPPORT TRUE)
+ENDIF(LIBUSB_FOUND)
+
+IF(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "Has USB support - found")
+ELSE(HAVE_USB_SUPPORT)
+    MESSAGE(STATUS "Has USB support - not found")
+ENDIF(HAVE_USB_SUPPORT)
+
+########################################################################
 # Check for SIMD headers
 ########################################################################
 INCLUDE(CheckIncludeFileCXX)

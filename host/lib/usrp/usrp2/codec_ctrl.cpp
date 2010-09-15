@@ -66,8 +66,8 @@ public:
           this->send_ads62p44_reg(0x00); //issue a reset to the ADC
           //everything else should be pretty much default, i think
 //          _ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
-          
-
+          _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
+          this->send_ads62p44_reg(0x14);
         }
     }
 
