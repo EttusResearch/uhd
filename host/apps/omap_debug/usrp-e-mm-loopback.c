@@ -72,14 +72,14 @@ static void *read_thread(void *threadid)
 	while (1) {
 
 		if (!((*rxi)[rb_read].flags & RB_USER)) {
-			printf("Waiting for data\n");
+//			printf("Waiting for data\n");
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLIN;
 			ssize_t ret = poll(&pfd, 1, -1);
 		}
 
-		printf("pkt received, rb_read = %d\n", rb_read);
+//		printf("pkt received, rb_read = %d\n", rb_read);
 
 		cnt = (*rxi)[rb_read].len;
 		p = &(*rx_buf)[rb_read];
@@ -88,7 +88,7 @@ static void *read_thread(void *threadid)
 //		if (cnt < 0)
 //			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
 
-		printf("p = %X, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
+//		printf("p = %X, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
 
 
 		pkt_count++;
@@ -96,6 +96,8 @@ static void *read_thread(void *threadid)
 		if (p->seq_num != prev_seq_num + 1) {
 			printf("Sequence number fail, current = %d, previous = %d, pkt_count = %d\n",
 				p->seq_num, prev_seq_num, pkt_count);
+			printf("pkt received, rb_read = %d\n", rb_read);
+			printf("p = %X, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
 
 			seq_num_failure ++;
 			if (seq_num_failure > 2)
@@ -113,7 +115,7 @@ static void *read_thread(void *threadid)
 		(*rxi)[rb_read].flags = RB_KERNEL;
 
 		rb_read++;
-		if (rb_read == 200)
+		if (rb_read == 100)
 			rb_read = 0;
 
 		bytes_transfered += cnt;
