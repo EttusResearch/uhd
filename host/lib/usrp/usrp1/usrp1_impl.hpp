@@ -192,6 +192,12 @@ private:
     //transports
     uhd::transport::usb_zero_copy::sptr _data_transport;
     usrp_ctrl::sptr _ctrl_transport;
+
+    //capabilities
+    size_t get_num_ducs(void);
+    size_t get_num_ddcs(void);
+    bool has_rx_halfband(void);
+    bool has_tx_halfband(void);
 };
 
 #endif /* INCLUDED_USRP1_IMPL_HPP */

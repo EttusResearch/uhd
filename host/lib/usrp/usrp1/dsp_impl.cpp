@@ -46,7 +46,10 @@ void usrp1_impl::rx_dsp_get(const wax::obj &key, wax::obj &val)
 {
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("usrp1 ddc0");
+        val = str(boost::format("usrp1 ddc %uX %s")
+            % this->get_num_ddcs()
+            % (this->has_rx_halfband()? "+ hb" : "")
+        );
         return;
 
     case DSP_PROP_OTHERS:
@@ -137,7 +140,10 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key, wax::obj &val)
 {
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_NAME:
-        val = std::string("usrp1 duc0");
+        val = str(boost::format("usrp1 duc %uX %s")
+            % this->get_num_ducs()
+            % (this->has_tx_halfband()? "+ hb" : "")
+        );
         return;
 
     case DSP_PROP_OTHERS:

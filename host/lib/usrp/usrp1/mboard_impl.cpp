@@ -172,23 +172,23 @@ static boost::uint32_t calc_tx_mux(
  * |               Reserved                        |T|DUCs |R|DDCs |
  * +-----------------------------------------------+-+-----+-+-----+
  */
-static int num_ddcs(boost::uint32_t regval)
-{
+size_t usrp1_impl::get_num_ddcs(void){
+    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 0) & 0x0007;
 }
 
-static int num_ducs(boost::uint32_t regval)
-{
+size_t usrp1_impl::get_num_ducs(void){
+    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 4) & 0x0007;
 }
 
-static bool has_rx_halfband(boost::uint32_t regval)
-{
+bool usrp1_impl::has_rx_halfband(void){
+    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 3) & 0x0001;
 }
 
-static bool has_tx_halfband(boost::uint32_t regval)
-{
+bool usrp1_impl::has_tx_halfband(void){
+    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 7) & 0x0001;
 }
 
@@ -224,22 +224,23 @@ void usrp1_impl::mboard_init(void)
     // 
     // Do something useful with the capabilities register
     //
-    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
     std::cout << "USRP1 Capabilities" << std::endl;
-    std::cout << "    number of duc's: " << num_ddcs(regval) << std::endl;
-    std::cout << "    number of ddc's: " << num_ducs(regval) << std::endl;
-    std::cout << "    rx halfband:     " << has_rx_halfband(regval) << std::endl;
-    std::cout << "    tx halfband:     " << has_tx_halfband(regval) << std::endl;
+    std::cout << "    number of duc's: " << get_num_ddcs() << std::endl;
+    std::cout << "    number of ddc's: " << get_num_ducs() << std::endl;
+    std::cout << "    rx halfband:     " << has_rx_halfband() << std::endl;
+    std::cout << "    tx halfband:     " << has_tx_halfband() << std::endl;
 }
 
 void usrp1_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd)
 {
-    if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
-        _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, true, 0, 0, 0);
-    }
+    switch(stream_cmd.stream_mode){
+    case stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
+        return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, true, 0, 0, 0);
 
-    if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS) {
-        _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, false, 0, 0, 0);
+    case stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS:
+        return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, false, 0, 0, 0);
+
+    default: throw std::runtime_error("unsupported stream command type for USRP1");
     }
 }
 
@@ -269,7 +270,7 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = std::string("usrp1 mboard");
+        val = std::string("usrp1 mboard - " + (*_mboard_proxy)[std::string("serial")].as<std::string>());
         return;
 
     case MBOARD_PROP_OTHERS:

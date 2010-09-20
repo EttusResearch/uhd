@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_SIMPLE_USRP_HPP
-#define INCLUDED_UHD_USRP_SIMPLE_USRP_HPP
+#ifndef INCLUDED_UHD_USRP_SINGLE_USRP_HPP
+#define INCLUDED_UHD_USRP_SINGLE_USRP_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -33,31 +33,32 @@
 namespace uhd{ namespace usrp{
 
 /*!
- * The simple USRP device class:
- * A simple usrp facilitates ease-of-use for most use-case scenarios.
+ * The single USRP device class:
+ * A single usrp facilitates ease-of-use for most use-case scenarios.
  * The wrapper provides convenience functions to tune the devices
  * as well as to set the dboard gains, antennas, and other properties.
+ * This wrapper supports multi-channel configurations per motherboard.
  */
-class UHD_API UHD_DEPRECATED simple_usrp : boost::noncopyable{
+class UHD_API single_usrp : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<simple_usrp> sptr;
+    typedef boost::shared_ptr<single_usrp> sptr;
 
     /*!
-     * Make a new simple usrp from the device address.
+     * Make a new single usrp from the device address.
      * \param dev_addr the device address
-     * \return a new simple usrp object
+     * \return a new single usrp object
      */
     static sptr make(const device_addr_t &dev_addr);
 
     /*!
      * Get the underlying device object.
      * This is needed to get access to the streaming API and properties.
-     * \return the device object within this simple usrp
+     * \return the device object within this single usrp
      */
     virtual device::sptr get_device(void) = 0;
 
     /*!
-     * Get a printable name for this simple usrp.
+     * Get a printable name for this usrp.
      * \return a printable string
      */
     virtual std::string get_pp_string(void) = 0;
@@ -115,29 +116,29 @@ public:
     virtual void set_rx_rate(double rate) = 0;
     virtual double get_rx_rate(void) = 0;
 
-    virtual tune_result_t set_rx_freq(double freq) = 0;
-    virtual tune_result_t set_rx_freq(double freq, double lo_off) = 0;
-    virtual double get_rx_freq(void) = 0;
-    virtual freq_range_t get_rx_freq_range(void) = 0;
+    virtual tune_result_t set_rx_freq(double freq, size_t chan = 0) = 0;
+    virtual tune_result_t set_rx_freq(double freq, double lo_off, size_t chan = 0) = 0;
+    virtual double get_rx_freq(size_t chan = 0) = 0;
+    virtual freq_range_t get_rx_freq_range(size_t chan = 0) = 0;
 
-    virtual void set_rx_gain(float gain) = 0;
-    virtual float get_rx_gain(void) = 0;
-    virtual gain_range_t get_rx_gain_range(void) = 0;
+    virtual void set_rx_gain(float gain, size_t chan = 0) = 0;
+    virtual float get_rx_gain(size_t chan = 0) = 0;
+    virtual gain_range_t get_rx_gain_range(size_t chan = 0) = 0;
 
-    virtual void set_rx_antenna(const std::string &ant) = 0;
-    virtual std::string get_rx_antenna(void) = 0;
-    virtual std::vector<std::string> get_rx_antennas(void) = 0;
+    virtual void set_rx_antenna(const std::string &ant, size_t chan = 0) = 0;
+    virtual std::string get_rx_antenna(size_t chan = 0) = 0;
+    virtual std::vector<std::string> get_rx_antennas(size_t chan = 0) = 0;
 
-    virtual bool get_rx_lo_locked(void) = 0;
+    virtual bool get_rx_lo_locked(size_t chan = 0) = 0;
 
     /*!
      * Read the RSSI value from a usrp device.
      * Or throw if the dboard does not support an RSSI readback.
      * \return the rssi in dB
      */
-    virtual float read_rssi(void) = 0;
+    virtual float read_rssi(size_t chan = 0) = 0;
 
-    virtual dboard_iface::sptr get_rx_dboard_iface(void) = 0;
+    virtual dboard_iface::sptr get_rx_dboard_iface(size_t chan = 0) = 0;
 
     /*******************************************************************
      * TX methods
@@ -148,24 +149,24 @@ public:
     virtual void set_tx_rate(double rate) = 0;
     virtual double get_tx_rate(void) = 0;
 
-    virtual tune_result_t set_tx_freq(double freq) = 0;
-    virtual tune_result_t set_tx_freq(double freq, double lo_off) = 0;
-    virtual double get_tx_freq(void) = 0;
-    virtual freq_range_t get_tx_freq_range(void) = 0;
+    virtual tune_result_t set_tx_freq(double freq, size_t chan = 0) = 0;
+    virtual tune_result_t set_tx_freq(double freq, double lo_off, size_t chan = 0) = 0;
+    virtual double get_tx_freq(size_t chan = 0) = 0;
+    virtual freq_range_t get_tx_freq_range(size_t chan = 0) = 0;
 
-    virtual void set_tx_gain(float gain) = 0;
-    virtual float get_tx_gain(void) = 0;
-    virtual gain_range_t get_tx_gain_range(void) = 0;
+    virtual void set_tx_gain(float gain, size_t chan = 0) = 0;
+    virtual float get_tx_gain(size_t chan = 0) = 0;
+    virtual gain_range_t get_tx_gain_range(size_t chan = 0) = 0;
 
-    virtual void set_tx_antenna(const std::string &ant) = 0;
-    virtual std::string get_tx_antenna(void) = 0;
-    virtual std::vector<std::string> get_tx_antennas(void) = 0;
+    virtual void set_tx_antenna(const std::string &ant, size_t chan = 0) = 0;
+    virtual std::string get_tx_antenna(size_t chan = 0) = 0;
+    virtual std::vector<std::string> get_tx_antennas(size_t chan = 0) = 0;
 
-    virtual bool get_tx_lo_locked(void) = 0;
+    virtual bool get_tx_lo_locked(size_t chan = 0) = 0;
 
-    virtual dboard_iface::sptr get_tx_dboard_iface(void) = 0;
+    virtual dboard_iface::sptr get_tx_dboard_iface(size_t chan = 0) = 0;
 };
 
 }}
 
-#endif /* INCLUDED_UHD_USRP_SIMPLE_USRP_HPP */
+#endif /* INCLUDED_UHD_USRP_SINGLE_USRP_HPP */
