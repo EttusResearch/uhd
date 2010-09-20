@@ -157,34 +157,26 @@ module u1plus_core
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
-   wire [99:0] 	 tx1_data;
-   wire 	 tx1_src_rdy, tx1_dst_rdy;
    wire [15:0] 	 tx_i_int, tx_q_int;
-   wire [31:0] 	 debug_vtc, debug_vtd, debug_vt;
+   wire [31:0] 	 debug_vt;
    wire 	 run_tx;
-   
-   vita_tx_deframer #(.BASE(SR_TX_CTRL), .MAXCHAN(1)) vita_tx_deframer
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
-      .debug(debug_vtd) );
 
-   vita_tx_control #(.BASE(SR_TX_CTRL), .WIDTH(32)) vita_tx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time),.underrun(underrun),
-      .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
-      .debug(debug_vtc) );
+   wire [31:0] 	 tx_err_data;
+   wire 	 tx_err_src_rdy, tx_err_dst_rdy;
+   assign tx_err_dst_rdy = 1'b1;
    
-   dsp_core_tx #(.BASE(SR_TX_DSP)) dsp_core_tx
-     (.clk(wb_clk),.rst(wb_rst),
+   vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
+		   .REPORT_ERROR(0), .PROT_ENG_FLAGS(0)) 
+   vita_tx_chain
+     (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+      .vita_time(vita_time),
+      .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
+      .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .debug(debug_tx_dsp) );
-
+      .underrun(underrun), .run(run_tx),
+      .debug(debug_vt));
+   
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
    
