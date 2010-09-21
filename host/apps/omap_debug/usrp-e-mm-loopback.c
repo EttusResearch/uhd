@@ -137,7 +137,7 @@ static void *read_thread(void *threadid)
 
 static void *write_thread(void *threadid)
 {
-	int seq_number, i, cnt;
+	int seq_number, i, cnt, rb_write;
 	void *tx_data;
 	struct pkt *p;
 
@@ -151,6 +151,7 @@ static void *write_thread(void *threadid)
 		p->data[i] = i;
 
 	seq_number = 1;
+	rb_write = 0;
 
 	while (1) {
 		p->seq_num = seq_number++;
@@ -162,9 +163,26 @@ static void *write_thread(void *threadid)
 
 		p->checksum = calc_checksum(p);
 
-		cnt = write(fp, tx_data, p->len * 2 + 12);
-		if (cnt < 0)
-			printf("Error returned from write: %d\n", cnt);
+		if (!((*txi)[rb_write].flags & RB_KERNEL)) {
+//			printf("Waiting for space\n");
+			struct pollfd pfd;
+			pfd.fd = fp;
+			pfd.events = POLLOUT;
+			ssize_t ret = poll(&pfd, 1, -1);
+		}
+
+		memcpy(&(*tx_buf)[rb_write], tx_data, p->len * 2 + 12);
+
+		(*txi)[rb_write].len = p->len * 2 + 12;
+		(*txi)[rb_write].flags = RB_USER;
+
+		rb_write++;
+		if (rb_write == 100)
+			rb_write = 0;
+
+//		cnt = write(fp, tx_data, p->len * 2 + 12);
+//		if (cnt < 0)
+//			printf("Error returned from write: %d\n", cnt);
 //		sleep(1);
 	}
 }
