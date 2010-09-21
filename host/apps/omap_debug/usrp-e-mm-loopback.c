@@ -27,6 +27,7 @@ struct pkt (*rx_buf)[200];
 struct pkt (*tx_buf)[200];
 
 static int fp;
+static struct usrp_e_ring_buffer_size_t rb_size;
 
 static int calc_checksum(struct pkt *p)
 {
@@ -110,7 +111,7 @@ static void *read_thread(void *threadid)
 		(*rxi)[rb_read].flags = RB_KERNEL;
 
 		rb_read++;
-		if (rb_read == 100)
+		if (rb_read == rb_size.num_rx_frames)
 			rb_read = 0;
 
 		bytes_transfered += cnt;
@@ -177,7 +178,7 @@ static void *write_thread(void *threadid)
 		(*txi)[rb_write].flags = RB_USER;
 
 		rb_write++;
-		if (rb_write == 100)
+		if (rb_write == rb_size.num_tx_frames)
 			rb_write = 0;
 
 //		cnt = write(fp, tx_data, p->len * 2 + 12);
@@ -195,7 +196,6 @@ int main(int argc, char *argv[])
 	struct sched_param s = {
 		.sched_priority = 1
 	};
-	struct usrp_e_ring_buffer_size_t rb_size;
 	int ret, map_size, page_size;
 	void *rb;
 
