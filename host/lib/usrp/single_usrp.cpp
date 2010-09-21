@@ -129,7 +129,6 @@ public:
      ******************************************************************/
     void set_rx_subdev_spec(const subdev_spec_t &spec){
         _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC] = spec;
-        std::cout << "RX " << this->get_rx_subdev_spec().to_pp_string() << std::endl;
     }
 
     subdev_spec_t get_rx_subdev_spec(void){
@@ -145,15 +144,15 @@ public:
     }
 
     tune_result_t set_rx_freq(double target_freq, size_t chan){
-        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(/*TODO*/), target_freq);
+        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq);
     }
 
     tune_result_t set_rx_freq(double target_freq, double lo_off, size_t chan){
-        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(/*TODO*/), target_freq, lo_off);
+        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq, lo_off);
     }
 
     double get_rx_freq(size_t chan){
-        return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(/*TODO*/));
+        return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan);
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
@@ -201,7 +200,6 @@ public:
      ******************************************************************/
     void set_tx_subdev_spec(const subdev_spec_t &spec){
         _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
-        std::cout << "TX " << this->get_tx_subdev_spec().to_pp_string() << std::endl;
     }
 
     subdev_spec_t get_tx_subdev_spec(void){
@@ -217,15 +215,15 @@ public:
     }
 
     tune_result_t set_tx_freq(double target_freq, size_t chan){
-        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(/*TODO*/), target_freq);
+        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq);
     }
 
     tune_result_t set_tx_freq(double target_freq, double lo_off, size_t chan){
-        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(/*TODO*/), target_freq, lo_off);
+        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq, lo_off);
     }
 
     double get_tx_freq(size_t chan){
-        return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(/*TODO*/));
+        return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan);
     }
 
     freq_range_t get_tx_freq_range(size_t chan){

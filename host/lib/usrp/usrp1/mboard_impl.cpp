@@ -36,6 +36,8 @@
 using namespace uhd;
 using namespace uhd::usrp;
 
+static const bool usrp1_mboard_verbose = false;
+
 /***********************************************************************
  * Calculate the RX mux value:
  *    The I and Q mux values are intentionally reversed to flip I and Q
@@ -220,15 +222,13 @@ void usrp1_impl::mboard_init(void)
     // Set default for TX format to 16-bit I&Q
     _iface->poke32(FR_TX_FORMAT, 0x00000000);
 
-    // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-    // 
-    // Do something useful with the capabilities register
-    //
-    std::cout << "USRP1 Capabilities" << std::endl;
-    std::cout << "    number of duc's: " << get_num_ddcs() << std::endl;
-    std::cout << "    number of ddc's: " << get_num_ducs() << std::endl;
-    std::cout << "    rx halfband:     " << has_rx_halfband() << std::endl;
-    std::cout << "    tx halfband:     " << has_tx_halfband() << std::endl;
+    if (usrp1_mboard_verbose){
+        std::cout << "USRP1 Capabilities" << std::endl;
+        std::cout << "    number of duc's: " << get_num_ddcs() << std::endl;
+        std::cout << "    number of ddc's: " << get_num_ducs() << std::endl;
+        std::cout << "    rx halfband:     " << has_rx_halfband() << std::endl;
+        std::cout << "    tx halfband:     " << has_tx_halfband() << std::endl;
+    }
 }
 
 void usrp1_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd)
@@ -362,18 +362,26 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();
+        if (_rx_subdev_spec.size() > this->get_num_ddcs()){
+            throw std::runtime_error(str(boost::format(
+                "USRP1 suports up to %u RX channels.\n"
+                "However, this RX subdev spec requires %u channels\n"
+            ) % this->get_num_ddcs() % _rx_subdev_spec.size()));
+        }
         verify_rx_subdev_spec(_rx_subdev_spec, _mboard_proxy->get_link());
-        //sanity check
-        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
         //set the mux and set the number of rx channels
         _iface->poke32(FR_RX_MUX, calc_rx_mux(_rx_subdev_spec, _mboard_proxy->get_link()));
         return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
+        if (_tx_subdev_spec.size() > this->get_num_ducs()){
+            throw std::runtime_error(str(boost::format(
+                "USRP1 suports up to %u TX channels.\n"
+                "However, this TX subdev spec requires %u channels\n"
+            ) % this->get_num_ducs() % _tx_subdev_spec.size()));
+        }
         verify_tx_subdev_spec(_tx_subdev_spec, _mboard_proxy->get_link());
-        //sanity check
-        UHD_ASSERT_THROW(_tx_subdev_spec.size() <= 2);
         //set the mux and set the number of tx channels
         _iface->poke32(FR_TX_MUX, calc_tx_mux(_tx_subdev_spec, _mboard_proxy->get_link()));
         return;

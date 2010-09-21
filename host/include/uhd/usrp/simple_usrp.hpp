@@ -33,7 +33,8 @@
 namespace uhd{ namespace usrp{
 
 /*!
- * The simple USRP device class:
+ * The simple USRP device class (DEPRECATED):
+ * This interface has been deprecated in favor of the single USRP interface.
  * A simple usrp facilitates ease-of-use for most use-case scenarios.
  * The wrapper provides convenience functions to tune the devices
  * as well as to set the dboard gains, antennas, and other properties.

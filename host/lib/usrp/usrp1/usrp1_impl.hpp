@@ -179,14 +179,16 @@ private:
     void rx_dsp_init(void);
     void rx_dsp_get(const wax::obj &, wax::obj &);
     void rx_dsp_set(const wax::obj &, const wax::obj &);
-    double _rx_dsp_freq; size_t _rx_dsp_decim;
+    uhd::dict<std::string, double> _rx_dsp_freqs;
+    size_t _rx_dsp_decim;
     wax_obj_proxy::sptr _rx_dsp_proxy;
 
     //tx dsp functions and settings
     void tx_dsp_init(void);
     void tx_dsp_get(const wax::obj &, wax::obj &);
     void tx_dsp_set(const wax::obj &, const wax::obj &);
-    double _tx_dsp_freq; size_t _tx_dsp_interp;
+    uhd::dict<std::string, double> _tx_dsp_freqs;
+    size_t _tx_dsp_interp;
     wax_obj_proxy::sptr _tx_dsp_proxy;
 
     //transports
