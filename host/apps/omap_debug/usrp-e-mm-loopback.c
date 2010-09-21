@@ -194,18 +194,18 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	rb = mmap(0, 202 * 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
+	rb = mmap(0, 102 * 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
 	if (rb == MAP_FAILED) {
 		perror("mmap failed");
-		exit;
+		return -1;
 	}
 
 	printf("rb = %X\n", rb);
 
 	rxi = rb;
 	rx_buf = rb + 4096;
-	txi = rb + 4096 + 4096 * 200;
-	tx_buf = rb + 4096 * 2 + 4096 * 200;
+	txi = rb + 4096 + 4096 * 100;
+	tx_buf = rb + 4096 * 2 + 4096 * 100;
 
 	printf("rxi = %X, rx_buf = %X, txi = %X, tx_buf = %X\n", rxi, rx_buf, txi, tx_buf);
 
