@@ -1,8 +1,8 @@
 
 
-//`define LOOPBACK 1
+`define LOOPBACK 1
 //`define TIMED 1
-`define DSP 1
+//`define DSP 1
 
 module u1plus_core
   (input clk_fpga, input rst_fpga,
