@@ -181,7 +181,7 @@ static void *write_thread(void *threadid)
 		if (rb_write == rb_size.num_tx_frames)
 			rb_write = 0;
 
-//		cnt = write(fp, tx_data, p->len * 2 + 12);
+		cnt = write(fp, NULL, 0);
 //		if (cnt < 0)
 //			printf("Error returned from write: %d\n", cnt);
 //		sleep(1);
