@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -18,12 +19,6 @@ struct pkt {
 	int checksum;
 	int seq_num;
 	short data[1024-6];
-};
-
-/* delete after usrp_e.h updated */
-struct ring_buffer_info {
-	int flags;
-	int len;
 };
 
 struct ring_buffer_info (*rxi)[];
@@ -182,6 +177,8 @@ int main(int argc, char *argv[])
 	struct sched_param s = {
 		.sched_priority = 1
 	};
+	struct usrp_e_ring_buffer_size_t rb_size;
+	int ret, map_size, page_size;
 	void *rb;
 
 	if (argc < 2) {
@@ -194,7 +191,14 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	rb = mmap(0, 102 * 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
+	page_size = getpagesize();
+
+	ret = ioctl(fp, USRP_E_GET_RB_INFO, &rb_size);
+
+	map_size = (rb_size.num_pages_rx_flags + rb_size.num_pages_tx_flags) * page_size +
+		(rb_size.num_rx_frames + rb_size.num_tx_frames) * (page_size >> 1);
+
+	rb = mmap(0, map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
 	if (rb == MAP_FAILED) {
 		perror("mmap failed");
 		return -1;
@@ -203,9 +207,12 @@ int main(int argc, char *argv[])
 	printf("rb = %X\n", rb);
 
 	rxi = rb;
-	rx_buf = rb + 4096;
-	txi = rb + 4096 + 4096 * 100;
-	tx_buf = rb + 4096 * 2 + 4096 * 100;
+	rx_buf = rb + (rb_size.num_pages_rx_flags * page_size);
+	txi = rb +  (rb_size.num_pages_rx_flags * page_size) +
+		(rb_size.num_rx_frames * page_size >> 1);
+	tx_buf = rb +  (rb_size.num_pages_rx_flags * page_size) +
+		(rb_size.num_rx_frames * page_size >> 1) +
+		(rb_size.num_pages_tx_flags * page_size);
 
 	printf("rxi = %X, rx_buf = %X, txi = %X, tx_buf = %X\n", rxi, rx_buf, txi, tx_buf);
 

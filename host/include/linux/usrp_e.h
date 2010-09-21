@@ -34,8 +34,8 @@ struct usrp_e_ctl32 {
 #define UE_SPI_TXRX	1
 
 /* Defines for spi ctrl register */
-#define UE_SPI_CTRL_TXNEG	(1 << 10)
-#define UE_SPI_CTRL_RXNEG	(1 << 9)
+#define UE_SPI_CTRL_TXNEG	(BIT(10))
+#define UE_SPI_CTRL_RXNEG	(BIT(9))
 
 #define UE_SPI_PUSH_RISE	0
 #define UE_SPI_PUSH_FALL	UE_SPI_CTRL_TXNEG
@@ -64,25 +64,24 @@ struct usrp_e_i2c {
 #define USRP_E_SPI		_IOWR(USRP_E_IOC_MAGIC, 0x24, struct usrp_e_spi)
 #define USRP_E_I2C_READ		_IOWR(USRP_E_IOC_MAGIC, 0x25, struct usrp_e_i2c)
 #define USRP_E_I2C_WRITE	_IOW(USRP_E_IOC_MAGIC, 0x26, struct usrp_e_i2c)
-
-/* Data transfer frame definition */
-
-struct usrp_transfer_frame {
-	__u32 status;
-	__u32 len;
-	__u8  buf[];
-};
+#define USRP_E_GET_RB_INFO      _IOR(USRP_E_IOC_MAGIC, 0x27, struct usrp_e_ring_buffer_size_t)
 
 /* Flag defines */
-#define RB_USER (1 << 0)
-#define RB_KERNEL (1 << 1)
-#define RB_OVERRUN (1 << 2)
-#define RB_DMA_ACTIVE (1 << 3)
+#define RB_USER (1<<0)
+#define RB_KERNEL (1<<1)
+#define RB_OVERRUN (1<<2)
+#define RB_DMA_ACTIVE (1<<3)
 
-struct ring_buffer_entry {
-	unsigned int flags;
-	unsigned long dma_addr;
-	struct usrp_transfer_frame *frame_addr;
+struct ring_buffer_info {
+	int flags;
+	int len;
+};
+
+struct usrp_e_ring_buffer_size_t {
+	int num_pages_rx_flags;
+	int num_rx_frames;
+	int num_pages_tx_flags;
+	int num_tx_frames;
 };
 
 #endif
