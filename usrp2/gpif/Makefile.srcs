@@ -9,4 +9,5 @@ GPIF_SRCS = $(abspath $(addprefix $(BASE_DIR)/../gpif/, \
 gpif.v \
 gpif_wr.v \
 gpif_rd.v \
+ctrl_resp.v \
 ))
