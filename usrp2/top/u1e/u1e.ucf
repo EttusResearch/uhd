@@ -95,10 +95,10 @@ NET "db_sen_tx"  LOC = "G18"  ;
 #NET "aux_sdi_codec"  LOC = "G3"  ;
 #NET "aux_sdo_codec"  LOC = "F3"  ;
 #NET "aux_sclk_codec"  LOC = "C1"  ;
-NET "sen_codec"  LOC = "F5"  ;
-NET "mosi_codec"  LOC = "F4"  ;
+NET "sen_codec"  LOC = "F5"  |IOSTANDARD = LVCMOS33;
+NET "mosi_codec"  LOC = "F4"  |IOSTANDARD = LVCMOS33;
 NET "miso_codec"  LOC = "H4"  ;
-NET "sclk_codec"  LOC = "H3"  ;
+NET "sclk_codec"  LOC = "H3"  |IOSTANDARD = LVCMOS33;
 
 ### Clock Gen SPI
 NET "cgen_miso"  LOC = "F22"  ;
@@ -184,22 +184,22 @@ NET "DA<2>"  LOC = "P6"  ;
 NET "DA<1>"  LOC = "R1"  ;
 NET "DA<0>"  LOC = "R2"  ;
 
-NET "TX<13>"  LOC = "T6"  ;
-NET "TX<12>"  LOC = "U1"  ;
-NET "TX<11>"  LOC = "T1"  ;
-NET "TX<10>"  LOC = "R5"  ;
-NET "TX<9>"  LOC = "V1"  ;
-NET "TX<8>"  LOC = "U2"  ;
-NET "TX<7>"  LOC = "T4"  ;
-NET "TX<6>"  LOC = "R3"  ;
-NET "TX<5>"  LOC = "W1"  ;
-NET "TX<4>"  LOC = "Y1"  ;
-NET "TX<3>"  LOC = "V3"  ;
-NET "TX<2>"  LOC = "V4"  ;
-NET "TX<1>"  LOC = "W2"  ;
-NET "TX<0>"  LOC = "W3"  ;
-NET "TXSYNC"  LOC = "U5"  ;
-NET "TXBLANK"  LOC = "U4"  ;
+NET "TX<13>"  LOC = "T6"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<12>"  LOC = "U1"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<11>"  LOC = "T1"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<10>"  LOC = "R5"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<9>"  LOC = "V1"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<8>"  LOC = "U2"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<7>"  LOC = "T4"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<6>"  LOC = "R3"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<5>"  LOC = "W1"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<4>"  LOC = "Y1"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<3>"  LOC = "V3"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<2>"  LOC = "V4"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<1>"  LOC = "W2"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TX<0>"  LOC = "W3"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TXSYNC"  LOC = "U5"   |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
+NET "TXBLANK"  LOC = "U4"  |IOSTANDARD = LVCMOS33  |DRIVE = 12  |SLEW = FAST ;
 
 NET "PPS_IN"  LOC = "M5"  ;
 

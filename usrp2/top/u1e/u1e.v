@@ -1,8 +1,6 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
-//`define DCM 1
-
 module u1e
   (input CLK_FPGA_P, input CLK_FPGA_N,  // Diff
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
@@ -41,11 +39,10 @@ module u1e
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clk_fpga_pin (.O(clk_fpga_in),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
 
-`ifdef DCM
-   wire  clk_2x, dcm_rst, dcm_locked;
+   wire  clk_2x, dcm_rst, dcm_locked, clk_fb;
    DCM #(.CLK_FEEDBACK ( "1X" ),
-	 .CLKDV_DIVIDE ( 2.0 ),
-	 .CLKFX_DIVIDE ( 1 ),
+	 .CLKDV_DIVIDE ( 2 ),
+	 .CLKFX_DIVIDE ( 2 ),
 	 .CLKFX_MULTIPLY ( 2 ),
 	 .CLKIN_DIVIDE_BY_2 ( "FALSE" ),
 	 .CLKIN_PERIOD ( 15.625 ),
@@ -57,15 +54,12 @@ module u1e
 	 .FACTORY_JF ( 16'h8080 ),
 	 .PHASE_SHIFT ( 0 ),
 	 .STARTUP_WAIT ( "FALSE" ))
-   clk_doubler (.CLKFB(clk_fpga), .CLKIN(clk_fpga_in), .RST(dcm_rst), 
+   clk_doubler (.CLKFB(clk_fb), .CLKIN(clk_fpga_in), .RST(dcm_rst), 
                 .DSSEN(0), .PSCLK(0), .PSEN(0), .PSINCDEC(0), .PSDONE(), 
 		.CLKDV(), .CLKFX(), .CLKFX180(), 
-                .CLK2X(clk_2x), .CLK2X180(), 
-                .CLK0(clk_fpga), .CLK90(), .CLK180(), .CLK270(), 
+                .CLK2X(), .CLK2X180(), 
+                .CLK0(clk_fb), .CLK90(clk_fpga), .CLK180(), .CLK270(), 
                 .LOCKED(dcm_locked), .STATUS());
-`else // !`ifdef DCM
-   BUFG clk_fpga_BUFG (.I(clk_fpga_in), .O(clk_fpga));
-`endif // !`ifdef DCM
    
    // /////////////////////////////////////////////////////////////////////////
    // SPI
@@ -83,23 +77,6 @@ module u1e
    assign TXBLANK = 0;
    wire [13:0] tx_i, tx_q;
 
-`ifdef DCM
-   reg [13:0]  TX;
-   reg 	       TXSYNC;
-   
-   always @(posedge clk_2x)
-     if(clk_fpga)
-       begin
-	  TX <= tx_i;
-	  TXSYNC <= 0;  // Low indicates first data item
-       end
-     else
-       begin
-	  TX <= tx_q;
-	  TXSYNC <= 1;
-       end
-`else // !`ifdef DCM
-   
    reg[13:0] delay_q;
    always @(posedge clk_fpga)
      delay_q <= tx_q;
@@ -132,8 +109,6 @@ module u1e
 		.D1(1'b1),   // 1-bit data input (associated with C1)
 		.R(1'b0),       // 1-bit reset input
 		.S(1'b0));      // 1-bit set input
-   
-`endif // !`ifdef DCM
    
    // /////////////////////////////////////////////////////////////////////////
    // Main U1E Core
