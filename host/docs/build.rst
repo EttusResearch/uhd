@@ -40,7 +40,7 @@ CMake
 ^^^^^^^^^^^^^^^^
 * **Purpose:** generates project build files
 * **Version:** at least 2.8
-* **Required for:** build time
+* **Usage:** build time (required)
 * **Download URL:** http://www.cmake.org/cmake/resources/software.html
 
 ^^^^^^^^^^^^^^^^
@@ -48,16 +48,16 @@ Boost
 ^^^^^^^^^^^^^^^^
 * **Purpose:** C++ library
 * **Version:** at least 3.6 unix, at least 4.0 windows
-* **Required for:** build time + run time
+* **Usage:** build time + run time (required)
 * **Download URL:** http://www.boost.org/users/download/
 * **Download URL (windows installer):** http://www.boostpro.com/download
 
 ^^^^^^^^^^^^^^^^
 LibUSB
 ^^^^^^^^^^^^^^^^
-* **Purpose:** USB userspace library
+* **Purpose:** USB-based hardware support
 * **Version:** at least 1.0
-* **Required for:** build time + run time (optional)
+* **Usage:** build time + run time (optional)
 * **Download URL:** http://www.libusb.org/
 
 ^^^^^^^^^^^^^^^^
@@ -65,7 +65,7 @@ Python
 ^^^^^^^^^^^^^^^^
 * **Purpose:** used by Cheetah and utility scripts
 * **Version:** at least 2.6
-* **Required for:** build time + run time utility scripts
+* **Usage:** build time + run time utility scripts (required)
 * **Download URL:** http://www.python.org/download/
 
 ^^^^^^^^^^^^^^^^
@@ -73,7 +73,7 @@ Cheetah
 ^^^^^^^^^^^^^^^^
 * **Purpose:** source code generation
 * **Version:** at least 2.0
-* **Required for:** build time
+* **Usage:** build time (required)
 * **Download URL:** http://www.cheetahtemplate.org/download.html
 * **Download URL (windows installer):** http://feisley.com/python/cheetah/
 
@@ -81,14 +81,14 @@ Cheetah
 Doxygen
 ^^^^^^^^^^^^^^^^
 * **Purpose:** generates html api documentation
-* **Required for:** build time (optional)
+* **Usage:** build time (optional)
 * **Download URL:** http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
 
 ^^^^^^^^^^^^^^^^
 Docutils
 ^^^^^^^^^^^^^^^^
 * **Purpose:** generates html user manual
-* **Required for:** build time (optional)
+* **Usage:** build time (optional)
 * **Download URL:** http://docutils.sourceforge.net/
 
 ------------------------------------------------------------------------
@@ -105,9 +105,16 @@ Generate Makefiles with cmake
     cd build
     cmake ../
 
-**Notes:**
+Additionally, configuration variables can be passed into cmake via the command line.
+The following common-use configuration variables are listed below:
 
-* For a custom prefix, use: cmake -DCMAKE_INSTALL_PREFIX=<prefix> ../
+* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<prefix>
+* To install libs into lib64: cmake -DLIB_SUFFIX=64
+
+Example usage:
+::
+
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/uhd ../
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build and install
@@ -155,11 +162,15 @@ Build the project in MSVC
 **Note:** you may not have permission to build the install target.
 You need to be an administrator or to run MSVC as administrator.
 
-** alternative command line instructions **
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Build the project in MSVC (command line)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Open the Visual Studio Command Prompt Shorcut:
+::
 
-* Open the Visual Studio Command Prompt Shorcut
-* DevEnv <uhd-repo-path>\host\build\ALL_BUILD.vcproj /Build Release
-* DevEnv <uhd-repo-path>\host\build\INSTALL.vcproj /Build Release
+    cd <uhd-repo-path>\host\build
+    DevEnv ALL_BUILD.vcproj /Build Release
+    DevEnv INSTALL.vcproj /Build Release
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable

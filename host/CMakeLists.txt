@@ -30,7 +30,7 @@ INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
 # Install Dirs
 ########################################################################
 SET(RUNTIME_DIR bin)
-SET(LIBRARY_DIR lib)
+SET(LIBRARY_DIR lib${LIB_SUFFIX})
 SET(INCLUDE_DIR include)
 SET(PKG_DATA_DIR share/uhd)
 SET(PKG_DOC_DIR share/doc/uhd)
@@ -61,7 +61,9 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 IF(CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-Wall)
     ADD_DEFINITIONS(-Wextra)
-    ADD_DEFINITIONS(-pedantic)
+    #causes trouble when compiling libusb1.0 on macintosh
+    #comment out until mac ports libusb gets its act together
+    #ADD_DEFINITIONS(-pedantic)
     ADD_DEFINITIONS(-ansi)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)

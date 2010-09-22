@@ -174,7 +174,7 @@ buffer incoming samples faster than they can be processed.
 However, if you application cannot process samples fast enough,
 no amount of buffering can save you.
 
-By default, the UHD will try to request a reasonably large buffer size for both send and receive.
+By default, the UHD will try to resize both the send and receive buffer for optimum performance.
 A warning will be printed on instantiation if the actual buffer size is insufficient.
 See the OS specific notes below:
 
