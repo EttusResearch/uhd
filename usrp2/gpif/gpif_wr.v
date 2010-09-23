@@ -5,8 +5,8 @@ module gpif_wr
    output reg gpif_full_d, output reg gpif_full_c,
 
    input sys_clk, input sys_rst,
-   output [18:0] data_o, output src_rdy_o, input dst_rdy_i,
-   output [18:0] ctrl_o, output ctrl_src_rdy_o, input ctrl_dst_rdy_i,
+   output [17:0] data_o, output src_rdy_o, input dst_rdy_i,
+   output [17:0] ctrl_o, output ctrl_src_rdy_o, input ctrl_dst_rdy_i,
    output [31:0] debug );
 
    reg 		 wr_reg, ep_reg;
@@ -57,8 +57,6 @@ module gpif_wr
       .rclk(sys_clk), .dataout(data_o[17:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i), .occupied(),
       .arst(sys_rst));
 
-   assign data_o[18] = 0;
-
    // Control Path
    wire [15:0] ctrl_fifo_space;
    always @(posedge gpif_clk)
@@ -74,6 +72,6 @@ module gpif_wr
       .src_rdy_o(ctrl_src_rdy_o), .dst_rdy_i(ctrl_dst_rdy_i), .occupied(),
       .arst(sys_rst));
 
-   assign ctrl_o[18] = 0;
+   assign debug = { 16'd0, ep_reg, wr_reg, eop, sop, (~ep_reg & wr_reg & ~write_count[8]), src_rdy_int, dst_rdy_int, write_count[8:0]};
    
 endmodule // gpif_wr

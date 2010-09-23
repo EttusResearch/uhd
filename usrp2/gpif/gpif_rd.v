@@ -5,13 +5,13 @@ module gpif_rd
    output reg gpif_empty_d, output reg gpif_empty_c,
    
    input sys_clk, input sys_rst,
-   input [18:0] data_i, input src_rdy_i, output dst_rdy_o,
-   input [18:0] resp_i, input resp_src_rdy_i, output resp_dst_rdy_o,
+   input [17:0] data_i, input src_rdy_i, output dst_rdy_o,
+   input [17:0] resp_i, input resp_src_rdy_i, output resp_dst_rdy_o,
    output [31:0] debug
    );
    
-   wire [17:0] 	data_o;
-   wire 	rx_full;
+   wire [17:0] 	data_o, resp_o;
+   wire 	final_rdy_data, final_rdy_resp;
    
    // 33/257 Bug Fix
    reg [8:0] 	read_count;
@@ -37,7 +37,7 @@ module gpif_rd
    fifo_cascade #(.WIDTH(18), .SIZE(9)) rd_fifo
      (.clk(~gpif_clk), .reset(gpif_rst), .clear(0),
       .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int), .space(),
-      .dataout(data_o), .src_rdy_o(), .dst_rdy_i(send_data_line), .occupied());
+      .dataout(data_o), .src_rdy_o(final_rdy_data), .dst_rdy_i(send_data_line), .occupied());
 
    reg [7:0] 	packet_count;
    always @(negedge gpif_clk)
@@ -62,12 +62,11 @@ module gpif_rd
    // Response Path
    wire [15:0] 	resp_fifolevel;
    wire 	send_resp_line = gpif_rd & gpif_ep & ~read_count[4];
-   wire [17:0] 	resp_o;
-   
+
    fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) resp_fifo_2clk
      (.wclk(sys_clk), .datain(resp_i), .src_rdy_i(resp_src_rdy_i), .dst_rdy_o(resp_dst_rdy_o), .space(),
       .rclk(~gpif_clk), .dataout(resp_o), 
-      .src_rdy_o(), .dst_rdy_i(send_resp_line), .occupied(resp_fifolevel),
+      .src_rdy_o(final_rdy_resp), .dst_rdy_i(send_resp_line), .occupied(resp_fifolevel),
       .arst(sys_rst));
 
    // FIXME -- handle short packets
@@ -80,5 +79,9 @@ module gpif_rd
    
    // Output Mux
    assign gpif_data = gpif_ep ? resp_o[15:0] : data_o[15:0];
+
+   assign debug = { { 16'd0 },
+		    { data_int[17:16], data_o[17:16], packet_count[3:0] },
+		    { 2'b0,final_rdy_data, final_rdy_resp, send_data_line, send_resp_line, src_rdy_int, dst_rdy_int} };
    
 endmodule // gpif_rd

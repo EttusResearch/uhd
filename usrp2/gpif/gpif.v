@@ -3,7 +3,7 @@
 module gpif
   #(parameter TXFIFOSIZE = 11, parameter RXFIFOSIZE = 11)
    (// GPIF signals
-    input gpif_clk,
+    input gpif_clk, input gpif_rst,
     inout [15:0] gpif_d, input [3:0] gpif_ctl, output [3:0] gpif_rdy,
     input [2:0] gpif_misc,
     
@@ -29,23 +29,22 @@ module gpif
    
    assign gpif_rdy = { CF, CE, DF, DE };
    
-   wire [15:0] 	  gpif_dat_out;
-   assign gpif_dat = OE ? gpif_dat_out : 16'bz;
+   wire [15:0] 	  gpif_d_out;
+   assign gpif_d = OE ? gpif_d_out : 16'bz;
 
    wire [15:0] 	  gpif_d_copy = gpif_d;
-   
-   assign debug0 = { 5'd0, gpif_misc[2:0], gpif_ctl[3:0], gpif_rdy[3:0], gpif_d_copy[15:0] };
-   assign debug1 = 32'd0;
+
+   wire [31:0] 	  debug_rd, debug_wr;
    
    // ////////////////////////////////////////////////////////////////////
    // TX Side
    
-   wire [18:0] 	  tx19_data;
-   wire 	  tx19_src_rdy, tx19_dst_rdy;
+   wire [17:0] 	  tx18_data;
+   wire 	  tx18_src_rdy, tx18_dst_rdy;
    wire [35:0] 	  tx36_data;
    wire 	  tx36_src_rdy, tx36_dst_rdy;
 
-   wire [18:0] 	  ctrl;
+   wire [17:0] 	  ctrl_data;
    wire 	  ctrl_src_rdy, ctrl_dst_rdy;
    
    gpif_wr gpif_wr
@@ -54,13 +53,13 @@ module gpif
       .gpif_full_d(DF), .gpif_full_c(CF),
       
       .sys_clk(fifo_clk), .sys_rst(fifo_rst),
-      .data_o(tx19_data), .src_rdy_o(tx19_src_rdy), .dst_rdy_i(tx19_dst_rdy),
-      .ctrl_o(ctrl), .ctrl_src_rdy_o(ctrl_src_rdy), .ctrl_dst_rdy_i(ctrl_dst_rdy),
-      .debug() );
+      .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
+      .ctrl_o(ctrl_data), .ctrl_src_rdy_o(ctrl_src_rdy), .ctrl_dst_rdy_i(ctrl_dst_rdy),
+      .debug(debug_wr) );
 
-   fifo19_to_fifo36 #(.LE(1)) f19_to_f36
+   fifo19_to_fifo36 #(.LE(1)) f18_to_f36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .f19_datain(tx19_data), .f19_src_rdy_i(tx19_src_rdy), .f19_dst_rdy_o(tx19_dst_rdy),
+      .f19_datain({1'b0,tx18_data}), .f19_src_rdy_i(tx18_src_rdy), .f19_dst_rdy_o(tx18_dst_rdy),
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
    
    fifo_cascade #(.WIDTH(36), .SIZE(TXFIFOSIZE)) tx_fifo36
@@ -73,9 +72,9 @@ module gpif
 
    wire [35:0] 	  rx36_data;
    wire 	  rx36_src_rdy, rx36_dst_rdy;
-   wire [18:0] 	  rx19_data;
-   wire 	  rx19_src_rdy, rx19_dst_rdy;
-   wire [18:0] 	  resp_data;
+   wire [17:0] 	  rx18_data;
+   wire 	  rx18_src_rdy, rx18_dst_rdy;
+   wire [17:0] 	  resp_data;
    wire 	  resp_src_rdy, resp_dst_rdy;
    
    fifo_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_fifo36
@@ -83,20 +82,20 @@ module gpif
       .datain(rx_data_i), .src_rdy_i(rx_src_rdy_i), .dst_rdy_o(rx_dst_rdy_o),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
 
-   fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // FIXME Endianness?
+   fifo36_to_fifo19 #(.LE(1)) f36_to_f18   // FIXME Endianness?
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
-      .f19_dataout(rx19_data), .f19_src_rdy_o(rx19_src_rdy), .f19_dst_rdy_i(rx19_dst_rdy) );
+      .f19_dataout(rx18_data), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
 
    gpif_rd gpif_rd
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst),
-      .gpif_data(gpif_dat_out), .gpif_rd(RD), .gpif_ep(EP),
+      .gpif_data(gpif_d_out), .gpif_rd(RD), .gpif_ep(EP),
       .gpif_empty_d(DE), .gpif_empty_c(CE),
       
       .sys_clk(fifo_clk), .sys_rst(fifo_rst),
-      .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy),
-      .resp_i(resp), .resp_src_rdy_i(resp_src_rdy), .resp_dst_rdy_o(resp_dst_rdy),
-      .debug() );
+      .data_i(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy),
+      .resp_i(resp_data), .resp_src_rdy_i(resp_src_rdy), .resp_dst_rdy_o(resp_dst_rdy),
+      .debug(debug_rd) );
 
    // ////////////////////////////////////////////////////////////////////
    // FIFO to Wishbone interface
@@ -110,13 +109,22 @@ module gpif
       .debug0(), .debug1());
   */
 
+   // ////////////////////////////////////////////
+   //    DEBUG
+   
    // Loopback for testing
-   assign resp = ctrl;
+   assign resp_data = ctrl_data;
    assign resp_src_rdy = ctrl_src_rdy;
-   assign ctrl_dst_rdy = resp_src_rdy;
+   assign ctrl_dst_rdy = resp_dst_rdy;
    
    //assign rx_data_i = tx_data_o;
    //assign rx_src_rdy_i = tx_src_rdy_o;
    //assign tx_dst_rdy_i = rx_dst_rdy_o;
+   
+   assign debug0 = { 5'd0, gpif_misc[2:0], gpif_ctl[3:0], gpif_rdy[3:0], gpif_d_copy[15:0] };
+   assign debug1 = { { debug_rd[15:8] },
+		     { debug_rd[7:0] },
+		     { rx_src_rdy_i, rx_dst_rdy_o, rx36_src_rdy, rx36_dst_rdy, rx18_src_rdy, rx18_dst_rdy, resp_src_rdy, resp_dst_rdy},
+		     { tx_src_rdy_o, tx_dst_rdy_i, tx18_src_rdy, tx18_dst_rdy, tx36_src_rdy, tx36_dst_rdy, ctrl_src_rdy, ctrl_dst_rdy} };
    
 endmodule // gpif
