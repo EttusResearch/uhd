@@ -15,11 +15,12 @@ properties of each board as well.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic RX and and LFRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Basic RX and LFRX boards have 3 subdevices:
+The Basic RX and LFRX boards have 4 subdevices:
 
 * **Subdevice A:** real signal on antenna RXA
 * **Subdevice B:** real signal on antenna RXB
-* **Subdevice AB:** quadrature subdevice using both antennas
+* **Subdevice AB:** quadrature subdevice using both antennas (IQ)
+* **Subdevice BA:** quadrature subdevice using both antennas (QI)
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can down-convert signals
@@ -28,11 +29,12 @@ greater than the Nyquist rate of the ADC.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Basic TX and LFTX boards have 3 subdevices:
+The Basic TX and LFTX boards have 4 subdevices:
 
 * **Subdevice A:** real signal on antenna TXA
 * **Subdevice B:** real signal on antenna TXB
-* **Subdevice AB:** quadrature subdevice using both antennas
+* **Subdevice AB:** quadrature subdevice using both antennas (IQ)
+* **Subdevice BA:** quadrature subdevice using both antennas (QI)
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can up-convert signals
