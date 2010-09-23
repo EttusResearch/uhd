@@ -148,6 +148,7 @@ static boost::uint32_t calc_tx_mux(
 
     //calculate the channel flags
     int channel_flags = 0, chan = 0;
+    uhd::dict<std::string, int> slot_to_chan_count = boost::assign::map_list_of("A", 0)("B", 0);
     BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
         wax::obj dboard = mboard[named_prop_t(MBOARD_PROP_TX_DBOARD, pair.db_name)];
         wax::obj subdev = dboard[named_prop_t(DBOARD_PROP_SUBDEV, pair.sd_name)];
@@ -156,6 +157,14 @@ static boost::uint32_t calc_tx_mux(
         //combine the channel flags: shift for slot A vs B
         if (pair.db_name == "A") channel_flags |= chan_to_conn_to_flag[chan][conn] << 0;
         if (pair.db_name == "B") channel_flags |= chan_to_conn_to_flag[chan][conn] << 8;
+
+        //sanity check, only 1 channel per slot
+        slot_to_chan_count[pair.db_name]++;
+        if (slot_to_chan_count[pair.db_name] > 1){
+            throw std::runtime_error(str(boost::format(
+                "dboard slot %s assigned to multiple channels in subdev spec %s"
+            ) % pair.db_name % subdev_spec.to_string()));
+        }
 
         //increment for the next channel
         chan++;
