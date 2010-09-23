@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_TRANSPORT_LIBUSB_HPP
-#define INCLUDED_TRANSPORT_LIBUSB_HPP
+#ifndef INCLUDED_LIBUHD_TRANSPORT_LIBUSB_HPP
+#define INCLUDED_LIBUHD_TRANSPORT_LIBUSB_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
@@ -91,4 +91,4 @@ namespace libusb {
 
 }} //namespace
 
-#endif /* INCLUDED_TRANSPORT_LIBUSB_HPP */
+#endif /* INCLUDED_LIBUHD_TRANSPORT_LIBUSB_HPP */
