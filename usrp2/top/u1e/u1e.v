@@ -8,7 +8,8 @@ module u1e
 
    // GPMC
    input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
-   input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
+   input EM_WAIT0, input EM_NCS4, input EM_NCS5, input EM_NCS6,
+   input EM_NWE, input EM_NOE,
 
    inout db_sda, inout db_scl, // I2C
 
@@ -116,8 +117,8 @@ module u1e
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
 		     .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
-		     .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), 
-		     .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
+		     .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS5(EM_NCS5), 
+		     .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
 		     .db_sda(db_sda), .db_scl(db_scl),
 		     .sclk(sclk), .sen({cgen_sen_b,sen_codec,db_sen_tx,db_sen_rx}), .mosi(mosi), .miso(miso),
 		     .cgen_st_status(cgen_st_status), .cgen_st_ld(cgen_st_ld),.cgen_st_refmon(cgen_st_refmon), 

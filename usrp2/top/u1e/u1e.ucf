@@ -32,7 +32,7 @@ NET "EM_A<2>"  LOC = "A7"  ;
 NET "EM_A<1>"  LOC = "C15"  ;
 
 NET "EM_NCS6"  LOC = "E17"  ;
-#NET "EM_NCS5"  LOC = "E10"  ;
+NET "EM_NCS5"  LOC = "E10"  ;
 NET "EM_NCS4"  LOC = "E6"  ;
 #NET "EM_NCS1"  LOC = "D18"  ;
 #NET "EM_NCS0"  LOC = "D17"  ;

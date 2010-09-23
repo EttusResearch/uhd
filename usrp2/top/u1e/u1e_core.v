@@ -11,7 +11,8 @@ module u1e_core
    
    // GPMC
    input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
-   input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
+   input EM_WAIT0, input EM_NCS4, input EM_NCS5, input EM_NCS6,
+   input EM_NWE, input EM_NOE,
    
    inout db_sda, inout db_scl,
    output sclk, output [7:0] sen, output mosi, input miso,
@@ -439,7 +440,7 @@ module u1e_core
 
    assign debug_clk = { EM_CLK, clk_fpga };
 
-   assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS4, EM_NWE, EM_NOE, rx_overrun, tx_underrun },
+   assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS5, EM_NCS4, EM_NWE, EM_NOE, rx_overrun },
 		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
 
