@@ -61,10 +61,11 @@ module u1plus_core
    wire [7:0] 	 rate;
 
    wire 	 bus_error;
+   wire 	 gpif_rst = 0;
    
    gpif #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
-   gpif (.gpif_clk(gpif_clk), .gpif_d(gpif_d), .gpif_ctl(gpif_ctl), 
-	 .gpif_rdy(gpif_rdy), .gpif_misc(gpif_misc),
+   gpif (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), .gpif_d(gpif_d),
+	 .gpif_ctl(gpif_ctl), .gpif_rdy(gpif_rdy), .gpif_misc(gpif_misc),
 	 
 	 .wb_clk(wb_clk), .wb_rst(wb_rst),
 	 .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
