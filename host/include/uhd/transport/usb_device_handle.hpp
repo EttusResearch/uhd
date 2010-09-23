@@ -38,7 +38,7 @@ namespace uhd { namespace transport {
  *       a true descriptor serial number string. This interface returns the
  *       actual string descriptor.
  */
-class UHD_API usb_device_handle : boost::noncopyable {
+class usb_device_handle : boost::noncopyable {
 public:
     typedef boost::shared_ptr<usb_device_handle> sptr;
 
@@ -46,31 +46,31 @@ public:
      * Return the device's serial number 
      * \return a string describing the device's serial number
      */
-    virtual UHD_API std::string get_serial() const = 0;
+    virtual std::string get_serial() const = 0;
 
     /*!
      * Return the device's Vendor ID (usually assigned by the USB-IF)
      * \return a Vendor ID
      */
-    virtual UHD_API boost::uint16_t get_vendor_id() const = 0;
+    virtual boost::uint16_t get_vendor_id() const = 0;
 
     /*!
      * Return the device's Product ID (usually assigned by manufacturer)
      * \return a Product ID
      */
-    virtual UHD_API boost::uint16_t get_product_id() const = 0;
+    virtual boost::uint16_t get_product_id() const = 0;
 
     /*!
      * Return the device's USB address
      * \return a Product ID
      */
-    virtual UHD_API boost::uint16_t get_device_addr() const = 0;
+    virtual boost::uint16_t get_device_addr() const = 0;
 
     /*!
      * Return a vector of USB devices on this host 
      * \return a vector of USB device handles that match vid and pid
      */
-    static UHD_API std::vector<usb_device_handle::sptr> get_device_list(boost::uint16_t vid, boost::uint16_t pid);
+    static std::vector<usb_device_handle::sptr> get_device_list(boost::uint16_t vid, boost::uint16_t pid);
 
 }; //namespace usb
 
