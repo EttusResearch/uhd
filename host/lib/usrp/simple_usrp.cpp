@@ -216,7 +216,7 @@ simple_usrp::sptr simple_usrp::make(const device_addr_t &dev_addr){
         "The simple USRP interface has been deprecated.\n"
         "Please switch to the single USRP interface.\n"
         "#include <uhd/usrp/single_usrp.hpp>\n"
-        "simple_usrp::sptr sdev = simple_usrp::make(args);\n"
+        "single_usrp::sptr sdev = single_usrp::make(args);\n"
     );
     return sptr(new simple_usrp_impl(dev_addr));
 }
