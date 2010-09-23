@@ -290,7 +290,10 @@ size_t usrp1_impl::recv(
         io_type, _rx_otw_type,                     //input and output types to convert
         _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
         &usrp1_bs_vrt_unpacker,
-        boost::bind(&get_recv_buffs, _data_transport, _1)
+        boost::bind(&get_recv_buffs, _data_transport, _1),
+        &vrt_packet_handler::handle_overflow_nop,
+        0,                                         //vrt header offset
+        _rx_subdev_spec.size()                     //num channels
     );
 
     //handle the polling for overflow conditions

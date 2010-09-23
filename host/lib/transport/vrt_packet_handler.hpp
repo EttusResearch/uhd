@@ -150,7 +150,8 @@ template <typename T> UHD_INLINE T get_context_code(
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
         const handle_overflow_t &handle_overflow,
-        size_t vrt_header_offset_words32
+        size_t vrt_header_offset_words32,
+        size_t chans_per_otw_buff
     ){
         metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
 
@@ -184,15 +185,21 @@ template <typename T> UHD_INLINE T get_context_code(
         //extract the number of samples available to copy
         size_t bytes_per_item = otw_type.get_sample_size();
         size_t nsamps_available = state.size_of_copy_buffs/bytes_per_item;
-        size_t nsamps_to_copy = std::min(total_samps, nsamps_available);
+        size_t nsamps_to_copy = std::min(total_samps*chans_per_otw_buff, nsamps_available);
         size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
+        size_t nsamps_to_copy_per_io_buff = nsamps_to_copy/chans_per_otw_buff;
 
-        for (size_t i = 0; i < state.width; i++){
+        std::vector<void *> io_buffs(chans_per_otw_buff);
+        for (size_t i = 0; i < state.width; i+=chans_per_otw_buff){
+
+            //fill a vector with pointers to the io buffers
+            for (size_t j = 0; j < chans_per_otw_buff; j++){
+                io_buffs[j] = reinterpret_cast<boost::uint8_t *>(buffs[i+j]) + offset_bytes;
+            }
+
             //copy-convert the samples from the recv buffer
             uhd::transport::convert_otw_type_to_io_type(
-                state.copy_buffs[i], otw_type,
-                reinterpret_cast<boost::uint8_t *>(buffs[i]) + offset_bytes,
-                io_type, nsamps_to_copy
+                state.copy_buffs[i], otw_type, io_buffs, io_type, nsamps_to_copy_per_io_buff
             );
 
             //update the rx copy buffer to reflect the bytes copied
@@ -206,7 +213,7 @@ template <typename T> UHD_INLINE T get_context_code(
         metadata.fragment_offset = state.fragment_offset_in_samps;
         state.fragment_offset_in_samps += nsamps_to_copy; //set for next call
 
-        return nsamps_to_copy;
+        return nsamps_to_copy_per_io_buff;
     }
 
     /*******************************************************************
@@ -224,7 +231,8 @@ template <typename T> UHD_INLINE T get_context_code(
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
         const handle_overflow_t &handle_overflow = &handle_overflow_nop,
-        size_t vrt_header_offset_words32 = 0
+        size_t vrt_header_offset_words32 = 0,
+        size_t chans_per_otw_buff = 1
     ){
         switch(recv_mode){
 
@@ -241,7 +249,8 @@ template <typename T> UHD_INLINE T get_context_code(
                 vrt_unpacker,
                 get_recv_buffs,
                 handle_overflow,
-                vrt_header_offset_words32
+                vrt_header_offset_words32,
+                chans_per_otw_buff
             );
         }
 
@@ -261,7 +270,8 @@ template <typename T> UHD_INLINE T get_context_code(
                     vrt_unpacker,
                     get_recv_buffs,
                     handle_overflow,
-                    vrt_header_offset_words32
+                    vrt_header_offset_words32,
+                    chans_per_otw_buff
                 );
                 if (num_samps == 0) break; //had a recv timeout or error, break loop
                 accum_num_samps += num_samps;
