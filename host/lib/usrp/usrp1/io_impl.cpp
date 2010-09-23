@@ -226,7 +226,9 @@ size_t usrp1_impl::send(
         _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
         &usrp1_bs_vrt_packer,
         boost::bind(&usrp1_impl::io_impl::get_send_buffs, _io_impl.get(), _1),
-        get_max_send_samps_per_packet()
+        get_max_send_samps_per_packet(),
+        0,                                         //vrt header offset
+        _tx_subdev_spec.size()                     //num channels
     );
 
     //Don't honor sob because it is normal to be always bursting...
