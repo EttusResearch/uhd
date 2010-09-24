@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/simple_usrp.hpp>
+#include <uhd/usrp/single_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -38,7 +38,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
+        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
         ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
@@ -60,7 +60,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
+    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
