@@ -62,7 +62,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
         );
     }
-    catch(const std::exception &e){
+    catch(...){
         uhd::print_warning(
             "Could not locate USRP1 firmware.\n"
             "Please install the images package.\n"

@@ -287,7 +287,7 @@ public:
     int usrp_load_eeprom(std::string filestring)
     {
         const char *filename = filestring.c_str();
-        const uint16_t i2c_addr = 0x50;
+        const boost::uint16_t i2c_addr = 0x50;
 
         //FIXME: verify types
         int len;
@@ -416,7 +416,7 @@ public:
     }
 
 
-    int usrp_control_write_cmd(uint8_t request, uint16_t value, uint16_t index)
+    int usrp_control_write_cmd(boost::uint8_t request, boost::uint16_t value, boost::uint16_t index)
     {
         return usrp_control_write(request, value, index, 0, 0);
     }

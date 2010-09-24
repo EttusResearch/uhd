@@ -80,7 +80,7 @@ public:
 
     boost::uint32_t peek32(boost::uint32_t addr)
     {
-        uint32_t value_out;
+        boost::uint32_t value_out;
 
         boost::uint8_t w_index_h = SPI_ENABLE_FPGA & 0xff;
         boost::uint8_t w_index_l = (SPI_FMT_MSB | SPI_FMT_HDR_1) & 0xff;
@@ -100,7 +100,7 @@ public:
 
     boost::uint16_t peek16(boost::uint32_t addr)
     {
-        uint32_t val = peek32(addr);
+        boost::uint32_t val = peek32(addr);
         return boost::uint16_t(val & 0xff);
     }
 
