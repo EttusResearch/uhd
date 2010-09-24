@@ -184,7 +184,7 @@ bool usrp1_impl::io_impl::get_send_buffs(
         ));
     }
 
-    return buffs[0].get();
+    return buffs[0].get() != NULL;
 }
 
 /***********************************************************************
@@ -277,7 +277,7 @@ static bool get_recv_buffs(
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
     buffs[0] = zc_if->get_recv_buff();
-    return buffs[0].get();
+    return buffs[0].get() != NULL;
 }
 
 size_t usrp1_impl::recv(

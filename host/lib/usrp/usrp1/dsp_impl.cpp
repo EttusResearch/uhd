@@ -107,8 +107,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
             return;
         }
     case DSP_PROP_HOST_RATE: {
-            unsigned int rate =
-                    _clock_ctrl->get_master_clock_freq() / val.as<double>();
+            size_t rate = size_t(_clock_ctrl->get_master_clock_freq() / val.as<double>());
 
             if ((rate & 0x01) || (rate < 4) || (rate > 256)) {
                 std::cerr << "Decimation must be even and between 4 and 256"
@@ -118,7 +117,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
 
             _rx_dsp_decim = rate;
             //TODO Poll every 100ms. Make it selectable?
-            _rx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() / rate;
+            _rx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() / rate);
 
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
         }
@@ -207,8 +206,7 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val){
         }
 
     case DSP_PROP_HOST_RATE: {
-            unsigned int rate =
-                    _clock_ctrl->get_master_clock_freq() * 2 / val.as<double>();
+            size_t rate = size_t(_clock_ctrl->get_master_clock_freq() * 2 / val.as<double>());
 
             if ((rate & 0x01) || (rate < 8) || (rate > 512)) {
                 std::cerr << "Interpolation rate must be even and between 8 and 512"
@@ -219,7 +217,7 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val){
             _tx_dsp_interp = rate;
 
             //TODO Poll every 100ms. Make it selectable? 
-            _tx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate;
+            _tx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate);
 
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
             return;
