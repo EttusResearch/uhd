@@ -36,12 +36,14 @@ NET "EM_NCS4"  LOC = "E6"  ;
 
 NET "EM_CLK"  LOC = "F11"  ;
 NET "EM_WAIT0"  LOC = "F14"  ;
-NET "EM_NBE<1>"  LOC = "D14"  ;
-NET "EM_NBE<0>"  LOC = "A13"  ;
+#NET "EM_NBE<1>"  LOC = "D14"  ;
+#NET "EM_NBE<0>"  LOC = "A13"  ;
 NET "EM_NWE"  LOC = "B13"  ;
 NET "EM_NOE"  LOC = "A14"  ;
 NET "EM_NADV_ALE"  LOC = "B15"  ;
-NET "EM_NWP"  LOC = "F13"  ;
+#NET "EM_NWP"  LOC = "F13"  ;
+NET "overo_gpio64"  LOC = "A4"  ;  # nRESET
+NET "overo_gpio176"  LOC = "B4"  ;  # IRQ
 
 ## Debug pins
 NET "debug_led<3>"  LOC = "Y15"  ;
