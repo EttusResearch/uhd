@@ -249,38 +249,39 @@ public:
         unsigned char buf[ep0_size];
         int ret;
 
-        FILE *fp;
-        if ((fp = fopen(filename, "rb")) == NULL) {
+        std::ifstream file;
+        file.open(filename, std::ios::in | std::ios::binary);
+        if (not file.good()) {
             std::cerr << "cannot open fpga input file" << std::endl;
-            fclose(fp);
+            file.close();
             return -1;
         }
 
         if (usrp_control_write_cmd(VRQ_FPGA_LOAD, 0, FL_BEGIN) < 0) {
             std::cerr << "fpga load error" << std::endl;
-            fclose(fp);
+            file.close();
             return -1;
         }
 
         ssize_t n;
-        while ((n = fread(buf, 1, sizeof(buf), fp)) > 0) {
+        while ((n = file.readsome((char *)buf, sizeof(buf))) > 0) {
             ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER,
                                      buf, n);
             if (ret != n) {
                 std::cerr << "fpga load error " << ret << std::endl;
-                fclose(fp);
+                file.close();
                 return -1;
             }
         }
  
         if (usrp_control_write_cmd(VRQ_FPGA_LOAD, 0, FL_END) < 0) {
             std::cerr << "fpga load error" << std::endl;
-            fclose(fp);
+            file.close();
             return -1;
         }
 
         usrp_set_fpga_hash(hash);
-        fclose(fp);
+        file.close();
         return 0; 
     }
 
