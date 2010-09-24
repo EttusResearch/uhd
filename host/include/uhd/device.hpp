@@ -26,7 +26,6 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <boost/asio/buffer.hpp>
 #include <vector>
 
 namespace uhd{
@@ -140,12 +139,6 @@ public:
         send_mode_t send_mode
     );
 
-    //! Deprecated
-    size_t send(
-        const boost::asio::const_buffer &, const tx_metadata_t &,
-        const io_type_t &, send_mode_t send_mode
-    );
-
     /*!
      * Receive buffers containing IF data described by the metadata.
      *
@@ -194,12 +187,6 @@ public:
         const io_type_t &io_type,
         recv_mode_t recv_mode,
         size_t timeout_ms = default_recv_timeout_ms
-    );
-
-    //! Deprecated
-    size_t recv(
-        const boost::asio::mutable_buffer &, rx_metadata_t &,
-        const io_type_t &, recv_mode_t
     );
 
     /*!

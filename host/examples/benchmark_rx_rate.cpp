@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/simple_usrp.hpp>
+#include <uhd/usrp/single_usrp.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -27,7 +27,7 @@
 namespace po = boost::program_options;
 
 static inline void test_device(
-    uhd::usrp::simple_usrp::sptr sdev,
+    uhd::usrp::single_usrp::sptr sdev,
     double rx_rate_sps,
     double duration_secs
 ){
@@ -118,7 +118,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
+        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for each test in seconds")
         ("rate", po::value<double>(&only_rate), "specify to perform a single test as this rate (sps)")
     ;
@@ -135,7 +135,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
+    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
     sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS); //stop if left running
 

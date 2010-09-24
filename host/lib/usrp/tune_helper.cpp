@@ -30,11 +30,12 @@ using namespace uhd::usrp;
  **********************************************************************/
 static tune_result_t tune_xx_subdev_and_dxc(
     dboard_iface::unit_t unit,
-    wax::obj subdev, wax::obj dxc,
+    wax::obj subdev, wax::obj dxc, size_t chan,
     double target_freq, double lo_offset
 ){
     wax::obj subdev_freq_proxy = subdev[SUBDEV_PROP_FREQ];
-    wax::obj dxc_freq_proxy = dxc[DSP_PROP_FREQ_SHIFT];
+    std::string freq_name = dxc[DSP_PROP_FREQ_SHIFT_NAMES].as<prop_names_t>().at(chan);
+    wax::obj dxc_freq_proxy = dxc[named_prop_t(DSP_PROP_FREQ_SHIFT, freq_name)];
     double dxc_sample_rate = dxc[DSP_PROP_CODEC_RATE].as<double>();
 
     // Ask the d'board to tune as closely as it can to target_freq+lo_offset
@@ -65,11 +66,12 @@ static tune_result_t tune_xx_subdev_and_dxc(
 
 static double derive_freq_from_xx_subdev_and_dxc(
     dboard_iface::unit_t unit,
-    wax::obj subdev, wax::obj dxc
+    wax::obj subdev, wax::obj dxc, size_t chan
 ){
     //extract actual dsp and IF frequencies
     double actual_inter_freq = subdev[SUBDEV_PROP_FREQ].as<double>();
-    double actual_dxc_freq = dxc[DSP_PROP_FREQ_SHIFT].as<double>();
+    std::string freq_name = dxc[DSP_PROP_FREQ_SHIFT_NAMES].as<prop_names_t>().at(chan);
+    double actual_dxc_freq = dxc[named_prop_t(DSP_PROP_FREQ_SHIFT, freq_name)].as<double>();
 
     //invert the sign on the dxc freq given the following conditions
     if (unit == dboard_iface::UNIT_TX) actual_dxc_freq *= -1.0;
@@ -81,50 +83,54 @@ static double derive_freq_from_xx_subdev_and_dxc(
  * RX Tune
  **********************************************************************/
 tune_result_t usrp::tune_rx_subdev_and_dsp(
-    wax::obj subdev, wax::obj ddc,
+    wax::obj subdev, wax::obj ddc, size_t chan,
     double target_freq, double lo_offset
 ){
-    return tune_xx_subdev_and_dxc(dboard_iface::UNIT_RX, subdev, ddc, target_freq, lo_offset);
+    return tune_xx_subdev_and_dxc(dboard_iface::UNIT_RX, subdev, ddc, chan, target_freq, lo_offset);
 }
 
 tune_result_t usrp::tune_rx_subdev_and_dsp(
     wax::obj subdev, wax::obj ddc,
-    double target_freq
+    size_t chan, double target_freq
 ){
     double lo_offset = 0.0;
     //if the local oscillator will be in the passband, use an offset
     if (subdev[SUBDEV_PROP_USE_LO_OFFSET].as<bool>()){
         lo_offset = 2.0*ddc[DSP_PROP_HOST_RATE].as<double>();
     }
-    return tune_rx_subdev_and_dsp(subdev, ddc, target_freq, lo_offset);
+    return tune_rx_subdev_and_dsp(subdev, ddc, chan, target_freq, lo_offset);
 }
 
-double usrp::derive_freq_from_rx_subdev_and_dsp(wax::obj subdev, wax::obj ddc){
-    return derive_freq_from_xx_subdev_and_dxc(dboard_iface::UNIT_RX, subdev, ddc);
+double usrp::derive_freq_from_rx_subdev_and_dsp(
+    wax::obj subdev, wax::obj ddc, size_t chan
+){
+    return derive_freq_from_xx_subdev_and_dxc(dboard_iface::UNIT_RX, subdev, ddc, chan);
 }
 
 /***********************************************************************
  * TX Tune
  **********************************************************************/
 tune_result_t usrp::tune_tx_subdev_and_dsp(
-    wax::obj subdev, wax::obj duc,
+    wax::obj subdev, wax::obj duc, size_t chan,
     double target_freq, double lo_offset
 ){
-    return tune_xx_subdev_and_dxc(dboard_iface::UNIT_TX, subdev, duc, target_freq, lo_offset);
+    return tune_xx_subdev_and_dxc(dboard_iface::UNIT_TX, subdev, duc, chan, target_freq, lo_offset);
 }
 
 tune_result_t usrp::tune_tx_subdev_and_dsp(
     wax::obj subdev, wax::obj duc,
-    double target_freq
+    size_t chan, double target_freq
 ){
     double lo_offset = 0.0;
     //if the local oscillator will be in the passband, use an offset
     if (subdev[SUBDEV_PROP_USE_LO_OFFSET].as<bool>()){
         lo_offset = 2.0*duc[DSP_PROP_HOST_RATE].as<double>();
     }
-    return tune_tx_subdev_and_dsp(subdev, duc, target_freq, lo_offset);
+    return tune_tx_subdev_and_dsp(subdev, duc, chan, target_freq, lo_offset);
 }
 
-double usrp::derive_freq_from_tx_subdev_and_dsp(wax::obj subdev, wax::obj duc){
-    return derive_freq_from_xx_subdev_and_dxc(dboard_iface::UNIT_TX, subdev, duc);
+double usrp::derive_freq_from_tx_subdev_and_dsp(
+    wax::obj subdev, wax::obj duc, size_t chan
+){
+    return derive_freq_from_xx_subdev_and_dxc(dboard_iface::UNIT_TX, subdev, duc, chan);
 }

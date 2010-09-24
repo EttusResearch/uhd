@@ -189,7 +189,7 @@ bool usrp2_impl::recv_async_msg(
 /***********************************************************************
  * Send Data
  **********************************************************************/
-bool get_send_buffs(
+static bool get_send_buffs(
     const std::vector<udp_zero_copy::sptr> &trans,
     vrt_packet_handler::managed_send_buffs_t &buffs
 ){

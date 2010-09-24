@@ -23,11 +23,11 @@ The device API provides ways to:
 See the documentation in *device.hpp* for reference.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-High-Level: The simple usrp
+High-Level: The single usrp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The goal of the simple usrp API is to wrap high level functions around the device properties.
-The simple usrp provides a fat interface to access the most common properties.
-The simple usrp provides ways to:
+The goal of the single usrp API is to wrap high level functions around the device properties.
+The single usrp provides a fat interface to access the most common properties.
+The single usrp provides ways to:
 
 * Set and get daughterboard gains.
 * Set and get daughterboard antennas.
@@ -38,13 +38,13 @@ The simple usrp provides ways to:
 * Set the usrp time registers.
 * Get the underlying device (as discussed above).
 
-See the documentation in *usrp/simple_usrp.hpp* for reference.
+See the documentation in *usrp/single_usrp.hpp* for reference.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 High-Level: The mimo usrp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The mimo usrp API provides a wrapper around a device that represents several motherboards.
-This API provides convenience calls just like the simple usrp,
+This API provides convenience calls just like the single usrp,
 however the calls either work across all channels in the configuration,
 or take a channel argument to specify which channel to configure.
 The mimo usrp provides ways to:
