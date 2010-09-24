@@ -29,9 +29,9 @@ const int libusb_debug_level = 0;
 class libusb1_device_handle_impl : public usb_device_handle {
 public:
     libusb1_device_handle_impl(std::string serial,
-                               boost::uint32_t product_id,
-                               boost::uint32_t vendor_id,
-                               boost::uint32_t device_addr)
+                               boost::uint16_t product_id,
+                               boost::uint16_t vendor_id,
+                               boost::uint16_t device_addr)
       : _serial(serial), _product_id(product_id), 
         _vendor_id(vendor_id), _device_addr(device_addr)
     {
@@ -66,9 +66,9 @@ public:
 
 private:
     std::string     _serial;
-    boost::uint32_t _product_id;
-    boost::uint32_t _vendor_id;
-    boost::uint32_t _device_addr;
+    boost::uint16_t _product_id;
+    boost::uint16_t _vendor_id;
+    boost::uint16_t _device_addr;
 };
 
 
@@ -81,9 +81,9 @@ usb_device_handle::sptr make_usb_device_handle(libusb_device *dev)
     }
 
     std::string     serial      = libusb::get_serial(dev);
-    boost::uint32_t product_id  = desc.idProduct;
-    boost::uint32_t vendor_id   = desc.idVendor;
-    boost::uint32_t device_addr = libusb_get_device_address(dev);
+    boost::uint16_t product_id  = desc.idProduct;
+    boost::uint16_t vendor_id   = desc.idVendor;
+    boost::uint16_t device_addr = libusb_get_device_address(dev);
 
     return usb_device_handle::sptr(new libusb1_device_handle_impl(
         serial,

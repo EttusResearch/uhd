@@ -67,7 +67,7 @@ bool libusb::compare_device(libusb_device *dev,
     std::string serial         = handle->get_serial();
     boost::uint16_t vendor_id  = handle->get_vendor_id();
     boost::uint16_t product_id = handle->get_product_id();
-    boost::uint8_t device_addr = handle->get_device_addr();
+    boost::uint16_t device_addr = handle->get_device_addr();
 
     libusb_device_descriptor libusb_desc;
     if (libusb_get_device_descriptor(dev, &libusb_desc) < 0)

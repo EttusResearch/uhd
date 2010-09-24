@@ -18,7 +18,6 @@
 #include "libusb1_base.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/assert.hpp>
-#include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 #include <iomanip>
@@ -208,7 +207,7 @@ libusb_transfer *usb_endpoint::allocate_transfer(int buff_len)
                               endpoint,           // endpoint
                               buff,               // buffer
                               buff_len,           // length
-                              callback,           // callback
+       libusb_transfer_cb_fn(callback),           // callback
                               this,               // user_data
                               0);                 // timeout
     return lut;
