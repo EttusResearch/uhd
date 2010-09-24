@@ -21,6 +21,8 @@
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/assign/list_of.hpp>
 #include <iostream>
 #include <cmath>
 
@@ -42,11 +44,15 @@ void usrp1_impl::rx_dsp_init(void)
 /***********************************************************************
  * RX DDC Get
  **********************************************************************/
-void usrp1_impl::rx_dsp_get(const wax::obj &key, wax::obj &val)
-{
+void usrp1_impl::rx_dsp_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("usrp1 ddc0");
+        val = str(boost::format("usrp1 ddc %uX %s")
+            % this->get_num_ddcs()
+            % (this->has_rx_halfband()? "+ hb" : "")
+        );
         return;
 
     case DSP_PROP_OTHERS:
@@ -54,7 +60,16 @@ void usrp1_impl::rx_dsp_get(const wax::obj &key, wax::obj &val)
         return;
 
     case DSP_PROP_FREQ_SHIFT:
-        val = _rx_dsp_freq;
+        val = _rx_dsp_freqs[key.name];
+        return;
+
+    case DSP_PROP_FREQ_SHIFT_NAMES:{
+            prop_names_t names;
+            for(size_t i = 0; i < this->get_num_ddcs(); i++){
+                names.push_back(boost::lexical_cast<std::string>(i));
+            }
+            val = names;
+        }
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -73,30 +88,26 @@ void usrp1_impl::rx_dsp_get(const wax::obj &key, wax::obj &val)
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
-void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
-{
+void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
             boost::uint32_t reg_word = dsp_type1::calc_cordic_word_and_update(
                 new_freq, _clock_ctrl->get_master_clock_freq());
 
-            //TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-            //
-            // Handle multiple receive channels / DDC's
-            //
-            //TODO TODO TODO TODO TODO TODO TODO TODO TODO
-            _iface->poke32(FR_RX_FREQ_0, reg_word);
-            _iface->poke32(FR_RX_FREQ_1, reg_word);
-            _iface->poke32(FR_RX_FREQ_2, reg_word);
-            _iface->poke32(FR_RX_FREQ_3, reg_word);
-
-            _rx_dsp_freq = new_freq;
+            static const uhd::dict<std::string, boost::uint32_t>
+            freq_name_to_reg_val = boost::assign::map_list_of
+                ("0", FR_RX_FREQ_0) ("1", FR_RX_FREQ_1)
+                ("2", FR_RX_FREQ_2) ("3", FR_RX_FREQ_3)
+            ;
+            _iface->poke32(freq_name_to_reg_val[key.name], reg_word);
+            _rx_dsp_freqs[key.name] = new_freq;
             return;
         }
     case DSP_PROP_HOST_RATE: {
-            unsigned int rate =
-                    _clock_ctrl->get_master_clock_freq() / val.as<double>();
+            size_t rate = size_t(_clock_ctrl->get_master_clock_freq() / val.as<double>());
 
             if ((rate & 0x01) || (rate < 4) || (rate > 256)) {
                 std::cerr << "Decimation must be even and between 4 and 256"
@@ -106,7 +117,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key, const wax::obj &val)
 
             _rx_dsp_decim = rate;
             //TODO Poll every 100ms. Make it selectable?
-            _rx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() / rate;
+            _rx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() / rate);
 
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
         }
@@ -133,11 +144,15 @@ void usrp1_impl::tx_dsp_init(void)
 /***********************************************************************
  * TX DUC Get
  **********************************************************************/
-void usrp1_impl::tx_dsp_get(const wax::obj &key, wax::obj &val)
-{
+void usrp1_impl::tx_dsp_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_NAME:
-        val = std::string("usrp1 duc0");
+        val = str(boost::format("usrp1 duc %uX %s")
+            % this->get_num_ducs()
+            % (this->has_tx_halfband()? "+ hb" : "")
+        );
         return;
 
     case DSP_PROP_OTHERS:
@@ -145,7 +160,16 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key, wax::obj &val)
         return;
 
     case DSP_PROP_FREQ_SHIFT:
-        val = _tx_dsp_freq;
+        val = _tx_dsp_freqs[key.name];
+        return;
+
+    case DSP_PROP_FREQ_SHIFT_NAMES:{
+            prop_names_t names;
+            for(size_t i = 0; i < this->get_num_ducs(); i++){
+                names.push_back(boost::lexical_cast<std::string>(i));
+            }
+            val = names;
+        }
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -164,26 +188,25 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key, wax::obj &val)
 /***********************************************************************
  * TX DUC Set
  **********************************************************************/
-void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
-{
+void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()) {
 
-    //TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-    //
-    // Set both codec frequencies until we have duality properties 
-    //
-    //TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
     case DSP_PROP_FREQ_SHIFT: {
             double new_freq = val.as<double>();
-            _codec_ctrls[DBOARD_SLOT_A]->set_duc_freq(new_freq);
-            _codec_ctrls[DBOARD_SLOT_B]->set_duc_freq(new_freq);
-            _tx_dsp_freq = new_freq;
+
+            //map the freq shift key to a subdev spec to a particular codec chip
+            std::string db_name = _tx_subdev_spec.at(boost::lexical_cast<size_t>(key.name)).db_name;
+            if (db_name == "A") _codec_ctrls[DBOARD_SLOT_A]->set_duc_freq(new_freq);
+            if (db_name == "B") _codec_ctrls[DBOARD_SLOT_B]->set_duc_freq(new_freq);
+
+            _tx_dsp_freqs[key.name] = new_freq;
             return;
         }
 
     case DSP_PROP_HOST_RATE: {
-            unsigned int rate =
-                    _clock_ctrl->get_master_clock_freq() * 2 / val.as<double>();
+            size_t rate = size_t(_clock_ctrl->get_master_clock_freq() * 2 / val.as<double>());
 
             if ((rate & 0x01) || (rate < 8) || (rate > 512)) {
                 std::cerr << "Interpolation rate must be even and between 8 and 512"
@@ -194,7 +217,7 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key, const wax::obj &val)
             _tx_dsp_interp = rate;
 
             //TODO Poll every 100ms. Make it selectable? 
-            _tx_samps_per_poll_interval = 0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate;
+            _tx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate);
 
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
             return;

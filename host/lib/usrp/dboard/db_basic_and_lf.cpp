@@ -59,6 +59,7 @@ private:
 
 static const uhd::dict<std::string, subdev_conn_t> sd_name_to_conn = map_list_of
     ("AB", SUBDEV_CONN_COMPLEX_IQ)
+    ("BA", SUBDEV_CONN_COMPLEX_QI)
     ("A",  SUBDEV_CONN_REAL_I)
     ("B",  SUBDEV_CONN_REAL_Q)
 ;

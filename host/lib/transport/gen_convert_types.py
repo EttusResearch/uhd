@@ -99,9 +99,9 @@ void transport::convert_io_type_to_otw_type(
             nsamps_per_io_buff
         );
         #else
-        for (size_t i = 0; i < nsamps_per_io_buff; i++){
+        for (size_t i = 0, j = 0; i < nsamps_per_io_buff; i++){
             #for $j in range($num_chans)
-            reinterpret_cast<$(out_type)_t *>(otw_buff)[i*$num_chans + $j] =
+            reinterpret_cast<$(out_type)_t *>(otw_buff)[j++] =
                 #if $ph.get_swap_type($pred) == 'bswap'
                 uhd::byteswap($(converter)(reinterpret_cast<const $(in_type)_t *>(io_buffs[$j])[i]));
                 #else
@@ -139,13 +139,13 @@ void transport::convert_otw_type_to_io_type(
             nsamps_per_io_buff
         );
         #else
-        for (size_t i = 0; i < nsamps_per_io_buff; i++){
+        for (size_t i = 0, j = 0; i < nsamps_per_io_buff; i++){
             #for $j in range($num_chans)
             reinterpret_cast<$(out_type)_t *>(io_buffs[$j])[i] =
                 #if $ph.get_swap_type($pred) == 'bswap'
-                $(converter)(uhd::byteswap(reinterpret_cast<const $(in_type)_t *>(otw_buff)[i*$num_chans + $j]));
+                $(converter)(uhd::byteswap(reinterpret_cast<const $(in_type)_t *>(otw_buff)[j++]));
                 #else
-                $(converter)(reinterpret_cast<const $(in_type)_t *>(otw_buff)[i*$num_chans + $j]);
+                $(converter)(reinterpret_cast<const $(in_type)_t *>(otw_buff)[j++]);
                 #end if
             #end for
         }

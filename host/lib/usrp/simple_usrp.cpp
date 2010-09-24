@@ -15,27 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/usrp/single_usrp.hpp>
 #include <uhd/usrp/simple_usrp.hpp>
-#include <uhd/usrp/tune_helper.hpp>
-#include <uhd/utils/assert.hpp>
-#include <uhd/utils/gain_group.hpp>
-#include <uhd/usrp/subdev_props.hpp>
-#include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/device_props.hpp>
-#include <uhd/usrp/dboard_props.hpp>
-#include <uhd/usrp/dsp_props.hpp>
-#include <boost/foreach.hpp>
-#include <boost/format.hpp>
-#include <stdexcept>
-#include <iostream>
+#include <uhd/utils/warning.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-static inline freq_range_t add_dsp_shift(const freq_range_t &range, wax::obj dsp){
-    double codec_rate = dsp[DSP_PROP_CODEC_RATE].as<double>();
-    return freq_range_t(range.min - codec_rate/2.0, range.max + codec_rate/2.0);
-}
 
 /***********************************************************************
  * Simple USRP Implementation
@@ -43,7 +28,7 @@ static inline freq_range_t add_dsp_shift(const freq_range_t &range, wax::obj dsp
 class simple_usrp_impl : public simple_usrp{
 public:
     simple_usrp_impl(const device_addr_t &addr){
-        _dev = device::make(addr);
+        _sdev = single_usrp::make(addr);
     }
 
     ~simple_usrp_impl(void){
@@ -51,235 +36,187 @@ public:
     }
 
     device::sptr get_device(void){
-        return _dev;
+        return _sdev->get_device();
     }
 
     std::string get_pp_string(void){
-        return str(boost::format(
-            "Simple USRP:\n"
-            "  Device: %s\n"
-            "  Mboard: %s\n"
-            "  RX DSP: %s\n"
-            "  RX Dboard: %s\n"
-            "  RX Subdev: %s\n"
-            "  TX DSP: %s\n"
-            "  TX Dboard: %s\n"
-            "  TX Subdev: %s\n"
-        )
-            % (*_dev)[DEVICE_PROP_NAME].as<std::string>()
-            % _mboard()[MBOARD_PROP_NAME].as<std::string>()
-            % _rx_dsp()[DSP_PROP_NAME].as<std::string>()
-            % _rx_dboard()[DBOARD_PROP_NAME].as<std::string>()
-            % _rx_subdev()[SUBDEV_PROP_NAME].as<std::string>()
-            % _tx_dsp()[DSP_PROP_NAME].as<std::string>()
-            % _tx_dboard()[DBOARD_PROP_NAME].as<std::string>()
-            % _tx_subdev()[SUBDEV_PROP_NAME].as<std::string>()
-        );
+        return _sdev->get_pp_string();
     }
 
     /*******************************************************************
      * Misc
      ******************************************************************/
     time_spec_t get_time_now(void){
-        return _mboard()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+        return _sdev->get_time_now();
     }
 
     void set_time_now(const time_spec_t &time_spec){
-        _mboard()[MBOARD_PROP_TIME_NOW] = time_spec;
+        return _sdev->set_time_now(time_spec);
     }
 
     void set_time_next_pps(const time_spec_t &time_spec){
-        _mboard()[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+        return _sdev->set_time_next_pps(time_spec);
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
-        _mboard()[MBOARD_PROP_STREAM_CMD] = stream_cmd;
+        return _sdev->issue_stream_cmd(stream_cmd);
     }
 
     void set_clock_config(const clock_config_t &clock_config){
-        _mboard()[MBOARD_PROP_CLOCK_CONFIG] = clock_config;
+        return _sdev->set_clock_config(clock_config);
     }
 
     /*******************************************************************
      * RX methods
      ******************************************************************/
     void set_rx_subdev_spec(const subdev_spec_t &spec){
-        _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC] = spec;
-        std::cout << "RX " << _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().to_pp_string() << std::endl;
+        return _sdev->set_rx_subdev_spec(spec);
     }
 
     subdev_spec_t get_rx_subdev_spec(void){
-        return _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
+        return _sdev->get_rx_subdev_spec();
     }
 
     void set_rx_rate(double rate){
-        _rx_dsp()[DSP_PROP_HOST_RATE] = rate;
+        return _sdev->set_rx_rate(rate);
     }
 
     double get_rx_rate(void){
-        return _rx_dsp()[DSP_PROP_HOST_RATE].as<double>();
+        return _sdev->get_rx_rate();
     }
 
     tune_result_t set_rx_freq(double target_freq){
-        return tune_rx_subdev_and_dsp(_rx_subdev(), _rx_dsp(), target_freq);
+        return _sdev->set_rx_freq(target_freq);
     }
 
     tune_result_t set_rx_freq(double target_freq, double lo_off){
-        return tune_rx_subdev_and_dsp(_rx_subdev(), _rx_dsp(), target_freq, lo_off);
+        return _sdev->set_rx_freq(target_freq, lo_off);
     }
 
     double get_rx_freq(void){
-        return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(), _rx_dsp());
+        return _sdev->get_rx_freq();
     }
 
     freq_range_t get_rx_freq_range(void){
-        return add_dsp_shift(_rx_subdev()[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp());
+        return _sdev->get_rx_freq_range();
     }
 
     void set_rx_gain(float gain){
-        return _rx_gain_group()->set_value(gain);
+        return _sdev->set_rx_gain(gain);
     }
 
     float get_rx_gain(void){
-        return _rx_gain_group()->get_value();
+        return _sdev->get_rx_gain();
     }
 
     gain_range_t get_rx_gain_range(void){
-        return _rx_gain_group()->get_range();
+        return _sdev->get_rx_gain_range();
     }
 
     void set_rx_antenna(const std::string &ant){
-        _rx_subdev()[SUBDEV_PROP_ANTENNA] = ant;
+        return _sdev->set_rx_antenna(ant);
     }
 
     std::string get_rx_antenna(void){
-        return _rx_subdev()[SUBDEV_PROP_ANTENNA].as<std::string>();
+        return _sdev->get_rx_antenna();
     }
 
     std::vector<std::string> get_rx_antennas(void){
-        return _rx_subdev()[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+        return _sdev->get_rx_antennas();
     }
 
     bool get_rx_lo_locked(void){
-        return _rx_subdev()[SUBDEV_PROP_LO_LOCKED].as<bool>();
+        return _sdev->get_rx_lo_locked();
     }
 
     float read_rssi(void){
-        return _rx_subdev()[SUBDEV_PROP_RSSI].as<float>();
+        return _sdev->read_rssi();
     }
 
     dboard_iface::sptr get_rx_dboard_iface(void){
-        return _rx_dboard()[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
+        return _sdev->get_rx_dboard_iface();
     }
 
     /*******************************************************************
      * TX methods
      ******************************************************************/
     void set_tx_subdev_spec(const subdev_spec_t &spec){
-        _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC] = spec;
-        std::cout << "TX " << _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().to_pp_string() << std::endl;
+        return _sdev->set_tx_subdev_spec(spec);
     }
 
     subdev_spec_t get_tx_subdev_spec(void){
-        return _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
+        return _sdev->get_tx_subdev_spec();
     }
 
     void set_tx_rate(double rate){
-        _tx_dsp()[DSP_PROP_HOST_RATE] = rate;
+        return _sdev->set_tx_rate(rate);
     }
 
     double get_tx_rate(void){
-        return _tx_dsp()[DSP_PROP_HOST_RATE].as<double>();
+        return _sdev->get_tx_rate();
     }
 
     tune_result_t set_tx_freq(double target_freq){
-        return tune_tx_subdev_and_dsp(_tx_subdev(), _tx_dsp(), target_freq);
+        return _sdev->set_tx_freq(target_freq);
     }
 
     tune_result_t set_tx_freq(double target_freq, double lo_off){
-        return tune_tx_subdev_and_dsp(_tx_subdev(), _tx_dsp(), target_freq, lo_off);
+        return _sdev->set_tx_freq(target_freq, lo_off);
     }
 
     double get_tx_freq(void){
-        return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(), _tx_dsp());
+        return _sdev->get_tx_freq();
     }
 
     freq_range_t get_tx_freq_range(void){
-        return add_dsp_shift(_tx_subdev()[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp());
+        return _sdev->get_tx_freq_range();
     }
 
     void set_tx_gain(float gain){
-        return _tx_gain_group()->set_value(gain);
+        return _sdev->set_tx_gain(gain);
     }
 
     float get_tx_gain(void){
-        return _tx_gain_group()->get_value();
+        return _sdev->get_tx_gain();
     }
 
     gain_range_t get_tx_gain_range(void){
-        return _tx_gain_group()->get_range();
+        return _sdev->get_tx_gain_range();
     }
 
     void set_tx_antenna(const std::string &ant){
-        _tx_subdev()[SUBDEV_PROP_ANTENNA] = ant;
+        return _sdev->set_tx_antenna(ant);
     }
 
     std::string get_tx_antenna(void){
-        return _tx_subdev()[SUBDEV_PROP_ANTENNA].as<std::string>();
+        return _sdev->get_tx_antenna();
     }
 
     std::vector<std::string> get_tx_antennas(void){
-        return _tx_subdev()[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
+        return _sdev->get_tx_antennas();
     }
 
     bool get_tx_lo_locked(void){
-        return _tx_subdev()[SUBDEV_PROP_LO_LOCKED].as<bool>();
+        return _sdev->get_tx_lo_locked();
     }
 
     dboard_iface::sptr get_tx_dboard_iface(void){
-        return _tx_dboard()[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
+        return _sdev->get_tx_dboard_iface();
     }
 
 private:
-    device::sptr _dev;
-    wax::obj _mboard(void){
-        return (*_dev)[DEVICE_PROP_MBOARD];
-    }
-    wax::obj _rx_dsp(void){
-        return _mboard()[MBOARD_PROP_RX_DSP];
-    }
-    wax::obj _tx_dsp(void){
-        return _mboard()[MBOARD_PROP_TX_DSP];
-    }
-    wax::obj _rx_dboard(void){
-        std::string db_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().db_name;
-        return _mboard()[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
-    }
-    wax::obj _tx_dboard(void){
-        std::string db_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().db_name;
-        return _mboard()[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
-    }
-    wax::obj _rx_subdev(void){
-        std::string sd_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
-        return _rx_dboard()[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
-    }
-    wax::obj _tx_subdev(void){
-        std::string sd_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
-        return _tx_dboard()[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
-    }
-    gain_group::sptr _rx_gain_group(void){
-        std::string sd_name = _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
-        return _rx_dboard()[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
-    }
-    gain_group::sptr _tx_gain_group(void){
-        std::string sd_name = _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>().front().sd_name;
-        return _tx_dboard()[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
-    }
+    single_usrp::sptr _sdev;
 };
 
 /***********************************************************************
  * The Make Function
  **********************************************************************/
 simple_usrp::sptr simple_usrp::make(const device_addr_t &dev_addr){
+    uhd::print_warning(
+        "The simple USRP interface has been deprecated.\n"
+        "Please switch to the single USRP interface.\n"
+        "#include <uhd/usrp/single_usrp.hpp>\n"
+        "single_usrp::sptr sdev = single_usrp::make(args);\n"
+    );
     return sptr(new simple_usrp_impl(dev_addr));
 }
