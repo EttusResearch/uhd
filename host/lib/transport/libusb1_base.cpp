@@ -30,9 +30,7 @@ using namespace uhd::transport;
  **********************************************************/
 void libusb::init(libusb_context **ctx, int debug_level)
 {
-    if (libusb_init(ctx) < 0)
-        std::cerr << "error: libusb_init" << std::endl;
-
+    UHD_ASSERT_THROW(libusb_init(ctx) == 0);
     libusb_set_debug(*ctx, debug_level);
 }
 
@@ -48,14 +46,13 @@ libusb_device_handle *libusb::open_device(libusb_context *ctx,
         libusb_device *dev = libusb_dev_list[i];
 
         if (compare_device(dev, handle)) {
-            libusb_open(dev, &dev_handle);
-            libusb_unref_device(dev);
-            break;
+            if (libusb_open(dev, &dev_handle) == 0) break;
         }
-            
-        libusb_unref_device(dev);
     }
 
+    libusb_free_device_list(libusb_dev_list, true);
+    if(dev_handle == NULL)
+        throw std::runtime_error("USB: cannot open device handle");
     return dev_handle;
 }
 
@@ -70,12 +67,12 @@ bool libusb::compare_device(libusb_device *dev,
     boost::uint16_t device_addr = handle->get_device_addr();
 
     libusb_device_descriptor libusb_desc;
-    if (libusb_get_device_descriptor(dev, &libusb_desc) < 0)
+    if (libusb_get_device_descriptor(dev, &libusb_desc) != 0)
         return false;
     if (vendor_id != libusb_desc.idVendor)
         return false;
     if (product_id != libusb_desc.idProduct)
-        return false; 
+        return false;
     if (serial != get_serial(dev))
         return false;
     if (device_addr != libusb_get_device_address(dev))

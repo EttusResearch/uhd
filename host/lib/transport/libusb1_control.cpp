@@ -46,6 +46,7 @@ private:
 
 libusb_control_impl::libusb_control_impl(usb_device_handle::sptr handle)
 {
+    _ctx = NULL;
     libusb::init(&_ctx, libusb_debug_level);
 
     // Find and open the libusb_device corresponding to the

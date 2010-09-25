@@ -77,7 +77,7 @@ usb_device_handle::sptr make_usb_device_handle(libusb_device *dev)
     libusb_device_descriptor desc;
 
     if (libusb_get_device_descriptor(dev, &desc) < 0) {
-        UHD_ASSERT_THROW("USB: failed to get device descriptor");
+        throw std::runtime_error("USB: failed to get device descriptor");
     }
 
     std::string     serial      = libusb::get_serial(dev);
@@ -104,14 +104,15 @@ std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(boost::u
     size_t dev_size = libusb_get_device_list(ctx, &libusb_device_list);
     for (size_t i = 0; i < dev_size; i++) {
         libusb_device *dev = libusb_device_list[i];
-        if(libusb_get_device_descriptor(dev, &desc) < 0) {
-          UHD_ASSERT_THROW("USB: failed to get device descriptor");
+        if(libusb_get_device_descriptor(dev, &desc) != 0) {
+            continue; //just try the next device, do not throw
         }
         if(desc.idVendor == vid && desc.idProduct == pid) {
-          device_handle_list.push_back(make_usb_device_handle(dev));
+            device_handle_list.push_back(make_usb_device_handle(dev));
         }
     }
 
+    libusb_free_device_list(libusb_device_list, true);
     libusb_exit(ctx);
     return device_handle_list; 
 }
