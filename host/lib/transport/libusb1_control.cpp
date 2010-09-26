@@ -20,7 +20,6 @@
 
 using namespace uhd::transport;
 
-const int libusb_debug_level = 0;
 const int libusb_timeout = 0;
 
 /***********************************************************************
@@ -28,69 +27,38 @@ const int libusb_timeout = 0;
  **********************************************************************/
 class libusb_control_impl : public usb_control {
 public:
-    libusb_control_impl(usb_device_handle::sptr handle);
-    ~libusb_control_impl();
+    libusb_control_impl(libusb::device_handle::sptr handle):
+        _handle(handle)
+    {
+        _handle->claim_interface(0 /* control interface */);
+    }
 
     size_t submit(boost::uint8_t request_type,
                   boost::uint8_t request,
                   boost::uint16_t value,
                   boost::uint16_t index,
                   unsigned char *buff,
-                  boost::uint16_t length); 
+                  boost::uint16_t length
+    ){
+        return libusb_control_transfer(_handle->get(),
+                                       request_type,
+                                       request,
+                                       value,
+                                       index,
+                                       buff,
+                                       length,
+                                       libusb_timeout);
+    }
 
 private:
-    libusb_context       *_ctx;
-    libusb_device_handle *_dev_handle;
+    libusb::device_handle::sptr _handle;
 };
-
-
-libusb_control_impl::libusb_control_impl(usb_device_handle::sptr handle)
-{
-    _ctx = NULL;
-    libusb::init(&_ctx, libusb_debug_level);
-
-    // Find and open the libusb_device corresponding to the
-    // given handle and return the libusb_device_handle
-    // that can be used for I/O purposes.
-    _dev_handle = libusb::open_device(_ctx, handle);
-
-    // Open USB interfaces for control using magic value
-    // IN interface:      2
-    // OUT interface:     1
-    // Control interface: 0
-    libusb::open_interface(_dev_handle, 0);
-}
-
-
-libusb_control_impl::~libusb_control_impl()
-{
-    libusb_close(_dev_handle);
-    libusb_exit(_ctx);
-}
-
-
-size_t libusb_control_impl::submit(boost::uint8_t request_type,
-                                   boost::uint8_t request,
-                                   boost::uint16_t value,
-                                   boost::uint16_t index, 
-                                   unsigned char *buff,
-                                   boost::uint16_t length) 
-{
-    return libusb_control_transfer(_dev_handle,
-                                   request_type,
-                                   request,
-                                   value,
-                                   index,
-                                   buff, 
-                                   length, 
-                                   libusb_timeout);
-}
-
 
 /***********************************************************************
  * USB control public make functions
  **********************************************************************/
-usb_control::sptr usb_control::make(usb_device_handle::sptr handle)
-{
-    return sptr(new libusb_control_impl(handle));
+usb_control::sptr usb_control::make(usb_device_handle::sptr handle){
+    return sptr(new libusb_control_impl(libusb::device_handle::get_cached_handle(
+        boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
+    )));
 }

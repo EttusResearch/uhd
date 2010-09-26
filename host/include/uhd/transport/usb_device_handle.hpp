@@ -61,12 +61,6 @@ public:
     virtual boost::uint16_t get_product_id() const = 0;
 
     /*!
-     * Return the device's USB address
-     * \return a Product ID
-     */
-    virtual boost::uint16_t get_device_addr() const = 0;
-
-    /*!
      * Return a vector of USB devices on this host 
      * \return a vector of USB device handles that match vid and pid
      */

@@ -24,7 +24,6 @@
 
 using namespace uhd::transport;
 
-const int libusb_debug_level = 0;
 const int libusb_timeout = 0;
 
 /***********************************************************************
@@ -57,8 +56,8 @@ void pp_transfer(libusb_transfer *lut)
  **********************************************************************/
 class usb_endpoint {
 private:
-    libusb_device_handle *_dev_handle;
-    libusb_context *_ctx;
+    libusb::device_handle::sptr _handle;
+    libusb::session::sptr _session;
     int  _endpoint;
     bool _input;
 
@@ -90,9 +89,8 @@ private:
     void print_transfer_status(libusb_transfer *lut);
 
 public:
-    usb_endpoint(libusb_device_handle *dev_handle,
-                 libusb_context *ctx, int endpoint, bool input,
-                 size_t transfer_size, size_t num_transfers);
+    usb_endpoint(libusb::device_handle::sptr handle, libusb::session::sptr sess,
+                 int endpoint, bool input, size_t transfer_size, size_t num_transfers);
 
     ~usb_endpoint();
 
@@ -143,11 +141,11 @@ void usb_endpoint::callback_handle_transfer(libusb_transfer *lut)
  * submit the transfers so that they're ready to return when
  * data is available. 
  */
-usb_endpoint::usb_endpoint(libusb_device_handle *dev_handle,
-                          libusb_context *ctx, int endpoint, bool input,
-                          size_t transfer_size, size_t num_transfers)
-    : _dev_handle(dev_handle),
-      _ctx(ctx), _endpoint(endpoint), _input(input),
+usb_endpoint::usb_endpoint(
+    libusb::device_handle::sptr handle, libusb::session::sptr sess,
+    int endpoint, bool input, size_t transfer_size, size_t num_transfers)
+    : _handle(handle), _session(sess),
+      _endpoint(endpoint), _input(input),
       _transfer_size(transfer_size), _num_transfers(num_transfers)
 {
     unsigned int i;
@@ -203,7 +201,7 @@ libusb_transfer *usb_endpoint::allocate_transfer(int buff_len)
     unsigned int endpoint = ((_endpoint & 0x7f) | (_input ? 0x80 : 0));
 
     libusb_fill_bulk_transfer(lut,                // transfer
-                              _dev_handle,        // dev_handle
+                              _handle->get(),     // dev_handle
                               endpoint,           // endpoint
                               buff,               // buffer
                               buff_len,           // length
@@ -356,7 +354,7 @@ bool usb_endpoint::reap_pending_list()
 {
     int retval;
 
-    if ((retval = libusb_handle_events(_ctx)) < 0) {
+    if ((retval = libusb_handle_events(_session->get_context())) < 0) {
         std::cerr << "error: libusb_handle_events: " << retval << std::endl;
         return false;
     }
@@ -383,7 +381,7 @@ bool usb_endpoint::reap_pending_list_timeout()
 
     size_t pending_list_size = _pending_list.size();
 
-    if ((retval = libusb_handle_events_timeout(_ctx, &tv)) < 0) {
+    if ((retval = libusb_handle_events_timeout(_session->get_context(), &tv)) < 0) {
         std::cerr << "error: libusb_handle_events: " << retval << std::endl;
         return false;
     }
@@ -613,11 +611,8 @@ private:
     usb_endpoint          *_rx_ep;
     usb_endpoint          *_tx_ep;
 
-    // Maintain libusb values
-    libusb_context       *_rx_ctx;
-    libusb_context       *_tx_ctx;
-    libusb_device_handle *_rx_dev_handle;
-    libusb_device_handle *_tx_dev_handle;
+    libusb::device_handle::sptr _handle;
+    libusb::session::sptr _session;
 
     size_t _recv_buff_size;
     size_t _send_buff_size;
@@ -626,7 +621,7 @@ private:
 public:
     typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
 
-    libusb_zero_copy_impl(usb_device_handle::sptr handle,
+    libusb_zero_copy_impl(libusb::device_handle::sptr handle,
                           unsigned int rx_endpoint,
                           unsigned int tx_endpoint,
                           size_t recv_buff_size,
@@ -646,44 +641,27 @@ public:
  * Initializes libusb, opens devices, and sets up interfaces for I/O.
  * Finally, creates endpoints for asynchronous I/O. 
  */
-libusb_zero_copy_impl::libusb_zero_copy_impl(usb_device_handle::sptr handle,
+libusb_zero_copy_impl::libusb_zero_copy_impl(libusb::device_handle::sptr handle,
                                              unsigned int rx_endpoint,
                                              unsigned int tx_endpoint,
                                              size_t buff_size,
                                              size_t block_size)
- : _rx_ctx(NULL), _tx_ctx(NULL), _rx_dev_handle(NULL), _tx_dev_handle(NULL),
+ : _handle(handle), _session(libusb::session::get_global_session()),
    _recv_buff_size(block_size), _send_buff_size(block_size),
    _num_frames(buff_size / block_size)
 {
-    // Initialize libusb with separate contexts to allow
-    // thread safe operation of transmit and receive 
-    libusb::init(&_rx_ctx, libusb_debug_level);
-    libusb::init(&_tx_ctx, libusb_debug_level);
+    _handle->claim_interface(2 /*in interface*/);
+    _handle->claim_interface(1 /*out interface*/);
 
-    UHD_ASSERT_THROW((_rx_ctx != NULL) && (_tx_ctx != NULL));
-
-    // Find and open the libusb_device corresponding to the
-    // given handle and return the libusb_device_handle
-    // that can be used for I/O purposes.
-    _rx_dev_handle = libusb::open_device(_rx_ctx, handle);
-    _tx_dev_handle = libusb::open_device(_tx_ctx, handle);
-
-    // Open USB interfaces for tx/rx using magic values.
-    // IN interface:      2
-    // OUT interface:     1
-    // Control interface: 0
-    libusb::open_interface(_rx_dev_handle, 2);
-    libusb::open_interface(_tx_dev_handle, 1);
-
-    _rx_ep = new usb_endpoint(_rx_dev_handle,  // libusb device_handle
-                              _rx_ctx,         // libusb context
+    _rx_ep = new usb_endpoint(_handle,         // libusb device_handle
+                              _session,        // libusb session w/ context
                               rx_endpoint,     // USB endpoint number
                               true,            // IN endpoint
                               _recv_buff_size, // buffer size per transfer 
                               _num_frames);    // number of libusb transfers
 
-    _tx_ep = new usb_endpoint(_tx_dev_handle,  // libusb device_handle
-                              _tx_ctx,         // libusb context
+    _tx_ep = new usb_endpoint(_handle,         // libusb device_handle
+                              _session,        // libusb session w/ context
                               tx_endpoint,     // USB endpoint number
                               false,           // OUT endpoint
                               _send_buff_size, // buffer size per transfer
@@ -694,13 +672,7 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(usb_device_handle::sptr handle,
 libusb_zero_copy_impl::~libusb_zero_copy_impl()
 {
     delete _rx_ep;
-    delete _tx_ep; 
-
-    libusb_close(_rx_dev_handle);
-    libusb_close(_tx_dev_handle);
-
-    libusb_exit(_rx_ctx);
-    libusb_exit(_tx_ctx);
+    delete _tx_ep;
 }
 
 
@@ -755,7 +727,10 @@ usb_zero_copy::sptr usb_zero_copy::make(usb_device_handle::sptr handle,
                                         size_t block_size)
 
 {
-    return sptr(new libusb_zero_copy_impl(handle,
+    libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
+        boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
+    ));
+    return sptr(new libusb_zero_copy_impl(dev_handle,
                                           rx_endpoint,
                                           tx_endpoint,
                                           buff_size, 
