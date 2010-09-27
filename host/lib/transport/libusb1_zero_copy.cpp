@@ -21,6 +21,7 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/shared_array.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -132,6 +133,7 @@ static void callback(libusb_transfer *lut){
  * \param pointer to libusb_transfer
  */
 void usb_endpoint::callback_handle_transfer(libusb_transfer *lut){
+    boost::this_thread::disable_interruption di; //disable because the wait can throw
     _completed_list->push_with_wait(lut);
 }
 
@@ -182,10 +184,7 @@ usb_endpoint::~usb_endpoint(void){
     }
 
     //collect canceled transfers (drain the queue)
-    libusb_transfer *lut;
-    while(_completed_list->pop_with_timed_wait(
-        lut, boost::posix_time::milliseconds(100)
-    ));
+    while (this->get_lut_with_wait() != NULL);
 
     //free all transfers
     BOOST_FOREACH(libusb_transfer *lut, _all_luts){
@@ -273,6 +272,7 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut){
 }
 
 libusb_transfer *usb_endpoint::get_lut_with_wait(size_t timeout_ms){
+    boost::this_thread::disable_interruption di; //disable because the wait can throw
     libusb_transfer *lut;
     if (_completed_list->pop_with_timed_wait(
         lut, boost::posix_time::milliseconds(timeout_ms)
