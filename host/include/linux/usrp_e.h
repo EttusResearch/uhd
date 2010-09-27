@@ -34,8 +34,8 @@ struct usrp_e_ctl32 {
 #define UE_SPI_TXRX	1
 
 /* Defines for spi ctrl register */
-#define UE_SPI_CTRL_TXNEG	(BIT(10))
-#define UE_SPI_CTRL_RXNEG	(BIT(9))
+#define UE_SPI_CTRL_TXNEG	(1<<10)
+#define UE_SPI_CTRL_RXNEG	(1<<9)
 
 #define UE_SPI_PUSH_RISE	0
 #define UE_SPI_PUSH_FALL	UE_SPI_CTRL_TXNEG
