@@ -45,7 +45,7 @@
 #define TX_MIXER_ENB    (TXMOD_EN|ADF4350_PDBRF)
 #define TX_MIXER_DIS    0
 
-#define RX_MIXER_ENB    (RXBB_PDB|ADF4350_PDBRF)
+#define RX_MIXER_ENB    (ADF4350_PDBRF)
 #define RX_MIXER_DIS    0
 
 // Pin functions
@@ -63,11 +63,11 @@
 #define RX_POWER_DOWN   0
 
 // Antenna constants
-#define ANT_TX          0                       //the tx line is transmitting
+#define ANT_TX          TRSW                       //the tx line is transmitting
 #define ANT_RX          TRSW                    //the tx line is receiving
-#define ANT_TXRX        0                       //the rx line is on txrx
-#define ANT_RX2         LNASW                   //the rx line in on rx2
-#define ANT_XX          0                       //dont care how the antenna is set
+#define ANT_TXRX        TRSW                       //the rx line is on txrx
+#define ANT_RX2         (TRSW|LNASW)                   //the rx line in on rx2
+#define ANT_XX          TRSW                       //dont care how the antenna is set
 
 #include "adf4350_regs.hpp"
 #include <uhd/types/dict.hpp>
@@ -605,7 +605,7 @@ void sbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
+        val = SUBDEV_CONN_COMPLEX_QI;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
