@@ -22,7 +22,7 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 
 /***********************************************************************
  * Libusb object oriented smart pointer wrappers:
