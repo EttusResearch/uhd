@@ -38,6 +38,8 @@ enum firmware_code {
 
 #define FX2_FIRMWARE_LOAD 0xa0
 
+static const bool load_img_msg = true;
+
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
@@ -178,6 +180,7 @@ public:
         unsigned char reset_n = 0;
 
         //hit the reset line
+        if (load_img_msg) std::cout << "Loading firmware image " << filestring << "..." << std::flush;
         usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0,
                            &reset_y, 1);
  
@@ -213,7 +216,7 @@ public:
 
                 //wait for things to settle
                 boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-
+                if (load_img_msg) std::cout << " done" << std::endl;
                 return USRP_FIRMWARE_LOAD_SUCCESS; 
             }
             //type anything else is unhandled
@@ -249,6 +252,7 @@ public:
         unsigned char buf[ep0_size];
         int ret;
 
+        if (load_img_msg) std::cout << "Loading FPGA image: " << filestring << "..." << std::flush;
         std::ifstream file;
         file.open(filename, std::ios::in | std::ios::binary);
         if (not file.good()) {
@@ -282,6 +286,7 @@ public:
 
         usrp_set_fpga_hash(hash);
         file.close();
+        if (load_img_msg) std::cout << " done" << std::endl;
         return 0; 
     }
 
