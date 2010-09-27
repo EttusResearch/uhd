@@ -24,6 +24,13 @@
 #include <uhd/transport/usb_device_handle.hpp>
 #include <libusb-1.0/libusb.h>
 
+/***********************************************************************
+ * Libusb object oriented smart pointer wrappers:
+ * The following wrappers provide allocation and automatic deallocation
+ * for various libusb data types and handles. The construction routines
+ * also store tables of already allocated structures to avoid multiple
+ * occurrences of opened handles (for example).
+ **********************************************************************/
 namespace uhd { namespace transport {
 
 namespace libusb {
