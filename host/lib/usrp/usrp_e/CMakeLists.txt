@@ -25,6 +25,8 @@ MESSAGE(STATUS "Configuring usrp-e support...")
 INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(linux/usrp_e.h HAVE_LINUX_USRP_E_H)
 
+SET(ENABLE_USRP_E TRUE)
+
 IF(DEFINED ENABLE_USRP_E)
     IF(ENABLE_USRP_E)
         MESSAGE(STATUS "USRP-E support enabled by configure flag")
