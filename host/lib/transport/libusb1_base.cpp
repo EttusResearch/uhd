@@ -20,6 +20,7 @@
 #include <uhd/types/dict.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 
 using namespace uhd::transport;
@@ -32,9 +33,12 @@ public:
     libusb_session_impl(void){
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
         libusb_set_debug(_context, debug_level);
+        _thread_group.create_thread(boost::bind(&libusb_session_impl::run_event_loop, this));
     }
 
     ~libusb_session_impl(void){
+        _running = false;
+        _thread_group.join_all();
         libusb_exit(_context);
     }
 
@@ -44,6 +48,18 @@ public:
 
 private:
     libusb_context *_context;
+    boost::thread_group _thread_group;
+    bool _running;
+
+    void run_event_loop(void){
+        _running = true;
+        timeval tv;
+        while(_running){
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000; //100ms
+            libusb_handle_events_timeout(this->get_context(), &tv);
+        }
+    }
 };
 
 libusb::session::sptr libusb::session::get_global_session(void){
