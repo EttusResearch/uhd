@@ -184,7 +184,7 @@ usb_endpoint::~usb_endpoint(void){
     }
 
     //collect canceled transfers (drain the queue)
-    while (this->get_lut_with_wait() != NULL);
+    while (this->get_lut_with_wait() != NULL){};
 
     //free all transfers
     BOOST_FOREACH(libusb_transfer *lut, _all_luts){
