@@ -267,8 +267,9 @@ public:
             return -1;
         }
 
-        ssize_t n;
-        while ((n = file.readsome((char *)buf, sizeof(buf))) > 0) {
+        while (not file.eof()) {
+            file.read((char *)buf, sizeof(buf));
+            size_t n = file.gcount();
             ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER,
                                      buf, n);
             if (ret != n) {
