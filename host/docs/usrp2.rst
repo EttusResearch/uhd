@@ -211,6 +211,20 @@ Hardware setup notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Front panel LEDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The LEDs on the front panel can be useful in debugging hardware and software issues.
+The LEDs reveal the following about the state of the device:
+
+* **LED A:** transmitting
+* **LED B:** undocumented
+* **LED C:** receiving
+* **LED D:** firmware loaded
+* **LED E:** undocumented
+* **LED F:** FPGA loaded
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Ref Clock - 10MHz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using an external 10MHz reference clock requires a signal level between

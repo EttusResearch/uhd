@@ -58,7 +58,7 @@ void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
             "    Got unexpected event code 0x%x.\n"
         ) % async_md.event_code << std::endl;
         //clear the async messages
-        while (dev->recv_async_msg(async_md, 0));
+        while (dev->recv_async_msg(async_md, 0)){};
     }
     else{
         std::cout << boost::format(
