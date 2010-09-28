@@ -209,9 +209,9 @@ public:
             }  
             //type 0x01 is end 
             else if (type == 0x01) {
+                usrp_set_firmware_hash(hash); //set hash before reset
                 usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0,
                                    &reset_n, 1);
-                usrp_set_firmware_hash(hash);
                 file.close();
 
                 //wait for things to settle
