@@ -74,14 +74,14 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : USRP1_VENDOR_ID;
     boost::uint16_t pid = hint.has_key("uninit") ? FX2_PRODUCT_ID : USRP1_PRODUCT_ID;
 
-    //see what we got on the USB bus
-    std::vector<usb_device_handle::sptr> device_list =
-        usb_device_handle::get_device_list(vid, pid);
-
-    if(device_list.size() == 0) return usrp1_addrs; //return nothing if no USRPs found
+    // Important note:
+    // The get device list calls are nested inside the for loop.
+    // This allows the usb guts to decontruct when not in use,
+    // so that re-enumeration after fw load can occur successfully.
+    // This requirement is a courtesy of libusb1.0 on windows.
 
     //find the usrps and load firmware
-    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
+    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
             usb_control::sptr ctrl_transport = usb_control::make(handle);
             usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
             usrp_ctrl->usrp_load_firmware(usrp1_fw_image);
@@ -90,9 +90,8 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
     vid = USRP1_VENDOR_ID;
     pid = USRP1_PRODUCT_ID;
-    device_list = usb_device_handle::get_device_list(vid, pid);
 
-    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
+    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
             device_addr_t new_addr;
             new_addr["type"] = "usrp1";
             new_addr["serial"] = handle->get_serial();
