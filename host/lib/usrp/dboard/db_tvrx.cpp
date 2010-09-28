@@ -42,6 +42,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <utility>
 #include <cmath>
+#include <tuner_4937di5_regs.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -57,19 +58,73 @@ static const freq_range_t tvrx_freq_range(50e6, 860e6);
 static const prop_names_t tvrx_antennas = ""; //only got one
 
 static const uhd::dict<std::string, gain_range_t> tvrx_gain_ranges = map_list_of
-    ("RF", gain_range_t(0, 60, float(60.0/4096))) //both gains are analog and controlled by DAC
-    ("IF", gain_range_t(0, 35, float(35.0/4096))) //the old driver used 1dB for both; i don't think that's right?
+    ("RF", gain_range_t(-13.3, 50.3, float(50.3/4096))) //both gains are analog and controlled by DAC
+    ("IF", gain_range_t(-1.5, 32.5, float(32.5/4096))) //the old driver used 1dB for both; i don't think that's right?
 ;
 
 static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges = map_list_of
-    ("VHFLO", freq_range_t(50e6, 158e6)) //this isn't used outside this driver. just for us.
+    ("VHFLO", freq_range_t(50e6, 158e6))
     ("VHFHI", freq_range_t(158e6, 454e6))
     ("UHF"  , freq_range_t(454e6, 860e6))
 ;
 
-//we might need to spec the various bands for band selection.
+//gain linearization data
+//this is from the datasheet and is dB vs. volts (below)
+//i tried to curve fit this, but it's really just so nonlinear that you'd
+//need dang near as many coefficients as to just map it like this and interp.
+//these numbers are culled from the 4937DI5 datasheet and are probably totally inaccurate
+//but if it's better than the old linear fit i'm happy
+static const uhd::dict<std::string, std::vector<float> > tvrx_rf_gains_db = map_list_of
+    ("VHFLO", std::vector<float>(-6.00000, -6.00000, -6.00000, -4.00000, 0.00000,
+                                 5.00000, 10.00000, 17.40000, 26.30000, 36.00000,
+                                 43.00000, 48.00000, 49.50000, 50.10000, 50.30000,
+                                 50.30000, 50.30000))
+    ("VHFHI", std::vector<float>(-13.3000,  -13.3000,  -13.3000,   -1.0000,    7.7000,
+                                 11.0000,   14.7000,   19.3000,   26.1000,   36.0000,
+                                 42.7000,   46.0000,   47.0000,   47.8000,   48.2000,
+                                 48.2000,   48.2000))
+    ("UHF"  , std::vector<float>(-8.0000,   -8.0000,   -7.0000,    4.0000,   10.2000,
+                                 14.5000,   17.5000,   20.0000,   24.5000,   30.8000,
+                                 37.0000,   39.8000,   40.7000,   41.6000,   42.6000,
+                                 43.2000,   43.8000))
+;
 
-static const double tvrx_lo_freq = 36e6; //LO freq of TVRX module
+static const std::vector<float> tvrx_if_gains_db = 
+              std::vector<float>(-1.50000,   -1.50000,   -1.50000,   -1.00000,    0.20000,
+                                 2.10000,    4.30000,    6.40000,    9.00000,   12.00000,
+                                 14.80000,   18.20000,   26.10000,   32.50000,  32.50000,
+                                 32.50000,   32.50000)
+;
+
+//sample voltages for the above points
+static const std::vector<float> tvrx_rf_gains_volts = 
+              std::vector<float>(0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0);
+
+
+/*!
+ * Execute a linear interpolation to find the voltage corresponding to a desired gain
+ * \param gain the desired gain in dB
+ * \param db_vector the vector of dB readings
+ * \param volts_vector the corresponding vector of voltages db_vector was sampled at
+ * \return a voltage to feed the TVRX analog gain
+ */
+
+static float gain_interp(float gain, std::vector<float> db_vector, std::vector<float> volts_vector) {
+    float volts;
+    gain = std::clip<float>(gain, db_vector.front(), db_vector.back()); //let's not get carried away here
+    
+    boost::uint8_t gain_step = 0;
+    for(int i = 0; i < db_vector.size()-1; i++) {
+        if(gain > db_vector[i] && gain < db_vector.[i+1]) gain_step = i;
+    }
+        
+    
+    return volts;
+}
+
+static const double opamp_gain = 1.22; //onboard DAC opamp gain
+static const double tvrx_lo_freq = 43.75e6; //LO freq of TVRX module
+static const boost::uint16_t reference_divider = 640; //clock reference divider to use
 
 /***********************************************************************
  * The tvrx dboard class
@@ -84,40 +139,28 @@ public:
 
 private:
     uhd::dict<std::string, float> _gains;
-    dtt75403_regs_t _dtt75403_regs;
-    boost::uint8_t _dtt75403_addr(void){
+    tuner_4937di5_regs_t _tuner_4937di5_regs;
+    boost::uint8_t _tuner_4937di5_addr(void){
         return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x60 : 0x61; //ok really? we could rename that call
     };
 
     void set_gain(float gain, const std::string &name);
 
-    void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
-        //why is this an inline anyway? bring this out
-        start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0x5));
-        stop_reg = boost::uint8_t(std::clip(int(stop_reg), 0x0, 0x5));
+    void update_regs(void){
+        byte_vector_t regs_vector(4);
 
-        for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t) - 1){
-            int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) - 1 ? sizeof(boost::uint32_t) - 1 : stop_reg - start_addr + 1;
-
-            //create buffer for register data (+1 for start address)
-            byte_vector_t regs_vector(num_bytes + 1);
-
-            //first byte is the address of first register
-            regs_vector[0] = start_addr;
-
-            //get the register data
-            for(int i=0; i<num_bytes; i++){
-                regs_vector[1+i] = _max2118_write_regs.get_reg(start_addr+i);
-                if(tvrx_debug) std::cerr << boost::format(
-                    "tvrx: send reg 0x%02x, value 0x%04x, start_addr = 0x%04x, num_bytes %d"
-                ) % int(start_addr+i) % int(regs_vector[1+i]) % int(start_addr) % num_bytes << std::endl;
-            }
-
-            //send the data
-            this->get_iface()->write_i2c(
-                _max2118_addr(), regs_vector
-            );
+        //get the register data
+        for(int i=0; i<4; i++){
+            regs_vector[i] = _tuner_4937di5_regs.get_reg(i);
+            if(tvrx_debug) std::cerr << boost::format(
+                "tvrx: send reg 0x%02x, value 0x%04x"
+            ) % int(i) % int(regs_vector[i]) << std::endl;
         }
+
+        //send the data
+        this->get_iface()->write_i2c(
+            _tuner_4937di5_addr(), regs_vector
+        );
     }
 
 };
@@ -138,10 +181,6 @@ UHD_STATIC_BLOCK(reg_tvrx_dboard){
  * Structors
  **********************************************************************/
 tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
-    //enable only the clocks we need
-    
-    //TODO: YOU GOT SOME CLOCK SETUP TO DO HERE, DOGGGG
-    
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions and atr controls (identically)
@@ -165,62 +204,89 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
 tvrx::~tvrx(void){
 }
 
+/*! Return a string corresponding to the relevant band
+ * \param freq the frequency of interest
+ * \return a string corresponding to the band
+ */
+
+static std::string get_band(double freq) {
+    BOOST_FOREACH(const std::string &band, tvrx_freq_ranges.keys()) {
+        if(freq >= tvrx_freq_ranges[band].min && freq <= tvrx_freq_ranges[band].max)
+            return name;
+    }
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-/*!
- * Convert a requested gain for the GC2 vga into the integer register value.
- * The gain passed into the function will be set to the actual value.
- * \param gain the requested gain in dB
- * \return 5 bit the register value
+/* 
+ * Gain accuracy on this thing is basically a crap shoot. In other words, there is none.
+ * The old driver basically picked a linear approximation of the median gain, but the actual
+ * gain slope is heavily nonlinear and varies both with gain and with frequency.
+ * It also probably varies markedly over temperature, but there's only so much we can do.
+ * The best approximation to the RF gain data is fifth-order. If we ignore the curve portions
+ * below 0dB (yes, it's a pad below a certain gain value) and if we ignore the curve portions
+ * near the max-gain asymptotes, it looks pretty close to third-order. This is less insane to
+ * approximate.
  */
 
-//yo this should look the same as the below one for the IF, dogg
-static int gain_to_gc2_vga_reg(float &gain){
-    int reg = 0;
-    gain = std::clip<float>(float(boost::math::iround(gain)), tvrx_gain_ranges["GC2"].min, tvrx_gain_ranges["GC2"].max);
-
-    // Half dB steps from 0-5dB, 1dB steps from 5-24dB
-    if (gain < 5) {
-        reg = boost::math::iround(31.0 - gain/0.5);
-        gain = float(boost::math::iround(gain) * 0.5);
-    } else {
-        reg = boost::math::iround(22.0 - (gain - 4.0));
-        gain = float(boost::math::iround(gain));
-    }
-
-    if (tvrx_debug) std::cerr << boost::format(
-        "tvrx GC2 Gain: %f dB, reg: %d"
-    ) % gain % reg << std::endl;
-
-    return reg;
-}
-
 /*!
- * Convert a requested gain for the RF gain into the dac_volts value.
+ * Convert a requested gain for the RF gain into a DAC voltage.
  * The gain passed into the function will be set to the actual value.
  * \param gain the requested gain in dB
  * \return dac voltage value
  */
 
-//yo what about the 1.22 opamp gain of the USRP1 -- is this replicated on U2?
-static float gain_to_rfgain_dac(float &gain){
+static float rf_gain_to_voltage(float &gain){
     //clip the input
     gain = std::clip<float>(gain, tvrx_gain_ranges["RF"].min, tvrx_gain_ranges["RF"].max);
 
     //voltage level constants
-    static const float max_volts = float(0), min_volts = float(3.3);
+    static const float max_volts = float(4.0), min_volts = float(0.6);
     static const float slope = (max_volts-min_volts)/tvrx_gain_ranges["RF"].max;
 
-    //calculate the voltage for the aux dac
-    float dac_volts = gain*slope + min_volts;
-
-    if (tvrx_debug) std::cerr << boost::format(
-        "tvrx RFAGC Gain: %f dB, dac_volts: %f V"
-    ) % gain % dac_volts << std::endl;
+    //this is the voltage at the TVRX gain input
+    float gain_volts = gain*slope + min_volts
+    //this is the voltage at the USRP DAC output
+    float dac_volts = gain_volts / opamp_gain;
 
     //the actual gain setting
     gain = (dac_volts - min_volts)/slope;
+
+    if (tvrx_debug) std::cerr << boost::format(
+        "tvrx RF AGC gain: %f dB, dac_volts: %f V"
+    ) % gain % dac_volts << std::endl;
+
+    return dac_volts;
+}
+
+/*!
+ * Convert a requested gain for the IF gain into a DAC voltage.
+ * The gain passed into the function will be set to the actual value.
+ * \param gain the requested gain in dB
+ * \return dac voltage value
+ */
+
+static float if_gain_to_voltage(float &gain){
+    //clip the input
+    gain = std::clip<float>(gain, tvrx_gain_ranges["IF"].min, tvrx_gain_ranges["IF"].max);
+
+    //voltage level constants
+    static const float max_volts = float(4.0), min_volts = float(0.0);
+    static const float slope = (max_volts-min_volts)/tvrx_gain_ranges["IF"].max;
+
+    //this is the voltage at the TVRX gain input
+    float gain_volts = gain*slope + 1.25;
+    //this is the voltage at the USRP DAC output
+    float dac_volts = gain_volts / opamp_gain;
+
+    //the actual gain setting
+    gain = (dac_volts - min_volts)/slope;
+
+    if (tvrx_debug) std::cerr << boost::format(
+        "tvrx IF AGC gain: %f dB, dac_volts: %f V"
+    ) % gain % dac_volts << std::endl;
 
     return dac_volts;
 }
@@ -228,14 +294,24 @@ static float gain_to_rfgain_dac(float &gain){
 void tvrx::set_gain(float gain, const std::string &name){
     assert_has(tvrx_gain_ranges.keys(), name, "tvrx gain name");
     if (name == "RF"){
-//should look the same as below
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, rf_gain_to_voltage(gain));
     }
     else if(name == "IF"){
-        //write the new voltage to the aux dac                                CHECK THIS
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, gain_to_gc1_rfvga_dac(gain));
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_B, if_gain_to_voltage(gain));
     }
     else UHD_THROW_INVALID_CODE_PATH();
     _gains[name] = gain;
+}
+
+/*!
+ * Set the tuner to center the desired frequency at 43.75MHz
+ * \param freq the requested frequency
+ */
+
+void tvrx::set_freq(double freq) {
+    
+    
+    
 }
 
 /***********************************************************************
@@ -300,7 +376,6 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
     }
 }
 
-//for smaaht kids to use to set advanced props
 void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
@@ -308,6 +383,9 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_GAIN:
         this->set_gain(val.as<float>(), key.name);
+        return;
+    case SUBDEV_PROP_FREQ:
+        this->set_freq(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
