@@ -54,7 +54,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The tvrx constants
  **********************************************************************/
-static const bool tvrx_debug = true;
+static const bool tvrx_debug = false;
 
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
@@ -218,10 +218,9 @@ tvrx::~tvrx(void){
  */
 
 static std::string get_band(double freq) {
-    std::cout << "get_band called with freq " << freq << std::endl;
     BOOST_FOREACH(const std::string &band, tvrx_freq_ranges.keys()) {
         if(freq >= tvrx_freq_ranges[band].min && freq <= tvrx_freq_ranges[band].max){
-            std::cout << "Holy poop you're in band " << band << std::endl;
+            if(tvrx_debug) std::cout << "Band: " << band << std::endl;
             return band;
         }
     }
@@ -404,7 +403,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = _lo_freq - 2*tvrx_if_freq;
+        val = _lo_freq;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
