@@ -201,7 +201,7 @@ Each parameter will accept a numeric value for the number of bytes.
 * recv_buff_size
 * send_buff_size
 
-Example, set the args string to the following:
+Example usage, set the device address markup string to the following:
 ::
 
     addr=192.168.10.2, recv_buff_size=100e6
