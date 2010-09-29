@@ -322,10 +322,10 @@ static float if_gain_to_voltage(float gain){
 void tvrx::set_gain(float gain, const std::string &name){
     assert_has(get_tvrx_gain_ranges().keys(), name, "tvrx gain name");
     if (name == "RF"){
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, rf_gain_to_voltage(gain, _lo_freq));
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_B, rf_gain_to_voltage(gain, _lo_freq));
     }
     else if(name == "IF"){
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_B, if_gain_to_voltage(gain));
+        this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, if_gain_to_voltage(gain));
     }
     else UHD_THROW_INVALID_CODE_PATH();
     _gains[name] = gain;
