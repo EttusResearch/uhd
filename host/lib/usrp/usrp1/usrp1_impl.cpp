@@ -62,7 +62,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
         );
     }
-    catch(const std::exception &e){
+    catch(...){
         uhd::print_warning(
             "Could not locate USRP1 firmware.\n"
             "Please install the images package.\n"
@@ -96,7 +96,10 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             device_addr_t new_addr;
             new_addr["type"] = "usrp1";
             new_addr["serial"] = handle->get_serial();
-            usrp1_addrs.push_back(new_addr);
+            //this is a found usrp1 when a hint serial is not specified or it matches
+            if (not hint.has_key("serial") or hint["serial"] == new_addr["serial"]){
+                usrp1_addrs.push_back(new_addr);
+            }
     }
 
     return usrp1_addrs;

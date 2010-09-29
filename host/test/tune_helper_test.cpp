@@ -99,7 +99,8 @@ public:
         /* NOP */
     }
 private:
-    void get(const wax::obj &key, wax::obj &val){
+    void get(const wax::obj &key_, wax::obj &val){
+        named_prop_t key = named_prop_t::extract(key_);
         switch(key.as<dsp_prop_t>()){
         case DSP_PROP_CODEC_RATE:
             val = _codec_rate;
@@ -109,11 +110,16 @@ private:
             val = _freq_shift;
             return;
 
+        case DSP_PROP_FREQ_SHIFT_NAMES:
+            val = prop_names_t(1, "");
+            return;
+
         default: UHD_THROW_PROP_GET_ERROR();
         }
     }
 
-    void set(const wax::obj &key, const wax::obj &val){
+    void set(const wax::obj &key_, const wax::obj &val){
+        named_prop_t key = named_prop_t::extract(key_);
         switch(key.as<dsp_prop_t>()){
         case DSP_PROP_FREQ_SHIFT:
             _freq_shift = val.as<double>();
@@ -136,12 +142,12 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper RX automatic LO offset" << std::endl;
-    tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.3451e9);
+    tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.3451e9);
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, -100e3, tolerance);
 
-    double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
+    double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0);
     BOOST_CHECK_CLOSE(freq_derived, 2.3451e9, tolerance);
 }
 
@@ -150,12 +156,12 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper TX automatic LO offset" << std::endl;
-    tune_result_t tr = tune_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.3451e9);
+    tune_result_t tr = tune_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.3451e9);
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 100e3, tolerance);
 
-    double freq_derived = derive_freq_from_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
+    double freq_derived = derive_freq_from_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0);
     BOOST_CHECK_CLOSE(freq_derived, 2.3451e9, tolerance);
 }
 
@@ -164,11 +170,11 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx_nyquist){
     dummy_dsp dsp(100e6);
 
     std::cout << "Testing tune helper RX dummy basic board" << std::endl;
-    tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 55e6);
+    tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 55e6);
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 0.0, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 45e6, tolerance);
 
-    double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
+    double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0);
     BOOST_CHECK_CLOSE(freq_derived, -45e6, tolerance);
 }

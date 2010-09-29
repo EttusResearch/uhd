@@ -17,110 +17,258 @@
 
 #include "libusb1_base.hpp"
 #include <uhd/utils/assert.hpp>
+#include <uhd/types/dict.hpp>
+#include <boost/weak_ptr.hpp>
+#include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 
 using namespace uhd::transport;
 
-/**********************************************************
- * Helper Methods
- **********************************************************/
+/***********************************************************************
+ * libusb session
+ **********************************************************************/
+class libusb_session_impl : public libusb::session{
+public:
+    libusb_session_impl(void){
+        UHD_ASSERT_THROW(libusb_init(&_context) == 0);
+        libusb_set_debug(_context, debug_level);
+        _thread_group.create_thread(boost::bind(&libusb_session_impl::run_event_loop, this));
+    }
 
-/**********************************************************
- * libusb namespace 
- **********************************************************/
-void libusb::init(libusb_context **ctx, int debug_level)
-{
-    if (libusb_init(ctx) < 0)
-        std::cerr << "error: libusb_init" << std::endl;
+    ~libusb_session_impl(void){
+        _running = false;
+        _thread_group.join_all();
+        libusb_exit(_context);
+    }
 
-    libusb_set_debug(*ctx, debug_level);
-}
+    libusb_context *get_context(void) const{
+        return _context;
+    }
 
-libusb_device_handle *libusb::open_device(libusb_context *ctx,
-                                          usb_device_handle::sptr handle)
-{
-    libusb_device_handle *dev_handle = NULL;
-    libusb_device **libusb_dev_list;
-    size_t dev_cnt = libusb_get_device_list(ctx, &libusb_dev_list);
+private:
+    libusb_context *_context;
+    boost::thread_group _thread_group;
+    bool _running;
 
-    //find and open the USB device 
-    for (size_t i = 0; i < dev_cnt; i++) {
-        libusb_device *dev = libusb_dev_list[i];
-
-        if (compare_device(dev, handle)) {
-            libusb_open(dev, &dev_handle);
-            libusb_unref_device(dev);
-            break;
+    void run_event_loop(void){
+        _running = true;
+        timeval tv;
+        while(_running){
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000; //100ms
+            libusb_handle_events_timeout(this->get_context(), &tv);
         }
-            
-        libusb_unref_device(dev);
     }
+};
 
-    return dev_handle;
+libusb::session::sptr libusb::session::get_global_session(void){
+    static boost::weak_ptr<session> global_session;
+
+    //not expired -> get existing session
+    if (not global_session.expired()) return global_session.lock();
+
+    //create a new global session
+    sptr new_global_session(new libusb_session_impl());
+    global_session = new_global_session;
+    return new_global_session;
 }
 
-//note: changed order of checks so it only tries to get_serial and get_device_address if vid and pid match
-//doing this so it doesn't try to open the device if it's not ours
-bool libusb::compare_device(libusb_device *dev,
-                            usb_device_handle::sptr handle)
-{
-    std::string serial         = handle->get_serial();
-    boost::uint16_t vendor_id  = handle->get_vendor_id();
-    boost::uint16_t product_id = handle->get_product_id();
-    boost::uint8_t device_addr = handle->get_device_addr();
+/***********************************************************************
+ * libusb device
+ **********************************************************************/
+class libusb_device_impl : public libusb::device{
+public:
+    libusb_device_impl(libusb_device *dev){
+        _session = libusb::session::get_global_session();
+        _dev = dev;
+    }
 
-    libusb_device_descriptor libusb_desc;
-    if (libusb_get_device_descriptor(dev, &libusb_desc) < 0)
-        return false;
-    if (vendor_id != libusb_desc.idVendor)
-        return false;
-    if (product_id != libusb_desc.idProduct)
-        return false; 
-    if (serial != get_serial(dev))
-        return false;
-    if (device_addr != libusb_get_device_address(dev))
-        return false;
+    ~libusb_device_impl(void){
+        libusb_unref_device(this->get());
+    }
 
-    return true;
+    libusb_device *get(void) const{
+        return _dev;
+    }
+
+private:
+    libusb::session::sptr _session; //always keep a reference to session
+    libusb_device *_dev;
+};
+
+/***********************************************************************
+ * libusb device list
+ **********************************************************************/
+class libusb_device_list_impl : public libusb::device_list{
+public:
+    libusb_device_list_impl(void){
+        libusb::session::sptr sess = libusb::session::get_global_session();
+
+        //allocate a new list of devices
+        libusb_device** dev_list;
+        ssize_t ret = libusb_get_device_list(sess->get_context(), &dev_list);
+        if (ret < 0) throw std::runtime_error("cannot enumerate usb devices");
+
+        //fill the vector of device references
+        for (size_t i = 0; i < size_t(ret); i++) _devs.push_back(
+            libusb::device::sptr(new libusb_device_impl(dev_list[i]))
+        );
+
+        //free the device list but dont unref (done in ~device)
+        libusb_free_device_list(dev_list, false/*dont unref*/);
+    }
+
+    size_t size(void) const{
+        return _devs.size();
+    }
+
+    libusb::device::sptr at(size_t i) const{
+        return _devs.at(i);
+    }
+
+private:
+    std::vector<libusb::device::sptr> _devs;
+};
+
+libusb::device_list::sptr libusb::device_list::make(void){
+    return sptr(new libusb_device_list_impl());
 }
 
+/***********************************************************************
+ * libusb device descriptor
+ **********************************************************************/
+class libusb_device_descriptor_impl : public libusb::device_descriptor{
+public:
+    libusb_device_descriptor_impl(libusb::device::sptr dev){
+        _dev = dev;
+        UHD_ASSERT_THROW(libusb_get_device_descriptor(_dev->get(), &_desc) == 0);
+    }
 
-bool libusb::open_interface(libusb_device_handle *dev_handle,
-                            int interface)
-{
-    int ret = libusb_claim_interface(dev_handle, interface);
-    if (ret < 0) {
-        std::cerr << "error: libusb_claim_interface() " << ret << std::endl;
-        return false;
+    const libusb_device_descriptor &get(void) const{
+        return _desc;
     }
-    else {
-        return true;
+
+    std::string get_ascii_serial(void) const{
+        if (this->get().iSerialNumber == 0) return "";
+
+        libusb::device_handle::sptr handle(
+            libusb::device_handle::get_cached_handle(_dev)
+        );
+
+        unsigned char buff[512];
+        ssize_t ret = libusb_get_string_descriptor_ascii(
+            handle->get(), this->get().iSerialNumber, buff, sizeof(buff)
+        );
+        if (ret < 0) return ""; //on error, just return empty string
+
+        return std::string((char *)buff, ret);
     }
+
+private:
+    libusb::device::sptr _dev; //always keep a reference to device
+    libusb_device_descriptor _desc;
+};
+
+libusb::device_descriptor::sptr libusb::device_descriptor::make(device::sptr dev){
+    return sptr(new libusb_device_descriptor_impl(dev));
 }
 
-
-std::string libusb::get_serial(libusb_device *dev)
-{
-    unsigned char buff[32];
-
-    libusb_device_descriptor desc;
-    if (libusb_get_device_descriptor(dev, &desc) < 0)
-        return "";
-
-    if (desc.iSerialNumber == 0)
-        return "";
-
-    //open the device because we have to
-    libusb_device_handle *dev_handle;
-    if (libusb_open(dev, &dev_handle) < 0)
-        return "";
-
-    if (libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber,
-                                           buff, sizeof(buff)) < 0) {
-        return "";
+/***********************************************************************
+ * libusb device handle
+ **********************************************************************/
+class libusb_device_handle_impl : public libusb::device_handle{
+public:
+    libusb_device_handle_impl(libusb::device::sptr dev){
+        _dev = dev;
+        UHD_ASSERT_THROW(libusb_open(_dev->get(), &_handle) == 0);
     }
 
-    libusb_close(dev_handle);
+    ~libusb_device_handle_impl(void){
+        //release all claimed interfaces
+        for (size_t i = 0; i < _claimed.size(); i++){
+            libusb_release_interface(this->get(), _claimed[i]);
+        }
+        libusb_close(_handle);
+    }
 
-    return (char*) buff;
+    libusb_device_handle *get(void) const{
+        return _handle;
+    }
+
+    void claim_interface(int interface){
+        UHD_ASSERT_THROW(libusb_claim_interface(this->get(), interface) == 0);
+        _claimed.push_back(interface);
+    }
+
+private:
+    libusb::device::sptr _dev; //always keep a reference to device
+    libusb_device_handle *_handle;
+    std::vector<int> _claimed;
+};
+
+libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::sptr dev){
+    static uhd::dict<libusb_device *, boost::weak_ptr<device_handle> > handles;
+
+    //not expired -> get existing session
+    if (handles.has_key(dev->get()) and not handles[dev->get()].expired()){
+        return handles[dev->get()].lock();
+    }
+
+    //create a new global session
+    sptr new_handle(new libusb_device_handle_impl(dev));
+    handles[dev->get()] = new_handle;
+    return new_handle;
+}
+
+/***********************************************************************
+ * libusb special handle
+ **********************************************************************/
+class libusb_special_handle_impl : public libusb::special_handle{
+public:
+    libusb_special_handle_impl(libusb::device::sptr dev){
+        _dev = dev;
+    }
+
+    libusb::device::sptr get_device(void) const{
+        return _dev;
+    }
+
+    std::string get_serial(void) const{
+        return libusb::device_descriptor::make(this->get_device())->get_ascii_serial();
+    }
+
+    boost::uint16_t get_vendor_id(void) const{
+        return libusb::device_descriptor::make(this->get_device())->get().idVendor;
+    }
+
+    boost::uint16_t get_product_id(void) const{
+        return libusb::device_descriptor::make(this->get_device())->get().idProduct;
+    }
+
+private:
+    libusb::device::sptr _dev; //always keep a reference to device
+};
+
+libusb::special_handle::sptr libusb::special_handle::make(device::sptr dev){
+    return sptr(new libusb_special_handle_impl(dev));
+}
+
+/***********************************************************************
+ * list device handles implementations
+ **********************************************************************/
+std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(
+    boost::uint16_t vid, boost::uint16_t pid
+){
+    std::vector<usb_device_handle::sptr> handles;
+
+    libusb::device_list::sptr dev_list = libusb::device_list::make();
+    for (size_t i = 0; i < dev_list->size(); i++){
+        usb_device_handle::sptr handle = libusb::special_handle::make(dev_list->at(i));
+        if (handle->get_vendor_id() == vid and handle->get_product_id() == pid){
+            handles.push_back(handle);
+        }
+    }
+
+    return handles;
 }

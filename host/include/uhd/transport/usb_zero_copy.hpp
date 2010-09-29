@@ -53,7 +53,7 @@ public:
     static sptr make(usb_device_handle::sptr handle,
                      unsigned int rx_endpoint,
                      unsigned int tx_endpoint,
-		     size_t buff_size = 0, 
+                     size_t buff_size = 0,
                      size_t block_size = 0);
 };
 

@@ -30,8 +30,11 @@ IF(LIBUSB_FOUND)
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_control.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_zero_copy.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_base.cpp
-        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_device_handle.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_base.hpp
     )
+    IF(MSVC) #include our custom stdint for libusb
+        INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport/msvc)
+    ENDIF(MSVC)
     SET(HAVE_USB_SUPPORT TRUE)
 ENDIF(LIBUSB_FOUND)
 

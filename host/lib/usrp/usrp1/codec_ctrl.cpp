@@ -129,7 +129,7 @@ usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface,
     _ad9862_regs.clkout2_div_factor = ad9862_regs_t::CLKOUT2_DIV_FACTOR_2;
 
     //write the register settings to the codec
-    for (uint8_t addr = 0; addr <= 25; addr++) {
+    for (boost::uint8_t addr = 0; addr <= 25; addr++) {
         this->send_reg(addr);
     }
 
@@ -202,7 +202,7 @@ float usrp1_codec_ctrl_impl::get_rx_pga_gain(char which){
  **********************************************************************/
 static float aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low)
 {
-    return float((boost::uint16_t(high) << 2) | low)*3.3/0x3ff;
+    return float(((boost::uint16_t(high) << 2) | low)*3.3)/0x3ff;
 }
 
 float usrp1_codec_ctrl_impl::read_aux_adc(aux_adc_t which)

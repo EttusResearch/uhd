@@ -18,6 +18,7 @@
 #include "dboard_ctor_args.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_props.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
@@ -176,10 +177,6 @@ static args_t get_dboard_args(
 ){
     //special case, the none id was provided, use the following ids
     if (dboard_id == dboard_id_t::none() or force_to_unknown){
-        std::cerr << boost::format(
-            "Warning: unknown dboard-id or dboard-id combination: %s\n"
-            "    -> defaulting to the unknown board type"
-        ) % dboard_id.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(get_id_to_args_map().has_key(0xfff1));
         UHD_ASSERT_THROW(get_id_to_args_map().has_key(0xfff0));
         switch(unit){
@@ -191,6 +188,9 @@ static args_t get_dboard_args(
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
+        uhd::print_warning(str(boost::format(
+            "Unknown dboard ID: %s.\n"
+        ) % dboard_id.to_pp_string()));
         return get_dboard_args(unit, dboard_id, true);
     }
 
@@ -214,12 +214,25 @@ dboard_manager_impl::dboard_manager_impl(
         (get_xcvr_id_to_id_map()[tx_dboard_id] == rx_dboard_id)
     );
 
+    //warn for invalid dboard id xcvr combinations
+    if (rx_dboard_is_xcvr != this_dboard_is_xcvr or tx_dboard_is_xcvr != this_dboard_is_xcvr){
+        uhd::print_warning(str(boost::format(
+            "Unknown transceiver board ID combination...\n"
+            "RX dboard ID: %s\n"
+            "TX dboard ID: %s\n"
+        ) % rx_dboard_id.to_pp_string() % tx_dboard_id.to_pp_string()));
+    }
+
     //extract dboard constructor and settings (force to unknown for messed up xcvr status)
     dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
-    boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(dboard_iface::UNIT_RX, rx_dboard_id, rx_dboard_is_xcvr != this_dboard_is_xcvr);
+    boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(
+        dboard_iface::UNIT_RX, rx_dboard_id, rx_dboard_is_xcvr != this_dboard_is_xcvr
+    );
 
     dboard_ctor_t tx_dboard_ctor; std::string tx_name; prop_names_t tx_subdevs;
-    boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(dboard_iface::UNIT_TX, tx_dboard_id, tx_dboard_is_xcvr != this_dboard_is_xcvr);
+    boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(
+        dboard_iface::UNIT_TX, tx_dboard_id, tx_dboard_is_xcvr != this_dboard_is_xcvr
+    );
 
     //initialize the gpio pins before creating subdevs
     set_nice_dboard_if();
