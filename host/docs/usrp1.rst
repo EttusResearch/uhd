@@ -95,6 +95,27 @@ Notice that the subdevice name is always specified in the 3 possible cases.
 
     B:B
 
+
+------------------------------------------------------------------------
+Change USB transfer parameters
+------------------------------------------------------------------------
+The advanced user may manipulate parameters of the usb bulk transfers
+for various reasons, such as lowering latency or increasing buffer size.
+By default, the UHD will use values for these parameters
+that are known to perform well on a variety of systems.
+
+The following device address can be used to manipulate USB bulk transfers:
+
+* **recv_xfer_size:** the size of each receive bulk transfer in bytes
+* **recv_num_xfers:** the number of simultaneous receive bulk transfers
+* **send_xfer_size:** the size of each send bulk transfer in bytes
+* **send_num_xfers:** the number of simultaneous send bulk transfers
+
+Example, set the args string to the following:
+::
+
+    serial=12345678, recv_num_xfers=16
+
 ------------------------------------------------------------------------
 OS Specific Notes
 ------------------------------------------------------------------------
@@ -113,3 +134,9 @@ so that non-root users may access the device:
     sudo mv tmpfile /etc/udev/rules.d/10-usrp.rules
     sudo udevadm control --reload-rules
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install libusb driver on Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On Windows, a driver must be installed the first time the USRP1 is attached to the host computer.
+A download link for this driver can be found on the Ettus Research UHD wiki page.
+Download and unpack the driver, and direct the Windows driver install wizard to the *.inf file.

@@ -30,6 +30,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -107,6 +108,15 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
 /***********************************************************************
  * Make
  **********************************************************************/
+template<typename output_type> static output_type cast_from_dev_addr(
+	const device_addr_t &device_addr,
+	const std::string &key,
+	output_type def_val
+){
+	return (device_addr.has_key(key))?
+		boost::lexical_cast<output_type>(device_addr[key]) : def_val;
+}
+
 static device::sptr usrp1_make(const device_addr_t &device_addr)
 {
     //extract the FPGA path for the USRP1
@@ -130,11 +140,15 @@ static device::sptr usrp1_make(const device_addr_t &device_addr)
             usrp_ctrl = usrp_ctrl::make(ctrl_transport);
             usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
 
-            data_transport = usb_zero_copy::make(handle,        // identifier
-                                                 6,             // IN endpoint
-                                                 2,             // OUT endpoint
-                                                 2 * (1 << 20), // buffer size
-                                                 16384);        // transfer size
+            data_transport = usb_zero_copy::make(
+                handle,        // identifier
+                6,             // IN endpoint
+                2,             // OUT endpoint
+                size_t(cast_from_dev_addr<double>(device_addr, "recv_xfer_size", 0)),
+                size_t(cast_from_dev_addr<double>(device_addr, "recv_num_xfers", 0)),
+                size_t(cast_from_dev_addr<double>(device_addr, "send_xfer_size", 0)),
+                size_t(cast_from_dev_addr<double>(device_addr, "send_num_xfers", 0))
+            );
             break;
         }
     }
@@ -173,7 +187,7 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     //initialize the mboard
     mboard_init();
 
-    //initialize the dboards 
+    //initialize the dboards
     dboard_init();
 
     //initialize the dsps

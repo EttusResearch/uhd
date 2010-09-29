@@ -30,6 +30,9 @@ using namespace uhd::transport;
 
 const int libusb_timeout = 0;
 
+static const size_t DEFAULT_NUM_XFERS = 16;     //num xfers
+static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
+
 /***********************************************************************
  * Helper functions
  ***********************************************************************/
@@ -56,7 +59,7 @@ void pp_transfer(libusb_transfer *lut)
  *   create a bidirectional interface. It is a zero copy implementation
  *   with respect to libusb, however, each send and recv requires a copy
  *   operation from kernel to userspace; this is due to the usbfs
- *   interface provided by the kernel. 
+ *   interface provided by the kernel.
  **********************************************************************/
 class usb_endpoint {
 public:
@@ -107,7 +110,7 @@ private:
     //! a list of shared arrays for the transfer buffers
     std::vector<boost::shared_array<boost::uint8_t> > _buffers;
 
-    // Calls for processing asynchronous I/O 
+    // Calls for processing asynchronous I/O
     libusb_transfer *allocate_transfer(int buff_len);
     void print_transfer_status(libusb_transfer *lut);
 };
@@ -142,7 +145,7 @@ void usb_endpoint::callback_handle_transfer(libusb_transfer *lut){
  * Constructor
  * Allocate libusb transfers and mark as free.  For IN endpoints,
  * submit the transfers so that they're ready to return when
- * data is available. 
+ * data is available.
  */
 usb_endpoint::usb_endpoint(
     libusb::device_handle::sptr handle,
@@ -194,7 +197,7 @@ usb_endpoint::~usb_endpoint(void){
 
 
 /*
- * Allocate a libusb transfer 
+ * Allocate a libusb transfer
  * The allocated transfer - and buffer it contains - is repeatedly
  * submitted, reaped, and reused and should not be freed until shutdown.
  * \param buff_len size of the individual buffer held by each transfer
@@ -225,7 +228,7 @@ libusb_transfer *usb_endpoint::allocate_transfer(int buff_len){
  * Asynchonous transfer submission
  * Submit a libusb transfer to libusb add pending status
  * \param lut pointer to libusb_transfer
- * \return true on success or false on error 
+ * \return true on success or false on error
  */
 void usb_endpoint::submit(libusb_transfer *lut){
     UHD_ASSERT_THROW(libusb_submit_transfer(lut) == 0);
@@ -281,14 +284,14 @@ libusb_transfer *usb_endpoint::get_lut_with_wait(size_t timeout_ms){
 }
 
 /***********************************************************************
- * Managed buffers 
+ * Managed buffers
  **********************************************************************/
 /*
  * Libusb managed receive buffer
  * Construct a recv buffer from a libusb transfer. The memory held by
  * the libusb transfer is exposed through the managed buffer interface.
  * Upon destruction, the transfer and buffer are resubmitted to the
- * endpoint for further use. 
+ * endpoint for further use.
  */
 class libusb_managed_recv_buffer_impl : public managed_recv_buffer {
 public:
@@ -307,7 +310,7 @@ public:
 private:
     const boost::asio::const_buffer &get() const
     {
-        return _buff; 
+        return _buff;
     }
 
     libusb_transfer *_lut;
@@ -327,9 +330,8 @@ private:
 class libusb_managed_send_buffer_impl : public managed_send_buffer {
 public:
     libusb_managed_send_buffer_impl(libusb_transfer *lut,
-                                    usb_endpoint::sptr endpoint,
-                                    size_t buff_size)
-        : _buff(lut->buffer, buff_size), _committed(false)
+                                    usb_endpoint::sptr endpoint)
+        : _buff(lut->buffer, lut->length), _committed(false)
     {
         _lut = lut;
         _endpoint = endpoint;
@@ -349,7 +351,7 @@ public:
             std::cerr << "UHD: send buffer already committed" << std::endl;
             return 0;
         }
-        
+
         UHD_ASSERT_THROW(num_bytes <= boost::asio::buffer_size(_buff));
 
         _lut->length = num_bytes;
@@ -369,7 +371,7 @@ public:
 private:
     const boost::asio::mutable_buffer &get() const
     {
-        return _buff; 
+        return _buff;
     }
 
     libusb_transfer *_lut;
@@ -385,61 +387,71 @@ private:
 class libusb_zero_copy_impl : public usb_zero_copy
 {
 private:
-    usb_endpoint::sptr _rx_ep, _tx_ep;
-
     libusb::device_handle::sptr _handle;
-
-    size_t _recv_buff_size;
-    size_t _send_buff_size;
-    size_t _num_frames;
+    size_t _recv_num_frames, _send_num_frames;
+    usb_endpoint::sptr _recv_ep, _send_ep;
 
 public:
     typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
 
-    libusb_zero_copy_impl(libusb::device_handle::sptr handle,
-                          unsigned int rx_endpoint,
-                          unsigned int tx_endpoint,
-                          size_t recv_buff_size,
-                          size_t send_buff_size);
+    libusb_zero_copy_impl(
+		libusb::device_handle::sptr handle,
+		unsigned int recv_endpoint, unsigned int send_endpoint,
+		size_t recv_xfer_size, size_t recv_num_xfers,
+		size_t send_xfer_size, size_t send_num_xfers
+	);
 
     managed_recv_buffer::sptr get_recv_buff(void);
     managed_send_buffer::sptr get_send_buff(void);
 
-    size_t get_num_recv_frames(void) const { return _num_frames; }
-    size_t get_num_send_frames(void) const { return _num_frames; }
+    size_t get_num_recv_frames(void) const { return _recv_num_frames; }
+    size_t get_num_send_frames(void) const { return _send_num_frames; }
 };
 
 /*
  * Constructor
  * Initializes libusb, opens devices, and sets up interfaces for I/O.
- * Finally, creates endpoints for asynchronous I/O. 
+ * Finally, creates endpoints for asynchronous I/O.
  */
-libusb_zero_copy_impl::libusb_zero_copy_impl(libusb::device_handle::sptr handle,
-                                             unsigned int rx_endpoint,
-                                             unsigned int tx_endpoint,
-                                             size_t buff_size,
-                                             size_t block_size)
- : _handle(handle),
-   _recv_buff_size(block_size), _send_buff_size(block_size),
-   _num_frames(buff_size / block_size)
-{
-    _handle->claim_interface(2 /*in interface*/);
+libusb_zero_copy_impl::libusb_zero_copy_impl(
+    libusb::device_handle::sptr handle,
+    unsigned int recv_endpoint, unsigned int send_endpoint,
+    size_t recv_xfer_size, size_t recv_num_xfers,
+    size_t send_xfer_size, size_t send_num_xfers
+){
+	_handle = handle;
+
+	//if the sizes are left at 0 (automatic) -> use the defaults
+	if (recv_xfer_size == 0) recv_xfer_size = DEFAULT_XFER_SIZE;
+	if (recv_num_xfers == 0) recv_num_xfers = DEFAULT_NUM_XFERS;
+	if (send_xfer_size == 0) send_xfer_size = DEFAULT_XFER_SIZE;
+	if (send_num_xfers == 0) send_num_xfers = DEFAULT_NUM_XFERS;
+
+    //sanity check the transfer sizes
+    UHD_ASSERT_THROW(recv_xfer_size % 512 == 0);
+    UHD_ASSERT_THROW(send_xfer_size % 512 == 0);
+
+	//store the num xfers for the num frames count
+	_recv_num_frames = recv_num_xfers;
+	_send_num_frames = send_num_xfers;
+
+	_handle->claim_interface(2 /*in interface*/);
     _handle->claim_interface(1 /*out interface*/);
 
-    _rx_ep = usb_endpoint::sptr(new usb_endpoint(
+    _recv_ep = usb_endpoint::sptr(new usb_endpoint(
                               _handle,         // libusb device_handle
-                              rx_endpoint,     // USB endpoint number
+                              recv_endpoint,   // USB endpoint number
                               true,            // IN endpoint
-                              _recv_buff_size, // buffer size per transfer 
-                              _num_frames      // number of libusb transfers
+                              recv_xfer_size,  // buffer size per transfer
+                              recv_num_xfers   // number of libusb transfers
     ));
 
-    _tx_ep = usb_endpoint::sptr(new usb_endpoint(
+    _send_ep = usb_endpoint::sptr(new usb_endpoint(
                               _handle,         // libusb device_handle
-                              tx_endpoint,     // USB endpoint number
+                              send_endpoint,   // USB endpoint number
                               false,           // OUT endpoint
-                              _send_buff_size, // buffer size per transfer
-                              _num_frames      // number of libusb transfers
+                              send_xfer_size,  // buffer size per transfer
+                              send_num_xfers   // number of libusb transfers
     ));
 }
 
@@ -447,17 +459,17 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(libusb::device_handle::sptr handle,
  * Construct a managed receive buffer from a completed libusb transfer
  * (happy with buffer full of data) obtained from the receive endpoint.
  * Return empty pointer if no transfer is available (timeout or error).
- * \return pointer to a managed receive buffer 
+ * \return pointer to a managed receive buffer
  */
 managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(void){
-    libusb_transfer *lut = _rx_ep->get_lut_with_wait(/* TODO timeout API */);
+    libusb_transfer *lut = _recv_ep->get_lut_with_wait(/* TODO timeout API */);
     if (lut == NULL) {
         return managed_recv_buffer::sptr();
     }
     else {
         return managed_recv_buffer::sptr(
             new libusb_managed_recv_buffer_impl(lut,
-                                                _rx_ep));
+                                                _recv_ep));
     }
 }
 
@@ -466,38 +478,36 @@ managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(void){
  * Construct a managed send buffer from a free libusb transfer (with
  * empty buffer). Return empty pointer of no transfer is available
  * (timeout or error).
- * \return pointer to a managed send buffer 
+ * \return pointer to a managed send buffer
  */
 managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(void){
-    libusb_transfer *lut = _tx_ep->get_lut_with_wait(/* TODO timeout API */);
+    libusb_transfer *lut = _send_ep->get_lut_with_wait(/* TODO timeout API */);
     if (lut == NULL) {
         return managed_send_buffer::sptr();
     }
     else {
         return managed_send_buffer::sptr(
             new libusb_managed_send_buffer_impl(lut,
-                                                _tx_ep,
-                                                _send_buff_size));
+                                                _send_ep));
     }
 }
-
 
 /***********************************************************************
  * USB zero_copy make functions
  **********************************************************************/
-usb_zero_copy::sptr usb_zero_copy::make(usb_device_handle::sptr handle,
-                                        unsigned int rx_endpoint,
-                                        unsigned int tx_endpoint,
-                                        size_t buff_size,
-                                        size_t block_size)
-
-{
+usb_zero_copy::sptr usb_zero_copy::make(
+	usb_device_handle::sptr handle,
+    unsigned int recv_endpoint, unsigned int send_endpoint,
+	size_t recv_xfer_size, size_t recv_num_xfers,
+	size_t send_xfer_size, size_t send_num_xfers
+){
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
         boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
     ));
-    return sptr(new libusb_zero_copy_impl(dev_handle,
-                                          rx_endpoint,
-                                          tx_endpoint,
-                                          buff_size, 
-                                          block_size));
+    return sptr(new libusb_zero_copy_impl(
+		dev_handle,
+		recv_endpoint,  send_endpoint,
+		recv_xfer_size, recv_num_xfers,
+		send_xfer_size, send_num_xfers
+    ));
 }
