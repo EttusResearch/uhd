@@ -50,9 +50,9 @@ public:
      * \param index        2-byte (wIndex)
      * \param buff         buffer to hold send or receive data
      * \param length       2-byte (wLength)
-     * \return             number of bytes submitted
+     * \return             number of bytes submitted or error code
      */
-    virtual size_t submit(boost::uint8_t request_type,
+    virtual ssize_t submit(boost::uint8_t request_type,
                           boost::uint8_t request,
                           boost::uint16_t value,
                           boost::uint16_t index, 
