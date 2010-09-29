@@ -44,6 +44,7 @@
 #include <utility>
 #include <cmath>
 #include <cfloat>
+#include <limits>
 #include <tuner_4937di5_regs.hpp>
 
 using namespace uhd;
@@ -58,10 +59,6 @@ static const bool tvrx_debug = true;
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
 static const std::string tvrx_antennas = std::string(""); //only got one
-
-//a note on these: the gain of the TVRX varies over frequency. the gain ranges
-//below correspond to the maximum and minimum gains over the entire frequency range.
-//specifying a gain higher or lower than the TVRX can accomplish will of course just clip.
 
 static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges = map_list_of
     ("VHFLO", freq_range_t(50e6, 158e6))
@@ -148,7 +145,7 @@ private:
     double _lo_freq;
     tuner_4937di5_regs_t _tuner_4937di5_regs;
     boost::uint8_t _tuner_4937di5_addr(void){
-        return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x60 : 0x61; //ok really? we could rename that call
+        return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x61 : 0x60; //ok really? we could rename that call
     };
 
     void set_gain(float gain, const std::string &name);
@@ -182,7 +179,7 @@ static dboard_base::sptr make_tvrx(dboard_base::ctor_args_t args){
 
 UHD_STATIC_BLOCK(reg_tvrx_dboard){
     //register the factory function for the rx dbid
-    dboard_manager::register_dboard(0x0003, &make_tvrx, "tvrx");
+    dboard_manager::register_dboard(0x0040, &make_tvrx, "tvrx");
 }
 
 /***********************************************************************
@@ -203,6 +200,7 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
     //send initial register settings if necessary
     
     //set default freq
+    _lo_freq = tvrx_freq_range.min + tvrx_if_freq; //init _lo_freq to a sane default
     set_freq(tvrx_freq_range.min);
     
     //set default gains
@@ -220,9 +218,12 @@ tvrx::~tvrx(void){
  */
 
 static std::string get_band(double freq) {
+    std::cout << "get_band called with freq " << freq << std::endl;
     BOOST_FOREACH(const std::string &band, tvrx_freq_ranges.keys()) {
-        if(freq >= tvrx_freq_ranges[band].min && freq <= tvrx_freq_ranges[band].max)
+        if(freq >= tvrx_freq_ranges[band].min && freq <= tvrx_freq_ranges[band].max){
+            std::cout << "Holy poop you're in band " << band << std::endl;
             return band;
+        }
     }
     UHD_THROW_INVALID_CODE_PATH();
 }
@@ -245,15 +246,25 @@ static float gain_interp(float gain, boost::array<float, 17> db_vector, boost::a
     boost::uint8_t gain_step = 0;
     //find which bin we're in
     for(size_t i = 0; i < db_vector.size()-1; i++) {
-        if(gain > db_vector[i] && gain < db_vector[i+1]) gain_step = i;
+        if(gain >= db_vector[i] && gain <= db_vector[i+1]) gain_step = i;
     }
     
     //find the current slope for linear interpolation
     float slope = (volts_vector[gain_step + 1] - volts_vector[gain_step]) 
                 / (db_vector[gain_step + 1] - db_vector[gain_step]);
+                
+    //the problem here is that for gains approaching the maximum, the voltage slope becomes infinite
+    //i.e., a small change in gain requires an infinite change in voltage
+    //to cope, we limit the slope
+    
+    if(slope == std::numeric_limits<float>::infinity())
+        return volts_vector[gain_step];
 
     //use the volts per dB slope to find the final interpolated voltage
     volts = volts_vector[gain_step] + (slope * (gain - db_vector[gain_step]));
+        
+    if(tvrx_debug)
+        std::cout << "Gain interp: gain: " << gain << ", gain_step: " << int(gain_step) << ", slope: " << slope << ", volts: " << volts << std::endl;
     
     return volts;
 }
@@ -276,6 +287,8 @@ static float rf_gain_to_voltage(float gain, double lo_freq){
     float gain_volts = gain_interp(gain, tvrx_rf_gains_db[band], tvrx_gains_volts);
     //this is the voltage at the USRP DAC output
     float dac_volts = gain_volts / opamp_gain;
+    
+    dac_volts = std::clip<float>(dac_volts, 0.0, 3.3);
 
     if (tvrx_debug) std::cerr << boost::format(
         "tvrx RF AGC gain: %f dB, dac_volts: %f V"
@@ -297,6 +310,8 @@ static float if_gain_to_voltage(float gain){
     
     float gain_volts = gain_interp(gain, tvrx_if_gains_db, tvrx_gains_volts);
     float dac_volts = gain_volts / opamp_gain;
+    
+    dac_volts = std::clip<float>(dac_volts, 0.0, 3.3);
 
     if (tvrx_debug) std::cerr << boost::format(
         "tvrx IF AGC gain: %f dB, dac_volts: %f V"
@@ -324,13 +339,13 @@ void tvrx::set_gain(float gain, const std::string &name){
 
 void tvrx::set_freq(double freq) {
     freq = std::clip<float>(freq, tvrx_freq_range.min, tvrx_freq_range.max);
-    std::string prev_band = get_band(_lo_freq + tvrx_if_freq);
+    std::string prev_band = get_band(_lo_freq - tvrx_if_freq);
     std::string new_band = get_band(freq);
     
-    double lo_freq = freq + tvrx_if_freq; //the desired LO freq for high-side mixing
+    double target_lo_freq = freq + tvrx_if_freq; //the desired LO freq for high-side mixing
     double f_ref = reference_freq / double(reference_divider); //your tuning step size
     
-    int divisor = int(lo_freq + (f_ref * 4.0)) / (f_ref * 8); //the divisor we'll use
+    int divisor = int((target_lo_freq + (f_ref * 4.0)) / (f_ref * 8)); //the divisor we'll use
     double actual_lo_freq = (f_ref * 8 * divisor); //the LO freq we'll actually get
     
     if((divisor & ~0x7fff)) UHD_THROW_INVALID_CODE_PATH();
@@ -344,13 +359,16 @@ void tvrx::set_freq(double freq) {
     else if(new_band == "UHF") _tuner_4937di5_regs.bandsel = tuner_4937di5_regs_t::BANDSEL_UHF;
     else UHD_THROW_INVALID_CODE_PATH();
     
-    _tuner_4937di5_regs.power = tuner_4937di5_regs_t::POWER_ON;
+    _tuner_4937di5_regs.power = tuner_4937di5_regs_t::POWER_OFF;
     update_regs();
 
     //ok don't forget to reset RF gain here if the new band != the old band
     //we do this because the gains are different for different band settings
     //not FAR off, but we do this to be consistent
     if(prev_band != new_band) set_gain(_gains["RF"], "RF");
+    
+    if(tvrx_debug) 
+        std::cout << boost::format("set_freq: target LO: %f f_ref: %f divisor: %i actual LO: %f") % target_lo_freq % f_ref % divisor % actual_lo_freq << std::endl;
     
     _lo_freq = actual_lo_freq; //for rx props
 }
@@ -386,7 +404,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = _lo_freq - tvrx_if_freq;
+        val = _lo_freq - 2*tvrx_if_freq;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
