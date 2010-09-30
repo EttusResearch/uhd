@@ -33,7 +33,7 @@ public:
         _handle->claim_interface(0 /* control interface */);
     }
 
-    size_t submit(boost::uint8_t request_type,
+    ssize_t submit(boost::uint8_t request_type,
                   boost::uint8_t request,
                   boost::uint16_t value,
                   boost::uint16_t index,

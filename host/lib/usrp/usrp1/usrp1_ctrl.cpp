@@ -180,7 +180,7 @@ public:
         unsigned char reset_n = 0;
 
         //hit the reset line
-        if (load_img_msg) std::cout << "Loading firmware image " << filestring << "..." << std::flush;
+        if (load_img_msg) std::cout << "Loading firmware image: " << filestring << "..." << std::flush;
         usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0,
                            &reset_y, 1);
  
@@ -209,9 +209,9 @@ public:
             }  
             //type 0x01 is end 
             else if (type == 0x01) {
+                usrp_set_firmware_hash(hash); //set hash before reset
                 usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0,
                                    &reset_n, 1);
-                usrp_set_firmware_hash(hash);
                 file.close();
 
                 //wait for things to settle
@@ -267,11 +267,12 @@ public:
             return -1;
         }
 
-        ssize_t n;
-        while ((n = file.readsome((char *)buf, sizeof(buf))) > 0) {
+        while (not file.eof()) {
+            file.read((char *)buf, sizeof(buf));
+            size_t n = file.gcount();
             ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER,
                                      buf, n);
-            if (ret != n) {
+            if (ret < 0 or size_t(ret) != n) {
                 std::cerr << "fpga load error " << ret << std::endl;
                 file.close();
                 return -1;
