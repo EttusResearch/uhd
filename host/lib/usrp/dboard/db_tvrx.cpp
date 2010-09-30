@@ -377,6 +377,7 @@ void tvrx::set_freq(double freq) {
  **********************************************************************/
 void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
+    int codec_rate;
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -403,7 +404,15 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
+    /* 
+     * so here we have to do some magic. because the TVRX uses a relatively high IF,
+     * we have to watch the sample rate to see if the IF will be aliased
+     * or if it will fall within Nyquist.
+     */
+        codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
+        if(codec_rate/2 > tvrx_if_freq) val = _lo_freq;
+        //ok take a deep breath i am positive there is an easier way to get this number
+        else val = _lo_freq - tvrx_if_freq - (tvrx_if_freq-codec_rate)*int(tvrx_if_freq / (codec_rate/2));
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:

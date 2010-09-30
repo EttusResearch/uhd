@@ -423,7 +423,8 @@ void usrp1_codec_ctrl_impl::set_duc_freq(double freq)
 
 /***********************************************************************
  * Codec Control ADC buffer bypass
- * Enable this for DC-coupled daughterboards (TVRX)
+ * Disable this for AC-coupled daughterboards (TVRX)
+ * By default it is initialized TRUE.
  **********************************************************************/
 void usrp1_codec_ctrl_impl::bypass_adc_buffers(bool bypass) {
     _ad9862_regs.byp_buffer_a = bypass;
