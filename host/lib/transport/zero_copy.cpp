@@ -68,12 +68,12 @@ phony_zero_copy_recv_if::~phony_zero_copy_recv_if(void){
     /* NOP */
 }
 
-managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(void){
+managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(size_t timeout_ms){
     //allocate memory
     boost::uint8_t *recv_mem = new boost::uint8_t[_impl->max_buff_size];
 
     //call recv() with timeout option
-    ssize_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size));
+    ssize_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size), timeout_ms);
 
     if (num_bytes <= 0) return managed_recv_buffer::sptr(); //NULL sptr
 

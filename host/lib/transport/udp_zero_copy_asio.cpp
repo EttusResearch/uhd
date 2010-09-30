@@ -35,7 +35,6 @@ static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(sizeof(boost::uint32_t) * 2
 //Perhaps this is due to the kernel scheduling,
 //but may change with host-based flow control.
 static const size_t MIN_SEND_SOCK_BUFF_SIZE = size_t(10e3);
-static const double RECV_TIMEOUT = 0.1; //100 ms
 
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
@@ -110,11 +109,11 @@ private:
     boost::asio::io_service        _io_service;
     int                            _sock_fd;
 
-    ssize_t recv(const boost::asio::mutable_buffer &buff){
+    ssize_t recv(const boost::asio::mutable_buffer &buff, size_t timeout_ms){
         //setup timeval for timeout
         timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = int(RECV_TIMEOUT*1e6);
+        tv.tv_usec = timeout_ms*1000;
 
         //setup rset for timeout
         fd_set rset;
