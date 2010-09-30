@@ -16,6 +16,7 @@
 //
 
 #include "libusb1_base.hpp"
+#include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/weak_ptr.hpp>
@@ -23,6 +24,7 @@
 #include <boost/thread.hpp>
 #include <iostream>
 
+using namespace uhd;
 using namespace uhd::transport;
 
 /***********************************************************************
@@ -52,6 +54,7 @@ private:
     bool _running;
 
     void run_event_loop(void){
+        set_thread_priority_safe();
         _running = true;
         timeval tv;
         while(_running){
