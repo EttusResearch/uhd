@@ -33,6 +33,7 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
+static const double RECV_TIMEOUT_MS = 100;
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -90,7 +91,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     size_t next_packet_seq = 0;
 
     while(recv_pirate_crew_raiding){
-        managed_recv_buffer::sptr buff = zc_if->get_recv_buff();
+        managed_recv_buffer::sptr buff = zc_if->get_recv_buff(RECV_TIMEOUT_MS);
         if (not buff.get()) continue; //ignore timeout/error buffers
 
         try{
@@ -150,7 +151,7 @@ void usrp2_impl::io_init(void){
         std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
         //drain the recv buffers (may have junk)
-        while (data_transport->get_recv_buff().get());
+        while (data_transport->get_recv_buff(RECV_TIMEOUT_MS).get()){};
     }
 
     //the number of recv frames is the number for the first transport

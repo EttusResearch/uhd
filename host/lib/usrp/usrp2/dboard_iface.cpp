@@ -61,6 +61,7 @@ public:
     double get_clock_rate(unit_t);
     std::vector<double> get_clock_rates(unit_t);
     void set_clock_enabled(unit_t, bool);
+    double get_codec_rate(unit_t);
 
     void write_spi(
         unit_t unit,
@@ -158,6 +159,9 @@ void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
     }
 }
 
+double usrp2_dboard_iface::get_codec_rate(unit_t){
+    return _clock_ctrl->get_master_clock_rate();
+}
 /***********************************************************************
  * GPIO
  **********************************************************************/

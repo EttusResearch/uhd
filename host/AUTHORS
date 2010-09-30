@@ -24,6 +24,7 @@ Tom Tsou - ttsou@vt.edu
     USRP1 host code
     USRP1 firmware
 
-Nick Foster - nick@nerdnetworks.org
+Nick Foster - nick@ettus.com
     LIBUSB host code
     USRP1 host code
+    TVRX host code

@@ -122,9 +122,10 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new receive buffer from this transport object.
+         * \param timeout_ms the timeout to get the buffer in ms
          * \return a managed buffer, or null sptr on timeout/error
          */
-        virtual managed_recv_buffer::sptr get_recv_buff(void) = 0;
+        virtual managed_recv_buffer::sptr get_recv_buff(size_t timeout_ms) = 0;
 
         /*!
          * Get the maximum number of receive frames:
@@ -171,16 +172,19 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new receive buffer from this transport object.
+         * \param timeout_ms the timeout to get the buffer in ms
+         * \return a managed buffer, or null sptr on timeout/error
          */
-        managed_recv_buffer::sptr get_recv_buff(void);
+        managed_recv_buffer::sptr get_recv_buff(size_t timeout_ms);
 
     private:
         /*!
          * Perform a private copying recv.
          * \param buff the buffer to write data into
+         * \param timeout_ms the timeout to get the buffer in ms
          * \return the number of bytes written to buff, 0 for timeout, negative for error
          */
-        virtual ssize_t recv(const boost::asio::mutable_buffer &buff) = 0;
+        virtual ssize_t recv(const boost::asio::mutable_buffer &buff, size_t timeout_ms) = 0;
 
         UHD_PIMPL_DECL(impl) _impl;
     };
@@ -204,6 +208,7 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new send buffer from this transport object.
+         * \return a managed buffer, or null sptr on timeout/error
          */
         managed_send_buffer::sptr get_send_buff(void);
 

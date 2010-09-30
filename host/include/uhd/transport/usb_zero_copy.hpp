@@ -45,16 +45,22 @@ public:
      * The underlying implementation may be platform specific.
      *
      * \param handle a device handle that uniquely identifying the device
-     * \param rx_endpoint an integer specifiying an IN endpoint number 
-     * \param tx_endpoint an integer specifiying an OUT endpoint number
-     * \param buff_size total number of bytes of buffer space to allocate 
-     * \param block_size number of bytes allocated for each I/O transaction 
+     * \param recv_endpoint an integer specifiying an IN endpoint number
+     * \param send_endpoint an integer specifiying an OUT endpoint number
+     * \param recv_xfer_size the number of bytes for each receive transfer
+     * \param recv_num_xfers the number of simultaneous receive transfers
+     * \param send_xfer_size the number of bytes for each send transfer
+     * \param send_num_xfers the number of simultaneous send transfers
      */
-    static sptr make(usb_device_handle::sptr handle,
-                     unsigned int rx_endpoint,
-                     unsigned int tx_endpoint,
-                     size_t buff_size = 0,
-                     size_t block_size = 0);
+    static sptr make(
+        usb_device_handle::sptr handle,
+        unsigned int recv_endpoint,
+        unsigned int send_endpoint,
+        size_t recv_xfer_size = 0,
+        size_t recv_num_xfers = 0,
+        size_t send_xfer_size = 0,
+        size_t send_num_xfers = 0
+    );
 };
 
 }} //namespace

@@ -242,6 +242,15 @@ public:
      * \param enb true for enabled
      */
     virtual void set_clock_enabled(unit_t unit, bool enb) = 0;
+
+    /*!
+     * Get the rate of the codec.
+     * For rx, this is the rate the ADC feeds the DSP.
+     * For tx, this is the rate the DSP feeds the DAC.
+     * \param unit which unit rx or tx
+     * \return the codec rate in Hz
+     */
+    virtual double get_codec_rate(unit_t unit) = 0;
 };
 
 }} //namespace
