@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/simple_usrp.hpp>
+#include <uhd/usrp/single_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -31,13 +31,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    float seconds;
+    double seconds;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
+        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -52,7 +52,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
+    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
@@ -60,20 +60,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << "Set time to known value (100.0) without regard to pps:" << std::endl;
     sdev->set_time_now(uhd::time_spec_t(100.0));
     boost::this_thread::sleep(boost::posix_time::seconds(1));
-    std::cout << boost::format("Reading time 1 second later: %f\n") % (sdev->get_time_now().get_full_secs()) << std::endl;
+    std::cout << boost::format("Reading time 1 second later: %f\n") % (sdev->get_time_now().get_real_secs()) << std::endl;
 
     //store the time to see if PPS resets it
-    seconds = sdev->get_time_now().get_full_secs();
+    seconds = sdev->get_time_now().get_real_secs();
 
     //set a known time at next PPS, check that time increments
     uhd::time_spec_t time_spec = uhd::time_spec_t(0.0);
     std::cout << "Set time to known value (0.0) at next pps:" << std::endl;
     sdev->set_time_next_pps(time_spec);
     boost::this_thread::sleep(boost::posix_time::seconds(1));
-    std::cout << boost::format("Reading time 1 second later: %f\n") % (sdev->get_time_now().get_full_secs()) << std::endl;
+    std::cout << boost::format("Reading time 1 second later: %f\n") % (sdev->get_time_now().get_real_secs()) << std::endl;
 
     //finished
-    if (seconds > sdev->get_time_now().get_full_secs()){
+    if (seconds > sdev->get_time_now().get_real_secs()){
         std::cout << std::endl << "Success!" << std::endl << std::endl;
         return 0;
     } else {

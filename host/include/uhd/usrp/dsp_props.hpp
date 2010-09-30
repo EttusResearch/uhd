@@ -37,11 +37,12 @@ namespace uhd{ namespace usrp{
      *   Set the shift property and read it back to get actual shift.
      */
     enum dsp_prop_t{
-        DSP_PROP_NAME         = 'n', //ro, std::string
-        DSP_PROP_OTHERS       = 'o', //ro, prop_names_t
-        DSP_PROP_FREQ_SHIFT   = 'f', //rw, double Hz
-        DSP_PROP_CODEC_RATE   = 'c', //ro, double Sps
-        DSP_PROP_HOST_RATE    = 'h'  //rw, double Sps
+        DSP_PROP_NAME              = 'n', //ro, std::string
+        DSP_PROP_OTHERS            = 'o', //ro, prop_names_t
+        DSP_PROP_FREQ_SHIFT        = 'f', //rw, double Hz
+        DSP_PROP_FREQ_SHIFT_NAMES  = 'F', //ro, prop_names_t
+        DSP_PROP_CODEC_RATE        = 'c', //ro, double Sps
+        DSP_PROP_HOST_RATE         = 'h'  //rw, double Sps
     };
 
 }} //namespace

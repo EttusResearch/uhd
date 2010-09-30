@@ -21,6 +21,7 @@
 #include "usrp2_clk_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
+#include <iostream>
 
 using namespace uhd;
 
@@ -70,12 +71,60 @@ public:
         this->enable_dac_clock(true);
         this->enable_adc_clock(true);
 
+        /* always driving the mimo reference */
+        this->enable_mimo_clock_out(true);
     }
 
     ~usrp2_clock_ctrl_impl(void){
-        /* private clock enables, must be set here */
+        //power down clock outputs
+        this->enable_external_ref(false);
+        this->enable_rx_dboard_clock(false);
+        this->enable_tx_dboard_clock(false);
         this->enable_dac_clock(false);
         this->enable_adc_clock(false);
+        this->enable_mimo_clock_out(false);
+    }
+
+    void enable_mimo_clock_out(bool enb){
+        //FIXME TODO put this revision read in a common place
+        boost::uint8_t rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
+
+        //calculate the low and high dividers
+        size_t divider = size_t(this->get_master_clock_rate()/10e6);
+        size_t high = divider/2;
+        size_t low = divider - high;
+
+        switch(rev_hi){
+        case 3: //clock 2
+            _ad9510_regs.power_down_lvpecl_out2 = enb?
+                ad9510_regs_t::POWER_DOWN_LVPECL_OUT2_NORMAL :
+                ad9510_regs_t::POWER_DOWN_LVPECL_OUT2_SAFE_PD;
+            _ad9510_regs.output_level_lvpecl_out2 = ad9510_regs_t::OUTPUT_LEVEL_LVPECL_OUT2_810MV;
+            //set the registers (divider - 1)
+            _ad9510_regs.divider_low_cycles_out2 = low - 1;
+            _ad9510_regs.divider_high_cycles_out2 = high - 1;
+            _ad9510_regs.bypass_divider_out2 = 0;
+            this->write_reg(0x3e);
+            this->write_reg(0x4c);
+            break;
+
+        case 4: //clock 5
+            _ad9510_regs.power_down_lvds_cmos_out5 = enb? 0 : 1;
+            _ad9510_regs.lvds_cmos_select_out5 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT5_LVDS;
+            _ad9510_regs.output_level_lvds_out5 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT5_1_75MA;
+            //set the registers (divider - 1)
+            _ad9510_regs.divider_low_cycles_out5 = low - 1;
+            _ad9510_regs.divider_high_cycles_out5 = high - 1;
+            _ad9510_regs.bypass_divider_out5 = 0;
+            this->write_reg(0x41);
+            this->write_reg(0x52);
+            break;
+
+        //TODO FIXME do i want to throw, what about uninitialized boards?
+        //default: throw std::runtime_error("unknown rev hi in mboard eeprom");
+        default: std::cerr << "unknown rev hi: " << rev_hi << std::endl;
+        }
+        this->update_regs();
     }
 
     //uses output clock 7 (cmos)

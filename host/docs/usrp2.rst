@@ -174,7 +174,7 @@ buffer incoming samples faster than they can be processed.
 However, if you application cannot process samples fast enough,
 no amount of buffering can save you.
 
-By default, the UHD will try to request a reasonably large buffer size for both send and receive.
+By default, the UHD will try to resize both the send and receive buffer for optimum performance.
 A warning will be printed on instantiation if the actual buffer size is insufficient.
 See the OS specific notes below:
 
@@ -201,7 +201,7 @@ Each parameter will accept a numeric value for the number of bytes.
 * recv_buff_size
 * send_buff_size
 
-Example, set the args string to the following:
+Example usage, set the device address markup string to the following:
 ::
 
     addr=192.168.10.2, recv_buff_size=100e6
@@ -209,6 +209,20 @@ Example, set the args string to the following:
 ------------------------------------------------------------------------
 Hardware setup notes
 ------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Front panel LEDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The LEDs on the front panel can be useful in debugging hardware and software issues.
+The LEDs reveal the following about the state of the device:
+
+* **LED A:** transmitting
+* **LED B:** undocumented
+* **LED C:** receiving
+* **LED D:** firmware loaded
+* **LED E:** undocumented
+* **LED F:** FPGA loaded
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Ref Clock - 10MHz

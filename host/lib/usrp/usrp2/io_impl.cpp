@@ -150,7 +150,8 @@ void usrp2_impl::io_init(void){
         std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
         //drain the recv buffers (may have junk)
-        while (data_transport->get_recv_buff().get()){;}
+
+        while (data_transport->get_recv_buff().get()){};
     }
 
     //the number of recv frames is the number for the first transport
@@ -189,7 +190,7 @@ bool usrp2_impl::recv_async_msg(
 /***********************************************************************
  * Send Data
  **********************************************************************/
-bool get_send_buffs(
+static bool get_send_buffs(
     const std::vector<udp_zero_copy::sptr> &trans,
     vrt_packet_handler::managed_send_buffs_t &buffs
 ){

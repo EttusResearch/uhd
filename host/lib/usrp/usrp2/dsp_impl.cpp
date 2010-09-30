@@ -56,7 +56,9 @@ void usrp2_mboard_impl::init_ddc_config(void){
 /***********************************************************************
  * DDC Properties
  **********************************************************************/
-void usrp2_mboard_impl::ddc_get(const wax::obj &key, wax::obj &val){
+void usrp2_mboard_impl::ddc_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
         val = std::string("usrp2 ddc0");
@@ -68,6 +70,10 @@ void usrp2_mboard_impl::ddc_get(const wax::obj &key, wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:
         val = _ddc_freq;
+        return;
+
+    case DSP_PROP_FREQ_SHIFT_NAMES:
+        val = prop_names_t(1, "");
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -82,7 +88,9 @@ void usrp2_mboard_impl::ddc_get(const wax::obj &key, wax::obj &val){
     }
 }
 
-void usrp2_mboard_impl::ddc_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{
@@ -131,7 +139,9 @@ void usrp2_mboard_impl::init_duc_config(void){
 /***********************************************************************
  * DUC Properties
  **********************************************************************/
-void usrp2_mboard_impl::duc_get(const wax::obj &key, wax::obj &val){
+void usrp2_mboard_impl::duc_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
         val = std::string("usrp2 duc0");
@@ -143,6 +153,10 @@ void usrp2_mboard_impl::duc_get(const wax::obj &key, wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:
         val = _duc_freq;
+        return;
+
+    case DSP_PROP_FREQ_SHIFT_NAMES:
+        val = prop_names_t(1, "");
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -157,7 +171,9 @@ void usrp2_mboard_impl::duc_get(const wax::obj &key, wax::obj &val){
     }
 }
 
-void usrp2_mboard_impl::duc_set(const wax::obj &key, const wax::obj &val){
+void usrp2_mboard_impl::duc_set(const wax::obj &key_, const wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{
