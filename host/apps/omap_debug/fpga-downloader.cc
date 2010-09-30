@@ -97,15 +97,17 @@ gpio::gpio(unsigned int gpio_num, gpio_direction pin_direction)
 	std::fstream direction_file;
 	std::string direction_file_name;
 
-	direction_file_name = base_path.str() + "/direction";
+	if (gpio_num != 114) {
+		direction_file_name = base_path.str() + "/direction";
 
-	direction_file.open(direction_file_name.c_str()); 
-	if (!direction_file.is_open())
-		std::cout << "Failed to open direction file." << std::endl;
-	if (pin_direction == OUT)
-		direction_file << "out" << std::endl;
-	else
-		direction_file << "in" << std::endl;
+		direction_file.open(direction_file_name.c_str()); 
+		if (!direction_file.is_open())
+			std::cout << "Failed to open direction file." << std::endl;
+		if (pin_direction == OUT)
+			direction_file << "out" << std::endl;
+		else
+			direction_file << "in" << std::endl;
+	}
 
 	std::string value_file_name;
 
