@@ -412,7 +412,7 @@ module u2_rev3
    defparam DCM_INST1.DLL_FREQUENCY_MODE = "LOW";
    defparam DCM_INST1.DUTY_CYCLE_CORRECTION = "TRUE";
    defparam DCM_INST1.FACTORY_JF = 16'h8080;
-   defparam DCM_INST1.PHASE_SHIFT = -12;
+   defparam DCM_INST1.PHASE_SHIFT = -64;
    defparam DCM_INST1.STARTUP_WAIT = "FALSE";
    
    IBUFG RAM_CLK_buf_i1 (.I(RAM_CLK), 
