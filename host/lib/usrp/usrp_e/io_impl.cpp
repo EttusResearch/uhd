@@ -39,6 +39,7 @@ static const size_t MAX_BUFF_SIZE = 2048;
 static const bool usrp_e_io_impl_verbose = false;
 static const size_t tx_async_report_sid = 1;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
+static const double recv_timeout_ms = 100;
 
 /***********************************************************************
  * Data Transport (phony zero-copy with read/write)
@@ -74,7 +75,7 @@ private:
             boost::asio::buffer_size(buff)
         );
     }
-    ssize_t recv(const boost::asio::mutable_buffer &buff){
+    ssize_t recv(const boost::asio::mutable_buffer &buff, size_t to_ms){
         //std::cout << boost::format(
         //    "calling read on fd %d, buff size is %d"
         //) % _fd % boost::asio::buffer_size(buff) << std::endl;
@@ -84,7 +85,7 @@ private:
         pollfd pfd;
         pfd.fd = _fd;
         pfd.events = POLLIN;
-        ssize_t poll_ret = poll(&pfd, 1, 100/*ms*/);
+        ssize_t poll_ret = poll(&pfd, 1, to_ms);
         if (poll_ret <= 0){
             if (usrp_e_io_impl_verbose) std::cerr << boost::format(
                 "usrp-e io impl recv(): poll() returned non-positive value: %d\n"
@@ -170,7 +171,7 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
     //size_t next_packet_seq = 0;
 
     while(recv_pirate_crew_raiding){
-        managed_recv_buffer::sptr buff = this->transport.get_recv_buff();
+        managed_recv_buffer::sptr buff = this->transport.get_recv_buff(recv_timeout_ms);
         if (not buff.get()) continue; //ignore timeout/error buffers
 
         try{
@@ -262,7 +263,7 @@ bool get_send_buffs(
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
     buffs[0] = trans->get_send_buff();
-    return buffs[0].get();
+    return buffs[0].get() != NULL;
 }
 
 size_t usrp_e_impl::send(
@@ -292,15 +293,6 @@ size_t usrp_e_impl::send(
 /***********************************************************************
  * Data Recv
  **********************************************************************/
-bool get_recv_buffs(
-    data_transport *trans,
-    vrt_packet_handler::managed_recv_buffs_t &buffs
-){
-    UHD_ASSERT_THROW(buffs.size() == 1);
-    buffs[0] = trans->get_recv_buff();
-    return buffs[0].get();
-}
-
 size_t usrp_e_impl::recv(
     const std::vector<void *> &buffs,
     size_t num_samps,
