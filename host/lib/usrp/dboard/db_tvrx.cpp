@@ -373,11 +373,29 @@ void tvrx::set_freq(double freq) {
 }
 
 /***********************************************************************
+ * Get the alias frequency of frequency freq when sampled at fs.
+ * \param freq the frequency of interest
+ * \param fs the sample rate
+ * \return the alias frequency
+ **********************************************************************/
+
+static double get_alias(double freq, double fs) {
+    double alias;
+    freq = fmod(freq, fs);
+    if(freq >= (fs/2)) {
+        alias = fs - freq;
+    } else {
+        alias = freq;
+    }
+    return alias;
+}
+
+/***********************************************************************
  * RX Get and Set
  **********************************************************************/
 void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
-    int codec_rate;
+    double codec_rate;
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -410,9 +428,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
      * or if it will fall within Nyquist.
      */
         codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
-        if(codec_rate/2 > tvrx_if_freq) val = _lo_freq;
-        //ok take a deep breath i am positive there is an easier way to get this number
-        else val = _lo_freq - tvrx_if_freq - (tvrx_if_freq-codec_rate)*int(tvrx_if_freq / (codec_rate/2));
+        val = (_lo_freq - tvrx_if_freq) + get_alias(tvrx_if_freq, codec_rate);
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
