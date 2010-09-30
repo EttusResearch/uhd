@@ -61,6 +61,9 @@ public:
     float get_tx_pga_gain(void);
     void set_rx_pga_gain(float, char);
     float get_rx_pga_gain(char);
+    
+    //rx adc buffer control
+    void bypass_adc_buffers(bool bypass);
 
 private:
     usrp1_iface::sptr _iface;
@@ -416,6 +419,17 @@ void usrp1_codec_ctrl_impl::set_duc_freq(double freq)
     this->send_reg(21);
     this->send_reg(22);
     this->send_reg(23);
+}
+
+/***********************************************************************
+ * Codec Control ADC buffer bypass
+ * Disable this for AC-coupled daughterboards (TVRX)
+ * By default it is initialized TRUE.
+ **********************************************************************/
+void usrp1_codec_ctrl_impl::bypass_adc_buffers(bool bypass) {
+    _ad9862_regs.byp_buffer_a = bypass;
+    _ad9862_regs.byp_buffer_b = bypass;
+    this->send_reg(2);
 }
 
 /***********************************************************************
