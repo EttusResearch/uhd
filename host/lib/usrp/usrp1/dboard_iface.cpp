@@ -93,6 +93,7 @@ public:
     std::vector<double> get_clock_rates(unit_t);
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
+    double get_codec_rate(unit_t);
 
 private:
     usrp1_iface::sptr _iface;
@@ -168,6 +169,10 @@ double usrp1_dboard_iface::get_clock_rate(unit_t unit)
 void usrp1_dboard_iface::set_clock_enabled(unit_t, bool)
 {
     //TODO we can only enable for special case anyway...
+}
+
+double usrp1_dboard_iface::get_codec_rate(unit_t){
+    return _clock->get_master_clock_freq();
 }
 
 /***********************************************************************
