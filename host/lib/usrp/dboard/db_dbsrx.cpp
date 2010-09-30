@@ -551,6 +551,10 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -586,6 +590,9 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_GAIN:
         this->set_gain(val.as<float>(), key.name);
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
         this->set_bandwidth(val.as<float>());
