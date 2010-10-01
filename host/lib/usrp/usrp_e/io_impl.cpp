@@ -22,8 +22,6 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include "../../transport/vrt_packet_handler.hpp"
 #include <boost/bind.hpp>
-#include <fcntl.h> //read, write
-#include <poll.h>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
 #include <iostream>
@@ -32,89 +30,14 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
+zero_copy_if::sptr usrp_e_make_mmap_zero_copy(usrp_e_iface::sptr iface);
+
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const size_t MAX_BUFF_SIZE = 2048;
-static const bool usrp_e_io_impl_verbose = false;
 static const size_t tx_async_report_sid = 1;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
 static const double recv_timeout_ms = 100;
-
-/***********************************************************************
- * Data Transport (phony zero-copy with read/write)
- **********************************************************************/
-class data_transport:
-    public transport::phony_zero_copy_recv_if,
-    public transport::phony_zero_copy_send_if
-{
-public:
-    data_transport(int fd):
-        transport::phony_zero_copy_recv_if(MAX_BUFF_SIZE),
-        transport::phony_zero_copy_send_if(MAX_BUFF_SIZE),
-        _fd(fd)
-    {
-        /* NOP */
-    }
-
-    size_t get_num_recv_frames(void) const{
-        return 100; //FIXME no idea!
-        //this will be an important number when packet ring gets implemented
-    }
-
-    size_t get_num_send_frames(void) const{
-        return 100; //FIXME no idea!
-        //this will be an important number when packet ring gets implemented
-    }
-
-private:
-    int _fd;
-    ssize_t send(const boost::asio::const_buffer &buff){
-        return write(_fd,
-            boost::asio::buffer_cast<const void *>(buff),
-            boost::asio::buffer_size(buff)
-        );
-    }
-    ssize_t recv(const boost::asio::mutable_buffer &buff, size_t to_ms){
-        //std::cout << boost::format(
-        //    "calling read on fd %d, buff size is %d"
-        //) % _fd % boost::asio::buffer_size(buff) << std::endl;
-
-        //setup and call poll on the file descriptor
-        //return 0 and do not read when poll times out
-        pollfd pfd;
-        pfd.fd = _fd;
-        pfd.events = POLLIN;
-        ssize_t poll_ret = poll(&pfd, 1, to_ms);
-        if (poll_ret <= 0){
-            if (usrp_e_io_impl_verbose) std::cerr << boost::format(
-                "usrp-e io impl recv(): poll() returned non-positive value: %d\n"
-                "    -> return 0 for timeout"
-            ) % poll_ret << std::endl;
-            return 0; //timeout
-        }
-
-        //perform the blocking read(...)
-        ssize_t read_ret = read(_fd,
-            boost::asio::buffer_cast<void *>(buff),
-            boost::asio::buffer_size(buff)
-        );
-        if (read_ret < 0){
-            if (usrp_e_io_impl_verbose) std::cerr << boost::format(
-                "usrp-e io impl recv(): read() returned small value: %d\n"
-                "    -> return -1 for error"
-            ) % read_ret << std::endl;
-            return -1;
-        }
-
-        //std::cout << "len " << int(read_ret) << std::endl;
-        //for (size_t i = 0; i < 9; i++){
-        //    std::cout << boost::format("    0x%08x") % boost::asio::buffer_cast<boost::uint32_t *>(buff)[i] << std::endl;
-        //}
-
-        return read_ret;
-    }
-};
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -127,11 +50,11 @@ struct usrp_e_impl::io_impl{
     //state management for the vrt packet handler code
     vrt_packet_handler::recv_state packet_handler_recv_state;
     vrt_packet_handler::send_state packet_handler_send_state;
-    data_transport transport;
+    zero_copy_if::sptr data_xport;
     bool continuous_streaming;
-    io_impl(int fd):
-        transport(fd),
-        recv_pirate_booty(recv_booty_type::make(transport.get_num_recv_frames())),
+    io_impl(usrp_e_iface::sptr iface):
+        data_xport(usrp_e_make_mmap_zero_copy(iface)),
+        recv_pirate_booty(recv_booty_type::make(data_xport->get_num_recv_frames())),
         async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
     {
         /* NOP */
@@ -171,7 +94,7 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
     //size_t next_packet_seq = 0;
 
     while(recv_pirate_crew_raiding){
-        managed_recv_buffer::sptr buff = this->transport.get_recv_buff(recv_timeout_ms);
+        managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff(recv_timeout_ms);
         if (not buff.get()) continue; //ignore timeout/error buffers
 
         try{
@@ -229,7 +152,7 @@ void usrp_e_impl::io_init(void){
     _iface->poke32(UE_REG_CTRL_TX_REPORT_SID, tx_async_report_sid);
     _iface->poke32(UE_REG_CTRL_TX_POLICY, UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET);
 
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface->get_file_descriptor()));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface));
 
     //spawn a pirate, yarrr!
     _io_impl->recv_pirate_crew.create_thread(boost::bind(
@@ -258,7 +181,7 @@ void usrp_e_impl::handle_overrun(size_t){
  * Data Send
  **********************************************************************/
 bool get_send_buffs(
-    data_transport *trans,
+    zero_copy_if::sptr trans,
     vrt_packet_handler::managed_send_buffs_t &buffs
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
@@ -285,7 +208,7 @@ size_t usrp_e_impl::send(
         io_type, send_otw_type,                    //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_le,
-        boost::bind(&get_send_buffs, &_io_impl->transport, _1),
+        boost::bind(&get_send_buffs, _io_impl->data_xport, _1),
         get_max_send_samps_per_packet()
     );
 }
