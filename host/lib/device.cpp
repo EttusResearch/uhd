@@ -26,6 +26,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <stdexcept>
+#include <iostream>
 
 using namespace uhd;
 
@@ -73,12 +74,17 @@ device_addrs_t device::find(const device_addr_t &hint){
     device_addrs_t device_addrs;
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
-        device_addrs_t discovered_addrs = fcn.get<0>()(hint);
-        device_addrs.insert(
-            device_addrs.begin(),
-            discovered_addrs.begin(),
-            discovered_addrs.end()
-        );
+        try{
+            device_addrs_t discovered_addrs = fcn.get<0>()(hint);
+            device_addrs.insert(
+                device_addrs.begin(),
+                discovered_addrs.begin(),
+                discovered_addrs.end()
+            );
+        }
+        catch(const std::exception &e){
+            std::cerr << "Device discovery error: " << e.what() << std::endl;
+        }
     }
 
     return device_addrs;
