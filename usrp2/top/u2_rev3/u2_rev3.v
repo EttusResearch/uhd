@@ -330,8 +330,8 @@ module u2_rev3
    wire [15:0] dac_a_int, dac_b_int;
    // DAC A and B are swapped in schematic to facilitate clean layout
    // DAC A is also inverted in schematic to facilitate clean layout
-   always @(negedge dsp_clk) dac_a <= ~dac_b_int;
-   always @(negedge dsp_clk) dac_b <= dac_a_int;
+   always @(posedge dsp_clk) dac_a <= ~dac_b_int;
+   always @(posedge dsp_clk) dac_b <= dac_a_int;
 
    /*
    OFDDRRSE OFDDRRSE_serdes_inst 
