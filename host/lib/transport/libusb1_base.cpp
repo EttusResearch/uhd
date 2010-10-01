@@ -35,7 +35,9 @@ public:
     libusb_session_impl(void){
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
         libusb_set_debug(_context, debug_level);
+        _mutex.lock();
         _thread_group.create_thread(boost::bind(&libusb_session_impl::run_event_loop, this));
+        _mutex.lock();
     }
 
     ~libusb_session_impl(void){
@@ -52,11 +54,13 @@ private:
     libusb_context *_context;
     boost::thread_group _thread_group;
     bool _running;
+    boost::mutex _mutex;
 
     void run_event_loop(void){
         set_thread_priority_safe();
         _running = true;
         timeval tv;
+        _mutex.unlock();
         while(_running){
             tv.tv_sec = 0;
             tv.tv_usec = 100000; //100ms
