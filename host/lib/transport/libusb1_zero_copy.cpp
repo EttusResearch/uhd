@@ -24,12 +24,10 @@
 #include <boost/thread.hpp>
 #include <vector>
 #include <iostream>
-#include <iomanip>
 
 using namespace uhd::transport;
 
-const int libusb_timeout = 0;
-
+static const double CLEANUP_TIMEOUT   = 0.2;    //seconds
 static const size_t DEFAULT_NUM_XFERS = 16;     //num xfers
 static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
 
@@ -84,10 +82,10 @@ public:
      * Get an available transfer:
      * For inputs, this is a just filled transfer.
      * For outputs, this is a just emptied transfer.
-     * \param timeout_ms the timeout to wait for a lut
+     * \param timeout the timeout to wait for a lut
      * \return the transfer pointer or NULL if timeout
      */
-    libusb_transfer *get_lut_with_wait(size_t timeout_ms = 100);
+    libusb_transfer *get_lut_with_wait(double timeout);
 
     //Callback use only
     void callback_handle_transfer(libusb_transfer *lut);
@@ -187,7 +185,7 @@ usb_endpoint::~usb_endpoint(void){
     }
 
     //collect canceled transfers (drain the queue)
-    while (this->get_lut_with_wait() != NULL){};
+    while (this->get_lut_with_wait(CLEANUP_TIMEOUT) != NULL){};
 
     //free all transfers
     BOOST_FOREACH(libusb_transfer *lut, _all_luts){
@@ -274,12 +272,10 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut){
     }
 }
 
-libusb_transfer *usb_endpoint::get_lut_with_wait(size_t timeout_ms){
+libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
     boost::this_thread::disable_interruption di; //disable because the wait can throw
     libusb_transfer *lut;
-    if (_completed_list->pop_with_timed_wait(
-        lut, boost::posix_time::milliseconds(timeout_ms)
-    )) return lut;
+    if (_completed_list->pop_with_timed_wait(lut, timeout)) return lut;
     return NULL;
 }
 
@@ -399,8 +395,8 @@ public:
         size_t send_xfer_size, size_t send_num_xfers
     );
 
-    managed_recv_buffer::sptr get_recv_buff(size_t timeout_ms);
-    managed_send_buffer::sptr get_send_buff(void);
+    managed_recv_buffer::sptr get_recv_buff(double);
+    managed_send_buffer::sptr get_send_buff(double);
 
     size_t get_num_recv_frames(void) const { return _recv_num_frames; }
     size_t get_num_send_frames(void) const { return _send_num_frames; }
@@ -459,8 +455,8 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
  * Return empty pointer if no transfer is available (timeout or error).
  * \return pointer to a managed receive buffer
  */
-managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(size_t timeout_ms){
-    libusb_transfer *lut = _recv_ep->get_lut_with_wait(timeout_ms);
+managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(double timeout){
+    libusb_transfer *lut = _recv_ep->get_lut_with_wait(timeout);
     if (lut == NULL) {
         return managed_recv_buffer::sptr();
     }
@@ -478,8 +474,8 @@ managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(size_t timeout_ms
  * (timeout or error).
  * \return pointer to a managed send buffer
  */
-managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(void){
-    libusb_transfer *lut = _send_ep->get_lut_with_wait(/* TODO timeout API */);
+managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(double timeout){
+    libusb_transfer *lut = _send_ep->get_lut_with_wait(timeout);
     if (lut == NULL) {
         return managed_send_buffer::sptr();
     }
@@ -494,18 +490,18 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(void){
  * USB zero_copy make functions
  **********************************************************************/
 usb_zero_copy::sptr usb_zero_copy::make(
-	usb_device_handle::sptr handle,
+    usb_device_handle::sptr handle,
     unsigned int recv_endpoint, unsigned int send_endpoint,
-	size_t recv_xfer_size, size_t recv_num_xfers,
-	size_t send_xfer_size, size_t send_num_xfers
+    size_t recv_xfer_size, size_t recv_num_xfers,
+    size_t send_xfer_size, size_t send_num_xfers
 ){
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
         boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
     ));
     return sptr(new libusb_zero_copy_impl(
-		dev_handle,
-		recv_endpoint,  send_endpoint,
-		recv_xfer_size, recv_num_xfers,
-		send_xfer_size, send_num_xfers
+        dev_handle,
+        recv_endpoint,  send_endpoint,
+        recv_xfer_size, recv_num_xfers,
+        send_xfer_size, send_num_xfers
     ));
 }

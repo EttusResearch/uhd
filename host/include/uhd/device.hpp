@@ -41,9 +41,6 @@ public:
     typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
     typedef boost::function<sptr(const device_addr_t &)> make_t;
 
-    //! A reasonable default timeout for receive
-    static const size_t default_recv_timeout_ms = 100;
-
     /*!
      * Register a device into the discovery and factory system.
      *
@@ -112,12 +109,15 @@ public:
      *
      * This is a blocking call and will not return until the number
      * of samples returned have been read out of each buffer.
+     * Under a timeout condition, the number of samples returned
+     * may be less than the number of samples specified.
      *
      * \param buffs a vector of read-only memory containing IF data
      * \param nsamps_per_buff the number of samples to send, per buffer
      * \param metadata data describing the buffer's contents
      * \param io_type the type of data loaded in the buffer
      * \param send_mode tells send how to unload the buffer
+     * \param timeout the timeout in seconds to wait on a packet
      * \return the number of samples sent
      */
     virtual size_t send(
@@ -125,7 +125,8 @@ public:
         size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
-        send_mode_t send_mode
+        send_mode_t send_mode,
+        double timeout = 0.1
     ) = 0;
 
     /*!
@@ -136,7 +137,8 @@ public:
         size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
-        send_mode_t send_mode
+        send_mode_t send_mode,
+        double timeout = 0.1
     );
 
     /*!
@@ -154,7 +156,9 @@ public:
      * See the rx metadata fragment flags and offset fields for details.
      *
      * This is a blocking call and will not return until the number
-     * of samples returned have been written into each buffer or timeout.
+     * of samples returned have been written into each buffer.
+     * Under a timeout condition, the number of samples returned
+     * may be less than the number of samples specified.
      *
      * When using the full buffer recv mode, the metadata only applies
      * to the first packet received and written into the recv buffers.
@@ -165,7 +169,7 @@ public:
      * \param metadata data to fill describing the buffer
      * \param io_type the type of data to fill into the buffer
      * \param recv_mode tells recv how to load the buffer
-     * \param timeout_ms the timeout in milliseconds to wait for a packet
+     * \param timeout the timeout in seconds to wait for a packet
      * \return the number of samples received or 0 on error
      */
     virtual size_t recv(
@@ -174,7 +178,7 @@ public:
         rx_metadata_t &metadata,
         const io_type_t &io_type,
         recv_mode_t recv_mode,
-        size_t timeout_ms = default_recv_timeout_ms
+        double timeout = 0.1
     ) = 0;
 
     /*!
@@ -186,7 +190,7 @@ public:
         rx_metadata_t &metadata,
         const io_type_t &io_type,
         recv_mode_t recv_mode,
-        size_t timeout_ms = default_recv_timeout_ms
+        double timeout = 0.1
     );
 
     /*!
@@ -204,12 +208,11 @@ public:
     /*!
      * Receive and asynchronous message from the device.
      * \param async_metadata the metadata to be filled in
-     * \param timeout_ms the timeout in milliseconds to wait for a message
+     * \param timeout the timeout in seconds to wait for a message
      * \return true when the async_metadata is valid, false for timeout
      */
     virtual bool recv_async_msg(
-        async_metadata_t &async_metadata,
-        size_t timeout_ms = default_recv_timeout_ms
+        async_metadata_t &async_metadata, double timeout = 0.1
     ) = 0;
 
 };

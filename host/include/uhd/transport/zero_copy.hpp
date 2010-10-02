@@ -122,10 +122,10 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new receive buffer from this transport object.
-         * \param timeout_ms the timeout to get the buffer in ms
+         * \param timeout the timeout to get the buffer in seconds
          * \return a managed buffer, or null sptr on timeout/error
          */
-        virtual managed_recv_buffer::sptr get_recv_buff(size_t timeout_ms) = 0;
+        virtual managed_recv_buffer::sptr get_recv_buff(double timeout = 0.1) = 0;
 
         /*!
          * Get the maximum number of receive frames:
@@ -138,9 +138,10 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new send buffer from this transport object.
+         * \param timeout the timeout to get the buffer in seconds
          * \return a managed buffer, or null sptr on timeout/error
          */
-        virtual managed_send_buffer::sptr get_send_buff(void) = 0;
+        virtual managed_send_buffer::sptr get_send_buff(double timeout = 0.1) = 0;
 
         /*!
          * Get the maximum number of send frames:
@@ -172,19 +173,19 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new receive buffer from this transport object.
-         * \param timeout_ms the timeout to get the buffer in ms
+         * \param timeout the timeout to get the buffer in seconds
          * \return a managed buffer, or null sptr on timeout/error
          */
-        managed_recv_buffer::sptr get_recv_buff(size_t timeout_ms);
+        managed_recv_buffer::sptr get_recv_buff(double timeout);
 
     private:
         /*!
          * Perform a private copying recv.
          * \param buff the buffer to write data into
-         * \param timeout_ms the timeout to get the buffer in ms
+         * \param timeout the timeout to get the buffer in seconds
          * \return the number of bytes written to buff, 0 for timeout, negative for error
          */
-        virtual ssize_t recv(const boost::asio::mutable_buffer &buff, size_t timeout_ms) = 0;
+        virtual ssize_t recv(const boost::asio::mutable_buffer &buff, double timeout) = 0;
 
         UHD_PIMPL_DECL(impl) _impl;
     };
@@ -208,9 +209,10 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new send buffer from this transport object.
+         * \param timeout the timeout to get the buffer in seconds
          * \return a managed buffer, or null sptr on timeout/error
          */
-        managed_send_buffer::sptr get_send_buff(void);
+        managed_send_buffer::sptr get_send_buff(double timeout);
 
     private:
         /*!

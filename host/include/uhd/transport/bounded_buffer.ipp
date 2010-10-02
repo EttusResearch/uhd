@@ -21,6 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace uhd{ namespace transport{ namespace{ /*anon*/
 
@@ -57,9 +58,12 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             _empty_cond.notify_one();
         }
 
-        bool push_with_timed_wait(const elem_type &elem, const time_duration_t &time){
+        bool push_with_timed_wait(const elem_type &elem, double timeout){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            if (not _full_cond.timed_wait(lock, time, boost::bind(&bounded_buffer_impl<elem_type>::not_full, this))) return false;
+            if (not _full_cond.timed_wait(
+                lock, boost::posix_time::microseconds(long(timeout*1e6)),
+                boost::bind(&bounded_buffer_impl<elem_type>::not_full, this)
+            )) return false;
             _buffer.push_front(elem);
             lock.unlock();
             _empty_cond.notify_one();
@@ -74,9 +78,12 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             _full_cond.notify_one();
         }
 
-        bool pop_with_timed_wait(elem_type &elem, const time_duration_t &time){
+        bool pop_with_timed_wait(elem_type &elem, double timeout){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            if (not _empty_cond.timed_wait(lock, time, boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this))) return false;
+            if (not _empty_cond.timed_wait(
+                lock, boost::posix_time::microseconds(long(timeout*1e6)),
+                boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this)
+            )) return false;
             elem = _buffer.back(); _buffer.pop_back();
             lock.unlock();
             _full_cond.notify_one();

@@ -109,11 +109,11 @@ private:
     boost::asio::io_service        _io_service;
     int                            _sock_fd;
 
-    ssize_t recv(const boost::asio::mutable_buffer &buff, size_t timeout_ms){
+    ssize_t recv(const boost::asio::mutable_buffer &buff, double timeout){
         //setup timeval for timeout
         timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = timeout_ms*1000;
+        tv.tv_usec = long(timeout*1e6);
 
         //setup rset for timeout
         fd_set rset;

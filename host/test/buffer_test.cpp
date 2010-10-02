@@ -23,7 +23,7 @@
 using namespace boost::assign;
 using namespace uhd::transport;
 
-static const boost::posix_time::milliseconds timeout(10);
+static const double timeout = 0.01/*secs*/;
 
 BOOST_AUTO_TEST_CASE(test_bounded_buffer_with_timed_wait){
     bounded_buffer<int>::sptr bb(bounded_buffer<int>::make(3));

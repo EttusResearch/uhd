@@ -83,13 +83,12 @@ public:
                 size_t,
                 const uhd::tx_metadata_t &,
                 const uhd::io_type_t &,
-                send_mode_t);
+                send_mode_t, double);
 
     size_t recv(const std::vector<void *> &,
                 size_t, uhd::rx_metadata_t &,
                 const uhd::io_type_t &,
-                recv_mode_t,
-                size_t timeout);
+                recv_mode_t, double);
 
     static const size_t BYTES_PER_PACKET = 512*4; //under the transfer size
 
@@ -101,7 +100,7 @@ public:
         return BYTES_PER_PACKET/_rx_otw_type.get_sample_size()/_rx_subdev_spec.size();
     }
 
-    bool recv_async_msg(uhd::async_metadata_t &, size_t);
+    bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
     /*!

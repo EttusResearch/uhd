@@ -68,12 +68,12 @@ phony_zero_copy_recv_if::~phony_zero_copy_recv_if(void){
     /* NOP */
 }
 
-managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(size_t timeout_ms){
+managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(double timeout){
     //allocate memory
     boost::uint8_t *recv_mem = new boost::uint8_t[_impl->max_buff_size];
 
     //call recv() with timeout option
-    ssize_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size), timeout_ms);
+    ssize_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size), timeout);
 
     if (num_bytes <= 0) return managed_recv_buffer::sptr(); //NULL sptr
 
@@ -138,6 +138,6 @@ phony_zero_copy_send_if::~phony_zero_copy_send_if(void){
     delete [] _impl->send_mem;
 }
 
-managed_send_buffer::sptr phony_zero_copy_send_if::get_send_buff(void){
+managed_send_buffer::sptr phony_zero_copy_send_if::get_send_buff(double){
     return _impl->send_buff; //FIXME there is only ever one send buff, we assume that the caller doesnt hang onto these
 }

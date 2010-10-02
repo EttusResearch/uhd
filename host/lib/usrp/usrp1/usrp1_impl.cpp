@@ -209,9 +209,9 @@ usrp1_impl::~usrp1_impl(void){
     /* NOP */
 }
 
-bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, size_t timeout_ms){
+bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){
     //dummy fill-in for the recv_async_msg
-    boost::this_thread::sleep(boost::posix_time::milliseconds(timeout_ms));
+    boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
     return false;
 }
 
