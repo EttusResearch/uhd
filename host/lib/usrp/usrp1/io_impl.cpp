@@ -34,35 +34,6 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 /***********************************************************************
- * Pseudo send buffer implementation
- **********************************************************************/
-class pseudo_managed_send_buffer : public managed_send_buffer{
-public:
-
-    pseudo_managed_send_buffer(
-        const boost::asio::mutable_buffer &buff,
-        const boost::function<ssize_t(size_t)> &commit
-    ):
-        _buff(buff),
-        _commit(commit)
-    {
-        /* NOP */
-    }
-
-    ssize_t commit(size_t num_bytes){
-        return _commit(num_bytes);
-    }
-
-private:
-    const boost::asio::mutable_buffer &get(void) const{
-        return _buff;
-    }
-
-    const boost::asio::mutable_buffer      _buff;
-    const boost::function<ssize_t(size_t)> _commit;
-};
-
-/***********************************************************************
  * IO Implementation Details
  **********************************************************************/
 struct usrp1_impl::io_impl{
@@ -96,9 +67,9 @@ struct usrp1_impl::io_impl{
     size_t num_bytes_committed;
     double send_timeout;
     boost::uint8_t pseudo_buff[BYTES_PER_PACKET];
-    ssize_t phony_commit_pseudo_buff(size_t num_bytes);
-    ssize_t phony_commit_send_buff(size_t num_bytes);
-    ssize_t commit_send_buff(void);
+    void phony_commit_pseudo_buff(size_t num_bytes);
+    void phony_commit_send_buff(size_t num_bytes);
+    void commit_send_buff(void);
     void flush_send_buff(void);
     bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &, double);
 
@@ -119,28 +90,25 @@ struct usrp1_impl::io_impl{
  *   The first loop iteration will fill the remainder of the send buffer.
  *   The second loop iteration will empty the pseudo buffer remainder.
  */
-ssize_t usrp1_impl::io_impl::phony_commit_pseudo_buff(size_t num_bytes){
+void usrp1_impl::io_impl::phony_commit_pseudo_buff(size_t num_bytes){
     size_t bytes_to_copy = num_bytes, bytes_copied = 0;
     while(bytes_to_copy){
         size_t bytes_copied_here = std::min(bytes_to_copy, get_send_mem_size());
         std::memcpy(get_send_mem_ptr(), pseudo_buff + bytes_copied, bytes_copied_here);
-        ssize_t ret = phony_commit_send_buff(bytes_copied_here);
-        if (ret < 0) return ret;
-        bytes_to_copy -= ret;
-        bytes_copied += ret;
+        phony_commit_send_buff(bytes_copied_here);
+        bytes_to_copy -= bytes_copied_here;
+        bytes_copied += bytes_copied_here;
     }
-    return bytes_copied;
 }
 
 /*!
  * Accept a commit of num bytes to the send buffer.
  * Conditionally commit the send buffer if full.
  */
-ssize_t usrp1_impl::io_impl::phony_commit_send_buff(size_t num_bytes){
+void usrp1_impl::io_impl::phony_commit_send_buff(size_t num_bytes){
     num_bytes_committed += num_bytes;
-    if (num_bytes_committed != send_buff->size()) return num_bytes;
-    ssize_t ret = commit_send_buff();
-    return (ret < 0)? ret : num_bytes;
+    if (num_bytes_committed != send_buff->size()) return;
+    commit_send_buff();
 }
 
 /*!
@@ -158,11 +126,10 @@ void usrp1_impl::io_impl::flush_send_buff(void){
  * Perform an actual commit on the send buffer:
  * Commit the contents of the send buffer and request a new buffer.
  */
-ssize_t usrp1_impl::io_impl::commit_send_buff(void){
-    ssize_t ret = send_buff->commit(num_bytes_committed);
+void usrp1_impl::io_impl::commit_send_buff(void){
+    send_buff->commit(num_bytes_committed);
     send_buff = data_transport->get_send_buff(send_timeout);
     num_bytes_committed = 0;
-    return ret;
 }
 
 bool usrp1_impl::io_impl::get_send_buffs(
@@ -173,17 +140,17 @@ bool usrp1_impl::io_impl::get_send_buffs(
 
     //not enough bytes free -> use the pseudo buffer
     if (get_send_mem_size() < BYTES_PER_PACKET){
-        buffs[0] = managed_send_buffer::sptr(new pseudo_managed_send_buffer(
+        buffs[0] = managed_send_buffer::make_safe(
             boost::asio::buffer(pseudo_buff),
             boost::bind(&usrp1_impl::io_impl::phony_commit_pseudo_buff, this, _1)
-        ));
+        );
     }
     //otherwise use the send buffer offset by the bytes written
     else{
-        buffs[0] = managed_send_buffer::sptr(new pseudo_managed_send_buffer(
+        buffs[0] = managed_send_buffer::make_safe(
             boost::asio::buffer(get_send_mem_ptr(), get_send_mem_size()),
             boost::bind(&usrp1_impl::io_impl::phony_commit_send_buff, this, _1)
-        ));
+        );
     }
 
     return buffs[0].get() != NULL;

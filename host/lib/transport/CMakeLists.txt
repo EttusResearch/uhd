@@ -36,6 +36,8 @@ IF(LIBUSB_FOUND)
         INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport/msvc)
     ENDIF(MSVC)
     SET(HAVE_USB_SUPPORT TRUE)
+ELSE(LIBUSB_FOUND)
+    #TODO dummy usb
 ENDIF(LIBUSB_FOUND)
 
 IF(HAVE_USB_SUPPORT)
@@ -99,7 +101,7 @@ SET_SOURCE_FILES_PROPERTIES(
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/transport/if_addrs.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/udp_simple.cpp
-    ${CMAKE_SOURCE_DIR}/lib/transport/udp_zero_copy_asio.cpp
+    #${CMAKE_SOURCE_DIR}/lib/transport/udp_zero_copy_asio.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/vrt_packet_handler.hpp
     ${CMAKE_SOURCE_DIR}/lib/transport/zero_copy.cpp
 )

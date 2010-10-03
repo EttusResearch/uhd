@@ -343,9 +343,7 @@ template <typename T> UHD_INLINE T get_context_code(
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
-            if (send_buffs[i]->commit(num_bytes_total) < ssize_t(num_bytes_total)){
-                std::cerr << "commit to send buffer returned less than commit size" << std::endl;
-            }
+            send_buffs[i]->commit(num_bytes_total);
         }
         return num_samps;
     }

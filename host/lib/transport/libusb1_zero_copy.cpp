@@ -95,9 +95,6 @@ private:
     int  _endpoint;
     bool _input;
 
-    size_t _transfer_size;
-    size_t _num_transfers;
-
     //! hold a bounded buffer of completed transfers
     typedef bounded_buffer<libusb_transfer *> lut_buff_type;
     lut_buff_type::sptr _completed_list;
@@ -154,14 +151,12 @@ usb_endpoint::usb_endpoint(
 ):
     _handle(handle),
     _endpoint(endpoint),
-    _input(input),
-    _transfer_size(transfer_size),
-    _num_transfers(num_transfers)
+    _input(input)
 {
     _completed_list = lut_buff_type::make(num_transfers);
 
-    for (size_t i = 0; i < _num_transfers; i++){
-        _all_luts.push_back(allocate_transfer(_transfer_size));
+    for (size_t i = 0; i < num_transfers; i++){
+        _all_luts.push_back(allocate_transfer(transfer_size));
 
         //input luts are immediately submitted to be filled
         //output luts go into the completed list as free buffers
@@ -280,111 +275,9 @@ libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
 }
 
 /***********************************************************************
- * Managed buffers
- **********************************************************************/
-/*
- * Libusb managed receive buffer
- * Construct a recv buffer from a libusb transfer. The memory held by
- * the libusb transfer is exposed through the managed buffer interface.
- * Upon destruction, the transfer and buffer are resubmitted to the
- * endpoint for further use.
- */
-class libusb_managed_recv_buffer_impl : public managed_recv_buffer {
-public:
-    libusb_managed_recv_buffer_impl(libusb_transfer *lut,
-                                    usb_endpoint::sptr endpoint)
-        : _buff(lut->buffer, lut->length)
-    {
-        _lut = lut;
-        _endpoint = endpoint;
-    }
-
-    ~libusb_managed_recv_buffer_impl(void){
-        _endpoint->submit(_lut);
-    }
-
-private:
-    const boost::asio::const_buffer &get(void) const{
-        return _buff;
-    }
-
-    libusb_transfer *_lut;
-    usb_endpoint::sptr _endpoint;
-    const boost::asio::const_buffer _buff;
-};
-
-/*
- * Libusb managed send buffer
- * Construct a send buffer from a libusb transfer. The memory held by
- * the libusb transfer is exposed through the managed buffer interface.
- * Committing the buffer will set the data length and submit the buffer
- * to the endpoint. Submitting a buffer multiple times or destroying
- * the buffer before committing is an error. For the latter, the transfer
- * is returned to the endpoint with no data for reuse.
- */
-class libusb_managed_send_buffer_impl : public managed_send_buffer {
-public:
-    libusb_managed_send_buffer_impl(libusb_transfer *lut,
-                                    usb_endpoint::sptr endpoint)
-        : _buff(lut->buffer, lut->length), _committed(false)
-    {
-        _lut = lut;
-        _endpoint = endpoint;
-    }
-
-    ~libusb_managed_send_buffer_impl(void){
-        if (!_committed) {
-            _lut->length = 0;
-            _lut->actual_length = 0;
-            _endpoint->submit(_lut);
-        }
-    }
-
-    ssize_t commit(size_t num_bytes)
-    {
-        if (_committed) {
-            std::cerr << "UHD: send buffer already committed" << std::endl;
-            return 0;
-        }
-
-        UHD_ASSERT_THROW(num_bytes <= boost::asio::buffer_size(_buff));
-
-        _lut->length = num_bytes;
-        _lut->actual_length = 0;
-
-        try{
-            _endpoint->submit(_lut);
-            _committed = true;
-            return num_bytes;
-        }
-        catch(const std::exception &e){
-            std::cerr << "Error in commit: " << e.what() << std::endl;
-            return -1;
-        }
-    }
-
-private:
-    const boost::asio::mutable_buffer &get(void) const{
-        return _buff;
-    }
-
-    libusb_transfer *_lut;
-    usb_endpoint::sptr _endpoint;
-    const boost::asio::mutable_buffer _buff;
-    bool _committed;
-};
-
-
-/***********************************************************************
  * USB zero_copy device class
  **********************************************************************/
-class libusb_zero_copy_impl : public usb_zero_copy
-{
-private:
-    libusb::device_handle::sptr _handle;
-    size_t _recv_num_frames, _send_num_frames;
-    usb_endpoint::sptr _recv_ep, _send_ep;
-
+class libusb_zero_copy_impl : public usb_zero_copy {
 public:
     typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
 
@@ -400,6 +293,26 @@ public:
 
     size_t get_num_recv_frames(void) const { return _recv_num_frames; }
     size_t get_num_send_frames(void) const { return _send_num_frames; }
+
+private:
+    void release(libusb_transfer *lut){
+        _recv_ep->submit(lut);
+    }
+
+    void commit(libusb_transfer *lut, size_t num_bytes){
+        lut->length = num_bytes;
+        try{
+            _send_ep->submit(lut);
+        }
+        catch(const std::exception &e){
+            std::cerr << "Error in commit: " << e.what() << std::endl;
+        }
+    }
+
+    libusb::device_handle::sptr _handle;
+    size_t _recv_xfer_size, _send_xfer_size;
+    size_t _recv_num_frames, _send_num_frames;
+    usb_endpoint::sptr _recv_ep, _send_ep;
 };
 
 /*
@@ -426,7 +339,9 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
     UHD_ASSERT_THROW(send_xfer_size % 512 == 0);
 
     //store the num xfers for the num frames count
+    _recv_xfer_size = recv_xfer_size;
     _recv_num_frames = recv_num_xfers;
+    _send_xfer_size = send_xfer_size;
     _send_num_frames = send_num_xfers;
 
     _handle->claim_interface(2 /*in interface*/);
@@ -461,9 +376,10 @@ managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(double timeout){
         return managed_recv_buffer::sptr();
     }
     else {
-        return managed_recv_buffer::sptr(
-            new libusb_managed_recv_buffer_impl(lut,
-                                                _recv_ep));
+        return managed_recv_buffer::make_safe(
+            boost::asio::const_buffer(lut->buffer, lut->actual_length),
+            boost::bind(&libusb_zero_copy_impl::release, this, lut)
+        );
     }
 }
 
@@ -480,9 +396,10 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(double timeout){
         return managed_send_buffer::sptr();
     }
     else {
-        return managed_send_buffer::sptr(
-            new libusb_managed_send_buffer_impl(lut,
-                                                _send_ep));
+        return managed_send_buffer::make_safe(
+            boost::asio::mutable_buffer(lut->buffer, _send_xfer_size),
+            boost::bind(&libusb_zero_copy_impl::commit, this, lut, _1)
+        );
     }
 }
 
