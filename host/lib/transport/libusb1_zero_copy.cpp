@@ -22,6 +22,7 @@
 #include <boost/shared_array.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <vector>
 #include <iostream>
 
@@ -280,7 +281,6 @@ libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
  **********************************************************************/
 class libusb_zero_copy_impl : public usb_zero_copy, public boost::enable_shared_from_this<libusb_zero_copy_impl> {
 public:
-    typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
 
     libusb_zero_copy_impl(
         libusb::device_handle::sptr handle,
@@ -334,10 +334,6 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
     if (recv_num_xfers == 0) recv_num_xfers = DEFAULT_NUM_XFERS;
     if (send_xfer_size == 0) send_xfer_size = DEFAULT_XFER_SIZE;
     if (send_num_xfers == 0) send_num_xfers = DEFAULT_NUM_XFERS;
-
-    //sanity check the transfer sizes
-    UHD_ASSERT_THROW(recv_xfer_size % 512 == 0);
-    UHD_ASSERT_THROW(send_xfer_size % 512 == 0);
 
     //store the num xfers for the num frames count
     _recv_xfer_size = recv_xfer_size;

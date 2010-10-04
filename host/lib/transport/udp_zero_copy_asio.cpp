@@ -25,6 +25,7 @@
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <iostream>
 
 using namespace uhd;
