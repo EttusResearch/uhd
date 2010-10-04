@@ -130,12 +130,12 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
                 continue;
             }
 
+            //same number of frames as the data transport -> always immediate
+            recv_pirate_booty->push_with_wait(buff);
+
         }catch(const std::exception &e){
             std::cerr << "Error (usrp-e recv pirate loop): " << e.what() << std::endl;
         }
-
-        //usrp-e back-pressures on receive: push with wait
-        recv_pirate_booty->push_with_wait(buff);
     }
 }
 

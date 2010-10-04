@@ -112,6 +112,12 @@ public:
             if (poll_ret <= 0) return managed_recv_buffer::sptr();
         }
 
+        //check that the frame is really ready
+        if (not (info->flags & RB_USER)){
+            if (fp_verbose) std::cout << "  flags: not ready" << std::endl;
+            return managed_recv_buffer::sptr();
+        }
+
         //increment the index for the next call
         if (++_recv_index == size_t(_rb_size.num_rx_frames)) _recv_index = 0;
 
@@ -142,6 +148,12 @@ public:
             ssize_t poll_ret = ::poll(&pfd, 1, size_t(timeout*1e3));
             if (fp_verbose) std::cout << "  POLLOUT: " << poll_ret << std::endl;
             if (poll_ret <= 0) return managed_send_buffer::sptr();
+        }
+
+        //check that the frame is really ready
+        if (not (info->flags & RB_KERNEL)){
+            if (fp_verbose) std::cout << "  flags: not ready" << std::endl;
+            return managed_send_buffer::sptr();
         }
 
         //increment the index for the next call
