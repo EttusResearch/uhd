@@ -22,6 +22,7 @@
 #include <boost/shared_array.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <vector>
 #include <iostream>
 
@@ -280,7 +281,6 @@ libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
  **********************************************************************/
 class libusb_zero_copy_impl : public usb_zero_copy, public boost::enable_shared_from_this<libusb_zero_copy_impl> {
 public:
-    typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
 
     libusb_zero_copy_impl(
         libusb::device_handle::sptr handle,
