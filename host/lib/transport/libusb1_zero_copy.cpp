@@ -100,13 +100,13 @@ private:
     lut_buff_type::sptr _completed_list;
 
     //! a list of all transfer structs we allocated
-    std::vector<libusb_transfer *>  _all_luts;
+    std::vector<libusb_transfer *> _all_luts;
 
-    //! a list of shared arrays for the transfer buffers
-    std::vector<boost::shared_array<boost::uint8_t> > _buffers;
+    //! a block of memory for the transfer buffers
+    boost::shared_array<char> _buffer;
 
     // Calls for processing asynchronous I/O
-    libusb_transfer *allocate_transfer(int buff_len);
+    libusb_transfer *allocate_transfer(void *mem, size_t len);
     void print_transfer_status(libusb_transfer *lut);
 };
 
@@ -154,9 +154,9 @@ usb_endpoint::usb_endpoint(
     _input(input)
 {
     _completed_list = lut_buff_type::make(num_transfers);
-
+    _buffer = boost::shared_array<char>(new char[num_transfers*transfer_size]);
     for (size_t i = 0; i < num_transfers; i++){
-        _all_luts.push_back(allocate_transfer(transfer_size));
+        _all_luts.push_back(allocate_transfer(_buffer.get() + i*transfer_size, transfer_size));
 
         //input luts are immediately submitted to be filled
         //output luts go into the completed list as free buffers
@@ -193,23 +193,23 @@ usb_endpoint::~usb_endpoint(void){
  * Allocate a libusb transfer
  * The allocated transfer - and buffer it contains - is repeatedly
  * submitted, reaped, and reused and should not be freed until shutdown.
- * \param buff_len size of the individual buffer held by each transfer
+ * \param mem a pointer to the buffer memory
+ * \param len size of the individual buffer
  * \return pointer to an allocated libusb_transfer
  */
-libusb_transfer *usb_endpoint::allocate_transfer(int buff_len){
+libusb_transfer *usb_endpoint::allocate_transfer(void *mem, size_t len){
     libusb_transfer *lut = libusb_alloc_transfer(0);
-
-    boost::shared_array<boost::uint8_t> buff(new boost::uint8_t[buff_len]);
-    _buffers.push_back(buff); //store a reference to this shared array
+    UHD_ASSERT_THROW(lut != NULL);
 
     unsigned int endpoint = ((_endpoint & 0x7f) | (_input ? 0x80 : 0));
+    unsigned char *buff = reinterpret_cast<unsigned char *>(mem);
     libusb_transfer_cb_fn lut_callback = libusb_transfer_cb_fn(&callback);
 
     libusb_fill_bulk_transfer(lut,                // transfer
                               _handle->get(),     // dev_handle
                               endpoint,           // endpoint
-                              buff.get(),         // buffer
-                              buff_len,           // length
+                              buff,               // buffer
+                              len,                // length
                               lut_callback,       // callback
                               this,               // user_data
                               0);                 // timeout
@@ -232,6 +232,7 @@ void usb_endpoint::submit(libusb_transfer *lut){
  * \param lut pointer to an libusb_transfer
  */
 void usb_endpoint::print_transfer_status(libusb_transfer *lut){
+    std::cout << "here " << lut->status << std::endl;
     switch (lut->status) {
     case LIBUSB_TRANSFER_COMPLETED:
         if (lut->actual_length < lut->length) {
