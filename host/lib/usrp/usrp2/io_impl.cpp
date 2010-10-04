@@ -168,10 +168,6 @@ void usrp2_impl::io_init(void){
             _mboards.at(i), i
         ));
     }
-
-    std::cout << "RX samples per packet: " << get_max_recv_samps_per_packet() << std::endl;
-    std::cout << "TX samples per packet: " << get_max_send_samps_per_packet() << std::endl;
-    std::cout << "Recv pirate num frames: " << num_frames << std::endl;
 }
 
 /***********************************************************************
