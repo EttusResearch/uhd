@@ -45,6 +45,9 @@ static const size_t MIN_SEND_SOCK_BUFF_SIZE = size_t(10e3);
 //the number of async frames to allocate for each send and recv
 static const size_t DEFAULT_NUM_ASYNC_FRAMES = 32;
 
+//a single concurrent thread for io_service seems to be the fastest
+static const size_t CONCURRENCY_HINT = 1;
+
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
  *   This is the portable zero copy implementation for systems
@@ -61,6 +64,8 @@ public:
         size_t recv_frame_size, size_t num_recv_frames,
         size_t send_frame_size, size_t num_send_frames
     ):
+        _io_service(CONCURRENCY_HINT),
+        _work(new asio::io_service::work(_io_service)),
         _recv_frame_size(recv_frame_size), _num_recv_frames(num_recv_frames),
         _send_frame_size(send_frame_size), _num_send_frames(num_send_frames)
     {
@@ -92,13 +97,15 @@ public:
             handle_send(_send_buffer.get() + i*_send_frame_size);
         }
 
-        //spawn the service thread that will run the io service
-        _thread_group.create_thread(boost::bind(&udp_zero_copy_asio_impl::service, this));
+        //spawn the service threads that will run the io service
+        for (size_t i = 0; i < CONCURRENCY_HINT; i++) _thread_group.create_thread(
+            boost::bind(&udp_zero_copy_asio_impl::service, this)
+        );
     }
 
     ~udp_zero_copy_asio_impl(void){
-        _io_service.stop();
-        _thread_group.join_all();
+        delete _work; //allow io_service run to complete
+        _thread_group.join_all(); //wait for service threads to exit
         delete _socket;
     }
 
@@ -200,6 +207,7 @@ private:
     //asio guts -> socket and service
     asio::ip::udp::socket   *_socket;
     asio::io_service        _io_service;
+    asio::io_service::work  *_work;
 
     //memory management -> buffers and fifos
     boost::thread_group _thread_group;
