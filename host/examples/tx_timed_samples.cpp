@@ -99,7 +99,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             //send will backup into the host this many seconds before sending:
             seconds_in_future + 0.1 //timeout (delay before transmit + padding)
         );
-        if (num_tx_samps == 0) std::cout << "Send timeout..." << std::endl;
+        if (num_tx_samps < samps_to_send) std::cout << "Send timeout..." << std::endl;
         if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
     }
 
