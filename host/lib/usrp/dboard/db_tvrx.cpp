@@ -58,7 +58,7 @@ static const bool tvrx_debug = false;
 
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
-static const std::string tvrx_antennas = std::string(""); //only got one
+static const prop_names_t tvrx_antennas = list_of(""); //only got one
 
 static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges = map_list_of
     ("VHFLO", freq_range_t(50e6, 158e6))
@@ -436,7 +436,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        val = std::string(tvrx_antennas);
+        val = std::string("");
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:

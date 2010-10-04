@@ -95,8 +95,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         size_t num_tx_samps = dev->send(
             &buff.front(), samps_to_send, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_FULL_BUFF
+            uhd::device::SEND_MODE_FULL_BUFF,
+            //send will backup into the host this many seconds before sending:
+            seconds_in_future + 0.1 //timeout (delay before transmit + padding)
         );
+        if (num_tx_samps == 0) std::cout << "Send timeout..." << std::endl;
         if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
     }
 

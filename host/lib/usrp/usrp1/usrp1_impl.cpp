@@ -83,9 +83,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
 
     //find the usrps and load firmware
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
-            usb_control::sptr ctrl_transport = usb_control::make(handle);
-            usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
-            usrp_ctrl->usrp_load_firmware(usrp1_fw_image);
+        usrp_ctrl::make(usb_control::make(handle))->usrp_load_firmware(usrp1_fw_image);
     }
 
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
@@ -93,13 +91,13 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     pid = USRP1_PRODUCT_ID;
 
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
-            device_addr_t new_addr;
-            new_addr["type"] = "usrp1";
-            new_addr["serial"] = handle->get_serial();
-            //this is a found usrp1 when a hint serial is not specified or it matches
-            if (not hint.has_key("serial") or hint["serial"] == new_addr["serial"]){
-                usrp1_addrs.push_back(new_addr);
-            }
+        device_addr_t new_addr;
+        new_addr["type"] = "usrp1";
+        new_addr["serial"] = handle->get_serial();
+        //this is a found usrp1 when a hint serial is not specified or it matches
+        if (not hint.has_key("serial") or hint["serial"] == new_addr["serial"]){
+            usrp1_addrs.push_back(new_addr);
+        }
     }
 
     return usrp1_addrs;
@@ -109,12 +107,12 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
  * Make
  **********************************************************************/
 template<typename output_type> static output_type cast_from_dev_addr(
-	const device_addr_t &device_addr,
-	const std::string &key,
-	output_type def_val
+    const device_addr_t &device_addr,
+    const std::string &key,
+    output_type def_val
 ){
-	return (device_addr.has_key(key))?
-		boost::lexical_cast<output_type>(device_addr[key]) : def_val;
+    return (device_addr.has_key(key))?
+        boost::lexical_cast<output_type>(device_addr[key]) : def_val;
 }
 
 static device::sptr usrp1_make(const device_addr_t &device_addr)
@@ -211,9 +209,9 @@ usrp1_impl::~usrp1_impl(void){
     /* NOP */
 }
 
-bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, size_t timeout_ms){
+bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){
     //dummy fill-in for the recv_async_msg
-    boost::this_thread::sleep(boost::posix_time::milliseconds(timeout_ms));
+    boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
     return false;
 }
 

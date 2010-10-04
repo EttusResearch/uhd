@@ -213,15 +213,21 @@ private:
 libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::sptr dev){
     static uhd::dict<libusb_device *, boost::weak_ptr<device_handle> > handles;
 
-    //not expired -> get existing session
+    //not expired -> get existing handle
     if (handles.has_key(dev->get()) and not handles[dev->get()].expired()){
         return handles[dev->get()].lock();
     }
 
-    //create a new global session
-    sptr new_handle(new libusb_device_handle_impl(dev));
-    handles[dev->get()] = new_handle;
-    return new_handle;
+    //create a new cached handle
+    try{
+        sptr new_handle(new libusb_device_handle_impl(dev));
+        handles[dev->get()] = new_handle;
+        return new_handle;
+    }
+    catch(const std::exception &e){
+        std::cerr << "USB open failed: see the application notes for your device." << std::endl;
+        throw std::runtime_error(e.what());
+    }
 }
 
 /***********************************************************************
