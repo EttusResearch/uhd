@@ -37,7 +37,7 @@ zero_copy_if::sptr usrp_e_make_mmap_zero_copy(usrp_e_iface::sptr iface);
  **********************************************************************/
 static const size_t tx_async_report_sid = 1;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
-static const double recv_timeout_ms = 100;
+static const bool recv_debug = true;
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -66,10 +66,10 @@ struct usrp_e_impl::io_impl{
         recv_pirate_crew.join_all();
     }
 
-    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, size_t timeout_ms){
+    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, double timeout){
         UHD_ASSERT_THROW(buffs.size() == 1);
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty->pop_with_timed_wait(buffs.front(), boost::posix_time::milliseconds(timeout_ms));
+        return recv_pirate_booty->pop_with_timed_wait(buffs.front(), timeout);
     }
 
     //a pirate's life is the life for me!
@@ -94,8 +94,16 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
     //size_t next_packet_seq = 0;
 
     while(recv_pirate_crew_raiding){
-        managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff(recv_timeout_ms);
+        managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
+
+        if (recv_debug){
+            std::cout << "len " << buff->size() << std::endl;
+            for (size_t i = 0; i < 9; i++){
+                std::cout << boost::format("    0x%08x") % buff->cast<const boost::uint32_t *>()[i] << std::endl;
+            }
+            std::cout << std::endl << std::endl;
+        }
 
         try{
             //extract the vrt header packet info
@@ -181,20 +189,18 @@ void usrp_e_impl::handle_overrun(size_t){
  * Data Send
  **********************************************************************/
 bool get_send_buffs(
-    zero_copy_if::sptr trans,
+    zero_copy_if::sptr trans, double timeout,
     vrt_packet_handler::managed_send_buffs_t &buffs
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
-    buffs[0] = trans->get_send_buff();
+    buffs[0] = trans->get_send_buff(timeout);
     return buffs[0].get() != NULL;
 }
 
 size_t usrp_e_impl::send(
-    const std::vector<const void *> &buffs,
-    size_t num_samps,
-    const tx_metadata_t &metadata,
-    const io_type_t &io_type,
-    send_mode_t send_mode
+    const std::vector<const void *> &buffs, size_t num_samps,
+    const tx_metadata_t &metadata, const io_type_t &io_type,
+    send_mode_t send_mode, double timeout
 ){
     otw_type_t send_otw_type;
     send_otw_type.width = 16;
@@ -208,7 +214,7 @@ size_t usrp_e_impl::send(
         io_type, send_otw_type,                    //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_le,
-        boost::bind(&get_send_buffs, _io_impl->data_xport, _1),
+        boost::bind(&get_send_buffs, _io_impl->data_xport, timeout, _1),
         get_max_send_samps_per_packet()
     );
 }
@@ -217,12 +223,9 @@ size_t usrp_e_impl::send(
  * Data Recv
  **********************************************************************/
 size_t usrp_e_impl::recv(
-    const std::vector<void *> &buffs,
-    size_t num_samps,
-    rx_metadata_t &metadata,
-    const io_type_t &io_type,
-    recv_mode_t recv_mode,
-    size_t timeout_ms
+    const std::vector<void *> &buffs, size_t num_samps,
+    rx_metadata_t &metadata, const io_type_t &io_type,
+    recv_mode_t recv_mode, double timeout
 ){
     otw_type_t recv_otw_type;
     recv_otw_type.width = 16;
@@ -236,7 +239,7 @@ size_t usrp_e_impl::recv(
         io_type, recv_otw_type,                    //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
-        boost::bind(&usrp_e_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout_ms),
+        boost::bind(&usrp_e_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
         boost::bind(&usrp_e_impl::handle_overrun, this, _1)
     );
 }
@@ -245,11 +248,8 @@ size_t usrp_e_impl::recv(
  * Async Recv
  **********************************************************************/
 bool usrp_e_impl::recv_async_msg(
-    async_metadata_t &async_metadata,
-    size_t timeout_ms
+    async_metadata_t &async_metadata, double timeout
 ){
     boost::this_thread::disable_interruption di; //disable because the wait can throw
-    return _io_impl->async_msg_fifo->pop_with_timed_wait(
-        async_metadata, boost::posix_time::milliseconds(timeout_ms)
-    );
+    return _io_impl->async_msg_fifo->pop_with_timed_wait(async_metadata, timeout);
 }

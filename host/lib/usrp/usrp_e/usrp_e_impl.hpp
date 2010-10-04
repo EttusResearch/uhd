@@ -82,9 +82,9 @@ public:
     ~usrp_e_impl(void);
 
     //the io interface
-    size_t send(const std::vector<const void *> &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t);
-    size_t recv(const std::vector<void *> &, size_t, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t, size_t);
-    bool recv_async_msg(uhd::async_metadata_t &, size_t);
+    size_t send(const std::vector<const void *> &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t, double);
+    size_t recv(const std::vector<void *> &, size_t, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t, double);
+    bool recv_async_msg(uhd::async_metadata_t &, double);
     size_t get_max_send_samps_per_packet(void) const{return 503;}
     size_t get_max_recv_samps_per_packet(void) const{return 503;}
 
