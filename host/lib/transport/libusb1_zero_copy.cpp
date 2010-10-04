@@ -335,10 +335,6 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
     if (send_xfer_size == 0) send_xfer_size = DEFAULT_XFER_SIZE;
     if (send_num_xfers == 0) send_num_xfers = DEFAULT_NUM_XFERS;
 
-    //sanity check the transfer sizes
-    UHD_ASSERT_THROW(recv_xfer_size % 512 == 0);
-    UHD_ASSERT_THROW(send_xfer_size % 512 == 0);
-
     //store the num xfers for the num frames count
     _recv_xfer_size = recv_xfer_size;
     _recv_num_frames = recv_num_xfers;

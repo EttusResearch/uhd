@@ -73,7 +73,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         UHD_INLINE void pop_with_wait(elem_type &elem){
             boost::unique_lock<boost::mutex> lock(_mutex);
             _empty_cond.wait(lock, boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this));
-            elem = _buffer.back(); _buffer.pop_back();
+            this->pop_back(elem);
             lock.unlock();
             _full_cond.notify_one();
         }
@@ -84,7 +84,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
                 lock, boost::posix_time::microseconds(long(timeout*1e6)),
                 boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this)
             )) return false;
-            elem = _buffer.back(); _buffer.pop_back();
+            this->pop_back(elem);
             lock.unlock();
             _full_cond.notify_one();
             return true;
@@ -104,6 +104,18 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
 
         bool not_full(void) const{return not _buffer.full();}
         bool not_empty(void) const{return not _buffer.empty();}
+
+        /*!
+         * Three part operation to pop an element:
+         * 1) assign elem to the back element
+         * 2) assign the back element to empty
+         * 3) pop the back to move the counter
+         */
+        UHD_INLINE void pop_back(elem_type &elem){
+            elem = _buffer.back();
+            _buffer.back() = elem_type();
+            _buffer.pop_back();
+        }
     };
 }}} //namespace
 
