@@ -20,11 +20,12 @@ Building the UHD
 ^^^^^^^^^^^^^^^^^^^^^
 Application Notes
 ^^^^^^^^^^^^^^^^^^^^^
-* `General App Notes <./general.html>`_
+* `General Application Notes <./general.html>`_
 * `Firmware and FPGA Image Notes <./images.html>`_
-* `USRP1 App Notes <./usrp1.html>`_
-* `USRP2 App Notes <./usrp2.html>`_
-* `Daughterboard App Notes <./dboards.html>`_
+* `USRP1 Application Notes <./usrp1.html>`_
+* `USRP2 Application Notes <./usrp2.html>`_
+* `Daughterboard Application Notes <./dboards.html>`_
+* `Transport Application Notes <./transport.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 API Documentation
