@@ -168,7 +168,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
         }
     } else {
-    
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
@@ -178,7 +177,8 @@ void usrp2_mboard_impl::update_clock_config(void){
     }
 
     //clock source ref 10mhz
-    bool use_external = _clock_config.ref_source != clock_config_t::REF_INT;
+    bool use_external = (_clock_config.ref_source != clock_config_t::REF_INT)
+                     || (_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV); //USRP2P has an internal 10MHz TCXO
     _clock_ctrl->enable_external_ref(use_external);
 }
 

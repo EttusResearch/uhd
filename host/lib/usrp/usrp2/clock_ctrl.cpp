@@ -212,6 +212,19 @@ public:
     std::vector<double> get_rates_tx_dboard_clock(void){
         return get_rates_rx_dboard_clock(); //same master clock, same dividers...
     }
+    
+    void enable_test_clock(bool enb) {
+        _ad9510_regs.power_down_lvpecl_out0 = enb?
+            ad9510_regs_t::POWER_DOWN_LVPECL_OUT0_NORMAL :
+            ad9510_regs_t::POWER_DOWN_LVPECL_OUT0_SAFE_PD;
+        _ad9510_regs.output_level_lvpecl_out0 = ad9510_regs_t::OUTPUT_LEVEL_LVPECL_OUT0_810MV;
+        _ad9510_regs.divider_low_cycles_out0 = 0;
+        _ad9510_regs.divider_high_cycles_out0 = 0;
+        _ad9510_regs.bypass_divider_out0 = 1;
+        this->write_reg(0x3c);
+        this->write_reg(0x48);
+        this->write_reg(0x49);
+    }
 
     /*!
      * If we are to use an external reference, enable the charge pump.
