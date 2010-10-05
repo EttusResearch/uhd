@@ -272,18 +272,18 @@ static void usrp1_bs_vrt_unpacker(
 }
 
 static bool get_recv_buffs(
-    zero_copy_if::sptr zc_if,
+    zero_copy_if::sptr zc_if, size_t timeout_ms,
     vrt_packet_handler::managed_recv_buffs_t &buffs
 ){
     UHD_ASSERT_THROW(buffs.size() == 1);
-    buffs[0] = zc_if->get_recv_buff();
+    buffs[0] = zc_if->get_recv_buff(timeout_ms);
     return buffs[0].get() != NULL;
 }
 
 size_t usrp1_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,
-    recv_mode_t recv_mode, size_t /*timeout_ms TODO*/
+    recv_mode_t recv_mode, size_t timeout_ms
 ){
     size_t num_samps_recvd = vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
@@ -292,7 +292,7 @@ size_t usrp1_impl::recv(
         io_type, _rx_otw_type,                     //input and output types to convert
         _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
         &usrp1_bs_vrt_unpacker,
-        boost::bind(&get_recv_buffs, _data_transport, _1),
+        boost::bind(&get_recv_buffs, _data_transport, timeout_ms, _1),
         &vrt_packet_handler::handle_overflow_nop,
         0,                                         //vrt header offset
         _rx_subdev_spec.size()                     //num channels

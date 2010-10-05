@@ -308,8 +308,7 @@ public:
     }
 
 private:
-    const boost::asio::const_buffer &get() const
-    {
+    const boost::asio::const_buffer &get(void) const{
         return _buff;
     }
 
@@ -369,8 +368,7 @@ public:
     }
 
 private:
-    const boost::asio::mutable_buffer &get() const
-    {
+    const boost::asio::mutable_buffer &get(void) const{
         return _buff;
     }
 
@@ -395,13 +393,13 @@ public:
     typedef boost::shared_ptr<libusb_zero_copy_impl> sptr;
 
     libusb_zero_copy_impl(
-		libusb::device_handle::sptr handle,
-		unsigned int recv_endpoint, unsigned int send_endpoint,
-		size_t recv_xfer_size, size_t recv_num_xfers,
-		size_t send_xfer_size, size_t send_num_xfers
-	);
+        libusb::device_handle::sptr handle,
+        unsigned int recv_endpoint, unsigned int send_endpoint,
+        size_t recv_xfer_size, size_t recv_num_xfers,
+        size_t send_xfer_size, size_t send_num_xfers
+    );
 
-    managed_recv_buffer::sptr get_recv_buff(void);
+    managed_recv_buffer::sptr get_recv_buff(size_t timeout_ms);
     managed_send_buffer::sptr get_send_buff(void);
 
     size_t get_num_recv_frames(void) const { return _recv_num_frames; }
@@ -419,23 +417,23 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
     size_t recv_xfer_size, size_t recv_num_xfers,
     size_t send_xfer_size, size_t send_num_xfers
 ){
-	_handle = handle;
+    _handle = handle;
 
-	//if the sizes are left at 0 (automatic) -> use the defaults
-	if (recv_xfer_size == 0) recv_xfer_size = DEFAULT_XFER_SIZE;
-	if (recv_num_xfers == 0) recv_num_xfers = DEFAULT_NUM_XFERS;
-	if (send_xfer_size == 0) send_xfer_size = DEFAULT_XFER_SIZE;
-	if (send_num_xfers == 0) send_num_xfers = DEFAULT_NUM_XFERS;
+    //if the sizes are left at 0 (automatic) -> use the defaults
+    if (recv_xfer_size == 0) recv_xfer_size = DEFAULT_XFER_SIZE;
+    if (recv_num_xfers == 0) recv_num_xfers = DEFAULT_NUM_XFERS;
+    if (send_xfer_size == 0) send_xfer_size = DEFAULT_XFER_SIZE;
+    if (send_num_xfers == 0) send_num_xfers = DEFAULT_NUM_XFERS;
 
     //sanity check the transfer sizes
     UHD_ASSERT_THROW(recv_xfer_size % 512 == 0);
     UHD_ASSERT_THROW(send_xfer_size % 512 == 0);
 
-	//store the num xfers for the num frames count
-	_recv_num_frames = recv_num_xfers;
-	_send_num_frames = send_num_xfers;
+    //store the num xfers for the num frames count
+    _recv_num_frames = recv_num_xfers;
+    _send_num_frames = send_num_xfers;
 
-	_handle->claim_interface(2 /*in interface*/);
+    _handle->claim_interface(2 /*in interface*/);
     _handle->claim_interface(1 /*out interface*/);
 
     _recv_ep = usb_endpoint::sptr(new usb_endpoint(
@@ -461,8 +459,8 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
  * Return empty pointer if no transfer is available (timeout or error).
  * \return pointer to a managed receive buffer
  */
-managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(void){
-    libusb_transfer *lut = _recv_ep->get_lut_with_wait(/* TODO timeout API */);
+managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(size_t timeout_ms){
+    libusb_transfer *lut = _recv_ep->get_lut_with_wait(timeout_ms);
     if (lut == NULL) {
         return managed_recv_buffer::sptr();
     }

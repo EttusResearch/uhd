@@ -21,3 +21,17 @@
 std::string uhd::get_version_string(void){
     return UHD_VERSION_STRING;
 }
+
+#include <uhd/utils/static.hpp>
+#include <boost/version.hpp>
+#include <iostream>
+
+UHD_STATIC_BLOCK(print_system_info){
+    std::cout
+        << BOOST_PLATFORM << "; "
+        << BOOST_COMPILER << "; "
+        << "Boost_" << BOOST_VERSION << "; "
+        << "UHD_" << uhd::get_version_string()
+        << std::endl << std::endl
+    ;
+}

@@ -35,7 +35,9 @@ public:
     libusb_session_impl(void){
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
         libusb_set_debug(_context, debug_level);
+        _mutex.lock();
         _thread_group.create_thread(boost::bind(&libusb_session_impl::run_event_loop, this));
+        _mutex.lock();
     }
 
     ~libusb_session_impl(void){
@@ -52,11 +54,13 @@ private:
     libusb_context *_context;
     boost::thread_group _thread_group;
     bool _running;
+    boost::mutex _mutex;
 
     void run_event_loop(void){
         set_thread_priority_safe();
         _running = true;
         timeval tv;
+        _mutex.unlock();
         while(_running){
             tv.tv_sec = 0;
             tv.tv_usec = 100000; //100ms
@@ -213,15 +217,21 @@ private:
 libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::sptr dev){
     static uhd::dict<libusb_device *, boost::weak_ptr<device_handle> > handles;
 
-    //not expired -> get existing session
+    //not expired -> get existing handle
     if (handles.has_key(dev->get()) and not handles[dev->get()].expired()){
         return handles[dev->get()].lock();
     }
 
-    //create a new global session
-    sptr new_handle(new libusb_device_handle_impl(dev));
-    handles[dev->get()] = new_handle;
-    return new_handle;
+    //create a new cached handle
+    try{
+        sptr new_handle(new libusb_device_handle_impl(dev));
+        handles[dev->get()] = new_handle;
+        return new_handle;
+    }
+    catch(const std::exception &e){
+        std::cerr << "USB open failed: see the application notes for your device." << std::endl;
+        throw std::runtime_error(e.what());
+    }
 }
 
 /***********************************************************************

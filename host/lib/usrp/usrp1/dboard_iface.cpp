@@ -32,6 +32,8 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
+static const dboard_id_t tvrx_id(0x0040);
+
 class usrp1_dboard_iface : public dboard_iface {
 public:
 
@@ -51,6 +53,10 @@ public:
         //init the clock rate shadows
         this->set_clock_rate(UNIT_RX, this->get_clock_rates(UNIT_RX).front());
         this->set_clock_rate(UNIT_TX, this->get_clock_rates(UNIT_TX).front());
+        
+        //yes this is evil but it's necessary for TVRX to work on USRP1
+        if(_rx_dboard_id == tvrx_id) _codec->bypass_adc_buffers(false);
+        //else _codec->bypass_adc_buffers(false); //don't think this is necessary
     }
 
     ~usrp1_dboard_iface()
@@ -93,6 +99,7 @@ public:
     std::vector<double> get_clock_rates(unit_t);
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
+    double get_codec_rate(unit_t);
 
 private:
     usrp1_iface::sptr _iface;
@@ -168,6 +175,10 @@ double usrp1_dboard_iface::get_clock_rate(unit_t unit)
 void usrp1_dboard_iface::set_clock_enabled(unit_t, bool)
 {
     //TODO we can only enable for special case anyway...
+}
+
+double usrp1_dboard_iface::get_codec_rate(unit_t){
+    return _clock->get_master_clock_freq();
 }
 
 /***********************************************************************
