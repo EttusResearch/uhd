@@ -20,6 +20,7 @@
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/exception.hpp>
 
+using namespace uhd;
 using namespace uhd::transport;
 
 std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(boost::uint16_t, boost::uint16_t){
@@ -32,8 +33,7 @@ usb_control::sptr usb_control::make(usb_device_handle::sptr){
 
 usb_zero_copy::sptr usb_zero_copy::make(
     usb_device_handle::sptr,
-    unsigned int, unsigned int,
-    size_t, size_t, size_t, size_t
+    size_t, size_t, const device_addr_t &
 ){
     throw std::runtime_error("no usb support -> usb_zero_copy::make not implemented");
 }

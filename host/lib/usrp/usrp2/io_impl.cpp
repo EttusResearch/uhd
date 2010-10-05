@@ -206,7 +206,7 @@ size_t usrp2_impl::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
         metadata, send_mode,                       //samples metadata
-        io_type, _io_helper.get_tx_otw_type(),     //input and output types to convert
+        io_type, _tx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_be,
         boost::bind(&get_send_buffs, _data_transports, _1, timeout),
@@ -226,7 +226,7 @@ size_t usrp2_impl::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
         metadata, recv_mode,                       //samples metadata
-        io_type, _io_helper.get_rx_otw_type(),     //input and output types to convert
+        io_type, _rx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
         boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout)

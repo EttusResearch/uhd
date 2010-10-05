@@ -155,13 +155,18 @@ namespace uhd{ namespace transport{
         virtual managed_recv_buffer::sptr get_recv_buff(double timeout = 0.1) = 0;
 
         /*!
-         * Get the maximum number of receive frames:
-         *   The maximum number of valid managed recv buffers,
-         *   or the maximum number of frames in the ring buffer,
-         *   depending upon the underlying implementation.
+         * Get the number of receive frames:
+         * The number of simultaneous receive buffers in use.
          * \return number of frames
          */
         virtual size_t get_num_recv_frames(void) const = 0;
+
+        /*!
+         * Get the size of a receive frame:
+         * The maximum capacity of a single receive buffer.
+         * \return frame size in bytes
+         */
+        virtual size_t get_recv_frame_size(void) const = 0;
 
         /*!
          * Get a new send buffer from this transport object.
@@ -171,13 +176,18 @@ namespace uhd{ namespace transport{
         virtual managed_send_buffer::sptr get_send_buff(double timeout = 0.1) = 0;
 
         /*!
-         * Get the maximum number of send frames:
-         *   The maximum number of valid managed send buffers,
-         *   or the maximum number of frames in the ring buffer,
-         *   depending upon the underlying implementation.
+         * Get the number of send frames:
+         * The number of simultaneous send buffers in use.
          * \return number of frames
          */
         virtual size_t get_num_send_frames(void) const = 0;
+
+        /*!
+         * Get the size of a send frame:
+         * The maximum capacity of a single send buffer.
+         * \return frame size in bytes
+         */
+        virtual size_t get_send_frame_size(void) const = 0;
 
     };
 
