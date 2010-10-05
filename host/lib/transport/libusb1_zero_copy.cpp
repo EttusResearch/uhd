@@ -18,6 +18,7 @@
 #include "libusb1_base.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/shared_array.hpp>
 #include <boost/foreach.hpp>
@@ -290,6 +291,11 @@ public:
         const device_addr_t &hints
     );
 
+    ~libusb_zero_copy_impl(void){
+        _threads_running = false;
+        _thread_group.join_all();
+    }
+
     managed_recv_buffer::sptr get_recv_buff(double);
     managed_send_buffer::sptr get_send_buff(double);
 
@@ -318,6 +324,22 @@ private:
     const size_t _recv_frame_size, _num_recv_frames;
     const size_t _send_frame_size, _num_send_frames;
     usb_endpoint::sptr _recv_ep, _send_ep;
+
+    //event handler threads
+    boost::thread_group _thread_group;
+    bool _threads_running;
+
+    void run_event_loop(void){
+        set_thread_priority_safe();
+        libusb::session::sptr session = libusb::session::get_global_session();
+        _threads_running = true;
+        while(_threads_running){
+            timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000; //100ms
+            libusb_handle_events_timeout(session->get_context(), &tv);
+        }
+    }
 };
 
 /*
@@ -355,6 +377,12 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
                               this->get_send_frame_size(),  // buffer size per transfer
                               this->get_num_send_frames()   // number of libusb transfers
     ));
+
+    //spawn the event handler threads
+    size_t concurrency = hints.cast<size_t>("concurrency_hint", 1);
+    for (size_t i = 0; i < concurrency; i++) _thread_group.create_thread(
+        boost::bind(&libusb_zero_copy_impl::run_event_loop, this)
+    );
 }
 
 /*
