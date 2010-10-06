@@ -71,6 +71,7 @@ struct usrp_e_i2c {
 #define RB_KERNEL (1<<1)
 #define RB_OVERRUN (1<<2)
 #define RB_DMA_ACTIVE (1<<3)
+#define RB_USER_PROCESS (1<<4)
 
 struct ring_buffer_info {
 	int flags;
