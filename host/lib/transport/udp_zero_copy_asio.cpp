@@ -246,11 +246,11 @@ template<typename Opt> static void resize_buff_helper(
             "Current %s sock buff size: %d bytes"
         ) % name % actual_size << std::endl;
         if (actual_size < target_size) uhd::print_warning(str(boost::format(
-            "The %s buffer is smaller than the requested size.\n"
-            "The minimum recommended buffer size is %d bytes.\n"
+            "The %1% buffer is smaller than the requested size.\n"
+            "The minimum recommended buffer size is %2% bytes.\n"
             "See the transport application notes on buffer resizing.\n"
             #if defined(UHD_PLATFORM_LINUX)
-            "On Linux: sudo sysctl -w net.core.rmem_max=%2%\n"
+            "Please run: sudo sysctl -w net.core.rmem_max=%2%\n"
             #endif /*defined(UHD_PLATFORM_LINUX)*/
         ) % name % min_sock_buff_size));
     }
