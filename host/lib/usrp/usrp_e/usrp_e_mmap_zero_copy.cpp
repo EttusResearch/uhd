@@ -31,6 +31,7 @@ using namespace uhd::transport;
 
 static const bool fp_verbose = true; //fast-path verbose
 static const bool sp_verbose = true; //slow-path verbose
+static const size_t poll_breakout = 10; //how many poll timeouts constitute a full timeout
 
 /***********************************************************************
  * The zero copy interface implementation
@@ -104,19 +105,19 @@ public:
 
         //poll/wait for a ready frame
         if (not (info->flags & RB_USER)){
-            pollfd pfd;
-            pfd.fd = _fd;
-            pfd.events = POLLIN;
-            ssize_t poll_ret = ::poll(&pfd, 1, size_t(timeout*1e3));
-            if (fp_verbose) std::cout << "  POLLIN: " << poll_ret << std::endl;
-            if (poll_ret <= 0) return managed_recv_buffer::sptr();
-        }
+            for (size_t i = 0; i < poll_breakout; i++){
+                pollfd pfd;
+                pfd.fd = _fd;
+                pfd.events = POLLIN;
+                ssize_t poll_ret = ::poll(&pfd, 1, size_t(timeout*1e3/poll_breakout));
+                if (fp_verbose) std::cout << "  POLLIN: " << poll_ret << std::endl;
+                if (poll_ret > 0) goto found_user_frame; //good poll, continue on
+            }
+            return managed_recv_buffer::sptr(); //timed-out for real
+        } found_user_frame:
 
-        //check that the frame is really ready
-        if (not (info->flags & RB_USER)){
-            if (fp_verbose) std::cout << "  flags: not ready" << std::endl;
-            return managed_recv_buffer::sptr();
-        }
+        //the process has claimed the frame
+        info->flags = RB_USER_PROCESS;
 
         //increment the index for the next call
         if (++_recv_index == size_t(_rb_size.num_rx_frames)) _recv_index = 0;
@@ -148,12 +149,6 @@ public:
             ssize_t poll_ret = ::poll(&pfd, 1, size_t(timeout*1e3));
             if (fp_verbose) std::cout << "  POLLOUT: " << poll_ret << std::endl;
             if (poll_ret <= 0) return managed_send_buffer::sptr();
-        }
-
-        //check that the frame is really ready
-        if (not (info->flags & RB_KERNEL)){
-            if (fp_verbose) std::cout << "  flags: not ready" << std::endl;
-            return managed_send_buffer::sptr();
         }
 
         //increment the index for the next call
