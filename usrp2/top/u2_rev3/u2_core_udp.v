@@ -427,7 +427,7 @@ module u2_core
        cycle_count <= cycle_count + 1;
 
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd1;
+   localparam compat_num = 32'd2;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
