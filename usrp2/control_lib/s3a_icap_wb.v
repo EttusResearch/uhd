@@ -3,7 +3,7 @@
 module s3a_icap_wb
   (input clk, input reset,
    input cyc_i, input stb_i, input we_i, output ack_o,
-   input [31:0] dat_i, output [31:0] dat_o)//, output [31:0] debug_out);
+   input [31:0] dat_i, output [31:0] dat_o);//, output [31:0] debug_out);
 
    assign dat_o[31:8] = 24'd0;
    
