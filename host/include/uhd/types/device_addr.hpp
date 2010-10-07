@@ -20,6 +20,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/dict.hpp>
+#include <boost/lexical_cast.hpp>
+#include <stdexcept>
 #include <vector>
 #include <string>
 
@@ -62,6 +64,24 @@ namespace uhd{
          * \return a string with delimiter markup
          */
         std::string to_string(void) const;
+
+        /*!
+         * Lexically cast a parameter to the specified type,
+         * or use the default value if the key is not found.
+         * \param key the key as one of the address parameters
+         * \param def the value to use when key is not present
+         * \return the casted value as type T or the default
+         * \throw error when the parameter cannot be casted
+         */
+        template <typename T> T cast(const std::string &key, const T &def) const{
+            if (not this->has_key(key)) return def;
+            try{
+                return boost::lexical_cast<T>((*this)[key]);
+            }
+            catch(const boost::bad_lexical_cast &){
+                throw std::runtime_error("cannot cast " + key + " = " + (*this)[key]);
+            }
+        }
     };
 
     //handy typedef for a vector of device addresses

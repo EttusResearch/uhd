@@ -124,26 +124,7 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
-template <typename out_type, typename in_type>
-out_type lexical_cast(const in_type &in){
-    try{
-        return boost::lexical_cast<out_type>(in);
-    }catch(...){
-        throw std::runtime_error(str(boost::format(
-            "failed to cast \"%s\" to type \"%s\""
-        ) % boost::lexical_cast<std::string>(in) % typeid(out_type).name()));
-    }
-}
-
 static device::sptr usrp2_make(const device_addr_t &device_addr){
-    //extract the receive and send buffer sizes
-    size_t recv_buff_size = 0, send_buff_size= 0 ;
-    if (device_addr.has_key("recv_buff_size")){
-        recv_buff_size = size_t(lexical_cast<double>(device_addr["recv_buff_size"]));
-    }
-    if (device_addr.has_key("send_buff_size")){
-        send_buff_size = size_t(lexical_cast<double>(device_addr["send_buff_size"]));
-    }
 
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
@@ -154,8 +135,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
             addr, num2str(USRP2_UDP_CTRL_PORT)
         ));
         data_transports.push_back(udp_zero_copy::make(
-            addr, num2str(USRP2_UDP_DATA_PORT),
-            recv_buff_size, send_buff_size
+            addr, num2str(USRP2_UDP_DATA_PORT), device_addr
         ));
     }
 
@@ -178,11 +158,23 @@ usrp2_impl::usrp2_impl(
 ):
     _data_transports(data_transports)
 {
+    //setup rx otw type
+    _rx_otw_type.width = 16;
+    _rx_otw_type.shift = 0;
+    _rx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+
+    //setup tx otw type
+    _tx_otw_type.width = 16;
+    _tx_otw_type.shift = 0;
+    _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+
+    //!!!!! set the otw type here before continuing, its used below
+
     //create a new mboard handler for each control transport
     for(size_t i = 0; i < ctrl_transports.size(); i++){
-        _mboards.push_back(usrp2_mboard_impl::sptr(
-            new usrp2_mboard_impl(i, ctrl_transports[i], _io_helper)
-        ));
+        _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
+            i, ctrl_transports[i], this->get_max_recv_samps_per_packet()
+        )));
         //use an empty name when there is only one mboard
         std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";
         _mboard_dict[name] = _mboards.back();

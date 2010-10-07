@@ -37,7 +37,9 @@ IF(LIBUSB_FOUND)
     ENDIF(MSVC)
     SET(HAVE_USB_SUPPORT TRUE)
 ELSE(LIBUSB_FOUND)
-    #TODO dummy usb
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_SOURCE_DIR}/lib/transport/usb_dummy_impl.cpp
+    )
 ENDIF(LIBUSB_FOUND)
 
 IF(HAVE_USB_SUPPORT)

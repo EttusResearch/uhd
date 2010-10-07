@@ -18,6 +18,7 @@
 #include "libusb1_base.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/shared_array.hpp>
 #include <boost/foreach.hpp>
@@ -26,6 +27,7 @@
 #include <vector>
 #include <iostream>
 
+using namespace uhd;
 using namespace uhd::transport;
 
 static const double CLEANUP_TIMEOUT   = 0.2;    //seconds
@@ -284,16 +286,24 @@ public:
 
     libusb_zero_copy_impl(
         libusb::device_handle::sptr handle,
-        unsigned int recv_endpoint, unsigned int send_endpoint,
-        size_t recv_xfer_size, size_t recv_num_xfers,
-        size_t send_xfer_size, size_t send_num_xfers
+        size_t recv_endpoint,
+        size_t send_endpoint,
+        const device_addr_t &hints
     );
+
+    ~libusb_zero_copy_impl(void){
+        _threads_running = false;
+        _thread_group.join_all();
+    }
 
     managed_recv_buffer::sptr get_recv_buff(double);
     managed_send_buffer::sptr get_send_buff(double);
 
-    size_t get_num_recv_frames(void) const { return _recv_num_frames; }
-    size_t get_num_send_frames(void) const { return _send_num_frames; }
+    size_t get_num_recv_frames(void) const { return _num_recv_frames; }
+    size_t get_num_send_frames(void) const { return _num_send_frames; }
+
+    size_t get_recv_frame_size(void) const { return _recv_frame_size; }
+    size_t get_send_frame_size(void) const { return _send_frame_size; }
 
 private:
     void release(libusb_transfer *lut){
@@ -311,9 +321,25 @@ private:
     }
 
     libusb::device_handle::sptr _handle;
-    size_t _recv_xfer_size, _send_xfer_size;
-    size_t _recv_num_frames, _send_num_frames;
+    const size_t _recv_frame_size, _num_recv_frames;
+    const size_t _send_frame_size, _num_send_frames;
     usb_endpoint::sptr _recv_ep, _send_ep;
+
+    //event handler threads
+    boost::thread_group _thread_group;
+    bool _threads_running;
+
+    void run_event_loop(void){
+        set_thread_priority_safe();
+        libusb::session::sptr session = libusb::session::get_global_session();
+        _threads_running = true;
+        while(_threads_running){
+            timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000; //100ms
+            libusb_handle_events_timeout(session->get_context(), &tv);
+        }
+    }
 };
 
 /*
@@ -323,24 +349,16 @@ private:
  */
 libusb_zero_copy_impl::libusb_zero_copy_impl(
     libusb::device_handle::sptr handle,
-    unsigned int recv_endpoint, unsigned int send_endpoint,
-    size_t recv_xfer_size, size_t recv_num_xfers,
-    size_t send_xfer_size, size_t send_num_xfers
-){
-    _handle = handle;
-
-    //if the sizes are left at 0 (automatic) -> use the defaults
-    if (recv_xfer_size == 0) recv_xfer_size = DEFAULT_XFER_SIZE;
-    if (recv_num_xfers == 0) recv_num_xfers = DEFAULT_NUM_XFERS;
-    if (send_xfer_size == 0) send_xfer_size = DEFAULT_XFER_SIZE;
-    if (send_num_xfers == 0) send_num_xfers = DEFAULT_NUM_XFERS;
-
-    //store the num xfers for the num frames count
-    _recv_xfer_size = recv_xfer_size;
-    _recv_num_frames = recv_num_xfers;
-    _send_xfer_size = send_xfer_size;
-    _send_num_frames = send_num_xfers;
-
+    size_t recv_endpoint,
+    size_t send_endpoint,
+    const device_addr_t &hints
+):
+    _handle(handle),
+    _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", DEFAULT_XFER_SIZE))),
+    _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_XFERS))),
+    _send_frame_size(size_t(hints.cast<double>("send_frame_size", DEFAULT_XFER_SIZE))),
+    _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_XFERS)))
+{
     _handle->claim_interface(2 /*in interface*/);
     _handle->claim_interface(1 /*out interface*/);
 
@@ -348,17 +366,23 @@ libusb_zero_copy_impl::libusb_zero_copy_impl(
                               _handle,         // libusb device_handle
                               recv_endpoint,   // USB endpoint number
                               true,            // IN endpoint
-                              recv_xfer_size,  // buffer size per transfer
-                              recv_num_xfers   // number of libusb transfers
+                              this->get_recv_frame_size(),  // buffer size per transfer
+                              this->get_num_recv_frames()   // number of libusb transfers
     ));
 
     _send_ep = usb_endpoint::sptr(new usb_endpoint(
                               _handle,         // libusb device_handle
                               send_endpoint,   // USB endpoint number
                               false,           // OUT endpoint
-                              send_xfer_size,  // buffer size per transfer
-                              send_num_xfers   // number of libusb transfers
+                              this->get_send_frame_size(),  // buffer size per transfer
+                              this->get_num_send_frames()   // number of libusb transfers
     ));
+
+    //spawn the event handler threads
+    size_t concurrency = hints.cast<size_t>("concurrency_hint", 1);
+    for (size_t i = 0; i < concurrency; i++) _thread_group.create_thread(
+        boost::bind(&libusb_zero_copy_impl::run_event_loop, this)
+    );
 }
 
 /*
@@ -394,7 +418,7 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(double timeout){
     }
     else {
         return managed_send_buffer::make_safe(
-            boost::asio::mutable_buffer(lut->buffer, _send_xfer_size),
+            boost::asio::mutable_buffer(lut->buffer, this->get_send_frame_size()),
             boost::bind(&libusb_zero_copy_impl::commit, shared_from_this(), lut, _1)
         );
     }
@@ -405,17 +429,14 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(double timeout){
  **********************************************************************/
 usb_zero_copy::sptr usb_zero_copy::make(
     usb_device_handle::sptr handle,
-    unsigned int recv_endpoint, unsigned int send_endpoint,
-    size_t recv_xfer_size, size_t recv_num_xfers,
-    size_t send_xfer_size, size_t send_num_xfers
+    size_t recv_endpoint,
+    size_t send_endpoint,
+    const device_addr_t &hints
 ){
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
         boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
     ));
     return sptr(new libusb_zero_copy_impl(
-        dev_handle,
-        recv_endpoint,  send_endpoint,
-        recv_xfer_size, recv_num_xfers,
-        send_xfer_size, send_num_xfers
+        dev_handle, recv_endpoint, send_endpoint, hints
     ));
 }

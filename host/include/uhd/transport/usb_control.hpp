@@ -18,7 +18,7 @@
 #ifndef INCLUDED_UHD_TRANSPORT_USB_CONTROL_HPP
 #define INCLUDED_UHD_TRANSPORT_USB_CONTROL_HPP
 
-#include "usb_device_handle.hpp"
+#include <uhd/transport/usb_device_handle.hpp>
 
 namespace uhd { namespace transport {
 

@@ -44,7 +44,7 @@ static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(4 * 25e6 * 0.5);
 static const size_t MIN_SEND_SOCK_BUFF_SIZE = size_t(10e3);
 
 //the number of async frames to allocate for each send and recv
-static const size_t DEFAULT_NUM_ASYNC_FRAMES = 32;
+static const size_t DEFAULT_NUM_FRAMES = 32;
 
 //a single concurrent thread for io_service seems to be the fastest
 static const size_t CONCURRENCY_HINT = 1;
@@ -61,14 +61,15 @@ public:
     typedef boost::shared_ptr<udp_zero_copy_asio_impl> sptr;
 
     udp_zero_copy_asio_impl(
-        const std::string &addr, const std::string &port,
-        size_t recv_frame_size, size_t num_recv_frames,
-        size_t send_frame_size, size_t num_send_frames
+        const std::string &addr,
+        const std::string &port,
+        const device_addr_t &hints
     ):
-        _io_service(CONCURRENCY_HINT),
-        _work(new asio::io_service::work(_io_service)),
-        _recv_frame_size(recv_frame_size), _num_recv_frames(num_recv_frames),
-        _send_frame_size(send_frame_size), _num_send_frames(num_send_frames)
+        _io_service(hints.cast<size_t>("concurrency_hint", CONCURRENCY_HINT)),
+        _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
+        _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_FRAMES))),
+        _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
+        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES)))
     {
         //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
@@ -99,6 +100,7 @@ public:
         }
 
         //spawn the service threads that will run the io service
+        _work = new asio::io_service::work(_io_service); //new work to delete later
         for (size_t i = 0; i < CONCURRENCY_HINT; i++) _thread_group.create_thread(
             boost::bind(&udp_zero_copy_asio_impl::service, this)
         );
@@ -141,6 +143,7 @@ public:
     }
 
     size_t get_num_recv_frames(void) const {return _num_recv_frames;}
+    size_t get_recv_frame_size(void) const {return _recv_frame_size;}
 
     //! pop an empty send buffer off of the fifo and bind with the commit callback
     managed_send_buffer::sptr get_send_buff(double timeout){
@@ -159,6 +162,7 @@ public:
     }
 
     size_t get_num_send_frames(void) const {return _num_send_frames;}
+    size_t get_send_frame_size(void) const {return _send_frame_size;}
 
 private:
     void service(void){
@@ -242,9 +246,12 @@ template<typename Opt> static void resize_buff_helper(
             "Current %s sock buff size: %d bytes"
         ) % name % actual_size << std::endl;
         if (actual_size < target_size) uhd::print_warning(str(boost::format(
-            "The %s buffer is smaller than the requested size.\n"
-            "The minimum recommended buffer size is %d bytes.\n"
-            "See the USRP2 application notes on buffer resizing.\n"
+            "The %1% buffer is smaller than the requested size.\n"
+            "The minimum recommended buffer size is %2% bytes.\n"
+            "See the transport application notes on buffer resizing.\n"
+            #if defined(UHD_PLATFORM_LINUX)
+            "Please run: sudo sysctl -w net.core.rmem_max=%2%\n"
+            #endif /*defined(UHD_PLATFORM_LINUX)*/
         ) % name % min_sock_buff_size));
     }
 
@@ -260,14 +267,15 @@ template<typename Opt> static void resize_buff_helper(
 udp_zero_copy::sptr udp_zero_copy::make(
     const std::string &addr,
     const std::string &port,
-    size_t recv_buff_size,
-    size_t send_buff_size
+    const device_addr_t &hints
 ){
-    udp_zero_copy_asio_impl::sptr udp_trans(new udp_zero_copy_asio_impl(
-        addr, port,
-        udp_simple::mtu, DEFAULT_NUM_ASYNC_FRAMES, //recv
-        udp_simple::mtu, DEFAULT_NUM_ASYNC_FRAMES  //send
-    ));
+    udp_zero_copy_asio_impl::sptr udp_trans(
+        new udp_zero_copy_asio_impl(addr, port, hints)
+    );
+
+    //extract buffer size hints from the device addr
+    size_t recv_buff_size = size_t(hints.cast<double>("recv_buff_size", 0.0));
+    size_t send_buff_size = size_t(hints.cast<double>("send_buff_size", 0.0));
 
     //call the helper to resize send and recv buffers
     resize_buff_helper<asio::socket_base::receive_buffer_size>(udp_trans, recv_buff_size, "recv");
