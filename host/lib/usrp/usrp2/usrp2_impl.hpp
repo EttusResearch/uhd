@@ -184,24 +184,18 @@ public:
     ~usrp2_impl(void);
 
     //the io interface
-    size_t get_max_send_samps_per_packet(void) const{
-        const size_t bytes_per_packet = _data_transports.front()->get_send_frame_size() - _max_tx_header_bytes;
-        return bytes_per_packet/_tx_otw_type.get_sample_size();
-    }
     size_t send(
         const std::vector<const void *> &, size_t,
         const uhd::tx_metadata_t &, const uhd::io_type_t &,
         uhd::device::send_mode_t, double
     );
-    size_t get_max_recv_samps_per_packet(void) const{
-        const size_t bytes_per_packet = _data_transports.front()->get_recv_frame_size() - _max_rx_header_bytes;
-        return bytes_per_packet/_rx_otw_type.get_sample_size();
-    }
     size_t recv(
         const std::vector<void *> &, size_t,
         uhd::rx_metadata_t &, const uhd::io_type_t &,
         uhd::device::recv_mode_t, double
     );
+    size_t get_max_send_samps_per_packet(void) const;
+    size_t get_max_recv_samps_per_packet(void) const;
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
@@ -215,20 +209,9 @@ private:
 
     //io impl methods and members
     std::vector<uhd::transport::udp_zero_copy::sptr> _data_transports;
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
-
-    //over-the-wire structs and constants
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    static const size_t _max_rx_header_bytes = 0
-        + uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-        + sizeof(uhd::transport::vrt::if_packet_info_t().tlr) //forced to have trailer
-        - sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
-    ;
-    static const size_t _max_tx_header_bytes = 0
-        + uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-        - sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
-    ;
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */
