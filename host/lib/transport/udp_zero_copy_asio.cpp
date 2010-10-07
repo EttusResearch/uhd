@@ -189,7 +189,7 @@ public:
         //setup timeval for timeout
         timeval tv;
         tv.tv_sec = 0;
-        tv.tv_usec = timeout*1e6;
+        tv.tv_usec = long(timeout*1e6);
 
         //setup rset for timeout
         fd_set rset;
@@ -274,7 +274,7 @@ private:
     asio::ip::udp::socket   *_socket;
     asio::io_service        _io_service;
     asio::io_service::work  *_work;
-    asio::ip::udp::socket::native_type _sock_fd;
+    int                     _sock_fd;
 
     //memory management -> buffers and fifos
     boost::thread_group _thread_group;
