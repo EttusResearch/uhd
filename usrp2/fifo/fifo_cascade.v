@@ -10,11 +10,11 @@ module fifo_cascade
   #(parameter WIDTH=32, SIZE=9)
     (input clk, input reset, input clear,
      input [WIDTH-1:0] datain,
-     input src_rdy_i,                // WRITE
-     output dst_rdy_o,               // not FULL
+     input src_rdy_i,
+     output dst_rdy_o,
      output [WIDTH-1:0] dataout,
-     output src_rdy_o,               // not EMPTY
-     input dst_rdy_i,                // READ
+     output src_rdy_o,
+     input dst_rdy_i,
      output [15:0] space,
      output [15:0] occupied);
 
