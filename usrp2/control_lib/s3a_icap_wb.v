@@ -3,18 +3,19 @@
 module s3a_icap_wb
   (input clk, input reset,
    input cyc_i, input stb_i, input we_i, output ack_o,
-   input [31:0] dat_i, output [31:0] dat_o);
+   input [31:0] dat_i, output [31:0] dat_o)//, output [31:0] debug_out);
 
    assign dat_o[31:8] = 24'd0;
    
-   wire 	BUSY, CE, WRITE;
+   wire 	BUSY, CE, WRITE, ICAPCLK;
    
+   //changed this to gray-ish code to prevent glitching
    reg [2:0] 	icap_state;
    localparam ICAP_IDLE  = 0;
    localparam ICAP_WR0 	 = 1;
-   localparam ICAP_WR1 	 = 2;
-   localparam ICAP_RD0 	 = 3;
-   localparam ICAP_RD1 	 = 4;
+   localparam ICAP_WR1 	 = 5;
+   localparam ICAP_RD0 	 = 2;
+   localparam ICAP_RD1 	 = 3;
 
    always @(posedge clk)
      if(reset)
@@ -40,15 +41,17 @@ module s3a_icap_wb
        endcase // case (icap_state)
 
    assign WRITE 	 = (icap_state == ICAP_WR0) | (icap_state == ICAP_WR1);
-   assign CE 		 = (icap_state == ICAP_WR1) | (icap_state == ICAP_RD0);
+   assign CE 		 = (icap_state == ICAP_WR0) | (icap_state == ICAP_RD0);
+   assign ICAPCLK        = CE & (~clk);
 
    assign ack_o = (icap_state == ICAP_WR1) | (icap_state == ICAP_RD1);
+   //assign debug_out = {17'd0, BUSY, dat_i[7:0], ~CE, ICAPCLK, ~WRITE, icap_state};
    
    ICAP_SPARTAN3A ICAP_SPARTAN3A_inst 
      (.BUSY(BUSY),          // Busy output
       .O(dat_o[7:0]),            // 32-bit data output
       .CE(~CE),              // Clock enable input
-      .CLK(clk),            // Clock input
+      .CLK(ICAPCLK),            // Clock input
       .I(dat_i[7:0]),            // 32-bit data input
       .WRITE(~WRITE)         // Write input
       );
