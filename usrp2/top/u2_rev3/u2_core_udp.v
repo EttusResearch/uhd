@@ -414,7 +414,7 @@ module u2_core
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
 		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio(/* {io_tx,io_rx}*/ ) );
+		 .gpio({io_tx,io_rx}) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
@@ -788,12 +788,10 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
-   assign debug_clk = {dsp_clk, clk_to_mac};
-   assign debug = debug_extfifo;
+   assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
+   assign debug = 32'd0; // debug_extfifo;
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
-   assign {io_tx,io_rx} = debug_extfifo2;
-
    
 endmodule // u2_core
 
