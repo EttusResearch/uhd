@@ -63,6 +63,7 @@ struct usrp1_impl::io_impl{
         data_transport(data_transport),
         underflow_poll_samp_count(0),
         overflow_poll_samp_count(0),
+        curr_buff_committed(true),
         curr_buff(offset_send_buffer::make(data_transport->get_send_buff()))
     {
         /* NOP */
@@ -86,6 +87,7 @@ struct usrp1_impl::io_impl{
     //all of this to ensure only aligned lengths are committed
     //NOTE: you must commit before getting a new buffer
     //since the vrt packet handler obeys this, we are ok
+    bool curr_buff_committed;
     offset_send_buffer::sptr curr_buff;
     void commit_send_buff(offset_send_buffer::sptr, offset_send_buffer::sptr, size_t);
     void flush_send_buff(void);
@@ -121,6 +123,7 @@ void usrp1_impl::io_impl::commit_send_buff(
 
     //commit the current buffer
     curr->buff->commit(num_bytes_to_commit);
+    curr_buff_committed = true;
 }
 
 /*!
@@ -145,7 +148,7 @@ void usrp1_impl::io_impl::flush_send_buff(void){
 bool usrp1_impl::io_impl::get_send_buffs(
     vrt_packet_handler::managed_send_buffs_t &buffs, double timeout
 ){
-    UHD_ASSERT_THROW(buffs.size() == 1);
+    UHD_ASSERT_THROW(curr_buff_committed and buffs.size() == 1);
 
     //try to get a new managed buffer with timeout
     offset_send_buffer::sptr next_buff(offset_send_buffer::make(data_transport->get_send_buff(timeout)));
@@ -163,6 +166,7 @@ bool usrp1_impl::io_impl::get_send_buffs(
 
     //store the next buffer for the next call
     curr_buff = next_buff;
+    curr_buff_committed = false;
 
     return true;
 }
