@@ -91,7 +91,6 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
 ){
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
-    //size_t next_packet_seq = 0;
 
     while(recv_pirate_crew_raiding){
         managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff();
@@ -143,6 +142,15 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
  * Helper Functions
  **********************************************************************/
 void usrp_e_impl::io_init(void){
+    //setup otw types
+    _send_otw_type.width = 16;
+    _send_otw_type.shift = 0;
+    _send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
+    _recv_otw_type.width = 16;
+    _recv_otw_type.shift = 0;
+    _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
     //setup rx data path
     _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
     _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
@@ -197,21 +205,25 @@ bool get_send_buffs(
     return buffs[0].get() != NULL;
 }
 
+size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
+    static const size_t hdr_size = 0
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+    ;
+    size_t bpp = _io_impl->data_xport->get_send_frame_size() - hdr_size;
+    return bpp/_send_otw_type.get_sample_size();
+}
+
 size_t usrp_e_impl::send(
     const std::vector<const void *> &buffs, size_t num_samps,
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
-    otw_type_t send_otw_type;
-    send_otw_type.width = 16;
-    send_otw_type.shift = 0;
-    send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-
     return vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
         metadata, send_mode,                       //samples metadata
-        io_type, send_otw_type,                    //input and output types to convert
+        io_type, _send_otw_type,                   //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_le,
         boost::bind(&get_send_buffs, _io_impl->data_xport, timeout, _1),
@@ -222,21 +234,26 @@ size_t usrp_e_impl::send(
 /***********************************************************************
  * Data Recv
  **********************************************************************/
+size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
+    static const size_t hdr_size = 0
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
+        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+    ;
+    size_t bpp = _io_impl->data_xport->get_recv_frame_size() - hdr_size;
+    return bpp/_recv_otw_type.get_sample_size();
+}
+
 size_t usrp_e_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
-    otw_type_t recv_otw_type;
-    recv_otw_type.width = 16;
-    recv_otw_type.shift = 0;
-    recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
         metadata, recv_mode,                       //samples metadata
-        io_type, recv_otw_type,                    //input and output types to convert
+        io_type, _recv_otw_type,                   //input and output types to convert
         MASTER_CLOCK_RATE,                         //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
         boost::bind(&usrp_e_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),

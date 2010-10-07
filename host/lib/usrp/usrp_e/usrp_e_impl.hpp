@@ -22,6 +22,7 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -85,8 +86,8 @@ public:
     size_t send(const std::vector<const void *> &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t, double);
     size_t recv(const std::vector<void *> &, size_t, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t, double);
     bool recv_async_msg(uhd::async_metadata_t &, double);
-    size_t get_max_send_samps_per_packet(void) const{return 503;}
-    size_t get_max_recv_samps_per_packet(void) const{return 503;}
+    size_t get_max_send_samps_per_packet(void) const;
+    size_t get_max_recv_samps_per_packet(void) const;
 
 private:
     //interface to ioctls and file descriptor
@@ -97,6 +98,7 @@ private:
 
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
+    uhd::otw_type_t _send_otw_type, _recv_otw_type;
     void io_init(void);
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
     void handle_overrun(size_t);

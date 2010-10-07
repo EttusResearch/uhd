@@ -134,6 +134,10 @@ public:
         return _rb_size.num_rx_frames;
     }
 
+    size_t get_recv_frame_size(void) const{
+        return _frame_size;
+    }
+
     managed_send_buffer::sptr get_send_buff(double timeout){
         if (fp_verbose) std::cout << "get_send_buff: " << _send_index << std::endl;
 
@@ -164,6 +168,10 @@ public:
 
     size_t get_num_send_frames(void) const{
         return _rb_size.num_tx_frames;
+    }
+
+    size_t get_send_frame_size(void) const{
+        return _frame_size;
     }
 
 private:
