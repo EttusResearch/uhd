@@ -33,6 +33,28 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
+static const size_t alignment_padding = 512;
+
+/***********************************************************************
+ * Helper struct to associate an offset with a buffer
+ **********************************************************************/
+class offset_send_buffer{
+public:
+    typedef boost::shared_ptr<offset_send_buffer> sptr;
+
+    static sptr make(managed_send_buffer::sptr buff, size_t offset = 0){
+        return sptr(new offset_send_buffer(buff, offset));
+    }
+
+    //member variables
+    managed_send_buffer::sptr buff;
+    size_t offset; /* in bytes */
+
+private:
+    offset_send_buffer(managed_send_buffer::sptr buff, size_t offset):
+        buff(buff), offset(offset){/* NOP */}
+};
+
 /***********************************************************************
  * IO Implementation Details
  **********************************************************************/
@@ -41,8 +63,7 @@ struct usrp1_impl::io_impl{
         data_transport(data_transport),
         underflow_poll_samp_count(0),
         overflow_poll_samp_count(0),
-        send_buff(data_transport->get_send_buff()),
-        num_bytes_committed(0)
+        curr_buff(offset_send_buffer::make(data_transport->get_send_buff()))
     {
         /* NOP */
     }
@@ -62,98 +83,88 @@ struct usrp1_impl::io_impl{
     size_t overflow_poll_samp_count;
 
     //wrapper around the actual send buffer interface
-    //all of this to ensure only full buffers are committed
-    managed_send_buffer::sptr send_buff;
-    size_t num_bytes_committed;
-    double send_timeout;
-    boost::uint8_t pseudo_buff[BYTES_PER_PACKET];
-    void phony_commit_pseudo_buff(size_t num_bytes);
-    void phony_commit_send_buff(size_t num_bytes);
-    void commit_send_buff(void);
+    //all of this to ensure only aligned lengths are committed
+    //NOTE: you must commit before getting a new buffer
+    //since the vrt packet handler obeys this, we are ok
+    offset_send_buffer::sptr curr_buff;
+    void commit_send_buff(offset_send_buffer::sptr, offset_send_buffer::sptr, size_t);
     void flush_send_buff(void);
     bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &, double);
-
-    //helpers to get at the send buffer + offset
-    inline void *get_send_mem_ptr(void){
-        return send_buff->cast<boost::uint8_t *>() + num_bytes_committed;
-    }
-    inline size_t get_send_mem_size(void){
-        return send_buff->size() - num_bytes_committed;
-    }
 };
 
 /*!
- * Accept a commit of num bytes to the pseudo buffer.
- * Memcpy the entire contents of pseudo buffer into send buffers.
- *
- * Under most conditions:
- *   The first loop iteration will fill the remainder of the send buffer.
- *   The second loop iteration will empty the pseudo buffer remainder.
+ * Perform an actual commit on the send buffer:
+ * Copy the remainder of alignment to the next buffer.
+ * Commit the current buffer at multiples of alignment.
  */
-void usrp1_impl::io_impl::phony_commit_pseudo_buff(size_t num_bytes){
-    size_t bytes_to_copy = num_bytes, bytes_copied = 0;
-    while(bytes_to_copy){
-        size_t bytes_copied_here = std::min(bytes_to_copy, get_send_mem_size());
-        std::memcpy(get_send_mem_ptr(), pseudo_buff + bytes_copied, bytes_copied_here);
-        phony_commit_send_buff(bytes_copied_here);
-        bytes_to_copy -= bytes_copied_here;
-        bytes_copied += bytes_copied_here;
+void usrp1_impl::io_impl::commit_send_buff(
+    offset_send_buffer::sptr curr,
+    offset_send_buffer::sptr next,
+    size_t num_bytes
+){
+    //total number of bytes now in the current buffer
+    size_t bytes_in_curr_buffer = curr->offset + num_bytes;
+
+    //calculate how many to commit and remainder
+    size_t num_bytes_remaining = bytes_in_curr_buffer % alignment_padding;
+    size_t num_bytes_to_commit = bytes_in_curr_buffer - num_bytes_remaining;
+
+    //copy the remainder into the next buffer
+    std::memcpy(
+        next->buff->cast<char *>() + next->offset,
+        curr->buff->cast<char *>() + num_bytes_to_commit,
+        num_bytes_remaining
+    );
+
+    //update the offset into the next buffer
+    next->offset += num_bytes_remaining;
+
+    //commit the current buffer
+    curr->buff->commit(num_bytes_to_commit);
+}
+
+/*!
+ * Flush the current buffer by padding out to alignment and committing.
+ */
+void usrp1_impl::io_impl::flush_send_buff(void){
+    //calculate the number of bytes to alignment
+    size_t bytes_to_pad = (-1*curr_buff->offset)%alignment_padding;
+
+    //get the buffer, clear, and commit (really current buffer)
+    vrt_packet_handler::managed_send_buffs_t buffs(1);
+    if (this->get_send_buffs(buffs, 0.1)){
+        std::memset(buffs[0]->cast<void *>(), 0, bytes_to_pad);
+        buffs[0]->commit(bytes_to_pad);
     }
 }
 
 /*!
- * Accept a commit of num bytes to the send buffer.
- * Conditionally commit the send buffer if full.
+ * Get a managed send buffer with the alignment padding:
+ * Always grab the next send buffer so we can timeout here.
  */
-void usrp1_impl::io_impl::phony_commit_send_buff(size_t num_bytes){
-    num_bytes_committed += num_bytes;
-    if (num_bytes_committed != send_buff->size()) return;
-    commit_send_buff();
-}
-
-/*!
- * Flush the send buffer:
- * Zero-pad the send buffer to the nearest 512 byte boundary and commit.
- */
-void usrp1_impl::io_impl::flush_send_buff(void){
-    size_t bytes_to_pad = (-1*num_bytes_committed)%512;
-    std::memset(get_send_mem_ptr(), 0, bytes_to_pad);
-    num_bytes_committed += bytes_to_pad;
-    commit_send_buff();
-}
-
-/*!
- * Perform an actual commit on the send buffer:
- * Commit the contents of the send buffer and request a new buffer.
- */
-void usrp1_impl::io_impl::commit_send_buff(void){
-    send_buff->commit(num_bytes_committed);
-    send_buff = data_transport->get_send_buff(send_timeout);
-    num_bytes_committed = 0;
-}
-
 bool usrp1_impl::io_impl::get_send_buffs(
     vrt_packet_handler::managed_send_buffs_t &buffs, double timeout
 ){
-    send_timeout = timeout;
     UHD_ASSERT_THROW(buffs.size() == 1);
 
-    //not enough bytes free -> use the pseudo buffer
-    if (get_send_mem_size() < BYTES_PER_PACKET){
-        buffs[0] = managed_send_buffer::make_safe(
-            boost::asio::buffer(pseudo_buff),
-            boost::bind(&usrp1_impl::io_impl::phony_commit_pseudo_buff, this, _1)
-        );
-    }
-    //otherwise use the send buffer offset by the bytes written
-    else{
-        buffs[0] = managed_send_buffer::make_safe(
-            boost::asio::buffer(get_send_mem_ptr(), get_send_mem_size()),
-            boost::bind(&usrp1_impl::io_impl::phony_commit_send_buff, this, _1)
-        );
-    }
+    //try to get a new managed buffer with timeout
+    offset_send_buffer::sptr next_buff(offset_send_buffer::make(data_transport->get_send_buff(timeout)));
+    if (not next_buff->buff.get()) return false; /* propagate timeout here */
 
-    return buffs[0].get() != NULL;
+    //calculate the buffer pointer and size given the offset
+    //references to the buffers are held in the bound function
+    buffs[0] = managed_send_buffer::make_safe(
+        boost::asio::buffer(
+            curr_buff->buff->cast<char *>() + curr_buff->offset,
+            curr_buff->buff->size()         - curr_buff->offset
+        ),
+        boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, curr_buff, next_buff, _1)
+    );
+
+    //store the next buffer for the next call
+    curr_buff = next_buff;
+
+    return true;
 }
 
 /***********************************************************************
@@ -180,6 +191,13 @@ static void usrp1_bs_vrt_packer(
 ){
     if_packet_info.num_header_words32 = 0;
     if_packet_info.num_packet_words32 = if_packet_info.num_payload_words32;
+}
+
+size_t usrp1_impl::get_max_send_samps_per_packet(void) const {
+    return (_data_transport->get_send_frame_size() - alignment_padding)
+        / _tx_otw_type.get_sample_size()
+        / _tx_subdev_spec.size()
+    ;
 }
 
 size_t usrp1_impl::send(
@@ -247,6 +265,13 @@ static bool get_recv_buffs(
     UHD_ASSERT_THROW(buffs.size() == 1);
     buffs[0] = zc_if->get_recv_buff(timeout);
     return buffs[0].get() != NULL;
+}
+
+size_t usrp1_impl::get_max_recv_samps_per_packet(void) const {
+    return _data_transport->get_recv_frame_size()
+        / _rx_otw_type.get_sample_size()
+        / _rx_subdev_spec.size()
+    ;
 }
 
 size_t usrp1_impl::recv(

@@ -90,15 +90,9 @@ public:
                 const uhd::io_type_t &,
                 recv_mode_t, double);
 
-    static const size_t BYTES_PER_PACKET = 512*4; //under the transfer size
+    size_t get_max_send_samps_per_packet(void) const;
 
-    size_t get_max_send_samps_per_packet(void) const {
-        return BYTES_PER_PACKET/_tx_otw_type.get_sample_size()/_tx_subdev_spec.size();
-    }
-
-    size_t get_max_recv_samps_per_packet(void) const {
-        return BYTES_PER_PACKET/_rx_otw_type.get_sample_size()/_rx_subdev_spec.size();
-    }
+    size_t get_max_recv_samps_per_packet(void) const;
 
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
