@@ -39,6 +39,10 @@ namespace asio = boost::asio;
 //Otherwise, get_recv_buff uses a blocking receive with timeout.
 //#define USE_ASIO_ASYNC_RECV
 
+//Define this to the the boost async io calls to perform send.
+//Otherwise, the commit callback uses a blocking send.
+//#define USE_ASIO_ASYNC_SEND
+
 //enough buffering for half a second of samples at full rate on usrp2
 static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(4 * 25e6 * 0.5);
 
@@ -55,7 +59,13 @@ static const size_t DEFAULT_NUM_RECV_FRAMES = 32;
 #else
 static const size_t DEFAULT_NUM_RECV_FRAMES = MIN_RECV_SOCK_BUFF_SIZE/udp_simple::mtu;
 #endif
+//The non-async send only ever requires a single frame
+//because the buffer will be committed before a new get.
+#ifdef USE_ASIO_ASYNC_SEND
 static const size_t DEFAULT_NUM_SEND_FRAMES = 32;
+#else
+static const size_t DEFAULT_NUM_SEND_FRAMES = MIN_SEND_SOCK_BUFF_SIZE/udp_simple::mtu;;
+#endif
 
 //a single concurrent thread for io_service seems to be the fastest
 static const size_t CONCURRENCY_HINT = 1;
@@ -143,6 +153,12 @@ public:
         return get_buff_size<Opt>();
     }
 
+    //! handle a recv callback -> push the filled memory into the fifo
+    UHD_INLINE void handle_recv(void *mem, size_t len){
+        boost::this_thread::disable_interruption di; //disable because the wait can throw
+        _pending_recv_buffs->push_with_wait(boost::asio::buffer(mem, len));
+    }
+
     ////////////////////////////////////////////////////////////////////
     #ifdef USE_ASIO_ASYNC_RECV
     ////////////////////////////////////////////////////////////////////
@@ -162,16 +178,10 @@ public:
         return managed_recv_buffer::sptr();
     }
 
-    //! handle a recv callback -> push the filled memory into the fifo
-    void handle_recv(void *mem, size_t len){
-        boost::this_thread::disable_interruption di; //disable because the wait can throw
-        _pending_recv_buffs->push_with_wait(boost::asio::buffer(mem, len));
-    }
-
     //! release a recv buffer -> start an async recv on the buffer
     void release(void *mem){
         _socket->async_receive(
-            boost::asio::buffer(mem, _recv_frame_size),
+            boost::asio::buffer(mem, this->get_recv_frame_size()),
             boost::bind(
                 &udp_zero_copy_asio_impl::handle_recv,
                 shared_from_this(), mem,
@@ -185,6 +195,7 @@ public:
     ////////////////////////////////////////////////////////////////////
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
+        asio::mutable_buffer buff;
 
         //setup timeval for timeout
         timeval tv;
@@ -196,34 +207,30 @@ public:
         FD_ZERO(&rset);
         FD_SET(_sock_fd, &rset);
 
-        //call select to perform timed wait
-        if (::select(_sock_fd+1, &rset, NULL, NULL, &tv) <= 0)
-            return managed_recv_buffer::sptr();
-
-        //grab an available buffer
-        asio::mutable_buffer buff;
-        if (not _pending_recv_buffs->pop_with_timed_wait(buff, timeout))
-            return managed_recv_buffer::sptr();
-
-        //receive and return the buffer
-        return managed_recv_buffer::make_safe(
-            asio::buffer(
-                boost::asio::buffer_cast<void *>(buff),
-                _socket->receive(boost::asio::buffer(buff))
-            ),
-            boost::bind(
-                &udp_zero_copy_asio_impl::release,
-                shared_from_this(),
-                asio::buffer_cast<void*>(buff)
-            )
-        );
+        //call select to perform timed wait and grab an available buffer with wait
+        //if the condition is true, call receive and return the managed buffer
+        if (
+            ::select(_sock_fd+1, &rset, NULL, NULL, &tv) > 0 and
+            _pending_recv_buffs->pop_with_timed_wait(buff, timeout)
+        ){
+            return managed_recv_buffer::make_safe(
+                asio::buffer(
+                    boost::asio::buffer_cast<void *>(buff),
+                    _socket->receive(asio::buffer(buff))
+                ),
+                boost::bind(
+                    &udp_zero_copy_asio_impl::release,
+                    shared_from_this(),
+                    asio::buffer_cast<void*>(buff)
+                )
+            );
+        }
+        return managed_recv_buffer::sptr();
     }
 
     void release(void *mem){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        _pending_recv_buffs->push_with_wait(
-            boost::asio::buffer(mem, this->get_recv_frame_size())
-        );
+        handle_recv(mem, this->get_recv_frame_size());
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -232,6 +239,12 @@ public:
 
     size_t get_num_recv_frames(void) const {return _num_recv_frames;}
     size_t get_recv_frame_size(void) const {return _recv_frame_size;}
+
+    //! handle a send callback -> push the emptied memory into the fifo
+    UHD_INLINE void handle_send(void *mem){
+        boost::this_thread::disable_interruption di; //disable because the wait can throw
+        _pending_send_buffs->push_with_wait(boost::asio::buffer(mem, this->get_send_frame_size()));
+    }
 
     //! pop an empty send buffer off of the fifo and bind with the commit callback
     managed_send_buffer::sptr get_send_buff(double timeout){
@@ -249,12 +262,9 @@ public:
         return managed_send_buffer::sptr();
     }
 
-    //! handle a send callback -> push the emptied memory into the fifo
-    void handle_send(void *mem){
-        boost::this_thread::disable_interruption di; //disable because the wait can throw
-        _pending_send_buffs->push_with_wait(boost::asio::buffer(mem, _send_frame_size));
-    }
-
+    ////////////////////////////////////////////////////////////////////
+    #ifdef USE_ASIO_ASYNC_SEND
+    ////////////////////////////////////////////////////////////////////
     //! commit a send buffer -> start an async send on the buffer
     void commit(void *mem, size_t len){
         _socket->async_send(
@@ -265,6 +275,18 @@ public:
             )
         );
     }
+
+    ////////////////////////////////////////////////////////////////////
+    #else /*USE_ASIO_ASYNC_SEND*/
+    ////////////////////////////////////////////////////////////////////
+    void commit(void *mem, size_t len){
+        _socket->send(asio::buffer(mem, len));
+        handle_send(mem);
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    #endif /*USE_ASIO_ASYNC_SEND*/
+    ////////////////////////////////////////////////////////////////////
 
     size_t get_num_send_frames(void) const {return _num_send_frames;}
     size_t get_send_frame_size(void) const {return _send_frame_size;}
@@ -297,6 +319,13 @@ template<typename Opt> static void resize_buff_helper(
     if (name == "recv") min_sock_buff_size = MIN_RECV_SOCK_BUFF_SIZE;
     if (name == "send") min_sock_buff_size = MIN_SEND_SOCK_BUFF_SIZE;
 
+    std::string help_message;
+    #if defined(UHD_PLATFORM_LINUX)
+        help_message = str(boost::format(
+            "Please run: sudo sysctl -w net.core.%smem_max=%d\n"
+        ) % ((name == "recv")?"r":"w") % min_sock_buff_size);
+    #endif /*defined(UHD_PLATFORM_LINUX)*/
+
     //resize the buffer if size was provided
     if (target_size > 0){
         size_t actual_size = udp_trans->resize_buff<Opt>(target_size);
@@ -308,13 +337,10 @@ template<typename Opt> static void resize_buff_helper(
             "Current %s sock buff size: %d bytes"
         ) % name % actual_size << std::endl;
         if (actual_size < target_size) uhd::print_warning(str(boost::format(
-            "The %1% buffer is smaller than the requested size.\n"
-            "The minimum recommended buffer size is %2% bytes.\n"
-            "See the transport application notes on buffer resizing.\n"
-            #if defined(UHD_PLATFORM_LINUX)
-            "Please run: sudo sysctl -w net.core.rmem_max=%2%\n"
-            #endif /*defined(UHD_PLATFORM_LINUX)*/
-        ) % name % min_sock_buff_size));
+            "The %s buffer is smaller than the requested size.\n"
+            "The minimum recommended buffer size is %d bytes.\n"
+            "See the transport application notes on buffer resizing.\n%s"
+        ) % name % min_sock_buff_size % help_message));
     }
 
     //only enable on platforms that are happy with the large buffer resize
