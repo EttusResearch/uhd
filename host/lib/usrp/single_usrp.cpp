@@ -54,6 +54,9 @@ public:
         return _dev;
     }
 
+    /*******************************************************************
+     * Mboard methods
+     ******************************************************************/
     std::string get_pp_string(void){
         std::string buff = str(boost::format(
             "Single USRP:\n"
@@ -101,9 +104,10 @@ public:
         return buff;
     }
 
-    /*******************************************************************
-     * Misc
-     ******************************************************************/
+    std::string get_mboard_name(void){
+        return _mboard()[MBOARD_PROP_NAME].as<std::string>();
+    }
+
     time_spec_t get_time_now(void){
         return _mboard()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
@@ -133,6 +137,10 @@ public:
 
     subdev_spec_t get_rx_subdev_spec(void){
         return _mboard()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
+    }
+
+    std::string get_rx_subdev_name(size_t chan){
+        return _rx_subdev(chan)[SUBDEV_PROP_NAME].as<std::string>();
     }
 
     void set_rx_rate(double rate){
@@ -204,6 +212,10 @@ public:
 
     subdev_spec_t get_tx_subdev_spec(void){
         return _mboard()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
+    }
+
+    std::string get_tx_subdev_name(size_t chan){
+        return _tx_subdev(chan)[SUBDEV_PROP_NAME].as<std::string>();
     }
 
     void set_tx_rate(double rate){
