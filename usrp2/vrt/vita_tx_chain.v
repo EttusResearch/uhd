@@ -24,9 +24,10 @@ module vita_tx_chain
    wire 		trigger, sent;
    wire [31:0] 		debug_vtc, debug_vtd, debug_tx_dsp;
 
-   wire 		error;
+   wire 		error, packet_consumed;
    wire [31:0] 		error_code;
    wire 		clear_seqnum;
+   wire [15:0] 		current_seqnum;
    
    assign underrun = error;
    assign message = error_code;
@@ -40,6 +41,7 @@ module vita_tx_chain
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
       .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
+      .current_seqnum(current_seqnum),
       .debug(debug_vtd) );
 
    vita_tx_control #(.BASE(BASE_CTRL), .WIDTH(32*MAXCHAN)) vita_tx_control
@@ -47,7 +49,7 @@ module vita_tx_chain
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time),.error(error),.error_code(error_code),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
-      .sample(sample_tx), .run(run), .strobe(strobe_tx),
+      .sample(sample_tx), .run(run), .strobe(strobe_tx), .packet_consumed(packet_consumed),
       .debug(debug_vtc) );
    
    dsp_core_tx #(.BASE(BASE_DSP)) dsp_core_tx
@@ -59,13 +61,21 @@ module vita_tx_chain
 
    generate
       if(REPORT_ERROR==1)
-	gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
-	  (.clk(clk), .reset(reset), .clear(clear_vita),
-	   .trigger(error), .sent(), 
-	   .streamid(streamid), .vita_time(vita_time), .message(message),
-	   .data_o(err_data_o), .src_rdy_o(err_src_rdy_o), .dst_rdy_i(err_dst_rdy_i));
+	begin
+	   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
+	     (.clk(clk), .reset(reset), .clear(clear_vita),
+	      .trigger(trigger),.error(error), .sent(), 
+	      .streamid(streamid), .vita_time(vita_time), .message(message),
+	      .seqnum0(current_seqnum), .seqnum1(16'd0),
+	      .data_o(err_data_o), .src_rdy_o(err_src_rdy_o), .dst_rdy_i(err_dst_rdy_i));
+	   trigger_context_pkt #(.BASE(BASE_CTRL)) trigger_context_pkt
+	     (.clk(clk), .reset(reset), .clear(clear_vita),
+	      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+	      .packet_consumed(packet_consumed), .trigger(trigger));
+	end
    endgenerate
-   
-   assign debug = debug_vtc | debug_vtd;
+      
+   //assign debug = debug_vtc | debug_vtd;
+   assign debug = { debug_vtd[15:0], current_seqnum };
    
 endmodule // vita_tx_chain
