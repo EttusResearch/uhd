@@ -42,6 +42,7 @@
 #include <string.h>
 #include "clocks.h"
 #include "usrp2/fw_common.h"
+#include <i2c_async.h>
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
