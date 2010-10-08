@@ -33,7 +33,6 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
-static const double RECV_TIMEOUT_MS = 100;
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -59,9 +58,9 @@ struct usrp2_impl::io_impl{
         recv_pirate_crew.join_all();
     }
 
-    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, size_t timeout_ms){
+    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty->pop_elems_with_timed_wait(buffs, boost::posix_time::milliseconds(timeout_ms));
+        return recv_pirate_booty->pop_elems_with_timed_wait(buffs, timeout);
     }
 
     //state management for the vrt packet handler code
@@ -91,7 +90,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     size_t next_packet_seq = 0;
 
     while(recv_pirate_crew_raiding){
-        managed_recv_buffer::sptr buff = zc_if->get_recv_buff(RECV_TIMEOUT_MS);
+        managed_recv_buffer::sptr buff = zc_if->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
 
         try{
@@ -151,8 +150,7 @@ void usrp2_impl::io_init(void){
         std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
         //drain the recv buffers (may have junk)
-
-        while (data_transport->get_recv_buff(RECV_TIMEOUT_MS).get()){};
+        while (data_transport->get_recv_buff().get()){};
     }
 
     //the number of recv frames is the number for the first transport
@@ -170,22 +168,16 @@ void usrp2_impl::io_init(void){
             _mboards.at(i), i
         ));
     }
-
-    std::cout << "RX samples per packet: " << get_max_recv_samps_per_packet() << std::endl;
-    std::cout << "TX samples per packet: " << get_max_send_samps_per_packet() << std::endl;
-    std::cout << "Recv pirate num frames: " << num_frames << std::endl;
 }
 
 /***********************************************************************
  * Async Data
  **********************************************************************/
 bool usrp2_impl::recv_async_msg(
-    async_metadata_t &async_metadata, size_t timeout_ms
+    async_metadata_t &async_metadata, double timeout
 ){
     boost::this_thread::disable_interruption di; //disable because the wait can throw
-    return _io_impl->async_msg_fifo->pop_with_timed_wait(
-        async_metadata, boost::posix_time::milliseconds(timeout_ms)
-    );
+    return _io_impl->async_msg_fifo->pop_with_timed_wait(async_metadata, timeout);
 }
 
 /***********************************************************************
@@ -193,28 +185,40 @@ bool usrp2_impl::recv_async_msg(
  **********************************************************************/
 static bool get_send_buffs(
     const std::vector<udp_zero_copy::sptr> &trans,
-    vrt_packet_handler::managed_send_buffs_t &buffs
+    vrt_packet_handler::managed_send_buffs_t &buffs,
+    double timeout
 ){
     UHD_ASSERT_THROW(trans.size() == buffs.size());
+    bool good = true;
     for (size_t i = 0; i < buffs.size(); i++){
-        buffs[i] = trans[i]->get_send_buff();
+        buffs[i] = trans[i]->get_send_buff(timeout);
+        good = good and (buffs[i].get() != NULL);
     }
-    return true;
+    return good;
+}
+
+size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
+    static const size_t hdr_size = 0
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+    ;
+    const size_t bpp = _data_transports.front()->get_send_frame_size() - hdr_size;
+    return bpp/_tx_otw_type.get_sample_size();
 }
 
 size_t usrp2_impl::send(
     const std::vector<const void *> &buffs, size_t num_samps,
     const tx_metadata_t &metadata, const io_type_t &io_type,
-    send_mode_t send_mode
+    send_mode_t send_mode, double timeout
 ){
     return vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
         metadata, send_mode,                       //samples metadata
-        io_type, _io_helper.get_tx_otw_type(),     //input and output types to convert
+        io_type, _tx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_be,
-        boost::bind(&get_send_buffs, _data_transports, _1),
+        boost::bind(&get_send_buffs, _data_transports, _1, timeout),
         get_max_send_samps_per_packet()
     );
 }
@@ -222,18 +226,28 @@ size_t usrp2_impl::send(
 /***********************************************************************
  * Receive Data
  **********************************************************************/
+size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
+    static const size_t hdr_size = 0
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
+        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+    ;
+    const size_t bpp = _data_transports.front()->get_recv_frame_size() - hdr_size;
+    return bpp/_rx_otw_type.get_sample_size();
+}
+
 size_t usrp2_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,
-    recv_mode_t recv_mode, size_t timeout_ms
+    recv_mode_t recv_mode, double timeout
 ){
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
         metadata, recv_mode,                       //samples metadata
-        io_type, _io_helper.get_rx_otw_type(),     //input and output types to convert
+        io_type, _rx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
-        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout_ms)
+        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout)
     );
 }

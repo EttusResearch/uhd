@@ -20,12 +20,8 @@
 
 #include <uhd/config.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace uhd{ namespace transport{
-
-    //! typedef for the time duration type for wait operations
-    typedef boost::posix_time::time_duration time_duration_t;
 
     /*!
      * Implement a templated bounded buffer:
@@ -64,10 +60,10 @@ namespace uhd{ namespace transport{
          * Push a new element into the bounded_buffer.
          * Wait until the bounded_buffer becomes non-full or timeout.
          * \param elem the new element to push
-         * \param time the timeout time
+         * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
-        virtual bool push_with_timed_wait(const elem_type &elem, const time_duration_t &time) = 0;
+        virtual bool push_with_timed_wait(const elem_type &elem, double timeout) = 0;
 
         /*!
          * Pop an element from the bounded_buffer.
@@ -80,10 +76,10 @@ namespace uhd{ namespace transport{
          * Pop an element from the bounded_buffer.
          * Wait until the bounded_buffer becomes non-empty or timeout.
          * \param elem the element reference pop to
-         * \param time the timeout time
+         * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
-        virtual bool pop_with_timed_wait(elem_type &elem, const time_duration_t &time) = 0;
+        virtual bool pop_with_timed_wait(elem_type &elem, double timeout) = 0;
 
         /*!
          * Clear all elements from the bounded_buffer.

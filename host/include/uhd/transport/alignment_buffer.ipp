@@ -41,9 +41,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE bool push_with_pop_on_full(
-            const elem_type &elem,
-            const seq_type &seq,
-            size_t index
+            const elem_type &elem, const seq_type &seq, size_t index
         ){
             //clear the buffer for this index if the seqs are mis-ordered
             if (seq < _last_seqs[index]){
@@ -54,17 +52,16 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE bool pop_elems_with_timed_wait(
-            std::vector<elem_type> &elems,
-            const time_duration_t &time
+            std::vector<elem_type> &elems, double timeout
         ){
-            boost::system_time exit_time = boost::get_system_time() + time;
+            boost::system_time exit_time = boost::get_system_time() + to_time_dur(timeout);
             buff_contents_type buff_contents_tmp;
             std::list<size_t> indexes_to_do(_all_indexes);
 
             //do an initial pop to load an initial sequence id
             size_t index = indexes_to_do.front();
             if (not _buffs[index]->pop_with_timed_wait(
-                buff_contents_tmp, exit_time - boost::get_system_time()
+                buff_contents_tmp, from_time_dur(exit_time - boost::get_system_time())
             )) return false;
             elems[index] = buff_contents_tmp.first;
             seq_type expected_seq_id = buff_contents_tmp.second;
@@ -79,7 +76,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
                     indexes_to_do = _all_indexes;
                     index = indexes_to_do.front();
                     if (not _buffs[index]->pop_with_timed_wait(
-                        buff_contents_tmp, exit_time - boost::get_system_time()
+                        buff_contents_tmp, from_time_dur(exit_time - boost::get_system_time())
                     )) return false;
                     elems[index] = buff_contents_tmp.first;
                     expected_seq_id = buff_contents_tmp.second;
@@ -89,7 +86,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
                 //pop an element off for this index
                 index = indexes_to_do.front();
                 if (not _buffs[index]->pop_with_timed_wait(
-                    buff_contents_tmp, exit_time - boost::get_system_time()
+                    buff_contents_tmp, from_time_dur(exit_time - boost::get_system_time())
                 )) return false;
 
                 //if the sequence id matches:

@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_USRP_SUBDEV_SPEC_HPP
 
 #include <uhd/config.hpp>
+#include <boost/operators.hpp>
 #include <vector>
 #include <string>
 
@@ -27,7 +28,7 @@ namespace uhd{ namespace usrp{
     /*!
      * A subdevice specification (daughterboard, subdevice) name pairing.
      */
-    struct UHD_API subdev_spec_pair_t{
+    struct UHD_API subdev_spec_pair_t : boost::equality_comparable<subdev_spec_pair_t>{
         //! The daughterboard name
         std::string db_name;
 
@@ -44,6 +45,9 @@ namespace uhd{ namespace usrp{
             const std::string &sd_name = ""
         );
     };
+
+    //! overloaded comparison operator for subdev_spec_pair_t
+    UHD_API bool operator==(const subdev_spec_pair_t &, const subdev_spec_pair_t &);
 
     /*!
      * A list of (daughterboard name, subdevice name) pairs:

@@ -73,54 +73,6 @@ private:
 };
 
 /*!
- * The io helper class encapculates the max packet sizes and otw types.
- * The otw types are read-only for now, this will be reimplemented
- * when it becomes possible to change the otw type in the usrp2.
- */
-class usrp2_io_helper{
-public:
-    usrp2_io_helper(void){
-        //setup rx otw type
-        _rx_otw_type.width = 16;
-        _rx_otw_type.shift = 0;
-        _rx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
-
-        //setup tx otw type
-        _tx_otw_type.width = 16;
-        _tx_otw_type.shift = 0;
-        _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
-    }
-
-    inline size_t get_max_send_samps_per_packet(void) const{
-        return _max_tx_bytes_per_packet/_tx_otw_type.get_sample_size();
-    }
-
-    inline size_t get_max_recv_samps_per_packet(void) const{
-        return _max_rx_bytes_per_packet/_rx_otw_type.get_sample_size();
-    }
-
-    inline const uhd::otw_type_t &get_rx_otw_type(void) const{
-        return _rx_otw_type;
-    }
-
-    inline const uhd::otw_type_t &get_tx_otw_type(void) const{
-        return _tx_otw_type;
-    }
-
-private:
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
-    static const size_t _max_rx_bytes_per_packet = uhd::transport::udp_simple::mtu
-        - uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-        - sizeof(uhd::transport::vrt::if_packet_info_t().tlr) //forced to have trailer
-        + sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
-    ;
-    static const size_t _max_tx_bytes_per_packet = uhd::transport::udp_simple::mtu
-        - uhd::transport::vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-        + sizeof(uhd::transport::vrt::if_packet_info_t().cid) //no class id ever used
-    ;
-};
-
-/*!
  * USRP2 mboard implementation guts:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
@@ -130,7 +82,11 @@ public:
     typedef boost::shared_ptr<usrp2_mboard_impl> sptr;
 
     //structors
-    usrp2_mboard_impl(size_t index, uhd::transport::udp_simple::sptr, const usrp2_io_helper &);
+    usrp2_mboard_impl(
+        size_t index,
+        uhd::transport::udp_simple::sptr,
+        size_t recv_frame_size
+    );
     ~usrp2_mboard_impl(void);
 
     inline double get_master_clock_freq(void){
@@ -140,7 +96,7 @@ public:
 private:
     size_t _index;
     int _rev_hi, _rev_lo;
-    const usrp2_io_helper &_io_helper;
+    const size_t _recv_frame_size;
 
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
@@ -233,23 +189,19 @@ public:
     ~usrp2_impl(void);
 
     //the io interface
-    size_t get_max_send_samps_per_packet(void) const{
-        return _io_helper.get_max_send_samps_per_packet();
-    }
     size_t send(
         const std::vector<const void *> &, size_t,
         const uhd::tx_metadata_t &, const uhd::io_type_t &,
-        uhd::device::send_mode_t
+        uhd::device::send_mode_t, double
     );
-    size_t get_max_recv_samps_per_packet(void) const{
-        return _io_helper.get_max_recv_samps_per_packet();
-    }
     size_t recv(
         const std::vector<void *> &, size_t,
         uhd::rx_metadata_t &, const uhd::io_type_t &,
-        uhd::device::recv_mode_t, size_t
+        uhd::device::recv_mode_t, double
     );
-    bool recv_async_msg(uhd::async_metadata_t &, size_t);
+    size_t get_max_send_samps_per_packet(void) const;
+    size_t get_max_recv_samps_per_packet(void) const;
+    bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
     //device properties interface
@@ -262,7 +214,7 @@ private:
 
     //io impl methods and members
     std::vector<uhd::transport::udp_zero_copy::sptr> _data_transports;
-    const usrp2_io_helper _io_helper;
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
 };

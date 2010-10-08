@@ -57,15 +57,21 @@ public:
      */
     virtual device::sptr get_device(void) = 0;
 
+    /*******************************************************************
+     * Mboard methods
+     ******************************************************************/
     /*!
      * Get a printable name for this usrp.
      * \return a printable string
      */
     virtual std::string get_pp_string(void) = 0;
 
-    /*******************************************************************
-     * Misc
-     ******************************************************************/
+    /*!
+     * Get canonical name for this USRP motherboard.
+     * \return a string representing the name
+     */
+    virtual std::string get_mboard_name(void) = 0;
+
     /*!
      * Gets the current time in the usrp time registers.
      * \return a timespec representing current usrp time
@@ -110,8 +116,15 @@ public:
     /*******************************************************************
      * RX methods
      ******************************************************************/
+    /*!
+     * Set the RX subdevice specification:
+     * The subdev spec maps a physical part of a daughter-board to a channel number.
+     * Set the subdev spec before calling into any methods with a channel number.
+     */
     virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
     virtual uhd::usrp::subdev_spec_t get_rx_subdev_spec(void) = 0;
+
+    virtual std::string get_rx_subdev_name(size_t chan = 0) = 0;
 
     virtual void set_rx_rate(double rate) = 0;
     virtual double get_rx_rate(void) = 0;
@@ -143,8 +156,15 @@ public:
     /*******************************************************************
      * TX methods
      ******************************************************************/
+    /*!
+     * Set the TX subdevice specification:
+     * The subdev spec maps a physical part of a daughter-board to a channel number.
+     * Set the subdev spec before calling into any methods with a channel number.
+     */
     virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
     virtual uhd::usrp::subdev_spec_t get_tx_subdev_spec(void) = 0;
+
+    virtual std::string get_tx_subdev_name(size_t chan = 0) = 0;
 
     virtual void set_tx_rate(double rate) = 0;
     virtual double get_tx_rate(void) = 0;

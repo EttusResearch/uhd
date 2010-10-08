@@ -18,8 +18,9 @@
 #ifndef INCLUDED_UHD_TRANSPORT_USB_ZERO_COPY_HPP
 #define INCLUDED_UHD_TRANSPORT_USB_ZERO_COPY_HPP
 
-#include "usb_device_handle.hpp"
+#include <uhd/transport/usb_device_handle.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/types/device_addr.hpp>
 
 namespace uhd { namespace transport {
 
@@ -47,19 +48,13 @@ public:
      * \param handle a device handle that uniquely identifying the device
      * \param recv_endpoint an integer specifiying an IN endpoint number
      * \param send_endpoint an integer specifiying an OUT endpoint number
-     * \param recv_xfer_size the number of bytes for each receive transfer
-     * \param recv_num_xfers the number of simultaneous receive transfers
-     * \param send_xfer_size the number of bytes for each send transfer
-     * \param send_num_xfers the number of simultaneous send transfers
+     * \param hints optional parameters to pass to the underlying transport
      */
     static sptr make(
         usb_device_handle::sptr handle,
-        unsigned int recv_endpoint,
-        unsigned int send_endpoint,
-        size_t recv_xfer_size = 0,
-        size_t recv_num_xfers = 0,
-        size_t send_xfer_size = 0,
-        size_t send_num_xfers = 0
+        size_t recv_endpoint,
+        size_t send_endpoint,
+        const device_addr_t &hints = device_addr_t()
     );
 };
 

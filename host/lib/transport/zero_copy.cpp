@@ -16,32 +16,35 @@
 //
 
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/cstdint.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
 
 using namespace uhd::transport;
 
 /***********************************************************************
- * The pure-virtual deconstructor needs an implementation to be happy
+ * Safe managed receive buffer
  **********************************************************************/
-managed_recv_buffer::~managed_recv_buffer(void){
+static void release_nop(void){
     /* NOP */
 }
 
-/***********************************************************************
- * Phony zero-copy recv interface implementation
- **********************************************************************/
-
-//! phony zero-copy recv buffer implementation
-class managed_recv_buffer_impl : public managed_recv_buffer{
+class safe_managed_receive_buffer : public managed_recv_buffer{
 public:
-    managed_recv_buffer_impl(const boost::asio::const_buffer &buff) : _buff(buff){
+    safe_managed_receive_buffer(
+        const boost::asio::const_buffer &buff,
+        const release_fcn_t &release_fcn
+    ):
+        _buff(buff), _release_fcn(release_fcn)
+    {
         /* NOP */
     }
 
-    ~managed_recv_buffer_impl(void){
-        delete [] this->cast<const boost::uint8_t *>();
+    ~safe_managed_receive_buffer(void){
+        _release_fcn();
+    }
+
+    void release(void){
+        release_fcn_t release_fcn = _release_fcn;
+        _release_fcn = &release_nop;
+        return release_fcn();
     }
 
 private:
@@ -50,64 +53,42 @@ private:
     }
 
     const boost::asio::const_buffer _buff;
+    release_fcn_t _release_fcn;
 };
 
-//! phony zero-copy recv interface implementation
-struct phony_zero_copy_recv_if::impl{
-    impl(size_t max_buff_size) : max_buff_size(max_buff_size){
-        /* NOP */
-    }
-    size_t max_buff_size;
-};
-
-phony_zero_copy_recv_if::phony_zero_copy_recv_if(size_t max_buff_size){
-    _impl = UHD_PIMPL_MAKE(impl, (max_buff_size));
-}
-
-phony_zero_copy_recv_if::~phony_zero_copy_recv_if(void){
-    /* NOP */
-}
-
-managed_recv_buffer::sptr phony_zero_copy_recv_if::get_recv_buff(size_t timeout_ms){
-    //allocate memory
-    boost::uint8_t *recv_mem = new boost::uint8_t[_impl->max_buff_size];
-
-    //call recv() with timeout option
-    ssize_t num_bytes = this->recv(boost::asio::buffer(recv_mem, _impl->max_buff_size), timeout_ms);
-
-    if (num_bytes <= 0) return managed_recv_buffer::sptr(); //NULL sptr
-
-    //create a new managed buffer to house the data
-    return managed_recv_buffer::sptr(
-        new managed_recv_buffer_impl(boost::asio::buffer(recv_mem, num_bytes))
-    );
+managed_recv_buffer::sptr managed_recv_buffer::make_safe(
+    const boost::asio::const_buffer &buff,
+    const release_fcn_t &release_fcn
+){
+    return sptr(new safe_managed_receive_buffer(buff, release_fcn));
 }
 
 /***********************************************************************
- * Phony zero-copy send interface implementation
+ * Safe managed send buffer
  **********************************************************************/
+static void commit_nop(size_t){
+    /* NOP */
+}
 
-//! phony zero-copy send buffer implementation
-class managed_send_buffer_impl : public managed_send_buffer{
+class safe_managed_send_buffer : public managed_send_buffer{
 public:
-    typedef boost::function<ssize_t(const boost::asio::const_buffer &)> send_fcn_t;
-
-    managed_send_buffer_impl(
+    safe_managed_send_buffer(
         const boost::asio::mutable_buffer &buff,
-        const send_fcn_t &send_fcn
+        const commit_fcn_t &commit_fcn
     ):
-        _buff(buff),
-        _send_fcn(send_fcn)
+        _buff(buff), _commit_fcn(commit_fcn)
     {
         /* NOP */
     }
 
-    ~managed_send_buffer_impl(void){
-        /* NOP */
+    ~safe_managed_send_buffer(void){
+        _commit_fcn(0);
     }
 
-    ssize_t commit(size_t num_bytes){
-        return _send_fcn(boost::asio::buffer(_buff, num_bytes));
+    void commit(size_t num_bytes){
+        commit_fcn_t commit_fcn = _commit_fcn;
+        _commit_fcn = &commit_nop;
+        return commit_fcn(num_bytes);
     }
 
 private:
@@ -116,28 +97,12 @@ private:
     }
 
     const boost::asio::mutable_buffer _buff;
-    const send_fcn_t                  _send_fcn;
+    commit_fcn_t _commit_fcn;
 };
 
-//! phony zero-copy send interface implementation
-struct phony_zero_copy_send_if::impl{
-    boost::uint8_t *send_mem;
-    managed_send_buffer::sptr send_buff;
-};
-
-phony_zero_copy_send_if::phony_zero_copy_send_if(size_t max_buff_size){
-    _impl = UHD_PIMPL_MAKE(impl, ());
-    _impl->send_mem = new boost::uint8_t[max_buff_size];
-    _impl->send_buff = managed_send_buffer::sptr(new managed_send_buffer_impl(
-        boost::asio::buffer(_impl->send_mem, max_buff_size),
-        boost::bind(&phony_zero_copy_send_if::send, this, _1)
-    ));
-}
-
-phony_zero_copy_send_if::~phony_zero_copy_send_if(void){
-    delete [] _impl->send_mem;
-}
-
-managed_send_buffer::sptr phony_zero_copy_send_if::get_send_buff(void){
-    return _impl->send_buff; //FIXME there is only ever one send buff, we assume that the caller doesnt hang onto these
+safe_managed_send_buffer::sptr managed_send_buffer::make_safe(
+    const boost::asio::mutable_buffer &buff,
+    const commit_fcn_t &commit_fcn
+){
+    return sptr(new safe_managed_send_buffer(buff, commit_fcn));
 }
