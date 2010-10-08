@@ -149,6 +149,10 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = sd_name_to_conn[get_subdev_name()];
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -177,6 +181,9 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
@@ -241,6 +248,10 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = sd_name_to_conn[get_subdev_name()];
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -269,6 +280,9 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
