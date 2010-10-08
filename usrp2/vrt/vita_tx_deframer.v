@@ -13,6 +13,8 @@ module vita_tx_deframer
     output [5+64+16+(32*MAXCHAN)-1:0] sample_fifo_o,
     output sample_fifo_src_rdy_o,
     input sample_fifo_dst_rdy_i,
+
+    output [15:0] current_seqnum,
     
     // FIFO Levels
     output [15:0] fifo_occupied,
@@ -45,23 +47,29 @@ module vita_tx_deframer
    reg [1:0]  vector_phase;
    wire       line_done;
    
-   reg 	      seqnum_err;
-   reg [3:0]  seqnum_reg;
-   wire [3:0] seqnum = data_i[19:16];
-   wire [3:0] next_seqnum = seqnum_reg + 4'd1;
+   wire [15:0] seqnum = data_i[15:0];
+   reg [15:0]  seqnum_reg;
+   wire [15:0] next_seqnum = seqnum_reg + 16'd1;
+   wire [3:0]  vita_seqnum = data_i[19:16];
+   reg [3:0]   vita_seqnum_reg;
+   wire [3:0]  next_vita_seqnum = vita_seqnum_reg[3:0] + 4'd1;
+   reg 	       seqnum_err;
+
+   assign curren_seqnum = seqnum_reg;
    
    // Output FIFO for packetized data
-   localparam VITA_HEADER 	 = 0;
-   localparam VITA_STREAMID 	 = 1;
-   localparam VITA_CLASSID 	 = 2;
-   localparam VITA_CLASSID2 	 = 3;
-   localparam VITA_SECS 	 = 4;
-   localparam VITA_TICS 	 = 5;
-   localparam VITA_TICS2 	 = 6;
-   localparam VITA_PAYLOAD 	 = 7;
-   localparam VITA_STORE         = 8;
-   localparam VITA_TRAILER 	 = 9;
-
+   localparam VITA_TRANS_HEADER  = 0;
+   localparam VITA_HEADER 	 = 1;
+   localparam VITA_STREAMID 	 = 2;
+   localparam VITA_CLASSID 	 = 3;
+   localparam VITA_CLASSID2 	 = 4;
+   localparam VITA_SECS 	 = 5;
+   localparam VITA_TICS 	 = 6;
+   localparam VITA_TICS2 	 = 7;
+   localparam VITA_PAYLOAD 	 = 8;
+   localparam VITA_STORE         = 9;
+   localparam VITA_TRAILER 	 = 10;
+   
    wire [15:0] hdr_len = 2 + has_streamid_reg + has_classid_reg + has_classid_reg + has_secs_reg + 
 	       has_tics_reg + has_tics_reg + has_trailer_reg;
 
@@ -70,15 +78,22 @@ module vita_tx_deframer
 
    always @(posedge clk)
      if(reset | clear_seqnum)
-       seqnum_reg <= 4'hF;
+       begin
+	  seqnum_reg <= 16'hFFFF;
+	  vita_seqnum_reg <= 4'hF;
+       end
      else
-       if((vita_state==VITA_HEADER) & src_rdy_i)
-	 seqnum_reg <= seqnum;
+       begin
+	  if((vita_state==VITA_TRANS_HEADER) & src_rdy_i)
+	    seqnum_reg <= seqnum;
+	  if((vita_state==VITA_HEADER) & src_rdy_i)
+	    vita_seqnum_reg <= vita_seqnum;
+       end // else: !if(reset | clear_seqnum)
    
    always @(posedge clk)
      if(reset | clear)
        begin
-	  vita_state 		<= VITA_HEADER;
+	  vita_state 		<= VITA_TRANS_HEADER;
 	  {has_streamid_reg, has_classid_reg, has_secs_reg, has_tics_reg, has_trailer_reg, is_sob_reg, is_eob_reg} 
 	    <= 0;
 	  seqnum_err <= 0;
@@ -97,6 +112,11 @@ module vita_tx_deframer
 	   end
        else if(src_rdy_i)
 	 case(vita_state)
+	   VITA_TRANS_HEADER :
+	     begin
+		seqnum_err <= ~(seqnum == next_seqnum);
+		vita_state <= VITA_HEADER;
+	     end
 	   VITA_HEADER :
 	     begin
 		{has_streamid_reg, has_classid_reg, has_secs_reg, has_tics_reg, has_trailer_reg, is_sob_reg, is_eob_reg} 
@@ -113,7 +133,7 @@ module vita_tx_deframer
 		  vita_state <= VITA_TICS;
 		else
 		  vita_state <= VITA_PAYLOAD;
-		seqnum_err <= ~(seqnum == next_seqnum);
+		seqnum_err <= seqnum_err | ~(vita_seqnum == next_vita_seqnum);
 	     end // case: VITA_HEADER
 	   VITA_STREAMID :
 	     if(has_classid_reg)
@@ -191,7 +211,7 @@ module vita_tx_deframer
 
    // sob, eob, has_secs (send_at) ignored on all lines except first
    assign fifo_i = {sample_d,sample_c,sample_b,sample_a,seqnum_err,has_secs_reg,is_sob_reg,is_eob_reg,eop,
-		    12'd0,seqnum_reg,send_time};
+		    12'd0,seqnum_reg[3:0],send_time};
 
    assign dst_rdy_o = ~(vita_state == VITA_PAYLOAD) & ~((vita_state==VITA_STORE)& ~fifo_space) ;
 
