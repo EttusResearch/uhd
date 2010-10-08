@@ -27,14 +27,15 @@ module gen_context_pkt
    reg [3:0] 	 seqno;
    reg [3:0] 	 ctxt_state;
    reg [63:0] 	 err_time;
-
+   reg [31:0] 	 stored_message;
+   
    always @(posedge clk)
      if(reset | clear)
        stored_message <= 0;
      else
        if(error)
 	 stored_message <= message;
-       else if(state == CTXT_FLOWCTRL)
+       else if(ctxt_state == CTXT_FLOWCTRL)
 	 stored_message <= 0;
    
    always @(posedge clk)
