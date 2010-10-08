@@ -447,6 +447,10 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -467,9 +471,13 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_GAIN:
         this->set_gain(val.as<float>(), key.name);
         return;
+
     case SUBDEV_PROP_FREQ:
         this->set_freq(val.as<double>());
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
