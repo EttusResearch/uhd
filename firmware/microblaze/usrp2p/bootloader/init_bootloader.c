@@ -33,7 +33,7 @@ bool find_safe_booted_flag(void) {
 	unsigned char flag_byte;
 	i2c_read(SAFE_FLAG_LOCATION, &flag_byte, 1);
 	
-	return (flag_byte != 0x5E);
+	return (flag_byte == 0x5E);
 }
 
 void set_safe_booted_flag(bool flag) {
