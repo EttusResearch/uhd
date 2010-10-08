@@ -36,6 +36,9 @@ The following parameters can be used to alter the transport's default behavior:
 * **num_send_frames:** The number of send buffers to allocate
 * **concurrency_hint:** The number of threads to run the IO service
 
+**Note:** num_send_frames and concurrency_hint will not have an effect
+as the asynchronous send implementation is currently disabled.
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Resize socket buffers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
