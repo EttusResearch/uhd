@@ -30,7 +30,7 @@ LDADD = $(top_srcdir)/usrp2p/libusrp2p.a
 noinst_PROGRAMS = \
 	init_bootloader.elf
 
-init_bootloader_elf_SOURCES = init_bootloader.c
+init_bootloader_elf_SOURCES = init_bootloader.c i2c_sync.c
 
 .bin.rmi:
 	$(top_srcdir)/bin/bin_to_ram_macro_init.py $< $@

@@ -51,6 +51,7 @@ libusrp2p_a_SOURCES = \
 	spi_flash_read.c \
 	bootloader_utils.c \
 	ethernet.c \
+	xilinx_s3_icap.c \
   udp_fw_update.c
 
 noinst_PROGRAMS = \

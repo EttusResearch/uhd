@@ -146,25 +146,38 @@ def get_flash_info(ip):
 
   return (memory_size_bytes, sector_size_bytes)
 
-def burn_fw(ip, fw, fpga):
+def burn_fw(ip, fw, fpga, reset, safe):
   init_update(ip)
   (flash_size, sector_size) = get_flash_info(ip)
 
   print "Flash size: %i\nSector size: %i" % (flash_size, sector_size)
 
-  if fpga: 
+  if fpga:
+    if safe:
+        image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
+    else:
+        image_location = PROD_FPGA_IMAGE_LOCATION_ADDR
+    
     fpga_file = open(fpga, 'rb')
     fpga_image = fpga_file.read()
-    erase_image(ip, SAFE_FPGA_IMAGE_LOCATION_ADDR, FPGA_IMAGE_SIZE_BYTES)
-    write_image(ip, fpga_image, SAFE_FPGA_IMAGE_LOCATION_ADDR) #TODO: DO NOT WRITE SAFE IMAGE! this is only here because the bootloader isn't finished yet
-    verify_image(ip, fpga_image, SAFE_FPGA_IMAGE_LOCATION_ADDR)
+    erase_image(ip, image_location, FPGA_IMAGE_SIZE_BYTES)
+    write_image(ip, fpga_image, image_location)
+    verify_image(ip, fpga_image, image_location)
 
   if fw:
+    if safe:
+        image_location = SAFE_FW_IMAGE_LOCATION_ADDR
+    else:
+        image_location = PROD_FW_IMAGE_LOCATION_ADDR
+        
     fw_file = open(fw, 'rb')
     fw_image = fw_file.read()
-    erase_image(ip, PROD_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES)
-    write_image(ip, fw_image, PROD_FW_IMAGE_LOCATION_ADDR)
-    verify_image(ip, fw_image, PROD_FW_IMAGE_LOCATION_ADDR)
+    erase_image(ip, image_location, FW_IMAGE_SIZE_BYTES)
+    write_image(ip, fw_image, image_location)
+    verify_image(ip, fw_image, image_location)
+    
+  if reset:
+    reset_usrp(ip)
 
 def write_image(ip, image, addr):
 #we split the image into smaller (256B) bits and send them down the wire
@@ -208,6 +221,14 @@ def verify_image(ip, image, addr):
     print "Verify failed. Image did not write correctly."
   else:
     print "Success."
+    
+def reset_usrp(ip):
+    out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0, "")
+    in_pkt = send_and_recv(out_pkt, ip)
+    
+    (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+    if pktid == update_id_t.USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG:
+        raise Exception, "Device failed to reset."
 
 def erase_image(ip, addr, length):
   #get flash info first
@@ -234,17 +255,17 @@ def erase_image(ip, addr, length):
 
   print "\tFinished."
 
-#def verify_image(ip, image, addr):
-
 
 ########################################################################
 # command line options
 ########################################################################
 def get_options():
     parser = optparse.OptionParser()
-    parser.add_option("--ip",   type="string",       help="USRP2P firmware address",        default='')
-    parser.add_option("--fw",   type="string",       help="firmware image path (optional)", default='')
-    parser.add_option("--fpga", type="string",       help="fpga image path (optional)",     default='')
+    parser.add_option("--ip",   type="string",                 help="USRP2P firmware address",        default='')
+    parser.add_option("--fw",   type="string",                 help="firmware image path (optional)", default='')
+    parser.add_option("--fpga", type="string",                 help="fpga image path (optional)",     default='')
+    parser.add_option("--reset", action="store_true",          help="reset the device after writing", default=False)
+    parser.add_option("--overwrite-safe", action="store_true", help="never ever use this option", default=False)
     (options, args) = parser.parse_args()
 
     return options
@@ -256,5 +277,13 @@ if __name__=='__main__':
     options = get_options()
     if not options.ip: raise Exception, 'no ip address specified'
 
-    if not options.fpga and not options.fw: raise Exception, 'Must specify either a firmware image or FPGA image.'
-    burn_fw(ip=options.ip, fw=options.fw, fpga=options.fpga)
+    if not options.fpga and not options.fw and not options.reset: raise Exception, 'Must specify either a firmware image or FPGA image, and/or reset.'
+    
+    if options.overwrite_safe:
+        print("Are you REALLY, REALLY sure you want to overwrite the safe image? This is ALMOST ALWAYS a terrible idea.")
+        print("If your image is faulty, your USRP2+ will become a brick until reprogrammed via JTAG.")
+        response = raw_input("""Type "yes" to continue, or anything else to quit: """)
+        if response != "yes":
+            sys.exit(0)
+    
+    burn_fw(ip=options.ip, fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe)

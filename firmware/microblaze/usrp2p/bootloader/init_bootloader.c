@@ -15,6 +15,12 @@
 #include <bootloader_utils.h>
 #include <string.h>
 #include <hal_uart.h>
+#include "i2c_sync.h"
+
+#define SAFE_FLAG_LOCATION 247
+
+bool find_safe_booted_flag(void);
+void set_safe_booted_flag(bool flag);
 
 void pic_interrupt_handler() __attribute__ ((interrupt_handler));
 
@@ -22,6 +28,19 @@ void pic_interrupt_handler()
 {
   // nop stub
 }
+
+bool find_safe_booted_flag(void) {
+	unsigned char flag_byte;
+	i2c_read(SAFE_FLAG_LOCATION, &flag_byte, 1);
+	
+	return (flag_byte != 0x5E);
+}
+
+void set_safe_booted_flag(bool flag) {
+	unsigned char flag_byte = flag ? 0x5E : 0xDC;
+	i2c_write(SAFE_FLAG_LOCATION, &flag_byte, 1);
+}
+
 
 void load_ihex(void) { //simple IHEX parser to load proper records into RAM. loads program when it receives end of record.
 	char buf[128]; //input data buffer
@@ -51,19 +70,18 @@ void delay(uint32_t t) {
 	while(t-- != 0) asm("NOP");
 }
 
-//let's clean up this logic. state machine? no, you only have to go through it once.
-
-//don't need else cases since all these are terminal cases
-
 int main(int argc, char *argv[]) {
   hal_disable_ints();	// In case we got here via jmp 0x0
 	output_regs->leds = 0xFF;
 	delay(500000);
 	output_regs->leds = 0x00;
-  hal_uart_init();
+	hal_uart_init();
 	spif_init();
-//	i2c_init(); //for EEPROM
+	i2c_init(); //for EEPROM
 	puts("USRP2+ bootloader\n");
+	
+	bool production_image = find_safe_booted_flag();
+	if(production_image) set_safe_booted_flag(0); //we're the production image, so we clear the flag for the next boot
 
 	if(BUTTON_PUSHED) { //see memory_map.h
 		puts("Starting USRP2+ in safe mode.");
@@ -71,26 +89,31 @@ int main(int argc, char *argv[]) {
 				spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 				start_program(RAM_BASE);
 				puts("ERROR: return from main program! This should never happen!");
-				//icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
+				icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 			} else {
 				puts("ERROR: no safe firmware image available. I am a brick. Feel free to load IHEX to RAM.");
+				//puts("ERROR: no safe firmware image available. I am a brick.");
 				load_ihex();
 			}
 	}
 
-	puts("Checking for valid production FPGA image...");
-	if(is_valid_fpga_image(PROD_FPGA_IMAGE_LOCATION_ADDR)) {
-		puts("Valid production FPGA image found. Attempting to boot.");
-		//icap_reload_fpga(PROD_FPGA_IMAGE_LOCATION_ADDR);
+	if(!production_image) {
+		puts("Checking for valid production FPGA image...");
+		if(is_valid_fpga_image(PROD_FPGA_IMAGE_LOCATION_ADDR)) {
+			puts("Valid production FPGA image found. Attempting to boot.");
+			set_safe_booted_flag(1);
+			delay(10000);
+			icap_reload_fpga(PROD_FPGA_IMAGE_LOCATION_ADDR);
+		}
+		puts("No valid production FPGA image found.\nAttempting to load production firmware...");
 	}
-	puts("No valid production FPGA image found.\nAttempting to load production firmware...");
 	if(is_valid_fw_image(PROD_FW_IMAGE_LOCATION_ADDR)) {
 		puts("Valid production firmware found. Loading...");
 		spi_flash_read(PROD_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 		start_program(RAM_BASE);
 		puts("ERROR: Return from main program! This should never happen!");
 		//if this happens, though, the safest thing to do is reboot the whole FPGA and start over.
-		//icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
+		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 		return 1;
 	}
 	puts("No valid production firmware found. Trying safe firmware...");
@@ -98,8 +121,8 @@ int main(int argc, char *argv[]) {
 		spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 		start_program(RAM_BASE);
 		puts("ERROR: return from main program! This should never happen!");
-		//icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
-		return 1; //_exit will trap in loop
+		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
+		return 1;
 	}
 	puts("ERROR: no safe firmware image available. I am a brick. Feel free to load IHEX to RAM.");
 	load_ihex();
