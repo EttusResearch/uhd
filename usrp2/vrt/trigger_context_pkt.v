@@ -14,11 +14,11 @@ module trigger_context_pkt
    reg [30:0]  cycle_count, packet_count;
 
    
-   setting_reg #(.my_addr(BASE_CTRL+X), .at_reset(0)) sr_settings
+   setting_reg #(.my_addr(BASE+4), .at_reset(0)) sr_cycles
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_cycle,dummy1,cycles}),.changed());
 
-   setting_reg #(.my_addr(BASE_CTRL+X), .at_reset(0)) sr_settings
+   setting_reg #(.my_addr(BASE+5), .at_reset(0)) sr_packets
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_consumed,dummy2,packets}),.changed());
 
