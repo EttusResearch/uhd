@@ -18,8 +18,6 @@
 #include <i2c.h>
 #include "usrp2/fw_common.h"
 
-#define SAFE_FLAG_LOCATION 247
-
 bool find_safe_booted_flag(void);
 void set_safe_booted_flag(bool flag);
 
@@ -32,13 +30,13 @@ void pic_interrupt_handler()
 
 bool find_safe_booted_flag(void) {
 	unsigned char flag_byte;
-	eeprom_read(USRP2_I2C_ADDR_MBOARD, SAFE_FLAG_LOCATION, &flag_byte, 1);
+	eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
 	return (flag_byte == 0x5E);
 }
 
 void set_safe_booted_flag(bool flag) {
 	unsigned char flag_byte = flag ? 0x5E : 0xDC;
-	eeprom_write(USRP2_I2C_ADDR_MBOARD, SAFE_FLAG_LOCATION, &flag_byte, 1);
+	eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
 }
 
 

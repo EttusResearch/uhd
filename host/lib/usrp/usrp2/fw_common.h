@@ -59,7 +59,6 @@ extern "C" {
 #define USRP2_EE_MBOARD_REV_MSB  0x01 //1 byte
 #define USRP2_EE_MBOARD_MAC_ADDR 0x02 //6 bytes
 #define USRP2_EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
-#define USRP2_EE_MBOARD_SERIAL_NUM 0xF8
 #define USRP2_EE_MBOARD_BOOTLOADER_FLAGS 0xF7
 
 typedef enum{
