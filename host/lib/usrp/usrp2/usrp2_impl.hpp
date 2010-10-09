@@ -33,7 +33,7 @@
 #include <boost/function.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/transport/zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 
@@ -178,7 +178,7 @@ public:
      */
     usrp2_impl(
         std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
-        std::vector<uhd::transport::udp_zero_copy::sptr> data_transports
+        std::vector<uhd::transport::zero_copy_if::sptr> data_transports
     );
 
     ~usrp2_impl(void);
@@ -208,7 +208,7 @@ private:
     uhd::dict<std::string, usrp2_mboard_impl::sptr> _mboard_dict;
 
     //io impl methods and members
-    std::vector<uhd::transport::udp_zero_copy::sptr> _data_transports;
+    std::vector<uhd::transport::zero_copy_if::sptr> _data_transports;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);

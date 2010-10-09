@@ -18,11 +18,11 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/convert_types.hpp>
 #include <uhd/transport/alignment_buffer.hpp>
 #include <boost/format.hpp>
-#include <boost/asio.hpp> //htonl and ntohl
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <iostream>
@@ -32,7 +32,12 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
+static const int underflow_flags = 0
+    | async_metadata_t::EVENT_CODE_UNDERFLOW
+    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
+;
+
+static const size_t vrt_send_header_offset_words32 = 1;
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -61,6 +66,27 @@ struct usrp2_impl::io_impl{
     bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
         return recv_pirate_booty->pop_elems_with_timed_wait(buffs, timeout);
+    }
+
+    bool get_send_buffs(
+        const std::vector<zero_copy_if::sptr> &trans,
+        vrt_packet_handler::managed_send_buffs_t &buffs,
+        double timeout
+    ){
+        UHD_ASSERT_THROW(trans.size() == buffs.size());
+
+        //calculate the 16-bit sequence number for the special header
+        const boost::uint32_t next_seq = uhd::htonx(boost::uint32_t(
+            packet_handler_send_state.next_packet_seq & 0xffff
+        ));
+
+        //grab a managed buffer for each index
+        for (size_t i = 0; i < buffs.size(); i++){
+            buffs[i] = trans[i]->get_send_buff(timeout);
+            if (not buffs[i].get()) return false;
+            buffs[i]->cast<boost::uint32_t *>()[0] = next_seq;
+        }
+        return true;
     }
 
     //state management for the vrt packet handler code
@@ -146,7 +172,9 @@ void usrp2_impl::io_init(void){
     //send a small data packet so the usrp2 knows the udp source port
     BOOST_FOREACH(zero_copy_if::sptr data_transport, _data_transports){
         managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
-        static const boost::uint32_t data = htonl(USRP2_INVALID_VRT_HEADER);
+        static const boost::uint32_t data = uhd::htonx(
+            boost::uint32_t(USRP2_INVALID_VRT_HEADER)
+        );
         std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
         //drain the recv buffers (may have junk)
@@ -183,23 +211,10 @@ bool usrp2_impl::recv_async_msg(
 /***********************************************************************
  * Send Data
  **********************************************************************/
-static bool get_send_buffs(
-    const std::vector<udp_zero_copy::sptr> &trans,
-    vrt_packet_handler::managed_send_buffs_t &buffs,
-    double timeout
-){
-    UHD_ASSERT_THROW(trans.size() == buffs.size());
-    bool good = true;
-    for (size_t i = 0; i < buffs.size(); i++){
-        buffs[i] = trans[i]->get_send_buff(timeout);
-        good = good and (buffs[i].get() != NULL);
-    }
-    return good;
-}
-
 size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
     const size_t bpp = _data_transports.front()->get_send_frame_size() - hdr_size;
@@ -218,8 +233,9 @@ size_t usrp2_impl::send(
         io_type, _tx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_be,
-        boost::bind(&get_send_buffs, _data_transports, _1, timeout),
-        get_max_send_samps_per_packet()
+        boost::bind(&usrp2_impl::io_impl::get_send_buffs, _io_impl.get(), _data_transports, _1, timeout),
+        get_max_send_samps_per_packet(),
+        vrt_send_header_offset_words32
     );
 }
 

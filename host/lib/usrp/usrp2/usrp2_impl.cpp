@@ -17,7 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include <uhd/transport/if_addrs.hpp>
-#include <uhd/transport/udp_simple.hpp>
+#include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
@@ -128,7 +128,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
 
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
-    std::vector<udp_zero_copy::sptr> data_transports;
+    std::vector<zero_copy_if::sptr> data_transports;
 
     BOOST_FOREACH(const std::string &addr, std::split_string(device_addr["addr"])){
         ctrl_transports.push_back(udp_simple::make_connected(
@@ -154,7 +154,7 @@ UHD_STATIC_BLOCK(register_usrp2_device){
  **********************************************************************/
 usrp2_impl::usrp2_impl(
     std::vector<udp_simple::sptr> ctrl_transports,
-    std::vector<udp_zero_copy::sptr> data_transports
+    std::vector<zero_copy_if::sptr> data_transports
 ):
     _data_transports(data_transports)
 {
