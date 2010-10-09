@@ -30,17 +30,7 @@
 using namespace uhd;
 using namespace uhd::transport;
 
-/*!
- * FIXME: large timeout, ethernet pause frames...
- *
- * Use a large timeout to work-around the fact that
- * flow-control may throttle outgoing control packets
- * due to its use of ethernet pause frames.
- *
- * This will be fixed when host-based flow control is implemented,
- * along with larger incoming send buffers using the on-board SRAM.
- */
-static const size_t CONTROL_TIMEOUT_MS = 3000; //3 seconds
+static const size_t CONTROL_TIMEOUT_MS = 200;
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
