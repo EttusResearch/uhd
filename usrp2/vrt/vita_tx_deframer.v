@@ -104,7 +104,7 @@ module vita_tx_deframer
 	   if(has_trailer_reg)
 	     vita_state <= VITA_TRAILER;
 	   else
-	     vita_state <= VITA_HEADER;
+	     vita_state <= VITA_TRANS_HEADER;
 	 else
 	   begin
 	      vita_state <= VITA_PAYLOAD;
@@ -171,11 +171,11 @@ module vita_tx_deframer
 	     else
 	       vector_phase <= vector_phase + 1;
 	   VITA_TRAILER :
-	     vita_state <= VITA_HEADER;
+	     vita_state <= VITA_TRANS_HEADER;
 	   VITA_STORE :
 	     ;
 	   default :
-	     vita_state <= VITA_HEADER;
+	     vita_state <= VITA_TRANS_HEADER;
 	 endcase // case (vita_state)
 
    assign line_done = (vector_phase == numchan);
