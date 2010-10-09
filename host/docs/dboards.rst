@@ -107,6 +107,15 @@ Transmit Gains: **PGA0**, Range: 0-25dB
 
 Recieve Gains: **PGA0**, Range: 0-31.5dB
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TVRX
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Receive Antennas: RX
+
+Receive Gains:
+ * **RF**, Range: -13.3-50.3dB (frequency-dependent)
+ * **IF**, Range: -1.5-32.5dB
+
 ------------------------------------------------------------------------
 Daughterboard Modifications
 ------------------------------------------------------------------------

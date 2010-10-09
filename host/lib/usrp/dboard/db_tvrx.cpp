@@ -58,7 +58,7 @@ static const bool tvrx_debug = false;
 
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
-static const prop_names_t tvrx_antennas = list_of(""); //only got one
+static const prop_names_t tvrx_antennas = list_of("RX");
 
 static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges = map_list_of
     ("VHFLO", freq_range_t(50e6, 158e6))
@@ -73,7 +73,7 @@ static const boost::array<double, 17> vhflo_gains_db =
      50.30000, 50.30000}};
 
 static const boost::array<double, 17> vhfhi_gains_db =
-    {{13.3000,  -13.3000,  -13.3000,   -1.0000,    7.7000,
+    {{-13.3000,  -13.3000,  -13.3000,   -1.0000,    7.7000,
     11.0000,   14.7000,   19.3000,   26.1000,   36.0000,
     42.7000,   46.0000,   47.0000,   47.8000,   48.2000,
     48.2000,   48.2000}};
@@ -436,7 +436,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
+        val = tvrx_antennas.front(); //there's only one
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
