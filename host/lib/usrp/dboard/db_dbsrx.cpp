@@ -277,15 +277,17 @@ void dbsrx::set_lo_freq(double target_freq){
         }
     } 
 
-    //Assert because we failed to find a suitable combination of ref_clock, R and N 
-    UHD_ASSERT_THROW(ref_clock/(1 << m) < 1e6 or ref_clock/(1 << m) > 2.5e6);
-    UHD_ASSERT_THROW((pfd_freq < dbsrx_pfd_freq_range.min) or (pfd_freq > dbsrx_pfd_freq_range.max));
-    UHD_ASSERT_THROW((N < 256) or (N > 32768));
     done_loop:
 
+    //Assert because we failed to find a suitable combination of ref_clock, R and N 
+    UHD_ASSERT_THROW(ref_clock < 27.0e6 and ref_clock > 0.0);
+    UHD_ASSERT_THROW(ref_clock/m > 1e6 and ref_clock/m < 2.5e6);
+    UHD_ASSERT_THROW((pfd_freq > dbsrx_pfd_freq_range.min) and (pfd_freq < dbsrx_pfd_freq_range.max));
+    UHD_ASSERT_THROW((N > 256) and (N < 32768));
+
     if(dbsrx_debug) std::cerr << boost::format(
-        "DBSRX: choose ref_clock %f and m_divider %d"
-    ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % m << std::endl;
+        "DBSRX: choose ref_clock (current: %f, new: %f) and m_divider %d"
+    ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % ref_clock % m << std::endl;
 
     //if ref_clock or m divider changed, we need to update the filter settings
     if (ref_clock != this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX) or m != _max2118_write_regs.m_divider) update_filter_settings = true;
