@@ -49,6 +49,7 @@ module vita_tx_control
    localparam IBS_ERROR_DONE = 4;
    localparam IBS_ERROR_WAIT = 5;
 
+   wire [31:0] CODE_EOB_ACK = {seqnum,16'd1};
    wire [31:0] CODE_UNDERRUN = {seqnum,16'd2};
    wire [31:0] CODE_SEQ_ERROR = {seqnum,16'd4};
    wire [31:0] CODE_TIME_ERROR = {seqnum,16'd8};
@@ -107,7 +108,11 @@ module vita_tx_control
 	       end
 	     else if(eop)
 	       if(eob)
-		 ibs_state <= IBS_IDLE;
+		 begin
+		    ibs_state <= IBS_ERROR;  // Not really an error
+		    error_code <= CODE_EOB_ACK;
+		    send_error <= 1;
+		 end
 	       else
 		 ibs_state <= IBS_CONT_BURST;
 
