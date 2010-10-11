@@ -38,10 +38,11 @@ using namespace uhd::usrp;
 usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
-    size_t recv_frame_size
+    size_t recv_samps_per_packet,
+    size_t send_bytes_per_packet
 ):
     _index(index),
-    _recv_frame_size(recv_frame_size)
+    _recv_samps_per_packet(recv_samps_per_packet)
 {
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
@@ -75,7 +76,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
     //init the rx control registers
-    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_frame_size);
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_samps_per_packet);
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
@@ -93,6 +94,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
     _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
     _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+    const size_t cycles_per_ack = size_t(_clock_ctrl->get_master_clock_rate()/100); //100 aps
+    //_iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | cycles_per_ack); //FIXME total pause frames
+    static const double sram_frac = 1.0/8.0; //fraction of sram to fill before ack
+    const size_t packets_per_ack = size_t(usrp2_impl::sram_bytes*sram_frac/send_bytes_per_packet);
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | packets_per_ack);
 
     //init the ddc
     init_ddc_config();
@@ -178,7 +184,7 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
-        stream_cmd, _recv_frame_size
+        stream_cmd, _recv_samps_per_packet
     ));
     _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));

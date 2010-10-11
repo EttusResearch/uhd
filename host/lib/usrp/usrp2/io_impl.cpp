@@ -32,12 +32,76 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
+/***********************************************************************
+ * constants
+ **********************************************************************/
 static const int underflow_flags = 0
     | async_metadata_t::EVENT_CODE_UNDERFLOW
     | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
 ;
 
 static const size_t vrt_send_header_offset_words32 = 1;
+
+/***********************************************************************
+ * flow control monitor for a single tx channel
+ *  - the pirate thread calls update
+ *  - the get send buffer calls check
+ **********************************************************************/
+class flow_control_monitor{
+public:
+    typedef boost::shared_ptr<flow_control_monitor> sptr;
+
+    /*!
+     * Make a new flow control monitor.
+     * \param max_seqs_out num seqs before throttling
+     */
+    flow_control_monitor(size_t max_seqs_out){
+        _last_seq_out = 0;
+        _last_seq_ack = 0;
+        _max_seqs_out = max_seqs_out;
+    }
+
+    /*!
+     * Check the flow control condition.
+     * \param seq the sequence to go out
+     * \param timeout the timeout in seconds
+     * \return false on timeout
+     */
+    UHD_INLINE bool check_fc_condition(boost::uint16_t seq, double timeout){
+        boost::unique_lock<boost::mutex> lock(_fc_mutex);
+        _last_seq_out = seq;
+        return _fc_cond.timed_wait(
+            lock,
+            boost::posix_time::microseconds(long(timeout*1e6)),
+            boost::bind(&flow_control_monitor::ready, this)
+        );
+    }
+
+    /*!
+     * Update the flow control condition.
+     * \param seq the last sequence number to be ACK'd
+     */
+    UHD_INLINE void update_fc_condition(boost::uint16_t seq){
+        boost::unique_lock<boost::mutex> lock(_fc_mutex);
+        _last_seq_ack = seq;
+        lock.unlock();
+        _fc_cond.notify_one();
+    }
+
+private:
+    bool ready(void){
+        //return true;
+        //std::cout << "_last_seq_out " << _last_seq_out << std::endl;
+        //std::cout << "_last_seq_ack " << _last_seq_ack << std::endl;
+        //std::cout << "boost::uint16_t(_last_seq_out -_last_seq_ack) " << boost::uint16_t(_last_seq_out -_last_seq_ack) << std::endl;
+        return boost::uint16_t(_last_seq_out -_last_seq_ack) < boost::uint16_t(_max_seqs_out);
+    }
+
+    boost::mutex _fc_mutex;
+    boost::condition _fc_cond;
+    boost::uint16_t _last_seq_out, _last_seq_ack;
+    size_t _max_seqs_out;
+};
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -49,12 +113,14 @@ static const size_t vrt_send_header_offset_words32 = 1;
 struct usrp2_impl::io_impl{
     typedef alignment_buffer<managed_recv_buffer::sptr, time_spec_t> alignment_buffer_type;
 
-    io_impl(size_t num_frames, size_t width):
+    io_impl(size_t num_recv_frames, size_t send_frame_size, size_t width):
         packet_handler_recv_state(width),
-        recv_pirate_booty(alignment_buffer_type::make(num_frames, width)),
+        recv_pirate_booty(alignment_buffer_type::make(num_recv_frames, width)),
         async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
     {
-        /* NOP */
+        for (size_t i = 0; i < width; i++) fc_mons.push_back(
+            flow_control_monitor::sptr(new flow_control_monitor(usrp2_impl::sram_bytes/send_frame_size))
+        );
     }
 
     ~io_impl(void){
@@ -76,18 +142,21 @@ struct usrp2_impl::io_impl{
         UHD_ASSERT_THROW(trans.size() == buffs.size());
 
         //calculate the 16-bit sequence number for the special header
-        const boost::uint32_t next_seq = uhd::htonx(boost::uint32_t(
-            packet_handler_send_state.next_packet_seq & 0xffff
-        ));
+        const boost::uint16_t seq_num = boost::uint16_t(packet_handler_send_state.next_packet_seq & 0xffff);
+        const boost::uint32_t fc_word32 = uhd::htonx(boost::uint32_t(seq_num));
 
         //grab a managed buffer for each index
         for (size_t i = 0; i < buffs.size(); i++){
+            if (not fc_mons[i]->check_fc_condition(seq_num, timeout)) return false;
             buffs[i] = trans[i]->get_send_buff(timeout);
             if (not buffs[i].get()) return false;
-            buffs[i]->cast<boost::uint32_t *>()[0] = next_seq;
+            buffs[i]->cast<boost::uint32_t *>()[0] = fc_word32;
         }
         return true;
     }
+
+    //flow control monitors
+    std::vector<flow_control_monitor::sptr> fc_mons;
 
     //state management for the vrt packet handler code
     vrt_packet_handler::recv_state packet_handler_recv_state;
@@ -138,6 +207,13 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 );
                 metadata.event_code = vrt_packet_handler::get_context_code<async_metadata_t::event_code_t>(vrt_hdr, if_packet_info);
 
+                //catch the flow control packets and react
+                if (metadata.event_code == 0){
+                    boost::uint32_t fc_word32 = uhd::ntohx((vrt_hdr + if_packet_info.num_header_words32)[1]);
+                    this->fc_mons[index]->update_fc_condition(fc_word32 & 0xffff);
+                    continue;
+                }
+
                 //print the famous U, and push the metadata into the message queue
                 if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
                 async_msg_fifo->push_with_pop_on_full(metadata);
@@ -172,21 +248,22 @@ void usrp2_impl::io_init(void){
     //send a small data packet so the usrp2 knows the udp source port
     BOOST_FOREACH(zero_copy_if::sptr data_transport, _data_transports){
         managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
-        static const boost::uint32_t data = uhd::htonx(
-            boost::uint32_t(USRP2_INVALID_VRT_HEADER)
-        );
+        static const boost::uint32_t data[2] = {
+            uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+            uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+        };
         std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
         //drain the recv buffers (may have junk)
         while (data_transport->get_recv_buff().get()){};
     }
 
-    //the number of recv frames is the number for the first transport
     //the assumption is that all data transports should be identical
-    size_t num_frames = _data_transports.front()->get_num_recv_frames();
+    const size_t num_recv_frames = _data_transports.front()->get_num_recv_frames();
+    const size_t send_frame_size = _data_transports.front()->get_send_frame_size();
 
     //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (num_frames, _data_transports.size()));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (num_recv_frames, send_frame_size, _data_transports.size()));
 
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){

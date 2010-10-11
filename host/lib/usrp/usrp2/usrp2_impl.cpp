@@ -173,7 +173,9 @@ usrp2_impl::usrp2_impl(
     //create a new mboard handler for each control transport
     for(size_t i = 0; i < ctrl_transports.size(); i++){
         _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
-            i, ctrl_transports[i], this->get_max_recv_samps_per_packet()
+            i, ctrl_transports[i],
+            this->get_max_recv_samps_per_packet(),
+            _data_transports[i]->get_send_frame_size()
         )));
         //use an empty name when there is only one mboard
         std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";

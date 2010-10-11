@@ -84,7 +84,8 @@ public:
     usrp2_mboard_impl(
         size_t index,
         uhd::transport::udp_simple::sptr,
-        size_t recv_frame_size
+        size_t recv_samps_per_packet,
+        size_t send_bytes_per_packet
     );
     ~usrp2_mboard_impl(void);
 
@@ -95,7 +96,7 @@ public:
 private:
     size_t _index;
     int _rev_hi, _rev_lo;
-    const size_t _recv_frame_size;
+    const size_t _recv_samps_per_packet;
 
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
@@ -171,6 +172,8 @@ private:
  */
 class usrp2_impl : public uhd::device{
 public:
+    static const size_t sram_bytes = size_t(1 << 20);
+
     /*!
      * Create a new usrp2 impl base.
      * \param ctrl_transports the udp transports for control
