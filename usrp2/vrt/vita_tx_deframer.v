@@ -56,7 +56,7 @@ module vita_tx_deframer
    wire [3:0]  next_vita_seqnum = vita_seqnum_reg[3:0] + 4'd1;
    reg 	       seqnum_err;
 
-   assign curren_seqnum = seqnum_reg;
+   assign current_seqnum = seqnum_reg;
    
    // Output FIFO for packetized data
    localparam VITA_TRANS_HEADER  = 0;
