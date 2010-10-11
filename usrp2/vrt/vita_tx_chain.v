@@ -29,7 +29,7 @@ module vita_tx_chain
    wire 		error, packet_consumed;
    wire [31:0] 		error_code;
    wire 		clear_seqnum;
-   wire [15:0] 		current_seqnum;
+   wire [31:0] 		current_seqnum;
    
    assign underrun = error;
    assign message = error_code;

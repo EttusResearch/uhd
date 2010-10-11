@@ -15,7 +15,7 @@ module vita_tx_deframer
     output sample_fifo_src_rdy_o,
     input sample_fifo_dst_rdy_i,
 
-    output [15:0] current_seqnum,
+    output [31:0] current_seqnum,
     
     // FIFO Levels
     output [15:0] fifo_occupied,
@@ -48,9 +48,9 @@ module vita_tx_deframer
    reg [1:0]  vector_phase;
    wire       line_done;
    
-   wire [15:0] seqnum = data_i[15:0];
-   reg [15:0]  seqnum_reg;
-   wire [15:0] next_seqnum = seqnum_reg + 16'd1;
+   wire [31:0] seqnum = data_i;
+   reg [31:0]  seqnum_reg;
+   wire [31:0] next_seqnum = seqnum_reg + 32'd1;
    wire [3:0]  vita_seqnum = data_i[19:16];
    reg [3:0]   vita_seqnum_reg;
    wire [3:0]  next_vita_seqnum = vita_seqnum_reg[3:0] + 4'd1;
@@ -80,7 +80,7 @@ module vita_tx_deframer
    always @(posedge clk)
      if(reset | clear_seqnum)
        begin
-	  seqnum_reg <= 16'hFFFF;
+	  seqnum_reg <= 32'hFFFF_FFFF;
 	  vita_seqnum_reg <= 4'hF;
        end
      else

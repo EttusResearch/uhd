@@ -7,8 +7,8 @@ module gen_context_pkt
     input [31:0] streamid,
     input [63:0] vita_time,
     input [31:0] message,
-    input [15:0] seqnum0,
-    input [15:0] seqnum1,
+    input [31:0] seqnum0,
+    input [31:0] seqnum1,
     output [35:0] data_o, output src_rdy_o, input dst_rdy_i);
    
    localparam CTXT_IDLE = 0;
@@ -19,8 +19,9 @@ module gen_context_pkt
    localparam CTXT_TICS = 5;
    localparam CTXT_TICS2 = 6;
    localparam CTXT_MESSAGE = 7;
-   localparam CTXT_FLOWCTRL = 8;
-   localparam CTXT_DONE = 9;
+   localparam CTXT_FLOWCTRL0 = 8;
+   localparam CTXT_FLOWCTRL1 = 9;
+   localparam CTXT_DONE = 10;
 
    reg [33:0] 	 data_int;
    wire 	 src_rdy_int, dst_rdy_int;
@@ -35,7 +36,7 @@ module gen_context_pkt
      else
        if(trigger)
 	 stored_message <= message;
-       else if(ctxt_state == CTXT_FLOWCTRL)
+       else if(ctxt_state == CTXT_FLOWCTRL1)
 	 stored_message <= 0;
    
    always @(posedge clk)
@@ -70,14 +71,15 @@ module gen_context_pkt
    
    always @*
      case(ctxt_state)
-       CTXT_PROT_ENG : data_int <= { 2'b01, 16'd1, 16'd28 };
-       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100001101, seqno, 16'd7 };
+       CTXT_PROT_ENG : data_int <= { 2'b01, 16'd1, 16'd32 };
+       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100001101, seqno, 16'd8 };
        CTXT_STREAMID : data_int <= { 2'b00, streamid };
        CTXT_SECS : data_int <= { 2'b00, err_time[63:32] };
        CTXT_TICS : data_int <= { 2'b00, 32'd0 };
        CTXT_TICS2 : data_int <= { 2'b00, err_time[31:0] };
        CTXT_MESSAGE : data_int <= { 2'b00, message };
-       CTXT_FLOWCTRL : data_int <= { 2'b10, {seqnum1,seqnum0} };
+       CTXT_FLOWCTRL0 : data_int <= { 2'b00, seqnum0 };
+       CTXT_FLOWCTRL1 : data_int <= { 2'b10, seqnum1 };
        default : data_int <= {2'b00, 32'b00};
      endcase // case (ctxt_state)
 
