@@ -3,7 +3,7 @@
 module gen_context_pkt
   #(parameter PROT_ENG_FLAGS=1)
    (input clk, input reset, input clear,
-    input trigger, input error, output sent,
+    input trigger, output sent,
     input [31:0] streamid,
     input [63:0] vita_time,
     input [31:0] message,
@@ -33,7 +33,7 @@ module gen_context_pkt
      if(reset | clear)
        stored_message <= 0;
      else
-       if(error)
+       if(trigger)
 	 stored_message <= message;
        else if(ctxt_state == CTXT_FLOWCTRL)
 	 stored_message <= 0;

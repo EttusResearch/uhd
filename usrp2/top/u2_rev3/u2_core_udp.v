@@ -677,7 +677,8 @@ module u2_core
 	);
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
-		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
+		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
+		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1)) 
    vita_tx_chain
      (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),

@@ -1,7 +1,8 @@
 
 module vita_tx_deframer
   #(parameter BASE=0,
-    parameter MAXCHAN=1)
+    parameter MAXCHAN=1,
+    parameter USE_TRANS_HEADER=0)
    (input clk, input reset, input clear, input clear_seqnum,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     
@@ -93,7 +94,7 @@ module vita_tx_deframer
    always @(posedge clk)
      if(reset | clear)
        begin
-	  vita_state 		<= VITA_TRANS_HEADER;
+	  vita_state 		<= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	  {has_streamid_reg, has_classid_reg, has_secs_reg, has_tics_reg, has_trailer_reg, is_sob_reg, is_eob_reg} 
 	    <= 0;
 	  seqnum_err <= 0;
@@ -104,7 +105,7 @@ module vita_tx_deframer
 	   if(has_trailer_reg)
 	     vita_state <= VITA_TRAILER;
 	   else
-	     vita_state <= VITA_TRANS_HEADER;
+	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	 else
 	   begin
 	      vita_state <= VITA_PAYLOAD;
@@ -171,11 +172,11 @@ module vita_tx_deframer
 	     else
 	       vector_phase <= vector_phase + 1;
 	   VITA_TRAILER :
-	     vita_state <= VITA_TRANS_HEADER;
+	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	   VITA_STORE :
 	     ;
 	   default :
-	     vita_state <= VITA_TRANS_HEADER;
+	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	 endcase // case (vita_state)
 
    assign line_done = (vector_phase == numchan);
