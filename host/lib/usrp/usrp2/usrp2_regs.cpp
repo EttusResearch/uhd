@@ -15,19 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/usrp/mboard_rev.hpp>
 #include "usrp2_regs.hpp"
 
 int sr_addr(int misc_output_base, int sr) {
 	return misc_output_base + 4 * sr;
 }
 
-usrp2_regs_t usrp2_get_regs(int hw_rev) {
+usrp2_regs_t usrp2_get_regs(uhd::usrp::mboard_rev_t hw_rev) {
 
   //how about you just make this dependent on hw_rev instead of doing the init before main, and give up the const globals, since the application won't ever need both.
-  const int misc_output_base = (hw_rev>=USRP2P_FIRST_HW_REV) ? USRP2P_MISC_OUTPUT_BASE : USRP2_MISC_OUTPUT_BASE,
-            gpio_base        = (hw_rev>=USRP2P_FIRST_HW_REV) ? USRP2P_GPIO_BASE        : USRP2_GPIO_BASE,
-            atr_base         = (hw_rev>=USRP2P_FIRST_HW_REV) ? USRP2P_ATR_BASE         : USRP2_ATR_BASE,
-            bp_base          = (hw_rev>=USRP2P_FIRST_HW_REV) ? USRP2P_BP_STATUS_BASE   : USRP2_BP_STATUS_BASE;
+  const int misc_output_base = (hw_rev.is_usrp2p()) ? USRP2P_MISC_OUTPUT_BASE : USRP2_MISC_OUTPUT_BASE,
+            gpio_base        = (hw_rev.is_usrp2p()) ? USRP2P_GPIO_BASE        : USRP2_GPIO_BASE,
+            atr_base         = (hw_rev.is_usrp2p()) ? USRP2P_ATR_BASE         : USRP2_ATR_BASE,
+            bp_base          = (hw_rev.is_usrp2p()) ? USRP2P_BP_STATUS_BASE   : USRP2_BP_STATUS_BASE;
 
   usrp2_regs_t x;
   x.sr_misc = 0;

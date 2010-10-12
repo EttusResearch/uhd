@@ -59,7 +59,7 @@ public:
         }
 
         //power-up adc
-        if(_iface->get_hw_rev() < USRP2P_FIRST_HW_REV) { //if we're on a USRP2
+        if(!_iface->get_hw_rev().is_usrp2p()) { //if we're on a USRP2
           _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_ON);
         } else { //we're on a USRP2+
           _ads62p44_regs.reset = 1;
@@ -77,7 +77,7 @@ public:
         this->send_ad9777_reg(0);
 
         //power-down adc
-        if(_iface->get_hw_rev() < USRP2P_FIRST_HW_REV) { //if we're on a USRP2
+        if(!_iface->get_hw_rev().is_usrp2p()) { //if we're on a USRP2
           _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_OFF);
         } else { //we're on a USRP2+
           //send a global power-down to the ADC here... it will get lifted on reset
@@ -87,21 +87,21 @@ public:
     }
 
     void set_rx_digital_gain(float gain) {  //fine digital gain
-      if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+      if(_iface->get_hw_rev().is_usrp2p()) {
         _ads62p44_regs.fine_gain = int(gain/0.5);
         this->send_ads62p44_reg(0x17);
       } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
     }
 
     void set_rx_digital_fine_gain(float gain) { //gain correction      
-      if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+      if(_iface->get_hw_rev().is_usrp2p()) {
         _ads62p44_regs.gain_correction = int(gain / 0.05);
         this->send_ads62p44_reg(0x1A);
       } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
     }
 
     void set_rx_analog_gain(bool gain) { //turns on/off analog 3.5dB preamp
-      if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+      if(_iface->get_hw_rev().is_usrp2p()) {
         _ads62p44_regs.coarse_gain = gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
         this->send_ads62p44_reg(0x14);
       } else UHD_THROW_INVALID_CODE_PATH();

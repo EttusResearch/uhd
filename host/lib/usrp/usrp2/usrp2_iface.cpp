@@ -260,12 +260,12 @@ public:
  /***********************************************************************
   * Get/set hardware revision
   **********************************************************************/
-    void set_hw_rev(mboard_rev_t rev) {
+    void set_hw_rev(uhd::usrp::mboard_rev_t rev) {
         hw_rev = rev;
         regs = usrp2_get_regs(rev); //might be a better place to do this
     }
  
-    mboard_rev_t get_hw_rev(void) {
+    uhd::usrp::mboard_rev_t get_hw_rev(void) {
         return hw_rev;
     }
 

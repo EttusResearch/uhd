@@ -23,7 +23,9 @@
 
 using namespace uhd::usrp;
 
-mboard_rev_t::mboard_rev_t(boost::uint16_t id){
+static const mboard_rev_t usrp2p_first_hw_rev = mboard_rev_t(0x0A00);
+
+mboard_rev_t::mboard_rev_t(boost::uint16_t rev){
     _rev = rev;
 }
 
@@ -60,9 +62,30 @@ std::string mboard_rev_t::to_string(void) const{
     return str(boost::format("0x%04x") % this->to_uint16());
 }
 
-//Note: to_pp_string is implemented in the dboard manager
-//because it needs access to the dboard registration table
+std::string mboard_rev_t::to_pp_string(void) const{
+    if(this->is_usrp2p()) {
+        return str(boost::format("USRP2+, major rev %i, minor rev %i") % int(this->major()) % int(this->minor()));
+    } else {
+        return str(boost::format("USRP2, major rev %i, minor rev %i") % int(this->major()) % int(this->minor()));
+    }
+}
+
+bool mboard_rev_t::is_usrp2p(void) const{
+    return _rev >= usrp2p_first_hw_rev;
+}
+
+boost::uint8_t mboard_rev_t::major(void) const{
+    return _rev >> 8;
+}
+
+boost::uint8_t mboard_rev_t::minor(void) const{
+    return _rev & 0xff;
+}
 
 bool uhd::usrp::operator==(const mboard_rev_t &lhs, const mboard_rev_t &rhs){
     return lhs.to_uint16() == rhs.to_uint16();
+}
+
+bool uhd::usrp::operator<(const mboard_rev_t &lhs, const mboard_rev_t &rhs){
+    return lhs.to_uint16() < rhs.to_uint16();
 }

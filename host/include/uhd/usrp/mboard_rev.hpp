@@ -25,7 +25,7 @@
 
 namespace uhd{ namespace usrp{
 
-    class UHD_API mboard_rev_t : boost::equality_comparable<mboard_rev_t>{
+    class UHD_API mboard_rev_t : boost::equality_comparable<mboard_rev_t>, boost::less_than_comparable<mboard_rev_t>{
     public:
         /*!
          * Create a mboard rev from an integer.
@@ -71,6 +71,24 @@ namespace uhd{ namespace usrp{
          * \return a string with the mboard name and rev number
          */
         std::string to_pp_string(void) const;
+        
+        /*!
+         * Tell you if you're USRP2 or USRP2+
+         * \return true if USRP2+, false if USRP2
+         */
+        bool is_usrp2p(void) const;
+        
+        /*!
+         * Get the major revision number
+         * \return major revision number
+         */
+        boost::uint8_t major(void) const;
+        
+        /*!
+         * Get the minor revision number
+         * \return minor revision number
+         */
+        boost::uint8_t minor(void) const;
 
     private:
         boost::uint16_t _rev; //internal representation
@@ -79,11 +97,21 @@ namespace uhd{ namespace usrp{
     /*!
      * Comparator operator overloaded for mboard rev.
      * The boost::equality_comparable provides the !=.
-     * \param lhs the dboard id to the left of the operator
-     * \param rhs the dboard id to the right of the operator
+     * \param lhs the mboard rev to the left of the operator
+     * \param rhs the mboard rev to the right of the operator
      * \return true when the mboard revs are equal
      */
     UHD_API bool operator==(const mboard_rev_t &lhs, const mboard_rev_t &rhs);
+    
+    /*!
+     * Comparator operator overloaded for mboard rev.
+     * The boost::less_than_comparable provides the >, <=, >=.
+     * \param lhs the mboard rev to the left of the operator
+     * \param rhs the mboard rev to the right of the operator
+     * \return true when lhs < rhs
+     */
+    
+    UHD_API bool operator<(const mboard_rev_t &lhs, const mboard_rev_t &rhs);
 
 }} //namespace
 

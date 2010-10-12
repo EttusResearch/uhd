@@ -51,7 +51,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //extract the mboard rev numbers
     byte_vector_t rev_bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, 2);
-    _iface->set_hw_rev(mboard_rev_t::from_uint16(rev_bytes.at(0) | (revbytes.at(1) << 8)));
+    _iface->set_hw_rev(mboard_rev_t::from_uint16(rev_bytes.at(0) | (rev_bytes.at(1) << 8)));
     
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -158,7 +158,7 @@ void usrp2_mboard_impl::update_clock_config(void){
     _iface->poke32(_iface->regs.time64_flags, pps_flags);
 
     //clock source ref 10mhz
-    if(_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV) {
+    if(_iface->get_hw_rev().is_usrp2p()) {
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
@@ -176,7 +176,7 @@ void usrp2_mboard_impl::update_clock_config(void){
 
     //clock source ref 10mhz
     bool use_external = (_clock_config.ref_source != clock_config_t::REF_INT)
-                     || (_iface->get_hw_rev() >= USRP2P_FIRST_HW_REV); //USRP2P has an internal 10MHz TCXO
+                     || (_iface->get_hw_rev().is_usrp2p()); //USRP2P has an internal 10MHz TCXO
     _clock_ctrl->enable_external_ref(use_external);
 }
 
@@ -224,10 +224,11 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         }
         
         if (key.as<std::string>() == "hw-rev"){
-            //extract the mboard rev numbers
+            //extract the mboard rev number
             val = _iface->get_hw_rev().to_string();
             return;
         }
+    }
 
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
@@ -327,12 +328,13 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         
         if (key.as<std::string>() == "hw-rev"){
             mboard_rev_t rev = mboard_rev_t::from_string(val.as<std::string>());
-            byte_vector_t revbytes(2);
-            revbytes(1) = rev.to_uint16() >> 8;
-            revbytes(0) = rev.to_uint16() & 0xff;
-            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, revbytes);
+            byte_vector_t rev_bytes(2);
+            rev_bytes[1] = rev.to_uint16() >> 8;
+            rev_bytes[0] = rev.to_uint16() & 0xff;
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, rev_bytes);
             _iface->set_hw_rev(rev); //so the iface knows what rev it is
             return;
+        }
     }
 
     //handle the set request conditioned on the key

@@ -35,8 +35,8 @@ unsigned char u2_hw_rev_minor;
 static inline void
 get_hw_rev(void)
 {
-  bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_LSB, &u2_hw_rev_minor, 1);
-  ok &= eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, &u2_hw_rev_major, 1);
+  bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, &u2_hw_rev_minor, 1);
+  ok &= eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV+1, &u2_hw_rev_major, 1);
 }
 
 /*

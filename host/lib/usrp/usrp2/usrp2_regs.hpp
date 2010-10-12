@@ -18,6 +18,8 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
+#include <uhd/usrp/mboard_rev.hpp>
+
 #define USRP2_MISC_OUTPUT_BASE  0xD400
 #define USRP2_GPIO_BASE         0xC800
 #define USRP2_ATR_BASE          0xE400
@@ -28,7 +30,7 @@
 #define USRP2P_ATR_BASE         0x3800
 #define USRP2P_BP_STATUS_BASE   0x3300
 
-#define USRP2P_FIRST_HW_REV     0x0A00
+const uhd::usrp::mboard_rev_t USRP2P_FIRST_HW_REV(0x0A00);
 
 typedef struct {
 	int sr_misc;
@@ -101,7 +103,7 @@ typedef struct {
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
 
-usrp2_regs_t usrp2_get_regs(int hw_rev);
+usrp2_regs_t usrp2_get_regs(uhd::usrp::mboard_rev_t hw_rev);
 
 ////////////////////////////////////////////////////
 // Settings Bus, Slave #7, Not Byte Addressable!

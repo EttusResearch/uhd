@@ -32,7 +32,8 @@ using namespace uhd;
 class usrp2_clock_ctrl_impl : public usrp2_clock_ctrl{
 public:
     usrp2_clock_ctrl_impl(usrp2_iface::sptr iface){
-        clk_regs = usrp2_clk_regs_t(iface->get_hw_rev());
+        _iface = iface;
+        clk_regs = usrp2_clk_regs_t(_iface->get_hw_rev());
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
         this->write_reg(clk_regs.pll_3);
@@ -123,6 +124,7 @@ public:
             break;
 
         default:
+            break;
         }
         this->write_reg(clk_regs.output(clk_regs.exp));
         this->write_reg(clk_regs.div_lo(clk_regs.exp));
@@ -296,6 +298,8 @@ private:
         this->write_reg(clk_regs.div_hi(clk_regs.adc));
         this->update_regs();
     }
+    
+    usrp2_iface::sptr _iface;
 
     usrp2_clk_regs_t clk_regs;
     ad9510_regs_t _ad9510_regs;

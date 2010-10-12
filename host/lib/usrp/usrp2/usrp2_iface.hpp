@@ -23,6 +23,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
+#include <uhd/usrp/mboard_rev.hpp>
 #include <utility>
 #include "fw_common.h"
 #include "usrp2_regs.hpp"
