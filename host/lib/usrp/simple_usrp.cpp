@@ -136,6 +136,10 @@ public:
     dboard_iface::sptr get_rx_dboard_iface(void){
         return _sdev->get_rx_dboard_iface();
     }
+    
+    void set_rx_bandwidth(float bandwidth) {
+        return _sdev->set_rx_bandwidth(bandwidth);
+    }
 
     /*******************************************************************
      * TX methods

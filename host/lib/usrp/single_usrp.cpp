@@ -202,6 +202,10 @@ public:
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
         return _rx_dboard(chan)[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
     }
+    
+    void set_rx_bandwidth(float bandwidth, size_t chan) {
+        _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH] = bandwidth;
+    }
 
     /*******************************************************************
      * TX methods
