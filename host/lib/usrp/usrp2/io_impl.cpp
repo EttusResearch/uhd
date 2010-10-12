@@ -49,13 +49,14 @@ static const size_t vrt_send_header_offset_words32 = 1;
  **********************************************************************/
 class flow_control_monitor{
 public:
+    typedef boost::uint32_t seq_type;
     typedef boost::shared_ptr<flow_control_monitor> sptr;
 
     /*!
      * Make a new flow control monitor.
      * \param max_seqs_out num seqs before throttling
      */
-    flow_control_monitor(size_t max_seqs_out){
+    flow_control_monitor(seq_type max_seqs_out){
         _last_seq_out = 0;
         _last_seq_ack = 0;
         _max_seqs_out = max_seqs_out;
@@ -67,7 +68,7 @@ public:
      * \param timeout the timeout in seconds
      * \return false on timeout
      */
-    UHD_INLINE bool check_fc_condition(boost::uint16_t seq, double timeout){
+    UHD_INLINE bool check_fc_condition(seq_type seq, double timeout){
         boost::unique_lock<boost::mutex> lock(_fc_mutex);
         _last_seq_out = seq;
         return _fc_cond.timed_wait(
@@ -81,7 +82,7 @@ public:
      * Update the flow control condition.
      * \param seq the last sequence number to be ACK'd
      */
-    UHD_INLINE void update_fc_condition(boost::uint16_t seq){
+    UHD_INLINE void update_fc_condition(seq_type seq){
         boost::unique_lock<boost::mutex> lock(_fc_mutex);
         _last_seq_ack = seq;
         lock.unlock();
@@ -90,17 +91,12 @@ public:
 
 private:
     bool ready(void){
-        //return true;
-        //std::cout << "_last_seq_out " << _last_seq_out << std::endl;
-        //std::cout << "_last_seq_ack " << _last_seq_ack << std::endl;
-        //std::cout << "boost::uint16_t(_last_seq_out -_last_seq_ack) " << boost::uint16_t(_last_seq_out -_last_seq_ack) << std::endl;
-        return boost::uint16_t(_last_seq_out -_last_seq_ack) < boost::uint16_t(_max_seqs_out);
+        return seq_type(_last_seq_out -_last_seq_ack) < _max_seqs_out;
     }
 
     boost::mutex _fc_mutex;
     boost::condition _fc_cond;
-    boost::uint16_t _last_seq_out, _last_seq_ack;
-    size_t _max_seqs_out;
+    seq_type _last_seq_out, _last_seq_ack, _max_seqs_out;
 };
 
 /***********************************************************************
@@ -141,16 +137,15 @@ struct usrp2_impl::io_impl{
     ){
         UHD_ASSERT_THROW(trans.size() == buffs.size());
 
-        //calculate the 16-bit sequence number for the special header
-        const boost::uint16_t seq_num = boost::uint16_t(packet_handler_send_state.next_packet_seq & 0xffff);
-        const boost::uint32_t fc_word32 = uhd::htonx(boost::uint32_t(seq_num));
+        //calculate the flow control word
+        const boost::uint32_t fc_word32 = packet_handler_send_state.next_packet_seq;
 
         //grab a managed buffer for each index
         for (size_t i = 0; i < buffs.size(); i++){
-            if (not fc_mons[i]->check_fc_condition(seq_num, timeout)) return false;
+            if (not fc_mons[i]->check_fc_condition(fc_word32, timeout)) return false;
             buffs[i] = trans[i]->get_send_buff(timeout);
             if (not buffs[i].get()) return false;
-            buffs[i]->cast<boost::uint32_t *>()[0] = fc_word32;
+            buffs[i]->cast<boost::uint32_t *>()[0] = uhd::htonx(fc_word32);
         }
         return true;
     }
@@ -209,8 +204,8 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
                 //catch the flow control packets and react
                 if (metadata.event_code == 0){
-                    boost::uint32_t fc_word32 = uhd::ntohx((vrt_hdr + if_packet_info.num_header_words32)[1]);
-                    this->fc_mons[index]->update_fc_condition(fc_word32 & 0xffff);
+                    boost::uint32_t fc_word32 = (vrt_hdr + if_packet_info.num_header_words32)[1];
+                    this->fc_mons[index]->update_fc_condition(uhd::ntohx(fc_word32));
                     continue;
                 }
 

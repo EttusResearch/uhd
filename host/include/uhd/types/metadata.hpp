@@ -130,7 +130,7 @@ namespace uhd{
 
         /*!
          * Event codes:
-         * - success: a packet was successfully transmitted
+         * - eob ack: an eob packet was successfully transmitted
          * - underflow: an internal send buffer has emptied
          * - sequence error: packet loss between host and device
          * - time error: packet had time that was late (or too early)
@@ -138,7 +138,7 @@ namespace uhd{
          * - sequence error in burst: packet loss within a burst
          */
         enum event_code_t {
-            EVENT_CODE_SUCCESS    = 0x1,
+            EVENT_CODE_EOB_ACK    = 0x1,
             EVENT_CODE_UNDERFLOW  = 0x2,
             EVENT_CODE_SEQ_ERROR  = 0x4,
             EVENT_CODE_TIME_ERROR = 0x8,
