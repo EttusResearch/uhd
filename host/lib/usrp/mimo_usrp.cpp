@@ -226,7 +226,7 @@ public:
         return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<float>();
     }
     
-    void set_rx_bandwidth(float bandwidth, size_t chan){
+    void set_rx_bandwidth(size_t chan, float bandwidth){
         _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH] = bandwidth;
     }
 

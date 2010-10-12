@@ -149,7 +149,7 @@ public:
      */
     virtual float read_rssi(size_t chan) = 0;
     
-    virtual void set_rx_bandwidth(float bandwidth, size_t chan) = 0;
+    virtual void set_rx_bandwidth(size_t chan, float bandwidth) = 0;
 
     /*******************************************************************
      * TX methods
