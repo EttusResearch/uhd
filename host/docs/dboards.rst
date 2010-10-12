@@ -69,20 +69,19 @@ Recieve Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The XCVR2450 has a non-contiguous tuning range consisting of a high band and a low band.
-The high band consists of frequencies between...TODO
+The XCVR2450 has a non-contiguous tuning range consisting of a 
+high band (4.9-6.0GHz) and a low band (2.4-2.5GHz).
 
 Transmit Antennas: **J1** or **J2**
 
 Receive Antennas: **J1** or **J2**
 
-When using the XCVR2450 in full-duplex mode,
-the user must set the receive antenna and the transmit antenna to be different;
-not doing so will yeild undefined results.
-
 The XCVR2450 uses a common LO for both receive and transmit.
 Even though the API allows the RX and TX LOs to be individually set,
 a change of one LO setting will be reflected in the other LO setting.
+
+The XCVR2450 does not support full-duplex mode, attempting to operate 
+in full-duplex will result in transmit-only operation.
 
 Transmit Gains:
  * **VGA**, Range: 0-30dB

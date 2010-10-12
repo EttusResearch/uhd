@@ -51,6 +51,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
@@ -72,6 +73,7 @@ using namespace boost::assign;
 static const bool xcvr2450_debug = false;
 
 static const freq_range_t xcvr_freq_range(2.4e9, 6.0e9);
+static const freq_range_t xcvr_freq_band_seperation(2.5e9, 4.9e9);
 
 static const prop_names_t xcvr_antennas = list_of("J1")("J2");
 
@@ -100,6 +102,7 @@ public:
 
 private:
     double _lo_freq;
+    float _rx_bandwidth, _tx_bandwidth;
     uhd::dict<std::string, float> _tx_gains, _rx_gains;
     std::string _tx_ant, _rx_ant;
     int _ad9515div;
@@ -110,6 +113,8 @@ private:
     void set_rx_ant(const std::string &ant);
     void set_tx_gain(float gain, const std::string &name);
     void set_rx_gain(float gain, const std::string &name);
+    void set_rx_bandwidth(float bandwidth);
+    void set_tx_bandwidth(float bandwidth);
 
     void update_atr(void);
     void spi_reset(void);
@@ -176,6 +181,9 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
 
     spi_reset(); //prepare the spi
 
+    _rx_bandwidth = 9.5e6;
+    _tx_bandwidth = 12.0e6;
+
     //setup the misc max2829 registers
     _max2829_regs.mimo_select         = max2829_regs_t::MIMO_SELECT_MIMO;
     _max2829_regs.band_sel_mimo       = max2829_regs_t::BAND_SEL_MIMO_MIMO;
@@ -183,7 +191,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     _max2829_regs.rssi_high_bw        = max2829_regs_t::RSSI_HIGH_BW_6MHZ;
     _max2829_regs.tx_lpf_coarse_adj   = max2829_regs_t::TX_LPF_COARSE_ADJ_12MHZ;
     _max2829_regs.rx_lpf_coarse_adj   = max2829_regs_t::RX_LPF_COARSE_ADJ_9_5MHZ;
-    _max2829_regs.rx_lpf_fine_adj     = max2829_regs_t::RX_LPF_FINE_ADJ_95;
+    _max2829_regs.rx_lpf_fine_adj     = max2829_regs_t::RX_LPF_FINE_ADJ_100;
     _max2829_regs.rx_vga_gain_spi     = max2829_regs_t::RX_VGA_GAIN_SPI_SPI;
     _max2829_regs.rssi_output_range   = max2829_regs_t::RSSI_OUTPUT_RANGE_HIGH;
     _max2829_regs.rssi_op_mode        = max2829_regs_t::RSSI_OP_MODE_ENABLED;
@@ -244,15 +252,24 @@ void xcvr2450::update_atr(void){
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP_RXIO | RX_DIS_RXIO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP_RXIO | RX_ENB_RXIO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP_RXIO | RX_DIS_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP_RXIO | RX_ENB_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP_RXIO | RX_DIS_RXIO);
 }
 
 /***********************************************************************
  * Tuning
  **********************************************************************/
 void xcvr2450::set_lo_freq(double target_freq){
+    //clip for highband and lowband
+    if((target_freq > xcvr_freq_band_seperation.min) and (target_freq < xcvr_freq_band_seperation.max)){
+        if(target_freq - xcvr_freq_band_seperation.min < xcvr_freq_band_seperation.max - target_freq){
+            target_freq = xcvr_freq_band_seperation.min;
+        }else{
+            target_freq = xcvr_freq_band_seperation.max;
+        }
+    }
+
+    //clip for max and min
     target_freq = std::clip(target_freq, xcvr_freq_range.min, xcvr_freq_range.max);
-    //TODO: clip for highband and lowband
 
     //variables used in the calculation below
     double scaler = xcvr2450::is_highband(target_freq)? (4.0/5.0) : (4.0/3.0);
@@ -434,6 +451,114 @@ void xcvr2450::set_rx_gain(float gain, const std::string &name){
     _rx_gains[name] = gain;
 }
 
+
+/***********************************************************************
+ * Bandwidth Handling
+ **********************************************************************/
+static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(float &bandwidth){
+    int reg = std::clip(boost::math::iround((bandwidth-6.0e6)/6.0e6), 1, 3);
+
+    switch(reg){
+    case 1: // bandwidth < 15MHz
+        bandwidth = 12e6;
+        return max2829_regs_t::TX_LPF_COARSE_ADJ_12MHZ;
+    case 2: // 15MHz < bandwidth < 21MHz
+        bandwidth = 18e6;
+        return max2829_regs_t::TX_LPF_COARSE_ADJ_18MHZ;
+    case 3: // bandwidth > 21MHz
+        bandwidth = 24e6;
+        return max2829_regs_t::TX_LPF_COARSE_ADJ_24MHZ;
+    }
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+static max2829_regs_t::rx_lpf_fine_adj_t bandwidth_to_rx_lpf_fine_reg(float &bandwidth, float requested_bandwidth){
+    int reg = std::clip(boost::math::iround((requested_bandwidth/bandwidth)/0.05), 18, 22);
+
+    switch(reg){
+    case 18: // requested_bandwidth < 92.5%
+        bandwidth = 0.9 * bandwidth;
+        return max2829_regs_t::RX_LPF_FINE_ADJ_90;
+    case 19: // 92.5% < requested_bandwidth < 97.5%
+        bandwidth = 0.95 * bandwidth;
+        return max2829_regs_t::RX_LPF_FINE_ADJ_95;
+    case 20: // 97.5% < requested_bandwidth < 102.5%
+        bandwidth = 1.0 * bandwidth;
+        return max2829_regs_t::RX_LPF_FINE_ADJ_100;
+    case 21: // 102.5% < requested_bandwidth < 107.5%
+        bandwidth = 1.05 * bandwidth;
+        return max2829_regs_t::RX_LPF_FINE_ADJ_105;
+    case 22: // 107.5% < requested_bandwidth
+        bandwidth = 1.1 * bandwidth;
+        return max2829_regs_t::RX_LPF_FINE_ADJ_110;
+    }
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(float &bandwidth){
+    int reg = std::clip(boost::math::iround((bandwidth-7.0e6)/1.0e6), 0, 11);
+
+    switch(reg){
+    case 0: // bandwidth < 7.5MHz
+    case 1: // 7.5MHz < bandwidth < 8.5MHz
+        bandwidth = 7.5e6;
+        return max2829_regs_t::RX_LPF_COARSE_ADJ_7_5MHZ;
+    case 2: // 8.5MHz < bandwidth < 9.5MHz
+    case 3: // 9.5MHz < bandwidth < 10.5MHz
+    case 4: // 10.5MHz < bandwidth < 11.5MHz
+        bandwidth = 9.5e6;
+        return max2829_regs_t::RX_LPF_COARSE_ADJ_9_5MHZ;
+    case 5: // 11.5MHz < bandwidth < 12.5MHz
+    case 6: // 12.5MHz < bandwidth < 13.5MHz
+    case 7: // 13.5MHz < bandwidth < 14.5MHz
+    case 8: // 14.5MHz < bandwidth < 15.5MHz
+        bandwidth = 14e6;
+        return max2829_regs_t::RX_LPF_COARSE_ADJ_14MHZ;
+    case 9: // 15.5MHz < bandwidth < 16.5MHz
+    case 10: // 16.5MHz < bandwidth < 17.5MHz
+    case 11: // 17.5MHz < bandwidth
+        bandwidth = 18e6;
+        return max2829_regs_t::RX_LPF_COARSE_ADJ_18MHZ;
+    }
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+void xcvr2450::set_rx_bandwidth(float bandwidth){
+    float requested_bandwidth = bandwidth;
+
+    //compute coarse low pass cutoff frequency setting
+    _max2829_regs.rx_lpf_coarse_adj = bandwidth_to_rx_lpf_coarse_reg(bandwidth);
+
+    //compute fine low pass cutoff frequency setting
+    _max2829_regs.rx_lpf_fine_adj = bandwidth_to_rx_lpf_fine_reg(bandwidth, requested_bandwidth);
+
+    //shadow bandwidth setting
+    _rx_bandwidth = bandwidth;
+
+    //update register
+    send_reg(0x7);
+
+    if (xcvr2450_debug) std::cerr << boost::format(
+        "XCVR2450 RX Bandwidth (lp_fc): %f Hz, coarse reg: %d, fine reg: %d"
+    ) % _rx_bandwidth % (int(_max2829_regs.rx_lpf_coarse_adj)) % (int(_max2829_regs.rx_lpf_fine_adj)) << std::endl;
+}
+
+void xcvr2450::set_tx_bandwidth(float bandwidth){
+    //compute coarse low pass cutoff frequency setting
+    _max2829_regs.tx_lpf_coarse_adj = bandwidth_to_tx_lpf_coarse_reg(bandwidth);
+
+    //shadow bandwidth setting
+    _tx_bandwidth = bandwidth;
+
+    //update register
+    send_reg(0x7);
+
+    if (xcvr2450_debug) std::cerr << boost::format(
+        "XCVR2450 TX Bandwidth (lp_fc): %f Hz, coarse reg: %d"
+    ) % _tx_bandwidth % (int(_max2829_regs.tx_lpf_coarse_adj)) << std::endl;
+}
+
+
 /***********************************************************************
  * RX Get and Set
  **********************************************************************/
@@ -500,6 +625,10 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_rssi();
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = _rx_bandwidth;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -520,6 +649,10 @@ void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         this->set_rx_ant(val.as<std::string>());
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        this->set_rx_bandwidth(val.as<float>());
         return;
 
     case SUBDEV_PROP_ENABLED:
@@ -591,6 +724,10 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked();
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = _tx_bandwidth;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -607,6 +744,10 @@ void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_GAIN:
         this->set_tx_gain(val.as<float>(), key.name);
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        this->set_tx_bandwidth(val.as<float>());
         return;
 
     case SUBDEV_PROP_ANTENNA:
