@@ -148,6 +148,8 @@ public:
      * \return the rssi in dB
      */
     virtual float read_rssi(size_t chan) = 0;
+    
+    virtual void set_rx_bandwidth(float bandwidth, size_t chan) = 0;
 
     /*******************************************************************
      * TX methods

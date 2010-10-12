@@ -139,6 +139,8 @@ public:
     virtual float read_rssi(void) = 0;
 
     virtual dboard_iface::sptr get_rx_dboard_iface(void) = 0;
+    
+    virtual void set_rx_bandwidth(float) = 0;
 
     /*******************************************************************
      * TX methods
