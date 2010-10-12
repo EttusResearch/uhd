@@ -49,9 +49,11 @@ Receive Antennas: **J3**
 
 The board has no user selectable antenna setting
 
-Recieve Gains: 
+Receive Gains: 
     **GC1**, Range: 0-56dB
     **GC2**, Range: 0-24dB
+
+Low-Pass Filter Bandwidth (Hz): 4M-33M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
@@ -64,7 +66,7 @@ The user may set the receive antenna to be TX/RX or RX2.
 However, when using an RFX board in full-duplex mode,
 the receive antenna will always be set to RX2, regardless of the settings.
 
-Recieve Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
+Receive Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
@@ -91,6 +93,10 @@ Receive Gains:
  * **LNA**, Range: 0-30.5dB
  * **VGA**, Range: 0-62dB
 
+Low-Pass Filter Bandwidths (Hz):
+ * **RX**: 7.5M, 9.5M, 14M, 18M; (each +-0, 5, or 10%)
+ * **TX**: 12M, 18M, 24M
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +110,11 @@ the receive antenna will always be set to RX2, regardless of the settings.
 
 Transmit Gains: **PGA0**, Range: 0-25dB
 
-Recieve Gains: **PGA0**, Range: 0-31.5dB
+Receive Gains: **PGA0**, Range: 0-31.5dB
+
+Low-Pass Filter Bandwidths (Hz):
+ * **RX**: 20M (Fixed)
+ * **TX**: 20M (Fixed)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX
@@ -114,6 +124,8 @@ Receive Antennas: RX
 Receive Gains:
  * **RF**, Range: -13.3-50.3dB (frequency-dependent)
  * **IF**, Range: -1.5-32.5dB
+
+Bandpass Filter Bandwidth: 6MHz
 
 ------------------------------------------------------------------------
 Daughterboard Modifications
