@@ -95,7 +95,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
     _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
     const size_t cycles_per_ack = size_t(_clock_ctrl->get_master_clock_rate()/100); //100 aps
-    //_iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | cycles_per_ack); //FIXME total pause frames
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | cycles_per_ack);
     static const double sram_frac = 1.0/8.0; //fraction of sram to fill before ack
     const size_t packets_per_ack = size_t(usrp2_impl::sram_bytes*sram_frac/send_bytes_per_packet);
     _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | packets_per_ack);
@@ -121,7 +121,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
-    /* NOP */
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_ACK, 0);
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_ACK, 0);
 }
 
 /***********************************************************************
