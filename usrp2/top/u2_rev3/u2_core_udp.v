@@ -541,10 +541,17 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // Interrupt Controller, Slave #8
 
+   // Pass interrupts on dsp_clk to wb_clk.  These need edge triggering in the pic
+   wire 	 underrun_wb, overrun_wb, pps_wb;
+
+   oneshot_2clk underrun_1s (.clk_in(dsp_clk), .in(underrun), .clk_out(wb_clk), .out(underrun_wb));
+   oneshot_2clk overrun_1s (.clk_in(dsp_clk), .in(overrun), .clk_out(wb_clk), .out(overrun_wb));
+   oneshot_2clk pps_1s (.clk_in(dsp_clk), .in(pps_int), .clk_out(wb_clk), .out(pps_wb));
+   
    assign irq= {{8'b0},
 		{8'b0},
 		{3'b0, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
-		{pps_int,overrun,underrun,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
+		{pps_wb,overrun_wb,underrun_wb,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
 	   .we_i(s8_we),.dat_i(s8_dat_o),.dat_o(s8_dat_i),.ack_o(s8_ack),.int_o(proc_int),
