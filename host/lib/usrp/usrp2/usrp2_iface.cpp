@@ -260,12 +260,12 @@ public:
  /***********************************************************************
   * Get/set hardware revision
   **********************************************************************/
-    void set_hw_rev(int rev) {
+    void set_hw_rev(mboard_rev_t rev) {
         hw_rev = rev;
         regs = usrp2_get_regs(rev); //might be a better place to do this
     }
  
-    int get_hw_rev(void) {
+    mboard_rev_t get_hw_rev(void) {
         return hw_rev;
     }
 

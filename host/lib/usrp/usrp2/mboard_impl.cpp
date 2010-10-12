@@ -20,6 +20,7 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/mboard_rev.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
@@ -49,12 +50,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface = usrp2_iface::make(ctrl_transport);
 
     //extract the mboard rev numbers
-    _rev_lo = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_LSB, 1).at(0);
-    _rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
-
-    //set the device revision (USRP2 or USRP2+) based on the above
-    _iface->set_hw_rev((_rev_hi << 8) | _rev_lo);
-
+    byte_vector_t rev_bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, 2);
+    _iface->set_hw_rev(mboard_rev_t::from_uint16(rev_bytes.at(0) | (revbytes.at(1) << 8)));
+    
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
@@ -224,12 +222,17 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
             val = boost::asio::ip::address_v4(bytes).to_string();
             return;
         }
-    }
+        
+        if (key.as<std::string>() == "hw-rev"){
+            //extract the mboard rev numbers
+            val = _iface->get_hw_rev().to_string();
+            return;
+        }
 
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = str(boost::format("usrp2 mboard%d - rev %d:%d") % _index % _rev_hi % _rev_lo);
+        val = str(boost::format("usrp2 mboard%d - rev %s") % _index % _iface->get_hw_rev().to_string());
         return;
 
     case MBOARD_PROP_OTHERS:{
@@ -321,9 +324,18 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
             _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, bytes);
             return;
         }
+        
+        if (key.as<std::string>() == "hw-rev"){
+            mboard_rev_t rev = mboard_rev_t::from_string(val.as<std::string>());
+            byte_vector_t revbytes(2);
+            revbytes(1) = rev.to_uint16() >> 8;
+            revbytes(0) = rev.to_uint16() & 0xff;
+            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, revbytes);
+            _iface->set_hw_rev(rev); //so the iface knows what rev it is
+            return;
     }
 
-    //handle the get request conditioned on the key
+    //handle the set request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
     case MBOARD_PROP_CLOCK_CONFIG:

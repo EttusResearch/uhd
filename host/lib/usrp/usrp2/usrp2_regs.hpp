@@ -18,8 +18,6 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
-//these are used to set the 
-
 #define USRP2_MISC_OUTPUT_BASE  0xD400
 #define USRP2_GPIO_BASE         0xC800
 #define USRP2_ATR_BASE          0xE400

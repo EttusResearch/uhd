@@ -112,12 +112,12 @@ public:
      * Set the hardware revision number. Also selects the proper register set for the device.
      * \param rev the 16-bit revision
      */
-    virtual void set_hw_rev(int rev) = 0;
+    virtual void set_hw_rev(uhd::usrp::mboard_rev_t rev) = 0;
 
     /*! Return the hardware revision number
      * \return hardware revision
      */
-    virtual int get_hw_rev(void) = 0;
+    virtual uhd::usrp::mboard_rev_t get_hw_rev(void) = 0;
 
     /*!
      * Register map selected from USRP2/USRP2+.
@@ -126,7 +126,7 @@ public:
     /*!
      * Hardware revision as returned by the device.
      */
-    int hw_rev;
+    uhd::usrp::mboard_rev_t hw_rev;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

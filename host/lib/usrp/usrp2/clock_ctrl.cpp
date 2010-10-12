@@ -17,6 +17,7 @@
 
 #include "clock_ctrl.hpp"
 #include "ad9510_regs.hpp"
+#include <uhd/usrp/mboard_rev.hpp>
 #include "usrp2_regs.hpp" //spi slave constants
 #include "usrp2_clk_regs.hpp"
 #include <uhd/utils/assert.hpp>
@@ -31,9 +32,7 @@ using namespace uhd;
 class usrp2_clock_ctrl_impl : public usrp2_clock_ctrl{
 public:
     usrp2_clock_ctrl_impl(usrp2_iface::sptr iface){
-        _iface = iface; //_iface has get_hw_rev(), which lets us know if it's a USRP2+ (>=0x80) or USRP2 (<0x80).
-
-        clk_regs = usrp2_clk_regs_t(_iface->get_hw_rev());
+        clk_regs = usrp2_clk_regs_t(iface->get_hw_rev());
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
         this->write_reg(clk_regs.pll_3);
@@ -86,16 +85,13 @@ public:
     }
 
     void enable_mimo_clock_out(bool enb){
-        //FIXME TODO put this revision read in a common place
-        boost::uint8_t rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
-
         //calculate the low and high dividers
         size_t divider = size_t(this->get_master_clock_rate()/10e6);
         size_t high = divider/2;
         size_t low = divider - high;
 
-        switch(rev_hi){
-        case 3: //clock 2
+        switch(clk_regs.exp){
+        case 2: //U2 rev 3
             _ad9510_regs.power_down_lvpecl_out2 = enb?
                 ad9510_regs_t::POWER_DOWN_LVPECL_OUT2_NORMAL :
                 ad9510_regs_t::POWER_DOWN_LVPECL_OUT2_SAFE_PD;
@@ -104,11 +100,9 @@ public:
             _ad9510_regs.divider_low_cycles_out2 = low - 1;
             _ad9510_regs.divider_high_cycles_out2 = high - 1;
             _ad9510_regs.bypass_divider_out2 = 0;
-            this->write_reg(0x3e);
-            this->write_reg(0x4c);
             break;
 
-        case 4: //clock 5
+        case 5: //U2 rev 4
             _ad9510_regs.power_down_lvds_cmos_out5 = enb? 0 : 1;
             _ad9510_regs.lvds_cmos_select_out5 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT5_LVDS;
             _ad9510_regs.output_level_lvds_out5 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT5_1_75MA;
@@ -116,19 +110,26 @@ public:
             _ad9510_regs.divider_low_cycles_out5 = low - 1;
             _ad9510_regs.divider_high_cycles_out5 = high - 1;
             _ad9510_regs.bypass_divider_out5 = 0;
-            this->write_reg(0x41);
-            this->write_reg(0x52);
+            break;
+            
+        case 6: //U2+
+            _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
+            _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_LVDS;
+            _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
+            //set the registers (divider - 1)
+            _ad9510_regs.divider_low_cycles_out6 = low - 1;
+            _ad9510_regs.divider_high_cycles_out6 = high - 1;
+            _ad9510_regs.bypass_divider_out5 = 0;
             break;
 
-        //TODO FIXME do i want to throw, what about uninitialized boards?
-        //default: throw std::runtime_error("unknown rev hi in mboard eeprom");
-        default: std::cerr << "unknown rev hi: " << rev_hi << std::endl;
+        default:
         }
+        this->write_reg(clk_regs.output(clk_regs.exp));
+        this->write_reg(clk_regs.div_lo(clk_regs.exp));
         this->update_regs();
     }
 
     //uses output clock 7 (cmos)
-    //this clock is the same between USRP2 and USRP2+ and so this fn does not get a switch statement
     void enable_rx_dboard_clock(bool enb){
         _ad9510_regs.power_down_lvds_cmos_out7 = enb? 0 : 1;
         _ad9510_regs.lvds_cmos_select_out7 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT7_CMOS;
@@ -297,7 +298,6 @@ private:
     }
 
     usrp2_clk_regs_t clk_regs;
-    usrp2_iface::sptr _iface;
     ad9510_regs_t _ad9510_regs;
 };
 

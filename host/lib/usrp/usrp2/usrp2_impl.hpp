@@ -95,7 +95,6 @@ public:
 
 private:
     size_t _index;
-    int _rev_hi, _rev_lo;
     const size_t _recv_frame_size;
 
     //properties for this mboard

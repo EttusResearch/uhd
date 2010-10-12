@@ -55,8 +55,7 @@ extern "C" {
 ////////////////////////////////////////////////////////////////////////
 // EEPROM Layout
 ////////////////////////////////////////////////////////////////////////
-#define USRP2_EE_MBOARD_REV_LSB  0x00 //1 byte
-#define USRP2_EE_MBOARD_REV_MSB  0x01 //1 byte
+#define USRP2_EE_MBOARD_REV      0x00 //2 bytes, little-endian (historic, don't blame me)
 #define USRP2_EE_MBOARD_MAC_ADDR 0x02 //6 bytes
 #define USRP2_EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
 #define USRP2_EE_MBOARD_BOOTLOADER_FLAGS 0xF7

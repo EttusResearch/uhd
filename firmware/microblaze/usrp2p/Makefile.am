@@ -22,9 +22,10 @@ AM_CFLAGS = \
 
 AM_LDFLAGS = \
 	$(COMMON_LFLAGS) \
-	libusrp2p.a \
 	-Wl,-defsym -Wl,_TEXT_START_ADDR=0x8050 \
 	-Wl,-defsym -Wl,_STACK_SIZE=3072
+
+LDADD = libusrp2p.a
 
 #all of this here is to relocate the hardware vectors to somewhere normal.
 RELOCATE_ARGS = \

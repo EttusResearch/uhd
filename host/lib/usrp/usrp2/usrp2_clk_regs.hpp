@@ -18,19 +18,24 @@
 #ifndef INCLUDED_USRP2_CLK_REGS_HPP
 #define INCLUDED_USRP2_CLK_REGS_HPP
 
+#include <uhd/usrp/mboard_rev.hpp>
 #include "usrp2_regs.hpp"
 
 class usrp2_clk_regs_t {
 public:
   usrp2_clk_regs_t(void) { ; }
-  usrp2_clk_regs_t(int hw_rev) {   
+  usrp2_clk_regs_t(uhd::usrp::mboard_rev_t hw_rev) {
     test = 0;
     fpga = 1;
-    adc = (hw_rev>=USRP2P_FIRST_HW_REV) ? 2 : 4;
+    adc = (hw_rev.is_usrp2p()) ? 2 : 4;
     dac = 3;
-    serdes = (hw_rev>=USRP2P_FIRST_HW_REV) ? 4 : 2; //only used by usrp2+
-    tx_db = (hw_rev>=USRP2P_FIRST_HW_REV) ? 5 : 6;
-    exp = (hw_rev>=USRP2P_FIRST_HW_REV) ? 6 : 5;
+    serdes = (hw_rev.is_usrp2p()) ? 4 : 2; //only used by usrp2+
+    tx_db = (hw_rev.is_usrp2p()) ? 5 : 6;
+    
+    if(hw_rev.major() == 3) exp = 2;
+    else if(hw_rev.major() >= 4) exp = 5;
+    else if(hw_rev.major() > 10) exp = 6;
+    
     rx_db = 7;
   }
 
