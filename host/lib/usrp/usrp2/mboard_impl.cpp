@@ -70,11 +70,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
-    //Issue a stop streaming command (in case it was left running).
-    //Since this command is issued before the networking is setup,
-    //most if not all junk packets will never make it to the socket.
-    this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-
     //init the rx control registers
     _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_samps_per_packet);
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);

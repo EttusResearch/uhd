@@ -249,8 +249,6 @@ void usrp2_impl::io_init(void){
         };
         std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
         send_buff->commit(sizeof(data));
-        //drain the recv buffers (may have junk)
-        while (data_transport->get_recv_buff(0).get()){};
     }
 
     //the assumption is that all data transports should be identical

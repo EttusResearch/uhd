@@ -27,13 +27,13 @@
 namespace po = boost::program_options;
 
 /*!
- * Test that no messages are received:
+ * Test the eob ack message:
  *    Send a burst of many samples that will fragment internally.
- *    We expect to not get any async messages.
+ *    We expect to get an eob ack async message.
  */
-void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
+void test_ack_async_message(uhd::usrp::single_usrp::sptr sdev){
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << "Test no async message... " << std::flush;
+    std::cout << "Test eob ack message... " << std::flush;
 
     uhd::tx_metadata_t md;
     md.start_of_burst = true;
@@ -50,19 +50,27 @@ void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
     );
 
     uhd::async_metadata_t async_md;
-    if (dev->recv_async_msg(async_md)){
+    if (not dev->recv_async_msg(async_md)){
+        std::cout << boost::format(
+            "failed:\n"
+            "    Async message recv timed out.\n"
+        ) << std::endl;
+        return;
+    }
+
+    switch(async_md.event_code){
+    case uhd::async_metadata_t::EVENT_CODE_EOB_ACK:
+        std::cout << boost::format(
+            "success:\n"
+            "    Got event code eob ack message.\n"
+        ) << std::endl;
+        break;
+
+    default:
         std::cout << boost::format(
             "failed:\n"
             "    Got unexpected event code 0x%x.\n"
         ) % async_md.event_code << std::endl;
-        //clear the async messages
-        while (dev->recv_async_msg(async_md, 0)){};
-    }
-    else{
-        std::cout << boost::format(
-            "success:\n"
-            "    Did not get an async message.\n"
-        ) << std::endl;
     }
 }
 
@@ -195,7 +203,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     // begin asyc messages test
     //------------------------------------------------------------------
-    test_no_async_message(sdev);
+    test_ack_async_message(sdev);
     test_underflow_message(sdev);
     test_time_error_message(sdev);
 
