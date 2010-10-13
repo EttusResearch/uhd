@@ -85,7 +85,8 @@ public:
         size_t index,
         uhd::transport::udp_simple::sptr,
         size_t recv_samps_per_packet,
-        size_t send_bytes_per_packet
+        size_t send_bytes_per_packet,
+        const uhd::device_addr_t &flow_control_hints
     );
     ~usrp2_mboard_impl(void);
 
@@ -178,10 +179,12 @@ public:
      * Create a new usrp2 impl base.
      * \param ctrl_transports the udp transports for control
      * \param data_transports the udp transports for data
+     * \param flow_control_hints optional flow control params
      */
     usrp2_impl(
         std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
-        std::vector<uhd::transport::zero_copy_if::sptr> data_transports
+        std::vector<uhd::transport::zero_copy_if::sptr> data_transports,
+        const uhd::device_addr_t &flow_control_hints
     );
 
     ~usrp2_impl(void);

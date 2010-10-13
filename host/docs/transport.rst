@@ -40,6 +40,17 @@ The following parameters can be used to alter the transport's default behavior:
 as the asynchronous send implementation is currently disabled.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Flow control parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The host-based flow control expects periodic update packets from the device.
+These update packets inform the host of the last packet consumed by the device,
+which allows the host to determine throttling conditions for the transmission of packets.
+The following mechanisms affect the transmission of periodic update packets:
+
+* **ups_per_fifo:** The number of update packets for each FIFO's worth of bytes sent into the device
+* **ups_per_sec:** The number of update packets per second
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Resize socket buffers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 It may be useful increase the size of the socket buffers to

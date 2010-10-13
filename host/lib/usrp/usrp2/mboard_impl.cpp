@@ -39,7 +39,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
     size_t recv_samps_per_packet,
-    size_t send_bytes_per_packet
+    size_t send_bytes_per_packet,
+    const device_addr_t &flow_control_hints
 ):
     _index(index),
     _recv_samps_per_packet(recv_samps_per_packet)
@@ -89,11 +90,16 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
     _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
     _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
-    const size_t cycles_per_ack = size_t(_clock_ctrl->get_master_clock_rate()/100); //100 aps
-    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | cycles_per_ack);
-    static const double sram_frac = 1.0/8.0; //fraction of sram to fill before ack
-    const size_t packets_per_ack = size_t(usrp2_impl::sram_bytes*sram_frac/send_bytes_per_packet);
-    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_ACK, U2_FLAG_TX_CTRL_ACK_ENB | packets_per_ack);
+
+    //setting the cycles per update
+    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 100);
+    const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
+
+    //setting the packets per update
+    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8);
+    const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/send_bytes_per_packet);
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
 
     //init the ddc
     init_ddc_config();
@@ -116,8 +122,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
-    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_ACK, 0);
-    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_ACK, 0);
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, 0);
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, 0);
 }
 
 /***********************************************************************

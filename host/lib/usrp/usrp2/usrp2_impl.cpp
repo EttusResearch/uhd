@@ -138,7 +138,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
 
     //create the usrp2 implementation guts
     return device::sptr(
-        new usrp2_impl(ctrl_transports, data_transports)
+        new usrp2_impl(ctrl_transports, data_transports, device_addr)
     );
 }
 
@@ -151,7 +151,8 @@ UHD_STATIC_BLOCK(register_usrp2_device){
  **********************************************************************/
 usrp2_impl::usrp2_impl(
     std::vector<udp_simple::sptr> ctrl_transports,
-    std::vector<zero_copy_if::sptr> data_transports
+    std::vector<zero_copy_if::sptr> data_transports,
+    const device_addr_t &flow_control_hints
 ):
     _data_transports(data_transports)
 {
@@ -172,7 +173,8 @@ usrp2_impl::usrp2_impl(
         _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
             i, ctrl_transports[i],
             this->get_max_recv_samps_per_packet(),
-            _data_transports[i]->get_send_frame_size()
+            _data_transports[i]->get_send_frame_size(),
+            flow_control_hints
         )));
         //use an empty name when there is only one mboard
         std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";
