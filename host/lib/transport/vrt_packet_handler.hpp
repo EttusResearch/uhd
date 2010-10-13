@@ -318,7 +318,7 @@ template <typename T> UHD_INLINE T get_context_code(
     ){
         //load the rest of the if_packet_info in here
         if_packet_info.num_payload_words32 = (num_samps*chans_per_otw_buff*otw_type.get_sample_size())/sizeof(boost::uint32_t);
-        if_packet_info.packet_count = state.next_packet_seq++;
+        if_packet_info.packet_count = state.next_packet_seq;
 
         //get send buffers for each channel
         managed_send_buffs_t send_buffs(buffs.size()/chans_per_otw_buff);
@@ -345,6 +345,7 @@ template <typename T> UHD_INLINE T get_context_code(
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
             send_buffs[i]->commit(num_bytes_total);
         }
+        state.next_packet_seq++; //increment sequence after commits
         return num_samps;
     }
 

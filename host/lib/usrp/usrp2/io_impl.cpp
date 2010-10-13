@@ -211,6 +211,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
                 //print the famous U, and push the metadata into the message queue
                 if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
+                //else std::cout << "metadata.event_code " << metadata.event_code << std::endl;
                 async_msg_fifo->push_with_pop_on_full(metadata);
                 continue;
             }
