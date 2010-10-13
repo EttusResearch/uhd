@@ -70,11 +70,13 @@ module vita_tx_deframer
    localparam VITA_PAYLOAD 	 = 8;
    localparam VITA_STORE         = 9;
    localparam VITA_TRAILER 	 = 10;
+   localparam VITA_DUMP          = 11;
    
    wire [15:0] hdr_len = 2 + has_streamid_reg + has_classid_reg + has_classid_reg + has_secs_reg + 
 	       has_tics_reg + has_tics_reg + has_trailer_reg;
 
-   wire        eop = eof | (pkt_len==hdr_len);  // FIXME would ignoring eof allow larger VITA packets?
+   wire        vita_eof = (pkt_len==hdr_len);
+   wire        eop = eof | vita_eof;  // FIXME would ignoring eof allow larger VITA packets?
    wire        fifo_space;
 
    always @(posedge clk)
@@ -101,12 +103,14 @@ module vita_tx_deframer
        end
      else 
        if((vita_state == VITA_STORE) & fifo_space)
-	 if(eop)  
-	   if(has_trailer_reg)
+	 if(vita_eof)  
+	   if(eof)
+	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
+	   else if(has_trailer_reg)
 	     vita_state <= VITA_TRAILER;
 	   else
-	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
-	 else
+	     vita_state <= VITA_DUMP;
+   	 else
 	   begin
 	      vita_state <= VITA_PAYLOAD;
 	      pkt_len <= pkt_len - 1;
@@ -172,7 +176,13 @@ module vita_tx_deframer
 	     else
 	       vector_phase <= vector_phase + 1;
 	   VITA_TRAILER :
-	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
+	     if(eof)
+	       vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
+	     else
+	       vita_state <= VITA_DUMP;
+	   VITA_DUMP :
+	     if(eof)
+	       vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	   VITA_STORE :
 	     ;
 	   default :
