@@ -59,16 +59,23 @@ static const size_t DEFAULT_NUM_RECV_FRAMES = 32;
 #else
 static const size_t DEFAULT_NUM_RECV_FRAMES = MIN_RECV_SOCK_BUFF_SIZE/udp_simple::mtu;
 #endif
+
 //The non-async send only ever requires a single frame
 //because the buffer will be committed before a new get.
 #ifdef USE_ASIO_ASYNC_SEND
 static const size_t DEFAULT_NUM_SEND_FRAMES = 32;
 #else
-static const size_t DEFAULT_NUM_SEND_FRAMES = MIN_SEND_SOCK_BUFF_SIZE/udp_simple::mtu;;
+static const size_t DEFAULT_NUM_SEND_FRAMES = MIN_SEND_SOCK_BUFF_SIZE/udp_simple::mtu;
 #endif
 
-//a single concurrent thread for io_service seems to be the fastest
+//The number of service threads to spawn for async ASIO:
+//A single concurrent thread for io_service seems to be the fastest.
+//Threads are disabled when no async implementations are enabled.
+#if defined(USE_ASIO_ASYNC_RECV) || defined(USE_ASIO_ASYNC_SEND)
 static const size_t CONCURRENCY_HINT = 1;
+#else
+static const size_t CONCURRENCY_HINT = 0;
+#endif
 
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
@@ -86,11 +93,12 @@ public:
         const std::string &port,
         const device_addr_t &hints
     ):
-        _io_service(hints.cast<size_t>("concurrency_hint", CONCURRENCY_HINT)),
         _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
         _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_RECV_FRAMES))),
         _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
-        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_SEND_FRAMES)))
+        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_SEND_FRAMES))),
+        _concurrency_hint(hints.cast<size_t>("concurrency_hint", CONCURRENCY_HINT)),
+        _io_service(_concurrency_hint)
     {
         //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
@@ -129,7 +137,7 @@ public:
 
         //spawn the service threads that will run the io service
         _work = new asio::io_service::work(_io_service); //new work to delete later
-        for (size_t i = 0; i < CONCURRENCY_HINT; i++) _thread_group.create_thread(
+        for (size_t i = 0; i < _concurrency_hint; i++) _thread_group.create_thread(
             boost::bind(&udp_zero_copy_asio_impl::service, this)
         );
     }
@@ -292,12 +300,6 @@ public:
     size_t get_send_frame_size(void) const {return _send_frame_size;}
 
 private:
-    //asio guts -> socket and service
-    asio::ip::udp::socket   *_socket;
-    asio::io_service        _io_service;
-    asio::io_service::work  *_work;
-    int                     _sock_fd;
-
     //memory management -> buffers and fifos
     boost::thread_group _thread_group;
     boost::shared_array<char> _send_buffer, _recv_buffer;
@@ -305,6 +307,13 @@ private:
     pending_buffs_type::sptr _pending_recv_buffs, _pending_send_buffs;
     const size_t _recv_frame_size, _num_recv_frames;
     const size_t _send_frame_size, _num_send_frames;
+
+    //asio guts -> socket and service
+    size_t                  _concurrency_hint;
+    asio::io_service        _io_service;
+    asio::ip::udp::socket   *_socket;
+    asio::io_service::work  *_work;
+    int                     _sock_fd;
 };
 
 /***********************************************************************
