@@ -109,7 +109,7 @@ module vita_tx_control
 	     else if(eop)
 	       if(eob)
 		 begin
-		    ibs_state <= IBS_ERROR;  // Not really an error
+		    ibs_state <= IBS_ERROR_DONE;  // Not really an error
 		    error_code <= CODE_EOB_ACK;
 		    send_error <= 1;
 		 end
