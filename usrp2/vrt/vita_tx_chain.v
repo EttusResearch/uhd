@@ -31,7 +31,7 @@ module vita_tx_chain
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
    
-   assign underrun = error;
+   assign underrun = error & ~(error_code == 1);
    assign message = error_code;
       
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
