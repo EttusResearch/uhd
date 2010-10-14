@@ -47,7 +47,7 @@ CMake
 Boost
 ^^^^^^^^^^^^^^^^
 * **Purpose:** C++ library
-* **Version:** at least 3.6 unix, at least 4.0 windows
+* **Version:** at least 1.36 unix, at least 1.40 windows
 * **Usage:** build time + run time (required)
 * **Download URL:** http://www.boost.org/users/download/
 * **Download URL (windows installer):** http://www.boostpro.com/download
