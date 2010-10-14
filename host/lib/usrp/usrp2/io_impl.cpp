@@ -242,16 +242,6 @@ void usrp2_impl::io_impl::recv_pirate_loop(
  * Helper Functions
  **********************************************************************/
 void usrp2_impl::io_init(void){
-    //send a small data packet so the usrp2 knows the udp source port
-    BOOST_FOREACH(zero_copy_if::sptr data_transport, _data_transports){
-        managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
-        static const boost::uint32_t data[2] = {
-            uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
-            uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
-        };
-        std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
-        send_buff->commit(sizeof(data));
-    }
 
     //the assumption is that all data transports should be identical
     const size_t num_recv_frames = _data_transports.front()->get_num_recv_frames();

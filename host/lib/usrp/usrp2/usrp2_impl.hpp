@@ -84,8 +84,8 @@ public:
     usrp2_mboard_impl(
         size_t index,
         uhd::transport::udp_simple::sptr,
+        uhd::transport::zero_copy_if::sptr,
         size_t recv_samps_per_packet,
-        size_t send_bytes_per_packet,
         const uhd::device_addr_t &flow_control_hints
     );
     ~usrp2_mboard_impl(void);

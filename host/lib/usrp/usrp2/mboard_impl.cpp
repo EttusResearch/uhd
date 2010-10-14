@@ -21,6 +21,7 @@
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
@@ -38,13 +39,24 @@ using namespace uhd::usrp;
 usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
+    transport::zero_copy_if::sptr data_transport,
     size_t recv_samps_per_packet,
-    size_t send_bytes_per_packet,
     const device_addr_t &flow_control_hints
 ):
     _index(index),
     _recv_samps_per_packet(recv_samps_per_packet)
 {
+    //Send a small data packet so the usrp2 knows the udp source port.
+    //This setup must happen before further initialization occurs
+    //or the async update packets will cause ICMP destination unreachable.
+    transport::managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
+    static const boost::uint32_t data[2] = {
+        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    };
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
 
@@ -98,7 +110,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //setting the packets per update
     const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8);
-    const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/send_bytes_per_packet);
+    const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
     _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
 
     //init the ddc
