@@ -93,10 +93,8 @@ bool test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
     md.end_of_burst   = false;
     md.has_time_spec  = false;
 
-    std::vector<std::complex<float> > buff(1); //minimum 1 sample
-
     dev->send(
-        &buff.front(), buff.size(), md,
+        NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
@@ -144,10 +142,8 @@ bool test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
 
     sdev->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
 
-    std::vector<std::complex<float> > buff(1); //minimum 1 sample
-
     dev->send(
-        &buff.front(), buff.size(), md,
+        NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );

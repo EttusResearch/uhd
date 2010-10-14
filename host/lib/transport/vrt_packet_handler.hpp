@@ -388,10 +388,19 @@ template <typename T> UHD_INLINE T get_context_code(
             if_packet_info.sob = metadata.start_of_burst;
             if_packet_info.eob = metadata.end_of_burst;
 
+            //TODO remove this code when sample counts of zero are supported by hardware
+            std::vector<const void *> buffs_(buffs);
+            size_t total_num_samps_(total_num_samps);
+            if (total_num_samps == 0){
+                static const boost::uint64_t zeros = 0; //max size of a host sample
+                buffs_ = std::vector<const void *>(buffs.size(), &zeros);
+                total_num_samps_ = 1;
+            }
+
             return _send1(
                 state,
-                buffs, 0,
-                std::min(total_num_samps, max_samples_per_packet),
+                buffs_, 0,
+                std::min(total_num_samps_, max_samples_per_packet),
                 if_packet_info,
                 io_type, otw_type,
                 vrt_packer,
