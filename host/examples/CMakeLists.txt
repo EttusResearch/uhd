@@ -25,6 +25,9 @@ TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
 ADD_EXECUTABLE(rx_to_file rx_to_file.cpp)
 TARGET_LINK_LIBRARIES(rx_to_file uhd)
 
+ADD_EXECUTABLE(rx_to_udp rx_to_udp.cpp)
+TARGET_LINK_LIBRARIES(rx_to_udp uhd)
+
 ADD_EXECUTABLE(test_async_messages test_async_messages.cpp)
 TARGET_LINK_LIBRARIES(test_async_messages uhd)
 
@@ -48,6 +51,7 @@ INSTALL(TARGETS
     tx_timed_samples
     tx_from_file
     rx_to_file
+    rx_to_udp
     tx_waveforms
     RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
 )
