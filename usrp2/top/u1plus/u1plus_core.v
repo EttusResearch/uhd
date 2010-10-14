@@ -70,7 +70,7 @@ module u1plus_core
 	 .wb_clk(wb_clk), .wb_rst(wb_rst),
 	 .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
 	 .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
-	 .wb_ack_i(m0_ack),
+	 .wb_ack_i(m0_ack), .triggers(8'd0),
 	 
 	 .fifo_clk(wb_clk), .fifo_rst(wb_rst),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
@@ -359,14 +359,14 @@ module u1plus_core
 
    wire [31:0] 	atr_lines;
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
-/*   
+   
    nsgpio16LE 
      nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
 		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
-*/
+
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #5
 
@@ -401,6 +401,5 @@ module u1plus_core
    assign debug_gpio_0 = 0;
    assign debug_gpio_1 = 0;
 
-   assign {io_tx,io_rx} = debug1;
    
 endmodule // u1plus_core
