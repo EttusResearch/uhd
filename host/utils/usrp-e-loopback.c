@@ -8,7 +8,7 @@
 #include <sys/mman.h>
 #include <linux/usrp_e.h>
 
-// max length #define PKT_DATA_LENGTH 1016
+#define MAX_PACKET_SIZE 1016
 static int packet_data_length;
 static int error;
 
@@ -18,6 +18,30 @@ struct pkt {
 	int seq_num;
 	short data[];
 };
+
+static int length_array[2048];
+static int length_array_tail = 0;
+static int length_array_head = 0;
+
+pthread_mutex_t length_array_mutex; //gotta lock the index to keep it from getting hosed
+
+//yes this is a circular buffer that does not check empty
+//no i don't want to hear about it
+void push_length_array(int length) {
+	pthread_mutex_lock(&length_array_mutex);
+	if(length_array_tail > 2047) length_array_tail = 0;
+	length_array[length_array_tail++] = length;
+	pthread_mutex_unlock(&length_array_mutex);
+}
+
+int pop_length_array(void) {
+	int retval;
+	pthread_mutex_lock(&length_array_mutex);
+	if(length_array_head > 2047) length_array_head = 0;
+	retval = length_array[length_array_head++];
+	pthread_mutex_unlock(&length_array_mutex);
+	return retval;
+}
 
 static int fp;
 
@@ -29,10 +53,10 @@ static int calc_checksum(struct pkt *p)
 	sum = 0;
 
 	for (i=0; i < p->len; i++)
-		sum += p->data[i];
+		sum ^= p->data[i];
 
-	sum += p->seq_num;
-	sum += p->len;
+	sum ^= p->seq_num;
+	sum ^= p->len;
 
 	return sum;
 }
@@ -44,6 +68,7 @@ static void *read_thread(void *threadid)
 	struct pkt *p;
 	unsigned long bytes_transfered, elapsed_seconds;
 	struct timeval start_time, finish_time;
+	int expected_count;
 
 	printf("Greetings from the reading thread!\n");
 
@@ -76,6 +101,11 @@ static void *read_thread(void *threadid)
 			seq_num_failure ++;
 			if (seq_num_failure > 2)
 				error = 1;
+		}
+
+		expected_count = pop_length_array()*2+12;
+		if(cnt != expected_count) {
+			printf("Received %d bytes, expected %d\n", cnt, expected_count);
 		}
 
 		prev_seq_num = p->seq_num;
@@ -131,7 +161,9 @@ static void *write_thread(void *threadid)
 		if (packet_data_length > 0)
 			p->len = packet_data_length;
 		else
-			p->len = (random() & 0x1ff) + (1004 - 512);
+			p->len = (random()<<1 & 0x1ff) + (1004 - 512);
+
+		push_length_array(p->len);
 
 		p->checksum = calc_checksum(p);
 
@@ -146,6 +178,7 @@ static void *write_thread(void *threadid)
 int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
+	pthread_mutex_init(&length_array_mutex, 0);
 	long int t;
 	struct sched_param s = {
 		.sched_priority = 1
@@ -159,6 +192,10 @@ int main(int argc, char *argv[])
 	}
 
 	packet_data_length = atoi(argv[1]);
+	if(packet_data_length > MAX_PACKET_SIZE) {
+		printf("Packet size must be smaller than %i\n", MAX_PACKET_SIZE);
+		exit(-1);
+	}
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
