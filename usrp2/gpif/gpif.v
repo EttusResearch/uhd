@@ -9,8 +9,9 @@ module gpif
     
     // Wishbone signals
     input wb_clk, input wb_rst,
-    output [10:0] wb_adr_o, output [15:0] wb_dat_mosi, input [15:0] wb_dat_miso,
+    output [15:0] wb_adr_o, output [15:0] wb_dat_mosi, input [15:0] wb_dat_miso,
     output [1:0] wb_sel_o, output wb_cyc_o, output wb_stb_o, output wb_we_o, input wb_ack_i,
+    input [7:0] triggers,
     
     // FIFO interface
     input fifo_clk, input fifo_rst,
@@ -99,27 +100,23 @@ module gpif
 
    // ////////////////////////////////////////////////////////////////////
    // FIFO to Wishbone interface
-/*
+
    fifo_to_wb fifo_to_wb
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .data_i(ctrl_data), .src_rdy_i(ctrl_src_rdy), .dst_rdy_o(ctrl_dst_rdy),
       .data_o(resp_data), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy),
-      .wb_adr_o(), .wb_dat_mosi(), .wb_dat_miso(),
-      .wb_sel_o(), .wb_cyc_o(), .wb_stb_o(), .wb_we_o(), .wb_ack_i(),
+      .wb_adr_o(wb_adr_o), .wb_dat_mosi(wb_dat_mosi), .wb_dat_miso(wb_dat_miso), .wb_sel_o(wb_sel_o), 
+      .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o), .wb_ack_i(wb_ack_i),
+      .triggers(triggers),
       .debug0(), .debug1());
-  */
 
    // ////////////////////////////////////////////
    //    DEBUG
    
    // Loopback for testing
-   assign resp_data = ctrl_data;
-   assign resp_src_rdy = ctrl_src_rdy;
-   assign ctrl_dst_rdy = resp_dst_rdy;
-   
-   //assign rx_data_i = tx_data_o;
-   //assign rx_src_rdy_i = tx_src_rdy_o;
-   //assign tx_dst_rdy_i = rx_dst_rdy_o;
+   //assign resp_data = ctrl_data;
+   //assign resp_src_rdy = ctrl_src_rdy;
+   //assign ctrl_dst_rdy = resp_dst_rdy;
    
    assign debug0 = { 5'd0, gpif_misc[2:0], gpif_ctl[3:0], gpif_rdy[3:0], gpif_d_copy[15:0] };
    assign debug1 = { { debug_rd[15:8] },
