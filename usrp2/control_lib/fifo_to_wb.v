@@ -39,7 +39,9 @@ module fifo_to_wb
    localparam RESP_WAIT_READ = 6;
    localparam RESP_RCMD = 7;
    localparam RESP_RLEN = 8;
-   localparam RESP_READ = 9;
+   localparam RESP_RADDR_LSW = 9;
+   localparam RESP_RADDR_MSW = 10;
+   localparam RESP_READ = 11;
    
    reg [3:0] 	  resp_state;
    reg 		  rd, wr;
@@ -111,6 +113,12 @@ module fifo_to_wb
 	     resp_state <= RESP_RLEN;
 	 RESP_RLEN :
 	   if(resp_dst_rdy)
+	     resp_state <= RESP_RADDR_LSW;
+	 RESP_RADDR_LSW :
+	   if(resp_dst_rdy)
+	     resp_state <= RESP_RADDR_MSW;
+	 RESP_RADDR_MSW :
+	   if(resp_dst_rdy)
 	     resp_state <= RESP_READ;
 	 RESP_READ :
 	   if(resp_dst_rdy & wb_ack_i)
@@ -127,6 +135,8 @@ module fifo_to_wb
      case(resp_state)
        RESP_RCMD : resp_data <= { 2'b01, 8'hAA, seqnum };
        RESP_RLEN : resp_data <= { 2'b00, length };
+       RESP_RADDR_LSW : resp_data <= { 2'b00, base_addr };
+       RESP_RADDR_MSW : resp_data <= { 2'b00, 16'd0 };
        default : resp_data <= { (count==1), 1'b0, wb_dat_miso };
      endcase // case (resp_state)
    
@@ -139,6 +149,8 @@ module fifo_to_wb
    
    assign resp_src_rdy = (resp_state == RESP_RCMD) |
 			 (resp_state == RESP_RLEN) |
+			 (resp_state == RESP_RADDR_LSW) |
+			 (resp_state == RESP_RADDR_MSW) |
 			 ((resp_state == RESP_READ) & wb_ack_i);
    
    assign wb_dat_mosi = ctrl_data[15:0];
