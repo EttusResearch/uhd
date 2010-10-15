@@ -19,21 +19,25 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/single_usrp.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/program_options.hpp>
+#include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <cstdlib>
 #include <complex>
 #include <iostream>
 
 namespace po = boost::program_options;
 
 /*!
- * Test that no messages are received:
+ * Test the eob ack message:
  *    Send a burst of many samples that will fragment internally.
- *    We expect to not get any async messages.
+ *    We expect to get an eob ack async message.
  */
-void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
+bool test_eob_ack_message(uhd::usrp::single_usrp::sptr sdev){
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << "Test no async message... " << std::flush;
+    std::cout << "Test eob ack message... " << std::flush;
 
     uhd::tx_metadata_t md;
     md.start_of_burst = true;
@@ -50,19 +54,28 @@ void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
     );
 
     uhd::async_metadata_t async_md;
-    if (dev->recv_async_msg(async_md)){
+    if (not dev->recv_async_msg(async_md)){
+        std::cout << boost::format(
+            "failed:\n"
+            "    Async message recv timed out.\n"
+        ) << std::endl;
+        return false;
+    }
+
+    switch(async_md.event_code){
+    case uhd::async_metadata_t::EVENT_CODE_EOB_ACK:
+        std::cout << boost::format(
+            "success:\n"
+            "    Got event code eob ack message.\n"
+        ) << std::endl;
+        return true;
+
+    default:
         std::cout << boost::format(
             "failed:\n"
             "    Got unexpected event code 0x%x.\n"
         ) % async_md.event_code << std::endl;
-        //clear the async messages
-        while (dev->recv_async_msg(async_md, 0)){};
-    }
-    else{
-        std::cout << boost::format(
-            "success:\n"
-            "    Did not get an async message.\n"
-        ) << std::endl;
+        return false;
     }
 }
 
@@ -71,7 +84,7 @@ void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
  *    Send a start of burst packet with no following end of burst.
  *    We expect to get an underflow(within a burst) async message.
  */
-void test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
+bool test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
     uhd::device::sptr dev = sdev->get_device();
     std::cout << "Test underflow message... " << std::flush;
 
@@ -80,18 +93,19 @@ void test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
     md.end_of_burst   = false;
     md.has_time_spec  = false;
 
-    dev->send(NULL, 0, md,
+    dev->send(
+        NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
 
     uhd::async_metadata_t async_md;
-    if (not dev->recv_async_msg(async_md)){
+    if (not dev->recv_async_msg(async_md, 1)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
         ) << std::endl;
-        return;
+        return false;
     }
 
     switch(async_md.event_code){
@@ -100,13 +114,14 @@ void test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
             "success:\n"
             "    Got event code underflow message.\n"
         ) << std::endl;
-        break;
+        return true;
 
     default:
         std::cout << boost::format(
             "failed:\n"
             "    Got unexpected event code 0x%x.\n"
         ) % async_md.event_code << std::endl;
+        return false;
     }
 }
 
@@ -115,7 +130,7 @@ void test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
  *    Send a burst packet that occurs at a time in the past.
  *    We expect to get a time error async message.
  */
-void test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
+bool test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
     uhd::device::sptr dev = sdev->get_device();
     std::cout << "Test time error message... " << std::flush;
 
@@ -127,7 +142,8 @@ void test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
 
     sdev->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
 
-    dev->send(NULL, 0, md,
+    dev->send(
+        NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
@@ -138,7 +154,7 @@ void test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
             "failed:\n"
             "    Async message recv timed out.\n"
         ) << std::endl;
-        return;
+        return false;
     }
 
     switch(async_md.event_code){
@@ -147,14 +163,21 @@ void test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
             "success:\n"
             "    Got event code time error message.\n"
         ) << std::endl;
-        break;
+        return true;
 
     default:
         std::cout << boost::format(
             "failed:\n"
             "    Got unexpected event code 0x%x.\n"
         ) % async_md.event_code << std::endl;
+        return false;
     }
+}
+
+void flush_async_md(uhd::usrp::single_usrp::sptr sdev){
+    uhd::device::sptr dev = sdev->get_device();
+    uhd::async_metadata_t async_md;
+    while (dev->recv_async_msg(async_md, 1.0)){}
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -163,13 +186,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args;
     double rate;
+    size_t ntests;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("rate", po::value<double>(&rate)->default_value(1.5e6), "rate of outgoing samples")
+        ("args",   po::value<std::string>(&args)->default_value(""), "single uhd device address args")
+        ("rate",   po::value<double>(&rate)->default_value(1.5e6),   "rate of outgoing samples")
+        ("ntests", po::value<size_t>(&ntests)->default_value(10),    "number of tests to run")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -195,9 +220,38 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     // begin asyc messages test
     //------------------------------------------------------------------
-    test_no_async_message(sdev);
-    test_underflow_message(sdev);
-    test_time_error_message(sdev);
+    static const uhd::dict<std::string, boost::function<bool(uhd::usrp::single_usrp::sptr)> >
+        tests = boost::assign::map_list_of
+        ("Test EOB ACK   ",    &test_eob_ack_message)
+        ("Test Underflow ",  &test_underflow_message)
+        ("Test Time Error", &test_time_error_message)
+    ;
+
+    //init result counts
+    uhd::dict<std::string, size_t> failures, successes;
+    BOOST_FOREACH(const std::string &key, tests.keys()){
+        failures[key] = 0;
+        successes[key] = 0;
+    }
+
+    //run the tests, pick at random
+    for (size_t n = 0; n < ntests; n++){
+        std::string key = tests.keys()[std::rand() % tests.size()];
+        bool pass = tests[key](sdev);
+        flush_async_md(sdev);
+
+        //store result
+        if (pass) successes[key]++;
+        else      failures[key]++;
+    }
+
+    //print the result summary
+    std::cout << std::endl << "Summary:" << std::endl << std::endl;
+    BOOST_FOREACH(const std::string &key, tests.keys()){
+        std::cout << boost::format(
+            "%s   ->   %3d successes, %3d failures"
+        ) % key % successes[key] % failures[key] << std::endl;
+    }
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

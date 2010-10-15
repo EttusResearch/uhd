@@ -39,12 +39,10 @@ Use the card burner tool (windows)
 ------------------------------------------------------------------------
 Setup networking
 ------------------------------------------------------------------------
-The USRP2 only supports gigabit ethernet, and
-will not work with a 10/100 Mbps interface.
-Because the USRP2 uses gigabit ethernet pause frames for flow control,
-you cannot use multiple USRP2s with a switch or a hub.
-It is recommended that each USRP2 be plugged directly into its own
-dedicated gigabit ethernet interface on the host computer.
+The USRP2 only supports gigabit ethernet,
+and will not work with a 10/100 Mbps interface.
+However, a 10/100 Mbps interface can be connected indirectly
+to a USRP2 through a gigabit ethernet switch.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the host interface
@@ -63,8 +61,9 @@ It is recommended that you change or disable your firewall settings.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Multiple device configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-As described above, you will need one ethernet interface per USRP2.
-Each ethernet interface should have its own subnet,
+For maximum throughput, one ethernet interface per USRP2 is recommended,
+although multiple devices may be connected via a gigabit ethernet switch.
+In any case, each ethernet interface should have its own subnet,
 and the corresponding USRP2 device should be assigned an address in that subnet.
 Example:
 

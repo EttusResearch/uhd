@@ -193,9 +193,14 @@
 #define U2_REG_TX_CTRL_CLEAR_STATE       _SR_ADDR(SR_TX_CTRL + 1)
 #define U2_REG_TX_CTRL_REPORT_SID        _SR_ADDR(SR_TX_CTRL + 2)
 #define U2_REG_TX_CTRL_POLICY            _SR_ADDR(SR_TX_CTRL + 3)
+#define U2_REG_TX_CTRL_CYCLES_PER_UP     _SR_ADDR(SR_TX_CTRL + 4)
+#define U2_REG_TX_CTRL_PACKETS_PER_UP    _SR_ADDR(SR_TX_CTRL + 5)
 
 #define U2_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
 #define U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
 #define U2_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
+
+//enable flag for registers: cycles and packets per update packet
+#define U2_FLAG_TX_CTRL_UP_ENB              (1ul << 31)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

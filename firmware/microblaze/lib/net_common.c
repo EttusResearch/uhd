@@ -291,8 +291,17 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
 {
   switch (icmp->type){
   case ICMP_DUR:	// Destinatino Unreachable
-    //stop_streaming(); //FIXME
     if (icmp->code == ICMP_DUR_PORT){	// port unreachable
+      //handle destination port unreachable (the host ctrl+c'd the app):
+
+      //end async update packets per second
+      sr_tx_ctrl->cyc_per_up = 0;
+
+      //the end continuous streaming command
+      sr_rx_ctrl->cmd = (1 << 31) | 1; //one sample, asap
+      sr_rx_ctrl->time_secs = 0;
+      sr_rx_ctrl->time_ticks = 0; //latch the command
+
       //struct udp_hdr *udp = (struct udp_hdr *)((char *)icmp + 28);
       //printf("icmp port unr %d\n", udp->dest);
       putchar('i');

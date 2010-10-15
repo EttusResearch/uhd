@@ -463,6 +463,9 @@ typedef struct {
 typedef struct {
   volatile uint32_t     num_chan;
   volatile uint32_t     clear_state;	// clears out state machine, fifos,
+  volatile uint32_t     report_sid;
+  volatile uint32_t     policy;
+  volatile uint32_t     cyc_per_up;
 } sr_tx_ctrl_t;
 
 #define sr_tx_ctrl ((sr_tx_ctrl_t *) _SR_ADDR(SR_TX_CTRL))

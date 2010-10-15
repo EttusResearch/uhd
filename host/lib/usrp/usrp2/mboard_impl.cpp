@@ -21,6 +21,7 @@
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/types/dict.hpp>
@@ -38,11 +39,24 @@ using namespace uhd::usrp;
 usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
-    size_t recv_frame_size
+    transport::zero_copy_if::sptr data_transport,
+    size_t recv_samps_per_packet,
+    const device_addr_t &flow_control_hints
 ):
     _index(index),
-    _recv_frame_size(recv_frame_size)
+    _recv_samps_per_packet(recv_samps_per_packet)
 {
+    //Send a small data packet so the usrp2 knows the udp source port.
+    //This setup must happen before further initialization occurs
+    //or the async update packets will cause ICMP destination unreachable.
+    transport::managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
+    static const boost::uint32_t data[2] = {
+        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    };
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
 
@@ -69,13 +83,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
-    //Issue a stop streaming command (in case it was left running).
-    //Since this command is issued before the networking is setup,
-    //most if not all junk packets will never make it to the socket.
-    this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-
     //init the rx control registers
-    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_frame_size);
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_samps_per_packet);
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
@@ -93,6 +102,16 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
     _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
     _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+
+    //setting the cycles per update
+    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 100);
+    const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
+
+    //setting the packets per update
+    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8);
+    const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
 
     //init the ddc
     init_ddc_config();
@@ -115,7 +134,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
-    /* NOP */
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, 0);
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, 0);
 }
 
 /***********************************************************************
@@ -178,7 +198,7 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
-        stream_cmd, _recv_frame_size
+        stream_cmd, _recv_samps_per_packet
     ));
     _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
