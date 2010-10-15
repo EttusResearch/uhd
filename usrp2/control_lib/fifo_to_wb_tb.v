@@ -75,7 +75,7 @@ module fifo_to_wb_tb();
 	      data_val <= data_val + 1;
 	      @(posedge clk);
 	   end
-	 repeat (16-len-1)
+	 repeat (12-len-1)
 	   begin
 	      cmd <= {2'b00,16'hBEEF};
 	      @(posedge clk);
