@@ -37,7 +37,7 @@ zero_copy_if::sptr usrp_e_make_mmap_zero_copy(usrp_e_iface::sptr iface);
  **********************************************************************/
 static const size_t tx_async_report_sid = 1;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
-static const bool recv_debug = true;
+static const bool recv_debug = false;
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -205,6 +205,7 @@ bool get_send_buffs(
     return buffs[0].get() != NULL;
 }
 
+#if 0
 size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
@@ -213,6 +214,7 @@ size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
     size_t bpp = _io_impl->data_xport->get_send_frame_size() - hdr_size;
     return bpp/_send_otw_type.get_sample_size();
 }
+#endif
 
 size_t usrp_e_impl::send(
     const std::vector<const void *> &buffs, size_t num_samps,
@@ -234,6 +236,7 @@ size_t usrp_e_impl::send(
 /***********************************************************************
  * Data Recv
  **********************************************************************/
+#if 0
 size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
@@ -243,6 +246,7 @@ size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
     size_t bpp = _io_impl->data_xport->get_recv_frame_size() - hdr_size;
     return bpp/_recv_otw_type.get_sample_size();
 }
+#endif
 
 size_t usrp_e_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
