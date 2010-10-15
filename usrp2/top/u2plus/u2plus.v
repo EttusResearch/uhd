@@ -216,7 +216,49 @@ module u2plus
 
    BUFG dspclk_BUFG (.I(dcm_out), .O(dsp_clk));
    BUFG wbclk_BUFG (.I(clk_div), .O(wb_clk));
-
+   
+   wire     RAM_CLK_buf;
+   wire     clk100_ext;
+   wire     clk100_ext_buf;
+   
+   DCM DCM_INST1 (.CLKFB(RAM_CLK_buf), 
+                  .CLKIN(clk_fpga), 
+                  .DSSEN(1'b0), 
+                  .PSCLK(1'b0), 
+                  .PSEN(1'b0), 
+                  .PSINCDEC(1'b0), 
+                  .RST(1'b0), 
+                  .CLK0(clk100_ext) );
+   defparam DCM_INST1.CLK_FEEDBACK = "1X";
+   defparam DCM_INST1.CLKDV_DIVIDE = 2.0;
+   defparam DCM_INST1.CLKFX_DIVIDE = 1;
+   defparam DCM_INST1.CLKFX_MULTIPLY = 4;
+   defparam DCM_INST1.CLKIN_DIVIDE_BY_2 = "FALSE";
+   defparam DCM_INST1.CLKIN_PERIOD = 10.000;
+   defparam DCM_INST1.CLKOUT_PHASE_SHIFT = "FIXED";
+   defparam DCM_INST1.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
+   defparam DCM_INST1.DFS_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST1.DLL_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST1.DUTY_CYCLE_CORRECTION = "TRUE";
+   defparam DCM_INST1.FACTORY_JF = 16'h8080;
+   defparam DCM_INST1.PHASE_SHIFT = -64;
+   defparam DCM_INST1.STARTUP_WAIT = "FALSE";
+   
+   IBUFG RAM_CLK_buf_i1 (.I(RAM_CLK), 
+			 .O(RAM_CLK_buf));
+   
+   BUFG  clk100_ext_buf_i1 (.I(clk100_ext), 
+			    .O(clk100_ext_buf));
+   
+   OFDDRRSE RAM_CLK_i1 (.Q(RAM_CLK),
+			.C0(clk100_ext_buf),
+			.C1(~clk100_ext_buf),
+			.CE(1'b1),
+			.D0(1'b1),
+			.D1(1'b0),
+			.R(1'b0),
+			.S(1'b0));
+   
    // I2C -- Don't use external transistors for open drain, the FPGA implements this
    IOBUF scl_pin(.O(scl_pad_i), .IO(SCL), .I(scl_pad_o), .T(scl_pad_oen_o));
    IOBUF sda_pin(.O(sda_pad_i), .IO(SDA), .I(sda_pad_o), .T(sda_pad_oen_o));
@@ -299,6 +341,36 @@ module u2plus
       .S(0)       // Synchronous preset input
       );
    */
+
+
+   //
+   // Instantiate IO for Bidirectional bus to SRAM
+   //
+   wire [35:0] RAM_D_pi;
+   wire [35:0] RAM_D_po;
+   wire        RAM_D_poe;
+   
+   genvar      i;
+   
+   generate  
+      for (i=0;i<36;i=i+1)
+        begin : gen_RAM_D_IO
+
+	   IOBUF #(
+		   .DRIVE(12),
+		   .IOSTANDARD("LVCMOS25"),
+		   .SLEW("FAST")
+		   )
+	     RAM_D_i (
+		      .O(RAM_D_pi[i]),
+		      .I(RAM_D_po[i]),
+		      .IO(RAM_D[i]),
+		      .T(RAM_D_poe)
+		      );
+	end // block: gen_RAM_D_IO
+   endgenerate
+
+   
    
    wire [15:0] dac_a_int, dac_b_int;
    // DAC A and B are swapped in schematic to facilitate clean layout
@@ -377,11 +449,12 @@ module u2plus
 		     .sen_rx_dac	(SEN_RX_DAC),
 		     .io_tx		(io_tx[15:0]),
 		     .io_rx		(io_rx[15:0]),
-		     .RAM_D             (RAM_D),
+		     .RAM_D_po          (RAM_D_po),
+		     .RAM_D_pi          (RAM_D_pi),
+		     .RAM_D_poe         (RAM_D_poe),
 		     .RAM_A             (RAM_A),
 		     .RAM_CE1n          (RAM_CE1n),
 		     .RAM_CENn          (RAM_CENn),
-		     .RAM_CLK           (RAM_CLK),
 		     .RAM_WEn           (RAM_WEn),
 		     .RAM_OEn           (RAM_OEn),
 		     .RAM_LDn           (RAM_LDn), 
@@ -398,6 +471,8 @@ module u2plus
 		     );
 
    assign RAM_ZZ = 1;
-   assign RAM_BWn = 4'b1111;
+   // Byte Writes are qualified by the global write enable
+   // Always do 36bit operations to extram.
+   assign RAM_BWn = 4'b0000;
    
 endmodule // u2plus

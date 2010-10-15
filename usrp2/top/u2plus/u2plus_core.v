@@ -110,11 +110,12 @@ module u2plus_core
    inout [15:0] io_rx,
 
    // External RAM
-   inout [35:0] RAM_D,
+   input [35:0] RAM_D_pi,
+   output [35:0] RAM_D_po,
+   output RAM_D_poe,   
    output [20:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
-   output RAM_CLK,
    output RAM_WEn,
    output RAM_OEn,
    output RAM_LDn,
@@ -606,11 +607,41 @@ module u2plus_core
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
    
+/* -----\/----- EXCLUDED -----\/-----
    fifo_cascade #(.WIDTH(36), .SIZE(DSP_TX_FIFOSIZE)) tx_fifo_cascade
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd1_flags,rd1_dat}), .src_rdy_i(rd1_ready_o), .dst_rdy_o(rd1_ready_i),
       .dataout(tx_data), .src_rdy_o(tx_src_rdy), .dst_rdy_i(tx_dst_rdy) );
-
+ -----/\----- EXCLUDED -----/\----- */
+   // External and internal clock run at 100MHz for USRP2+ because ext RAM is 36bits wide
+   // and provides ample bandwidth.
+   assign 	 RAM_A[20:18] = 3'b0;
+   
+   ext_fifo #(.EXT_WIDTH(36),.INT_WIDTH(36),.RAM_DEPTH(18),.FIFO_DEPTH(18)) 
+     ext_fifo_i1
+       (
+	.int_clk(dsp_clk),
+	.ext_clk(dsp_clk),
+	.rst(dsp_rst),
+	.RAM_D_pi(RAM_D_pi),
+	.RAM_D_po(RAM_D_po),
+	.RAM_D_poe(RAM_D_poe),
+	.RAM_A(RAM_A[17:0]),
+	.RAM_WEn(RAM_WEn),
+	.RAM_CENn(RAM_CENn),
+	.RAM_LDn(RAM_LDn),
+	.RAM_OEn(RAM_OEn),
+	.RAM_CE1n(RAM_CE1n),
+	.datain({rd1_flags[3:2],rd1_dat[31:16],rd1_flags[1:0],rd1_dat[15:0]}),
+	.src_rdy_i(rd1_ready_o),               // WRITE
+	.dst_rdy_o(rd1_ready_i),               // not FULL
+	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
+	.src_rdy_o(tx_src_rdy),               // not EMPTY
+	.dst_rdy_i(tx_dst_rdy),
+	.debug(debug_extfifo),
+	.debug2(debug_extfifo2)
+	);
+   
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
    vita_tx_chain

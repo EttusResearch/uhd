@@ -70,26 +70,27 @@ module nobl_fifo
    // Simple NoBL SRAM interface, 4 cycle read latency.
    // Read/Write arbitration via temprary application of empty/full flags.
    //
-   nobl_if nobl_if_i1
-     (
-      .clk(clk),
-      .rst(rst),
-      .RAM_D_pi(RAM_D_pi),
-      .RAM_D_po(RAM_D_po),
-      .RAM_D_poe(RAM_D_poe),
-      .RAM_A(RAM_A),
-      .RAM_WEn(RAM_WEn),
-      .RAM_CENn(RAM_CENn),
-      .RAM_LDn(RAM_LDn),
-      .RAM_OEn(RAM_OEn),
-      .RAM_CE1n(RAM_CE1n),
-      .address(address),
-      .data_out(write_data),
-      .data_in(read_data),
-      .data_in_valid(data_avail),
-      .write(write),
-      .enable(enable)
-      );
+   nobl_if #(.WIDTH(WIDTH),.DEPTH(RAM_DEPTH))
+     nobl_if_i1
+       (
+	.clk(clk),
+	.rst(rst),
+	.RAM_D_pi(RAM_D_pi),
+	.RAM_D_po(RAM_D_po),
+	.RAM_D_poe(RAM_D_poe),
+	.RAM_A(RAM_A),
+	.RAM_WEn(RAM_WEn),
+	.RAM_CENn(RAM_CENn),
+	.RAM_LDn(RAM_LDn),
+	.RAM_OEn(RAM_OEn),
+	.RAM_CE1n(RAM_CE1n),
+	.address(address),
+	.data_out(write_data),
+	.data_in(read_data),
+	.data_in_valid(data_avail),
+	.write(write),
+	.enable(enable)
+	);
 
    
 
