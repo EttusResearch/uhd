@@ -29,8 +29,8 @@
 using namespace uhd;
 using namespace uhd::transport;
 
-static const bool fp_verbose = true; //fast-path verbose
-static const bool sp_verbose = true; //slow-path verbose
+static const bool fp_verbose = false; //fast-path verbose
+static const bool sp_verbose = false; //slow-path verbose
 static const size_t poll_breakout = 10; //how many poll timeouts constitute a full timeout
 
 /***********************************************************************
