@@ -17,11 +17,14 @@ module fifo_to_wb_tb();
    wire        cmd_dst_rdy, resp_src_rdy, resp_dst_rdy;
    reg [17:0]  cmd;
    wire [17:0] resp;
+
+   wire [17:0] resp_int;
+   wire        resp_src_rdy_int, resp_dst_rdy_int;
    
    fifo_to_wb fifo_to_wb
      (.clk(clk), .reset(rst), .clear(clear),
       .data_i(cmd), .src_rdy_i(cmd_src_rdy), .dst_rdy_o(cmd_dst_rdy),
-      .data_o(resp), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy),
+      .data_o(resp_int), .src_rdy_o(resp_src_rdy_int), .dst_rdy_i(resp_dst_rdy_int),
 
       .wb_adr_o(wb_adr), .wb_dat_mosi(wb_dat_mosi), .wb_dat_miso(wb_dat_miso),
       .wb_sel_o(), .wb_cyc_o(wb_cyc), .wb_stb_o(wb_stb), 
@@ -29,6 +32,12 @@ module fifo_to_wb_tb();
       .triggers());
 
    assign wb_dat_miso = {wb_adr[7:0],8'hBF};
+
+   fifo19_pad #(.LENGTH(16)) fifo19_pad
+     (.clk(clk), .reset(rst), .clear(clear),
+      .data_i(resp_int), .src_rdy_i(resp_src_rdy_int), .dst_rdy_o(resp_dst_rdy_int),
+      .data_o(resp), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy));
+        
    
    // Set up monitors
    always @(posedge clk)
