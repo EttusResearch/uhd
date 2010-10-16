@@ -263,7 +263,6 @@ void usrp2_impl::io_init(void){
 
         //issue a stream command to each motherboard
         BOOST_FOREACH(usrp2_mboard_impl::sptr mboard, _mboards){
-            (*mboard)[MBOARD_PROP_STREAM_CMD] = stream_cmd_t(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
             (*mboard)[MBOARD_PROP_STREAM_CMD] = stream_cmd_t(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         }
 
