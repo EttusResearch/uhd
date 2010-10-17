@@ -347,5 +347,11 @@ private:
  * The Make Function
  **********************************************************************/
 mimo_usrp::sptr mimo_usrp::make(const device_addr_t &dev_addr){
+    uhd::print_warning(
+        "The mimo USRP interface has been deprecated.\n"
+        "Please switch to the multi USRP interface.\n"
+        "#include <uhd/usrp/multi_usrp.hpp>\n"
+        "multi_usrp::sptr sdev = multi_usrp::make(args);\n"
+    );
     return sptr(new mimo_usrp_impl(dev_addr));
 }

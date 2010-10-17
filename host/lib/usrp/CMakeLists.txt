@@ -25,6 +25,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/dsp_utils.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/mimo_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/multi_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/simple_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/single_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/subdev_spec.cpp

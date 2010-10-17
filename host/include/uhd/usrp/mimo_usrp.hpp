@@ -32,12 +32,12 @@
 namespace uhd{ namespace usrp{
 
 /*!
- * The MIMO USRP device class:
+ * The MIMO USRP device class (DEPRECATED):
  * A mimo usrp facilitates ease-of-use for multi-usrp scenarios.
  * The wrapper provides convenience functions to control the group
  * of underlying devices as if they consisted of a single device.
  */
-class UHD_API mimo_usrp : boost::noncopyable{
+class UHD_API UHD_DEPRECATED mimo_usrp : boost::noncopyable{
 public:
     typedef boost::shared_ptr<mimo_usrp> sptr;
 

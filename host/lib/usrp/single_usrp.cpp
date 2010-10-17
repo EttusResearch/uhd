@@ -46,10 +46,6 @@ public:
         _dev = device::make(addr);
     }
 
-    ~single_usrp_impl(void){
-        /* NOP */
-    }
-
     device::sptr get_device(void){
         return _dev;
     }

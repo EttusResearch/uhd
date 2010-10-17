@@ -33,8 +33,8 @@
 namespace uhd{ namespace usrp{
 
 /*!
- * The single USRP device class:
- * A single usrp facilitates ease-of-use for most use-case scenarios.
+ * The single-USRP device class:
+ * A single-USRP facilitates ease-of-use for most use-case scenarios.
  * The wrapper provides convenience functions to tune the devices
  * as well as to set the dboard gains, antennas, and other properties.
  * This wrapper supports multi-channel configurations per motherboard.
@@ -61,7 +61,7 @@ public:
      * Mboard methods
      ******************************************************************/
     /*!
-     * Get a printable name for this usrp.
+     * Get a printable summary for this USRP configuration.
      * \return a printable string
      */
     virtual std::string get_pp_string(void) = 0;
