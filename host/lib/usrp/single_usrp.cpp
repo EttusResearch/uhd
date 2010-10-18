@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "wrapper_utils.hpp"
 #include <uhd/usrp/single_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/utils/assert.hpp>
@@ -31,11 +32,6 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-static inline freq_range_t add_dsp_shift(const freq_range_t &range, wax::obj dsp){
-    double codec_rate = dsp[DSP_PROP_CODEC_RATE].as<double>();
-    return freq_range_t(range.min - codec_rate/2.0, range.max + codec_rate/2.0);
-}
 
 /***********************************************************************
  * Simple USRP Implementation
@@ -141,6 +137,7 @@ public:
 
     void set_rx_rate(double rate){
         _rx_dsp()[DSP_PROP_HOST_RATE] = rate;
+        do_samp_rate_warning_message(rate, get_rx_rate(), "RX");
     }
 
     double get_rx_rate(void){
@@ -148,11 +145,15 @@ public:
     }
 
     tune_result_t set_rx_freq(double target_freq, size_t chan){
-        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq);
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq);
+        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
+        return r;
     }
 
     tune_result_t set_rx_freq(double target_freq, double lo_off, size_t chan){
-        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq, lo_off);
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq, lo_off);
+        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
+        return r;
     }
 
     double get_rx_freq(size_t chan){
@@ -220,6 +221,7 @@ public:
 
     void set_tx_rate(double rate){
         _tx_dsp()[DSP_PROP_HOST_RATE] = rate;
+        do_samp_rate_warning_message(rate, get_tx_rate(), "TX");
     }
 
     double get_tx_rate(void){
@@ -227,11 +229,15 @@ public:
     }
 
     tune_result_t set_tx_freq(double target_freq, size_t chan){
-        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq);
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq);
+        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
+        return r;
     }
 
     tune_result_t set_tx_freq(double target_freq, double lo_off, size_t chan){
-        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq, lo_off);
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq, lo_off);
+        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
+        return r;
     }
 
     double get_tx_freq(size_t chan){
