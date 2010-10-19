@@ -18,8 +18,7 @@
 ########################################################################
 # unit test suite
 ########################################################################
-ADD_EXECUTABLE(main_test
-    main_test.cpp
+SET(test_sources
     addr_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
@@ -34,8 +33,18 @@ ADD_EXECUTABLE(main_test
     warning_test.cpp
     wax_test.cpp
 )
-TARGET_LINK_LIBRARIES(main_test uhd)
-ADD_TEST(test main_test)
+
+#turn each test cpp file into an executable with an int main() function
+ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
+
+#for each source: build an executable, register it as a test, and install
+FOREACH(test_source ${test_sources})
+    GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
+    ADD_EXECUTABLE(${test_name} ${test_source})
+    TARGET_LINK_LIBRARIES(${test_name} uhd)
+    ADD_TEST(${test_name} ${test_name})
+    INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/tests)
+ENDFOREACH(test_source)
 
 ########################################################################
 # demo of a loadable module
