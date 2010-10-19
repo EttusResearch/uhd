@@ -256,16 +256,20 @@ public:
         return _rx_subdev(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
     }
 
+    void set_rx_bandwidth(double bandwidth, size_t chan){
+        _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH] = bandwidth;
+    }
+
+    double get_rx_bandwidth(size_t chan){
+        return _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH].as<double>();
+    }
+
     float read_rssi(size_t chan){
         return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<float>();
     }
 
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
         return _rx_dboard(chan)[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
-    }
-    
-    void set_rx_bandwidth(float bandwidth, size_t chan) {
-        _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH] = bandwidth;
     }
 
     /*******************************************************************
@@ -350,6 +354,14 @@ public:
 
     bool get_tx_lo_locked(size_t chan){
         return _tx_subdev(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
+    }
+
+    void set_tx_bandwidth(double bandwidth, size_t chan){
+        _tx_subdev(chan)[SUBDEV_PROP_BANDWIDTH] = bandwidth;
+    }
+
+    double get_tx_bandwidth(size_t chan){
+        return _tx_subdev(chan)[SUBDEV_PROP_BANDWIDTH].as<double>();
     }
 
     dboard_iface::sptr get_tx_dboard_iface(size_t chan){

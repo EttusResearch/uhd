@@ -69,7 +69,7 @@ public:
 
 private:
     double _lo_freq;
-    float _bandwidth;
+    double _bandwidth;
     uhd::dict<std::string, float> _gains;
     max2118_write_regs_t _max2118_write_regs;
     max2118_read_regs_t _max2118_read_regs;
@@ -79,7 +79,7 @@ private:
 
     void set_lo_freq(double target_freq);
     void set_gain(float gain, const std::string &name);
-    void set_bandwidth(float bandwidth);
+    void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
         start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0x5));
@@ -482,9 +482,9 @@ void dbsrx::set_gain(float gain, const std::string &name){
 /***********************************************************************
  * Bandwidth Handling
  **********************************************************************/
-void dbsrx::set_bandwidth(float bandwidth){
+void dbsrx::set_bandwidth(double bandwidth){
     //clip the input
-    bandwidth = std::clip<float>(bandwidth, 4e6, 33e6);
+    bandwidth = std::clip<double>(bandwidth, 4e6, 33e6);
 
     double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     
@@ -494,7 +494,7 @@ void dbsrx::set_bandwidth(float bandwidth){
     _max2118_write_regs.f_dac = std::clip<int>(int((((bandwidth*_max2118_write_regs.m_divider)/ref_clock) - 4)/0.145),0,127);
 
     //determine actual bandwidth
-    _bandwidth = float((ref_clock/(_max2118_write_regs.m_divider))*(4+0.145*_max2118_write_regs.f_dac));
+    _bandwidth = double((ref_clock/(_max2118_write_regs.m_divider))*(4+0.145*_max2118_write_regs.f_dac));
 
     if (dbsrx_debug) std::cerr << boost::format(
         "DBSRX Filter Bandwidth: %f MHz, m: %d, f_dac: %d\n"
@@ -565,12 +565,6 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked();
         return;
 
-/*
-    case SUBDEV_PROP_RSSI:
-        val = this->get_rssi();
-        return;
-*/
-
     case SUBDEV_PROP_BANDWIDTH:
         val = _bandwidth;
         return;
@@ -597,7 +591,7 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_bandwidth(val.as<float>());
+        this->set_bandwidth(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

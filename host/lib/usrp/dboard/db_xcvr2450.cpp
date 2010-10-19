@@ -102,7 +102,7 @@ public:
 
 private:
     double _lo_freq;
-    float _rx_bandwidth, _tx_bandwidth;
+    double _rx_bandwidth, _tx_bandwidth;
     uhd::dict<std::string, float> _tx_gains, _rx_gains;
     std::string _tx_ant, _rx_ant;
     int _ad9515div;
@@ -113,8 +113,8 @@ private:
     void set_rx_ant(const std::string &ant);
     void set_tx_gain(float gain, const std::string &name);
     void set_rx_gain(float gain, const std::string &name);
-    void set_rx_bandwidth(float bandwidth);
-    void set_tx_bandwidth(float bandwidth);
+    void set_rx_bandwidth(double bandwidth);
+    void set_tx_bandwidth(double bandwidth);
 
     void update_atr(void);
     void spi_reset(void);
@@ -455,7 +455,7 @@ void xcvr2450::set_rx_gain(float gain, const std::string &name){
 /***********************************************************************
  * Bandwidth Handling
  **********************************************************************/
-static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(float &bandwidth){
+static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(double &bandwidth){
     int reg = std::clip(boost::math::iround((bandwidth-6.0e6)/6.0e6), 1, 3);
 
     switch(reg){
@@ -472,7 +472,7 @@ static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(float 
     UHD_THROW_INVALID_CODE_PATH();
 }
 
-static max2829_regs_t::rx_lpf_fine_adj_t bandwidth_to_rx_lpf_fine_reg(float &bandwidth, float requested_bandwidth){
+static max2829_regs_t::rx_lpf_fine_adj_t bandwidth_to_rx_lpf_fine_reg(double &bandwidth, double requested_bandwidth){
     int reg = std::clip(boost::math::iround((requested_bandwidth/bandwidth)/0.05), 18, 22);
 
     switch(reg){
@@ -495,7 +495,7 @@ static max2829_regs_t::rx_lpf_fine_adj_t bandwidth_to_rx_lpf_fine_reg(float &ban
     UHD_THROW_INVALID_CODE_PATH();
 }
 
-static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(float &bandwidth){
+static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(double &bandwidth){
     int reg = std::clip(boost::math::iround((bandwidth-7.0e6)/1.0e6), 0, 11);
 
     switch(reg){
@@ -523,7 +523,7 @@ static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(float 
     UHD_THROW_INVALID_CODE_PATH();
 }
 
-void xcvr2450::set_rx_bandwidth(float bandwidth){
+void xcvr2450::set_rx_bandwidth(double bandwidth){
     float requested_bandwidth = bandwidth;
 
     //compute coarse low pass cutoff frequency setting
@@ -543,7 +543,7 @@ void xcvr2450::set_rx_bandwidth(float bandwidth){
     ) % _rx_bandwidth % (int(_max2829_regs.rx_lpf_coarse_adj)) % (int(_max2829_regs.rx_lpf_fine_adj)) << std::endl;
 }
 
-void xcvr2450::set_tx_bandwidth(float bandwidth){
+void xcvr2450::set_tx_bandwidth(double bandwidth){
     //compute coarse low pass cutoff frequency setting
     _max2829_regs.tx_lpf_coarse_adj = bandwidth_to_tx_lpf_coarse_reg(bandwidth);
 
@@ -652,7 +652,7 @@ void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_rx_bandwidth(val.as<float>());
+        this->set_rx_bandwidth(val.as<double>());
         return;
 
     case SUBDEV_PROP_ENABLED:
@@ -747,7 +747,7 @@ void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_tx_bandwidth(val.as<float>());
+        this->set_tx_bandwidth(val.as<double>());
         return;
 
     case SUBDEV_PROP_ANTENNA:

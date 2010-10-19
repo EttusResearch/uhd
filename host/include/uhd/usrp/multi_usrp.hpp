@@ -201,6 +201,9 @@ public:
 
     virtual bool get_rx_lo_locked(size_t chan) = 0;
 
+    virtual void set_rx_bandwidth(double bandwidth, size_t chan) = 0;
+    virtual double get_rx_bandwidth(size_t chan) = 0;
+
     /*!
      * Read the RSSI value from a usrp device.
      * Or throw if the dboard does not support an RSSI readback.
@@ -209,8 +212,6 @@ public:
     virtual float read_rssi(size_t chan) = 0;
 
     virtual dboard_iface::sptr get_rx_dboard_iface(size_t chan) = 0;
-    
-    virtual void set_rx_bandwidth(float bandwidth, size_t chan) = 0;
 
     /*******************************************************************
      * TX methods
@@ -250,6 +251,9 @@ public:
     virtual std::vector<std::string> get_tx_antennas(size_t chan) = 0;
 
     virtual bool get_tx_lo_locked(size_t chan) = 0;
+
+    virtual void set_tx_bandwidth(double bandwidth, size_t chan) = 0;
+    virtual double get_tx_bandwidth(size_t chan) = 0;
 
     virtual dboard_iface::sptr get_tx_dboard_iface(size_t chan) = 0;
 };
