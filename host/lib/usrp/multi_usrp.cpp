@@ -215,27 +215,23 @@ public:
     }
 
     tune_result_t set_rx_freq(double target_freq, size_t chan){
-        size_t nchan = get_rx_num_channels();
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(nchan/chan), nchan%chan, target_freq);
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), target_freq);
         do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
         return r;
     }
 
     tune_result_t set_rx_freq(double target_freq, double lo_off, size_t chan){
-        size_t nchan = get_rx_num_channels();
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(nchan/chan), nchan%chan, target_freq, lo_off);
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), target_freq, lo_off);
         do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
         return r;
     }
 
     double get_rx_freq(size_t chan){
-        size_t nchan = get_rx_num_channels();
-        return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(nchan/chan), nchan%chan);
+        return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm());
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
-        size_t nchan = get_rx_num_channels();
-        return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp(nchan/chan));
+        return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp(chan/rx_cpm()));
     }
 
     void set_rx_gain(float gain, size_t chan){
@@ -321,27 +317,23 @@ public:
     }
 
     tune_result_t set_tx_freq(double target_freq, size_t chan){
-        size_t nchan = get_tx_num_channels();
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(nchan/chan), nchan%chan, target_freq);
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), target_freq);
         do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 
     tune_result_t set_tx_freq(double target_freq, double lo_off, size_t chan){
-        size_t nchan = get_tx_num_channels();
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(nchan/chan), nchan%chan, target_freq, lo_off);
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), target_freq, lo_off);
         do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 
     double get_tx_freq(size_t chan){
-        size_t nchan = get_tx_num_channels();
-        return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(nchan/chan), nchan%chan);
+        return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm());
     }
 
     freq_range_t get_tx_freq_range(size_t chan){
-        size_t nchan = get_tx_num_channels();
-        return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp(nchan/chan));
+        return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp(chan/tx_cpm()));
     }
 
     void set_tx_gain(float gain, size_t chan){
@@ -378,6 +370,15 @@ public:
 
 private:
     device::sptr _dev;
+
+    size_t rx_cpm(void){ //channels per mboard
+        return get_rx_num_channels()/get_num_mboards();
+    }
+
+    size_t tx_cpm(void){ //channels per mboard
+        return get_tx_num_channels()/get_num_mboards();
+    }
+
     wax::obj _mboard(size_t mboard){
         std::string mb_name = (*_dev)[DEVICE_PROP_MBOARD_NAMES].as<prop_names_t>().at(mboard);
         return (*_dev)[named_prop_t(DEVICE_PROP_MBOARD, mb_name)];
@@ -389,33 +390,27 @@ private:
         return _mboard(mboard)[MBOARD_PROP_TX_DSP];
     }
     wax::obj _rx_dboard(size_t chan){
-        size_t nchan = get_rx_num_channels();
-        std::string db_name = get_rx_subdev_spec(chan/nchan).at(chan%nchan).db_name;
-        return _mboard(chan/nchan)[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
+        std::string db_name = get_rx_subdev_spec(chan/rx_cpm()).at(chan%rx_cpm()).db_name;
+        return _mboard(chan/rx_cpm())[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
     }
     wax::obj _tx_dboard(size_t chan){
-        size_t nchan = get_tx_num_channels();
-        std::string db_name = get_tx_subdev_spec(chan/nchan).at(chan%nchan).db_name;
-        return _mboard(chan/nchan)[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
+        std::string db_name = get_tx_subdev_spec(chan/tx_cpm()).at(chan%tx_cpm()).db_name;
+        return _mboard(chan/tx_cpm())[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
     }
     wax::obj _rx_subdev(size_t chan){
-        size_t nchan = get_rx_num_channels();
-        std::string sd_name = get_rx_subdev_spec(chan/nchan).at(chan%nchan).sd_name;
+        std::string sd_name = get_rx_subdev_spec(chan/rx_cpm()).at(chan%rx_cpm()).sd_name;
         return _rx_dboard(chan)[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
     }
     wax::obj _tx_subdev(size_t chan){
-        size_t nchan = get_tx_num_channels();
-        std::string sd_name = get_tx_subdev_spec(chan/nchan).at(chan%nchan).sd_name;
+        std::string sd_name = get_tx_subdev_spec(chan/tx_cpm()).at(chan%tx_cpm()).sd_name;
         return _tx_dboard(chan)[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
     }
     gain_group::sptr _rx_gain_group(size_t chan){
-        size_t nchan = get_rx_num_channels();
-        std::string sd_name = get_rx_subdev_spec(chan/nchan).at(chan%nchan).sd_name;
+        std::string sd_name = get_rx_subdev_spec(chan/rx_cpm()).at(chan%rx_cpm()).sd_name;
         return _rx_dboard(chan)[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
     }
     gain_group::sptr _tx_gain_group(size_t chan){
-        size_t nchan = get_tx_num_channels();
-        std::string sd_name = get_tx_subdev_spec(chan/nchan).at(chan%nchan).sd_name;
+        std::string sd_name = get_tx_subdev_spec(chan/tx_cpm()).at(chan%tx_cpm()).sd_name;
         return _tx_dboard(chan)[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
     }
 };
