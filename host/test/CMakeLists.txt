@@ -28,6 +28,7 @@ ADD_EXECUTABLE(main_test
     error_test.cpp
     gain_group_test.cpp
     subdev_spec_test.cpp
+    time_spec_test.cpp
     tune_helper_test.cpp
     vrt_test.cpp
     warning_test.cpp
