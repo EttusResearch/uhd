@@ -112,7 +112,7 @@ struct usrp2_impl::io_impl{
 
     io_impl(size_t num_recv_frames, size_t send_frame_size, size_t width):
         packet_handler_recv_state(width),
-        recv_pirate_booty(alignment_buffer_type::make(num_recv_frames, width)),
+        recv_pirate_booty(alignment_buffer_type::make(num_recv_frames-3, width)),
         async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
     {
         for (size_t i = 0; i < width; i++) fc_mons.push_back(
