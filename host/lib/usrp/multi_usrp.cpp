@@ -190,13 +190,7 @@ public:
     }
 
     size_t get_rx_num_channels(void){
-        size_t nchan = get_rx_subdev_spec(0).size();
-        for (size_t m = 1; m < get_num_mboards(); m++){
-            if (nchan != get_rx_subdev_spec(m).size()){
-                throw std::runtime_error("rx subdev spec size inconsistent across all mboards");
-            }
-        }
-        return nchan;
+        return rx_cpm()*get_num_mboards(); //total num channels
     }
 
     std::string get_rx_subdev_name(size_t chan){
@@ -296,13 +290,7 @@ public:
     }
 
     size_t get_tx_num_channels(void){
-        size_t nchan = get_tx_subdev_spec(0).size();
-        for (size_t m = 1; m < get_num_mboards(); m++){
-            if (nchan != get_tx_subdev_spec(m).size()){
-                throw std::runtime_error("tx subdev spec size inconsistent across all mboards");
-            }
-        }
-        return nchan;
+        return tx_cpm()*get_num_mboards(); //total num channels
     }
 
     void set_tx_rate(double rate){
@@ -372,11 +360,23 @@ private:
     device::sptr _dev;
 
     size_t rx_cpm(void){ //channels per mboard
-        return get_rx_num_channels()/get_num_mboards();
+        size_t nchan = get_rx_subdev_spec(0).size();
+        for (size_t m = 1; m < get_num_mboards(); m++){
+            if (nchan != get_rx_subdev_spec(m).size()){
+                throw std::runtime_error("rx subdev spec size inconsistent across all mboards");
+            }
+        }
+        return nchan;
     }
 
     size_t tx_cpm(void){ //channels per mboard
-        return get_tx_num_channels()/get_num_mboards();
+        size_t nchan = get_tx_subdev_spec(0).size();
+        for (size_t m = 1; m < get_num_mboards(); m++){
+            if (nchan != get_tx_subdev_spec(m).size()){
+                throw std::runtime_error("tx subdev spec size inconsistent across all mboards");
+            }
+        }
+        return nchan;
     }
 
     wax::obj _mboard(size_t mboard){
