@@ -95,7 +95,7 @@ gain_group::sptr usrp::make_gain_group(
         fcns.get_range = boost::bind(&get_subdev_gain_range, subdev, name);
         fcns.get_value = boost::bind(&get_subdev_gain, subdev, name);
         fcns.set_value = boost::bind(&set_subdev_gain, subdev, name, _1);
-        gg->register_fcns(fcns, subdev_gain_priority);
+        gg->register_fcns(name, fcns, subdev_gain_priority);
     }
     //add all the codec gains last (antenna to dsp order)
     BOOST_FOREACH(const std::string &name, codec[CODEC_PROP_GAIN_NAMES].as<prop_names_t>()){
@@ -119,7 +119,7 @@ gain_group::sptr usrp::make_gain_group(
             fcns.set_value = boost::bind(&set_codec_gain_q, codec, name, _1);
             break;
         }
-        gg->register_fcns(fcns, codec_gain_priority);
+        gg->register_fcns(name, fcns, codec_gain_priority);
     }
     return gg;
 }
