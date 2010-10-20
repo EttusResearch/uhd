@@ -73,6 +73,9 @@ public:
     //! A wildcard motherboard index
     static const size_t ALL_MBOARDS = size_t(~0);
 
+    //! A wildcard gain element name
+    static const std::string ALL_GAINS;
+
     /*!
      * Make a new multi usrp from the device address.
      * \param dev_addr the device address
@@ -240,27 +243,39 @@ public:
     virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
 
     /*!
-     * Set the RX gain:
-     * Distribute among gain elements in the RX path.
+     * Set the RX gain value for the specified gain element.
+     * For an empty name, distribute across all gain elements.
      * \param gain the gain in dB
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_gain(float gain, size_t chan) = 0;
+    virtual void set_rx_gain(float gain, const std::string &name, size_t chan) = 0;
 
     /*!
-     * Get the RX gain:
-     * Summation of gain elements in the RX path.
+     * Get the RX gain value for the specified gain element.
+     * For an empty name, sum across all gain elements.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_rx_gain(size_t chan) = 0;
+    virtual float get_rx_gain(const std::string &name, size_t chan) = 0;
 
     /*!
-     * Get the RX gain range.
+     * Get the RX gain range for the specified gain element.
+     * For an empty name, calculate the overall gain range.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return a gain range object
      */
-    virtual gain_range_t get_rx_gain_range(size_t chan) = 0;
+    virtual gain_range_t get_rx_gain_range(const std::string &name, size_t chan) = 0;
+
+    /*!
+     * Get the names of the gain elements in the RX chain.
+     * Gain elements are ordered from antenna to FPGA.
+     * \param chan the channel index 0 to N-1
+     * \return a vector of gain element names
+     */
+    virtual std::vector<std::string> get_rx_gain_names(size_t chan) = 0;
 
     /*!
      * Select the RX antenna on the subdevice.
@@ -399,27 +414,39 @@ public:
     virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
 
     /*!
-     * Set the TX gain:
-     * Distribute among gain elements in the TX path.
+     * Set the TX gain value for the specified gain element.
+     * For an empty name, distribute across all gain elements.
      * \param gain the gain in dB
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_gain(float gain, size_t chan) = 0;
+    virtual void set_tx_gain(float gain, const std::string &name, size_t chan) = 0;
 
     /*!
-     * Get the TX gain:
-     * Summation of gain elements in the TX path.
+     * Get the TX gain value for the specified gain element.
+     * For an empty name, sum across all gain elements.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_tx_gain(size_t chan) = 0;
+    virtual float get_tx_gain(const std::string &name, size_t chan) = 0;
 
     /*!
-     * Get the TX gain range.
+     * Get the TX gain range for the specified gain element.
+     * For an empty name, calculate the overall gain range.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return a gain range object
      */
-    virtual gain_range_t get_tx_gain_range(size_t chan) = 0;
+    virtual gain_range_t get_tx_gain_range(const std::string &name, size_t chan) = 0;
+
+    /*!
+     * Get the names of the gain elements in the TX chain.
+     * Gain elements are ordered from antenna to FPGA.
+     * \param chan the channel index 0 to N-1
+     * \return a vector of gain element names
+     */
+    virtual std::vector<std::string> get_tx_gain_names(size_t chan) = 0;
 
     /*!
      * Select the TX antenna on the subdevice.
