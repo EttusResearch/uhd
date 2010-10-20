@@ -524,7 +524,7 @@ static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(double
 }
 
 void xcvr2450::set_rx_bandwidth(double bandwidth){
-    float requested_bandwidth = bandwidth;
+    double requested_bandwidth = bandwidth;
 
     //compute coarse low pass cutoff frequency setting
     _max2829_regs.rx_lpf_coarse_adj = bandwidth_to_rx_lpf_coarse_reg(bandwidth);
