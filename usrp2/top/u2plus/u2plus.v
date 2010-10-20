@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+//`define DCM_FOR_RAMCLK
 //////////////////////////////////////////////////////////////////////////////////
 
 module u2plus
@@ -195,7 +196,7 @@ module u2plus
                  .CLK2X180(), 
                  .CLK90(), 
                  .CLK180(), 
-                 .CLK270(), 
+                 .CLK270(clk270_100), 
                  .LOCKED(LOCKED_OUT), 
                  .PSDONE(), 
                  .STATUS());
@@ -216,7 +217,8 @@ module u2plus
 
    BUFG dspclk_BUFG (.I(dcm_out), .O(dsp_clk));
    BUFG wbclk_BUFG (.I(clk_div), .O(wb_clk));
-   
+ 
+`ifdef DCM_FOR_RAMCLK  
    wire     RAM_CLK_buf;
    wire     clk100_ext;
    wire     clk100_ext_buf;
@@ -258,7 +260,21 @@ module u2plus
 			.D1(1'b0),
 			.R(1'b0),
 			.S(1'b0));
-   
+ 
+`else // !`ifdef DCM_FOR_RAMCLK
+ //  assign   RAM_CLK = dcm_out;
+      BUFG  clk270_100_buf_i1 (.I(clk270_100), 
+			       .O(clk270_100_buf));
+      OFDDRRSE RAM_CLK_i1 (.Q(RAM_CLK),
+			.C0(clk270_100_buf),
+			.C1(~clk270_100_buf),
+			.CE(1'b1),
+			.D0(1'b1),
+			.D1(1'b0),
+			.R(1'b0),
+			.S(1'b0));
+`endif
+  
    // I2C -- Don't use external transistors for open drain, the FPGA implements this
    IOBUF scl_pin(.O(scl_pad_i), .IO(SCL), .I(scl_pad_o), .T(scl_pad_oen_o));
    IOBUF sda_pin(.O(sda_pad_i), .IO(SDA), .I(sda_pad_o), .T(sda_pad_oen_o));
