@@ -40,7 +40,9 @@ INSTALL(FILES
 
     ### interfaces ###
     simple_usrp.hpp
+    single_usrp.hpp
     mimo_usrp.hpp
+    multi_usrp.hpp
 
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
 )

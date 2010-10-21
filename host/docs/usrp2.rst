@@ -158,7 +158,7 @@ The value for the addr key is a white-space separated list
 of IPv4 addresses or resolvable hostnames.
 The first address in the list will represent channel 0,
 the second channel 1, and so on...
-Use this addressing scheme with the *mimo_usrp* interface.
+Use this addressing scheme with the *multi_usrp* interface.
 
 The device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 and 192.168.20.2
 ::
@@ -166,49 +166,22 @@ The device address string representation for 2 USRP2s with IPv4 addresses 192.16
     addr=192.168.10.2 192.168.20.2
 
 ------------------------------------------------------------------------
-Resize the send and receive buffers
-------------------------------------------------------------------------
-It may be useful increase the size of the socket buffers to
-move the burden of buffering samples into the kernel, or to
-buffer incoming samples faster than they can be processed.
-However, if you application cannot process samples fast enough,
-no amount of buffering can save you.
-
-By default, the UHD will try to request a reasonably large buffer size for both send and receive.
-A warning will be printed on instantiation if the actual buffer size is insufficient.
-See the OS specific notes below:
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-OS specific notes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On linux, the maximum buffer sizes are capped by the sysctl values
-**net.core.rmem_max** and **net.core.wmem_max**.
-To change the maximum values, run the following commands:
-::
-
-    sudo sysctl -w net.core.rmem_max=<new value>
-    sudo sysctl -w net.core.wmem_max=<new value>
-
-Set the values permanently by editing */etc/sysctl.conf*
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Device address params
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To manually set the size of the buffers,
-the usrp2 will accept two optional parameters in the device address.
-Each parameter will accept a numeric value for the number of bytes.
-
-* recv_buff_size
-* send_buff_size
-
-Example, set the args string to the following:
-::
-
-    addr=192.168.10.2, recv_buff_size=100e6
-
-------------------------------------------------------------------------
 Hardware setup notes
 ------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Front panel LEDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The LEDs on the front panel can be useful in debugging hardware and software issues.
+The LEDs reveal the following about the state of the device:
+
+* **LED A:** transmitting
+* **LED B:** undocumented
+* **LED C:** receiving
+* **LED D:** firmware loaded
+* **LED E:** undocumented
+* **LED F:** FPGA loaded
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Ref Clock - 10MHz

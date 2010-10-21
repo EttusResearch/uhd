@@ -100,10 +100,10 @@ OS Specific Notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Setup Udev on Linux
+Linux - setup udev
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Linux, Udev handles USB plug and unplug events.
-The following command creates a Udev rule for the USRP1
+On Linux, udev handles USB plug and unplug events.
+The following commands create a udev rule for the USRP1
 so that non-root users may access the device:
 
 ::
@@ -113,3 +113,9 @@ so that non-root users may access the device:
     sudo mv tmpfile /etc/udev/rules.d/10-usrp.rules
     sudo udevadm control --reload-rules
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Windows - install driver
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On Windows, a driver must be installed the first time the USRP1 is attached to the host computer.
+A download link for this driver can be found on the UHD wiki page.
+Download and unpack the driver, and direct the Windows driver install wizard to the .inf file.

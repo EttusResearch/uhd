@@ -30,7 +30,7 @@ INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
 # Install Dirs
 ########################################################################
 SET(RUNTIME_DIR bin)
-SET(LIBRARY_DIR lib)
+SET(LIBRARY_DIR lib${LIB_SUFFIX})
 SET(INCLUDE_DIR include)
 SET(PKG_DATA_DIR share/uhd)
 SET(PKG_DOC_DIR share/doc/uhd)
@@ -61,6 +61,10 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 IF(CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-Wall)
     ADD_DEFINITIONS(-Wextra)
+    #causes trouble when compiling libusb1.0 on macintosh
+    #comment out until mac ports libusb gets its act together
+    #ADD_DEFINITIONS(-pedantic)
+    #ADD_DEFINITIONS(-ansi)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
@@ -80,7 +84,7 @@ IF(UNIX AND EXISTS "/usr/lib64")
     LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
 ENDIF(UNIX AND EXISTS "/usr/lib64")
 
-SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43")
+SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43" "1.44.0" "1.44")
 FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
     date_time
     filesystem
