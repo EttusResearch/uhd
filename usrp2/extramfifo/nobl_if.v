@@ -39,6 +39,12 @@ module nobl_if
    assign 	   RAM_LDn = 0;
    // ZBT/NoBL RAM actually manages its own output enables very well.
    assign 	   RAM_OEn = 0;
+
+   // gray code the address to reduce EMI
+   wire [WIDTH-1:0] address_gray;
+   
+   bin2gray #(.WIDTH(WIDTH)) bin2gray (.bin(address),.gray(address_gray));
+   
    
    //
    // Pipeline stage 1
@@ -59,7 +65,7 @@ module nobl_if
 	  
 	  if (enable)
 	    begin
-	       address_pipe1 <= address;
+	       address_pipe1 <= address_gray;
 	       write_pipe1 <= write;
 	       RAM_WEn <= ~write;  // Creates IOB flob
 	       
