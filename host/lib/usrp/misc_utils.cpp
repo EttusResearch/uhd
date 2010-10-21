@@ -88,8 +88,8 @@ gain_group::sptr usrp::make_gain_group(
     const size_t codec_gain_priority = (gain_group_policy == GAIN_GROUP_POLICY_RX)?
         (subdev_gain_priority - 1): //RX policy, codec gains fill last (lower priority)
         (subdev_gain_priority + 1); //TX policy, codec gains fill first (higher priority)
-    const std::string subdev_prefix = dboard_id.to_cname() + " ";
-    const std::string codec_prefix = (gain_group_policy == GAIN_GROUP_POLICY_RX)? "ADC " : "DAC ";
+    const std::string subdev_prefix = dboard_id.to_cname() + "-";
+    const std::string codec_prefix = (gain_group_policy == GAIN_GROUP_POLICY_RX)? "ADC-" : "DAC-";
 
     gain_group::sptr gg = gain_group::make();
     gain_fcns_t fcns;

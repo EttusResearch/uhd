@@ -69,8 +69,8 @@ void dboard_manager::register_dboard(
     const prop_names_t &subdev_names
 ){
     //regular registration for ids
-    register_dboard(rx_dboard_id, dboard_ctor, name + " RX", subdev_names);
-    register_dboard(tx_dboard_id, dboard_ctor, name + " TX", subdev_names);
+    register_dboard(rx_dboard_id, dboard_ctor, name, subdev_names);
+    register_dboard(tx_dboard_id, dboard_ctor, name, subdev_names);
 
     //register xcvr mapping for ids
     get_xcvr_id_to_id_map()[rx_dboard_id] = tx_dboard_id;
