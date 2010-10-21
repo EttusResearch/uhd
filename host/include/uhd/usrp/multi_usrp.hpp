@@ -251,6 +251,11 @@ public:
      */
     virtual void set_rx_gain(float gain, const std::string &name, size_t chan) = 0;
 
+    //! A convenience wrapper for setting overall RX gain
+    void set_rx_gain(float gain, size_t chan){
+        return this->set_rx_gain(gain, ALL_GAINS, chan);
+    }
+
     /*!
      * Get the RX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
@@ -260,6 +265,11 @@ public:
      */
     virtual float get_rx_gain(const std::string &name, size_t chan) = 0;
 
+    //! A convenience wrapper for getting overall RX gain
+    float get_rx_gain(size_t chan){
+        return this->get_rx_gain(ALL_GAINS, chan);
+    }
+
     /*!
      * Get the RX gain range for the specified gain element.
      * For an empty name, calculate the overall gain range.
@@ -268,6 +278,11 @@ public:
      * \return a gain range object
      */
     virtual gain_range_t get_rx_gain_range(const std::string &name, size_t chan) = 0;
+
+    //! A convenience wrapper for getting overall RX gain range
+    gain_range_t get_rx_gain_range(size_t chan){
+        return this->get_rx_gain_range(ALL_GAINS, chan);
+    }
 
     /*!
      * Get the names of the gain elements in the RX chain.
@@ -422,6 +437,11 @@ public:
      */
     virtual void set_tx_gain(float gain, const std::string &name, size_t chan) = 0;
 
+    //! A convenience wrapper for setting overall TX gain
+    void set_tx_gain(float gain, size_t chan){
+        return this->set_tx_gain(gain, ALL_GAINS, chan);
+    }
+
     /*!
      * Get the TX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
@@ -431,6 +451,11 @@ public:
      */
     virtual float get_tx_gain(const std::string &name, size_t chan) = 0;
 
+    //! A convenience wrapper for getting overall TX gain
+    float get_tx_gain(size_t chan){
+        return this->get_tx_gain(ALL_GAINS, chan);
+    }
+
     /*!
      * Get the TX gain range for the specified gain element.
      * For an empty name, calculate the overall gain range.
@@ -439,6 +464,11 @@ public:
      * \return a gain range object
      */
     virtual gain_range_t get_tx_gain_range(const std::string &name, size_t chan) = 0;
+
+    //! A convenience wrapper for getting overall TX gain range
+    gain_range_t get_tx_gain_range(size_t chan){
+        return this->get_tx_gain_range(ALL_GAINS, chan);
+    }
 
     /*!
      * Get the names of the gain elements in the TX chain.
