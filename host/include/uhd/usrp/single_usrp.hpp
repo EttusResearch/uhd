@@ -123,7 +123,6 @@ public:
      * Set the RX subdevice specification:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
-     * The subdev spec must be the same size across all motherboards.
      * \param spec the new subdevice specification
      */
     virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
@@ -300,7 +299,6 @@ public:
      * Set the TX subdevice specification:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
-     * The subdev spec must be the same size across all motherboards.
      * \param spec the new subdevice specification
      */
     virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
