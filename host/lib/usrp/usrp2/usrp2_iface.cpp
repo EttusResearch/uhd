@@ -19,6 +19,7 @@
 #include "usrp2_iface.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/usrp/mboard_rev.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
@@ -50,7 +51,11 @@ public:
  **********************************************************************/
     usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
-/*
+        
+        //extract the mboard rev numbers
+        byte_vector_t rev_bytes = read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, 2);
+        set_hw_rev(uhd::usrp::mboard_rev_t::from_uint16(rev_bytes.at(0) | (rev_bytes.at(1) << 8)));
+
          //check the fpga compatibility number
         const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
         if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
@@ -59,7 +64,7 @@ public:
                 "The fpga build is not compatible with the host code build."
             ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
         }
-*/
+
     }
 
     ~usrp2_iface_impl(void){

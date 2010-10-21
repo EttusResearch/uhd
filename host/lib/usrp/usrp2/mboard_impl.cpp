@@ -48,10 +48,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 {
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
-
-    //extract the mboard rev numbers
-    byte_vector_t rev_bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, 2);
-    _iface->set_hw_rev(mboard_rev_t::from_uint16(rev_bytes.at(0) | (rev_bytes.at(1) << 8)));
     
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
