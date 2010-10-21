@@ -67,6 +67,12 @@ namespace uhd{ namespace usrp{
         std::string to_string(void) const;
 
         /*!
+         * Get the dboard id represented as a canonical name.
+         * \return the canonical string representation
+         */
+        std::string to_cname(void) const;
+
+        /*!
          * Get the pretty print representation of this dboard id.
          * \return a string with the dboard name and id number
          */

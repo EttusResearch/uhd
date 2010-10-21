@@ -152,12 +152,12 @@ static dboard_base::sptr make_rfx_flex2400(dboard_base::ctor_args_t args){
 }
 
 UHD_STATIC_BLOCK(reg_rfx_dboards){
-    dboard_manager::register_dboard(0x0024, 0x0028, &make_rfx_flex400,  "Flex 400 MIMO B");
-    dboard_manager::register_dboard(0x0025, 0x0029, &make_rfx_flex900,  "Flex 900 MIMO B");
-    dboard_manager::register_dboard(0x0034, 0x0035, &make_rfx_flex1800, "Flex 1800 MIMO B");
-    dboard_manager::register_dboard(0x0026, 0x002a, &make_rfx_flex1200, "Flex 1200 MIMO B");
-    dboard_manager::register_dboard(0x002c, 0x002d, &make_rfx_flex2200, "Flex 2200 MIMO B");
-    dboard_manager::register_dboard(0x0027, 0x002b, &make_rfx_flex2400, "Flex 2400 MIMO B");
+    dboard_manager::register_dboard(0x0024, 0x0028, &make_rfx_flex400,  "RFX400");
+    dboard_manager::register_dboard(0x0025, 0x0029, &make_rfx_flex900,  "RFX900");
+    dboard_manager::register_dboard(0x0034, 0x0035, &make_rfx_flex1800, "RFX1800");
+    dboard_manager::register_dboard(0x0026, 0x002a, &make_rfx_flex1200, "RFX1200");
+    dboard_manager::register_dboard(0x002c, 0x002d, &make_rfx_flex2200, "RFX2200");
+    dboard_manager::register_dboard(0x0027, 0x002b, &make_rfx_flex2400, "RFX2400");
 }
 
 /***********************************************************************

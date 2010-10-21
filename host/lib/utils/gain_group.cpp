@@ -63,7 +63,9 @@ public:
         /*NOP*/
     }
 
-    gain_range_t get_range(void){
+    gain_range_t get_range(const std::string &name){
+        if (not name.empty()) return _name_to_fcns[name].get_range();
+
         float overall_min = 0, overall_max = 0, overall_step = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
             const gain_range_t range = fcns.get_range();
@@ -76,7 +78,9 @@ public:
         return gain_range_t(overall_min, overall_max, overall_step);
     }
 
-    float get_value(void){
+    float get_value(const std::string &name){
+        if (not name.empty()) return _name_to_fcns[name].get_value();
+
         float overall_gain = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
             overall_gain += fcns.get_value();
@@ -84,7 +88,9 @@ public:
         return overall_gain;
     }
 
-    void set_value(float gain){
+    void set_value(float gain, const std::string &name){
+        if (not name.empty()) return _name_to_fcns[name].set_value(gain);
+
         std::vector<gain_fcns_t> all_fcns = get_all_fcns();
         if (all_fcns.size() == 0) return; //nothing to set!
 
@@ -140,10 +146,21 @@ public:
         }
     }
 
+    const std::vector<std::string> get_names(void){
+        return _name_to_fcns.keys();
+    }
+
     void register_fcns(
-        const gain_fcns_t &gain_fcns, size_t priority
+        const std::string &name,
+        const gain_fcns_t &gain_fcns,
+        size_t priority
     ){
+        if (name.empty() or _name_to_fcns.has_key(name)){
+            //ensure the name name is unique and non-empty
+            return register_fcns(name + "_", gain_fcns, priority);
+        }
         _registry[priority].push_back(gain_fcns);
+        _name_to_fcns[name] = gain_fcns;
     }
 
 private:
@@ -158,6 +175,7 @@ private:
     }
 
     uhd::dict<size_t, std::vector<gain_fcns_t> > _registry;
+    uhd::dict<std::string, gain_fcns_t> _name_to_fcns;
 };
 
 /***********************************************************************

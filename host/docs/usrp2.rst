@@ -157,7 +157,7 @@ The value for the addr key is a white-space separated list
 of IPv4 addresses or resolvable hostnames.
 The first address in the list will represent channel 0,
 the second channel 1, and so on...
-Use this addressing scheme with the *mimo_usrp* interface.
+Use this addressing scheme with the *multi_usrp* interface.
 
 The device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 and 192.168.20.2
 ::
