@@ -24,12 +24,12 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_manager.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dsp_utils.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/mboard_rev.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/mimo_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/simple_usrp.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/multi_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/single_usrp.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/subdev_spec.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/tune_helper.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/wrapper_utils.hpp
 )
 
 INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/dboard/CMakeLists.txt)

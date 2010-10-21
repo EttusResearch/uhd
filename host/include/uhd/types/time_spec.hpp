@@ -59,7 +59,7 @@ namespace uhd{
          * \param tick_count the fractional seconds tick count
          * \param tick_rate the number of ticks per second
          */
-        time_spec_t(time_t full_secs, size_t tick_count, double tick_rate);
+        time_spec_t(time_t full_secs, long tick_count, double tick_rate);
 
         /*!
          * Convert the fractional seconds to clock ticks.
@@ -67,7 +67,7 @@ namespace uhd{
          * \param tick_rate the number of ticks per second
          * \return the fractional seconds tick count
          */
-        size_t get_tick_count(double tick_rate) const;
+        long get_tick_count(double tick_rate) const;
 
         /*!
          * Get the time as a real-valued seconds count.

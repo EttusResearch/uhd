@@ -80,6 +80,7 @@ static void set_subdev_gain(wax::obj subdev, const std::string &name, float gain
  * gain group factory function for usrp
  **********************************************************************/
 gain_group::sptr usrp::make_gain_group(
+    const dboard_id_t &dboard_id,
     wax::obj subdev, wax::obj codec,
     gain_group_policy_t gain_group_policy
 ){
@@ -87,6 +88,8 @@ gain_group::sptr usrp::make_gain_group(
     const size_t codec_gain_priority = (gain_group_policy == GAIN_GROUP_POLICY_RX)?
         (subdev_gain_priority - 1): //RX policy, codec gains fill last (lower priority)
         (subdev_gain_priority + 1); //TX policy, codec gains fill first (higher priority)
+    const std::string subdev_prefix = dboard_id.to_cname() + "-";
+    const std::string codec_prefix = (gain_group_policy == GAIN_GROUP_POLICY_RX)? "ADC-" : "DAC-";
 
     gain_group::sptr gg = gain_group::make();
     gain_fcns_t fcns;
@@ -95,7 +98,7 @@ gain_group::sptr usrp::make_gain_group(
         fcns.get_range = boost::bind(&get_subdev_gain_range, subdev, name);
         fcns.get_value = boost::bind(&get_subdev_gain, subdev, name);
         fcns.set_value = boost::bind(&set_subdev_gain, subdev, name, _1);
-        gg->register_fcns(fcns, subdev_gain_priority);
+        gg->register_fcns(subdev_prefix+name, fcns, subdev_gain_priority);
     }
     //add all the codec gains last (antenna to dsp order)
     BOOST_FOREACH(const std::string &name, codec[CODEC_PROP_GAIN_NAMES].as<prop_names_t>()){
@@ -119,7 +122,7 @@ gain_group::sptr usrp::make_gain_group(
             fcns.set_value = boost::bind(&set_codec_gain_q, codec, name, _1);
             break;
         }
-        gg->register_fcns(fcns, codec_gain_priority);
+        gg->register_fcns(codec_prefix+name, fcns, codec_gain_priority);
     }
     return gg;
 }

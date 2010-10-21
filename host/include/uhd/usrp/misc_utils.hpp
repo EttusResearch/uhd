@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/gain_group.hpp>
 
@@ -35,11 +36,13 @@ namespace uhd{ namespace usrp{
 
     /*!
      * Create a gain group that represents the subdevice and its codec.
+     * \param dboard_id the dboard id for this subdevice
      * \param subdev the object with subdevice properties
      * \param codec the object with codec properties
      * \param gain_group_policy the policy to use
      */
     UHD_API gain_group::sptr make_gain_group(
+        const dboard_id_t &dboard_id,
         wax::obj subdev, wax::obj codec,
         gain_group_policy_t gain_group_policy
     );

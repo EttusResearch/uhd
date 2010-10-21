@@ -69,20 +69,21 @@ void dboard_manager::register_dboard(
     const prop_names_t &subdev_names
 ){
     //regular registration for ids
-    register_dboard(rx_dboard_id, dboard_ctor, name + " RX", subdev_names);
-    register_dboard(tx_dboard_id, dboard_ctor, name + " TX", subdev_names);
+    register_dboard(rx_dboard_id, dboard_ctor, name, subdev_names);
+    register_dboard(tx_dboard_id, dboard_ctor, name, subdev_names);
 
     //register xcvr mapping for ids
     get_xcvr_id_to_id_map()[rx_dboard_id] = tx_dboard_id;
     get_xcvr_id_to_id_map()[tx_dboard_id] = rx_dboard_id;
 }
 
+std::string dboard_id_t::to_cname(void) const{
+    if (not get_id_to_args_map().has_key(*this)) return "Unknown";
+    return get_id_to_args_map()[*this].get<1>();
+}
+
 std::string dboard_id_t::to_pp_string(void) const{
-    std::string name = "unknown";
-    if (get_id_to_args_map().has_key(*this)){
-        name = get_id_to_args_map()[*this].get<1>();
-    }
-    return str(boost::format("%s (%s)") % name % this->to_string());
+    return str(boost::format("%s (%s)") % this->to_cname() % this->to_string());
 }
 
 /***********************************************************************
