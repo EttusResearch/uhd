@@ -52,6 +52,5 @@ ENDFOREACH(test_source)
 ADD_LIBRARY(module_test MODULE module_test.cpp)
 
 INSTALL(TARGETS
-   main_test
    RUNTIME DESTINATION ${PKG_DATA_DIR}/tests
 )
