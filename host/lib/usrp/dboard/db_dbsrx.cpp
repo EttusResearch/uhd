@@ -162,15 +162,10 @@ static dboard_base::sptr make_dbsrx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new dbsrx(args));
 }
 
-//dbid for USRP2 version
 UHD_STATIC_BLOCK(reg_dbsrx_dboard){
-    //register the factory function for the rx dbid
+    //register the factory function for the rx dbid (others version)
     dboard_manager::register_dboard(0x000D, &make_dbsrx, "DBSRX");
-}
-
-//dbid for USRP1 version
-UHD_STATIC_BLOCK(reg_dbsrx_on_usrp1_dboard){
-    //register the factory function for the rx dbid
+    //register the factory function for the rx dbid (USRP1 version)
     dboard_manager::register_dboard(0x0002, &make_dbsrx, "DBSRX");
 }
 
