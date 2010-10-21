@@ -1,18 +1,31 @@
 `timescale 1ns / 1ps
-`define INT_WIDTH 36
-`define EXT_WIDTH 18
-`define RAM_DEPTH 19
-`define FIFO_DEPTH 8
-`define DUMP_VCD_FULL
+`define USRP2
+//`define USRP2PLUS
+
+`ifdef USRP2
+ `define INT_WIDTH 36
+ `define EXT_WIDTH 18
+ `define RAM_DEPTH 19
+ `define FIFO_DEPTH 8
+ `define DUMP_VCD_FULL
+ `define INT_CLK_PERIOD 5
+ `define EXT_CLK_PERIOD 4
+`elsif USRP2PLUS
+ `define INT_WIDTH 36
+ `define EXT_WIDTH 36
+ `define RAM_DEPTH 18
+ `define FIFO_DEPTH 8
+ `define DUMP_VCD_FULL
+ `define INT_CLK_PERIOD 5
+ `define EXT_CLK_PERIOD 5
+`endif //  `ifdef USRP2
+   
 
 module ext_fifo_tb();
-
-   
+  
    reg int_clk;
    reg ext_clk;
    reg rst;
-   
-
 
    wire [`EXT_WIDTH-1:0] RAM_D_pi;
    wire [`EXT_WIDTH-1:0] RAM_D_po;
@@ -33,7 +46,6 @@ module ext_fifo_tb();
    reg 			dst_rdy_i;
    integer 		ether_frame;
    
-
    // Clocks
    // Int clock is 100MHz
    // Ext clock is 125MHz
@@ -47,10 +59,10 @@ module ext_fifo_tb();
      end
 
    always
-     #5 int_clk <= ~int_clk;
+     #(`INT_CLK_PERIOD/2) int_clk <= ~int_clk;
 
    always
-     #4 ext_clk <= ~ext_clk;
+     #(`EXT_CLK_PERIOD/2) ext_clk <= ~ext_clk;
 
    initial
      begin
@@ -270,7 +282,7 @@ module ext_fifo_tb();
    //
    
    generate  
-      for (i=0;i<18;i=i+1)
+      for (i=0;i<`EXT_WIDTH;i=i+1)
         begin : gen_RAM_D_IO
 
 	   IOBUF #(
@@ -309,28 +321,53 @@ module ext_fifo_tb();
 
    assign 		#2 RAM_A_ext = RAM_A;
    
- 
    
-   idt71v65603s150  idt71v65603s150_i1
-     (
-      .A(RAM_A_ext[17:0]),
-      .adv_ld_(RAM_LDn_ext),                  // advance (high) / load (low)
-      .bw1_(1'b0), 
-      .bw2_(1'b0), 
-      .bw3_(1'b1), 
-      .bw4_(1'b1),   // byte write enables (low)
-      .ce1_(RAM_CE1n_ext), 
-      .ce2(1'b1), 
-      .ce2_(1'b0),          // chip enables
-      .cen_(RAM_CENn_ext),                     // clock enable (low)
-      .clk(ext_clk),                      // clock
-      .IO({RAM_D[16:9],RAM_D[7:0]}), 
-      .IOP({RAM_D[17],RAM_D[8]}),                  // data bus
-      .lbo_(1'b0),                     // linear burst order (low)
-      .oe_(RAM_OEn_ext),                      // output enable (low)
-      .r_w_(RAM_WEn_ext)
-      );                    // read (high) / write (low)
+   generate
+      if (`EXT_WIDTH==18) begin: ram_tb_g1
+	 idt71v65603s150  idt71v65603s150_i1
+	   (
+	    .A(RAM_A_ext[17:0]),
+	    .adv_ld_(RAM_LDn_ext),                  // advance (high) / load (low)
+	    .bw1_(1'b0), 
+	    .bw2_(1'b0),
+	    .bw3_(1'b1), 
+	    .bw4_(1'b1),   // byte write enables (low)
+	    .ce1_(RAM_CE1n_ext), 
+	    .ce2(1'b1), 
+	    .ce2_(1'b0),          // chip enables
+	    .cen_(RAM_CENn_ext),                     // clock enable (low)
+	    .clk(ext_clk),                      // clock
+	    .IO({RAM_D[16:9],RAM_D[7:0]}), 
+	    .IOP({RAM_D[17],RAM_D[8]}),                  // data bus
+	    .lbo_(1'b0),                     // linear burst order (low)
+	    .oe_(RAM_OEn_ext),                      // output enable (low)
+	    .r_w_(RAM_WEn_ext)
+	    );                    // read (high) / write (low)
+      end // block: ram_tb_g1
+      else if (`EXT_WIDTH==36) begin: ram_tb_g1
+	 idt71v65603s150  idt71v65603s150_i1
+	   (
+	    .A(RAM_A_ext[17:0]),
+	    .adv_ld_(RAM_LDn_ext),                  // advance (high) / load (low)
+	    .bw1_(1'b0), 
+	    .bw2_(1'b0),
+	    .bw3_(1'b0), 
+	    .bw4_(1'b0),   // byte write enables (low)
+	    .ce1_(RAM_CE1n_ext), 
+	    .ce2(1'b1), 
+	    .ce2_(1'b0),          // chip enables
+	    .cen_(RAM_CENn_ext),                     // clock enable (low)
+	    .clk(ext_clk),                      // clock
+	    .IO(RAM_D[31:0]), 
+	    .IOP(RAM_D[35:32]),                  // data bus
+	    .lbo_(1'b0),                     // linear burst order (low)
+	    .oe_(RAM_OEn_ext),                      // output enable (low)
+	    .r_w_(RAM_WEn_ext)
+	    );                    // read (high) / write (low)
+      end // block: ram_tb_g1
  
+   endgenerate
+   
 /* -----\/----- EXCLUDED -----\/-----
 
 	 
