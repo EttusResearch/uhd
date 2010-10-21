@@ -49,9 +49,11 @@ Receive Antennas: **J3**
 
 The board has no user selectable antenna setting
 
-Recieve Gains: 
+Receive Gains: 
     **GC1**, Range: 0-56dB
     **GC2**, Range: 0-24dB
+
+Low-Pass Filter Bandwidth (Hz): 4M-33M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
@@ -64,25 +66,24 @@ The user may set the receive antenna to be TX/RX or RX2.
 However, when using an RFX board in full-duplex mode,
 the receive antenna will always be set to RX2, regardless of the settings.
 
-Recieve Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
+Receive Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The XCVR2450 has a non-contiguous tuning range consisting of a high band and a low band.
-The high band consists of frequencies between...TODO
+The XCVR2450 has a non-contiguous tuning range consisting of a 
+high band (4.9-6.0GHz) and a low band (2.4-2.5GHz).
 
 Transmit Antennas: **J1** or **J2**
 
 Receive Antennas: **J1** or **J2**
 
-When using the XCVR2450 in full-duplex mode,
-the user must set the receive antenna and the transmit antenna to be different;
-not doing so will yeild undefined results.
-
 The XCVR2450 uses a common LO for both receive and transmit.
 Even though the API allows the RX and TX LOs to be individually set,
 a change of one LO setting will be reflected in the other LO setting.
+
+The XCVR2450 does not support full-duplex mode, attempting to operate 
+in full-duplex will result in transmit-only operation.
 
 Transmit Gains:
  * **VGA**, Range: 0-30dB
@@ -91,6 +92,10 @@ Transmit Gains:
 Receive Gains:
  * **LNA**, Range: 0-30.5dB
  * **VGA**, Range: 0-62dB
+
+Low-Pass Filter Bandwidths (Hz):
+ * **RX**: 7.5M, 9.5M, 14M, 18M; (each +-0, 5, or 10%)
+ * **TX**: 12M, 18M, 24M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WBX Series
@@ -105,7 +110,22 @@ the receive antenna will always be set to RX2, regardless of the settings.
 
 Transmit Gains: **PGA0**, Range: 0-25dB
 
-Recieve Gains: **PGA0**, Range: 0-31.5dB
+Receive Gains: **PGA0**, Range: 0-31.5dB
+
+Low-Pass Filter Bandwidths (Hz):
+ * **RX**: 20M (Fixed)
+ * **TX**: 20M (Fixed)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TVRX
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Receive Antennas: RX
+
+Receive Gains:
+ * **RF**, Range: -13.3-50.3dB (frequency-dependent)
+ * **IF**, Range: -1.5-32.5dB
+
+Bandpass Filter Bandwidth: 6MHz
 
 ------------------------------------------------------------------------
 Daughterboard Modifications

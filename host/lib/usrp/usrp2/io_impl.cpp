@@ -46,7 +46,7 @@ struct usrp2_impl::io_impl{
 
     io_impl(size_t num_frames, size_t width):
         packet_handler_recv_state(width),
-        recv_pirate_booty(alignment_buffer_type::make(num_frames, width)),
+        recv_pirate_booty(alignment_buffer_type::make(num_frames-3, width)),
         async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
     {
         /* NOP */
@@ -197,6 +197,15 @@ static bool get_send_buffs(
     return good;
 }
 
+size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
+    static const size_t hdr_size = 0
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+    ;
+    const size_t bpp = _data_transports.front()->get_send_frame_size() - hdr_size;
+    return bpp/_tx_otw_type.get_sample_size();
+}
+
 size_t usrp2_impl::send(
     const std::vector<const void *> &buffs, size_t num_samps,
     const tx_metadata_t &metadata, const io_type_t &io_type,
@@ -217,6 +226,16 @@ size_t usrp2_impl::send(
 /***********************************************************************
  * Receive Data
  **********************************************************************/
+size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
+    static const size_t hdr_size = 0
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
+        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+    ;
+    const size_t bpp = _data_transports.front()->get_recv_frame_size() - hdr_size;
+    return bpp/_rx_otw_type.get_sample_size();
+}
+
 size_t usrp2_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,

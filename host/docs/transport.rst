@@ -4,6 +4,10 @@ UHD - Transport Application Notes
 
 .. contents:: Table of Contents
 
+------------------------------------------------------------------------
+Introduction
+------------------------------------------------------------------------
+A transport is the layer between the packet interface and a device IO interface.
 The advanced user can pass optional parameters
 into the underlying transport layer through the device address.
 These optional parameters control how the transport object allocates memory,
@@ -31,6 +35,9 @@ The following parameters can be used to alter the transport's default behavior:
 * **send_frame_size:** The size of a single send buffer in bytes
 * **num_send_frames:** The number of send buffers to allocate
 * **concurrency_hint:** The number of threads to run the IO service
+
+**Note:** num_send_frames and concurrency_hint will not have an effect
+as the asynchronous send implementation is currently disabled.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Resize socket buffers
@@ -67,8 +74,7 @@ The USB transport is implemented with libusb.
 Libusb provides an asynchronous API for USB bulk transfers.
 The transport implementation allocates a number of buffers
 and submits asynchronous requests through libusb.
-A single thread runs in the background
-and executes the libusb event handler to process these requests.
+Event handler threads run in the background to process these requests.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transport parameters

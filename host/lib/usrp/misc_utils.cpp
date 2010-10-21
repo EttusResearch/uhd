@@ -17,6 +17,7 @@
 
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/subdev_props.hpp>
@@ -185,6 +186,22 @@ static void verify_xx_subdev_spec(
         throw std::runtime_error(str(boost::format(
             "Validate %s subdev spec failed: %s\n    %s"
         ) % xx_type % subdev_spec.to_string() % e.what()));
+    }
+
+    //now use the subdev spec to enable the subdevices in use and vice-versa
+    BOOST_FOREACH(const std::string &db_name, mboard[dboard_names_prop].as<prop_names_t>()){
+        wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
+        BOOST_FOREACH(const std::string &sd_name, dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>()){
+            try{
+                bool enable = std::has(subdev_spec, subdev_spec_pair_t(db_name, sd_name));
+                dboard[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)][SUBDEV_PROP_ENABLED] = enable;
+            }
+            catch(const std::exception &e){
+                throw std::runtime_error(str(boost::format(
+                    "Cannot set enabled property on subdevice %s:%s\n    %s"
+                ) % db_name % sd_name % e.what()));
+            }
+        }
     }
 }
 

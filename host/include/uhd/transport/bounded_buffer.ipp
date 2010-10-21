@@ -19,18 +19,28 @@
 #define INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_IPP
 
 #include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace uhd{ namespace transport{ namespace{ /*anon*/
 
+    static UHD_INLINE boost::posix_time::time_duration to_time_dur(double timeout){
+        return boost::posix_time::microseconds(long(timeout*1e6));
+    }
+
+    static UHD_INLINE double from_time_dur(const boost::posix_time::time_duration &time_dur){
+        return 1e-6*time_dur.total_microseconds();
+    }
+
     template <typename elem_type>
     class bounded_buffer_impl : public bounded_buffer<elem_type>{
     public:
 
         bounded_buffer_impl(size_t capacity) : _buffer(capacity){
-            /* NOP */
+            _not_full_fcn = boost::bind(&bounded_buffer_impl<elem_type>::not_full, this);
+            _not_empty_fcn = boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this);
         }
 
         UHD_INLINE bool push_with_pop_on_full(const elem_type &elem){
@@ -52,17 +62,16 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
 
         UHD_INLINE void push_with_wait(const elem_type &elem){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            _full_cond.wait(lock, boost::bind(&bounded_buffer_impl<elem_type>::not_full, this));
+            _full_cond.wait(lock, _not_full_fcn);
             _buffer.push_front(elem);
             lock.unlock();
             _empty_cond.notify_one();
         }
 
-        bool push_with_timed_wait(const elem_type &elem, double timeout){
+        UHD_INLINE bool push_with_timed_wait(const elem_type &elem, double timeout){
             boost::unique_lock<boost::mutex> lock(_mutex);
             if (not _full_cond.timed_wait(
-                lock, boost::posix_time::microseconds(long(timeout*1e6)),
-                boost::bind(&bounded_buffer_impl<elem_type>::not_full, this)
+                lock, to_time_dur(timeout), _not_full_fcn
             )) return false;
             _buffer.push_front(elem);
             lock.unlock();
@@ -72,19 +81,18 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
 
         UHD_INLINE void pop_with_wait(elem_type &elem){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            _empty_cond.wait(lock, boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this));
-            this->pop_back(elem);
+            _empty_cond.wait(lock, _not_empty_fcn);
+            elem = this->pop_back();
             lock.unlock();
             _full_cond.notify_one();
         }
 
-        bool pop_with_timed_wait(elem_type &elem, double timeout){
+        UHD_INLINE bool pop_with_timed_wait(elem_type &elem, double timeout){
             boost::unique_lock<boost::mutex> lock(_mutex);
             if (not _empty_cond.timed_wait(
-                lock, boost::posix_time::microseconds(long(timeout*1e6)),
-                boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this)
+                lock, to_time_dur(timeout), _not_empty_fcn
             )) return false;
-            this->pop_back(elem);
+            elem = this->pop_back();
             lock.unlock();
             _full_cond.notify_one();
             return true;
@@ -92,7 +100,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
 
         UHD_INLINE void clear(void){
             boost::unique_lock<boost::mutex> lock(_mutex);
-            while (not_empty()) _buffer.pop_back();
+            while (not_empty()) this->pop_back();
             lock.unlock();
             _full_cond.notify_one();
         }
@@ -105,16 +113,19 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         bool not_full(void) const{return not _buffer.full();}
         bool not_empty(void) const{return not _buffer.empty();}
 
+        boost::function<bool(void)> _not_full_fcn, _not_empty_fcn;
+
         /*!
          * Three part operation to pop an element:
          * 1) assign elem to the back element
          * 2) assign the back element to empty
          * 3) pop the back to move the counter
          */
-        UHD_INLINE void pop_back(elem_type &elem){
-            elem = _buffer.back();
+        UHD_INLINE elem_type pop_back(void){
+            elem_type elem = _buffer.back();
             _buffer.back() = elem_type();
             _buffer.pop_back();
+            return elem;
         }
     };
 }}} //namespace

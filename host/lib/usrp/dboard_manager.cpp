@@ -86,7 +86,7 @@ std::string dboard_id_t::to_pp_string(void) const{
 }
 
 /***********************************************************************
- * internal helper classe
+ * internal helper classes
  **********************************************************************/
 /*!
  * A special wax proxy object that forwards calls to a subdev.
@@ -329,5 +329,15 @@ void dboard_manager_impl::set_nice_dboard_if(void){
         _iface->write_gpio(unit, 0x0000); //all low
         _iface->set_pin_ctrl(unit, 0x0000); //all gpio
         _iface->set_clock_enabled(unit, false); //clock off
+    }
+
+    //disable all rx subdevices
+    BOOST_FOREACH(const std::string &sd_name, this->get_rx_subdev_names()){
+        this->get_rx_subdev(sd_name)[SUBDEV_PROP_ENABLED] = false;
+    }
+
+    //disable all tx subdevices
+    BOOST_FOREACH(const std::string &sd_name, this->get_tx_subdev_names()){
+        this->get_tx_subdev(sd_name)[SUBDEV_PROP_ENABLED] = false;
     }
 }

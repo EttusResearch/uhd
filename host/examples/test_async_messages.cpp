@@ -26,8 +26,6 @@
 
 namespace po = boost::program_options;
 
-static const size_t async_to_ms = 100;
-
 /*!
  * Test that no messages are received:
  *    Send a burst of many samples that will fragment internally.
@@ -52,7 +50,7 @@ void test_no_async_message(uhd::usrp::single_usrp::sptr sdev){
     );
 
     uhd::async_metadata_t async_md;
-    if (dev->recv_async_msg(async_md, async_to_ms)){
+    if (dev->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Got unexpected event code 0x%x.\n"
@@ -88,7 +86,7 @@ void test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
     );
 
     uhd::async_metadata_t async_md;
-    if (not dev->recv_async_msg(async_md, async_to_ms)){
+    if (not dev->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -135,7 +133,7 @@ void test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
     );
 
     uhd::async_metadata_t async_md;
-    if (not dev->recv_async_msg(async_md, async_to_ms)){
+    if (not dev->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
