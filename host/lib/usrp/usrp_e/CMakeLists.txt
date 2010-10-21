@@ -54,6 +54,7 @@ IF(ENABLE_USRP_E)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_impl.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_iface.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_iface.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_mmap_zero_copy.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e/usrp_e_regs.hpp
     )
 ELSE(ENABLE_USRP_E)

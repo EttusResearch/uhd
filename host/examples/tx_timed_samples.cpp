@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/simple_usrp.hpp>
+#include <uhd/usrp/single_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -40,7 +40,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
+        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
@@ -64,7 +64,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::simple_usrp::sptr sdev = uhd::usrp::simple_usrp::make(args);
+    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
@@ -95,8 +95,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         size_t num_tx_samps = dev->send(
             &buff.front(), samps_to_send, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_FULL_BUFF
+            uhd::device::SEND_MODE_FULL_BUFF,
+            //send will backup into the host this many seconds before sending:
+            seconds_in_future + 0.1 //timeout (delay before transmit + padding)
         );
+        if (num_tx_samps < samps_to_send) std::cout << "Send timeout..." << std::endl;
         if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
     }
 

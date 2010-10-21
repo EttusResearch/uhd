@@ -150,7 +150,8 @@ template <typename T> UHD_INLINE T get_context_code(
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
         const handle_overflow_t &handle_overflow,
-        size_t vrt_header_offset_words32
+        size_t vrt_header_offset_words32,
+        size_t chans_per_otw_buff
     ){
         metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
 
@@ -184,15 +185,21 @@ template <typename T> UHD_INLINE T get_context_code(
         //extract the number of samples available to copy
         size_t bytes_per_item = otw_type.get_sample_size();
         size_t nsamps_available = state.size_of_copy_buffs/bytes_per_item;
-        size_t nsamps_to_copy = std::min(total_samps, nsamps_available);
+        size_t nsamps_to_copy = std::min(total_samps*chans_per_otw_buff, nsamps_available);
         size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
+        size_t nsamps_to_copy_per_io_buff = nsamps_to_copy/chans_per_otw_buff;
 
-        for (size_t i = 0; i < state.width; i++){
+        std::vector<void *> io_buffs(chans_per_otw_buff);
+        for (size_t i = 0; i < state.width; i+=chans_per_otw_buff){
+
+            //fill a vector with pointers to the io buffers
+            for (size_t j = 0; j < chans_per_otw_buff; j++){
+                io_buffs[j] = reinterpret_cast<boost::uint8_t *>(buffs[i+j]) + offset_bytes;
+            }
+
             //copy-convert the samples from the recv buffer
             uhd::transport::convert_otw_type_to_io_type(
-                state.copy_buffs[i], otw_type,
-                reinterpret_cast<boost::uint8_t *>(buffs[i]) + offset_bytes,
-                io_type, nsamps_to_copy
+                state.copy_buffs[i], otw_type, io_buffs, io_type, nsamps_to_copy_per_io_buff
             );
 
             //update the rx copy buffer to reflect the bytes copied
@@ -206,7 +213,7 @@ template <typename T> UHD_INLINE T get_context_code(
         metadata.fragment_offset = state.fragment_offset_in_samps;
         state.fragment_offset_in_samps += nsamps_to_copy; //set for next call
 
-        return nsamps_to_copy;
+        return nsamps_to_copy_per_io_buff;
     }
 
     /*******************************************************************
@@ -224,7 +231,8 @@ template <typename T> UHD_INLINE T get_context_code(
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
         const handle_overflow_t &handle_overflow = &handle_overflow_nop,
-        size_t vrt_header_offset_words32 = 0
+        size_t vrt_header_offset_words32 = 0,
+        size_t chans_per_otw_buff = 1
     ){
         switch(recv_mode){
 
@@ -241,7 +249,8 @@ template <typename T> UHD_INLINE T get_context_code(
                 vrt_unpacker,
                 get_recv_buffs,
                 handle_overflow,
-                vrt_header_offset_words32
+                vrt_header_offset_words32,
+                chans_per_otw_buff
             );
         }
 
@@ -261,7 +270,8 @@ template <typename T> UHD_INLINE T get_context_code(
                     vrt_unpacker,
                     get_recv_buffs,
                     handle_overflow,
-                    vrt_header_offset_words32
+                    vrt_header_offset_words32,
+                    chans_per_otw_buff
                 );
                 if (num_samps == 0) break; //had a recv timeout or error, break loop
                 accum_num_samps += num_samps;
@@ -293,47 +303,49 @@ template <typename T> UHD_INLINE T get_context_code(
      * Pack a vrt header, copy-convert the data, and send it.
      *  - helper function for vrt_packet_handler::send
      ******************************************************************/
-    static UHD_INLINE void _send1(
+    static UHD_INLINE size_t _send1(
         send_state &state,
         const std::vector<const void *> &buffs,
-        size_t offset_bytes,
-        size_t num_samps,
+        const size_t offset_bytes,
+        const size_t num_samps,
         uhd::transport::vrt::if_packet_info_t &if_packet_info,
         const uhd::io_type_t &io_type,
         const uhd::otw_type_t &otw_type,
         const vrt_packer_t &vrt_packer,
         const get_send_buffs_t &get_send_buffs,
-        size_t vrt_header_offset_words32
+        const size_t vrt_header_offset_words32,
+        const size_t chans_per_otw_buff
     ){
         //load the rest of the if_packet_info in here
-        if_packet_info.num_payload_words32 = (num_samps*otw_type.get_sample_size())/sizeof(boost::uint32_t);
+        if_packet_info.num_payload_words32 = (num_samps*chans_per_otw_buff*otw_type.get_sample_size())/sizeof(boost::uint32_t);
         if_packet_info.packet_count = state.next_packet_seq++;
 
         //get send buffers for each channel
-        managed_send_buffs_t send_buffs(buffs.size());
-        UHD_ASSERT_THROW(get_send_buffs(send_buffs));
+        managed_send_buffs_t send_buffs(buffs.size()/chans_per_otw_buff);
+        if (not get_send_buffs(send_buffs)) return 0;
 
-        for (size_t i = 0; i < buffs.size(); i++){
+        std::vector<const void *> io_buffs(chans_per_otw_buff);
+        for (size_t i = 0; i < buffs.size(); i+=chans_per_otw_buff){
             //calculate pointers with offsets to io and otw memory
-            const boost::uint8_t *io_mem = reinterpret_cast<const boost::uint8_t *>(buffs[i]) + offset_bytes;
+            for (size_t j = 0; j < chans_per_otw_buff; j++){
+                io_buffs[j] = reinterpret_cast<const boost::uint8_t *>(buffs[i+j]) + offset_bytes;
+            }
             boost::uint32_t *otw_mem = send_buffs[i]->cast<boost::uint32_t *>() + vrt_header_offset_words32;
 
             //pack metadata into a vrt header
             vrt_packer(otw_mem, if_packet_info);
+            otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
             uhd::transport::convert_io_type_to_otw_type(
-                io_mem, io_type,
-                otw_mem + if_packet_info.num_header_words32, otw_type,
-                num_samps
+                io_buffs, io_type, otw_mem, otw_type, num_samps
             );
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
-            if (send_buffs[i]->commit(num_bytes_total) < ssize_t(num_bytes_total)){
-                std::cerr << "commit to send buffer returned less than commit size" << std::endl;
-            }
+            send_buffs[i]->commit(num_bytes_total);
         }
+        return num_samps;
     }
 
     /*******************************************************************
@@ -351,7 +363,8 @@ template <typename T> UHD_INLINE T get_context_code(
         const vrt_packer_t &vrt_packer,
         const get_send_buffs_t &get_send_buffs,
         size_t max_samples_per_packet,
-        size_t vrt_header_offset_words32 = 0
+        size_t vrt_header_offset_words32 = 0,
+        size_t chans_per_otw_buff = 1
     ){
         //translate the metadata to vrt if packet info
         uhd::transport::vrt::if_packet_info_t if_packet_info;
@@ -367,7 +380,6 @@ template <typename T> UHD_INLINE T get_context_code(
         ////////////////////////////////////////////////////////////////
         case uhd::device::SEND_MODE_ONE_PACKET:{
         ////////////////////////////////////////////////////////////////
-            size_t num_samps = std::min(total_num_samps, max_samples_per_packet);
 
             //fill in parts of the packet info overwrote in full buff mode
             if_packet_info.has_tsi = metadata.has_time_spec;
@@ -375,49 +387,54 @@ template <typename T> UHD_INLINE T get_context_code(
             if_packet_info.sob = metadata.start_of_burst;
             if_packet_info.eob = metadata.end_of_burst;
 
-            _send1(
+            return _send1(
                 state,
                 buffs, 0,
-                num_samps,
+                std::min(total_num_samps, max_samples_per_packet),
                 if_packet_info,
                 io_type, otw_type,
                 vrt_packer,
                 get_send_buffs,
-                vrt_header_offset_words32
+                vrt_header_offset_words32,
+                chans_per_otw_buff
             );
-            return num_samps;
         }
 
         ////////////////////////////////////////////////////////////////
         case uhd::device::SEND_MODE_FULL_BUFF:{
         ////////////////////////////////////////////////////////////////
-            //calculate constants for fragmentation
-            const size_t num_fragments = (total_num_samps+max_samples_per_packet-1)/max_samples_per_packet;
-            static const size_t first_fragment_index = 0;
-            const size_t final_fragment_index = num_fragments-1;
+            size_t total_num_samps_sent = 0;
 
             //loop through the following fragment indexes
-            for (size_t n = first_fragment_index; n <= final_fragment_index; n++){
+            while(total_num_samps_sent < total_num_samps){
+
+                //calculate per-loop-iteration variables
+                const size_t total_num_samps_unsent = total_num_samps - total_num_samps_sent;
+                const bool first_fragment = (total_num_samps_sent == 0);
+                const bool final_fragment = (total_num_samps_unsent <= max_samples_per_packet);
 
                 //calculate new flags for the fragments
-                if_packet_info.has_tsi = metadata.has_time_spec  and (n == first_fragment_index);
-                if_packet_info.has_tsf = metadata.has_time_spec  and (n == first_fragment_index);
-                if_packet_info.sob     = metadata.start_of_burst and (n == first_fragment_index);
-                if_packet_info.eob     = metadata.end_of_burst   and (n == final_fragment_index);
+                if_packet_info.has_tsi = metadata.has_time_spec  and first_fragment;
+                if_packet_info.has_tsf = if_packet_info.has_tsi;
+                if_packet_info.sob     = metadata.start_of_burst and first_fragment;
+                if_packet_info.eob     = metadata.end_of_burst   and final_fragment;
 
                 //send the fragment with the helper function
-                _send1(
+                const size_t num_samps_sent = _send1(
                     state,
-                    buffs, n*max_samples_per_packet*io_type.size,
-                    (n == final_fragment_index)?(total_num_samps%max_samples_per_packet):max_samples_per_packet,
+                    buffs, total_num_samps_sent*io_type.size,
+                    std::min(total_num_samps_unsent, max_samples_per_packet),
                     if_packet_info,
                     io_type, otw_type,
                     vrt_packer,
                     get_send_buffs,
-                    vrt_header_offset_words32
+                    vrt_header_offset_words32,
+                    chans_per_otw_buff
                 );
+                total_num_samps_sent += num_samps_sent;
+                if (num_samps_sent == 0) return total_num_samps_sent;
             }
-            return total_num_samps;
+            return total_num_samps_sent;
         }
 
         default: throw std::runtime_error("unknown send mode");

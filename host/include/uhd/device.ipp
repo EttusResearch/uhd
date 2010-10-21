@@ -25,25 +25,13 @@ namespace uhd{
         size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
-        send_mode_t send_mode
+        send_mode_t send_mode,
+        double timeout
     ){
         return this->send(
             std::vector<const void *>(1, buff),
             nsamps_per_buff, metadata,
-            io_type, send_mode
-        );
-    }
-
-    UHD_DEPRECATED UHD_INLINE size_t device::send(
-        const boost::asio::const_buffer &buff,
-        const tx_metadata_t &metadata,
-        const io_type_t &io_type,
-        send_mode_t send_mode
-    ){
-        return this->send(
-            boost::asio::buffer_cast<const void *>(buff),
-            boost::asio::buffer_size(buff)/io_type.size,
-            metadata, io_type, send_mode
+            io_type, send_mode, timeout
         );
     }
 
@@ -53,25 +41,12 @@ namespace uhd{
         rx_metadata_t &metadata,
         const io_type_t &io_type,
         recv_mode_t recv_mode,
-        size_t timeout_ms
+        double timeout
     ){
         return this->recv(
             std::vector<void *>(1, buff),
             nsamps_per_buff, metadata,
-            io_type, recv_mode, timeout_ms
-        );
-    }
-
-    UHD_DEPRECATED UHD_INLINE size_t device::recv(
-        const boost::asio::mutable_buffer &buff,
-        rx_metadata_t &metadata,
-        const io_type_t &io_type,
-        recv_mode_t recv_mode
-    ){
-        return this->recv(
-            boost::asio::buffer_cast<void *>(buff),
-            boost::asio::buffer_size(buff)/io_type.size,
-            metadata, io_type, recv_mode
+            io_type, recv_mode, timeout
         );
     }
 

@@ -34,6 +34,10 @@ subdev_spec_pair_t::subdev_spec_pair_t(
     /* NOP */
 }
 
+bool usrp::operator==(const subdev_spec_pair_t &lhs, const subdev_spec_pair_t &rhs){
+    return (lhs.db_name == rhs.db_name) and (lhs.sd_name == rhs.sd_name);
+}
+
 subdev_spec_t::subdev_spec_t(const std::string &markup){
     BOOST_FOREACH(const std::string &pair, std::split_string(markup)){
         if (pair == "") continue;

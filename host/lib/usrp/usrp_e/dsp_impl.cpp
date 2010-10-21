@@ -44,7 +44,9 @@ void usrp_e_impl::rx_ddc_init(void){
 /***********************************************************************
  * RX DDC Get
  **********************************************************************/
-void usrp_e_impl::rx_ddc_get(const wax::obj &key, wax::obj &val){
+void usrp_e_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
         val = std::string("usrp-e ddc0");
@@ -56,6 +58,10 @@ void usrp_e_impl::rx_ddc_get(const wax::obj &key, wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:
         val = _ddc_freq;
+        return;
+
+    case DSP_PROP_FREQ_SHIFT_NAMES:
+        val = prop_names_t(1, "");
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -73,7 +79,9 @@ void usrp_e_impl::rx_ddc_get(const wax::obj &key, wax::obj &val){
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
-void usrp_e_impl::rx_ddc_set(const wax::obj &key, const wax::obj &val){
+void usrp_e_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{
@@ -119,7 +127,9 @@ void usrp_e_impl::tx_duc_init(void){
 /***********************************************************************
  * TX DUC Get
  **********************************************************************/
-void usrp_e_impl::tx_duc_get(const wax::obj &key, wax::obj &val){
+void usrp_e_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
         val = std::string("usrp-e duc0");
@@ -131,6 +141,10 @@ void usrp_e_impl::tx_duc_get(const wax::obj &key, wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:
         val = _duc_freq;
+        return;
+
+    case DSP_PROP_FREQ_SHIFT_NAMES:
+        val = prop_names_t(1, "");
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -148,7 +162,9 @@ void usrp_e_impl::tx_duc_get(const wax::obj &key, wax::obj &val){
 /***********************************************************************
  * TX DUC Set
  **********************************************************************/
-void usrp_e_impl::tx_duc_set(const wax::obj &key, const wax::obj &val){
+void usrp_e_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
+    named_prop_t key = named_prop_t::extract(key_);
+
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{

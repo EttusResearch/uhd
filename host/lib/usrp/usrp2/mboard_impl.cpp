@@ -38,10 +38,10 @@ using namespace uhd::usrp;
 usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
-    const usrp2_io_helper &io_helper
+    size_t recv_frame_size
 ):
     _index(index),
-    _io_helper(io_helper)
+    _recv_frame_size(recv_frame_size)
 {
     //make a new interface for usrp2 stuff
     _iface = usrp2_iface::make(ctrl_transport);
@@ -75,7 +75,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
     //init the rx control registers
-    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _io_helper.get_max_recv_samps_per_packet());
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_frame_size);
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
     _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
@@ -178,7 +178,7 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
-        stream_cmd, _io_helper.get_max_recv_samps_per_packet()
+        stream_cmd, _recv_frame_size
     ));
     _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));

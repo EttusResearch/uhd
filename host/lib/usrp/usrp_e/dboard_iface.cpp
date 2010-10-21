@@ -91,6 +91,7 @@ public:
     std::vector<double> get_clock_rates(unit_t);
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
+    double get_codec_rate(unit_t);
 
 private:
     usrp_e_iface::sptr _iface;
@@ -138,6 +139,10 @@ void usrp_e_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
     case UNIT_RX: return _clock->enable_rx_dboard_clock(enb);
     case UNIT_TX: return _clock->enable_tx_dboard_clock(enb);
     }
+}
+
+double usrp_e_dboard_iface::get_codec_rate(unit_t){
+    return _clock->get_fpga_clock_rate();
 }
 
 /***********************************************************************

@@ -444,6 +444,10 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_QI;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -473,6 +477,9 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ANTENNA:
         this->set_rx_ant(val.as<std::string>());
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
@@ -524,6 +531,10 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = true;
         return;
@@ -553,6 +564,9 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_ANTENNA:
         this->set_tx_ant(val.as<std::string>());
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     default: UHD_THROW_PROP_SET_ERROR();
     }

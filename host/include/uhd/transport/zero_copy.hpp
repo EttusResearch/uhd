@@ -19,10 +19,10 @@
 #define INCLUDED_UHD_TRANSPORT_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 
 namespace uhd{ namespace transport{
 
@@ -34,14 +34,27 @@ namespace uhd{ namespace transport{
     class UHD_API managed_recv_buffer : boost::noncopyable{
     public:
         typedef boost::shared_ptr<managed_recv_buffer> sptr;
+        typedef boost::function<void(void)> release_fcn_t;
 
         /*!
-         * Managed recv buffer destructor:
+         * Make a safe managed receive buffer:
+         * A safe managed buffer ensures that release is called once,
+         * either by the user or automatically upon deconstruction.
+         * \param buff a reference to the constant buffer
+         * \param release_fcn callback to release the memory
+         * \return a new managed receive buffer
+         */
+        static sptr make_safe(
+            const boost::asio::const_buffer &buff,
+            const release_fcn_t &release_fcn
+        );
+
+        /*!
          * Signal to the transport that we are done with the buffer.
-         * This should be called to release the buffer to the transport.
+         * This should be called to release the buffer to the transport object.
          * After calling, the referenced memory should be considered invalid.
          */
-        virtual ~managed_recv_buffer(void) = 0;
+        virtual void release(void) = 0;
 
         /*!
          * Get the size of the underlying buffer.
@@ -71,20 +84,34 @@ namespace uhd{ namespace transport{
     /*!
      * A managed send buffer:
      * Contains a reference to transport-managed memory,
-     * and a method to release the memory after writing.
+     * and a method to commit the memory after writing.
      */
     class UHD_API managed_send_buffer : boost::noncopyable{
     public:
         typedef boost::shared_ptr<managed_send_buffer> sptr;
+        typedef boost::function<void(size_t)> commit_fcn_t;
+
+        /*!
+         * Make a safe managed send buffer:
+         * A safe managed buffer ensures that commit is called once,
+         * either by the user or automatically upon deconstruction.
+         * In the later case, the deconstructor will call commit(0).
+         * \param buff a reference to the mutable buffer
+         * \param commit_fcn callback to commit the memory
+         * \return a new managed send buffer
+         */
+        static sptr make_safe(
+            const boost::asio::mutable_buffer &buff,
+            const commit_fcn_t &commit_fcn
+        );
 
         /*!
          * Signal to the transport that we are done with the buffer.
          * This should be called to commit the write to the transport object.
          * After calling, the referenced memory should be considered invalid.
          * \param num_bytes the number of bytes written into the buffer
-         * \return the number of bytes written, 0 for timeout, negative for error
          */
-        virtual ssize_t commit(size_t num_bytes) = 0;
+        virtual void commit(size_t num_bytes) = 0;
 
         /*!
          * Get the size of the underlying buffer.
@@ -122,100 +149,46 @@ namespace uhd{ namespace transport{
 
         /*!
          * Get a new receive buffer from this transport object.
+         * \param timeout the timeout to get the buffer in seconds
          * \return a managed buffer, or null sptr on timeout/error
          */
-        virtual managed_recv_buffer::sptr get_recv_buff(void) = 0;
+        virtual managed_recv_buffer::sptr get_recv_buff(double timeout = 0.1) = 0;
 
         /*!
-         * Get the maximum number of receive frames:
-         *   The maximum number of valid managed recv buffers,
-         *   or the maximum number of frames in the ring buffer,
-         *   depending upon the underlying implementation.
+         * Get the number of receive frames:
+         * The number of simultaneous receive buffers in use.
          * \return number of frames
          */
         virtual size_t get_num_recv_frames(void) const = 0;
 
         /*!
-         * Get a new send buffer from this transport object.
-         * \return a managed buffer, or null sptr on timeout/error
+         * Get the size of a receive frame:
+         * The maximum capacity of a single receive buffer.
+         * \return frame size in bytes
          */
-        virtual managed_send_buffer::sptr get_send_buff(void) = 0;
+        virtual size_t get_recv_frame_size(void) const = 0;
 
         /*!
-         * Get the maximum number of send frames:
-         *   The maximum number of valid managed send buffers,
-         *   or the maximum number of frames in the ring buffer,
-         *   depending upon the underlying implementation.
+         * Get a new send buffer from this transport object.
+         * \param timeout the timeout to get the buffer in seconds
+         * \return a managed buffer, or null sptr on timeout/error
+         */
+        virtual managed_send_buffer::sptr get_send_buff(double timeout = 0.1) = 0;
+
+        /*!
+         * Get the number of send frames:
+         * The number of simultaneous send buffers in use.
          * \return number of frames
          */
         virtual size_t get_num_send_frames(void) const = 0;
 
-    };
-
-    /*!
-     * A phony-zero-copy interface for transport objects that
-     * provides a zero-copy interface on top of copying transport.
-     * This interface implements the get managed recv buffer,
-     * the base class must implement the private recv method.
-     */
-    class UHD_API phony_zero_copy_recv_if : public virtual zero_copy_if{
-    public:
         /*!
-         * Create a phony zero copy recv interface.
-         * \param max_buff_size max buffer size in bytes
+         * Get the size of a send frame:
+         * The maximum capacity of a single send buffer.
+         * \return frame size in bytes
          */
-        phony_zero_copy_recv_if(size_t max_buff_size);
+        virtual size_t get_send_frame_size(void) const = 0;
 
-        //! destructor
-        virtual ~phony_zero_copy_recv_if(void);
-
-        /*!
-         * Get a new receive buffer from this transport object.
-         */
-        managed_recv_buffer::sptr get_recv_buff(void);
-
-    private:
-        /*!
-         * Perform a private copying recv.
-         * \param buff the buffer to write data into
-         * \return the number of bytes written to buff, 0 for timeout, negative for error
-         */
-        virtual ssize_t recv(const boost::asio::mutable_buffer &buff) = 0;
-
-        UHD_PIMPL_DECL(impl) _impl;
-    };
-
-    /*!
-     * A phony-zero-copy interface for transport objects that
-     * provides a zero-copy interface on top of copying transport.
-     * This interface implements the get managed send buffer,
-     * the base class must implement the private send method.
-     */
-    class UHD_API phony_zero_copy_send_if : public virtual zero_copy_if{
-    public:
-        /*!
-         * Create a phony zero copy send interface.
-         * \param max_buff_size max buffer size in bytes
-         */
-        phony_zero_copy_send_if(size_t max_buff_size);
-
-        //! destructor
-        virtual ~phony_zero_copy_send_if(void);
-
-        /*!
-         * Get a new send buffer from this transport object.
-         */
-        managed_send_buffer::sptr get_send_buff(void);
-
-    private:
-        /*!
-         * Perform a private copying send.
-         * \param buff the buffer to read data from
-         * \return the number of bytes read from buff, 0 for timeout, negative for error
-         */
-        virtual ssize_t send(const boost::asio::const_buffer &buff) = 0;
-
-        UHD_PIMPL_DECL(impl) _impl;
     };
 
 }} //namespace
