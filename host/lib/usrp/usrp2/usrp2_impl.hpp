@@ -94,10 +94,13 @@ public:
         return _clock_ctrl->get_master_clock_rate();
     }
 
+    void handle_overflow(void);
+
 private:
     size_t _index;
     int _rev_hi, _rev_lo;
     const size_t _recv_samps_per_packet;
+    bool _continuous_streaming;
 
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
