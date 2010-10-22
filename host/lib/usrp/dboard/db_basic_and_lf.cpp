@@ -95,6 +95,11 @@ UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
  **********************************************************************/
 basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
     _max_freq = max_freq;
+    
+    //set GPIOs to output 0x0000 to decrease noise pickup
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0000);
+    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0xFFFF);
+    this->get_iface()->write_gpio(dboard_iface::UNIT_RX, 0x0000);
 }
 
 basic_rx::~basic_rx(void){
