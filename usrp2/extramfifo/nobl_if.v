@@ -41,9 +41,9 @@ module nobl_if
    assign 	   RAM_OEn = 0;
 
    // gray code the address to reduce EMI
-   wire [WIDTH-1:0] address_gray;
+   wire [DEPTH-1:0] address_gray;
    
-   bin2gray #(.WIDTH(WIDTH)) bin2gray (.bin(address),.gray(address_gray));
+   bin2gray #(.WIDTH(DEPTH)) bin2gray (.bin(address),.gray(address_gray));
    
    
    //
