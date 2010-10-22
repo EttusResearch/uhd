@@ -65,6 +65,9 @@ struct usrp_e_i2c {
 #define USRP_E_I2C_READ		_IOWR(USRP_E_IOC_MAGIC, 0x25, struct usrp_e_i2c)
 #define USRP_E_I2C_WRITE	_IOW(USRP_E_IOC_MAGIC, 0x26, struct usrp_e_i2c)
 #define USRP_E_GET_RB_INFO      _IOR(USRP_E_IOC_MAGIC, 0x27, struct usrp_e_ring_buffer_size_t)
+#define USRP_E_GET_COMPAT_NUMBER _IO(USRP_E_IOC_MAGIC, 0x28)
+
+#define USRP_E_COMPAT_NUMBER 1
 
 /* Flag defines */
 #define RB_USER (1<<0)
