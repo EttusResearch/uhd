@@ -351,6 +351,22 @@ send_arp_reply(struct arp_eth_ipv4 *req, eth_mac_addr_t our_mac)
   send_pkt(t, ETHERTYPE_ARP, &reply, sizeof(reply), 0, 0, 0, 0);
 }
 
+void send_gratuitous_arp(void){
+  struct arp_eth_ipv4 req _AL4;
+  req.ar_hrd = ARPHRD_ETHER;
+  req.ar_pro = ETHERTYPE_IPV4;
+  req.ar_hln = sizeof(eth_mac_addr_t);
+  req.ar_pln = sizeof(struct ip_addr);
+  req.ar_op = ARPOP_REQUEST;
+  memcpy(req.ar_sha, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
+  memcpy(req.ar_sip, get_ip_addr(),       sizeof(struct ip_addr));
+  memset(req.ar_tha, 0x00,                sizeof(eth_mac_addr_t));
+  memcpy(req.ar_tip, get_ip_addr(),       sizeof(struct ip_addr));
+
+  //send the request with a broadcast ethernet mac address
+  eth_mac_addr_t t; memset(&t, 0xff, sizeof(t));
+  send_pkt(t, ETHERTYPE_ARP, &req, sizeof(req), 0, 0, 0, 0);
+}
 
 static void
 handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
