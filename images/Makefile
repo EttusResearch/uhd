@@ -119,6 +119,7 @@ $(BUILT_IMAGES_DIR):
 	mkdir $@
 
 images: $(BUILT_IMAGES_DIR) $(IMAGES_LIST)
+	chmod -x $(BUILT_IMAGES_DIR)/*
 
 clean:
 	$(RM) -rf $(BUILT_IMAGES_DIR)
