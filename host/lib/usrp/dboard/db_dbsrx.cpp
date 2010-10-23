@@ -236,8 +236,10 @@ void dbsrx::set_lo_freq(double target_freq){
     bool update_filter_settings = false;
     //choose refclock
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
+    const double max_clock_rate = std::sorted(clock_rates).back();
     BOOST_FOREACH(ref_clock, std::reversed(std::sorted(clock_rates))){
         if (ref_clock > 27.0e6) continue;
+        if (size_t(max_clock_rate/ref_clock)%2 == 1) continue; //reject asymmetric clocks (odd divisors)
 
         //choose m_divider such that filter tuning constraint is met
         m = 31;
