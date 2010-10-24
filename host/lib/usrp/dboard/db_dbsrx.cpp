@@ -374,6 +374,9 @@ void dbsrx::set_lo_freq(double target_freq){
         //update vco selection and check vtune
         send_reg(0x2, 0x2);
         read_reg(0x0, 0x0);
+
+        //allow for setup time before checking condition again
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     }
       
     if(dbsrx_debug) std::cerr << boost::format(
