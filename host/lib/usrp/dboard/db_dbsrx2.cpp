@@ -314,8 +314,8 @@ static float gain_to_gc1_rfvga_dac(float &gain){
 void dbsrx2::set_gain(float gain, const std::string &name){
     assert_has(dbsrx2_gain_ranges.keys(), name, "dbsrx2 gain name");
     if (name == "BBG"){
-        //_max2112_write_regs.bbg = gain_to_bbg_vga_reg(gain);
-        //send_reg(0x9, 0x9);
+        _max2112_write_regs.bbg = gain_to_bbg_vga_reg(gain);
+        send_reg(0x9, 0x9);
     }
     else if(name == "GC1"){
         //write the new voltage to the aux dac
@@ -347,8 +347,7 @@ void dbsrx2::set_bandwidth(float bandwidth){
  * RX Get and Set
  **********************************************************************/
 void dbsrx2::rx_get(const wax::obj &key_, wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -361,13 +360,13 @@ void dbsrx2::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        assert_has(_gains.keys(), name, "dbsrx2 gain name");
-        val = _gains[name];
+        assert_has(_gains.keys(), key.name, "dbsrx2 gain name");
+        val = _gains[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(dbsrx2_gain_ranges.keys(), name, "dbsrx2 gain name");
-        val = dbsrx2_gain_ranges[name];
+        assert_has(dbsrx2_gain_ranges.keys(), key.name, "dbsrx2 gain name");
+        val = dbsrx2_gain_ranges[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
@@ -390,21 +389,12 @@ void dbsrx2::rx_get(const wax::obj &key_, wax::obj &val){
         val = dbsrx2_antennas;
         return;
 
-/*
-    case SUBDEV_PROP_QUADRATURE:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_IQ_SWAPPED:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_SPECTRUM_INVERTED:
-        val = false;
-        return;
-*/
     case SUBDEV_PROP_CONNECTION:
         val = SUBDEV_CONN_COMPLEX_QI;
+        return;
+
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
@@ -415,12 +405,6 @@ void dbsrx2::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked();
         return;
 
-/*
-    case SUBDEV_PROP_RSSI:
-        val = this->get_rssi();
-        return;
-*/
-
     case SUBDEV_PROP_BANDWIDTH:
         val = _bandwidth;
         return;
@@ -430,8 +414,7 @@ void dbsrx2::rx_get(const wax::obj &key_, wax::obj &val){
 }
 
 void dbsrx2::rx_set(const wax::obj &key_, const wax::obj &val){
-    wax::obj key; std::string name;
-    boost::tie(key, name) = extract_named_prop(key_);
+    named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
@@ -441,8 +424,11 @@ void dbsrx2::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<float>(), name);
+        this->set_gain(val.as<float>(), key.name);
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
         this->set_bandwidth(val.as<float>());
