@@ -563,7 +563,7 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = _bandwidth;
+        val = 2*_bandwidth; //_bandwidth is low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -588,7 +588,7 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_bandwidth(val.as<double>());
+        this->set_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

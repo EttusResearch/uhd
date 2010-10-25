@@ -71,6 +71,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -525,6 +526,10 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked(dboard_iface::UNIT_RX);
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 2*30.0e6; //20MHz low-pass, we want complex double-sided
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -549,6 +554,12 @@ void wbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ENABLED:
         return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::print_warning(
+            str(boost::format("WBX: No tunable bandwidth, fixed filtered to 40MHz"))
+        );
+        return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
@@ -616,6 +627,10 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked(dboard_iface::UNIT_TX);
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 2*30.0e6; //20MHz low-pass, we want complex double-sided
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -640,6 +655,12 @@ void wbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ENABLED:
         return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::print_warning(
+            str(boost::format("WBX: No tunable bandwidth, fixed filtered to 40MHz"))
+        );
+        return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }

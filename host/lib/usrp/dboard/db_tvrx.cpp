@@ -459,6 +459,10 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = true;
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 6.0e6; //30MHz low-pass, we want complex double-sided
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -478,6 +482,12 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ENABLED:
         return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::print_warning(
+            str(boost::format("TVRX: No tunable bandwidth, fixed filtered to 6MHz"))
+        );
+        return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
