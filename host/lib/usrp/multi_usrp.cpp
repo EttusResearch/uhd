@@ -210,15 +210,9 @@ public:
         return _rx_dsp(0)[DSP_PROP_HOST_RATE].as<double>();
     }
 
-    tune_result_t set_rx_freq(double target_freq, size_t chan){
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), target_freq);
-        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
-        return r;
-    }
-
-    tune_result_t set_rx_freq(double target_freq, double lo_off, size_t chan){
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), target_freq, lo_off);
-        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
+    tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
         return r;
     }
 
@@ -314,15 +308,9 @@ public:
         return _tx_dsp(0)[DSP_PROP_HOST_RATE].as<double>();
     }
 
-    tune_result_t set_tx_freq(double target_freq, size_t chan){
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), target_freq);
-        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
-        return r;
-    }
-
-    tune_result_t set_tx_freq(double target_freq, double lo_off, size_t chan){
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), target_freq, lo_off);
-        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
+    tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 

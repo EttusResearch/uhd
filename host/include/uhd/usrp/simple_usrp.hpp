@@ -117,7 +117,7 @@ public:
     virtual double get_rx_rate(void) = 0;
 
     virtual tune_result_t set_rx_freq(double freq) = 0;
-    virtual tune_result_t set_rx_freq(double freq, double lo_off) = 0;
+    //virtual tune_result_t set_rx_freq(double freq, double lo_off) = 0;
     virtual double get_rx_freq(void) = 0;
     virtual freq_range_t get_rx_freq_range(void) = 0;
 
@@ -152,7 +152,7 @@ public:
     virtual double get_tx_rate(void) = 0;
 
     virtual tune_result_t set_tx_freq(double freq) = 0;
-    virtual tune_result_t set_tx_freq(double freq, double lo_off) = 0;
+    //virtual tune_result_t set_tx_freq(double freq, double lo_off) = 0;
     virtual double get_tx_freq(void) = 0;
     virtual freq_range_t get_tx_freq_range(void) = 0;
 
@@ -243,9 +243,9 @@ public:
         return _sdev->set_rx_freq(target_freq);
     }
 
-    tune_result_t set_rx_freq(double target_freq, double lo_off){
-        return _sdev->set_rx_freq(target_freq, lo_off);
-    }
+    //tune_result_t set_rx_freq(double target_freq, double lo_off){
+    //    return _sdev->set_rx_freq(target_freq, lo_off);
+    //}
 
     double get_rx_freq(void){
         return _sdev->get_rx_freq();
@@ -318,9 +318,9 @@ public:
         return _sdev->set_tx_freq(target_freq);
     }
 
-    tune_result_t set_tx_freq(double target_freq, double lo_off){
-        return _sdev->set_tx_freq(target_freq, lo_off);
-    }
+    //tune_result_t set_tx_freq(double target_freq, double lo_off){
+    //    return _sdev->set_tx_freq(target_freq, lo_off);
+    //}
 
     double get_tx_freq(void){
         return _sdev->get_tx_freq();

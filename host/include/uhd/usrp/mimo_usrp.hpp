@@ -127,7 +127,7 @@ public:
     virtual double get_rx_rate_all(void) = 0;
 
     virtual tune_result_t set_rx_freq(size_t chan, double freq) = 0;
-    virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
+    //virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
     virtual double get_rx_freq(size_t chan) = 0;
     virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
 
@@ -161,7 +161,7 @@ public:
     virtual double get_tx_rate_all(void) = 0;
 
     virtual tune_result_t set_tx_freq(size_t chan, double freq) = 0;
-    virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
+    //virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
     virtual double get_tx_freq(size_t chan) = 0;
     virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
 
@@ -345,9 +345,9 @@ public:
         return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0, target_freq);
     }
 
-    tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0, target_freq, lo_off);
-    }
+    //tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
+    //    return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0, target_freq, lo_off);
+    //}
 
     double get_rx_freq(size_t chan){
         return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0);
@@ -425,9 +425,9 @@ public:
         return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0, target_freq);
     }
 
-    tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0, target_freq, lo_off);
-    }
+    //tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
+    //    return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0, target_freq, lo_off);
+    //}
 
     double get_tx_freq(size_t chan){
         return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0);

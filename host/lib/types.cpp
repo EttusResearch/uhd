@@ -17,6 +17,7 @@
 
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -53,6 +54,25 @@ gain_range_t::gain_range_t(float min, float max, float step):
 freq_range_t::freq_range_t(double min, double max):
     min(min),
     max(max)
+{
+    /* NOP */
+}
+
+/***********************************************************************
+ * tune request
+ **********************************************************************/
+tune_request_t::tune_request_t(double target_freq):
+    target_freq(target_freq),
+    inter_freq_policy(POLICY_AUTO),
+    dsp_freq_policy(POLICY_AUTO)
+{
+    /* NOP */
+}
+
+tune_request_t::tune_request_t(double target_freq, double lo_off):
+    target_freq(target_freq + lo_off),
+    inter_freq_policy(POLICY_MANUAL),
+    dsp_freq_policy(POLICY_AUTO)
 {
     /* NOP */
 }

@@ -28,6 +28,7 @@ INSTALL(FILES
     serial.hpp
     stream_cmd.hpp
     time_spec.hpp
+    tune_request.hpp
     tune_result.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
 )
