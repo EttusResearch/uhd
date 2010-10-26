@@ -19,6 +19,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <uhd/usrp/dboard_iface.hpp> //unit_t
+#include <uhd/utils/algorithm.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <cmath>
 
@@ -43,9 +44,11 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     double lo_offset = 0.0;
     if (subdev[SUBDEV_PROP_USE_LO_OFFSET].as<bool>()){
-        //if the local oscillator will be in the passband, use an offset
-        //TODO make this nicer, use bandwidth property to clip bounds
-        lo_offset = 2.0*dsp[DSP_PROP_HOST_RATE].as<double>();
+        //If the local oscillator will be in the passband, use an offset.
+        //But constrain the LO offset by the width of the filter bandwidth.
+        double rate = dsp[DSP_PROP_HOST_RATE].as<double>();
+        double bw = subdev[SUBDEV_PROP_BANDWIDTH].as<double>();
+        if (bw > rate) lo_offset = std::min((bw - rate)/2, rate/2);
     }
 
     //------------------------------------------------------------------
