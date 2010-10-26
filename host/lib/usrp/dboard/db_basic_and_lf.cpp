@@ -191,7 +191,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("%s: No tunable bandwidth, fixed filtered to %0.2fMHz")
                 % get_rx_id().to_pp_string() % _max_freq
             )
@@ -302,7 +302,7 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("%s: No tunable bandwidth, fixed filtered to %0.2fMHz")
                 % get_tx_id().to_pp_string() % _max_freq
             )

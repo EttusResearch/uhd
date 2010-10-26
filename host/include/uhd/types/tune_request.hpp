@@ -60,7 +60,7 @@ namespace uhd{
 
         /*!
          * The target frequency of the overall chain in Hz.
-         * Use in conjunction with the automatic policies.
+         * Set this even if all policies are set to manual.
          */
         double target_freq;
 

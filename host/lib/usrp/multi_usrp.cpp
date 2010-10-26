@@ -145,7 +145,7 @@ public:
             time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             time_spec_t time_i = _mboard(m)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
-                uhd::print_warning(str(boost::format(
+                uhd::warning::post(str(boost::format(
                     "Detected time deviation between board %d and board 0.\n"
                     "Board 0 time is %f seconds.\n"
                     "Board %d time is %f seconds.\n"

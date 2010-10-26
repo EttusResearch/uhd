@@ -175,7 +175,7 @@ UHD_STATIC_BLOCK(reg_dbsrx_dboard){
 dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     //warn user about incorrect DBID on USRP1, requires R193 populated
     if (this->get_iface()->get_special_props().soft_clock_divider and this->get_rx_id() == 0x000D)
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format(
                 "DBSRX: incorrect dbid\n"
                 "Expected dbid 0x0002 and R193\n"
@@ -186,7 +186,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
 
     //warn user about incorrect DBID on non-USRP1, requires R194 populated
     if (not this->get_iface()->get_special_props().soft_clock_divider and this->get_rx_id() == 0x0002)
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format(
                 "DBSRX: incorrect dbid\n"
                 "Expected dbid 0x000D and R194\n"
@@ -342,7 +342,7 @@ void dbsrx::set_lo_freq(double target_freq){
         //vtune is too low, try lower frequency vco
         if (_max2118_read_regs.adc == 0){
             if (_max2118_write_regs.osc_band == 0){
-                uhd::print_warning(
+                uhd::warning::post(
                     str(boost::format(
                         "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
                         ) % int(_max2118_write_regs.osc_band))
@@ -356,7 +356,7 @@ void dbsrx::set_lo_freq(double target_freq){
         //vtune is too high, try higher frequency vco
         if (_max2118_read_regs.adc == 7){
             if (_max2118_write_regs.osc_band == 7){
-                uhd::print_warning(
+                uhd::warning::post(
                     str(boost::format(
                         "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
                         ) % int(_max2118_write_regs.osc_band))

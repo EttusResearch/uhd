@@ -487,7 +487,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("RFX: No tunable bandwidth, fixed filtered to 40MHz"))
         );
         return;
@@ -584,7 +584,7 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("RFX: No tunable bandwidth, fixed filtered to 40MHz"))
         );
         return;

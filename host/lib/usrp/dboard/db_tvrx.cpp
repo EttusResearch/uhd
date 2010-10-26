@@ -484,7 +484,7 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("TVRX: No tunable bandwidth, fixed filtered to 6MHz"))
         );
         return;

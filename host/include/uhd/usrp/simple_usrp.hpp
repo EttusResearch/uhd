@@ -374,7 +374,7 @@ namespace uhd{ namespace usrp{
  * The Make Function
  **********************************************************************/
 inline simple_usrp::sptr simple_usrp::make(const device_addr_t &dev_addr){
-    uhd::print_warning(
+    uhd::warning::post(
         "The simple USRP interface has been deprecated.\n"
         "Please switch to the single USRP interface.\n"
         "#include <uhd/usrp/single_usrp.hpp>\n"

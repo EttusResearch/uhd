@@ -120,10 +120,7 @@ namespace uhd{
             BOOST_FOREACH(const pair_t &p, _map){
                 if (p.first == key) return p.second;
             }
-            throw std::invalid_argument(str(boost::format(
-                "key \"%s\" not found in dict(%s, %s)"
-            ) % boost::lexical_cast<std::string>(key)
-            % typeid(Key).name() % typeid(Val).name()));
+            throw key_not_found_in_dict(key);
         }
 
         /*!
@@ -147,12 +144,24 @@ namespace uhd{
          * \throw an exception when not found
          */
         Val pop(const Key &key){
-            Val val = (*this)[key];
-            _map.remove(pair_t(key, val));
-            return val;
+            typename std::list<pair_t>::iterator it;
+            for (it = _map.begin(); it != _map.end(); it++){
+                if (it->first != key) continue;
+                Val val = it->second;
+                _map.erase(it);
+                return val;
+            }
+            throw key_not_found_in_dict(key);
         }
 
     private:
+        std::exception key_not_found_in_dict(const Key &key) const{
+            return std::out_of_range(str(boost::format(
+                "key \"%s\" not found in dict(%s, %s)"
+            ) % boost::lexical_cast<std::string>(key)
+            % typeid(Key).name() % typeid(Val).name()));
+        }
+
         std::list<pair_t> _map; //private container
     };
 

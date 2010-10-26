@@ -164,7 +164,7 @@ void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("Unknown Daughterboard: No tunable bandwidth, fixed filtered to 0.0MHz"))
         );
         return;
@@ -270,7 +270,7 @@ void unknown_tx::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format("Unknown Daughterboard: No tunable bandwidth, fixed filtered to 0.0MHz"))
         );
         return;
