@@ -70,8 +70,9 @@ tune_request_t::tune_request_t(double target_freq):
 }
 
 tune_request_t::tune_request_t(double target_freq, double lo_off):
-    target_freq(target_freq + lo_off),
+    target_freq(target_freq),
     inter_freq_policy(POLICY_MANUAL),
+    inter_freq(target_freq + lo_off),
     dsp_freq_policy(POLICY_AUTO)
 {
     /* NOP */

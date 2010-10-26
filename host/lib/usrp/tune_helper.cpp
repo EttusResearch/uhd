@@ -70,7 +70,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- calculate the dsp freq, only used with automatic policy
     //------------------------------------------------------------------
-    double delta_freq = std::fmod(target_inter_freq - actual_inter_freq, dsp_sample_rate);
+    double delta_freq = std::fmod(tune_request.target_freq - actual_inter_freq, dsp_sample_rate);
     bool outside_of_nyquist = std::abs(delta_freq) > dsp_sample_rate/2.0;
     double target_dsp_freq = (outside_of_nyquist)?
         boost::math::sign(delta_freq)*dsp_sample_rate - delta_freq : -delta_freq;
