@@ -48,21 +48,19 @@ namespace uhd{
          */
         tune_request_t(double target_freq, double lo_off);
 
-        /*!
-         * Policy types for tune arguments:
-         * - None: do not set this argument, use current setting
-         * - Auto: automatically determine the argument's value
-         * - Manual: use the argument's value for the setting
-         */
+        //! Policy options for tunable elements in the RF chain.
         enum policy_t {
+            //! Do not set this argument, use current setting.
             POLICY_NONE   = 'N',
+            //! Automatically determine the argument's value.
             POLICY_AUTO   = 'A',
+            //! Use the argument's value for the setting.
             POLICY_MANUAL = 'M'
         };
 
         /*!
          * The target frequency of the overall chain in Hz.
-         * Use when one of the policies is set to automatic.
+         * Use in conjunction with the automatic policies.
          */
         double target_freq;
 
