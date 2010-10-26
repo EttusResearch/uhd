@@ -107,7 +107,13 @@ module fifo_to_wb_tb();
 	@(posedge clk);
 	@(posedge clk);
 	InsertRW(16'hF00D, 6'd0, 8'hB5, 16'd7, 16'h1234);
+	#20000;
+	InsertRW(16'h9876, 6'd0, 8'h43, 16'd8, 16'hBEEF);
+	#20000;
+	InsertRW(16'h1000, 6'd0, 8'h96, 16'd4, 16'hF00D);
+	#20000;
+	InsertRW(16'h3000, 6'd0, 8'h12, 16'd10,16'hDEAD);
+	#20000 $finish;
      end
    
-   initial #20000 $finish;
 endmodule // fifo_to_wb_tb

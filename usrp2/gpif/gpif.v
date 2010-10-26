@@ -75,8 +75,8 @@ module gpif
    wire 	  rx36_src_rdy, rx36_dst_rdy;
    wire [17:0] 	  rx18_data;
    wire 	  rx18_src_rdy, rx18_dst_rdy;
-   wire [17:0] 	  resp_data;
-   wire 	  resp_src_rdy, resp_dst_rdy;
+   wire [17:0] 	  resp_data, resp_int;
+   wire 	  resp_src_rdy, resp_dst_rdy, resp_src_rdy_int, resp_dst_rdy_int;
    
    fifo_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_fifo36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
@@ -104,12 +104,17 @@ module gpif
    fifo_to_wb fifo_to_wb
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
       .data_i(ctrl_data), .src_rdy_i(ctrl_src_rdy), .dst_rdy_o(ctrl_dst_rdy),
-      .data_o(resp_data), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy),
+      .data_o(resp_int), .src_rdy_o(resp_src_rdy_int), .dst_rdy_i(resp_dst_rdy_int),
       .wb_adr_o(wb_adr_o), .wb_dat_mosi(wb_dat_mosi), .wb_dat_miso(wb_dat_miso), .wb_sel_o(wb_sel_o), 
       .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o), .wb_ack_i(wb_ack_i),
       .triggers(triggers),
       .debug0(), .debug1());
 
+   fifo19_pad #(.LENGTH(16)) fifo19_pad
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear),
+      .data_i(resp_int), .src_rdy_i(resp_src_rdy_int), .dst_rdy_o(resp_dst_rdy_int),
+      .data_o(resp_data), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy));
+        
    // ////////////////////////////////////////////
    //    DEBUG
    

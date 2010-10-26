@@ -34,4 +34,5 @@ packet_generator32.v \
 packet_generator.v \
 packet_verifier32.v \
 packet_verifier.v \
+fifo19_pad.v \
 ))
