@@ -19,6 +19,7 @@
 INSTALL(FILES
     clock_config.hpp
     device_addr.hpp
+    dict.ipp
     dict.hpp
     io_type.hpp
     mac_addr.hpp

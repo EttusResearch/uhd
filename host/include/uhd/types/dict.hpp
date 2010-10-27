@@ -19,11 +19,6 @@
 #define INCLUDED_UHD_TYPES_DICT_HPP
 
 #include <uhd/config.hpp>
-#include <boost/foreach.hpp>
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <stdexcept>
-#include <typeinfo>
 #include <vector>
 #include <list>
 
@@ -34,14 +29,10 @@ namespace uhd{
      */
     template <typename Key, typename Val> class dict{
     public:
-        typedef std::pair<Key, Val> pair_t;
-
         /*!
          * Create a new empty dictionary.
          */
-        dict(void){
-            /* NOP */
-        }
+        dict(void);
 
         /*!
          * Input iterator constructor:
@@ -50,64 +41,34 @@ namespace uhd{
          * \param last the end iterator
          */
         template <typename InputIterator>
-        dict(InputIterator first, InputIterator last){
-            for(InputIterator it = first; it != last; it++){
-                _map.push_back(*it);
-            }
-        }
-
-        /*!
-         * Destroy this dict.
-         */
-        ~dict(void){
-            /* NOP */
-        }
+        dict(InputIterator first, InputIterator last);
 
         /*!
          * Get the number of elements in this dict.
          * \return the number of elements
          */
-        std::size_t size(void) const{
-            return _map.size();
-        }
+        std::size_t size(void) const;
 
         /*!
          * Get a list of the keys in this dict.
          * Key order depends on insertion precedence.
          * \return vector of keys
          */
-        const std::vector<Key> keys(void) const{
-            std::vector<Key> keys;
-            BOOST_FOREACH(const pair_t &p, _map){
-                keys.push_back(p.first);
-            }
-            return keys;
-        }
+        const std::vector<Key> keys(void) const;
 
         /*!
          * Get a list of the values in this dict.
          * Value order depends on insertion precedence.
          * \return vector of values
          */
-        const std::vector<Val> vals(void) const{
-            std::vector<Val> vals;
-            BOOST_FOREACH(const pair_t &p, _map){
-                vals.push_back(p.second);
-            }
-            return vals;
-        }
+        const std::vector<Val> vals(void) const;
 
         /*!
          * Does the dictionary contain this key?
          * \param key the key to look for
          * \return true if found
          */
-        bool has_key(const Key &key) const{
-            BOOST_FOREACH(const pair_t &p, _map){
-                if (p.first == key) return true;
-            }
-            return false;
-        }
+        bool has_key(const Key &key) const;
 
         /*!
          * Get a value for the given key if it exists.
@@ -116,12 +77,7 @@ namespace uhd{
          * \return the value at the key
          * \throw an exception when not found
          */
-        const Val &operator[](const Key &key) const{
-            BOOST_FOREACH(const pair_t &p, _map){
-                if (p.first == key) return p.second;
-            }
-            throw key_not_found_in_dict(key);
-        }
+        const Val &operator[](const Key &key) const;
 
         /*!
          * Set a value for the given key, however, in reality
@@ -129,13 +85,7 @@ namespace uhd{
          * \param key the key to set to
          * \return a reference to the value
          */
-        Val &operator[](const Key &key){
-            BOOST_FOREACH(pair_t &p, _map){
-                if (p.first == key) return p.second;
-            }
-            _map.push_back(std::make_pair(key, Val()));
-            return _map.back().second;
-        }
+        Val &operator[](const Key &key);
 
         /*!
          * Pop an item out of the dictionary.
@@ -143,28 +93,15 @@ namespace uhd{
          * \return the value of the item
          * \throw an exception when not found
          */
-        Val pop(const Key &key){
-            typename std::list<pair_t>::iterator it;
-            for (it = _map.begin(); it != _map.end(); it++){
-                if (it->first != key) continue;
-                Val val = it->second;
-                _map.erase(it);
-                return val;
-            }
-            throw key_not_found_in_dict(key);
-        }
+        Val pop(const Key &key);
 
     private:
-        std::exception key_not_found_in_dict(const Key &key) const{
-            return std::out_of_range(str(boost::format(
-                "key \"%s\" not found in dict(%s, %s)"
-            ) % boost::lexical_cast<std::string>(key)
-            % typeid(Key).name() % typeid(Val).name()));
-        }
-
+        typedef std::pair<Key, Val> pair_t;
         std::list<pair_t> _map; //private container
     };
 
 } //namespace uhd
+
+#include <uhd/types/dict.ipp>
 
 #endif /* INCLUDED_UHD_TYPES_DICT_HPP */
