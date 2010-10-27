@@ -124,6 +124,7 @@ void usrp1_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
 
     case DBOARD_PROP_GAIN_GROUP:
         val = make_gain_group(
+            _rx_db_eeproms[dboard_slot].id,
             _dboard_managers[dboard_slot]->get_rx_subdev(key.name),
             _rx_codec_proxies[dboard_slot]->get_link(),
             GAIN_GROUP_POLICY_RX
@@ -188,6 +189,7 @@ void usrp1_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
 
     case DBOARD_PROP_GAIN_GROUP:
         val = make_gain_group(
+            _tx_db_eeproms[dboard_slot].id,
             _dboard_managers[dboard_slot]->get_tx_subdev(key.name),
             _tx_codec_proxies[dboard_slot]->get_link(),
             GAIN_GROUP_POLICY_TX

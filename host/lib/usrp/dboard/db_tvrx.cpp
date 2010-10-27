@@ -179,7 +179,7 @@ static dboard_base::sptr make_tvrx(dboard_base::ctor_args_t args){
 
 UHD_STATIC_BLOCK(reg_tvrx_dboard){
     //register the factory function for the rx dbid
-    dboard_manager::register_dboard(0x0040, &make_tvrx, "tvrx");
+    dboard_manager::register_dboard(0x0040, &make_tvrx, "TVRX");
 }
 
 /***********************************************************************

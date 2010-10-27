@@ -55,3 +55,15 @@ INSTALL(TARGETS
     tx_waveforms
     RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
 )
+
+########################################################################
+# ASCII Art DFT - requires curses, so this part is optional
+########################################################################
+INCLUDE(FindCurses)
+
+IF(CURSES_FOUND)
+    INCLUDE_DIRECTORIES(${CURSES_INCLUDE_DIR})
+    ADD_EXECUTABLE(rx_ascii_art_dft rx_ascii_art_dft.cpp)
+    TARGET_LINK_LIBRARIES(rx_ascii_art_dft uhd ${CURSES_LIBRARIES})
+    INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_DATA_DIR}/examples)
+ENDIF(CURSES_FOUND)

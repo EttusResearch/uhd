@@ -162,15 +162,10 @@ static dboard_base::sptr make_dbsrx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new dbsrx(args));
 }
 
-//dbid for USRP2 version
 UHD_STATIC_BLOCK(reg_dbsrx_dboard){
-    //register the factory function for the rx dbid
+    //register the factory function for the rx dbid (others version)
     dboard_manager::register_dboard(0x000D, &make_dbsrx, "DBSRX");
-}
-
-//dbid for USRP1 version
-UHD_STATIC_BLOCK(reg_dbsrx_on_usrp1_dboard){
-    //register the factory function for the rx dbid
+    //register the factory function for the rx dbid (USRP1 version)
     dboard_manager::register_dboard(0x0002, &make_dbsrx, "DBSRX");
 }
 
@@ -241,8 +236,10 @@ void dbsrx::set_lo_freq(double target_freq){
     bool update_filter_settings = false;
     //choose refclock
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
+    const double max_clock_rate = std::sorted(clock_rates).back();
     BOOST_FOREACH(ref_clock, std::reversed(std::sorted(clock_rates))){
         if (ref_clock > 27.0e6) continue;
+        if (size_t(max_clock_rate/ref_clock)%2 == 1) continue; //reject asymmetric clocks (odd divisors)
 
         //choose m_divider such that filter tuning constraint is met
         m = 31;
