@@ -71,10 +71,6 @@ static device_addrs_t usrp_e_find(const device_addr_t &hint){
  **********************************************************************/
 static device::sptr usrp_e_make(const device_addr_t &device_addr){
 
-    //The fpga is loaded when:
-    // 1) The compatibility number matches.
-    // 2) The hash in the hash-file matches.
-
     //setup the main interface into fpga
     std::string node = device_addr["node"];
     std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
@@ -86,6 +82,7 @@ static device::sptr usrp_e_make(const device_addr_t &device_addr){
     //--   1) The compatibility number matches.
     //--   2) The hash in the hash-file matches.
     //------------------------------------------------------------------
+    static const char *hash_file_path = "/tmp/usrp_e100_hash";
 
     //extract the fpga path for usrp-e
     std::string usrp_e_fpga_image = find_image_path(

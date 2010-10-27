@@ -73,7 +73,7 @@ struct usrp_e_impl::io_impl{
     }
 
     //a pirate's life is the life for me!
-    void recv_pirate_loop();
+    void recv_pirate_loop(usrp_e_clock_ctrl::sptr);
     typedef bounded_buffer<managed_recv_buffer::sptr> recv_booty_type;
     recv_booty_type::sptr recv_pirate_booty;
     bounded_buffer<async_metadata_t>::sptr async_msg_fifo;
@@ -86,9 +86,8 @@ struct usrp_e_impl::io_impl{
  * - while raiding, loot for recv buffers
  * - put booty into the alignment buffer
  **********************************************************************/
-void usrp_e_impl::io_impl::recv_pirate_loop(
-
-){
+void usrp_e_impl::io_impl::recv_pirate_loop(usrp_e_clock_ctrl::sptr clock_ctrl)
+{
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
 
@@ -119,7 +118,7 @@ void usrp_e_impl::io_impl::recv_pirate_loop(
                 metadata.channel = 0;
                 metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
                 metadata.time_spec = time_spec_t(
-                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), MASTER_CLOCK_RATE
+                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), clock_ctrl->get_fpga_clock_rate()
                 );
                 metadata.event_code = vrt_packet_handler::get_context_code<async_metadata_t::event_code_t>(vrt_hdr, if_packet_info);
 
@@ -172,7 +171,7 @@ void usrp_e_impl::io_init(void){
 
     //spawn a pirate, yarrr!
     _io_impl->recv_pirate_crew.create_thread(boost::bind(
-        &usrp_e_impl::io_impl::recv_pirate_loop, _io_impl.get()
+        &usrp_e_impl::io_impl::recv_pirate_loop, _io_impl.get(), _clock_ctrl
     ));
 }
 
@@ -182,7 +181,7 @@ void usrp_e_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
         stream_cmd, get_max_recv_samps_per_packet()
     ));
     _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(MASTER_CLOCK_RATE));
+    _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
 }
 
 void usrp_e_impl::handle_overrun(size_t){
@@ -226,7 +225,7 @@ size_t usrp_e_impl::send(
         buffs, num_samps,                          //buffer to fill
         metadata, send_mode,                       //samples metadata
         io_type, _send_otw_type,                   //input and output types to convert
-        MASTER_CLOCK_RATE,                         //master clock tick rate
+        _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_le,
         boost::bind(&get_send_buffs, _io_impl->data_xport, timeout, _1),
         get_max_send_samps_per_packet()
@@ -258,7 +257,7 @@ size_t usrp_e_impl::recv(
         buffs, num_samps,                          //buffer to fill
         metadata, recv_mode,                       //samples metadata
         io_type, _recv_otw_type,                   //input and output types to convert
-        MASTER_CLOCK_RATE,                         //master clock tick rate
+        _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
         boost::bind(&usrp_e_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
         boost::bind(&usrp_e_impl::handle_overrun, this, _1)

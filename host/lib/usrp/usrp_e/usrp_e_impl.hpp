@@ -30,8 +30,6 @@
 #ifndef INCLUDED_USRP_E_IMPL_HPP
 #define INCLUDED_USRP_E_IMPL_HPP
 
-static const double MASTER_CLOCK_RATE = 64e6; //TODO get from clock control
-static const char *hash_file_path = "/tmp/usrp_e100_hash";
 static const boost::uint16_t USRP_E_COMPAT_NUM = 0x02;
 
 //! load an fpga image from a bin file into the usrp-e fpga
@@ -99,9 +97,6 @@ public:
 private:
     //interface to ioctls and file descriptor
     usrp_e_iface::sptr _iface;
-
-    //FIXME fetch from ioctl?
-    static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
 
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
