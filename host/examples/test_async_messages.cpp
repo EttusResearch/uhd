@@ -31,13 +31,13 @@
 namespace po = boost::program_options;
 
 /*!
- * Test the eob ack message:
+ * Test the burst ack message:
  *    Send a burst of many samples that will fragment internally.
- *    We expect to get an eob ack async message.
+ *    We expect to get an burst ack async message.
  */
-bool test_eob_ack_message(uhd::usrp::single_usrp::sptr sdev){
+bool test_burst_ack_message(uhd::usrp::single_usrp::sptr sdev){
     uhd::device::sptr dev = sdev->get_device();
-    std::cout << "Test eob ack message... " << std::flush;
+    std::cout << "Test burst ack message... " << std::flush;
 
     uhd::tx_metadata_t md;
     md.start_of_burst = true;
@@ -63,10 +63,10 @@ bool test_eob_ack_message(uhd::usrp::single_usrp::sptr sdev){
     }
 
     switch(async_md.event_code){
-    case uhd::async_metadata_t::EVENT_CODE_EOB_ACK:
+    case uhd::async_metadata_t::EVENT_CODE_BURST_ACK:
         std::cout << boost::format(
             "success:\n"
-            "    Got event code eob ack message.\n"
+            "    Got event code burst ack message.\n"
         ) << std::endl;
         return true;
 
@@ -222,8 +222,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     static const uhd::dict<std::string, boost::function<bool(uhd::usrp::single_usrp::sptr)> >
         tests = boost::assign::map_list_of
-        ("Test EOB ACK   ",    &test_eob_ack_message)
-        ("Test Underflow ",  &test_underflow_message)
+        ("Test Burst ACK ", &test_burst_ack_message)
+        ("Test Underflow ", &test_underflow_message)
         ("Test Time Error", &test_time_error_message)
     ;
 

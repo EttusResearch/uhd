@@ -17,16 +17,67 @@
 
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/static.hpp>
+#include <uhd/types/dict.hpp>
 #include <boost/foreach.hpp>
+#include <sstream>
+#include <stdexcept>
 #include <iostream>
 #include <vector>
 
 using namespace uhd;
 
-void uhd::print_warning(const std::string &msg){
-    //print the warning message
-    std::cerr << std::endl << "Warning:" << std::endl;
+/***********************************************************************
+ * Registry implementation
+ **********************************************************************/
+//create the registry for the handlers
+typedef uhd::dict<std::string, warning::handler_t> registry_t;
+UHD_SINGLETON_FCN(registry_t, get_registry)
+
+//the default warning handler
+static void stderr_warning(const std::string &msg){
+    std::cerr << msg;
+}
+
+//register a default handler
+UHD_STATIC_BLOCK(warning_register_default){
+    warning::register_handler("default", &stderr_warning);
+}
+
+/***********************************************************************
+ * Post + format
+ **********************************************************************/
+void warning::post(const std::string &msg){
+    std::stringstream ss;
+
+    //format the warning message
+    ss << std::endl << "Warning:" << std::endl;
     BOOST_FOREACH(const std::string &line, std::split_string(msg, "\n")){
-        std::cerr << "    " << line << std::endl;
+        ss << "    " << line << std::endl;
     }
+
+    //post the formatted message
+    BOOST_FOREACH(const std::string &name, get_registry().keys()){
+        get_registry()[name](ss.str());
+    }
+}
+
+/***********************************************************************
+ * Registry accessor functions
+ **********************************************************************/
+void warning::register_handler(
+    const std::string &name, const handler_t &handler
+){
+    get_registry()[name] = handler;
+}
+
+warning::handler_t warning::unregister_handler(const std::string &name){
+    if (not get_registry().has_key(name)) throw std::runtime_error(
+        "The warning registry does not have a handler registered to " + name
+    );
+    return get_registry().pop(name);
+}
+
+const std::vector<std::string> warning::registry_names(void){
+    return get_registry().keys();
 }

@@ -189,7 +189,7 @@ static args_t get_dboard_args(
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
-        uhd::print_warning(str(boost::format(
+        uhd::warning::post(str(boost::format(
             "Unknown dboard ID: %s.\n"
         ) % dboard_id.to_pp_string()));
         return get_dboard_args(unit, dboard_id, true);
@@ -217,7 +217,7 @@ dboard_manager_impl::dboard_manager_impl(
 
     //warn for invalid dboard id xcvr combinations
     if (rx_dboard_is_xcvr != this_dboard_is_xcvr or tx_dboard_is_xcvr != this_dboard_is_xcvr){
-        uhd::print_warning(str(boost::format(
+        uhd::warning::post(str(boost::format(
             "Unknown transceiver board ID combination...\n"
             "RX dboard ID: %s\n"
             "TX dboard ID: %s\n"
