@@ -154,6 +154,15 @@ public:
         }
     }
 
+    bool get_time_synchronized(void){
+        for (size_t m = 1; m < get_num_mboards(); m++){
+            time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            time_spec_t time_i = _mboard(m)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)) return false;
+        }
+        return true;
+    }
+
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
         for (size_t m = 0; m < get_num_mboards(); m++){
             _mboard(m)[MBOARD_PROP_STREAM_CMD] = stream_cmd;
