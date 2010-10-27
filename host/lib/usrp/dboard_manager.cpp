@@ -69,20 +69,21 @@ void dboard_manager::register_dboard(
     const prop_names_t &subdev_names
 ){
     //regular registration for ids
-    register_dboard(rx_dboard_id, dboard_ctor, name + " RX", subdev_names);
-    register_dboard(tx_dboard_id, dboard_ctor, name + " TX", subdev_names);
+    register_dboard(rx_dboard_id, dboard_ctor, name, subdev_names);
+    register_dboard(tx_dboard_id, dboard_ctor, name, subdev_names);
 
     //register xcvr mapping for ids
     get_xcvr_id_to_id_map()[rx_dboard_id] = tx_dboard_id;
     get_xcvr_id_to_id_map()[tx_dboard_id] = rx_dboard_id;
 }
 
+std::string dboard_id_t::to_cname(void) const{
+    if (not get_id_to_args_map().has_key(*this)) return "Unknown";
+    return get_id_to_args_map()[*this].get<1>();
+}
+
 std::string dboard_id_t::to_pp_string(void) const{
-    std::string name = "unknown";
-    if (get_id_to_args_map().has_key(*this)){
-        name = get_id_to_args_map()[*this].get<1>();
-    }
-    return str(boost::format("%s (%s)") % name % this->to_string());
+    return str(boost::format("%s (%s)") % this->to_cname() % this->to_string());
 }
 
 /***********************************************************************
@@ -188,7 +189,7 @@ static args_t get_dboard_args(
 
     //verify that there is a registered constructor for this id
     if (not get_id_to_args_map().has_key(dboard_id)){
-        uhd::print_warning(str(boost::format(
+        uhd::warning::post(str(boost::format(
             "Unknown dboard ID: %s.\n"
         ) % dboard_id.to_pp_string()));
         return get_dboard_args(unit, dboard_id, true);
@@ -216,7 +217,7 @@ dboard_manager_impl::dboard_manager_impl(
 
     //warn for invalid dboard id xcvr combinations
     if (rx_dboard_is_xcvr != this_dboard_is_xcvr or tx_dboard_is_xcvr != this_dboard_is_xcvr){
-        uhd::print_warning(str(boost::format(
+        uhd::warning::post(str(boost::format(
             "Unknown transceiver board ID combination...\n"
             "RX dboard ID: %s\n"
             "TX dboard ID: %s\n"

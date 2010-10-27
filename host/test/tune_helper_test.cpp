@@ -91,6 +91,44 @@ private:
     }
 };
 
+class dummy_subdev_bw : public wax::obj{
+private:
+    void get(const wax::obj &key, wax::obj &val){
+        switch(key.as<subdev_prop_t>()){
+
+        case SUBDEV_PROP_FREQ:
+            val = _freq;
+            return;
+
+        case SUBDEV_PROP_USE_LO_OFFSET:
+            val = true;
+            return;
+
+        case SUBDEV_PROP_BANDWIDTH:
+            val = _bandwidth;
+            return;
+
+        default: UHD_THROW_PROP_GET_ERROR();
+        }
+    }
+
+    void set(const wax::obj &key, const wax::obj &val){
+        switch(key.as<subdev_prop_t>()){
+        case SUBDEV_PROP_FREQ:
+            _freq = val.as<double>();
+            return;
+
+        case SUBDEV_PROP_BANDWIDTH:
+            _bandwidth = val.as<double>();
+            return;
+
+        default: UHD_THROW_PROP_SET_ERROR();
+        }
+    }
+
+    double _freq, _bandwidth;
+};
+
 class dummy_dsp : public wax::obj{
 public:
     dummy_dsp(double codec_rate):
@@ -104,6 +142,10 @@ private:
         switch(key.as<dsp_prop_t>()){
         case DSP_PROP_CODEC_RATE:
             val = _codec_rate;
+            return;
+
+        case DSP_PROP_HOST_RATE:
+            val = _host_rate;
             return;
 
         case DSP_PROP_FREQ_SHIFT:
@@ -125,11 +167,15 @@ private:
             _freq_shift = val.as<double>();
             return;
 
+        case DSP_PROP_HOST_RATE:
+            _host_rate = val.as<double>();
+            return;
+
         default: UHD_THROW_PROP_SET_ERROR();
         }
     }
 
-    double _codec_rate, _freq_shift;
+    double _codec_rate, _freq_shift, _host_rate;
 };
 
 /***********************************************************************
@@ -141,7 +187,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
     dummy_subdev subdev(1e6);
     dummy_dsp dsp(100e6);
 
-    std::cout << "Testing tune helper RX automatic LO offset" << std::endl;
+    std::cout << "Testing tune helper RX automatic IF offset" << std::endl;
     tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.3451e9);
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
@@ -155,7 +201,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
     dummy_subdev subdev(1e6);
     dummy_dsp dsp(100e6);
 
-    std::cout << "Testing tune helper TX automatic LO offset" << std::endl;
+    std::cout << "Testing tune helper TX automatic IF offset" << std::endl;
     tune_result_t tr = tune_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.3451e9);
     std::cout << tr.to_pp_string() << std::endl;
     BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
@@ -177,4 +223,31 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx_nyquist){
 
     double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0);
     BOOST_CHECK_CLOSE(freq_derived, -45e6, tolerance);
+}
+
+BOOST_AUTO_TEST_CASE(test_tune_helper_rx_lo_off){
+    dummy_subdev_bw subdev;
+    dummy_dsp dsp(100e6);
+    tune_result_t tr;
+
+    std::cout << "Testing tune helper RX automatic LO offset B >> fs" << std::endl;
+    subdev[SUBDEV_PROP_BANDWIDTH] = double(40e6);
+    dsp[DSP_PROP_HOST_RATE] = double(4e6);
+    tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.45e9);
+    std::cout << tr.to_pp_string() << std::endl;
+    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.45e9+4e6/2, tolerance);
+
+    std::cout << "Testing tune helper RX automatic LO offset B > fs" << std::endl;
+    subdev[SUBDEV_PROP_BANDWIDTH] = double(40e6);
+    dsp[DSP_PROP_HOST_RATE] = double(25e6);
+    tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.45e9);
+    std::cout << tr.to_pp_string() << std::endl;
+    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.45e9+(40e6-25e6)/2, tolerance);
+
+    std::cout << "Testing tune helper RX automatic LO offset B < fs" << std::endl;
+    subdev[SUBDEV_PROP_BANDWIDTH] = double(20e6);
+    dsp[DSP_PROP_HOST_RATE] = double(25e6);
+    tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 0, 2.45e9);
+    std::cout << tr.to_pp_string() << std::endl;
+    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.45e9, tolerance);
 }

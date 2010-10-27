@@ -23,6 +23,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
@@ -42,6 +43,9 @@ namespace uhd{ namespace usrp{
 class UHD_API single_usrp : boost::noncopyable{
 public:
     typedef boost::shared_ptr<single_usrp> sptr;
+
+    //! A wildcard gain element name
+    static const std::string ALL_GAINS;
 
     /*!
      * Make a new single usrp from the device address.
@@ -120,7 +124,6 @@ public:
      * Set the RX subdevice specification:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
-     * The subdev spec must be the same size across all motherboards.
      * \param spec the new subdevice specification
      */
     virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
@@ -152,20 +155,13 @@ public:
 
     /*!
      * Set the RX center frequency.
-     * \param freq the frequency in Hz
+     * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
      */
-    virtual tune_result_t set_rx_freq(double freq, size_t chan = 0) = 0;
-
-    /*!
-     * Set the RX center frequency.
-     * \param freq the frequency in Hz
-     * \param lo_off an LO offset in Hz
-     * \param chan the channel index 0 to N-1
-     * \return a tune result object
-     */
-    virtual tune_result_t set_rx_freq(double freq, double lo_off, size_t chan = 0) = 0;
+    virtual tune_result_t set_rx_freq(
+        const tune_request_t &tune_request, size_t chan = 0
+    ) = 0;
 
     /*!
      * Get the RX center frequency.
@@ -182,27 +178,54 @@ public:
     virtual freq_range_t get_rx_freq_range(size_t chan = 0) = 0;
 
     /*!
-     * Set the RX gain:
-     * Distribute among gain elements in the RX path.
+     * Set the RX gain value for the specified gain element.
+     * For an empty name, distribute across all gain elements.
      * \param gain the gain in dB
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_gain(float gain, size_t chan = 0) = 0;
+    virtual void set_rx_gain(float gain, const std::string &name, size_t chan = 0) = 0;
+
+    //! A convenience wrapper for setting overall RX gain
+    void set_rx_gain(float gain, size_t chan = 0){
+        return this->set_rx_gain(gain, ALL_GAINS, chan);
+    }
 
     /*!
-     * Get the RX gain:
-     * Summation of gain elements in the RX path.
+     * Get the RX gain value for the specified gain element.
+     * For an empty name, sum across all gain elements.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_rx_gain(size_t chan = 0) = 0;
+    virtual float get_rx_gain(const std::string &name, size_t chan = 0) = 0;
+
+    //! A convenience wrapper for getting overall RX gain
+    float get_rx_gain(size_t chan = 0){
+        return this->get_rx_gain(ALL_GAINS, chan);
+    }
 
     /*!
-     * Get the RX gain range.
+     * Get the RX gain range for the specified gain element.
+     * For an empty name, calculate the overall gain range.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return a gain range object
      */
-    virtual gain_range_t get_rx_gain_range(size_t chan = 0) = 0;
+    virtual gain_range_t get_rx_gain_range(const std::string &name, size_t chan = 0) = 0;
+
+    //! A convenience wrapper for getting overall RX gain range
+    gain_range_t get_rx_gain_range(size_t chan = 0){
+        return this->get_rx_gain_range(ALL_GAINS, chan);
+    }
+
+    /*!
+     * Get the names of the gain elements in the RX chain.
+     * Gain elements are ordered from antenna to FPGA.
+     * \param chan the channel index 0 to N-1
+     * \return a vector of gain element names
+     */
+    virtual std::vector<std::string> get_rx_gain_names(size_t chan = 0) = 0;
 
     /*!
      * Select the RX antenna on the subdevice.
@@ -270,7 +293,6 @@ public:
      * Set the TX subdevice specification:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
-     * The subdev spec must be the same size across all motherboards.
      * \param spec the new subdevice specification
      */
     virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec) = 0;
@@ -302,20 +324,13 @@ public:
 
     /*!
      * Set the TX center frequency.
-     * \param freq the frequency in Hz
+     * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
      */
-    virtual tune_result_t set_tx_freq(double freq, size_t chan = 0) = 0;
-
-    /*!
-     * Set the TX center frequency.
-     * \param freq the frequency in Hz
-     * \param lo_off an LO offset in Hz
-     * \param chan the channel index 0 to N-1
-     * \return a tune result object
-     */
-    virtual tune_result_t set_tx_freq(double freq, double lo_off, size_t chan = 0) = 0;
+    virtual tune_result_t set_tx_freq(
+        const tune_request_t &tune_request, size_t chan = 0
+    ) = 0;
 
     /*!
      * Get the TX center frequency.
@@ -332,27 +347,54 @@ public:
     virtual freq_range_t get_tx_freq_range(size_t chan = 0) = 0;
 
     /*!
-     * Set the TX gain:
-     * Distribute among gain elements in the TX path.
+     * Set the TX gain value for the specified gain element.
+     * For an empty name, distribute across all gain elements.
      * \param gain the gain in dB
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_gain(float gain, size_t chan = 0) = 0;
+    virtual void set_tx_gain(float gain, const std::string &name, size_t chan = 0) = 0;
+
+    //! A convenience wrapper for setting overall TX gain
+    void set_tx_gain(float gain, size_t chan = 0){
+        return this->set_tx_gain(gain, ALL_GAINS, chan);
+    }
 
     /*!
-     * Get the TX gain:
-     * Summation of gain elements in the TX path.
+     * Get the TX gain value for the specified gain element.
+     * For an empty name, sum across all gain elements.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_tx_gain(size_t chan = 0) = 0;
+    virtual float get_tx_gain(const std::string &name, size_t chan = 0) = 0;
+
+    //! A convenience wrapper for getting overall TX gain
+    float get_tx_gain(size_t chan = 0){
+        return this->get_tx_gain(ALL_GAINS, chan);
+    }
 
     /*!
-     * Get the TX gain range.
+     * Get the TX gain range for the specified gain element.
+     * For an empty name, calculate the overall gain range.
+     * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      * \return a gain range object
      */
-    virtual gain_range_t get_tx_gain_range(size_t chan = 0) = 0;
+    virtual gain_range_t get_tx_gain_range(const std::string &name, size_t chan = 0) = 0;
+
+    //! A convenience wrapper for getting overall TX gain range
+    gain_range_t get_tx_gain_range(size_t chan = 0){
+        return this->get_tx_gain_range(ALL_GAINS, chan);
+    }
+
+    /*!
+     * Get the names of the gain elements in the TX chain.
+     * Gain elements are ordered from antenna to FPGA.
+     * \param chan the channel index 0 to N-1
+     * \return a vector of gain element names
+     */
+    virtual std::vector<std::string> get_tx_gain_names(size_t chan = 0) = 0;
 
     /*!
      * Select the TX antenna on the subdevice.

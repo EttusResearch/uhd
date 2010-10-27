@@ -33,6 +33,8 @@
 using namespace uhd;
 using namespace uhd::usrp;
 
+const std::string single_usrp::ALL_GAINS = "";
+
 /***********************************************************************
  * Simple USRP Implementation
  **********************************************************************/
@@ -144,15 +146,9 @@ public:
         return _rx_dsp()[DSP_PROP_HOST_RATE].as<double>();
     }
 
-    tune_result_t set_rx_freq(double target_freq, size_t chan){
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq);
-        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
-        return r;
-    }
-
-    tune_result_t set_rx_freq(double target_freq, double lo_off, size_t chan){
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, target_freq, lo_off);
-        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
+    tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(), chan, tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
         return r;
     }
 
@@ -164,16 +160,20 @@ public:
         return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp());
     }
 
-    void set_rx_gain(float gain, size_t chan){
-        return _rx_gain_group(chan)->set_value(gain);
+    void set_rx_gain(float gain, const std::string &name, size_t chan){
+        return _rx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_rx_gain(size_t chan){
-        return _rx_gain_group(chan)->get_value();
+    float get_rx_gain(const std::string &name, size_t chan){
+        return _rx_gain_group(chan)->get_value(name);
     }
 
-    gain_range_t get_rx_gain_range(size_t chan){
-        return _rx_gain_group(chan)->get_range();
+    gain_range_t get_rx_gain_range(const std::string &name, size_t chan){
+        return _rx_gain_group(chan)->get_range(name);
+    }
+
+    std::vector<std::string> get_rx_gain_names(size_t chan){
+        return _rx_gain_group(chan)->get_names();
     }
 
     void set_rx_antenna(const std::string &ant, size_t chan){
@@ -232,15 +232,9 @@ public:
         return _tx_dsp()[DSP_PROP_HOST_RATE].as<double>();
     }
 
-    tune_result_t set_tx_freq(double target_freq, size_t chan){
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq);
-        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
-        return r;
-    }
-
-    tune_result_t set_tx_freq(double target_freq, double lo_off, size_t chan){
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, target_freq, lo_off);
-        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
+    tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(), chan, tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 
@@ -252,16 +246,20 @@ public:
         return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp());
     }
 
-    void set_tx_gain(float gain, size_t chan){
-        return _tx_gain_group(chan)->set_value(gain);
+    void set_tx_gain(float gain, const std::string &name, size_t chan){
+        return _tx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_tx_gain(size_t chan){
-        return _tx_gain_group(chan)->get_value();
+    float get_tx_gain(const std::string &name, size_t chan){
+        return _tx_gain_group(chan)->get_value(name);
     }
 
-    gain_range_t get_tx_gain_range(size_t chan){
-        return _tx_gain_group(chan)->get_range();
+    gain_range_t get_tx_gain_range(const std::string &name, size_t chan){
+        return _tx_gain_group(chan)->get_range(name);
+    }
+
+    std::vector<std::string> get_tx_gain_names(size_t chan){
+        return _tx_gain_group(chan)->get_names();
     }
 
     void set_tx_antenna(const std::string &ant, size_t chan){

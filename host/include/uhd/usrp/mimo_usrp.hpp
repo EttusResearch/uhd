@@ -127,7 +127,7 @@ public:
     virtual double get_rx_rate_all(void) = 0;
 
     virtual tune_result_t set_rx_freq(size_t chan, double freq) = 0;
-    virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
+    //virtual tune_result_t set_rx_freq(size_t chan, double freq, double lo_off) = 0;
     virtual double get_rx_freq(size_t chan) = 0;
     virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
 
@@ -161,7 +161,7 @@ public:
     virtual double get_tx_rate_all(void) = 0;
 
     virtual tune_result_t set_tx_freq(size_t chan, double freq) = 0;
-    virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
+    //virtual tune_result_t set_tx_freq(size_t chan, double freq, double lo_off) = 0;
     virtual double get_tx_freq(size_t chan) = 0;
     virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
 
@@ -298,7 +298,7 @@ public:
             time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             time_spec_t time_i = _mboard(chan)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
-                uhd::print_warning(str(boost::format(
+                uhd::warning::post(str(boost::format(
                     "Detected time deviation between board %d and board 0.\n"
                     "Board 0 time is %f seconds.\n"
                     "Board %d time is %f seconds.\n"
@@ -345,9 +345,9 @@ public:
         return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0, target_freq);
     }
 
-    tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0, target_freq, lo_off);
-    }
+    //tune_result_t set_rx_freq(size_t chan, double target_freq, double lo_off){
+    //    return tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0, target_freq, lo_off);
+    //}
 
     double get_rx_freq(size_t chan){
         return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), 0);
@@ -425,9 +425,9 @@ public:
         return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0, target_freq);
     }
 
-    tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
-        return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0, target_freq, lo_off);
-    }
+    //tune_result_t set_tx_freq(size_t chan, double target_freq, double lo_off){
+    //    return tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0, target_freq, lo_off);
+    //}
 
     double get_tx_freq(size_t chan){
         return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), 0);
@@ -512,7 +512,7 @@ namespace uhd{ namespace usrp{
  * The Make Function
  **********************************************************************/
 inline mimo_usrp::sptr mimo_usrp::make(const device_addr_t &dev_addr){
-    uhd::print_warning(
+    uhd::warning::post(
         "The mimo USRP interface has been deprecated.\n"
         "Please switch to the multi USRP interface.\n"
         "#include <uhd/usrp/multi_usrp.hpp>\n"
