@@ -30,7 +30,7 @@
 #define UE_REG_MISC_CGEN_ST    UE_REG_MISC_BASE + 6
 #define UE_REG_MISC_TEST       UE_REG_MISC_BASE + 8
 #define UE_REG_MISC_RX_LEN     UE_REG_MISC_BASE + 10
-#define UE_REG_MISC_TX_LEN     UE_REG_MISC_BASE + 12
+#define UE_REG_MISC_COMPAT     UE_REG_MISC_BASE + 12
 
 /////////////////////////////////////////////////////
 // Slave 1 -- UART

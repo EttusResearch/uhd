@@ -15,11 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/config.hpp>
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <stdexcept>
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -82,8 +85,9 @@ gpio::gpio(unsigned int gpio_num, gpio_direction pin_direction)
 	std::fstream export_file;
 
 	export_file.open("/sys/class/gpio/export", std::ios::out);
-	if (!export_file.is_open())  ///\todo Poor error handling
-		std::cout << "Failed to open gpio export file." << std::endl;
+	if (not export_file.is_open()) throw std::runtime_error(
+		"Failed to open gpio export file."
+	);
 
 	export_file << gpio_num << std::endl;
 
@@ -92,15 +96,17 @@ gpio::gpio(unsigned int gpio_num, gpio_direction pin_direction)
 	std::fstream direction_file;
 	std::string direction_file_name;
 
-	direction_file_name = base_path.str() + "/direction";
+	if (gpio_num != 114) {
+		direction_file_name = base_path.str() + "/direction";
 
-	direction_file.open(direction_file_name.c_str()); 
-	if (!direction_file.is_open())
-		std::cout << "Failed to open direction file." << std::endl;
-	if (pin_direction == OUT)
-		direction_file << "out" << std::endl;
-	else
-		direction_file << "in" << std::endl;
+		direction_file.open(direction_file_name.c_str());
+		if (!direction_file.is_open())
+			std::cout << "Failed to open direction file." << std::endl;
+		if (pin_direction == OUT)
+			direction_file << "out" << std::endl;
+		else
+			direction_file << "in" << std::endl;
+	}
 
 	std::string value_file_name;
 
@@ -251,11 +257,11 @@ void usrp_e_load_fpga(const std::string &bin_file){
 	gpio gpio_init_b(INIT_B, IN);
 	gpio gpio_done  (DONE,   IN);
 
-	std::cout << "FPGA config file: " << bin_file << std::endl;
+	std::cout << "Loading FPGA image: " << bin_file << "... " << std::flush;
 
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
-	std::cout << "Done = " << gpio_done.get_value() << std::endl;
+	std::cout << "done = " << gpio_done.get_value() << std::endl;
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 }

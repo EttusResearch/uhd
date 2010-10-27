@@ -31,6 +31,8 @@
 #define INCLUDED_USRP_E_IMPL_HPP
 
 static const double MASTER_CLOCK_RATE = 64e6; //TODO get from clock control
+static const char *hash_file_path = "/tmp/usrp_e100_hash";
+static const boost::uint16_t USRP_E_COMPAT_NUM = 0x02;
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void usrp_e_load_fpga(const std::string &bin_file);
@@ -79,7 +81,7 @@ private:
 class usrp_e_impl : public uhd::device{
 public:
     //structors
-    usrp_e_impl(const std::string &node);
+    usrp_e_impl(usrp_e_iface::sptr);
     ~usrp_e_impl(void);
 
     //the io interface
