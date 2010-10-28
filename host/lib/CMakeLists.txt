@@ -19,13 +19,13 @@
 # Check Python Modules
 ########################################################################
 PYTHON_CHECK_MODULE(
-    "Python version >= 2.6"
+    "Python version 2.6 or greater"
     "platform" "platform.python_version() >= '2.6'"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
 PYTHON_CHECK_MODULE(
-    "Cheetah templates >= 2.0.0"
+    "Cheetah templates 2.0.0 or greater"
     "Cheetah" "Cheetah.Version >= '2.0.0'"
     HAVE_PYTHON_MODULE_CHEETAH
 )
