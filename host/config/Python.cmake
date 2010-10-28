@@ -24,26 +24,23 @@ IF(NOT PYTHONINTERP_FOUND)
     MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
 ENDIF(NOT PYTHONINTERP_FOUND)
 
-MACRO(PYTHON_CHECK_MODULE module have)
-    MESSAGE(STATUS "Checking for python module ${module}")
+MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
+    MESSAGE(STATUS "Python checking for ${desc}")
     EXECUTE_PROCESS(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import ${module}"
+        COMMAND ${PYTHON_EXECUTABLE} -c "
+#########################################
+try: import ${mod}
+except: exit(-1)
+try: assert ${cmd}
+except: exit(-1)
+#########################################"
         RESULT_VARIABLE ${have}
     )
     IF(${have} EQUAL 0)
-        MESSAGE(STATUS "Checking for python module ${module} - found")
+        MESSAGE(STATUS "Python checking for ${desc} - found")
         SET(${have} TRUE)
     ELSE(${have} EQUAL 0)
-        MESSAGE(STATUS "Checking for python module ${module} - not found")
+        MESSAGE(STATUS "Python checking for ${desc} - not found")
         SET(${have} FALSE)
     ENDIF(${have} EQUAL 0)
 ENDMACRO(PYTHON_CHECK_MODULE)
-
-########################################################################
-# Check Modules
-########################################################################
-PYTHON_CHECK_MODULE("Cheetah" HAVE_PYTHON_MODULE_CHEETAH)
-
-IF(NOT HAVE_PYTHON_MODULE_CHEETAH)
-    MESSAGE(FATAL_ERROR "Error: Cheetah Templates required by the build system.")
-ENDIF(NOT HAVE_PYTHON_MODULE_CHEETAH)

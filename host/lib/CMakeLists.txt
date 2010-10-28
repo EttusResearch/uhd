@@ -16,6 +16,25 @@
 #
 
 ########################################################################
+# Check Python Modules
+########################################################################
+PYTHON_CHECK_MODULE(
+    "Python version >= 2.6"
+    "platform" "platform.python_version() >= '2.6'"
+    HAVE_PYTHON_PLAT_MIN_VERSION
+)
+
+PYTHON_CHECK_MODULE(
+    "Cheetah templates >= 2.0.0"
+    "Cheetah" "Cheetah.Version >= '2.0.0'"
+    HAVE_PYTHON_MODULE_CHEETAH
+)
+
+IF(NOT HAVE_PYTHON_PLAT_MIN_VERSION OR NOT HAVE_PYTHON_MODULE_CHEETAH)
+    MESSAGE(FATAL_ERROR "Error: python requirements not met for the build system.")
+ENDIF(NOT HAVE_PYTHON_PLAT_MIN_VERSION OR NOT HAVE_PYTHON_MODULE_CHEETAH)
+
+########################################################################
 # Helpful Macros
 ########################################################################
 MACRO(LIBUHD_APPEND_SOURCES)
