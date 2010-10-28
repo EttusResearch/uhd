@@ -20,8 +20,9 @@
 ########################################################################
 SET(example_sources
     benchmark_rx_rate.cpp
+    rx_samples_to_file.cpp
+    rx_samples_to_udp.cpp
     rx_timed_samples.cpp
-    rx_to_file.cpp
     test_async_messages.cpp
     test_pps_input.cpp
     tx_timed_samples.cpp
