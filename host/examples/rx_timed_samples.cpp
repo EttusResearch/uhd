@@ -32,7 +32,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     time_t seconds_in_future;
     size_t total_num_samps;
-    double rx_rate, freq;
+    double rate, freq;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -41,7 +41,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
-        ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
+        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("dilv", "specify to disable inner-loop verbose")
     ;
@@ -64,12 +64,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
-    //set properties on the device
-    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rx_rate/1e6) << std::endl;
-    sdev->set_rx_rate(rx_rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl;
-    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
+    //set the rx sample rate
+    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
+    sdev->set_rx_rate(rate);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl << std::endl;
+
+    //set the rx center frequency
+    std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
     sdev->set_rx_freq(freq);
+    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (sdev->get_rx_freq()/1e6) << std::endl << std::endl;
+
+    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //setup streaming

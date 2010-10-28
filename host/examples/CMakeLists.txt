@@ -16,45 +16,26 @@
 #
 
 ########################################################################
-ADD_EXECUTABLE(benchmark_rx_rate benchmark_rx_rate.cpp)
-TARGET_LINK_LIBRARIES(benchmark_rx_rate uhd)
-
-ADD_EXECUTABLE(rx_timed_samples rx_timed_samples.cpp)
-TARGET_LINK_LIBRARIES(rx_timed_samples uhd)
-
-ADD_EXECUTABLE(rx_to_file rx_to_file.cpp)
-TARGET_LINK_LIBRARIES(rx_to_file uhd)
-
-ADD_EXECUTABLE(rx_to_udp rx_to_udp.cpp)
-TARGET_LINK_LIBRARIES(rx_to_udp uhd)
-
-ADD_EXECUTABLE(test_async_messages test_async_messages.cpp)
-TARGET_LINK_LIBRARIES(test_async_messages uhd)
-
-ADD_EXECUTABLE(test_pps_input test_pps_input.cpp)
-TARGET_LINK_LIBRARIES(test_pps_input uhd)
-
-ADD_EXECUTABLE(tx_timed_samples tx_timed_samples.cpp)
-TARGET_LINK_LIBRARIES(tx_timed_samples uhd)
-
-ADD_EXECUTABLE(tx_from_file tx_from_file.cpp)
-TARGET_LINK_LIBRARIES(tx_from_file uhd)
-
-ADD_EXECUTABLE(tx_waveforms tx_waveforms.cpp)
-TARGET_LINK_LIBRARIES(tx_waveforms uhd)
-
-INSTALL(TARGETS
-    benchmark_rx_rate
-    rx_timed_samples
-    test_async_messages
-    test_pps_input
-    tx_timed_samples
-    tx_from_file
-    rx_to_file
-    rx_to_udp
-    tx_waveforms
-    RUNTIME DESTINATION ${PKG_DATA_DIR}/examples
+# example applications
+########################################################################
+SET(example_sources
+    benchmark_rx_rate.cpp
+    rx_samples_to_file.cpp
+    rx_samples_to_udp.cpp
+    rx_timed_samples.cpp
+    test_async_messages.cpp
+    test_pps_input.cpp
+    tx_timed_samples.cpp
+    tx_waveforms.cpp
 )
+
+#for each source: build an executable and install
+FOREACH(example_source ${example_sources})
+    GET_FILENAME_COMPONENT(example_name ${example_source} NAME_WE)
+    ADD_EXECUTABLE(${example_name} ${example_source})
+    TARGET_LINK_LIBRARIES(${example_name} uhd)
+    INSTALL(TARGETS ${example_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/examples)
+ENDFOREACH(example_source)
 
 ########################################################################
 # ASCII Art DFT - requires curses, so this part is optional

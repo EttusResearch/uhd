@@ -18,42 +18,36 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/single_usrp.hpp>
+#include <uhd/transport/udp_simple.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
-#include <fstream>
 #include <complex>
 
-#include "sys/types.h"
-#include "sys/socket.h"
-#include "arpa/inet.h"
-
 namespace po = boost::program_options;
-
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
     std::string args;
-    time_t seconds_in_future;
     size_t total_num_samps;
-    double rx_rate, freq;
-    short srv_port;
-    std::string srv_ip;
+    double rate, freq;
+    float gain;
+    std::string addr, port;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
-        ("rxrate", po::value<double>(&rx_rate)->default_value(100e6/16), "rate of incoming samples")
+        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
-        ("port", po::value<short>(&srv_port)->default_value(7124), "server port")
-        ("ip", po::value<std::string>(&srv_ip)->default_value("192.168.1.10"), "server ip")
-        ("dilv", "specify to disable inner-loop verbose")
+        ("gain", po::value<float>(&gain)->default_value(0), "gain for the RF chain")
+        ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
+        ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -65,8 +59,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
-    bool verbose = vm.count("dilv") == 0;
-
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
@@ -74,52 +66,35 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
-    //set properties on the device
-    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rx_rate/1e6) << std::endl;
-    sdev->set_rx_rate(rx_rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl;
-    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
+    //set the rx sample rate
+    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
+    sdev->set_rx_rate(rate);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl << std::endl;
+
+    //set the rx center frequency
+    std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
     sdev->set_rx_freq(freq);
-    sdev->set_time_now(uhd::time_spec_t(0.0));
+    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (sdev->get_rx_freq()/1e6) << std::endl << std::endl;
 
-    uhd::gain_range_t rx_gain = sdev->get_rx_gain_range();
-    std::cout << "Setting RX Gain to: " << rx_gain.max << std::endl;
-    sdev->set_rx_gain(rx_gain.max);
+    //set the rx rf gain
+    std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
+    sdev->set_rx_gain(gain);
+    std::cout << boost::format("Actual RX Gain: %f dB...") % sdev->get_rx_gain() << std::endl << std::endl;
 
-    sleep(1);
+    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
     std::cout << "LO Locked = " << sdev->get_rx_lo_locked() << std::endl;
 
     //setup streaming
-    std::cout << std::endl;
-    std::cout << boost::format(
-        "Begin streaming %u samples, %d seconds in the future..."
-    ) % total_num_samps % seconds_in_future << std::endl;
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
-    stream_cmd.stream_now = false;
-    stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
+    stream_cmd.stream_now = true;
     sdev->issue_stream_cmd(stream_cmd);
 
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
     uhd::rx_metadata_t md;
-    std::vector<std::complex<float> > buff(368);
-    std::ofstream outfile("out.dat", std::ofstream::binary);
-
-    int s;
-    struct sockaddr_in si_other;
-    if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-	std::cout << "Failid to open socket." << std::endl;
-    	return -1;
-    }	
-
-    memset((char *) &si_other, 0, sizeof(si_other));
-    si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(srv_port);
-    if (inet_aton(srv_ip.c_str(), &si_other.sin_addr) == 0) {
-	    std::cout << "Bad inet addr: " << srv_ip << std::endl;
-	    return -1;
-    }
+    std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
+    uhd::transport::udp_simple::sptr udp_xport = uhd::transport::udp_simple::make_connected(addr, port);
 
     while(num_acc_samps < total_num_samps){
         size_t num_rx_samps = dev->recv(
@@ -147,18 +122,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             goto done_loop;
         }
 
-//	outfile.write((const char*)&buff[0], num_rx_samps * sizeof(std::complex<short>));
-	if (sendto(s, (const char *)&buff[0], num_rx_samps * sizeof(std::complex<float>), 0 , (const sockaddr *)&si_other, sizeof(si_other)) == -1)
-		std::cout << "Sendto failed." << std::endl;
-
-        if(verbose) std::cout << boost::format(
-            "Got packet: %u samples, %u full secs, %f frac secs"
-        ) % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
+        //send complex single precision floating point samples over udp
+        udp_xport->send(boost::asio::buffer(buff, num_rx_samps));
 
         num_acc_samps += num_rx_samps;
     } done_loop:
-
-    outfile.close();
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

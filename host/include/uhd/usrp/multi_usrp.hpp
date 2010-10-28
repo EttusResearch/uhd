@@ -145,6 +145,14 @@ public:
     virtual void set_time_unknown_pps(const time_spec_t &time_spec) = 0;
 
     /*!
+     * Are the times across all motherboards in this configuration synchronized?
+     * Checks that all time registers are approximately close but not exact,
+     * given that the RTT may varying for a control packet transaction.
+     * \return true when all motherboards time registers are in sync
+     */
+    virtual bool get_time_synchronized(void) = 0;
+
+    /*!
      * Issue a stream command to the usrp device.
      * This tells the usrp to send samples into the host.
      * See the documentation for stream_cmd_t for more info.
