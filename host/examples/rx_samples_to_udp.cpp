@@ -48,7 +48,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("gain", po::value<float>(&gain)->default_value(0), "gain for the RF chain")
         ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
         ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
-        ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -59,8 +58,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("UHD RX to UDP %s") % desc << std::endl;
         return ~0;
     }
-
-    bool verbose = vm.count("dilv") == 0;
 
     //create a usrp device
     std::cout << std::endl;
@@ -127,10 +124,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         //send complex single precision floating point samples over udp
         udp_xport->send(boost::asio::buffer(buff, num_rx_samps));
-
-        if(verbose) std::cout << boost::format(
-            "Got packet: %u samples, %u full secs, %f frac secs"
-        ) % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
 
         num_acc_samps += num_rx_samps;
     } done_loop:

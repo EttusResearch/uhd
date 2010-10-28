@@ -46,7 +46,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("gain", po::value<float>(&gain)->default_value(0), "gain for the RF chain")
-        ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -57,8 +56,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("UHD RX to File %s") % desc << std::endl;
         return ~0;
     }
-
-    bool verbose = vm.count("dilv") == 0;
 
     //create a usrp device
     std::cout << std::endl;
@@ -125,10 +122,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         //write complex short integer samples to the binary file
         outfile.write((const char*)&buff[0], num_rx_samps * sizeof(std::complex<short>));
-
-        if(verbose) std::cout << boost::format(
-            "Got packet: %u samples, %u full secs, %f frac secs"
-        ) % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
 
         num_acc_samps += num_rx_samps;
     } done_loop:
