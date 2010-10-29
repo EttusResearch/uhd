@@ -626,7 +626,7 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = _rx_bandwidth;
+        val = 2*_rx_bandwidth; //_tx_bandwidth is low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -652,7 +652,7 @@ void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_rx_bandwidth(val.as<double>());
+        this->set_rx_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
         return;
 
     case SUBDEV_PROP_ENABLED:
@@ -725,7 +725,7 @@ void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = _tx_bandwidth;
+        val = 2*_tx_bandwidth; //_tx_bandwidth is low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -747,7 +747,7 @@ void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_tx_bandwidth(val.as<double>());
+        this->set_tx_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
         return;
 
     case SUBDEV_PROP_ANTENNA:

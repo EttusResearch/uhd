@@ -40,7 +40,7 @@ static inline void do_samp_rate_warning_message(
 ){
     static const double max_allowed_error = 1.0; //Sps
     if (std::abs(target_rate - actual_rate) > max_allowed_error){
-        uhd::print_warning(str(boost::format(
+        uhd::warning::post(str(boost::format(
             "The hardware does not support the requested %s sample rate:\n"
             "Target sample rate: %f MSps\n"
             "Actual sample rate: %f MSps\n"
@@ -55,7 +55,7 @@ static inline void do_tune_freq_warning_message(
 ){
     static const double max_allowed_error = 1.0; //Hz
     if (std::abs(target_freq - actual_freq) > max_allowed_error){
-        uhd::print_warning(str(boost::format(
+        uhd::warning::post(str(boost::format(
             "The hardware does not support the requested %s frequency:\n"
             "Target frequency: %f MHz\n"
             "Actual frequency: %f MHz\n"

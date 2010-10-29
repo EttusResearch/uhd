@@ -145,13 +145,22 @@ public:
             time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             time_spec_t time_i = _mboard(m)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
-                uhd::print_warning(str(boost::format(
+                uhd::warning::post(str(boost::format(
                     "Detected time deviation between board %d and board 0.\n"
                     "Board 0 time is %f seconds.\n"
                     "Board %d time is %f seconds.\n"
                 ) % m % time_0.get_real_secs() % m % time_i.get_real_secs()));
             }
         }
+    }
+
+    bool get_time_synchronized(void){
+        for (size_t m = 1; m < get_num_mboards(); m++){
+            time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            time_spec_t time_i = _mboard(m)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+            if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)) return false;
+        }
+        return true;
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
@@ -210,15 +219,9 @@ public:
         return _rx_dsp(0)[DSP_PROP_HOST_RATE].as<double>();
     }
 
-    tune_result_t set_rx_freq(double target_freq, size_t chan){
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), target_freq);
-        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
-        return r;
-    }
-
-    tune_result_t set_rx_freq(double target_freq, double lo_off, size_t chan){
-        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), target_freq, lo_off);
-        do_tune_freq_warning_message(target_freq, get_rx_freq(chan), "RX");
+    tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan/rx_cpm()), chan%rx_cpm(), tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
         return r;
     }
 
@@ -314,15 +317,9 @@ public:
         return _tx_dsp(0)[DSP_PROP_HOST_RATE].as<double>();
     }
 
-    tune_result_t set_tx_freq(double target_freq, size_t chan){
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), target_freq);
-        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
-        return r;
-    }
-
-    tune_result_t set_tx_freq(double target_freq, double lo_off, size_t chan){
-        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), target_freq, lo_off);
-        do_tune_freq_warning_message(target_freq, get_tx_freq(chan), "TX");
+    tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan/tx_cpm()), chan%tx_cpm(), tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 

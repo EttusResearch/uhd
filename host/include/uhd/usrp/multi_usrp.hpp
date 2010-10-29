@@ -23,6 +23,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
@@ -144,6 +145,14 @@ public:
     virtual void set_time_unknown_pps(const time_spec_t &time_spec) = 0;
 
     /*!
+     * Are the times across all motherboards in this configuration synchronized?
+     * Checks that all time registers are approximately close but not exact,
+     * given that the RTT may varying for a control packet transaction.
+     * \return true when all motherboards time registers are in sync
+     */
+    virtual bool get_time_synchronized(void) = 0;
+
+    /*!
      * Issue a stream command to the usrp device.
      * This tells the usrp to send samples into the host.
      * See the documentation for stream_cmd_t for more info.
@@ -213,20 +222,13 @@ public:
 
     /*!
      * Set the RX center frequency.
-     * \param freq the frequency in Hz
+     * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
      */
-    virtual tune_result_t set_rx_freq(double freq, size_t chan) = 0;
-
-    /*!
-     * Set the RX center frequency.
-     * \param freq the frequency in Hz
-     * \param lo_off an LO offset in Hz
-     * \param chan the channel index 0 to N-1
-     * \return a tune result object
-     */
-    virtual tune_result_t set_rx_freq(double freq, double lo_off, size_t chan) = 0;
+    virtual tune_result_t set_rx_freq(
+        const tune_request_t &tune_request, size_t chan = 0
+    ) = 0;
 
     /*!
      * Get the RX center frequency.
@@ -399,20 +401,13 @@ public:
 
     /*!
      * Set the TX center frequency.
-     * \param freq the frequency in Hz
+     * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
      */
-    virtual tune_result_t set_tx_freq(double freq, size_t chan) = 0;
-
-    /*!
-     * Set the TX center frequency.
-     * \param freq the frequency in Hz
-     * \param lo_off an LO offset in Hz
-     * \param chan the channel index 0 to N-1
-     * \return a tune result object
-     */
-    virtual tune_result_t set_tx_freq(double freq, double lo_off, size_t chan) = 0;
+    virtual tune_result_t set_tx_freq(
+        const tune_request_t &tune_request, size_t chan = 0
+    ) = 0;
 
     /*!
      * Get the TX center frequency.

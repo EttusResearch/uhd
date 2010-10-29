@@ -19,6 +19,7 @@
 INSTALL(FILES
     clock_config.hpp
     device_addr.hpp
+    dict.ipp
     dict.hpp
     io_type.hpp
     mac_addr.hpp
@@ -28,6 +29,7 @@ INSTALL(FILES
     serial.hpp
     stream_cmd.hpp
     time_spec.hpp
+    tune_request.hpp
     tune_result.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
 )

@@ -20,6 +20,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -28,6 +29,16 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
+
+/***********************************************************************
+ * Constants
+ **********************************************************************/
+static const uhd::dict<std::string, double> subdev_bandwidth_scalar = map_list_of
+    ("A", 1.0)
+    ("B", 1.0)
+    ("AB", 2.0)
+    ("BA", 2.0)
+;
 
 /***********************************************************************
  * The basic and lf boards:
@@ -68,11 +79,11 @@ static const uhd::dict<std::string, subdev_conn_t> sd_name_to_conn = map_list_of
  * Register the basic and LF dboards
  **********************************************************************/
 static dboard_base::sptr make_basic_rx(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new basic_rx(args, 90e9));
+    return dboard_base::sptr(new basic_rx(args, 250e6));
 }
 
 static dboard_base::sptr make_basic_tx(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new basic_tx(args, 90e9));
+    return dboard_base::sptr(new basic_tx(args, 250e6));
 }
 
 static dboard_base::sptr make_lf_rx(dboard_base::ctor_args_t args){
@@ -161,6 +172,10 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = true; //there is no LO, so it must be true!
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = subdev_bandwidth_scalar[get_subdev_name()]*_max_freq;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -184,6 +199,14 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ENABLED:
         return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::warning::post(
+            str(boost::format("%s: No tunable bandwidth, fixed filtered to %0.2fMHz")
+                % get_rx_id().to_pp_string() % _max_freq
+            )
+        );
+        return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
@@ -260,6 +283,10 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = true; //there is no LO, so it must be true!
         return;
 
+    case SUBDEV_PROP_BANDWIDTH:
+        val = subdev_bandwidth_scalar[get_subdev_name()]*_max_freq;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -283,6 +310,14 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ENABLED:
         return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::warning::post(
+            str(boost::format("%s: No tunable bandwidth, fixed filtered to %0.2fMHz")
+                % get_tx_id().to_pp_string() % _max_freq
+            )
+        );
+        return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }

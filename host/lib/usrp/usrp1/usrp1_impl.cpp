@@ -64,7 +64,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         );
     }
     catch(...){
-        uhd::print_warning(
+        uhd::warning::post(
             "Could not locate USRP1 firmware.\n"
             "Please install the images package.\n"
         );

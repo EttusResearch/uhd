@@ -26,6 +26,14 @@ The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can down-convert signals
 greater than the Nyquist rate of the ADC.
 
+BasicRX Bandwidth (Hz): 
+    For Real-Mode (A or B subdevice): 250M
+    For Complex (AB or BA subdevice): 500M
+
+LFRX Bandwidth (Hz):
+    For Real-Mode (A or B subdevice): 33M
+    For Complex (AB or BA subdevice): 66M
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -40,6 +48,14 @@ The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can up-convert signals
 greater than the Nyquist rate of the DAC.
 
+BasicTX Bandwidth (Hz): 250M
+    For Real-Mode (A or B subdevice): 250M
+    For Complex (AB or BA subdevice): 500M
+
+LFTX Bandwidth (Hz): 33M
+    For Real-Mode (A or B subdevice): 33M
+    For Complex (AB or BA subdevice): 66M
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -53,7 +69,7 @@ Receive Gains:
     **GC1**, Range: 0-56dB
     **GC2**, Range: 0-24dB
 
-Low-Pass Filter Bandwidth (Hz): 4M-33M
+Bandwidth (Hz): 8M-66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
@@ -67,6 +83,10 @@ However, when using an RFX board in full-duplex mode,
 the receive antenna will always be set to RX2, regardless of the settings.
 
 Receive Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
+
+Bandwidths (Hz):
+ * **RX**: 40M
+ * **TX**: 40M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
@@ -93,9 +113,9 @@ Receive Gains:
  * **LNA**, Range: 0-30.5dB
  * **VGA**, Range: 0-62dB
 
-Low-Pass Filter Bandwidths (Hz):
- * **RX**: 7.5M, 9.5M, 14M, 18M; (each +-0, 5, or 10%)
- * **TX**: 12M, 18M, 24M
+Bandwidths (Hz):
+ * **RX**: 15M, 19M, 28M, 36M; (each +-0, 5, or 10%)
+ * **TX**: 24M, 36M, 48M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WBX Series
@@ -112,9 +132,9 @@ Transmit Gains: **PGA0**, Range: 0-25dB
 
 Receive Gains: **PGA0**, Range: 0-31.5dB
 
-Low-Pass Filter Bandwidths (Hz):
- * **RX**: 20M (Fixed)
- * **TX**: 20M (Fixed)
+Bandwidths (Hz):
+ * **RX**: 40M
+ * **TX**: 40M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX
@@ -125,7 +145,7 @@ Receive Gains:
  * **RF**, Range: -13.3-50.3dB (frequency-dependent)
  * **IF**, Range: -1.5-32.5dB
 
-Bandpass Filter Bandwidth: 6MHz
+Bandwidth: 6MHz
 
 ------------------------------------------------------------------------
 Daughterboard Modifications
