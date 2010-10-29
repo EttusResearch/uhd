@@ -31,6 +31,16 @@ using namespace uhd::usrp;
 using namespace boost::assign;
 
 /***********************************************************************
+ * Constants
+ **********************************************************************/
+static const uhd::dict<std::string, double> subdev_bandwidth_scalar = map_list_of
+    ("A", 1.0)
+    ("B", 1.0)
+    ("AB", 2.0)
+    ("BA", 2.0)
+;
+
+/***********************************************************************
  * The basic and lf boards:
  *   They share a common class because only the frequency bounds differ.
  **********************************************************************/
@@ -168,7 +178,7 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = 2*_max_freq; //we want complex double-sided
+        val = subdev_bandwidth_scalar[get_subdev_name()]*_max_freq;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -279,7 +289,7 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = 2*_max_freq; //we want complex double-sided
+        val = subdev_bandwidth_scalar[get_subdev_name()]*_max_freq;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

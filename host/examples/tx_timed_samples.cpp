@@ -33,7 +33,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     time_t seconds_in_future;
     size_t total_num_samps;
     size_t samps_per_packet;
-    double tx_rate, freq;
+    double rate, freq;
     float ampl;
 
     //setup the program options
@@ -44,7 +44,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
-        ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
+        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
         ("dilv", "specify to disable inner-loop verbose")
@@ -68,12 +68,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
-    //set properties on the device
-    std::cout << boost::format("Setting TX Rate: %f Msps...") % (tx_rate/1e6) << std::endl;
-    sdev->set_tx_rate(tx_rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl;
-    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
+    //set the tx sample rate
+    std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
+    sdev->set_tx_rate(rate);
+    std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl << std::endl;
+
+    //set the tx center frequency
+    std::cout << boost::format("Setting TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
     sdev->set_tx_freq(freq);
+    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (sdev->get_tx_freq()/1e6) << std::endl << std::endl;
+
+    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
     //allocate data to send
