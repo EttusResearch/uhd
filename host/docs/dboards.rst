@@ -26,9 +26,13 @@ The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can down-convert signals
 greater than the Nyquist rate of the ADC.
 
-BasicRX Bandwidth (Hz): 250M
+BasicRX Bandwidth (Hz): 
+    For Real-Mode (A or B subdevice): 250M
+    For Complex (AB or BA subdevice): 500M
 
-LFRX Bandwidth (Hz): 30M
+LFRX Bandwidth (Hz):
+    For Real-Mode (A or B subdevice): 33M
+    For Complex (AB or BA subdevice): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
@@ -45,8 +49,12 @@ Though the magic of aliasing, you can up-convert signals
 greater than the Nyquist rate of the DAC.
 
 BasicTX Bandwidth (Hz): 250M
+    For Real-Mode (A or B subdevice): 250M
+    For Complex (AB or BA subdevice): 500M
 
-LFTX Bandwidth (Hz): 30M
+LFTX Bandwidth (Hz): 33M
+    For Real-Mode (A or B subdevice): 33M
+    For Complex (AB or BA subdevice): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX

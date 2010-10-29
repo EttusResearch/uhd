@@ -460,7 +460,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = 6.0e6; //30MHz low-pass, we want complex double-sided
+        val = 6.0e6;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
