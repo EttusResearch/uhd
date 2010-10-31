@@ -86,6 +86,14 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
+    const Val &dict<Key, Val>::get(const Key &key, const Val &def) const{
+        BOOST_FOREACH(const pair_t &p, _map){
+            if (p.first == key) return p.second;
+        }
+        return def;
+    }
+
+    template <typename Key, typename Val>
     const Val &dict<Key, Val>::operator[](const Key &key) const{
         BOOST_FOREACH(const pair_t &p, _map){
             if (p.first == key) return p.second;

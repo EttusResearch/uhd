@@ -59,9 +59,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //extract the firmware path for the USRP1
     std::string usrp1_fw_image;
     try{
-        usrp1_fw_image = find_image_path(
-            hint.has_key("fw")? hint["fw"] : "usrp1_fw.ihx"
-        );
+        usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
     }
     catch(...){
         uhd::warning::post(
@@ -110,7 +108,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr){
 
     //extract the FPGA path for the USRP1
     std::string usrp1_fpga_image = find_image_path(
-        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp1_fpga.rbf"
+        device_addr.get("fpga", "usrp1_fpga.rbf")
     );
     //std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
 
