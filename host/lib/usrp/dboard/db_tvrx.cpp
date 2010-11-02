@@ -200,12 +200,12 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
     //send initial register settings if necessary
 
     //set default freq
-    _lo_freq = tvrx_freq_range.min + tvrx_if_freq; //init _lo_freq to a sane default
-    set_freq(tvrx_freq_range.min);
+    _lo_freq = tvrx_freq_range.start() + tvrx_if_freq; //init _lo_freq to a sane default
+    set_freq(tvrx_freq_range.start());
 
     //set default gains
     BOOST_FOREACH(const std::string &name, get_tvrx_gain_ranges().keys()){
-        set_gain(get_tvrx_gain_ranges()[name].min, name);
+        set_gain(get_tvrx_gain_ranges()[name].start(), name);
     }
 }
 
@@ -219,7 +219,7 @@ tvrx::~tvrx(void){
 
 static std::string get_band(double freq) {
     BOOST_FOREACH(const std::string &band, tvrx_freq_ranges.keys()) {
-        if(freq >= tvrx_freq_ranges[band].min && freq <= tvrx_freq_ranges[band].max){
+        if(freq >= tvrx_freq_ranges[band].start() && freq <= tvrx_freq_ranges[band].stop()){
             if(tvrx_debug) std::cout << "Band: " << band << std::endl;
             return band;
         }
@@ -277,7 +277,7 @@ static double gain_interp(double gain, boost::array<double, 17> db_vector, boost
 
 static float rf_gain_to_voltage(float gain, double lo_freq){
     //clip the input
-    gain = std::clip<float>(gain, get_tvrx_gain_ranges()["RF"].min, get_tvrx_gain_ranges()["RF"].max);
+    gain = std::clip(gain, get_tvrx_gain_ranges()["RF"].start(), get_tvrx_gain_ranges()["RF"].stop());
 
     //first we need to find out what band we're in, because gains are different across different bands
     std::string band = get_band(lo_freq + tvrx_if_freq);
@@ -305,7 +305,7 @@ static float rf_gain_to_voltage(float gain, double lo_freq){
 
 static float if_gain_to_voltage(float gain){
     //clip the input
-    gain = std::clip<float>(gain, get_tvrx_gain_ranges()["IF"].min, get_tvrx_gain_ranges()["IF"].max);
+    gain = std::clip(gain, get_tvrx_gain_ranges()["IF"].start(), get_tvrx_gain_ranges()["IF"].stop());
 
     double gain_volts = gain_interp(gain, tvrx_if_gains_db, tvrx_gains_volts);
     double dac_volts = gain_volts / opamp_gain;
@@ -337,7 +337,7 @@ void tvrx::set_gain(float gain, const std::string &name){
  */
 
 void tvrx::set_freq(double freq) {
-    freq = std::clip<double>(freq, tvrx_freq_range.min, tvrx_freq_range.max);
+    freq = std::clip(freq, tvrx_freq_range.start(), tvrx_freq_range.stop());
     std::string prev_band = get_band(_lo_freq - tvrx_if_freq);
     std::string new_band = get_band(freq);
 

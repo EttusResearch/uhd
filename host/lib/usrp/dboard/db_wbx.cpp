@@ -177,15 +177,15 @@ wbx_xcvr::wbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ) % RXIO_MASK % TXIO_MASK << std::endl;
 
     //set some default values
-    set_rx_lo_freq((wbx_freq_range.min + wbx_freq_range.max)/2.0);
-    set_tx_lo_freq((wbx_freq_range.min + wbx_freq_range.max)/2.0);
+    set_rx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
+    set_tx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
     set_rx_ant("RX2");
 
     BOOST_FOREACH(const std::string &name, wbx_tx_gain_ranges.keys()){
-        set_tx_gain(wbx_tx_gain_ranges[name].min, name);
+        set_tx_gain(wbx_tx_gain_ranges[name].start(), name);
     }
     BOOST_FOREACH(const std::string &name, wbx_rx_gain_ranges.keys()){
-        set_rx_gain(wbx_rx_gain_ranges[name].min, name);
+        set_rx_gain(wbx_rx_gain_ranges[name].start(), name);
     }
 }
 
@@ -198,10 +198,10 @@ wbx_xcvr::~wbx_xcvr(void){
  **********************************************************************/
 static int rx_pga0_gain_to_iobits(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, wbx_rx_gain_ranges["PGA0"].min, wbx_rx_gain_ranges["PGA0"].max);
+    gain = std::clip<float>(gain, wbx_rx_gain_ranges["PGA0"].start(), wbx_rx_gain_ranges["PGA0"].stop());
 
     //convert to attenuation and update iobits for atr
-    float attn = wbx_rx_gain_ranges["PGA0"].max - gain;
+    float attn = wbx_rx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the attenuation
     int attn_code = int(floor(attn*2));
@@ -213,18 +213,18 @@ static int rx_pga0_gain_to_iobits(float &gain){
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = wbx_rx_gain_ranges["PGA0"].max - float(attn_code)/2;
+    gain = wbx_rx_gain_ranges["PGA0"].stop() - float(attn_code)/2;
 
     return iobits;
 }
 
 static float tx_pga0_gain_to_dac_volts(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, wbx_tx_gain_ranges["PGA0"].min, wbx_tx_gain_ranges["PGA0"].max);
+    gain = std::clip<float>(gain, wbx_tx_gain_ranges["PGA0"].start(), wbx_tx_gain_ranges["PGA0"].stop());
 
     //voltage level constants
     static const float max_volts = float(0.5), min_volts = float(1.4);
-    static const float slope = (max_volts-min_volts)/wbx_tx_gain_ranges["PGA0"].max;
+    static const float slope = (max_volts-min_volts)/wbx_tx_gain_ranges["PGA0"].stop();
 
     //calculate the voltage for the aux dac
     float dac_volts = gain*slope + min_volts;
@@ -328,7 +328,7 @@ double wbx_xcvr::set_lo_freq(
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = std::clip(target_freq, wbx_freq_range.min, wbx_freq_range.max);
+    target_freq = std::clip(target_freq, wbx_freq_range.start(), wbx_freq_range.stop());
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of

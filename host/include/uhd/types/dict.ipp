@@ -46,12 +46,11 @@ namespace uhd{
         /* NOP */
     }
 
-    template <typename Key, typename Val>
-    template <typename InputIterator>
-    dict<Key, Val>::dict(InputIterator first, InputIterator last){
-        for(InputIterator it = first; it != last; it++){
-            _map.push_back(*it);
-        }
+    template <typename Key, typename Val> template <typename InputIterator>
+    dict<Key, Val>::dict(InputIterator first, InputIterator last):
+        _map(first, last)
+    {
+        /* NOP */
     }
 
     template <typename Key, typename Val>

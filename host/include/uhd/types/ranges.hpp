@@ -19,28 +19,87 @@
 #define INCLUDED_UHD_TYPES_RANGES_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/pimpl.hpp>
+#include <vector>
 
 namespace uhd{
 
     /*!
-     * The gain range struct describes possible gain settings.
-     * The mimumum gain, maximum gain, and step size are in dB.
+     * A range object describes a set of discrete values of the form:
+     * y = start + step*n, where n is an integer between 0 and (stop - start)/step
      */
-    struct UHD_API gain_range_t{
-        float min, max, step;
-        gain_range_t(float min = 0.0, float max = 0.0, float step = 0.0);
+    template <typename T> class range_t{
+    public:
+        /*!
+         * Create a range from a single value.
+         * The step size will be taken as zero.
+         * \param value the only possible value in this range
+         */
+        range_t(const T &value = T(0));
+
+        /*!
+         * Create a range from a full set of values.
+         * A step size of zero implies infinite precision.
+         * \param start the minimum value for this range
+         * \param stop the maximum value for this range
+         * \param step the step size for this range
+         */
+        range_t(const T &start, const T &stop, const T &step = T(0));
+
+        //! Get the start value for this range.
+        const T start(void) const;
+
+        //! Get the stop value for this range.
+        const T stop(void) const;
+
+        //! Get the step value for this range.
+        const T step(void) const;
+
+    private: UHD_PIMPL_DECL(impl) _impl;
     };
 
     /*!
-     * The frequency range struct describes possible frequency settings.
-     * Because tuning is very granular (sub-Hz), step size is not listed.
-     * The mimumum frequency and maximum frequency are in Hz.
+     * A meta-range object holds a list of individual ranges.
      */
-    struct UHD_API freq_range_t{
-        double min, max;
-        freq_range_t(double min = 0.0, double max = 0.0);
+    template <typename T> struct meta_range_t : std::vector<range_t<T> >{
+
+        //! A default constructor for an empty meta-range
+        meta_range_t(void);
+
+        /*!
+         * Input iterator constructor:
+         * Makes boost::assign::list_of work.
+         * \param first the begin iterator
+         * \param last the end iterator
+         */
+        template <typename InputIterator>
+        meta_range_t(InputIterator first, InputIterator last);
+
+        /*!
+         * A convenience constructor for a single range.
+         * A step size of zero implies infinite precision.
+         * \param start the minimum value for this range
+         * \param stop the maximum value for this range
+         * \param step the step size for this range
+         */
+        meta_range_t(const T &start, const T &stop, const T &step = T(0));
+
+        //! Get the overall start value for this meta-range.
+        const T start(void) const;
+
+        //! Get the overall stop value for this meta-range.
+        const T stop(void) const;
+
+        //! Get the overall step value for this meta-range.
+        const T step(void) const;
+
     };
 
+    typedef meta_range_t<float> gain_range_t;
+    typedef meta_range_t<double> freq_range_t;
+
 } //namespace uhd
+
+#include <uhd/types/ranges.ipp>
 
 #endif /* INCLUDED_UHD_TYPES_RANGES_HPP */

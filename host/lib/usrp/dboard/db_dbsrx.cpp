@@ -212,10 +212,10 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
 
     //set defaults for LO, gains, and filter bandwidth
     _bandwidth = 33e6;
-    set_lo_freq(dbsrx_freq_range.min);
+    set_lo_freq(dbsrx_freq_range.start());
 
     BOOST_FOREACH(const std::string &name, dbsrx_gain_ranges.keys()){
-        set_gain(dbsrx_gain_ranges[name].min, name);
+        set_gain(dbsrx_gain_ranges[name].start(), name);
     }
 
     set_bandwidth(33e6); // default bandwidth from datasheet
@@ -229,7 +229,7 @@ dbsrx::~dbsrx(void){
  * Tuning
  **********************************************************************/
 void dbsrx::set_lo_freq(double target_freq){
-    target_freq = std::clip(target_freq, dbsrx_freq_range.min, dbsrx_freq_range.max);
+    target_freq = std::clip(target_freq, dbsrx_freq_range.start(), dbsrx_freq_range.stop());
 
     double actual_freq=0.0, pfd_freq=0.0, ref_clock=0.0;
     int R=0, N=0, r=0, m=0;
@@ -261,7 +261,7 @@ void dbsrx::set_lo_freq(double target_freq){
             pfd_freq = ref_clock / R;
 
             //constrain the PFD frequency to specified range
-            if ((pfd_freq < dbsrx_pfd_freq_range.min) or (pfd_freq > dbsrx_pfd_freq_range.max)) continue;
+            if ((pfd_freq < dbsrx_pfd_freq_range.start()) or (pfd_freq > dbsrx_pfd_freq_range.stop())) continue;
 
             //compute N
             N = int(std::floor(target_freq/pfd_freq));
@@ -278,7 +278,7 @@ void dbsrx::set_lo_freq(double target_freq){
     //Assert because we failed to find a suitable combination of ref_clock, R and N 
     UHD_ASSERT_THROW(ref_clock <= 27.0e6 and ref_clock >= 0.0);
     UHD_ASSERT_THROW(ref_clock/m >= 1e6 and ref_clock/m <= 2.5e6);
-    UHD_ASSERT_THROW((pfd_freq >= dbsrx_pfd_freq_range.min) and (pfd_freq <= dbsrx_pfd_freq_range.max));
+    UHD_ASSERT_THROW((pfd_freq >= dbsrx_pfd_freq_range.start()) and (pfd_freq <= dbsrx_pfd_freq_range.stop()));
     UHD_ASSERT_THROW((N >= 256) and (N <= 32768));
 
     if(dbsrx_debug) std::cerr << boost::format(
@@ -417,7 +417,7 @@ void dbsrx::set_lo_freq(double target_freq){
  */
 static int gain_to_gc2_vga_reg(float &gain){
     int reg = 0;
-    gain = std::clip<float>(float(boost::math::iround(gain)), dbsrx_gain_ranges["GC2"].min, dbsrx_gain_ranges["GC2"].max);
+    gain = std::clip(gain, dbsrx_gain_ranges["GC2"].start(), dbsrx_gain_ranges["GC2"].stop());
 
     // Half dB steps from 0-5dB, 1dB steps from 5-24dB
     if (gain < 5) {
@@ -443,11 +443,11 @@ static int gain_to_gc2_vga_reg(float &gain){
  */
 static float gain_to_gc1_rfvga_dac(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, dbsrx_gain_ranges["GC1"].min, dbsrx_gain_ranges["GC1"].max);
+    gain = std::clip(gain, dbsrx_gain_ranges["GC1"].start(), dbsrx_gain_ranges["GC1"].stop());
 
     //voltage level constants
     static const float max_volts = float(1.2), min_volts = float(2.7);
-    static const float slope = (max_volts-min_volts)/dbsrx_gain_ranges["GC1"].max;
+    static const float slope = (max_volts-min_volts)/dbsrx_gain_ranges["GC1"].stop();
 
     //calculate the voltage for the aux dac
     float dac_volts = gain*slope + min_volts;
