@@ -28,7 +28,7 @@ namespace uhd{
 
     namespace /*anon*/{
         template<typename Key, typename Val>
-        struct UHD_API key_not_found: std::out_of_range{
+        struct key_not_found: std::out_of_range{
             key_not_found(const Key &key): std::out_of_range(
                 str(boost::format(
                     "key \"%s\" not found in dict(%s, %s)"
