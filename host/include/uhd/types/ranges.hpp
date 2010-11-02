@@ -93,6 +93,14 @@ namespace uhd{
         //! Get the overall step value for this meta-range.
         const T step(void) const;
 
+        /*!
+         * Clip the target value to a possible range value.
+         * \param value the value to clip to this range
+         * \param clip_step if true, clip to steps as well
+         * \return a value that is in one of the ranges
+         */
+         const T clip(const T &value, bool clip_step = false) const;
+
     };
 
     typedef meta_range_t<float> gain_range_t;

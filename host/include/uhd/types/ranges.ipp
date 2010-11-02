@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_RANGES_IPP
 
 #include <boost/math/special_functions/round.hpp>
+#include <boost/foreach.hpp>
 #include <algorithm>
 #include <stdexcept>
 #include <iostream>
@@ -69,6 +70,21 @@ namespace uhd{
      * meta_range_t implementation code
      ******************************************************************/
 
+    namespace /*anon*/{
+        template <typename T> inline
+        void check_meta_range_monotonic(const meta_range_t<T> &mr){
+            if (mr.empty()){
+                throw std::runtime_error("meta-range cannot be empty");
+            }
+            for (size_t i = 1; i < mr.size(); i++){
+                if (mr.at(i).start() < mr.at(i-1).stop()){
+                    throw std::runtime_error("meta-range is not monotonic");
+                }
+            }
+        }
+    } //namespace /*anon*/
+
+
     template <typename T> meta_range_t<T>::meta_range_t(void){
         /* NOP */
     }
@@ -91,42 +107,60 @@ namespace uhd{
     }
 
     template <typename T> const T meta_range_t<T>::start(void) const{
-        if (this->empty()){
-            throw std::runtime_error("cannot calculate overall start on empty meta-range");
-        }
-        T min_start = this->at(0).start();
-        for (size_t i = 1; i < this->size(); i++){
-            min_start = std::min(min_start, this->at(i).start());
+        check_meta_range_monotonic(*this);
+        T min_start = this->front().start();
+        BOOST_FOREACH(const range_t<T> &r, (*this)){
+            min_start = std::min(min_start, r.start());
         }
         return min_start;
     }
 
     template <typename T> const T meta_range_t<T>::stop(void) const{
-        if (this->empty()){
-            throw std::runtime_error("cannot calculate overall stop on empty meta-range");
-        }
-        T max_stop = this->at(0).stop();
-        for (size_t i = 1; i < this->size(); i++){
-            max_stop = std::max(max_stop, this->at(i).stop());
+        check_meta_range_monotonic(*this);
+        T max_stop = this->front().stop();
+        BOOST_FOREACH(const range_t<T> &r, (*this)){
+            max_stop = std::max(max_stop, r.stop());
         }
         return max_stop;
     }
 
     template <typename T> const T meta_range_t<T>::step(void) const{
-        if (this->empty()){
-            throw std::runtime_error("cannot calculate overall step on empty meta-range");
+        check_meta_range_monotonic(*this);
+        std::vector<T> non_zero_steps;
+        range_t<T> last = this->front();
+        BOOST_FOREACH(const range_t<T> &r, (*this)){
+            //steps at each range
+            if (r.step() != T(0)) non_zero_steps.push_back(r.step());
+            //and steps in-between ranges
+            T ibtw_step = r.start() - last.stop();
+            if (ibtw_step != T(0)) non_zero_steps.push_back(ibtw_step);
+            //store ref to last
+            last = r;
         }
-        T min_step  = this->at(0).step();
-        for (size_t i = 1; i < this->size(); i++){
-            if (this->at(i).start() < this->at(i-1).stop()){
-                throw std::runtime_error("cannot calculate overall range when start(n) < stop(n-1) ");
+        if (non_zero_steps.empty()) return T(0); //all zero steps, its zero...
+        return *std::min_element(non_zero_steps.begin(), non_zero_steps.end());
+    }
+
+    template <typename T> const T meta_range_t<T>::clip(
+        const T &value, bool clip_step
+    ) const{
+        check_meta_range_monotonic(*this);
+        T last_stop = this->front().stop();
+        BOOST_FOREACH(const range_t<T> &r, (*this)){
+            //in-between ranges, clip to nearest
+            if (value < r.start()){
+                return (std::abs(value - r.start()) < std::abs(value - last_stop))?
+                    r.start() : last_stop;
             }
-            if (this->at(i).start() != this->at(i).stop()){
-                min_step = std::min(min_step, this->at(i).step());
+            //in this range, clip here
+            if (value <= r.stop()){
+                if (not clip_step or r.step() == T(0)) return value;
+                return boost::math::round((value - r.start())/r.step())*r.step() + r.start();
             }
-            min_step = std::min(min_step, this->at(i).start() - this->at(i-1).stop());
+            //continue on to the next range
+            last_stop = r.stop();
         }
-        return min_step;
+        return last_stop;
     }
 
 } //namespace uhd

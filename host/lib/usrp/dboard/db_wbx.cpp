@@ -198,16 +198,15 @@ wbx_xcvr::~wbx_xcvr(void){
  **********************************************************************/
 static int rx_pga0_gain_to_iobits(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, wbx_rx_gain_ranges["PGA0"].start(), wbx_rx_gain_ranges["PGA0"].stop());
+    gain = wbx_rx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
     float attn = wbx_rx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the attenuation
-    int attn_code = int(floor(attn*2));
+    int attn_code = boost::math::iround(attn*2);
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
-    
     if (wbx_debug) std::cerr << boost::format(
         "WBX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
@@ -220,7 +219,7 @@ static int rx_pga0_gain_to_iobits(float &gain){
 
 static float tx_pga0_gain_to_dac_volts(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, wbx_tx_gain_ranges["PGA0"].start(), wbx_tx_gain_ranges["PGA0"].stop());
+    gain = wbx_tx_gain_ranges["PGA0"].clip(gain);
 
     //voltage level constants
     static const float max_volts = float(0.5), min_volts = float(1.4);
@@ -328,7 +327,7 @@ double wbx_xcvr::set_lo_freq(
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = std::clip(target_freq, wbx_freq_range.start(), wbx_freq_range.stop());
+    target_freq = wbx_freq_range.clip(target_freq);
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of

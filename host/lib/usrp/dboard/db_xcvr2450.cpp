@@ -84,7 +84,11 @@ static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list
     ("BB", gain_range_t(0, 5, 1.5))
 ;
 static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list_of
-    ("LNA", gain_range_t(0, 30.5, 15))
+    ("LNA", gain_range_t(list_of
+        (range_t<float>(0))
+        (range_t<float>(15))
+        (range_t<float>(30.5))
+    ))
     ("VGA", gain_range_t(0, 62, 2.0))
 ;
 
@@ -262,8 +266,8 @@ void xcvr2450::update_atr(void){
  **********************************************************************/
 void xcvr2450::set_lo_freq(double target_freq){
 
-    //clip the input to the range (TODO FIXME not right)
-    target_freq = std::clip(target_freq, xcvr_freq_range.start(), xcvr_freq_range.stop());
+    //clip the input to the range
+    target_freq = xcvr_freq_range.clip(target_freq);
 
     //variables used in the calculation below
     double scaler = xcvr2450::is_highband(target_freq)? (4.0/5.0) : (4.0/3.0);

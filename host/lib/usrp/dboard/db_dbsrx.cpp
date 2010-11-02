@@ -229,7 +229,7 @@ dbsrx::~dbsrx(void){
  * Tuning
  **********************************************************************/
 void dbsrx::set_lo_freq(double target_freq){
-    target_freq = std::clip(target_freq, dbsrx_freq_range.start(), dbsrx_freq_range.stop());
+    target_freq = dbsrx_freq_range.clip(target_freq);
 
     double actual_freq=0.0, pfd_freq=0.0, ref_clock=0.0;
     int R=0, N=0, r=0, m=0;
@@ -417,7 +417,7 @@ void dbsrx::set_lo_freq(double target_freq){
  */
 static int gain_to_gc2_vga_reg(float &gain){
     int reg = 0;
-    gain = std::clip(gain, dbsrx_gain_ranges["GC2"].start(), dbsrx_gain_ranges["GC2"].stop());
+    gain = dbsrx_gain_ranges["GC2"].clip(gain);
 
     // Half dB steps from 0-5dB, 1dB steps from 5-24dB
     if (gain < 5) {
@@ -443,7 +443,7 @@ static int gain_to_gc2_vga_reg(float &gain){
  */
 static float gain_to_gc1_rfvga_dac(float &gain){
     //clip the input
-    gain = std::clip(gain, dbsrx_gain_ranges["GC1"].start(), dbsrx_gain_ranges["GC1"].stop());
+    gain = dbsrx_gain_ranges["GC1"].clip(gain);
 
     //voltage level constants
     static const float max_volts = float(1.2), min_volts = float(2.7);

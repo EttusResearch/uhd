@@ -292,7 +292,7 @@ double rfx_xcvr::set_lo_freq(
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = std::clip(target_freq, _freq_range.start(), _freq_range.stop());
+    target_freq = _freq_range.clip(target_freq);
     if (_div2[unit]) target_freq *= 2;
 
     //map prescalers to the register enums
