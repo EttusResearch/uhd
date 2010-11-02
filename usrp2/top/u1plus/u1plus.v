@@ -144,7 +144,7 @@ module u1plus
 		     .gpif_misc({FX2_PA7_FLAGD,FX_PA6_PKTEND,FX2_PA2_SLOE}),
 		     .gpif_clk(IFCLK),
 
-		     .db_sda(db_sda), .db_scl(db_scl),
+		     .db_sda(SDA_FPGA), .db_scl(SCL_FPGA),
 		     .sclk(sclk), .sen({SEN_CODEC,SEN_TX_DB,SEN_RX_DB}), .mosi(mosi), .miso(miso),
 		     .cgen_st_status(cgen_st_status), .cgen_st_ld(cgen_st_ld),.cgen_st_refmon(cgen_st_refmon), 
 		     .cgen_sync_b(cgen_sync_b), .cgen_ref_sel(cgen_ref_sel),
