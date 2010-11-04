@@ -48,20 +48,17 @@ namespace uhd{ namespace transport{
          * \return true if the element fit without popping for space
          */
         virtual bool push_with_pop_on_full(
-            const elem_type &elem,
-            const seq_type &seq,
-            size_t index
+            const elem_type &elem, const seq_type &seq, size_t index
         ) = 0;
 
         /*!
          * Pop an aligned set of elements from this alignment buffer.
          * \param elems a collection to store the aligned elements
-         * \param time the timeout time
+         * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
         virtual bool pop_elems_with_timed_wait(
-            std::vector<elem_type> &elems,
-            const time_duration_t &time
+            std::vector<elem_type> &elems, double timeout
         ) = 0;
     };
 

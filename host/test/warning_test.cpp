@@ -19,9 +19,9 @@
 #include <uhd/utils/warning.hpp>
 #include <iostream>
 
-BOOST_AUTO_TEST_CASE(test_print_warning){
+BOOST_AUTO_TEST_CASE(test_warning_post){
     std::cerr << "---begin print test ---" << std::endl;
-    uhd::print_warning(
+    uhd::warning::post(
         "This is a test print for a warning message.\n"
         "And this is the second line of the test print.\n"
     );

@@ -22,6 +22,7 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -29,7 +30,7 @@
 #ifndef INCLUDED_USRP_E_IMPL_HPP
 #define INCLUDED_USRP_E_IMPL_HPP
 
-static const double MASTER_CLOCK_RATE = 64e6; //TODO get from clock control
+static const boost::uint16_t USRP_E_COMPAT_NUM = 0x02;
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void usrp_e_load_fpga(const std::string &bin_file);
@@ -78,25 +79,28 @@ private:
 class usrp_e_impl : public uhd::device{
 public:
     //structors
-    usrp_e_impl(const std::string &node);
+    usrp_e_impl(usrp_e_iface::sptr);
     ~usrp_e_impl(void);
 
     //the io interface
-    size_t send(const std::vector<const void *> &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t);
-    size_t recv(const std::vector<void *> &, size_t, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t, size_t);
-    bool recv_async_msg(uhd::async_metadata_t &, size_t);
+    size_t send(const std::vector<const void *> &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t, double);
+    size_t recv(const std::vector<void *> &, size_t, uhd::rx_metadata_t &, const uhd::io_type_t &, recv_mode_t, double);
+    bool recv_async_msg(uhd::async_metadata_t &, double);
+#if 0
+    size_t get_max_send_samps_per_packet(void) const;
+    size_t get_max_recv_samps_per_packet(void) const;
+#else
     size_t get_max_send_samps_per_packet(void) const{return 503;}
     size_t get_max_recv_samps_per_packet(void) const{return 503;}
+#endif
 
 private:
     //interface to ioctls and file descriptor
     usrp_e_iface::sptr _iface;
 
-    //FIXME fetch from ioctl?
-    static const size_t _max_num_samples = 2048/sizeof(boost::uint32_t);
-
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
+    uhd::otw_type_t _send_otw_type, _recv_otw_type;
     void io_init(void);
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
     void handle_overrun(size_t);

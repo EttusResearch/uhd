@@ -54,20 +54,6 @@ public:
     virtual boost::uint32_t peek32(boost::uint32_t addr) = 0;
 
     /*!
-     * Write a register (16 bits)
-     * \param addr the address
-     * \param data the 16bit data
-     */
-    virtual void poke16(boost::uint32_t addr, boost::uint16_t data) = 0;
-
-    /*!
-     * read a register (16 bits)
-     * \param addr the address
-     * \return the 16bit data
-     */
-    virtual boost::uint16_t peek16(boost::uint32_t addr) = 0;
-
-    /*!
      * Perform an spi transaction.
      * \param which_slave the slave device number
      * \param config spi config args

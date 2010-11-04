@@ -47,7 +47,7 @@ CMake
 Boost
 ^^^^^^^^^^^^^^^^
 * **Purpose:** C++ library
-* **Version:** at least 3.6 unix, at least 4.0 windows
+* **Version:** at least 1.36 unix, at least 1.40 windows
 * **Usage:** build time + run time (required)
 * **Download URL:** http://www.boost.org/users/download/
 * **Download URL (windows installer):** http://www.boostpro.com/download
@@ -58,7 +58,8 @@ LibUSB
 * **Purpose:** USB-based hardware support
 * **Version:** at least 1.0
 * **Usage:** build time + run time (optional)
-* **Download URL:** http://www.libusb.org/
+* **Download URL:** http://sourceforge.net/projects/libusb/files/libusb-1.0/
+* **Download URL (windows binaries):** http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
 
 ^^^^^^^^^^^^^^^^
 Python
@@ -152,6 +153,19 @@ Generate the project with cmake
 * Click generate and a project file will be created in the build directory.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+LibUSB cmake notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On Windows, cmake does not have the advantage of pkg-config,
+so we must manually tell cmake how to locate the LibUSB header and lib.
+
+From the cmake gui, select "Advanded View":
+
+* Set LIBUSB_INCLUDE_DIR to the directory with "libusb.h".
+* Set LIBUSB_LIBRARIES to the full path for "libusb-1.0.lib".
+
+Then check the boxes to enable USRP1 support, click configure and generate.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build the project in MSVC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Open the generated project file in MSVC.
@@ -177,3 +191,8 @@ Setup the PATH environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Add the boost library path to %PATH% (usually c:\\program files\\boost\\<version>\\lib)
 * Add the uhd library path to %PATH% (usually c:\\program files\\uhd\\lib)
+* Add the libusb library to %PATH% (if using usb support)
+
+**Note:**
+The interface for editing environment variable paths in Windows is very poor.
+I recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.

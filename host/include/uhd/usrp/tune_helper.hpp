@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 
 namespace uhd{ namespace usrp{
@@ -32,23 +33,12 @@ namespace uhd{ namespace usrp{
      * \param subdev the dboard subdevice object with properties
      * \param ddc the mboard dsp object with properties
      * \param chan the channel of the dsp to tune
-     * \param target_freq the desired center frequency
-     * \param lo_offset an offset for the subdevice IF from center
+     * \param tune_request tune request instructions
      * \return a tune result struct
      */
     UHD_API tune_result_t tune_rx_subdev_and_dsp(
         wax::obj subdev, wax::obj ddc, size_t chan,
-        double target_freq, double lo_offset
-    );
-
-    /*!
-     * Tune a rx chain to the desired frequency:
-     * Same as the above, except the LO offset
-     * is calculated based on the subdevice and BW.
-     */
-    UHD_API tune_result_t tune_rx_subdev_and_dsp(
-        wax::obj subdev, wax::obj ddc,
-        size_t chan, double target_freq
+        const tune_request_t &tune_request
     );
 
     /*!
@@ -70,23 +60,12 @@ namespace uhd{ namespace usrp{
      * \param subdev the dboard subdevice object with properties
      * \param duc the mboard dsp object with properties
      * \param chan the channel of the dsp to tune
-     * \param target_freq the desired center frequency
-     * \param lo_offset an offset for the subdevice IF from center
+     * \param tune_request tune request instructions
      * \return a tune result struct
      */
     UHD_API tune_result_t tune_tx_subdev_and_dsp(
         wax::obj subdev, wax::obj duc, size_t chan,
-        double target_freq, double lo_offset
-    );
-
-    /*!
-     * Tune a tx chain to the desired frequency:
-     * Same as the above, except the LO offset
-     * is calculated based on the subdevice and BW.
-     */
-    UHD_API tune_result_t tune_tx_subdev_and_dsp(
-        wax::obj subdev, wax::obj duc,
-        size_t chan, double target_freq
+        const tune_request_t &tune_request
     );
 
     /*!

@@ -19,74 +19,129 @@
 #define INCLUDED_LIBUHD_TRANSPORT_LIBUSB_HPP
 
 #include <uhd/config.hpp>
+#include <boost/utility.hpp>
+#include <boost/shared_ptr.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 
+/***********************************************************************
+ * Libusb object oriented smart pointer wrappers:
+ * The following wrappers provide allocation and automatic deallocation
+ * for various libusb data types and handles. The construction routines
+ * also store tables of already allocated structures to avoid multiple
+ * occurrences of opened handles (for example).
+ **********************************************************************/
 namespace uhd { namespace transport {
 
 namespace libusb {
-    /*
-     * Initialize libusb and set debug level
-     * Takes a pointer to context pointer because that's
-     * how libusb rolls. Debug levels.
-     *     
-     *   Level 0: no messages ever printed by the library (default)
-     *   Level 1: error messages are printed to stderr
-     *   Level 2: warning and error messages are printed to stderr
-     *   Level 3: informational messages are printed to stdout, warning
-     *            and error messages are printed to stderr
-     *
-     * \param ctx pointer to context pointer
-     * \param debug_level
-     */
-    void init(libusb_context **ctx, int debug_level);
 
-    /*
-     * Open the device specified by a generic handle
-     * Find the libusb_device cooresponding to the generic handle
-     * and open it for I/O, which returns a libusb_device_handle
-     * ready for an interface
-     * \param ctx the libusb context used for init
-     * \return a libusb_device_handle ready for action 
+    /*!
+     * This session class holds a global libusb context for this process.
+     * The get global session call will create a new context if none exists.
+     * When all references to session are destroyed, the context will be freed.
      */
-    libusb_device_handle *open_device(libusb_context *ctx,
-                                      usb_device_handle::sptr handle);
+    class session : boost::noncopyable {
+    public:
+        typedef boost::shared_ptr<session> sptr;
 
-    /*
-     * Compare a libusb device with a generic handle 
-     * Check the descriptors and open the device to check the
-     * serial number string. Compare values against the given
-     * handle. The libusb context is already implied in the
-     * libusb_device.
-     * \param dev a libusb_device pointer
-     * \param handle a generic handle specifier
-     * \return true if handle and device match, false otherwise
-     */
-    bool compare_device(libusb_device *dev, usb_device_handle::sptr handle);
+        /*!
+         *   Level 0: no messages ever printed by the library (default)
+         *   Level 1: error messages are printed to stderr
+         *   Level 2: warning and error messages are printed to stderr
+         *   Level 3: informational messages are printed to stdout, warning
+         *            and error messages are printed to stderr
+         */
+        static const int debug_level = 0;
 
-    /*
-     * Open an interface to the device
-     * This is a logical operation for operating system housekeeping as
-     * nothing is sent over the bus. The interface much correspond
-     * to the USB device descriptors.
-     * \param dev_handle libusb handle to an opened device
-     * \param interface integer of the interface to use
-     * \return true on success, false on error
-     */
-    bool open_interface(libusb_device_handle *dev_handle, int interface);
+        //! get a shared pointer to the global session
+        static sptr get_global_session(void);
 
-    /*
-     * Get serial number 
-     * The standard USB device descriptor contains an index to an
-     * actual serial number string descriptor. The index is readily
-     * readble, but the string descriptor requires probing the device.
-     * Because this call attempts to open the device, it may not
-     * succeed because not all USB devices are readily opened.
-     * The default language is used for the request (English).
-     * \param dev a libusb_device pointer
-     * \return string serial number or 0 on error or unavailablity
+        //! get the underlying libusb context pointer
+        virtual libusb_context *get_context(void) const = 0;
+    };
+
+    /*!
+     * Holds a device pointer with a reference to the session.
      */
-    std::string get_serial(libusb_device *dev);
+    class device : boost::noncopyable {
+    public:
+        typedef boost::shared_ptr<device> sptr;
+
+        //! get the underlying device pointer
+        virtual libusb_device *get(void) const = 0;
+    };
+
+    /*!
+     * This device list class holds a device list that will be
+     * automatically freed when the last reference is destroyed.
+     */
+    class device_list : boost::noncopyable {
+    public:
+        typedef boost::shared_ptr<device_list> sptr;
+
+        //! make a new device list
+        static sptr make(void);
+
+        //! the number of devices in this list
+        virtual size_t size() const = 0;
+
+        //! get the device pointer at a particular index
+        virtual device::sptr at(size_t index) const = 0;
+    };
+
+    /*!
+     * Holds a device descriptor and a reference to the device.
+     */
+    class device_descriptor : boost::noncopyable {
+    public:
+        typedef boost::shared_ptr<device_descriptor> sptr;
+
+        //! make a new descriptor from a device reference
+        static sptr make(device::sptr);
+
+        //! get the underlying device descriptor
+        virtual const libusb_device_descriptor &get(void) const = 0;
+
+        virtual std::string get_ascii_serial(void) const = 0;
+    };
+
+    /*!
+     * Holds a device handle and a reference to the device.
+     */
+    class device_handle : boost::noncopyable {
+    public:
+        typedef boost::shared_ptr<device_handle> sptr;
+
+        //! get a cached handle or make a new one given the device
+        static sptr get_cached_handle(device::sptr);
+
+        //! get the underlying device handle
+        virtual libusb_device_handle *get(void) const = 0;
+
+        /*!
+         * Open USB interfaces for control using magic value
+         * IN interface:      2
+         * OUT interface:     1
+         * Control interface: 0
+         */
+        virtual void claim_interface(int) = 0;
+    };
+
+    /*!
+     * The special handle is our internal implementation of the
+     * usb device handle which is used publicly to identify a device.
+     */
+    class special_handle : public usb_device_handle {
+    public:
+        typedef boost::shared_ptr<special_handle> sptr;
+
+        //! make a new special handle from device
+        static sptr make(device::sptr);
+
+        //! get the underlying device reference
+        virtual device::sptr get_device(void) const = 0;
+    };
+
 }
 
 }} //namespace

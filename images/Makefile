@@ -112,6 +112,22 @@ $(_usrp2_fpga_bin):
 endif
 
 ########################################################################
+# USRP-E100 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e
+_usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga.bin
+IMAGES_LIST += $(_usrp_e100_fpga_bin)
+
+$(_usrp_e100_fpga_bin):
+	cd $(_usrp_e100_fpga_dir) && make clean
+	cd $(_usrp_e100_fpga_dir) && make bin
+	cp $(_usrp_e100_fpga_dir)/build/u1e.bin $@
+
+endif
+
+########################################################################
 # Build rules
 ########################################################################
 ##little rule to make the images directory

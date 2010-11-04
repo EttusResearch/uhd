@@ -53,6 +53,7 @@ namespace uhd{ namespace usrp{
         SUBDEV_PROP_ANTENNA_NAMES     = 'A', //ro, prop_names_t
         SUBDEV_PROP_LO_LOCKED         = 'L', //ro, bool
         SUBDEV_PROP_CONNECTION        = 'c', //ro, subdev_conn_t
+        SUBDEV_PROP_ENABLED           = 'e', //rw, bool
         SUBDEV_PROP_USE_LO_OFFSET     = 'l', //ro, bool
         SUBDEV_PROP_RSSI              = 'R', //ro, float
         SUBDEV_PROP_BANDWIDTH         = 'B'  //rw, double

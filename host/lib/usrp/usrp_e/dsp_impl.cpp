@@ -65,11 +65,11 @@ void usrp_e_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_CODEC_RATE:
-        val = MASTER_CLOCK_RATE;
+        val = _clock_ctrl->get_fpga_clock_rate();
         return;
 
     case DSP_PROP_HOST_RATE:
-        val = MASTER_CLOCK_RATE/_ddc_decim;
+        val = _clock_ctrl->get_fpga_clock_rate()/_ddc_decim;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -87,7 +87,7 @@ void usrp_e_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
             _iface->poke32(UE_REG_DSP_RX_FREQ,
-                dsp_type1::calc_cordic_word_and_update(new_freq, MASTER_CLOCK_RATE)
+                dsp_type1::calc_cordic_word_and_update(new_freq, _clock_ctrl->get_fpga_clock_rate())
             );
             _ddc_freq = new_freq; //shadow
         }
@@ -95,7 +95,7 @@ void usrp_e_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
 
     case DSP_PROP_HOST_RATE:{
             //set the decimation
-            _ddc_decim = rint(MASTER_CLOCK_RATE/val.as<double>());
+            _ddc_decim = rint(_clock_ctrl->get_fpga_clock_rate()/val.as<double>());
             _iface->poke32(UE_REG_DSP_RX_DECIM_RATE, dsp_type1::calc_cic_filter_word(_ddc_decim));
 
             //set the scaling
@@ -148,11 +148,11 @@ void usrp_e_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_CODEC_RATE:
-        val = MASTER_CLOCK_RATE;
+        val = _clock_ctrl->get_fpga_clock_rate();
         return;
 
     case DSP_PROP_HOST_RATE:
-        val = MASTER_CLOCK_RATE/_duc_interp;
+        val = _clock_ctrl->get_fpga_clock_rate()/_duc_interp;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -170,14 +170,14 @@ void usrp_e_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
             _iface->poke32(UE_REG_DSP_TX_FREQ,
-                dsp_type1::calc_cordic_word_and_update(new_freq, MASTER_CLOCK_RATE)
+                dsp_type1::calc_cordic_word_and_update(new_freq, _clock_ctrl->get_fpga_clock_rate())
             );
             _duc_freq = new_freq; //shadow
         }
         return;
 
     case DSP_PROP_HOST_RATE:{
-            _duc_interp = rint(MASTER_CLOCK_RATE/val.as<double>());
+            _duc_interp = rint(_clock_ctrl->get_fpga_clock_rate()/val.as<double>());
 
             //set the interpolation
             _iface->poke32(UE_REG_DSP_TX_INTERP_RATE, dsp_type1::calc_cic_filter_word(_duc_interp));

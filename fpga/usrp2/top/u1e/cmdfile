@@ -1,0 +1,20 @@
+
+# My stuff
+-y .
+-y ../../control_lib
+-y ../../control_lib/newfifo
+-y ../../sdr_lib
+-y ../../timing
+-y ../../coregen
+-y ../../gpmc
+
+# Models
+-y ../../models
+-y /opt/Xilinx/10.1/ISE/verilog/src/unisims
+
+# Open Cores
+-y ../../opencores/spi/rtl/verilog
++incdir+../../opencores/spi/rtl/verilog
+-y ../../opencores/i2c/rtl/verilog
++incdir+../../opencores/i2c/rtl/verilog
+

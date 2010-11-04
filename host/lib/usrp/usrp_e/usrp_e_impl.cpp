@@ -16,13 +16,17 @@
 //
 
 #include "usrp_e_impl.hpp"
+#include "usrp_e_regs.hpp"
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/images.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/functional/hash.hpp>
 #include <iostream>
+#include <fstream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -66,7 +70,61 @@ static device_addrs_t usrp_e_find(const device_addr_t &hint){
  * Make
  **********************************************************************/
 static device::sptr usrp_e_make(const device_addr_t &device_addr){
-    return device::sptr(new usrp_e_impl(device_addr["node"]));
+
+    //setup the main interface into fpga
+    std::string node = device_addr["node"];
+    std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
+    usrp_e_iface::sptr iface = usrp_e_iface::make(node);
+
+    //------------------------------------------------------------------
+    //-- Handle the FPGA loading...
+    //-- The image can be confimed as already loaded when:
+    //--   1) The compatibility number matches.
+    //--   2) The hash in the hash-file matches.
+    //------------------------------------------------------------------
+    static const char *hash_file_path = "/tmp/usrp_e100_hash";
+
+    //extract the fpga path for usrp-e
+    std::string usrp_e_fpga_image = find_image_path(
+        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_e100_fpga.bin"
+    );
+
+    //calculate a hash of the fpga file
+    size_t fpga_hash = 0;
+    {
+        std::ifstream file(usrp_e_fpga_image.c_str());
+        if (not file.good()) throw std::runtime_error(
+            "cannot open fpga file for read: " + usrp_e_fpga_image
+        );
+        do{
+            boost::hash_combine(fpga_hash, file.get());
+        } while (file.good());
+        file.close();
+    }
+
+    //read the compatibility number
+    boost::uint16_t fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
+
+    //read the hash in the hash-file
+    size_t loaded_hash = 0;
+    try{std::ifstream(hash_file_path) >> loaded_hash;}catch(...){}
+
+    //if not loaded: load the fpga image and write the hash-file
+    if (fpga_compat_num != USRP_E_COMPAT_NUM or loaded_hash != fpga_hash){
+        usrp_e_load_fpga(usrp_e_fpga_image);
+        try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
+    }
+
+    //check that the compatibility is correct
+    fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
+    if (fpga_compat_num != USRP_E_COMPAT_NUM){
+        throw std::runtime_error(str(boost::format(
+            "Expected fpga compatibility number 0x%x, but got 0x%x:\n"
+            "The fpga build is not compatible with the host code build."
+        ) % USRP_E_COMPAT_NUM % fpga_compat_num));
+    }
+
+    return device::sptr(new usrp_e_impl(iface));
 }
 
 UHD_STATIC_BLOCK(register_usrp_e_device){
@@ -76,11 +134,9 @@ UHD_STATIC_BLOCK(register_usrp_e_device){
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp_e_impl::usrp_e_impl(const std::string &node){
-    std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
+usrp_e_impl::usrp_e_impl(usrp_e_iface::sptr iface): _iface(iface){
 
-    //setup various interfaces into hardware
-    _iface = usrp_e_iface::make(node);
+    //setup interfaces into hardware
     _clock_ctrl = usrp_e_clock_ctrl::make(_iface);
     _codec_ctrl = usrp_e_codec_ctrl::make(_iface);
 

@@ -30,6 +30,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -63,7 +64,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         );
     }
     catch(...){
-        uhd::print_warning(
+        uhd::warning::post(
             "Could not locate USRP1 firmware.\n"
             "Please install the images package.\n"
         );
@@ -74,29 +75,29 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : USRP1_VENDOR_ID;
     boost::uint16_t pid = hint.has_key("uninit") ? FX2_PRODUCT_ID : USRP1_PRODUCT_ID;
 
-    //see what we got on the USB bus
-    std::vector<usb_device_handle::sptr> device_list =
-        usb_device_handle::get_device_list(vid, pid);
-
-    if(device_list.size() == 0) return usrp1_addrs; //return nothing if no USRPs found
+    // Important note:
+    // The get device list calls are nested inside the for loop.
+    // This allows the usb guts to decontruct when not in use,
+    // so that re-enumeration after fw load can occur successfully.
+    // This requirement is a courtesy of libusb1.0 on windows.
 
     //find the usrps and load firmware
-    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
-            usb_control::sptr ctrl_transport = usb_control::make(handle);
-            usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
-            usrp_ctrl->usrp_load_firmware(usrp1_fw_image);
+    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+        usrp_ctrl::make(usb_control::make(handle))->usrp_load_firmware(usrp1_fw_image);
     }
 
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
     vid = USRP1_VENDOR_ID;
     pid = USRP1_PRODUCT_ID;
-    device_list = usb_device_handle::get_device_list(vid, pid);
 
-    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
-            device_addr_t new_addr;
-            new_addr["type"] = "usrp1";
-            new_addr["serial"] = handle->get_serial();
+    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+        device_addr_t new_addr;
+        new_addr["type"] = "usrp1";
+        new_addr["serial"] = handle->get_serial();
+        //this is a found usrp1 when a hint serial is not specified or it matches
+        if (not hint.has_key("serial") or hint["serial"] == new_addr["serial"]){
             usrp1_addrs.push_back(new_addr);
+        }
     }
 
     return usrp1_addrs;
@@ -105,8 +106,8 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
 /***********************************************************************
  * Make
  **********************************************************************/
-static device::sptr usrp1_make(const device_addr_t &device_addr)
-{
+static device::sptr usrp1_make(const device_addr_t &device_addr){
+
     //extract the FPGA path for the USRP1
     std::string usrp1_fpga_image = find_image_path(
         device_addr.has_key("fpga")? device_addr["fpga"] : "usrp1_fpga.rbf"
@@ -117,25 +118,26 @@ static device::sptr usrp1_make(const device_addr_t &device_addr)
     std::vector<usb_device_handle::sptr> device_list =
         usb_device_handle::get_device_list(USRP1_VENDOR_ID, USRP1_PRODUCT_ID);
 
-    //create data and control transports
-    usb_zero_copy::sptr data_transport;
-    usrp_ctrl::sptr usrp_ctrl;
-
-
-    BOOST_FOREACH(usb_device_handle::sptr handle, device_list) {
-        if (handle->get_serial() == device_addr["serial"]) {
-            usb_control::sptr ctrl_transport = usb_control::make(handle);
-            usrp_ctrl = usrp_ctrl::make(ctrl_transport);
-            usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
-
-            data_transport = usb_zero_copy::make(handle,        // identifier
-                                                 6,             // IN endpoint
-                                                 2,             // OUT endpoint
-                                                 2 * (1 << 20), // buffer size
-                                                 16384);        // transfer size
+    //locate the matching handle in the device list
+    usb_device_handle::sptr handle;
+    BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
+        if (dev_handle->get_serial() == device_addr["serial"]){
+            handle = dev_handle;
             break;
         }
     }
+    UHD_ASSERT_THROW(handle.get() != NULL); //better be found
+
+    //create control objects and a data transport
+    usb_control::sptr ctrl_transport = usb_control::make(handle);
+    usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
+    usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
+    usb_zero_copy::sptr data_transport = usb_zero_copy::make(
+        handle,        // identifier
+        6,             // IN endpoint
+        2,             // OUT endpoint
+        device_addr    // param hints
+    );
 
     //create the usrp1 implementation guts
     return device::sptr(new usrp1_impl(data_transport, usrp_ctrl));
@@ -171,7 +173,7 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     //initialize the mboard
     mboard_init();
 
-    //initialize the dboards 
+    //initialize the dboards
     dboard_init();
 
     //initialize the dsps
@@ -195,9 +197,9 @@ usrp1_impl::~usrp1_impl(void){
     /* NOP */
 }
 
-bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, size_t timeout_ms){
+bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){
     //dummy fill-in for the recv_async_msg
-    boost::this_thread::sleep(boost::posix_time::milliseconds(timeout_ms));
+    boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
     return false;
 }
 

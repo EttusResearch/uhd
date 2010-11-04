@@ -31,11 +31,12 @@
 # pragma warning(disable: 4251) // class 'A<T>' needs to have dll-interface to be used by clients of class 'B'
 //# pragma warning(disable: 4127) // conditional expression is constant
 //# pragma warning(disable: 4290) // C++ exception specification ignored except to ...
-# pragma warning(disable: 4180) // qualifier applied to function type has no meaning; ignored
+//# pragma warning(disable: 4180) // qualifier applied to function type has no meaning; ignored
 # pragma warning(disable: 4275) // non dll-interface class ... used as base for dll-interface class ...
 //# pragma warning(disable: 4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 //# pragma warning(disable: 4511) // 'class' : copy constructor could not be generated
-# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
+//# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
+# pragma warning(disable: 4200) // nonstandard extension used : zero-sized array in struct/union
 #endif
 
 // define logical operators

@@ -19,6 +19,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -122,12 +123,20 @@ void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
 
     case SUBDEV_PROP_LO_LOCKED:
         val = true; //there is no LO, so it must be true!
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 0.0;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -151,12 +160,21 @@ void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
 
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::warning::post(
+            str(boost::format("Unknown Daughterboard: No tunable bandwidth, fixed filtered to 0.0MHz"))
+        );
+        return;
+
     default: UHD_THROW_PROP_SET_ERROR();
     }
 }
 
 /***********************************************************************
- * Basic and LF TX dboard
+ * Unknown TX dboard
  **********************************************************************/
 unknown_tx::unknown_tx(ctor_args_t args) : tx_dboard_base(args){
     /* NOP */
@@ -211,12 +229,20 @@ void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
 
     case SUBDEV_PROP_LO_LOCKED:
         val = true; //there is no LO, so it must be true!
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 0.0;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -239,6 +265,15 @@ void unknown_tx::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::warning::post(
+            str(boost::format("Unknown Daughterboard: No tunable bandwidth, fixed filtered to 0.0MHz"))
+        );
+        return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }

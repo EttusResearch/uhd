@@ -19,16 +19,17 @@
 #define INCLUDED_UHD_USRP_SUBDEV_SPEC_HPP
 
 #include <uhd/config.hpp>
+#include <boost/operators.hpp>
 #include <vector>
 #include <string>
 
 namespace uhd{ namespace usrp{
 
     /*!
-     * A subdevice specification (daughterboard, subdevice) name pairing.
+     * A subdevice specification (daughterboard slot, subdevice) name pairing.
      */
-    struct UHD_API subdev_spec_pair_t{
-        //! The daughterboard name
+    struct UHD_API subdev_spec_pair_t : boost::equality_comparable<subdev_spec_pair_t>{
+        //! The daughterboard slot name
         std::string db_name;
 
         //! The subdevice name
@@ -45,8 +46,11 @@ namespace uhd{ namespace usrp{
         );
     };
 
+    //! overloaded comparison operator for subdev_spec_pair_t
+    UHD_API bool operator==(const subdev_spec_pair_t &, const subdev_spec_pair_t &);
+
     /*!
-     * A list of (daughterboard name, subdevice name) pairs:
+     * A list of (daughterboard slot name, subdevice name) pairs:
      *
      * A subdevice specification represents a list of subdevices on a motherboard.
      * The subdevices specified may span across multiple daughterboards;
@@ -58,6 +62,11 @@ namespace uhd{ namespace usrp{
      * The markup-string is a whitespace separated list of dboard:subdev pairs.
      * The first pair represents the subdevice for channel zero,
      * the second pair represents the subdevice for channel one, and so on.
+     *
+     * Special handling for empty conditions:
+     * - An empty subdevice specification means: select the first subdevice found in the configuration
+     * - An empty daughterboard name means: select the only daughterboard slot or error if multiple exist
+     * - An empty subdevice name means: select the only subdevice on that board or error if multiple exist
      */
     class UHD_API subdev_spec_t : public std::vector<subdev_spec_pair_t>{
     public:

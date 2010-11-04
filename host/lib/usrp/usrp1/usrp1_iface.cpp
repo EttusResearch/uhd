@@ -49,7 +49,7 @@ public:
      ******************************************************************/
     void poke32(boost::uint32_t addr, boost::uint32_t value)
     {
-        boost::uint32_t swapped = byteswap(value);
+        boost::uint32_t swapped = uhd::htonx(value);
 
         if (iface_debug) {
             std::cout.fill('0');
@@ -72,12 +72,6 @@ public:
             std::cerr << "USRP: failed memory write: " << ret << std::endl;
     }
 
-    void poke16(boost::uint32_t, boost::uint16_t)
-    {
-        //fpga only handles 32 bit writes
-        std::cerr << "USRP: unsupported operation: poke16()" << std::endl;
-    }
-
     boost::uint32_t peek32(boost::uint32_t addr)
     {
         boost::uint32_t value_out;
@@ -95,13 +89,7 @@ public:
         if (ret < 0)
             std::cerr << "USRP: failed memory read: " << ret << std::endl;
 
-        return byteswap(value_out);
-    }
-
-    boost::uint16_t peek16(boost::uint32_t addr)
-    {
-        boost::uint32_t val = peek32(addr);
-        return boost::uint16_t(val & 0xff);
+        return uhd::ntohx(value_out);
     }
 
     /*******************************************************************

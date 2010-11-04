@@ -17,6 +17,7 @@
 
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/subdev_props.hpp>
@@ -79,6 +80,7 @@ static void set_subdev_gain(wax::obj subdev, const std::string &name, float gain
  * gain group factory function for usrp
  **********************************************************************/
 gain_group::sptr usrp::make_gain_group(
+    const dboard_id_t &dboard_id,
     wax::obj subdev, wax::obj codec,
     gain_group_policy_t gain_group_policy
 ){
@@ -86,6 +88,8 @@ gain_group::sptr usrp::make_gain_group(
     const size_t codec_gain_priority = (gain_group_policy == GAIN_GROUP_POLICY_RX)?
         (subdev_gain_priority - 1): //RX policy, codec gains fill last (lower priority)
         (subdev_gain_priority + 1); //TX policy, codec gains fill first (higher priority)
+    const std::string subdev_prefix = dboard_id.to_cname() + "-";
+    const std::string codec_prefix = (gain_group_policy == GAIN_GROUP_POLICY_RX)? "ADC-" : "DAC-";
 
     gain_group::sptr gg = gain_group::make();
     gain_fcns_t fcns;
@@ -94,7 +98,7 @@ gain_group::sptr usrp::make_gain_group(
         fcns.get_range = boost::bind(&get_subdev_gain_range, subdev, name);
         fcns.get_value = boost::bind(&get_subdev_gain, subdev, name);
         fcns.set_value = boost::bind(&set_subdev_gain, subdev, name, _1);
-        gg->register_fcns(fcns, subdev_gain_priority);
+        gg->register_fcns(subdev_prefix+name, fcns, subdev_gain_priority);
     }
     //add all the codec gains last (antenna to dsp order)
     BOOST_FOREACH(const std::string &name, codec[CODEC_PROP_GAIN_NAMES].as<prop_names_t>()){
@@ -118,7 +122,7 @@ gain_group::sptr usrp::make_gain_group(
             fcns.set_value = boost::bind(&set_codec_gain_q, codec, name, _1);
             break;
         }
-        gg->register_fcns(fcns, codec_gain_priority);
+        gg->register_fcns(codec_prefix+name, fcns, codec_gain_priority);
     }
     return gg;
 }
@@ -160,13 +164,13 @@ static void verify_xx_subdev_spec(
         }
 
         //sanity check that the dboard/subdevice names exist for this mboard
-        BOOST_FOREACH(const subdev_spec_pair_t &pair, subdev_spec){
+        BOOST_FOREACH(subdev_spec_pair_t &pair, subdev_spec){
             //empty db name means select dboard automatically
             if (pair.db_name.empty()){
                 if (dboard_names.size() != 1) throw std::runtime_error(
                     "A daughterboard name must be provided for multi-slot motherboards: " + subdev_spec.to_string()
                 );
-                pair.db_name == dboard_names.front();
+                pair.db_name = dboard_names.front();
             }
             uhd::assert_has(dboard_names, pair.db_name, xx_type + " dboard name");
             wax::obj dboard = mboard[named_prop_t(dboard_prop, pair.db_name)];
@@ -177,7 +181,7 @@ static void verify_xx_subdev_spec(
                 if (subdev_names.size() != 1) throw std::runtime_error(
                     "A subdevice name must be provided for multi-subdev daughterboards: " + subdev_spec.to_string()
                 );
-                pair.sd_name == subdev_names.front();
+                pair.sd_name = subdev_names.front();
             }
             uhd::assert_has(subdev_names, pair.sd_name, xx_type + " subdev name");
         }
@@ -185,6 +189,22 @@ static void verify_xx_subdev_spec(
         throw std::runtime_error(str(boost::format(
             "Validate %s subdev spec failed: %s\n    %s"
         ) % xx_type % subdev_spec.to_string() % e.what()));
+    }
+
+    //now use the subdev spec to enable the subdevices in use and vice-versa
+    BOOST_FOREACH(const std::string &db_name, mboard[dboard_names_prop].as<prop_names_t>()){
+        wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
+        BOOST_FOREACH(const std::string &sd_name, dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>()){
+            try{
+                bool enable = std::has(subdev_spec, subdev_spec_pair_t(db_name, sd_name));
+                dboard[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)][SUBDEV_PROP_ENABLED] = enable;
+            }
+            catch(const std::exception &e){
+                throw std::runtime_error(str(boost::format(
+                    "Cannot set enabled property on subdevice %s:%s\n    %s"
+                ) % db_name % sd_name % e.what()));
+            }
+        }
     }
 }
 

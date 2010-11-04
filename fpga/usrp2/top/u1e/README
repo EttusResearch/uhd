@@ -1,0 +1,4 @@
+
+make clean
+make sim
+./tb_u1e -lxt2

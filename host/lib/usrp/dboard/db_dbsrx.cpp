@@ -69,7 +69,7 @@ public:
 
 private:
     double _lo_freq;
-    float _bandwidth;
+    double _bandwidth;
     uhd::dict<std::string, float> _gains;
     max2118_write_regs_t _max2118_write_regs;
     max2118_read_regs_t _max2118_read_regs;
@@ -79,7 +79,7 @@ private:
 
     void set_lo_freq(double target_freq);
     void set_gain(float gain, const std::string &name);
-    void set_bandwidth(float bandwidth);
+    void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
         start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0x5));
@@ -162,15 +162,10 @@ static dboard_base::sptr make_dbsrx(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new dbsrx(args));
 }
 
-//dbid for USRP2 version
 UHD_STATIC_BLOCK(reg_dbsrx_dboard){
-    //register the factory function for the rx dbid
+    //register the factory function for the rx dbid (others version)
     dboard_manager::register_dboard(0x000D, &make_dbsrx, "DBSRX");
-}
-
-//dbid for USRP1 version
-UHD_STATIC_BLOCK(reg_dbsrx_on_usrp1_dboard){
-    //register the factory function for the rx dbid
+    //register the factory function for the rx dbid (USRP1 version)
     dboard_manager::register_dboard(0x0002, &make_dbsrx, "DBSRX");
 }
 
@@ -180,7 +175,7 @@ UHD_STATIC_BLOCK(reg_dbsrx_on_usrp1_dboard){
 dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     //warn user about incorrect DBID on USRP1, requires R193 populated
     if (this->get_iface()->get_special_props().soft_clock_divider and this->get_rx_id() == 0x000D)
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format(
                 "DBSRX: incorrect dbid\n"
                 "Expected dbid 0x0002 and R193\n"
@@ -191,7 +186,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
 
     //warn user about incorrect DBID on non-USRP1, requires R194 populated
     if (not this->get_iface()->get_special_props().soft_clock_divider and this->get_rx_id() == 0x0002)
-        uhd::print_warning(
+        uhd::warning::post(
             str(boost::format(
                 "DBSRX: incorrect dbid\n"
                 "Expected dbid 0x000D and R194\n"
@@ -239,11 +234,12 @@ void dbsrx::set_lo_freq(double target_freq){
     double actual_freq=0.0, pfd_freq=0.0, ref_clock=0.0;
     int R=0, N=0, r=0, m=0;
     bool update_filter_settings = false;
-
     //choose refclock
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
+    const double max_clock_rate = std::sorted(clock_rates).back();
     BOOST_FOREACH(ref_clock, std::reversed(std::sorted(clock_rates))){
         if (ref_clock > 27.0e6) continue;
+        if (size_t(max_clock_rate/ref_clock)%2 == 1) continue; //reject asymmetric clocks (odd divisors)
 
         //choose m_divider such that filter tuning constraint is met
         m = 31;
@@ -251,7 +247,7 @@ void dbsrx::set_lo_freq(double target_freq){
 
         if(dbsrx_debug) std::cerr << boost::format(
             "DBSRX: trying ref_clock %f and m_divider %d"
-        ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % m << std::endl;
+        ) % (ref_clock) % m << std::endl;
 
         if (m >= 32) continue;
 
@@ -277,15 +273,17 @@ void dbsrx::set_lo_freq(double target_freq){
         }
     } 
 
-    //Assert because we failed to find a suitable combination of ref_clock, R and N 
-    UHD_ASSERT_THROW(ref_clock/(1 << m) < 1e6 or ref_clock/(1 << m) > 2.5e6);
-    UHD_ASSERT_THROW((pfd_freq < dbsrx_pfd_freq_range.min) or (pfd_freq > dbsrx_pfd_freq_range.max));
-    UHD_ASSERT_THROW((N < 256) or (N > 32768));
     done_loop:
 
+    //Assert because we failed to find a suitable combination of ref_clock, R and N 
+    UHD_ASSERT_THROW(ref_clock <= 27.0e6 and ref_clock >= 0.0);
+    UHD_ASSERT_THROW(ref_clock/m >= 1e6 and ref_clock/m <= 2.5e6);
+    UHD_ASSERT_THROW((pfd_freq >= dbsrx_pfd_freq_range.min) and (pfd_freq <= dbsrx_pfd_freq_range.max));
+    UHD_ASSERT_THROW((N >= 256) and (N <= 32768));
+
     if(dbsrx_debug) std::cerr << boost::format(
-        "DBSRX: choose ref_clock %f and m_divider %d"
-    ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % m << std::endl;
+        "DBSRX: choose ref_clock (current: %f, new: %f) and m_divider %d"
+    ) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % ref_clock % m << std::endl;
 
     //if ref_clock or m divider changed, we need to update the filter settings
     if (ref_clock != this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX) or m != _max2118_write_regs.m_divider) update_filter_settings = true;
@@ -344,12 +342,12 @@ void dbsrx::set_lo_freq(double target_freq){
         //vtune is too low, try lower frequency vco
         if (_max2118_read_regs.adc == 0){
             if (_max2118_write_regs.osc_band == 0){
-                uhd::print_warning(
+                uhd::warning::post(
                     str(boost::format(
                         "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
                         ) % int(_max2118_write_regs.osc_band))
                 );
-                UHD_ASSERT_THROW(_max2118_read_regs.adc == 0);
+                UHD_ASSERT_THROW(_max2118_read_regs.adc != 0); //just to cause a throw
             }
             if (_max2118_write_regs.osc_band <= 0) break;
             _max2118_write_regs.osc_band -= 1;
@@ -358,12 +356,12 @@ void dbsrx::set_lo_freq(double target_freq){
         //vtune is too high, try higher frequency vco
         if (_max2118_read_regs.adc == 7){
             if (_max2118_write_regs.osc_band == 7){
-                uhd::print_warning(
+                uhd::warning::post(
                     str(boost::format(
                         "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
                         ) % int(_max2118_write_regs.osc_band))
                 );
-                UHD_ASSERT_THROW(_max2118_read_regs.adc == 0);
+                UHD_ASSERT_THROW(_max2118_read_regs.adc != 7); //just to cause a throw
             }
             if (_max2118_write_regs.osc_band >= 7) break;
             _max2118_write_regs.osc_band += 1;
@@ -401,6 +399,7 @@ void dbsrx::set_lo_freq(double target_freq){
         << boost::format("    Ref    Freq=%fMHz\n") % (ref_clock/1e6)
         << boost::format("    Target Freq=%fMHz\n") % (target_freq/1e6)
         << boost::format("    Actual Freq=%fMHz\n") % (_lo_freq/1e6)
+        << boost::format("    VCO    Freq=%fMHz\n") % (vco_freq/1e6)
         << std::endl;
 
     if (update_filter_settings) set_bandwidth(_bandwidth);
@@ -480,9 +479,9 @@ void dbsrx::set_gain(float gain, const std::string &name){
 /***********************************************************************
  * Bandwidth Handling
  **********************************************************************/
-void dbsrx::set_bandwidth(float bandwidth){
+void dbsrx::set_bandwidth(double bandwidth){
     //clip the input
-    bandwidth = std::clip<float>(bandwidth, 4e6, 33e6);
+    bandwidth = std::clip<double>(bandwidth, 4e6, 33e6);
 
     double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     
@@ -492,7 +491,7 @@ void dbsrx::set_bandwidth(float bandwidth){
     _max2118_write_regs.f_dac = std::clip<int>(int((((bandwidth*_max2118_write_regs.m_divider)/ref_clock) - 4)/0.145),0,127);
 
     //determine actual bandwidth
-    _bandwidth = float((ref_clock/(_max2118_write_regs.m_divider))*(4+0.145*_max2118_write_regs.f_dac));
+    _bandwidth = double((ref_clock/(_max2118_write_regs.m_divider))*(4+0.145*_max2118_write_regs.f_dac));
 
     if (dbsrx_debug) std::cerr << boost::format(
         "DBSRX Filter Bandwidth: %f MHz, m: %d, f_dac: %d\n"
@@ -551,6 +550,10 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
         return;
@@ -559,14 +562,8 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = this->get_locked();
         return;
 
-/*
-    case SUBDEV_PROP_RSSI:
-        val = this->get_rssi();
-        return;
-*/
-
     case SUBDEV_PROP_BANDWIDTH:
-        val = _bandwidth;
+        val = 2*_bandwidth; //_bandwidth is low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -587,8 +584,11 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
         this->set_gain(val.as<float>(), key.name);
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
+
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_bandwidth(val.as<float>());
+        this->set_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

@@ -23,6 +23,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/utility.hpp>
+#include <vector>
+#include <string>
 
 namespace uhd{
 
@@ -40,36 +42,57 @@ public:
     typedef boost::shared_ptr<gain_group> sptr;
 
     /*!
-     * Get the overall gain range for this group.
+     * Get the gain range for the gain element specified by name.
+     * For an empty name, get the overall gain range for this group.
      * Overall step is defined as the minimum step size.
+     * \param name name of the gain element (optional)
      * \return a gain range with overall min, max, step
      */
-    virtual gain_range_t get_range(void) = 0;
+    virtual gain_range_t get_range(const std::string &name = "") = 0;
 
     /*!
-     * Get the overall gain value for this group.
-     * \return a summation of all the gain values
+     * Get the gain value for the gain element specified by name.
+     * For an empty name, get the overall gain value for this group.
+     * \param name name of the gain element (optional)
+     * \return a gain value of the element or all elements
      */
-    virtual float get_value(void) = 0;
+    virtual float get_value(const std::string &name = "") = 0;
 
     /*!
-     * Set the overall gain value for this group.
+     * Set the gain value for the gain element specified by name.
+     * For an empty name, set the overall gain value for this group.
      * The power will be distributed across individual gain elements.
      * The semantics of how to do this are determined by the priority.
-     * \param gain the gain to set across the group
+     * \param gain the gain to set for the lement or across the group
+     * \param name name of the gain element (optional)
      */
-    virtual void set_value(float gain) = 0;
+    virtual void set_value(float gain, const std::string &name = "") = 0;
 
     /*!
-     * Register a set of gain functions into this group.
+     * Get a list of names of registered gain elements.
+     * The names are in the order that they were registered.
+     * \return a vector of gain name strings
+     */
+    virtual const std::vector<std::string> get_names(void) = 0;
+
+    /*!
+     * Register a set of gain functions into this group:
+     *
+     * The name should be a unique and non-empty name.
+     * Othwerwise, the implementation will rename it.
+     *
      * Priority determines how power will be distributed
      * with higher priorities getting the power first,
      * and lower priorities getting the remainder power.
+     *
+     * \param name the name of the gain element
      * \param gain_fcns the set of gain functions
      * \param priority the priority of the gain element
      */
     virtual void register_fcns(
-        const gain_fcns_t &gain_fcns, size_t priority = 0
+        const std::string &name,
+        const gain_fcns_t &gain_fcns,
+        size_t priority = 0
     ) = 0;
 
     /*!

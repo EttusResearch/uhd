@@ -41,6 +41,9 @@ struct usrp_e_ctl32 {
 #define UE_SPI_PUSH_FALL	UE_SPI_CTRL_TXNEG
 #define UE_SPI_LATCH_RISE	0
 #define UE_SPI_LATCH_FALL	UE_SPI_CTRL_RXNEG
+#define USRP_E_GET_COMPAT_NUMBER _IO(USRP_E_IOC_MAGIC, 0x28)
+
+#define USRP_E_COMPAT_NUMBER 1
 
 struct usrp_e_spi {
 	__u8 readback;
