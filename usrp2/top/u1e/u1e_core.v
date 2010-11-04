@@ -36,7 +36,7 @@ module u1e_core
    localparam SR_TX_CTRL = 24;   // 2 regs
    localparam SR_TIME64 = 28;    // 4 regs
 
-   wire 	COMPAT_NUM = 8'd2;
+   wire [7:0]	COMPAT_NUM = 8'd2;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst = rst_fpga;
