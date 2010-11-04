@@ -342,7 +342,7 @@ module u1plus_core
    wire 	scl_pad_i, scl_pad_o, scl_pad_oen_o, sda_pad_i, sda_pad_o, sda_pad_oen_o;
    i2c_master_top #(.ARST_LVL(1)) i2c 
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.arst_i(1'b0), 
-      .wb_adr_i(s3_adr[4:2]),.wb_dat_i(s3_dat_mosi[7:0]),.wb_dat_o(s3_dat_miso[7:0]),
+      .wb_adr_i(s3_adr[3:1]),.wb_dat_i(s3_dat_mosi[7:0]),.wb_dat_o(s3_dat_miso[7:0]),
       .wb_we_i(s3_we),.wb_stb_i(s3_stb),.wb_cyc_i(s3_cyc),
       .wb_ack_o(s3_ack),.wb_inta_o(),
       .scl_pad_i(scl_pad_i),.scl_pad_o(scl_pad_o),.scl_padoen_o(scl_pad_oen_o),
