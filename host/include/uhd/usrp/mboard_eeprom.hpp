@@ -21,24 +21,18 @@
 #include <uhd/config.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/serial.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 #include <string>
 
 namespace uhd{ namespace usrp{
 
     /*!
-     * The motherboard EEPROM class:
+     * The motherboard EEPROM object:
      * Knows how to read and write the EEPROM for various USRPs.
      * The class inherits from a string, string dictionary.
      * Use the dictionary interface to get and set values.
      * Commit to the EEPROM to save changed settings.
      */
-    class UHD_API mboard_eeprom_t: boost::noncopyable,
-        public uhd::dict<std::string, std::string>
-    {
-    public:
-        typedef boost::shared_ptr<mboard_eeprom_t> sptr;
+    struct UHD_API mboard_eeprom_t : uhd::dict<std::string, std::string>{
 
         //! Possible EEPROM maps types
         enum map_type{
@@ -48,14 +42,17 @@ namespace uhd{ namespace usrp{
 
         /*!
          * Make a new mboard EEPROM handler.
-         * \param map the map type enum
          * \param iface the interface to i2c
-         * \return a new mboard EEPROM object
+         * \param map the map type enum
          */
-        static sptr make(map_type map, i2c_iface &iface);
+        mboard_eeprom_t(i2c_iface &iface, map_type map);
 
-        //! Write the contents of this object to the EEPROM.
-        virtual void commit(void) = 0;
+        /*!
+         * Write the contents of this object to the EEPROM.
+         * \param iface the interface to i2c
+         * \param map the map type enum
+         */
+        void commit(i2c_iface &iface, map_type map);
 
     };
 

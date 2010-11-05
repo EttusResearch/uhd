@@ -67,8 +67,8 @@ static const uhd::dict<std::string, boost::uint8_t> USRP_NXXX_OFFSETS = boost::a
     ("mac-addr", 0x02)
     ("ip-addr", 0x02 + sizeof(mac_addr_t))
     //leave space here for other addresses (perhaps)
-    ("name", 0x18)
-    ("serial", 0x18 + NAME_MAX_LEN)
+    ("serial", 0x18)
+    ("name", 0x18 + SERIAL_LEN)
 ;
 
 static void load_nxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
@@ -86,14 +86,14 @@ static void load_nxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     std::copy(iface.read_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["ip-addr"], 4), ip_addr_bytes);
     mb_eeprom["ip-addr"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
 
-    //extract the name
-    mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
-        NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["name"], NAME_MAX_LEN
-    ));
-
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
         NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["serial"], SERIAL_LEN
+    ));
+
+    //extract the name
+    mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
+        NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["name"], NAME_MAX_LEN
     ));
 }
 
@@ -116,61 +116,68 @@ static void store_nxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     std::copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
     iface.write_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["ip-addr"], ip_addr_bytes);
 
-    //store the name
-    iface.write_eeprom(
-        NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["name"],
-        string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
-    );
-
     //store the serial
     iface.write_eeprom(
         NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["serial"],
         string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
+    );
+
+    //store the name
+    iface.write_eeprom(
+        NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["name"],
+        string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 }
 
 /***********************************************************************
  * Implementation of BXXX load/store
  **********************************************************************/
-//TODO
+static const boost::uint8_t BXXX_EEPROM_ADDR = 0x50;
 
-static void load_bxxx(mboard_eeprom_t &, i2c_iface &){
-    
+static const uhd::dict<std::string, boost::uint8_t> USRP_BXXX_OFFSETS = boost::assign::map_list_of
+    ("serial", 0xf8)
+    ("name", 0xf8 + SERIAL_LEN)
+;
+
+static void load_bxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //extract the serial
+    mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
+        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["serial"], SERIAL_LEN
+    ));
+
+    //extract the name
+    mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
+        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["name"], NAME_MAX_LEN
+    ));
 }
 
-static void store_bxxx(const mboard_eeprom_t &, i2c_iface &){
-    
+static void store_bxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //store the serial
+    iface.write_eeprom(
+        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["serial"],
+        string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
+    );
+
+    //store the name
+    iface.write_eeprom(
+        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["name"],
+        string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
+    );
 }
 
 /***********************************************************************
  * Implementation of mboard eeprom
  **********************************************************************/
-class mboard_eeprom_impl : public mboard_eeprom_t{
-public:
-    mboard_eeprom_impl(map_type map, i2c_iface &iface):
-        _map(map), _iface(iface)
-    {
-        switch(_map){
-        case MAP_NXXX: load_nxxx(*this, _iface); break;
-        case MAP_BXXX: load_bxxx(*this, _iface); break;
-        }
+mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, map_type map){
+    switch(map){
+    case MAP_NXXX: load_nxxx(*this, iface); break;
+    case MAP_BXXX: load_bxxx(*this, iface); break;
     }
+}
 
-    void commit(void){
-        switch(_map){
-        case MAP_NXXX: store_nxxx(*this, _iface); break;
-        case MAP_BXXX: store_bxxx(*this, _iface); break;
-        }
+void mboard_eeprom_t::commit(i2c_iface &iface, map_type map){
+    switch(map){
+    case MAP_NXXX: store_nxxx(*this, iface); break;
+    case MAP_BXXX: store_bxxx(*this, iface); break;
     }
-
-private:
-    map_type _map;
-    i2c_iface &_iface;
-};
-
-/***********************************************************************
- * Factory function for mboard eeprom
- **********************************************************************/
-mboard_eeprom_t::sptr mboard_eeprom_t::make(map_type map, i2c_iface &iface){
-    return sptr(new mboard_eeprom_impl(map, iface));
 }
