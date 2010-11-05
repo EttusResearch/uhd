@@ -540,7 +540,7 @@ main(void)
     }
 
     if (pending & PIC_OVERRUN_INT){
-      dbsm_handle_rx_overrun(&dsp_rx_sm);
+      //dbsm_handle_rx_overrun(&dsp_rx_sm);
       pic_regs->pending = PIC_OVERRUN_INT;	// clear pending interrupt
 
       // FIXME Figure out how to handle this robustly.

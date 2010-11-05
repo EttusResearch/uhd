@@ -236,6 +236,11 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
     return bpp/_rx_otw_type.get_sample_size();
 }
 
+static void handle_overflow(std::vector<usrp2_mboard_impl::sptr> &mboards, size_t chan){
+    std::cerr << "O" << std::flush;
+    mboards.at(chan/mboards.size())->handle_overflow();
+}
+
 size_t usrp2_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,
@@ -248,6 +253,7 @@ size_t usrp2_impl::recv(
         io_type, _rx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
-        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout)
+        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
+        boost::bind(&handle_overflow, _mboards, _1)
     );
 }
