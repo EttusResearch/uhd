@@ -40,7 +40,7 @@ ENDIF(ENABLE_USRP1 AND NOT HAVE_USB_SUPPORT)
 
 IF(ENABLE_USRP1)
     MESSAGE(STATUS "  Building USRP1 support.")
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/include)
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.cpp

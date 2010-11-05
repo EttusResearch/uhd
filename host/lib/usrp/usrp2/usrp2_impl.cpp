@@ -21,6 +21,7 @@
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -122,8 +123,11 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
                         usrp2_addrs.push_back(new_addr);
                     }
                 }
-                catch(const std::exception &){
-                    usrp2_addrs.push_back(new_addr);
+                catch(const std::exception &e){
+                    uhd::warning::post(
+                        std::string("Ignoring discovered device\n")
+                        + e.what()
+                    );
                 }
                 //dont break here, it will exit the while loop
                 //just continue on to the next loop iteration
