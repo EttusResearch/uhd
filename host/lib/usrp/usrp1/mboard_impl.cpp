@@ -208,8 +208,6 @@ bool usrp1_impl::has_tx_halfband(void){
  **********************************************************************/
 void usrp1_impl::mboard_init(void)
 {
-    _mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_BXXX);
-
     _mboard_proxy = wax_obj_proxy::make(
                      boost::bind(&usrp1_impl::mboard_get, this, _1, _2),
                      boost::bind(&usrp1_impl::mboard_set, this, _1, _2));
@@ -267,7 +265,7 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = std::string("usrp1 mboard - " + _mb_eeprom["serial"]);
+        val = std::string("usrp1 mboard - " + _iface->mb_eeprom["serial"]);
         return;
 
     case MBOARD_PROP_OTHERS:
@@ -325,7 +323,7 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         return;
 
     case MBOARD_PROP_EEPROM_MAP:
-        val = _mb_eeprom;
+        val = _iface->mb_eeprom;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -380,8 +378,8 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         return;
 
     case MBOARD_PROP_EEPROM_MAP:
-        _mb_eeprom = val.as<mboard_eeprom_t>();
-        _mb_eeprom.commit(*_iface, mboard_eeprom_t::MAP_BXXX);
+        _iface->mb_eeprom = val.as<mboard_eeprom_t>();
+        _iface->mb_eeprom.commit(*_iface, mboard_eeprom_t::MAP_BXXX);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

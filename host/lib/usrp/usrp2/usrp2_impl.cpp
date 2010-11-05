@@ -61,7 +61,7 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
             if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
 
             //create a new hint with this broadcast address
-            device_addr_t new_hint;
+            device_addr_t new_hint = hint;
             new_hint["addr"] = if_addrs.bcast;
 
             //call discover with the new hint and append results
@@ -110,7 +110,21 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
                 device_addr_t new_addr;
                 new_addr["type"] = "usrp2";
                 new_addr["addr"] = ip_addr.to_string();
-                usrp2_addrs.push_back(new_addr);
+                //Attempt to read the name from the EEPROM and perform filtering.
+                //This operation can throw due to COMPAT mismatch. That is OK.
+                //We will allow the device to be found and the COMPAT mismatch
+                //will be thrown as an exception in the factory function.
+                try{
+                    new_addr["name"] = usrp2_iface::make(udp_simple::make_connected(
+                        new_addr["addr"], num2str(USRP2_UDP_CTRL_PORT))
+                    )->mb_eeprom["name"];
+                    if (not hint.has_key("name") or hint["name"] == new_addr["name"]){
+                        usrp2_addrs.push_back(new_addr);
+                    }
+                }
+                catch(const std::exception &){
+                    usrp2_addrs.push_back(new_addr);
+                }
                 //dont break here, it will exit the while loop
                 //just continue on to the next loop iteration
             }

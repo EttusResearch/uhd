@@ -26,7 +26,6 @@
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_id.hpp>
-#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -159,7 +158,6 @@ private:
     void mboard_get(const wax::obj &, wax::obj &);
     void mboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _mboard_proxy;
-    uhd::usrp::mboard_eeprom_t _mb_eeprom;
 
     //xx dboard functions and settings
     void dboard_init(void);

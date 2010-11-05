@@ -132,13 +132,20 @@ static void store_nxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
  * Implementation of BXXX load/store
  **********************************************************************/
 static const boost::uint8_t BXXX_EEPROM_ADDR = 0x50;
+static const size_t USB_SERIAL_LEN = 16;
 
 static const uhd::dict<std::string, boost::uint8_t> USRP_BXXX_OFFSETS = boost::assign::map_list_of
-    ("serial", 0xf8)
-    ("name", 0xf8 + SERIAL_LEN)
+    ("usb-serial", 0xf8)
+    ("serial", 0xf8 + USB_SERIAL_LEN)
+    ("name", 0xf8 + USB_SERIAL_LEN + SERIAL_LEN)
 ;
 
 static void load_bxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //extract the usb serial
+    mb_eeprom["usb-serial"] = bytes_to_string(iface.read_eeprom(
+        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["usb-serial"], USB_SERIAL_LEN
+    ));
+
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
         BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["serial"], SERIAL_LEN
@@ -151,6 +158,12 @@ static void load_bxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 }
 
 static void store_bxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //store the usb serial
+    iface.write_eeprom(
+        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["usb-serial"],
+        string_to_bytes(mb_eeprom["usb-serial"], USB_SERIAL_LEN)
+    );
+
     //store the serial
     iface.write_eeprom(
         BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["serial"],
