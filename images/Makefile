@@ -55,11 +55,11 @@ _usrp1_fw_ihx = $(BUILT_IMAGES_DIR)/usrp1_fw.ihx
 IMAGES_LIST += $(_usrp1_fw_ihx)
 
 $(_usrp1_fw_ihx):
-	cd $(_usrp1_fw_dir) && ./bootstrap
-	cd $(_usrp1_fw_dir) && ./configure
-	make -C $(_usrp1_fw_dir) clean
-	make -C $(_usrp1_fw_dir) all
-	cp $(_usrp1_fw_dir)/src/usrp1/std.ihx $@
+	cd $(_usrp1_fw_dir) && rm -rf build
+	cd $(_usrp1_fw_dir) && mkdir build
+	cd $(_usrp1_fw_dir)/build && cmake ../
+	cd $(_usrp1_fw_dir)/build && make
+	cp $(_usrp1_fw_dir)/build/usrp1/usrp1_fw.ihx $@
 
 endif
 
