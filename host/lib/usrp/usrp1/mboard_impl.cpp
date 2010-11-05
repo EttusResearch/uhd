@@ -208,6 +208,8 @@ bool usrp1_impl::has_tx_halfband(void){
  **********************************************************************/
 void usrp1_impl::mboard_init(void)
 {
+    _mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_BXXX);
+
     _mboard_proxy = wax_obj_proxy::make(
                      boost::bind(&usrp1_impl::mboard_get, this, _1, _2),
                      boost::bind(&usrp1_impl::mboard_set, this, _1, _2));
@@ -262,24 +264,10 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
 {
     named_prop_t key = named_prop_t::extract(key_);
 
-    if(key_.type() == typeid(std::string)) {
-      if(key.as<std::string>() == "serial") {
-        uhd::byte_vector_t buf;
-        buf.insert(buf.begin(), 248);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        _iface->write_i2c(I2C_DEV_EEPROM, buf);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        buf = _iface->read_i2c(I2C_DEV_EEPROM, 8);
-        val = std::string(buf.begin(), buf.end());
-      }
-
-      return;
-   	}
-
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = std::string("usrp1 mboard - " + (*_mboard_proxy)[std::string("serial")].as<std::string>());
+        val = std::string("usrp1 mboard - " + _mb_eeprom["serial"]);
         return;
 
     case MBOARD_PROP_OTHERS:
@@ -336,6 +324,10 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         val = _tx_subdev_spec;
         return;
 
+    case MBOARD_PROP_EEPROM_MAP:
+        val = _mb_eeprom;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -351,14 +343,6 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         std::cout << "USRP1 EEPROM image: " << usrp1_eeprom_image << std::endl;
         _ctrl_transport->usrp_load_eeprom(val.as<std::string>());
       }
-
-      if(key.as<std::string>() == "serial") {
-        std::string sernum = val.as<std::string>();
-        uhd::byte_vector_t buf(sernum.begin(), sernum.end());
-        buf.insert(buf.begin(), 248);
-        _iface->write_i2c(I2C_DEV_EEPROM, buf);
-      }
-
       return;
    	}
 
@@ -393,6 +377,11 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         verify_tx_subdev_spec(_tx_subdev_spec, _mboard_proxy->get_link());
         //set the mux and set the number of tx channels
         _iface->poke32(FR_TX_MUX, calc_tx_mux(_tx_subdev_spec, _mboard_proxy->get_link()));
+        return;
+
+    case MBOARD_PROP_EEPROM_MAP:
+        _mb_eeprom = val.as<mboard_eeprom_t>();
+        _mb_eeprom.commit(*_iface, mboard_eeprom_t::MAP_BXXX);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

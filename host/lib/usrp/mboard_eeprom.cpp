@@ -40,8 +40,7 @@ static const size_t NAME_MAX_LEN = 32 - SERIAL_LEN;
 static const std::string bytes_to_string(const byte_vector_t &bytes){
     std::string out;
     BOOST_FOREACH(boost::uint8_t byte, bytes){
-        if (byte == '\0') return out;
-        if (byte < 32 or byte > 127) return "";
+        if (byte < 32 or byte > 127) return out;
         out += byte;
     }
     return out;
