@@ -29,7 +29,6 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
@@ -110,7 +109,6 @@ private:
     void get(const wax::obj &, wax::obj &);
     void set(const wax::obj &, const wax::obj &);
     uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
-    uhd::usrp::mboard_eeprom_t _mboard_eeprom;
 
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;

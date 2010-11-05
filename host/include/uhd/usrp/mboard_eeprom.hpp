@@ -40,6 +40,9 @@ namespace uhd{ namespace usrp{
             MAP_BXXX
         };
 
+        //! Make a new empty mboard eeprom
+        mboard_eeprom_t(void);
+
         /*!
          * Make a new mboard EEPROM handler.
          * \param iface the interface to i2c

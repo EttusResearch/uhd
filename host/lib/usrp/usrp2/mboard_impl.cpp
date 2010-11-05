@@ -38,8 +38,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 ):
     _index(index),
     _recv_frame_size(recv_frame_size),
-    _iface(usrp2_iface::make(ctrl_transport)),
-    _mboard_eeprom(mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_NXXX))
+    _iface(usrp2_iface::make(ctrl_transport))
 {
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -194,7 +193,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = str(boost::format("usrp2 mboard%d - rev %s") % _index % _mboard_eeprom["rev"]);
+        val = str(boost::format("usrp2 mboard%d - rev %s") % _index % _iface->mb_eeprom["rev"]);
         return;
 
     case MBOARD_PROP_OTHERS:
@@ -260,7 +259,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_EEPROM_MAP:
-        val = _mboard_eeprom;
+        val = _iface->mb_eeprom;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -315,8 +314,8 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_EEPROM_MAP:
-        _mboard_eeprom = val.as<mboard_eeprom_t>();
-        _mboard_eeprom.commit(*_iface, mboard_eeprom_t::MAP_NXXX);
+        _iface->mb_eeprom = val.as<mboard_eeprom_t>();
+        _iface->mb_eeprom.commit(*_iface, mboard_eeprom_t::MAP_NXXX);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

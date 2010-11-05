@@ -168,6 +168,10 @@ static void store_bxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 /***********************************************************************
  * Implementation of mboard eeprom
  **********************************************************************/
+mboard_eeprom_t::mboard_eeprom_t(void){
+    /* NOP */
+}
+
 mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, map_type map){
     switch(map){
     case MAP_NXXX: load_nxxx(*this, iface); break;

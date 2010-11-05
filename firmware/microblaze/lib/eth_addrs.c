@@ -23,6 +23,12 @@
 #include "i2c.h"
 #include "usrp2/fw_common.h"
 
+////////////////////////////////////////////////////////////////////////
+// EEPROM Layout
+////////////////////////////////////////////////////////////////////////
+#define USRP2_EE_MBOARD_MAC_ADDR 0x02 //6 bytes
+#define USRP2_EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
+
 static bool
 unprogrammed(const void *t, size_t len)
 {
