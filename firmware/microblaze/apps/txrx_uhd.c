@@ -422,6 +422,7 @@ link_changed_callback(int speed)
   link_is_up = speed != 0;
   hal_set_leds(link_is_up ? LED_RJ45 : 0x0, LED_RJ45);
   printf("\neth link changed: speed = %d\n", speed);
+  if (link_is_up) send_gratuitous_arp();
 }
 
 static void setup_network(void){
@@ -479,14 +480,17 @@ main(void)
   printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
 
-  ethernet_register_link_changed_callback(link_changed_callback);
-  ethernet_init();
-
+  //1) register the addresses into the network stack
   register_mac_addr(ethernet_mac_addr());
   register_ip_addr(get_ip_addr());
 
+  //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+
+  //3) setup ethernet hardware to bring the link up
+  ethernet_register_link_changed_callback(link_changed_callback);
+  ethernet_init();
 
   // initialize double buffering state machine for ethernet -> DSP Tx
 
@@ -536,7 +540,7 @@ main(void)
     }
 
     if (pending & PIC_OVERRUN_INT){
-      dbsm_handle_rx_overrun(&dsp_rx_sm);
+      //dbsm_handle_rx_overrun(&dsp_rx_sm);
       pic_regs->pending = PIC_OVERRUN_INT;	// clear pending interrupt
 
       // FIXME Figure out how to handle this robustly.

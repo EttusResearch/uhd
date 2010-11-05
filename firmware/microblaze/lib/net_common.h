@@ -47,4 +47,6 @@ void send_udp_pkt(int src_port, struct socket_address dst,
 
 void handle_eth_packet(uint32_t *p, size_t nlines);
 
+void send_gratuitous_arp(void);
+
 #endif /* INCLUDED_NET_COMMON_H */

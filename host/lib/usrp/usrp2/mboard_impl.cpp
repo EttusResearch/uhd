@@ -167,7 +167,15 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     _iface->poke32(U2_REG_TIME64_SECS, boost::uint32_t(time_spec.get_full_secs()));
 }
 
+void usrp2_mboard_impl::handle_overflow(void){
+    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1);
+    if (_continuous_streaming){ //re-issue the stream command if already continuous
+        this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    }
+}
+
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
+    _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
     _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
         stream_cmd, _recv_frame_size
     ));
