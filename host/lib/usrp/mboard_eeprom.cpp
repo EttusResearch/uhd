@@ -65,7 +65,7 @@ static const boost::uint8_t NXXX_EEPROM_ADDR = 0x50;
 static const uhd::dict<std::string, boost::uint8_t> USRP_NXXX_OFFSETS = boost::assign::map_list_of
     ("rev-lsb-msb", 0x00)
     ("mac-addr", 0x02)
-    ("ip-addr", 0x02 + sizeof(mac_addr_t))
+    ("ip-addr", 0x08)
     //leave space here for other addresses (perhaps)
     ("serial", 0x18)
     ("name", 0x18 + SERIAL_LEN)
@@ -74,12 +74,12 @@ static const uhd::dict<std::string, boost::uint8_t> USRP_NXXX_OFFSETS = boost::a
 static void load_nxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //extract the revision number
     byte_vector_t rev_lsb_msb = iface.read_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["rev-lsb-msb"], 2);
-    boost::uint16_t rev = (boost::uint16_t(rev_lsb_msb[0]) << 0) | (boost::uint16_t(rev_lsb_msb[1]) << 8);
+    boost::uint16_t rev = (boost::uint16_t(rev_lsb_msb.at(0)) << 0) | (boost::uint16_t(rev_lsb_msb.at(1)) << 8);
     mb_eeprom["rev"] = boost::lexical_cast<std::string>(rev);
 
     //extract the addresses
     mb_eeprom["mac-addr"] = mac_addr_t::from_bytes(iface.read_eeprom(
-        NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["mac-addr"], sizeof(mac_addr_t)
+        NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["mac-addr"], 6
     )).to_string();
 
     boost::asio::ip::address_v4::bytes_type ip_addr_bytes;

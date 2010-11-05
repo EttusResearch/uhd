@@ -26,6 +26,7 @@
 #include <uhd/usrp/dsp_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -123,10 +124,9 @@ static std::string get_mboard_pp_string(wax::obj mboard){
     std::stringstream ss;
     ss << boost::format("Mboard: %s") % mboard[usrp::MBOARD_PROP_NAME].as<std::string>() << std::endl;
     //ss << std::endl;
-    BOOST_FOREACH(const std::string &other_name, mboard[usrp::MBOARD_PROP_OTHERS].as<prop_names_t>()){
-        try{
-            ss << boost::format("%s: %s") % other_name % mboard[other_name].as<std::string>() << std::endl;
-        } catch(...){}
+    usrp::mboard_eeprom_t mb_eeprom = mboard[usrp::MBOARD_PROP_EEPROM_MAP].as<usrp::mboard_eeprom_t>();
+    BOOST_FOREACH(const std::string &key, mb_eeprom.keys()){
+        if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
     }
     BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_RX_DSP_NAMES].as<prop_names_t>()){
         ss << make_border(get_dsp_pp_string("RX", mboard[named_prop_t(usrp::MBOARD_PROP_RX_DSP, dsp_name)]));
