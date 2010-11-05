@@ -57,7 +57,7 @@ static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges = map_list_
  **********************************************************************/
 class dbsrx2 : public rx_dboard_base{
 public:
-    dbsrx2(ctor_args_t args, boost::uint8_t max2112_addr);
+    dbsrx2(ctor_args_t args);
     ~dbsrx2(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
@@ -69,7 +69,9 @@ private:
     uhd::dict<std::string, float> _gains;
     max2112_write_regs_t _max2112_write_regs;
     max2112_read_regs_t _max2112_read_regs;
-    boost::uint8_t _max2112_addr; //0x60 or 0x61 depending on which side
+    boost::uint8_t _max2112_addr(){ //0x60 or 0x61 depending on which side
+        return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x60 : 0x61;
+    }
 
     void set_lo_freq(double target_freq);
     void set_gain(float gain, const std::string &name);
@@ -98,7 +100,7 @@ private:
 
             //send the data
             this->get_iface()->write_i2c(
-                _max2112_addr, regs_vector
+                _max2112_addr(), regs_vector
             );
         }
     }
@@ -117,7 +119,7 @@ private:
 
             //send the address
             this->get_iface()->write_i2c(
-                _max2112_addr, address_vector
+                _max2112_addr(), address_vector
             );
 
             //create buffer for register data
@@ -125,7 +127,7 @@ private:
 
             //read from i2c
             regs_vector = this->get_iface()->read_i2c(
-                _max2112_addr, num_bytes
+                _max2112_addr(), num_bytes
             );
 
             for(boost::uint8_t i=0; i < num_bytes; i++){
@@ -169,7 +171,7 @@ private:
 // FIXME 0x67 is the default i2c address on USRP2
 //       need to handle which side for USRP1 with different address
 static dboard_base::sptr make_dbsrx2(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new dbsrx2(args, 0x61));
+    return dboard_base::sptr(new dbsrx2(args));
 }
 
 UHD_STATIC_BLOCK(reg_dbsrx2_dboard){
@@ -180,16 +182,13 @@ UHD_STATIC_BLOCK(reg_dbsrx2_dboard){
 /***********************************************************************
  * Structors
  **********************************************************************/
-dbsrx2::dbsrx2(ctor_args_t args, boost::uint8_t max2112_addr) : rx_dboard_base(args){
+dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     //enable only the clocks we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions and atr controls (identically)
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0); // All unused in atr
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x0); // All Inputs
-
-    //set the i2c address for the max2112
-    _max2112_addr = max2112_addr;
 
     //send initial register settings
     send_reg(0x0, 0xB);
