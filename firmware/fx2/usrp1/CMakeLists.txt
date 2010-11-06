@@ -77,7 +77,7 @@ set(eeprom1_sources
 add_custom_target(usrp1_eeprom ALL
     DEPENDS usrp1_boot
     COMMAND objcopy -I ihex -O binary usrp1_boot.ihx usrp1_boot.bin
-    COMMAND ${PYTHON_EXECUTABLE} ${BUILD_EEPROM} -r2 usrp1_boot.bin usrp1_eeprom.bin
+    COMMAND ${PYTHON_EXECUTABLE} ${BUILD_EEPROM} -r1 usrp1_boot.bin usrp1_eeprom.bin
 )
 
 add_executable(usrp1_boot ${eeprom1_sources})

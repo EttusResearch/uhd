@@ -94,6 +94,9 @@ static void load_nxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
         NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["name"], NAME_MAX_LEN
     ));
+
+    //empty serial correction: use the mac address
+    if (mb_eeprom["serial"].empty()) mb_eeprom["serial"] = mb_eeprom["mac-addr"];
 }
 
 static void store_nxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
@@ -129,37 +132,38 @@ static void store_nxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 }
 
 /***********************************************************************
- * Implementation of BXXX load/store
+ * Implementation of B1XX load/store
  **********************************************************************/
-static const boost::uint8_t BXXX_EEPROM_ADDR = 0x50;
+static const boost::uint8_t B1XX_EEPROM_ADDR = 0x50;
+static const size_t B1XXX_SERIAL_LEN = 8;
 
-static const uhd::dict<std::string, boost::uint8_t> USRP_BXXX_OFFSETS = boost::assign::map_list_of
+static const uhd::dict<std::string, boost::uint8_t> USRP_B1XX_OFFSETS = boost::assign::map_list_of
     ("serial", 0xf8)
-    ("name", 0xf8 + SERIAL_LEN)
+    ("name", 0xf8 - NAME_MAX_LEN)
 ;
 
-static void load_bxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+static void load_b1xx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
-        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["serial"], SERIAL_LEN
+        B1XX_EEPROM_ADDR, USRP_B1XX_OFFSETS["serial"], B1XXX_SERIAL_LEN
     ));
 
     //extract the name
     mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
-        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["name"], NAME_MAX_LEN
+        B1XX_EEPROM_ADDR, USRP_B1XX_OFFSETS["name"], NAME_MAX_LEN
     ));
 }
 
-static void store_bxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+static void store_b1xx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //store the serial
     iface.write_eeprom(
-        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["serial"],
-        string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
+        B1XX_EEPROM_ADDR, USRP_B1XX_OFFSETS["serial"],
+        string_to_bytes(mb_eeprom["serial"], B1XXX_SERIAL_LEN)
     );
 
     //store the name
     iface.write_eeprom(
-        BXXX_EEPROM_ADDR, USRP_BXXX_OFFSETS["name"],
+        B1XX_EEPROM_ADDR, USRP_B1XX_OFFSETS["name"],
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 }
@@ -174,13 +178,13 @@ mboard_eeprom_t::mboard_eeprom_t(void){
 mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, map_type map){
     switch(map){
     case MAP_NXXX: load_nxxx(*this, iface); break;
-    case MAP_BXXX: load_bxxx(*this, iface); break;
+    case MAP_B1XX: load_b1xx(*this, iface); break;
     }
 }
 
 void mboard_eeprom_t::commit(i2c_iface &iface, map_type map){
     switch(map){
     case MAP_NXXX: store_nxxx(*this, iface); break;
-    case MAP_BXXX: store_bxxx(*this, iface); break;
+    case MAP_B1XX: store_b1xx(*this, iface); break;
     }
 }

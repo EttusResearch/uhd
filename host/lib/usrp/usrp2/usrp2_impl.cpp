@@ -102,36 +102,37 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem), DISCOVERY_TIMEOUT_MS);
         //std::cout << len << "\n";
-        if (len > offsetof(usrp2_ctrl_data_t, data)){
-            //handle the received data
-            switch(ntohl(ctrl_data_in->id)){
-            case USRP2_CTRL_ID_WAZZUP_DUDE:
-                //make a boost asio ipv4 with the raw addr in host byte order
-                boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
-                device_addr_t new_addr;
-                new_addr["type"] = "usrp2";
-                new_addr["addr"] = ip_addr.to_string();
-                //Attempt to read the name from the EEPROM and perform filtering.
-                //This operation can throw due to COMPAT mismatch. That is OK.
-                //We will allow the device to be found and the COMPAT mismatch
-                //will be thrown as an exception in the factory function.
-                try{
-                    new_addr["name"] = usrp2_iface::make(udp_simple::make_connected(
-                        new_addr["addr"], num2str(USRP2_UDP_CTRL_PORT))
-                    )->mb_eeprom["name"];
-                    if (not hint.has_key("name") or hint["name"] == new_addr["name"]){
-                        usrp2_addrs.push_back(new_addr);
-                    }
+        if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
+            //make a boost asio ipv4 with the raw addr in host byte order
+            boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+            device_addr_t new_addr;
+            new_addr["type"] = "usrp2";
+            new_addr["addr"] = ip_addr.to_string();
+            //Attempt to read the name from the EEPROM and perform filtering.
+            //This operation can throw due to COMPAT mismatch. That is OK.
+            //We will allow the device to be found and the COMPAT mismatch
+            //will be thrown as an exception in the factory function.
+            try{
+                mboard_eeprom_t mb_eeprom = usrp2_iface::make(
+                    udp_simple::make_connected(new_addr["addr"], num2str(USRP2_UDP_CTRL_PORT))
+                )->mb_eeprom;
+                new_addr["name"] = mb_eeprom["name"];
+                new_addr["serial"] = mb_eeprom["serial"];
+                if (
+                    (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+                    (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+                ){
+                    usrp2_addrs.push_back(new_addr);
                 }
-                catch(const std::exception &e){
-                    uhd::warning::post(
-                        std::string("Ignoring discovered device\n")
-                        + e.what()
-                    );
-                }
-                //dont break here, it will exit the while loop
-                //just continue on to the next loop iteration
             }
+            catch(const std::exception &e){
+                uhd::warning::post(
+                    std::string("Ignoring discovered device\n")
+                    + e.what()
+                );
+            }
+            //dont break here, it will exit the while loop
+            //just continue on to the next loop iteration
         }
         if (len == 0) break; //timeout
     }

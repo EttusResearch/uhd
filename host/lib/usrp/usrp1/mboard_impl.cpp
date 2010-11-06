@@ -379,7 +379,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_EEPROM_MAP:
         _iface->mb_eeprom = val.as<mboard_eeprom_t>();
-        _iface->mb_eeprom.commit(*_iface, mboard_eeprom_t::MAP_BXXX);
+        _iface->mb_eeprom.commit(*_iface, mboard_eeprom_t::MAP_B1XX);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

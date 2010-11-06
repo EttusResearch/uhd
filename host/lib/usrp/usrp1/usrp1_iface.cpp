@@ -38,7 +38,7 @@ public:
     usrp1_iface_impl(usrp_ctrl::sptr ctrl_transport)
     {
         _ctrl_transport = ctrl_transport;
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_BXXX);
+        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_B1XX);
     }
 
     ~usrp1_iface_impl(void)
