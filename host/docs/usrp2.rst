@@ -189,7 +189,7 @@ The LEDs reveal the following about the state of the device:
 * **LED C:** receiving
 * **LED D:** firmware loaded
 * **LED E:** reference lock
-* **LED F:** FPGA loaded
+* **LED F:** CPLD loaded
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
