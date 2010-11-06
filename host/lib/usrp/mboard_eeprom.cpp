@@ -101,31 +101,35 @@ static void load_nxxx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
 static void store_nxxx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //parse the revision number
-    boost::uint16_t rev = boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"]);
-    byte_vector_t rev_lsb_msb = boost::assign::list_of
-        (boost::uint8_t(rev >> 0))
-        (boost::uint8_t(rev >> 8))
-    ;
-    iface.write_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["rev-lsb-msb"], rev_lsb_msb);
+    if (mb_eeprom.has_key("rev")){
+        boost::uint16_t rev = boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"]);
+        byte_vector_t rev_lsb_msb = boost::assign::list_of
+            (boost::uint8_t(rev >> 0))
+            (boost::uint8_t(rev >> 8))
+        ;
+        iface.write_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["rev-lsb-msb"], rev_lsb_msb);
+    }
 
     //store the addresses
-    iface.write_eeprom(
+    if (mb_eeprom.has_key("mac-addr")) iface.write_eeprom(
         NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["mac-addr"],
         mac_addr_t::from_string(mb_eeprom["mac-addr"]).to_bytes()
     );
 
-    byte_vector_t ip_addr_bytes(4);
-    std::copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
-    iface.write_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["ip-addr"], ip_addr_bytes);
+    if (mb_eeprom.has_key("ip-addr")){
+        byte_vector_t ip_addr_bytes(4);
+        std::copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
+        iface.write_eeprom(NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["ip-addr"], ip_addr_bytes);
+    }
 
     //store the serial
-    iface.write_eeprom(
+    if (mb_eeprom.has_key("serial")) iface.write_eeprom(
         NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["serial"],
         string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
     );
 
     //store the name
-    iface.write_eeprom(
+    if (mb_eeprom.has_key("name")) iface.write_eeprom(
         NXXX_EEPROM_ADDR, USRP_NXXX_OFFSETS["name"],
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
@@ -156,13 +160,13 @@ static void load_b1xx(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
 static void store_b1xx(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //store the serial
-    iface.write_eeprom(
+    if (mb_eeprom.has_key("serial")) iface.write_eeprom(
         B1XX_EEPROM_ADDR, USRP_B1XX_OFFSETS["serial"],
         string_to_bytes(mb_eeprom["serial"], B1XXX_SERIAL_LEN)
     );
 
     //store the name
-    iface.write_eeprom(
+    if (mb_eeprom.has_key("name")) iface.write_eeprom(
         B1XX_EEPROM_ADDR, USRP_B1XX_OFFSETS["name"],
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );

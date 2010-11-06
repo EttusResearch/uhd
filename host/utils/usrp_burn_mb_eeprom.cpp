@@ -53,25 +53,27 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::cout << "Creating USRP device from address: " + args << std::endl;
     uhd::device::sptr dev = uhd::device::make(args);
-    std::cout << std::endl;
-
-    std::cout << "Fetching current settings from EEPROM..." << std::endl;
     //FIXME the default mboard for now (may be others)
     wax::obj mboard = (*dev)[uhd::usrp::DEVICE_PROP_MBOARD];
-    uhd::usrp::mboard_eeprom_t mb_eeprom = \
-        mboard[uhd::usrp::MBOARD_PROP_EEPROM_MAP].as<uhd::usrp::mboard_eeprom_t>();
-    if (not mb_eeprom.has_key(key)){
-        std::cerr << boost::format("Cannot find value for EEPROM[%s]") % key << std::endl;
-        return ~0;
-    }
-    std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % key % mb_eeprom[key] << std::endl;
     std::cout << std::endl;
 
+    if (true /*always readback*/){
+        std::cout << "Fetching current settings from EEPROM..." << std::endl;
+        uhd::usrp::mboard_eeprom_t mb_eeprom = \
+            mboard[uhd::usrp::MBOARD_PROP_EEPROM_MAP].as<uhd::usrp::mboard_eeprom_t>();
+        if (not mb_eeprom.has_key(key)){
+            std::cerr << boost::format("Cannot find value for EEPROM[%s]") % key << std::endl;
+            return ~0;
+        }
+        std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % key % mb_eeprom[key] << std::endl;
+        std::cout << std::endl;
+    }
     if (vm.count("val")){
+        uhd::usrp::mboard_eeprom_t mb_eeprom; mb_eeprom[key] = val;
         std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...") % key % val << std::endl;
-        mb_eeprom[key] = val;
         mboard[uhd::usrp::MBOARD_PROP_EEPROM_MAP] = mb_eeprom;
         std::cout << "Power-cycle the USRP device for the changes to take effect." << std::endl;
+        std::cout << std::endl;
     }
 
     std::cout << "Done" << std::endl;
