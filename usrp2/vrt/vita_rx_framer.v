@@ -57,13 +57,6 @@ module vita_rx_framer
    wire [15:0] 	  vita_pkt_len = samples_per_packet + 6;
    //wire [3:0] flags = {signal_overrun,signal_brokenchain,signal_latecmd,signal_cmd_done};
 
-   wire 	  clear_reg;
-   wire 	  clear_int  = clear | clear_reg;
-
-   setting_reg #(.my_addr(BASE+3)) sr_clear
-     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_reg));
-
    setting_reg #(.my_addr(BASE+4)) sr_header
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(vita_header),.changed());
@@ -102,7 +95,7 @@ module vita_rx_framer
    localparam VITA_ERR_TRAILER 	 = 15; // Extension context packets have no trailer
       
    always @(posedge clk)
-     if(reset | clear_pkt_count)
+     if(reset | clear | clear_pkt_count)
        pkt_count <= 0;
      else if((vita_state == VITA_TRAILER) & pkt_fifo_rdy)
        pkt_count <= pkt_count + 1;
@@ -135,7 +128,7 @@ module vita_rx_framer
        endcase // case (vita_state)
 
    always @(posedge clk)
-     if(reset)
+     if(reset | clear)
        begin
 	  vita_state   <= VITA_IDLE;
 	  sample_ctr   <= 0;
@@ -203,7 +196,7 @@ module vita_rx_framer
    
    // Short FIFO to buffer between us and the FIFOs outside
    fifo_short #(.WIDTH(34)) rx_pkt_fifo 
-     (.clk(clk), .reset(reset), .clear(clear_int),
+     (.clk(clk), .reset(reset), .clear(clear),
       .datain(pkt_fifo_line), .src_rdy_i(req_write_pkt_fifo), .dst_rdy_o(pkt_fifo_rdy),
       .dataout(data_o[33:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i),
       .space(),.occupied(fifo_occupied[4:0]) );

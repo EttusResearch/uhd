@@ -25,16 +25,14 @@ module vita_rx_control
    
    wire [63:0] 	  new_time;
    wire [31:0] 	  new_command;
-   wire 	  sc_pre1, clear_int, clear_reg;
+   wire 	  sc_pre1;
 
-   assign clear_int  = clear | clear_reg;
-   
    wire [63:0] 	  rcvtime_pre;
    reg [63:0] 	  rcvtime;
    wire [28:0] 	  numlines_pre;
    wire 	  send_imm_pre, chain_pre, reload_pre;
    reg 		  send_imm, chain, reload;
-   wire 	  full_ctrl, read_ctrl, empty_ctrl, write_ctrl;
+   wire 	  read_ctrl, empty_ctrl, write_ctrl;
    reg 		  sc_pre2;
    wire [33:0] 	  fifo_line;
    reg [28:0] 	  lines_left, lines_total;
@@ -54,21 +52,22 @@ module vita_rx_control
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(new_time[31:0]),.changed(sc_pre1));
    
-   setting_reg #(.my_addr(BASE+3)) sr_clear
-     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_reg));
-
    // FIFO to store commands sent from the settings bus
    always @(posedge clk)
-     sc_pre2 		  <= sc_pre1;
+     if(reset | clear)
+       sc_pre2 <= 0;
+     else
+       sc_pre2 <= sc_pre1;
+   
    assign      write_ctrl  = sc_pre1 & ~sc_pre2;
 
    wire [4:0]  command_queue_len;
-   shortfifo #(.WIDTH(96)) commandfifo
-     (.clk(clk),.rst(reset),.clear(clear_int),
-      .datain({new_command,new_time}), .write(write_ctrl&~full_ctrl), .full(full_ctrl),
+   
+   fifo_short #(.WIDTH(96)) commandfifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain({new_command,new_time}), .src_rdy_i(write_ctrl), .dst_rdy_o(),
       .dataout({send_imm_pre,chain_pre,reload_pre,numlines_pre,rcvtime_pre}),
-      .read(read_ctrl), .empty(empty_ctrl),
+      .src_rdy_o(empty_ctrl), .dst_rdy_i(read_ctrl),
       .occupied(command_queue_len), .space() );
    
    reg [33:0]  pkt_fifo_line;
@@ -92,7 +91,7 @@ module vita_rx_control
 				       (ibs_state==IBS_BROKENCHAIN) | (ibs_state==IBS_LATECMD));
    
    fifo_short #(.WIDTH(4+64+WIDTH)) rx_sample_fifo
-     (.clk(clk),.reset(reset),.clear(clear_int),
+     (.clk(clk),.reset(reset),.clear(clear),
       .datain({flags,vita_time,sample}), .src_rdy_i(attempt_sample_write), .dst_rdy_o(sample_fifo_in_rdy),
       .dataout(sample_fifo_o), 
       .src_rdy_o(sample_fifo_src_rdy_o), .dst_rdy_i(sample_fifo_dst_rdy_i),
@@ -107,7 +106,7 @@ module vita_rx_control
    wire full 		    = ~sample_fifo_in_rdy;
    
    always @(posedge clk)
-     if(reset | clear_int)
+     if(reset | clear)
        begin
 	  ibs_state 	   <= IBS_IDLE;
 	  lines_left 	   <= 0;
@@ -185,7 +184,7 @@ module vita_rx_control
    
    assign debug_rx = { { ibs_state[2:0], command_queue_len },
 		       { 8'd0 },
-		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, full_ctrl, empty_ctrl },
+		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, 1'b0, empty_ctrl },
 		       { 2'b0, overrun, chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
    
 endmodule // rx_control

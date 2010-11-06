@@ -624,9 +624,15 @@ module u2_core
       .debug(debug_rx_dsp) );
 
    wire [31:0] 	 vrc_debug;
+   wire 	 clear_rx;
    
+   setting_reg #(.my_addr(SR_RX_CTRL+3)) sr_clear
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
+      .out(),.changed(clear_rx));
+
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
@@ -636,7 +642,7 @@ module u2_core
    wire [3:0] 	 vita_state;
    
    vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .sample_fifo_i(rx_data), .sample_fifo_dst_rdy_o(rx_dst_rdy), .sample_fifo_src_rdy_i(rx_src_rdy),
       .data_o(rx1_data), .dst_rdy_i(rx1_dst_rdy), .src_rdy_o(rx1_src_rdy),
@@ -644,7 +650,7 @@ module u2_core
       .debug_rx(vita_state) );
 
    fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .datain(rx1_data), .src_rdy_i(rx1_src_rdy), .dst_rdy_o(rx1_dst_rdy),
       .dataout({wr1_flags,wr1_dat}), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
 
