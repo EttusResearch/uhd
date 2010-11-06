@@ -48,7 +48,7 @@ static const int dbsrx2_ref_divider = 4; // Hitachi HMC426 divider (U7)
 static const prop_names_t dbsrx2_antennas = list_of("J3");
 
 static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges = map_list_of
-    ("GC1", gain_range_t(0, 73, 0.05))
+    ("GC1", gain_range_t(0, 73, float(0.05)))
     ("BBG", gain_range_t(0, 15, 1))
 ;
 
@@ -65,7 +65,7 @@ public:
 
 private:
     double _lo_freq;
-    float _bandwidth;
+    double _bandwidth;
     uhd::dict<std::string, float> _gains;
     max2112_write_regs_t _max2112_write_regs;
     max2112_read_regs_t _max2112_read_regs;
@@ -75,7 +75,7 @@ private:
 
     void set_lo_freq(double target_freq);
     void set_gain(float gain, const std::string &name);
-    void set_bandwidth(float bandwidth);
+    void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
         start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0xB));
@@ -154,7 +154,7 @@ private:
         read_reg(0xC, 0xD);
 
         //mask and return lock detect
-        bool locked = _max2112_read_regs.ld & _max2112_read_regs.vasa & _max2112_read_regs.vase;
+        bool locked = (_max2112_read_regs.ld & _max2112_read_regs.vasa & _max2112_read_regs.vase) != 0;
 
         if(dbsrx2_debug) std::cerr << boost::format(
             "DBSRX2 locked: %d"
@@ -203,7 +203,7 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     set_bandwidth(40e6); // default bandwidth from datasheet
     get_locked();
 
-    _max2112_write_regs.bbg = int (std::clip<float>(boost::math::iround(0.0), dbsrx2_gain_ranges["BBG"].min, dbsrx2_gain_ranges["BBG"].max));
+    _max2112_write_regs.bbg = boost::math::iround(std::clip<float>(0, dbsrx2_gain_ranges["BBG"].min, dbsrx2_gain_ranges["BBG"].max));
     send_reg(0x9, 0x9);
 }
 
@@ -270,7 +270,7 @@ void dbsrx2::set_lo_freq(double target_freq){
  * \return 4 bit the register value
  */
 static int gain_to_bbg_vga_reg(float &gain){
-    int reg = std::clip<float>(boost::math::iround(gain), dbsrx2_gain_ranges["BBG"].min, dbsrx2_gain_ranges["BBG"].max);
+    int reg = boost::math::iround(std::clip<float>(gain, dbsrx2_gain_ranges["BBG"].min, dbsrx2_gain_ranges["BBG"].max));
 
     gain = float(reg);
 
@@ -327,12 +327,12 @@ void dbsrx2::set_gain(float gain, const std::string &name){
 /***********************************************************************
  * Bandwidth Handling
  **********************************************************************/
-void dbsrx2::set_bandwidth(float bandwidth){
+void dbsrx2::set_bandwidth(double bandwidth){
     //clip the input
-    bandwidth = std::clip<float>(bandwidth, 4e6, 40e6);
-    
+    bandwidth = std::clip<double>(bandwidth, 4e6, 40e6);
+
     _max2112_write_regs.lp = int((bandwidth/1e6 - 4)/0.29 + 12);
-    _bandwidth = float(4 + (_max2112_write_regs.lp - 12) * 0.29)*1e6;
+    _bandwidth = double(4 + (_max2112_write_regs.lp - 12) * 0.29)*1e6;
 
     if (dbsrx2_debug) std::cerr 
         << boost::format("DBSRX2 Bandwidth:\n")
@@ -430,7 +430,7 @@ void dbsrx2::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        this->set_bandwidth(val.as<float>());
+        this->set_bandwidth(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
