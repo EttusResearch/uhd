@@ -44,7 +44,8 @@ namespace uhd{ namespace usrp{
         MBOARD_PROP_CLOCK_CONFIG    = 'C', //rw, clock_config_t
         MBOARD_PROP_TIME_NOW        = 't', //rw, time_spec_t
         MBOARD_PROP_TIME_NEXT_PPS   = 'T', //wo, time_spec_t
-        MBOARD_PROP_STREAM_CMD      = 's'  //wo, stream_cmd_t
+        MBOARD_PROP_STREAM_CMD      = 's', //wo, stream_cmd_t
+        MBOARD_PROP_EEPROM_MAP      = 'M'  //wr, mboard_eeprom_t::sptr
     };
 
 }} //namespace

@@ -18,6 +18,7 @@
 #ifndef INCLUDED_USRP1_IFACE_HPP
 #define INCLUDED_USRP1_IFACE_HPP
 
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -81,6 +82,8 @@ public:
                                    boost::uint16_t index,
                                    unsigned char* buff,
                                    boost::uint16_t length) = 0;
+
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP1_IFACE_HPP */

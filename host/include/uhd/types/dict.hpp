@@ -71,6 +71,14 @@ namespace uhd{
         bool has_key(const Key &key) const;
 
         /*!
+         * Get a value in the dict or default.
+         * \param key the key to look for
+         * \param def use if key not found
+         * \return the value or default
+         */
+        const Val &get(const Key &key, const Val &def) const;
+
+        /*!
          * Get a value for the given key if it exists.
          * If the key is not found throw an error.
          * \param key the key to look for

@@ -20,6 +20,7 @@
 #include "usrp2_regs.hpp" //spi slave constants
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -83,8 +84,8 @@ public:
     }
 
     void enable_mimo_clock_out(bool enb){
-        //FIXME TODO put this revision read in a common place
-        boost::uint8_t rev_hi = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV_MSB, 1).at(0);
+        boost::uint16_t rev = boost::lexical_cast<boost::uint16_t>(_iface->mb_eeprom["rev"]);
+        boost::uint8_t rev_hi = boost::uint8_t(rev >> 8);
 
         //calculate the low and high dividers
         size_t divider = size_t(this->get_master_clock_rate()/10e6);

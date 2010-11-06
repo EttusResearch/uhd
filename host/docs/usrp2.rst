@@ -11,9 +11,14 @@ Load the images onto the SD card
 Use the usrp2_card_burner.py with caution. If you specify the wrong device node,
 you could overwrite your hard drive. Make sure that --dev= specifies the SD card.
 
-Use the *--list* option to get a list of possible raw devices.
-The list result will filter out disk partitions and devices too large to be the sd card.
-The list option has been implemented on Linux, Mac OS X, and Windows.
+**Warning!**
+It is possible to use 3rd party SD cards with the USRP2.
+However, certain types of SD cards will not interface with the CPLD:
+
+* Cards can be SDHC, which is not a supported interface.
+* Cards can have unexpected timing characteristics.
+
+For these reasons, we recommend that you use the SD card that was supplied with the USRP2.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the card burner tool (unix)
@@ -27,6 +32,10 @@ Use the card burner tool (unix)
     cd <prefix>/share/uhd/utils
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fpga=<path_to_fpga_image>
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fw=<path_to_firmware_image>
+
+Use the *--list* option to get a list of possible raw devices.
+The list result will filter out disk partitions and devices too large to be the sd card.
+The list option has been implemented on Linux, Mac OS X, and Windows.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the card burner tool (windows)
@@ -96,7 +105,7 @@ Run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp_addr_burner --addr=192.168.10.2 --new-ip=192.168.10.3
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=ip-addr --val=192.168.10.3
 
 **Method 2 (Linux Only):**
 This method assumes that you do not know the IP address of your USRP2.
@@ -179,7 +188,7 @@ The LEDs reveal the following about the state of the device:
 * **LED C:** receiving
 * **LED D:** firmware loaded
 * **LED E:** reference lock
-* **LED F:** FPGA loaded
+* **LED F:** CPLD loaded
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

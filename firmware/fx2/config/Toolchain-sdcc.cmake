@@ -15,16 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+# the name of the target operating system
+SET(CMAKE_SYSTEM_NAME Generic)
+# which compilers to use for C and C++
+SET(CMAKE_C_COMPILER sdcc)
 
-LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_basic_and_lf.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_rfx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_xcvr2450.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_wbx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_unknown.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_tvrx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx2.cpp
-)
+# here is where the target environment is located
+SET(CMAKE_FIND_ROOT_PATH  /usr/bin /usr/share/sdcc)
+
+# adjust the default behaviour of the FIND_XXX() commands:
+# search headers and libraries in the target environment, search 
+# programs in the host environment
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 

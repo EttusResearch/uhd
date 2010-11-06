@@ -18,11 +18,13 @@
 ########################################################################
 # Setup Python
 ########################################################################
-INCLUDE(FindPythonInterp)
+IF(NOT DEFINED PYTHON_EXECUTABLE)
+    INCLUDE(FindPythonInterp)
 
-IF(NOT PYTHONINTERP_FOUND)
-    MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
-ENDIF(NOT PYTHONINTERP_FOUND)
+    IF(NOT PYTHONINTERP_FOUND)
+        MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
+    ENDIF(NOT PYTHONINTERP_FOUND)
+ENDIF(NOT DEFINED PYTHON_EXECUTABLE)
 
 MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
     MESSAGE(STATUS "Python checking for ${desc}")

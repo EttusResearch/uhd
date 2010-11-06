@@ -15,16 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+# support for the SDCC assembler, asx8051
+SET( ASM_DIALECT "_SDCC" )
+SET( CMAKE_ASM${ASM_DIALECT}_SOURCE_FILE_EXTENSIONS a51 )
 
-LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_basic_and_lf.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_rfx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_xcvr2450.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_wbx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_unknown.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_tvrx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx2.cpp
-)
+#i don't want to talk about it. i had such high hopes for CMake.
+SET( CMAKE_ASM${ASM_DIALECT}_COMPILE_OBJECT "<CMAKE_ASM${ASM_DIALECT}_COMPILER> <FLAGS> -plosgff <SOURCE>" "${CMAKE_COMMAND} -DFILE=<OBJECT> -DSOURCE=<SOURCE> -P ${CMAKE_SOURCE_DIR}/config/Rename.cmake")
 
+INCLUDE( CMakeASMInformation )
+SET( CMAKE_ASM${ASM_DIALECT}_OUTPUT_EXTENSION ".rel" ) #must go here because the include appears to overwrite it, although it shouldn't
+# for future use
+SET( ASM_DIALECT )
