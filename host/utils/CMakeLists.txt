@@ -33,23 +33,19 @@ INSTALL(TARGETS
 ########################################################################
 # Utilities that get installed into the share path
 ########################################################################
-ADD_EXECUTABLE(usrp2_addr_burner usrp2_addr_burner.cpp)
-TARGET_LINK_LIBRARIES(usrp2_addr_burner uhd)
-
 ADD_EXECUTABLE(usrp_burn_db_eeprom usrp_burn_db_eeprom.cpp)
 TARGET_LINK_LIBRARIES(usrp_burn_db_eeprom uhd)
+
+ADD_EXECUTABLE(usrp_burn_mb_eeprom usrp_burn_mb_eeprom.cpp)
+TARGET_LINK_LIBRARIES(usrp_burn_mb_eeprom uhd)
 
 ADD_EXECUTABLE(usrp1_init_eeprom usrp1_init_eeprom.cpp)
 TARGET_LINK_LIBRARIES(usrp1_init_eeprom uhd)
 
-ADD_EXECUTABLE(usrp1_serial_burner usrp1_serial_burner.cpp)
-TARGET_LINK_LIBRARIES(usrp1_serial_burner uhd)
-
 INSTALL(TARGETS
-    usrp2_addr_burner
     usrp_burn_db_eeprom
+    usrp_burn_mb_eeprom
     usrp1_init_eeprom
-    usrp1_serial_burner
     RUNTIME DESTINATION ${PKG_DATA_DIR}/utils
 )
 

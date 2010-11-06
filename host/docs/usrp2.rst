@@ -97,7 +97,7 @@ Run the following commands:
 ::
 
     cd <prefix>/share/uhd/utils
-    ./usrp_addr_burner --addr=192.168.10.2 --new-ip=192.168.10.3
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=ip-addr --val=192.168.10.3
 
 **Method 2 (Linux Only):**
 This method assumes that you do not know the IP address of your USRP2.

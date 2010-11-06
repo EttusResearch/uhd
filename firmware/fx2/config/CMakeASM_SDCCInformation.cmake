@@ -15,30 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include $(top_srcdir)/Makefile.common
+# support for the SDCC assembler, asx8051
+SET( ASM_DIALECT "_SDCC" )
+SET( CMAKE_ASM${ASM_DIALECT}_SOURCE_FILE_EXTENSIONS a51 )
 
-AM_CFLAGS = \
-	$(COMMON_CFLAGS)
+#i don't want to talk about it. i had such high hopes for CMake.
+SET( CMAKE_ASM${ASM_DIALECT}_COMPILE_OBJECT "<CMAKE_ASM${ASM_DIALECT}_COMPILER> <FLAGS> -plosgff <SOURCE>" "${CMAKE_COMMAND} -DFILE=<OBJECT> -DSOURCE=<SOURCE> -P ${CMAKE_SOURCE_DIR}/config/Rename.cmake")
 
-AM_LDFLAGS = \
-	$(COMMON_LFLAGS) \
-	-Wl,-defsym -Wl,_TEXT_START_ADDR=0x0050 \
-	-Wl,-defsym -Wl,_STACK_SIZE=3072
-
-LDADD = libusrp2.a
-
-########################################################################
-# USRP2 specific library and programs
-########################################################################
-noinst_LIBRARIES = libusrp2.a
-
-libusrp2_a_SOURCES = \
-	$(COMMON_SRCS) \
-	sd.c \
-	ethernet.c
-
-noinst_PROGRAMS = \
-	usrp2_txrx_uhd.elf
-
-usrp2_txrx_uhd_elf_SOURCES = \
-	$(top_srcdir)/apps/txrx_uhd.c
+INCLUDE( CMakeASMInformation )
+SET( CMAKE_ASM${ASM_DIALECT}_OUTPUT_EXTENSION ".rel" ) #must go here because the include appears to overwrite it, although it shouldn't
+# for future use
+SET( ASM_DIALECT )

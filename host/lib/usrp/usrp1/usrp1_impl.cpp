@@ -56,6 +56,10 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //return an empty list of addresses when type is set to non-usrp1
     if (hint.has_key("type") and hint["type"] != "usrp1") return usrp1_addrs;
 
+    //Return an empty list of addresses when an address is specified,
+    //since an address is intended for a different, non-USB, device.
+    if (hint.has_key("addr")) return usrp1_addrs;
+
     //extract the firmware path for the USRP1
     std::string usrp1_fw_image;
     try{
@@ -89,11 +93,16 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     pid = USRP1_PRODUCT_ID;
 
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+        usrp1_iface::sptr iface = usrp1_iface::make(usrp_ctrl::make(usb_control::make(handle)));
         device_addr_t new_addr;
         new_addr["type"] = "usrp1";
+        new_addr["name"] = iface->mb_eeprom["name"];
         new_addr["serial"] = handle->get_serial();
-        //this is a found usrp1 when a hint serial is not specified or it matches
-        if (not hint.has_key("serial") or hint["serial"] == new_addr["serial"]){
+        //this is a found usrp1 when the hint serial and name match or blank
+        if (
+            (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+            (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+        ){
             usrp1_addrs.push_back(new_addr);
         }
     }

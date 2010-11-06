@@ -15,30 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include $(top_srcdir)/Makefile.common
+# the name of the target operating system
+SET(CMAKE_SYSTEM_NAME Generic)
+# which compilers to use for C and C++
+SET(CMAKE_C_COMPILER sdcc)
 
-AM_CFLAGS = \
-	$(COMMON_CFLAGS)
+# here is where the target environment is located
+SET(CMAKE_FIND_ROOT_PATH  /usr/bin /usr/share/sdcc)
 
-AM_LDFLAGS = \
-	$(COMMON_LFLAGS) \
-	-Wl,-defsym -Wl,_TEXT_START_ADDR=0x0050 \
-	-Wl,-defsym -Wl,_STACK_SIZE=3072
+# adjust the default behaviour of the FIND_XXX() commands:
+# search headers and libraries in the target environment, search 
+# programs in the host environment
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-LDADD = libusrp2.a
-
-########################################################################
-# USRP2 specific library and programs
-########################################################################
-noinst_LIBRARIES = libusrp2.a
-
-libusrp2_a_SOURCES = \
-	$(COMMON_SRCS) \
-	sd.c \
-	ethernet.c
-
-noinst_PROGRAMS = \
-	usrp2_txrx_uhd.elf
-
-usrp2_txrx_uhd_elf_SOURCES = \
-	$(top_srcdir)/apps/txrx_uhd.c

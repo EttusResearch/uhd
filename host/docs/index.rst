@@ -21,6 +21,7 @@ Building the UHD
 Application Notes
 ^^^^^^^^^^^^^^^^^^^^^
 * `General Application Notes <./general.html>`_
+* `Device Identification Notes <./identification.html>`_
 * `Firmware and FPGA Image Notes <./images.html>`_
 * `USRP1 Application Notes <./usrp1.html>`_
 * `USRP2 Application Notes <./usrp2.html>`_
