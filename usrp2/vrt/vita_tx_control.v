@@ -73,6 +73,7 @@ module vita_tx_control
        begin
 	  ibs_state <= IBS_IDLE;
 	  send_error <= 0;
+	  error_code <= 0;
        end
      else
        case(ibs_state)
