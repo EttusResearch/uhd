@@ -80,7 +80,7 @@ module vita_tx_deframer
    wire        fifo_space;
 
    always @(posedge clk)
-     if(reset | clear_seqnum)
+     if(reset | clear | clear_seqnum)
        begin
 	  seqnum_reg <= 32'hFFFF_FFFF;
 	  vita_seqnum_reg <= 4'hF;

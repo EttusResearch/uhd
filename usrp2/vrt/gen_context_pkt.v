@@ -38,9 +38,10 @@ module gen_context_pkt
 	 stored_message <= message;
        else if(ctxt_state == CTXT_FLOWCTRL1)
 	 stored_message <= 0;
-   
+
+   // Don't want to clear most of this to avoid getting stuck with a half packet in the pipe
    always @(posedge clk)
-     if(reset | clear)
+     if(reset)
        begin
 	  ctxt_state <= CTXT_IDLE;
 	  seqno <= 0;
@@ -84,7 +85,7 @@ module gen_context_pkt
      endcase // case (ctxt_state)
 
    fifo_short #(.WIDTH(34)) ctxt_fifo
-     (.clk(clk), .reset(reset), .clear(clear),
+     (.clk(clk), .reset(reset), .clear(0),
       .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int),
       .dataout(data_o[33:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));
    assign data_o[35:34] = 2'b00;

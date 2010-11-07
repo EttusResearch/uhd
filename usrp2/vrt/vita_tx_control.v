@@ -58,11 +58,6 @@ module vita_tx_control
    
    reg [2:0] ibs_state;
 
-   wire      clear_state;
-   setting_reg #(.my_addr(BASE+1)) sr
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_state));
-   
    wire [31:0] error_policy;
    setting_reg #(.my_addr(BASE+3)) sr_error_policy
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
@@ -74,7 +69,7 @@ module vita_tx_control
    reg 	       send_error;
    
    always @(posedge clk)
-     if(reset | clear_state)
+     if(reset | clear)
        begin
 	  ibs_state <= IBS_IDLE;
 	  send_error <= 0;
@@ -163,7 +158,7 @@ module vita_tx_control
    assign error = send_error;
 
    always @(posedge clk)
-     if(reset)
+     if(reset | clear)
        packet_consumed <= 0;
      else
        packet_consumed <= eop & sample_fifo_src_rdy_i & sample_fifo_dst_rdy_o;

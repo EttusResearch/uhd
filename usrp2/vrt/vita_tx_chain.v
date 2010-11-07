@@ -33,7 +33,11 @@ module vita_tx_chain
    
    assign underrun = error & ~(error_code == 1);
    assign message = error_code;
-      
+   
+   setting_reg #(.my_addr(BASE_CTRL+1)) sr
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_vita));
+
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed(clear_seqnum));
@@ -88,7 +92,7 @@ module vita_tx_chain
    assign debug = debug_vtc | debug_vtd;
    
    fifo36_mux #(.prio(1)) mux_err_and_flow  // Priority to err messages
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(0),  // Don't clear this or it could get clogged
       .data0_i(err_data_int), .src0_rdy_i(err_src_rdy_int), .dst0_rdy_o(err_dst_rdy_int),
       .data1_i(flow_data), .src1_rdy_i(flow_src_rdy), .dst1_rdy_o(flow_dst_rdy),
       .data_o(err_data_o), .src_rdy_o(err_src_rdy_o), .dst_rdy_i(err_dst_rdy_i));

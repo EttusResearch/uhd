@@ -162,6 +162,7 @@ module u2_core
    
    wire 	ram_loader_done;
    wire 	ram_loader_rst, wb_rst, dsp_rst;
+   assign dsp_rst = wb_rst;
 
    wire [31:0] 	status, status_b0, status_b1, status_b2, status_b3, status_b4, status_b5, status_b6, status_b7;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
@@ -660,14 +661,17 @@ module u2_core
    wire [35:0] 	 tx_data;
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
+   wire 	 clear_tx;
    
+   setting_reg #(.my_addr(SR_TX_CTRL+1)) sr_clear_tx
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_tx));
+
    ext_fifo #(.EXT_WIDTH(18),.INT_WIDTH(36),.RAM_DEPTH(19),.FIFO_DEPTH(19)) 
      ext_fifo_i1
-       (
-	.int_clk(dsp_clk),
+       (.int_clk(dsp_clk),
 	.ext_clk(clk_to_mac),
-//	.ext_clk(wb_clk),
-	.rst(dsp_rst),
+	.rst(dsp_rst | clear_tx),
 	.RAM_D_pi(RAM_D_pi),
 	.RAM_D_po(RAM_D_po),
 	.RAM_D_poe(RAM_D_poe),
@@ -679,15 +683,14 @@ module u2_core
 	.RAM_CE1n(RAM_CE1n),
 //	.datain({rd1_flags,rd1_dat}),
 	.datain({rd1_flags[3:2],rd1_dat[31:16],rd1_flags[1:0],rd1_dat[15:0]}),
-	.src_rdy_i(rd1_ready_o),               // WRITE
-	.dst_rdy_o(rd1_ready_i),               // not FULL
+	.src_rdy_i(rd1_ready_o),
+	.dst_rdy_o(rd1_ready_i),
 //	.dataout(tx_data),
 	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
-	.src_rdy_o(tx_src_rdy),               // not EMPTY
+	.src_rdy_o(tx_src_rdy),
 	.dst_rdy_i(tx_dst_rdy),
 	.debug(debug_extfifo),
-	.debug2(debug_extfifo2)
-	);
+	.debug2(debug_extfifo2) );
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
@@ -702,8 +705,6 @@ module u2_core
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
    
-   assign dsp_rst = wb_rst;
-
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
