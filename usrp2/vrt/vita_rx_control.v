@@ -9,7 +9,7 @@ module vita_rx_control
     output overrun,
 
     // To vita_rx_framer
-    output [4+64+WIDTH-1:0] sample_fifo_o,
+    output [5+64+WIDTH-1:0] sample_fifo_o,
     output sample_fifo_src_rdy_o,
     input sample_fifo_dst_rdy_i,
     
@@ -32,7 +32,7 @@ module vita_rx_control
    wire [28:0] 	  numlines_pre;
    wire 	  send_imm_pre, chain_pre, reload_pre;
    reg 		  send_imm, chain, reload;
-   wire 	  read_ctrl, empty_ctrl, write_ctrl;
+   wire 	  read_ctrl, not_empty_ctrl, write_ctrl;
    reg 		  sc_pre2;
    wire [33:0] 	  fifo_line;
    reg [28:0] 	  lines_left, lines_total;
@@ -62,12 +62,12 @@ module vita_rx_control
    assign      write_ctrl  = sc_pre1 & ~sc_pre2;
 
    wire [4:0]  command_queue_len;
-   
+
    fifo_short #(.WIDTH(96)) commandfifo
      (.clk(clk),.reset(reset),.clear(clear),
       .datain({new_command,new_time}), .src_rdy_i(write_ctrl), .dst_rdy_o(),
       .dataout({send_imm_pre,chain_pre,reload_pre,numlines_pre,rcvtime_pre}),
-      .src_rdy_o(empty_ctrl), .dst_rdy_i(read_ctrl),
+      .src_rdy_o(not_empty_ctrl), .dst_rdy_i(read_ctrl),
       .occupied(command_queue_len), .space() );
    
    reg [33:0]  pkt_fifo_line;
@@ -78,19 +78,22 @@ module vita_rx_control
    localparam IBS_OVERRUN = 4;
    localparam IBS_BROKENCHAIN = 5;
    localparam IBS_LATECMD = 6;
-
-   wire signal_cmd_done     = (lines_left == 1) & (~chain | (~empty_ctrl & (numlines_pre==0)));
+   localparam IBS_ZEROLEN = 7;
+   
+   wire signal_cmd_done     = (lines_left == 1) & (~chain | (not_empty_ctrl & (numlines_pre==0)));
    wire signal_overrun 	    = (ibs_state == IBS_OVERRUN);
    wire signal_brokenchain  = (ibs_state == IBS_BROKENCHAIN);
    wire signal_latecmd 	    = (ibs_state == IBS_LATECMD);
+   wire signal_zerolen 	    = (ibs_state == IBS_ZEROLEN);
 
    // Buffer of samples for while we're writing the packet headers
-   wire [3:0] flags = {signal_overrun,signal_brokenchain,signal_latecmd,signal_cmd_done};
+   wire [4:0] flags = {signal_zerolen,signal_overrun,signal_brokenchain,signal_latecmd,signal_cmd_done};
 
    wire       attempt_sample_write    = ((run & strobe) | (ibs_state==IBS_OVERRUN) |
-				       (ibs_state==IBS_BROKENCHAIN) | (ibs_state==IBS_LATECMD));
+					 (ibs_state==IBS_BROKENCHAIN) | (ibs_state==IBS_LATECMD) |
+					 (ibs_state==IBS_ZEROLEN));
    
-   fifo_short #(.WIDTH(4+64+WIDTH)) rx_sample_fifo
+   fifo_short #(.WIDTH(5+64+WIDTH)) rx_sample_fifo
      (.clk(clk),.reset(reset),.clear(clear),
       .datain({flags,vita_time,sample}), .src_rdy_i(attempt_sample_write), .dst_rdy_o(sample_fifo_in_rdy),
       .dataout(sample_fifo_o), 
@@ -119,12 +122,15 @@ module vita_rx_control
      else
        case(ibs_state)
 	 IBS_IDLE :
-	   if(~empty_ctrl)
+	   if(not_empty_ctrl)
 	     begin
 		lines_left <= numlines_pre;
 		lines_total <= numlines_pre;
 		rcvtime <= rcvtime_pre;
-		ibs_state <= IBS_WAITING;
+		if(numlines_pre == 0)
+		  ibs_state <= IBS_ZEROLEN;
+		else
+		  ibs_state <= IBS_WAITING;
 		send_imm <= send_imm_pre;
 		chain <= chain_pre;
 		reload <= reload_pre;
@@ -144,12 +150,12 @@ module vita_rx_control
 		  if(lines_left == 1)
 		    if(~chain)
 		      ibs_state      <= IBS_IDLE;
-		    else if(empty_ctrl & reload)
+		    else if(~not_empty_ctrl & reload)
 		      begin
 		        ibs_state      <= IBS_RUNNING;
 		        lines_left     <= lines_total;
 		      end
-		    else if(empty_ctrl)
+		    else if(~not_empty_ctrl)
 		      ibs_state      <= IBS_BROKENCHAIN;
 		    else
 		      begin
@@ -174,17 +180,20 @@ module vita_rx_control
 	 IBS_BROKENCHAIN :
 	   if(sample_fifo_in_rdy)
 	     ibs_state <= IBS_IDLE;
+	 IBS_ZEROLEN :
+	   if(sample_fifo_in_rdy)
+	     ibs_state <= IBS_IDLE;
        endcase // case(ibs_state)
    
    assign overrun = (ibs_state == IBS_OVERRUN);
    assign run = (ibs_state == IBS_RUNNING);
 
    assign read_ctrl = ( (ibs_state == IBS_IDLE) | ((ibs_state == IBS_RUNNING) & strobe & ~full & (lines_left==1) & chain) )
-     & ~empty_ctrl;
+     & not_empty_ctrl;
    
    assign debug_rx = { { ibs_state[2:0], command_queue_len },
 		       { 8'd0 },
-		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, 1'b0, empty_ctrl },
+		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, 1'b0, ~not_empty_ctrl },
 		       { 2'b0, overrun, chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
    
 endmodule // rx_control
