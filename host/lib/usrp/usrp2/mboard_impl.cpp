@@ -40,7 +40,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     const device_addr_t &flow_control_hints
 ):
     _index(index),
-    _recv_samps_per_packet(recv_samps_per_packet),
     _iface(usrp2_iface::make(ctrl_transport))
 {
     //Send a small data packet so the usrp2 knows the udp source port.
@@ -74,9 +73,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     }
 
     //init the rx control registers
-    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, _recv_samps_per_packet);
+    _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
+    _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PER_PKT, recv_samps_per_packet);
     _iface->poke32(U2_REG_RX_CTRL_NCHANNELS, 1);
-    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(U2_REG_RX_CTRL_VRT_HEADER, 0
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
@@ -88,8 +87,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
 
     //init the tx control registers
-    _iface->poke32(U2_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
     _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
+    _iface->poke32(U2_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
     _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, 1);  //sid 1 (different from rx)
     _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
@@ -97,6 +96,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 100);
     const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
     _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, 0); //cycles per update is disabled
 
     //setting the packets per update
     const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8);
@@ -187,7 +187,6 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 }
 
 void usrp2_mboard_impl::handle_overflow(void){
-    _iface->poke32(U2_REG_RX_CTRL_CLEAR_OVERRUN, 1);
     if (_continuous_streaming){ //re-issue the stream command if already continuous
         this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
@@ -195,9 +194,7 @@ void usrp2_mboard_impl::handle_overflow(void){
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
-        stream_cmd, _recv_samps_per_packet
-    ));
+    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD, dsp_type1::calc_stream_cmd_word(stream_cmd));
     _iface->poke32(U2_REG_RX_CTRL_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }

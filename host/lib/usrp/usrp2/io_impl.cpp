@@ -241,8 +241,6 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
-#include <uhd/usrp/mboard_props.hpp> //TODO remove when hack below is fixed
-
 void usrp2_impl::io_init(void){
 
     //the assumption is that all data transports should be identical
@@ -251,29 +249,6 @@ void usrp2_impl::io_init(void){
 
     //create new io impl
     _io_impl = UHD_PIMPL_MAKE(io_impl, (num_recv_frames, send_frame_size, _data_transports.size()));
-
-    //TODO temporary fix for weird power up state, remove when FPGA fixed
-    {
-        //send an initial packet to all transports
-        tx_metadata_t md; md.end_of_burst = true;
-        this->send(
-            std::vector<const void *>(_data_transports.size(), NULL), 0, md,
-            io_type_t::COMPLEX_FLOAT32, device::SEND_MODE_ONE_PACKET, 0
-        );
-
-        //issue a stream command to each motherboard
-        BOOST_FOREACH(usrp2_mboard_impl::sptr mboard, _mboards){
-            (*mboard)[MBOARD_PROP_STREAM_CMD] = stream_cmd_t(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-        }
-
-        //wait
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-        //flush all transport receive queues (no timeout)
-        BOOST_FOREACH(zero_copy_if::sptr xport, _data_transports){
-            while(xport->get_recv_buff(0).get() != NULL){};
-        }
-    }
 
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){

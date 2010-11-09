@@ -298,7 +298,7 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
       sr_tx_ctrl->cyc_per_up = 0;
 
       //the end continuous streaming command
-      sr_rx_ctrl->cmd = (1 << 31) | 1; //one sample, asap
+      sr_rx_ctrl->cmd = 1 << 31; //no samples now
       sr_rx_ctrl->time_secs = 0;
       sr_rx_ctrl->time_ticks = 0; //latch the command
 

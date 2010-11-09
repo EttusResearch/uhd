@@ -179,7 +179,7 @@
 #define U2_REG_RX_CTRL_TIME_SECS         _SR_ADDR(SR_RX_CTRL + 1)
 #define U2_REG_RX_CTRL_TIME_TICKS        _SR_ADDR(SR_RX_CTRL + 2)
 
-#define U2_REG_RX_CTRL_CLEAR_OVERRUN     _SR_ADDR(SR_RX_CTRL + 3) // write anything to clear overrun
+#define U2_REG_RX_CTRL_CLEAR_STATE       _SR_ADDR(SR_RX_CTRL + 3)
 #define U2_REG_RX_CTRL_VRT_HEADER        _SR_ADDR(SR_RX_CTRL + 4) // word 0 of packet.  FPGA fills in packet counter
 #define U2_REG_RX_CTRL_VRT_STREAM_ID     _SR_ADDR(SR_RX_CTRL + 5) // word 1 of packet.
 #define U2_REG_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)

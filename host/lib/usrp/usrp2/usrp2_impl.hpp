@@ -98,7 +98,6 @@ public:
 
 private:
     size_t _index;
-    const size_t _recv_samps_per_packet;
     bool _continuous_streaming;
 
     //interfaces
