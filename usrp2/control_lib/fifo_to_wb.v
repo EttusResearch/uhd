@@ -5,7 +5,7 @@ module fifo_to_wb
     input [17:0] data_i, input src_rdy_i, output dst_rdy_o,
     output [17:0] data_o, output src_rdy_o, input dst_rdy_i,
     output reg [15:0] wb_adr_o, output [15:0] wb_dat_mosi, input [15:0] wb_dat_miso,
-    output wb_sel_o, output wb_cyc_o, output wb_stb_o, output wb_we_o, input wb_ack_i,
+    output [1:0] wb_sel_o, output wb_cyc_o, output wb_stb_o, output wb_we_o, input wb_ack_i,
     input [7:0] triggers,
     output [31:0] debug0, output [31:0] debug1);
    
