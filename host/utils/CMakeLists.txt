@@ -37,8 +37,13 @@ ENDFOREACH(util_source)
 SET(util_share_sources
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
-    usrp1_init_eeprom.cpp
 )
+
+IF(ENABLE_USRP1)
+    LIST(APPEND util_share_sources
+        usrp1_init_eeprom.cpp
+    )
+ENDIF(ENABLE_USRP1)
 
 #for each source: build an executable and install
 FOREACH(util_source ${util_share_sources})
