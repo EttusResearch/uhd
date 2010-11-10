@@ -316,8 +316,8 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
     case MBOARD_PROP_EEPROM_MAP:
         // Step1: commit the map, writing only those values set.
         // Step2: readback the entire eeprom map into the iface.
-        val.as<mboard_eeprom_t>().commit(*_iface, mboard_eeprom_t::MAP_NXXX);
-        _iface->mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_NXXX);
+        val.as<mboard_eeprom_t>().commit(*_iface, mboard_eeprom_t::MAP_N100);
+        _iface->mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_N100);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

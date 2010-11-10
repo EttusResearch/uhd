@@ -37,8 +37,13 @@ ENDFOREACH(util_source)
 SET(util_share_sources
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
-    usrp1_init_eeprom.cpp
 )
+
+IF(ENABLE_USRP1)
+    LIST(APPEND util_share_sources
+        usrp1_init_eeprom.cpp
+    )
+ENDIF(ENABLE_USRP1)
 
 IF(ENABLE_USRP_E100)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
