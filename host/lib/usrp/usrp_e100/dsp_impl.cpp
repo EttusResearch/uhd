@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_impl.hpp"
-#include "usrp_e_regs.hpp"
+#include "usrp_e100_impl.hpp"
+#include "usrp_e100_regs.hpp"
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -30,10 +30,10 @@ using namespace uhd::usrp;
 /***********************************************************************
  * RX DDC Initialization
  **********************************************************************/
-void usrp_e_impl::rx_ddc_init(void){
+void usrp_e100_impl::rx_ddc_init(void){
     _rx_ddc_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp_e_impl::rx_ddc_get, this, _1, _2),
-        boost::bind(&usrp_e_impl::rx_ddc_set, this, _1, _2)
+        boost::bind(&usrp_e100_impl::rx_ddc_get, this, _1, _2),
+        boost::bind(&usrp_e100_impl::rx_ddc_set, this, _1, _2)
     );
 
     //initial config and update
@@ -44,7 +44,7 @@ void usrp_e_impl::rx_ddc_init(void){
 /***********************************************************************
  * RX DDC Get
  **********************************************************************/
-void usrp_e_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
+void usrp_e100_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
@@ -79,7 +79,7 @@ void usrp_e_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
-void usrp_e_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
+void usrp_e100_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
@@ -113,10 +113,10 @@ void usrp_e_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
 /***********************************************************************
  * TX DUC Initialization
  **********************************************************************/
-void usrp_e_impl::tx_duc_init(void){
+void usrp_e100_impl::tx_duc_init(void){
     _tx_duc_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp_e_impl::tx_duc_get, this, _1, _2),
-        boost::bind(&usrp_e_impl::tx_duc_set, this, _1, _2)
+        boost::bind(&usrp_e100_impl::tx_duc_get, this, _1, _2),
+        boost::bind(&usrp_e100_impl::tx_duc_set, this, _1, _2)
     );
 
     //initial config and update
@@ -127,7 +127,7 @@ void usrp_e_impl::tx_duc_init(void){
 /***********************************************************************
  * TX DUC Get
  **********************************************************************/
-void usrp_e_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
+void usrp_e100_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
@@ -162,7 +162,7 @@ void usrp_e_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * TX DUC Set
  **********************************************************************/
-void usrp_e_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
+void usrp_e100_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){

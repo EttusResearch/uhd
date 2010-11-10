@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 }
 */
 
-void usrp_e_load_fpga(const std::string &bin_file){
+void usrp_e100_load_fpga(const std::string &bin_file){
 	gpio gpio_prog_b(PROG_B, OUT);
 	gpio gpio_init_b(INIT_B, IN);
 	gpio gpio_done  (DONE,   IN);

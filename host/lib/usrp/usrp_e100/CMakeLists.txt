@@ -52,12 +52,12 @@ IF(ENABLE_USRP_E100)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/fpga-downloader.cc
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/io_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/mboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e_impl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e_iface.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e_mmap_zero_copy.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e_regs.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_impl.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_iface.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_iface.hpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_mmap_zero_copy.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_regs.hpp
     )
 ELSE(ENABLE_USRP_E100)
     MESSAGE(STATUS "  Skipping USRP-E100 support.")

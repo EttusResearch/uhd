@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_E_IFACE_HPP
-#define INCLUDED_USRP_E_IFACE_HPP
+#ifndef INCLUDED_USRP_E100_IFACE_HPP
+#define INCLUDED_USRP_E100_IFACE_HPP
 
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/serial.hpp>
@@ -38,9 +38,9 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp_e_iface : boost::noncopyable, public uhd::i2c_iface{
+class usrp_e100_iface : boost::noncopyable, public uhd::i2c_iface{
 public:
-    typedef boost::shared_ptr<usrp_e_iface> sptr;
+    typedef boost::shared_ptr<usrp_e100_iface> sptr;
 
     /*!
      * Make a new usrp-e interface with the control transport.
@@ -109,4 +109,4 @@ public:
     ) = 0;
 };
 
-#endif /* INCLUDED_USRP_E_IFACE_HPP */
+#endif /* INCLUDED_USRP_E100_IFACE_HPP */

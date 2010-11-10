@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_iface.hpp"
+#include "usrp_e100_iface.hpp"
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/assert.hpp>
 #include <linux/usrp_e.h>
@@ -36,9 +36,9 @@ static const size_t poll_breakout = 10; //how many poll timeouts constitute a fu
 /***********************************************************************
  * The zero copy interface implementation
  **********************************************************************/
-class usrp_e_mmap_zero_copy_impl : public zero_copy_if, public boost::enable_shared_from_this<usrp_e_mmap_zero_copy_impl> {
+class usrp_e100_mmap_zero_copy_impl : public zero_copy_if, public boost::enable_shared_from_this<usrp_e100_mmap_zero_copy_impl> {
 public:
-    usrp_e_mmap_zero_copy_impl(usrp_e_iface::sptr iface):
+    usrp_e100_mmap_zero_copy_impl(usrp_e100_iface::sptr iface):
         _fd(iface->get_file_descriptor()), _recv_index(0), _send_index(0)
     {
         //get system sizes
@@ -91,7 +91,7 @@ public:
         _send_buff = rb_ptr + send_buff_off;
     }
 
-    ~usrp_e_mmap_zero_copy_impl(void){
+    ~usrp_e100_mmap_zero_copy_impl(void){
         if (sp_verbose) std::cout << "cleanup: munmap" << std::endl;
         ::munmap(_mapped_mem, _map_size);
     }
@@ -126,7 +126,7 @@ public:
         if (fp_verbose) std::cout << "  make_recv_buff: " << info->len << std::endl;
         return managed_recv_buffer::make_safe(
             boost::asio::const_buffer(mem, info->len),
-            boost::bind(&usrp_e_mmap_zero_copy_impl::release, shared_from_this(), info)
+            boost::bind(&usrp_e100_mmap_zero_copy_impl::release, shared_from_this(), info)
         );
     }
 
@@ -162,7 +162,7 @@ public:
         if (fp_verbose) std::cout << "  make_send_buff: " << _frame_size << std::endl;
         return managed_send_buffer::make_safe(
             boost::asio::mutable_buffer(mem, _frame_size),
-            boost::bind(&usrp_e_mmap_zero_copy_impl::commit, shared_from_this(), info, _1)
+            boost::bind(&usrp_e100_mmap_zero_copy_impl::commit, shared_from_this(), info, _1)
         );
     }
 
@@ -210,6 +210,6 @@ private:
 /***********************************************************************
  * The zero copy interface make function
  **********************************************************************/
-zero_copy_if::sptr usrp_e_make_mmap_zero_copy(usrp_e_iface::sptr iface){
-    return zero_copy_if::sptr(new usrp_e_mmap_zero_copy_impl(iface));
+zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface){
+    return zero_copy_if::sptr(new usrp_e100_mmap_zero_copy_impl(iface));
 }

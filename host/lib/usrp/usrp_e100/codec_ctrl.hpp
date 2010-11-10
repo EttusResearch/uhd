@@ -15,10 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_E_CODEC_CTRL_HPP
-#define INCLUDED_USRP_E_CODEC_CTRL_HPP
+#ifndef INCLUDED_USRP_E100_CODEC_CTRL_HPP
+#define INCLUDED_USRP_E100_CODEC_CTRL_HPP
 
-#include "usrp_e_iface.hpp"
+#include "usrp_e100_iface.hpp"
 #include <uhd/types/ranges.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -28,19 +28,19 @@
  * - Init/power down codec.
  * - Read aux adc, write aux dac.
  */
-class usrp_e_codec_ctrl : boost::noncopyable{
+class usrp_e100_codec_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<usrp_e_codec_ctrl> sptr;
+    typedef boost::shared_ptr<usrp_e100_codec_ctrl> sptr;
 
     static const uhd::gain_range_t tx_pga_gain_range;
     static const uhd::gain_range_t rx_pga_gain_range;
 
     /*!
      * Make a new codec control object.
-     * \param iface the usrp_e iface object
+     * \param iface the usrp_e100 iface object
      * \return the codec control object
      */
-    static sptr make(usrp_e_iface::sptr iface);
+    static sptr make(usrp_e100_iface::sptr iface);
 
     //! aux adc identifier constants
     enum aux_adc_t{
@@ -87,4 +87,4 @@ public:
     virtual float get_rx_pga_gain(char which) = 0;
 };
 
-#endif /* INCLUDED_USRP_E_CODEC_CTRL_HPP */
+#endif /* INCLUDED_USRP_E100_CODEC_CTRL_HPP */

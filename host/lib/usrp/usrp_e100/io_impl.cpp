@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_impl.hpp"
-#include "usrp_e_regs.hpp"
+#include "usrp_e100_impl.hpp"
+#include "usrp_e100_regs.hpp"
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -30,7 +30,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-zero_copy_if::sptr usrp_e_make_mmap_zero_copy(usrp_e_iface::sptr iface);
+zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
 
 /***********************************************************************
  * Constants
@@ -46,14 +46,14 @@ static const bool recv_debug = false;
  * - thread loop
  * - vrt packet handler states
  **********************************************************************/
-struct usrp_e_impl::io_impl{
+struct usrp_e100_impl::io_impl{
     //state management for the vrt packet handler code
     vrt_packet_handler::recv_state packet_handler_recv_state;
     vrt_packet_handler::send_state packet_handler_send_state;
     zero_copy_if::sptr data_xport;
     bool continuous_streaming;
-    io_impl(usrp_e_iface::sptr iface):
-        data_xport(usrp_e_make_mmap_zero_copy(iface)),
+    io_impl(usrp_e100_iface::sptr iface):
+        data_xport(usrp_e100_make_mmap_zero_copy(iface)),
         recv_pirate_booty(recv_booty_type::make(data_xport->get_num_recv_frames())),
         async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
     {
@@ -73,7 +73,7 @@ struct usrp_e_impl::io_impl{
     }
 
     //a pirate's life is the life for me!
-    void recv_pirate_loop(usrp_e_clock_ctrl::sptr);
+    void recv_pirate_loop(usrp_e100_clock_ctrl::sptr);
     typedef bounded_buffer<managed_recv_buffer::sptr> recv_booty_type;
     recv_booty_type::sptr recv_pirate_booty;
     bounded_buffer<async_metadata_t>::sptr async_msg_fifo;
@@ -86,7 +86,7 @@ struct usrp_e_impl::io_impl{
  * - while raiding, loot for recv buffers
  * - put booty into the alignment buffer
  **********************************************************************/
-void usrp_e_impl::io_impl::recv_pirate_loop(usrp_e_clock_ctrl::sptr clock_ctrl)
+void usrp_e100_impl::io_impl::recv_pirate_loop(usrp_e100_clock_ctrl::sptr clock_ctrl)
 {
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
@@ -140,7 +140,7 @@ void usrp_e_impl::io_impl::recv_pirate_loop(usrp_e_clock_ctrl::sptr clock_ctrl)
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
-void usrp_e_impl::io_init(void){
+void usrp_e100_impl::io_init(void){
     //setup otw types
     _send_otw_type.width = 16;
     _send_otw_type.shift = 0;
@@ -172,11 +172,11 @@ void usrp_e_impl::io_init(void){
 
     //spawn a pirate, yarrr!
     _io_impl->recv_pirate_crew.create_thread(boost::bind(
-        &usrp_e_impl::io_impl::recv_pirate_loop, _io_impl.get(), _clock_ctrl
+        &usrp_e100_impl::io_impl::recv_pirate_loop, _io_impl.get(), _clock_ctrl
     ));
 }
 
-void usrp_e_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
+void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
     _io_impl->continuous_streaming = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
         stream_cmd, get_max_recv_samps_per_packet()
@@ -185,7 +185,7 @@ void usrp_e_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
     _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
 }
 
-void usrp_e_impl::handle_overrun(size_t){
+void usrp_e100_impl::handle_overrun(size_t){
     std::cerr << "O"; //the famous OOOOOOOOOOO
     _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 0);
     if (_io_impl->continuous_streaming){
@@ -205,7 +205,7 @@ bool get_send_buffs(
     return buffs[0].get() != NULL;
 }
 
-size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
+size_t usrp_e100_impl::get_max_send_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
@@ -214,7 +214,7 @@ size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
     return bpp/_send_otw_type.get_sample_size();
 }
 
-size_t usrp_e_impl::send(
+size_t usrp_e100_impl::send(
     const std::vector<const void *> &buffs, size_t num_samps,
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
@@ -234,7 +234,7 @@ size_t usrp_e_impl::send(
 /***********************************************************************
  * Data Recv
  **********************************************************************/
-size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
+size_t usrp_e100_impl::get_max_recv_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
@@ -244,7 +244,7 @@ size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
     return bpp/_recv_otw_type.get_sample_size();
 }
 
-size_t usrp_e_impl::recv(
+size_t usrp_e100_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
@@ -256,15 +256,15 @@ size_t usrp_e_impl::recv(
         io_type, _recv_otw_type,                   //input and output types to convert
         _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
-        boost::bind(&usrp_e_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
-        boost::bind(&usrp_e_impl::handle_overrun, this, _1)
+        boost::bind(&usrp_e100_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
+        boost::bind(&usrp_e100_impl::handle_overrun, this, _1)
     );
 }
 
 /***********************************************************************
  * Async Recv
  **********************************************************************/
-bool usrp_e_impl::recv_async_msg(
+bool usrp_e100_impl::recv_async_msg(
     async_metadata_t &async_metadata, double timeout
 ){
     boost::this_thread::disable_interruption di; //disable because the wait can throw

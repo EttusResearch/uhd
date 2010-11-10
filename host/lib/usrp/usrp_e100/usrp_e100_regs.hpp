@@ -10,8 +10,8 @@
 //  This means that address bit 0 is usually 0.
 //  There are 11 bits of address for the control.
 
-#ifndef __USRP_E_REGS_H
-#define __USRP_E_REGS_H
+#ifndef INCLUDED_USRP_E100_REGS_HPP
+#define INCLUDED_USRP_E100_REGS_HPP
 
 /////////////////////////////////////////////////////
 // Slave pointers

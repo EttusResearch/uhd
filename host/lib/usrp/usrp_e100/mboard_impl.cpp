@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_impl.hpp"
-#include "usrp_e_regs.hpp"
+#include "usrp_e100_impl.hpp"
+#include "usrp_e100_regs.hpp"
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
@@ -30,10 +30,10 @@ using namespace uhd::usrp;
 /***********************************************************************
  * Mboard Initialization
  **********************************************************************/
-void usrp_e_impl::mboard_init(void){
+void usrp_e100_impl::mboard_init(void){
     _mboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp_e_impl::mboard_get, this, _1, _2),
-        boost::bind(&usrp_e_impl::mboard_set, this, _1, _2)
+        boost::bind(&usrp_e100_impl::mboard_get, this, _1, _2),
+        boost::bind(&usrp_e100_impl::mboard_set, this, _1, _2)
     );
 
     //init the clock config
@@ -46,7 +46,7 @@ void usrp_e_impl::mboard_init(void){
 /***********************************************************************
  * Mboard Get
  **********************************************************************/
-void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
+void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -114,7 +114,7 @@ void usrp_e_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * Mboard Set
  **********************************************************************/
-void usrp_e_impl::mboard_set(const wax::obj &key, const wax::obj &val){
+void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 

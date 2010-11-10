@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_impl.hpp"
-#include "usrp_e_regs.hpp"
+#include "usrp_e100_impl.hpp"
+#include "usrp_e100_regs.hpp"
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
@@ -42,17 +42,17 @@ static std::string abs_path(const std::string &file_path){
 /***********************************************************************
  * Discovery
  **********************************************************************/
-static device_addrs_t usrp_e_find(const device_addr_t &hint){
-    device_addrs_t usrp_e_addrs;
+static device_addrs_t usrp_e100_find(const device_addr_t &hint){
+    device_addrs_t usrp_e100_addrs;
 
     //return an empty list of addresses when type is set to non-usrp-e
-    if (hint.has_key("type") and hint["type"] != "usrp-e") return usrp_e_addrs;
+    if (hint.has_key("type") and hint["type"] != "usrp-e") return usrp_e100_addrs;
 
     //device node not provided, assume its 0
     if (not hint.has_key("node")){
         device_addr_t new_addr = hint;
-        new_addr["node"] = "/dev/usrp_e0";
-        return usrp_e_find(new_addr);
+        new_addr["node"] = "/dev/usrp_e1000";
+        return usrp_e100_find(new_addr);
     }
 
     //use the given device node name
@@ -60,21 +60,21 @@ static device_addrs_t usrp_e_find(const device_addr_t &hint){
         device_addr_t new_addr;
         new_addr["type"] = "usrp-e";
         new_addr["node"] = abs_path(hint["node"]);
-        usrp_e_addrs.push_back(new_addr);
+        usrp_e100_addrs.push_back(new_addr);
     }
 
-    return usrp_e_addrs;
+    return usrp_e100_addrs;
 }
 
 /***********************************************************************
  * Make
  **********************************************************************/
-static device::sptr usrp_e_make(const device_addr_t &device_addr){
+static device::sptr usrp_e100_make(const device_addr_t &device_addr){
 
     //setup the main interface into fpga
     std::string node = device_addr["node"];
     std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
-    usrp_e_iface::sptr iface = usrp_e_iface::make(node);
+    usrp_e100_iface::sptr iface = usrp_e100_iface::make(node);
 
     //------------------------------------------------------------------
     //-- Handle the FPGA loading...
@@ -82,19 +82,19 @@ static device::sptr usrp_e_make(const device_addr_t &device_addr){
     //--   1) The compatibility number matches.
     //--   2) The hash in the hash-file matches.
     //------------------------------------------------------------------
-    static const char *hash_file_path = "/tmp/usrp_e100_hash";
+    static const char *hash_file_path = "/tmp/usrp_e100100_hash";
 
     //extract the fpga path for usrp-e
-    std::string usrp_e_fpga_image = find_image_path(
-        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_e100_fpga.bin"
+    std::string usrp_e100_fpga_image = find_image_path(
+        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_e100100_fpga.bin"
     );
 
     //calculate a hash of the fpga file
     size_t fpga_hash = 0;
     {
-        std::ifstream file(usrp_e_fpga_image.c_str());
+        std::ifstream file(usrp_e100_fpga_image.c_str());
         if (not file.good()) throw std::runtime_error(
-            "cannot open fpga file for read: " + usrp_e_fpga_image
+            "cannot open fpga file for read: " + usrp_e100_fpga_image
         );
         do{
             boost::hash_combine(fpga_hash, file.get());
@@ -112,9 +112,9 @@ static device::sptr usrp_e_make(const device_addr_t &device_addr){
     //if not loaded: load the fpga image and write the hash-file
     if (fpga_compat_num != USRP_E_COMPAT_NUM or loaded_hash != fpga_hash){
         iface.reset();
-        usrp_e_load_fpga(usrp_e_fpga_image);
+        usrp_e100_load_fpga(usrp_e100_fpga_image);
         std::cout << boost::format("re-Opening USRP-E on %s") % node << std::endl;
-        iface = usrp_e_iface::make(node);
+        iface = usrp_e100_iface::make(node);
         try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
     }
 
@@ -127,21 +127,21 @@ static device::sptr usrp_e_make(const device_addr_t &device_addr){
         ) % USRP_E_COMPAT_NUM % fpga_compat_num));
     }
 
-    return device::sptr(new usrp_e_impl(iface));
+    return device::sptr(new usrp_e100_impl(iface));
 }
 
-UHD_STATIC_BLOCK(register_usrp_e_device){
-    device::register_device(&usrp_e_find, &usrp_e_make);
+UHD_STATIC_BLOCK(register_usrp_e100_device){
+    device::register_device(&usrp_e100_find, &usrp_e100_make);
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp_e_impl::usrp_e_impl(usrp_e_iface::sptr iface): _iface(iface){
+usrp_e100_impl::usrp_e100_impl(usrp_e100_iface::sptr iface): _iface(iface){
 
     //setup interfaces into hardware
-    _clock_ctrl = usrp_e_clock_ctrl::make(_iface);
-    _codec_ctrl = usrp_e_codec_ctrl::make(_iface);
+    _clock_ctrl = usrp_e100_clock_ctrl::make(_iface);
+    _codec_ctrl = usrp_e100_codec_ctrl::make(_iface);
 
     //initialize the mboard
     mboard_init();
@@ -164,14 +164,14 @@ usrp_e_impl::usrp_e_impl(usrp_e_iface::sptr iface): _iface(iface){
     this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
-usrp_e_impl::~usrp_e_impl(void){
+usrp_e100_impl::~usrp_e100_impl(void){
     /* NOP */
 }
 
 /***********************************************************************
  * Device Get
  **********************************************************************/
-void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
+void usrp_e100_impl::get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -196,6 +196,6 @@ void usrp_e_impl::get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * Device Set
  **********************************************************************/
-void usrp_e_impl::set(const wax::obj &, const wax::obj &){
+void usrp_e100_impl::set(const wax::obj &, const wax::obj &){
     UHD_THROW_PROP_SET_ERROR();
 }

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e_iface.hpp"
+#include "usrp_e100_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include <uhd/device.hpp>
@@ -27,13 +27,13 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 
-#ifndef INCLUDED_USRP_E_IMPL_HPP
-#define INCLUDED_USRP_E_IMPL_HPP
+#ifndef INCLUDED_USRP_E100_IMPL_HPP
+#define INCLUDED_USRP_E100_IMPL_HPP
 
 static const boost::uint16_t USRP_E_COMPAT_NUM = 0x02;
 
 //! load an fpga image from a bin file into the usrp-e fpga
-extern void usrp_e_load_fpga(const std::string &bin_file);
+extern void usrp_e100_load_fpga(const std::string &bin_file);
 
 /*!
  * Make a usrp-e dboard interface.
@@ -42,10 +42,10 @@ extern void usrp_e_load_fpga(const std::string &bin_file);
  * \param codec the codec control interface
  * \return a sptr to a new dboard interface
  */
-uhd::usrp::dboard_iface::sptr make_usrp_e_dboard_iface(
-    usrp_e_iface::sptr iface,
-    usrp_e_clock_ctrl::sptr clock,
-    usrp_e_codec_ctrl::sptr codec
+uhd::usrp::dboard_iface::sptr make_usrp_e100_dboard_iface(
+    usrp_e100_iface::sptr iface,
+    usrp_e100_clock_ctrl::sptr clock,
+    usrp_e100_codec_ctrl::sptr codec
 );
 
 /*!
@@ -72,15 +72,15 @@ private:
 };
 
 /*!
- * USRP1E implementation guts:
+ * USRP-E100 implementation guts:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class usrp_e_impl : public uhd::device{
+class usrp_e100_impl : public uhd::device{
 public:
     //structors
-    usrp_e_impl(usrp_e_iface::sptr);
-    ~usrp_e_impl(void);
+    usrp_e100_impl(usrp_e100_iface::sptr);
+    ~usrp_e100_impl(void);
 
     //the io interface
     size_t send(const std::vector<const void *> &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t, double);
@@ -91,7 +91,7 @@ public:
 
 private:
     //interface to ioctls and file descriptor
-    usrp_e_iface::sptr _iface;
+    usrp_e100_iface::sptr _iface;
 
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
@@ -105,10 +105,10 @@ private:
     //TODO otw type recv/send
 
     //ad9522 clock control
-    usrp_e_clock_ctrl::sptr _clock_ctrl;
+    usrp_e100_clock_ctrl::sptr _clock_ctrl;
 
     //ad9862 codec control
-    usrp_e_codec_ctrl::sptr _codec_ctrl;
+    usrp_e100_codec_ctrl::sptr _codec_ctrl;
 
     //device functions and settings
     void get(const wax::obj &, wax::obj &);
@@ -161,4 +161,4 @@ private:
     wax_obj_proxy::sptr _rx_codec_proxy, _tx_codec_proxy;
 };
 
-#endif /* INCLUDED_USRP_E_IMPL_HPP */
+#endif /* INCLUDED_USRP_E100_IMPL_HPP */

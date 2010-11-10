@@ -19,7 +19,7 @@
 #include "ad9522_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
-#include "usrp_e_regs.hpp" //spi slave constants
+#include "usrp_e100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <utility>
@@ -58,9 +58,9 @@ static const size_t codec_clock_divider = size_t(master_clock_rate/64e6);
 /***********************************************************************
  * Clock Control Implementation
  **********************************************************************/
-class usrp_e_clock_ctrl_impl : public usrp_e_clock_ctrl{
+class usrp_e100_clock_ctrl_impl : public usrp_e100_clock_ctrl{
 public:
-    usrp_e_clock_ctrl_impl(usrp_e_iface::sptr iface){
+    usrp_e100_clock_ctrl_impl(usrp_e100_iface::sptr iface){
         _iface = iface;
 
         //init the clock gen registers
@@ -137,7 +137,7 @@ public:
         this->enable_tx_dboard_clock(false);
     }
 
-    ~usrp_e_clock_ctrl_impl(void){
+    ~usrp_e100_clock_ctrl_impl(void){
         this->enable_rx_dboard_clock(false);
         this->enable_tx_dboard_clock(false);
     }
@@ -210,7 +210,7 @@ public:
     }
 
 private:
-    usrp_e_iface::sptr _iface;
+    usrp_e100_iface::sptr _iface;
     ad9522_regs_t _ad9522_regs;
 
     void latch_regs(void){
@@ -232,6 +232,6 @@ private:
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-usrp_e_clock_ctrl::sptr usrp_e_clock_ctrl::make(usrp_e_iface::sptr iface){
-    return sptr(new usrp_e_clock_ctrl_impl(iface));
+usrp_e100_clock_ctrl::sptr usrp_e100_clock_ctrl::make(usrp_e100_iface::sptr iface){
+    return sptr(new usrp_e100_clock_ctrl_impl(iface));
 }
