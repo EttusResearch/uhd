@@ -21,6 +21,7 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -105,6 +106,10 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         val = _tx_subdev_spec;
+        return;
+
+    case MBOARD_PROP_EEPROM_MAP:
+        val = mboard_eeprom_t();
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
