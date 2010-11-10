@@ -46,8 +46,6 @@ module ext_fifo
    wire [EXT_WIDTH-1:0] read_data;
    wire 		full1, empty1;
    wire 		almost_full2, full2, empty2;
-   wire [INT_WIDTH-1:0] data_to_fifo;
-   wire [INT_WIDTH-1:0] data_from_fifo;
    wire [FIFO_DEPTH-1:0] capacity;
    wire 		 space_avail;
    wire 		 data_avail;
@@ -151,12 +149,14 @@ module ext_fifo
    
 
    
-   always @ (posedge int_clk)
-     debug[31:28] <= {empty2,full1,dst_rdy_i,src_rdy_i };
+//   always @ (posedge int_clk)
+//     debug[31:28] <= {empty2,full1,dst_rdy_i,src_rdy_i };
    
    always @ (posedge ext_clk)
-     debug[27:0] <= {RAM_WEn,RAM_CE1n,RAM_A[3:0],read_data[17:0],empty1,space_avail,data_avail,almost_full2 };
-
+ //    debug[27:0] <= {RAM_WEn,RAM_CE1n,RAM_A[3:0],read_data[17:0],empty1,space_avail,data_avail,almost_full2 };
+     debug[31:0] <= {7'h0,src_rdy_i,read_input_fifo,write_output_fifo,dst_rdy_i,full2,almost_full2,empty2,full1,empty1,write_data[7:0],read_data[7:0]};
+   
+     
    always@ (posedge ext_clk)
      //     debug2[31:0] <= {write_data[15:0],read_data[15:0]};
      debug2[31:0] <= 0;
