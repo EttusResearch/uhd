@@ -18,6 +18,9 @@
 ########################################################################
 # Utilities that get installed into the runtime path
 ########################################################################
+#TODO needed by USRP-E100 utils, whats the best way to handle this
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
+
 ADD_EXECUTABLE(uhd_find_devices uhd_find_devices.cpp)
 TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
 
