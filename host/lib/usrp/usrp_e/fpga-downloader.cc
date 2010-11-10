@@ -16,6 +16,7 @@
 //
 
 #include <uhd/config.hpp>
+#include <uhd/utils/assert.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -259,7 +260,7 @@ void usrp_e_load_fpga(const std::string &bin_file){
 
 	std::cout << "Loading FPGA image: " << bin_file << "... " << std::flush;
 
-	system("/sbin/rmmod usrp_e");
+	UHD_ASSERT_THROW(std::system("/sbin/rmmod usrp_e") == 0);
 
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
@@ -267,7 +268,7 @@ void usrp_e_load_fpga(const std::string &bin_file){
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 
-	system("/sbin/modprobe usrp_e");
+	UHD_ASSERT_THROW(std::system("/sbin/modprobe usrp_e") == 0);
 
 }
 
