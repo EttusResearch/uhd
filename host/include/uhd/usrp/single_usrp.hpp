@@ -23,6 +23,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
@@ -154,20 +155,13 @@ public:
 
     /*!
      * Set the RX center frequency.
-     * \param freq the frequency in Hz
+     * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
      */
-    virtual tune_result_t set_rx_freq(double freq, size_t chan = 0) = 0;
-
-    /*!
-     * Set the RX center frequency.
-     * \param freq the frequency in Hz
-     * \param lo_off an LO offset in Hz
-     * \param chan the channel index 0 to N-1
-     * \return a tune result object
-     */
-    virtual tune_result_t set_rx_freq(double freq, double lo_off, size_t chan = 0) = 0;
+    virtual tune_result_t set_rx_freq(
+        const tune_request_t &tune_request, size_t chan = 0
+    ) = 0;
 
     /*!
      * Get the RX center frequency.
@@ -330,20 +324,13 @@ public:
 
     /*!
      * Set the TX center frequency.
-     * \param freq the frequency in Hz
+     * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
      * \return a tune result object
      */
-    virtual tune_result_t set_tx_freq(double freq, size_t chan = 0) = 0;
-
-    /*!
-     * Set the TX center frequency.
-     * \param freq the frequency in Hz
-     * \param lo_off an LO offset in Hz
-     * \param chan the channel index 0 to N-1
-     * \return a tune result object
-     */
-    virtual tune_result_t set_tx_freq(double freq, double lo_off, size_t chan = 0) = 0;
+    virtual tune_result_t set_tx_freq(
+        const tune_request_t &tune_request, size_t chan = 0
+    ) = 0;
 
     /*!
      * Get the TX center frequency.

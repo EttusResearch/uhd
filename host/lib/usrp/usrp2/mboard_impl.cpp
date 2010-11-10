@@ -23,11 +23,7 @@
 #include "mboard_rev.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/types/mac_addr.hpp>
-#include <uhd/types/dict.hpp>
 #include <boost/bind.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/asio/ip/address_v4.hpp>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -44,11 +40,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     size_t recv_frame_size
 ):
     _index(index),
-    _recv_frame_size(recv_frame_size)
+    _recv_frame_size(recv_frame_size),
+    _iface(usrp2_iface::make(ctrl_transport))
 {
-    //make a new interface for usrp2 stuff
-    _iface = usrp2_iface::make(ctrl_transport);
-    
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
@@ -188,7 +182,15 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     _iface->poke32(_iface->regs.time64_secs, boost::uint32_t(time_spec.get_full_secs()));
 }
 
+void usrp2_mboard_impl::handle_overflow(void){
+    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1);
+    if (_continuous_streaming){ //re-issue the stream command if already continuous
+        this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    }
+}
+
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
+    _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
     _iface->poke32(_iface->regs.rx_ctrl_stream_cmd, dsp_type1::calc_stream_cmd_word(
         stream_cmd, _recv_frame_size
     ));
@@ -203,42 +205,14 @@ static const std::string dboard_name = "0";
 
 void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the other props
-    if (key_.type() == typeid(std::string)){
-        if (key.as<std::string>() == "mac-addr"){
-            byte_vector_t bytes = _iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, 6);
-            val = mac_addr_t::from_bytes(bytes).to_string();
-            return;
-        }
-
-        if (key.as<std::string>() == "ip-addr"){
-            boost::asio::ip::address_v4::bytes_type bytes;
-            std::copy(_iface->read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, 4), bytes);
-            val = boost::asio::ip::address_v4(bytes).to_string();
-            return;
-        }
-        
-        if (key.as<std::string>() == "hw-rev"){
-            //extract the mboard rev number
-            val = _iface->get_hw_rev().to_string();
-            return;
-        }
-    }
-
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = str(boost::format("usrp2 mboard%d - rev %s") % _index % _iface->get_hw_rev().to_string());
+        val = str(boost::format("usrp2 mboard%d - rev %s") % _index % _iface->mb_eeprom["rev"]);
         return;
 
-    case MBOARD_PROP_OTHERS:{
-            prop_names_t others = boost::assign::list_of
-                ("mac-addr")
-                ("ip-addr")
-            ;
-            val = others;
-        }
+    case MBOARD_PROP_OTHERS:
+        val = prop_names_t();
         return;
 
     case MBOARD_PROP_RX_DBOARD:
@@ -299,6 +273,10 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         val = _tx_subdev_spec;
         return;
 
+    case MBOARD_PROP_EEPROM_MAP:
+        val = _iface->mb_eeprom;
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -307,32 +285,6 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
  * MBoard Set Properties
  **********************************************************************/
 void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
-    //handle the other props
-    if (key.type() == typeid(std::string)){
-        if (key.as<std::string>() == "mac-addr"){
-            byte_vector_t bytes = mac_addr_t::from_string(val.as<std::string>()).to_bytes();
-            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, bytes);
-            return;
-        }
-
-        if (key.as<std::string>() == "ip-addr"){
-            byte_vector_t bytes(4);
-            std::copy(boost::asio::ip::address_v4::from_string(val.as<std::string>()).to_bytes(), bytes);
-            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, bytes);
-            return;
-        }
-        
-        if (key.as<std::string>() == "hw-rev"){
-            mboard_rev_t rev = mboard_rev_t::from_string(val.as<std::string>());
-            byte_vector_t rev_bytes(2);
-            rev_bytes[1] = rev.to_uint16() >> 8;
-            rev_bytes[0] = rev.to_uint16() & 0xff;
-            _iface->write_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, rev_bytes);
-            _iface->set_hw_rev(rev); //so the iface knows what rev it is
-            return;
-        }
-    }
-
     //handle the set request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
@@ -373,6 +325,13 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
             _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
+        return;
+
+    case MBOARD_PROP_EEPROM_MAP:
+        // Step1: commit the map, writing only those values set.
+        // Step2: readback the entire eeprom map into the iface.
+        val.as<mboard_eeprom_t>().commit(*_iface, mboard_eeprom_t::MAP_N100);
+        _iface->mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_N100);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

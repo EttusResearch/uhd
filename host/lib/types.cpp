@@ -17,6 +17,7 @@
 
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -53,6 +54,26 @@ gain_range_t::gain_range_t(float min, float max, float step):
 freq_range_t::freq_range_t(double min, double max):
     min(min),
     max(max)
+{
+    /* NOP */
+}
+
+/***********************************************************************
+ * tune request
+ **********************************************************************/
+tune_request_t::tune_request_t(double target_freq):
+    target_freq(target_freq),
+    inter_freq_policy(POLICY_AUTO),
+    dsp_freq_policy(POLICY_AUTO)
+{
+    /* NOP */
+}
+
+tune_request_t::tune_request_t(double target_freq, double lo_off):
+    target_freq(target_freq),
+    inter_freq_policy(POLICY_MANUAL),
+    inter_freq(target_freq + lo_off),
+    dsp_freq_policy(POLICY_AUTO)
 {
     /* NOP */
 }
@@ -229,22 +250,19 @@ mac_addr_t mac_addr_t::from_bytes(const byte_vector_t &bytes){
 
 mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
 
-    byte_vector_t bytes = boost::assign::list_of
-        (0x00)(0x50)(0xC2)(0x85)(0x30)(0x00); // Matt's IAB
+    byte_vector_t bytes;
 
     try{
-        //only allow patterns of xx:xx or xx:xx:xx:xx:xx:xx
-        //the IAB above will fill in for the shorter pattern
-        if (mac_addr_str.size() != 5 and mac_addr_str.size() != 17)
-            throw std::runtime_error("expected exactly 5 or 17 characters");
+        if (mac_addr_str.size() != 17){
+            throw std::runtime_error("expected exactly 17 characters");
+        }
 
         //split the mac addr hex string at the colons
-        size_t i = 0;
         BOOST_FOREACH(const std::string &hex_str, std::split_string(mac_addr_str, ":")){
             int hex_num;
             std::istringstream iss(hex_str);
             iss >> std::hex >> hex_num;
-            bytes[i++] = boost::uint8_t(hex_num);
+            bytes.push_back(boost::uint8_t(hex_num));
         }
 
     }

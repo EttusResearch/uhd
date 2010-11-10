@@ -25,6 +25,7 @@
 #include <iomanip>
 
 using namespace uhd;
+using namespace uhd::usrp;
 using namespace uhd::transport;
 
 static const bool iface_debug = false;
@@ -36,7 +37,8 @@ public:
      ******************************************************************/
     usrp1_iface_impl(usrp_ctrl::sptr ctrl_transport)
     {
-        _ctrl_transport = ctrl_transport; 
+        _ctrl_transport = ctrl_transport;
+        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_B000);
     }
 
     ~usrp1_iface_impl(void)

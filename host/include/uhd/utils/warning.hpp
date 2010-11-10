@@ -19,16 +19,44 @@
 #define INCLUDED_UHD_UTILS_WARNING_HPP
 
 #include <uhd/config.hpp>
+#include <boost/function.hpp>
+#include <vector>
 #include <string>
 
-namespace uhd{
+namespace uhd{ namespace warning{
+
+    //! Callback function type for a message handler
+    typedef boost::function<void(std::string)> handler_t;
 
     /*!
-     * Print a formatted warning string to stderr.
+     * Post a warning message to all registered handlers.
      * \param msg the multiline warning message
      */
-    UHD_API void print_warning(const std::string &msg);
+    UHD_API void post(const std::string &msg);
 
-} //namespace uhd
+    /*!
+     * Register a new handler with this name.
+     * If the name was already registered for this name,
+     * the old registered handler will be replaced.
+     * \param name a unique name for this handler
+     * \param handler the callback handler function
+     */
+    UHD_API void register_handler(const std::string &name, const handler_t &handler);
+
+    /*!
+     * Unregister a handler for this name.
+     * \param name a unique name for a registered handler
+     * \return the handler that was registered
+     * \throw error when the name was not found in the registry
+     */
+    UHD_API handler_t unregister_handler(const std::string &name);
+
+    /*!
+     * Get a list of registered handler names.
+     * \return a vector of unique string names
+     */
+    UHD_API const std::vector<std::string> registry_names(void);
+
+}} //namespace uhd::warning
 
 #endif /* INCLUDED_UHD_UTILS_WARNING_HPP */

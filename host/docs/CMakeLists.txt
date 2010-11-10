@@ -20,6 +20,7 @@
 ########################################################################
 SET(manual_sources
     index.rst
+    identification.rst
     build.rst
     coding.rst
     dboards.rst

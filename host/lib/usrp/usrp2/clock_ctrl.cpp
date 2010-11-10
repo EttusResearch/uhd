@@ -22,6 +22,7 @@
 #include "usrp2_clk_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 
 using namespace uhd;

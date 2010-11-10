@@ -20,9 +20,6 @@
 
 #include <stdbool.h>
 
-extern unsigned char u2_hw_rev_major;
-extern unsigned char u2_hw_rev_minor;
-
 /*!
  * one-time init
  */

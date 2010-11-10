@@ -20,6 +20,7 @@
 
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/serial.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
@@ -128,6 +129,8 @@ public:
      * Hardware revision as returned by the device.
      */
     mboard_rev_t hw_rev;
+    //motherboard eeprom map structure
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

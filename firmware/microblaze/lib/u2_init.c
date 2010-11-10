@@ -62,7 +62,6 @@ u2_init(void)
   i2c_init();
   i2c_register_handler(); //for using async I2C
   hal_enable_ints();
-  get_hw_rev();
 
   bp_init();	// buffer pool
   
