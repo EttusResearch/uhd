@@ -82,11 +82,11 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     //--   1) The compatibility number matches.
     //--   2) The hash in the hash-file matches.
     //------------------------------------------------------------------
-    static const char *hash_file_path = "/tmp/usrp_e100100_hash";
+    static const char *hash_file_path = "/tmp/usrp_e100_hash";
 
     //extract the fpga path for usrp-e
     std::string usrp_e100_fpga_image = find_image_path(
-        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_e100100_fpga.bin"
+        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_e100_fpga.bin"
     );
 
     //calculate a hash of the fpga file
