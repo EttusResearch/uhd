@@ -150,6 +150,9 @@ void usrp_e_impl::io_init(void){
     _recv_otw_type.shift = 0;
     _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
+    //setup before the registers (transport called to calculate max spp)
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface));
+
     //setup rx data path
     _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
     _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
@@ -166,8 +169,6 @@ void usrp_e_impl::io_init(void){
     //setup the tx policy
     _iface->poke32(UE_REG_CTRL_TX_REPORT_SID, tx_async_report_sid);
     _iface->poke32(UE_REG_CTRL_TX_POLICY, UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET);
-
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface));
 
     //spawn a pirate, yarrr!
     _io_impl->recv_pirate_crew.create_thread(boost::bind(
@@ -204,7 +205,6 @@ bool get_send_buffs(
     return buffs[0].get() != NULL;
 }
 
-#if 0
 size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
@@ -213,7 +213,6 @@ size_t usrp_e_impl::get_max_send_samps_per_packet(void) const{
     size_t bpp = _io_impl->data_xport->get_send_frame_size() - hdr_size;
     return bpp/_send_otw_type.get_sample_size();
 }
-#endif
 
 size_t usrp_e_impl::send(
     const std::vector<const void *> &buffs, size_t num_samps,
@@ -235,7 +234,6 @@ size_t usrp_e_impl::send(
 /***********************************************************************
  * Data Recv
  **********************************************************************/
-#if 0
 size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
@@ -245,7 +243,6 @@ size_t usrp_e_impl::get_max_recv_samps_per_packet(void) const{
     size_t bpp = _io_impl->data_xport->get_recv_frame_size() - hdr_size;
     return bpp/_recv_otw_type.get_sample_size();
 }
-#endif
 
 size_t usrp_e_impl::recv(
     const std::vector<void *> &buffs, size_t num_samps,
