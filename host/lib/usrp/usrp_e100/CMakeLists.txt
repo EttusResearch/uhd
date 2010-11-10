@@ -22,24 +22,20 @@
 ########################################################################
 MESSAGE(STATUS "Configuring USRP-E100 support...")
 
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(linux/usrp_e.h HAVE_LINUX_USRP_E_H)
-
-SET(ENABLE_USRP_E TRUE)
-
 IF(DEFINED ENABLE_USRP_E100)
     IF(ENABLE_USRP_E100)
         MESSAGE(STATUS "USRP-E100 support enabled by configure flag")
     ELSE(ENABLE_USRP_E100)
         MESSAGE(STATUS "USRP-E100 support disabled by configure flag")
     ENDIF(ENABLE_USRP_E100)
-ELSE(DEFINED ENABLE_USRP_E100) #not defined: automatic enabling of component
-    SET(ENABLE_USRP_E100 ${HAVE_LINUX_USRP_E_H})
+ELSE(DEFINED ENABLE_USRP_E100) #not defined: automatic disabling of component
+    SET(ENABLE_USRP_E100 FALSE)
 ENDIF(DEFINED ENABLE_USRP_E100)
 SET(ENABLE_USRP_E100 ${ENABLE_USRP_E100} CACHE BOOL "enable USRP-E100 support")
 
 IF(ENABLE_USRP_E100)
     MESSAGE(STATUS "  Building USRP-E100 support.")
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/clock_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/clock_ctrl.hpp

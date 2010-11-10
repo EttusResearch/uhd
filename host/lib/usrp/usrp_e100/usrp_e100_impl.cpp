@@ -51,7 +51,7 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
     //device node not provided, assume its 0
     if (not hint.has_key("node")){
         device_addr_t new_addr = hint;
-        new_addr["node"] = "/dev/usrp_e1000";
+        new_addr["node"] = "/dev/usrp_e0";
         return usrp_e100_find(new_addr);
     }
 
