@@ -18,63 +18,47 @@
 ########################################################################
 # Utilities that get installed into the runtime path
 ########################################################################
-#TODO needed by USRP-E100 utils, whats the best way to handle this
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
-
-ADD_EXECUTABLE(uhd_find_devices uhd_find_devices.cpp)
-TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
-
-ADD_EXECUTABLE(uhd_usrp_probe uhd_usrp_probe.cpp)
-TARGET_LINK_LIBRARIES(uhd_usrp_probe uhd)
-
-ADD_EXECUTABLE(fpga-downloader fpga-downloader.cpp)
-TARGET_LINK_LIBRARIES(fpga-downloader)
-
-ADD_EXECUTABLE(clkgen-config clkgen-config.cpp)
-TARGET_LINK_LIBRARIES(clkgen-config)
-
-ADD_EXECUTABLE(usrp-e-loopback usrp-e-loopback.c)
-TARGET_LINK_LIBRARIES(usrp-e-loopback pthread)
-
-ADD_EXECUTABLE(usrp-e-debug-pins usrp-e-debug-pins.c)
-TARGET_LINK_LIBRARIES(usrp-e-debug-pins)
-
-ADD_EXECUTABLE(usrp-e-i2c usrp-e-i2c.c)
-TARGET_LINK_LIBRARIES(usrp-e-i2c)
-
-ADD_EXECUTABLE(usrp-e-spi usrp-e-spi.c)
-TARGET_LINK_LIBRARIES(usrp-e-spi)
-
-INSTALL(TARGETS
-    uhd_find_devices
-    uhd_usrp_probe
-    fpga-downloader
-    usrp-e-loopback
-    usrp-e-debug-pins
-    usrp-e-spi
-    usrp-e-i2c
-    clkgen-config
-    RUNTIME DESTINATION ${RUNTIME_DIR}
+SET(util_runtime_sources
+    uhd_find_devices.cpp
+    uhd_usrp_probe.cpp
 )
+
+#for each source: build an executable and install
+FOREACH(util_source ${util_runtime_sources})
+    GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
+    ADD_EXECUTABLE(${util_name} ${util_source})
+    TARGET_LINK_LIBRARIES(${util_name} uhd)
+    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR})
+ENDFOREACH(util_source)
 
 ########################################################################
 # Utilities that get installed into the share path
 ########################################################################
-ADD_EXECUTABLE(usrp_burn_db_eeprom usrp_burn_db_eeprom.cpp)
-TARGET_LINK_LIBRARIES(usrp_burn_db_eeprom uhd)
-
-ADD_EXECUTABLE(usrp_burn_mb_eeprom usrp_burn_mb_eeprom.cpp)
-TARGET_LINK_LIBRARIES(usrp_burn_mb_eeprom uhd)
-
-ADD_EXECUTABLE(usrp1_init_eeprom usrp1_init_eeprom.cpp)
-TARGET_LINK_LIBRARIES(usrp1_init_eeprom uhd)
-
-INSTALL(TARGETS
-    usrp_burn_db_eeprom
-    usrp_burn_mb_eeprom
-    usrp1_init_eeprom
-    RUNTIME DESTINATION ${PKG_DATA_DIR}/utils
+SET(util_share_sources
+    usrp_burn_db_eeprom.cpp
+    usrp_burn_mb_eeprom.cpp
+    usrp1_init_eeprom.cpp
 )
+
+IF(ENABLE_USRP_E100)
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
+    LIST(APPEND util_share_sources
+        fpga-downloader.cpp
+        clkgen-config.cpp
+        usrp-e-loopback.c
+        usrp-e-debug-pins.c
+        usrp-e-i2c.c
+        usrp-e-spi.c
+    )
+ENDIF(ENABLE_USRP_E100)
+
+#for each source: build an executable and install
+FOREACH(util_source ${util_share_sources})
+    GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
+    ADD_EXECUTABLE(${util_name} ${util_source})
+    TARGET_LINK_LIBRARIES(${util_name} uhd)
+    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
+ENDFOREACH(util_source)
 
 INSTALL(PROGRAMS
     usrp2_recovery.py
