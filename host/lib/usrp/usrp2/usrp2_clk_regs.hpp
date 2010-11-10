@@ -18,13 +18,13 @@
 #ifndef INCLUDED_USRP2_CLK_REGS_HPP
 #define INCLUDED_USRP2_CLK_REGS_HPP
 
-#include <uhd/usrp/mboard_rev.hpp>
+#include "mboard_rev.hpp"
 #include "usrp2_regs.hpp"
 
 class usrp2_clk_regs_t {
 public:
   usrp2_clk_regs_t(void) { ; }
-  usrp2_clk_regs_t(uhd::usrp::mboard_rev_t hw_rev) {
+  usrp2_clk_regs_t(mboard_rev_t hw_rev) {
     test = 0;
     fpga = 1;
     adc = (hw_rev.is_usrp2p()) ? 2 : 4;

@@ -48,6 +48,8 @@ IF(ENABLE_USRP2)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/gps_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/io_impl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/mboard_impl.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/mboard_rev.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/mboard_rev.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/serdes_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/serdes_ctrl.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_iface.cpp

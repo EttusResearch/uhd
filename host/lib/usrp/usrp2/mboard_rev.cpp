@@ -15,13 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/mboard_rev.hpp>
+#include "mboard_rev.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <sstream>
 #include <iostream>
-
-using namespace uhd::usrp;
 
 static const mboard_rev_t usrp2p_first_hw_rev = mboard_rev_t(0x0A00);
 
@@ -82,10 +80,10 @@ boost::uint8_t mboard_rev_t::minor(void) const{
     return _rev & 0xff;
 }
 
-bool uhd::usrp::operator==(const mboard_rev_t &lhs, const mboard_rev_t &rhs){
+bool operator==(const mboard_rev_t &lhs, const mboard_rev_t &rhs){
     return lhs.to_uint16() == rhs.to_uint16();
 }
 
-bool uhd::usrp::operator<(const mboard_rev_t &lhs, const mboard_rev_t &rhs){
+bool operator<(const mboard_rev_t &lhs, const mboard_rev_t &rhs){
     return lhs.to_uint16() < rhs.to_uint16();
 }

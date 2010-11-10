@@ -15,17 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_USRP_MBOARD_REV_HPP
-#define INCLUDED_UHD_USRP_MBOARD_REV_HPP
+#ifndef INCLUDED_MBOARD_REV_HPP
+#define INCLUDED_MBOARD_REV_HPP
 
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/operators.hpp>
 #include <string>
 
-namespace uhd{ namespace usrp{
-
-    class UHD_API mboard_rev_t : boost::equality_comparable<mboard_rev_t>, boost::less_than_comparable<mboard_rev_t>{
+class UHD_API mboard_rev_t : boost::equality_comparable<mboard_rev_t>, boost::less_than_comparable<mboard_rev_t>{
     public:
         /*!
          * Create a mboard rev from an integer.
@@ -113,6 +111,4 @@ namespace uhd{ namespace usrp{
     
     UHD_API bool operator<(const mboard_rev_t &lhs, const mboard_rev_t &rhs);
 
-}} //namespace
-
-#endif /* INCLUDED_UHD_USRP_MBOARD_REV_HPP */
+#endif /* INCLUDED_MBOARD_REV_HPP */

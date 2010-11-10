@@ -45,9 +45,6 @@ TARGET_LINK_LIBRARIES(usrp1_init_eeprom uhd)
 ADD_EXECUTABLE(usrp1_serial_burner usrp1_serial_burner.cpp)
 TARGET_LINK_LIBRARIES(usrp1_serial_burner uhd)
 
-ADD_EXECUTABLE(usrp2_burn_mb_rev usrp2_burn_mb_rev.cpp)
-TARGET_LINK_LIBRARIES(usrp2_burn_mb_rev uhd)
-
 INSTALL(TARGETS
     usrp2_addr_burner
     usrp_burn_db_eeprom

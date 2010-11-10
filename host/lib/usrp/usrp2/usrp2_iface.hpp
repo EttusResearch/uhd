@@ -23,7 +23,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
-#include <uhd/usrp/mboard_rev.hpp>
+#include "mboard_rev.hpp"
 #include <utility>
 #include "fw_common.h"
 #include "usrp2_regs.hpp"
@@ -113,12 +113,12 @@ public:
      * Set the hardware revision number. Also selects the proper register set for the device.
      * \param rev the 16-bit revision
      */
-    virtual void set_hw_rev(uhd::usrp::mboard_rev_t rev) = 0;
+    virtual void set_hw_rev(mboard_rev_t rev) = 0;
 
     /*! Return the hardware revision number
      * \return hardware revision
      */
-    virtual uhd::usrp::mboard_rev_t get_hw_rev(void) = 0;
+    virtual mboard_rev_t get_hw_rev(void) = 0;
 
     /*!
      * Register map selected from USRP2/USRP2+.
@@ -127,7 +127,7 @@ public:
     /*!
      * Hardware revision as returned by the device.
      */
-    uhd::usrp::mboard_rev_t hw_rev;
+    mboard_rev_t hw_rev;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

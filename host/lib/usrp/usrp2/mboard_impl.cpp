@@ -20,7 +20,7 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/mboard_rev.hpp>
+#include "mboard_rev.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/mac_addr.hpp>
