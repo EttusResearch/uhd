@@ -259,9 +259,15 @@ void usrp_e_load_fpga(const std::string &bin_file){
 
 	std::cout << "Loading FPGA image: " << bin_file << "... " << std::flush;
 
+	system("/sbin/rmmod usrp_e");
+
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
 	std::cout << "done = " << gpio_done.get_value() << std::endl;
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
+
+	system("/sbin/modprobe usrp_e");
+
 }
+

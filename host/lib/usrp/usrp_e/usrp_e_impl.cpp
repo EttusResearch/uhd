@@ -111,8 +111,10 @@ static device::sptr usrp_e_make(const device_addr_t &device_addr){
 
     //if not loaded: load the fpga image and write the hash-file
     if (fpga_compat_num != USRP_E_COMPAT_NUM or loaded_hash != fpga_hash){
-//        usrp_e_load_fpga(usrp_e_fpga_image);
-std::cout << "Here is where I load the fpga" << std::endl;
+        iface.reset();
+        usrp_e_load_fpga(usrp_e_fpga_image);
+        std::cout << boost::format("re-Opening USRP-E on %s") % node << std::endl;
+        iface = usrp_e_iface::make(node);
         try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
     }
 
