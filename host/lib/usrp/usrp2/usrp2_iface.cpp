@@ -60,7 +60,7 @@ public:
             ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
         }
 
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_NXXX);
+        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
     }
 
     ~usrp2_iface_impl(void){
