@@ -46,4 +46,7 @@ shortfifo.v \
 medfifo.v \
 s3a_icap_wb.v \
 bootram.v \
+nsgpio16LE.v \
+settings_bus_16LE.v \
+atr_controller16.v \
 ))
