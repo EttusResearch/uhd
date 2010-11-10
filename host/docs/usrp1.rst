@@ -4,36 +4,6 @@ UHD - USRP1 Application Notes
 
 .. contents:: Table of Contents
 
-------------------------------------------------------------------------
-Addressing the device
-------------------------------------------------------------------------
-A USRP1 can be identified though its 8 digit serial number,
-designated by the "serial" key in the device address.
-
-The device address string representation for a USRP1 with serial 12345678:
-
-::
-
-    serial=12345678
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Change the serial number
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The USRP1 serial number can be changed to any 8 byte string. Examples:
-
-::
-
-    cd <prefix>/share/uhd/utils
-    ./usrp1_serial_burner --new=87654321
-
-    -- OR --
-
-    ./usrp1_serial_burner --new=Beatrice
-
-    -- OR --
-
-    ./usrp1_serial_burner --old=12345678 --new=87654321
-
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Specify a non-standard image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

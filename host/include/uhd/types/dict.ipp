@@ -28,7 +28,7 @@ namespace uhd{
 
     namespace /*anon*/{
         template<typename Key, typename Val>
-        struct UHD_API key_not_found: std::out_of_range{
+        struct key_not_found: std::out_of_range{
             key_not_found(const Key &key): std::out_of_range(
                 str(boost::format(
                     "key \"%s\" not found in dict(%s, %s)"
@@ -83,6 +83,14 @@ namespace uhd{
             if (p.first == key) return true;
         }
         return false;
+    }
+
+    template <typename Key, typename Val>
+    const Val &dict<Key, Val>::get(const Key &key, const Val &def) const{
+        BOOST_FOREACH(const pair_t &p, _map){
+            if (p.first == key) return p.second;
+        }
+        return def;
     }
 
     template <typename Key, typename Val>

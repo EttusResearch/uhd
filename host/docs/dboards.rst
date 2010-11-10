@@ -26,9 +26,13 @@ The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can down-convert signals
 greater than the Nyquist rate of the ADC.
 
-BasicRX Bandwidth (Hz): 250M
+BasicRX Bandwidth (Hz): 
+    For Real-Mode (A or B subdevice): 250M
+    For Complex (AB or BA subdevice): 500M
 
-LFRX Bandwidth (Hz): 30M
+LFRX Bandwidth (Hz):
+    For Real-Mode (A or B subdevice): 33M
+    For Complex (AB or BA subdevice): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
@@ -45,8 +49,12 @@ Though the magic of aliasing, you can up-convert signals
 greater than the Nyquist rate of the DAC.
 
 BasicTX Bandwidth (Hz): 250M
+    For Real-Mode (A or B subdevice): 250M
+    For Complex (AB or BA subdevice): 500M
 
-LFTX Bandwidth (Hz): 30M
+LFTX Bandwidth (Hz): 33M
+    For Real-Mode (A or B subdevice): 33M
+    For Complex (AB or BA subdevice): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX
@@ -149,7 +157,7 @@ Modification usually involves moving/removing a SMT component
 and burning a new daughterboard id into the eeprom.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-DBSRX
+DBSRX - Mod
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Due to different clocking capabilities,
@@ -177,5 +185,47 @@ With the daughterboard plugged-in, run the following commands:
     cd <prefix>/share/uhd/utils
     ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
+* <args> are device address arguments (optional if only one USRP is on your machine)
+* <slot> is the name of the daughterboard slot (optional if the USRP has only one slot)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RFX - Mod
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Older RFX boards require modifications to use the motherboard oscillator.
+If this is the case, UHD will print a warning about the modification.
+Please follow the modification procedures below:
+
+**Step 1: Disable the daughterboard clocks**
+
+Move R64 to R84, Move R142 to R153
+
+**Step 2: Connect the motherboard blocks**
+
+Move R35 to R36, Move R117 to R115
+These are all 0-ohm, so if you lose one, just short across the appropriate pads
+
+**Step 3: Burn the appropriate daughterboard id into the EEPROM**
+
+With the daughterboard plugged-in, run the following commands:
+::
+
+    cd <prefix>/share/uhd/utils
+    ./usrp_burn_db_eeprom --id=<rx_id> --unit=RX --args=<args> --slot=<slot>
+    ./usrp_burn_db_eeprom --id=<tx_id> --unit=TX --args=<args> --slot=<slot>
+
+* <rx_id> choose the appropriate RX ID for your daughterboard
+
+  * **RFX400:** 0x0024
+  * **RFX900:** 0x0025
+  * **RFX1800:** 0x0034
+  * **RFX1200:** 0x0026
+  * **RFX2400:** 0x0027
+* <tx_id> choose the appropriate TX ID for your daughterboard
+
+  * **RFX400:** 0x0028
+  * **RFX900:** 0x0029
+  * **RFX1800:** 0x0035
+  * **RFX1200:** 0x002a
+  * **RFX2400:** 0x002b
 * <args> are device address arguments (optional if only one USRP is on your machine)
 * <slot> is the name of the daughterboard slot (optional if the USRP has only one slot)

@@ -527,7 +527,7 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = 2*30.0e6; //20MHz low-pass, we want complex double-sided
+        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -628,7 +628,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        val = 2*30.0e6; //20MHz low-pass, we want complex double-sided
+        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();

@@ -250,22 +250,19 @@ mac_addr_t mac_addr_t::from_bytes(const byte_vector_t &bytes){
 
 mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
 
-    byte_vector_t bytes = boost::assign::list_of
-        (0x00)(0x50)(0xC2)(0x85)(0x30)(0x00); // Matt's IAB
+    byte_vector_t bytes;
 
     try{
-        //only allow patterns of xx:xx or xx:xx:xx:xx:xx:xx
-        //the IAB above will fill in for the shorter pattern
-        if (mac_addr_str.size() != 5 and mac_addr_str.size() != 17)
-            throw std::runtime_error("expected exactly 5 or 17 characters");
+        if (mac_addr_str.size() != 17){
+            throw std::runtime_error("expected exactly 17 characters");
+        }
 
         //split the mac addr hex string at the colons
-        size_t i = 0;
         BOOST_FOREACH(const std::string &hex_str, std::split_string(mac_addr_str, ":")){
             int hex_num;
             std::istringstream iss(hex_str);
             iss >> std::hex >> hex_num;
-            bytes[i++] = boost::uint8_t(hex_num);
+            bytes.push_back(boost::uint8_t(hex_num));
         }
 
     }

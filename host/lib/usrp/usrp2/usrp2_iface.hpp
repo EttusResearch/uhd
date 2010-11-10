@@ -20,6 +20,7 @@
 
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/serial.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
@@ -102,6 +103,9 @@ public:
         size_t num_bits,
         bool readback
     ) = 0;
+
+    //motherboard eeprom map structure
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

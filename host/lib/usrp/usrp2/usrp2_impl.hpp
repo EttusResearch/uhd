@@ -32,7 +32,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
-#include <uhd/transport/udp_simple.hpp> //mtu
+#include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
@@ -92,21 +92,23 @@ public:
         return _clock_ctrl->get_master_clock_rate();
     }
 
+    void handle_overflow(void);
+
 private:
     size_t _index;
-    int _rev_hi, _rev_lo;
     const size_t _recv_frame_size;
-
-    //properties for this mboard
-    void get(const wax::obj &, wax::obj &);
-    void set(const wax::obj &, const wax::obj &);
-    uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
+    bool _continuous_streaming;
 
     //interfaces
     usrp2_iface::sptr _iface;
     usrp2_clock_ctrl::sptr _clock_ctrl;
     usrp2_codec_ctrl::sptr _codec_ctrl;
     usrp2_serdes_ctrl::sptr _serdes_ctrl;
+
+    //properties for this mboard
+    void get(const wax::obj &, wax::obj &);
+    void set(const wax::obj &, const wax::obj &);
+    uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //rx and tx dboard methods and objects
     uhd::usrp::dboard_manager::sptr _dboard_manager;

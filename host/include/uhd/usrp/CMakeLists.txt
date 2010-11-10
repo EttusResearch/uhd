@@ -34,6 +34,7 @@ INSTALL(FILES
 
     ### utilities ###
     dsp_utils.hpp
+    mboard_eeprom.hpp
     misc_utils.hpp
     subdev_spec.hpp
     tune_helper.hpp
