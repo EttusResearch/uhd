@@ -139,7 +139,7 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
  * Implementation of B000 load/store
  **********************************************************************/
 static const boost::uint8_t B000_EEPROM_ADDR = 0x50;
-static const size_t B000X_SERIAL_LEN = 8;
+static const size_t B000_SERIAL_LEN = 8;
 
 static const uhd::dict<std::string, boost::uint8_t> USRP_B000_OFFSETS = boost::assign::map_list_of
     ("serial", 0xf8)
@@ -149,7 +149,7 @@ static const uhd::dict<std::string, boost::uint8_t> USRP_B000_OFFSETS = boost::a
 static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
-        B000_EEPROM_ADDR, USRP_B000_OFFSETS["serial"], B000X_SERIAL_LEN
+        B000_EEPROM_ADDR, USRP_B000_OFFSETS["serial"], B000_SERIAL_LEN
     ));
 
     //extract the name
@@ -162,7 +162,7 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //store the serial
     if (mb_eeprom.has_key("serial")) iface.write_eeprom(
         B000_EEPROM_ADDR, USRP_B000_OFFSETS["serial"],
-        string_to_bytes(mb_eeprom["serial"], B000X_SERIAL_LEN)
+        string_to_bytes(mb_eeprom["serial"], B000_SERIAL_LEN)
     );
 
     //store the name

@@ -27,23 +27,25 @@ using namespace uhd::transport;
  * Helper Functions
  **********************************************************************/
 /*!
- * A receive timeout for a socket:
- *
- * It seems that asio cannot have timeouts with synchronous io.
- * However, we can implement a polling loop that will timeout.
- * This is okay bacause this is the slow-path implementation.
- *
+ * Wait for available data or timeout.
  * \param socket the asio socket
- * \param timeout_ms the timeout in milliseconds
+ * \param timeout the timeout in seconds
+ * \return false for timeout, true for data
  */
-static void reasonable_recv_timeout(
-    boost::asio::ip::udp::socket &socket, size_t timeout_ms
+static bool wait_available(
+    boost::asio::ip::udp::socket &socket, double timeout
 ){
-    boost::asio::deadline_timer timer(socket.get_io_service());
-    timer.expires_from_now(boost::posix_time::milliseconds(timeout_ms));
-    while (not (socket.available() or timer.expires_from_now().is_negative())){
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-    }
+    //setup timeval for timeout
+    timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = long(timeout*1e6);
+
+    //setup rset for timeout
+    fd_set rset;
+    FD_ZERO(&rset);
+    FD_SET(socket.native(), &rset);
+
+    return ::select(socket.native()+1, &rset, NULL, NULL, &tv) > 0;
 }
 
 /***********************************************************************
@@ -57,7 +59,7 @@ public:
 
     //send/recv
     size_t send(const boost::asio::const_buffer &);
-    size_t recv(const boost::asio::mutable_buffer &, size_t);
+    size_t recv(const boost::asio::mutable_buffer &, double);
 
 private:
     boost::asio::ip::udp::socket   *_socket;
@@ -86,9 +88,8 @@ size_t udp_connected_impl::send(const boost::asio::const_buffer &buff){
     return _socket->send(boost::asio::buffer(buff));
 }
 
-size_t udp_connected_impl::recv(const boost::asio::mutable_buffer &buff, size_t timeout_ms){
-    reasonable_recv_timeout(*_socket, timeout_ms);
-    if (not _socket->available()) return 0;
+size_t udp_connected_impl::recv(const boost::asio::mutable_buffer &buff, double timeout){
+    if (not wait_available(*_socket, timeout)) return 0;
     return _socket->receive(boost::asio::buffer(buff));
 }
 
@@ -103,7 +104,7 @@ public:
 
     //send/recv
     size_t send(const boost::asio::const_buffer &);
-    size_t recv(const boost::asio::mutable_buffer &, size_t);
+    size_t recv(const boost::asio::mutable_buffer &, double);
 
 private:
     boost::asio::ip::udp::socket   *_socket;
@@ -137,9 +138,8 @@ size_t udp_broadcast_impl::send(const boost::asio::const_buffer &buff){
     return _socket->send_to(boost::asio::buffer(buff), _receiver_endpoint);
 }
 
-size_t udp_broadcast_impl::recv(const boost::asio::mutable_buffer &buff, size_t timeout_ms){
-    reasonable_recv_timeout(*_socket, timeout_ms);
-    if (not _socket->available()) return 0;
+size_t udp_broadcast_impl::recv(const boost::asio::mutable_buffer &buff, double timeout){
+    if (not wait_available(*_socket, timeout)) return 0;
     boost::asio::ip::udp::endpoint sender_endpoint;
     return _socket->receive_from(boost::asio::buffer(buff), sender_endpoint);
 }

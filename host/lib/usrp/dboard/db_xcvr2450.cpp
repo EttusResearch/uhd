@@ -72,8 +72,10 @@ using namespace boost::assign;
  **********************************************************************/
 static const bool xcvr2450_debug = false;
 
-static const freq_range_t xcvr_freq_range(2.4e9, 6.0e9);
-static const freq_range_t xcvr_freq_band_seperation(2.5e9, 4.9e9);
+static const freq_range_t xcvr_freq_range = list_of
+    (range_t<double>(2.4e9, 2.5e9))
+    (range_t<double>(4.9e9, 6.0e9))
+;
 
 static const prop_names_t xcvr_antennas = list_of("J1")("J2");
 
@@ -82,7 +84,11 @@ static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list
     ("BB", gain_range_t(0, 5, 1.5))
 ;
 static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list_of
-    ("LNA", gain_range_t(0, 30.5, 15))
+    ("LNA", gain_range_t(list_of
+        (range_t<float>(0))
+        (range_t<float>(15))
+        (range_t<float>(30.5))
+    ))
     ("VGA", gain_range_t(0, 62, 2.0))
 ;
 
@@ -212,10 +218,10 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     set_rx_ant(xcvr_antennas.at(0));
     set_tx_ant(xcvr_antennas.at(1));
     BOOST_FOREACH(const std::string &name, xcvr_tx_gain_ranges.keys()){
-        set_tx_gain(xcvr_tx_gain_ranges[name].min, name);
+        set_tx_gain(xcvr_tx_gain_ranges[name].start(), name);
     }
     BOOST_FOREACH(const std::string &name, xcvr_rx_gain_ranges.keys()){
-        set_rx_gain(xcvr_rx_gain_ranges[name].min, name);
+        set_rx_gain(xcvr_rx_gain_ranges[name].start(), name);
     }
 }
 
@@ -259,17 +265,9 @@ void xcvr2450::update_atr(void){
  * Tuning
  **********************************************************************/
 void xcvr2450::set_lo_freq(double target_freq){
-    //clip for highband and lowband
-    if((target_freq > xcvr_freq_band_seperation.min) and (target_freq < xcvr_freq_band_seperation.max)){
-        if(target_freq - xcvr_freq_band_seperation.min < xcvr_freq_band_seperation.max - target_freq){
-            target_freq = xcvr_freq_band_seperation.min;
-        }else{
-            target_freq = xcvr_freq_band_seperation.max;
-        }
-    }
 
-    //clip for max and min
-    target_freq = std::clip(target_freq, xcvr_freq_range.min, xcvr_freq_range.max);
+    //clip the input to the range
+    target_freq = xcvr_freq_range.clip(target_freq);
 
     //variables used in the calculation below
     double scaler = xcvr2450::is_highband(target_freq)? (4.0/5.0) : (4.0/3.0);

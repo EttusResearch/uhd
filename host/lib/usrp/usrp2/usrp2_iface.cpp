@@ -42,7 +42,7 @@ using namespace uhd::transport;
  * This will be fixed when host-based flow control is implemented,
  * along with larger incoming send buffers using the on-board SRAM.
  */
-static const size_t CONTROL_TIMEOUT_MS = 3000; //3 seconds
+static const double CONTROL_TIMEOUT = 3.0; //seconds
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
@@ -244,7 +244,7 @@ public:
         boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
-            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CONTROL_TIMEOUT_MS);
+            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CONTROL_TIMEOUT);
             if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_FW_COMPAT_NUM){
                 throw std::runtime_error(str(boost::format(
                     "Expected protocol compatibility number %d, but got %d:\n"

@@ -81,13 +81,13 @@ static std::string get_subdev_pp_string(const std::string &type, wax::obj subdev
     ss << boost::format("Antennas: %s") % prop_names_to_pp_string(ant_names) << std::endl;
 
     freq_range_t freq_range(subdev[usrp::SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>());
-    ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.min/1e6) % (freq_range.max/1e6) << std::endl;
+    ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;
 
     prop_names_t gain_names(subdev[usrp::SUBDEV_PROP_GAIN_NAMES].as<prop_names_t>());
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
     BOOST_FOREACH(const std::string &gain_name, gain_names){
         gain_range_t gain_range(subdev[named_prop_t(usrp::SUBDEV_PROP_GAIN_RANGE, gain_name)].as<gain_range_t>());
-        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.min % gain_range.max % gain_range.step << std::endl;
+        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
 
     ss << boost::format("Connection Type: %c") % char(subdev[usrp::SUBDEV_PROP_CONNECTION].as<usrp::subdev_conn_t>()) << std::endl;
@@ -104,7 +104,7 @@ static std::string get_codec_pp_string(const std::string &type, wax::obj codec){
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
     BOOST_FOREACH(const std::string &gain_name, gain_names){
         gain_range_t gain_range(codec[named_prop_t(usrp::CODEC_PROP_GAIN_RANGE, gain_name)].as<gain_range_t>());
-        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.min % gain_range.max % gain_range.step << std::endl;
+        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
     return ss.str();
 }

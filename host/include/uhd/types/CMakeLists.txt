@@ -25,6 +25,7 @@ INSTALL(FILES
     mac_addr.hpp
     metadata.hpp
     otw_type.hpp
+    ranges.ipp
     ranges.hpp
     serial.hpp
     stream_cmd.hpp
