@@ -180,6 +180,7 @@ def burn_fw(ip, fw, fpga, reset, safe):
     reset_usrp(ip)
 
 def write_image(ip, image, addr):
+  print "Writing image"
 #we split the image into smaller (256B) bits and send them down the wire
   while image:
     out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, image[:FLASH_DATA_PACKET_SIZE])
@@ -194,6 +195,7 @@ def write_image(ip, image, addr):
     addr += FLASH_DATA_PACKET_SIZE
 
 def verify_image(ip, image, addr):
+  print "Verifying data"
   readsize = len(image)
   readdata = str()
   while readsize > 0:
@@ -252,8 +254,6 @@ def erase_image(ip, addr, length):
     if pktid == update_id_t.USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG: break
     elif pktid != update_id_t.USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG:
       raise Exception, "Invalid reply %c from device." % (chr(pktid))
-
-  print "\tFinished."
 
 
 ########################################################################
