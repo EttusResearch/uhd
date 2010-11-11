@@ -21,7 +21,6 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -109,7 +108,7 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_EEPROM_MAP:
-        val = mboard_eeprom_t();
+        val = _iface->mb_eeprom;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -157,6 +156,13 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         _iface->poke32(UE_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
             _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
+        return;
+
+    case MBOARD_PROP_EEPROM_MAP:
+        // Step1: commit the map, writing only those values set.
+        // Step2: readback the entire eeprom map into the iface.
+        val.as<mboard_eeprom_t>().commit(_iface->get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
+        _iface->mb_eeprom = mboard_eeprom_t(_iface->get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

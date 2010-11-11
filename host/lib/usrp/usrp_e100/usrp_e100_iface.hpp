@@ -19,6 +19,7 @@
 #define INCLUDED_USRP_E100_IFACE_HPP
 
 #include <uhd/transport/udp_simple.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -62,6 +63,9 @@ public:
      * \param mem pointer to some memory
      */
     virtual void ioctl(int request, void *mem) = 0;
+
+    //! Get the I2C interface for the I2C device node
+    virtual uhd::i2c_iface &get_i2c_dev_iface(void) = 0;
 
     /*!
      * Write a register (32 bits)
@@ -107,6 +111,9 @@ public:
         size_t num_bits,
         bool readback
     ) = 0;
+
+    //motherboard eeprom map structure
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP_E100_IFACE_HPP */

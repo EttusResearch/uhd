@@ -22,10 +22,74 @@
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/format.hpp>
 #include <boost/thread.hpp> //mutex
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
 #include <stdexcept>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
+/***********************************************************************
+ * I2C device node implementation wrapper
+ **********************************************************************/
+class i2c_dev_iface : public i2c_iface{
+public:
+    i2c_dev_iface(const std::string &node){
+        if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
+            throw std::runtime_error("Failed to open " + node);
+        }
+    }
+
+    ~i2c_dev_iface(void){
+        ::close(_node_fd);
+    }
+
+    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+        byte_vector_t rw_bytes(bytes);
+
+        //setup the message
+        i2c_msg msg;
+        msg.addr = addr;
+        msg.flags = 0;
+        msg.len = bytes.size();
+        msg.buf = &rw_bytes.front();
+
+        //setup the data
+        i2c_rdwr_ioctl_data data;
+        data.msgs = &msg;
+        data.nmsgs = 1;
+
+        //call the ioctl
+        UHD_ASSERT_THROW(::ioctl(_node_fd, I2C_RDWR, &data) >= 0);
+    }
+
+    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+        byte_vector_t bytes(num_bytes);
+
+        //setup the message
+        i2c_msg msg;
+        msg.addr = addr;
+        msg.flags = I2C_M_RD;
+        msg.len = bytes.size();
+        msg.buf = &bytes.front();
+
+        //setup the data
+        i2c_rdwr_ioctl_data data;
+        data.msgs = &msg;
+        data.nmsgs = 1;
+
+        //call the ioctl
+        UHD_ASSERT_THROW(::ioctl(_node_fd, I2C_RDWR, &data) >= 0);
+
+        return bytes;
+    }
+
+private: int _node_fd;
+};
+
+/***********************************************************************
+ * USRP-E100 interface implementation
+ **********************************************************************/
 class usrp_e100_iface_impl : public usrp_e100_iface{
 public:
 
@@ -36,13 +100,15 @@ public:
     /*******************************************************************
      * Structors
      ******************************************************************/
-    usrp_e100_iface_impl(const std::string &node){
+    usrp_e100_iface_impl(const std::string &node):
+        _i2c_dev_iface(i2c_dev_iface("/dev/i2c-3"))
+    {
         //open the device node and check file descriptor
         if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
-            throw std::runtime_error(str(
-                boost::format("Failed to open %s") % node
-            ));
+            throw std::runtime_error("Failed to open " + node);
         }
+
+        mb_eeprom = mboard_eeprom_t(get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
     }
 
     ~usrp_e100_iface_impl(void){
@@ -61,6 +127,13 @@ public:
                 boost::format("ioctl failed with request %d") % request
             ));
         }
+    }
+
+    /*******************************************************************
+     * I2C device node interface
+     ******************************************************************/
+    i2c_iface &get_i2c_dev_iface(void){
+        return _i2c_dev_iface;
     }
 
     /*******************************************************************
@@ -183,6 +256,7 @@ public:
 
 private:
     int _node_fd;
+    i2c_dev_iface _i2c_dev_iface;
     boost::mutex _ctrl_mutex;
 };
 

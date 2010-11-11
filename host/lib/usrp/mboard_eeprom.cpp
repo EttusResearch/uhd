@@ -22,6 +22,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
+#include <cstddef>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -171,6 +172,80 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 }
+/***********************************************************************
+ * Implementation of E100 load/store
+ **********************************************************************/
+static const boost::uint8_t E100_EEPROM_ADDR = 0x51;
+
+struct e100_eeprom_map{
+    unsigned int device_vendor;
+    unsigned char revision;
+    unsigned char content;
+    unsigned char fab_revision[8];
+    unsigned char env_var[16];
+    unsigned char env_setting[64];
+    unsigned char serial[10];
+    unsigned char name[NAME_MAX_LEN];
+};
+
+template <typename T> static const byte_vector_t to_bytes(const T &item){
+    return byte_vector_t(
+        reinterpret_cast<const byte_vector_t::value_type *>(&item),
+        reinterpret_cast<const byte_vector_t::value_type *>(&item)+sizeof(item)
+    );
+}
+
+static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    const size_t num_bytes = offsetof(e100_eeprom_map, fab_revision);
+    byte_vector_t map_bytes = iface.read_eeprom(E100_EEPROM_ADDR, 0, num_bytes);
+    e100_eeprom_map map; std::memcpy(&map, &map_bytes[0], map_bytes.size());
+
+    mb_eeprom["device_vendor"] = boost::lexical_cast<std::string>(map.device_vendor);
+    mb_eeprom["revision"] = boost::lexical_cast<std::string>(map.revision);
+    mb_eeprom["content"] = boost::lexical_cast<std::string>(map.content);
+
+    #define load_e100_string_xx(key) mb_eeprom[#key] = bytes_to_string(iface.read_eeprom( \
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, key), sizeof(e100_eeprom_map::key) \
+    ));
+
+    load_e100_string_xx(fab_revision);
+    load_e100_string_xx(env_var);
+    load_e100_string_xx(env_setting);
+    load_e100_string_xx(serial);
+    load_e100_string_xx(fab_revision);
+    load_e100_string_xx(name);
+}
+
+static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+
+    if (mb_eeprom.has_key("device_vendor")) iface.write_eeprom(
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, device_vendor),
+        to_bytes(boost::lexical_cast<unsigned int>(mb_eeprom["device_vendor"]))
+    );
+
+    if (mb_eeprom.has_key("revision")) iface.write_eeprom(
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, revision),
+        to_bytes(boost::lexical_cast<unsigned char>(mb_eeprom["revision"]))
+    );
+
+    if (mb_eeprom.has_key("content")) iface.write_eeprom(
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, content),
+        to_bytes(boost::lexical_cast<unsigned char>(mb_eeprom["content"]))
+    );
+
+    #define store_e100_string_xx(key) if (mb_eeprom.has_key(#key)) iface.write_eeprom( \
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, key), \
+        string_to_bytes(mb_eeprom[#key], sizeof(e100_eeprom_map::key)) \
+    );
+
+    store_e100_string_xx(fab_revision);
+    store_e100_string_xx(env_var);
+    store_e100_string_xx(env_setting);
+    store_e100_string_xx(serial);
+    store_e100_string_xx(fab_revision);
+    store_e100_string_xx(name);
+
+}
 
 /***********************************************************************
  * Implementation of mboard eeprom
@@ -183,6 +258,7 @@ mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, map_type map){
     switch(map){
     case MAP_N100: load_n100(*this, iface); break;
     case MAP_B000: load_b000(*this, iface); break;
+    case MAP_E100: load_e100(*this, iface); break;
     }
 }
 
@@ -190,5 +266,6 @@ void mboard_eeprom_t::commit(i2c_iface &iface, map_type map){
     switch(map){
     case MAP_N100: store_n100(*this, iface); break;
     case MAP_B000: store_b000(*this, iface); break;
+    case MAP_E100: store_e100(*this, iface); break;
     }
 }
