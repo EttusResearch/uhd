@@ -33,13 +33,6 @@ using namespace uhd::usrp;
 namespace fs = boost::filesystem;
 
 /***********************************************************************
- * Helper Functions
- **********************************************************************/
-static std::string abs_path(const std::string &file_path){
-    return fs::system_complete(fs::path(file_path)).file_string();
-}
-
-/***********************************************************************
  * Discovery
  **********************************************************************/
 static device_addrs_t usrp_e100_find(const device_addr_t &hint){
@@ -59,8 +52,24 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
     if (fs::exists(hint["node"])){
         device_addr_t new_addr;
         new_addr["type"] = "usrp-e";
-        new_addr["node"] = abs_path(hint["node"]);
-        usrp_e100_addrs.push_back(new_addr);
+        new_addr["node"] = fs::system_complete(fs::path(hint["node"])).file_string();
+        try{
+            usrp_e100_iface::sptr iface = usrp_e100_iface::make(new_addr["node"]);
+            new_addr["name"] = iface->mb_eeprom["name"];
+            new_addr["serial"] = iface->mb_eeprom["serial"];
+            if (
+                (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+                (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+            ){
+                usrp_e100_addrs.push_back(new_addr);
+            }
+        }
+        catch(const std::exception &e){
+            uhd::warning::post(
+                std::string("Ignoring discovered device\n")
+                + e.what()
+            );
+        }
     }
 
     return usrp_e100_addrs;
