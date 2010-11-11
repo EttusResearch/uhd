@@ -43,8 +43,8 @@
 // low frequency of system clock this can be reduced.
 // Use SPI_DIVIDER_LEN for fine tuning theexact number.
 //
-//`define SPI_DIVIDER_LEN_8
-`define SPI_DIVIDER_LEN_16
+`define SPI_DIVIDER_LEN_8
+//`define SPI_DIVIDER_LEN_16
 //`define SPI_DIVIDER_LEN_24
 //`define SPI_DIVIDER_LEN_32
 
