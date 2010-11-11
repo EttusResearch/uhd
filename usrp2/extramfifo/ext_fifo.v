@@ -132,17 +132,17 @@ module ext_fifo
 						       .empty(empty1));
 	 
 	 // FIFO buffers data read from external FIFO into DSP clk domain and to TX DSP.
-	 fifo_xlnx_32x36_2clk fifo_xlnx_32x36_2clk_i2 (
-						       .rst(rst),
-						       .wr_clk(ext_clk),
-						       .rd_clk(int_clk),
-						       .din(read_data), // Bus [35 : 0] 
-						       .wr_en(write_output_fifo),
-						       .rd_en(dst_rdy_i),
-						       .dout(dataout), // Bus [35 : 0] 
-						       .full(full2),
-						       .empty(empty2),
-						       .prog_full(almost_full2));
+	 fifo_xlnx_512x36_2clk_prog_full fifo_xlnx_32x36_2clk_prog_full_i1 (
+									    .rst(rst),
+									    .wr_clk(ext_clk),
+									    .rd_clk(int_clk),
+									    .din(read_data), // Bus [35 : 0] 
+									    .wr_en(write_output_fifo),
+									    .rd_en(dst_rdy_i),
+									    .dout(dataout), // Bus [35 : 0] 
+									    .full(full2),
+									    .empty(empty2),
+									    .prog_full(almost_full2));
 
       end    
    endgenerate
