@@ -217,55 +217,11 @@ module u2plus
 
    BUFG dspclk_BUFG (.I(dcm_out), .O(dsp_clk));
    BUFG wbclk_BUFG (.I(clk_div), .O(wb_clk));
- 
-`ifdef DCM_FOR_RAMCLK  
-   wire     RAM_CLK_buf;
-   wire     clk100_ext;
-   wire     clk100_ext_buf;
-   
-   DCM DCM_INST1 (.CLKFB(RAM_CLK_buf), 
-                  .CLKIN(clk_fpga), 
-                  .DSSEN(1'b0), 
-                  .PSCLK(1'b0), 
-                  .PSEN(1'b0), 
-                  .PSINCDEC(1'b0), 
-                  .RST(1'b0), 
-                  .CLK0(clk100_ext) );
-   defparam DCM_INST1.CLK_FEEDBACK = "1X";
-   defparam DCM_INST1.CLKDV_DIVIDE = 2.0;
-   defparam DCM_INST1.CLKFX_DIVIDE = 1;
-   defparam DCM_INST1.CLKFX_MULTIPLY = 4;
-   defparam DCM_INST1.CLKIN_DIVIDE_BY_2 = "FALSE";
-   defparam DCM_INST1.CLKIN_PERIOD = 10.000;
-   defparam DCM_INST1.CLKOUT_PHASE_SHIFT = "FIXED";
-   defparam DCM_INST1.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
-   defparam DCM_INST1.DFS_FREQUENCY_MODE = "LOW";
-   defparam DCM_INST1.DLL_FREQUENCY_MODE = "LOW";
-   defparam DCM_INST1.DUTY_CYCLE_CORRECTION = "TRUE";
-   defparam DCM_INST1.FACTORY_JF = 16'h8080;
-   defparam DCM_INST1.PHASE_SHIFT = -64;
-   defparam DCM_INST1.STARTUP_WAIT = "FALSE";
-   
-   IBUFG RAM_CLK_buf_i1 (.I(RAM_CLK), 
-			 .O(RAM_CLK_buf));
-   
-   BUFG  clk100_ext_buf_i1 (.I(clk100_ext), 
-			    .O(clk100_ext_buf));
-   
+
+   // Create clock for external SRAM thats -90degree phase to DSPCLK (i.e) 2nS earlier at 100MHz.
+   BUFG  clk270_100_buf_i1 (.I(clk270_100), 
+			    .O(clk270_100_buf));
    OFDDRRSE RAM_CLK_i1 (.Q(RAM_CLK),
-			.C0(clk100_ext_buf),
-			.C1(~clk100_ext_buf),
-			.CE(1'b1),
-			.D0(1'b1),
-			.D1(1'b0),
-			.R(1'b0),
-			.S(1'b0));
- 
-`else // !`ifdef DCM_FOR_RAMCLK
- //  assign   RAM_CLK = dcm_out;
-      BUFG  clk270_100_buf_i1 (.I(clk270_100), 
-			       .O(clk270_100_buf));
-      OFDDRRSE RAM_CLK_i1 (.Q(RAM_CLK),
 			.C0(clk270_100_buf),
 			.C1(~clk270_100_buf),
 			.CE(1'b1),
@@ -273,7 +229,6 @@ module u2plus
 			.D1(1'b0),
 			.R(1'b0),
 			.S(1'b0));
-`endif
   
    // I2C -- Don't use external transistors for open drain, the FPGA implements this
    IOBUF scl_pin(.O(scl_pad_i), .IO(SCL), .I(scl_pad_o), .T(scl_pad_oen_o));
