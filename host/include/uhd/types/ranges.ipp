@@ -130,10 +130,10 @@ namespace uhd{
         range_t<T> last = this->front();
         BOOST_FOREACH(const range_t<T> &r, (*this)){
             //steps at each range
-            if (r.step() != T(0)) non_zero_steps.push_back(r.step());
+            if (r.step() > T(0)) non_zero_steps.push_back(r.step());
             //and steps in-between ranges
             T ibtw_step = r.start() - last.stop();
-            if (ibtw_step != T(0)) non_zero_steps.push_back(ibtw_step);
+            if (ibtw_step > T(0)) non_zero_steps.push_back(ibtw_step);
             //store ref to last
             last = r;
         }
