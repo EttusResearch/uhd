@@ -195,15 +195,15 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     //for (boost::uint8_t addr=0; addr<=12; addr++) this->send_reg(addr, addr);
 
     //set defaults for LO, gains
-    set_lo_freq(dbsrx2_freq_range.min);
+    set_lo_freq(dbsrx2_freq_range.start());
     BOOST_FOREACH(const std::string &name, dbsrx2_gain_ranges.keys()){
-        set_gain(dbsrx2_gain_ranges[name].min, name);
+        set_gain(dbsrx2_gain_ranges[name].start(), name);
     }
 
     set_bandwidth(40e6); // default bandwidth from datasheet
     get_locked();
 
-    _max2112_write_regs.bbg = boost::math::iround(std::clip<float>(0, dbsrx2_gain_ranges["BBG"].min, dbsrx2_gain_ranges["BBG"].max));
+    _max2112_write_regs.bbg = dbsrx2_gain_ranges["BBG"].start();
     send_reg(0x9, 0x9);
 }
 
@@ -270,7 +270,7 @@ void dbsrx2::set_lo_freq(double target_freq){
  * \return 4 bit the register value
  */
 static int gain_to_bbg_vga_reg(float &gain){
-    int reg = boost::math::iround(std::clip<float>(gain, dbsrx2_gain_ranges["BBG"].min, dbsrx2_gain_ranges["BBG"].max));
+    int reg = boost::math::iround(dbsrx2_gain_ranges["BBG"].clip(gain));
 
     gain = float(reg);
 
@@ -290,11 +290,11 @@ static int gain_to_bbg_vga_reg(float &gain){
  */
 static float gain_to_gc1_rfvga_dac(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, dbsrx2_gain_ranges["GC1"].min, dbsrx2_gain_ranges["GC1"].max);
+    gain = dbsrx2_gain_ranges["GC1"].clip(gain);
 
     //voltage level constants
     static const float max_volts = float(0.5), min_volts = float(2.7);
-    static const float slope = (max_volts-min_volts)/dbsrx2_gain_ranges["GC1"].max;
+    static const float slope = (max_volts-min_volts)/dbsrx2_gain_ranges["GC1"].stop();
 
     //calculate the voltage for the aux dac
     float dac_volts = gain*slope + min_volts;

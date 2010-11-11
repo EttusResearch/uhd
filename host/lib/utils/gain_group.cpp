@@ -32,7 +32,7 @@ static const bool verbose = false;
 static bool compare_by_step_size(
     const size_t &rhs, const size_t &lhs, std::vector<gain_fcns_t> &fcns
 ){
-    return fcns.at(rhs).get_range().step > fcns.at(lhs).get_range().step;
+    return fcns.at(rhs).get_range().step() > fcns.at(lhs).get_range().step();
 }
 
 /*!
@@ -69,11 +69,11 @@ public:
         float overall_min = 0, overall_max = 0, overall_step = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
             const gain_range_t range = fcns.get_range();
-            overall_min += range.min;
-            overall_max += range.max;
+            overall_min += range.start();
+            overall_max += range.stop();
             //the overall step is the min (zero is invalid, first run)
-            if (overall_step == 0) overall_step = range.step;
-            overall_step = std::min(overall_step, range.step);
+            if (overall_step == 0) overall_step = range.step();
+            overall_step = std::min(overall_step, range.step());
         }
         return gain_range_t(overall_min, overall_max, overall_step);
     }
@@ -97,7 +97,7 @@ public:
         //get the max step size among the gains
         float max_step = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
-            max_step = std::max(max_step, fcns.get_range().step);
+            max_step = std::max(max_step, fcns.get_range().step());
         }
 
         //create gain bucket to distribute power
@@ -108,7 +108,7 @@ public:
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             const gain_range_t range = fcns.get_range();
             gain_bucket.push_back(floor_step(std::clip(
-                gain_left_to_distribute, range.min, range.max
+                gain_left_to_distribute, range.start(), range.stop()
             ), max_step));
             gain_left_to_distribute -= gain_bucket.back();
         }
@@ -123,8 +123,8 @@ public:
             boost::bind(&compare_by_step_size, _1, _2, all_fcns)
         );
         UHD_ASSERT_THROW(
-            all_fcns.at(indexes_step_size_dec.front()).get_range().step >=
-            all_fcns.at(indexes_step_size_dec.back()).get_range().step
+            all_fcns.at(indexes_step_size_dec.front()).get_range().step() >=
+            all_fcns.at(indexes_step_size_dec.back()).get_range().step()
         );
 
         //distribute the remainder (less than max step)
@@ -132,8 +132,8 @@ public:
         BOOST_FOREACH(size_t i, indexes_step_size_dec){
             const gain_range_t range = all_fcns.at(i).get_range();
             float additional_gain = floor_step(std::clip(
-                gain_bucket.at(i) + gain_left_to_distribute, range.min, range.max
-            ), range.step) - gain_bucket.at(i);
+                gain_bucket.at(i) + gain_left_to_distribute, range.start(), range.stop()
+            ), range.step()) - gain_bucket.at(i);
             gain_bucket.at(i) += additional_gain;
             gain_left_to_distribute -= additional_gain;
         }

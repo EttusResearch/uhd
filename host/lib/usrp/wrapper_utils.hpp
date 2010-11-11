@@ -30,7 +30,7 @@ static inline uhd::freq_range_t add_dsp_shift(
     wax::obj dsp
 ){
     double codec_rate = dsp[uhd::usrp::DSP_PROP_CODEC_RATE].as<double>();
-    return uhd::freq_range_t(range.min - codec_rate/2.0, range.max + codec_rate/2.0);
+    return uhd::freq_range_t(range.start() - codec_rate/2.0, range.stop() + codec_rate/2.0);
 }
 
 static inline void do_samp_rate_warning_message(
