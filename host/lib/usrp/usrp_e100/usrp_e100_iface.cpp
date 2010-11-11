@@ -23,7 +23,6 @@
 #include <boost/format.hpp>
 #include <boost/thread.hpp> //mutex
 #include <linux/i2c-dev.h>
-#include <linux/i2c.h>
 #include <stdexcept>
 
 using namespace uhd;
