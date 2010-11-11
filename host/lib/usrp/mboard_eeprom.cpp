@@ -18,6 +18,7 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>
@@ -201,8 +202,8 @@ static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     byte_vector_t map_bytes = iface.read_eeprom(E100_EEPROM_ADDR, 0, num_bytes);
     e100_eeprom_map map; std::memcpy(&map, &map_bytes[0], map_bytes.size());
 
-    mb_eeprom["vendor"] = boost::lexical_cast<std::string>(map.vendor);
-    mb_eeprom["device"] = boost::lexical_cast<std::string>(map.device);
+    mb_eeprom["vendor"] = boost::lexical_cast<std::string>(uhd::ntohx(map.vendor));
+    mb_eeprom["device"] = boost::lexical_cast<std::string>(uhd::ntohx(map.device));
     mb_eeprom["revision"] = boost::lexical_cast<std::string>(unsigned(map.revision));
     mb_eeprom["content"] = boost::lexical_cast<std::string>(unsigned(map.content));
 
@@ -221,12 +222,12 @@ static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     if (mb_eeprom.has_key("vendor")) iface.write_eeprom(
         E100_EEPROM_ADDR, offsetof(e100_eeprom_map, vendor),
-        to_bytes(boost::lexical_cast<boost::uint16_t>(mb_eeprom["vendor"]))
+        to_bytes(uhd::htonx(boost::lexical_cast<boost::uint16_t>(mb_eeprom["vendor"])))
     );
 
     if (mb_eeprom.has_key("device")) iface.write_eeprom(
         E100_EEPROM_ADDR, offsetof(e100_eeprom_map, device),
-        to_bytes(boost::lexical_cast<boost::uint16_t>(mb_eeprom["device"]))
+        to_bytes(uhd::htonx(boost::lexical_cast<boost::uint16_t>(mb_eeprom["device"])))
     );
 
     if (mb_eeprom.has_key("revision")) iface.write_eeprom(
