@@ -19,7 +19,6 @@
 #include "usrp2_iface.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
-#include "mboard_rev.hpp"
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
@@ -53,9 +52,8 @@ public:
     usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
         
-        //extract the mboard rev numbers
-        byte_vector_t rev_bytes = read_eeprom(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, 2);
-        set_hw_rev(mboard_rev_t::from_uint16(rev_bytes.at(0) | (rev_bytes.at(1) << 8)));
+        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
+        regs = usrp2_get_regs(get_hw_rev());
 
          //check the fpga compatibility number
         const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
@@ -65,8 +63,6 @@ public:
                 "The fpga build is not compatible with the host code build."
             ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
         }
-
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
     }
 
     ~usrp2_iface_impl(void){
@@ -263,17 +259,13 @@ public:
         }
         throw std::runtime_error("usrp2 no control response");
     }
-
- /***********************************************************************
-  * Get/set hardware revision
-  **********************************************************************/
-    void set_hw_rev(mboard_rev_t rev) {
-        hw_rev = rev;
-        regs = usrp2_get_regs(rev); //might be a better place to do this
+    
+    bool is_usrp2p(void) {
+        return (get_hw_rev() >= usrp2_rev_nums(N2XX));
     }
- 
-    mboard_rev_t get_hw_rev(void) {
-        return hw_rev;
+
+    boost::uint16_t get_hw_rev(void) {
+        return boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"]);
     }
 
 
@@ -313,7 +305,6 @@ private:
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
         return T(ntohl(in_data.data.poke_args.data));
     }
-
 };
 
 /***********************************************************************
@@ -322,3 +313,4 @@ private:
 usrp2_iface::sptr usrp2_iface::make(udp_simple::sptr ctrl_transport){
     return usrp2_iface::sptr(new usrp2_iface_impl(ctrl_transport));
 }
+

@@ -18,23 +18,33 @@
 #ifndef INCLUDED_USRP2_CLK_REGS_HPP
 #define INCLUDED_USRP2_CLK_REGS_HPP
 
-#include "mboard_rev.hpp"
 #include "usrp2_regs.hpp"
 
 class usrp2_clk_regs_t {
 public:
   usrp2_clk_regs_t(void) { ; }
-  usrp2_clk_regs_t(mboard_rev_t hw_rev) {
+  usrp2_clk_regs_t(boost::uint16_t hw_rev) {
     test = 0;
     fpga = 1;
-    adc = (hw_rev.is_usrp2p()) ? 2 : 4;
+    adc = (hw_rev >= usrp2_rev_nums(N2XX)) ? 2 : 4;
     dac = 3;
-    serdes = (hw_rev.is_usrp2p()) ? 4 : 2; //only used by usrp2+
-    tx_db = (hw_rev.is_usrp2p()) ? 5 : 6;
+    serdes = (hw_rev >= usrp2_rev_nums(N2XX)) ? 4 : 2; //only used by usrp2+
+    tx_db = (hw_rev >= usrp2_rev_nums(N2XX)) ? 5 : 6;
     
-    if(hw_rev.major() == 3) exp = 2;
-    else if(hw_rev.major() >= 4) exp = 5;
-    else if(hw_rev.major() > 10) exp = 6;
+    switch(hw_rev) {
+    case usrp2_rev_nums(USRP2_REV3):
+        exp = 2;
+        break;
+    case usrp2_rev_nums(USRP2_REV4):
+        exp = 5;
+        break;
+    case usrp2_rev_nums(N2XX):
+        exp = 6;
+        break;
+    default:
+        throw std::runtime_error("Unknown hardware revision");
+        break;
+    }
     
     rx_db = 7;
   }

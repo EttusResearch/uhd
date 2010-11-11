@@ -294,7 +294,7 @@ unprogrammed(const void *t, size_t len)
 }
 
 //////////////////// MAC Addr Stuff ///////////////////////
-
+/*
 static int8_t src_mac_addr_initialized = false;
 static eth_mac_addr_t src_mac_addr = {{
     0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff
@@ -373,7 +373,7 @@ bool set_ip_addr(const struct ip_addr *t){
 
   return ok;
 }
-
+*/
 int
 ethernet_check_errors(void)
 {

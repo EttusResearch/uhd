@@ -18,7 +18,13 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
-#include "mboard_rev.hpp"
+#include <boost/cstdint.hpp>
+
+enum usrp2_rev_nums {
+    USRP2_REV3 = 0x0003,
+    USRP2_REV4 = 0x0004,
+    N2XX       = 0x0A00
+};
 
 #define USRP2_MISC_OUTPUT_BASE  0xD400
 #define USRP2_GPIO_BASE         0xC800
@@ -30,80 +36,78 @@
 #define USRP2P_ATR_BASE         0x3800
 #define USRP2P_BP_STATUS_BASE   0x3300
 
-const mboard_rev_t USRP2P_FIRST_HW_REV(0x0A00);
-
 typedef struct {
-	int sr_misc;
-	int sr_tx_prot_eng;
-	int sr_rx_prot_eng;
-	int sr_buffer_pool_ctrl;
-	int sr_udp_sm;
-	int sr_tx_dsp;
-	int sr_tx_ctrl;
-	int sr_rx_dsp;
-	int sr_rx_ctrl;
-	int sr_time64;
-	int sr_simtimer;
-	int sr_last;
-	int misc_ctrl_clock;
-	int misc_ctrl_serdes;
-	int misc_ctrl_adc;
-	int misc_ctrl_leds;
-	int misc_ctrl_phy;
-	int misc_ctrl_dbg_mux;
-	int misc_ctrl_ram_page;
-	int misc_ctrl_flush_icache;
-	int misc_ctrl_led_src;
-	int time64_secs; // value to set absolute secs to on next PPS
-	int time64_ticks; // value to set absolute ticks to on next PPS
-	int time64_flags; // flags -- see chart below
-	int time64_imm; // set immediate (0=latch on next pps, 1=latch immediate, default=0)
-	int time64_tps; // ticks per second rollover count
-	int time64_secs_rb;
-	int time64_ticks_rb;
-  int compat_num_rb;
-	int dsp_tx_freq;
-	int dsp_tx_scale_iq;
-	int dsp_tx_interp_rate;
-  int dsp_tx_mux;
-	int dsp_rx_freq;
-	int dsp_rx_scale_iq;
-	int dsp_rx_decim_rate;
-	int dsp_rx_dcoffset_i;
-	int dsp_rx_dcoffset_q;
-	int dsp_rx_mux;
-	int gpio_base;
-	int gpio_io;
-	int gpio_ddr;
-	int gpio_tx_sel;
-	int gpio_rx_sel;
-	int atr_base;
-	int atr_idle_txside;
-	int atr_idle_rxside;
-	int atr_intx_txside;
-	int atr_intx_rxside;
-	int atr_inrx_txside;
-	int atr_inrx_rxside;
-	int atr_full_txside;
-	int atr_full_rxside;
-	int rx_ctrl_stream_cmd;
-	int rx_ctrl_time_secs;
-	int rx_ctrl_time_ticks;
-	int rx_ctrl_clear_overrun;
-	int rx_ctrl_vrt_header;
-	int rx_ctrl_vrt_stream_id;
-  int rx_ctrl_vrt_trailer;
-	int rx_ctrl_nsamps_per_pkt;
-	int rx_ctrl_nchannels;
-  int tx_ctrl_num_chan;
-  int tx_ctrl_clear_state;
-  int tx_ctrl_report_sid;
-  int tx_ctrl_policy;
+    int sr_misc;
+    int sr_tx_prot_eng;
+    int sr_rx_prot_eng;
+    int sr_buffer_pool_ctrl;
+    int sr_udp_sm;
+    int sr_tx_dsp;
+    int sr_tx_ctrl;
+    int sr_rx_dsp;
+    int sr_rx_ctrl;
+    int sr_time64;
+    int sr_simtimer;
+    int sr_last;
+    int misc_ctrl_clock;
+    int misc_ctrl_serdes;
+    int misc_ctrl_adc;
+    int misc_ctrl_leds;
+    int misc_ctrl_phy;
+    int misc_ctrl_dbg_mux;
+    int misc_ctrl_ram_page;
+    int misc_ctrl_flush_icache;
+    int misc_ctrl_led_src;
+    int time64_secs; // value to set absolute secs to on next PPS
+    int time64_ticks; // value to set absolute ticks to on next PPS
+    int time64_flags; // flags -- see chart below
+    int time64_imm; // set immediate (0=latch on next pps, 1=latch immediate, default=0)
+    int time64_tps; // ticks per second rollover count
+    int time64_secs_rb;
+    int time64_ticks_rb;
+    int compat_num_rb;
+    int dsp_tx_freq;
+    int dsp_tx_scale_iq;
+    int dsp_tx_interp_rate;
+    int dsp_tx_mux;
+    int dsp_rx_freq;
+    int dsp_rx_scale_iq;
+    int dsp_rx_decim_rate;
+    int dsp_rx_dcoffset_i;
+    int dsp_rx_dcoffset_q;
+    int dsp_rx_mux;
+    int gpio_base;
+    int gpio_io;
+    int gpio_ddr;
+    int gpio_tx_sel;
+    int gpio_rx_sel;
+    int atr_base;
+    int atr_idle_txside;
+    int atr_idle_rxside;
+    int atr_intx_txside;
+    int atr_intx_rxside;
+    int atr_inrx_txside;
+    int atr_inrx_rxside;
+    int atr_full_txside;
+    int atr_full_rxside;
+    int rx_ctrl_stream_cmd;
+    int rx_ctrl_time_secs;
+    int rx_ctrl_time_ticks;
+    int rx_ctrl_clear_overrun;
+    int rx_ctrl_vrt_header;
+    int rx_ctrl_vrt_stream_id;
+    int rx_ctrl_vrt_trailer;
+    int rx_ctrl_nsamps_per_pkt;
+    int rx_ctrl_nchannels;
+    int tx_ctrl_num_chan;
+    int tx_ctrl_clear_state;
+    int tx_ctrl_report_sid;
+    int tx_ctrl_policy;
 } usrp2_regs_t;
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
 
-usrp2_regs_t usrp2_get_regs(mboard_rev_t hw_rev);
+usrp2_regs_t usrp2_get_regs(boost::uint16_t hw_rev);
 
 ////////////////////////////////////////////////////
 // Settings Bus, Slave #7, Not Byte Addressable!

@@ -17,7 +17,6 @@
 
 #include "clock_ctrl.hpp"
 #include "ad9510_regs.hpp"
-#include "mboard_rev.hpp"
 #include "usrp2_regs.hpp" //spi slave constants
 #include "usrp2_clk_regs.hpp"
 #include <uhd/utils/assert.hpp>

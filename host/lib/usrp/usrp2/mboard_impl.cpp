@@ -20,7 +20,6 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
-#include "mboard_rev.hpp"
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
@@ -148,7 +147,7 @@ void usrp2_mboard_impl::update_clock_config(void){
     _iface->poke32(_iface->regs.time64_flags, pps_flags);
 
     //clock source ref 10mhz
-    if(_iface->get_hw_rev().is_usrp2p()) {
+    if(_iface->is_usrp2p()) {
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
@@ -166,7 +165,7 @@ void usrp2_mboard_impl::update_clock_config(void){
 
     //clock source ref 10mhz
     bool use_external = (_clock_config.ref_source != clock_config_t::REF_INT)
-                     || (_iface->get_hw_rev().is_usrp2p()); //USRP2P has an internal 10MHz TCXO
+                     || (_iface->is_usrp2p()); //USRP2P has an internal 10MHz TCXO
     _clock_ctrl->enable_external_ref(use_external);
 }
 

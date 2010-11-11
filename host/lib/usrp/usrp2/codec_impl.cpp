@@ -67,7 +67,7 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case CODEC_PROP_GAIN_NAMES:
-        if(_iface->get_hw_rev().is_usrp2p()) {
+        if(_iface->is_usrp2p()) {
           val = prop_names_t(codec_rx_gain_ranges.keys());
         } else val = prop_names_t();
         return;
@@ -94,7 +94,7 @@ void usrp2_mboard_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
   switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_GAIN_I:
     case CODEC_PROP_GAIN_Q:
-      if(!_iface->get_hw_rev().is_usrp2p()) UHD_THROW_PROP_SET_ERROR();//this capability is only found in USRP2P
+      if(!_iface->is_usrp2p()) UHD_THROW_PROP_SET_ERROR();//this capability is only found in USRP2P
 
       gain = val.as<float>();
       this->rx_codec_set_gain(gain, key.name);

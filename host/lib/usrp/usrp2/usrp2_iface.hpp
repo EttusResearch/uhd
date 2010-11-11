@@ -24,7 +24,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
-#include "mboard_rev.hpp"
 #include <utility>
 #include "fw_common.h"
 #include "usrp2_regs.hpp"
@@ -109,26 +108,16 @@ public:
     virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
 
     virtual std::string read_uart(boost::uint8_t dev) = 0;
-
-    /*!
-     * Set the hardware revision number. Also selects the proper register set for the device.
-     * \param rev the 16-bit revision
-     */
-    virtual void set_hw_rev(mboard_rev_t rev) = 0;
-
-    /*! Return the hardware revision number
-     * \return hardware revision
-     */
-    virtual mboard_rev_t get_hw_rev(void) = 0;
+    
+    virtual boost::uint16_t get_hw_rev(void) = 0;
+    
+    virtual bool is_usrp2p(void) = 0;
 
     /*!
      * Register map selected from USRP2/USRP2+.
      */
     usrp2_regs_t regs;
-    /*!
-     * Hardware revision as returned by the device.
-     */
-    mboard_rev_t hw_rev;
+    
     //motherboard eeprom map structure
     uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
