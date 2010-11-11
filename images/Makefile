@@ -78,12 +78,13 @@ $(_usrp1_fpga_4rx_rbf):
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
 
 ########################################################################
-# USRP2 firmware
+# USRP2/2+ firmware
 ########################################################################
 ifdef HAS_MB_GCC
 
 _usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
+_usrp2p_fw_bin = $(BUILT_IMAGES_DIR)/usrp2p_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
 
 $(_usrp2_fw_bin):
@@ -91,7 +92,7 @@ $(_usrp2_fw_bin):
 	cd $(_usrp2_fw_dir) && ./configure --host=mb
 	make -C $(_usrp2_fw_dir) clean
 	make -C $(_usrp2_fw_dir) all
-	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $@
+	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2p_fw_bin)
 
 endif
 
@@ -108,6 +109,22 @@ $(_usrp2_fpga_bin):
 	cd $(_usrp2_fpga_dir) && make -f Makefile.udp clean
 	cd $(_usrp2_fpga_dir) && make -f Makefile.udp bin
 	cp $(_usrp2_fpga_dir)/build-udp/u2_rev3.bin $@
+
+endif
+
+########################################################################
+# USRP2 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp2p_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
+_usrp2p_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2p_fpga.bin
+IMAGES_LIST += $(_usrp2p_fpga_bin)
+
+$(_usrp2p_fpga_bin):
+	cd $(_usrp2p_fpga_dir) && make -f Makefile.udp clean
+	cd $(_usrp2p_fpga_dir) && make -f Makefile.udp bin
+	cp $(_usrp2p_fpga_dir)/build-ISE12/u2plus.bin $@
 
 endif
 
