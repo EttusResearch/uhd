@@ -92,7 +92,8 @@ $(_usrp2_fw_bin):
 	cd $(_usrp2_fw_dir) && ./configure --host=mb
 	make -C $(_usrp2_fw_dir) clean
 	make -C $(_usrp2_fw_dir) all
-	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2p_fw_bin)
+	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp2p_fw_bin)
 
 endif
 
