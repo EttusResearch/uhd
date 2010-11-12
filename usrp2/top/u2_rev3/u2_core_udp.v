@@ -125,7 +125,6 @@ module u2_core
    output [18:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
- //  output RAM_CLK,
    output RAM_WEn,
    output RAM_OEn,
    output RAM_LDn,
@@ -662,7 +661,7 @@ module u2_core
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
    wire 	 clear_tx;
-   
+
    setting_reg #(.my_addr(SR_TX_CTRL+1)) sr_clear_tx
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(clear_tx));
@@ -681,11 +680,9 @@ module u2_core
 	.RAM_LDn(RAM_LDn),
 	.RAM_OEn(RAM_OEn),
 	.RAM_CE1n(RAM_CE1n),
-//	.datain({rd1_flags,rd1_dat}),
 	.datain({rd1_flags[3:2],rd1_dat[31:16],rd1_flags[1:0],rd1_dat[15:0]}),
 	.src_rdy_i(rd1_ready_o),
 	.dst_rdy_o(rd1_ready_i),
-//	.dataout(tx_data),
 	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
 	.src_rdy_o(tx_src_rdy),
 	.dst_rdy_i(tx_dst_rdy),

@@ -164,9 +164,7 @@ module u2plus_core
    wire [31:0] 	atr_lines;
 
    wire [31:0] 	debug_rx, debug_mac, debug_mac0, debug_mac1, debug_tx_dsp, debug_txc,
-		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp,
-		debug_extfifo;
-   
+		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp;
 
    wire [15:0] 	ser_rx_occ, ser_tx_occ, dsp_rx_occ, dsp_tx_occ, eth_rx_occ, eth_tx_occ, eth_rx_occ2;
    wire 	ser_rx_full, ser_tx_full, dsp_rx_full, dsp_tx_full, eth_rx_full, eth_tx_full, eth_rx_full2;
@@ -367,7 +365,7 @@ module u2plus_core
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
 		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio( {io_tx,io_rx} ) );
+		 .gpio({io_tx,io_rx}) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
@@ -380,7 +378,7 @@ module u2plus_core
        cycle_count <= cycle_count + 1;
 
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd2;
+   localparam compat_num = 32'd3;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -494,10 +492,17 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // Interrupt Controller, Slave #8
 
+   // Pass interrupts on dsp_clk to wb_clk.  These need edge triggering in the pic
+   wire 	 underrun_wb, overrun_wb, pps_wb;
+
+   oneshot_2clk underrun_1s (.clk_in(dsp_clk), .in(underrun), .clk_out(wb_clk), .out(underrun_wb));
+   oneshot_2clk overrun_1s (.clk_in(dsp_clk), .in(overrun), .clk_out(wb_clk), .out(overrun_wb));
+   oneshot_2clk pps_1s (.clk_in(dsp_clk), .in(pps_int), .clk_out(wb_clk), .out(pps_wb));
+   
    assign irq= {{8'b0},
 		{uart_tx_int[3:0], uart_rx_int[3:0]},
 		{2'b0, button, periodic_int, clk_status, serdes_link_up, 2'b00},
-		{pps_int,overrun,underrun,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
+		{pps_wb,overrun_wb,underrun_wb,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
 	   .we_i(s8_we),.dat_i(s8_dat_o),.dat_o(s8_dat_i),.ack_o(s8_ack),.int_o(proc_int),
@@ -578,9 +583,15 @@ module u2plus_core
       .debug(debug_rx_dsp) );
 
    wire [31:0] 	 vrc_debug;
+   wire 	 clear_rx;
    
+   setting_reg #(.my_addr(SR_RX_CTRL+3)) sr_clear
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
+      .out(),.changed(clear_rx));
+
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
@@ -590,7 +601,7 @@ module u2plus_core
    wire [3:0] 	 vita_state;
    
    vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .sample_fifo_i(rx_data), .sample_fifo_dst_rdy_o(rx_dst_rdy), .sample_fifo_src_rdy_i(rx_src_rdy),
       .data_o(rx1_data), .dst_rdy_i(rx1_dst_rdy), .src_rdy_o(rx1_src_rdy),
@@ -598,7 +609,7 @@ module u2plus_core
       .debug_rx(vita_state) );
 
    fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .datain(rx1_data), .src_rdy_i(rx1_src_rdy), .dst_rdy_o(rx1_dst_rdy),
       .dataout({wr1_flags,wr1_dat}), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
 
@@ -608,23 +619,19 @@ module u2plus_core
    wire [35:0] 	 tx_data;
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
-   
-/* -----\/----- EXCLUDED -----\/-----
-   fifo_cascade #(.WIDTH(36), .SIZE(DSP_TX_FIFOSIZE)) tx_fifo_cascade
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain({rd1_flags,rd1_dat}), .src_rdy_i(rd1_ready_o), .dst_rdy_o(rd1_ready_i),
-      .dataout(tx_data), .src_rdy_o(tx_src_rdy), .dst_rdy_i(tx_dst_rdy) );
- -----/\----- EXCLUDED -----/\----- */
-   // External and internal clock run at 100MHz for USRP2+ because ext RAM is 36bits wide
-   // and provides ample bandwidth.
+   wire 	 clear_tx;
+
+   setting_reg #(.my_addr(SR_TX_CTRL+1)) sr_clear_tx
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_tx));
+
    assign 	 RAM_A[20:18] = 3'b0;
    
    ext_fifo #(.EXT_WIDTH(36),.INT_WIDTH(36),.RAM_DEPTH(18),.FIFO_DEPTH(18)) 
      ext_fifo_i1
-       (
-	.int_clk(dsp_clk),
+       (.int_clk(dsp_clk),
 	.ext_clk(dsp_clk),
-	.rst(dsp_rst),
+	.rst(dsp_rst | clear_tx),
 	.RAM_D_pi(RAM_D_pi),
 	.RAM_D_po(RAM_D_po),
 	.RAM_D_poe(RAM_D_poe),
@@ -635,17 +642,17 @@ module u2plus_core
 	.RAM_OEn(RAM_OEn),
 	.RAM_CE1n(RAM_CE1n),
 	.datain({rd1_flags[3:2],rd1_dat[31:16],rd1_flags[1:0],rd1_dat[15:0]}),
-	.src_rdy_i(rd1_ready_o),               // WRITE
-	.dst_rdy_o(rd1_ready_i),               // not FULL
+	.src_rdy_i(rd1_ready_o),
+	.dst_rdy_o(rd1_ready_i),
 	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
-	.src_rdy_o(tx_src_rdy),               // not EMPTY
+	.src_rdy_o(tx_src_rdy),
 	.dst_rdy_i(tx_dst_rdy),
 	.debug(debug_extfifo),
-	.debug2(debug_extfifo2)
-	);
-   
+	.debug2(debug_extfifo2) );
+
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
-		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(1)) 
+		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
+		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1)) 
    vita_tx_chain
      (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
@@ -681,8 +688,8 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
-   assign debug_clk = 2'b00;
-   assign debug = 32'd0;
+   assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
+   assign debug = 32'd0; // debug_extfifo;
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
    
