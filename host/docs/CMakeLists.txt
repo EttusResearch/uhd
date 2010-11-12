@@ -28,7 +28,7 @@ SET(manual_sources
     images.rst
     transport.rst
     usrp1.rst
-    usrp2.rst
+    usrp_nxxx.rst
 )
 
 ########################################################################
