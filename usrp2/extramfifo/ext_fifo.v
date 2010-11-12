@@ -45,7 +45,7 @@ module ext_fifo
    wire [EXT_WIDTH-1:0] write_data;
    wire [EXT_WIDTH-1:0] read_data;
    wire 		full1, empty1;
-   wire 		almost_full2, full2, empty2;
+   wire 		almost_full2, almost_full2_spread, full2, empty2;
    wire [FIFO_DEPTH-1:0] capacity;
    wire 		 space_avail;
    wire 		 data_avail;
@@ -83,7 +83,7 @@ module ext_fifo
 	   .write_strobe(~empty1 ),
 	   .space_avail(space_avail),
 	   .read_data(read_data),
-	   .read_strobe(~almost_full2),
+	   .read_strobe(~almost_full2_spread),
 	   .data_avail(data_avail),
 	   .capacity(capacity)
 	   );
@@ -148,6 +148,13 @@ module ext_fifo
    endgenerate
    
 
+   refill_randomizer #(.BITS(7))
+     refill_randomizer_i1 (
+			   .clk(ext_clk),
+			   .rst(rst),
+			   .full_in(almost_full2),
+			   .full_out(almost_full2_spread)
+			   );
    
 //   always @ (posedge int_clk)
 //     debug[31:28] <= {empty2,full1,dst_rdy_i,src_rdy_i };

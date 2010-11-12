@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
-//`define USRP2
-`define USRP2PLUS
+`define USRP2
+//`define USRP2PLUS
 
 `ifdef USRP2
  `define INT_WIDTH 36
