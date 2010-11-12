@@ -55,7 +55,8 @@ namespace uhd{
         //! Get the step value for this range.
         const T step(void) const;
 
-    private: UHD_PIMPL_DECL(impl) _impl;
+    private: 
+	UHD_PIMPL_DECL(impl) _impl;
     };
 
     /*!
