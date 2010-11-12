@@ -17,6 +17,7 @@
 
 #include "usrp2_regs.hpp"
 #include "usrp2_iface.hpp"
+#include <uhd/utils/exception.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
@@ -51,11 +52,22 @@ public:
  **********************************************************************/
     usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
-        
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
-        regs = usrp2_get_regs(get_hw_rev());
 
-         //check the fpga compatibility number
+        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
+        switch(this->get_rev()){
+        case USRP2_REV3:
+        case USRP2_REV4:
+            regs = usrp2_get_regs(false);
+            break;
+
+        case USRP_NXXX:
+        case USRP_N200:
+        case USRP_N210:
+            regs = usrp2_get_regs(true);
+            break;
+        }
+
+        //check the fpga compatibility number
         const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
         if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
             throw std::runtime_error(str(boost::format(
@@ -259,15 +271,27 @@ public:
         }
         throw std::runtime_error("usrp2 no control response");
     }
-    
-    bool is_usrp2p(void) {
-        return (get_hw_rev() >= usrp2_rev_nums(N2XX));
+
+    rev_type get_rev(void){
+        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"])){
+        case 0x0003: return USRP2_REV3;
+        case 0x0004: return USRP2_REV4;
+        case 0x0A00: return USRP_N200;
+        case 0x0A01: return USRP_N210;
+        }
+        return USRP_NXXX; //unknown type
     }
 
-    boost::uint16_t get_hw_rev(void) {
-        return boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"]);
+    const std::string get_cname(void){
+        switch(this->get_rev()){
+        case USRP2_REV3: return "USRP2-REV3";
+        case USRP2_REV4: return "USRP2-REV4";
+        case USRP_N200: return "USRP-N200";
+        case USRP_N210: return "USRP-N210";
+        case USRP_NXXX: return "USRP-N???";
+        }
+        UHD_THROW_INVALID_CODE_PATH();
     }
-
 
 private:
     //this lovely lady makes it all possible

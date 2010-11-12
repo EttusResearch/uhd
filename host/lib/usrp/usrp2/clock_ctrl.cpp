@@ -33,7 +33,7 @@ class usrp2_clock_ctrl_impl : public usrp2_clock_ctrl{
 public:
     usrp2_clock_ctrl_impl(usrp2_iface::sptr iface){
         _iface = iface;
-        clk_regs = usrp2_clk_regs_t(_iface->get_hw_rev());
+        clk_regs = usrp2_clk_regs_t(_iface->get_rev());
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
         this->write_reg(clk_regs.pll_3);

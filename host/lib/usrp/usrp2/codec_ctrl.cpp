@@ -59,15 +59,23 @@ public:
         }
 
         //power-up adc
-        if(!_iface->is_usrp2p()) { //if we're on a USRP2
-          _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_ON);
-        } else { //we're on a USRP2+
-          _ads62p44_regs.reset = 1;
-          this->send_ads62p44_reg(0x00); //issue a reset to the ADC
-          //everything else should be pretty much default, i think
-//          _ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
-          _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
-          this->send_ads62p44_reg(0x14);
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP2_REV3:
+        case usrp2_iface::USRP2_REV4:
+            _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_ON);
+            break;
+
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _ads62p44_regs.reset = 1;
+            this->send_ads62p44_reg(0x00); //issue a reset to the ADC
+            //everything else should be pretty much default, i think
+            //_ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
+            _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
+            this->send_ads62p44_reg(0x14);
+            break;
+
+        case usrp2_iface::USRP_NXXX: break;
         }
     }
 
@@ -77,34 +85,57 @@ public:
         this->send_ad9777_reg(0);
 
         //power-down adc
-        if(!_iface->is_usrp2p()) { //if we're on a USRP2
-          _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_OFF);
-        } else { //we're on a USRP2+
-          //send a global power-down to the ADC here... it will get lifted on reset
-          _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
-          this->send_ads62p44_reg(0x14);
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP2_REV3:
+        case usrp2_iface::USRP2_REV4:
+            _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_OFF);
+            break;
+
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            //send a global power-down to the ADC here... it will get lifted on reset
+            _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
+            this->send_ads62p44_reg(0x14);
+            break;
+
+        case usrp2_iface::USRP_NXXX: break;
         }
     }
 
     void set_rx_digital_gain(float gain) {  //fine digital gain
-      if(_iface->is_usrp2p()) {
-        _ads62p44_regs.fine_gain = int(gain/0.5);
-        this->send_ads62p44_reg(0x17);
-      } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _ads62p44_regs.fine_gain = int(gain/0.5);
+            this->send_ads62p44_reg(0x17);
+            break;
+
+        default: UHD_THROW_INVALID_CODE_PATH();
+        }
     }
 
     void set_rx_digital_fine_gain(float gain) { //gain correction      
-      if(_iface->is_usrp2p()) {
-        _ads62p44_regs.gain_correction = int(gain / 0.05);
-        this->send_ads62p44_reg(0x1A);
-      } else UHD_THROW_INVALID_CODE_PATH(); //should never have been called for USRP2
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _ads62p44_regs.gain_correction = int(gain / 0.05);
+            this->send_ads62p44_reg(0x1A);
+            break;
+
+        default: UHD_THROW_INVALID_CODE_PATH();
+        }
     }
 
     void set_rx_analog_gain(bool gain) { //turns on/off analog 3.5dB preamp
-      if(_iface->is_usrp2p()) {
-        _ads62p44_regs.coarse_gain = gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
-        this->send_ads62p44_reg(0x14);
-      } else UHD_THROW_INVALID_CODE_PATH();
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _ads62p44_regs.coarse_gain = gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
+            this->send_ads62p44_reg(0x14);
+            break;
+
+        default: UHD_THROW_INVALID_CODE_PATH();
+        }
     }
 
 private:

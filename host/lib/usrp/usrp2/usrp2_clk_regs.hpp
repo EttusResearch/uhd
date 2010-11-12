@@ -18,31 +18,38 @@
 #ifndef INCLUDED_USRP2_CLK_REGS_HPP
 #define INCLUDED_USRP2_CLK_REGS_HPP
 
-#include "usrp2_regs.hpp"
+#include "usrp2_iface.hpp"
 
 class usrp2_clk_regs_t {
 public:
   usrp2_clk_regs_t(void) { ; }
-  usrp2_clk_regs_t(boost::uint16_t hw_rev) {
+  usrp2_clk_regs_t(usrp2_iface::rev_type rev) {
     test = 0;
     fpga = 1;
-    adc = (hw_rev >= usrp2_rev_nums(N2XX)) ? 2 : 4;
     dac = 3;
-    serdes = (hw_rev >= usrp2_rev_nums(N2XX)) ? 4 : 2; //only used by usrp2+
-    tx_db = (hw_rev >= usrp2_rev_nums(N2XX)) ? 5 : 6;
-    
-    switch(hw_rev) {
-    case usrp2_rev_nums(USRP2_REV3):
+
+    switch(rev) {
+    case usrp2_iface::USRP2_REV3:
         exp = 2;
+        adc = 4;
+        serdes = 2;
+        tx_db = 6;
         break;
-    case usrp2_rev_nums(USRP2_REV4):
+    case usrp2_iface::USRP2_REV4:
         exp = 5;
+        adc = 4;
+        serdes = 2;
+        tx_db = 6;
         break;
-    case usrp2_rev_nums(N2XX):
+    case usrp2_iface::USRP_N200:
+    case usrp2_iface::USRP_N210:
         exp = 6;
+        adc = 2;
+        serdes = 4;
+        tx_db = 5;
         break;
-    default:
-        throw std::runtime_error("Unknown hardware revision");
+    case usrp2_iface::USRP_NXXX:
+        //dont throw, it may be unitialized
         break;
     }
     

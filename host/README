@@ -8,6 +8,7 @@ The hardware driver for Ettus Research products.
 ########################################################################
 USRP1
 USRP2
+USRP-N2XX
 
 ########################################################################
 # Supported USRP Daughterboards
@@ -20,6 +21,7 @@ RFX Series
 XCVR 2450
 WBX Series
 DBSRX
+DBSRX2
 TVRX
 
 ########################################################################

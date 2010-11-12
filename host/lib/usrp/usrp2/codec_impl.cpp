@@ -32,7 +32,7 @@ using namespace boost::assign;
 static const uhd::dict<std::string, gain_range_t> codec_rx_gain_ranges = map_list_of
                                   ("analog", gain_range_t(0, 3.5, 3.5))
                                   ("digital", gain_range_t(0, 6.0, 0.5))
-				  ("digital-fine", gain_range_t(0, 0.5, 0.05));
+                                  ("digital-fine", gain_range_t(0, 0.5, 0.05));
 
 
 /***********************************************************************
@@ -67,9 +67,14 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case CODEC_PROP_GAIN_NAMES:
-        if(_iface->is_usrp2p()) {
-          val = prop_names_t(codec_rx_gain_ranges.keys());
-        } else val = prop_names_t();
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            val = prop_names_t(codec_rx_gain_ranges.keys());
+            return;
+
+        default: val = prop_names_t();
+        }
         return;
 
     case CODEC_PROP_GAIN_I:
@@ -89,19 +94,14 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
 
 void usrp2_mboard_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
-    float gain;
 
-  switch(key.as<codec_prop_t>()) {
+    switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_GAIN_I:
     case CODEC_PROP_GAIN_Q:
-      if(!_iface->is_usrp2p()) UHD_THROW_PROP_SET_ERROR();//this capability is only found in USRP2P
+        this->rx_codec_set_gain(val.as<float>(), key.name);
+        return;
 
-      gain = val.as<float>();
-      this->rx_codec_set_gain(gain, key.name);
-      return;
-
-    default:
-      UHD_THROW_PROP_SET_ERROR();
+    default: UHD_THROW_PROP_SET_ERROR();
   }
 }
 

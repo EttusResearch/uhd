@@ -20,12 +20,6 @@
 
 #include <boost/cstdint.hpp>
 
-enum usrp2_rev_nums {
-    USRP2_REV3 = 0x0003,
-    USRP2_REV4 = 0x0004,
-    N2XX       = 0x0A00
-};
-
 #define USRP2_MISC_OUTPUT_BASE  0xD400
 #define USRP2_GPIO_BASE         0xC800
 #define USRP2_ATR_BASE          0xE400
@@ -107,7 +101,7 @@ typedef struct {
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
 
-usrp2_regs_t usrp2_get_regs(boost::uint16_t hw_rev);
+usrp2_regs_t usrp2_get_regs(bool);
 
 ////////////////////////////////////////////////////
 // Settings Bus, Slave #7, Not Byte Addressable!

@@ -147,26 +147,31 @@ void usrp2_mboard_impl::update_clock_config(void){
     _iface->poke32(_iface->regs.time64_flags, pps_flags);
 
     //clock source ref 10mhz
-    if(_iface->is_usrp2p()) {
+    switch(_iface->get_rev()){
+    case usrp2_iface::USRP_N200:
+    case usrp2_iface::USRP_N210:
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
         case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
         }
-    } else {
+        _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
+        break;
+
+    case usrp2_iface::USRP2_REV3:
+    case usrp2_iface::USRP2_REV4:
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
         case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
         }
-    }
+        _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
+        break;
 
-    //clock source ref 10mhz
-    bool use_external = (_clock_config.ref_source != clock_config_t::REF_INT)
-                     || (_iface->is_usrp2p()); //USRP2P has an internal 10MHz TCXO
-    _clock_ctrl->enable_external_ref(use_external);
+    case usrp2_iface::USRP_NXXX: break;
+    }
 }
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
