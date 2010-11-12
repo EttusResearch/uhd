@@ -133,14 +133,14 @@ void usrp2_mboard_impl::update_clock_config(void){
     switch(_clock_config.pps_source){
     case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
     case clock_config_t::PPS_MIMO: pps_flags |= U2_FLAG_TIME64_PPS_MIMO; break;
-    default: throw std::runtime_error("usrp2: unhandled clock configuration pps source");
+    default: throw std::runtime_error("unhandled clock configuration pps source");
     }
 
     //translate pps polarity enums
     switch(_clock_config.pps_polarity){
     case clock_config_t::PPS_POS: pps_flags |= U2_FLAG_TIME64_PPS_POSEDGE; break;
     case clock_config_t::PPS_NEG: pps_flags |= U2_FLAG_TIME64_PPS_NEGEDGE; break;
-    default: throw std::runtime_error("usrp2: unhandled clock configuration pps polarity");
+    default: throw std::runtime_error("unhandled clock configuration pps polarity");
     }
 
     //set the pps flags
@@ -154,7 +154,7 @@ void usrp2_mboard_impl::update_clock_config(void){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
         case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
-        default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
+        default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
         break;
@@ -165,7 +165,7 @@ void usrp2_mboard_impl::update_clock_config(void){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
         case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
-        default: throw std::runtime_error("usrp2: unhandled clock configuration reference source");
+        default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
         break;
@@ -212,7 +212,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = str(boost::format("usrp2 mboard%d - rev %s") % _index % _iface->mb_eeprom["rev"]);
+        val = _iface->get_cname() + " mboard";
         return;
 
     case MBOARD_PROP_OTHERS:

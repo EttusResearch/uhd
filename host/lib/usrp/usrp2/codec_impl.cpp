@@ -59,7 +59,21 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
     case CODEC_PROP_NAME:
-        val = std::string("usrp2 adc");
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            val = std::string(_iface->get_cname() + " adc - ads62p44");
+            break;
+
+        case usrp2_iface::USRP2_REV3:
+        case usrp2_iface::USRP2_REV4:
+            val = std::string(_iface->get_cname() + " adc - ltc2284");
+            break;
+
+        case usrp2_iface::USRP_NXXX:
+            val = std::string(_iface->get_cname() + " adc - ??????");
+            break;
+        }
         return;
 
     case CODEC_PROP_OTHERS:
@@ -139,7 +153,7 @@ void usrp2_mboard_impl::tx_codec_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<codec_prop_t>()){
     case CODEC_PROP_NAME:
-        val = std::string("usrp2 dac - ad9777");
+        val = std::string(_iface->get_cname() + " dac - ad9777");
         return;
 
     case CODEC_PROP_OTHERS:

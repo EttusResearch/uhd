@@ -269,7 +269,7 @@ public:
             if (len == 0) break; //timeout
             //didnt get seq or bad packet, continue looking...
         }
-        throw std::runtime_error("usrp2 no control response");
+        throw std::runtime_error(this->get_cname() + ": no control response");
     }
 
     rev_type get_rev(void){

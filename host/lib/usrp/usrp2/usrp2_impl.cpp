@@ -214,8 +214,8 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<device_prop_t>()){
     case DEVICE_PROP_NAME:
-        if (_mboards.size() > 1) val = std::string("usrp2 mimo device");
-        else                     val = std::string("usrp2 device");
+        if (_mboards.size() > 1) val = std::string("USRP-NXXX mimo device");
+        else                     val = std::string("USRP-NXXX device");
         return;
 
     case DEVICE_PROP_MBOARD:

@@ -61,7 +61,7 @@ void usrp2_mboard_impl::ddc_get(const wax::obj &key_, wax::obj &val){
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("usrp2 ddc0");
+        val = std::string(_iface->get_cname() + " ddc0");
         return;
 
     case DSP_PROP_OTHERS:
@@ -144,7 +144,7 @@ void usrp2_mboard_impl::duc_get(const wax::obj &key_, wax::obj &val){
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("usrp2 duc0");
+        val = std::string(_iface->get_cname() + " duc0");
         return;
 
     case DSP_PROP_OTHERS:
