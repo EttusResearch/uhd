@@ -171,7 +171,7 @@ rfx_xcvr::rfx_xcvr(
 ):
     xcvr_dboard_base(args),
     _freq_range(freq_range),
-    _rx_gain_ranges((this->get_rx_id() == 0x0024)?
+    _rx_gain_ranges((get_rx_id() == 0x0024)?
         rfx400_rx_gain_ranges : rfx_rx_gain_ranges
     ),
     _div2(map_list_of

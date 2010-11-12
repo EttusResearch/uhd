@@ -203,7 +203,7 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     set_bandwidth(40e6); // default bandwidth from datasheet
     get_locked();
 
-    _max2112_write_regs.bbg = dbsrx2_gain_ranges["BBG"].start();
+    _max2112_write_regs.bbg = boost::math::iround(dbsrx2_gain_ranges["BBG"].start());
     send_reg(0x9, 0x9);
 }
 

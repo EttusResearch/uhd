@@ -64,7 +64,7 @@ void usrp2_mboard_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_NAME:
-        val = std::string(_iface->get_cname() + " dboard (rx unit)");
+        val = _iface->get_cname() + " dboard (rx unit)";
         return;
 
     case DBOARD_PROP_SUBDEV:
@@ -121,7 +121,7 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_NAME:
-        val = std::string(_iface->get_cname() + " dboard (tx unit)");
+        val = _iface->get_cname() + " dboard (tx unit)";
         return;
 
     case DBOARD_PROP_SUBDEV:
