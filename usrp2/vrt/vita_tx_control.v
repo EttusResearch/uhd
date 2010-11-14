@@ -38,9 +38,8 @@ module vita_tx_control
    // FIXME ignore too_early for now for timing reasons
    assign too_early = 0;
    time_compare 
-     time_compare (.time_now(vita_time), .trigger_time(send_time), .now(now), .early(early), 
-		   .late(late), .too_early());
-//		   .late(late), .too_early(too_early));
+     time_compare (.time_now(vita_time), .trigger_time(send_time), 
+		   .now(now), .early(early), .late(late), .too_early());
    
    localparam IBS_IDLE = 0;
    localparam IBS_RUN = 1;  // FIXME do we need this?
