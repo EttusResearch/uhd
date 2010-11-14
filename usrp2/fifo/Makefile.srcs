@@ -22,4 +22,5 @@ fifo36_to_fifo19.v \
 fifo19_to_fifo36.v \
 fifo36_mux.v \
 fifo36_demux.v \
+packet_router.v \
 ))
