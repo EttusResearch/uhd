@@ -26,3 +26,7 @@ print_mac_addr(const unsigned char addr[6])
   }
 }
 
+void print_ip_addr(const void *t){
+    uint8_t *p = (uint8_t *)t;
+    printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+}

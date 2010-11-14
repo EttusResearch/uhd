@@ -22,7 +22,6 @@
 #include "net_common.h"
 #include "banal.h"
 #include <hal_io.h>
-#include <buffer_pool.h>
 #include <memory_map.h>
 #include <memcpy_wa.h>
 #include <ethernet.h>
@@ -36,12 +35,6 @@
 #include "if_arp.h"
 #include <ethertype.h>
 #include <string.h>
-
-
-int cpu_tx_buf_dest_port = PORT_ETH;
-
-// If this is non-zero, this dbsm could be writing to the ethernet
-dbsm_t *ac_could_be_sending_to_eth;
 
 static inline bool
 ip_addr_eq(const struct ip_addr a, const struct ip_addr b)
@@ -130,8 +123,8 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   // FIXME can this ever not be ready?
 
   //hal_set_leds(LED_BUF_BUSY, LED_BUF_BUSY);
-  while((buffer_pool_status->status & BPS_IDLE(CPU_TX_BUF)) == 0)
-    ;
+  //FIXME while((buffer_pool_status->status & BPS_IDLE(CPU_TX_BUF)) == 0)
+  //FIXME   ;
   //hal_set_leds(0, LED_BUF_BUSY);
 
   // Assemble the header
@@ -141,7 +134,7 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   ehdr.src = _local_mac_addr;
   ehdr.ethertype = ethertype;
 
-  uint32_t *p = buffer_ram(CPU_TX_BUF);
+  uint32_t *p = 0;//FIXME buffer_ram(CPU_TX_BUF);
 
   // Copy the pieces into the buffer
   *p++ = 0x0;  				  // slow path
@@ -173,31 +166,26 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
     p += len2/sizeof(uint32_t);
   }
 
-  size_t total_len = (p - buffer_ram(CPU_TX_BUF)) * sizeof(uint32_t);
+  size_t total_len = 0;//FIXME (p - buffer_ram(CPU_TX_BUF)) * sizeof(uint32_t);
   if (total_len < 60)		// ensure that we don't try to send a short packet
     total_len = 60;
   
   // wait until nobody else is sending to the ethernet
-  if (ac_could_be_sending_to_eth){
+  //FIXME if (ac_could_be_sending_to_eth){
     //hal_set_leds(LED_ETH_BUSY, LED_ETH_BUSY);
-    dbsm_wait_for_opening(ac_could_be_sending_to_eth);
+  //FIXME   dbsm_wait_for_opening(ac_could_be_sending_to_eth);
     //hal_set_leds(0x0, LED_ETH_BUSY);
-  }
+ //FIXME  }
 
-  if (0){
-    printf("send_pkt to port %d, len = %d\n",
-	   cpu_tx_buf_dest_port, (int) total_len);
-    print_buffer(buffer_ram(CPU_TX_BUF), total_len/4);
-  }
 
   // fire it off
-  bp_send_from_buf(CPU_TX_BUF, cpu_tx_buf_dest_port, 1, 0, total_len/4);
+  //FIXME bp_send_from_buf(CPU_TX_BUF, cpu_tx_buf_dest_port, 1, 0, total_len/4);
 
   // wait for it to complete (not long, it's a small pkt)
-  while((buffer_pool_status->status & (BPS_DONE(CPU_TX_BUF) | BPS_ERROR(CPU_TX_BUF))) == 0)
-    ;
+  //FIXME while((buffer_pool_status->status & (BPS_DONE(CPU_TX_BUF) | BPS_ERROR(CPU_TX_BUF))) == 0)
+  //FIXME   ;
 
-  bp_clear_buf(CPU_TX_BUF);
+  //FIXME bp_clear_buf(CPU_TX_BUF);
 }
 
 unsigned int 
@@ -235,7 +223,7 @@ send_ip_pkt(struct ip_addr dst, int protocol,
   bool found = arp_cache_lookup_mac(&ip.dest, &dst_mac);
   if (!found){
     printf("net_common: failed to hit cache looking for ");
-    print_ip(ip.dest);
+    print_ip_addr(&ip.dest);
     newline();
     return;
   }

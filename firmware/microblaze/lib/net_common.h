@@ -20,18 +20,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <dbsm.h>
 #include <net/socket_address.h>
 #include <net/eth_mac_addr.h>
-
-#define CPU_TX_BUF 	7	// cpu -> eth
-
-extern int cpu_tx_buf_dest_port;
-
-// If this is non-zero, this dbsm could be writing to the ethernet
-extern dbsm_t *ac_could_be_sending_to_eth;
-
-void stop_streaming(void);
 
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);

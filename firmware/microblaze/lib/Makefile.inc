@@ -21,10 +21,7 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/u2_init.c \
 	$(top_srcdir)/lib/abort.c \
 	$(top_srcdir)/lib/ad9510.c \
-	$(top_srcdir)/lib/bsm12.c \
-	$(top_srcdir)/lib/buffer_pool.c \
 	$(top_srcdir)/lib/clocks.c \
-	$(top_srcdir)/lib/dbsm.c \
 	$(top_srcdir)/lib/eeprom.c \
 	$(top_srcdir)/lib/eth_addrs.c \
 	$(top_srcdir)/lib/eth_mac.c \
@@ -39,7 +36,7 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/memset_wa.c \
 	$(top_srcdir)/lib/nonstdio.c \
 	$(top_srcdir)/lib/pic.c \
-	$(top_srcdir)/lib/print_mac_addr.c \
+	$(top_srcdir)/lib/print_addrs.c \
 	$(top_srcdir)/lib/print_rmon_regs.c \
 	$(top_srcdir)/lib/print_buffer.c \
 	$(top_srcdir)/lib/printf.c \

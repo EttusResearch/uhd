@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <lwip/ip_addr.h>
 
+#define dimof(x) (sizeof(x)/sizeof(x[0]))
+
 /*
  * 1's complement sum for IP and UDP headers
  *
@@ -83,8 +85,5 @@ get_int64(const unsigned char *s)
 {
   return get_uint64(s);
 }
-
-void
-print_ip(struct ip_addr ip);
 
 #endif /* INCLUDED_BANAL_H */

@@ -28,12 +28,10 @@
 #include "memory_map.h"
 #include "spi.h"
 #include "hal_io.h"
-#include "buffer_pool.h"
 #include "pic.h"
 #include <stdbool.h>
 #include "ethernet.h"
 #include "nonstdio.h"
-#include "dbsm.h"
 #include <net/padded_eth_hdr.h>
 #include <net_common.h>
 #include "memcpy_wa.h"
@@ -48,82 +46,6 @@
 #include <arp_cache.h>
 #include "udp_fw_update.h"
 
-/*
- * Full duplex Tx and Rx between ethernet and DSP pipelines
- *
- * Buffer 1 is used by the cpu to send frames to the host.
- * Buffers 2 and 3 are used to double-buffer the DSP Rx to eth flow
- * Buffers 4 and 5 are used to double-buffer the eth to DSP Tx  eth flow
- */
-//#define CPU_RX_BUF	0	// eth -> cpu
-
-#define	DSP_RX_BUF_0	2	// dsp rx -> eth (double buffer)
-#define	DSP_RX_BUF_1	3	// dsp rx -> eth
-#define	DSP_TX_BUF_0	4	// eth -> dsp tx (double buffer)
-#define	DSP_TX_BUF_1	5	// eth -> dsp tx
-
-/*
- * ================================================================
- *   configure DSP TX double buffering state machine (eth -> dsp)
- * ================================================================
- */
-
-// DSP Tx reads ethernet header words
-#define DSP_TX_FIRST_LINE ((sizeof(padded_eth_hdr_t) + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))/sizeof(uint32_t))
-
-// Receive from ethernet
-buf_cmd_args_t dsp_tx_recv_args = {
-  PORT_ETH,
-  0,
-  BP_LAST_LINE
-};
-
-// send to DSP Tx
-buf_cmd_args_t dsp_tx_send_args = {
-  PORT_DSP,
-  DSP_TX_FIRST_LINE,	// starts just past transport header
-  0			// filled in from last_line register
-};
-
-dbsm_t dsp_tx_sm;	// the state machine
-
-/*
- * ================================================================
- *   configure DSP RX double buffering state machine (dsp -> eth)
- * ================================================================
- */
-
-static const uint32_t rx_ctrl_word = 1 << 16;
-
-// DSP Rx writes ethernet header words
-#define DSP_RX_FIRST_LINE sizeof(rx_ctrl_word)/sizeof(uint32_t)
-
-static bool dbsm_rx_inspector(dbsm_t *sm, int buf_this){
-    size_t num_lines = buffer_pool_status->last_line[buf_this]-DSP_RX_FIRST_LINE;
-    ((uint32_t*)buffer_ram(buf_this))[0] = (num_lines*sizeof(uint32_t)) | (1 << 16);
-    return false;
-}
-
-// receive from DSP
-buf_cmd_args_t dsp_rx_recv_args = {
-  PORT_DSP,
-  DSP_RX_FIRST_LINE,
-  BP_LAST_LINE
-};
-
-// send to ETH
-buf_cmd_args_t dsp_rx_send_args = {
-  PORT_ETH,
-  0,		// starts with ethernet header in line 0
-  0,		// filled in from list_line register
-};
-
-dbsm_t dsp_rx_sm;	// the state machine
-
-
-// The mac address of the host we're sending to.
-eth_mac_addr_t host_mac_addr;
-
 static void setup_network(void);
 
 // ----------------------------------------------------------------
@@ -135,11 +57,6 @@ static struct socket_address fp_socket_src, fp_socket_dst;
 // ----------------------------------------------------------------
 void start_rx_streaming_cmd(void);
 void stop_rx_cmd(void);
-
-static void print_ip_addr(const void *t){
-    uint8_t *p = (uint8_t *)t;
-    printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-}
 
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
@@ -167,7 +84,7 @@ void handle_udp_data_packet(
     setup_network();
 
     // kick off the state machine
-    dbsm_start(&dsp_rx_sm);
+    //FIME dbsm_start(&dsp_rx_sm);
 
 }
 
@@ -382,6 +299,7 @@ void handle_udp_ctrl_packet(
  * Return true if we handled it here, otherwise
  * it'll be passed on to the DSP Tx pipe
  */
+/*
 static bool
 eth_pkt_inspector(dbsm_t *sm, int bufno)
 {
@@ -419,6 +337,7 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
   handle_eth_packet(buff, len);
   return true;
 }
+*/
 
 //------------------------------------------------------------------
 
@@ -486,10 +405,10 @@ static void setup_network(void){
 inline static void
 buffer_irq_handler(unsigned irq)
 {
-  uint32_t  status = buffer_pool_status->status;
+  //FIXME uint32_t  status = buffer_pool_status->status;
 
-  dbsm_process_status(&dsp_tx_sm, status);
-  dbsm_process_status(&dsp_rx_sm, status);
+  //FIXME dbsm_process_status(&dsp_tx_sm, status);
+  //FIXME dbsm_process_status(&dsp_rx_sm, status);
 }
 
 int
@@ -529,23 +448,23 @@ main(void)
 
   // initialize double buffering state machine for ethernet -> DSP Tx
 
-  dbsm_init(&dsp_tx_sm, DSP_TX_BUF_0,
-	    &dsp_tx_recv_args, &dsp_tx_send_args,
-	    eth_pkt_inspector);
+  //FIXME dbsm_init(&dsp_tx_sm, DSP_TX_BUF_0,
+//FIXME 	    &dsp_tx_recv_args, &dsp_tx_send_args,
+//FIXME 	    eth_pkt_inspector);
 
 
   // initialize double buffering state machine for DSP RX -> Ethernet
 
-    dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
-	      &dsp_rx_recv_args, &dsp_rx_send_args,
-	      dbsm_rx_inspector);
+//FIXME     dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
+//FIXME 	      &dsp_rx_recv_args, &dsp_rx_send_args,
+//FIXME 	      dbsm_rx_inspector);
 
   sr_tx_ctrl->clear_state = 1;
-  bp_clear_buf(DSP_TX_BUF_0);
-  bp_clear_buf(DSP_TX_BUF_1);
+//FIXME   bp_clear_buf(DSP_TX_BUF_0);
+//FIXME   bp_clear_buf(DSP_TX_BUF_1);
 
   // kick off the state machine
-  dbsm_start(&dsp_tx_sm);
+//FIXME   dbsm_start(&dsp_tx_sm);
 
   //int which = 0;
 

@@ -20,7 +20,6 @@
 #include "spi.h"
 #include "pic.h"
 #include "hal_io.h"
-#include "buffer_pool.h"
 #include "hal_uart.h"
 #include "i2c.h"
 #include "i2c_async.h"
@@ -62,10 +61,6 @@ u2_init(void)
   i2c_init();
   i2c_register_handler(); //for using async I2C
   hal_enable_ints();
-
-  bp_init();	// buffer pool
-  
-
 
   // flash all leds to let us know board is alive
   hal_set_leds(0x0, 0x1f);
