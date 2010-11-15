@@ -376,6 +376,7 @@ module u2_core
       .control(router_control), .status(status), .sys_int_o(buffer_int),
 
       .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
+      .dsp_out_data({rd0_flags, rd0_dat}), .dsp_out_valid(rd0_ready_o), .dsp_out_ready(rd0_ready_i),
       .eth_out_data({rd2_flags, rd2_dat}), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
 

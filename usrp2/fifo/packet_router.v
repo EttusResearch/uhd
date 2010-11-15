@@ -28,6 +28,7 @@ module packet_router
         input [35:0] eth_inp_data, input eth_inp_valid, output eth_inp_ready,
 
         // Output Interfaces (out of router)
+        output [35:0] dsp_out_data, output dsp_out_valid, input dsp_out_ready,
         output [35:0] eth_out_data, output eth_out_valid, input eth_out_ready
     );
 
@@ -69,9 +70,9 @@ module packet_router
     // Ethernet input control
     ////////////////////////////////////////////////////////////////////
     //TODO: just connect eth input to cpu input for now
-    assign cpu_inp_data = eth_inp_data;
-    assign cpu_inp_valid = eth_inp_valid;
-    assign eth_inp_ready = cpu_inp_ready;
+    //assign cpu_inp_data = eth_inp_data;
+    //assign cpu_inp_valid = eth_inp_valid;
+    //assign eth_inp_ready = cpu_inp_ready;
 
     ////////////////////////////////////////////////////////////////////
     // Ethernet output control
@@ -93,7 +94,7 @@ module packet_router
     reg [BUF_SIZE-1:0] cpu_inp_addr;
     assign cpu_inp_line_count = cpu_inp_addr;
     wire [BUF_SIZE-1:0] cpu_inp_addr_next = cpu_inp_addr + 1'b1;
-    
+
     wire cpu_inp_reading = (
         cpu_inp_state == CPU_INP_STATE_WAIT_SOF ||
         cpu_inp_state == CPU_INP_STATE_WAIT_EOF
@@ -221,6 +222,134 @@ module packet_router
         end
 
         endcase //cpu_out_state
+    end
+
+    ////////////////////////////////////////////////////////////////////
+    // Ethernet input inspector
+    //   - inspect Ethernet and send it to CPU or DSP
+    ////////////////////////////////////////////////////////////////////
+    localparam ETH_INSP_READ_ETH_PRE = 0;
+    localparam ETH_INSP_READ_ETH = 1;
+    localparam ETH_INSP_WRITE_DSP_REGS = 2;
+    localparam ETH_INSP_WRITE_DSP_LIVE = 3;
+    localparam ETH_INSP_WRITE_CPU_REGS = 4;
+    localparam ETH_INSP_WRITE_CPU_LIVE = 5;
+
+    localparam ETH_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr lines
+    localparam ETH_INSP_DREGS_DSP_OFFSET = 10; //offset to start dsp at
+
+    reg [2:0] eth_insp_state;
+    reg [3:0] eth_insp_dreg_count; //data registers to buffer headers
+    wire [3:0] eth_insp_dreg_count_next = eth_insp_dreg_count + 1'b1;
+    reg [35:0] eth_insp_dregs [ETH_INSP_MAX_NUM_DREGS-1:0];
+
+    wire eth_inp_dregs_is_data = 1'b0; //TODO (not data for now)
+
+    /////////////////////////////////////
+    //assign output signals to CPU input
+    /////////////////////////////////////
+    assign cpu_inp_data = (eth_insp_state == ETH_INSP_WRITE_CPU_REGS)?
+        eth_insp_dregs[eth_insp_dreg_count] : eth_inp_data
+    ;
+    assign cpu_inp_valid =
+        (eth_insp_state == ETH_INSP_WRITE_CPU_REGS)? 1'b1          : (
+        (eth_insp_state == ETH_INSP_WRITE_CPU_LIVE)? eth_inp_valid : (
+    1'b0));
+
+    /////////////////////////////////////
+    //assign output signals to DSP output
+    /////////////////////////////////////
+    wire [3:0] eth_insp_dsp_flags = (eth_insp_dreg_count == ETH_INSP_DREGS_DSP_OFFSET)?
+        4'b0001 : 4'b0000
+    ;
+    assign dsp_out_data = (eth_insp_state == ETH_INSP_WRITE_DSP_REGS)?
+        {eth_insp_dsp_flags, eth_insp_dregs[eth_insp_dreg_count][31:0]} : eth_inp_data
+    ;
+    assign dsp_out_valid =
+        (eth_insp_state == ETH_INSP_WRITE_DSP_REGS)? 1'b1          : (
+        (eth_insp_state == ETH_INSP_WRITE_DSP_LIVE)? eth_inp_valid : (
+    1'b0));
+
+    /////////////////////////////////////
+    //assign output signal to ETH input
+    /////////////////////////////////////
+    assign eth_inp_ready =
+        (eth_insp_state == ETH_INSP_READ_ETH_PRE)  ? 1'b1          : (
+        (eth_insp_state == ETH_INSP_READ_ETH)      ? 1'b1          : (
+        (eth_insp_state == ETH_INSP_WRITE_DSP_LIVE)? dsp_out_ready : (
+        (eth_insp_state == ETH_INSP_WRITE_CPU_LIVE)? cpu_inp_ready : (
+    1'b0))));
+
+    always @(posedge stream_clk)
+    if(stream_rst) begin
+        eth_insp_state <= ETH_INSP_READ_ETH_PRE;
+        eth_insp_dreg_count <= 0;
+    end
+    else begin
+        case(eth_insp_state)
+        ETH_INSP_READ_ETH_PRE: begin
+            if (eth_inp_ready & eth_inp_valid & eth_inp_data[32]) begin
+                eth_insp_state <= ETH_INSP_READ_ETH;
+                eth_insp_dreg_count <= eth_insp_dreg_count_next;
+                eth_insp_dregs[eth_insp_dreg_count] <= eth_inp_data;
+            end
+        end
+
+        ETH_INSP_READ_ETH: begin
+            if (eth_inp_ready & eth_inp_valid) begin
+                eth_insp_dregs[eth_insp_dreg_count] <= eth_inp_data;
+                if (eth_inp_dregs_is_data & (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS)) begin
+                    eth_insp_state <= ETH_INSP_WRITE_DSP_REGS;
+                    eth_insp_dreg_count <= ETH_INSP_DREGS_DSP_OFFSET;
+                end
+                else if (eth_inp_data[33] | (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS)) begin
+                    eth_insp_state <= ETH_INSP_WRITE_CPU_REGS;
+                    eth_insp_dreg_count <= 0;
+                end
+                else begin
+                    eth_insp_dreg_count <= eth_insp_dreg_count_next;
+                end
+            end
+        end
+
+        ETH_INSP_WRITE_DSP_REGS: begin
+            if (dsp_out_ready & dsp_out_valid) begin
+                eth_insp_dreg_count <= eth_insp_dreg_count_next;
+                if (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS) begin
+                    eth_insp_state <= ETH_INSP_WRITE_DSP_LIVE;
+                    eth_insp_dreg_count <= 0;
+                end
+            end
+
+        end
+
+        ETH_INSP_WRITE_DSP_LIVE: begin
+            if (dsp_out_ready & dsp_out_valid & eth_inp_data[33]) begin
+                eth_insp_state <= ETH_INSP_READ_ETH_PRE;
+            end
+        end
+
+        ETH_INSP_WRITE_CPU_REGS: begin
+            if (cpu_inp_ready & cpu_inp_valid) begin
+                eth_insp_dreg_count <= eth_insp_dreg_count_next;
+                if (cpu_inp_data[33]) begin
+                    eth_insp_state <= ETH_INSP_READ_ETH_PRE;
+                    eth_insp_dreg_count <= 0;
+                end
+                else if (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS) begin
+                    eth_insp_state <= ETH_INSP_WRITE_CPU_LIVE;
+                    eth_insp_dreg_count <= 0;
+                end
+            end
+        end
+
+        ETH_INSP_WRITE_CPU_LIVE: begin
+            if (cpu_inp_ready & cpu_inp_valid & eth_inp_data[33]) begin
+                eth_insp_state <= ETH_INSP_READ_ETH_PRE;
+            end
+        end
+
+        endcase //eth_insp_state
     end
 
 endmodule // packet_router
