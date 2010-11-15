@@ -45,6 +45,7 @@
 #include <ethertype.h>
 #include <arp_cache.h>
 #include "udp_fw_update.h"
+#include "pkt_ctrl.h"
 
 static void setup_network(void);
 
@@ -82,9 +83,6 @@ void handle_udp_data_packet(
 
     //setup network and vrt
     setup_network();
-
-    // kick off the state machine
-    //FIME dbsm_start(&dsp_rx_sm);
 
 }
 
@@ -294,28 +292,7 @@ void handle_udp_ctrl_packet(
     
 }
 
-/*
- * Called when an ethernet packet is received.
- * Return true if we handled it here, otherwise
- * it'll be passed on to the DSP Tx pipe
- */
-/*
-static bool
-eth_pkt_inspector(dbsm_t *sm, int bufno)
-{
-  //point me to the ethernet frame
-  uint32_t *buff = (uint32_t *)buffer_ram(bufno);
-
-  //treat this as fast-path data?
-  // We have to do this operation as fast as possible.
-  // Therefore, we do not check all the headers,
-  // just check that the udp port matches
-  // and that the vrt header is non zero.
-  // In the future, a hardware state machine will do this...
-  if ( //warning! magic numbers approaching....
-      (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
-      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[1] != USRP2_INVALID_VRT_HEADER)
-  ) return false;
+static void handle_inp_packet(uint32_t *buff, size_t num_lines){
 
   //test if its an ip recovery packet
   typedef struct{
@@ -329,15 +306,13 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
   if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
       printf("Got ip recovery packet: "); print_ip_addr(&recovery_packet->data.ip_addr); newline();
       set_ip_addr(&recovery_packet->data.ip_addr);
-      return true;
+      return;
   }
 
   //pass it to the slow-path handler
-  size_t len = buffer_pool_status->last_line[bufno] - 3;
-  handle_eth_packet(buff, len);
-  return true;
+  handle_eth_packet(buff, num_lines);
 }
-*/
+
 
 //------------------------------------------------------------------
 
@@ -402,15 +377,6 @@ static void setup_network(void){
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
 }
 
-inline static void
-buffer_irq_handler(unsigned irq)
-{
-  //FIXME uint32_t  status = buffer_pool_status->status;
-
-  //FIXME dbsm_process_status(&dsp_tx_sm, status);
-  //FIXME dbsm_process_status(&dsp_rx_sm, status);
-}
-
 int
 main(void)
 {
@@ -446,33 +412,14 @@ main(void)
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
 
-  // initialize double buffering state machine for ethernet -> DSP Tx
+  while(true){
 
-  //FIXME dbsm_init(&dsp_tx_sm, DSP_TX_BUF_0,
-//FIXME 	    &dsp_tx_recv_args, &dsp_tx_send_args,
-//FIXME 	    eth_pkt_inspector);
-
-
-  // initialize double buffering state machine for DSP RX -> Ethernet
-
-//FIXME     dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
-//FIXME 	      &dsp_rx_recv_args, &dsp_rx_send_args,
-//FIXME 	      dbsm_rx_inspector);
-
-  sr_tx_ctrl->clear_state = 1;
-//FIXME   bp_clear_buf(DSP_TX_BUF_0);
-//FIXME   bp_clear_buf(DSP_TX_BUF_1);
-
-  // kick off the state machine
-//FIXME   dbsm_start(&dsp_tx_sm);
-
-  //int which = 0;
-
-  while(1){
-    // hal_gpio_write(GPIO_TX_BANK, which, 0x8000);
-    // which ^= 0x8000;
-
-    buffer_irq_handler(0);
+    size_t num_lines;
+    void *buff = claim_incoming_buffer(&num_lines);
+    if (buff != NULL){
+        handle_inp_packet((uint32_t *)buff, num_lines);
+        release_incoming_buffer();
+    }
 
     if(i2c_done) {
       i2c_done = false;
@@ -488,18 +435,12 @@ main(void)
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
-      //dbsm_handle_tx_underrun(&dsp_tx_sm);
       pic_regs->pending = PIC_UNDERRUN_INT;	// clear interrupt
       putchar('U');
     }
 
     if (pending & PIC_OVERRUN_INT){
-      //dbsm_handle_rx_overrun(&dsp_rx_sm);
       pic_regs->pending = PIC_OVERRUN_INT;	// clear pending interrupt
-
-      // FIXME Figure out how to handle this robustly.
-      // Any buffers that are emptying should be allowed to drain...
-
       putchar('O');
     }
   }

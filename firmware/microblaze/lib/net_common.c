@@ -35,6 +35,7 @@
 #include "if_arp.h"
 #include <ethertype.h>
 #include <string.h>
+#include "pkt_ctrl.h"
 
 static inline bool
 ip_addr_eq(const struct ip_addr a, const struct ip_addr b)
@@ -119,13 +120,6 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
 	 const void *buf1, size_t len1,
 	 const void *buf2, size_t len2)
 {
-  // Wait for buffer to become idle
-  // FIXME can this ever not be ready?
-
-  //hal_set_leds(LED_BUF_BUSY, LED_BUF_BUSY);
-  //FIXME while((buffer_pool_status->status & BPS_IDLE(CPU_TX_BUF)) == 0)
-  //FIXME   ;
-  //hal_set_leds(0, LED_BUF_BUSY);
 
   // Assemble the header
   padded_eth_hdr_t	ehdr;
@@ -134,9 +128,10 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   ehdr.src = _local_mac_addr;
   ehdr.ethertype = ethertype;
 
-  uint32_t *p = 0;//FIXME buffer_ram(CPU_TX_BUF);
+  uint32_t *buff = (uint32_t *)claim_outgoing_buffer();
 
   // Copy the pieces into the buffer
+  uint32_t *p = buff;
   *p++ = 0x0;  				  // slow path
   memcpy_wa(p, &ehdr, sizeof(ehdr));      // 4 lines
   p += sizeof(ehdr)/sizeof(uint32_t);
@@ -166,26 +161,11 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
     p += len2/sizeof(uint32_t);
   }
 
-  size_t total_len = 0;//FIXME (p - buffer_ram(CPU_TX_BUF)) * sizeof(uint32_t);
+  size_t total_len = (p - buff) * sizeof(uint32_t);
   if (total_len < 60)		// ensure that we don't try to send a short packet
     total_len = 60;
-  
-  // wait until nobody else is sending to the ethernet
-  //FIXME if (ac_could_be_sending_to_eth){
-    //hal_set_leds(LED_ETH_BUSY, LED_ETH_BUSY);
-  //FIXME   dbsm_wait_for_opening(ac_could_be_sending_to_eth);
-    //hal_set_leds(0x0, LED_ETH_BUSY);
- //FIXME  }
 
-
-  // fire it off
-  //FIXME bp_send_from_buf(CPU_TX_BUF, cpu_tx_buf_dest_port, 1, 0, total_len/4);
-
-  // wait for it to complete (not long, it's a small pkt)
-  //FIXME while((buffer_pool_status->status & (BPS_DONE(CPU_TX_BUF) | BPS_ERROR(CPU_TX_BUF))) == 0)
-  //FIXME   ;
-
-  //FIXME bp_clear_buf(CPU_TX_BUF);
+  commit_outgoing_buffer(total_len/4);
 }
 
 unsigned int 

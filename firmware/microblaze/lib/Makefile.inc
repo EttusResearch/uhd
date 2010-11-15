@@ -36,6 +36,7 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/memset_wa.c \
 	$(top_srcdir)/lib/nonstdio.c \
 	$(top_srcdir)/lib/pic.c \
+	$(top_srcdir)/lib/pkt_ctrl.c \
 	$(top_srcdir)/lib/print_addrs.c \
 	$(top_srcdir)/lib/print_rmon_regs.c \
 	$(top_srcdir)/lib/print_buffer.c \
