@@ -73,6 +73,7 @@ struct usrp2_impl::io_impl{
     bool recv_pirate_crew_raiding;
     alignment_buffer_type::sptr recv_pirate_booty;
     bounded_buffer<async_metadata_t>::sptr async_msg_fifo;
+    boost::mutex spawn_mutex;
 };
 
 /***********************************************************************
@@ -88,6 +89,8 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
     size_t next_packet_seq = 0;
+
+    spawn_mutex.unlock();
 
     while(recv_pirate_crew_raiding){
         managed_recv_buffer::sptr buff = zc_if->get_recv_buff();
@@ -162,11 +165,17 @@ void usrp2_impl::io_init(void){
 
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){
+        //ensure a non-blocking mutex lock
+        _io_impl->spawn_mutex.unlock();
+        _io_impl->spawn_mutex.lock();
+        //spawn a new pirate to plunder the recv booty
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop,
             _io_impl.get(), _data_transports.at(i),
             _mboards.at(i), i
         ));
+        //will block here until the thread unlocks
+        _io_impl->spawn_mutex.lock();
     }
 }
 
