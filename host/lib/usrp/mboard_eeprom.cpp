@@ -64,7 +64,7 @@ static const boost::uint8_t NXXX_EEPROM_ADDR = 0x50;
 static const uhd::dict<std::string, boost::uint8_t> USRP_NXXX_OFFSETS = boost::assign::map_list_of
     ("rev-lsb-msb", 0x00)
     ("mac-addr", 0x02)
-    ("ip-addr", 0x08)
+    ("ip-addr", 0x0C)
     //leave space here for other addresses (perhaps)
     ("serial", 0x18)
     ("name", 0x18 + SERIAL_LEN)
