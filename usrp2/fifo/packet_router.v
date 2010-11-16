@@ -25,9 +25,12 @@ module packet_router
         output sys_int_o, //want an interrupt?
 
         // Input Interfaces (in to router)
+        input [35:0] ser_inp_data, input ser_inp_valid, output ser_inp_ready,
+        input [35:0] dsp_inp_data, input dsp_inp_valid, output dsp_inp_ready,
         input [35:0] eth_inp_data, input eth_inp_valid, output eth_inp_ready,
 
         // Output Interfaces (out of router)
+        output [35:0] ser_out_data, output ser_out_valid, input ser_out_ready,
         output [35:0] dsp_out_data, output dsp_out_valid, input dsp_out_ready,
         output [35:0] eth_out_data, output eth_out_valid, input eth_out_ready
     );
@@ -80,19 +83,29 @@ module packet_router
     // Communication input source combiner
     //   - combine streams from serdes and ethernet
     ////////////////////////////////////////////////////////////////////
-    //TODO: just connect eth input to com input for now
-    assign com_inp_data = eth_inp_data;
-    assign com_inp_valid = eth_inp_valid;
-    assign eth_inp_ready = com_inp_ready;
+    fifo36_mux com_input_source(
+        .clk(stream_clk), .rst(stream_rst), .clear(1'b0),
+        .data0_i(eth_inp_data), .src0_rdy_i(eth_inp_valid), .dst0_rdy_o(eth_inp_ready),
+        .data1_i(ser_inp_data), .src1_rdy_i(ser_inp_valid), .dst1_rdy_o(ser_inp_ready),
+        .data_o(com_inp_data), .src_rdy_o(com_inp_valid), .dst_rdy_i(com_inp_ready)
+    );
 
     ////////////////////////////////////////////////////////////////////
     // Communication output sink demuxer
     //   - demux the stream to serdes or ethernet
     ////////////////////////////////////////////////////////////////////
-    //TODO: just connect eth output to com output for now
+    wire eth_link_is_up = 1'b1; //TODO should come from input or register
+
+    //connect the ethernet output signals
     assign eth_out_data = com_out_data;
     assign eth_out_valid = com_out_valid;
-    assign com_out_ready = eth_out_ready;
+
+    //connect the serdes output signals
+    assign ser_out_data = com_out_data;
+    assign ser_out_valid = com_out_valid;
+
+    //mux the com signal from the ethernet link
+    assign com_out_ready = (eth_link_is_up)? eth_out_ready : ser_out_ready;
 
     ////////////////////////////////////////////////////////////////////
     // Communication output source combiner
