@@ -37,6 +37,9 @@ module packet_router
     always @(posedge wb_clk_i)
         wb_ack_o <= wb_stb_i & ~wb_ack_o;
 
+    //which buffer: 0 = CPU read buffer, 1 = CPU write buffer
+    wire which_buf = wb_adr_i[BUF_SIZE+2];
+
     ////////////////////////////////////////////////////////////////////
     // CPU interface to this packet router
     ////////////////////////////////////////////////////////////////////
@@ -47,8 +50,15 @@ module packet_router
     wire        cpu_out_valid;
     wire        cpu_out_ready;
 
-    //which buffer: 0 = CPU read buffer, 1 = CPU write buffer
-    wire which_buf = wb_adr_i[BUF_SIZE+2];
+    ////////////////////////////////////////////////////////////////////
+    // Communication interfaces
+    ////////////////////////////////////////////////////////////////////
+    wire [35:0] com_inp_data;
+    wire        com_inp_valid;
+    wire        com_inp_ready;
+    wire [35:0] com_out_data;
+    wire        com_out_valid;
+    wire        com_out_ready;
 
     ////////////////////////////////////////////////////////////////////
     // status and control handshakes
@@ -67,20 +77,31 @@ module packet_router
     assign status[1] = cpu_out_hs_stat;
 
     ////////////////////////////////////////////////////////////////////
-    // Ethernet input control
+    // Communication input source combiner
+    //   - combine streams from serdes and ethernet
     ////////////////////////////////////////////////////////////////////
-    //TODO: just connect eth input to cpu input for now
-    //assign cpu_inp_data = eth_inp_data;
-    //assign cpu_inp_valid = eth_inp_valid;
-    //assign eth_inp_ready = cpu_inp_ready;
+    //TODO: just connect eth input to com input for now
+    assign com_inp_data = eth_inp_data;
+    assign com_inp_valid = eth_inp_valid;
+    assign eth_inp_ready = com_inp_ready;
 
     ////////////////////////////////////////////////////////////////////
-    // Ethernet output control
+    // Communication output sink demuxer
+    //   - demux the stream to serdes or ethernet
     ////////////////////////////////////////////////////////////////////
-    //TODO: just connect eth output to cpu output for now
-    assign eth_out_data = cpu_out_data;
-    assign eth_out_valid = cpu_out_valid;
-    assign cpu_out_ready = eth_out_ready;
+    //TODO: just connect eth output to com output for now
+    assign eth_out_data = com_out_data;
+    assign eth_out_valid = com_out_valid;
+    assign com_out_ready = eth_out_ready;
+
+    ////////////////////////////////////////////////////////////////////
+    // Communication output source combiner
+    //   - combine streams from dsp framer, com inspector, and cpu
+    ////////////////////////////////////////////////////////////////////
+    //TODO: just connect com output to cpu output for now
+    assign com_out_data = cpu_out_data;
+    assign com_out_valid = cpu_out_valid;
+    assign cpu_out_ready = com_out_ready;
 
     ////////////////////////////////////////////////////////////////////
     // Interface CPU input interface to memory mapped wishbone
@@ -225,131 +246,131 @@ module packet_router
     end
 
     ////////////////////////////////////////////////////////////////////
-    // Ethernet input inspector
-    //   - inspect Ethernet and send it to CPU or DSP
+    // Communication input inspector
+    //   - inspect com input and send it to CPU, DSP, or COM
     ////////////////////////////////////////////////////////////////////
-    localparam ETH_INSP_READ_ETH_PRE = 0;
-    localparam ETH_INSP_READ_ETH = 1;
-    localparam ETH_INSP_WRITE_DSP_REGS = 2;
-    localparam ETH_INSP_WRITE_DSP_LIVE = 3;
-    localparam ETH_INSP_WRITE_CPU_REGS = 4;
-    localparam ETH_INSP_WRITE_CPU_LIVE = 5;
+    localparam COM_INSP_READ_COM_PRE = 0;
+    localparam COM_INSP_READ_COM = 1;
+    localparam COM_INSP_WRITE_DSP_REGS = 2;
+    localparam COM_INSP_WRITE_DSP_LIVE = 3;
+    localparam COM_INSP_WRITE_CPU_REGS = 4;
+    localparam COM_INSP_WRITE_CPU_LIVE = 5;
 
-    localparam ETH_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr lines
-    localparam ETH_INSP_DREGS_DSP_OFFSET = 10; //offset to start dsp at
+    localparam COM_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr lines
+    localparam COM_INSP_DREGS_DSP_OFFSET = 10; //offset to start dsp at
 
-    reg [2:0] eth_insp_state;
-    reg [3:0] eth_insp_dreg_count; //data registers to buffer headers
-    wire [3:0] eth_insp_dreg_count_next = eth_insp_dreg_count + 1'b1;
-    reg [35:0] eth_insp_dregs [ETH_INSP_MAX_NUM_DREGS-1:0];
+    reg [2:0] com_insp_state;
+    reg [3:0] com_insp_dreg_count; //data registers to buffer headers
+    wire [3:0] com_insp_dreg_count_next = com_insp_dreg_count + 1'b1;
+    reg [35:0] com_insp_dregs [COM_INSP_MAX_NUM_DREGS-1:0];
 
-    wire eth_inp_dregs_is_data = 1'b0; //TODO (not data for now)
+    wire com_inp_dregs_is_data = 1'b0; //TODO (not data for now)
 
     /////////////////////////////////////
     //assign output signals to CPU input
     /////////////////////////////////////
-    assign cpu_inp_data = (eth_insp_state == ETH_INSP_WRITE_CPU_REGS)?
-        eth_insp_dregs[eth_insp_dreg_count] : eth_inp_data
+    assign cpu_inp_data = (com_insp_state == COM_INSP_WRITE_CPU_REGS)?
+        com_insp_dregs[com_insp_dreg_count] : com_inp_data
     ;
     assign cpu_inp_valid =
-        (eth_insp_state == ETH_INSP_WRITE_CPU_REGS)? 1'b1          : (
-        (eth_insp_state == ETH_INSP_WRITE_CPU_LIVE)? eth_inp_valid : (
+        (com_insp_state == COM_INSP_WRITE_CPU_REGS)? 1'b1          : (
+        (com_insp_state == COM_INSP_WRITE_CPU_LIVE)? com_inp_valid : (
     1'b0));
 
     /////////////////////////////////////
     //assign output signals to DSP output
     /////////////////////////////////////
-    wire [3:0] eth_insp_dsp_flags = (eth_insp_dreg_count == ETH_INSP_DREGS_DSP_OFFSET)?
+    wire [3:0] com_insp_dsp_flags = (com_insp_dreg_count == COM_INSP_DREGS_DSP_OFFSET)?
         4'b0001 : 4'b0000
     ;
-    assign dsp_out_data = (eth_insp_state == ETH_INSP_WRITE_DSP_REGS)?
-        {eth_insp_dsp_flags, eth_insp_dregs[eth_insp_dreg_count][31:0]} : eth_inp_data
+    assign dsp_out_data = (com_insp_state == COM_INSP_WRITE_DSP_REGS)?
+        {com_insp_dsp_flags, com_insp_dregs[com_insp_dreg_count][31:0]} : com_inp_data
     ;
     assign dsp_out_valid =
-        (eth_insp_state == ETH_INSP_WRITE_DSP_REGS)? 1'b1          : (
-        (eth_insp_state == ETH_INSP_WRITE_DSP_LIVE)? eth_inp_valid : (
+        (com_insp_state == COM_INSP_WRITE_DSP_REGS)? 1'b1          : (
+        (com_insp_state == COM_INSP_WRITE_DSP_LIVE)? com_inp_valid : (
     1'b0));
 
     /////////////////////////////////////
-    //assign output signal to ETH input
+    //assign output signal to COM input
     /////////////////////////////////////
-    assign eth_inp_ready =
-        (eth_insp_state == ETH_INSP_READ_ETH_PRE)  ? 1'b1          : (
-        (eth_insp_state == ETH_INSP_READ_ETH)      ? 1'b1          : (
-        (eth_insp_state == ETH_INSP_WRITE_DSP_LIVE)? dsp_out_ready : (
-        (eth_insp_state == ETH_INSP_WRITE_CPU_LIVE)? cpu_inp_ready : (
+    assign com_inp_ready =
+        (com_insp_state == COM_INSP_READ_COM_PRE)  ? 1'b1          : (
+        (com_insp_state == COM_INSP_READ_COM)      ? 1'b1          : (
+        (com_insp_state == COM_INSP_WRITE_DSP_LIVE)? dsp_out_ready : (
+        (com_insp_state == COM_INSP_WRITE_CPU_LIVE)? cpu_inp_ready : (
     1'b0))));
 
     always @(posedge stream_clk)
     if(stream_rst) begin
-        eth_insp_state <= ETH_INSP_READ_ETH_PRE;
-        eth_insp_dreg_count <= 0;
+        com_insp_state <= COM_INSP_READ_COM_PRE;
+        com_insp_dreg_count <= 0;
     end
     else begin
-        case(eth_insp_state)
-        ETH_INSP_READ_ETH_PRE: begin
-            if (eth_inp_ready & eth_inp_valid & eth_inp_data[32]) begin
-                eth_insp_state <= ETH_INSP_READ_ETH;
-                eth_insp_dreg_count <= eth_insp_dreg_count_next;
-                eth_insp_dregs[eth_insp_dreg_count] <= eth_inp_data;
+        case(com_insp_state)
+        COM_INSP_READ_COM_PRE: begin
+            if (com_inp_ready & com_inp_valid & com_inp_data[32]) begin
+                com_insp_state <= COM_INSP_READ_COM;
+                com_insp_dreg_count <= com_insp_dreg_count_next;
+                com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
             end
         end
 
-        ETH_INSP_READ_ETH: begin
-            if (eth_inp_ready & eth_inp_valid) begin
-                eth_insp_dregs[eth_insp_dreg_count] <= eth_inp_data;
-                if (eth_inp_dregs_is_data & (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS)) begin
-                    eth_insp_state <= ETH_INSP_WRITE_DSP_REGS;
-                    eth_insp_dreg_count <= ETH_INSP_DREGS_DSP_OFFSET;
+        COM_INSP_READ_COM: begin
+            if (com_inp_ready & com_inp_valid) begin
+                com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
+                if (com_inp_dregs_is_data & (com_insp_dreg_count_next == COM_INSP_MAX_NUM_DREGS)) begin
+                    com_insp_state <= COM_INSP_WRITE_DSP_REGS;
+                    com_insp_dreg_count <= COM_INSP_DREGS_DSP_OFFSET;
                 end
-                else if (eth_inp_data[33] | (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS)) begin
-                    eth_insp_state <= ETH_INSP_WRITE_CPU_REGS;
-                    eth_insp_dreg_count <= 0;
+                else if (com_inp_data[33] | (com_insp_dreg_count_next == COM_INSP_MAX_NUM_DREGS)) begin
+                    com_insp_state <= COM_INSP_WRITE_CPU_REGS;
+                    com_insp_dreg_count <= 0;
                 end
                 else begin
-                    eth_insp_dreg_count <= eth_insp_dreg_count_next;
+                    com_insp_dreg_count <= com_insp_dreg_count_next;
                 end
             end
         end
 
-        ETH_INSP_WRITE_DSP_REGS: begin
+        COM_INSP_WRITE_DSP_REGS: begin
             if (dsp_out_ready & dsp_out_valid) begin
-                eth_insp_dreg_count <= eth_insp_dreg_count_next;
-                if (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS) begin
-                    eth_insp_state <= ETH_INSP_WRITE_DSP_LIVE;
-                    eth_insp_dreg_count <= 0;
+                com_insp_dreg_count <= com_insp_dreg_count_next;
+                if (com_insp_dreg_count_next == COM_INSP_MAX_NUM_DREGS) begin
+                    com_insp_state <= COM_INSP_WRITE_DSP_LIVE;
+                    com_insp_dreg_count <= 0;
                 end
             end
 
         end
 
-        ETH_INSP_WRITE_DSP_LIVE: begin
-            if (dsp_out_ready & dsp_out_valid & eth_inp_data[33]) begin
-                eth_insp_state <= ETH_INSP_READ_ETH_PRE;
+        COM_INSP_WRITE_DSP_LIVE: begin
+            if (dsp_out_ready & dsp_out_valid & com_inp_data[33]) begin
+                com_insp_state <= COM_INSP_READ_COM_PRE;
             end
         end
 
-        ETH_INSP_WRITE_CPU_REGS: begin
+        COM_INSP_WRITE_CPU_REGS: begin
             if (cpu_inp_ready & cpu_inp_valid) begin
-                eth_insp_dreg_count <= eth_insp_dreg_count_next;
+                com_insp_dreg_count <= com_insp_dreg_count_next;
                 if (cpu_inp_data[33]) begin
-                    eth_insp_state <= ETH_INSP_READ_ETH_PRE;
-                    eth_insp_dreg_count <= 0;
+                    com_insp_state <= COM_INSP_READ_COM_PRE;
+                    com_insp_dreg_count <= 0;
                 end
-                else if (eth_insp_dreg_count_next == ETH_INSP_MAX_NUM_DREGS) begin
-                    eth_insp_state <= ETH_INSP_WRITE_CPU_LIVE;
-                    eth_insp_dreg_count <= 0;
+                else if (com_insp_dreg_count_next == COM_INSP_MAX_NUM_DREGS) begin
+                    com_insp_state <= COM_INSP_WRITE_CPU_LIVE;
+                    com_insp_dreg_count <= 0;
                 end
             end
         end
 
-        ETH_INSP_WRITE_CPU_LIVE: begin
-            if (cpu_inp_ready & cpu_inp_valid & eth_inp_data[33]) begin
-                eth_insp_state <= ETH_INSP_READ_ETH_PRE;
+        COM_INSP_WRITE_CPU_LIVE: begin
+            if (cpu_inp_ready & cpu_inp_valid & com_inp_data[33]) begin
+                com_insp_state <= COM_INSP_READ_COM_PRE;
             end
         end
 
-        endcase //eth_insp_state
+        endcase //com_insp_state
     end
 
 endmodule // packet_router
