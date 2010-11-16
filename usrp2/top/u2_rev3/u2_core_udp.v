@@ -378,8 +378,9 @@ module u2_core
       .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
       .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),
       .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
-      .dsp_out_data({rd0_flags, rd0_dat}), .dsp_out_valid(rd0_ready_o), .dsp_out_ready(rd0_ready_i),
-      .ser_out_data({rd1_flags, rd1_dat}), .ser_out_valid(rd1_ready_o), .ser_out_ready(rd1_ready_i),
+
+      .ser_out_data({rd0_flags, rd0_dat}), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
+      .dsp_out_data({rd1_flags, rd1_dat}), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
       .eth_out_data({rd2_flags, rd2_dat}), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
 
