@@ -84,7 +84,7 @@ module packet_router
     //   - combine streams from serdes and ethernet
     ////////////////////////////////////////////////////////////////////
     fifo36_mux com_input_source(
-        .clk(stream_clk), .rst(stream_rst), .clear(1'b0),
+        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
         .data0_i(eth_inp_data), .src0_rdy_i(eth_inp_valid), .dst0_rdy_o(eth_inp_ready),
         .data1_i(ser_inp_data), .src1_rdy_i(ser_inp_valid), .dst1_rdy_o(ser_inp_ready),
         .data_o(com_inp_data), .src_rdy_o(com_inp_valid), .dst_rdy_i(com_inp_ready)
@@ -268,16 +268,22 @@ module packet_router
     localparam COM_INSP_WRITE_DSP_LIVE = 3;
     localparam COM_INSP_WRITE_CPU_REGS = 4;
     localparam COM_INSP_WRITE_CPU_LIVE = 5;
+    //FIXME collapse the write dsp/cpu states and use another register
 
-    localparam COM_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr lines
-    localparam COM_INSP_DREGS_DSP_OFFSET = 10; //offset to start dsp at
+    localparam COM_INSP_MAX_NUM_DREGS = 13; //padded_eth + ip + udp + vrt_hdr + extra cycle
+    localparam COM_INSP_DREGS_DSP_OFFSET = 11; //offset to start dsp at
 
     reg [2:0] com_insp_state;
     reg [3:0] com_insp_dreg_count; //data registers to buffer headers
     wire [3:0] com_insp_dreg_count_next = com_insp_dreg_count + 1'b1;
     reg [35:0] com_insp_dregs [COM_INSP_MAX_NUM_DREGS-1:0];
 
-    wire com_inp_dregs_is_data = 1'b0; //TODO (not data for now)
+    wire com_inp_dregs_is_data = 1'b1 //FIXME bit inspection is wrong (representation)
+        & (com_insp_dregs[3][15:0] == 16'h800)    //ethertype IPv4
+        & (com_insp_dregs[6][23:16] == 8'h11)     //protocol UDP
+        & (com_insp_dregs[9][15:0] == 16'd49153)  //UDP data port
+        & (com_insp_dregs[11][31:0] != 32'h0)     //VRT hdr non-zero
+    ;
 
     /////////////////////////////////////
     //assign output signals to CPU input
