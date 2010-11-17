@@ -43,6 +43,8 @@ module packet_router
     //which buffer: 0 = CPU read buffer, 1 = CPU write buffer
     wire which_buf = wb_adr_i[BUF_SIZE+2];
 
+    wire master_mode_flag = 1'b1; //TODO should come from input or register
+
     ////////////////////////////////////////////////////////////////////
     // CPU interface to this packet router
     ////////////////////////////////////////////////////////////////////
@@ -80,54 +82,87 @@ module packet_router
     assign status[1] = cpu_inp_hs_stat;
 
     ////////////////////////////////////////////////////////////////////
-    // Communication input source combiner
-    //   - combine streams from serdes and ethernet
+    // Communication input source crossbar
+    // When in master mode:
+    //   - serdes input -> comm output combiner
+    //   - ethernet input -> comm input inspector
+    // When in slave mode:
+    //   - serdes input -> comm input inspector
+    //   - ethernet input -> null sink
     ////////////////////////////////////////////////////////////////////
-    fifo36_mux com_input_source(
-        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
-        .data0_i(eth_inp_data), .src0_rdy_i(eth_inp_valid), .dst0_rdy_o(eth_inp_ready),
-        .data1_i(ser_inp_data), .src1_rdy_i(ser_inp_valid), .dst1_rdy_o(ser_inp_ready),
-        .data_o(com_inp_data), .src_rdy_o(com_inp_valid), .dst_rdy_i(com_inp_ready)
-    );
+
+    //streaming signals from the crossbar to the combiner
+    wire [35:0] crs_inp_data;
+    wire        crs_inp_valid;
+    wire        crs_inp_ready;
+
+    //connect the com input signals
+    assign com_inp_data = (master_mode_flag)? eth_inp_data : ser_inp_data;
+    assign com_inp_valid = (master_mode_flag)? eth_inp_valid : ser_inp_valid;
+
+    //connect the crossbar input signals
+    assign crs_inp_data = ser_inp_data;
+    assign crs_inp_valid = (master_mode_flag)? ser_inp_valid : 1'b0;
+
+    //connect the crossbar ready signals
+    assign eth_inp_ready = (master_mode_flag)? com_inp_ready : 1'b1/*null sink*/;
+    assign ser_inp_ready = (master_mode_flag)? crs_inp_ready : eth_inp_ready;
 
     ////////////////////////////////////////////////////////////////////
     // Communication output sink crossbar
-    //   - when the link is up (master): com -> eth and insp -> serdes
-    //   - when the link is down (slave): com -> serdes (insp disconnected)
+    // When in master mode:
+    //   - comm output -> ethernet output
+    //   - insp output -> serdes output
+    // When in slave mode:
+    //   - com output -> serdes output
+    //   - insp output -> null sink
     ////////////////////////////////////////////////////////////////////
-    wire eth_link_is_up = 1'b1; //TODO should come from input or register
 
     //streaming signals from the inspector to the crossbar
-    wire [35:0] ser_crs_data;
-    wire        ser_crs_valid;
-    wire        ser_crs_ready;
+    wire [35:0] crs_out_data;
+    wire        crs_out_valid;
+    wire        crs_out_ready;
 
-    //connect the ethernet source output signals
+    //connect the ethernet output signals
     assign eth_out_data = com_out_data;
-    assign eth_out_valid = (eth_link_is_up)? com_out_valid : 1'b0;
+    assign eth_out_valid = (master_mode_flag)? com_out_valid : 1'b0;
 
-    //connect the serdes source output signals
-    assign ser_out_data = (eth_link_is_up)? ser_crs_data : com_out_data;
-    assign ser_out_valid = (eth_link_is_up)? ser_crs_valid : com_out_valid;
+    //connect the serdes output signals
+    assign ser_out_data = (master_mode_flag)? crs_out_data : com_out_data;
+    assign ser_out_valid = (master_mode_flag)? crs_out_valid : com_out_valid;
 
-    //connect the crossbar sink output signals
-    assign com_out_ready = (eth_link_is_up)? eth_out_ready : ser_out_ready;
-    assign ser_crs_ready = (eth_link_is_up)? ser_out_ready : 1'b1/*null sink*/;
+    //connect the crossbar ready signals
+    assign com_out_ready = (master_mode_flag)? eth_out_ready : ser_out_ready;
+    assign crs_out_ready = (master_mode_flag)? ser_out_ready : 1'b1/*null sink*/;
 
     ////////////////////////////////////////////////////////////////////
     // Communication output source combiner
-    //   - combine streams from dsp framer, com inspector, and cpu
+    //   - DSP framer
+    //   - CPU input
+    //   - Crossbar input
     ////////////////////////////////////////////////////////////////////
 
-    //streaming signals from the dsp framer to the com mux
+    //streaming signals from the dsp framer to the combiner
     wire [35:0] dsp_frm_data;
     wire        dsp_frm_valid;
     wire        dsp_frm_ready;
 
-    fifo36_mux com_output_source(
+    //dummy signals to join the the muxes below
+    wire [35:0] _combiner_data;
+    wire        _combiner_valid;
+    wire        _combiner_ready;
+
+    fifo36_mux _com_output_source(
         .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
         .data0_i(dsp_frm_data), .src0_rdy_i(dsp_frm_valid), .dst0_rdy_o(dsp_frm_ready),
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
+        .data_o(_combiner_data), .src_rdy_o(_combiner_valid), .dst_rdy_i(_combiner_ready)
+    );
+
+    fifo36_mux com_output_source(
+        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
+        .data0_i(_combiner_data), .src0_rdy_i(_combiner_valid), .dst0_rdy_o(_combiner_ready),
+        .data1_i(crs_inp_data), .src1_rdy_i(crs_inp_valid), .dst1_rdy_o(crs_inp_ready),
         .data_o(com_out_data), .src_rdy_o(com_out_valid), .dst_rdy_i(com_out_ready)
     );
 
@@ -329,13 +364,13 @@ module packet_router
     //Always connected output data lines.
     assign cpu_out_data = com_insp_out_data;
     assign dsp_out_data = com_insp_out_data;
-    assign ser_crs_data = com_insp_out_data;
+    assign crs_out_data = com_insp_out_data;
 
     //Destination output valid signals:
     //Comes from inspector valid when destination is selected, and otherwise low.
     assign cpu_out_valid = (com_insp_dest == COM_INSP_DEST_CPU)? com_insp_out_valid : 1'b0;
     assign dsp_out_valid = (com_insp_dest == COM_INSP_DEST_DSP)? com_insp_out_valid : 1'b0;
-    assign ser_crs_valid = (com_insp_dest == COM_INSP_DEST_SER)? com_insp_out_valid : 1'b0;
+    assign crs_out_valid = (com_insp_dest == COM_INSP_DEST_SER)? com_insp_out_valid : 1'b0;
 
     //The communication inspector ouput ready signal:
     //Always ready when storing to data registers,
