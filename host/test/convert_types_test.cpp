@@ -38,6 +38,9 @@ template <typename T> const void * pod2ptr(const T &pod){
     return boost::asio::buffer_cast<const void *>(boost::asio::buffer(pod));
 }
 
+#define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f) and std::abs(b) > (f))) \
+    BOOST_CHECK_CLOSE_FRACTION(a, b, f)
+
 /***********************************************************************
  * Loopback runner:
  *    convert input buffer into intermediate buffer
@@ -130,8 +133,8 @@ static void test_convert_types_fc32(
     //run the loopback and test
     loopback(nsamps, io_type, otw_type, input, output);
     for (size_t i = 0; i < nsamps; i++){
-        BOOST_CHECK_CLOSE_FRACTION(input[i].real(), output[i].real(), float(0.01));
-        BOOST_CHECK_CLOSE_FRACTION(input[i].imag(), output[i].imag(), float(0.01));
+        MY_CHECK_CLOSE(input[i].real(), output[i].real(), float(0.01));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), float(0.01));
     }
 }
 
@@ -195,8 +198,8 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){
-        BOOST_CHECK_CLOSE_FRACTION(input[i].real(), output[i].real()/float(32767), float(0.01));
-        BOOST_CHECK_CLOSE_FRACTION(input[i].imag(), output[i].imag()/float(32767), float(0.01));
+        MY_CHECK_CLOSE(input[i].real(), output[i].real()/float(32767), float(0.01));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag()/float(32767), float(0.01));
     }
 }
 
@@ -236,7 +239,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){
-        BOOST_CHECK_CLOSE_FRACTION(input[i].real()/float(32767), output[i].real(), float(0.01));
-        BOOST_CHECK_CLOSE_FRACTION(input[i].imag()/float(32767), output[i].imag(), float(0.01));
+        MY_CHECK_CLOSE(input[i].real()/float(32767), output[i].real(), float(0.01));
+        MY_CHECK_CLOSE(input[i].imag()/float(32767), output[i].imag(), float(0.01));
     }
 }

@@ -35,6 +35,8 @@ using namespace uhd::transport;
 static bool wait_available(
     boost::asio::ip::udp::socket &socket, double timeout
 ){
+    #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
+
     //setup timeval for timeout
     timeval tv;
     tv.tv_sec = 0;
@@ -46,6 +48,17 @@ static bool wait_available(
     FD_SET(socket.native(), &rset);
 
     return ::select(socket.native()+1, &rset, NULL, NULL, &tv) > 0;
+
+    #else /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
+
+    //FIXME: why does select fail on macintosh?
+    for (size_t i = 0; i < size_t(timeout*1e3); i++){
+        if (socket.available()) return true;
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    }
+    return false;
+
+    #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
 }
 
 /***********************************************************************
