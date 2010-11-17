@@ -91,30 +91,50 @@ module packet_router
     );
 
     ////////////////////////////////////////////////////////////////////
-    // Communication output sink demuxer
-    //   - demux the stream to serdes or ethernet
+    // Communication output sink crossbar
+    //   - when the link is up (master): com -> eth and insp -> serdes
+    //   - when the link is down (slave): com -> serdes (insp disconnected)
     ////////////////////////////////////////////////////////////////////
     wire eth_link_is_up = 1'b1; //TODO should come from input or register
 
-    //connect the ethernet output signals
+    //streaming signals from the inspector to the crossbar
+    wire [35:0] ser_crs_data;
+    wire        ser_crs_valid;
+    wire        ser_crs_ready;
+
+    //connect the ethernet source output signals
     assign eth_out_data = com_out_data;
-    assign eth_out_valid = com_out_valid;
+    assign eth_out_valid = (eth_link_is_up)? com_out_valid : 1'b0;
 
-    //connect the serdes output signals
-    assign ser_out_data = com_out_data;
-    assign ser_out_valid = com_out_valid;
+    //connect the serdes source output signals
+    assign ser_out_data = (eth_link_is_up)? ser_crs_data : com_out_data;
+    assign ser_out_valid = (eth_link_is_up)? ser_crs_valid : com_out_valid;
 
-    //mux the com signal from the ethernet link
+    //connect the crossbar sink output signals
     assign com_out_ready = (eth_link_is_up)? eth_out_ready : ser_out_ready;
+    assign ser_crs_ready = (eth_link_is_up)? ser_out_ready : 1'b1/*null sink*/;
 
     ////////////////////////////////////////////////////////////////////
     // Communication output source combiner
     //   - combine streams from dsp framer, com inspector, and cpu
     ////////////////////////////////////////////////////////////////////
-    //TODO: just connect com output to cpu output for now
-    assign com_out_data = cpu_inp_data;
-    assign com_out_valid = cpu_inp_valid;
-    assign cpu_inp_ready = com_out_ready;
+
+    //streaming signals from the dsp framer to the com mux
+    wire [35:0] dsp_frm_data;
+    wire        dsp_frm_valid;
+    wire        dsp_frm_ready;
+
+    //TODO: tmp connect to dsp inp until we make the framer
+    assign dsp_frm_data = dsp_inp_data;
+    assign dsp_frm_valid = dsp_inp_valid;
+    assign dsp_inp_ready = dsp_frm_ready;
+
+    fifo36_mux com_output_source(
+        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
+        .data0_i(dsp_frm_data), .src0_rdy_i(dsp_frm_valid), .dst0_rdy_o(dsp_frm_ready),
+        .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
+        .data_o(com_out_data), .src_rdy_o(com_out_valid), .dst_rdy_i(com_out_ready)
+    );
 
     ////////////////////////////////////////////////////////////////////
     // Interface CPU output to memory mapped wishbone
@@ -268,7 +288,7 @@ module packet_router
     localparam COM_INSP_STATE_WRITE_LIVE = 3;
 
     localparam COM_INSP_DEST_DSP = 0;
-    localparam COM_INSP_DEST_COM = 1;
+    localparam COM_INSP_DEST_SER = 1;
     localparam COM_INSP_DEST_CPU = 2;
 
     localparam COM_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr
@@ -315,11 +335,13 @@ module packet_router
     //Always connected output data lines.
     assign cpu_out_data = com_insp_out_data;
     assign dsp_out_data = com_insp_out_data;
+    assign ser_crs_data = com_insp_out_data;
 
     //Destination output valid signals:
     //Comes from inspector valid when destination is selected, and otherwise low.
     assign cpu_out_valid = (com_insp_dest == COM_INSP_DEST_CPU)? com_insp_out_valid : 1'b0;
     assign dsp_out_valid = (com_insp_dest == COM_INSP_DEST_DSP)? com_insp_out_valid : 1'b0;
+    assign ser_crs_valid = (com_insp_dest == COM_INSP_DEST_SER)? com_insp_out_valid : 1'b0;
 
     //The communication inspector ouput ready signal:
     //Always ready when storing to data registers,
