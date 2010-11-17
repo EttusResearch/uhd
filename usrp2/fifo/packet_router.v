@@ -214,11 +214,13 @@ module packet_router
 
     reg [BUF_SIZE-1:0] cpu_inp_line_count_reg;
 
-    reg cpu_inp_flag_sof;
-    reg cpu_inp_flag_eof;
-    assign cpu_inp_data[35:32] = {2'b0, cpu_inp_flag_eof, cpu_inp_flag_sof};
+    assign cpu_inp_data[35:32] =
+        (cpu_inp_addr == 0                          )? 4'b0001 : (
+        (cpu_inp_addr_next == cpu_inp_line_count_reg)? 4'b0010 : (
+    4'b0000));
 
-    assign cpu_inp_valid = (cpu_inp_state == CPU_INP_STATE_UNLOAD)? 1'b1 : 1'b0;
+    reg cpu_inp_valid_reg;
+    assign cpu_inp_valid = cpu_inp_valid_reg;
     assign cpu_inp_hs_stat = (cpu_inp_state == CPU_INP_STATE_WAIT_CTRL_HI)? 1'b1 : 1'b0;
 
     RAMB16_S36_S36 cpu_inp_buff(
@@ -234,6 +236,7 @@ module packet_router
     if(stream_rst) begin
         cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
         cpu_inp_addr <= 0;
+        cpu_inp_valid_reg <= 1'b0;
     end
     else begin
         case(cpu_inp_state)
@@ -242,31 +245,27 @@ module packet_router
                 cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_LO;
             end
             cpu_inp_line_count_reg <= cpu_inp_line_count;
-            cpu_inp_addr <= 0; //reset the address counter
         end
 
         CPU_INP_STATE_WAIT_CTRL_LO: begin
             if (cpu_inp_hs_ctrl == 1'b0) begin
                 cpu_inp_state <= CPU_INP_STATE_UNLOAD;
-                cpu_inp_addr <= cpu_inp_addr_next; //BRAM has a setup delay and this is a bug
             end
-            cpu_inp_flag_sof <= 1'b1;
-            cpu_inp_flag_eof <= 1'b0;
         end
 
         CPU_INP_STATE_UNLOAD: begin
             if (cpu_inp_ready & cpu_inp_valid) begin
-                cpu_inp_addr <= cpu_inp_addr_next;
-                cpu_inp_flag_sof <= 1'b0;
-                if (cpu_inp_addr == cpu_inp_line_count_reg) begin
-                    cpu_inp_flag_eof <= 1'b1;
-                end
-                else begin
-                    cpu_inp_flag_eof <= 1'b0;
-                end
-                if (cpu_inp_flag_eof) begin
+                if (cpu_inp_data[33]) begin
+                    cpu_inp_addr <= 0;
                     cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
                 end
+                else begin
+                    cpu_inp_addr <= cpu_inp_addr_next;
+                end
+                cpu_inp_valid_reg <= 1'b0;
+            end
+            else begin
+                cpu_inp_valid_reg <= 1'b1;
             end
         end
 
