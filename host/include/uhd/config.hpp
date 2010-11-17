@@ -75,13 +75,16 @@
 #ifdef UHD_DLL // defined if UHD is compiled as a DLL
     #ifdef UHD_DLL_EXPORTS // defined if we are building the UHD DLL (instead of using it)
         #define UHD_API UHD_HELPER_DLL_EXPORT
+        #define EXIMP_TEMPLATE extern
     #else
         #define UHD_API UHD_HELPER_DLL_IMPORT
+        #define EXIMP_TEMPLATE
     #endif // UHD_DLL_EXPORTS
     #define UHD_LOCAL UHD_HELPER_DLL_LOCAL
 #else // UHD_DLL is not defined: this means UHD is a static lib.
     #define UHD_API
     #define UHD_LOCAL
+    #define EXIMP_TEMPLATE
 #endif // UHD_DLL
 
 // Define force inline macro
