@@ -184,74 +184,6 @@ typedef struct {
 
 #define buffer_pool_status ((buffer_pool_status_t *) BUFFER_POOL_STATUS_BASE)
 
-/*
- * Buffer n's xfer is done.
- * Clear this bit by issuing bp_clear_buf(n)
- */
-#define BPS_DONE(n)     (0x00000001 << (n))
-#define BPS_DONE_0	BPS_DONE(0)
-#define BPS_DONE_1	BPS_DONE(1)
-#define BPS_DONE_2	BPS_DONE(2)
-#define BPS_DONE_3	BPS_DONE(3)
-#define BPS_DONE_4	BPS_DONE(4)
-#define BPS_DONE_5	BPS_DONE(5)
-#define BPS_DONE_6	BPS_DONE(6)
-#define BPS_DONE_7	BPS_DONE(7)
-
-/*
- * Buffer n's xfer had an error.
- * Clear this bit by issuing bp_clear_buf(n)
- */
-#define BPS_ERROR(n)	(0x00000100 << (n))
-#define BPS_ERROR_0	BPS_ERROR(0)
-#define BPS_ERROR_1	BPS_ERROR(1)
-#define BPS_ERROR_2	BPS_ERROR(2)
-#define BPS_ERROR_3	BPS_ERROR(3)
-#define BPS_ERROR_4	BPS_ERROR(4)
-#define BPS_ERROR_5	BPS_ERROR(5)
-#define BPS_ERROR_6	BPS_ERROR(6)
-#define BPS_ERROR_7	BPS_ERROR(7)
-
-/*
- * Buffer n is idle.  A buffer is idle if it's not
- * DONE, ERROR, or processing a transaction.  If it's
- * IDLE, it's safe to start a new transaction.
- *
- * Clear this bit by starting a xfer with
- * bp_send_from_buf or bp_receive_to_buf.
- */
-#define BPS_IDLE(n)     (0x00010000 << (n))
-#define BPS_IDLE_0	BPS_IDLE(0)
-#define BPS_IDLE_1	BPS_IDLE(1)
-#define BPS_IDLE_2	BPS_IDLE(2)
-#define BPS_IDLE_3	BPS_IDLE(3)
-#define BPS_IDLE_4	BPS_IDLE(4)
-#define BPS_IDLE_5	BPS_IDLE(5)
-#define BPS_IDLE_6	BPS_IDLE(6)
-#define BPS_IDLE_7	BPS_IDLE(7)
-
-/*
- * Buffer n has a "slow path" packet in it.
- * This bit is orthogonal to the bits above and indicates that
- * the FPGA ethernet rx protocol engine has identified this packet
- * as one requiring firmware intervention.
- */
-#define BPS_SLOWPATH(n) (0x01000000 << (n))
-#define BPS_SLOWPATH_0	BPS_SLOWPATH(0)
-#define BPS_SLOWPATH_1	BPS_SLOWPATH(1)
-#define BPS_SLOWPATH_2	BPS_SLOWPATH(2)
-#define BPS_SLOWPATH_3	BPS_SLOWPATH(3)
-#define BPS_SLOWPATH_4	BPS_SLOWPATH(4)
-#define BPS_SLOWPATH_5	BPS_SLOWPATH(5)
-#define BPS_SLOWPATH_6	BPS_SLOWPATH(6)
-#define BPS_SLOWPATH_7	BPS_SLOWPATH(7)
-
-
-#define BPS_DONE_ALL	  0x000000ff	// mask of all dones
-#define BPS_ERROR_ALL	  0x0000ff00	// mask of all errors
-#define BPS_IDLE_ALL      0x00ff0000	// mask of all idles
-#define BPS_SLOWPATH_ALL  0xff000000	// mask of all slowpaths
-
 // The hw_config register
 
 #define	HWC_SIMULATION		0x80000000
@@ -318,46 +250,6 @@ hwconfig_wishbone_divisor(void)
 typedef struct {
   volatile uint32_t ctrl;
 } buffer_pool_ctrl_t;
-
-// buffer pool ports
-
-#define	PORT_SERDES	0	// serial/deserializer
-#define	PORT_DSP	1	// DSP tx or rx pipeline
-#define	PORT_ETH	2	// ethernet tx or rx
-#define	PORT_RAM	3	// RAM tx or rx
-
-// the buffer pool ctrl register fields
-
-#define BPC_BUFFER(n) (((n) & 0xf) << 28)
-#define   BPC_BUFFER_MASK      BPC_BUFFER(~0)
-#define   BPC_BUFFER_0	       BPC_BUFFER(0)
-#define   BPC_BUFFER_1	       BPC_BUFFER(1)
-#define   BPC_BUFFER_2	       BPC_BUFFER(2)
-#define   BPC_BUFFER_3	       BPC_BUFFER(3)
-#define   BPC_BUFFER_4	       BPC_BUFFER(4)
-#define   BPC_BUFFER_5	       BPC_BUFFER(5)
-#define   BPC_BUFFER_6	       BPC_BUFFER(6)
-#define   BPC_BUFFER_7	       BPC_BUFFER(7)
-#define	  BPC_BUFFER_NIL       BPC_BUFFER(0x8)	// disable
-
-#define BPC_PORT(n) (((n) & 0x7) << 25)
-#define   BPC_PORT_MASK        BPC_PORT(~0)
-#define   BPC_PORT_SERDES      BPC_PORT(PORT_SERDES)
-#define   BPC_PORT_DSP	       BPC_PORT(PORT_DSP)
-#define   BPC_PORT_ETH         BPC_PORT(PORT_ETH)
-#define   BPC_PORT_RAM         BPC_PORT(PORT_RAM)
-#define   BPC_PORT_NIL	       BPC_PORT(0x4)   	// disable
-
-#define	BPC_CLR	       	       (1 << 24)  // mutually excl commands
-#define	BPC_READ	       (1 << 23)
-#define BPC_WRITE              (1 << 22)
-
-#define BPC_STEP(step) (((step) & 0xf) << 18)
-#define   BPC_STEP_MASK	       BPC_STEP(~0)
-#define BPC_LAST_LINE(line) (((line) & 0x1ff) << 9)
-#define   BPC_LAST_LINE_MASK   BPC_LAST_LINE(~0)
-#define BPC_FIRST_LINE(line) (((line) & 0x1ff) << 0)
-#define   BPC_FIRST_LINE_MASK  BPC_FIRST_LINE(~0)
 
 #define buffer_pool_ctrl ((buffer_pool_ctrl_t *) BUFFER_POOL_CTRL_BASE)
 
