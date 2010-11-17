@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <vector>
+#include <string>
 
 namespace uhd{
 
@@ -55,8 +56,11 @@ namespace uhd{
         //! Get the step value for this range.
         const T step(void) const;
 
+        //! Convert this range to a printable string
+        const std::string to_pp_string(void) const;
+
     private: 
-	UHD_PIMPL_DECL(impl) _impl;
+        UHD_PIMPL_DECL(impl) _impl;
     };
 
     /*!
@@ -101,6 +105,9 @@ namespace uhd{
          * \return a value that is in one of the ranges
          */
          const T clip(const T &value, bool clip_step = false) const;
+
+        //! Convert this meta-range to a printable string
+        const std::string to_pp_string(void) const;
 
     };
 

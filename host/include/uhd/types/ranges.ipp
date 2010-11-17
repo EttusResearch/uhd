@@ -22,7 +22,7 @@
 #include <boost/foreach.hpp>
 #include <algorithm>
 #include <stdexcept>
-#include <iostream>
+#include <sstream>
 
 namespace uhd{
 
@@ -64,6 +64,15 @@ namespace uhd{
 
     template <typename T> const T range_t<T>::step(void) const{
         return _impl->step;
+    }
+
+    template <typename T> const std::string range_t<T>::to_pp_string(void) const{
+        std::stringstream ss;
+        ss << "(" << this->start();
+        if (this->start() != this->stop()) ss << ", " << this->stop();
+        if (this->step() != T(0)) ss << ", " << this->step();
+        ss << ")";
+        return ss.str();
     }
 
     /*******************************************************************
@@ -161,6 +170,14 @@ namespace uhd{
             last_stop = r.stop();
         }
         return last_stop;
+    }
+
+    template <typename T> const std::string meta_range_t<T>::to_pp_string(void) const{
+        std::stringstream ss;
+        BOOST_FOREACH(const range_t<T> &r, (*this)){
+            ss << r.to_pp_string() << std::endl;
+        }
+        return ss.str();
     }
 
 } //namespace uhd
