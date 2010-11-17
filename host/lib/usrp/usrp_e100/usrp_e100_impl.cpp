@@ -123,6 +123,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     if (fpga_compat_num != USRP_E_COMPAT_NUM or loaded_hash != fpga_hash){
         iface.reset();
         usrp_e100_load_fpga(usrp_e100_fpga_image);
+	sleep(1); ///\todo do this better one day.
         std::cout << boost::format("re-Opening USRP-E on %s") % node << std::endl;
         iface = usrp_e100_iface::make(node);
         try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
