@@ -112,11 +112,11 @@ namespace uhd{
     };
 
     //! export a symbol for the gain range type
-    EXIMP_TEMPLATE template struct UHD_API meta_range_t<float>;
+    UHD_EXIMP_TMPL template struct UHD_API meta_range_t<float>;
     typedef meta_range_t<float> gain_range_t;
 
     //! export a symbol for the freq range type
-    EXIMP_TEMPLATE template struct UHD_API meta_range_t<double>;
+    UHD_EXIMP_TMPL template struct UHD_API meta_range_t<double>;
     typedef meta_range_t<double> freq_range_t;
 
 
