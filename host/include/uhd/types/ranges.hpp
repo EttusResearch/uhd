@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/pimpl.hpp>
+#include <string>
 #include <vector>
 #include <string>
 
