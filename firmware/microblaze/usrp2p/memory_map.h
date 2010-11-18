@@ -78,9 +78,7 @@ wb_1master #(.decode_w(8),
 
 #define BUFFER_POOL_RAM_BASE 0x4000
 
-#define	NBUFFERS                8
 #define BP_NLINES	   0x0200	// number of 32-bit lines in a buffer
-#define BP_LAST_LINE	(BP_NLINES - 1)	// last line in a buffer
 
 #define buffer_pool_ram \
   ((uint32_t *) BUFFER_POOL_RAM_BASE)
@@ -198,8 +196,8 @@ typedef struct {
 #define BUFFER_POOL_STATUS_BASE 0x3300
 
 typedef struct {
-  volatile uint32_t last_line[NBUFFERS]; // last line xfer'd in buffer
-  volatile uint32_t status;	         // error and done flags
+  volatile uint32_t _padding[8];
+  volatile uint32_t status;
   volatile uint32_t hw_config;	         // see below
   volatile uint32_t dummy[3];
   volatile uint32_t irqs;
