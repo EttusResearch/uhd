@@ -43,8 +43,6 @@ module packet_router
     //which buffer: 0 = CPU read buffer, 1 = CPU write buffer
     wire which_buf = wb_adr_i[BUF_SIZE+2];
 
-    wire master_mode_flag = 1'b1; //TODO should come from input or register
-
     ////////////////////////////////////////////////////////////////////
     // CPU interface to this packet router
     ////////////////////////////////////////////////////////////////////
@@ -70,6 +68,7 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
     wire cpu_out_hs_ctrl = control[0];
     wire cpu_inp_hs_ctrl = control[1];
+    wire master_mode_flag = control[2];
     wire [BUF_SIZE-1:0] cpu_inp_line_count = control[BUF_SIZE-1+16:0+16];
 
     wire cpu_out_hs_stat;
