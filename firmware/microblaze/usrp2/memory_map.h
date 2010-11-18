@@ -466,6 +466,7 @@ typedef struct {
   volatile uint32_t     report_sid;
   volatile uint32_t     policy;
   volatile uint32_t     cyc_per_up;
+  volatile uint32_t     packets_per_up;
 } sr_tx_ctrl_t;
 
 #define sr_tx_ctrl ((sr_tx_ctrl_t *) _SR_ADDR(SR_TX_CTRL))
