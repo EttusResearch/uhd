@@ -1,0 +1,12 @@
+########################################################################
+# lib USRP directories:
+########################################################################
+
+dboard:
+    Daughterboard implementation code for all USRP daughterboards
+
+usrp1:
+    Implementation code for the USB-based USRP Classic motherboard.
+
+usrp2:
+    Implementation code for USRP2 and USRP-N2XX.

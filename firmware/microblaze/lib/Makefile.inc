@@ -33,6 +33,7 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/hal_io.c \
 	$(top_srcdir)/lib/hal_uart.c \
 	$(top_srcdir)/lib/i2c.c \
+	$(top_srcdir)/lib/i2c_async.c \
 	$(top_srcdir)/lib/mdelay.c \
 	$(top_srcdir)/lib/memcpy_wa.c \
 	$(top_srcdir)/lib/memset_wa.c \
@@ -42,6 +43,7 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/print_rmon_regs.c \
 	$(top_srcdir)/lib/print_buffer.c \
 	$(top_srcdir)/lib/printf.c \
+	$(top_srcdir)/lib/ihex.c \
 	$(top_srcdir)/lib/spi.c \
 	$(top_srcdir)/lib/net_common.c \
 	$(top_srcdir)/lib/arp_cache.c \

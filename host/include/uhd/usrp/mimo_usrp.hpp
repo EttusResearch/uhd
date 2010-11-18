@@ -200,7 +200,7 @@ namespace uhd{ namespace usrp{ namespace /*anon*/{
 
 static inline freq_range_t add_dsp_shift(const freq_range_t &range, wax::obj dsp){
     double codec_rate = dsp[DSP_PROP_CODEC_RATE].as<double>();
-    return freq_range_t(range.min - codec_rate/2.0, range.max + codec_rate/2.0);
+    return freq_range_t(range.start() - codec_rate/2.0, range.stop() + codec_rate/2.0);
 }
 
 /***********************************************************************

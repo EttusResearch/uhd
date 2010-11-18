@@ -83,6 +83,12 @@ public:
      * \param enb true to enable
      */
     virtual void enable_external_ref(bool enb) = 0;
+    
+    /*!
+     * Enable/disable test clock output.
+     * \param enb true to enable
+     */
+    virtual void enable_test_clock(bool enb) = 0;
 
     /*!
      * TODO other clock control api here....

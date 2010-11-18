@@ -47,6 +47,8 @@ AC_PATH_PROG([HEXDUMP],    [hexdump])
 ##################################################
 AC_CONFIG_FILES([ \
     Makefile \
+    usrp2p/bootloader/Makefile \
     usrp2/Makefile \
+    usrp2p/Makefile \
 ])
 AC_OUTPUT

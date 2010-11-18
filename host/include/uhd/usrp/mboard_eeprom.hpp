@@ -36,8 +36,8 @@ namespace uhd{ namespace usrp{
 
         //! Possible EEPROM maps types
         enum map_type{
-            MAP_NXXX,
-            MAP_B1XX
+            MAP_N100,
+            MAP_B000
         };
 
         //! Make a new empty mboard eeprom

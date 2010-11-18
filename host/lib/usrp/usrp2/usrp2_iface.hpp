@@ -25,7 +25,9 @@
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
 #include <utility>
+#include <string>
 #include "fw_common.h"
+#include "usrp2_regs.hpp"
 
 /*!
  * The usrp2 interface class:
@@ -103,6 +105,30 @@ public:
         size_t num_bits,
         bool readback
     ) = 0;
+
+    virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
+
+    virtual std::string read_uart(boost::uint8_t dev) = 0;
+
+    //! The list of possible revision types
+    enum rev_type {
+        USRP2_REV3 = 3,
+        USRP2_REV4 = 4,
+        USRP_N200 = 200,
+        USRP_N210 = 210,
+        USRP_NXXX = 0
+    };
+
+    //! Get the revision type for this device
+    virtual rev_type get_rev(void) = 0;
+
+    //! Get the canonical name for this device
+    virtual const std::string get_cname(void) = 0;
+
+    /*!
+     * Register map selected from USRP2/USRP2+.
+     */
+    usrp2_regs_t regs;
 
     //motherboard eeprom map structure
     uhd::usrp::mboard_eeprom_t mb_eeprom;

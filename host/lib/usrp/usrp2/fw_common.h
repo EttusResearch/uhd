@@ -52,6 +52,14 @@ extern "C" {
 #define	USRP2_I2C_ADDR_TX_DB  (USRP2_I2C_DEV_EEPROM | 0x4)
 #define	USRP2_I2C_ADDR_RX_DB  (USRP2_I2C_DEV_EEPROM | 0x5)
 
+////////////////////////////////////////////////////////////////////////
+// EEPROM Layout
+////////////////////////////////////////////////////////////////////////
+#define USRP2_EE_MBOARD_REV      0x00 //2 bytes, little-endian (historic, don't blame me)
+#define USRP2_EE_MBOARD_MAC_ADDR 0x02 //6 bytes
+#define USRP2_EE_MBOARD_IP_ADDR  0x0C //uint32, big-endian
+#define USRP2_EE_MBOARD_BOOTLOADER_FLAGS 0xF7
+
 typedef enum{
     USRP2_CTRL_ID_HUH_WHAT = ' ',
     //USRP2_CTRL_ID_FOR_SURE, //TODO error condition enums
@@ -74,6 +82,12 @@ typedef enum{
 
     USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO = 'r',
     USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE = 'R',
+
+    USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO = 'u',
+    USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE = 'U',
+
+    USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO = 'v',
+    USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE = 'V',
 
     USRP2_CTRL_ID_PEACE_OUT = '~'
 
@@ -115,6 +129,11 @@ typedef struct{
             __stdint(uint32_t) datahi;
             __stdint(uint8_t) num_bytes; //1, 2, 4, 8
         } poke_args;
+        struct {
+            __stdint(uint8_t) dev;
+            __stdint(uint8_t) bytes;
+            __stdint(uint8_t) data[20];
+        } uart_args;
     } data;
 } usrp2_ctrl_data_t;
 

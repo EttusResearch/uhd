@@ -18,36 +18,40 @@
 ########################################################################
 # Utilities that get installed into the runtime path
 ########################################################################
-ADD_EXECUTABLE(uhd_find_devices uhd_find_devices.cpp)
-TARGET_LINK_LIBRARIES(uhd_find_devices uhd)
-
-ADD_EXECUTABLE(uhd_usrp_probe uhd_usrp_probe.cpp)
-TARGET_LINK_LIBRARIES(uhd_usrp_probe uhd)
-
-INSTALL(TARGETS
-    uhd_find_devices
-    uhd_usrp_probe
-    RUNTIME DESTINATION ${RUNTIME_DIR}
+SET(util_runtime_sources
+    uhd_find_devices.cpp
+    uhd_usrp_probe.cpp
 )
+
+#for each source: build an executable and install
+FOREACH(util_source ${util_runtime_sources})
+    GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
+    ADD_EXECUTABLE(${util_name} ${util_source})
+    TARGET_LINK_LIBRARIES(${util_name} uhd)
+    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR})
+ENDFOREACH(util_source)
 
 ########################################################################
 # Utilities that get installed into the share path
 ########################################################################
-ADD_EXECUTABLE(usrp_burn_db_eeprom usrp_burn_db_eeprom.cpp)
-TARGET_LINK_LIBRARIES(usrp_burn_db_eeprom uhd)
-
-ADD_EXECUTABLE(usrp_burn_mb_eeprom usrp_burn_mb_eeprom.cpp)
-TARGET_LINK_LIBRARIES(usrp_burn_mb_eeprom uhd)
-
-ADD_EXECUTABLE(usrp1_init_eeprom usrp1_init_eeprom.cpp)
-TARGET_LINK_LIBRARIES(usrp1_init_eeprom uhd)
-
-INSTALL(TARGETS
-    usrp_burn_db_eeprom
-    usrp_burn_mb_eeprom
-    usrp1_init_eeprom
-    RUNTIME DESTINATION ${PKG_DATA_DIR}/utils
+SET(util_share_sources
+    usrp_burn_db_eeprom.cpp
+    usrp_burn_mb_eeprom.cpp
 )
+
+IF(ENABLE_USRP1)
+    LIST(APPEND util_share_sources
+        usrp1_init_eeprom.cpp
+    )
+ENDIF(ENABLE_USRP1)
+
+#for each source: build an executable and install
+FOREACH(util_source ${util_share_sources})
+    GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
+    ADD_EXECUTABLE(${util_name} ${util_source})
+    TARGET_LINK_LIBRARIES(${util_name} uhd)
+    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
+ENDFOREACH(util_source)
 
 INSTALL(PROGRAMS
     usrp2_recovery.py

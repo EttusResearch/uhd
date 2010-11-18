@@ -24,10 +24,39 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <vector>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
+
+/***********************************************************************
+ * Utility functions
+ **********************************************************************/
+static void warn_if_old_rfx(const dboard_id_t &dboard_id, const std::string &xx){
+    typedef boost::tuple<std::string, dboard_id_t, dboard_id_t> old_ids_t; //name, rx_id, tx_id
+    static const std::vector<old_ids_t> old_rfx_ids = list_of
+        (old_ids_t("Flex 400 Classic",  0x0004, 0x0008))
+        (old_ids_t("Flex 900 Classic",  0x0005, 0x0009))
+        (old_ids_t("Flex 1200 Classic", 0x0006, 0x000a))
+        (old_ids_t("Flex 1800 Classic", 0x0030, 0x0031))
+        (old_ids_t("Flex 2400 Classic", 0x0007, 0x000b))
+    ;
+    BOOST_FOREACH(const old_ids_t &old_id, old_rfx_ids){
+        std::string name; dboard_id_t rx_id, tx_id;
+        boost::tie(name, rx_id, tx_id) = old_id;
+        if (
+            (xx == "RX" and rx_id == dboard_id) or
+            (xx == "TX" and tx_id == dboard_id)
+        ) uhd::warning::post(str(boost::format(
+            "Detected %s daughterboard %s\n"
+            "This board requires modification to use.\n"
+            "See the daughterboard application notes.\n"
+        ) % xx % name));
+    }
+}
 
 /***********************************************************************
  * The unknown boards:
@@ -36,7 +65,6 @@ using namespace boost::assign;
 class unknown_rx : public rx_dboard_base{
 public:
     unknown_rx(ctor_args_t args);
-    ~unknown_rx(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
     void rx_set(const wax::obj &key, const wax::obj &val);
@@ -45,7 +73,6 @@ public:
 class unknown_tx : public tx_dboard_base{
 public:
     unknown_tx(ctor_args_t args);
-    ~unknown_tx(void);
 
     void tx_get(const wax::obj &key, wax::obj &val);
     void tx_set(const wax::obj &key, const wax::obj &val);
@@ -71,11 +98,7 @@ UHD_STATIC_BLOCK(reg_unknown_dboards){
  * Unknown RX dboard
  **********************************************************************/
 unknown_rx::unknown_rx(ctor_args_t args) : rx_dboard_base(args){
-    /* NOP */
-}
-
-unknown_rx::~unknown_rx(void){
-    /* NOP */
+    warn_if_old_rfx(this->get_rx_id(), "RX");
 }
 
 void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
@@ -108,7 +131,7 @@ void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(0, 0);
+        val = freq_range_t(0.0, 0.0);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -177,11 +200,7 @@ void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
  * Unknown TX dboard
  **********************************************************************/
 unknown_tx::unknown_tx(ctor_args_t args) : tx_dboard_base(args){
-    /* NOP */
-}
-
-unknown_tx::~unknown_tx(void){
-    /* NOP */
+    warn_if_old_rfx(this->get_tx_id(), "TX");
 }
 
 void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
@@ -214,7 +233,7 @@ void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(0, 0);
+        val = freq_range_t(0.0, 0.0);
         return;
 
     case SUBDEV_PROP_ANTENNA:

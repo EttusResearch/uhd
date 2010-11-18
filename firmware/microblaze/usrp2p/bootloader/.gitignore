@@ -1,0 +1,11 @@
+/*.ihx
+/*.rmi
+/*_rom
+/*.elf
+/*.bin
+/*.dump
+/*.log
+/*.rom
+/*.map
+/Makefile
+/Makefile.in

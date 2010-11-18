@@ -23,4 +23,7 @@ EXTRA_DIST = \
 	u2_flash_tool
 
 SUBDIRS = \
-	usrp2
+	usrp2 \
+	usrp2p \
+	usrp2p/bootloader
+

@@ -1,11 +1,11 @@
 ========================================================================
-UHD - USRP2 Application Notes
+UHD - USRP2 and USRP-N Series Application Notes
 ========================================================================
 
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Load the images onto the SD card
+Load the images onto the SD card (USRP2 only)
 ------------------------------------------------------------------------
 **Warning!**
 Use the usrp2_card_burner.py with caution. If you specify the wrong device node,
@@ -44,6 +44,39 @@ Use the card burner tool (windows)
 
     <path_to_python.exe> <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
 
+
+------------------------------------------------------------------------
+Load the images onto the on-board flash (USRP-N Series only)
+------------------------------------------------------------------------
+The USRP-N Series can be reprogrammed over the network
+to update or change the firmware and FPGA images.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the net burner tool (unix)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+::
+
+    cd <prefix>/share/uhd/utils
+    ./usrp_n2xx_net_burner.py --ip=<ip address> --fw=<path for firmware image>
+    ./usrp_n2xx_net_burner.py --ip=<ip address> --fpga=<path to FPGA image>
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the net burner tool (Windows)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+::
+
+    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner.py --ip=<ip address> --fw=<path for firmware image>
+    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner.py --ip=<ip address> --fpga=<path to FPGA image>
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Device recovery and bricking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Its possible to put the device into an unusable state by loading bad images.
+Fortunately, the USRP-N Series can be booted into a safe (read-only) image.
+Once booted into the safe image, the user can once again load images onto the device.
+
+To boot into the safe image, hold down the reset button while power-cycling the device.
+The reset button is a pushbutton switch (S2) located inside the enclosure.
 
 ------------------------------------------------------------------------
 Setup networking

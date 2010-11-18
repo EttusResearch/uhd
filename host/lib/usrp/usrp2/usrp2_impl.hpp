@@ -21,6 +21,7 @@
 #include "usrp2_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include "gps_ctrl.hpp"
 #include "serdes_ctrl.hpp"
 #include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
@@ -105,6 +106,7 @@ private:
     usrp2_clock_ctrl::sptr _clock_ctrl;
     usrp2_codec_ctrl::sptr _codec_ctrl;
     usrp2_serdes_ctrl::sptr _serdes_ctrl;
+    usrp2_gps_ctrl::sptr _gps_ctrl;
 
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
@@ -130,6 +132,9 @@ private:
     void tx_codec_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _rx_codec_proxy;
     wax_obj_proxy::sptr _tx_codec_proxy;
+
+    void rx_codec_set_gain(float, const std::string &);
+    uhd::dict<std::string, float> _codec_rx_gains;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);

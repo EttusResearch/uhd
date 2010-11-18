@@ -42,9 +42,11 @@
 #include <string.h>
 #include "clocks.h"
 #include "usrp2/fw_common.h"
+#include <i2c_async.h>
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
+#include "udp_fw_update.h"
 
 /*
  * Full duplex Tx and Rx between ethernet and DSP pipelines
@@ -346,6 +348,28 @@ void handle_udp_ctrl_packet(
         send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
+    case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
+      //executes a readline()-style read, up to num_bytes long, up to and including newline
+      int num_bytes = ctrl_data_in->data.uart_args.bytes;
+      if(num_bytes > 20) num_bytes = 20;
+      num_bytes = fngets_timeout(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_out.data.uart_args.data, num_bytes);
+      ctrl_data_out.id = USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE;
+      ctrl_data_out.data.uart_args.bytes = num_bytes;
+      break;
+    }
+
+    case USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO:{
+      int num_bytes = ctrl_data_in->data.uart_args.bytes;
+      if(num_bytes > 20) num_bytes = 20;
+      //before we write to the UART, we flush the receive buffer
+      //this assumes that we're interested in the reply
+      hal_uart_rx_flush(ctrl_data_in->data.uart_args.dev);
+      fnputstr(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_in->data.uart_args.data, num_bytes);
+      ctrl_data_out.id = USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE;
+      ctrl_data_out.data.uart_args.bytes = num_bytes;
+      break;
+    }
+
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
         send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
@@ -487,6 +511,7 @@ main(void)
   //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 
   //3) setup ethernet hardware to bring the link up
   ethernet_register_link_changed_callback(link_changed_callback);

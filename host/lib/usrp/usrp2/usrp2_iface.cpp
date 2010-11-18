@@ -17,6 +17,7 @@
 
 #include "usrp2_regs.hpp"
 #include "usrp2_iface.hpp"
+#include <uhd/utils/exception.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
@@ -24,6 +25,7 @@
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
+#include <boost/tokenizer.hpp>
 #include <stdexcept>
 #include <algorithm>
 
@@ -39,16 +41,28 @@ public:
     usrp2_iface_impl(udp_simple::sptr ctrl_transport){
         _ctrl_transport = ctrl_transport;
 
-         //check the fpga compatibility number
-        const boost::uint32_t fpga_compat_num = this->peek32(U2_REG_COMPAT_NUM_RB);
+        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
+        switch(this->get_rev()){
+        case USRP2_REV3:
+        case USRP2_REV4:
+            regs = usrp2_get_regs(false);
+            break;
+
+        case USRP_NXXX:
+        case USRP_N200:
+        case USRP_N210:
+            regs = usrp2_get_regs(true);
+            break;
+        }
+
+        //check the fpga compatibility number
+        const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
         if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
             throw std::runtime_error(str(boost::format(
                 "Expected fpga compatibility number %d, but got %d:\n"
                 "The fpga build is not compatible with the host code build."
             ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
         }
-
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_NXXX);
     }
 
     ~usrp2_iface_impl(void){
@@ -163,6 +177,58 @@ public:
     }
 
 /***********************************************************************
+ * UART
+ **********************************************************************/
+    void write_uart(boost::uint8_t dev, const std::string &buf){
+      //first tokenize the string into 20-byte substrings
+      boost::offset_separator f(20, 1, true, true);
+      boost::tokenizer<boost::offset_separator> tok(buf, f);
+      std::vector<std::string> queue(tok.begin(), tok.end());
+
+      BOOST_FOREACH(std::string item, queue) {
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO);
+        out_data.data.uart_args.dev = dev;
+        out_data.data.uart_args.bytes = item.size();
+
+        //limitation of uart transaction size
+        UHD_ASSERT_THROW(item.size() <= sizeof(out_data.data.uart_args.data));
+
+        //copy in the data
+        std::copy(item.begin(), item.end(), out_data.data.uart_args.data);
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE);
+      }
+    }
+
+    std::string read_uart(boost::uint8_t dev){
+    	int readlen = 20;
+      std::string result;
+    	while(readlen == 20) { //while we keep receiving full packets
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO);
+        out_data.data.uart_args.dev = dev;
+        out_data.data.uart_args.bytes = 20;
+
+        //limitation of uart transaction size
+        //UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.uart_args.data));
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE);
+        readlen = in_data.data.uart_args.bytes;
+
+        //copy out the data
+        result += std::string((const char *)in_data.data.uart_args.data, (size_t)readlen);
+      }
+      return result;
+    }
+
+/***********************************************************************
  * Send/Recv over control
  **********************************************************************/
     usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data){
@@ -191,7 +257,28 @@ public:
             if (len == 0) break; //timeout
             //didnt get seq or bad packet, continue looking...
         }
-        throw std::runtime_error("usrp2 no control response");
+        throw std::runtime_error(this->get_cname() + ": no control response");
+    }
+
+    rev_type get_rev(void){
+        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"])){
+        case 0x0300: return USRP2_REV3;
+        case 0x0400: return USRP2_REV4;
+        case 0x0A00: return USRP_N200;
+        case 0x0A01: return USRP_N210;
+        }
+        return USRP_NXXX; //unknown type
+    }
+
+    const std::string get_cname(void){
+        switch(this->get_rev()){
+        case USRP2_REV3: return "USRP2-REV3";
+        case USRP2_REV4: return "USRP2-REV4";
+        case USRP_N200: return "USRP-N200";
+        case USRP_N210: return "USRP-N210";
+        case USRP_NXXX: return "USRP-N???";
+        }
+        UHD_THROW_INVALID_CODE_PATH();
     }
 
 private:
@@ -230,7 +317,6 @@ private:
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
         return T(ntohl(in_data.data.poke_args.data));
     }
-
 };
 
 /***********************************************************************
@@ -239,3 +325,4 @@ private:
 usrp2_iface::sptr usrp2_iface::make(udp_simple::sptr ctrl_transport){
     return usrp2_iface::sptr(new usrp2_iface_impl(ctrl_transport));
 }
+

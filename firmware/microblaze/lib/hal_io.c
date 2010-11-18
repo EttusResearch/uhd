@@ -18,9 +18,9 @@
 
 // conditionalized on HAL_IO_USES_DBOARD_PINS && HAL_IO_USES_UART
 
-#include "hal_io.h"
 #include "memory_map.h"
 #include "hal_uart.h"
+#include "hal_io.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -124,16 +124,29 @@ hal_finish(void)
 
 // %c
 inline int
+fputchar(hal_uart_name_t u, int ch)
+{
+  hal_uart_putc(u, ch);
+  return ch;
+}
+
+inline int
 putchar(int ch)
 {
-  hal_uart_putc(ch);
+  hal_uart_putc(DEFAULT_UART, ch);
   return ch;
+}
+
+int
+fgetchar(hal_uart_name_t u)
+{
+  return hal_uart_getc(u);
 }
 
 int
 getchar(void)
 {
-  return hal_uart_getc();
+  return fgetchar(DEFAULT_UART);
 }
 
 #else	// nop all i/o
@@ -172,34 +185,87 @@ getchar(void)
 
 // \n
 inline void 
+fnewline(hal_uart_name_t u)
+{
+  fputchar(u, '\n');
+}
+
+inline void
 newline(void)
 {
-  putchar('\n');
+  fnewline(DEFAULT_UART);
+}
+
+int
+fputstr(hal_uart_name_t u, const char *s)
+{
+  while (*s)
+    fputchar(u, *s++);
+
+  return 0;
+}
+
+int
+fnputstr(hal_uart_name_t u, const char *s, int len)
+{
+  int x = 0;
+  while (*s && (len > x++))
+    fputchar(u, *s++);
+
+  return x;
 }
 
 int
 putstr(const char *s)
 {
-  while (*s)
-    putchar(*s++);
-
-  return 0;
+  return fputstr(DEFAULT_UART, s);
 }
 
 int
-puts(const char *s)
+fputs(hal_uart_name_t u, const char *s)
 {
-  putstr(s);
-  putchar('\n');
+  fputstr(u, s);
+  fputchar(u, '\n');
   return 0;
+}
+
+int puts(const char *s)
+{
+  return fputs(DEFAULT_UART, s);
+}
+
+char *
+fgets(hal_uart_name_t u, char * const s)
+{
+  char *x = s;
+  while((*x=(char)hal_uart_getc(u)) != '\n') x++;
+  *x = 0;
+  return s;
+}
+
+int
+fngets(hal_uart_name_t u, char * const s, int len)
+{
+  char *x = s;
+  while(((*x=(char)hal_uart_getc(u)) != '\n') && ((x-s) < len)) x++;
+  *x = 0;
+  return (x-s);
+}
+
+int
+fngets_timeout(hal_uart_name_t u, char * const s, int len)
+{
+  char *x = s;
+
+  while(((*x=(char)hal_uart_getc_timeout(u)) != '\n') && (*x != -1) && ((x-s) < len)) x++;
+  *x = 0;
+  //printf("Returning from fngets() with string %d of length %d\n", s[0], x-s);
+  return (x-s);
 }
 
 char *
 gets(char * const s)
 {
-	char *x = s;
-	while((*x=(char)hal_uart_getc()) != '\n') x++;
-	*x = 0;
-	return s;
+  return fgets(DEFAULT_UART, s);
 }
 

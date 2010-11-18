@@ -61,7 +61,7 @@ void usrp2_mboard_impl::ddc_get(const wax::obj &key_, wax::obj &val){
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("usrp2 ddc0");
+        val = _iface->get_cname() + " ddc0";
         return;
 
     case DSP_PROP_OTHERS:
@@ -95,7 +95,7 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(U2_REG_DSP_RX_FREQ,
+            _iface->poke32(_iface->regs.dsp_rx_freq,
                 dsp_type1::calc_cordic_word_and_update(new_freq, get_master_clock_freq())
             );
             _ddc_freq = new_freq; //shadow
@@ -107,11 +107,11 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val){
             _ddc_decim = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
 
             //set the decimation
-            _iface->poke32(U2_REG_DSP_RX_DECIM_RATE, dsp_type1::calc_cic_filter_word(_ddc_decim));
+            _iface->poke32(_iface->regs.dsp_rx_decim_rate, dsp_type1::calc_cic_filter_word(_ddc_decim));
 
             //set the scaling
             static const boost::int16_t default_rx_scale_iq = 1024;
-            _iface->poke32(U2_REG_DSP_RX_SCALE_IQ,
+            _iface->poke32(_iface->regs.dsp_rx_scale_iq,
                 dsp_type1::calc_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
             );
         }
@@ -144,7 +144,7 @@ void usrp2_mboard_impl::duc_get(const wax::obj &key_, wax::obj &val){
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("usrp2 duc0");
+        val = _iface->get_cname() + " duc0";
         return;
 
     case DSP_PROP_OTHERS:
@@ -178,7 +178,7 @@ void usrp2_mboard_impl::duc_set(const wax::obj &key_, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(U2_REG_DSP_TX_FREQ,
+            _iface->poke32(_iface->regs.dsp_tx_freq,
                 dsp_type1::calc_cordic_word_and_update(new_freq, get_master_clock_freq())
             );
             _duc_freq = new_freq; //shadow
@@ -190,10 +190,10 @@ void usrp2_mboard_impl::duc_set(const wax::obj &key_, const wax::obj &val){
             _duc_interp = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
 
             //set the interpolation
-            _iface->poke32(U2_REG_DSP_TX_INTERP_RATE, dsp_type1::calc_cic_filter_word(_duc_interp));
+            _iface->poke32(_iface->regs.dsp_tx_interp_rate, dsp_type1::calc_cic_filter_word(_duc_interp));
 
             //set the scaling
-            _iface->poke32(U2_REG_DSP_TX_SCALE_IQ, dsp_type1::calc_iq_scale_word(_duc_interp));
+            _iface->poke32(_iface->regs.dsp_tx_scale_iq, dsp_type1::calc_iq_scale_word(_duc_interp));
         }
         return;
 

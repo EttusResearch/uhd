@@ -23,10 +23,21 @@
 #include "buffer_pool.h"
 #include "hal_uart.h"
 #include "i2c.h"
+#include "i2c_async.h"
 #include "mdelay.h"
 #include "clocks.h"
 #include "usrp2/fw_common.h"
 #include "nonstdio.h"
+
+unsigned char u2_hw_rev_major;
+unsigned char u2_hw_rev_minor;
+
+static inline void
+get_hw_rev(void)
+{
+  bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, &u2_hw_rev_minor, 1);
+  ok &= eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV+1, &u2_hw_rev_major, 1);
+}
 
 /*
  * We ought to arrange for this to be called before main, but for now,
@@ -49,6 +60,7 @@ u2_init(void)
   // init i2c so we can read our rev
   pic_init();	// progammable interrupt controller
   i2c_init();
+  i2c_register_handler(); //for using async I2C
   hal_enable_ints();
 
   bp_init();	// buffer pool

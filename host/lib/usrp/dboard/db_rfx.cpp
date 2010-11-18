@@ -93,9 +93,9 @@ public:
     void tx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    freq_range_t _freq_range;
-    uhd::dict<std::string, gain_range_t> _rx_gain_ranges;
-    uhd::dict<dboard_iface::unit_t, bool> _div2;
+    const freq_range_t _freq_range;
+    const uhd::dict<std::string, gain_range_t> _rx_gain_ranges;
+    const uhd::dict<dboard_iface::unit_t, bool> _div2;
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _rx_ant;
     uhd::dict<std::string, float> _rx_gains;
@@ -168,19 +168,17 @@ rfx_xcvr::rfx_xcvr(
     ctor_args_t args,
     const freq_range_t &freq_range,
     bool rx_div2, bool tx_div2
-) : xcvr_dboard_base(args){
-    _freq_range = freq_range;
-    _div2[dboard_iface::UNIT_RX] = rx_div2;
-    _div2[dboard_iface::UNIT_TX] = tx_div2;
-
-    if(this->get_rx_id() == 0x0024) { //RFX400
-        _rx_gain_ranges = rfx400_rx_gain_ranges;
-    }
-    else {
-        _rx_gain_ranges = rfx_rx_gain_ranges;
-    }
-
-
+):
+    xcvr_dboard_base(args),
+    _freq_range(freq_range),
+    _rx_gain_ranges((get_rx_id() == 0x0024)?
+        rfx400_rx_gain_ranges : rfx_rx_gain_ranges
+    ),
+    _div2(map_list_of
+        (dboard_iface::UNIT_RX, rx_div2)
+        (dboard_iface::UNIT_TX, tx_div2)
+    )
+{
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
@@ -204,12 +202,12 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_RX2| MIXER_ENB);
 
     //set some default values
-    set_rx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
-    set_tx_lo_freq((_freq_range.min + _freq_range.max)/2.0);
+    set_rx_lo_freq((_freq_range.start() + _freq_range.stop())/2.0);
+    set_tx_lo_freq((_freq_range.start() + _freq_range.stop())/2.0);
     set_rx_ant("RX2");
 
     BOOST_FOREACH(const std::string &name, _rx_gain_ranges.keys()){
-        set_rx_gain(_rx_gain_ranges[name].min, name);
+        set_rx_gain(_rx_gain_ranges[name].start(), name);
     }
 }
 
@@ -265,7 +263,7 @@ void rfx_xcvr::set_rx_gain(float gain, const std::string &name){
     assert_has(_rx_gain_ranges.keys(), name, "rfx rx gain name");
     if(name == "PGA0"){
         float dac_volts = rx_pga0_gain_to_dac_volts(gain, 
-                              (_rx_gain_ranges["PGA0"].max - _rx_gain_ranges["PGA0"].min));
+                              (_rx_gain_ranges["PGA0"].stop() - _rx_gain_ranges["PGA0"].start()));
         _rx_gains[name] = gain;
 
         //write the new voltage to the aux dac
@@ -294,7 +292,7 @@ double rfx_xcvr::set_lo_freq(
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = std::clip(target_freq, _freq_range.min, _freq_range.max);
+    target_freq = _freq_range.clip(target_freq);
     if (_div2[unit]) target_freq *= 2;
 
     //map prescalers to the register enums

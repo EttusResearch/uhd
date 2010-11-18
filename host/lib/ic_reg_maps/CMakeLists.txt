@@ -80,6 +80,11 @@ LIBUHD_PYTHON_GEN_SOURCE(
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ads62p44_regs.py
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ads62p44_regs.hpp
+    )
+
+LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_tuner_4937di5_regs.py
     ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/tuner_4937di5_regs.hpp
 )
