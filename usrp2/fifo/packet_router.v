@@ -249,12 +249,11 @@ module packet_router
     reg [BUF_SIZE-1:0] cpu_inp_line_count_reg;
 
     assign cpu_inp_data[35:32] =
-        (cpu_inp_addr == 0                          )? 4'b0001 : (
-        (cpu_inp_addr_next == cpu_inp_line_count_reg)? 4'b0010 : (
+        (cpu_inp_addr == 0                     )? 4'b0001 : (
+        (cpu_inp_addr == cpu_inp_line_count_reg)? 4'b0010 : (
     4'b0000));
 
-    reg cpu_inp_valid_reg;
-    assign cpu_inp_valid = cpu_inp_valid_reg;
+    assign cpu_inp_valid = (cpu_inp_state == CPU_INP_STATE_UNLOAD)? 1'b1 : 1'b0;
     assign cpu_inp_hs_stat = (cpu_inp_state == CPU_INP_STATE_WAIT_CTRL_HI)? 1'b1 : 1'b0;
 
     RAMB16_S36_S36 cpu_inp_buff(
@@ -263,14 +262,13 @@ module packet_router
         .ENA(wb_stb_i & (which_buf == 1'b1)),.SSRA(0),.WEA(wb_we_i),
         //port B = packet router interface from CPU (output only)
         .DOB(cpu_inp_data[31:0]),.ADDRB(cpu_inp_addr),.CLKB(stream_clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(1'b1),.SSRB(0),.WEB(1'b0)
+        .ENB(cpu_inp_ready & cpu_inp_valid),.SSRB(0),.WEB(1'b0)
     );
 
     always @(posedge stream_clk)
     if(stream_rst) begin
         cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
         cpu_inp_addr <= 0;
-        cpu_inp_valid_reg <= 1'b0;
     end
     else begin
         case(cpu_inp_state)
@@ -284,6 +282,7 @@ module packet_router
         CPU_INP_STATE_WAIT_CTRL_LO: begin
             if (cpu_inp_hs_ctrl == 1'b0) begin
                 cpu_inp_state <= CPU_INP_STATE_UNLOAD;
+                cpu_inp_addr <= cpu_inp_addr_next;
             end
         end
 
@@ -296,10 +295,6 @@ module packet_router
                 else begin
                     cpu_inp_addr <= cpu_inp_addr_next;
                 end
-                cpu_inp_valid_reg <= 1'b0;
-            end
-            else begin
-                cpu_inp_valid_reg <= 1'b1;
             end
         end
 
@@ -330,12 +325,14 @@ module packet_router
     reg [35:0] com_insp_dregs [COM_INSP_MAX_NUM_DREGS-1:0];
 
     //Inspection logic:
-    wire com_inp_dregs_is_data = 1'b1
+    wire com_inp_dregs_is_dsp = 1'b1
         & (com_insp_dregs[3][15:0] == 16'h800)    //ethertype IPv4
         & (com_insp_dregs[6][23:16] == 8'h11)     //protocol UDP
         & (com_insp_dregs[9][15:0] == 16'd49153)  //UDP data port
         & (com_inp_data[31:0] != 32'h0)           //VRT hdr non-zero
     ;
+
+    wire com_inp_dregs_is_ser = 1'b0;
 
     //Inspector output flags special case:
     //Inject SOF into flags at first DSP line.
@@ -399,10 +396,15 @@ module packet_router
         COM_INSP_STATE_READ_COM: begin
             if (com_inp_ready & com_inp_valid) begin
                 com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
-                if (com_inp_dregs_is_data & com_insp_dreg_counter_done) begin
+                if (com_inp_dregs_is_dsp & com_insp_dreg_counter_done) begin
                     com_insp_dest <= COM_INSP_DEST_DSP;
                     com_insp_state <= COM_INSP_STATE_WRITE_REGS;
                     com_insp_dreg_count <= COM_INSP_DREGS_DSP_OFFSET;
+                end
+                else if (com_inp_dregs_is_ser & com_insp_dreg_counter_done) begin
+                    com_insp_dest <= COM_INSP_DEST_SER;
+                    com_insp_state <= COM_INSP_STATE_WRITE_REGS;
+                    com_insp_dreg_count <= 0;
                 end
                 else if (com_inp_data[33] | com_insp_dreg_counter_done) begin
                     com_insp_dest <= COM_INSP_DEST_CPU;
@@ -455,7 +457,6 @@ module packet_router
     reg [BUF_SIZE-1:0] dsp_frm_addr;
     reg [BUF_SIZE-1:0] dsp_frm_count;
     wire [BUF_SIZE-1:0] dsp_frm_addr_next = dsp_frm_addr + 1'b1;
-    reg dsp_frm_valid_reg; //registered valid to deal with read delay
 
     //DSP input stream ready in the following states
     assign dsp_inp_ready =
@@ -469,9 +470,12 @@ module packet_router
     wire [15:0] dsp_frm_bytes = {dsp_frm_count, 2'b00};
     assign dsp_frm_data =
         (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR)? {4'b0001, 16'b1, dsp_frm_bytes} : (
-        (dsp_frm_addr_next == dsp_frm_count)      ? {4'b0010, dsp_frm_data_bram}    : (
+        (dsp_frm_addr == dsp_frm_count)           ? {4'b0010, dsp_frm_data_bram}    : (
     {4'b0000, dsp_frm_data_bram}));
-    assign dsp_frm_valid = dsp_frm_valid_reg;
+    assign dsp_frm_valid = (
+        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR) |
+        (dsp_frm_state == DSP_FRM_STATE_WRITE)
+    )? 1'b1 : 1'b0;
 
     RAMB16_S36_S36 dsp_frm_buff(
         //port A = DSP input interface (writes to BRAM)
@@ -479,14 +483,13 @@ module packet_router
         .ENA(dsp_inp_ready),.SSRA(0),.WEA(dsp_inp_ready),
         //port B = DSP framer interface (reads from BRAM)
         .DOB(dsp_frm_data_bram),.ADDRB(dsp_frm_addr),.CLKB(stream_clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(1'b1),.SSRB(0),.WEB(1'b0)
+        .ENB(dsp_frm_ready & dsp_frm_valid),.SSRB(0),.WEB(1'b0)
     );
 
     always @(posedge stream_clk)
     if(stream_rst) begin
         dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
         dsp_frm_addr <= 0;
-        dsp_frm_valid_reg <= 1'b0;
     end
     else begin
         case(dsp_frm_state)
@@ -512,12 +515,8 @@ module packet_router
 
         DSP_FRM_STATE_WRITE_HDR: begin
             if (dsp_frm_ready & dsp_frm_valid) begin
-                dsp_frm_addr <= 0;
+                dsp_frm_addr <= dsp_frm_addr_next;
                 dsp_frm_state <= DSP_FRM_STATE_WRITE;
-                dsp_frm_valid_reg <= 1'b0;
-            end
-            else begin
-                dsp_frm_valid_reg <= 1'b1;
             end
         end
 
@@ -530,10 +529,6 @@ module packet_router
                 else begin
                     dsp_frm_addr <= dsp_frm_addr_next;
                 end
-                dsp_frm_valid_reg <= 1'b0;
-            end
-            else begin
-                dsp_frm_valid_reg <= 1'b1;
             end
         end
         endcase //dsp_frm_state
