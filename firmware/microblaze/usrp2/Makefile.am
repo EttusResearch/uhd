@@ -24,8 +24,6 @@ AM_LDFLAGS = \
 	$(COMMON_LFLAGS) \
 	-Wl,-defsym -Wl,_TEXT_START_ADDR=0x0050 \
 	-Wl,-defsym -Wl,_STACK_SIZE=3072
-	
-LDADD = libusrp2.a
 
 LDADD = libusrp2.a
 
@@ -38,7 +36,7 @@ libusrp2_a_SOURCES = \
 	$(COMMON_SRCS) \
 	sd.c \
 	ethernet.c \
-  udp_fw_update.c
+	udp_fw_update.c
 
 noinst_PROGRAMS = \
 	usrp2_txrx_uhd.elf

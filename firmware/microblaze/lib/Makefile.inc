@@ -30,7 +30,6 @@ COMMON_SRCS = \
 	$(top_srcdir)/lib/hal_io.c \
 	$(top_srcdir)/lib/hal_uart.c \
 	$(top_srcdir)/lib/i2c.c \
-	$(top_srcdir)/lib/i2c_async.c \
 	$(top_srcdir)/lib/mdelay.c \
 	$(top_srcdir)/lib/memcpy_wa.c \
 	$(top_srcdir)/lib/memset_wa.c \

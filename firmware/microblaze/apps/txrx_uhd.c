@@ -40,12 +40,12 @@
 #include <string.h>
 #include "clocks.h"
 #include "usrp2/fw_common.h"
-#include <i2c_async.h>
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
 #include "udp_fw_update.h"
 #include "pkt_ctrl.h"
+#include "banal.h"
 
 static void setup_network(void);
 
@@ -54,10 +54,6 @@ static void setup_network(void);
 // ----------------------------------------------------------------
 static eth_mac_addr_t fp_mac_addr_src, fp_mac_addr_dst;
 static struct socket_address fp_socket_src, fp_socket_dst;
-
-// ----------------------------------------------------------------
-void start_rx_streaming_cmd(void);
-void stop_rx_cmd(void);
 
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
@@ -89,33 +85,6 @@ void handle_udp_data_packet(
 #define OTW_GPIO_BANK_TO_NUM(bank) \
     (((bank) == USRP2_DIR_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
 
-//setup the output data
-static usrp2_ctrl_data_t ctrl_data_out;
-static struct socket_address i2c_src;
-static struct socket_address spi_src;
-
-static volatile bool i2c_done = false;
-void i2c_read_done_callback(void) {
-  //printf("I2C read done callback\n");
-  i2c_async_data_ready(ctrl_data_out.data.i2c_args.data);
-  i2c_done = true;
-  i2c_register_callback(0);
-}
-
-void i2c_write_done_callback(void) {
-  //printf("I2C write done callback\n");
-  i2c_done = true;
-  i2c_register_callback(0);
-}
-
-static volatile bool spi_done = false;
-static volatile uint32_t spi_readback_data;
-void get_spi_readback_data(void) {
-  ctrl_data_out.data.spi_args.data = spi_get_data();
-  spi_done = true;
-  spi_register_callback(0);
-}
-
 void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
@@ -141,6 +110,7 @@ void handle_udp_ctrl_packet(
     }
 
     //setup the output data
+    usrp2_ctrl_data_t ctrl_data_out;
     ctrl_data_out.proto_ver = USRP2_FW_COMPAT_NUM;
     ctrl_data_out.id=USRP2_CTRL_ID_HUH_WHAT;
     ctrl_data_out.seq=ctrl_data_in->seq;
@@ -154,7 +124,6 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_WAZZUP_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_WAZZUP_DUDE;
         memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -162,21 +131,19 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
             //transact
-            bool success = spi_async_transact(
-                //(ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
+            uint32_t result = spi_transact(
+                (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
                 ctrl_data_in->data.spi_args.dev,      //which device
                 ctrl_data_in->data.spi_args.data,     //32 bit data
                 ctrl_data_in->data.spi_args.num_bits, //length in bits
-                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE | //flags
-                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL,
-                get_spi_readback_data //callback
+                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE |
+                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
             );
 
             //load output
+            ctrl_data_out.data.spi_args.data = result;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
-            spi_src = src;
         }
-//        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -184,13 +151,11 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_register_callback(i2c_read_done_callback);
-            i2c_async_read(
+            i2c_read(
                 ctrl_data_in->data.i2c_args.addr,
+                ctrl_data_out.data.i2c_args.data,
                 num_bytes
             );
-            i2c_src = src;
-//            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
@@ -198,14 +163,11 @@ void handle_udp_ctrl_packet(
 
     case USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_register_callback(i2c_read_done_callback);
-            i2c_async_write(
+            i2c_write(
                 ctrl_data_in->data.i2c_args.addr,
                 ctrl_data_in->data.i2c_args.data,
                 num_bytes
             );
-            i2c_src = src;
-//            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
@@ -237,7 +199,6 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
@@ -260,7 +221,6 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
@@ -287,9 +247,8 @@ void handle_udp_ctrl_packet(
 
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
     }
-    
+    send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
 }
 
 static void handle_inp_packet(uint32_t *buff, size_t num_lines){
@@ -317,27 +276,10 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
 //------------------------------------------------------------------
 
 /*
- * 1's complement sum for IP and UDP headers
- *
- * init chksum to zero to start.
- */
-static unsigned int
-CHKSUM(unsigned int x, unsigned int *chksum)
-{
-  *chksum += x;
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  return x;
-}
-
-/*
  * Called when eth phy state changes (w/ interrupts disabled)
  */
-volatile bool link_is_up = false;	// eth handler sets this
-void
-link_changed_callback(int speed)
-{
-  link_is_up = speed != 0;
+void link_changed_callback(int speed){
+  bool link_is_up = speed != 0;
   hal_set_leds(link_is_up ? LED_RJ45 : 0x0, LED_RJ45);
   printf("\neth link changed: speed = %d\n", speed);
   if (link_is_up) send_gratuitous_arp();
@@ -419,17 +361,6 @@ main(void)
     if (buff != NULL){
         handle_inp_packet((uint32_t *)buff, num_lines);
         release_incoming_buffer();
-    }
-
-    if(i2c_done) {
-      i2c_done = false;
-      send_udp_pkt(USRP2_UDP_CTRL_PORT, i2c_src, &ctrl_data_out, sizeof(ctrl_data_out));
-      //printf("Sending UDP packet from main loop for I2C...\n");
-    }
-
-    if(spi_done) {
-      spi_done = false;
-      send_udp_pkt(USRP2_UDP_CTRL_PORT, spi_src, &ctrl_data_out, sizeof(ctrl_data_out));
     }
 
     int pending = pic_regs->pending;		// poll for under or overrun

@@ -22,7 +22,6 @@
 #include "hal_io.h"
 #include "hal_uart.h"
 #include "i2c.h"
-#include "i2c_async.h"
 #include "mdelay.h"
 #include "clocks.h"
 #include "usrp2/fw_common.h"
@@ -59,7 +58,6 @@ u2_init(void)
   // init i2c so we can read our rev
   pic_init();	// progammable interrupt controller
   i2c_init();
-  i2c_register_handler(); //for using async I2C
   hal_enable_ints();
 
   // flash all leds to let us know board is alive
