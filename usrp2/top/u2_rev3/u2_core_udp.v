@@ -163,7 +163,7 @@ module u2_core
    wire 	ram_loader_rst, wb_rst, dsp_rst;
    assign dsp_rst = wb_rst;
 
-   wire [31:0] 	status, status_b0, status_b1, status_b2, status_b3, status_b4, status_b5, status_b6, status_b7;
+   wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
    wire 	proc_int, overrun, underrun, uart_tx_int, uart_rx_int;
 
@@ -433,8 +433,8 @@ module u2_core
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
       
-      .word00(status_b0),.word01(status_b1),.word02(status_b2),.word03(status_b3),
-      .word04(status_b4),.word05(status_b5),.word06(status_b6),.word07(status_b7),
+      .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(status_enc),.word15(cycle_count)
       );
