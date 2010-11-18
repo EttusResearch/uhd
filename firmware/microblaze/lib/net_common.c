@@ -128,7 +128,7 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   ehdr.src = _local_mac_addr;
   ehdr.ethertype = ethertype;
 
-  uint32_t *buff = (uint32_t *)claim_outgoing_buffer();
+  uint32_t *buff = (uint32_t *)pkt_ctrl_claim_outgoing_buffer();
 
   // Copy the pieces into the buffer
   uint32_t *p = buff;
@@ -165,7 +165,7 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   if (total_len < 60)		// ensure that we don't try to send a short packet
     total_len = 60;
 
-  commit_outgoing_buffer(total_len/4);
+  pkt_ctrl_commit_outgoing_buffer(total_len/4);
 }
 
 unsigned int 

@@ -20,28 +20,36 @@
 
 #include <stddef.h>
 
+typedef enum {
+    PKT_CTRL_ROUTING_MODE_SLAVE,
+    PKT_CTRL_ROUTING_MODE_MASTER,
+} pkt_ctrl_routing_mode_t;
+
+//! Set the routing mode for this device
+void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode);
+
 /*!
  * Try to claim an incomming buffer.
  * \param num_lines filled with the buffer size
  * \return a pointer to the buffer memory or NULL
  */
-void *claim_incoming_buffer(size_t *num_lines);
+void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines);
 
 /*!
  * Release the incoming buffer. Call when done.
  */
-void release_incoming_buffer(void);
+void pkt_ctrl_release_incoming_buffer(void);
 
 /*!
  * Claim an outgoing buffer.
  * \return a pointer to the buffer
  */
-void *claim_outgoing_buffer(void);
+void *pkt_ctrl_claim_outgoing_buffer(void);
 
 /*!
  * Commit the outgoing buffer.
  * \param num_lines how many lines written.
  */
-void commit_outgoing_buffer(size_t num_lines);
+void pkt_ctrl_commit_outgoing_buffer(size_t num_lines);
 
 #endif /* INCLUDED_PKT_CTRL_H */

@@ -30,24 +30,35 @@ static void set_control(uint32_t value, uint32_t mask){
     buffer_pool_ctrl->ctrl = ctrl_shadow;
 }
 
-void *claim_incoming_buffer(size_t *num_lines){
+void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
+    switch(mode){
+    case PKT_CTRL_ROUTING_MODE_SLAVE:
+        set_control(0x0, 0x4);
+        break;
+    case PKT_CTRL_ROUTING_MODE_MASTER:
+        set_control(0x4, 0x4);
+        break;
+    }
+}
+
+void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
     if ((buffer_pool_status->status & 0x1) != 1) return NULL;
     *num_lines = (buffer_pool_status->status >> 16) & 0xffff;
     set_control(0x1, 0x1);
     return buffer_ram(0);
 }
 
-void release_incoming_buffer(void){
+void pkt_ctrl_release_incoming_buffer(void){
     set_control(0x0, 0x1);
     while ((buffer_pool_status->status & 0x1) != 0){}
 }
 
-void *claim_outgoing_buffer(void){
+void *pkt_ctrl_claim_outgoing_buffer(void){
     while ((buffer_pool_status->status & 0x2) != 0x2){}
     return buffer_ram(1);
 }
 
-void commit_outgoing_buffer(size_t num_lines){
+void pkt_ctrl_commit_outgoing_buffer(size_t num_lines){
     set_control(0x2 | (num_lines << 16), 0x2 | (0xffff << 16));
     while ((buffer_pool_status->status & 0x2) != 0x0){}
     set_control(0x0, 0x2);

@@ -279,10 +279,16 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
  * Called when eth phy state changes (w/ interrupts disabled)
  */
 void link_changed_callback(int speed){
-  bool link_is_up = speed != 0;
-  hal_set_leds(link_is_up ? LED_RJ45 : 0x0, LED_RJ45);
-  printf("\neth link changed: speed = %d\n", speed);
-  if (link_is_up) send_gratuitous_arp();
+    printf("\neth link changed: speed = %d\n", speed);
+    if (speed != 0){
+        hal_set_leds(LED_RJ45, LED_RJ45);
+        pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_MASTER);
+        send_gratuitous_arp(); //garp after setting the routing mode
+    }
+    else{
+        hal_set_leds(0x0, LED_RJ45);
+        pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
+    }
 }
 
 static void setup_network(void){
@@ -357,10 +363,10 @@ main(void)
   while(true){
 
     size_t num_lines;
-    void *buff = claim_incoming_buffer(&num_lines);
+    void *buff = pkt_ctrl_claim_incoming_buffer(&num_lines);
     if (buff != NULL){
         handle_inp_packet((uint32_t *)buff, num_lines);
-        release_incoming_buffer();
+        pkt_ctrl_release_incoming_buffer();
     }
 
     int pending = pic_regs->pending;		// poll for under or overrun
