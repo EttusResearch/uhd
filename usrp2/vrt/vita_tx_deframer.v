@@ -201,8 +201,6 @@ module vita_tx_deframer
 	 send_time[63:32] <= data_i[31:0];
        VITA_TICS2 :
 	 send_time[31:0] <= data_i[31:0];
-       VITA_STORE, VITA_HEADER :
-	 send_time[63:0] <= 64'd0;
      endcase // case (vita_state)
    
    always @(posedge clk)
