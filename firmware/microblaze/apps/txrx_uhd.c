@@ -283,12 +283,12 @@ void link_changed_callback(int speed){
     if (speed != 0){
         hal_set_leds(LED_RJ45, LED_RJ45);
         pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_MASTER);
+        send_gratuitous_arp();
     }
     else{
         hal_set_leds(0x0, LED_RJ45);
         pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
     }
-    send_gratuitous_arp();
 }
 
 static void setup_network(void){
