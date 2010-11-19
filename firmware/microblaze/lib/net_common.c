@@ -37,6 +37,8 @@
 #include <string.h>
 #include "pkt_ctrl.h"
 
+static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
+
 static inline bool
 ip_addr_eq(const struct ip_addr a, const struct ip_addr b)
 {
@@ -341,8 +343,7 @@ void send_gratuitous_arp(void){
   memcpy(req.ar_tip, get_ip_addr(),       sizeof(struct ip_addr));
 
   //send the request with a broadcast ethernet mac address
-  eth_mac_addr_t t; memset(&t, 0xff, sizeof(t));
-  send_pkt(t, ETHERTYPE_ARP, &req, sizeof(req), 0, 0, 0, 0);
+  send_pkt(BCAST_MAC_ADDR, ETHERTYPE_ARP, &req, sizeof(req), 0, 0, 0, 0);
 }
 
 static void
@@ -390,13 +391,13 @@ handle_eth_packet(uint32_t *p, size_t nlines)
 {
   //print_buffer(p, nlines);
 
-  int ethertype = p[3] & 0xffff;
+  padded_eth_hdr_t *eth_hdr = (padded_eth_hdr_t *)p;
 
-  if (ethertype == ETHERTYPE_ARP){
+  if (eth_hdr->ethertype == ETHERTYPE_ARP){
     struct arp_eth_ipv4 *arp = (struct arp_eth_ipv4 *)(p + 4);
     handle_arp_packet(arp, nlines*sizeof(uint32_t) - 14);
   }
-  else if (ethertype == ETHERTYPE_IPV4){
+  else if (eth_hdr->ethertype == ETHERTYPE_IPV4){
     struct ip_hdr *ip = (struct ip_hdr *)(p + 4);
     if (IPH_V(ip) != 4 || IPH_HL(ip) != 5)	// ignore pkts w/ bad version or options
       return;
@@ -404,7 +405,10 @@ handle_eth_packet(uint32_t *p, size_t nlines)
     if (IPH_OFFSET(ip) & (IP_MF | IP_OFFMASK))	// ignore fragmented packets
       return;
 
-    // FIXME filter on dest ip addr (should be broadcast or for us)
+    // filter on dest ip addr (should be broadcast or for us)
+    bool is_bcast = memcmp(&eth_hdr->dst, &BCAST_MAC_ADDR, sizeof(BCAST_MAC_ADDR)) == 0;
+    bool is_my_ip = memcmp(&ip->dest, &_local_ip_addr, sizeof(_local_ip_addr)) == 0;
+    if (!is_bcast && !is_my_ip) return;
 
     arp_cache_update(&ip->src, (eth_mac_addr_t *)(((char *)p)+8));
 
