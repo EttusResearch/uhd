@@ -31,7 +31,7 @@ module vita_tx_chain
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
    
-   assign underrun = error & ~(error_code == 1);
+   assign underrun = error;
    assign message = error_code;
    
    setting_reg #(.my_addr(BASE_CTRL+1)) sr
@@ -56,7 +56,7 @@ module vita_tx_chain
    vita_tx_control #(.BASE(BASE_CTRL), .WIDTH(32*MAXCHAN)) vita_tx_control
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time),.error(error),.error_code(error_code),
+      .vita_time(vita_time), .error(error), .ack(ack), .error_code(error_code),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
       .sample(sample_tx), .run(run), .strobe(strobe_tx), .packet_consumed(packet_consumed),
       .debug(debug_vtc) );
@@ -84,7 +84,7 @@ module vita_tx_chain
    
    gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
-      .trigger(error & (REPORT_ERROR==1)), .sent(), 
+      .trigger((error|ack) & (REPORT_ERROR==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(message),
       .seqnum0(current_seqnum), .seqnum1(32'd0),
       .data_o(err_data_int), .src_rdy_o(err_src_rdy_int), .dst_rdy_i(err_dst_rdy_int));
