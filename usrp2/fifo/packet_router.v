@@ -310,12 +310,38 @@ module packet_router
     localparam COM_INSP_STATE_WRITE_REGS = 2;
     localparam COM_INSP_STATE_WRITE_LIVE = 3;
 
-    localparam COM_INSP_DEST_DSP = 0;
-    localparam COM_INSP_DEST_SER = 1;
-    localparam COM_INSP_DEST_CPU = 2;
+    localparam COM_INSP_DEST_FP_THIS = 0;
+    localparam COM_INSP_DEST_FP_OTHER = 1;
+    localparam COM_INSP_DEST_SP_BOTH = 2;
 
     localparam COM_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr
     localparam COM_INSP_DREGS_DSP_OFFSET = 11; //offset to start dsp at
+
+    //output inspector interfaces
+    wire [35:0] com_insp_out_fp_this_data;
+    wire com_insp_out_fp_this_valid;
+    wire com_insp_out_fp_this_ready;
+
+    wire [35:0] com_insp_out_fp_other_data;
+    wire com_insp_out_fp_other_valid;
+    wire com_insp_out_fp_other_ready;
+
+    wire [35:0] com_insp_out_sp_both_data;
+    wire com_insp_out_sp_both_valid;
+    wire com_insp_out_sp_both_ready;
+
+    //connect the other interfaces into here for now
+    assign dsp_out_data = com_insp_out_fp_this_data;
+    assign dsp_out_valid = com_insp_out_fp_this_valid;
+    assign com_insp_out_fp_this_ready = dsp_out_ready;
+
+    assign crs_out_data = com_insp_out_fp_other_data;
+    assign crs_out_valid = com_insp_out_fp_other_valid;
+    assign com_insp_out_fp_other_ready = crs_out_ready;
+
+    assign cpu_out_data = com_insp_out_sp_both_data;
+    assign cpu_out_valid = com_insp_out_sp_both_valid;
+    assign com_insp_out_sp_both_ready = cpu_out_ready;
 
     reg [1:0] com_insp_state;
     reg [1:0] com_insp_dest;
@@ -325,20 +351,22 @@ module packet_router
     reg [35:0] com_insp_dregs [COM_INSP_MAX_NUM_DREGS-1:0];
 
     //Inspection logic:
-    wire com_inp_dregs_is_dsp = 1'b1
+    wire com_inp_dregs_is_data = 1'b1
         & (com_insp_dregs[3][15:0] == 16'h800)    //ethertype IPv4
         & (com_insp_dregs[6][23:16] == 8'h11)     //protocol UDP
         & (com_insp_dregs[9][15:0] == 16'd49153)  //UDP data port
         & (com_inp_data[31:0] != 32'h0)           //VRT hdr non-zero
     ;
 
-    wire com_inp_dregs_is_ser = 1'b0;
+    wire com_inp_dregs_is_data_here = com_inp_dregs_is_data & 1'b1; //TODO check for ip match
+    wire com_inp_dregs_is_data_there = com_inp_dregs_is_data & 1'b0; //TODO check for ip mismatch
 
     //Inspector output flags special case:
     //Inject SOF into flags at first DSP line.
-    wire [3:0] com_insp_out_flags = ((com_insp_dreg_count == COM_INSP_DREGS_DSP_OFFSET) & (com_insp_dest == COM_INSP_DEST_DSP))?
-        4'b0001 : com_insp_dregs[com_insp_dreg_count][35:32]
-    ;
+    wire [3:0] com_insp_out_flags = (
+        (com_insp_dreg_count == COM_INSP_DREGS_DSP_OFFSET) &
+        (com_insp_dest == COM_INSP_DEST_FP_THIS)
+    )? 4'b0001 : com_insp_dregs[com_insp_dreg_count][35:32];
 
     //The communication inspector ouput data and valid signals:
     //Mux between com input and data registers based on the state.
@@ -353,20 +381,21 @@ module packet_router
     //The communication inspector ouput ready signal:
     //Mux between the various destination ready signals.
     wire com_insp_out_ready =
-        (com_insp_dest == COM_INSP_DEST_CPU)? cpu_out_ready : (
-        (com_insp_dest == COM_INSP_DEST_DSP)? dsp_out_ready : (
-    1'b0));
+        (com_insp_dest == COM_INSP_DEST_FP_THIS) ? com_insp_out_fp_this_ready  : (
+        (com_insp_dest == COM_INSP_DEST_FP_OTHER)? com_insp_out_fp_other_ready : (
+        (com_insp_dest == COM_INSP_DEST_SP_BOTH) ? com_insp_out_sp_both_ready  : (
+    1'b0)));
 
     //Always connected output data lines.
-    assign cpu_out_data = com_insp_out_data;
-    assign dsp_out_data = com_insp_out_data;
-    assign crs_out_data = com_insp_out_data;
+    assign com_insp_out_fp_this_data = com_insp_out_data;
+    assign com_insp_out_fp_other_data = com_insp_out_data;
+    assign com_insp_out_sp_both_data = com_insp_out_data;
 
     //Destination output valid signals:
     //Comes from inspector valid when destination is selected, and otherwise low.
-    assign cpu_out_valid = (com_insp_dest == COM_INSP_DEST_CPU)? com_insp_out_valid : 1'b0;
-    assign dsp_out_valid = (com_insp_dest == COM_INSP_DEST_DSP)? com_insp_out_valid : 1'b0;
-    assign crs_out_valid = (com_insp_dest == COM_INSP_DEST_SER)? com_insp_out_valid : 1'b0;
+    assign com_insp_out_fp_this_valid  = (com_insp_dest == COM_INSP_DEST_FP_THIS) ? com_insp_out_valid : 1'b0;
+    assign com_insp_out_fp_other_valid = (com_insp_dest == COM_INSP_DEST_FP_OTHER)? com_insp_out_valid : 1'b0;
+    assign com_insp_out_sp_both_valid  = (com_insp_dest == COM_INSP_DEST_SP_BOTH) ? com_insp_out_valid : 1'b0;
 
     //The communication inspector ouput ready signal:
     //Always ready when storing to data registers,
@@ -396,18 +425,18 @@ module packet_router
         COM_INSP_STATE_READ_COM: begin
             if (com_inp_ready & com_inp_valid) begin
                 com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
-                if (com_inp_dregs_is_dsp & com_insp_dreg_counter_done) begin
-                    com_insp_dest <= COM_INSP_DEST_DSP;
+                if (com_inp_dregs_is_data_here & com_insp_dreg_counter_done) begin
+                    com_insp_dest <= COM_INSP_DEST_FP_THIS;
                     com_insp_state <= COM_INSP_STATE_WRITE_REGS;
                     com_insp_dreg_count <= COM_INSP_DREGS_DSP_OFFSET;
                 end
-                else if (com_inp_dregs_is_ser & com_insp_dreg_counter_done) begin
-                    com_insp_dest <= COM_INSP_DEST_SER;
+                else if (com_inp_dregs_is_data_there & com_insp_dreg_counter_done) begin
+                    com_insp_dest <= COM_INSP_DEST_FP_OTHER;
                     com_insp_state <= COM_INSP_STATE_WRITE_REGS;
                     com_insp_dreg_count <= 0;
                 end
                 else if (com_inp_data[33] | com_insp_dreg_counter_done) begin
-                    com_insp_dest <= COM_INSP_DEST_CPU;
+                    com_insp_dest <= COM_INSP_DEST_SP_BOTH;
                     com_insp_state <= COM_INSP_STATE_WRITE_REGS;
                     com_insp_dreg_count <= 0;
                 end
