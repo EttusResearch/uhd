@@ -105,7 +105,7 @@ module packet_router
 
     //connect the crossbar ready signals
     assign eth_inp_ready = (master_mode_flag)? com_inp_ready : 1'b1/*null sink*/;
-    assign ser_inp_ready = (master_mode_flag)? crs_inp_ready : eth_inp_ready;
+    assign ser_inp_ready = (master_mode_flag)? crs_inp_ready : com_inp_ready;
 
     ////////////////////////////////////////////////////////////////////
     // Communication output sink crossbar
@@ -330,18 +330,10 @@ module packet_router
     wire com_insp_out_sp_both_valid;
     wire com_insp_out_sp_both_ready;
 
-    //connect the other interfaces into here for now
+    //connect this fast-path signals directly to the DSP out
     assign dsp_out_data = com_insp_out_fp_this_data;
     assign dsp_out_valid = com_insp_out_fp_this_valid;
     assign com_insp_out_fp_this_ready = dsp_out_ready;
-
-    assign crs_out_data = com_insp_out_fp_other_data;
-    assign crs_out_valid = com_insp_out_fp_other_valid;
-    assign com_insp_out_fp_other_ready = crs_out_ready;
-
-    assign cpu_out_data = com_insp_out_sp_both_data;
-    assign cpu_out_valid = com_insp_out_sp_both_valid;
-    assign com_insp_out_sp_both_ready = cpu_out_ready;
 
     reg [1:0] com_insp_state;
     reg [1:0] com_insp_dest;
@@ -470,6 +462,31 @@ module packet_router
 
         endcase //com_insp_state
     end
+
+    ////////////////////////////////////////////////////////////////////
+    // Serdes crossbar output source
+    //   - combine slow-path data with fast-path other data
+    //   - slow-path data is duplicated to this and CPU out
+    ////////////////////////////////////////////////////////////////////
+
+    //dummy signals to join the the splitter and mux below
+    wire [35:0] _sp_split_to_mux_data;
+    wire        _sp_split_to_mux_valid;
+    wire        _sp_split_to_mux_ready;
+
+    fifo36_splitter crs_out_src0(
+        .clk(stream_clk), .rst(stream_rst),
+        .inp_data(com_insp_out_sp_both_data), .inp_valid(com_insp_out_sp_both_valid), .inp_ready(com_insp_out_sp_both_ready),
+        .out0_data(_sp_split_to_mux_data),    .out0_valid(_sp_split_to_mux_valid),    .out0_ready(_sp_split_to_mux_ready),
+        .out1_data(cpu_out_data),             .out1_valid(cpu_out_valid),             .out1_ready(cpu_out_ready)
+    );
+
+    fifo36_mux crs_out_src1(
+        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
+        .data0_i(com_insp_out_fp_other_data), .src0_rdy_i(com_insp_out_fp_other_valid), .dst0_rdy_o(com_insp_out_fp_other_ready),
+        .data1_i(_sp_split_to_mux_data),      .src1_rdy_i(_sp_split_to_mux_valid),      .dst1_rdy_o(_sp_split_to_mux_ready),
+        .data_o(crs_out_data),                .src_rdy_o(crs_out_valid),                .dst_rdy_i(crs_out_ready)
+    );
 
     ////////////////////////////////////////////////////////////////////
     // DSP input framer
