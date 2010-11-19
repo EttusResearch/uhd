@@ -18,9 +18,9 @@
 ########################################################################
 # Setup Version Numbers
 ########################################################################
-SET(UHD_VERSION_MAJOR 0)
-SET(UHD_VERSION_MINOR 0)
-SET(UHD_VERSION_PATCH 0)
+SET(UHD_VERSION_MAJOR 0001) #API compatibility number
+SET(UHD_VERSION_MINOR 0)    #Timestamp of git commit
+SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
 
 ########################################################################
 # Find GIT to get repo information
@@ -46,19 +46,12 @@ ELSE(${GIT} STREQUAL "GIT-NOTFOUND")
         OUTPUT_VARIABLE _git_timestamp OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
-    #format the timestamp into YYYY-MM-DD
+    #format the timestamp into YYYY-MM-DD-HH-MM-SS
     EXECUTE_PROCESS(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d', time.gmtime(${_git_timestamp}))"
+        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d%H%M%S', time.gmtime(${_git_timestamp}))"
         OUTPUT_VARIABLE _git_date OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    SET(UHD_VERSION_MAJOR ${_git_date})
-
-    #format the timestamp into HH-MM-SS
-    EXECUTE_PROCESS(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%H%M%S', time.gmtime(${_git_timestamp}))"
-        OUTPUT_VARIABLE _git_time OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    SET(UHD_VERSION_MINOR ${_git_time})
+    SET(UHD_VERSION_MINOR ${_git_date})
 
     #grab the git ref id for the current head
     EXECUTE_PROCESS(
