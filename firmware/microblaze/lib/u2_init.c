@@ -78,6 +78,8 @@ u2_init(void)
     printf("ad9510 reg[0x%x] = 0x%x\n", rr, vv);
   }
 #endif
-  
+
+  output_regs->serdes_ctrl = (SERDES_ENABLE | SERDES_RXEN);
+
   return true;
 }
