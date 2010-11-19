@@ -168,6 +168,7 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
     total_len = 60;
 
   pkt_ctrl_commit_outgoing_buffer(total_len/4);
+  //printf("sent %d bytes\n", total_len);
 }
 
 unsigned int 
@@ -389,6 +390,8 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
 void
 handle_eth_packet(uint32_t *p, size_t nlines)
 {
+  //static size_t bcount = 0;
+  //printf("===> %d\n", bcount++);
   //print_buffer(p, nlines);
 
   padded_eth_hdr_t *eth_hdr = (padded_eth_hdr_t *)p;

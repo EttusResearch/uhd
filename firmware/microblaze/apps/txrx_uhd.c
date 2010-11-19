@@ -356,7 +356,11 @@ main(void)
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 
-  //3) setup ethernet hardware to bring the link up
+  //3) set the routing mode to slave and send a garp
+  pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
+  send_gratuitous_arp();
+
+  //4) setup ethernet hardware to bring the link up
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
 
