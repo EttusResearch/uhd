@@ -361,10 +361,11 @@ module u2_core
    wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
 
    wire [31:0] router_control;
+   wire router_control_changed;
 
     setting_reg #(.my_addr(SR_BUF_POOL)) 
      sreg(.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
-        .out(router_control),.changed());
+        .out(router_control),.changed(router_control_changed));
 
    packet_router #(.BUF_SIZE(9)) packet_router
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
@@ -373,7 +374,8 @@ module u2_core
 
       .stream_clk(dsp_clk), .stream_rst(dsp_rst),
 
-      .control(router_control), .status(status), .sys_int_o(buffer_int),
+      .control(router_control), .control_changed(router_control_changed),
+      .status(status), .sys_int_o(buffer_int),
 
       .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
       .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),

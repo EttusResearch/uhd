@@ -18,6 +18,7 @@ module packet_router
 
         //input control register
         input [31:0] control,
+        input control_changed,
 
         //output status register
         output [31:0] status,
@@ -66,10 +67,19 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
     // status and control handshakes
     ////////////////////////////////////////////////////////////////////
-    wire cpu_out_hs_ctrl = control[0];
-    wire cpu_inp_hs_ctrl = control[1];
-    wire master_mode_flag = control[2];
-    wire [BUF_SIZE-1:0] cpu_inp_line_count = control[BUF_SIZE-1+16:0+16];
+    reg cpu_out_hs_ctrl;
+    reg cpu_inp_hs_ctrl;
+    reg master_mode_flag;
+    reg router_clr;
+    reg [BUF_SIZE-1:0] cpu_inp_line_count;
+
+    always @(posedge control_changed) begin
+        cpu_out_hs_ctrl <= control[0];
+        cpu_inp_hs_ctrl <= control[1];
+        master_mode_flag <= control[2];
+        router_clr <= control[8];
+        cpu_inp_line_count <= control[BUF_SIZE-1+16:0+16];
+    end
 
     wire cpu_out_hs_stat;
     assign status[0] = cpu_out_hs_stat;
@@ -152,14 +162,14 @@ module packet_router
     wire        _combiner_ready;
 
     fifo36_mux _com_output_source(
-        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
+        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
         .data0_i(dsp_frm_data), .src0_rdy_i(dsp_frm_valid), .dst0_rdy_o(dsp_frm_ready),
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
         .data_o(_combiner_data), .src_rdy_o(_combiner_valid), .dst_rdy_i(_combiner_ready)
     );
 
     fifo36_mux com_output_source(
-        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
+        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
         .data0_i(_combiner_data), .src0_rdy_i(_combiner_valid), .dst0_rdy_o(_combiner_ready),
         .data1_i(crs_inp_data), .src1_rdy_i(crs_inp_valid), .dst1_rdy_o(crs_inp_ready),
         .data_o(com_out_data), .src_rdy_o(com_out_valid), .dst_rdy_i(com_out_ready)
@@ -197,7 +207,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst) begin
+    if(stream_rst | router_clr) begin
         cpu_out_state <= CPU_OUT_STATE_WAIT_SOF;
         cpu_out_addr <= 0;
     end
@@ -266,7 +276,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst) begin
+    if(stream_rst | router_clr) begin
         cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
         cpu_inp_addr <= 0;
     end
@@ -400,7 +410,7 @@ module packet_router
     1'b0)));
 
     always @(posedge stream_clk)
-    if(stream_rst) begin
+    if(stream_rst | router_clr) begin
         com_insp_state <= COM_INSP_STATE_READ_COM_PRE;
         com_insp_dreg_count <= 0;
     end
@@ -475,14 +485,14 @@ module packet_router
     wire        _sp_split_to_mux_ready;
 
     fifo36_splitter crs_out_src0(
-        .clk(stream_clk), .rst(stream_rst),
+        .clk(stream_clk), .rst(stream_rst | router_clr),
         .inp_data(com_insp_out_sp_both_data), .inp_valid(com_insp_out_sp_both_valid), .inp_ready(com_insp_out_sp_both_ready),
         .out0_data(_sp_split_to_mux_data),    .out0_valid(_sp_split_to_mux_valid),    .out0_ready(_sp_split_to_mux_ready),
         .out1_data(cpu_out_data),             .out1_valid(cpu_out_valid),             .out1_ready(cpu_out_ready)
     );
 
     fifo36_mux crs_out_src1(
-        .clk(stream_clk), .reset(stream_rst), .clear(1'b0),
+        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
         .data0_i(com_insp_out_fp_other_data), .src0_rdy_i(com_insp_out_fp_other_valid), .dst0_rdy_o(com_insp_out_fp_other_ready),
         .data1_i(_sp_split_to_mux_data),      .src1_rdy_i(_sp_split_to_mux_valid),      .dst1_rdy_o(_sp_split_to_mux_ready),
         .data_o(crs_out_data),                .src_rdy_o(crs_out_valid),                .dst_rdy_i(crs_out_ready)
@@ -533,7 +543,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst) begin
+    if(stream_rst | router_clr) begin
         dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
         dsp_frm_addr <= 0;
     end
