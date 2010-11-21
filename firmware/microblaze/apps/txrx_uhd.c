@@ -348,9 +348,9 @@ main(void)
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
 
   //1) register the addresses into the network stack
-  register_mac_addr(ethernet_mac_addr());
-  register_ip_addr(get_ip_addr());
-  
+  register_addrs(ethernet_mac_addr(), get_ip_addr());
+  pkt_ctrl_register_addrs(ethernet_mac_addr(), get_ip_addr());
+
   //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);

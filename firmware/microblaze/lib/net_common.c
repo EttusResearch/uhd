@@ -39,21 +39,12 @@
 
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
-static inline bool
-ip_addr_eq(const struct ip_addr a, const struct ip_addr b)
-{
-  return a.addr == b.addr;
-}
-
 // ------------------------------------------------------------------------
 
 static eth_mac_addr_t _local_mac_addr;
-void register_mac_addr(const eth_mac_addr_t *mac_addr){
-    _local_mac_addr = *mac_addr;
-}
-
 static struct ip_addr _local_ip_addr;
-void register_ip_addr(const struct ip_addr *ip_addr){
+void register_addrs(const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr){
+    _local_mac_addr = *mac_addr;
     _local_ip_addr = *ip_addr;
 }
 
@@ -382,7 +373,7 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
   sip.addr = get_int32(p->ar_sip);
   tip.addr = get_int32(p->ar_tip);
 
-  if (ip_addr_eq(tip, _local_ip_addr)){	// They're looking for us...
+  if (memcmp(&tip, &_local_ip_addr, sizeof(_local_ip_addr)) == 0){	// They're looking for us...
     send_arp_reply(p, _local_mac_addr);
   }
 }
