@@ -74,6 +74,8 @@ module packet_router
     reg master_mode_flag;
     reg router_clr;
     reg [BUF_SIZE-1:0] cpu_inp_line_count;
+    reg [31:0] my_ip_addr;
+    reg [47:0] my_mac_addr;
 
     always @(posedge control_changed) begin
         cpu_out_hs_ctrl <= control[0];
@@ -81,6 +83,18 @@ module packet_router
         master_mode_flag <= control[2];
         router_clr <= control[8];
         cpu_inp_line_count <= control[BUF_SIZE-1+16:0+16];
+        case (control[6:4])
+        3'b001:
+            my_ip_addr[15:0] <= control[31:16];
+        3'b010:
+            my_ip_addr[31:16] <= control[31:16];
+        3'b011:
+            my_mac_addr[15:0] <= control[31:16];
+        3'b100:
+            my_mac_addr[31:16] <= control[31:16];
+        3'b101:
+            my_mac_addr[47:32] <= control[31:16];
+        endcase
     end
 
     wire cpu_out_hs_stat;
@@ -362,8 +376,9 @@ module packet_router
         && (com_inp_data[31:0] != 32'h0)           //VRT hdr non-zero
     ;
 
-    wire com_inp_dregs_is_data_here = com_inp_dregs_is_data & 1'b1; //TODO check for ip match
-    wire com_inp_dregs_is_data_there = com_inp_dregs_is_data & 1'b0; //TODO check for ip mismatch
+    wire com_inp_dregs_my_ip_match = (my_ip_addr == com_insp_dregs[8][31:0])? 1'b1 : 1'b0;
+    wire com_inp_dregs_is_data_here = com_inp_dregs_is_data & com_inp_dregs_my_ip_match;
+    wire com_inp_dregs_is_data_there = com_inp_dregs_is_data & ~com_inp_dregs_my_ip_match;
 
     //Inspector output flags special case:
     //Inject SOF into flags at first DSP line.
