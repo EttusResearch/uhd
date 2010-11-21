@@ -25,6 +25,8 @@ module packet_router
 
         output sys_int_o, //want an interrupt?
 
+        output [31:0] debug,
+
         // Input Interfaces (in to router)
         input [35:0] ser_inp_data, input ser_inp_valid, output ser_inp_ready,
         input [35:0] dsp_inp_data, input dsp_inp_valid, output dsp_inp_ready,
@@ -214,14 +216,14 @@ module packet_router
     else begin
         case(cpu_out_state)
         CPU_OUT_STATE_WAIT_SOF: begin
-            if (cpu_out_ready & cpu_out_valid & (cpu_out_data[32] == 1'b1)) begin
+            if (cpu_out_ready & cpu_out_valid & cpu_out_data[32]) begin
                 cpu_out_state <= CPU_OUT_STATE_WAIT_EOF;
                 cpu_out_addr <= cpu_out_addr_next;
             end
         end
 
         CPU_OUT_STATE_WAIT_EOF: begin
-            if (cpu_out_ready & cpu_out_valid & (cpu_out_data[33] == 1'b1)) begin
+            if (cpu_out_ready & cpu_out_valid & cpu_out_data[33]) begin
                 cpu_out_state <= CPU_OUT_STATE_WAIT_CTRL_HI;
             end
             if (cpu_out_ready & cpu_out_valid) begin
@@ -259,7 +261,7 @@ module packet_router
     reg [BUF_SIZE-1:0] cpu_inp_line_count_reg;
 
     assign cpu_inp_data[35:32] =
-        (cpu_inp_addr == 0                     )? 4'b0001 : (
+        (cpu_inp_addr == 1                     )? 4'b0001 : (
         (cpu_inp_addr == cpu_inp_line_count_reg)? 4'b0010 : (
     4'b0000));
 
@@ -354,10 +356,10 @@ module packet_router
 
     //Inspection logic:
     wire com_inp_dregs_is_data = 1'b1
-        & (com_insp_dregs[3][15:0] == 16'h800)    //ethertype IPv4
-        & (com_insp_dregs[6][23:16] == 8'h11)     //protocol UDP
-        & (com_insp_dregs[9][15:0] == 16'd49153)  //UDP data port
-        & (com_inp_data[31:0] != 32'h0)           //VRT hdr non-zero
+        && (com_insp_dregs[3][15:0] == 16'h800)    //ethertype IPv4
+        && (com_insp_dregs[6][23:16] == 8'h11)     //protocol UDP
+        && (com_insp_dregs[9][15:0] == 16'd49153)  //UDP data port
+        && (com_inp_data[31:0] != 32'h0)           //VRT hdr non-zero
     ;
 
     wire com_inp_dregs_is_data_here = com_inp_dregs_is_data & 1'b1; //TODO check for ip match
@@ -366,7 +368,7 @@ module packet_router
     //Inspector output flags special case:
     //Inject SOF into flags at first DSP line.
     wire [3:0] com_insp_out_flags = (
-        (com_insp_dreg_count == COM_INSP_DREGS_DSP_OFFSET) &
+        (com_insp_dreg_count == COM_INSP_DREGS_DSP_OFFSET) &&
         (com_insp_dest == COM_INSP_DEST_FP_THIS)
     )? 4'b0001 : com_insp_dregs[com_insp_dreg_count][35:32];
 
@@ -529,7 +531,7 @@ module packet_router
         (dsp_frm_addr == dsp_frm_count)           ? {4'b0010, dsp_frm_data_bram}    : (
     {4'b0000, dsp_frm_data_bram}));
     assign dsp_frm_valid = (
-        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR) |
+        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR) ||
         (dsp_frm_state == DSP_FRM_STATE_WRITE)
     )? 1'b1 : 1'b0;
 
@@ -589,5 +591,35 @@ module packet_router
         end
         endcase //dsp_frm_state
     end
+
+    ////////////////////////////////////////////////////////////////////
+    // Assign debugs
+    ////////////////////////////////////////////////////////////////////
+
+    assign debug = {
+        //inputs to the router (8)
+        dsp_inp_ready, dsp_inp_valid,
+        ser_inp_ready, ser_inp_valid,
+        eth_inp_ready, eth_inp_valid,
+        cpu_inp_ready, cpu_inp_valid,
+
+        //outputs from the router (8)
+        dsp_out_ready, dsp_out_valid,
+        ser_out_ready, ser_out_valid,
+        eth_out_ready, eth_out_valid,
+        cpu_out_ready, cpu_out_valid,
+
+        //inspector interfaces (8)
+        com_inp_ready, com_inp_valid,
+        com_insp_out_fp_this_ready, com_insp_out_fp_this_valid,
+        com_insp_out_fp_other_ready, com_insp_out_fp_other_valid,
+        com_insp_out_sp_both_ready, com_insp_out_sp_both_valid,
+
+        //other interfaces (8)
+        crs_inp_ready, crs_inp_valid,
+        com_out_ready, com_out_valid,
+        crs_out_ready, crs_out_valid,
+        _sp_split_to_mux_ready, _sp_split_to_mux_valid
+    };
 
 endmodule // packet_router
