@@ -78,7 +78,8 @@ void *pkt_ctrl_claim_outgoing_buffer(void){
 }
 
 void pkt_ctrl_commit_outgoing_buffer(size_t num_lines){
-    set_control((1 << OUT_HS_BIT) | (num_lines << 16), (1 << OUT_HS_BIT) | (0xffff << 16));
+    set_control(num_lines << 16, 0xffff << 16);
+    set_control_bit(OUT_HS_BIT);
     while (is_status_bit_set(OUT_HS_BIT)){}
     clr_control_bit(OUT_HS_BIT);
 }
