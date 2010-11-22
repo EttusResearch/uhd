@@ -528,8 +528,8 @@ module packet_router
     wire        _sp_split_to_mux_valid;
     wire        _sp_split_to_mux_ready;
 
-    fifo36_splitter crs_out_src0(
-        .clk(stream_clk), .rst(stream_rst | stream_clr),
+    splitter36 crs_out_src0(
+        .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
         .inp_data(com_insp_out_sp_both_data), .inp_valid(com_insp_out_sp_both_valid), .inp_ready(com_insp_out_sp_both_ready),
         .out0_data(_sp_split_to_mux_data),    .out0_valid(_sp_split_to_mux_valid),    .out0_ready(_sp_split_to_mux_ready),
         .out1_data(cpu_out_data),             .out1_valid(cpu_out_valid),             .out1_ready(cpu_out_ready)
@@ -544,95 +544,13 @@ module packet_router
 
     ////////////////////////////////////////////////////////////////////
     // DSP input framer
-    //   - add a 1-line frame header to each DSP input packet
-    //   - each header is composed of a byte count and flags
     ////////////////////////////////////////////////////////////////////
 
-    localparam DSP_FRM_STATE_WAIT_SOF = 0;
-    localparam DSP_FRM_STATE_WAIT_EOF = 1;
-    localparam DSP_FRM_STATE_WRITE_HDR = 2;
-    localparam DSP_FRM_STATE_WRITE = 3;
-
-    reg [1:0] dsp_frm_state;
-    reg [BUF_SIZE-1:0] dsp_frm_addr;
-    reg [BUF_SIZE-1:0] dsp_frm_count;
-    wire [BUF_SIZE-1:0] dsp_frm_addr_next = dsp_frm_addr + 1'b1;
-
-    //DSP input stream ready in the following states
-    assign dsp_inp_ready =
-        (dsp_frm_state == DSP_FRM_STATE_WAIT_SOF)? 1'b1 : (
-        (dsp_frm_state == DSP_FRM_STATE_WAIT_EOF)? 1'b1 : (
-    1'b0));
-
-    //DSP framer output data mux (header or BRAM):
-    //The header is generated here from the count.
-    wire [31:0] dsp_frm_data_bram;
-    wire [15:0] dsp_frm_bytes = {dsp_frm_count, 2'b00};
-    assign dsp_frm_data =
-        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR)? {4'b0001, 16'b1, dsp_frm_bytes} : (
-        (dsp_frm_addr == dsp_frm_count)           ? {4'b0010, dsp_frm_data_bram}    : (
-    {4'b0000, dsp_frm_data_bram}));
-    assign dsp_frm_valid = (
-        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR) ||
-        (dsp_frm_state == DSP_FRM_STATE_WRITE)
-    )? 1'b1 : 1'b0;
-
-    RAMB16_S36_S36 dsp_frm_buff(
-        //port A = DSP input interface (writes to BRAM)
-        .DOA(),.ADDRA(dsp_frm_addr),.CLKA(stream_clk),.DIA(dsp_inp_data[31:0]),.DIPA(4'h0),
-        .ENA(dsp_inp_ready),.SSRA(0),.WEA(dsp_inp_ready),
-        //port B = DSP framer interface (reads from BRAM)
-        .DOB(dsp_frm_data_bram),.ADDRB(dsp_frm_addr),.CLKB(stream_clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(dsp_frm_ready & dsp_frm_valid),.SSRB(0),.WEB(1'b0)
+    dsp_framer36 #(.BUF_SIZE(BUF_SIZE)) dsp0_framer36(
+        .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
+        .inp_data(dsp_inp_data), .inp_valid(dsp_inp_valid), .inp_ready(dsp_inp_ready),
+        .out_data(dsp_frm_data), .out_valid(dsp_frm_valid), .out_ready(dsp_frm_ready)
     );
-
-    always @(posedge stream_clk)
-    if(stream_rst | stream_clr) begin
-        dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
-        dsp_frm_addr <= 0;
-    end
-    else begin
-        case(dsp_frm_state)
-        DSP_FRM_STATE_WAIT_SOF: begin
-            if (dsp_inp_ready & dsp_inp_valid & dsp_inp_data[32]) begin
-                dsp_frm_addr <= dsp_frm_addr_next;
-                dsp_frm_state <= DSP_FRM_STATE_WAIT_EOF;
-            end
-        end
-
-        DSP_FRM_STATE_WAIT_EOF: begin
-            if (dsp_inp_ready & dsp_inp_valid) begin
-                if (dsp_inp_data[33]) begin
-                    dsp_frm_count <= dsp_frm_addr_next;
-                    dsp_frm_addr <= 0;
-                    dsp_frm_state <= DSP_FRM_STATE_WRITE_HDR;
-                end
-                else begin
-                    dsp_frm_addr <= dsp_frm_addr_next;
-                end
-            end
-        end
-
-        DSP_FRM_STATE_WRITE_HDR: begin
-            if (dsp_frm_ready & dsp_frm_valid) begin
-                dsp_frm_addr <= dsp_frm_addr_next;
-                dsp_frm_state <= DSP_FRM_STATE_WRITE;
-            end
-        end
-
-        DSP_FRM_STATE_WRITE: begin
-            if (dsp_frm_ready & dsp_frm_valid) begin
-                if (dsp_frm_data[33]) begin
-                    dsp_frm_addr <= 0;
-                    dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
-                end
-                else begin
-                    dsp_frm_addr <= dsp_frm_addr_next;
-                end
-            end
-        end
-        endcase //dsp_frm_state
-    end
 
     ////////////////////////////////////////////////////////////////////
     // Assign debugs

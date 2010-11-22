@@ -1,9 +1,9 @@
 
 // Split packets from a fifo based interface so it goes out identically on two interfaces
 
-module fifo36_splitter
+module splitter36
     (
-        input clk, input rst,
+        input clk, input rst, input clr,
         input [35:0] inp_data, input inp_valid, output inp_ready,
         output [35:0] out0_data, output out0_valid, input out0_ready,
         output [35:0] out1_data, output out1_valid, input out1_ready
@@ -32,7 +32,7 @@ module fifo36_splitter
     assign inp_ready = (state == STATE_COPY_BOTH)? (out0_ready | out1_ready) : 1'b0;
 
     always @(posedge clk)
-    if (rst) begin
+    if (rst | clr) begin
         state <= STATE_COPY_BOTH;
     end
     else begin
@@ -65,4 +65,4 @@ module fifo36_splitter
 
 
 
-endmodule //fifo36_splitter
+endmodule //splitter36
