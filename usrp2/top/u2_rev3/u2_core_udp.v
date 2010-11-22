@@ -360,6 +360,9 @@ module u2_core
    wire [3:0] 	 wr0_flags, wr1_flags, wr2_flags, wr3_flags;
    wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
 
+   wire [35:0] 	 tx_err_data;
+   wire 	 tx_err_src_rdy, tx_err_dst_rdy;
+
    wire [31:0] router_control;
    wire router_control_changed;
 
@@ -382,6 +385,7 @@ module u2_core
       .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
       .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),
       .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
+      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_src_rdy), .err_inp_valid(tx_err_dst_rdy),
 
       .ser_out_data({rd0_flags, rd0_dat}), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
       .dsp_out_data({rd1_flags, rd1_dat}), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
@@ -475,20 +479,11 @@ module u2_core
       .tx_f36_data(udp_tx_data), .tx_f36_src_rdy_i(udp_tx_src_rdy), .tx_f36_dst_rdy_o(udp_tx_dst_rdy),
       .debug(debug_udp) );
 
-   wire [35:0] 	 tx_err_data, udp1_tx_data;
-   wire 	 tx_err_src_rdy, tx_err_dst_rdy, udp1_tx_src_rdy, udp1_tx_dst_rdy;
-   
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(udp1_tx_data), .src_rdy_o(udp1_tx_src_rdy), .dst_rdy_i(udp1_tx_dst_rdy));
+      .dataout(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
 
-   fifo36_mux #(.prio(0)) mux_err_stream
-     (.clk(dsp_clk), .reset(dsp_reset), .clear(0),
-      .data0_i(udp1_tx_data), .src0_rdy_i(udp1_tx_src_rdy), .dst0_rdy_o(udp1_tx_dst_rdy),
-      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
-      .data_o(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
-   
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain(udp_rx_data), .src_rdy_i(udp_rx_src_rdy), .dst_rdy_o(udp_rx_dst_rdy),

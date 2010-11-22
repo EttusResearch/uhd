@@ -31,6 +31,7 @@ module packet_router
         input [35:0] ser_inp_data, input ser_inp_valid, output ser_inp_ready,
         input [35:0] dsp_inp_data, input dsp_inp_valid, output dsp_inp_ready,
         input [35:0] eth_inp_data, input eth_inp_valid, output eth_inp_ready,
+        input [35:0] err_inp_data, input err_inp_valid, output err_inp_ready,
 
         // Output Interfaces (out of router)
         output [35:0] ser_out_data, output ser_out_valid, input ser_out_ready,
@@ -164,6 +165,7 @@ module packet_router
     // Communication output source combiner
     //   - DSP framer
     //   - CPU input
+    //   - Error input
     //   - Crossbar input
     ////////////////////////////////////////////////////////////////////
 
@@ -173,21 +175,28 @@ module packet_router
     wire        dsp_frm_ready;
 
     //dummy signals to join the the muxes below
-    wire [35:0] _combiner_data;
-    wire        _combiner_valid;
-    wire        _combiner_ready;
+    wire [35:0] _combiner0_data, _combiner1_data;
+    wire        _combiner0_valid, _combiner1_valid;
+    wire        _combiner0_ready, _combiner1_ready;
 
-    fifo36_mux _com_output_source(
+    fifo36_mux _com_output_combiner0(
         .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
         .data0_i(dsp_frm_data), .src0_rdy_i(dsp_frm_valid), .dst0_rdy_o(dsp_frm_ready),
+        .data1_i(err_inp_data), .src1_rdy_i(err_inp_valid), .dst1_rdy_o(err_inp_ready),
+        .data_o(_combiner0_data), .src_rdy_o(_combiner0_valid), .dst_rdy_i(_combiner0_ready)
+    );
+
+    fifo36_mux _com_output_combiner1(
+        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
+        .data0_i(crs_inp_data), .src0_rdy_i(crs_inp_valid), .dst0_rdy_o(crs_inp_ready),
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
-        .data_o(_combiner_data), .src_rdy_o(_combiner_valid), .dst_rdy_i(_combiner_ready)
+        .data_o(_combiner1_data), .src_rdy_o(_combiner1_valid), .dst_rdy_i(_combiner1_ready)
     );
 
     fifo36_mux com_output_source(
         .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
-        .data0_i(_combiner_data), .src0_rdy_i(_combiner_valid), .dst0_rdy_o(_combiner_ready),
-        .data1_i(crs_inp_data), .src1_rdy_i(crs_inp_valid), .dst1_rdy_o(crs_inp_ready),
+        .data0_i(_combiner0_data), .src0_rdy_i(_combiner0_valid), .dst0_rdy_o(_combiner0_ready),
+        .data1_i(_combiner1_data), .src1_rdy_i(_combiner1_valid), .dst1_rdy_o(_combiner1_ready),
         .data_o(com_out_data), .src_rdy_o(com_out_valid), .dst_rdy_i(com_out_ready)
     );
 
