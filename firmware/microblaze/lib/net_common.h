@@ -23,6 +23,13 @@
 #include <net/socket_address.h>
 #include <net/eth_mac_addr.h>
 
+/*
+ * 1's complement sum for IP and UDP headers
+ *
+ * init chksum to zero to start.
+ */
+unsigned int CHKSUM(unsigned int x, unsigned int *chksum);
+
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);
 

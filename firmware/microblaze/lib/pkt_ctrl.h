@@ -20,17 +20,14 @@
 
 #include <stddef.h>
 #include <lwip/ip_addr.h>
-#include <net/eth_mac_addr.h>
 
 typedef enum {
     PKT_CTRL_ROUTING_MODE_SLAVE,
     PKT_CTRL_ROUTING_MODE_MASTER,
 } pkt_ctrl_routing_mode_t;
 
-//! Register this devices addresses into the router
-void pkt_ctrl_register_addrs(
-    const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr
-);
+//! Register the IP address into the router
+void pkt_ctrl_register_ip_addr(const struct ip_addr *ip_addr);
 
 //! Set the routing mode for this device
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode);

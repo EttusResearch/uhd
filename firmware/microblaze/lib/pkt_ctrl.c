@@ -47,28 +47,15 @@ static bool is_status_bit_set(int bit){
 #define MODE_BIT 2
 #define CLR_BIT 8
 
-void pkt_ctrl_register_addrs(
-    const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr
-){
+void pkt_ctrl_register_ip_addr(const struct ip_addr *ip_addr){
     //program in the ip addr
-    set_control(0x1 << 4, 0x7 << 4);
+    set_control(0x1 << 4, 0x3 << 4);
     set_control((ip_addr->addr & 0x0000ffff) << 16, 0xffff << 16);
-    set_control(0x2 << 4, 0x7 << 4);
+    set_control(0x2 << 4, 0x3 << 4);
     set_control((ip_addr->addr & 0xffff0000) << 0,  0xffff << 16);
 
-    //program in the mac addr
-    set_control(0x3 << 4, 0x7 << 4);
-    set_control((uint32_t)mac_addr->addr[0] << 16, 0x00ff << 16);
-    set_control((uint32_t)mac_addr->addr[1] << 24, 0xff00 << 16);
-    set_control(0x4 << 4, 0x7 << 4);
-    set_control((uint32_t)mac_addr->addr[2] << 16, 0x00ff << 16);
-    set_control((uint32_t)mac_addr->addr[3] << 24, 0xff00 << 16);
-    set_control(0x5 << 4, 0x7 << 4);
-    set_control((uint32_t)mac_addr->addr[4] << 16, 0x00ff << 16);
-    set_control((uint32_t)mac_addr->addr[5] << 24, 0xff00 << 16);
-
     //clear cmd
-    set_control(0x0, 0x7 << 4);
+    set_control(0x0, 0x3 << 4);
 }
 
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
@@ -80,8 +67,6 @@ void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
         set_control_bit(MODE_BIT);
         break;
     }
-    set_control_bit(CLR_BIT); //clear after mode change
-    clr_control_bit(CLR_BIT); //unset the clear signal
 }
 
 void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){

@@ -349,7 +349,7 @@ main(void)
 
   //1) register the addresses into the network stack
   register_addrs(ethernet_mac_addr(), get_ip_addr());
-  pkt_ctrl_register_addrs(ethernet_mac_addr(), get_ip_addr());
+  pkt_ctrl_register_ip_addr(get_ip_addr());
 
   //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);

@@ -162,7 +162,15 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   //printf("sent %d bytes\n", total_len);
 }
 
-unsigned int 
+unsigned int CHKSUM(unsigned int x, unsigned int *chksum)
+{
+  *chksum += x;
+  *chksum = (*chksum & 0xffff) + (*chksum>>16);
+  *chksum = (*chksum & 0xffff) + (*chksum>>16);
+  return x;
+}
+
+static unsigned int
 chksum_buffer(unsigned short *buf, int nshorts, unsigned int initial_chksum)
 {
   unsigned int chksum = initial_chksum;
@@ -171,7 +179,6 @@ chksum_buffer(unsigned short *buf, int nshorts, unsigned int initial_chksum)
 
   return chksum;
 }
-
 
 void
 send_ip_pkt(struct ip_addr dst, int protocol,
