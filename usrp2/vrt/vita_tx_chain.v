@@ -75,7 +75,7 @@ module vita_tx_chain
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .trigger(trigger & (DO_FLOW_CONTROL==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(32'd0),
-      .seqnum0(current_seqnum), .seqnum1(32'd0),
+      .seqnum(current_seqnum),
       .data_o(flow_data), .src_rdy_o(flow_src_rdy), .dst_rdy_i(flow_dst_rdy));
    trigger_context_pkt #(.BASE(BASE_CTRL)) trigger_context_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
@@ -86,7 +86,7 @@ module vita_tx_chain
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .trigger((error|ack) & (REPORT_ERROR==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(message),
-      .seqnum0(current_seqnum), .seqnum1(32'd0),
+      .seqnum(current_seqnum),
       .data_o(err_data_int), .src_rdy_o(err_src_rdy_int), .dst_rdy_i(err_dst_rdy_int));
       
    assign debug = debug_vtc | debug_vtd;
