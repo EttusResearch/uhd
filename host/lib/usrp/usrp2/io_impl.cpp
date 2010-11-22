@@ -165,8 +165,7 @@ void usrp2_impl::io_init(void){
 
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){
-        //ensure a non-blocking mutex lock
-        _io_impl->spawn_mutex.unlock();
+        //lock the unlocked mutex (non-blocking)
         _io_impl->spawn_mutex.lock();
         //spawn a new pirate to plunder the recv booty
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
@@ -174,8 +173,10 @@ void usrp2_impl::io_init(void){
             _io_impl.get(), _data_transports.at(i),
             _mboards.at(i), i
         ));
-        //will block here until the thread unlocks
+        //block here until the spawned thread unlocks
         _io_impl->spawn_mutex.lock();
+        //exit loop iteration in an unlocked condition
+        _io_impl->spawn_mutex.unlock();
     }
 }
 
