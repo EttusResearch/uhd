@@ -1,5 +1,9 @@
 module packet_router
-    #(parameter BUF_SIZE = 9)
+    #(
+        parameter BUF_SIZE = 9,
+        parameter UDP_BASE = 0,
+        parameter STATUS_BASE = 0
+    )
     (
         //wishbone interface for memory mapped CPU frames
         input wb_clk_i,
@@ -13,12 +17,12 @@ module packet_router
         output wb_err_o,
         output wb_rty_o,
 
+        //setting register interface
+        input set_stb, input [7:0] set_addr, input [31:0] set_data,
+
         input stream_clk,
         input stream_rst,
-
-        //input control register
-        input [31:0] control,
-        input control_changed,
+        input stream_clr,
 
         //output status register
         output [31:0] status,
@@ -73,28 +77,28 @@ module packet_router
     reg cpu_out_hs_ctrl;
     reg cpu_inp_hs_ctrl;
     reg master_mode_flag;
-    reg router_clr;
     reg [BUF_SIZE-1:0] cpu_inp_line_count;
     reg [31:0] my_ip_addr;
-    reg [47:0] my_mac_addr;
 
+    wire [31:0] control;
+    wire control_changed;
+    setting_reg #(.my_addr(STATUS_BASE)) sreg(
+        .clk(stream_clk),.rst(stream_rst),
+        .strobe(set_stb),.addr(set_addr),.in(set_data),
+        .out(control),.changed(control_changed)
+    );
+
+    //grab the pertinent control settings
     always @(posedge control_changed) begin
         cpu_out_hs_ctrl <= control[0];
         cpu_inp_hs_ctrl <= control[1];
         master_mode_flag <= control[2];
-        router_clr <= control[8];
         cpu_inp_line_count <= control[BUF_SIZE-1+16:0+16];
-        case (control[6:4])
-        3'b001:
+        case (control[5:4])
+        2'b01:
             my_ip_addr[15:0] <= control[31:16];
-        3'b010:
+        2'b10:
             my_ip_addr[31:16] <= control[31:16];
-        3'b011:
-            my_mac_addr[15:0] <= control[31:16];
-        3'b100:
-            my_mac_addr[31:16] <= control[31:16];
-        3'b101:
-            my_mac_addr[47:32] <= control[31:16];
         endcase
     end
 
@@ -122,17 +126,24 @@ module packet_router
     wire        crs_inp_valid;
     wire        crs_inp_ready;
 
-    //connect the com input signals
-    assign com_inp_data = (master_mode_flag)? eth_inp_data : ser_inp_data;
-    assign com_inp_valid = (master_mode_flag)? eth_inp_valid : ser_inp_valid;
+    //dummy signals for valve/xbar below
+    wire [35:0] _eth_inp_data;
+    wire        _eth_inp_valid;
+    wire        _eth_inp_ready;
 
-    //connect the crossbar input signals
-    assign crs_inp_data = ser_inp_data;
-    assign crs_inp_valid = (master_mode_flag)? ser_inp_valid : 1'b0;
+    valve36 eth_inp_valve (
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr), .shutoff(~master_mode_flag),
+        .data_i(eth_inp_data), .src_rdy_i(eth_inp_valid), .dst_rdy_o(eth_inp_ready),
+        .data_o(_eth_inp_data), .src_rdy_o(_eth_inp_valid), .dst_rdy_i(_eth_inp_ready)
+    );
 
-    //connect the crossbar ready signals
-    assign eth_inp_ready = (master_mode_flag)? com_inp_ready : 1'b1/*null sink*/;
-    assign ser_inp_ready = (master_mode_flag)? crs_inp_ready : com_inp_ready;
+    crossbar36 com_inp_xbar (
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr), .cross(~master_mode_flag),
+        .data0_i(_eth_inp_data), .src0_rdy_i(_eth_inp_valid), .dst0_rdy_o(_eth_inp_ready),
+        .data1_i(ser_inp_data), .src1_rdy_i(ser_inp_valid), .dst1_rdy_o(ser_inp_ready),
+        .data0_o(com_inp_data), .src0_rdy_o(com_inp_valid), .dst0_rdy_i(com_inp_ready),
+        .data1_o(crs_inp_data), .src1_rdy_o(crs_inp_valid), .dst1_rdy_i(crs_inp_ready)
+    );
 
     ////////////////////////////////////////////////////////////////////
     // Communication output sink crossbar
@@ -149,17 +160,24 @@ module packet_router
     wire        crs_out_valid;
     wire        crs_out_ready;
 
-    //connect the ethernet output signals
-    assign eth_out_data = com_out_data;
-    assign eth_out_valid = (master_mode_flag)? com_out_valid : 1'b0;
+    //dummy signals for valve/xbar below
+    wire [35:0] _eth_out_data;
+    wire        _eth_out_valid;
+    wire        _eth_out_ready;
 
-    //connect the serdes output signals
-    assign ser_out_data = (master_mode_flag)? crs_out_data : com_out_data;
-    assign ser_out_valid = (master_mode_flag)? crs_out_valid : com_out_valid;
+    crossbar36 com_out_xbar (
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr), .cross(~master_mode_flag),
+        .data0_i(com_out_data), .src0_rdy_i(com_out_valid), .dst0_rdy_o(com_out_ready),
+        .data1_i(crs_out_data), .src1_rdy_i(crs_out_valid), .dst1_rdy_o(crs_out_ready),
+        .data0_o(_eth_out_data), .src0_rdy_o(_eth_out_valid), .dst0_rdy_i(_eth_out_ready),
+        .data1_o(ser_out_data), .src1_rdy_o(ser_out_valid), .dst1_rdy_i(ser_out_ready)
+    );
 
-    //connect the crossbar ready signals
-    assign com_out_ready = (master_mode_flag)? eth_out_ready : ser_out_ready;
-    assign crs_out_ready = (master_mode_flag)? ser_out_ready : 1'b1/*null sink*/;
+    valve36 eth_out_valve (
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr), .shutoff(~master_mode_flag),
+        .data_i(_eth_out_data), .src_rdy_i(_eth_out_valid), .dst_rdy_o(_eth_out_ready),
+        .data_o(eth_out_data), .src_rdy_o(eth_out_valid), .dst_rdy_i(eth_out_ready)
+    );
 
     ////////////////////////////////////////////////////////////////////
     // Communication output source combiner
@@ -180,21 +198,21 @@ module packet_router
     wire        _combiner0_ready, _combiner1_ready;
 
     fifo36_mux _com_output_combiner0(
-        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(dsp_frm_data), .src0_rdy_i(dsp_frm_valid), .dst0_rdy_o(dsp_frm_ready),
         .data1_i(err_inp_data), .src1_rdy_i(err_inp_valid), .dst1_rdy_o(err_inp_ready),
         .data_o(_combiner0_data), .src_rdy_o(_combiner0_valid), .dst_rdy_i(_combiner0_ready)
     );
 
     fifo36_mux _com_output_combiner1(
-        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(crs_inp_data), .src0_rdy_i(crs_inp_valid), .dst0_rdy_o(crs_inp_ready),
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
         .data_o(_combiner1_data), .src_rdy_o(_combiner1_valid), .dst_rdy_i(_combiner1_ready)
     );
 
     fifo36_mux com_output_source(
-        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(_combiner0_data), .src0_rdy_i(_combiner0_valid), .dst0_rdy_o(_combiner0_ready),
         .data1_i(_combiner1_data), .src1_rdy_i(_combiner1_valid), .dst1_rdy_o(_combiner1_ready),
         .data_o(com_out_data), .src_rdy_o(com_out_valid), .dst_rdy_i(com_out_ready)
@@ -232,7 +250,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst | router_clr) begin
+    if(stream_rst | stream_clr) begin
         cpu_out_state <= CPU_OUT_STATE_WAIT_SOF;
         cpu_out_addr <= 0;
     end
@@ -301,7 +319,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst | router_clr) begin
+    if(stream_rst | stream_clr) begin
         cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
         cpu_inp_addr <= 0;
     end
@@ -436,7 +454,7 @@ module packet_router
     1'b0)));
 
     always @(posedge stream_clk)
-    if(stream_rst | router_clr) begin
+    if(stream_rst | stream_clr) begin
         com_insp_state <= COM_INSP_STATE_READ_COM_PRE;
         com_insp_dreg_count <= 0;
     end
@@ -511,14 +529,14 @@ module packet_router
     wire        _sp_split_to_mux_ready;
 
     fifo36_splitter crs_out_src0(
-        .clk(stream_clk), .rst(stream_rst | router_clr),
+        .clk(stream_clk), .rst(stream_rst | stream_clr),
         .inp_data(com_insp_out_sp_both_data), .inp_valid(com_insp_out_sp_both_valid), .inp_ready(com_insp_out_sp_both_ready),
         .out0_data(_sp_split_to_mux_data),    .out0_valid(_sp_split_to_mux_valid),    .out0_ready(_sp_split_to_mux_ready),
         .out1_data(cpu_out_data),             .out1_valid(cpu_out_valid),             .out1_ready(cpu_out_ready)
     );
 
     fifo36_mux crs_out_src1(
-        .clk(stream_clk), .reset(stream_rst), .clear(router_clr),
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(com_insp_out_fp_other_data), .src0_rdy_i(com_insp_out_fp_other_valid), .dst0_rdy_o(com_insp_out_fp_other_ready),
         .data1_i(_sp_split_to_mux_data),      .src1_rdy_i(_sp_split_to_mux_valid),      .dst1_rdy_o(_sp_split_to_mux_ready),
         .data_o(crs_out_data),                .src_rdy_o(crs_out_valid),                .dst_rdy_i(crs_out_ready)
@@ -569,7 +587,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst | router_clr) begin
+    if(stream_rst | stream_clr) begin
         dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
         dsp_frm_addr <= 0;
     end

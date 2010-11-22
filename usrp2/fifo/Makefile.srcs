@@ -8,6 +8,7 @@
 FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../fifo/, \
 buffer_int.v \
 buffer_pool.v \
+crossbar36.v \
 fifo_2clock.v \
 fifo_2clock_cascade.v \
 ll8_shortfifo.v \
@@ -24,4 +25,5 @@ fifo36_mux.v \
 fifo36_demux.v \
 fifo36_splitter.v \
 packet_router.v \
+valve36.v \
 ))

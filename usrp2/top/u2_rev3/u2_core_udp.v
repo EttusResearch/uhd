@@ -363,37 +363,28 @@ module u2_core
    wire [35:0] 	 tx_err_data;
    wire 	 tx_err_src_rdy, tx_err_dst_rdy;
 
-   wire [31:0] router_control;
-   wire router_control_changed;
-
    wire [31:0] router_debug;
 
-    setting_reg #(.my_addr(SR_BUF_POOL)) 
-     sreg(.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
-        .out(router_control),.changed(router_control_changed));
-
-   packet_router #(.BUF_SIZE(9)) packet_router
+   packet_router #(.BUF_SIZE(9), .UDP_BASE(SR_UDP_SM), .STATUS_BASE(SR_BUF_POOL)) packet_router
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
-      .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),   
+      .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
 
-      .stream_clk(dsp_clk), .stream_rst(dsp_rst),
+      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
 
-      .control(router_control), .control_changed(router_control_changed),
+      .stream_clk(dsp_clk), .stream_rst(dsp_rst), .stream_clr(1'b0),
+
       .status(status), .sys_int_o(buffer_int), .debug(router_debug),
 
       .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
       .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),
       .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
-      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_src_rdy), .err_inp_valid(tx_err_dst_rdy),
+      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
 
       .ser_out_data({rd0_flags, rd0_dat}), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
       .dsp_out_data({rd1_flags, rd1_dat}), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
       .eth_out_data({rd2_flags, rd2_dat}), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
-
-   wire [31:0] 	 status_enc;
-   priority_enc priority_enc (.in({16'b0,status[15:0]}), .out(status_enc));
    
    // /////////////////////////////////////////////////////////////////////////
    // SPI -- Slave #2
@@ -444,7 +435,7 @@ module u2_core
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(status_enc),.word15(cycle_count)
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(32'b0),.word15(cycle_count)
       );
 
    // /////////////////////////////////////////////////////////////////////////
