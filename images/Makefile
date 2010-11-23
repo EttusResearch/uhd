@@ -84,16 +84,16 @@ ifdef HAS_MB_GCC
 
 _usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
-_usrp2p_fw_bin = $(BUILT_IMAGES_DIR)/usrp2p_fw.bin
+_usrp_n2xx_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n2xx_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
 
-$(_usrp2_fw_bin):
+$(_usrp2_fw_bin) $(_usrp_n2xx_fw_bin):
 	cd $(_usrp2_fw_dir) && ./bootstrap
 	cd $(_usrp2_fw_dir) && ./configure --host=mb
 	make -C $(_usrp2_fw_dir) clean
 	make -C $(_usrp2_fw_dir) all
 	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
-	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp2p_fw_bin)
+	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
 
 endif
 
