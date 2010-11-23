@@ -11,7 +11,7 @@ module vita_rx_framer
     output src_rdy_o,
     
     // From vita_rx_control
-    input [4+64+(32*MAXCHAN)-1:0] sample_fifo_i,
+    input [5+64+(32*MAXCHAN)-1:0] sample_fifo_i,
     input sample_fifo_src_rdy_i,
     output sample_fifo_dst_rdy_o,
     
@@ -23,11 +23,11 @@ module vita_rx_framer
     output [31:0] debug_rx
     );
 
-   localparam SAMP_WIDTH  = 4+64+(32*MAXCHAN);
+   localparam SAMP_WIDTH  = 5+64+(32*MAXCHAN);
    reg [3:0] 	  sample_phase;
    wire [3:0] 	  numchan;
-   wire [3:0] 	  flags_fifo_o = sample_fifo_i[SAMP_WIDTH-1:SAMP_WIDTH-4];
-   wire [63:0] 	  vita_time_fifo_o = sample_fifo_i[SAMP_WIDTH-5:SAMP_WIDTH-68];
+   wire [4:0] 	  flags_fifo_o = sample_fifo_i[SAMP_WIDTH-1:SAMP_WIDTH-5];
+   wire [63:0] 	  vita_time_fifo_o = sample_fifo_i[SAMP_WIDTH-6:SAMP_WIDTH-69];
 
    reg [31:0] 	  data_fifo_o;
 
@@ -55,14 +55,7 @@ module vita_rx_framer
    reg [3:0] 	  pkt_count;
    
    wire [15:0] 	  vita_pkt_len = samples_per_packet + 6;
-   //wire [3:0] flags = {signal_overrun,signal_brokenchain,signal_latecmd,signal_cmd_done};
-
-   wire 	  clear_reg;
-   wire 	  clear_int  = clear | clear_reg;
-
-   setting_reg #(.my_addr(BASE+3)) sr_clear
-     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_reg));
+   //wire [4:0] flags = {signal_zerolen,signal_overrun,signal_brokenchain,signal_latecmd,signal_cmd_done};
 
    setting_reg #(.my_addr(BASE+4)) sr_header
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
@@ -76,11 +69,11 @@ module vita_rx_framer
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(vita_trailer),.changed());
 
-   setting_reg #(.my_addr(BASE+7)) sr_samples_per_pkt
+   setting_reg #(.my_addr(BASE+7),.width(16)) sr_samples_per_pkt
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(samples_per_packet),.changed());
 
-   setting_reg #(.my_addr(BASE+8), .at_reset(1)) sr_numchan
+   setting_reg #(.my_addr(BASE+8),.width(4), .at_reset(1)) sr_numchan
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(numchan),.changed());
 
@@ -102,7 +95,7 @@ module vita_rx_framer
    localparam VITA_ERR_TRAILER 	 = 15; // Extension context packets have no trailer
       
    always @(posedge clk)
-     if(reset | clear_pkt_count)
+     if(reset | clear | clear_pkt_count)
        pkt_count <= 0;
      else if((vita_state == VITA_TRAILER) & pkt_fifo_rdy)
        pkt_count <= pkt_count + 1;
@@ -114,7 +107,8 @@ module vita_rx_framer
    always @*
      case(vita_state)
        // Data packets are IF Data packets with or w/o streamid, no classid, with trailer
-       VITA_HEADER : pkt_fifo_line <= {2'b01,3'b000,vita_header[28],2'b01,vita_header[25:20],pkt_count,vita_pkt_len};
+       VITA_HEADER : pkt_fifo_line <= {2'b01,3'b000,vita_header[28],2'b01,vita_header[25:24],
+				       vita_header[23:20],pkt_count[3:0],vita_pkt_len[15:0]};
        VITA_STREAMID : pkt_fifo_line <= {2'b00,vita_streamid};
        VITA_SECS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
        VITA_TICS : pkt_fifo_line <= {2'b00,32'd0};
@@ -128,14 +122,14 @@ module vita_rx_framer
        VITA_ERR_SECS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
        VITA_ERR_TICS : pkt_fifo_line <= {2'b00,32'd0};
        VITA_ERR_TICS2 : pkt_fifo_line <= {2'b00,vita_time_fifo_o[31:0]};
-       VITA_ERR_PAYLOAD : pkt_fifo_line <= {2'b10,28'd0,flags_fifo_o};
+       VITA_ERR_PAYLOAD : pkt_fifo_line <= {2'b10,27'd0,flags_fifo_o};
        //VITA_ERR_TRAILER : pkt_fifo_line <= {2'b11,vita_trailer};
        
        default : pkt_fifo_line <= 34'h0_FFFF_FFFF;
        endcase // case (vita_state)
 
    always @(posedge clk)
-     if(reset)
+     if(reset | clear)
        begin
 	  vita_state   <= VITA_IDLE;
 	  sample_ctr   <= 0;
@@ -147,7 +141,7 @@ module vita_rx_framer
 	    sample_ctr <= 1;
 	    sample_phase <= 0;
 	    if(sample_fifo_src_rdy_i)
-	      if(|flags_fifo_o[3:1])
+	      if(|flags_fifo_o[4:1])
 		vita_state <= VITA_ERR_HEADER;
 	      else
 		vita_state <= VITA_HEADER;
@@ -192,7 +186,7 @@ module vita_rx_framer
 	 req_write_pkt_fifo <= 1;
        VITA_PAYLOAD :
 	 // Write if sample ready and no error flags
-     	 req_write_pkt_fifo <= (sample_fifo_src_rdy_i & ~|flags_fifo_o[3:1]);
+     	 req_write_pkt_fifo <= (sample_fifo_src_rdy_i & ~|flags_fifo_o[4:1]);
        VITA_ERR_HEADER, VITA_ERR_STREAMID, VITA_ERR_SECS, VITA_ERR_TICS, VITA_ERR_TICS2, VITA_ERR_PAYLOAD :
 	 req_write_pkt_fifo <= 1;
        default :
@@ -203,7 +197,7 @@ module vita_rx_framer
    
    // Short FIFO to buffer between us and the FIFOs outside
    fifo_short #(.WIDTH(34)) rx_pkt_fifo 
-     (.clk(clk), .reset(reset), .clear(clear_int),
+     (.clk(clk), .reset(reset), .clear(clear),
       .datain(pkt_fifo_line), .src_rdy_i(req_write_pkt_fifo), .dst_rdy_o(pkt_fifo_rdy),
       .dataout(data_o[33:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i),
       .space(),.occupied(fifo_occupied[4:0]) );
@@ -212,7 +206,7 @@ module vita_rx_framer
    assign sample_fifo_dst_rdy_o  = pkt_fifo_rdy & 
 				   ( ((vita_state==VITA_PAYLOAD) & 
 				      (sample_phase == (numchan-4'd1)) & 
-				      ~|flags_fifo_o[3:1]) |
+				      ~|flags_fifo_o[4:1]) |
 				     (vita_state==VITA_ERR_PAYLOAD));
    
    assign debug_rx  = vita_state;

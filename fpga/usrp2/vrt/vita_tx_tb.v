@@ -33,7 +33,7 @@ module vita_tx_tb;
    wire [31:0] set_data_dsp;
 
    wire        sample_dst_rdy, sample_src_rdy;
-   wire [64+4+(MAXCHAN*32)-1:0] sample_data_o, sample_data_tx;
+   wire [5+64+16+(MAXCHAN*32)-1:0] sample_data_o, sample_data_tx;
 
    time_64bit #(.TICKS_PER_SEC(100000000), .BASE(0)) time_64bit
      (.clk(clk), .rst(reset),
@@ -49,8 +49,8 @@ module vita_tx_tb;
       .datain(data_o), .src_rdy_i(src_rdy), .dst_rdy_o(dst_rdy),
       .dataout(data_tx), .src_rdy_o(src_rdy_tx), .dst_rdy_i(dst_rdy_tx));
    
-   vita_tx_deframer #(.BASE(16), .MAXCHAN(MAXCHAN)) vita_tx_deframer
-     (.clk(clk), .reset(reset), .clear(0),
+   vita_tx_deframer #(.BASE(16), .MAXCHAN(MAXCHAN), .USE_TRANS_HEADER(0)) vita_tx_deframer
+     (.clk(clk), .reset(reset), .clear(0), .clear_seqnum(0),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .data_i(data_tx), .dst_rdy_o(dst_rdy_tx), .src_rdy_i(src_rdy_tx),
       .sample_fifo_o(sample_data_tx), 
@@ -60,7 +60,7 @@ module vita_tx_tb;
    vita_tx_control #(.BASE(16), .WIDTH(MAXCHAN*32)) vita_tx_control
      (.clk(clk), .reset(reset), .clear(0),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .vita_time(vita_time), .underrun(underrun),
+      .vita_time(vita_time), .error(underrun), .error_code(),
       .sample_fifo_i(sample_data_tx), 
       .sample_fifo_dst_rdy_o(sample_dst_rdy_tx), .sample_fifo_src_rdy_i(sample_src_rdy_tx),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx));
@@ -92,35 +92,47 @@ module vita_tx_tb;
 	write_setting(7,8);  // Samples per VITA packet
 	write_setting(8,NUMCHAN);  // Samples per VITA packet
 	#10000;
-	queue_vita_packets(32'h300, 106, 32'hF00D_1234, 32'h55AA_AA55);
-	//queue_vita_packets(32'h300, 6, 32'hF00D_1234, 32'h0);
-	queue_vita_packets(32'h600, 9, 32'h9876_ABCD, 32'h0);
-	
+	queue_vita_packets(0, 32'h300, 5, 32'h0000_1000, 32'h0, 4'h0, 1, 0, 1);
+	queue_vita_packets(0, 32'h0,   5, 32'h0000_2000, 32'h0, 4'h1, 0, 0, 0);
+	queue_vita_packets(0, 32'h0,   5, 32'h0000_3000, 32'h0, 4'h2, 0, 0, 0);
+
+	queue_vita_packets(0, 32'h400, 3, 32'h0000_4000, 32'h0, 4'h3, 1, 0, 1);
+	queue_vita_packets(0, 32'h0,   3, 32'h0000_5000, 32'h0, 4'h4, 0, 0, 0);
+	queue_vita_packets(0, 32'h0,   3, 32'h0000_6000, 32'h0, 4'h5, 0, 1, 0);
+
 	#300000 $finish;
      end
 
    task queue_vita_packets;
+      input [31:0] send_secs;
       input [31:0] sendtime;
       input [15:0] samples;
       input [15:0] word;
       input [31:0] trailer;
+      input [3:0]  seqnum;
+      input 	   sob;
+      input 	   eob;
+      input 	   sendat;
       
       reg [15:0]   i;
       
       begin
+	 src_rdy <= 0;
 	 @(posedge clk);
 	 src_rdy <= 1;
-	 data_o <= {4'b0001,4'h1,1'b0,|trailer,2'h3,8'hF0,(16'd5+samples+|trailer)}; // header
+	 data_o <= {4'b0001,4'h0,1'b0,|trailer,sob,eob,{2{sendat}},1'b0,sendat,seqnum,(16'd1+samples+|trailer+sendat+sendat+sendat)}; // header
 	 @(posedge clk);
-	 data_o <= {4'b0000,32'h0}; // streamid
-	 @(posedge clk);
-	 data_o <= {4'b0000,32'h0}; // SECS
-	 @(posedge clk);
-	 data_o <= {4'b0000,32'h0}; // TICS
-	 @(posedge clk);
-	 data_o <= {4'b0000,sendtime}; // TICS
-	 @(posedge clk);
-
+	 //data_o <= {4'b0000,32'h0}; // streamid
+	 //@(posedge clk);
+	 if(sendat)
+	   begin
+	      data_o <= {4'b0000,send_secs}; // SECS
+	      @(posedge clk);
+	      data_o <= {4'b0000,32'h0}; // TICS
+	      @(posedge clk);
+	      data_o <= {4'b0000,sendtime}; // TICS
+	      @(posedge clk);
+	   end
 	 for(i=0;i<samples-1;i=i+1)
 	   begin
 	      data_o <= {4'b0000,i,word}; // Payload

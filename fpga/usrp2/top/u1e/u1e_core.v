@@ -36,7 +36,7 @@ module u1e_core
    localparam SR_TX_CTRL = 24;   // 2 regs
    localparam SR_TIME64 = 28;    // 4 regs
 
-   wire 	COMPAT_NUM = 8'd2;
+   wire [7:0]	COMPAT_NUM = 8'd2;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst = rst_fpga;
@@ -344,7 +344,7 @@ module u1e_core
    assign rx_enable = xfer_rate[14];
    assign rate = xfer_rate[7:0];
    
-   assign { debug_led[3:0] } = {run_rx,run_tx,reg_leds[1:0]};
+   assign { debug_led[3:0] } = ~{run_rx,run_tx,reg_leds[1:0]};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 

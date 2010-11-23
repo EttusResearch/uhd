@@ -16,7 +16,8 @@ module fifo19_to_fifo36
     output [31:0] debug
     );
 
-   reg 		  f36_sof, f36_eof, f36_occ;
+   reg 		  f36_sof, f36_eof;
+   reg [1:0] 	  f36_occ;
    
    reg [1:0] 	  state;
    reg [15:0] 	  dat0, dat1;

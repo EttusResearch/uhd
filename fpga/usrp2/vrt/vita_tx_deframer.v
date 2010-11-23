@@ -80,7 +80,7 @@ module vita_tx_deframer
    wire        fifo_space;
 
    always @(posedge clk)
-     if(reset | clear_seqnum)
+     if(reset | clear | clear_seqnum)
        begin
 	  seqnum_reg <= 32'hFFFF_FFFF;
 	  vita_seqnum_reg <= 4'hF;
@@ -201,8 +201,6 @@ module vita_tx_deframer
 	 send_time[63:32] <= data_i[31:0];
        VITA_TICS2 :
 	 send_time[31:0] <= data_i[31:0];
-       VITA_STORE, VITA_HEADER :
-	 send_time[63:0] <= 64'd0;
      endcase // case (vita_state)
    
    always @(posedge clk)

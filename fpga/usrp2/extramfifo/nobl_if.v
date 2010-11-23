@@ -56,18 +56,21 @@ module nobl_if
 	  address_pipe1 <= 0;
 	  write_pipe1 <= 0;
 	  data_out_pipe1  <= 0;
+	  RAM_WEn <= 1;
+	  RAM_CE1n <= 1;
+	  
        end
      else
        begin
 	  enable_pipe1 <= enable;
-	  RAM_CE1n <= ~enable;  // Creates IOB flob
-	  
+	  RAM_CE1n <= ~enable;  // Creates IOB flop
+	  RAM_WEn <= ~write;  // Creates IOB flop
 	  
 	  if (enable)
 	    begin
 	       address_pipe1 <= address_gray;
 	       write_pipe1 <= write;
-	       RAM_WEn <= ~write;  // Creates IOB flob
+//	       RAM_WEn <= ~write;  // Creates IOB flop
 	       
 	       
 	       if (write)

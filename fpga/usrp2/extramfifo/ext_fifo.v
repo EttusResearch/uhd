@@ -45,9 +45,7 @@ module ext_fifo
    wire [EXT_WIDTH-1:0] write_data;
    wire [EXT_WIDTH-1:0] read_data;
    wire 		full1, empty1;
-   wire 		almost_full2, full2, empty2;
-   wire [INT_WIDTH-1:0] data_to_fifo;
-   wire [INT_WIDTH-1:0] data_from_fifo;
+   wire 		almost_full2, almost_full2_spread, full2, empty2;
    wire [FIFO_DEPTH-1:0] capacity;
    wire 		 space_avail;
    wire 		 data_avail;
@@ -134,17 +132,17 @@ module ext_fifo
 						       .empty(empty1));
 	 
 	 // FIFO buffers data read from external FIFO into DSP clk domain and to TX DSP.
-	 fifo_xlnx_32x36_2clk fifo_xlnx_32x36_2clk_i2 (
-						       .rst(rst),
-						       .wr_clk(ext_clk),
-						       .rd_clk(int_clk),
-						       .din(read_data), // Bus [35 : 0] 
-						       .wr_en(write_output_fifo),
-						       .rd_en(dst_rdy_i),
-						       .dout(dataout), // Bus [35 : 0] 
-						       .full(full2),
-						       .empty(empty2),
-						       .prog_full(almost_full2));
+	 fifo_xlnx_512x36_2clk_prog_full fifo_xlnx_32x36_2clk_prog_full_i1 (
+									    .rst(rst),
+									    .wr_clk(ext_clk),
+									    .rd_clk(int_clk),
+									    .din(read_data), // Bus [35 : 0] 
+									    .wr_en(write_output_fifo),
+									    .rd_en(dst_rdy_i),
+									    .dout(dataout), // Bus [35 : 0] 
+									    .full(full2),
+									    .empty(empty2),
+									    .prog_full(almost_full2));
 
       end    
    endgenerate
@@ -158,13 +156,14 @@ module ext_fifo
 			   .full_out(almost_full2_spread)
 			   );
    
-   
-   always @ (posedge int_clk)
-     debug[31:28] <= {empty2,full1,dst_rdy_i,src_rdy_i };
+//   always @ (posedge int_clk)
+//     debug[31:28] <= {empty2,full1,dst_rdy_i,src_rdy_i };
    
    always @ (posedge ext_clk)
-     debug[27:0] <= {RAM_WEn,RAM_CE1n,RAM_A[3:0],read_data[17:0],empty1,space_avail,data_avail,almost_full2 };
-
+ //    debug[27:0] <= {RAM_WEn,RAM_CE1n,RAM_A[3:0],read_data[17:0],empty1,space_avail,data_avail,almost_full2 };
+     debug[31:0] <= {7'h0,src_rdy_i,read_input_fifo,write_output_fifo,dst_rdy_i,full2,almost_full2,empty2,full1,empty1,write_data[7:0],read_data[7:0]};
+   
+     
    always@ (posedge ext_clk)
      //     debug2[31:0] <= {write_data[15:0],read_data[15:0]};
      debug2[31:0] <= 0;
