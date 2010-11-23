@@ -1,8 +1,10 @@
 
 module fifo_2clock_cascade
   #(parameter WIDTH=32, SIZE=9)
-   (input wclk, input [WIDTH-1:0] datain, input src_rdy_i, output dst_rdy_o, output [15:0] space,
-    input rclk, output [WIDTH-1:0] dataout, output src_rdy_o, input dst_rdy_i, output [15:0] occupied,
+   (input wclk, input [WIDTH-1:0] datain, input src_rdy_i, output dst_rdy_o, 
+    output [15:0] space, output [15:0] short_space,
+    input rclk, output [WIDTH-1:0] dataout, output src_rdy_o, input dst_rdy_i, 
+    output [15:0] occupied, output [15:0] short_occupied,
     input arst);
    
    wire [WIDTH-1:0] data_int1, data_int2;
@@ -29,7 +31,11 @@ module fifo_2clock_cascade
       .space(s2_space), .occupied(s2_occupied));
 
    // Be conservative -- Only advertise space from input side of fifo, occupied from output side
-   assign 	    space = {11'b0,s1_space} + l_space;
-   assign 	    occupied = {11'b0,s2_occupied} + l_occupied;
+   assign 	    space 	    = {11'b0,s1_space} + l_space;
+   assign 	    occupied 	    = {11'b0,s2_occupied} + l_occupied;
+
+   // For the fifo_extram, we only want to know the immediately adjacent space
+   assign 	    short_space     = {11'b0,s1_space};
+   assign 	    short_occupied  = {11'b0,s2_occupied};
    
 endmodule // fifo_2clock_cascade

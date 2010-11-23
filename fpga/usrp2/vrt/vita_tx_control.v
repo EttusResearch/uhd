@@ -8,7 +8,8 @@ module vita_tx_control
     input [63:0] vita_time,
     output error,
     output reg [31:0] error_code,
-
+    output reg packet_consumed,
+    
     // From vita_tx_deframer
     input [5+64+16+WIDTH-1:0] sample_fifo_i,
     input sample_fifo_src_rdy_i,
@@ -48,6 +49,7 @@ module vita_tx_control
    localparam IBS_ERROR_DONE = 4;
    localparam IBS_ERROR_WAIT = 5;
 
+   wire [31:0] CODE_EOB_ACK = {seqnum,16'd1};
    wire [31:0] CODE_UNDERRUN = {seqnum,16'd2};
    wire [31:0] CODE_SEQ_ERROR = {seqnum,16'd4};
    wire [31:0] CODE_TIME_ERROR = {seqnum,16'd8};
@@ -106,7 +108,11 @@ module vita_tx_control
 	       end
 	     else if(eop)
 	       if(eob)
-		 ibs_state <= IBS_IDLE;
+		 begin
+		    ibs_state <= IBS_ERROR_DONE;  // Not really an error
+		    error_code <= CODE_EOB_ACK;
+		    send_error <= 1;
+		 end
 	       else
 		 ibs_state <= IBS_CONT_BURST;
 
@@ -154,9 +160,14 @@ module vita_tx_control
 
    assign sample_fifo_dst_rdy_o = (ibs_state == IBS_ERROR) | (strobe & (ibs_state == IBS_RUN));  // FIXME also cleanout
    assign run = (ibs_state == IBS_RUN) | (ibs_state == IBS_CONT_BURST);
-   //assign error = (ibs_state == IBS_ERROR_DONE);
    assign error = send_error;
 
+   always @(posedge clk)
+     if(reset)
+       packet_consumed <= 0;
+     else
+       packet_consumed <= eop & sample_fifo_src_rdy_i & sample_fifo_dst_rdy_o;
+   
    assign debug = { { now,early,late,too_early,eop,eob,sob,send_at },
 		    { sample_fifo_src_rdy_i, sample_fifo_dst_rdy_o, strobe, run, error, ibs_state[2:0] },
 		    { 8'b0 },

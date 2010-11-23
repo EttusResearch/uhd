@@ -109,9 +109,7 @@ boost::uint32_t dsp_type1::calc_iq_scale_word(unsigned rate){
     return calc_iq_scale_word(scale, scale);
 }
 
-boost::uint32_t dsp_type1::calc_stream_cmd_word(
-    const stream_cmd_t &stream_cmd, size_t num_samps_continuous
-){
+boost::uint32_t dsp_type1::calc_stream_cmd_word(const stream_cmd_t &stream_cmd){
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x3fffffff);
 
     //setup the mode to instruction flags
@@ -133,6 +131,6 @@ boost::uint32_t dsp_type1::calc_stream_cmd_word(
     word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
     word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
     word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
-    word |= (inst_samps)? stream_cmd.num_samps : ((inst_chain)? num_samps_continuous : 1);
+    word |= (inst_samps)? stream_cmd.num_samps : ((inst_chain)? 1 : 0);
     return word;
 }

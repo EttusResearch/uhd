@@ -396,7 +396,7 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
   // In the future, a hardware state machine will do this...
   if ( //warning! magic numbers approaching....
       (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
-      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[0] != USRP2_INVALID_VRT_HEADER)
+      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[1] != USRP2_INVALID_VRT_HEADER)
   ) return false;
 
   //test if its an ip recovery packet

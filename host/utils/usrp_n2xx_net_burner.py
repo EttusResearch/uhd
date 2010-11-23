@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# TODO: make it work
 # TODO: make it autodetect UHD devices
 # TODO: you should probably watch sequence numbers
 
@@ -36,7 +35,7 @@ UDP_MAX_XFER_BYTES = 1024
 UDP_TIMEOUT = 3
 UDP_POLL_INTERVAL = 0.10 #in seconds
 
-USRP2_FW_PROTO_VERSION = 6
+USRP2_FW_PROTO_VERSION = 7
 
 #from bootloader_utils.h
 

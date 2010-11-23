@@ -85,7 +85,9 @@ public:
     usrp2_mboard_impl(
         size_t index,
         uhd::transport::udp_simple::sptr,
-        size_t recv_frame_size
+        uhd::transport::zero_copy_if::sptr,
+        size_t recv_samps_per_packet,
+        const uhd::device_addr_t &flow_control_hints
     );
     ~usrp2_mboard_impl(void);
 
@@ -97,7 +99,6 @@ public:
 
 private:
     size_t _index;
-    const size_t _recv_frame_size;
     bool _continuous_streaming;
 
     //interfaces
@@ -178,14 +179,18 @@ private:
  */
 class usrp2_impl : public uhd::device{
 public:
+    static const size_t sram_bytes = size_t(1 << 20);
+
     /*!
      * Create a new usrp2 impl base.
      * \param ctrl_transports the udp transports for control
      * \param data_transports the udp transports for data
+     * \param flow_control_hints optional flow control params
      */
     usrp2_impl(
         std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
-        std::vector<uhd::transport::udp_zero_copy::sptr> data_transports
+        std::vector<uhd::transport::zero_copy_if::sptr> data_transports,
+        const uhd::device_addr_t &flow_control_hints
     );
 
     ~usrp2_impl(void);
@@ -215,7 +220,7 @@ private:
     uhd::dict<std::string, usrp2_mboard_impl::sptr> _mboard_dict;
 
     //io impl methods and members
-    std::vector<uhd::transport::udp_zero_copy::sptr> _data_transports;
+    std::vector<uhd::transport::zero_copy_if::sptr> _data_transports;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);

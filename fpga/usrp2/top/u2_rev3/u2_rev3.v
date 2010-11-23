@@ -330,8 +330,8 @@ module u2_rev3
    wire [15:0] dac_a_int, dac_b_int;
    // DAC A and B are swapped in schematic to facilitate clean layout
    // DAC A is also inverted in schematic to facilitate clean layout
-   always @(negedge dsp_clk) dac_a <= ~dac_b_int;
-   always @(negedge dsp_clk) dac_b <= dac_a_int;
+   always @(posedge dsp_clk) dac_a <= ~dac_b_int;
+   always @(posedge dsp_clk) dac_b <= dac_a_int;
 
    /*
    OFDDRRSE OFDDRRSE_serdes_inst 
@@ -345,100 +345,228 @@ module u2_rev3
       .S(0)       // Synchronous preset input
       );
    */
+
+   wire [17:0] RAM_D_pi;
+   wire [17:0] RAM_D_po;
+   wire        RAM_D_poe;
+   
+   genvar      i;
+
+   //
+   // Instantiate IO for Bidirectional bus to SRAM
+   //
+   
+   generate  
+      for (i=0;i<18;i=i+1)
+        begin : gen_RAM_D_IO
+
+	   IOBUF #(
+		   .DRIVE(12),
+		   .IOSTANDARD("LVCMOS25"),
+		   .SLEW("FAST")
+		   )
+	     RAM_D_i (
+		      .O(RAM_D_pi[i]),
+		      .I(RAM_D_po[i]),
+		      .IO(RAM_D[i]),
+		      .T(RAM_D_poe)
+		      );
+	end // block: gen_RAM_D_IO
+   endgenerate
+
+   //
+   // DCM edits start here
+   //
+
+ 
+   wire RAM_CLK_buf;
+   wire clk_to_mac_buf;
+   wire clk125_ext_clk0;
+   wire clk125_ext_clk180;
+   wire clk125_ext_clk0_buf;
+   wire clk125_ext_clk180_buf;
+   wire clk125_int_buf;
+   wire clk125_int;
+   
+   IBUFG clk_to_mac_buf_i1 (.I(clk_to_mac), 
+			    .O(clk_to_mac_buf));
+   
+   DCM DCM_INST1 (.CLKFB(RAM_CLK_buf), 
+                  .CLKIN(clk_to_mac_buf), 
+                  .DSSEN(1'b0), 
+                  .PSCLK(1'b0), 
+                  .PSEN(1'b0), 
+                  .PSINCDEC(1'b0), 
+                  .RST(1'b0), 
+                  .CLK0(clk125_ext_clk0), 
+                  .CLK180(clk125_ext_clk180) );
+   defparam DCM_INST1.CLK_FEEDBACK = "1X";
+   defparam DCM_INST1.CLKDV_DIVIDE = 2.0;
+   defparam DCM_INST1.CLKFX_DIVIDE = 1;
+   defparam DCM_INST1.CLKFX_MULTIPLY = 4;
+   defparam DCM_INST1.CLKIN_DIVIDE_BY_2 = "FALSE";
+   defparam DCM_INST1.CLKIN_PERIOD = 8.000;
+   defparam DCM_INST1.CLKOUT_PHASE_SHIFT = "FIXED";
+   defparam DCM_INST1.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
+   defparam DCM_INST1.DFS_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST1.DLL_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST1.DUTY_CYCLE_CORRECTION = "TRUE";
+   defparam DCM_INST1.FACTORY_JF = 16'h8080;
+   defparam DCM_INST1.PHASE_SHIFT = -64;
+   defparam DCM_INST1.STARTUP_WAIT = "FALSE";
+   
+   IBUFG RAM_CLK_buf_i1 (.I(RAM_CLK), 
+			 .O(RAM_CLK_buf));
+   BUFG  clk125_ext_clk0_buf_i1 (.I(clk125_ext_clk0), 
+				   .O(clk125_ext_clk0_buf));
+   BUFG  clk125_ext_clk180_buf_i1 (.I(clk125_ext_clk180), 
+				   .O(clk125_ext_clk180_buf));
+
+   OFDDRRSE RAM_CLK_i1 (.Q(RAM_CLK),
+			.C0(clk125_ext_clk0_buf),
+			.C1(clk125_ext_clk180_buf),
+			.CE(1'b1),
+			.D0(1'b1),
+			.D1(1'b0),
+			.R(1'b0),
+			.S(1'b0));
+
+//   SRL16 dcm2_rst_i1 (.D(1'b0),
+//		      .CLK(clk_to_mac_buf),
+//		      .Q(dcm2_rst),
+//		      .A0(1'b1),
+//		      .A1(1'b1),
+//		      .A2(1'b1),
+//		      .A3(1'b1));
+   // synthesis attribute init of dcm2_rst_i1 is "000F";
+      
+   DCM DCM_INST2 (.CLKFB(clk125_int_buf), 
+                  .CLKIN(clk_to_mac_buf), 
+                  .DSSEN(1'b0), 
+                  .PSCLK(1'b0), 
+                  .PSEN(1'b0), 
+                  .PSINCDEC(1'b0), 
+                  .RST(1'b0),
+                  .CLK0(clk125_int));
+   defparam DCM_INST2.CLK_FEEDBACK = "1X";
+   defparam DCM_INST2.CLKDV_DIVIDE = 2.0;
+   defparam DCM_INST2.CLKFX_DIVIDE = 1;
+   defparam DCM_INST2.CLKFX_MULTIPLY = 4;
+   defparam DCM_INST2.CLKIN_DIVIDE_BY_2 = "FALSE";
+   defparam DCM_INST2.CLKIN_PERIOD = 8.000;
+   defparam DCM_INST2.CLKOUT_PHASE_SHIFT = "NONE";
+   defparam DCM_INST2.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
+   defparam DCM_INST2.DFS_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST2.DLL_FREQUENCY_MODE = "LOW";
+   defparam DCM_INST2.DUTY_CYCLE_CORRECTION = "TRUE";
+   defparam DCM_INST2.FACTORY_JF = 16'h8080;
+   defparam DCM_INST2.PHASE_SHIFT = 0;
+   defparam DCM_INST2.STARTUP_WAIT = "FALSE";
+  
+   BUFG clk125_int_buf_i1 (.I(clk125_int), 
+                           .O(clk125_int_buf));
+   
+   //
+   // DCM edits end here
+   //
+   
+   
    u2_core #(.RAM_SIZE(32768))
-	u2_core(.dsp_clk           (dsp_clk),
-		     .wb_clk            (wb_clk),
-		     .clock_ready       (clock_ready),
-		     .clk_to_mac	(clk_to_mac),
-		     .pps_in		(pps_in),
-		     .leds		(leds_int),
-		     .debug		(debug[31:0]),
-		     .debug_clk		(debug_clk[1:0]),
-		     .exp_pps_in	(exp_pps_in),
-		     .exp_pps_out	(exp_pps_out),
-		     .GMII_COL		(GMII_COL),
-		     .GMII_CRS		(GMII_CRS),
-		     .GMII_TXD		(GMII_TXD_unreg[7:0]),
-		     .GMII_TX_EN	(GMII_TX_EN_unreg),
-		     .GMII_TX_ER	(GMII_TX_ER_unreg),
-		     .GMII_GTX_CLK	(GMII_GTX_CLK_int),
-		     .GMII_TX_CLK	(GMII_TX_CLK),
-		     .GMII_RXD		(GMII_RXD[7:0]),
-		     .GMII_RX_CLK	(GMII_RX_CLK),
-		     .GMII_RX_DV	(GMII_RX_DV),
-		     .GMII_RX_ER	(GMII_RX_ER),
-		     .MDIO		(MDIO),
-		     .MDC		(MDC),
-		     .PHY_INTn		(PHY_INTn),
-		     .PHY_RESETn	(PHY_RESETn),
-		     .ser_enable	(ser_enable),
-		     .ser_prbsen	(ser_prbsen),
-		     .ser_loopen	(ser_loopen),
-		     .ser_rx_en		(ser_rx_en),
-		     .ser_tx_clk	(ser_tx_clk_int),
-		     .ser_t		(ser_t_unreg[15:0]),
-		     .ser_tklsb		(ser_tklsb_unreg),
-		     .ser_tkmsb		(ser_tkmsb_unreg),
-		     .ser_rx_clk	(ser_rx_clk_buf),
-		     .ser_r		(ser_r_int[15:0]),
-		     .ser_rklsb		(ser_rklsb_int),
-		     .ser_rkmsb		(ser_rkmsb_int),
-		     .cpld_start        (cpld_start),
-		     .cpld_mode         (cpld_mode),
-		     .cpld_done         (cpld_done),
-		     .cpld_din          (cpld_din),
-		     .cpld_clk          (cpld_clk),
-		     .cpld_detached     (cpld_detached),
-		     .cpld_misc         (cpld_misc),
-		     .cpld_init_b       (cpld_init_b),
-		     .por               (~POR),
-		     .config_success    (config_success),
-		     .adc_a		(adc_a_reg2),
-		     .adc_ovf_a		(adc_ovf_a_reg2),
-		     .adc_on_a		(adc_on_a),
-		     .adc_oe_a		(adc_oe_a),
-		     .adc_b		(adc_b_reg2),
-		     .adc_ovf_b		(adc_ovf_b_reg2),
-		     .adc_on_b		(adc_on_b),
-		     .adc_oe_b		(adc_oe_b),
-		     .dac_a		(dac_a_int),
-		     .dac_b		(dac_b_int),
-		     .scl_pad_i		(scl_pad_i),
-		     .scl_pad_o		(scl_pad_o),
-		     .scl_pad_oen_o	(scl_pad_oen_o),
-		     .sda_pad_i		(sda_pad_i),
-		     .sda_pad_o		(sda_pad_o),
-		     .sda_pad_oen_o	(sda_pad_oen_o),
-		     .clk_en		(clk_en[1:0]),
-		     .clk_sel		(clk_sel[1:0]),
-		     .clk_func		(clk_func),
-		     .clk_status	(clk_status),
-		     .sclk		(sclk_int),
-		     .mosi		(mosi),
-		     .miso		(miso),
-		     .sen_clk		(sen_clk),
-		     .sen_dac		(sen_dac),
-		     .sen_tx_db		(sen_tx_db),
-		     .sen_tx_adc	(sen_tx_adc),
-		     .sen_tx_dac	(sen_tx_dac),
-		     .sen_rx_db		(sen_rx_db),
-		     .sen_rx_adc	(sen_rx_adc),
-		     .sen_rx_dac	(sen_rx_dac),
-		     .io_tx		(io_tx[15:0]),
-		     .io_rx		(io_rx[15:0]),
-		     .RAM_D             (RAM_D),
-		     .RAM_A             (RAM_A),
-		     .RAM_CE1n          (RAM_CE1n),
-		     .RAM_CENn          (RAM_CENn),
-		     .RAM_CLK           (RAM_CLK),
-		     .RAM_WEn           (RAM_WEn),
-		     .RAM_OEn           (RAM_OEn),
-		     .RAM_LDn           (RAM_LDn), 
-		     .uart_tx_o         (uart_tx_o),
-		     .uart_rx_i         (uart_rx_i),
-		     .uart_baud_o       (),
-		     .sim_mode          (1'b0),
-		     .clock_divider     (2)
-		     );
+     u2_core(.dsp_clk           (dsp_clk),
+	     .wb_clk            (wb_clk),
+	     .clock_ready       (clock_ready),
+	     .clk_to_mac	(clk125_int_buf),
+	     .pps_in		(pps_in),
+	     .leds		(leds_int),
+	     .debug		(debug[31:0]),
+	     .debug_clk		(debug_clk[1:0]),
+	     .exp_pps_in	(exp_pps_in),
+	     .exp_pps_out	(exp_pps_out),
+	     .GMII_COL		(GMII_COL),
+	     .GMII_CRS		(GMII_CRS),
+	     .GMII_TXD		(GMII_TXD_unreg[7:0]),
+	     .GMII_TX_EN	(GMII_TX_EN_unreg),
+	     .GMII_TX_ER	(GMII_TX_ER_unreg),
+	     .GMII_GTX_CLK	(GMII_GTX_CLK_int),
+	     .GMII_TX_CLK	(GMII_TX_CLK),
+	     .GMII_RXD		(GMII_RXD[7:0]),
+	     .GMII_RX_CLK	(GMII_RX_CLK),
+	     .GMII_RX_DV	(GMII_RX_DV),
+	     .GMII_RX_ER	(GMII_RX_ER),
+	     .MDIO		(MDIO),
+	     .MDC		(MDC),
+	     .PHY_INTn		(PHY_INTn),
+	     .PHY_RESETn	(PHY_RESETn),
+	     .ser_enable	(ser_enable),
+	     .ser_prbsen	(ser_prbsen),
+	     .ser_loopen	(ser_loopen),
+	     .ser_rx_en		(ser_rx_en),
+	     .ser_tx_clk	(ser_tx_clk_int),
+	     .ser_t		(ser_t_unreg[15:0]),
+	     .ser_tklsb		(ser_tklsb_unreg),
+	     .ser_tkmsb		(ser_tkmsb_unreg),
+	     .ser_rx_clk	(ser_rx_clk_buf),
+	     .ser_r		(ser_r_int[15:0]),
+	     .ser_rklsb		(ser_rklsb_int),
+	     .ser_rkmsb		(ser_rkmsb_int),
+	     .cpld_start        (cpld_start),
+	     .cpld_mode         (cpld_mode),
+	     .cpld_done         (cpld_done),
+	     .cpld_din          (cpld_din),
+	     .cpld_clk          (cpld_clk),
+	     .cpld_detached     (cpld_detached),
+	     .cpld_misc         (cpld_misc),
+	     .cpld_init_b       (cpld_init_b),
+	     .por               (~POR),
+	     .config_success    (config_success),
+	     .adc_a		(adc_a_reg2),
+	     .adc_ovf_a		(adc_ovf_a_reg2),
+	     .adc_on_a		(adc_on_a),
+	     .adc_oe_a		(adc_oe_a),
+	     .adc_b		(adc_b_reg2),
+	     .adc_ovf_b		(adc_ovf_b_reg2),
+	     .adc_on_b		(adc_on_b),
+	     .adc_oe_b		(adc_oe_b),
+	     .dac_a		(dac_a_int),
+	     .dac_b		(dac_b_int),
+	     .scl_pad_i		(scl_pad_i),
+	     .scl_pad_o		(scl_pad_o),
+	     .scl_pad_oen_o	(scl_pad_oen_o),
+	     .sda_pad_i		(sda_pad_i),
+	     .sda_pad_o		(sda_pad_o),
+	     .sda_pad_oen_o	(sda_pad_oen_o),
+	     .clk_en		(clk_en[1:0]),
+	     .clk_sel		(clk_sel[1:0]),
+	     .clk_func		(clk_func),
+	     .clk_status	(clk_status),
+	     .sclk		(sclk_int),
+	     .mosi		(mosi),
+	     .miso		(miso),
+	     .sen_clk		(sen_clk),
+	     .sen_dac		(sen_dac),
+	     .sen_tx_db		(sen_tx_db),
+	     .sen_tx_adc	(sen_tx_adc),
+	     .sen_tx_dac	(sen_tx_dac),
+	     .sen_rx_db		(sen_rx_db),
+	     .sen_rx_adc	(sen_rx_adc),
+	     .sen_rx_dac	(sen_rx_dac),
+	     .io_tx		(io_tx[15:0]),
+	     .io_rx		(io_rx[15:0]),
+	     .RAM_D_pi             (RAM_D_pi),
+	     .RAM_D_po             (RAM_D_po),
+	     .RAM_D_poe             (RAM_D_poe),
+	     .RAM_A             (RAM_A),
+	     .RAM_CE1n          (RAM_CE1n),
+	     .RAM_CENn          (RAM_CENn),
+	//     .RAM_CLK           (RAM_CLK),
+	     .RAM_WEn           (RAM_WEn),
+	     .RAM_OEn           (RAM_OEn),
+	     .RAM_LDn           (RAM_LDn), 
+	     .uart_tx_o         (uart_tx_o),
+	     .uart_rx_i         (uart_rx_i),
+	     .uart_baud_o       (),
+	     .sim_mode          (1'b0),
+	     .clock_divider     (2)
+	     );
    
 endmodule // u2_rev2

@@ -21,6 +21,7 @@
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
@@ -36,12 +37,24 @@ using namespace boost::posix_time;
 usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
-    size_t recv_frame_size
+    transport::zero_copy_if::sptr data_transport,
+    size_t recv_samps_per_packet,
+    const device_addr_t &flow_control_hints
 ):
     _index(index),
-    _recv_frame_size(recv_frame_size),
     _iface(usrp2_iface::make(ctrl_transport))
 {
+    //Send a small data packet so the usrp2 knows the udp source port.
+    //This setup must happen before further initialization occurs
+    //or the async update packets will cause ICMP destination unreachable.
+    transport::managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
+    static const boost::uint32_t data[2] = {
+        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    };
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
@@ -64,13 +77,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _allowed_decim_and_interp_rates.push_back(i);
     }
 
+
     //Issue a stop streaming command (in case it was left running).
     //Since this command is issued before the networking is setup,
     //most if not all junk packets will never make it to the socket.
     this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
     //setup the vrt rx registers
-    _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, _recv_frame_size);
+    _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, recv_samps_per_packet);
     _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
     _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
     _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
@@ -88,6 +102,17 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.tx_ctrl_clear_state, 1); //reset
     _iface->poke32(_iface->regs.tx_ctrl_report_sid, 1);  //sid 1 (different from rx)
     _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+
+    //setting the cycles per update
+    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 100);
+    const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
+    _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
+    _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, 0); //cycles per update is disabled
+
+    //setting the packets per update
+    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8);
+    const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
+    _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
 
     //init the ddc
     init_ddc_config();
@@ -110,7 +135,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
-    /* NOP */
+    _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, 0);
+    _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, 0);
 }
 
 /***********************************************************************
@@ -187,7 +213,6 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 }
 
 void usrp2_mboard_impl::handle_overflow(void){
-    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1);
     if (_continuous_streaming){ //re-issue the stream command if already continuous
         this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
@@ -195,9 +220,7 @@ void usrp2_mboard_impl::handle_overflow(void){
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-    _iface->poke32(_iface->regs.rx_ctrl_stream_cmd, dsp_type1::calc_stream_cmd_word(
-        stream_cmd, _recv_frame_size
-    ));
+    _iface->poke32(_iface->regs.rx_ctrl_stream_cmd, dsp_type1::calc_stream_cmd_word(stream_cmd));
     _iface->poke32(_iface->regs.rx_ctrl_time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(_iface->regs.rx_ctrl_time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }

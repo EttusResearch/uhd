@@ -17,7 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include <uhd/transport/if_addrs.hpp>
-#include <uhd/transport/udp_simple.hpp>
+#include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
@@ -144,7 +144,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
 
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
-    std::vector<udp_zero_copy::sptr> data_transports;
+    std::vector<zero_copy_if::sptr> data_transports;
 
     BOOST_FOREACH(const std::string &addr, std::split_string(device_addr["addr"])){
         ctrl_transports.push_back(udp_simple::make_connected(
@@ -157,7 +157,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
 
     //create the usrp2 implementation guts
     return device::sptr(
-        new usrp2_impl(ctrl_transports, data_transports)
+        new usrp2_impl(ctrl_transports, data_transports, device_addr)
     );
 }
 
@@ -170,7 +170,8 @@ UHD_STATIC_BLOCK(register_usrp2_device){
  **********************************************************************/
 usrp2_impl::usrp2_impl(
     std::vector<udp_simple::sptr> ctrl_transports,
-    std::vector<udp_zero_copy::sptr> data_transports
+    std::vector<zero_copy_if::sptr> data_transports,
+    const device_addr_t &flow_control_hints
 ):
     _data_transports(data_transports)
 {
@@ -189,7 +190,9 @@ usrp2_impl::usrp2_impl(
     //create a new mboard handler for each control transport
     for(size_t i = 0; i < ctrl_transports.size(); i++){
         _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
-            i, ctrl_transports[i], this->get_max_recv_samps_per_packet()
+            i, ctrl_transports[i], data_transports[i],
+            this->get_max_recv_samps_per_packet(),
+            flow_control_hints
         )));
         //use an empty name when there is only one mboard
         std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";

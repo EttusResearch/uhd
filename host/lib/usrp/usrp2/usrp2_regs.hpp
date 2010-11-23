@@ -97,6 +97,8 @@ typedef struct {
     int tx_ctrl_clear_state;
     int tx_ctrl_report_sid;
     int tx_ctrl_policy;
+    int tx_ctrl_cycles_per_up;
+    int tx_ctrl_packets_per_up;
 } usrp2_regs_t;
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
@@ -254,7 +256,18 @@ usrp2_regs_t usrp2_get_regs(bool);
 ///////////////////////////////////////////////////
 // RX CTRL regs
 ///////////////////////////////////////////////////
+// The following 3 are logically a single command register.
+// They are clocked into the underlying fifo when time_ticks is written.
+//#define U2_REG_RX_CTRL_STREAM_CMD        _SR_ADDR(SR_RX_CTRL + 0) // {now, chain, num_samples(30)
+//#define U2_REG_RX_CTRL_TIME_SECS         _SR_ADDR(SR_RX_CTRL + 1)
+//#define U2_REG_RX_CTRL_TIME_TICKS        _SR_ADDR(SR_RX_CTRL + 2)
 
+//#define U2_REG_RX_CTRL_CLEAR_STATE       _SR_ADDR(SR_RX_CTRL + 3)
+//#define U2_REG_RX_CTRL_VRT_HEADER        _SR_ADDR(SR_RX_CTRL + 4) // word 0 of packet.  FPGA fills in packet counter
+//#define U2_REG_RX_CTRL_VRT_STREAM_ID     _SR_ADDR(SR_RX_CTRL + 5) // word 1 of packet.
+//#define U2_REG_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)
+//#define U2_REG_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
+//#define U2_REG_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
 
 ///////////////////////////////////////////////////
 // TX CTRL regs
@@ -263,9 +276,14 @@ usrp2_regs_t usrp2_get_regs(bool);
 //#define U2_REG_TX_CTRL_CLEAR_STATE       _SR_ADDR(SR_TX_CTRL + 1)
 //#define U2_REG_TX_CTRL_REPORT_SID        _SR_ADDR(SR_TX_CTRL + 2)
 //#define U2_REG_TX_CTRL_POLICY            _SR_ADDR(SR_TX_CTRL + 3)
+//#define U2_REG_TX_CTRL_CYCLES_PER_UP     _SR_ADDR(SR_TX_CTRL + 4)
+//#define U2_REG_TX_CTRL_PACKETS_PER_UP    _SR_ADDR(SR_TX_CTRL + 5)
 
 #define U2_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
 #define U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
 #define U2_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
+
+//enable flag for registers: cycles and packets per update packet
+#define U2_FLAG_TX_CTRL_UP_ENB              (1ul << 31)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

@@ -132,8 +132,8 @@ namespace uhd{
          * The type of event for a receive async message call.
          */
         enum event_code_t {
-            //! A packet was successfully transmitted.
-            EVENT_CODE_SUCCESS    = 0x1,
+            //! A burst was successfully transmitted.
+            EVENT_CODE_BURST_ACK  = 0x1,
             //! An internal send buffer has emptied.
             EVENT_CODE_UNDERFLOW  = 0x2,
             //! Packet loss between host and device.
