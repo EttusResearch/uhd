@@ -85,12 +85,9 @@ namespace dsp_type1{
     /*!
      * Calculate the stream command word from the stream command struct.
      * \param stream_cmd the requested stream command with mode, flags, timestamp
-     * \param num_samps_continuous number of samples to request in continuous mode
      * \return the 32-bit stream command word
      */
-    UHD_API boost::uint32_t calc_stream_cmd_word(
-        const stream_cmd_t &stream_cmd, size_t num_samps_continuous
-    );
+    UHD_API boost::uint32_t calc_stream_cmd_word(const stream_cmd_t &stream_cmd);
 
 } //namespace dsp_type1
 

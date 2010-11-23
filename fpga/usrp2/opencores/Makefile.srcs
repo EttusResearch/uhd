@@ -24,5 +24,5 @@ spi/rtl/verilog/spi_clgen.v \
 spi/rtl/verilog/spi_defines.v \
 spi/rtl/verilog/spi_shift.v \
 spi/rtl/verilog/spi_top.v \
-spi/rtl/verilog/timescale.v \
+spi/rtl/verilog/spi_top16.v \
 ))

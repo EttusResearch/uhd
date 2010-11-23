@@ -1,11 +1,12 @@
 
 module simple_uart
   #(parameter TXDEPTH = 1,
-    parameter RXDEPTH = 1)
-    (input clk_i, input rst_i,
-     input we_i, input stb_i, input cyc_i, output reg ack_o,
-     input [2:0] adr_i, input [31:0] dat_i, output reg [31:0] dat_o,
-     output rx_int_o, output tx_int_o, output tx_o, input rx_i, output baud_o);
+    parameter RXDEPTH = 1,
+    parameter CLKDIV_DEFAULT = 16'd0)
+   (input clk_i, input rst_i,
+    input we_i, input stb_i, input cyc_i, output reg ack_o,
+    input [2:0] adr_i, input [31:0] dat_i, output reg [31:0] dat_o,
+    output rx_int_o, output tx_int_o, output tx_o, input rx_i, output baud_o);
    
    // Register Map
    localparam SUART_CLKDIV = 0;
@@ -30,7 +31,7 @@ module simple_uart
    
    always @(posedge clk_i)
      if (rst_i)
-       clkdiv <= 0;
+       clkdiv <= CLKDIV_DEFAULT;
      else if (wb_wr)
        case(adr_i)
 	 SUART_CLKDIV : clkdiv <= dat_i[15:0];

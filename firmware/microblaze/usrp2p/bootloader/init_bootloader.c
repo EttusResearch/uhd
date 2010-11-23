@@ -18,27 +18,12 @@
 #include <i2c.h>
 #include "usrp2/fw_common.h"
 
-bool find_safe_booted_flag(void);
-void set_safe_booted_flag(bool flag);
-
 void pic_interrupt_handler() __attribute__ ((interrupt_handler));
 
 void pic_interrupt_handler()
 {
   // nop stub
 }
-
-bool find_safe_booted_flag(void) {
-	unsigned char flag_byte;
-	eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
-	return (flag_byte == 0x5E);
-}
-
-void set_safe_booted_flag(bool flag) {
-	unsigned char flag_byte = flag ? 0x5E : 0xDC;
-	eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_BOOTLOADER_FLAGS, &flag_byte, 1);
-}
-
 
 void load_ihex(void) { //simple IHEX parser to load proper records into RAM. loads program when it receives end of record.
 	char buf[128]; //input data buffer
@@ -79,22 +64,22 @@ int main(int argc, char *argv[]) {
 	puts("USRP2+ bootloader\n");
 	
 	bool production_image = find_safe_booted_flag();
-	if(production_image) set_safe_booted_flag(0); //we're the production image, so we clear the flag for the next boot
-
+	set_safe_booted_flag(0); //haven't booted yet
+	
 	if(BUTTON_PUSHED) { //see memory_map.h
 		puts("Starting USRP2+ in safe mode.");
 		if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
+				set_safe_booted_flag(1); //let the firmware know it's the safe image
 				spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 				start_program(RAM_BASE);
 				puts("ERROR: return from main program! This should never happen!");
 				icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 			} else {
 				puts("ERROR: no safe firmware image available. I am a brick. Feel free to load IHEX to RAM.");
-				//puts("ERROR: no safe firmware image available. I am a brick.");
 				load_ihex();
 			}
 	}
-
+	
 	if(!production_image) {
 		puts("Checking for valid production FPGA image...");
 		if(is_valid_fpga_image(PROD_FPGA_IMAGE_LOCATION_ADDR)) {

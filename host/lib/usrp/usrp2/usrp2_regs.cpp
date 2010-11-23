@@ -95,6 +95,8 @@ usrp2_regs_t usrp2_get_regs(bool use_n2xx_map) {
   x.tx_ctrl_clear_state = sr_addr(misc_output_base, x.sr_tx_ctrl + 1);
   x.tx_ctrl_report_sid = sr_addr(misc_output_base, x.sr_tx_ctrl + 2);
   x.tx_ctrl_policy = sr_addr(misc_output_base, x.sr_tx_ctrl + 3);
+  x.tx_ctrl_cycles_per_up = sr_addr(misc_output_base, x.sr_tx_ctrl + 4);
+  x.tx_ctrl_packets_per_up = sr_addr(misc_output_base, x.sr_tx_ctrl + 5);
 
   return x;
 }

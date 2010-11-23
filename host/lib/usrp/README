@@ -9,4 +9,7 @@ usrp1:
     Implementation code for the USB-based USRP Classic motherboard.
 
 usrp2:
-    Implementation code for USRP2 and USRP-N2XX.
+    Implementation code for USRP2, USRP-N200, and USRP-N210.
+
+usrp_e100:
+    Implementation code for USRP-E100.

@@ -11,7 +11,7 @@ module aeMB_core_BE
     (input sys_clk_i,
      input sys_rst_i,
      // Instruction port
-     output [14:0] if_adr,
+     output [ISIZ-1:0] if_adr,
      input [31:0] if_dat,
      // Data port
      output dwb_we_o,
@@ -34,7 +34,7 @@ module aeMB_core_BE
    
    assign dwb_cyc_o = dwb_stb_o;
    assign iwb_ack_i = 1'b1;
-   assign if_adr = iwb_adr_o[14:0];
+   assign if_adr = iwb_adr_o[ISIZ-1:0];
    assign iwb_dat_i = if_dat;
 
    // Note some "wishbone" instruction fetch signals pruned on external interface

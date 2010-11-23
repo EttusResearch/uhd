@@ -3,7 +3,9 @@ module vita_tx_chain
   #(parameter BASE_CTRL=0,
     parameter BASE_DSP=0,
     parameter REPORT_ERROR=0,
-    parameter PROT_ENG_FLAGS=0)
+    parameter DO_FLOW_CONTROL=0,
+    parameter PROT_ENG_FLAGS=0,
+    parameter USE_TRANS_HEADER=0)
    (input clk, input reset,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [63:0] vita_time,
@@ -24,30 +26,39 @@ module vita_tx_chain
    wire 		trigger, sent;
    wire [31:0] 		debug_vtc, debug_vtd, debug_tx_dsp;
 
-   wire 		error;
+   wire 		error, packet_consumed;
    wire [31:0] 		error_code;
    wire 		clear_seqnum;
+   wire [31:0] 		current_seqnum;
    
    assign underrun = error;
    assign message = error_code;
-      
+   
+   setting_reg #(.my_addr(BASE_CTRL+1)) sr
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_vita));
+
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed(clear_seqnum));
 
-   vita_tx_deframer #(.BASE(BASE_CTRL), .MAXCHAN(MAXCHAN)) vita_tx_deframer
+   vita_tx_deframer #(.BASE(BASE_CTRL), 
+		      .MAXCHAN(MAXCHAN), 
+		      .USE_TRANS_HEADER(USE_TRANS_HEADER)) 
+   vita_tx_deframer
      (.clk(clk), .reset(reset), .clear(clear_vita), .clear_seqnum(clear_seqnum),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
       .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
+      .current_seqnum(current_seqnum),
       .debug(debug_vtd) );
 
    vita_tx_control #(.BASE(BASE_CTRL), .WIDTH(32*MAXCHAN)) vita_tx_control
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time),.error(error),.error_code(error_code),
+      .vita_time(vita_time), .error(error), .ack(ack), .error_code(error_code),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
-      .sample(sample_tx), .run(run), .strobe(strobe_tx),
+      .sample(sample_tx), .run(run), .strobe(strobe_tx), .packet_consumed(packet_consumed),
       .debug(debug_vtc) );
    
    dsp_core_tx #(.BASE(BASE_DSP)) dsp_core_tx
@@ -57,15 +68,33 @@ module vita_tx_chain
       .dac_a(dac_a),.dac_b(dac_b),
       .debug(debug_tx_dsp) );
 
-   generate
-      if(REPORT_ERROR==1)
-	gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
-	  (.clk(clk), .reset(reset), .clear(clear_vita),
-	   .trigger(error), .sent(), 
-	   .streamid(streamid), .vita_time(vita_time), .message(message),
-	   .data_o(err_data_o), .src_rdy_o(err_src_rdy_o), .dst_rdy_i(err_dst_rdy_i));
-   endgenerate
+   wire [35:0] 		flow_data, err_data_int;
+   wire 		flow_src_rdy, flow_dst_rdy, err_src_rdy_int, err_dst_rdy_int;
    
+   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_flow_pkt
+     (.clk(clk), .reset(reset), .clear(clear_vita),
+      .trigger(trigger & (DO_FLOW_CONTROL==1)), .sent(), 
+      .streamid(streamid), .vita_time(vita_time), .message(32'd0),
+      .seqnum(current_seqnum),
+      .data_o(flow_data), .src_rdy_o(flow_src_rdy), .dst_rdy_i(flow_dst_rdy));
+   trigger_context_pkt #(.BASE(BASE_CTRL)) trigger_context_pkt
+     (.clk(clk), .reset(reset), .clear(clear_vita),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .packet_consumed(packet_consumed), .trigger(trigger));
+   
+   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
+     (.clk(clk), .reset(reset), .clear(clear_vita),
+      .trigger((error|ack) & (REPORT_ERROR==1)), .sent(), 
+      .streamid(streamid), .vita_time(vita_time), .message(message),
+      .seqnum(current_seqnum),
+      .data_o(err_data_int), .src_rdy_o(err_src_rdy_int), .dst_rdy_i(err_dst_rdy_int));
+      
    assign debug = debug_vtc | debug_vtd;
+   
+   fifo36_mux #(.prio(1)) mux_err_and_flow  // Priority to err messages
+     (.clk(clk), .reset(reset), .clear(0),  // Don't clear this or it could get clogged
+      .data0_i(err_data_int), .src0_rdy_i(err_src_rdy_int), .dst0_rdy_o(err_dst_rdy_int),
+      .data1_i(flow_data), .src1_rdy_i(flow_src_rdy), .dst1_rdy_o(flow_dst_rdy),
+      .data_o(err_data_o), .src_rdy_o(err_src_rdy_o), .dst_rdy_i(err_dst_rdy_i));
    
 endmodule // vita_tx_chain

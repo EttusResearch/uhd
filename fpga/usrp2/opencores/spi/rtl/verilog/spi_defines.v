@@ -43,8 +43,8 @@
 // low frequency of system clock this can be reduced.
 // Use SPI_DIVIDER_LEN for fine tuning theexact number.
 //
-//`define SPI_DIVIDER_LEN_8
-`define SPI_DIVIDER_LEN_16
+`define SPI_DIVIDER_LEN_8
+//`define SPI_DIVIDER_LEN_16
 //`define SPI_DIVIDER_LEN_24
 //`define SPI_DIVIDER_LEN_32
 
@@ -102,8 +102,8 @@
 // Number of device select signals. Use SPI_SS_NB for fine tuning the 
 // exact number.
 //
-`define SPI_SS_NB_8
-//`define SPI_SS_NB_16
+//`define SPI_SS_NB_8
+`define SPI_SS_NB_16
 //`define SPI_SS_NB_24
 //`define SPI_SS_NB_32
 
@@ -137,7 +137,7 @@
 `define SPI_TX_2                2
 `define SPI_TX_3                3
 `define SPI_CTRL                4
-`define SPI_DEVIDE              5
+`define SPI_DIVIDE              5
 `define SPI_SS                  6
 
 //

@@ -1,0 +1,20 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# SERDES Sources
+##################################################
+GPMC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../gpmc/, \
+dbsm.v \
+edge_sync.v \
+fifo_to_gpmc_async.v \
+fifo_to_gpmc_sync.v \
+fifo_watcher.v \
+gpmc_async.v \
+gpmc_sync.v \
+gpmc_to_fifo_async.v \
+gpmc_to_fifo_sync.v \
+gpmc_wb.v \
+ram_to_fifo.v \
+))

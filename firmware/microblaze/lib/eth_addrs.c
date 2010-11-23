@@ -46,9 +46,20 @@ unprogrammed(const void *t, size_t len)
 //////////////////// MAC Addr Stuff ///////////////////////
 
 static int8_t src_mac_addr_initialized = false;
+
+static const eth_mac_addr_t default_mac_addr = {{
+    0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff
+  }};
+
 static eth_mac_addr_t src_mac_addr = {{
     0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff
   }};
+  
+void set_default_mac_addr(void)
+{
+    src_mac_addr_initialized = true;
+    src_mac_addr = default_mac_addr;
+}
 
 const eth_mac_addr_t *
 ethernet_mac_addr(void)
@@ -88,10 +99,20 @@ ethernet_set_mac_addr(const eth_mac_addr_t *t)
 //////////////////// IP Addr Stuff ///////////////////////
 
 static int8_t src_ip_addr_initialized = false;
+
+static const struct ip_addr default_ip_addr = {
+    (192 << 24 | 168 << 16 | 10 << 8 | 2 << 0)
+};
+
 static struct ip_addr src_ip_addr = {
     (192 << 24 | 168 << 16 | 10 << 8 | 2 << 0)
 };
 
+void set_default_ip_addr(void)
+{
+    src_ip_addr_initialized = true;
+    src_ip_addr = default_ip_addr;
+}
 
 const struct ip_addr *get_ip_addr(void)
 {

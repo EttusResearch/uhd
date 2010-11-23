@@ -78,22 +78,22 @@ $(_usrp1_fpga_4rx_rbf):
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
 
 ########################################################################
-# USRP2/2+ firmware
+# USRP2 and USRP-N2XX firmware
 ########################################################################
 ifdef HAS_MB_GCC
 
 _usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
-_usrp2p_fw_bin = $(BUILT_IMAGES_DIR)/usrp2p_fw.bin
+_usrp_n2xx_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n2xx_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
 
-$(_usrp2_fw_bin):
+$(_usrp2_fw_bin) $(_usrp_n2xx_fw_bin):
 	cd $(_usrp2_fw_dir) && ./bootstrap
 	cd $(_usrp2_fw_dir) && ./configure --host=mb
 	make -C $(_usrp2_fw_dir) clean
 	make -C $(_usrp2_fw_dir) all
 	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
-	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp2p_fw_bin)
+	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
 
 endif
 
@@ -114,18 +114,34 @@ $(_usrp2_fpga_bin):
 endif
 
 ########################################################################
-# USRP2 fpga
+# USRP-N210 fpga
 ########################################################################
 ifdef HAS_XTCLSH
 
-_usrp2p_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
-_usrp2p_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2p_fpga.bin
-IMAGES_LIST += $(_usrp2p_fpga_bin)
+_usrp_n210_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
+_usrp_n210_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_fpga.bin
+IMAGES_LIST += $(_usrp_n210_fpga_bin)
 
-$(_usrp2p_fpga_bin):
-	cd $(_usrp2p_fpga_dir) && make -f Makefile.udp clean
-	cd $(_usrp2p_fpga_dir) && make -f Makefile.udp bin
-	cp $(_usrp2p_fpga_dir)/build-ISE12/u2plus.bin $@
+$(_usrp_n210_fpga_bin):
+	cd $(_usrp_n210_fpga_dir) && make clean
+	cd $(_usrp_n210_fpga_dir) && make bin
+	cp $(_usrp_n210_fpga_dir)/build/u2plus.bin $@
+
+endif
+
+########################################################################
+# USRP-E100 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e
+_usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga.bin
+IMAGES_LIST += $(_usrp_e100_fpga_bin)
+
+$(_usrp_e100_fpga_bin):
+	cd $(_usrp_e100_fpga_dir) && make clean
+	cd $(_usrp_e100_fpga_dir) && make bin
+	cp $(_usrp_e100_fpga_dir)/build/u1e.bin $@
 
 endif
 

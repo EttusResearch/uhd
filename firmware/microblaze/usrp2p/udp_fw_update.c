@@ -38,13 +38,13 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
   usrp2_fw_update_id_t update_data_in_id = update_data_in->id;
 
   //ensure that the protocol versions match
-  if (payload_len >= sizeof(uint32_t) && update_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
+/*  if (payload_len >= sizeof(uint32_t) && update_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
     printf("!Error in update packet handler: Expected compatibility number %d, but got %d\n",
         USRP2_FW_COMPAT_NUM, update_data_in->proto_ver
       );
       update_data_in_id = USRP2_FW_UPDATE_ID_OHAI_LOL; //so we can respond
   }
-
+*/
   //ensure that this is not a short packet
   if (payload_len < sizeof(usrp2_fw_update_data_t)){
       printf("!Error in update packet handler: Expected payload length %d, but got %d\n",

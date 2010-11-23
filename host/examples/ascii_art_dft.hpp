@@ -28,7 +28,7 @@ namespace acsii_art_dft{
     );
 
     /*!
-     * Convert a DFT to a printable ascii plot.
+     * Convert a DFT to a piroundable ascii plot.
      * \param dft the log power dft bins
      * \param width the frame width in characters
      * \param height the frame height in characters

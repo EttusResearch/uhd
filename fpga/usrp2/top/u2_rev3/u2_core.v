@@ -123,7 +123,7 @@ module u2_core
    output [18:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
-   output RAM_CLK,
+ //  output RAM_CLK,
    output RAM_WEn,
    output RAM_OEn,
    output RAM_LDn,

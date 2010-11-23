@@ -8,7 +8,9 @@ The hardware driver for Ettus Research products.
 ########################################################################
 USRP1
 USRP2
-USRP-N2XX
+USRP-N200
+USRP-N210
+USRP-E100
 
 ########################################################################
 # Supported USRP Daughterboards

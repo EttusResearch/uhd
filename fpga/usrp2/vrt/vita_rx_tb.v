@@ -37,7 +37,7 @@ module vita_rx_tb;
    
    wire        sample_dst_rdy, sample_src_rdy;
    //wire [99:0] sample_data_o;
-   wire [64+4+(MAXCHAN*32)-1:0] sample_data_o;
+   wire [64+5+(MAXCHAN*32)-1:0] sample_data_o;
 
    vita_rx_control #(.BASE(0), .WIDTH(32*MAXCHAN)) vita_rx_control
      (.clk(clk), .reset(reset), .clear(0),
@@ -92,58 +92,68 @@ module vita_rx_tb;
      begin
 	@(negedge reset);
 	@(posedge clk);
-	write_setting(4,32'hDEADBEEF);  // VITA header
+	write_setting(4,32'h15F00000);  // VITA header
 	write_setting(5,32'hF00D1234);  // VITA streamid
-	write_setting(6,32'hF0000000);  // VITA trailer
+	write_setting(6,32'hE0000000);  // VITA trailer
 	write_setting(7,8);  // Samples per VITA packet
-	write_setting(8,NUMCHAN);  // Samples per VITA packet
-	queue_rx_cmd(1,0,8,32'h0,32'h0);  // send imm, single packet
-	queue_rx_cmd(1,0,16,32'h0,32'h0);  // send imm, 2 packets worth
-	queue_rx_cmd(1,0,7,32'h0,32'h0);  // send imm, 1 short packet worth
-	queue_rx_cmd(1,0,9,32'h0,32'h0);  // send imm, just longer than 1 packet
+	write_setting(8,NUMCHAN);  // Vector length
+
+	queue_rx_cmd(1,1,0,10,32'h0,32'h0);  // send imm, single packet
+	#10000;
 	
-	queue_rx_cmd(1,1,16,32'h0,32'h0);  // chained
-	queue_rx_cmd(0,0,8,32'h0,32'h0);  // 2nd in chain
+	queue_rx_cmd(1,0,0,0,32'h0,32'h0);  // send imm, single packet
+	//queue_rx_cmd(1,1,0,0,32'h0,32'h0);  // send imm, single packet
 	
-	queue_rx_cmd(1,1,17,32'h0,32'h0);  // chained, odd length
-	queue_rx_cmd(0,0,9,32'h0,32'h0);  // 2nd in chain, also odd length
+	//queue_rx_cmd(1,0,0,0,32'h0,32'h0);  // send imm, single packet
 	
-	queue_rx_cmd(0,0,8,32'h0,32'h340);  // send at, on time
-	queue_rx_cmd(0,0,8,32'h0,32'h100);  // send at, but late
+	/*
+	queue_rx_cmd(1,0,0,8,32'h0,32'h0);  // send imm, single packet
+	queue_rx_cmd(1,0,0,16,32'h0,32'h0);  // send imm, 2 packets worth
+	queue_rx_cmd(1,0,0,7,32'h0,32'h0);  // send imm, 1 short packet worth
+	queue_rx_cmd(1,0,0,9,32'h0,32'h0);  // send imm, just longer than 1 packet
+	
+	queue_rx_cmd(1,1,0,16,32'h0,32'h0);  // chained
+	queue_rx_cmd(0,0,0,8,32'h0,32'h0);  // 2nd in chain
+	
+	queue_rx_cmd(1,1,0,17,32'h0,32'h0);  // chained, odd length
+	queue_rx_cmd(0,0,0,9,32'h0,32'h0);  // 2nd in chain, also odd length
+	
+	queue_rx_cmd(0,0,0,8,32'h0,32'h340);  // send at, on time
+	queue_rx_cmd(0,0,0,8,32'h0,32'h100);  // send at, but late
 
 	#100000;
 	$display("\nChained, break chain\n");
-	queue_rx_cmd(1,1,8,32'h0,32'h0);  // chained, but break chain
+	queue_rx_cmd(1,1,0,8,32'h0,32'h0);  // chained, but break chain
 	#100000;
 	$display("\nSingle packet\n");
-	queue_rx_cmd(1,0,8,32'h0,32'h0);  // send imm, single packet
+	queue_rx_cmd(1,0,0,8,32'h0,32'h0);  // send imm, single packet
 	#100000;
 	$display("\nEnd chain with zero samples, shouldn't error\n");
-	queue_rx_cmd(1,1,8,32'h0,32'h0);  // chained
-	queue_rx_cmd(0,0,0,32'h0,32'h0);  // end chain with zero samples, should keep us out of error
+	queue_rx_cmd(1,1,0,8,32'h0,32'h0);  // chained
+	queue_rx_cmd(0,0,0,0,32'h0,32'h0);  // end chain with zero samples, should keep us out of error
 	#100000;
 
 	$display("\nEnd chain with zero samples on odd-length, shouldn't error\n");
-	queue_rx_cmd(1,1,14,32'h0,32'h0);  // chained
-	queue_rx_cmd(0,0,0,32'h0,32'h0);  // end chain with zero samples, should keep us out of error
+	queue_rx_cmd(1,1,0,14,32'h0,32'h0);  // chained
+	queue_rx_cmd(0,0,0,0,32'h0,32'h0);  // end chain with zero samples, should keep us out of error
 	#100000;
 	$display("Should have gotten 14 samples and EOF by now\n");
 	
-	queue_rx_cmd(1,1,9,32'h0,32'h0);  // chained, but break chain, odd length
+	queue_rx_cmd(1,1,0,9,32'h0,32'h0);  // chained, but break chain, odd length
 	#100000;
 	dst_rdy <= 0;  // stop pulling out of fifo so we can get an overrun
-	queue_rx_cmd(1,0,100,32'h0,32'h0);  // long enough to fill the fifos
-	queue_rx_cmd(1,0,5,32'h0,32'h0);  // this command waits until the previous error packet is sent
+	queue_rx_cmd(1,0,0,100,32'h0,32'h0);  // long enough to fill the fifos
+	queue_rx_cmd(1,0,0,5,32'h0,32'h0);  // this command waits until the previous error packet is sent
 	#100000;
 	dst_rdy <= 1;  // restart the reads so we can see what we got
 	#100000;
 	dst_rdy <= 0;  // stop pulling out of fifo so we can get an overrun
-	queue_rx_cmd(1,1,100,32'h0,32'h0);  // long enough to fill the fifos
-	//queue_rx_cmd(1,0,5,32'h0,32'h0);  // this command waits until the previous error packet is sent
+	queue_rx_cmd(1,1,0,100,32'h0,32'h0);  // long enough to fill the fifos
+	//queue_rx_cmd(1,0,0,5,32'h0,32'h0);  // this command waits until the previous error packet is sent
 	#100000;
 	@(posedge clk);
 	dst_rdy <= 1;
-	  
+	 */
 	#100000 $finish;
      end
 
@@ -164,11 +174,12 @@ module vita_rx_tb;
    task queue_rx_cmd;
       input send_imm;
       input chain;
-      input [29:0] lines;
+      input reload;
+      input [28:0] lines;
       input [31:0] secs;
       input [31:0] tics;
       begin
-	 write_setting(0,{send_imm,chain,lines});
+	 write_setting(0,{send_imm,chain,reload,lines});
 	 write_setting(1,secs);
 	 write_setting(2,tics);
       end

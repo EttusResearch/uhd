@@ -12,4 +12,5 @@ vita_tx_control.v \
 vita_tx_deframer.v \
 vita_tx_chain.v \
 gen_context_pkt.v \
+trigger_context_pkt.v \
 ))
