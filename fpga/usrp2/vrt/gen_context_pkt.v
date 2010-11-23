@@ -7,8 +7,7 @@ module gen_context_pkt
     input [31:0] streamid,
     input [63:0] vita_time,
     input [31:0] message,
-    input [31:0] seqnum0,
-    input [31:0] seqnum1,
+    input [31:0] seqnum,
     output [35:0] data_o, output src_rdy_o, input dst_rdy_i);
    
    localparam CTXT_IDLE = 0;
@@ -19,9 +18,8 @@ module gen_context_pkt
    localparam CTXT_TICS = 5;
    localparam CTXT_TICS2 = 6;
    localparam CTXT_MESSAGE = 7;
-   localparam CTXT_FLOWCTRL0 = 8;
-   localparam CTXT_FLOWCTRL1 = 9;
-   localparam CTXT_DONE = 10;
+   localparam CTXT_FLOWCTRL = 8;
+   localparam CTXT_DONE = 9;
 
    reg [33:0] 	 data_int;
    wire 	 src_rdy_int, dst_rdy_int;
@@ -36,11 +34,12 @@ module gen_context_pkt
      else
        if(trigger)
 	 stored_message <= message;
-       else if(ctxt_state == CTXT_FLOWCTRL1)
+       else if(ctxt_state == CTXT_DONE)
 	 stored_message <= 0;
-   
+
+   // Don't want to clear most of this to avoid getting stuck with a half packet in the pipe
    always @(posedge clk)
-     if(reset | clear)
+     if(reset)
        begin
 	  ctxt_state <= CTXT_IDLE;
 	  seqno <= 0;
@@ -72,19 +71,18 @@ module gen_context_pkt
    always @*
      case(ctxt_state)
        CTXT_PROT_ENG : data_int <= { 2'b01, 16'd1, 16'd32 };
-       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100001101, seqno, 16'd8 };
+       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100001101, seqno, 16'd7 };
        CTXT_STREAMID : data_int <= { 2'b00, streamid };
        CTXT_SECS : data_int <= { 2'b00, err_time[63:32] };
        CTXT_TICS : data_int <= { 2'b00, 32'd0 };
        CTXT_TICS2 : data_int <= { 2'b00, err_time[31:0] };
        CTXT_MESSAGE : data_int <= { 2'b00, message };
-       CTXT_FLOWCTRL0 : data_int <= { 2'b00, seqnum0 };
-       CTXT_FLOWCTRL1 : data_int <= { 2'b10, seqnum1 };
+       CTXT_FLOWCTRL : data_int <= { 2'b10, seqnum };
        default : data_int <= {2'b00, 32'b00};
      endcase // case (ctxt_state)
 
    fifo_short #(.WIDTH(34)) ctxt_fifo
-     (.clk(clk), .reset(reset), .clear(clear),
+     (.clk(clk), .reset(reset), .clear(0),
       .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int),
       .dataout(data_o[33:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));
    assign data_o[35:34] = 2'b00;

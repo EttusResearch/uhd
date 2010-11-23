@@ -21,6 +21,7 @@ nsgpio.v \
 ram_2port.v \
 ram_harv_cache.v \
 ram_harvard.v \
+ram_harvard2.v \
 ram_loader.v \
 setting_reg.v \
 settings_bus.v \
@@ -29,6 +30,7 @@ srl.v \
 system_control.v \
 wb_1master.v \
 wb_readback_mux.v \
+quad_uart.v \
 simple_uart.v \
 simple_uart_tx.v \
 simple_uart_rx.v \
@@ -42,4 +44,9 @@ pic.v \
 longfifo.v \
 shortfifo.v \
 medfifo.v \
+s3a_icap_wb.v \
+bootram.v \
+nsgpio16LE.v \
+settings_bus_16LE.v \
+atr_controller16.v \
 ))

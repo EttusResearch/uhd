@@ -31,9 +31,13 @@ module vita_tx_chain
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
    
-   assign underrun = error & ~(error_code == 1);
+   assign underrun = error;
    assign message = error_code;
-      
+   
+   setting_reg #(.my_addr(BASE_CTRL+1)) sr
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_vita));
+
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed(clear_seqnum));
@@ -52,7 +56,7 @@ module vita_tx_chain
    vita_tx_control #(.BASE(BASE_CTRL), .WIDTH(32*MAXCHAN)) vita_tx_control
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time),.error(error),.error_code(error_code),
+      .vita_time(vita_time), .error(error), .ack(ack), .error_code(error_code),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
       .sample(sample_tx), .run(run), .strobe(strobe_tx), .packet_consumed(packet_consumed),
       .debug(debug_vtc) );
@@ -71,7 +75,7 @@ module vita_tx_chain
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .trigger(trigger & (DO_FLOW_CONTROL==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(32'd0),
-      .seqnum0(current_seqnum), .seqnum1(32'd0),
+      .seqnum(current_seqnum),
       .data_o(flow_data), .src_rdy_o(flow_src_rdy), .dst_rdy_i(flow_dst_rdy));
    trigger_context_pkt #(.BASE(BASE_CTRL)) trigger_context_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
@@ -80,15 +84,15 @@ module vita_tx_chain
    
    gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
-      .trigger(error & (REPORT_ERROR==1)), .sent(), 
+      .trigger((error|ack) & (REPORT_ERROR==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(message),
-      .seqnum0(current_seqnum), .seqnum1(32'd0),
+      .seqnum(current_seqnum),
       .data_o(err_data_int), .src_rdy_o(err_src_rdy_int), .dst_rdy_i(err_dst_rdy_int));
       
    assign debug = debug_vtc | debug_vtd;
    
    fifo36_mux #(.prio(1)) mux_err_and_flow  // Priority to err messages
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(0),  // Don't clear this or it could get clogged
       .data0_i(err_data_int), .src0_rdy_i(err_src_rdy_int), .dst0_rdy_o(err_dst_rdy_int),
       .data1_i(flow_data), .src1_rdy_i(flow_src_rdy), .dst1_rdy_o(flow_dst_rdy),
       .data_o(err_data_o), .src_rdy_o(err_src_rdy_o), .dst_rdy_i(err_dst_rdy_i));

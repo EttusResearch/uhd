@@ -13,8 +13,10 @@ else
 endif
 BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
+SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
+BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
 MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
 
 ##################################################
@@ -25,12 +27,13 @@ all: bin
 proj: $(ISE_FILE)
 
 check: $(ISE_FILE)
+	$(SANITY_CHECKER) $(TOP_MODULE).v $(TOP_MODULE).ucf
 	$(ISE_HELPER) "Check Syntax"
 
 synth: $(ISE_FILE)
 	$(ISE_HELPER) "Synthesize - XST"
 
-bin: $(BIN_FILE)
+bin: check $(BIN_FILE)
 	$(ISE_HELPER) "Generate Programming File"
 
 mcs: $(MCS_FILE)
@@ -54,6 +57,6 @@ $(BIN_FILE): $(ISE_FILE) $$(SOURCES) $$(MAKEFILE_LIST)
 	touch $@
 
 $(MCS_FILE): $(BIN_FILE)
-	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIN_FILE)
+	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIT_FILE)
 
 .EXPORT_ALL_VARIABLES:
