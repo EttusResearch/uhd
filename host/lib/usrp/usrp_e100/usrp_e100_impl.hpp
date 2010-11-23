@@ -102,7 +102,6 @@ private:
 
     //configuration shadows
     uhd::clock_config_t _clock_config;
-    //TODO otw type recv/send
 
     //ad9522 clock control
     usrp_e100_clock_ctrl::sptr _clock_ctrl;
@@ -159,6 +158,10 @@ private:
     void tx_codec_get(const wax::obj &, wax::obj &);
     void tx_codec_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _rx_codec_proxy, _tx_codec_proxy;
+    
+    //clock control functions and settings
+    void init_clock_config(void);
+    void update_clock_config(void);
 };
 
 #endif /* INCLUDED_USRP_E100_IMPL_HPP */

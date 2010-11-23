@@ -39,8 +39,31 @@ void usrp_e100_impl::mboard_init(void){
     //init the clock config
     _clock_config.ref_source = clock_config_t::REF_AUTO;
     _clock_config.pps_source = clock_config_t::PPS_SMA;
+    _clock_config.pps_polarity = clock_config_t::PPS_NEG;
 
-    //TODO poke the clock config regs
+    update_clock_config();
+}
+
+void usrp_e100_impl::update_clock_config(void){
+    boost::uint32_t pps_flags = 0;
+
+    //translate pps polarity enums
+    switch(_clock_config.pps_polarity){
+    case clock_config_t::PPS_POS: pps_flags |= UE_FLAG_TIME64_PPS_POSEDGE; break;
+    case clock_config_t::PPS_NEG: pps_flags |= UE_FLAG_TIME64_PPS_NEGEDGE; break;
+    default: throw std::runtime_error("unhandled clock configuration pps polarity");
+    }
+
+    //set the pps flags
+    _iface->poke32(UE_REG_TIME64_FLAGS, pps_flags);
+
+    //clock source ref 10mhz
+    switch(_clock_config.ref_source){
+    case clock_config_t::REF_AUTO: _clock_ctrl->use_auto_ref();
+    case clock_config_t::REF_INT: _clock_ctrl->use_internal_ref();
+    case clock_config_t::REF_SMA: _clock_ctrl->use_external_ref();
+    default: throw std::runtime_error("unhandled clock configuration ref source");
+    }
 }
 
 /***********************************************************************
@@ -163,6 +186,11 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         // Step2: readback the entire eeprom map into the iface.
         val.as<mboard_eeprom_t>().commit(_iface->get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
         _iface->mb_eeprom = mboard_eeprom_t(_iface->get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
+        return;
+        
+    case MBOARD_PROP_CLOCK_CONFIG:
+        _clock_config = val.as<clock_config_t>();
+        update_clock_config();
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

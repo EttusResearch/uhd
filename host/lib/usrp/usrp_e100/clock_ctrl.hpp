@@ -82,6 +82,21 @@ public:
      * \param enb true to enable
      */
     virtual void enable_tx_dboard_clock(bool enb) = 0;
+    
+    /*!
+     * Use the internal TCXO reference
+     */
+    virtual void use_internal_ref(void) = 0;
+    
+    /*!
+     * Use the external SMA reference
+     */
+    virtual void use_external_ref(void) = 0;
+    
+    /*!
+     * Use external if available, internal otherwise
+     */
+    virtual void use_auto_ref(void) = 0;
 
 };
 

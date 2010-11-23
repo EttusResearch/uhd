@@ -208,6 +208,32 @@ public:
         this->send_reg(0x197);
         this->latch_regs();
     }
+    
+    /***********************************************************************
+     * Clock reference control
+     **********************************************************************/
+    void use_internal_ref(void) {
+        _ad9522_regs.enable_ref2 = 1;
+        _ad9522_regs.enable_ref1 = 0;
+        _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF2;
+        _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_MANUAL;
+        this->send_reg(0x01C);
+    }
+    
+    void use_external_ref(void) {
+        _ad9522_regs.enable_ref2 = 0;
+        _ad9522_regs.enable_ref1 = 1;
+        _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF1;
+        _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_MANUAL;
+        this->send_reg(0x01C);
+    }
+    
+    void use_auto_ref(void) {
+        _ad9522_regs.enable_ref2 = 1;
+        _ad9522_regs.enable_ref1 = 1;
+        _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF1;
+        _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_AUTO;
+    }
 
 private:
     usrp_e100_iface::sptr _iface;
