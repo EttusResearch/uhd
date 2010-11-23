@@ -41,7 +41,7 @@ module simple_gemac_wb
    wire [6:0] misc_settings;
    assign {pause_request_en, pass_ucast, pass_mcast, pass_bcast, pass_pause, pass_all, pause_respect_en} = misc_settings;
 
-   wb_reg #(.ADDR(0),.DEFAULT(7'b0111001))
+   wb_reg #(.ADDR(0),.DEFAULT(7'b0111011))
    wb_reg_settings (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		    .dat_i(wb_dat_i), .dat_o(misc_settings) );
    wb_reg #(.ADDR(1),.DEFAULT(0))

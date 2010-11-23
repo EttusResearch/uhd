@@ -17,6 +17,7 @@ delay_line.v \
 flow_ctrl_tx.v \
 flow_ctrl_rx.v \
 address_filter.v \
+address_filter_promisc.v \
 ll8_to_txmac.v \
 rxmac_to_ll8.v \
 miim/eth_miim.v \
