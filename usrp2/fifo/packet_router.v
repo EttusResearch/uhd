@@ -209,7 +209,7 @@ module packet_router
 
     fifo36_mux _com_output_combiner1(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(crs_inp_data), .src0_rdy_i(crs_inp_valid), .dst0_rdy_o(crs_inp_ready),
+        .data0_i(32'b0), .src0_rdy_i(1'b0), .dst0_rdy_o(), //mux out from dsp1 can go here
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
         .data_o(_combiner1_data), .src_rdy_o(_combiner1_valid), .dst_rdy_i(_combiner1_ready)
     );
@@ -564,6 +564,9 @@ module packet_router
     wire _udp_r2s_valid, _udp_s2p_valid, _udp_p2s_valid, _udp_s2r_valid;
     wire _udp_r2s_ready, _udp_s2p_ready, _udp_p2s_ready, _udp_s2r_ready;
 
+    wire [35:0] _com_out_data;
+    wire _com_out_valid, _com_out_ready;
+
     fifo36_to_fifo19 udp_fifo36_to_fifo19
      (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
       .f36_datain(udp_out_data),   .f36_src_rdy_i(udp_out_valid),  .f36_dst_rdy_o(udp_out_ready),
@@ -590,7 +593,14 @@ module packet_router
     fifo19_to_fifo36 udp_fifo19_to_fifo36
      (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
       .f19_datain(_udp_s2r_data), .f19_src_rdy_i(_udp_s2r_valid), .f19_dst_rdy_o(_udp_s2r_ready),
-      .f36_dataout(com_out_data), .f36_src_rdy_o(com_out_valid),  .f36_dst_rdy_i(com_out_ready) );
+      .f36_dataout(_com_out_data), .f36_src_rdy_o(_com_out_valid),  .f36_dst_rdy_i(_com_out_ready) );
+
+    fifo36_mux com_out_mux(
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+        .data0_i(crs_inp_data),  .src0_rdy_i(crs_inp_valid),  .dst0_rdy_o(crs_inp_ready),
+        .data1_i(_com_out_data), .src1_rdy_i(_com_out_valid), .dst1_rdy_o(_com_out_ready),
+        .data_o(com_out_data),   .src_rdy_o(com_out_valid),   .dst_rdy_i(com_out_ready)
+    );
 
     ////////////////////////////////////////////////////////////////////
     // Assign debugs
