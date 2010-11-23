@@ -178,9 +178,7 @@ void usrp_e100_impl::io_init(void){
 
 void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
     _io_impl->continuous_streaming = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, dsp_type1::calc_stream_cmd_word(
-        stream_cmd, get_max_recv_samps_per_packet()
-    ));
+    _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, dsp_type1::calc_stream_cmd_word(stream_cmd));
     _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
     _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
 }
