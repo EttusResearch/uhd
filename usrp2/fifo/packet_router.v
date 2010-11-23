@@ -70,6 +70,9 @@ module packet_router
     wire [35:0] com_out_data;
     wire        com_out_valid;
     wire        com_out_ready;
+    wire [35:0] udp_out_data;
+    wire        udp_out_valid;
+    wire        udp_out_ready;
 
     ////////////////////////////////////////////////////////////////////
     // status and control handshakes
@@ -180,7 +183,7 @@ module packet_router
     );
 
     ////////////////////////////////////////////////////////////////////
-    // Communication output source combiner
+    // Communication output source combiner (feeds UDP proto machine)
     //   - DSP framer
     //   - CPU input
     //   - Error input
@@ -215,7 +218,7 @@ module packet_router
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(_combiner0_data), .src0_rdy_i(_combiner0_valid), .dst0_rdy_o(_combiner0_ready),
         .data1_i(_combiner1_data), .src1_rdy_i(_combiner1_valid), .dst1_rdy_o(_combiner1_ready),
-        .data_o(com_out_data), .src_rdy_o(com_out_valid), .dst_rdy_i(com_out_ready)
+        .data_o(udp_out_data), .src_rdy_o(udp_out_valid), .dst_rdy_i(udp_out_ready)
     );
 
     ////////////////////////////////////////////////////////////////////
@@ -551,6 +554,43 @@ module packet_router
         .inp_data(dsp_inp_data), .inp_valid(dsp_inp_valid), .inp_ready(dsp_inp_ready),
         .out_data(dsp_frm_data), .out_valid(dsp_frm_valid), .out_ready(dsp_frm_ready)
     );
+
+    ////////////////////////////////////////////////////////////////////
+    // UDP TX Protocol machine
+    ////////////////////////////////////////////////////////////////////
+
+    //dummy signals to connect the components below
+    wire [18:0] _udp_r2s_data, _udp_s2p_data, _udp_p2s_data, _udp_s2r_data;
+    wire _udp_r2s_valid, _udp_s2p_valid, _udp_p2s_valid, _udp_s2r_valid;
+    wire _udp_r2s_ready, _udp_s2p_ready, _udp_p2s_ready, _udp_s2r_ready;
+
+    fifo36_to_fifo19 udp_fifo36_to_fifo19
+     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+      .f36_datain(udp_out_data),   .f36_src_rdy_i(udp_out_valid),  .f36_dst_rdy_o(udp_out_ready),
+      .f19_dataout(_udp_r2s_data), .f19_src_rdy_o(_udp_r2s_valid), .f19_dst_rdy_i(_udp_r2s_ready) );
+
+    fifo_short #(.WIDTH(19)) udp_shortfifo19_inp
+     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+      .datain(_udp_r2s_data),  .src_rdy_i(_udp_r2s_valid), .dst_rdy_o(_udp_r2s_ready),
+      .dataout(_udp_s2p_data), .src_rdy_o(_udp_s2p_valid), .dst_rdy_i(_udp_s2p_ready),
+      .space(), .occupied() );
+
+    prot_eng_tx #(.BASE(UDP_BASE)) udp_prot_eng_tx
+     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .datain(_udp_s2p_data),  .src_rdy_i(_udp_s2p_valid), .dst_rdy_o(_udp_s2p_ready),
+      .dataout(_udp_p2s_data), .src_rdy_o(_udp_p2s_valid), .dst_rdy_i(_udp_p2s_ready) );
+
+    fifo_short #(.WIDTH(19)) udp_shortfifo19_out
+     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+      .datain(_udp_p2s_data),  .src_rdy_i(_udp_p2s_valid), .dst_rdy_o(_udp_p2s_ready),
+      .dataout(_udp_s2r_data), .src_rdy_o(_udp_s2r_valid), .dst_rdy_i(_udp_s2r_ready),
+      .space(), .occupied() );
+
+    fifo19_to_fifo36 udp_fifo19_to_fifo36
+     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+      .f19_datain(_udp_s2r_data), .f19_src_rdy_i(_udp_s2r_valid), .f19_dst_rdy_o(_udp_s2r_ready),
+      .f36_dataout(com_out_data), .f36_src_rdy_o(com_out_valid),  .f36_dst_rdy_i(com_out_ready) );
 
     ////////////////////////////////////////////////////////////////////
     // Assign debugs

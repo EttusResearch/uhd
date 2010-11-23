@@ -442,7 +442,7 @@ module u2_core
    // Ethernet MAC  Slave #6
 
    wire [18:0] 	 rx_f19_data, tx_f19_data;
-   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, rx_f36_src_rdy, rx_f36_dst_rdy;
+   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, tx_f19_src_rdy, tx_f19_dst_rdy;
    
    simple_gemac_wrapper19 #(.RXFIFOSIZE(11), .TXFIFOSIZE(6)) simple_gemac_wrapper19
      (.clk125(clk_to_mac),  .reset(wb_rst),
@@ -458,28 +458,39 @@ module u2_core
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
 
-   wire [35:0] 	 udp_tx_data, udp_rx_data;
-   wire 	 udp_tx_src_rdy, udp_tx_dst_rdy, udp_rx_src_rdy, udp_rx_dst_rdy;
-   
-   udp_wrapper #(.BASE(SR_UDP_SM)) udp_wrapper
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .rx_f19_data(rx_f19_data), .rx_f19_src_rdy_i(rx_f19_src_rdy), .rx_f19_dst_rdy_o(rx_f19_dst_rdy),
-      .tx_f19_data(tx_f19_data), .tx_f19_src_rdy_o(tx_f19_src_rdy), .tx_f19_dst_rdy_i(tx_f19_dst_rdy),
-      .rx_f36_data(udp_rx_data), .rx_f36_src_rdy_o(udp_rx_src_rdy), .rx_f36_dst_rdy_i(udp_rx_dst_rdy),
-      .tx_f36_data(udp_tx_data), .tx_f36_src_rdy_i(udp_tx_src_rdy), .tx_f36_dst_rdy_o(udp_tx_dst_rdy),
-      .debug(debug_udp) );
+   wire [35:0] 	 rx_f36_data, tx_f36_data;
+   wire 	 rx_f36_src_rdy, rx_f36_dst_rdy, tx_f36_src_rdy, tx_f36_dst_rdy;
 
-   fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
+   wire [18:0] 	 _rx_f19_data;
+   wire 	 _rx_f19_src_rdy, _rx_f19_dst_rdy;
+
+   //mac rx to eth input...
+   fifo19_rxrealign fifo19_rxrealign
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
+      .datain(rx_f19_data), .src_rdy_i(rx_f19_src_rdy), .dst_rdy_o(rx_f19_dst_rdy),
+      .dataout(_rx_f19_data), .src_rdy_o(_rx_f19_src_rdy), .dst_rdy_i(_rx_f19_dst_rdy) );
+
+   fifo19_to_fifo36 eth_inp_fifo19_to_fifo36
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .f19_datain(_rx_f19_data),  .f19_src_rdy_i(_rx_f19_src_rdy), .f19_dst_rdy_o(_rx_f19_dst_rdy),
+      .f36_dataout(rx_f36_data), .f36_src_rdy_o(rx_f36_src_rdy), .f36_dst_rdy_i(rx_f36_dst_rdy) );
 
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(udp_rx_data), .src_rdy_i(udp_rx_src_rdy), .dst_rdy_o(udp_rx_dst_rdy),
+      .datain(rx_f36_data), .src_rdy_i(rx_f36_src_rdy), .dst_rdy_o(rx_f36_dst_rdy),
       .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
-   
+
+   //eth output to mac tx...
+   fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
+      .dataout(tx_f36_data), .src_rdy_o(tx_f36_src_rdy), .dst_rdy_i(tx_f36_dst_rdy));
+
+   fifo36_to_fifo19 eth_out_fifo36_to_fifo19
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .f36_datain(tx_f36_data),  .f36_src_rdy_i(tx_f36_src_rdy), .f36_dst_rdy_o(tx_f36_dst_rdy),
+      .f19_dataout(tx_f19_data), .f19_src_rdy_o(tx_f19_src_rdy), .f19_dst_rdy_i(tx_f19_dst_rdy) );
+
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #7
    settings_bus settings_bus
