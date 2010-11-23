@@ -16,7 +16,7 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD CXX)
+PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
 ########################################################################
@@ -64,7 +64,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     #causes trouble when compiling libusb1.0 on macintosh
     #comment out until mac ports libusb gets its act together
     #ADD_DEFINITIONS(-pedantic)
-    ADD_DEFINITIONS(-ansi)
+    #ADD_DEFINITIONS(-ansi)
     #only export symbols that are declared to be part of the uhd api:
     UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)

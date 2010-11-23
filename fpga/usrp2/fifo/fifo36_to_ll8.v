@@ -55,6 +55,5 @@ module fifo36_to_ll8
 
    assign advance 	 = ll_src_rdy & ll_dst_rdy;
    assign f36_dst_rdy_o  = advance & ((state==3)|ll_eof);
-   assign debug 	 = state;
    
 endmodule // ll8_to_fifo36

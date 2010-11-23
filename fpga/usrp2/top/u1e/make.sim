@@ -1,0 +1,7 @@
+all: sim
+
+sim:	
+	iverilog -Wimplicit -Wportbind -c cmdfile tb_u1e.v -o tb_u1e
+
+clean:
+	rm -f tb_u1e *.vcd *.lxt a.out

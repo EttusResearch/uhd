@@ -20,7 +20,6 @@
 
 #include <uhd/config.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 
 /*! \file pimpl.hpp
  * "Pimpl idiom" (pointer to implementation idiom).
@@ -51,6 +50,6 @@
  * \param _args the constructor args for the pimpl
  */
 #define UHD_PIMPL_MAKE(_name, _args) \
-    boost::make_shared<_name> _args
+    boost::shared_ptr<_name>(new _name _args)
 
 #endif /* INCLUDED_UHD_UTILS_PIMPL_HPP */

@@ -114,18 +114,18 @@ $(_usrp2_fpga_bin):
 endif
 
 ########################################################################
-# USRP2 fpga
+# USRP-E100 fpga
 ########################################################################
 ifdef HAS_XTCLSH
 
-_usrp2p_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
-_usrp2p_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2p_fpga.bin
-IMAGES_LIST += $(_usrp2p_fpga_bin)
+_usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e
+_usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga.bin
+IMAGES_LIST += $(_usrp_e100_fpga_bin)
 
-$(_usrp2p_fpga_bin):
-	cd $(_usrp2p_fpga_dir) && make -f Makefile.udp clean
-	cd $(_usrp2p_fpga_dir) && make -f Makefile.udp bin
-	cp $(_usrp2p_fpga_dir)/build-ISE12/u2plus.bin $@
+$(_usrp_e100_fpga_bin):
+	cd $(_usrp_e100_fpga_dir) && make clean
+	cd $(_usrp_e100_fpga_dir) && make bin
+	cp $(_usrp_e100_fpga_dir)/build/u1e.bin $@
 
 endif
 
