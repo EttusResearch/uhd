@@ -84,23 +84,23 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
     //setup the vrt rx registers
+    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
     _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, recv_samps_per_packet);
     _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
-    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
     _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
         | (0x1 << 20) //fractional time sample count
     );
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_stream_id, 0);
+    _iface->poke32(_iface->regs.rx_ctrl_vrt_stream_id, usrp2_impl::RECV_SID);
     _iface->poke32(_iface->regs.rx_ctrl_vrt_trailer, 0);
     _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
 
     //init the tx control registers
-    _iface->poke32(_iface->regs.tx_ctrl_num_chan, 0);    //1 channel
     _iface->poke32(_iface->regs.tx_ctrl_clear_state, 1); //reset
-    _iface->poke32(_iface->regs.tx_ctrl_report_sid, 1);  //sid 1 (different from rx)
+    _iface->poke32(_iface->regs.tx_ctrl_num_chan, 0);    //1 channel
+    _iface->poke32(_iface->regs.tx_ctrl_report_sid, usrp2_impl::ASYNC_SID);
     _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
     //setting the cycles per update

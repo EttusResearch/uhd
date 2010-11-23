@@ -194,8 +194,27 @@ void usrp2_impl::io_impl::recv_pirate_loop(
             const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
             vrt::if_hdr_unpack_be(vrt_hdr, if_packet_info);
 
+            //handle the rx data stream
+            if (if_packet_info.sid == usrp2_impl::RECV_SID and if_packet_info.packet_type == vrt::if_packet_info_t::PACKET_TYPE_DATA){
+                //handle the packet count / sequence number
+                if (if_packet_info.packet_count != next_packet_seq){
+                    //std::cerr << "S" << (if_packet_info.packet_count - next_packet_seq)%16;
+                    std::cerr << "O" << std::flush; //report overflow (drops in the kernel)
+                }
+                next_packet_seq = (if_packet_info.packet_count+1)%16;
+
+                //extract the timespec and round to the nearest packet
+                UHD_ASSERT_THROW(if_packet_info.has_tsi and if_packet_info.has_tsf);
+                time_spec_t time(
+                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), mboard->get_master_clock_freq()
+                );
+
+                //push the packet into the buffer with the new time
+                recv_pirate_booty->push_with_pop_on_full(buff, time, index);
+            }
+
             //handle a tx async report message
-            if (if_packet_info.sid == 1 and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+            else if (if_packet_info.sid == usrp2_impl::ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
 
                 //fill in the async metadata
                 async_metadata_t metadata;
@@ -217,24 +236,10 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
                 //else std::cout << "metadata.event_code " << metadata.event_code << std::endl;
                 async_msg_fifo->push_with_pop_on_full(metadata);
-                continue;
             }
-
-            //handle the packet count / sequence number
-            if (if_packet_info.packet_count != next_packet_seq){
-                //std::cerr << "S" << (if_packet_info.packet_count - next_packet_seq)%16;
-                std::cerr << "O" << std::flush; //report overflow (drops in the kernel)
+            else{
+                //TODO unknown received packet, may want to print error...
             }
-            next_packet_seq = (if_packet_info.packet_count+1)%16;
-
-            //extract the timespec and round to the nearest packet
-            UHD_ASSERT_THROW(if_packet_info.has_tsi and if_packet_info.has_tsf);
-            time_spec_t time(
-                time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), mboard->get_master_clock_freq()
-            );
-
-            //push the packet into the buffer with the new time
-            recv_pirate_booty->push_with_pop_on_full(buff, time, index);
         }catch(const std::exception &e){
             std::cerr << "Error (usrp2 recv pirate loop): " << e.what() << std::endl;
         }
@@ -252,6 +257,16 @@ void usrp2_impl::io_init(void){
 
     //create new io impl
     _io_impl = UHD_PIMPL_MAKE(io_impl, (num_recv_frames, send_frame_size, _data_transports.size()));
+
+    //TODO temporary fix for weird power up state, remove when FPGA fixed
+    {
+        //send an initial packet to all transports
+        tx_metadata_t md; md.end_of_burst = true;
+        this->send(
+            std::vector<const void *>(_data_transports.size(), NULL), 0, md,
+            io_type_t::COMPLEX_FLOAT32, device::SEND_MODE_ONE_PACKET, 0
+        );
+    }
 
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){
