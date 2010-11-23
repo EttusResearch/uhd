@@ -18,7 +18,8 @@
 include $(top_srcdir)/Makefile.common
 
 AM_CFLAGS = \
-	$(COMMON_CFLAGS)
+	$(COMMON_CFLAGS) \
+	-DUSRP2P
 
 AM_LDFLAGS = \
 	$(COMMON_LFLAGS) \

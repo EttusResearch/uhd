@@ -44,6 +44,9 @@ void ethernet_register_link_changed_callback(ethernet_link_changed_callback_t cb
  */
 const eth_mac_addr_t *ethernet_mac_addr(void);
 
+/*!set mac addr to default*/
+void set_default_mac_addr(void);
+
 /*!
  * \brief write mac address to eeprom and begin using it
  */
@@ -53,6 +56,9 @@ bool ethernet_set_mac_addr(const eth_mac_addr_t *t);
  * \returns IP address
  */
 const struct ip_addr *get_ip_addr(void);
+
+/*!set ip addr to default*/
+void set_default_ip_addr(void);
 
 /*!
  * \brief write ip address to eeprom and begin using it

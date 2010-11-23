@@ -33,4 +33,7 @@ bool eeprom_write (int i2c_addr, int eeprom_offset, const void *buf, int len);
 
 bool eeprom_read (int i2c_addr, int eeprom_offset, void *buf, int len);
 
+bool find_safe_booted_flag(void);
+void set_safe_booted_flag(bool flag);
+
 #endif /* INCLUDED_I2C_H */
