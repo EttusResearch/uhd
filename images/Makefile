@@ -78,7 +78,7 @@ $(_usrp1_fpga_4rx_rbf):
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
 
 ########################################################################
-# USRP2/2+ firmware
+# USRP2 and USRP-N2XX firmware
 ########################################################################
 ifdef HAS_MB_GCC
 
@@ -110,6 +110,22 @@ $(_usrp2_fpga_bin):
 	cd $(_usrp2_fpga_dir) && make -f Makefile.udp clean
 	cd $(_usrp2_fpga_dir) && make -f Makefile.udp bin
 	cp $(_usrp2_fpga_dir)/build-udp/u2_rev3.bin $@
+
+endif
+
+########################################################################
+# USRP-N210 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_n210_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
+_usrp_n210_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_fpga.bin
+IMAGES_LIST += $(_usrp_n210_fpga_bin)
+
+$(_usrp_n210_fpga_bin):
+	cd $(_usrp_n210_fpga_dir) && make clean
+	cd $(_usrp_n210_fpga_dir) && make bin
+	cp $(_usrp_n210_fpga_dir)/build/u2plus.bin $@
 
 endif
 
