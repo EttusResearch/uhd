@@ -24,9 +24,6 @@ module simple_gemac_wrapper_tb;
    
    wire [7:0] rx_data, tx_data;
    
-   reg [15:0] pause_time;
-   reg pause_req      = 0;
-
    wire GMII_RX_CLK   = GMII_GTX_CLK;
 
    reg [7:0] FORCE_DAT_ERR = 0;
@@ -47,7 +44,7 @@ module simple_gemac_wrapper_tb;
    reg [35:0]  tx_f36_data=0;
    reg 	       tx_f36_src_rdy = 0;
    wire        tx_f36_dst_rdy;
-   wire        rx_f36_data;
+   wire [35:0] rx_f36_data;
    wire        rx_f36_src_rdy;
    wire        rx_f36_dst_rdy = 1;
    
@@ -57,7 +54,6 @@ module simple_gemac_wrapper_tb;
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
       .GMII_RX_CLK(GMII_RX_CLK), .GMII_RX_DV(GMII_RX_DV),  
       .GMII_RX_ER(GMII_RX_ER), .GMII_RXD(GMII_RXD),
-      .pause_req(pause_req), .pause_time(pause_time),
 
       .sys_clk(sys_clk), .rx_f36_data(rx_f36_data), .rx_f36_src_rdy(rx_f36_src_rdy), .rx_f36_dst_rdy(rx_f36_dst_rdy),
       .tx_f36_data(tx_f36_data), .tx_f36_src_rdy(tx_f36_src_rdy), .tx_f36_dst_rdy(tx_f36_dst_rdy),

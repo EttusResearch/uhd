@@ -44,12 +44,12 @@ module simple_gemac_wrapper19_tb;
    reg 	       wb_stb=0, wb_cyc=0, wb_we=0;
    wire        wb_ack;
 
-   reg [18:0]  tx_f19_data=0;
+   reg [19:0]  tx_f19_data=0;
    reg 	       tx_f19_src_rdy = 0;
    wire        tx_f19_dst_rdy;
-   wire [35:0] rx_f36_data;
-   wire        rx_f36_src_rdy;
-   wire        rx_f36_dst_rdy = 1;
+   wire [35:0] rx_f19_data;
+   wire        rx_f19_src_rdy;
+   wire        rx_f19_dst_rdy = 1;
    
    simple_gemac_wrapper19 simple_gemac_wrapper19
      (.clk125(eth_clk),  .reset(reset),
@@ -59,7 +59,7 @@ module simple_gemac_wrapper19_tb;
       .GMII_RX_ER(GMII_RX_ER), .GMII_RXD(GMII_RXD),
       //.pause_req(pause_req), .pause_time(pause_time),
 
-      .sys_clk(sys_clk), .rx_f36_data(rx_f36_data), .rx_f36_src_rdy(rx_f36_src_rdy), .rx_f36_dst_rdy(rx_f36_dst_rdy),
+      .sys_clk(sys_clk), .rx_f19_data(rx_f19_data), .rx_f19_src_rdy(rx_f19_src_rdy), .rx_f19_dst_rdy(rx_f19_dst_rdy),
       .tx_f19_data(tx_f19_data), .tx_f19_src_rdy(tx_f19_src_rdy), .tx_f19_dst_rdy(tx_f19_dst_rdy),
 
       .wb_clk(wb_clk), .wb_rst(wb_rst), .wb_stb(wb_stb), .wb_cyc(wb_cyc), .wb_ack(wb_ack), .wb_we(wb_we),
