@@ -197,6 +197,9 @@ template <typename T> static const byte_vector_t to_bytes(const T &item){
     );
 }
 
+#define sizeof_member(struct_name, member_name) \
+    sizeof(reinterpret_cast<struct_name*>(NULL)->member_name)
+
 static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     const size_t num_bytes = offsetof(e100_eeprom_map, model);
     byte_vector_t map_bytes = iface.read_eeprom(E100_EEPROM_ADDR, 0, num_bytes);
@@ -208,7 +211,7 @@ static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     mb_eeprom["content"] = boost::lexical_cast<std::string>(unsigned(map.content));
 
     #define load_e100_string_xx(key) mb_eeprom[#key] = bytes_to_string(iface.read_eeprom( \
-        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, key), sizeof(e100_eeprom_map::key) \
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, key), sizeof_member(e100_eeprom_map, key) \
     ));
 
     load_e100_string_xx(model);
@@ -242,7 +245,7 @@ static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     #define store_e100_string_xx(key) if (mb_eeprom.has_key(#key)) iface.write_eeprom( \
         E100_EEPROM_ADDR, offsetof(e100_eeprom_map, key), \
-        string_to_bytes(mb_eeprom[#key], sizeof(e100_eeprom_map::key)) \
+        string_to_bytes(mb_eeprom[#key], sizeof_member(e100_eeprom_map, key)) \
     );
 
     store_e100_string_xx(model);
