@@ -89,3 +89,25 @@ Windows - install driver
 On Windows, a driver must be installed the first time the USRP1 is attached to the host computer.
 A download link for this driver can be found on the UHD wiki page.
 Download and unpack the driver, and direct the Windows driver install wizard to the .inf file.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Hardware setup notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+------------------------------------------------------------------------
+External Clock Modification
+------------------------------------------------------------------------
+The USRP can be modified to accept an external clock reference instead of the 64MHz onboard reference.
+ * Solder SMA (LTI-SASF54GT) connector to J2001
+ * Move 0 ohm 0603 resistor R2029 to R2930
+ * Move 0.01uF 0603 capacitor C929 to C926
+ * Remove 0.01uF 0603 capacitor C924
+
+The new external clock needs to be a square wave between +7dBm and +15dBm
+
+To configure UHD for the new reference clock, modify host/lib/usrp/usrp1/clock_ctrl.cpp:
+
+::
+
+    static const double master_clock_rate = <YOUR_NEW_REFERENCE_FREQUENCY>;
+
