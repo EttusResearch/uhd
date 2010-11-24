@@ -48,10 +48,13 @@ public:
             regs = usrp2_get_regs(false);
             break;
 
-        case USRP_NXXX:
         case USRP_N200:
         case USRP_N210:
             regs = usrp2_get_regs(true);
+            break;
+
+        case USRP_NXXX: //fallthough case is old register map (USRP2)
+            regs = usrp2_get_regs(false);
             break;
         }
 
@@ -262,7 +265,8 @@ public:
 
     rev_type get_rev(void){
         switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"])){
-        case 0x0300: return USRP2_REV3;
+        case 0x0300:
+        case 0x0301: return USRP2_REV3;
         case 0x0400: return USRP2_REV4;
         case 0x0A00: return USRP_N200;
         case 0x0A01: return USRP_N210;
