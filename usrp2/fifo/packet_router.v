@@ -365,7 +365,7 @@ module packet_router
     localparam COM_INSP_DEST_FP_OTHER = 1;
     localparam COM_INSP_DEST_SP_BOTH = 2;
 
-    localparam COM_INSP_MAX_NUM_DREGS = 12; //padded_eth + ip + udp + vrt_hdr
+    localparam COM_INSP_MAX_NUM_DREGS = 13; //padded_eth + ip + udp + seq + vrt_hdr
     localparam COM_INSP_DREGS_DSP_OFFSET = 11; //offset to start dsp at
 
     //output inspector interfaces
