@@ -70,27 +70,20 @@ module packet_router
     //    - handshake lines for the CPU communication
     //    - setting registers to program the inspector
     ////////////////////////////////////////////////////////////////////
-    reg cpu_out_hs_ctrl;
-    reg cpu_inp_hs_ctrl;
-    reg master_mode_flag;
-    reg [BUF_SIZE-1:0] cpu_inp_line_count;
 
     //setting register to misc control + handshakes
     wire [31:0] control;
-    wire control_changed;
     setting_reg #(.my_addr(CTRL_BASE)) sreg_ctrl(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(control),.changed(control_changed)
+        .out(control),.changed()
     );
 
-    //grab the pertinent control settings
-    always @(posedge control_changed) begin
-        cpu_out_hs_ctrl <= control[0];
-        cpu_inp_hs_ctrl <= control[1];
-        master_mode_flag <= control[2];
-        cpu_inp_line_count <= control[BUF_SIZE-1+16:0+16];
-    end
+    //connect the pertinent control settings
+    wire cpu_out_hs_ctrl = control[0];
+    wire cpu_inp_hs_ctrl = control[1];
+    wire master_mode_flag = control[2];
+    wire [BUF_SIZE-1:0] cpu_inp_line_count = control[BUF_SIZE-1+16:0+16];
 
     //setting register to program the IP address
     wire [31:0] my_ip_addr;
