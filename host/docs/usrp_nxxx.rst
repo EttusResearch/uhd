@@ -228,19 +228,27 @@ The LEDs reveal the following about the state of the device:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Ref Clock - 10MHz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Using an external 10MHz reference clock requires a signal level between
-+5dBm and +20dBm at 10MHz applied to the Ref Clock SMA port on the front panel.
+Using an external 10MHz reference clock, square wave will offer the best phase
+noise performance, but sinusoid is acceptable.  The reference clock requires the following power level:
+
+* **USRP2** 5 to 15dBm
+* **N2XX** 0 to 15dBm
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PPS - Pulse Per Second
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Using a PPS signal for timestamp synchronization requires a 5Vpp square wave signal
+Using a PPS signal for timestamp synchronization requires a square wave signal with the following amplitude:
 
-Test the PPS input of the USRP2 with the following app:
+* **USRP2** 5Vpp
+* **N2XX** 3.3 to 5Vpp
+
+Test the PPS input with the following app:
+
+* <args> are device address arguments (optional if only one USRP is on your machine)
+
 ::
 
     cd <prefix>/share/uhd/examples
     ./test_pps_input --args=<args>
 
-* <args> are device address arguments (optional if only one USRP is on your machine)
