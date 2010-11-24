@@ -17,8 +17,6 @@
 
 #include "pkt_ctrl.h"
 #include "memory_map.h"
-#include <stdint.h>
-#include <stdbool.h>
 #include <nonstdio.h>
 
 static void set_control(uint32_t value, uint32_t mask){
@@ -47,15 +45,11 @@ static bool is_status_bit_set(int bit){
 #define MODE_BIT 2
 #define CLR_BIT 8
 
-void pkt_ctrl_register_ip_addr(const struct ip_addr *ip_addr){
-    //program in the ip addr
-    set_control(0x1 << 4, 0x3 << 4);
-    set_control((ip_addr->addr & 0x0000ffff) << 16, 0xffff << 16);
-    set_control(0x2 << 4, 0x3 << 4);
-    set_control((ip_addr->addr & 0xffff0000) << 0,  0xffff << 16);
-
-    //clear cmd
-    set_control(0x0, 0x3 << 4);
+void pkt_ctrl_program_inspector(
+    const struct ip_addr *ip_addr, uint16_t dsp_udp_port
+){
+    buffer_pool_ctrl->ip_addr = ip_addr->addr;
+    buffer_pool_ctrl->udp_ports = dsp_udp_port;
 }
 
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){

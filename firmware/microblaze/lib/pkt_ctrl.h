@@ -19,6 +19,8 @@
 #define INCLUDED_PKT_CTRL_H
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <lwip/ip_addr.h>
 
 typedef enum {
@@ -26,8 +28,10 @@ typedef enum {
     PKT_CTRL_ROUTING_MODE_MASTER,
 } pkt_ctrl_routing_mode_t;
 
-//! Register the IP address into the router
-void pkt_ctrl_register_ip_addr(const struct ip_addr *ip_addr);
+//! Program the decision values into the packet inspector
+void pkt_ctrl_program_inspector(
+    const struct ip_addr *ip_addr, uint16_t dsp_udp_port
+);
 
 //! Set the routing mode for this device
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode);

@@ -274,6 +274,8 @@ hwconfig_wishbone_divisor(void)
 
 typedef struct {
   volatile uint32_t ctrl;
+  volatile uint32_t ip_addr;
+  volatile uint32_t udp_ports; //dsp0 (low 16) dsp1 (high 16)
 } buffer_pool_ctrl_t;
 
 #define buffer_pool_ctrl ((buffer_pool_ctrl_t *) BUFFER_POOL_CTRL_BASE)
