@@ -2,7 +2,7 @@ module packet_router
     #(
         parameter BUF_SIZE = 9,
         parameter UDP_BASE = 0,
-        parameter STATUS_BASE = 0
+        parameter CTRL_BASE = 0
     )
     (
         //wishbone interface for memory mapped CPU frames
@@ -54,38 +54,31 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
     // CPU interface to this packet router
     ////////////////////////////////////////////////////////////////////
-    wire [35:0] cpu_inp_data;
-    wire        cpu_inp_valid;
-    wire        cpu_inp_ready;
-    wire [35:0] cpu_out_data;
-    wire        cpu_out_valid;
-    wire        cpu_out_ready;
+    wire [35:0] cpu_inp_data,  cpu_out_data;
+    wire        cpu_inp_valid, cpu_out_valid;
+    wire        cpu_inp_ready, cpu_out_ready;
 
     ////////////////////////////////////////////////////////////////////
     // Communication interfaces
     ////////////////////////////////////////////////////////////////////
-    wire [35:0] com_inp_data;
-    wire        com_inp_valid;
-    wire        com_inp_ready;
-    wire [35:0] com_out_data;
-    wire        com_out_valid;
-    wire        com_out_ready;
-    wire [35:0] udp_out_data;
-    wire        udp_out_valid;
-    wire        udp_out_ready;
+    wire [35:0] com_inp_data,  com_out_data,  udp_out_data;
+    wire        com_inp_valid, com_out_valid, udp_out_valid;
+    wire        com_inp_ready, com_out_ready, udp_out_ready;
 
     ////////////////////////////////////////////////////////////////////
-    // status and control handshakes
+    // Control signals (setting registers and status signals)
+    //    - handshake lines for the CPU communication
+    //    - setting registers to program the inspector
     ////////////////////////////////////////////////////////////////////
     reg cpu_out_hs_ctrl;
     reg cpu_inp_hs_ctrl;
     reg master_mode_flag;
     reg [BUF_SIZE-1:0] cpu_inp_line_count;
-    reg [31:0] my_ip_addr;
 
+    //setting register to misc control + handshakes
     wire [31:0] control;
     wire control_changed;
-    setting_reg #(.my_addr(STATUS_BASE)) sreg(
+    setting_reg #(.my_addr(CTRL_BASE)) sreg_ctrl(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
         .out(control),.changed(control_changed)
@@ -97,20 +90,29 @@ module packet_router
         cpu_inp_hs_ctrl <= control[1];
         master_mode_flag <= control[2];
         cpu_inp_line_count <= control[BUF_SIZE-1+16:0+16];
-        case (control[5:4])
-        2'b01:
-            my_ip_addr[15:0] <= control[31:16];
-        2'b10:
-            my_ip_addr[31:16] <= control[31:16];
-        endcase
     end
 
+    //setting register to program the IP address
+    wire [31:0] my_ip_addr;
+    setting_reg #(.my_addr(CTRL_BASE+1)) sreg_ip_addr(
+        .clk(stream_clk),.rst(stream_rst),
+        .strobe(set_stb),.addr(set_addr),.in(set_data),
+        .out(my_ip_addr),.changed()
+    );
+
+    //setting register to program the UDP data ports
+    wire [15:0] dsp0_udp_port, dsp1_udp_port;
+    setting_reg #(.my_addr(CTRL_BASE+2)) sreg_udp_ports(
+        .clk(stream_clk),.rst(stream_rst),
+        .strobe(set_stb),.addr(set_addr),.in(set_data),
+        .out({dsp1_udp_port, dsp0_udp_port}),.changed()
+    );
+
+    //assign status output signals
     wire cpu_out_hs_stat;
     assign status[0] = cpu_out_hs_stat;
-
     wire [BUF_SIZE-1:0] cpu_out_line_count;
     assign status[BUF_SIZE-1+16:0+16] = cpu_out_line_count;
-
     wire cpu_inp_hs_stat;
     assign status[1] = cpu_inp_hs_stat;
 
@@ -400,10 +402,10 @@ module packet_router
 
     //Inspection logic:
     wire com_inp_dregs_is_data = 1'b1
-        && (com_insp_dregs[3][15:0] == 16'h800)    //ethertype IPv4
-        && (com_insp_dregs[6][23:16] == 8'h11)     //protocol UDP
-        && (com_insp_dregs[9][15:0] == 16'd49153)  //UDP data port
-        && (com_inp_data[31:0] != 32'h0)           //VRT hdr non-zero
+        && (com_insp_dregs[3][15:0] == 16'h800)        //ethertype IPv4
+        && (com_insp_dregs[6][23:16] == 8'h11)         //protocol UDP
+        && (com_insp_dregs[9][15:0] == dsp0_udp_port)  //UDP data port
+        && (com_inp_data[15:0] != 16'h0)               //VRT packet size
     ;
 
     wire com_inp_dregs_my_ip_match = (my_ip_addr == com_insp_dregs[8][31:0])? 1'b1 : 1'b0;

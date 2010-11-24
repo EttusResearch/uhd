@@ -365,7 +365,7 @@ module u2_core
 
    wire [31:0] router_debug;
 
-   packet_router #(.BUF_SIZE(9), .UDP_BASE(SR_UDP_SM), .STATUS_BASE(SR_BUF_POOL)) packet_router
+   packet_router #(.BUF_SIZE(9), .UDP_BASE(SR_UDP_SM), .CTRL_BASE(SR_BUF_POOL)) packet_router
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
       .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
