@@ -22,7 +22,6 @@
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include "gps_ctrl.hpp"
-#include "serdes_ctrl.hpp"
 #include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
@@ -105,7 +104,6 @@ private:
     usrp2_iface::sptr _iface;
     usrp2_clock_ctrl::sptr _clock_ctrl;
     usrp2_codec_ctrl::sptr _codec_ctrl;
-    usrp2_serdes_ctrl::sptr _serdes_ctrl;
     usrp2_gps_ctrl::sptr _gps_ctrl;
 
     //properties for this mboard
