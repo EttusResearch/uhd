@@ -59,9 +59,9 @@ void usrp_e100_impl::update_clock_config(void){
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
-    case clock_config_t::REF_AUTO: _clock_ctrl->use_auto_ref();
-    case clock_config_t::REF_INT: _clock_ctrl->use_internal_ref();
-    case clock_config_t::REF_SMA: _clock_ctrl->use_external_ref();
+    case clock_config_t::REF_AUTO: _clock_ctrl->use_auto_ref(); break;
+    case clock_config_t::REF_INT: _clock_ctrl->use_internal_ref(); break;
+    case clock_config_t::REF_SMA: _clock_ctrl->use_auto_ref(); break;
     default: throw std::runtime_error("unhandled clock configuration ref source");
     }
 }
