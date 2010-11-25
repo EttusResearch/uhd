@@ -33,8 +33,8 @@ extern "C" {
 #endif
 
 //fpga and firmware compatibility numbers
-#define USRP2_FPGA_COMPAT_NUM 3
-#define USRP2_FW_COMPAT_NUM 7
+#define USRP2_FPGA_COMPAT_NUM 4
+#define USRP2_FW_COMPAT_NUM 8
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
