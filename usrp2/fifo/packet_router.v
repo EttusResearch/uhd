@@ -122,6 +122,7 @@ module packet_router
     assign status[BUF_SIZE-1+16:0+16] = cpu_out_line_count;
     wire cpu_inp_hs_stat;
     assign status[1] = cpu_inp_hs_stat;
+    assign status[8] = master_mode_flag; //for the host to readback
 
     ////////////////////////////////////////////////////////////////////
     // Communication input source crossbar
