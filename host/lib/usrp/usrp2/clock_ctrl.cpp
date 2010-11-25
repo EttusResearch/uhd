@@ -66,13 +66,11 @@ public:
         this->enable_external_ref(false);
         this->enable_rx_dboard_clock(false);
         this->enable_tx_dboard_clock(false);
+        this->enable_mimo_clock_out(false);
 
         /* private clock enables, must be set here */
         this->enable_dac_clock(true);
         this->enable_adc_clock(true);
-
-        /* always driving the mimo reference */
-        this->enable_mimo_clock_out(true);
     }
 
     ~usrp2_clock_ctrl_impl(void){

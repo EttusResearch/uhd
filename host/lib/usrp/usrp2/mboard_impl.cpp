@@ -154,7 +154,6 @@ void usrp2_mboard_impl::update_clock_config(void){
     //translate pps source enums
     switch(_clock_config.pps_source){
     case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
-    case clock_config_t::PPS_MIMO: pps_flags |= U2_FLAG_TIME64_PPS_MIMO; break;
     default: throw std::runtime_error("unhandled clock configuration pps source");
     }
 
@@ -175,7 +174,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
@@ -186,7 +184,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
@@ -194,6 +191,16 @@ void usrp2_mboard_impl::update_clock_config(void){
 
     case usrp2_iface::USRP_NXXX: break;
     }
+
+    //Handle the serdes clocking based on master/slave mode:
+    //   - Masters always drive the clock over serdes.
+    //   - Slaves always lock to this serdes clock.
+    //   - Slaves lock their time over the serdes.
+    const bool master_mode = bool(_iface->peek32(_iface->regs.status) & (1 << 8));
+    _clock_ctrl->enable_mimo_clock_out(master_mode);
+    if (not master_mode) _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
+    //TODO slaves lock time over the serdes...
+
 }
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
