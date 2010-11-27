@@ -63,10 +63,10 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, float);
     float read_aux_adc(unit_t, aux_adc_t);
 
-    void set_pin_ctrl(unit_t, boost::uint16_t);
-    void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
-    void set_gpio_ddr(unit_t, boost::uint16_t);
-    void write_gpio(unit_t, boost::uint16_t);
+    void _set_pin_ctrl(unit_t, boost::uint16_t);
+    void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
+    void _set_gpio_ddr(unit_t, boost::uint16_t);
+    void _set_gpio_out(unit_t, boost::uint16_t);
     void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
 
@@ -148,7 +148,7 @@ double usrp_e100_dboard_iface::get_codec_rate(unit_t){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp_e100_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value){
+void usrp_e100_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value){
     UHD_ASSERT_THROW(GPIO_SEL_ATR == 1); //make this assumption
     switch(unit){
     case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_SEL, value); return;
@@ -156,14 +156,14 @@ void usrp_e100_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value){
     }
 }
 
-void usrp_e100_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value){
+void usrp_e100_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value){
     switch(unit){
     case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_DDR, value); return;
     case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_DDR, value); return;
     }
 }
 
-void usrp_e100_dboard_iface::write_gpio(unit_t unit, boost::uint16_t value){
+void usrp_e100_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value){
     switch(unit){
     case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_IO, value); return;
     case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_IO, value); return;
@@ -178,7 +178,7 @@ boost::uint16_t usrp_e100_dboard_iface::read_gpio(unit_t unit){
     }
 }
 
-void usrp_e100_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
+void usrp_e100_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
     //define mapping of unit to atr regs to register address
     static const uhd::dict<
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>

@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_USRP_DBOARD_IFACE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/pimpl.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
@@ -114,38 +115,83 @@ public:
 
     /*!
      * Set a daughterboard output pin control source.
-     * By default, the outputs are all GPIO controlled.
      *
      * \param unit which unit rx or tx
      * \param value 16-bits, 0=GPIO controlled, 1=ATR controlled
+     * \param mask 16-bits, 0=do not change, 1=change value
      */
-    virtual void set_pin_ctrl(unit_t unit, boost::uint16_t value) = 0;
+    virtual void set_pin_ctrl(
+        unit_t unit, boost::uint16_t value, boost::uint16_t mask = 0xffff
+    );
+
+    /*!
+     * Read back the pin control setting.
+     *
+     * \param unit which unit rx or tx
+     * \return the 16-bit settings value
+     */
+    virtual boost::uint16_t get_pin_ctrl(unit_t unit);
 
     /*!
      * Set a daughterboard ATR register.
      *
      * \param unit which unit rx or tx
-     * \param reg which ATR register to set
+     * \param reg which ATR register
      * \param value 16-bits, 0=ATR output low, 1=ATR output high
+     * \param mask 16-bits, 0=do not change, 1=change value
      */
-    virtual void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint16_t value) = 0;
+    virtual void set_atr_reg(
+        unit_t unit, atr_reg_t reg, boost::uint16_t value, boost::uint16_t mask = 0xffff
+    );
 
     /*!
-     * Set daughterboard GPIO data direction register.
-     * By default, the GPIO pins are all inputs.
+     * Read back an ATR register setting.
+     *
+     * \param unit which unit rx or tx
+     * \param reg which ATR register
+     * \return the 16-bit settings value
+     */
+    virtual boost::uint16_t get_atr_reg(unit_t unit, atr_reg_t reg);
+
+    /*!
+     * Set daughterboard GPIO data direction setting.
      *
      * \param unit which unit rx or tx
      * \param value 16-bits, 0=GPIO input, 1=GPIO output
+     * \param mask 16-bits, 0=do not change, 1=change value
      */
-    virtual void set_gpio_ddr(unit_t unit, boost::uint16_t value) = 0;
+    virtual void set_gpio_ddr(
+        unit_t unit, boost::uint16_t value, boost::uint16_t mask = 0xffff
+    );
 
     /*!
-     * Read daughterboard GPIO pin values.
+     * Read back the GPIO data direction setting.
+     *
+     * \param unit which unit rx or tx
+     * \return the 16-bit settings value
+     */
+    virtual boost::uint16_t get_gpio_ddr(unit_t unit);
+
+    /*!
+     * Set daughterboard GPIO pin output setting.
      *
      * \param unit which unit rx or tx
      * \param value 16-bits, 0=GPIO output low, 1=GPIO output high
+     * \param mask 16-bits, 0=do not change, 1=change value
      */
-    virtual void write_gpio(unit_t unit, boost::uint16_t value) = 0;
+    virtual void set_gpio_out(
+        unit_t unit, boost::uint16_t value, boost::uint16_t mask = 0xffff
+    );
+
+    /*!
+     * Read back the GPIO pin output setting.
+     *
+     * \param unit which unit rx or tx
+     * \return the 16-bit settings value
+     */
+    virtual boost::uint16_t get_gpio_out(unit_t unit);
+
+    UHD_DEPRECATED void write_gpio(unit_t unit, boost::uint16_t value){set_gpio_out(unit, value);}
 
     /*!
      * Setup the GPIO debug mux.
@@ -251,6 +297,18 @@ public:
      * \return the codec rate in Hz
      */
     virtual double get_codec_rate(unit_t unit) = 0;
+
+private:
+    UHD_PIMPL_DECL(impl) _impl;
+
+    virtual void _set_pin_ctrl(unit_t unit, boost::uint16_t value) = 0;
+    virtual void _set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint16_t value) = 0;
+    virtual void _set_gpio_ddr(unit_t unit, boost::uint16_t value) = 0;
+    virtual void _set_gpio_out(unit_t unit, boost::uint16_t value) = 0;
+
+protected:
+    dboard_iface(void);
+
 };
 
 }} //namespace
