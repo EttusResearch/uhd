@@ -75,10 +75,10 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, float);
     float read_aux_adc(unit_t, aux_adc_t);
 
-    void set_pin_ctrl(unit_t, boost::uint16_t);
-    void set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
-    void set_gpio_ddr(unit_t, boost::uint16_t);
-    void write_gpio(unit_t, boost::uint16_t);
+    void _set_pin_ctrl(unit_t, boost::uint16_t);
+    void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
+    void _set_gpio_ddr(unit_t, boost::uint16_t);
+    void _set_gpio_out(unit_t, boost::uint16_t);
     void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
 
@@ -184,7 +184,7 @@ double usrp1_dboard_iface::get_codec_rate(unit_t){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp1_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value)
+void usrp1_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value)
 {
     switch(unit) {
     case UNIT_RX:
@@ -202,7 +202,7 @@ void usrp1_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint16_t value)
     }
 }
 
-void usrp1_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value)
+void usrp1_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value)
 {
     switch(unit) {
     case UNIT_RX:
@@ -220,7 +220,7 @@ void usrp1_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint16_t value)
     }
 }
 
-void usrp1_dboard_iface::write_gpio(unit_t unit, boost::uint16_t value)
+void usrp1_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value)
 {
     switch(unit) {
     case UNIT_RX:
@@ -263,7 +263,7 @@ boost::uint16_t usrp1_dboard_iface::read_gpio(unit_t unit)
     UHD_ASSERT_THROW(false);
 }
 
-void usrp1_dboard_iface::set_atr_reg(unit_t unit,
+void usrp1_dboard_iface::_set_atr_reg(unit_t unit,
                                      atr_reg_t atr, boost::uint16_t value)
 {
     // Ignore unsupported states

@@ -21,6 +21,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_base.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_eeprom.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_id.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_iface.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_manager.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/dsp_utils.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/mboard_eeprom.cpp
