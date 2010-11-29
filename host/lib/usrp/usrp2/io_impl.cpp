@@ -195,7 +195,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
             vrt::if_hdr_unpack_be(vrt_hdr, if_packet_info);
 
             //handle the rx data stream
-            if (if_packet_info.sid == usrp2_impl::RECV_SID and if_packet_info.packet_type == vrt::if_packet_info_t::PACKET_TYPE_DATA){
+            if (if_packet_info.sid == usrp2_impl::RECV_SID){
                 //handle the packet count / sequence number
                 if (if_packet_info.packet_count != next_packet_seq){
                     //std::cerr << "S" << (if_packet_info.packet_count - next_packet_seq)%16;
@@ -211,10 +211,11 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
                 //push the packet into the buffer with the new time
                 recv_pirate_booty->push_with_pop_on_full(buff, time, index);
+                continue;
             }
 
             //handle a tx async report message
-            else if (if_packet_info.sid == usrp2_impl::ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+            if (if_packet_info.sid == usrp2_impl::ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
 
                 //fill in the async metadata
                 async_metadata_t metadata;
