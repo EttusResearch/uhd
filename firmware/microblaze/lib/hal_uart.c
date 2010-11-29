@@ -113,7 +113,7 @@ hal_uart_getc_timeout(hal_uart_name_t u)
 
 int hal_uart_rx_flush(hal_uart_name_t u)
 {
-  char x;
+  char x = 0;
   while(uart_regs[u].rxlevel) x = uart_regs[u].rxchar;
   return x;
 }
