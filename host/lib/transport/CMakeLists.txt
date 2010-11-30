@@ -26,6 +26,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/lib/transport)
 FIND_PACKAGE(USB1 REQUIRED)
 
 IF(LIBUSB_FOUND)
+    MESSAGE(STATUS "USB support enabled via libusb.")
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIR})
     LIBUHD_APPEND_LIBS(${LIBUSB_LIBRARIES})
     LIBUHD_APPEND_SOURCES(
@@ -39,21 +40,18 @@ IF(LIBUSB_FOUND)
     ENDIF(MSVC)
     SET(HAVE_USB_SUPPORT TRUE)
 ELSE(LIBUSB_FOUND)
+    MESSAGE(STATUS "USB support disabled.")
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/transport/usb_dummy_impl.cpp
     )
     SET(HAVE_USB_SUPPORT FALSE)
 ENDIF(LIBUSB_FOUND)
 
-IF(HAVE_USB_SUPPORT)
-    MESSAGE(STATUS "Has USB support - found")
-ELSE(HAVE_USB_SUPPORT)
-    MESSAGE(STATUS "Has USB support - not found")
-ENDIF(HAVE_USB_SUPPORT)
-
 ########################################################################
 # Check for SIMD headers
 ########################################################################
+MESSAGE(STATUS "")
+
 INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
 
@@ -67,6 +65,7 @@ CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
 IF(HAVE_ARM_NEON_H)
     ADD_DEFINITIONS(-DHAVE_ARM_NEON_H)
 ENDIF(HAVE_ARM_NEON_H)
+
 ########################################################################
 # Setup defines for interface address discovery
 ########################################################################
