@@ -20,22 +20,11 @@
 ########################################################################
 # Conditionally configure the USRP-E100 support
 ########################################################################
-MESSAGE(STATUS "Configuring USRP-E100 support...")
-
-IF(DEFINED ENABLE_USRP_E100)
-    IF(ENABLE_USRP_E100)
-        MESSAGE(STATUS "USRP-E100 support enabled by configure flag")
-    ELSE(ENABLE_USRP_E100)
-        MESSAGE(STATUS "USRP-E100 support disabled by configure flag")
-    ENDIF(ENABLE_USRP_E100)
-ELSE(DEFINED ENABLE_USRP_E100) #not defined: automatic disabling of component
-    SET(ENABLE_USRP_E100 FALSE)
-ENDIF(DEFINED ENABLE_USRP_E100)
-SET(ENABLE_USRP_E100 ${ENABLE_USRP_E100} CACHE BOOL "enable USRP-E100 support")
+LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 FALSE)
 
 IF(ENABLE_USRP_E100)
-    MESSAGE(STATUS "  Building USRP-E100 support.")
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
+
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/clock_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/clock_ctrl.hpp
@@ -55,6 +44,4 @@ IF(ENABLE_USRP_E100)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_mmap_zero_copy.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_regs.hpp
     )
-ELSE(ENABLE_USRP_E100)
-    MESSAGE(STATUS "  Skipping USRP-E100 support.")
 ENDIF(ENABLE_USRP_E100)

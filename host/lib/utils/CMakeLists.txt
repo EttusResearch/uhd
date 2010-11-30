@@ -20,6 +20,7 @@
 ########################################################################
 # Setup defines for process scheduling
 ########################################################################
+MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring priority scheduling...")
 
 INCLUDE(CheckCXXSourceCompiles)
@@ -56,6 +57,7 @@ ENDIF(HAVE_PTHREAD_SETSCHEDPARAM)
 ########################################################################
 # Setup defines for module loading
 ########################################################################
+MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring module loading...")
 
 INCLUDE(CheckIncludeFileCXX)

@@ -35,6 +35,7 @@ SET(manual_sources
 ########################################################################
 # Setup Manual
 ########################################################################
+MESSAGE(STATUS "")
 MESSAGE(STATUS "Checking for rst2html (docutils)")
 FIND_PROGRAM(RST2HTML rst2html)
 IF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
@@ -79,6 +80,8 @@ INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst)
 ########################################################################
 # Setup Doxygen
 ########################################################################
+MESSAGE(STATUS "")
+MESSAGE(STATUS "Checking for doxygen")
 INCLUDE(FindDoxygen)
 
 IF(DOXYGEN_FOUND)

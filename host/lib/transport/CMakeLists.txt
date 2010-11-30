@@ -20,6 +20,8 @@
 ########################################################################
 # Setup libusb
 ########################################################################
+MESSAGE(STATUS "")
+MESSAGE(STATUS "Configuring USB support...")
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/lib/transport)
 FIND_PACKAGE(USB1 REQUIRED)
 
@@ -67,6 +69,7 @@ ENDIF(HAVE_ARM_NEON_H)
 ########################################################################
 # Setup defines for interface address discovery
 ########################################################################
+MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring interface address discovery...")
 
 INCLUDE(CheckIncludeFileCXX)

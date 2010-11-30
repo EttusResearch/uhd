@@ -20,18 +20,7 @@
 ########################################################################
 # Conditionally configure the USRP1 support
 ########################################################################
-MESSAGE(STATUS "Configuring USRP1 support...")
-
-IF(DEFINED ENABLE_USRP1)
-    IF(ENABLE_USRP1)
-        MESSAGE(STATUS "USRP1 support enabled by configure flag")
-    ELSE(ENABLE_USRP1)
-        MESSAGE(STATUS "USRP1 support disabled by configure flag")
-    ENDIF(ENABLE_USRP1)
-ELSE(DEFINED ENABLE_USRP1) #not defined: automatic enabling of component
-    SET(ENABLE_USRP1 ${HAVE_USB_SUPPORT})
-ENDIF(DEFINED ENABLE_USRP1)
-SET(ENABLE_USRP1 ${ENABLE_USRP1} CACHE BOOL "enable USRP1 support")
+LIBUHD_REGISTER_COMPONENT("USRP1" ENABLE_USRP1 ${HAVE_USB_SUPPORT})
 
 #sanity check when USRP1 support enabled
 IF(ENABLE_USRP1 AND NOT HAVE_USB_SUPPORT)
@@ -39,7 +28,6 @@ IF(ENABLE_USRP1 AND NOT HAVE_USB_SUPPORT)
 ENDIF(ENABLE_USRP1 AND NOT HAVE_USB_SUPPORT)
 
 IF(ENABLE_USRP1)
-    MESSAGE(STATUS "  Building USRP1 support.")
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
 
     LIBUHD_APPEND_SOURCES(
@@ -60,6 +48,4 @@ IF(ENABLE_USRP1)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.hpp
     )
-ELSE(ENABLE_USRP1)
-    MESSAGE(STATUS "  Skipping USRP1 support.")
 ENDIF(ENABLE_USRP1)

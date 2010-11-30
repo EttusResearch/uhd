@@ -25,6 +25,7 @@ SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
 ########################################################################
 # Find GIT to get repo information
 ########################################################################
+MESSAGE(STATUS "")
 MESSAGE(STATUS "Checking for git")
 FIND_PROGRAM(GIT git)
 IF(${GIT} STREQUAL "GIT-NOTFOUND")

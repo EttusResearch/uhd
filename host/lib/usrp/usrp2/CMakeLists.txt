@@ -20,21 +20,9 @@
 ########################################################################
 # Conditionally configure the USRP2 support
 ########################################################################
-MESSAGE(STATUS "Configuring USRP2 support...")
-
-IF(DEFINED ENABLE_USRP2)
-    IF(ENABLE_USRP2)
-        MESSAGE(STATUS "USRP2 support enabled by configure flag")
-    ELSE(ENABLE_USRP2)
-        MESSAGE(STATUS "USRP2 support disabled by configure flag")
-    ENDIF(ENABLE_USRP2)
-ELSE(DEFINED ENABLE_USRP2) #not defined: automatic enabling of component
-    SET(ENABLE_USRP2 TRUE)
-ENDIF(DEFINED ENABLE_USRP2)
-SET(ENABLE_USRP2 ${ENABLE_USRP2} CACHE BOOL "enable USRP2 support")
+LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 TRUE)
 
 IF(ENABLE_USRP2)
-    MESSAGE(STATUS "  Building USRP2 support.")
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.cpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.hpp
@@ -57,6 +45,4 @@ IF(ENABLE_USRP2)
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.hpp
         ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.cpp
     )
-ELSE(ENABLE_USRP2)
-    MESSAGE(STATUS "  Skipping USRP2 support.")
 ENDIF(ENABLE_USRP2)
