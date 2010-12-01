@@ -180,6 +180,9 @@ namespace uhd{
         return ss.str();
     }
 
+    UHD_EXIM_TMPL template struct UHD_API meta_range_t<float>;
+    UHD_EXIM_TMPL template struct UHD_API meta_range_t<double>;
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_RANGES_IPP */

@@ -56,17 +56,17 @@
     #define UHD_HELPER_DLL_IMPORT __declspec(dllimport)
     #define UHD_HELPER_DLL_EXPORT __declspec(dllexport)
     #define UHD_HELPER_DLL_LOCAL
-    #define UHD_HELPER_EXIMP_TMPL
+    #define UHD_HELPER_EXIM_TMPL
 #elif defined(__GNUG__) && __GNUG__ >= 4
     #define UHD_HELPER_DLL_IMPORT __attribute__ ((visibility("default")))
     #define UHD_HELPER_DLL_EXPORT __attribute__ ((visibility("default")))
     #define UHD_HELPER_DLL_LOCAL  __attribute__ ((visibility("hidden")))
-    #define UHD_HELPER_EXIMP_TMPL extern
+    #define UHD_HELPER_EXIM_TMPL extern
 #else
     #define UHD_HELPER_DLL_IMPORT
     #define UHD_HELPER_DLL_EXPORT
     #define UHD_HELPER_DLL_LOCAL
-    #define UHD_HELPER_EXIMP_TMPL extern
+    #define UHD_HELPER_EXIM_TMPL extern
 #endif
 
 // Now we use the generic helper definitions above to define UHD_API and UHD_LOCAL.
@@ -78,16 +78,16 @@
 #ifdef UHD_DLL // defined if UHD is compiled as a DLL
     #ifdef UHD_DLL_EXPORTS // defined if we are building the UHD DLL (instead of using it)
         #define UHD_API UHD_HELPER_DLL_EXPORT
-        #define UHD_EXIMP_TMPL UHD_HELPER_EXIMP_TMPL
+        #define UHD_EXIM_TMPL UHD_HELPER_EXIM_TMPL
     #else
         #define UHD_API UHD_HELPER_DLL_IMPORT
-        #define UHD_EXIMP_TMPL
+        #define UHD_EXIM_TMPL
     #endif // UHD_DLL_EXPORTS
     #define UHD_LOCAL UHD_HELPER_DLL_LOCAL
 #else // UHD_DLL is not defined: this means UHD is a static lib.
     #define UHD_API
     #define UHD_LOCAL
-    #define UHD_EXIMP_TMPL
+    #define UHD_EXIM_TMPL
 #endif // UHD_DLL
 
 // Define force inline macro
