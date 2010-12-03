@@ -81,7 +81,7 @@
         #define UHD_EXIM_TMPL UHD_HELPER_EXIM_TMPL
     #else
         #define UHD_API UHD_HELPER_DLL_IMPORT
-        #define UHD_EXIM_TMPL
+        #define UHD_EXIM_TMPL UHD_HELPER_EXIM_TMPL
     #endif // UHD_DLL_EXPORTS
     #define UHD_LOCAL UHD_HELPER_DLL_LOCAL
 #else // UHD_DLL is not defined: this means UHD is a static lib.
