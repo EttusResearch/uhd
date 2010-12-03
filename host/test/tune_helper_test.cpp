@@ -19,6 +19,7 @@
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dsp_props.hpp>
+#include <uhd/usrp/dsp_utils.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -165,6 +166,7 @@ private:
         switch(key.as<dsp_prop_t>()){
         case DSP_PROP_FREQ_SHIFT:
             _freq_shift = val.as<double>();
+            dsp_type1::calc_cordic_word_and_update(_freq_shift, _codec_rate);
             return;
 
         case DSP_PROP_HOST_RATE:
