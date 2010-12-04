@@ -66,9 +66,12 @@ FOREACH(util_source ${util_share_sources})
     INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/utils)
 ENDFOREACH(util_source)
 
-INSTALL(PROGRAMS
-    usrp2_recovery.py
-    usrp2_card_burner.py
-    usrp2_card_burner_gui.py
-    DESTINATION ${PKG_DATA_DIR}/utils
-)
+IF(ENABLE_USRP2)
+    INSTALL(PROGRAMS
+        usrp2_recovery.py
+        usrp2_card_burner.py
+        usrp2_card_burner_gui.py
+        usrp_n2xx_net_burner.py
+        DESTINATION ${PKG_DATA_DIR}/utils
+    )
+ENDIF(ENABLE_USRP2)
