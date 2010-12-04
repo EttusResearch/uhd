@@ -46,6 +46,7 @@ IF(ENABLE_USRP1)
 ENDIF(ENABLE_USRP1)
 
 IF(ENABLE_USRP_E100)
+    ENABLE_LANGUAGE(C)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
     LIST(APPEND util_share_sources
         fpga-downloader.cpp

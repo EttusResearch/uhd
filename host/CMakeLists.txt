@@ -16,7 +16,7 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD CXX C)
+PROJECT(UHD CXX)
 ENABLE_TESTING()
 
 ########################################################################
