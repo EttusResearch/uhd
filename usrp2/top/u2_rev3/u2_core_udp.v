@@ -308,18 +308,26 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////
    // Processor
-   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
-     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
-	   // Instruction Wishbone bus to I-RAM
-	   .if_adr(if_adr),
-	   .if_dat(if_dat),
+//   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
+//     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
+//	   // Instruction Wishbone bus to I-RAM
+//	   .if_adr(if_adr),
+//	   .if_dat(if_dat),
+//	   // Data Wishbone bus to system bus fabric
+//	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
+//	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
+//	   // Interrupts and exceptions
+//	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
+
+   //assign 	 bus_error = m0_err | m0_rty;
+
+   zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(1'b1),
 	   // Data Wishbone bus to system bus fabric
-	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
-	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
+	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
+	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
-   
-   assign 	 bus_error = m0_err | m0_rty;
+	   .interrupt(proc_int));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
