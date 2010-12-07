@@ -321,13 +321,14 @@ module u2_core
 
    //assign 	 bus_error = m0_err | m0_rty;
 
+   wire [63:0] zpu_status;
    zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
      zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(1'b1),
 	   // Data Wishbone bus to system bus fabric
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .interrupt(proc_int));
+	   .zpu_status(zpu_status), .interrupt(proc_int));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
