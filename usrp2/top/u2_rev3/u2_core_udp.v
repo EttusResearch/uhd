@@ -3,7 +3,7 @@
 // ////////////////////////////////////////////////////////////////////////////////
 
 module u2_core
-  #(parameter RAM_SIZE=32768)
+  #(parameter RAM_SIZE=16384, parameter RAM_AW=14)
   (// Clocks
    input dsp_clk,
    input wb_clk,
@@ -292,7 +292,7 @@ module u2_core
    wire [3:0] 	 ram_loader_sel;
    wire 	 ram_loader_stb, ram_loader_we;
    wire 	 iwb_ack, iwb_stb;
-   ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
+   ram_loader #(.AWIDTH(aw),.RAM_SIZE(RAM_SIZE))
      ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
 		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
 		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
@@ -334,10 +334,10 @@ module u2_core
    // I-port connects directly to processor and ram loader
 
    wire 	 flush_icache;
-   ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
+   ram_harvard #(.AWIDTH(RAM_AW),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
-	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
+	     .ram_loader_adr_i(ram_loader_adr[RAM_AW-1:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
 	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
@@ -345,7 +345,7 @@ module u2_core
 	     .if_adr(if_adr), 
 	     .if_data(if_dat), 
 	     
-	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+	     .dwb_adr_i(s0_adr[RAM_AW-1:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
 	     .flush_icache(flush_icache));
    
