@@ -39,7 +39,7 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 package wishbone_pkg is
 
 	type wishbone_bus_in is record
-		adr			: std_logic_vector(31 downto 0); 
+		adr			: std_logic_vector(15 downto 0); 
 		sel			: std_logic_vector(3 downto 0); 
 		we			: std_logic;
 		dat			: std_logic_vector(31 downto 0); 	-- Note! Data written with 'we'

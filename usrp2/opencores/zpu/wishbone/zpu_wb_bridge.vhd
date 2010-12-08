@@ -68,7 +68,7 @@ begin
 	mem_read <= zpu_wb_i.dat;
 	mem_ack <= zpu_wb_i.ack;
 	
-	zpu_wb_o.adr <= "000000" & out_mem_addr(27) & out_mem_addr(24 downto 0);
+	zpu_wb_o.adr <= out_mem_addr;
 	zpu_wb_o.dat <= mem_write;
 	zpu_wb_o.sel <= mem_writeMask;
 	zpu_wb_o.stb <= mem_req;

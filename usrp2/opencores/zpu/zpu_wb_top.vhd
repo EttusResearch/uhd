@@ -53,7 +53,7 @@ begin
 zpu_wb_i.dat <= dat_i;
 zpu_wb_i.ack <= ack_i;
 
-adr_o <= zpu_wb_o.adr(adr_w-1 downto 0);
+adr_o <= zpu_wb_o.adr;
 sel_o <= zpu_wb_o.sel;
 we_o <= zpu_wb_o.we;
 dat_o <= zpu_wb_o.dat;
