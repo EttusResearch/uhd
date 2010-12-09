@@ -33,6 +33,8 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
+static const double CTRL_RECV_TIMEOUT = 1.0;
+
 class usrp2_iface_impl : public usrp2_iface{
 public:
 /***********************************************************************
@@ -247,7 +249,7 @@ public:
         boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
-            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem));
+            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CTRL_RECV_TIMEOUT);
             if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_FW_COMPAT_NUM){
                 throw std::runtime_error(str(boost::format(
                     "Expected protocol compatibility number %d, but got %d:\n"
@@ -260,7 +262,7 @@ public:
             if (len == 0) break; //timeout
             //didnt get seq or bad packet, continue looking...
         }
-        throw std::runtime_error(this->get_cname() + ": no control response");
+        throw std::runtime_error("no control response");
     }
 
     rev_type get_rev(void){
