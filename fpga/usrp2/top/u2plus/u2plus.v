@@ -44,7 +44,7 @@ module u2plus
    output [1:0] clk_en,
    output [1:0] clk_sel,
    input CLK_FUNC,        // FIXME is an input to control the 9510
-   input CLK_STATUS,
+   input clk_status,
 
    inout SCL, inout SDA,   // I2C
 
