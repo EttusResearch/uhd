@@ -27,6 +27,7 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
@@ -43,10 +44,76 @@ template <class T> std::string num2str(T num){
     return boost::lexical_cast<std::string>(num);
 }
 
+//! separate indexed device addresses into a vector of device addresses
+device_addrs_t sep_indexed_dev_addrs(const device_addr_t &dev_addr){
+    //------------ support old deprecated way and print warning --------
+    if (dev_addr.has_key("addr")){
+        std::vector<std::string> addrs = std::split_string(dev_addr["addr"]);
+        if (addrs.size() > 1){
+            device_addr_t fixed_dev_addr = dev_addr;
+            fixed_dev_addr.pop("addr");
+            for (size_t i = 0; i < addrs.size(); i++){
+                fixed_dev_addr[str(boost::format("addr%d") % i)] = addrs[i];
+            }
+            uhd::warning::post(
+                "addr = <space separated list of ip addresses> is deprecated.\n"
+                "To address a multi-device, use multiple <key><index> = <val>.\n"
+                "See the USRP-NXXX application notes. Two device example:\n"
+                "    addr0 = 192.168.10.2\n"
+                "    addr1 = 192.168.10.3\n"
+            );
+            return sep_indexed_dev_addrs(fixed_dev_addr);
+        }
+    }
+    //------------------------------------------------------------------
+    device_addrs_t dev_addrs;
+    BOOST_FOREACH(const std::string &key, dev_addr.keys()){
+        boost::cmatch matches;
+        if (not boost::regex_match(key.c_str(), matches, boost::regex("^(\\D+)(\\d*)$"))){
+            throw std::runtime_error("unknown key format: " + key);
+        }
+        std::string key_part(matches[1].first, matches[1].second);
+        std::string num_part(matches[2].first, matches[2].second);
+        size_t num = (num_part.empty())? 0 : boost::lexical_cast<size_t>(num_part);
+        dev_addrs.resize(std::max(num+1, dev_addrs.size()));
+        dev_addrs[num][key_part] = dev_addr[key];
+    }
+    return dev_addrs;
+}
+
+//! combine a vector in device addresses into an indexed device address
+device_addr_t combine_dev_addr_vector(const device_addrs_t &dev_addrs){
+    device_addr_t dev_addr;
+    for (size_t i = 0; i < dev_addrs.size(); i++){
+        BOOST_FOREACH(const std::string &key, dev_addrs[i].keys()){
+            dev_addr[str(boost::format("%s%d") % key % i)] = dev_addrs[i][key];
+        }
+    }
+    return dev_addr;
+}
+
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
-static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
+static device_addrs_t usrp2_find(const device_addr_t &hint_){
+    //handle the multi-device discovery
+    device_addrs_t hints = sep_indexed_dev_addrs(hint_);
+    if (hints.size() > 1){
+        device_addrs_t found_devices;
+        BOOST_FOREACH(const device_addr_t &hint_i, hints){
+            device_addrs_t found_devices_i = usrp2_find(hint_i);
+            if (found_devices_i.size() != 1) throw std::runtime_error(str(boost::format(
+                "Could not resolve device hint \"%s\" to a single device."
+            ) % hint_i.to_string()));
+            found_devices.push_back(found_devices_i[0]);
+        }
+        return device_addrs_t(1, combine_dev_addr_vector(found_devices));
+    }
+
+    //initialize the hint for a single device case
+    UHD_ASSERT_THROW(hints.size() <= 1);
+    hints.resize(1); //in case it was empty
+    device_addr_t hint = hints[0];
     device_addrs_t usrp2_addrs;
 
     //return an empty list of addresses when type is set to non-usrp2
@@ -68,16 +135,6 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
                 new_usrp2_addrs.begin(), new_usrp2_addrs.end()
             );
         }
-        return usrp2_addrs;
-    }
-
-    //if there are multiple addresses, just return good, dont test
-    std::vector<std::string> addrs = std::split_string(hint["addr"]);
-    if (addrs.size() > 1){
-        device_addr_t new_addr;
-        new_addr["type"] = "usrp2";
-        new_addr["addr"] = hint["addr"];
-        usrp2_addrs.push_back(new_addr);
         return usrp2_addrs;
     }
 
@@ -106,9 +163,8 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
             new_addr["type"] = "usrp2";
             new_addr["addr"] = ip_addr.to_string();
             //Attempt to read the name from the EEPROM and perform filtering.
-            //This operation can throw due to COMPAT mismatch. That is OK.
-            //We will allow the device to be found and the COMPAT mismatch
-            //will be thrown as an exception in the factory function.
+            //This operation can throw due to compatibility mismatch.
+            //In this case, the discovered device will be ignored.
             try{
                 mboard_eeprom_t mb_eeprom = usrp2_iface::make(
                     udp_simple::make_connected(new_addr["addr"], num2str(USRP2_UDP_CTRL_PORT))
@@ -141,17 +197,17 @@ static uhd::device_addrs_t usrp2_find(const device_addr_t &hint){
  * Make
  **********************************************************************/
 static device::sptr usrp2_make(const device_addr_t &device_addr){
-
+sep_indexed_dev_addrs(device_addr);
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
     std::vector<zero_copy_if::sptr> data_transports;
 
-    BOOST_FOREACH(const std::string &addr, std::split_string(device_addr["addr"])){
+    BOOST_FOREACH(const device_addr_t &dev_addr_i, sep_indexed_dev_addrs(device_addr)){
         ctrl_transports.push_back(udp_simple::make_connected(
-            addr, num2str(USRP2_UDP_CTRL_PORT)
+            dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
         data_transports.push_back(udp_zero_copy::make(
-            addr, num2str(USRP2_UDP_DATA_PORT), device_addr
+            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), device_addr
         ));
     }
 
@@ -217,8 +273,8 @@ void usrp2_impl::get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<device_prop_t>()){
     case DEVICE_PROP_NAME:
-        if (_mboards.size() > 1) val = std::string("USRP-NXXX mimo device");
-        else                     val = std::string("USRP-NXXX device");
+        if (_mboards.size() > 1) val = std::string("USRP2/N Series multi-device");
+        else                     val = std::string("USRP2/N Series device");
         return;
 
     case DEVICE_PROP_MBOARD:

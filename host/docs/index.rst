@@ -24,7 +24,7 @@ Application Notes
 * `Device Identification Notes <./identification.html>`_
 * `Firmware and FPGA Image Notes <./images.html>`_
 * `USRP1 Application Notes <./usrp1.html>`_
-* `USRP2 and USRP-N Series Application Notes <./usrp_nxxx.html>`_
+* `USRP2 and N Series Application Notes <./usrp2.html>`_
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_
 
