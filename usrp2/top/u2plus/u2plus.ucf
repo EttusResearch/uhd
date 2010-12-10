@@ -158,7 +158,7 @@ NET "RXD<2>"  LOC = "AF15"  ;
 NET "RXD<1>"  LOC = "AD12"  ;
 
 ## AD9510
-NET "CLK_STATUS"  LOC = "AD22"  ;
+NET "clk_status"  LOC = "AD22"  ;
 NET "CLK_FUNC"  LOC = "AC21"  ;
 NET "clk_sel<0>"  LOC = "AE21"  ;
 NET "clk_sel<1>"  LOC = "AD21"  ;

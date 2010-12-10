@@ -6,7 +6,7 @@
 # Project Setup
 ##################################################
 TOP_MODULE = u2_rev3
-BUILD_DIR = $(abspath build-udp$(ISE))
+BUILD_DIR = $(abspath build)
 
 ##################################################
 # Include other makefiles
@@ -46,7 +46,7 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 # Sources
 ##################################################
 TOP_SRCS = \
-u2_core_udp.v \
+u2_core.v \
 u2_rev3.v \
 u2_rev3.ucf
 
