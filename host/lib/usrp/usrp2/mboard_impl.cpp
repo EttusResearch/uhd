@@ -27,6 +27,10 @@
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
+static const double mimo_clock_delay_usrp_n2xx = 0; //TODO
+static const int mimo_clock_sync_delay_cycles = 134;
+
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::posix_time;
@@ -196,27 +200,30 @@ void usrp2_mboard_impl::update_clock_config(void){
     //   - Masters always drive the clock over serdes.
     //   - Slaves always lock to this serdes clock.
     //   - Slaves lock their time over the serdes.
-    const bool master_mode = bool(_iface->peek32(_iface->regs.status) & (1 << 8));
-    _clock_ctrl->enable_mimo_clock_out(master_mode);
-    if (master_mode){
+    if (_iface->peek32(_iface->regs.status) & (1 << 8)){
+        _clock_ctrl->enable_mimo_clock_out(true);
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
-            _clock_ctrl->set_mimo_clock_delay(0/*TODO*/);
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp_n2xx);
             break;
 
         case usrp2_iface::USRP2_REV4:
-            _clock_ctrl->set_mimo_clock_delay(3.08e-9);
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp2_rev4);
             break;
 
         default: break; //not handled
         }
+        _iface->poke32(_iface->regs.time64_mimo_sync, 0);
     }
     else{
         _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
         _clock_ctrl->enable_external_ref(true);
+        _clock_ctrl->enable_mimo_clock_out(false);
+        _iface->poke32(_iface->regs.time64_mimo_sync,
+            (1 << 8) | (mimo_clock_sync_delay_cycles & 0xff)
+        );
     }
-    //TODO slaves lock time over the serdes...
 
 }
 

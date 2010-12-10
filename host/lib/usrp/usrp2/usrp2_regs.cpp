@@ -57,6 +57,7 @@ usrp2_regs_t usrp2_get_regs(bool use_n2xx_map) {
   x.time64_flags = sr_addr(misc_output_base, x.sr_time64 + 2);
   x.time64_imm = sr_addr(misc_output_base, x.sr_time64 + 3);
   x.time64_tps = sr_addr(misc_output_base, x.sr_time64 + 4);
+  x.time64_mimo_sync = sr_addr(misc_output_base, x.sr_time64 + 5);
   x.status = bp_base + 4*8;
   x.time64_secs_rb = bp_base + 4*10;
   x.time64_ticks_rb = bp_base + 4*11;
