@@ -2,22 +2,22 @@
 
 module time_sender
   (input clk, input rst,
-   input [31:0] master_time,
+   input [63:0] vita_time,
    input send_sync,
-   output exp_pps_out);
+   output reg exp_time_out);
 
    reg [7:0] datain;
    reg 	     k;
    wire [9:0] dataout;
-   reg [9:0] dataout_reg;
-   reg 	     disp_reg;
-   wire      disp, new_word;
+   reg [9:0]  dataout_reg;
+   reg 	      disp_reg;
+   wire       disp, new_word;
+   reg [4:0]  state;
+   reg [3:0]  bit_count;
    
    encode_8b10b encode_8b10b 
      (.datain({k,datain}),.dispin(disp_reg),
       .dataout(dataout),.dispout(disp));
-
-   assign    exp_pps_out = dataout_reg[0];
 
    always @(posedge clk)
      if(rst)
@@ -33,9 +33,9 @@ module time_sender
      else
        dataout_reg <= {1'b0,dataout_reg[9:1]};
    
-   reg [4:0] state;
-   reg [3:0] bit_count;
-
+   always @(posedge clk)
+     exp_time_out <= dataout_reg[0];
+   
    assign    new_word = (bit_count == 9);
    
    always @(posedge clk)
@@ -52,17 +52,23 @@ module time_sender
    localparam SEND_T1 = 3;
    localparam SEND_T2 = 4;
    localparam SEND_T3 = 5;
+   localparam SEND_T4 = 6;
+   localparam SEND_T5 = 7;
+   localparam SEND_T6 = 8;
+   localparam SEND_T7 = 9;
+   localparam SEND_TAIL = 10;
 
    localparam COMMA = 8'hBC;
    localparam HEAD = 8'h3C;
-
-   reg [31:0] master_time_reg;
+   localparam TAIL = 8'hF7;
+   
+   reg [63:0] vita_time_reg;
    
    always @(posedge clk)
      if(rst)
-       master_time_reg <= 0;
+       vita_time_reg <= 0;
      else if(send_sync)
-       master_time_reg <= master_time;
+       vita_time_reg <= vita_time;
    
    always @(posedge clk)
      if(rst)
@@ -84,27 +90,51 @@ module time_sender
 	     end
 	   SEND_T0 :
 	     begin
-		{k,datain} <= {1'b0, master_time_reg[31:24] };
+		{k,datain} <= {1'b0, vita_time_reg[63:56] };
 		state <= SEND_T1;
 	     end
 	   SEND_T1 :
 	     begin
-		{k,datain} <= {1'b0, master_time_reg[23:16]};
+		{k,datain} <= {1'b0, vita_time_reg[55:48]};
 		state <= SEND_T2;
 	     end
 	   SEND_T2 :
 	     begin
-		{k,datain} <= {1'b0, master_time_reg[15:8]};
+		{k,datain} <= {1'b0, vita_time_reg[47:40]};
 		state <= SEND_T3;
 	     end
 	   SEND_T3 :
 	     begin
-		{k,datain} <= {1'b0, master_time_reg[7:0]};
+		{k,datain} <= {1'b0, vita_time_reg[39:32]};
+		state <= SEND_T4;
+	     end
+	   SEND_T4 :
+	     begin
+		{k,datain} <= {1'b0, vita_time_reg[31:24]};
+		state <= SEND_T5;
+	     end
+	   SEND_T5 :
+	     begin
+		{k,datain} <= {1'b0, vita_time_reg[23:16]};
+		state <= SEND_T6;
+	     end
+	   SEND_T6 :
+	     begin
+		{k,datain} <= {1'b0, vita_time_reg[15:8]};
+		state <= SEND_T7;
+	     end
+	   SEND_T7 :
+	     begin
+		{k,datain} <= {1'b0, vita_time_reg[7:0]};
+		state <= SEND_TAIL;
+	     end
+	   SEND_TAIL :
+	     begin
+		{k,datain} <= {1'b1, TAIL};
 		state <= SEND_IDLE;
 	     end
 	   default :
 	     state <= SEND_IDLE;
 	 endcase // case(state)
-   
    
 endmodule // time_sender

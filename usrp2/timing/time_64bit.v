@@ -3,12 +3,13 @@
 module time_64bit
   #(parameter TICKS_PER_SEC = 32'd100000000,
     parameter BASE = 0)
-    (input clk, input rst,
-     input set_stb, input [7:0] set_addr, input [31:0] set_data,  
-     input pps,
-     output [63:0] vita_time, output pps_int
-     );
-
+   (input clk, input rst,
+    input set_stb, input [7:0] set_addr, input [31:0] set_data,  
+    input pps,
+    output [63:0] vita_time, output pps_int,
+    input exp_time_in, output exp_time_out
+    );
+   
    localparam 	   NEXT_SECS = 0;   
    localparam 	   NEXT_TICKS = 1;
    localparam      PPS_POLSRC = 2;
@@ -91,5 +92,34 @@ module time_64bit
        ticks <= ticks_plus_one;
 
    assign pps_int = pps_edge;
+
+   localparam SYNC_RATE = 59999;   // Send every 600uS
+   reg [15:0] sync_counter;
+   wire       send_sync = (sync_counter == SYNC_RATE);
+   wire       sync_rcvd;
+   
+   always @(posedge clk)
+     if(rst)
+       sync_counter <= 0;
+     else
+       if(send_sync)
+	 sync_counter <= 0;
+       else
+	 sync_counter <= sync_counter + 1;
+   
+   // must be greater than 1000, 1 less than a multiple of 10;
+   
+   time_sender time_sender
+     (.clk(clk),.rst(rst),
+      .vita_time(vita_time),
+      .send_sync(send_sync),
+      .exp_pps_out(exp_pps_out) );
+
+   time_receiver time_receiver
+     (.clk(clk),.rst(rst),
+      .vita_time(vita_time_rcvd),
+      .sync_rcvd(sync_rcvd),
+      .exp_pps_in(exp_pps_in) );
+
    
 endmodule // time_64bit
