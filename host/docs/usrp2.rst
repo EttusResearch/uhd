@@ -101,7 +101,7 @@ On some systems, the firewall will block UDP broadcast packets.
 It is recommended that you change or disable your firewall settings.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Multiple device configuration
+Multiple devices per host
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For maximum throughput, one ethernet interface per USRP2 is recommended,
 although multiple devices may be connected via a gigabit ethernet switch.
@@ -208,6 +208,18 @@ Example device address string representation for 2 USRP2s with IPv4 addresses 19
 ::
 
     addr0=192.168.10.2, addr1=192.168.20.2
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MIMO cable configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using the MIMO cable, two USRP devices can be grouped together in a multi-device configuration.
+Only one device in the configuration can be attached to the ethernet.
+This device will be referred to as the master, and the other device, the slave.
+
+* The master provides reference clock and time synchronization to the slave.
+* All data passing between the host and the slave is router over the MIMO cable.
+* Both master and slave must have different IPv4 addresses but in the same subnet.
+* The master and slave may be used individually or in a multi-device configuration.
 
 ------------------------------------------------------------------------
 Hardware setup notes
