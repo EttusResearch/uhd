@@ -7,7 +7,8 @@ module time_64bit
     input set_stb, input [7:0] set_addr, input [31:0] set_data,  
     input pps,
     output [63:0] vita_time, output pps_int,
-    input exp_time_in, output exp_time_out
+    input exp_time_in, output exp_time_out,
+    output [31:0] debug
     );
    
    localparam 	   NEXT_SECS = 0;   
@@ -137,5 +138,8 @@ module time_64bit
    assign mimo_secs = vita_time_rcvd[63:32];
    assign mimo_ticks = vita_time_rcvd[31:0] + {16'd0,sync_delay};
    assign mimo_sync_now = mimo_sync & sync_rcvd & (mimo_ticks <= TICKS_PER_SEC);
+
+   assign debug = { { 24'b0} ,
+		    { 2'b0, exp_time_in, exp_time_out, mimo_sync, mimo_sync_now, sync_rcvd, send_sync} };
    
 endmodule // time_64bit
