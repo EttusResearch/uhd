@@ -17,8 +17,8 @@ module u2_core
    output [1:0] debug_clk,
 
    // Expansion
-   input exp_pps_in,
-   output exp_pps_out,
+   input exp_time_in,
+   output exp_time_out,
    
    // GMII
    //   GMII-CTRL

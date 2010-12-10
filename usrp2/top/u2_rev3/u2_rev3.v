@@ -11,10 +11,10 @@ module u2_rev3
    input uart_rx_i,
    
    // Expansion
-   input exp_pps_in_p, // Diff
-   input exp_pps_in_n, // Diff
-   output exp_pps_out_p, // Diff 
-   output exp_pps_out_n, // Diff 
+   input exp_time_in_p, // Diff
+   input exp_time_in_n, // Diff
+   output exp_time_out_p, // Diff 
+   output exp_time_out_n, // Diff 
    
    // GMII
    //   GMII-CTRL
@@ -181,13 +181,13 @@ module u2_rev3
    wire 	cpld_clock_buf;
    BUFG cpld_clock_BUF (.O(cpld_clock_buf),.I(cpld_clock));
    
-   wire 	exp_pps_in;
-   IBUFDS exp_pps_in_pin (.O(exp_pps_in),.I(exp_pps_in_p),.IB(exp_pps_in_n));
-   defparam 	exp_pps_in_pin.IOSTANDARD = "LVDS_25";
+   wire 	exp_time_in;
+   IBUFDS exp_time_in_pin (.O(exp_time_in),.I(exp_time_in_p),.IB(exp_time_in_n));
+   defparam 	exp_time_in_pin.IOSTANDARD = "LVDS_25";
    
-   wire 	exp_pps_out;
-   OBUFDS exp_pps_out_pin (.O(exp_pps_out_p),.OB(exp_pps_out_n),.I(exp_pps_out));
-   defparam 	exp_pps_out_pin.IOSTANDARD = "LVDS_25";
+   wire 	exp_time_out;
+   OBUFDS exp_time_out_pin (.O(exp_time_out_p),.OB(exp_time_out_n),.I(exp_time_out));
+   defparam 	exp_time_out_pin.IOSTANDARD = "LVDS_25";
 
    reg [5:0] 	clock_ready_d;
    always @(posedge clk_fpga)
@@ -480,8 +480,8 @@ module u2_rev3
 	     .leds		(leds_int),
 	     .debug		(debug[31:0]),
 	     .debug_clk		(debug_clk[1:0]),
-	     .exp_pps_in	(exp_pps_in),
-	     .exp_pps_out	(exp_pps_out),
+	     .exp_time_in	(exp_time_in),
+	     .exp_time_out	(exp_time_out),
 	     .GMII_COL		(GMII_COL),
 	     .GMII_CRS		(GMII_CRS),
 	     .GMII_TXD		(GMII_TXD_unreg[7:0]),
