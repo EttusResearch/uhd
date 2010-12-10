@@ -15,16 +15,28 @@ module time_64bit
    localparam      PPS_POLSRC = 2;
    localparam      PPS_IMM = 3;
    localparam      TPS = 4;
+   localparam      MIMO_SYNC = 5;
    
    reg [31:0] 	   seconds, ticks;
    wire 	   end_of_second;
    assign 	   vita_time = {seconds,ticks};
+   wire [63:0] 	   vita_time_rcvd;
    
    wire [31:0] 	   next_ticks_preset, next_seconds_preset;
    wire [31:0] 	   ticks_per_sec_reg;
    wire 	   set_on_pps_trig;
    reg 		   set_on_next_pps;
    wire 	   pps_polarity, pps_source, set_imm;
+   reg [1:0] 	   pps_del;
+   reg 		   pps_reg_p, pps_reg_n, pps_reg;
+   wire 	   pps_edge;
+
+   reg [15:0] 	   sync_counter;
+   wire 	   sync_rcvd;
+   wire [31:0] 	   mimo_secs, mimo_ticks;
+   wire 	   mimo_sync_now;
+   wire 	   mimo_sync;
+   wire [7:0] 	   sync_delay;
    
    setting_reg #(.my_addr(BASE+NEXT_TICKS)) sr_next_ticks
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
@@ -46,10 +58,10 @@ module time_64bit
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(ticks_per_sec_reg),.changed());
 
-   reg [1:0] 	   pps_del;
-   reg 		   pps_reg_p, pps_reg_n, pps_reg;
-   wire 	   pps_edge;
-   
+   setting_reg #(.my_addr(BASE+MIMO_SYNC), .at_reset(0), .width(9)) sr_mimosync
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out({mimo_sync,sync_delay}),.changed());
+
    always @(posedge clk)  pps_reg_p <= pps;   
    always @(negedge clk)  pps_reg_n <= pps;
    always @* pps_reg <= pps_polarity ? pps_reg_p : pps_reg_n;
@@ -83,6 +95,11 @@ module time_64bit
 	  seconds <= next_seconds_preset;
 	  ticks <= next_ticks_preset;
        end
+     else if(mimo_sync_now)
+       begin
+	  seconds <= mimo_secs;
+	  ticks <= mimo_ticks;
+       end
      else if(ticks_plus_one == ticks_per_sec_reg)
        begin
 	  seconds <= seconds + 1;
@@ -93,11 +110,9 @@ module time_64bit
 
    assign pps_int = pps_edge;
 
-   localparam SYNC_RATE = 59999;   // Send every 600uS
-   reg [15:0] sync_counter;
-   wire       send_sync = (sync_counter == SYNC_RATE);
-   wire       sync_rcvd;
-   
+   // MIMO Connector Time Sync
+   wire send_sync = (sync_counter == 59999); // X % 10 = 9
+
    always @(posedge clk)
      if(rst)
        sync_counter <= 0;
@@ -106,8 +121,6 @@ module time_64bit
 	 sync_counter <= 0;
        else
 	 sync_counter <= sync_counter + 1;
-   
-   // must be greater than 1000, 1 less than a multiple of 10;
    
    time_sender time_sender
      (.clk(clk),.rst(rst),
@@ -121,5 +134,8 @@ module time_64bit
       .sync_rcvd(sync_rcvd),
       .exp_time_in(exp_time_in) );
 
+   assign mimo_secs = vita_time_rcvd[63:32];
+   assign mimo_ticks = vita_time_rcvd[31:0] + {16'd0,sync_delay};
+   assign mimo_sync_now = mimo_sync & sync_rcvd & (mimo_ticks <= TICKS_PER_SEC);
    
 endmodule // time_64bit

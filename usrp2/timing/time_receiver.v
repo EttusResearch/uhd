@@ -2,7 +2,7 @@
 module time_receiver
   (input clk, input rst,
    output reg [63:0] vita_time,
-   output sync_rcvd,
+   output reg sync_rcvd,
    input exp_time_in);
 
    wire       code_err, disp_err, dispout, complete_word;
@@ -121,6 +121,10 @@ module time_receiver
 	     state <= STATE_IDLE;
 	 endcase // case(state)
    
-   assign sync_rcvd = (complete_word & (state == STATE_TAIL) & (dataout_reg[8:0] == TAIL));
+   always @(posedge clk)
+     if(rst)
+       sync_rcvd <= 0;
+     else
+       sync_rcvd <= (complete_word & (state == STATE_TAIL) & (dataout_reg[8:0] == TAIL));
    
 endmodule // time_sender
