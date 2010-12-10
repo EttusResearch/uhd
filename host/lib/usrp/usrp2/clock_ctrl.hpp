@@ -95,6 +95,14 @@ public:
      * \param enb true to enable
      */
     virtual void enable_mimo_clock_out(bool enb) = 0;
+    
+    /*!
+     * Set the output delay of the mimo clock
+     * Used to synchronise daisy-chained USRPs over the MIMO cable
+     * Can also be used to adjust delay for uneven reference cable lengths
+     * \param delay in an arbitrary scaling
+     */
+    virtual void set_mimo_clock_delay(boost::uint8_t delay) = 0;
 
 };
 
