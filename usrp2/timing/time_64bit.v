@@ -113,13 +113,13 @@ module time_64bit
      (.clk(clk),.rst(rst),
       .vita_time(vita_time),
       .send_sync(send_sync),
-      .exp_pps_out(exp_pps_out) );
+      .exp_time_out(exp_time_out) );
 
    time_receiver time_receiver
      (.clk(clk),.rst(rst),
       .vita_time(vita_time_rcvd),
       .sync_rcvd(sync_rcvd),
-      .exp_pps_in(exp_pps_in) );
+      .exp_time_in(exp_time_in) );
 
    
 endmodule // time_64bit
