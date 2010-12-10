@@ -198,7 +198,24 @@ void usrp2_mboard_impl::update_clock_config(void){
     //   - Slaves lock their time over the serdes.
     const bool master_mode = bool(_iface->peek32(_iface->regs.status) & (1 << 8));
     _clock_ctrl->enable_mimo_clock_out(master_mode);
-    if (not master_mode) _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
+    if (master_mode){
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _clock_ctrl->set_mimo_clock_delay(0/*TODO*/);
+            break;
+
+        case usrp2_iface::USRP2_REV4:
+            _clock_ctrl->set_mimo_clock_delay(3.08e-9);
+            break;
+
+        default: break; //not handled
+        }
+    }
+    else{
+        _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
+        _clock_ctrl->enable_external_ref(true);
+    }
     //TODO slaves lock time over the serdes...
 
 }

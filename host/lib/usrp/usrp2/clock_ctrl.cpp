@@ -22,9 +22,12 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <iostream>
 
 using namespace uhd;
+
+static const bool enb_test_clk = false;
 
 /*!
  * A usrp2 clock control specific to the ad9510 ic.
@@ -71,6 +74,7 @@ public:
         /* private clock enables, must be set here */
         this->enable_dac_clock(true);
         this->enable_adc_clock(true);
+        this->enable_test_clock(enb_test_clk);
     }
 
     ~usrp2_clock_ctrl_impl(void){
@@ -81,6 +85,7 @@ public:
         this->enable_dac_clock(false);
         this->enable_adc_clock(false);
         this->enable_mimo_clock_out(false);
+        this->enable_test_clock(false);
     }
 
     void enable_mimo_clock_out(bool enb){
@@ -245,22 +250,24 @@ public:
         return 100e6;
     }
     
-    void set_mimo_clock_delay(boost::uint8_t delay) {
-        //delay is a 5-bit value (0-31) for fine control
+    void set_mimo_clock_delay(double delay) {
+        //delay_val is a 5-bit value (0-31) for fine control
         //the equations below determine delay for a given ramp current, # of caps and fine delay register
         //delay range:
         //range_ns = 200*((caps+3)/i_ramp_ua)*1.3286
         //offset (zero delay):
         //offset_ns = 0.34 + (1600 - i_ramp_ua)*1e-4 + ((caps-1)/ramp)*6
         //delay_ns = offset_ns + range_ns * delay / 31
-        
-        if(delay == 0) {
+
+        int delay_val = boost::math::iround(delay/9.744e-9*31);
+
+        if(delay_val == 0) {
             switch(clk_regs.exp) {
             case 5:
-                _ad9510_regs.delay_control_out5 = 0;
+                _ad9510_regs.delay_control_out5 = 1;
                 break;
             case 6:
-                _ad9510_regs.delay_control_out6 = 0;
+                _ad9510_regs.delay_control_out6 = 1;
                 break;
             default:
                 break; //delay not supported on U2 rev 3
@@ -268,19 +275,19 @@ public:
         } else {
             switch(clk_regs.exp) {
             case 5:
-                _ad9510_regs.delay_control_out5 = 1;
+                _ad9510_regs.delay_control_out5 = 0;
                 _ad9510_regs.ramp_current_out5 = ad9510_regs_t::RAMP_CURRENT_OUT5_200UA;
                 _ad9510_regs.ramp_capacitor_out5 = ad9510_regs_t::RAMP_CAPACITOR_OUT5_4CAPS;
-                _ad9510_regs.delay_fine_adjust_out5 = delay;
+                _ad9510_regs.delay_fine_adjust_out5 = delay_val;
                 this->write_reg(0x34);
                 this->write_reg(0x35);
                 this->write_reg(0x36);
                 break;
             case 6:
-                _ad9510_regs.delay_control_out6 = 1;
+                _ad9510_regs.delay_control_out6 = 0;
                 _ad9510_regs.ramp_current_out6 = ad9510_regs_t::RAMP_CURRENT_OUT6_200UA;
                 _ad9510_regs.ramp_capacitor_out6 = ad9510_regs_t::RAMP_CAPACITOR_OUT6_4CAPS;
-                _ad9510_regs.delay_fine_adjust_out6 = delay;
+                _ad9510_regs.delay_fine_adjust_out6 = delay_val;
                 this->write_reg(0x38);
                 this->write_reg(0x39);
                 this->write_reg(0x3A);
