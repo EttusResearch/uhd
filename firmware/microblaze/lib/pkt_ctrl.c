@@ -20,10 +20,11 @@
 #include <nonstdio.h>
 
 void pkt_ctrl_program_inspector(
-    const struct ip_addr *ip_addr, uint16_t dsp_udp_port
+    const struct ip_addr *ip_addr, uint16_t ctrl_port, uint16_t data_port
 ){
     buffer_pool_ctrl->ip_addr = ip_addr->addr;
-    buffer_pool_ctrl->udp_ports = dsp_udp_port;
+    buffer_pool_ctrl->ctrl_ports = ctrl_port;
+    buffer_pool_ctrl->data_ports = data_port;
 }
 
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
