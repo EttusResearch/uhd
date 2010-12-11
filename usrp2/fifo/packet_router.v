@@ -89,12 +89,14 @@ module packet_router
     );
 
     //setting register to program the UDP ctrl ports
+    /*
     wire [15:0] ctrl_udp_port, other_udp_port;
     setting_reg #(.my_addr(CTRL_BASE+2)) sreg_ctrl_ports(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
         .out({other_udp_port, ctrl_udp_port}),.changed()
     );
+    */
 
     //setting register to program the UDP data ports
     wire [15:0] dsp0_udp_port, dsp1_udp_port;
@@ -420,19 +422,13 @@ module packet_router
     wire com_insp_dreg_counter_done = (com_insp_dreg_count_next == COM_INSP_MAX_NUM_DREGS)? 1'b1 : 1'b0;
     reg [35:0] com_insp_dregs [COM_INSP_MAX_NUM_DREGS-1:0];
 
-    //Inspection logic:
-    wire com_insp_is_ip_udp = 1'b1
-        && (com_insp_dregs[3][15:0] == 16'h800)        //ethertype IPv4
-        && (com_insp_dregs[6][23:16] == 8'h11)         //protocol UDP
-    ;
-    wire com_insp_is_bcast = 1'b1
-        && (com_insp_dregs[0][15:0] == 16'hffff)       //ethernet dst mac
-        && (com_insp_dregs[1][31:0] == 32'hffffffff)   //ethernet dst mac
-    ;
-    wire com_insp_is_ip_match = (my_ip_addr == com_insp_dregs[8][31:0])? 1'b1 : 1'b0;
-    wire com_insp_is_dsp0_port = (com_insp_dregs[9][15:0] == dsp0_udp_port)? 1'b1 : 1'b0;
-    wire com_insp_is_ctrl_port = (com_insp_dregs[9][15:0] == ctrl_udp_port)? 1'b1 : 1'b0;
-    wire com_insp_is_vrt_pkt = (com_inp_data[15:0] != 16'h0)? 1'b1 : 1'b0;
+    //extract various packet components:
+    wire [47:0] com_insp_dregs_eth_dst_mac   = {com_insp_dregs[0][15:0], com_insp_dregs[1][31:0]};
+    wire [15:0] com_insp_dregs_eth_type      = com_insp_dregs[3][15:0];
+    wire [7:0]  com_insp_dregs_ipv4_proto    = com_insp_dregs[6][23:16];
+    wire [31:0] com_insp_dregs_ipv4_dst_addr = com_insp_dregs[8][31:0];
+    wire [15:0] com_insp_dregs_udp_dst_port  = com_insp_dregs[9][15:0];
+    wire [15:0] com_insp_dregs_vrt_size      = com_inp_data[15:0];
 
     //Inspector output flags special case:
     //Inject SOF into flags at first DSP line.
@@ -503,31 +499,33 @@ module packet_router
                 com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
                 if (com_insp_dreg_counter_done | com_inp_data[33]) begin
                     com_insp_state <= COM_INSP_STATE_WRITE_REGS;
+                    com_insp_dreg_count <= 0;
 
                     //---------- begin inspection decision -----------//
-                    if (com_insp_is_bcast | com_inp_data[33]) begin
+                    //bcast or EOF:
+                    if ((com_insp_dregs_eth_dst_mac == 48'hffffffffffff) || com_inp_data[33]) begin
                         com_insp_dest <= COM_INSP_DEST_BOF;
-                        com_insp_dreg_count <= 0;
                     end
 
-                    else if (~com_insp_is_ip_udp) begin
+                    //not IPv4/UDP:
+                    else if ((com_insp_dregs_eth_type != 16'h800) || (com_insp_dregs_ipv4_proto != 8'h11)) begin
                         com_insp_dest <= COM_INSP_DEST_CPU;
-                        com_insp_dreg_count <= 0;
                     end
 
-                    else if (~com_insp_is_ip_match) begin
+                    //not my IP address:
+                    else if (com_insp_dregs_ipv4_dst_addr != my_ip_addr) begin
                         com_insp_dest <= COM_INSP_DEST_EXT;
-                        com_insp_dreg_count <= 0;
                     end
 
-                    else if (com_insp_is_dsp0_port & com_insp_is_vrt_pkt) begin
+                    //UDP data port and VRT:
+                    else if ((com_insp_dregs_udp_dst_port == dsp0_udp_port) && (com_insp_dregs_vrt_size != 16'h0)) begin
                         com_insp_dest <= COM_INSP_DEST_DSP;
                         com_insp_dreg_count <= COM_INSP_DREGS_DSP_OFFSET;
                     end
 
+                    //other:
                     else begin
                         com_insp_dest <= COM_INSP_DEST_CPU;
-                        com_insp_dreg_count <= 0;
                     end
                     //---------- end inspection decision -------------//
 
@@ -570,9 +568,9 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
 
     //dummy signals to join the the splitter and muxes below
-    wire [35:0] _split_to_ext_data, _split_to_cpu_data;
-    wire        _split_to_ext_valid, _split_to_cpu_valid;
-    wire        _split_to_ext_ready, _split_to_cpu_ready;
+    wire [35:0] _split_to_ext_data,  _split_to_cpu_data,  _cpu_out_data;
+    wire        _split_to_ext_valid, _split_to_cpu_valid, _cpu_out_valid;
+    wire        _split_to_ext_ready, _split_to_cpu_ready, _cpu_out_ready;
 
     splitter36 bof_out_splitter(
         .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
@@ -592,7 +590,13 @@ module packet_router
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(com_insp_out_cpu_data), .src0_rdy_i(com_insp_out_cpu_valid), .dst0_rdy_o(com_insp_out_cpu_ready),
         .data1_i(_split_to_cpu_data),    .src1_rdy_i(_split_to_cpu_valid),    .dst1_rdy_o(_split_to_cpu_ready),
-        .data_o(cpu_out_data),           .src_rdy_o(cpu_out_valid),           .dst_rdy_i(cpu_out_ready)
+        .data_o(_cpu_out_data),          .src_rdy_o(_cpu_out_valid),          .dst_rdy_i(_cpu_out_ready)
+    );
+
+    fifo_cascade #(.WIDTH(36), .SIZE(9/*512 lines plenty for short pkts*/)) cpu_out_fifo (
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+        .datain(_cpu_out_data), .src_rdy_i(_cpu_out_valid), .dst_rdy_o(_cpu_out_ready),
+        .dataout(cpu_out_data), .src_rdy_o(cpu_out_valid),  .dst_rdy_i(cpu_out_ready)
     );
 
     ////////////////////////////////////////////////////////////////////
