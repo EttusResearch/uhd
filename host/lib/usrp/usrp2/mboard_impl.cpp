@@ -97,16 +97,19 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.tx_ctrl_report_sid, usrp2_impl::ASYNC_SID);
     _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
-    //setting the cycles per update
-    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 100);
-    const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
-    _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
-    _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, 0); //cycles per update is disabled
+    //setting the cycles per update (disabled by default)
+    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 0.0);
+    if (ups_per_sec > 0.0){
+        const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
+        _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
+    }
 
-    //setting the packets per update
-    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8);
-    const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
-    _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
+    //setting the packets per update (enabled by default)
+    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8.0);
+    if (ups_per_fifo > 0.0){
+        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
+        _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
+    }
 
     //init the ddc
     init_ddc_config();

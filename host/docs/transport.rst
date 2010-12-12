@@ -48,7 +48,7 @@ which allows the host to determine throttling conditions for the transmission of
 The following mechanisms affect the transmission of periodic update packets:
 
 * **ups_per_fifo:** The number of update packets for each FIFO's worth of bytes sent into the device
-* **ups_per_sec:** The number of update packets per second
+* **ups_per_sec:** The number of update packets per second (disabled by default)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Resize socket buffers
