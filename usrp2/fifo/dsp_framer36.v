@@ -29,7 +29,6 @@ module dsp_framer36
     //The header is generated here from the count.
     wire [31:0] dsp_frm_data_bram;
     wire [15:0] dsp_frm_bytes = {dsp_frm_count, 2'b00};
-    wire dsp_frm_enb = (dsp_frm_state == DSP_FRM_STATE_WRITE)? (out_ready & out_valid) : 1'b1;
     assign out_data =
         (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR)? {4'b0001, 16'b1, dsp_frm_bytes} : (
         (dsp_frm_addr == dsp_frm_count)           ? {4'b0010, dsp_frm_data_bram}    : (
@@ -45,7 +44,7 @@ module dsp_framer36
         .ENA(inp_ready),.SSRA(0),.WEA(inp_ready),
         //port B = DSP framer interface (reads from BRAM)
         .DOB(dsp_frm_data_bram),.ADDRB(dsp_frm_addr),.CLKB(clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(dsp_frm_enb),.SSRB(0),.WEB(1'b0)
+        .ENB(out_ready & out_valid),.SSRB(0),.WEB(1'b0)
     );
 
     always @(posedge clk)
