@@ -328,6 +328,7 @@ module packet_router
         (cpu_inp_addr == cpu_inp_line_count_reg)? 4'b0010 : (
     4'b0000));
 
+    wire cpu_inp_enb = (cpu_inp_state == CPU_INP_STATE_UNLOAD)? (cpu_inp_ready & cpu_inp_valid) : 1'b1;
     assign cpu_inp_valid = (cpu_inp_state == CPU_INP_STATE_UNLOAD)? 1'b1 : 1'b0;
     assign cpu_inp_hs_stat = (cpu_inp_state == CPU_INP_STATE_WAIT_CTRL_HI)? 1'b1 : 1'b0;
 
@@ -337,7 +338,7 @@ module packet_router
         .ENA(wb_stb_i & (which_buf == 1'b1)),.SSRA(0),.WEA(wb_we_i),
         //port B = packet router interface from CPU (output only)
         .DOB(cpu_inp_data[31:0]),.ADDRB(cpu_inp_addr),.CLKB(stream_clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(cpu_inp_ready & cpu_inp_valid),.SSRB(0),.WEB(1'b0)
+        .ENB(cpu_inp_enb),.SSRB(0),.WEB(1'b0)
     );
 
     always @(posedge stream_clk)
