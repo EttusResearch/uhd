@@ -253,13 +253,10 @@ module packet_router
     assign cpu_out_line_count = cpu_out_addr;
     wire [BUF_SIZE-1:0] cpu_out_addr_next = cpu_out_addr + 1'b1;
 
-    wire cpu_out_reading = (
+    assign cpu_out_ready = (
         cpu_out_state == CPU_OUT_STATE_WAIT_SOF ||
         cpu_out_state == CPU_OUT_STATE_WAIT_EOF
     )? 1'b1 : 1'b0;
-
-    wire cpu_out_we = cpu_out_reading;
-    assign cpu_out_ready = cpu_out_reading;
     assign cpu_out_hs_stat = (cpu_out_state == CPU_OUT_STATE_WAIT_CTRL_HI)? 1'b1 : 1'b0;
 
     RAMB16_S36_S36 cpu_out_buff(
@@ -267,8 +264,8 @@ module packet_router
         .DOA(wb_dat_o),.ADDRA(wb_adr_i[BUF_SIZE+1:2]),.CLKA(wb_clk_i),.DIA(36'b0),.DIPA(4'h0),
         .ENA(wb_stb_i & (which_buf == 1'b0)),.SSRA(0),.WEA(wb_we_i),
         //port B = packet router interface to CPU (input only)
-        .DOB(),.ADDRB(cpu_out_addr),.CLKB(stream_clk),.DIB(cpu_out_data),.DIPB(4'h0),
-        .ENB(cpu_out_we),.SSRB(0),.WEB(cpu_out_we)
+        .DOB(),.ADDRB(cpu_out_addr),.CLKB(stream_clk),.DIB(cpu_out_data[31:0]),.DIPB(4'h0),
+        .ENB(cpu_out_ready & cpu_out_valid),.SSRB(0),.WEB(cpu_out_ready & cpu_out_valid)
     );
 
     always @(posedge stream_clk)
