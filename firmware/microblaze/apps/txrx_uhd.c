@@ -53,7 +53,7 @@ static void setup_network(void);
 // the fast-path setup global variables
 // ----------------------------------------------------------------
 static eth_mac_addr_t fp_mac_addr_src, fp_mac_addr_dst;
-static struct socket_address fp_socket_src, fp_socket_dst;
+extern struct socket_address fp_socket_src, fp_socket_dst;
 
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,

@@ -41,6 +41,9 @@ static const bool debug = false;
 
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
+//used in the top level application...
+struct socket_address fp_socket_src, fp_socket_dst;
+
 // ------------------------------------------------------------------------
 
 static eth_mac_addr_t _local_mac_addr;
@@ -264,6 +267,11 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
   case ICMP_DUR:	// Destinatino Unreachable
     if (icmp->code == ICMP_DUR_PORT){	// port unreachable
       //handle destination port unreachable (the host ctrl+c'd the app):
+
+      //filter out non udp data response
+      struct ip_hdr *ip = (struct ip_hdr *)(((uint8_t*)icmp) + sizeof(struct icmp_echo_hdr));
+      struct udp_hdr *udp = (struct udp_hdr *)(((char *)ip) + IP_HLEN);
+      if (IPH_PROTO(ip) != IP_PROTO_UDP || udp->dest != fp_socket_dst.port) return;
 
       //end async update packets per second
       sr_tx_ctrl->cyc_per_up = 0;
