@@ -500,14 +500,12 @@ module packet_router
                     com_insp_dreg_count <= 0;
 
                     //---------- begin inspection decision -----------//
-                    //bcast or EOF:
-                    if ((com_insp_dregs_eth_dst_mac == 48'hffffffffffff) || com_inp_data[33]) begin
+                    //EOF or bcast or not IPv4 or not UDP:
+                    if (
+                        com_inp_data[33] || (com_insp_dregs_eth_dst_mac == 48'hffffffffffff) ||
+                        (com_insp_dregs_eth_type != 16'h800) || (com_insp_dregs_ipv4_proto != 8'h11)
+                    ) begin
                         com_insp_dest <= COM_INSP_DEST_BOF;
-                    end
-
-                    //not IPv4/UDP:
-                    else if ((com_insp_dregs_eth_type != 16'h800) || (com_insp_dregs_ipv4_proto != 8'h11)) begin
-                        com_insp_dest <= COM_INSP_DEST_CPU;
                     end
 
                     //not my IP address:
