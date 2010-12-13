@@ -40,7 +40,21 @@ module vita_tx_control
    time_compare 
      time_compare (.time_now(vita_time), .trigger_time(send_time), 
 		   .now(now), .early(early), .late(late), .too_early());
+
+   reg 	       late_qual, late_del;
+
+   always @(posedge clk)
+     if(reset | clear)
+       late_del <= 0;
+     else
+       late_del <= late;
    
+   always @(posedge clk)
+     if(reset | clear)
+       late_qual <= 0;
+     else
+       late_qual <= (sample_fifo_src_rdy_i & ~sample_fifo_dst_rdy_o);
+      
    localparam IBS_IDLE = 0;
    localparam IBS_RUN = 1;  // FIXME do we need this?
    localparam IBS_CONT_BURST = 2;
@@ -87,7 +101,7 @@ module vita_tx_control
 	       end
 	     else if(~send_at | now)
 	       ibs_state <= IBS_RUN;
-	     else if(late | too_early)
+	     else if((late_qual & late_del) | too_early)
 	       begin
 		  ibs_state <= IBS_ERROR;
 		  error_code <= CODE_TIME_ERROR;
@@ -166,7 +180,7 @@ module vita_tx_control
      else
        packet_consumed <= eop & sample_fifo_src_rdy_i & sample_fifo_dst_rdy_o;
    
-   assign debug = { { now,early,late,ack,eop,eob,sob,send_at },
+   assign debug = { { now,late_qual,late_del,ack,eop,eob,sob,send_at },
 		    { sample_fifo_src_rdy_i, sample_fifo_dst_rdy_o, strobe, run, error, ibs_state[2:0] },
 		    { 8'b0 },
 		    { 8'b0 } };

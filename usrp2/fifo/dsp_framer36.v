@@ -20,10 +20,10 @@ module dsp_framer36
     wire [BUF_SIZE-1:0] dsp_frm_addr_next = dsp_frm_addr + 1'b1;
 
     //DSP input stream ready in the following states
-    assign inp_ready =
-        (dsp_frm_state == DSP_FRM_STATE_WAIT_SOF)? 1'b1 : (
-        (dsp_frm_state == DSP_FRM_STATE_WAIT_EOF)? 1'b1 : (
-    1'b0));
+    assign inp_ready = (
+        dsp_frm_state == DSP_FRM_STATE_WAIT_SOF ||
+        dsp_frm_state == DSP_FRM_STATE_WAIT_EOF
+    )? 1'b1 : 1'b0;
 
     //DSP framer output data mux (header or BRAM):
     //The header is generated here from the count.
@@ -41,7 +41,7 @@ module dsp_framer36
     RAMB16_S36_S36 dsp_frm_buff(
         //port A = DSP input interface (writes to BRAM)
         .DOA(),.ADDRA(dsp_frm_addr),.CLKA(clk),.DIA(inp_data[31:0]),.DIPA(4'h0),
-        .ENA(inp_ready),.SSRA(0),.WEA(inp_ready),
+        .ENA(inp_ready & inp_valid),.SSRA(0),.WEA(inp_ready & inp_valid),
         //port B = DSP framer interface (reads from BRAM)
         .DOB(dsp_frm_data_bram),.ADDRB(dsp_frm_addr),.CLKB(clk),.DIB(36'b0),.DIPB(4'h0),
         .ENB(out_ready & out_valid),.SSRB(0),.WEB(1'b0)

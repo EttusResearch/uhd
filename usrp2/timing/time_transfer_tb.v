@@ -18,12 +18,12 @@ module time_transfer_tb();
    
    initial #100000000 $finish;
 
-   wire exp_pps, pps, pps_rcv;
-   wire [31:0] master_clock_rcv;
-   reg [31:0]  master_clock = 0;
-   reg [31:0]  counter = 0;
+   wire exp_time, pps, pps_rcv;
+   wire [63:0] vita_time_rcv;
+   reg [63:0]  vita_time = 0;
+   reg [63:0]  counter = 0;
 
-   localparam  PPS_PERIOD = 109;
+   localparam  PPS_PERIOD = 439; // PPS_PERIOD % 10 must = 9
    always @(posedge clk)
      if(counter == PPS_PERIOD)
        counter <= 0;
@@ -32,19 +32,19 @@ module time_transfer_tb();
    assign      pps = (counter == (PPS_PERIOD-1));
    
    always @(posedge clk)
-     master_clock <= master_clock + 1;
+     vita_time <= vita_time + 1;
    
    time_sender time_sender
      (.clk(clk),.rst(rst),
-      .master_clock(master_clock),
-      .pps(pps),
-      .exp_pps_out(exp_pps) );
+      .vita_time(vita_time),
+      .send_sync(pps),
+      .exp_time_out(exp_time) );
 
    time_receiver time_receiver
      (.clk(clk),.rst(rst),
-      .master_clock(master_clock_rcv),
-      .pps(pps_rcv),
-      .exp_pps_in(exp_pps) );
+      .vita_time(vita_time_rcv),
+      .sync_rcvd(pps_rcv),
+      .exp_time_in(exp_time) );
 
-   wire [31:0] delta = master_clock - master_clock_rcv;
+   wire [31:0] delta = vita_time - vita_time_rcv;
 endmodule // time_transfer_tb

@@ -17,8 +17,8 @@ module u2_core
    output [1:0] debug_clk,
 
    // Expansion
-   input exp_pps_in,
-   output exp_pps_out,
+   input exp_time_in,
+   output exp_time_out,
    
    // GMII
    //   GMII-CTRL
@@ -440,7 +440,7 @@ module u2_core
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
-      
+
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
@@ -730,10 +730,14 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
+   wire [31:0] 	 debug_sync;
+
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int));
-   
+      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int),
+      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out),
+      .debug(debug_sync));
+
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
