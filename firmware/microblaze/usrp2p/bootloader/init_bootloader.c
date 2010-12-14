@@ -56,7 +56,7 @@ void delay(uint32_t t) {
 int main(int argc, char *argv[]) {
   hal_disable_ints();	// In case we got here via jmp 0x0
 	output_regs->leds = 0xFF;
-	delay(500000);
+	delay(5000);
 	output_regs->leds = 0x00;
 	hal_uart_init();
 	spif_init();
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 		if(is_valid_fpga_image(PROD_FPGA_IMAGE_LOCATION_ADDR)) {
 			puts("Valid production FPGA image found. Attempting to boot.");
 			set_safe_booted_flag(1);
-			delay(30000); //so serial output can finish
+			delay(300); //so serial output can finish
 			icap_reload_fpga(PROD_FPGA_IMAGE_LOCATION_ADDR);
 		}
 		puts("No valid production FPGA image found.\nAttempting to load production firmware...");
