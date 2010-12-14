@@ -3,7 +3,7 @@
 // ////////////////////////////////////////////////////////////////////////////////
 
 module u2_core
-  #(parameter RAM_SIZE=32768)
+  #(parameter RAM_SIZE=16384, parameter RAM_AW=14)
   (// Clocks
    input dsp_clk,
    input wb_clk,
@@ -286,13 +286,11 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////
    // RAM Loader
 
-   wire [31:0] 	 ram_loader_dat, if_dat;
+   wire [31:0] 	 ram_loader_dat;
    wire [15:0] 	 ram_loader_adr;
-   wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
    wire 	 ram_loader_stb, ram_loader_we;
-   wire 	 iwb_ack, iwb_stb;
-   ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
+   ram_loader #(.AWIDTH(aw),.RAM_SIZE(RAM_SIZE))
      ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
 		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
 		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
@@ -308,36 +306,44 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////
    // Processor
-   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
-     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
-	   // Instruction Wishbone bus to I-RAM
-	   .if_adr(if_adr),
-	   .if_dat(if_dat),
+//   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
+//     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
+//	   // Instruction Wishbone bus to I-RAM
+//	   .if_adr(if_adr),
+//	   .if_dat(if_dat),
+//	   // Data Wishbone bus to system bus fabric
+//	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
+//	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
+//	   // Interrupts and exceptions
+//	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
+
+   //assign 	 bus_error = m0_err | m0_rty;
+
+   wire [63:0] zpu_status;
+   zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(ram_loader_done),
 	   // Data Wishbone bus to system bus fabric
-	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
-	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
+	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
+	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
-   
-   assign 	 bus_error = m0_err | m0_rty;
+	   .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
    // I-port connects directly to processor and ram loader
 
    wire 	 flush_icache;
-   ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
+   ram_harvard #(.AWIDTH(RAM_AW),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
-	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
+	     .ram_loader_adr_i(ram_loader_adr[RAM_AW-1:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
 	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
-	     .if_adr(if_adr), 
-	     .if_data(if_dat), 
+	     .if_adr(16'b0), .if_data(),
 	     
-	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+	     .dwb_adr_i(s0_adr[RAM_AW-1:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
 	     .flush_icache(flush_icache));
    
@@ -431,6 +437,7 @@ module u2_core
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
+
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
@@ -721,7 +728,7 @@ module u2_core
    // VITA Timing
 
    wire [31:0] 	 debug_sync;
-   
+
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int),
