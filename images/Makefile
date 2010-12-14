@@ -107,9 +107,9 @@ _usrp2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2_fpga.bin
 IMAGES_LIST += $(_usrp2_fpga_bin)
 
 $(_usrp2_fpga_bin):
-	cd $(_usrp2_fpga_dir) && make -f Makefile.udp clean
-	cd $(_usrp2_fpga_dir) && make -f Makefile.udp bin
-	cp $(_usrp2_fpga_dir)/build-udp/u2_rev3.bin $@
+	cd $(_usrp2_fpga_dir) && make clean
+	cd $(_usrp2_fpga_dir) && make bin
+	cp $(_usrp2_fpga_dir)/build/u2_rev3.bin $@
 
 endif
 
