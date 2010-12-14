@@ -54,7 +54,8 @@ pic_init(void)
  * system interrupt handler with the appropriate prologue and
  * epilogue.
  */
-void pic_interrupt_handler() __attribute__ ((interrupt_handler));
+//FIXME zpu-gcc does not install interrupt_handler like this
+//void pic_interrupt_handler() __attribute__ ((interrupt_handler));
 
 void pic_interrupt_handler()
 {

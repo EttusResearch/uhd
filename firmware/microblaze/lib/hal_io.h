@@ -70,13 +70,7 @@ hal_set_timeout(int delta_ticks)
 static inline int
 hal_disable_ints(void)
 {
-  int result, t0;
-
-  //asm volatile("mfs   %0, rmsr       \n\
-//		andni %1, %0, 0x2    \n\
-//		mts   rmsr, %1"
-//	       : "=r" (result), "=r" (t0));
-  return result;
+  return 0; /* NOP */
 }
 
 /*!
@@ -86,13 +80,7 @@ hal_disable_ints(void)
 static inline int
 hal_enable_ints(void)
 {
-  int result, t0;
-
-//  asm volatile("mfs  %0, rmsr	      \n\
-//		ori  %1, %0, 0x2      \n\
-//		mts  rmsr, %1"
-//	       : "=r" (result), "=r" (t0));
-  return result;
+  return 0; /* NOP */
 }
 
 /*!
@@ -102,13 +90,7 @@ hal_enable_ints(void)
 static inline void
 hal_restore_ints(int prev_state)
 {
-  int t0, t1;
-//  asm volatile("andi  %0, %2, 0x2	\n\
-//		mfs   %1, rmsr          \n\
-//		andni %1, %1, 0x2	\n\
-//		or    %1, %1, %0	\n\
-//		mts   rmsr, %1"
-//	       : "=r" (t0), "=r"(t1) : "r" (prev_state));
+    /* NOP */
 }
 
 #endif /* INCLUDED_HAL_IO_H */
