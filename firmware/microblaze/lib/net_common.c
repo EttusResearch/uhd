@@ -22,7 +22,6 @@
 #include "net_common.h"
 #include "banal.h"
 #include <hal_io.h>
-#include <buffer_pool.h>
 #include <memory_map.h>
 #include <memcpy_wa.h>
 #include <ethernet.h>
@@ -36,28 +35,21 @@
 #include "if_arp.h"
 #include <ethertype.h>
 #include <string.h>
+#include "pkt_ctrl.h"
 
+static const bool debug = false;
 
-int cpu_tx_buf_dest_port = PORT_ETH;
+static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
-// If this is non-zero, this dbsm could be writing to the ethernet
-dbsm_t *ac_could_be_sending_to_eth;
-
-static inline bool
-ip_addr_eq(const struct ip_addr a, const struct ip_addr b)
-{
-  return a.addr == b.addr;
-}
+//used in the top level application...
+struct socket_address fp_socket_src, fp_socket_dst;
 
 // ------------------------------------------------------------------------
 
 static eth_mac_addr_t _local_mac_addr;
-void register_mac_addr(const eth_mac_addr_t *mac_addr){
-    _local_mac_addr = *mac_addr;
-}
-
 static struct ip_addr _local_ip_addr;
-void register_ip_addr(const struct ip_addr *ip_addr){
+void register_addrs(const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr){
+    _local_mac_addr = *mac_addr;
     _local_ip_addr = *ip_addr;
 }
 
@@ -126,13 +118,6 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
 	 const void *buf1, size_t len1,
 	 const void *buf2, size_t len2)
 {
-  // Wait for buffer to become idle
-  // FIXME can this ever not be ready?
-
-  //hal_set_leds(LED_BUF_BUSY, LED_BUF_BUSY);
-  while((buffer_pool_status->status & BPS_IDLE(CPU_TX_BUF)) == 0)
-    ;
-  //hal_set_leds(0, LED_BUF_BUSY);
 
   // Assemble the header
   padded_eth_hdr_t	ehdr;
@@ -141,9 +126,10 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
   ehdr.src = _local_mac_addr;
   ehdr.ethertype = ethertype;
 
-  uint32_t *p = buffer_ram(CPU_TX_BUF);
+  uint32_t *buff = (uint32_t *)pkt_ctrl_claim_outgoing_buffer();
 
   // Copy the pieces into the buffer
+  uint32_t *p = buff;
   *p++ = 0x0;  				  // slow path
   memcpy_wa(p, &ehdr, sizeof(ehdr));      // 4 lines
   p += sizeof(ehdr)/sizeof(uint32_t);
@@ -173,34 +159,23 @@ send_pkt(eth_mac_addr_t dst, int ethertype,
     p += len2/sizeof(uint32_t);
   }
 
-  size_t total_len = (p - buffer_ram(CPU_TX_BUF)) * sizeof(uint32_t);
+  size_t total_len = (p - buff) * sizeof(uint32_t);
   if (total_len < 60)		// ensure that we don't try to send a short packet
     total_len = 60;
-  
-  // wait until nobody else is sending to the ethernet
-  if (ac_could_be_sending_to_eth){
-    //hal_set_leds(LED_ETH_BUSY, LED_ETH_BUSY);
-    dbsm_wait_for_opening(ac_could_be_sending_to_eth);
-    //hal_set_leds(0x0, LED_ETH_BUSY);
-  }
 
-  if (0){
-    printf("send_pkt to port %d, len = %d\n",
-	   cpu_tx_buf_dest_port, (int) total_len);
-    print_buffer(buffer_ram(CPU_TX_BUF), total_len/4);
-  }
-
-  // fire it off
-  bp_send_from_buf(CPU_TX_BUF, cpu_tx_buf_dest_port, 1, 0, total_len/4);
-
-  // wait for it to complete (not long, it's a small pkt)
-  while((buffer_pool_status->status & (BPS_DONE(CPU_TX_BUF) | BPS_ERROR(CPU_TX_BUF))) == 0)
-    ;
-
-  bp_clear_buf(CPU_TX_BUF);
+  pkt_ctrl_commit_outgoing_buffer(total_len/4);
+  if (debug) printf("sent %d bytes\n", (int)total_len);
 }
 
-unsigned int 
+unsigned int CHKSUM(unsigned int x, unsigned int *chksum)
+{
+  *chksum += x;
+  *chksum = (*chksum & 0xffff) + (*chksum>>16);
+  *chksum = (*chksum & 0xffff) + (*chksum>>16);
+  return x;
+}
+
+static unsigned int
 chksum_buffer(unsigned short *buf, int nshorts, unsigned int initial_chksum)
 {
   unsigned int chksum = initial_chksum;
@@ -209,7 +184,6 @@ chksum_buffer(unsigned short *buf, int nshorts, unsigned int initial_chksum)
 
   return chksum;
 }
-
 
 void
 send_ip_pkt(struct ip_addr dst, int protocol,
@@ -235,7 +209,7 @@ send_ip_pkt(struct ip_addr dst, int protocol,
   bool found = arp_cache_lookup_mac(&ip.dest, &dst_mac);
   if (!found){
     printf("net_common: failed to hit cache looking for ");
-    print_ip(ip.dest);
+    print_ip_addr(&ip.dest);
     newline();
     return;
   }
@@ -293,6 +267,11 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
   case ICMP_DUR:	// Destinatino Unreachable
     if (icmp->code == ICMP_DUR_PORT){	// port unreachable
       //handle destination port unreachable (the host ctrl+c'd the app):
+
+      //filter out non udp data response
+      struct ip_hdr *ip = (struct ip_hdr *)(((uint8_t*)icmp) + sizeof(struct icmp_echo_hdr));
+      struct udp_hdr *udp = (struct udp_hdr *)(((char *)ip) + IP_HLEN);
+      if (IPH_PROTO(ip) != IP_PROTO_UDP || udp->dest != fp_socket_dst.port) return;
 
       //end async update packets per second
       sr_tx_ctrl->cyc_per_up = 0;
@@ -373,8 +352,7 @@ void send_gratuitous_arp(void){
   memcpy(req.ar_tip, get_ip_addr(),       sizeof(struct ip_addr));
 
   //send the request with a broadcast ethernet mac address
-  eth_mac_addr_t t; memset(&t, 0xff, sizeof(t));
-  send_pkt(t, ETHERTYPE_ARP, &req, sizeof(req), 0, 0, 0, 0);
+  send_pkt(BCAST_MAC_ADDR, ETHERTYPE_ARP, &req, sizeof(req), 0, 0, 0, 0);
 }
 
 static void
@@ -412,7 +390,7 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
   sip.addr = get_int32(p->ar_sip);
   tip.addr = get_int32(p->ar_tip);
 
-  if (ip_addr_eq(tip, _local_ip_addr)){	// They're looking for us...
+  if (memcmp(&tip, &_local_ip_addr, sizeof(_local_ip_addr)) == 0){	// They're looking for us...
     send_arp_reply(p, _local_mac_addr);
   }
 }
@@ -420,15 +398,17 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
 void
 handle_eth_packet(uint32_t *p, size_t nlines)
 {
-  //print_buffer(p, nlines);
+  static size_t bcount = 0;
+  if (debug) printf("===> %d\n", (int)bcount++);
+  if (debug) print_buffer(p, nlines);
 
-  int ethertype = p[3] & 0xffff;
+  padded_eth_hdr_t *eth_hdr = (padded_eth_hdr_t *)p;
 
-  if (ethertype == ETHERTYPE_ARP){
+  if (eth_hdr->ethertype == ETHERTYPE_ARP){
     struct arp_eth_ipv4 *arp = (struct arp_eth_ipv4 *)(p + 4);
     handle_arp_packet(arp, nlines*sizeof(uint32_t) - 14);
   }
-  else if (ethertype == ETHERTYPE_IPV4){
+  else if (eth_hdr->ethertype == ETHERTYPE_IPV4){
     struct ip_hdr *ip = (struct ip_hdr *)(p + 4);
     if (IPH_V(ip) != 4 || IPH_HL(ip) != 5)	// ignore pkts w/ bad version or options
       return;
@@ -436,7 +416,10 @@ handle_eth_packet(uint32_t *p, size_t nlines)
     if (IPH_OFFSET(ip) & (IP_MF | IP_OFFMASK))	// ignore fragmented packets
       return;
 
-    // FIXME filter on dest ip addr (should be broadcast or for us)
+    // filter on dest ip addr (should be broadcast or for us)
+    bool is_bcast = memcmp(&eth_hdr->dst, &BCAST_MAC_ADDR, sizeof(BCAST_MAC_ADDR)) == 0;
+    bool is_my_ip = memcmp(&ip->dest, &_local_ip_addr, sizeof(_local_ip_addr)) == 0;
+    if (!is_bcast && !is_my_ip) return;
 
     arp_cache_update(&ip->src, (eth_mac_addr_t *)(((char *)p)+8));
 

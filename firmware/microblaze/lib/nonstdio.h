@@ -45,4 +45,6 @@ void print_buffer(uint32_t *buf, size_t n);
 //char *itoa(signed long value, char *result, int base);
 //void reverse(char s[]);
 
+void print_ip_addr(const void *t);
+
 #endif /* INCLUDED_NONSTDIO_H */

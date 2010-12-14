@@ -19,24 +19,8 @@
 #define INCLUDED_BANAL_H
 
 #include <stdint.h>
-#include <lwip/ip_addr.h>
 
-/*
- * 1's complement sum for IP and UDP headers
- *
- * init chksum to zero to start.
- */
-static inline unsigned int
-CHKSUM(unsigned int x, unsigned int *chksum)
-{
-  *chksum += x;
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  return x;
-}
-
-unsigned int 
-chksum_buffer(unsigned short *buf, int nshorts, unsigned int initial_chksum);
+#define dimof(x) (sizeof(x)/sizeof(x[0]))
 
 //-------------- unsigned get_int 8, 16, 32, 64 --------------//
 
@@ -83,8 +67,5 @@ get_int64(const unsigned char *s)
 {
   return get_uint64(s);
 }
-
-void
-print_ip(struct ip_addr ip);
 
 #endif /* INCLUDED_BANAL_H */

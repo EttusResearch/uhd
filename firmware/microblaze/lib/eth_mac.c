@@ -28,6 +28,7 @@
 void
 eth_mac_set_addr(const eth_mac_addr_t *src)
 {
+  /* disable because MAC_SET_PASS_ALL is set below
   eth_mac->ucast_hi = 
     (((unsigned int)src->addr[0])<<8) + 
     ((unsigned int)src->addr[1]);
@@ -36,6 +37,7 @@ eth_mac_set_addr(const eth_mac_addr_t *src)
     (((unsigned int)src->addr[3])<<16) +
     (((unsigned int)src->addr[4])<<8) +
     (((unsigned int)src->addr[5]));
+*/
 }
 
 
@@ -45,7 +47,7 @@ eth_mac_init(const eth_mac_addr_t *src)
   eth_mac->miimoder = 25;	// divider from CPU clock (50MHz/25 = 2MHz)
 
   eth_mac_set_addr(src);
-  eth_mac->settings = MAC_SET_PAUSE_EN | MAC_SET_PASS_BCAST | MAC_SET_PASS_UCAST | MAC_SET_PAUSE_SEND_EN; 
+  eth_mac->settings = MAC_SET_PAUSE_EN | MAC_SET_PASS_BCAST | MAC_SET_PASS_UCAST | MAC_SET_PAUSE_SEND_EN | MAC_SET_PASS_ALL;
 
   eth_mac->pause_time = 38;
   eth_mac->pause_thresh = 1200;

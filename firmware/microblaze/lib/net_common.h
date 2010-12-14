@@ -20,25 +20,20 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <dbsm.h>
 #include <net/socket_address.h>
 #include <net/eth_mac_addr.h>
 
-#define CPU_TX_BUF 	7	// cpu -> eth
-
-extern int cpu_tx_buf_dest_port;
-
-// If this is non-zero, this dbsm could be writing to the ethernet
-extern dbsm_t *ac_could_be_sending_to_eth;
-
-void stop_streaming(void);
+/*
+ * 1's complement sum for IP and UDP headers
+ *
+ * init chksum to zero to start.
+ */
+unsigned int CHKSUM(unsigned int x, unsigned int *chksum);
 
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);
 
-void register_mac_addr(const eth_mac_addr_t *mac_addr);
-
-void register_ip_addr(const struct ip_addr *ip_addr);
+void register_addrs(const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr);
 
 void register_udp_listener(int port, udp_receiver_t rcvr);
 

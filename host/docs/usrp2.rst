@@ -101,7 +101,7 @@ On some systems, the firewall will block UDP broadcast packets.
 It is recommended that you change or disable your firewall settings.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Multiple device configuration
+Multiple devices per host
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For maximum throughput, one ethernet interface per USRP2 is recommended,
 although multiple devices may be connected via a gigabit ethernet switch.
@@ -210,6 +210,66 @@ Example device address string representation for 2 USRP2s with IPv4 addresses 19
     addr0=192.168.10.2, addr1=192.168.20.2
 
 ------------------------------------------------------------------------
+Using the MIMO Cable
+------------------------------------------------------------------------
+The MIMO cable allows two USRP devices to share reference clocks,
+time synchronization, and the ethernet interface.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Shared ethernet mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In shared ethernet mode,
+only one device in the configuration can be attached to the ethernet.
+This device will be referred to as the master, and the other device, the slave.
+
+* The master provides reference clock and time synchronization to the slave.
+* All data passing between the host and the slave is routed over the MIMO cable.
+* Both master and slave must have different IPv4 addresses in the same subnet.
+* The master and slave may be used individually or in a multi-device configuration.
+* External clocking is optional, and should only be supplied to the master device.
+* The role of slave and master may be switched with the "mimo_mode" device address (see dual ethernet mode).
+
+Example device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 (master) and 192.168.10.3 (slave)
+::
+
+    -- Multi-device example --
+
+    addr0=192.168.10.2, addr1=192.168.10.3
+
+    -- Two single devices example --
+
+    addr=192.168.10.2
+
+    addr=192.168.10.3
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Dual ethernet mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In dual ethernet mode,
+both devices in the configuration must be attached to the ethernet.
+One of the devices in the configuration will be configured to provide synchronization.
+This device will be referred to as the master, and the other device, the slave.
+
+* The master provides reference clock and time synchronization to the slave.
+* The devices require the special device address argument "mimo_mode" set.
+* Both master and slave must have different IPv4 addresses in different subnets.
+* The master and slave may be used individually or in a multi-device configuration.
+* External clocking is optional, and should only be supplied to the master device.
+
+Example device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 (master) and 192.168.20.2 (slave)
+::
+
+    -- Multi-device example --
+
+    addr0=192.168.10.2, mimo_mode0=master, addr1=192.168.20.2, mimo_mode1=slave
+
+    -- Two single devices example --
+
+    addr=192.168.10.2, mimo_mode=master
+
+    addr=192.168.20.2, mimo_mode=slave
+
+------------------------------------------------------------------------
 Hardware setup notes
 ------------------------------------------------------------------------
 
@@ -220,7 +280,7 @@ The LEDs on the front panel can be useful in debugging hardware and software iss
 The LEDs reveal the following about the state of the device:
 
 * **LED A:** transmitting
-* **LED B:** serdes link
+* **LED B:** mimo cable link
 * **LED C:** receiving
 * **LED D:** firmware loaded
 * **LED E:** reference lock

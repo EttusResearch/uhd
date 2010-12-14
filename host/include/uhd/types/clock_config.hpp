@@ -32,12 +32,10 @@ namespace uhd{
             REF_AUTO = 'a', //automatic (device specific)
             REF_INT  = 'i', //internal reference
             REF_SMA  = 's', //external sma port
-            REF_MIMO = 'm'  //mimo cable (usrp2 only)
         } ref_source;
         enum pps_source_t {
             PPS_INT  = 'i', //there is no internal
             PPS_SMA  = 's', //external sma port
-            PPS_MIMO = 'm'  //mimo cable (usrp2 only)
         } pps_source;
         enum pps_polarity_t {
             PPS_NEG = 'n', //negative edge

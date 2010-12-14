@@ -28,12 +28,10 @@
 #include "memory_map.h"
 #include "spi.h"
 #include "hal_io.h"
-#include "buffer_pool.h"
 #include "pic.h"
 #include <stdbool.h>
 #include "ethernet.h"
 #include "nonstdio.h"
-#include "dbsm.h"
 #include <net/padded_eth_hdr.h>
 #include <net_common.h>
 #include "memcpy_wa.h"
@@ -42,87 +40,12 @@
 #include <string.h>
 #include "clocks.h"
 #include "usrp2/fw_common.h"
-#include <i2c_async.h>
 #include <i2c.h>
 #include <ethertype.h>
 #include <arp_cache.h>
 #include "udp_fw_update.h"
-
-/*
- * Full duplex Tx and Rx between ethernet and DSP pipelines
- *
- * Buffer 1 is used by the cpu to send frames to the host.
- * Buffers 2 and 3 are used to double-buffer the DSP Rx to eth flow
- * Buffers 4 and 5 are used to double-buffer the eth to DSP Tx  eth flow
- */
-//#define CPU_RX_BUF	0	// eth -> cpu
-
-#define	DSP_RX_BUF_0	2	// dsp rx -> eth (double buffer)
-#define	DSP_RX_BUF_1	3	// dsp rx -> eth
-#define	DSP_TX_BUF_0	4	// eth -> dsp tx (double buffer)
-#define	DSP_TX_BUF_1	5	// eth -> dsp tx
-
-/*
- * ================================================================
- *   configure DSP TX double buffering state machine (eth -> dsp)
- * ================================================================
- */
-
-// DSP Tx reads ethernet header words
-#define DSP_TX_FIRST_LINE ((sizeof(padded_eth_hdr_t) + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))/sizeof(uint32_t))
-
-// Receive from ethernet
-buf_cmd_args_t dsp_tx_recv_args = {
-  PORT_ETH,
-  0,
-  BP_LAST_LINE
-};
-
-// send to DSP Tx
-buf_cmd_args_t dsp_tx_send_args = {
-  PORT_DSP,
-  DSP_TX_FIRST_LINE,	// starts just past transport header
-  0			// filled in from last_line register
-};
-
-dbsm_t dsp_tx_sm;	// the state machine
-
-/*
- * ================================================================
- *   configure DSP RX double buffering state machine (dsp -> eth)
- * ================================================================
- */
-
-static const uint32_t rx_ctrl_word = 1 << 16;
-
-// DSP Rx writes ethernet header words
-#define DSP_RX_FIRST_LINE sizeof(rx_ctrl_word)/sizeof(uint32_t)
-
-static bool dbsm_rx_inspector(dbsm_t *sm, int buf_this){
-    size_t num_lines = buffer_pool_status->last_line[buf_this]-DSP_RX_FIRST_LINE;
-    ((uint32_t*)buffer_ram(buf_this))[0] = (num_lines*sizeof(uint32_t)) | (1 << 16);
-    return false;
-}
-
-// receive from DSP
-buf_cmd_args_t dsp_rx_recv_args = {
-  PORT_DSP,
-  DSP_RX_FIRST_LINE,
-  BP_LAST_LINE
-};
-
-// send to ETH
-buf_cmd_args_t dsp_rx_send_args = {
-  PORT_ETH,
-  0,		// starts with ethernet header in line 0
-  0,		// filled in from list_line register
-};
-
-dbsm_t dsp_rx_sm;	// the state machine
-
-
-// The mac address of the host we're sending to.
-eth_mac_addr_t host_mac_addr;
+#include "pkt_ctrl.h"
+#include "banal.h"
 
 static void setup_network(void);
 
@@ -130,16 +53,7 @@ static void setup_network(void);
 // the fast-path setup global variables
 // ----------------------------------------------------------------
 static eth_mac_addr_t fp_mac_addr_src, fp_mac_addr_dst;
-static struct socket_address fp_socket_src, fp_socket_dst;
-
-// ----------------------------------------------------------------
-void start_rx_streaming_cmd(void);
-void stop_rx_cmd(void);
-
-static void print_ip_addr(const void *t){
-    uint8_t *p = (uint8_t *)t;
-    printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-}
+extern struct socket_address fp_socket_src, fp_socket_dst;
 
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
@@ -166,40 +80,10 @@ void handle_udp_data_packet(
     //setup network and vrt
     setup_network();
 
-    // kick off the state machine
-    dbsm_start(&dsp_rx_sm);
-
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \
     (((bank) == USRP2_DIR_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
-
-//setup the output data
-static usrp2_ctrl_data_t ctrl_data_out;
-static struct socket_address i2c_src;
-static struct socket_address spi_src;
-
-static volatile bool i2c_done = false;
-void i2c_read_done_callback(void) {
-  //printf("I2C read done callback\n");
-  i2c_async_data_ready(ctrl_data_out.data.i2c_args.data);
-  i2c_done = true;
-  i2c_register_callback(0);
-}
-
-void i2c_write_done_callback(void) {
-  //printf("I2C write done callback\n");
-  i2c_done = true;
-  i2c_register_callback(0);
-}
-
-static volatile bool spi_done = false;
-static volatile uint32_t spi_readback_data;
-void get_spi_readback_data(void) {
-  ctrl_data_out.data.spi_args.data = spi_get_data();
-  spi_done = true;
-  spi_register_callback(0);
-}
 
 void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
@@ -226,6 +110,7 @@ void handle_udp_ctrl_packet(
     }
 
     //setup the output data
+    usrp2_ctrl_data_t ctrl_data_out;
     ctrl_data_out.proto_ver = USRP2_FW_COMPAT_NUM;
     ctrl_data_out.id=USRP2_CTRL_ID_HUH_WHAT;
     ctrl_data_out.seq=ctrl_data_in->seq;
@@ -239,7 +124,6 @@ void handle_udp_ctrl_packet(
     case USRP2_CTRL_ID_WAZZUP_BRO:
         ctrl_data_out.id = USRP2_CTRL_ID_WAZZUP_DUDE;
         memcpy(&ctrl_data_out.data.ip_addr, get_ip_addr(), sizeof(struct ip_addr));
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -247,21 +131,19 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO:{
             //transact
-            bool success = spi_async_transact(
-                //(ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
+            uint32_t result = spi_transact(
+                (ctrl_data_in->data.spi_args.readback == 0)? SPI_TXONLY : SPI_TXRX,
                 ctrl_data_in->data.spi_args.dev,      //which device
                 ctrl_data_in->data.spi_args.data,     //32 bit data
                 ctrl_data_in->data.spi_args.num_bits, //length in bits
-                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE | //flags
-                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL,
-                get_spi_readback_data //callback
+                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE |
+                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
             );
 
             //load output
+            ctrl_data_out.data.spi_args.data = result;
             ctrl_data_out.id = USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE;
-            spi_src = src;
         }
-//        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     /*******************************************************************
@@ -269,13 +151,11 @@ void handle_udp_ctrl_packet(
      ******************************************************************/
     case USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_register_callback(i2c_read_done_callback);
-            i2c_async_read(
+            i2c_read(
                 ctrl_data_in->data.i2c_args.addr,
+                ctrl_data_out.data.i2c_args.data,
                 num_bytes
             );
-            i2c_src = src;
-//            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
@@ -283,14 +163,11 @@ void handle_udp_ctrl_packet(
 
     case USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO:{
             uint8_t num_bytes = ctrl_data_in->data.i2c_args.bytes;
-            i2c_register_callback(i2c_read_done_callback);
-            i2c_async_write(
+            i2c_write(
                 ctrl_data_in->data.i2c_args.addr,
                 ctrl_data_in->data.i2c_args.data,
                 num_bytes
             );
-            i2c_src = src;
-//            i2c_dst = dst;
             ctrl_data_out.id = USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE;
             ctrl_data_out.data.i2c_args.bytes = num_bytes;
         }
@@ -322,7 +199,6 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
@@ -345,7 +221,6 @@ void handle_udp_ctrl_packet(
 
         }
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
         break;
 
     case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
@@ -372,32 +247,11 @@ void handle_udp_ctrl_packet(
 
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;
-        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
     }
-    
+    send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
 }
 
-/*
- * Called when an ethernet packet is received.
- * Return true if we handled it here, otherwise
- * it'll be passed on to the DSP Tx pipe
- */
-static bool
-eth_pkt_inspector(dbsm_t *sm, int bufno)
-{
-  //point me to the ethernet frame
-  uint32_t *buff = (uint32_t *)buffer_ram(bufno);
-
-  //treat this as fast-path data?
-  // We have to do this operation as fast as possible.
-  // Therefore, we do not check all the headers,
-  // just check that the udp port matches
-  // and that the vrt header is non zero.
-  // In the future, a hardware state machine will do this...
-  if ( //warning! magic numbers approaching....
-      (((buff + ((2 + 14 + 20)/sizeof(uint32_t)))[0] & 0xffff) == USRP2_UDP_DATA_PORT) &&
-      ((buff + ((2 + 14 + 20 + 8)/sizeof(uint32_t)))[1] != USRP2_INVALID_VRT_HEADER)
-  ) return false;
+static void handle_inp_packet(uint32_t *buff, size_t num_lines){
 
   //test if its an ip recovery packet
   typedef struct{
@@ -411,42 +265,30 @@ eth_pkt_inspector(dbsm_t *sm, int bufno)
   if (recovery_packet->eth_hdr.ethertype == 0xbeee && strncmp(recovery_packet->code, "addr", 4) == 0){
       printf("Got ip recovery packet: "); print_ip_addr(&recovery_packet->data.ip_addr); newline();
       set_ip_addr(&recovery_packet->data.ip_addr);
-      return true;
+      return;
   }
 
   //pass it to the slow-path handler
-  size_t len = buffer_pool_status->last_line[bufno] - 3;
-  handle_eth_packet(buff, len);
-  return true;
+  handle_eth_packet(buff, num_lines);
 }
+
 
 //------------------------------------------------------------------
 
 /*
- * 1's complement sum for IP and UDP headers
- *
- * init chksum to zero to start.
- */
-static unsigned int
-CHKSUM(unsigned int x, unsigned int *chksum)
-{
-  *chksum += x;
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  return x;
-}
-
-/*
  * Called when eth phy state changes (w/ interrupts disabled)
  */
-volatile bool link_is_up = false;	// eth handler sets this
-void
-link_changed_callback(int speed)
-{
-  link_is_up = speed != 0;
-  hal_set_leds(link_is_up ? LED_RJ45 : 0x0, LED_RJ45);
-  printf("\neth link changed: speed = %d\n", speed);
-  if (link_is_up) send_gratuitous_arp();
+void link_changed_callback(int speed){
+    printf("\neth link changed: speed = %d\n", speed);
+    if (speed != 0){
+        hal_set_leds(LED_RJ45, LED_RJ45);
+        pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_MASTER);
+        send_gratuitous_arp();
+    }
+    else{
+        hal_set_leds(0x0, LED_RJ45);
+        pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
+    }
 }
 
 static void setup_network(void){
@@ -483,15 +325,6 @@ static void setup_network(void){
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
 }
 
-inline static void
-buffer_irq_handler(unsigned irq)
-{
-  uint32_t  status = buffer_pool_status->status;
-
-  dbsm_process_status(&dsp_tx_sm, status);
-  dbsm_process_status(&dsp_rx_sm, status);
-}
-
 int
 main(void)
 {
@@ -515,72 +348,40 @@ main(void)
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
 
   //1) register the addresses into the network stack
-  register_mac_addr(ethernet_mac_addr());
-  register_ip_addr(get_ip_addr());
-  
+  register_addrs(ethernet_mac_addr(), get_ip_addr());
+  pkt_ctrl_program_inspector(get_ip_addr(), USRP2_UDP_CTRL_PORT, USRP2_UDP_DATA_PORT);
+
   //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 
-  //3) setup ethernet hardware to bring the link up
+  //3) set the routing mode to slave and send a garp
+  pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
+  send_gratuitous_arp();
+
+  //4) setup ethernet hardware to bring the link up
   ethernet_register_link_changed_callback(link_changed_callback);
   ethernet_init();
 
-  // initialize double buffering state machine for ethernet -> DSP Tx
+  while(true){
 
-  dbsm_init(&dsp_tx_sm, DSP_TX_BUF_0,
-	    &dsp_tx_recv_args, &dsp_tx_send_args,
-	    eth_pkt_inspector);
-
-
-  // initialize double buffering state machine for DSP RX -> Ethernet
-
-    dbsm_init(&dsp_rx_sm, DSP_RX_BUF_0,
-	      &dsp_rx_recv_args, &dsp_rx_send_args,
-	      dbsm_rx_inspector);
-
-  sr_tx_ctrl->clear_state = 1;
-  bp_clear_buf(DSP_TX_BUF_0);
-  bp_clear_buf(DSP_TX_BUF_1);
-
-  // kick off the state machine
-  dbsm_start(&dsp_tx_sm);
-
-  //int which = 0;
-
-  while(1){
-    // hal_gpio_write(GPIO_TX_BANK, which, 0x8000);
-    // which ^= 0x8000;
-
-    buffer_irq_handler(0);
-
-    if(i2c_done) {
-      i2c_done = false;
-      send_udp_pkt(USRP2_UDP_CTRL_PORT, i2c_src, &ctrl_data_out, sizeof(ctrl_data_out));
-      //printf("Sending UDP packet from main loop for I2C...\n");
-    }
-
-    if(spi_done) {
-      spi_done = false;
-      send_udp_pkt(USRP2_UDP_CTRL_PORT, spi_src, &ctrl_data_out, sizeof(ctrl_data_out));
+    size_t num_lines;
+    void *buff = pkt_ctrl_claim_incoming_buffer(&num_lines);
+    if (buff != NULL){
+        handle_inp_packet((uint32_t *)buff, num_lines);
+        pkt_ctrl_release_incoming_buffer();
     }
 
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
-      //dbsm_handle_tx_underrun(&dsp_tx_sm);
       pic_regs->pending = PIC_UNDERRUN_INT;	// clear interrupt
       putchar('U');
     }
 
     if (pending & PIC_OVERRUN_INT){
-      //dbsm_handle_rx_overrun(&dsp_rx_sm);
       pic_regs->pending = PIC_OVERRUN_INT;	// clear pending interrupt
-
-      // FIXME Figure out how to handle this robustly.
-      // Any buffers that are emptying should be allowed to drain...
-
       putchar('O');
     }
   }

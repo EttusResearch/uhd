@@ -20,9 +20,9 @@
 #include "pic.h"
 #include "nonstdio.h"
 
-void (*volatile spi_callback)(void); //SPI callback when xfer complete.
+//void (*volatile spi_callback)(void); //SPI callback when xfer complete.
 
-static void spi_irq_handler(unsigned irq);
+//static void spi_irq_handler(unsigned irq);
 
 void
 spi_init(void) 
@@ -66,6 +66,7 @@ spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags
     return 0;
 }
 
+/*
 void spi_register_callback(void (*volatile callback)(void)) {
   spi_callback = callback;
 }
@@ -106,3 +107,4 @@ spi_async_transact(int slave, uint32_t data, int length, uint32_t flags, void (*
 
   return true;
 }
+*/

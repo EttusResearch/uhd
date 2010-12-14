@@ -201,8 +201,9 @@ sep_indexed_dev_addrs(device_addr);
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
     std::vector<zero_copy_if::sptr> data_transports;
+    const device_addrs_t device_addrs = sep_indexed_dev_addrs(device_addr);
 
-    BOOST_FOREACH(const device_addr_t &dev_addr_i, sep_indexed_dev_addrs(device_addr)){
+    BOOST_FOREACH(const device_addr_t &dev_addr_i, device_addrs){
         ctrl_transports.push_back(udp_simple::make_connected(
             dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
@@ -213,7 +214,7 @@ sep_indexed_dev_addrs(device_addr);
 
     //create the usrp2 implementation guts
     return device::sptr(
-        new usrp2_impl(ctrl_transports, data_transports, device_addr)
+        new usrp2_impl(ctrl_transports, data_transports, device_addrs)
     );
 }
 
@@ -227,7 +228,7 @@ UHD_STATIC_BLOCK(register_usrp2_device){
 usrp2_impl::usrp2_impl(
     std::vector<udp_simple::sptr> ctrl_transports,
     std::vector<zero_copy_if::sptr> data_transports,
-    const device_addr_t &flow_control_hints
+    const device_addrs_t &device_args
 ):
     _data_transports(data_transports)
 {
@@ -244,11 +245,10 @@ usrp2_impl::usrp2_impl(
     //!!!!! set the otw type here before continuing, its used below
 
     //create a new mboard handler for each control transport
-    for(size_t i = 0; i < ctrl_transports.size(); i++){
+    for(size_t i = 0; i < device_args.size(); i++){
         _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
-            i, ctrl_transports[i], data_transports[i],
-            this->get_max_recv_samps_per_packet(),
-            flow_control_hints
+            i, ctrl_transports[i], data_transports[i], device_args[i],
+            this->get_max_recv_samps_per_packet()
         )));
         //use an empty name when there is only one mboard
         std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";

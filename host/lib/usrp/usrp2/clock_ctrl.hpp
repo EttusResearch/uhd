@@ -91,8 +91,18 @@ public:
     virtual void enable_test_clock(bool enb) = 0;
 
     /*!
-     * TODO other clock control api here....
+     * Enable/disable the ref clock output over the serdes cable.
+     * \param enb true to enable
      */
+    virtual void enable_mimo_clock_out(bool enb) = 0;
+    
+    /*!
+     * Set the output delay of the mimo clock
+     * Used to synchronise daisy-chained USRPs over the MIMO cable
+     * Can also be used to adjust delay for uneven reference cable lengths
+     * \param delay the clock delay in seconds
+     */
+    virtual void set_mimo_clock_delay(double delay) = 0;
 
 };
 

@@ -27,6 +27,10 @@
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
+static const double mimo_clock_delay_usrp_n2xx = 0; //TODO
+static const int mimo_clock_sync_delay_cycles = 134;
+
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::posix_time;
@@ -38,8 +42,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
     transport::zero_copy_if::sptr data_transport,
-    size_t recv_samps_per_packet,
-    const device_addr_t &flow_control_hints
+    const device_addr_t &device_args,
+    size_t recv_samps_per_packet
 ):
     _index(index),
     _iface(usrp2_iface::make(ctrl_transport))
@@ -58,7 +62,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
     //_gps_ctrl = usrp2_gps_ctrl::make(_iface);
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
@@ -98,14 +101,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
     //setting the cycles per update (disabled by default)
-    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 0.0);
+    const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
         _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
     }
 
     //setting the packets per update (enabled by default)
-    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8.0);
+    const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
         const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
@@ -118,6 +121,20 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     init_duc_config();
 
     //initialize the clock configuration
+    if (device_args.has_key("mimo_mode")){
+        if (device_args["mimo_mode"] == "master"){
+            _mimo_clocking_mode_is_master = true;
+        }
+        else if (device_args["mimo_mode"] == "slave"){
+            _mimo_clocking_mode_is_master = false;
+        }
+        else throw std::runtime_error(
+            "mimo_mode must be set to master or slave"
+        );
+    }
+    else {
+        _mimo_clocking_mode_is_master = bool(_iface->peek32(_iface->regs.status) & (1 << 8));
+    }
     init_clock_config();
 
     //init the codec before the dboard
@@ -155,7 +172,6 @@ void usrp2_mboard_impl::update_clock_config(void){
     //translate pps source enums
     switch(_clock_config.pps_source){
     case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
-    case clock_config_t::PPS_MIMO: pps_flags |= U2_FLAG_TIME64_PPS_MIMO; break;
     default: throw std::runtime_error("unhandled clock configuration pps source");
     }
 
@@ -176,7 +192,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
@@ -187,7 +202,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
@@ -195,6 +209,36 @@ void usrp2_mboard_impl::update_clock_config(void){
 
     case usrp2_iface::USRP_NXXX: break;
     }
+
+    //Handle the serdes clocking based on master/slave mode:
+    //   - Masters always drive the clock over serdes.
+    //   - Slaves always lock to this serdes clock.
+    //   - Slaves lock their time over the serdes.
+    if (_mimo_clocking_mode_is_master){
+        _clock_ctrl->enable_mimo_clock_out(true);
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp_n2xx);
+            break;
+
+        case usrp2_iface::USRP2_REV4:
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp2_rev4);
+            break;
+
+        default: break; //not handled
+        }
+        _iface->poke32(_iface->regs.time64_mimo_sync, 0);
+    }
+    else{
+        _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
+        _clock_ctrl->enable_external_ref(true);
+        _clock_ctrl->enable_mimo_clock_out(false);
+        _iface->poke32(_iface->regs.time64_mimo_sync,
+            (1 << 8) | (mimo_clock_sync_delay_cycles & 0xff)
+        );
+    }
+
 }
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){

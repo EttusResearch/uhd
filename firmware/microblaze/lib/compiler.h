@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2009 Ettus Research LLC
+ * Copyright 2009, 2010 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,5 +21,6 @@
 // FIXME gcc specific.
 #define _AL4   __attribute__((aligned (4)))
 
+#define FORCE_INLINE inline __attribute__((always_inline))
 
 #endif /* INCLUDED_COMPILER_H */
