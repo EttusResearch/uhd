@@ -20,7 +20,6 @@
 #include <uhd/usrp/dsp_props.hpp>
 #include <uhd/usrp/dboard_iface.hpp> //unit_t
 #include <uhd/utils/algorithm.hpp>
-#include <boost/math/special_functions/sign.hpp>
 #include <cmath>
 
 using namespace uhd;
@@ -37,7 +36,6 @@ static tune_result_t tune_xx_subdev_and_dsp(
     wax::obj subdev_freq_proxy = subdev[SUBDEV_PROP_FREQ];
     std::string freq_name = dsp[DSP_PROP_FREQ_SHIFT_NAMES].as<prop_names_t>().at(chan);
     wax::obj dsp_freq_proxy = dsp[named_prop_t(DSP_PROP_FREQ_SHIFT, freq_name)];
-    double dsp_sample_rate = dsp[DSP_PROP_CODEC_RATE].as<double>();
 
     //------------------------------------------------------------------
     //-- calculate the LO offset, only used with automatic policy
@@ -73,10 +71,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- calculate the dsp freq, only used with automatic policy
     //------------------------------------------------------------------
-    double delta_freq = std::fmod(tune_request.target_freq - actual_inter_freq, dsp_sample_rate);
-    bool outside_of_nyquist = std::abs(delta_freq) > dsp_sample_rate/2.0;
-    double target_dsp_freq = (outside_of_nyquist)?
-        boost::math::sign(delta_freq)*dsp_sample_rate - delta_freq : -delta_freq;
+    double target_dsp_freq = actual_inter_freq - tune_request.target_freq;
 
     //invert the sign on the dsp freq given the following conditions
     if (unit == dboard_iface::UNIT_TX) target_dsp_freq *= -1.0;

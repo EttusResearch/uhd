@@ -34,6 +34,15 @@ public:
     static sptr make(usrp2_iface::sptr iface);
 
     /*!
+     * Set the modulation mode for the DAC.
+     * Possible modes are 0, +/-1, +/-2, +/-4, +/-8
+     * which correspond to shifts of fs/mod_mode.
+     * A mode of 0 or +/-1 means no modulation.
+     * \param mod_mode the modulation mode
+     */
+    virtual void set_tx_mod_mode(int mod_mode) = 0;
+
+    /*!
      * Set the analog preamplifier on the USRP2+ ADC (ADS62P44).
      * \param gain enable or disable the 3.5dB preamp
      */

@@ -39,7 +39,7 @@ public:
         //setup the ad9777 dac
         _ad9777_regs.x_1r_2r_mode = ad9777_regs_t::X_1R_2R_MODE_1R;
         _ad9777_regs.filter_interp_rate = ad9777_regs_t::FILTER_INTERP_RATE_4X;
-        _ad9777_regs.mix_mode = ad9777_regs_t::MIX_MODE_REAL;
+        _ad9777_regs.mix_mode = ad9777_regs_t::MIX_MODE_COMPLEX;
         _ad9777_regs.pll_divide_ratio = ad9777_regs_t::PLL_DIVIDE_RATIO_DIV1;
         _ad9777_regs.pll_state = ad9777_regs_t::PLL_STATE_ON;
         _ad9777_regs.auto_cp_control = ad9777_regs_t::AUTO_CP_CONTROL_AUTO;
@@ -57,6 +57,7 @@ public:
         for(boost::uint8_t addr = 0; addr <= 0xC; addr++){
             this->send_ad9777_reg(addr);
         }
+        set_tx_mod_mode(0);
 
         //power-up adc
         switch(_iface->get_rev()){
@@ -100,6 +101,26 @@ public:
 
         case usrp2_iface::USRP_NXXX: break;
         }
+    }
+
+    void set_tx_mod_mode(int mod_mode){
+        //set the sign of the frequency shift
+        _ad9777_regs.modulation_form = (mod_mode > 0)?
+            ad9777_regs_t::MODULATION_FORM_E_PLUS_JWT:
+            ad9777_regs_t::MODULATION_FORM_E_MINUS_JWT
+        ;
+
+        //set the frequency shift
+        switch(std::abs(mod_mode)){
+        case 0:
+        case 1: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_NONE; break;
+        case 2: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_FS_2; break;
+        case 4: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_FS_4; break;
+        case 8: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_FS_8; break;
+        default: throw std::runtime_error("unknown modulation mode for ad9777");
+        }
+
+        this->send_ad9777_reg(0x01); //set the register
     }
 
     void set_rx_digital_gain(float gain) {  //fine digital gain
