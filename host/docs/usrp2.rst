@@ -217,9 +217,10 @@ Only one device in the configuration can be attached to the ethernet.
 This device will be referred to as the master, and the other device, the slave.
 
 * The master provides reference clock and time synchronization to the slave.
-* All data passing between the host and the slave is router over the MIMO cable.
+* All data passing between the host and the slave is routed over the MIMO cable.
 * Both master and slave must have different IPv4 addresses but in the same subnet.
 * The master and slave may be used individually or in a multi-device configuration.
+* External clocking is optional, and should only be supplied to the master device.
 
 ------------------------------------------------------------------------
 Hardware setup notes
