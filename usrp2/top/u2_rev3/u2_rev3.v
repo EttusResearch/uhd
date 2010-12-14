@@ -471,7 +471,7 @@ module u2_rev3
    //
    
    
-   u2_core #(.RAM_SIZE(32768))
+   u2_core #(.RAM_SIZE(16384), .RAM_AW(14))
      u2_core(.dsp_clk           (dsp_clk),
 	     .wb_clk            (wb_clk),
 	     .clock_ready       (clock_ready),

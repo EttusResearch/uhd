@@ -286,12 +286,10 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////
    // RAM Loader
 
-   wire [31:0] 	 ram_loader_dat, if_dat;
+   wire [31:0] 	 ram_loader_dat;
    wire [15:0] 	 ram_loader_adr;
-   wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
    wire 	 ram_loader_stb, ram_loader_we;
-   wire 	 iwb_ack, iwb_stb;
    ram_loader #(.AWIDTH(aw),.RAM_SIZE(RAM_SIZE))
      ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
 		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
@@ -323,12 +321,12 @@ module u2_core
 
    wire [63:0] zpu_status;
    zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
-     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(1'b1),
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(ram_loader_done),
 	   // Data Wishbone bus to system bus fabric
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .zpu_status(zpu_status), .interrupt(proc_int));
+	   .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
@@ -343,8 +341,7 @@ module u2_core
 	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
-	     .if_adr(if_adr), 
-	     .if_data(if_dat), 
+	     .if_adr(16'b0), .if_data(),
 	     
 	     .dwb_adr_i(s0_adr[RAM_AW-1:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
