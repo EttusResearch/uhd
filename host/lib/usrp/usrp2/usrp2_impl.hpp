@@ -85,8 +85,8 @@ public:
         size_t index,
         uhd::transport::udp_simple::sptr,
         uhd::transport::zero_copy_if::sptr,
-        size_t recv_samps_per_packet,
-        const uhd::device_addr_t &flow_control_hints
+        const uhd::device_addr_t &device_args,
+        size_t recv_samps_per_packet
     );
     ~usrp2_mboard_impl(void);
 
@@ -99,6 +99,7 @@ public:
 private:
     size_t _index;
     bool _continuous_streaming;
+    bool _mimo_clocking_mode_is_master;
 
     //interfaces
     usrp2_iface::sptr _iface;
@@ -190,7 +191,7 @@ public:
     usrp2_impl(
         std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
         std::vector<uhd::transport::zero_copy_if::sptr> data_transports,
-        const uhd::device_addr_t &flow_control_hints
+        const uhd::device_addrs_t &device_args
     );
 
     ~usrp2_impl(void);

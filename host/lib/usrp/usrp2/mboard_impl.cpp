@@ -42,8 +42,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
     transport::zero_copy_if::sptr data_transport,
-    size_t recv_samps_per_packet,
-    const device_addr_t &flow_control_hints
+    const device_addr_t &device_args,
+    size_t recv_samps_per_packet
 ):
     _index(index),
     _iface(usrp2_iface::make(ctrl_transport))
@@ -101,14 +101,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
     //setting the cycles per update (disabled by default)
-    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 0.0);
+    const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
         _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
     }
 
     //setting the packets per update (enabled by default)
-    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8.0);
+    const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
         const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
@@ -121,6 +121,20 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     init_duc_config();
 
     //initialize the clock configuration
+    if (device_args.has_key("mimo_mode")){
+        if (device_args["mimo_mode"] == "master"){
+            _mimo_clocking_mode_is_master = true;
+        }
+        else if (device_args["mimo_mode"] == "slave"){
+            _mimo_clocking_mode_is_master = false;
+        }
+        else throw std::runtime_error(
+            "mimo_mode must be set to master or slave"
+        );
+    }
+    else {
+        _mimo_clocking_mode_is_master = bool(_iface->peek32(_iface->regs.status) & (1 << 8));
+    }
     init_clock_config();
 
     //init the codec before the dboard
@@ -200,7 +214,7 @@ void usrp2_mboard_impl::update_clock_config(void){
     //   - Masters always drive the clock over serdes.
     //   - Slaves always lock to this serdes clock.
     //   - Slaves lock their time over the serdes.
-    if (_iface->peek32(_iface->regs.status) & (1 << 8)){
+    if (_mimo_clocking_mode_is_master){
         _clock_ctrl->enable_mimo_clock_out(true);
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
