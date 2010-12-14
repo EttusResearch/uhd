@@ -37,8 +37,8 @@ ifeq ($(shell sdcc --help > /dev/null 2>&1 && echo $$?),0)
 	HAS_SDCC=1
 endif
 
-ifeq ($(shell mb-gcc --help > /dev/null 2>&1 && echo $$?),0)
-	HAS_MB_GCC=1
+ifeq ($(shell zpu-elf-gcc --help > /dev/null 2>&1 && echo $$?),0)
+	HAS_ZPU_GCC=1
 endif
 
 ifeq ($(shell xtclsh -h > /dev/null 2>&1 && echo $$?),0)
@@ -78,9 +78,9 @@ $(_usrp1_fpga_4rx_rbf):
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
 
 ########################################################################
-# USRP2 and USRP-N2XX firmware
+# USRP2 and N Series firmware
 ########################################################################
-ifdef HAS_MB_GCC
+ifdef HAS_ZPU_GCC
 
 _usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
@@ -88,12 +88,12 @@ _usrp_n2xx_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n2xx_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
 
 $(_usrp2_fw_bin) $(_usrp_n2xx_fw_bin):
-	cd $(_usrp2_fw_dir) && ./bootstrap
-	cd $(_usrp2_fw_dir) && ./configure --host=mb
-	make -C $(_usrp2_fw_dir) clean
-	make -C $(_usrp2_fw_dir) all
-	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
-	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
+	cd $(_usrp2_fw_dir) && rm -rf build
+	cd $(_usrp2_fw_dir) && mkdir build
+	cd $(_usrp2_fw_dir)/build && cmake ../
+	cd $(_usrp2_fw_dir)/build && make
+	cp $(_usrp2_fw_dir)/build/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
 
 endif
 
