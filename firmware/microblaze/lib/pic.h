@@ -31,5 +31,6 @@ int  pic_disable_interrupts();
 int  pic_enable_interrupts();
 void pic_restore_interrupts(int prev_status);
 
+void pic_interrupt_handler();
 
 #endif /* INCLUDED_PIC_H */
