@@ -30,7 +30,7 @@
 inline static void
 delay_1ms(int loop_count)
 {
-  int	i;
+/*  int	i;
   for (i = 0; i < loop_count; i++){
     asm volatile ("or  r0, r0, r0\n\
 		   or  r0, r0, r0\n\
@@ -40,6 +40,7 @@ delay_1ms(int loop_count)
 		   or  r0, r0, r0\n\
 		   or  r0, r0, r0\n");
   }
+*/
 }
 
 // delay about ms milliseconds

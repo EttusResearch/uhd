@@ -373,6 +373,7 @@ main(void)
         pkt_ctrl_release_incoming_buffer();
     }
 
+    pic_interrupt_handler();
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
