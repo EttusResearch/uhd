@@ -238,6 +238,8 @@ hwconfig_wishbone_divisor(void)
 
 #define	_SR_ADDR(sr)	(MISC_OUTPUT_BASE + (sr) * sizeof(uint32_t))
 
+#define SR_ADDR_BLDRDONE _SR_ADDR(5)
+
 // --- buffer pool control regs ---
 
 typedef struct {

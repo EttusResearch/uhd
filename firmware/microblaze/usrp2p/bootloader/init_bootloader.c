@@ -42,7 +42,7 @@ void load_ihex(void) { //simple IHEX parser to load proper records into RAM. loa
 			} else if(ihex_record.type == 1) { //end of record
 				puts("OK");
 				//load main firmware
-				start_program(RAM_BASE);
+				start_program();
 				puts("ERROR: main image returned! Back in IHEX load mode.");
 			} else puts("NOK"); //RAM loads do not support extended segment address records (04) -- upper 16 bits are always "0".
 		} else puts("NOK");
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 		if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
 				set_safe_booted_flag(1); //let the firmware know it's the safe image
 				spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
-				start_program(RAM_BASE);
+				start_program();
 				puts("ERROR: return from main program! This should never happen!");
 				icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 			} else {
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 	if(is_valid_fw_image(PROD_FW_IMAGE_LOCATION_ADDR)) {
 		puts("Valid production firmware found. Loading...");
 		spi_flash_read(PROD_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
-		start_program(RAM_BASE);
+		start_program();
 		puts("ERROR: Return from main program! This should never happen!");
 		//if this happens, though, the safest thing to do is reboot the whole FPGA and start over.
 		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 	puts("No valid production firmware found. Trying safe firmware...");
 	if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
 		spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
-		start_program(RAM_BASE);
+		start_program();
 		puts("ERROR: return from main program! This should never happen!");
 		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 		return 1;

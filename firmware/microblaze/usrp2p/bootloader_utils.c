@@ -10,6 +10,7 @@
 #include <string.h>
 #include <bootloader_utils.h>
 #include <spi_flash.h>
+#include <memory_map.h>
 
 int is_valid_fpga_image(uint32_t addr) {
 	uint8_t imgbuf[64];
@@ -25,15 +26,15 @@ int is_valid_fpga_image(uint32_t addr) {
 }
 
 int is_valid_fw_image(uint32_t addr) {
-	static const uint8_t fwheader[] = {0x0b 0x0b 0x0b 0x0b 0x80 0x70}; //just lookin for a jump to anywhere located at the reset vector
+	static const uint8_t fwheader[] = {0x0b, 0x0b, 0x0b, 0x0b, 0x80, 0x70}; //just lookin for a jump to anywhere located at the reset vector
 	uint8_t buf[12];
 	spi_flash_read(addr, 6, buf);
 	return memcmp(buf, fwheader, 6) == 0;
 }
 
-void start_program(uint32_t addr)
+void start_program(void)
 {
-	memcpy(0x00000000, addr+0x00000000, 0x3f); //copy the reset vector and interrupt vector
-	typedef void (*fptr_t)(void);
-	(*(fptr_t) 0x00000000)();	// most likely no return
+	//ignoring the addr now
+	//all this does is tap that register
+	*((volatile uint32_t *) SR_ADDR_BLDRDONE) = 1;
 }
