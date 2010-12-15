@@ -16,21 +16,24 @@
 #
 
 ########################################################################
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/CMakeLists.txt)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE(FindPythonInterp)
 
-ADD_LIBRARY(libusrp2fw STATIC
-    ${COMMON_SRCS}
-    sd.c
-    ethernet.c
-    udp_fw_update.c
-)
+MACRO(GEN_RMI target)
+    GET_FILENAME_COMPONENT(name ${target} NAME_WE)
+    #command to create a rmi from elf
+    ADD_CUSTOM_COMMAND(
+        OUTPUT ${name}.rmi DEPENDS ${name}.bin
+        COMMAND ${PYTHON_EXECUTABLE}
+        ARGS ${CMAKE_SOURCE_DIR}/bin/bin_to_ram_macro_init.py ${name}.bin ${name}.rmi
+    )
+    #add a top level target for output files
+    ADD_CUSTOM_TARGET(
+        ${name}_rmi ALL DEPENDS ${name}.rmi
+    )
+ENDMACRO(GEN_RMI)
 
 ########################################################################
-ADD_EXECUTABLE(usrp2_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
-TARGET_LINK_LIBRARIES(usrp2_txrx_uhd.elf libusrp2fw)
-GEN_OUTPUTS(usrp2_txrx_uhd.elf)
-
-ADD_EXECUTABLE(usrp2_blinkenlights.elf ${CMAKE_SOURCE_DIR}/apps/blinkenlights.c)
-TARGET_LINK_LIBRARIES(usrp2_blinkenlights.elf libusrp2fw)
-GEN_OUTPUTS(usrp2_blinkenlights.elf)
+ADD_EXECUTABLE(init_bootloader.elf init_bootloader.c)
+TARGET_LINK_LIBRARIES(init_bootloader.elf libusrp2pfw)
+GEN_OUTPUTS(init_bootloader.elf)
+GEN_RMI(init_bootloader.bin)

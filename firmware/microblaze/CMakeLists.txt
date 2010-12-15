@@ -46,7 +46,6 @@ MACRO(ADD_LINKER_FLAGS flags)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
 ENDMACRO(ADD_LINKER_FLAGS)
 
-ADD_LINKER_FLAGS("-Wl,-defsym -Wl,_STACK_SIZE=3072")
 ADD_LINKER_FLAGS("-Wl,--relax -Wl,--gc-sections")
 
 ########################################################################

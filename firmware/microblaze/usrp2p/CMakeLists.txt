@@ -32,9 +32,9 @@ ADD_LIBRARY(libusrp2pfw STATIC
     udp_fw_update.c
 )
 
-########################################################################
-ADD_LINKER_FLAGS("-Wl,-defsym -Wl,_TEXT_START_ADDR=0x8050")
+ADD_SUBDIRECTORY(bootloader)
 
+########################################################################
 ADD_EXECUTABLE(usrp2p_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
 TARGET_LINK_LIBRARIES(usrp2p_txrx_uhd.elf libusrp2pfw)
 GEN_OUTPUTS(usrp2p_txrx_uhd.elf)
