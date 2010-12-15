@@ -16,38 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Overall Memory Map
- *   0000-FFFF  64K    RAM space
- *
- *   0000-1FFF  8K     Boot RAM
- *   2000-5FFF  16K    Buffer pool
- *   6000-7FFF  8K     Peripherals
- *   8000-FFFF  32K    Main System RAM
-
-
-From u2plus_core.v:
-wb_1master #(.decode_w(8),
-.s0_addr(8'b0000_0000),.s0_mask(8'b1110_0000),  // 0-8K, Boot RAM
-.s1_addr(8'b0100_0000),.s1_mask(8'b1100_0000),  // 16K-32K, Buffer Pool
-.s2_addr(8'b0011_0000),.s2_mask(8'b1111_1111),  // SPI 0x3000
-.s3_addr(8'b0011_0001),.s3_mask(8'b1111_1111),  // I2C 0x3100
-.s4_addr(8'b0011_0010),.s4_mask(8'b1111_1111),  // GPIO 0x3200
-.s5_addr(8'b0011_0011),.s5_mask(8'b1111_1111),  // Readback 0x3300
-.s6_addr(8'b0011_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC 0x3400
-.s7_addr(8'b0010_0000),.s7_mask(8'b1111_0000),  // 8-12K, Settings Bus (only uses 1K) 0x2000-0x2FFF
-.s8_addr(8'b0011_0101),.s8_mask(8'b1111_1111),  // PIC 0x3500
-.s9_addr(8'b0011_0110),.s9_mask(8'b1111_1111),  // Unused 0x3600
-.sa_addr(8'b0011_0111),.sa_mask(8'b1111_1111),  // UART 0x3700
-.sb_addr(8'b0011_1000),.sb_mask(8'b1111_1111),  // ATR 0x3800
-.sc_addr(8'b0011_1001),.sc_mask(8'b1111_1111),  // Unused 0x3900
-.sd_addr(8'b0011_1010),.sd_mask(8'b1111_1111),  // ICAP 0x3A00
-.se_addr(8'b0011_1011),.se_mask(8'b1111_1111),  // SPI Flash 0x3B00
-.sf_addr(8'b1000_0000),.sf_mask(8'b1000_0000),  // 32-64K, Main RAM 0x8000-0xFFFF
-               .dw(dw),.aw(aw),.sw(sw)) wb_1master
-
- */
-
-
 #ifndef INCLUDED_MEMORY_MAP_H
 #define INCLUDED_MEMORY_MAP_H
 
@@ -88,7 +56,7 @@ wb_1master #(.decode_w(8),
 
 /////////////////////////////////////////////////////
 // SPI Core, Slave 2.  See core docs for more info
-#define SPI_BASE 0x3000   // Base address (16-bit) is base peripheral addr
+#define SPI_BASE 0x6000   // Base address (16-bit) is base peripheral addr
 
 typedef struct {
   volatile uint32_t	txrx0;
@@ -127,7 +95,7 @@ typedef struct {
 // I2C, Slave 3
 // See Wishbone I2C-Master Core Specification.
 
-#define I2C_BASE 0x3100
+#define I2C_BASE 0x6100
 
 typedef struct {
   volatile uint32_t  prescaler_lo;	// r/w
@@ -169,7 +137,7 @@ typedef struct {
 //
 // These go to the daughterboard i/o pins
 
-#define GPIO_BASE 0x3200
+#define GPIO_BASE 0x6200
 
 typedef struct {
   volatile uint32_t	io;	  // tx data in high 16, rx in low 16
@@ -193,7 +161,7 @@ typedef struct {
 // The status registers are in Slave 5, Buffer Pool Status.
 // The control register is in Slave 7, Settings Bus.
 
-#define BUFFER_POOL_STATUS_BASE 0x3300
+#define BUFFER_POOL_STATUS_BASE 0x6300
 
 typedef struct {
   volatile uint32_t _padding[8];
@@ -236,7 +204,7 @@ hwconfig_wishbone_divisor(void)
 ///////////////////////////////////////////////////
 // Ethernet Core, Slave 6
 
-#define ETH_BASE 0x3400
+#define ETH_BASE 0x6400
 
 #include "eth_mac_regs.h"
 
@@ -249,11 +217,11 @@ hwconfig_wishbone_divisor(void)
 // 1KB of address space (== 256 32-bit write-only regs)
 
 
-#define MISC_OUTPUT_BASE        0x2000
-#define	TX_PROTOCOL_ENGINE_BASE 0x2080
-#define	RX_PROTOCOL_ENGINE_BASE 0x20C0
-#define BUFFER_POOL_CTRL_BASE   0x2100
-#define LAST_SETTING_REG        0x23FC	// last valid setting register
+#define MISC_OUTPUT_BASE        0x5000
+#define	TX_PROTOCOL_ENGINE_BASE 0x5080
+#define	RX_PROTOCOL_ENGINE_BASE 0x50C0
+#define BUFFER_POOL_CTRL_BASE   0x5100
+#define LAST_SETTING_REG        0x53FC	// last valid setting register
 
 #define SR_MISC 0
 #define SR_TX_PROT_ENG 32
@@ -608,7 +576,7 @@ typedef struct {
 ///////////////////////////////////////////////////
 // Simple Programmable Interrupt Controller, Slave 8
 
-#define PIC_BASE  0x3500
+#define PIC_BASE  0x6500
 
 // Interrupt request lines
 // Bit numbers (LSB == 0) that correpond to interrupts into PIC
@@ -668,7 +636,7 @@ typedef struct {
 ///////////////////////////////////////////////////
 // UART, Slave 10
 
-#define UART_BASE  0x3700
+#define UART_BASE  0x6700
 
 typedef struct {
   //  All elements are 8 bits except for clkdiv (16), but we use uint32 to make 
@@ -686,7 +654,7 @@ typedef struct {
 ///////////////////////////////////////////////////
 // ATR Controller, Slave 11
 
-#define ATR_BASE  0x3800
+#define ATR_BASE  0x6800
 
 typedef struct {
   volatile uint32_t	v[16];
@@ -705,7 +673,7 @@ typedef struct {
 ///////////////////////////////////////////////////
 // ICAP, Slave 13
 
-#define ICAP_BASE 0x3A00
+#define ICAP_BASE 0x6A00
 typedef struct {
   uint32_t icap; //only the lower 8 bits matter
 } icap_regs_t;
@@ -717,7 +685,7 @@ typedef struct {
 // Control register definitions are the same as SPI, so use SPI_CTRL_ASS, etc.
 // Peripheral mask not needed since bus is dedicated (CE held low)
 
-#define SPIF_BASE 0x3B00
+#define SPIF_BASE 0x6B00
 typedef struct {
   volatile uint32_t	txrx0;
   volatile uint32_t	txrx1;
