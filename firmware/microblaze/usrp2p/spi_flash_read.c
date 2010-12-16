@@ -19,6 +19,7 @@
 
 #include "spi_flash_private.h"
 #include <stdlib.h>		// abort
+#include <nonstdio.h>
 
 static size_t _spi_flash_log2_memory_size;
 
@@ -99,8 +100,9 @@ spi_flash_read(uint32_t flash_addr,  size_t nbytes, void *buf)
    * Read up to 16 bytes at a time until done
    */
   unsigned char *dst = (unsigned char *) buf;
-  size_t m;
-  for (size_t n = 0; n < nbytes; n += m, dst += m){
+  uint32_t m;
+  for (uint32_t n = 0; n < nbytes; n += m, dst += m){
+        
     spif_regs->ctrl = FLAGS | LEN(16 * 8);	// xfer 16 bytes
     spif_regs->ctrl = FLAGS | LEN(16 * 8) | SPI_CTRL_GO_BSY;
     spif_wait();

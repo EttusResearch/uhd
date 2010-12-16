@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 	hal_uart_init();
 	spif_init();
 	i2c_init(); //for EEPROM
-	puts("USRP2+ bootloader\n");
+	puts("USRP2+ bootloader super ultra ZPU edition\n");
 	
 	bool production_image = find_safe_booted_flag();
 	set_safe_booted_flag(0); //haven't booted yet
@@ -93,17 +93,23 @@ int main(int argc, char *argv[]) {
 	if(is_valid_fw_image(PROD_FW_IMAGE_LOCATION_ADDR)) {
 		puts("Valid production firmware found. Loading...");
 		spi_flash_read(PROD_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
+		puts("Finished loading. Starting image.");
+		delay(300);
 		start_program();
 		puts("ERROR: Return from main program! This should never happen!");
 		//if this happens, though, the safest thing to do is reboot the whole FPGA and start over.
+		delay(300);
 		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 		return 1;
 	}
 	puts("No valid production firmware found. Trying safe firmware...");
 	if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
 		spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
+		puts("Finished loading. Starting image.");
+		delay(300);
 		start_program();
 		puts("ERROR: return from main program! This should never happen!");
+		delay(300);
 		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 		return 1;
 	}

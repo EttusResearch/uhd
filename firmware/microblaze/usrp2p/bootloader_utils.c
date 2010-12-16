@@ -11,15 +11,20 @@
 #include <bootloader_utils.h>
 #include <spi_flash.h>
 #include <memory_map.h>
+#include <nonstdio.h>
 
 int is_valid_fpga_image(uint32_t addr) {
+//	printf("is_valid_fpga_image(): starting with addr=%x...\n", addr);
 	uint8_t imgbuf[64];
 	spi_flash_read(addr, 64, imgbuf);
 	//we're just looking for leading 0xFF padding, followed by the sync bytes 0xAA 0x99
 	int i = 0;
 	for(i; i<63; i++) {
 		if(imgbuf[i] == 0xFF) continue;
-		if(imgbuf[i] == 0xAA && imgbuf[i+1] == 0x99) return 1;
+		if(imgbuf[i] == 0xAA && imgbuf[i+1] == 0x99) {
+			//printf("is_valid_fpga_image(): found valid FPGA image\n");
+			return 1;
+		}
 	}
 	
 	return 0;
@@ -27,8 +32,12 @@ int is_valid_fpga_image(uint32_t addr) {
 
 int is_valid_fw_image(uint32_t addr) {
 	static const uint8_t fwheader[] = {0x0b, 0x0b, 0x0b, 0x0b, 0x80, 0x70}; //just lookin for a jump to anywhere located at the reset vector
+	//printf("is_valid_fw_image(): starting with addr=%x...\n", addr);
 	uint8_t buf[12];
 	spi_flash_read(addr, 6, buf);
+	//printf("is_valid_fw_image(): read ");
+	//for(int i = 0; i < 5; i++) printf("%x ", buf[i]);
+	//printf("\n");
 	return memcmp(buf, fwheader, 6) == 0;
 }
 
