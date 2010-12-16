@@ -25,10 +25,10 @@
 #define USRP2_ATR_BASE          0xE400
 #define USRP2_BP_STATUS_BASE    0xCC00
 
-#define USRP2P_MISC_OUTPUT_BASE 0x2000
-#define USRP2P_GPIO_BASE        0x3200
-#define USRP2P_ATR_BASE         0x3800
-#define USRP2P_BP_STATUS_BASE   0x3300
+#define USRP2P_MISC_OUTPUT_BASE 0x5000
+#define USRP2P_GPIO_BASE        0x6200
+#define USRP2P_ATR_BASE         0x6800
+#define USRP2P_BP_STATUS_BASE   0x6300
 
 typedef struct {
     int sr_misc;
