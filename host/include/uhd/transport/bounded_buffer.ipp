@@ -26,14 +26,6 @@
 
 namespace uhd{ namespace transport{ namespace{ /*anon*/
 
-    static UHD_INLINE boost::posix_time::time_duration to_time_dur(double timeout){
-        return boost::posix_time::microseconds(long(timeout*1e6));
-    }
-
-    static UHD_INLINE double from_time_dur(const boost::posix_time::time_duration &time_dur){
-        return 1e-6*time_dur.total_microseconds();
-    }
-
     template <typename elem_type>
     class bounded_buffer_impl : public bounded_buffer<elem_type>{
     public:
@@ -127,6 +119,11 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             _buffer.pop_back();
             return elem;
         }
+
+        static UHD_INLINE boost::posix_time::time_duration to_time_dur(double timeout){
+            return boost::posix_time::microseconds(long(timeout*1e6));
+        }
+
     };
 }}} //namespace
 
