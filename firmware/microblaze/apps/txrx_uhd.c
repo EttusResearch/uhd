@@ -141,15 +141,22 @@ static void print_ip_addr(const void *t){
     printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
 }
 
+void handle_udp_err0_packet(
+    struct socket_address src, struct socket_address dst,
+    unsigned char *payload, int payload_len
+){
+    sr_udp_sm->err0_port = src.port;
+}
+
 void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    //its a tiny payload, load the fast-path variables
     fp_mac_addr_src = *ethernet_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
     fp_socket_src = dst;
     fp_socket_dst = src;
+    sr_udp_sm->dsp0_port = src.port;
     printf("Storing for fast path:\n");
     printf("  source mac addr: ");
     print_mac_addr(fp_mac_addr_src.addr); newline();
@@ -163,7 +170,7 @@ void handle_udp_data_packet(
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
 
-    //setup network and vrt
+    //setup network
     setup_network();
 
     // kick off the state machine
@@ -478,7 +485,7 @@ static void setup_network(void){
 
   //setup the udp header machine
   sr_udp_sm->udp_hdr.src_port = fp_socket_src.port;
-  sr_udp_sm->udp_hdr.dst_port = fp_socket_dst.port;
+  sr_udp_sm->udp_hdr.dst_port = UDP_SM_INS_UDP_PORT;
   sr_udp_sm->udp_hdr.length = UDP_SM_INS_UDP_LEN;
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
 }
@@ -521,6 +528,7 @@ main(void)
   //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_err0_packet);
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 
   //3) setup ethernet hardware to bring the link up

@@ -43,6 +43,7 @@ extern "C" {
 // Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
 #define USRP2_UDP_DATA_PORT 49153
+#define USRP2_UDP_ERR0_PORT 49154
 
 ////////////////////////////////////////////////////////////////////////
 // I2C addresses
