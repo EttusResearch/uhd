@@ -435,7 +435,7 @@ typedef struct {
     uint32_t length;
     uint32_t checksum; //word 22
   } udp_hdr;
-  volatile uint32_t _pad[2];
+  volatile uint32_t _pad[1];
   volatile uint32_t dsp0_port;
   volatile uint32_t err0_port;
   volatile uint32_t dsp1_port;
@@ -444,8 +444,11 @@ typedef struct {
 
 // control bits (all expect UDP_SM_LAST_WORD are mutually exclusive)
 
+// Insert a UDP source port from the table
+#define UDP_SM_INS_UDP_SRC_PORT     (1 << 21)
+
 // Insert a UDP dest port from the table
-#define UDP_SM_INS_UDP_PORT     (1 << 20)
+#define UDP_SM_INS_UDP_DST_PORT     (1 << 20)
 
 // This is the last word of the header
 #define	UDP_SM_LAST_WORD		(1 << 19)
