@@ -35,7 +35,7 @@ module prot_eng_tx
    assign dst_rdy_o 	 = dst_rdy_i & (do_payload | (state==0) | (state==1) | (state==30));
    assign src_rdy_o 	 = src_rdy_i & ~((state==0) | (state==1) | (state==30));
    
-   localparam HDR_WIDTH  = 16 + 5;  // 16 bits plus flags
+   localparam HDR_WIDTH  = 16 + 6;  // 16 bits plus flags
    localparam HDR_LEN 	 = 32;      // Up to 64 bytes of protocol
    
    // Store header values in a small dual-port (distributed) ram
@@ -43,11 +43,12 @@ module prot_eng_tx
    wire [HDR_WIDTH-1:0] header_word;
 
    reg [1:0] 		port_sel;
-   reg [15:0] 		per_port_data[0:3];
-   reg [15:0] 		udp_port, chk_precompute;
+   reg [32:0] 		per_port_data[0:3];
+   reg [15:0] 		udp_src_port, udp_dst_port, chk_precompute;
 
-   always @(posedge clk) udp_port <= per_port_data[port_sel];
-   
+   always @(posedge clk) udp_src_port <= per_port_data[port_sel][31:16];
+   always @(posedge clk) udp_dst_port <= per_port_data[port_sel][15:0];
+
    always @(posedge clk)
      if(set_stb & ((set_addr & 8'hE0) == BASE))
        begin
@@ -60,11 +61,12 @@ module prot_eng_tx
      if(set_stb & ((set_addr & 8'hFC) == (BASE+24)))
        per_port_data[set_addr[1:0]] <= set_data;
    
-   wire do_udp_port    = header_word[20];
-   wire last_hdr_line  = header_word[19];
-   wire do_ip_chk      = header_word[18];
-   wire do_ip_len      = header_word[17];
-   wire do_udp_len     = header_word[16];
+   wire do_udp_src_port = header_word[21];
+   wire do_udp_dst_port = header_word[20];
+   wire last_hdr_line   = header_word[19];
+   wire do_ip_chk       = header_word[18];
+   wire do_ip_len       = header_word[17];
+   wire do_udp_len      = header_word[16];
 
    assign header_word = header_ram[state];
    
@@ -133,8 +135,10 @@ module prot_eng_tx
        dataout_int 	<= ip_length;
      else if(do_udp_len)
        dataout_int 	<= udp_length;
-     else if(do_udp_port)
-       dataout_int      <= udp_port;
+     else if(do_udp_src_port)
+       dataout_int      <= udp_src_port;
+     else if(do_udp_dst_port)
+       dataout_int      <= udp_dst_port;
      else
        dataout_int 	<= header_word[15:0];
    
