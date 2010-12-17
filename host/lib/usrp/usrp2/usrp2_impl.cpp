@@ -212,7 +212,7 @@ sep_indexed_dev_addrs(device_addr);
             dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), device_addr
         ));
         err0_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr
+            dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()
         ));
     }
 

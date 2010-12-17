@@ -121,7 +121,7 @@ struct usrp2_impl::io_impl{
             ));
             //init empty packet infos
             vrt::if_packet_info_t packet_info;
-            packet_info.packet_count = 0;
+            packet_info.packet_count = 0xf;
             packet_info.has_tsi = true;
             packet_info.tsi = 0;
             packet_info.has_tsf = true;
@@ -157,7 +157,7 @@ struct usrp2_impl::io_impl{
     }
 
     bool get_recv_buffs(
-        const std::vector<zero_copy_if::sptr> xports,
+        const std::vector<zero_copy_if::sptr> &xports,
         vrt_packet_handler::managed_recv_buffs_t &buffs,
         double timeout
     );
@@ -330,7 +330,9 @@ static UHD_INLINE double from_time_dur(const boost::posix_time::time_duration &t
     return 1e-6*time_dur.total_microseconds();
 }
 
-static UHD_INLINE time_spec_t extract_time_spec(const vrt::if_packet_info_t &packet_info){
+static UHD_INLINE time_spec_t extract_time_spec(
+    const vrt::if_packet_info_t &packet_info
+){
     return time_spec_t( //assumes has_tsi and has_tsf are true
         time_t(packet_info.tsi), size_t(packet_info.tsf),
         100e6 //tick rate does not have to be correct for comparison purposes
@@ -338,12 +340,13 @@ static UHD_INLINE time_spec_t extract_time_spec(const vrt::if_packet_info_t &pac
 }
 
 static UHD_INLINE void extract_packet_info(
-    managed_recv_buffer::sptr buff,
+    managed_recv_buffer::sptr &buff,
     vrt::if_packet_info_t &prev_info,
     time_spec_t &time, bool &clear
 ){
     //extract packet info
     vrt::if_packet_info_t next_info;
+    next_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
     vrt::if_hdr_unpack_be(buff->cast<const boost::uint32_t *>(), next_info);
 
     //handle the packet count / sequence number
@@ -357,7 +360,7 @@ static UHD_INLINE void extract_packet_info(
 }
 
 UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
-    const std::vector<zero_copy_if::sptr> xports,
+    const std::vector<zero_copy_if::sptr> &xports,
     vrt_packet_handler::managed_recv_buffs_t &buffs,
     double timeout
 ){
