@@ -35,7 +35,7 @@ package zpu_top_pkg is
             -- ZPU Control signals
             enable			: in std_logic;
             interrupt		: in std_logic;
-
+            stack_start		: in std_logic_vector(maxAddrBitIncIO downto 0);
             zpu_status		: out std_logic_vector(63 downto 0);
 
             -- wishbone interfaces

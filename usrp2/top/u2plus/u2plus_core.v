@@ -131,7 +131,7 @@ module u2plus_core
    output spiflash_cs, output spiflash_clk, input spiflash_miso, output spiflash_mosi
    );
 
-   localparam SR_BUF_POOL = 64;   // Uses 1 reg
+   localparam SR_BUF_POOL = 64;   // router
    localparam SR_UDP_SM   = 96;   // 64 regs
    localparam SR_RX_DSP   = 160;  // 16
    localparam SR_RX_CTRL  = 176;  // 16
@@ -197,21 +197,21 @@ module u2plus_core
    
    wb_1master #(.decode_w(8),
 		.s0_addr(8'b0000_0000),.s0_mask(8'b1110_0000),  // 0-8K, Boot RAM
-		.s1_addr(8'b0100_0000),.s1_mask(8'b1100_0000),  // 16K-32K, Buffer Pool
- 		.s2_addr(8'b0011_0000),.s2_mask(8'b1111_1111),  // SPI
-		.s3_addr(8'b0011_0001),.s3_mask(8'b1111_1111),  // I2C
-		.s4_addr(8'b0011_0010),.s4_mask(8'b1111_1111),  // GPIO
-		.s5_addr(8'b0011_0011),.s5_mask(8'b1111_1111),  // Readback
-		.s6_addr(8'b0011_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
-		.s7_addr(8'b0010_0000),.s7_mask(8'b1111_0000),  // 8-12K, Settings Bus (only uses 1K)
-		.s8_addr(8'b0011_0101),.s8_mask(8'b1111_1111),  // PIC
-		.s9_addr(8'b0011_0110),.s9_mask(8'b1111_1111),  // Unused
-		.sa_addr(8'b0011_0111),.sa_mask(8'b1111_1111),  // UART
-		.sb_addr(8'b0011_1000),.sb_mask(8'b1111_1111),  // ATR
-		.sc_addr(8'b0011_1001),.sc_mask(8'b1111_1111),  // Unused
-		.sd_addr(8'b0011_1010),.sd_mask(8'b1111_1111),  // ICAP
-		.se_addr(8'b0011_1011),.se_mask(8'b1111_1111),  // SPI Flash
-		.sf_addr(8'b1000_0000),.sf_mask(8'b1000_0000),  // 32-64K, Main RAM
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // 16K-20K, Buffer Pool
+		.s2_addr(8'b0110_0000),.s2_mask(8'b1111_1111),  // SPI
+		.s3_addr(8'b0110_0001),.s3_mask(8'b1111_1111),  // I2C
+		.s4_addr(8'b0110_0010),.s4_mask(8'b1111_1111),  // GPIO
+		.s5_addr(8'b0110_0011),.s5_mask(8'b1111_1111),  // Readback
+		.s6_addr(8'b0110_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
+		.s7_addr(8'b0101_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s8_addr(8'b0110_0101),.s8_mask(8'b1111_1111),  // PIC
+		.s9_addr(8'b0110_0110),.s9_mask(8'b1111_1111),  // Unused
+		.sa_addr(8'b0110_0111),.sa_mask(8'b1111_1111),  // UART
+		.sb_addr(8'b0110_1000),.sb_mask(8'b1111_1111),  // ATR
+		.sc_addr(8'b0110_1001),.sc_mask(8'b1111_1111),  // Unused
+		.sd_addr(8'b0110_1010),.sd_mask(8'b1111_1111),  // ICAP
+		.se_addr(8'b0110_1011),.se_mask(8'b1111_1111),  // SPI Flash
+		.sf_addr(8'b1000_0000),.sf_mask(8'b1100_0000),  // 32-48K, Main RAM
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
@@ -251,33 +251,58 @@ module u2plus_core
       
    //////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
-   
+
+    reg cpu_bldr_ctrl_state;
+    localparam CPU_BLDR_CTRL_WAIT = 0;
+    localparam CPU_BLDR_CTRL_DONE = 1;
+
+    wire bldr_done;
+    reg cpu_rst;
+    wire cpu_enb = ~cpu_rst;
+    wire [aw-1:0] cpu_adr;
+    wire [aw-1:0] cpu_sp_init = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)?
+        16'h3ff8 /*16K main ram*/: 16'h1ff8 /*8K boot ram*/;
+
+    //When the main program runs, it will try to access system ram at 0.
+    //This logic sets the upper bit high to force select the system ram.
+    assign m0_adr = ((cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE) &&
+        (cpu_adr[15:14] == 2'b00))? {2'b10, cpu_adr[13:0]} : cpu_adr;
+
+    always @(posedge wb_clk)
+    if(wb_rst) begin
+        cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_WAIT;
+        cpu_rst <= 1'b0;
+    end
+    else begin
+        case(cpu_bldr_ctrl_state)
+
+        CPU_BLDR_CTRL_WAIT: begin
+            if (bldr_done == 1'b1) begin //set by the bootloader
+                cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_DONE;
+                cpu_rst <= 1'b1;
+            end
+        end
+
+        CPU_BLDR_CTRL_DONE: begin //stay here forever
+            cpu_rst <= 1'b0;
+        end
+
+        endcase //cpu_bldr_ctrl_state
+    end
+
    // /////////////////////////////////////////////////////////////////////////
    // Processor
-//   wire [31:0] 	 if_dat;
-//   wire [15:0] 	 if_adr;
 
-//   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
-//     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
-//	   // Instruction Wishbone bus to I-RAM
-//	   .if_adr(if_adr),
-//	   .if_dat(if_dat),
-//	   // Data Wishbone bus to system bus fabric
-//	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
-//	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
-//	   // Interrupts and exceptions
-//	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
-   
-//   assign 	 bus_error = m0_err | m0_rty;
+   assign 	 bus_error = m0_err | m0_rty;
 
    wire [63:0] zpu_status;
    zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
-     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(ram_loader_done),
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst | cpu_rst), .enb(cpu_enb),
 	   // Data Wishbone bus to system bus fabric
-	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
+	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(cpu_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
+	   .stack_start(cpu_sp_init), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
 
 
    // /////////////////////////////////////////////////////////////////////////
@@ -476,6 +501,8 @@ module u2plus_core
 				      .in(set_data),.out(adc_outs),.changed());
    setting_reg #(.my_addr(4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(phy_reset),.changed());
+   setting_reg #(.my_addr(5),.width(1)) sr_bldr (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+				      .in(set_data),.out(bldr_done),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
    //  LEDS
@@ -694,8 +721,17 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
-   assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
-   assign debug = 32'd0; // debug_extfifo;
+   //assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
+   //assign debug = 32'd0; // debug_extfifo;
+   assign debug_clk = {wb_rst, wb_clk};
+   assign debug = {
+    cpu_adr, //16 bits
+    cpu_bldr_ctrl_state, //1 bits
+    bldr_done, //1 bit
+    cpu_rst, cpu_enb, // 2 bits
+    m0_we, m0_stb, m0_ack, m0_cyc, //4
+    button, 7'b0
+   };
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
    

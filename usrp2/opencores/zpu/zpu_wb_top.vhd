@@ -36,6 +36,7 @@ entity zpu_wb_top is
 
         -- misc zpu signals
         interrupt: in std_logic;
+        stack_start: in std_logic_vector(adr_w-1 downto 0);
         zpu_status: out std_logic_vector(63 downto 0)
     );
 
@@ -66,6 +67,7 @@ zpu_system0: zpu_system port map(
     areset => rst,
     enable => enb,
     interrupt => interrupt,
+    stack_start => stack_start,
     zpu_status => zpu_status,
     zpu_wb_i => zpu_wb_i,
     zpu_wb_o => zpu_wb_o
