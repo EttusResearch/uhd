@@ -271,12 +271,13 @@ module u2plus_core
     always @(posedge wb_clk)
     if(wb_rst) begin
         cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_WAIT;
-        cpu_rst <= 1'b0;
+        cpu_rst <= 1'b1;
     end
     else begin
         case(cpu_bldr_ctrl_state)
 
         CPU_BLDR_CTRL_WAIT: begin
+            cpu_rst <= 1'b0;
             if (bldr_done == 1'b1) begin //set by the bootloader
                 cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_DONE;
                 cpu_rst <= 1'b1;
