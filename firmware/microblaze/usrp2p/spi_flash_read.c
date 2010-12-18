@@ -100,8 +100,8 @@ spi_flash_read(uint32_t flash_addr,  size_t nbytes, void *buf)
    * Read up to 16 bytes at a time until done
    */
   unsigned char *dst = (unsigned char *) buf;
-  uint32_t m;
-  for (uint32_t n = 0; n < nbytes; n += m, dst += m){
+  size_t m;
+  for (size_t n = 0; n < nbytes; n += m){
         
     spif_regs->ctrl = FLAGS | LEN(16 * 8);	// xfer 16 bytes
     spif_regs->ctrl = FLAGS | LEN(16 * 8) | SPI_CTRL_GO_BSY;
@@ -115,7 +115,7 @@ spi_flash_read(uint32_t flash_addr,  size_t nbytes, void *buf)
     unsigned char *src = (unsigned char *) &w[0];
     m = min(nbytes - n, 16);
     for (size_t i = 0; i < m; i++)
-      dst[i] = src[i];
+      *(dst++) = src[i];
   }
   spif_regs->ss = 0;			// deassert chip select
 }

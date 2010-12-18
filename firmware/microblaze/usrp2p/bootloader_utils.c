@@ -18,8 +18,7 @@ int is_valid_fpga_image(uint32_t addr) {
 	uint8_t imgbuf[64];
 	spi_flash_read(addr, 64, imgbuf);
 	//we're just looking for leading 0xFF padding, followed by the sync bytes 0xAA 0x99
-	int i = 0;
-	for(i; i<63; i++) {
+	for(size_t i = 0; i<63; i++) {
 		if(imgbuf[i] == 0xFF) continue;
 		if(imgbuf[i] == 0xAA && imgbuf[i+1] == 0x99) {
 			//printf("is_valid_fpga_image(): found valid FPGA image\n");

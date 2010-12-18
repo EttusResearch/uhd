@@ -18,7 +18,7 @@
 #include <i2c.h>
 #include "usrp2/fw_common.h"
 
-void pic_interrupt_handler() __attribute__ ((interrupt_handler));
+//void pic_interrupt_handler() __attribute__ ((interrupt_handler));
 
 void pic_interrupt_handler()
 {

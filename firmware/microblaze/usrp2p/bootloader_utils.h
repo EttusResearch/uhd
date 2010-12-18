@@ -9,8 +9,8 @@
 //we're working in bytes and byte addresses so we can run the same code with Flash chips of different sector sizes.
 //it's really 1463736, but rounded up to 1.5MB
 #define FPGA_IMAGE_SIZE_BYTES 1572864
-//16K - 4B for the hell of it
-#define FW_IMAGE_SIZE_BYTES 15360
+//16K
+#define FW_IMAGE_SIZE_BYTES 0x3fff
 
 #define SAFE_FPGA_IMAGE_LOCATION_ADDR 0x00000000
 #define SAFE_FW_IMAGE_LOCATION_ADDR 0x003F0000

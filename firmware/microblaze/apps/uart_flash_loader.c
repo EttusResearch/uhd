@@ -139,8 +139,8 @@ void delay(uint32_t t) {
 }
 
 int main(int argc, char *argv[]) {
-	uint8_t buf[32];
-	int i = 0;
+	//uint8_t buf[32];
+	//int i = 0;
 
   hal_disable_ints();	// In case we got here via jmp 0x0
 
