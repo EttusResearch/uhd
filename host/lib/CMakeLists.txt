@@ -61,25 +61,6 @@ MACRO(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
     LIBUHD_APPEND_SOURCES(${outfile})
 ENDMACRO(LIBUHD_PYTHON_GEN_SOURCE)
 
-MACRO(LIBUHD_REGISTER_COMPONENT name var auto)
-    MESSAGE(STATUS "")
-    MESSAGE(STATUS "Configuring ${name} support...")
-    IF(DEFINED ${var})
-        MESSAGE(STATUS "${name} support configured ${var}=${${var}}")
-    ELSE(DEFINED ${var}) #not defined: automatic enabling of component
-        SET(${var} ${auto})
-        MESSAGE(STATUS "${name} support configured automatically")
-    ENDIF(DEFINED ${var})
-    OPTION(${var} "enable ${name} support" ${${var}})
-    IF(${var})
-        MESSAGE(STATUS "  Enabling ${name} support.")
-        LIST(APPEND _libuhd_enabled_components ${name})
-    ELSE(${var})
-        MESSAGE(STATUS "  Disabling ${name} support.")
-        LIST(APPEND _libuhd_disabled_components ${name})
-    ENDIF(${var})
-ENDMACRO(LIBUHD_REGISTER_COMPONENT)
-
 ########################################################################
 # Include CMakeLists.txt from subdirectories
 ########################################################################
@@ -128,24 +109,3 @@ INSTALL(TARGETS uhd
     ARCHIVE DESTINATION ${LIBRARY_DIR} # .lib file
     RUNTIME DESTINATION ${LIBRARY_DIR} # .dll file
 )
-
-########################################################################
-# Print configuration summary
-########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "######################################################")
-MESSAGE(STATUS "# LibUHD enabled components                           ")
-MESSAGE(STATUS "######################################################")
-FOREACH(comp ${_libuhd_enabled_components})
-    MESSAGE(STATUS "  * ${comp}")
-ENDFOREACH(comp)
-
-MESSAGE(STATUS "")
-MESSAGE(STATUS "######################################################")
-MESSAGE(STATUS "# LibUHD disabled components                          ")
-MESSAGE(STATUS "######################################################")
-FOREACH(comp ${_libuhd_disabled_components})
-    MESSAGE(STATUS "  * ${comp}")
-ENDFOREACH(comp)
-
-MESSAGE(STATUS "")

@@ -20,7 +20,7 @@
 ########################################################################
 # Conditionally configure the USRP-E100 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 FALSE)
+LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 OFF "ENABLE_LIBUHD" ON)
 
 IF(ENABLE_USRP_E100)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)

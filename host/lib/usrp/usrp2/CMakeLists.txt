@@ -20,7 +20,7 @@
 ########################################################################
 # Conditionally configure the USRP2 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 TRUE)
+LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF)
 
 IF(ENABLE_USRP2)
     LIBUHD_APPEND_SOURCES(

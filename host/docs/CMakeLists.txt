@@ -41,10 +41,16 @@ FIND_PROGRAM(RST2HTML rst2html)
 IF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
     MESSAGE(STATUS "Checking for rst2html (docutils) - not found")
     MESSAGE(STATUS "  Disabled generation of HTML manual.")
+    SET(HAVE_RST2HTML FALSE)
 ELSE(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
     MESSAGE(STATUS "Checking for rst2html (docutils) - found")
     MESSAGE(STATUS "  Enabled generation of HTML manual.")
+    SET(HAVE_RST2HTML TRUE)
+ENDIF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
 
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "HAVE_RST2HTML" OFF)
+
+IF(ENABLE_MANUAL)
     #setup rst2html options
     SET(stylesheet ${CMAKE_CURRENT_SOURCE_DIR}/style.css)
     SET(rst2html_options
@@ -73,7 +79,7 @@ ELSE(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
 
     #make the html manual a build-time dependency
     ADD_CUSTOM_TARGET(manual_html ALL DEPENDS ${manual_html_files})
-ENDIF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
+ENDIF(ENABLE_MANUAL)
 
 INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst)
 
@@ -84,7 +90,9 @@ MESSAGE(STATUS "")
 MESSAGE(STATUS "Checking for doxygen")
 INCLUDE(FindDoxygen)
 
-IF(DOXYGEN_FOUND)
+LIBUHD_REGISTER_COMPONENT("Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
+
+IF(ENABLE_DOXYGEN)
     MESSAGE(STATUS "  Enabled generation of Doxygen documentation.")
 
     #generate the doxygen configuration file
@@ -105,6 +113,6 @@ IF(DOXYGEN_FOUND)
     #make the doxygen generation a built-time dependency
     ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
-ELSE(DOXYGEN_FOUND)
+ELSE(ENABLE_DOXYGEN)
     MESSAGE(STATUS "  Disabled generation of Doxygen documentation.")
-ENDIF(DOXYGEN_FOUND)
+ENDIF(ENABLE_DOXYGEN)

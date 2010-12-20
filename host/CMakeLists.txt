@@ -22,6 +22,7 @@ ENABLE_TESTING()
 ########################################################################
 # Config Files (include order is important)
 ########################################################################
+INCLUDE(${CMAKE_SOURCE_DIR}/config/Component.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/config/Python.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/config/Version.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
@@ -34,7 +35,6 @@ SET(LIBRARY_DIR lib${LIB_SUFFIX})
 SET(INCLUDE_DIR include)
 SET(PKG_DATA_DIR share/uhd)
 SET(PKG_DOC_DIR share/doc/uhd)
-MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 ########################################################################
 # Local Include Dir
@@ -134,11 +134,38 @@ INSTALL(FILES
 )
 
 ########################################################################
+# Register top level components
+########################################################################
+SET(ENABLE_LIBUHD ON) #always enabled
+LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF)
+LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF)
+LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)
+
+########################################################################
 # Add the subdirectories
 ########################################################################
 ADD_SUBDIRECTORY(docs)
-ADD_SUBDIRECTORY(examples)
+
+IF(ENABLE_EXAMPLES)
+    ADD_SUBDIRECTORY(examples)
+ENDIF(ENABLE_EXAMPLES)
+
 ADD_SUBDIRECTORY(include)
-ADD_SUBDIRECTORY(lib)
-ADD_SUBDIRECTORY(test)
-ADD_SUBDIRECTORY(utils)
+
+IF(ENABLE_LIBUHD)
+    ADD_SUBDIRECTORY(lib)
+ENDIF(ENABLE_LIBUHD)
+
+IF(ENABLE_TESTS)
+    ADD_SUBDIRECTORY(test)
+ENDIF(ENABLE_TESTS)
+
+IF(ENABLE_UTILS)
+    ADD_SUBDIRECTORY(utils)
+ENDIF(ENABLE_UTILS)
+
+########################################################################
+# Print Summary
+########################################################################
+UHD_PRINT_COMPONENT_SUMMARY()
+MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

@@ -20,12 +20,12 @@
 ########################################################################
 # Setup libusb
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring USB support...")
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/lib/transport)
 FIND_PACKAGE(USB1 REQUIRED)
 
-IF(LIBUSB_FOUND)
+LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF)
+
+IF(ENABLE_USB)
     MESSAGE(STATUS "USB support enabled via libusb.")
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIR})
     LIBUHD_APPEND_LIBS(${LIBUSB_LIBRARIES})
@@ -38,14 +38,11 @@ IF(LIBUSB_FOUND)
     IF(MSVC) #include our custom stdint for libusb
         INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport/msvc)
     ENDIF(MSVC)
-    SET(HAVE_USB_SUPPORT TRUE)
-ELSE(LIBUSB_FOUND)
-    MESSAGE(STATUS "USB support disabled.")
+ELSE(ENABLE_USB)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_SOURCE_DIR}/lib/transport/usb_dummy_impl.cpp
     )
-    SET(HAVE_USB_SUPPORT FALSE)
-ENDIF(LIBUSB_FOUND)
+ENDIF(ENABLE_USB)
 
 ########################################################################
 # Check for SIMD headers
