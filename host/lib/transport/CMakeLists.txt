@@ -15,12 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
 ########################################################################
 # Setup libusb
 ########################################################################
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/lib/transport)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 FIND_PACKAGE(USB1 REQUIRED)
 
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF)
@@ -30,17 +32,17 @@ IF(ENABLE_USB)
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIR})
     LIBUHD_APPEND_LIBS(${LIBUSB_LIBRARIES})
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_control.cpp
-        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_zero_copy.cpp
-        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_base.cpp
-        ${CMAKE_SOURCE_DIR}/lib/transport/libusb1_base.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_control.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_zero_copy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.hpp
     )
     IF(MSVC) #include our custom stdint for libusb
-        INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport/msvc)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/msvc)
     ENDIF(MSVC)
 ELSE(ENABLE_USB)
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_SOURCE_DIR}/lib/transport/usb_dummy_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usb_dummy_impl.cpp
     )
 ENDIF(ENABLE_USB)
 
@@ -87,29 +89,29 @@ ENDIF(HAVE_IFADDRS_H)
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/transport/gen_vrt_if_packet.py
-    ${CMAKE_BINARY_DIR}/lib/transport/vrt_if_packet.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_vrt_if_packet.py
+    ${CMAKE_CURRENT_BINARY_DIR}/vrt_if_packet.cpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/transport/gen_convert_types.py
-    ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_convert_types.py
+    ${CMAKE_CURRENT_BINARY_DIR}/convert_types.cpp
 )
 
 # append this directory to the include path so the generated convert types
 # can include the implementation convert types file in the source directory
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/transport)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # make the generated convert types depend on the implementation header
 SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_BINARY_DIR}/lib/transport/convert_types.cpp PROPERTIES
-    OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/lib/transport/convert_types_impl.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/convert_types.cpp PROPERTIES
+    OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/convert_types_impl.hpp
 )
 
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/transport/if_addrs.cpp
-    ${CMAKE_SOURCE_DIR}/lib/transport/udp_simple.cpp
-    ${CMAKE_SOURCE_DIR}/lib/transport/udp_zero_copy_asio.cpp
-    ${CMAKE_SOURCE_DIR}/lib/transport/vrt_packet_handler.hpp
-    ${CMAKE_SOURCE_DIR}/lib/transport/zero_copy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy_asio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vrt_packet_handler.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy.cpp
 )

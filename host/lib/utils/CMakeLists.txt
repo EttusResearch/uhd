@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
 ########################################################################
 # Setup defines for process scheduling
@@ -79,12 +81,12 @@ ENDIF(HAVE_DLFCN_H)
 # Append sources
 ########################################################################
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/utils/assert.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/gain_group.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/images.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/load_modules.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/props.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/thread_priority.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/warning.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/assert.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gain_group.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/images.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/props.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/warning.cpp
 )

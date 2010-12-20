@@ -15,16 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_basic_and_lf.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_rfx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_xcvr2450.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_wbx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_unknown.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_tvrx.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard/db_dbsrx2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_basic_and_lf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_rfx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_xcvr2450.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_wbx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_dbsrx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_unknown.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_tvrx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_dbsrx2.cpp
 )
 

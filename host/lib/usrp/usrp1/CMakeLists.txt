@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
 ########################################################################
 # Conditionally configure the USRP1 support
@@ -26,21 +28,21 @@ IF(ENABLE_USRP1)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
 
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/clock_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/codec_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dboard_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/dsp_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/io_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/mboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_iface.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_impl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/usrp1_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_ctrl.hpp
     )
 ENDIF(ENABLE_USRP1)

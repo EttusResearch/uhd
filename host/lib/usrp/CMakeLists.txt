@@ -15,25 +15,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
-
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_base.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_eeprom.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_id.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_iface.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dboard_manager.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/dsp_utils.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/mboard_eeprom.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/misc_utils.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/multi_usrp.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/single_usrp.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/subdev_spec.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/tune_helper.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/wrapper_utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_id.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/misc_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/single_usrp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tune_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/wrapper_utils.hpp
 )
 
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/dboard/CMakeLists.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp1/CMakeLists.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/CMakeLists.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/CMakeLists.txt)
+INCLUDE_SUBDIRECTORY(dboard)
+INCLUDE_SUBDIRECTORY(usrp1)
+INCLUDE_SUBDIRECTORY(usrp2)
+INCLUDE_SUBDIRECTORY(usrp_e100)
