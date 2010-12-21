@@ -7,7 +7,8 @@
 //            Odd means the last word is half full
 //   Flags[1:0] is {eop, sop}
 //   Protocol word format is:
-//             20   UDP Port Here
+//             21   UDP Source Port Here
+//             20   UDP Dest Port Here
 //             19   Last Header Line
 //             18   IP Header Checksum XOR
 //             17   IP Length Here
@@ -43,7 +44,7 @@ module prot_eng_tx
    wire [HDR_WIDTH-1:0] header_word;
 
    reg [1:0] 		port_sel;
-   reg [32:0] 		per_port_data[0:3];
+   reg [31:0] 		per_port_data[0:3];
    reg [15:0] 		udp_src_port, udp_dst_port, chk_precompute;
 
    always @(posedge clk) udp_src_port <= per_port_data[port_sel][31:16];
@@ -51,11 +52,11 @@ module prot_eng_tx
 
    always @(posedge clk)
      if(set_stb & ((set_addr & 8'hE0) == BASE))
-       begin
-	  header_ram[set_addr[4:0]] <= set_data;
-	  if(set_data[18])
-	    chk_precompute <= set_data[15:0];
-       end
+       header_ram[set_addr[4:0]] <= set_data;
+
+   always @(posedge clk)
+     if(set_stb & ((set_addr[4:0] & 8'hE0) == (BASE + 14)))
+       chk_precompute <= set_data[15:0];
 
    always @(posedge clk)
      if(set_stb & ((set_addr & 8'hFC) == (BASE+24)))
