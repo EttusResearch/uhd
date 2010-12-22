@@ -55,7 +55,7 @@ module prot_eng_tx
        header_ram[set_addr[4:0]] <= set_data;
 
    always @(posedge clk)
-     if(set_stb & ((set_addr[4:0] & 8'hE0) == (BASE + 14)))
+     if(set_stb & (set_addr == (BASE + 14)))
        chk_precompute <= set_data[15:0];
 
    always @(posedge clk)
