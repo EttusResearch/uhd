@@ -261,12 +261,16 @@ module u2plus_core
     wire cpu_enb = ~cpu_rst;
     wire [aw-1:0] cpu_adr;
     wire [aw-1:0] cpu_sp_init = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)?
-        16'h3ff8 /*16K main ram*/: 16'h1ff8 /*8K boot ram*/;
+        16'hfff8 : //top of 8K boot ram re-purposed at 56K
+        16'h1ff8 ; //top of 8K boot ram
 
     //When the main program runs, it will try to access system ram at 0.
-    //This logic sets the upper bit high to force select the system ram.
-    assign m0_adr = ((cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE) &&
-        (cpu_adr[15:14] == 2'b00))? {2'b10, cpu_adr[13:0]} : cpu_adr;
+    //This logic re-maps the cpu address to force select the system ram.
+    assign m0_adr =
+        (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_WAIT)? cpu_adr : ( //in bootloader
+        (cpu_adr[15:14] == 2'b00)?   {2'b10, cpu_adr[13:0]}  : ( //map 0-16 to 32-48 (main ram)
+        (cpu_adr[15:13] == 3'b111)?  {3'b000, cpu_adr[12:0]} : ( //map 56-64 to 0-8 (boot ram)
+    cpu_adr))); //otherwise
 
     always @(posedge wb_clk)
     if(wb_rst) begin
@@ -344,6 +348,9 @@ module u2plus_core
    wire [3:0] 	 wr0_flags, wr1_flags, wr2_flags, wr3_flags;
    wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
 
+   wire [35:0] 	 tx_err_data;
+   wire 	 tx_err_src_rdy, tx_err_dst_rdy;
+
    wire [31:0] router_debug;
 
    packet_router #(.BUF_SIZE(9), .UDP_BASE(SR_UDP_SM), .CTRL_BASE(SR_BUF_POOL)) packet_router
@@ -407,7 +414,7 @@ module u2plus_core
        cycle_count <= cycle_count + 1;
 
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd3;
+   localparam compat_num = 32'd4;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -722,17 +729,8 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   
-   //assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
-   //assign debug = 32'd0; // debug_extfifo;
-   assign debug_clk = {wb_rst, wb_clk};
-   assign debug = {
-    cpu_adr, //16 bits
-    cpu_bldr_ctrl_state, //1 bits
-    bldr_done, //1 bit
-    cpu_rst, cpu_enb, // 2 bits
-    m0_we, m0_stb, m0_ack, m0_cyc, //4
-    button, 7'b0
-   };
+   assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
+   assign debug = 32'd0; // debug_extfifo;
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
    
