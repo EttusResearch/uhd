@@ -342,7 +342,7 @@ static UHD_INLINE time_spec_t extract_time_spec(
 static UHD_INLINE void extract_packet_info(
     managed_recv_buffer::sptr &buff,
     vrt::if_packet_info_t &prev_info,
-    time_spec_t &time, bool &clear
+    time_spec_t &time, bool &clear, bool &msg
 ){
     //extract packet info
     vrt::if_packet_info_t next_info;
@@ -356,7 +356,18 @@ static UHD_INLINE void extract_packet_info(
 
     time = extract_time_spec(next_info);
     clear = extract_time_spec(prev_info) > time;
+    msg = prev_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA;
     prev_info = next_info;
+}
+
+static UHD_INLINE bool handle_msg_packet(
+    vrt_packet_handler::managed_recv_buffs_t &buffs, size_t index
+){
+    for (size_t i = 0; i < buffs.size(); i++){
+        if (i == index) continue;
+        buffs[i].reset(); //set NULL
+    }
+    return true;
 }
 
 UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
@@ -367,9 +378,9 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     if (buffs.size() == 1){
         buffs[0] = xports[0]->get_recv_buff(timeout);
         if (buffs[0].get() == NULL) return false;
-        bool clear; time_spec_t time; //unused variables
+        bool clear, msg; time_spec_t time; //unused variables
         //call extract_packet_info to handle printing the overflows
-        extract_packet_info(buffs[0], this->prev_infos[0], time, clear);
+        extract_packet_info(buffs[0], this->prev_infos[0], time, clear, msg);
         return true;
     }
     //-------------------- begin alignment logic ---------------------//
@@ -377,7 +388,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     managed_recv_buffer::sptr buff_tmp;
     std::list<size_t> _all_indexes, indexes_to_do;
     for (size_t i = 0; i < buffs.size(); i++) _all_indexes.push_back(i);
-    bool clear;
+    bool clear, msg;
     time_spec_t expected_time;
 
     //respond to a clear by starting from scratch
@@ -389,9 +400,10 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     size_t index = indexes_to_do.front();
     buff_tmp = xports[index]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
     if (buff_tmp.get() == NULL) return false;
-    extract_packet_info(buff_tmp, this->prev_infos[index], expected_time, clear);
+    extract_packet_info(buff_tmp, this->prev_infos[index], expected_time, clear, msg);
     if (clear) goto got_clear;
     buffs[index] = buff_tmp;
+    if (msg) return handle_msg_packet(buffs, index);
     indexes_to_do.pop_front();
 
     //get an aligned set of elements from the buffers:
@@ -402,9 +414,10 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
         buff_tmp = xports[index]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
         if (buff_tmp.get() == NULL) return false;
         time_spec_t this_time;
-        extract_packet_info(buff_tmp, this->prev_infos[index], this_time, clear);
+        extract_packet_info(buff_tmp, this->prev_infos[index], this_time, clear, msg);
         if (clear) goto got_clear;
         buffs[index] = buff_tmp;
+        if (msg) return handle_msg_packet(buffs, index);
 
         //if the sequence id matches:
         //  remove this index from the list and continue

@@ -91,6 +91,7 @@ template <typename T> UHD_INLINE T get_context_code(
         //vrt unpack each managed buffer
         uhd::transport::vrt::if_packet_info_t if_packet_info;
         for (size_t i = 0; i < state.width; i++){
+            if (state.managed_buffs[i].get() == NULL) continue; //better have a message packet coming up...
 
             //extract packet words and check thats its enough to move on
             size_t num_packet_words32 = state.managed_buffs[i]->size()/sizeof(boost::uint32_t);
