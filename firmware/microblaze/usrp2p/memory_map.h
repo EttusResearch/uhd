@@ -218,10 +218,6 @@ hwconfig_wishbone_divisor(void)
 
 
 #define MISC_OUTPUT_BASE        0x5000
-#define	TX_PROTOCOL_ENGINE_BASE 0x5080
-#define	RX_PROTOCOL_ENGINE_BASE 0x50C0
-#define BUFFER_POOL_CTRL_BASE   0x5100
-#define LAST_SETTING_REG        0x53FC	// last valid setting register
 
 #define SR_MISC 0
 #define SR_TX_PROT_ENG 32
@@ -251,7 +247,7 @@ typedef struct {
   volatile uint32_t cpu_inp_ctrl;
 } buffer_pool_ctrl_t;
 
-#define buffer_pool_ctrl ((buffer_pool_ctrl_t *) BUFFER_POOL_CTRL_BASE)
+#define buffer_pool_ctrl ((buffer_pool_ctrl_t *) _SR_ADDR(SR_BUFFER_POOL_CTRL))
 
 // --- misc outputs ---
 
@@ -544,7 +540,7 @@ typedef struct {
   volatile uint32_t  seqno;	     // Write to init seqno.  It autoincs on match
 } tx_proto_engine_regs_t;
 
-#define tx_proto_engine ((tx_proto_engine_regs_t *) TX_PROTOCOL_ENGINE_BASE)
+#define tx_proto_engine ((tx_proto_engine_regs_t *) _SR_ADDR(SR_TX_PROT_ENG))
 
 /*
  * --- ethernet rx protocol engine regs (write only) ---
@@ -571,7 +567,7 @@ typedef struct {
   volatile uint32_t  ethertype_pad;  // ethertype in high 16-bits
 } rx_proto_engine_regs_t;
 
-#define rx_proto_engine ((rx_proto_engine_regs_t *) RX_PROTOCOL_ENGINE_BASE)
+#define rx_proto_engine ((rx_proto_engine_regs_t *) _SR_ADDR(SR_RX_PROT_ENG))
 
 
 

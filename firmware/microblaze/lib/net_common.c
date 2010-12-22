@@ -37,7 +37,7 @@
 #include <string.h>
 #include "pkt_ctrl.h"
 
-static const bool debug = true;
+static const bool debug = false;
 
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
