@@ -1,16 +1,17 @@
 
 module wb_reg
   #(parameter ADDR=0,
-    parameter DEFAULT=0)
+    parameter DEFAULT=0,
+    parameter WIDTH=32)
    (input clk, input rst, 
     input [5:0] adr, input wr_acc,
-    input [31:0] dat_i, output reg [31:0] dat_o);
+    input [31:0] dat_i, output reg [WIDTH-1:0] dat_o);
 
    always @(posedge clk)
      if(rst)
        dat_o <= DEFAULT;
      else if(wr_acc & (adr == ADDR))
-       dat_o <= dat_i;
+       dat_o <= dat_i[WIDTH-1:0];
    
 endmodule // wb_reg
 
@@ -41,19 +42,19 @@ module simple_gemac_wb
    wire [6:0] misc_settings;
    assign {pause_request_en, pass_ucast, pass_mcast, pass_bcast, pass_pause, pass_all, pause_respect_en} = misc_settings;
 
-   wb_reg #(.ADDR(0),.DEFAULT(7'b0111001))
+   wb_reg #(.ADDR(0),.DEFAULT(7'b0111011),.WIDTH(7))
    wb_reg_settings (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		    .dat_i(wb_dat_i), .dat_o(misc_settings) );
-   wb_reg #(.ADDR(1),.DEFAULT(0))
+   wb_reg #(.ADDR(1),.DEFAULT(0),.WIDTH(16))
    wb_reg_ucast_h (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		   .dat_i(wb_dat_i), .dat_o(ucast_addr[47:32]) );
-   wb_reg #(.ADDR(2),.DEFAULT(0))
+   wb_reg #(.ADDR(2),.DEFAULT(0),.WIDTH(32))
    wb_reg_ucast_l (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		   .dat_i(wb_dat_i), .dat_o(ucast_addr[31:0]) );
-   wb_reg #(.ADDR(3),.DEFAULT(0))
+   wb_reg #(.ADDR(3),.DEFAULT(0),.WIDTH(16))
    wb_reg_mcast_h (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		   .dat_i(wb_dat_i), .dat_o(mcast_addr[47:32]) );
-   wb_reg #(.ADDR(4),.DEFAULT(0))
+   wb_reg #(.ADDR(4),.DEFAULT(0),.WIDTH(32))
    wb_reg_mcast_l (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		   .dat_i(wb_dat_i), .dat_o(mcast_addr[31:0]) );
 
@@ -80,15 +81,15 @@ module simple_gemac_wb
    reg [15:0]  MIIRX_DATA;
    wire [2:0]  MIISTATUS;
 
-   wb_reg #(.ADDR(5),.DEFAULT(0))
+   wb_reg #(.ADDR(5),.DEFAULT(0),.WIDTH(9))
    wb_reg_miimoder (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		    .dat_i(wb_dat_i), .dat_o({NoPre,Divider}) );
    
-   wb_reg #(.ADDR(6),.DEFAULT(0))
+   wb_reg #(.ADDR(6),.DEFAULT(0),.WIDTH(13))
    wb_reg_miiaddr (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		   .dat_i(wb_dat_i), .dat_o(MIIADDRESS) );
    
-   wb_reg #(.ADDR(7),.DEFAULT(0))
+   wb_reg #(.ADDR(7),.DEFAULT(0),.WIDTH(16))
    wb_reg_miidata (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		   .dat_i(wb_dat_i), .dat_o(CtrlData) );
    
@@ -133,11 +134,11 @@ module simple_gemac_wb
       .WCtrlDataStart(WCtrlDataStart), .RStatStart(RStatStart), 
       .UpdateMIIRX_DATAReg(UpdateMIIRX_DATAReg) );
 
-   wb_reg #(.ADDR(11),.DEFAULT(0))
+   wb_reg #(.ADDR(11),.DEFAULT(0),.WIDTH(16))
    wb_reg_pausetime (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		     .dat_i(wb_dat_i), .dat_o(pause_time) );
    
-   wb_reg #(.ADDR(12),.DEFAULT(0))
+   wb_reg #(.ADDR(12),.DEFAULT(0),.WIDTH(16))
    wb_reg_pausethresh (.clk(wb_clk), .rst(wb_rst), .adr(wb_adr[7:2]), .wr_acc(wr_acc),
 		       .dat_i(wb_dat_i), .dat_o(pause_thresh) );
    

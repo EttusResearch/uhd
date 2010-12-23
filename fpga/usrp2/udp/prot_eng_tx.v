@@ -7,6 +7,8 @@
 //            Odd means the last word is half full
 //   Flags[1:0] is {eop, sop}
 //   Protocol word format is:
+//             21   UDP Source Port Here
+//             20   UDP Dest Port Here
 //             19   Last Header Line
 //             18   IP Header Checksum XOR
 //             17   IP Length Here
@@ -34,28 +36,40 @@ module prot_eng_tx
    assign dst_rdy_o 	 = dst_rdy_i & (do_payload | (state==0) | (state==1) | (state==30));
    assign src_rdy_o 	 = src_rdy_i & ~((state==0) | (state==1) | (state==30));
    
-   localparam HDR_WIDTH  = 16 + 4;  // 16 bits plus flags
+   localparam HDR_WIDTH  = 16 + 6;  // 16 bits plus flags
    localparam HDR_LEN 	 = 32;      // Up to 64 bytes of protocol
    
    // Store header values in a small dual-port (distributed) ram
    reg [HDR_WIDTH-1:0] header_ram[0:HDR_LEN-1];
    wire [HDR_WIDTH-1:0] header_word;
-   reg [15:0]  chk_precompute;
-   
+
+   reg [1:0] 		port_sel;
+   reg [31:0] 		per_port_data[0:3];
+   reg [15:0] 		udp_src_port, udp_dst_port, chk_precompute;
+
+   always @(posedge clk) udp_src_port <= per_port_data[port_sel][31:16];
+   always @(posedge clk) udp_dst_port <= per_port_data[port_sel][15:0];
+
    always @(posedge clk)
      if(set_stb & ((set_addr & 8'hE0) == BASE))
-       begin
-	  header_ram[set_addr[4:0]] <= set_data;
-	  if(set_data[18])
-	    chk_precompute <= set_data[15:0];
-       end
-   
-   assign header_word = header_ram[state];
+       header_ram[set_addr[4:0]] <= set_data;
 
-   wire last_hdr_line  = header_word[19];
-   wire ip_chk 	       = header_word[18];
-   wire ip_len 	       = header_word[17];
-   wire udp_len        = header_word[16];
+   always @(posedge clk)
+     if(set_stb & (set_addr == (BASE + 14)))
+       chk_precompute <= set_data[15:0];
+
+   always @(posedge clk)
+     if(set_stb & ((set_addr & 8'hFC) == (BASE+24)))
+       per_port_data[set_addr[1:0]] <= set_data;
+   
+   wire do_udp_src_port = header_word[21];
+   wire do_udp_dst_port = header_word[20];
+   wire last_hdr_line   = header_word[19];
+   wire do_ip_chk       = header_word[18];
+   wire do_ip_len       = header_word[17];
+   wire do_udp_len      = header_word[16];
+
+   assign header_word = header_ram[state];
    
    // Protocol State Machine
    reg [15:0] length;
@@ -75,6 +89,7 @@ module prot_eng_tx
 	   0 :
 	     begin
 		fast_path <= datain[0];
+		port_sel <= datain[2:1];
 		state <= 1;
 	     end
 	   1 :
@@ -113,15 +128,18 @@ module prot_eng_tx
      checksum_reg <= checksum;
    
    always @*
-     if(ip_chk)
-       //dataout_int 	<= header_word[15:0] ^ ip_length;
-       dataout_int 	<= 16'hFFFF ^ checksum_reg;
-     else if(ip_len)
-       dataout_int 	<= ip_length;
-     else if(udp_len)
-       dataout_int 	<= udp_length;
-     else if(do_payload)
+     if(do_payload)
        dataout_int 	<= datain[15:0];
+     else if(do_ip_chk)
+       dataout_int 	<= 16'hFFFF ^ checksum_reg;
+     else if(do_ip_len)
+       dataout_int 	<= ip_length;
+     else if(do_udp_len)
+       dataout_int 	<= udp_length;
+     else if(do_udp_src_port)
+       dataout_int      <= udp_src_port;
+     else if(do_udp_dst_port)
+       dataout_int      <= udp_dst_port;
      else
        dataout_int 	<= header_word[15:0];
    

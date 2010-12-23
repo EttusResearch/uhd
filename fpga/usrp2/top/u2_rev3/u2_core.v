@@ -3,7 +3,7 @@
 // ////////////////////////////////////////////////////////////////////////////////
 
 module u2_core
-  #(parameter RAM_SIZE=32768)
+  #(parameter RAM_SIZE=16384, parameter RAM_AW=14)
   (// Clocks
    input dsp_clk,
    input wb_clk,
@@ -163,7 +163,7 @@ module u2_core
    wire 	ram_loader_rst, wb_rst, dsp_rst;
    assign dsp_rst = wb_rst;
 
-   wire [31:0] 	status, status_b0, status_b1, status_b2, status_b3, status_b4, status_b5, status_b6, status_b7;
+   wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
    wire 	proc_int, overrun, underrun, uart_tx_int, uart_rx_int;
 
@@ -286,13 +286,11 @@ module u2_core
    // ///////////////////////////////////////////////////////////////////
    // RAM Loader
 
-   wire [31:0] 	 ram_loader_dat, if_dat;
+   wire [31:0] 	 ram_loader_dat;
    wire [15:0] 	 ram_loader_adr;
-   wire [14:0] 	 if_adr;
    wire [3:0] 	 ram_loader_sel;
    wire 	 ram_loader_stb, ram_loader_we;
-   wire 	 iwb_ack, iwb_stb;
-   ram_loader #(.AWIDTH(16),.RAM_SIZE(RAM_SIZE))
+   ram_loader #(.AWIDTH(aw),.RAM_SIZE(RAM_SIZE))
      ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
 		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
 		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
@@ -308,36 +306,34 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////
    // Processor
-   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
-     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
-	   // Instruction Wishbone bus to I-RAM
-	   .if_adr(if_adr),
-	   .if_dat(if_dat),
-	   // Data Wishbone bus to system bus fabric
-	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
-	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
-	   // Interrupts and exceptions
-	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
-   
+
    assign 	 bus_error = m0_err | m0_rty;
+
+   wire [63:0] zpu_status;
+   zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(ram_loader_done),
+	   // Data Wishbone bus to system bus fabric
+	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
+	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
+	   // Interrupts and exceptions
+	   .stack_start(16'h3ff8), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
    // I-port connects directly to processor and ram loader
 
    wire 	 flush_icache;
-   ram_harvard #(.AWIDTH(15),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
+   ram_harvard #(.AWIDTH(RAM_AW),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
-	     .ram_loader_adr_i(ram_loader_adr[14:0]), .ram_loader_dat_i(ram_loader_dat),
+	     .ram_loader_adr_i(ram_loader_adr[RAM_AW-1:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
 	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
-	     .if_adr(if_adr), 
-	     .if_data(if_dat), 
+	     .if_adr(16'b0), .if_data(),
 	     
-	     .dwb_adr_i(s0_adr[14:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+	     .dwb_adr_i(s0_adr[RAM_AW-1:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
 	     .flush_icache(flush_icache));
    
@@ -359,33 +355,32 @@ module u2_core
    wire 	 wr3_ready_i, wr3_ready_o;
    wire [3:0] 	 wr0_flags, wr1_flags, wr2_flags, wr3_flags;
    wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
-   
-   buffer_pool #(.BUF_SIZE(9), .SET_ADDR(SR_BUF_POOL)) buffer_pool
+
+   wire [35:0] 	 tx_err_data;
+   wire 	 tx_err_src_rdy, tx_err_dst_rdy;
+
+   wire [31:0] router_debug;
+
+   packet_router #(.BUF_SIZE(9), .UDP_BASE(SR_UDP_SM), .CTRL_BASE(SR_BUF_POOL)) packet_router
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
-      .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),   
+      .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
-   
-      .stream_clk(dsp_clk), .stream_rst(dsp_rst),
+
       .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .status(status),.sys_int_o(buffer_int),
 
-      .s0(status_b0),.s1(status_b1),.s2(status_b2),.s3(status_b3),
-      .s4(status_b4),.s5(status_b5),.s6(status_b6),.s7(status_b7),
+      .stream_clk(dsp_clk), .stream_rst(dsp_rst), .stream_clr(1'b0),
 
-      // Write Interfaces
-      .wr0_data_i(wr0_dat), .wr0_flags_i(wr0_flags), .wr0_ready_i(wr0_ready_i), .wr0_ready_o(wr0_ready_o),
-      .wr1_data_i(wr1_dat), .wr1_flags_i(wr1_flags), .wr1_ready_i(wr1_ready_i), .wr1_ready_o(wr1_ready_o),
-      .wr2_data_i(wr2_dat), .wr2_flags_i(wr2_flags), .wr2_ready_i(wr2_ready_i), .wr2_ready_o(wr2_ready_o),
-      .wr3_data_i(wr3_dat), .wr3_flags_i(wr3_flags), .wr3_ready_i(wr3_ready_i), .wr3_ready_o(wr3_ready_o),
-      // Read Interfaces
-      .rd0_data_o(rd0_dat), .rd0_flags_o(rd0_flags), .rd0_ready_i(rd0_ready_i), .rd0_ready_o(rd0_ready_o),
-      .rd1_data_o(rd1_dat), .rd1_flags_o(rd1_flags), .rd1_ready_i(rd1_ready_i), .rd1_ready_o(rd1_ready_o),
-      .rd2_data_o(rd2_dat), .rd2_flags_o(rd2_flags), .rd2_ready_i(rd2_ready_i), .rd2_ready_o(rd2_ready_o),
-      .rd3_data_o(rd3_dat), .rd3_flags_o(rd3_flags), .rd3_ready_i(rd3_ready_i), .rd3_ready_o(rd3_ready_o)
+      .status(status), .sys_int_o(buffer_int), .debug(router_debug),
+
+      .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
+      .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),
+      .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
+      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
+
+      .ser_out_data({rd0_flags, rd0_dat}), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
+      .dsp_out_data({rd1_flags, rd1_dat}), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
+      .eth_out_data({rd2_flags, rd2_dat}), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
-
-   wire [31:0] 	 status_enc;
-   priority_enc priority_enc (.in({16'b0,status[15:0]}), .out(status_enc));
    
    // /////////////////////////////////////////////////////////////////////////
    // SPI -- Slave #2
@@ -427,23 +422,23 @@ module u2_core
        cycle_count <= cycle_count + 1;
 
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd3;
+   localparam compat_num = 32'd4;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
-      
-      .word00(status_b0),.word01(status_b1),.word02(status_b2),.word03(status_b3),
-      .word04(status_b4),.word05(status_b5),.word06(status_b6),.word07(status_b7),
+
+      .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(status_enc),.word15(cycle_count)
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(32'b0),.word15(cycle_count)
       );
 
    // /////////////////////////////////////////////////////////////////////////
    // Ethernet MAC  Slave #6
 
    wire [18:0] 	 rx_f19_data, tx_f19_data;
-   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, rx_f36_src_rdy, rx_f36_dst_rdy;
+   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, tx_f19_src_rdy, tx_f19_dst_rdy;
    
    simple_gemac_wrapper19 #(.RXFIFOSIZE(11), .TXFIFOSIZE(6)) simple_gemac_wrapper19
      (.clk125(clk_to_mac),  .reset(wb_rst),
@@ -459,37 +454,39 @@ module u2_core
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
 
-   wire [35:0] 	 udp_tx_data, udp_rx_data;
-   wire 	 udp_tx_src_rdy, udp_tx_dst_rdy, udp_rx_src_rdy, udp_rx_dst_rdy;
-   
-   udp_wrapper #(.BASE(SR_UDP_SM)) udp_wrapper
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .rx_f19_data(rx_f19_data), .rx_f19_src_rdy_i(rx_f19_src_rdy), .rx_f19_dst_rdy_o(rx_f19_dst_rdy),
-      .tx_f19_data(tx_f19_data), .tx_f19_src_rdy_o(tx_f19_src_rdy), .tx_f19_dst_rdy_i(tx_f19_dst_rdy),
-      .rx_f36_data(udp_rx_data), .rx_f36_src_rdy_o(udp_rx_src_rdy), .rx_f36_dst_rdy_i(udp_rx_dst_rdy),
-      .tx_f36_data(udp_tx_data), .tx_f36_src_rdy_i(udp_tx_src_rdy), .tx_f36_dst_rdy_o(udp_tx_dst_rdy),
-      .debug(debug_udp) );
+   wire [35:0] 	 rx_f36_data, tx_f36_data;
+   wire 	 rx_f36_src_rdy, rx_f36_dst_rdy, tx_f36_src_rdy, tx_f36_dst_rdy;
 
-   wire [35:0] 	 tx_err_data, udp1_tx_data;
-   wire 	 tx_err_src_rdy, tx_err_dst_rdy, udp1_tx_src_rdy, udp1_tx_dst_rdy;
-   
+   wire [18:0] 	 _rx_f19_data;
+   wire 	 _rx_f19_src_rdy, _rx_f19_dst_rdy;
+
+   //mac rx to eth input...
+   fifo19_rxrealign fifo19_rxrealign
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain(rx_f19_data), .src_rdy_i(rx_f19_src_rdy), .dst_rdy_o(rx_f19_dst_rdy),
+      .dataout(_rx_f19_data), .src_rdy_o(_rx_f19_src_rdy), .dst_rdy_i(_rx_f19_dst_rdy) );
+
+   fifo19_to_fifo36 eth_inp_fifo19_to_fifo36
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .f19_datain(_rx_f19_data),  .f19_src_rdy_i(_rx_f19_src_rdy), .f19_dst_rdy_o(_rx_f19_dst_rdy),
+      .f36_dataout(rx_f36_data), .f36_src_rdy_o(rx_f36_src_rdy), .f36_dst_rdy_i(rx_f36_dst_rdy) );
+
+   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain(rx_f36_data), .src_rdy_i(rx_f36_src_rdy), .dst_rdy_o(rx_f36_dst_rdy),
+      .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
+
+   //eth output to mac tx...
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(udp1_tx_data), .src_rdy_o(udp1_tx_src_rdy), .dst_rdy_i(udp1_tx_dst_rdy));
+      .dataout(tx_f36_data), .src_rdy_o(tx_f36_src_rdy), .dst_rdy_i(tx_f36_dst_rdy));
 
-   fifo36_mux #(.prio(0)) mux_err_stream
-     (.clk(dsp_clk), .reset(dsp_reset), .clear(0),
-      .data0_i(udp1_tx_data), .src0_rdy_i(udp1_tx_src_rdy), .dst0_rdy_o(udp1_tx_dst_rdy),
-      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
-      .data_o(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
-   
-   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
+   fifo36_to_fifo19 eth_out_fifo36_to_fifo19
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(udp_rx_data), .src_rdy_i(udp_rx_src_rdy), .dst_rdy_o(udp_rx_dst_rdy),
-      .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
-   
+      .f36_datain(tx_f36_data),  .f36_src_rdy_i(tx_f36_src_rdy), .f36_dst_rdy_o(tx_f36_dst_rdy),
+      .f19_dataout(tx_f19_data), .f19_src_rdy_o(tx_f19_src_rdy), .f19_dst_rdy_i(tx_f19_dst_rdy) );
+
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #7
    settings_bus settings_bus
@@ -691,7 +688,8 @@ module u2_core
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
-		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1)) 
+		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
+		   .DSP_NUMBER(0))
    vita_tx_chain
      (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
@@ -721,13 +719,13 @@ module u2_core
    // VITA Timing
 
    wire [31:0] 	 debug_sync;
-   
+
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int),
       .exp_time_in(exp_time_in), .exp_time_out(exp_time_out),
       .debug(debug_sync));
-   
+
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
   

@@ -131,7 +131,7 @@ module u2plus_core
    output spiflash_cs, output spiflash_clk, input spiflash_miso, output spiflash_mosi
    );
 
-   localparam SR_BUF_POOL = 64;   // Uses 1 reg
+   localparam SR_BUF_POOL = 64;   // router
    localparam SR_UDP_SM   = 96;   // 64 regs
    localparam SR_RX_DSP   = 160;  // 16
    localparam SR_RX_CTRL  = 176;  // 16
@@ -155,7 +155,7 @@ module u2plus_core
    
    wire 	wb_rst, dsp_rst;
 
-   wire [31:0] 	status, status_b0, status_b1, status_b2, status_b3, status_b4, status_b5, status_b6, status_b7;
+   wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
    wire 	proc_int, overrun, underrun;
    wire [3:0] 	uart_tx_int, uart_rx_int;
@@ -197,21 +197,21 @@ module u2plus_core
    
    wb_1master #(.decode_w(8),
 		.s0_addr(8'b0000_0000),.s0_mask(8'b1110_0000),  // 0-8K, Boot RAM
-		.s1_addr(8'b0100_0000),.s1_mask(8'b1100_0000),  // 16K-32K, Buffer Pool
- 		.s2_addr(8'b0011_0000),.s2_mask(8'b1111_1111),  // SPI
-		.s3_addr(8'b0011_0001),.s3_mask(8'b1111_1111),  // I2C
-		.s4_addr(8'b0011_0010),.s4_mask(8'b1111_1111),  // GPIO
-		.s5_addr(8'b0011_0011),.s5_mask(8'b1111_1111),  // Readback
-		.s6_addr(8'b0011_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
-		.s7_addr(8'b0010_0000),.s7_mask(8'b1111_0000),  // 8-12K, Settings Bus (only uses 1K)
-		.s8_addr(8'b0011_0101),.s8_mask(8'b1111_1111),  // PIC
-		.s9_addr(8'b0011_0110),.s9_mask(8'b1111_1111),  // Unused
-		.sa_addr(8'b0011_0111),.sa_mask(8'b1111_1111),  // UART
-		.sb_addr(8'b0011_1000),.sb_mask(8'b1111_1111),  // ATR
-		.sc_addr(8'b0011_1001),.sc_mask(8'b1111_1111),  // Unused
-		.sd_addr(8'b0011_1010),.sd_mask(8'b1111_1111),  // ICAP
-		.se_addr(8'b0011_1011),.se_mask(8'b1111_1111),  // SPI Flash
-		.sf_addr(8'b1000_0000),.sf_mask(8'b1000_0000),  // 32-64K, Main RAM
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // 16K-20K, Buffer Pool
+		.s2_addr(8'b0110_0000),.s2_mask(8'b1111_1111),  // SPI
+		.s3_addr(8'b0110_0001),.s3_mask(8'b1111_1111),  // I2C
+		.s4_addr(8'b0110_0010),.s4_mask(8'b1111_1111),  // GPIO
+		.s5_addr(8'b0110_0011),.s5_mask(8'b1111_1111),  // Readback
+		.s6_addr(8'b0110_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
+		.s7_addr(8'b0101_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s8_addr(8'b0110_0101),.s8_mask(8'b1111_1111),  // PIC
+		.s9_addr(8'b0110_0110),.s9_mask(8'b1111_1111),  // Unused
+		.sa_addr(8'b0110_0111),.sa_mask(8'b1111_1111),  // UART
+		.sb_addr(8'b0110_1000),.sb_mask(8'b1111_1111),  // ATR
+		.sc_addr(8'b0110_1001),.sc_mask(8'b1111_1111),  // Unused
+		.sd_addr(8'b0110_1010),.sd_mask(8'b1111_1111),  // ICAP
+		.se_addr(8'b0110_1011),.se_mask(8'b1111_1111),  // SPI Flash
+		.sf_addr(8'b1000_0000),.sf_mask(8'b1100_0000),  // 32-48K, Main RAM
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
@@ -251,35 +251,72 @@ module u2plus_core
       
    //////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
-   
+
+    reg cpu_bldr_ctrl_state;
+    localparam CPU_BLDR_CTRL_WAIT = 0;
+    localparam CPU_BLDR_CTRL_DONE = 1;
+
+    wire bldr_done;
+    reg cpu_rst;
+    wire cpu_enb = ~cpu_rst;
+    wire [aw-1:0] cpu_adr;
+    wire [aw-1:0] cpu_sp_init = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)?
+        16'hfff8 : //top of 8K boot ram re-purposed at 56K
+        16'h1ff8 ; //top of 8K boot ram
+
+    //When the main program runs, it will try to access system ram at 0.
+    //This logic re-maps the cpu address to force select the system ram.
+    assign m0_adr =
+        (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_WAIT)? cpu_adr : ( //in bootloader
+        (cpu_adr[15:14] == 2'b00)?   {2'b10, cpu_adr[13:0]}  : ( //map 0-16 to 32-48 (main ram)
+        (cpu_adr[15:13] == 3'b111)?  {3'b000, cpu_adr[12:0]} : ( //map 56-64 to 0-8 (boot ram)
+    cpu_adr))); //otherwise
+
+    always @(posedge wb_clk)
+    if(wb_rst) begin
+        cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_WAIT;
+        cpu_rst <= 1'b1;
+    end
+    else begin
+        case(cpu_bldr_ctrl_state)
+
+        CPU_BLDR_CTRL_WAIT: begin
+            cpu_rst <= 1'b0;
+            if (bldr_done == 1'b1) begin //set by the bootloader
+                cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_DONE;
+                cpu_rst <= 1'b1;
+            end
+        end
+
+        CPU_BLDR_CTRL_DONE: begin //stay here forever
+            cpu_rst <= 1'b0;
+        end
+
+        endcase //cpu_bldr_ctrl_state
+    end
+
    // /////////////////////////////////////////////////////////////////////////
    // Processor
-   wire [31:0] 	 if_dat;
-   wire [15:0] 	 if_adr;
 
-   aeMB_core_BE #(.ISIZ(16),.DSIZ(16),.MUL(0),.BSF(1))
-     aeMB (.sys_clk_i(wb_clk), .sys_rst_i(wb_rst),
-	   // Instruction Wishbone bus to I-RAM
-	   .if_adr(if_adr),
-	   .if_dat(if_dat),
-	   // Data Wishbone bus to system bus fabric
-	   .dwb_we_o(m0_we),.dwb_stb_o(m0_stb),.dwb_dat_o(m0_dat_i),.dwb_adr_o(m0_adr),
-	   .dwb_dat_i(m0_dat_o),.dwb_ack_i(m0_ack),.dwb_sel_o(m0_sel),.dwb_cyc_o(m0_cyc),
-	   // Interrupts and exceptions
-	   .sys_int_i(proc_int),.sys_exc_i(bus_error) );
-   
    assign 	 bus_error = m0_err | m0_rty;
-   
+
+   wire [63:0] zpu_status;
+   zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst | cpu_rst), .enb(cpu_enb),
+	   // Data Wishbone bus to system bus fabric
+	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(cpu_adr),
+	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
+	   // Interrupts and exceptions
+	   .stack_start(cpu_sp_init), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
+
+
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported Boot RAM -- D-Port is Slave #0 on main Wishbone
    // Dual Ported Main RAM -- D-Port is Slave #F on main Wishbone
    // I-port connects directly to processor
 
-   wire [31:0] 	 if_dat_boot, if_dat_main;
-   assign if_dat = if_adr[15] ? if_dat_main : if_dat_boot;
-   
    bootram bootram(.clk(wb_clk), .reset(wb_rst),
-		   .if_adr(if_adr[12:0]), .if_data(if_dat_boot), 
+		   .if_adr(13'b0), .if_data(),
 		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
 
@@ -289,10 +326,10 @@ module u2plus_core
 
 `include "bootloader.rmi"
 
-   ram_harvard2 #(.AWIDTH(15),.RAM_SIZE(32768))
+   ram_harvard2 #(.AWIDTH(14),.RAM_SIZE(16384))
    sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
-	   .if_adr(if_adr[14:0]), .if_data(if_dat_main), 
-	   .dwb_adr_i(sf_adr[14:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
+	   .if_adr(14'b0), .if_data(),
+	   .dwb_adr_i(sf_adr[13:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
 	   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
    
    // /////////////////////////////////////////////////////////////////////////
@@ -310,34 +347,33 @@ module u2plus_core
    wire 	 wr3_ready_i, wr3_ready_o;
    wire [3:0] 	 wr0_flags, wr1_flags, wr2_flags, wr3_flags;
    wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
-   
-   buffer_pool #(.BUF_SIZE(9), .SET_ADDR(SR_BUF_POOL)) buffer_pool
+
+   wire [35:0] 	 tx_err_data;
+   wire 	 tx_err_src_rdy, tx_err_dst_rdy;
+
+   wire [31:0] router_debug;
+
+   packet_router #(.BUF_SIZE(9), .UDP_BASE(SR_UDP_SM), .CTRL_BASE(SR_BUF_POOL)) packet_router
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
-      .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),   
+      .wb_we_i(s1_we),.wb_stb_i(s1_stb),.wb_adr_i(s1_adr),.wb_dat_i(s1_dat_o),
       .wb_dat_o(s1_dat_i),.wb_ack_o(s1_ack),.wb_err_o(),.wb_rty_o(),
-   
-      .stream_clk(dsp_clk), .stream_rst(dsp_rst),
+
       .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .status(status),.sys_int_o(buffer_int),
 
-      .s0(status_b0),.s1(status_b1),.s2(status_b2),.s3(status_b3),
-      .s4(status_b4),.s5(status_b5),.s6(status_b6),.s7(status_b7),
+      .stream_clk(dsp_clk), .stream_rst(dsp_rst), .stream_clr(1'b0),
 
-      // Write Interfaces
-      .wr0_data_i(wr0_dat), .wr0_flags_i(wr0_flags), .wr0_ready_i(wr0_ready_i), .wr0_ready_o(wr0_ready_o),
-      .wr1_data_i(wr1_dat), .wr1_flags_i(wr1_flags), .wr1_ready_i(wr1_ready_i), .wr1_ready_o(wr1_ready_o),
-      .wr2_data_i(wr2_dat), .wr2_flags_i(wr2_flags), .wr2_ready_i(wr2_ready_i), .wr2_ready_o(wr2_ready_o),
-      .wr3_data_i(wr3_dat), .wr3_flags_i(wr3_flags), .wr3_ready_i(wr3_ready_i), .wr3_ready_o(wr3_ready_o),
-      // Read Interfaces
-      .rd0_data_o(rd0_dat), .rd0_flags_o(rd0_flags), .rd0_ready_i(rd0_ready_i), .rd0_ready_o(rd0_ready_o),
-      .rd1_data_o(rd1_dat), .rd1_flags_o(rd1_flags), .rd1_ready_i(rd1_ready_i), .rd1_ready_o(rd1_ready_o),
-      .rd2_data_o(rd2_dat), .rd2_flags_o(rd2_flags), .rd2_ready_i(rd2_ready_i), .rd2_ready_o(rd2_ready_o),
-      .rd3_data_o(rd3_dat), .rd3_flags_o(rd3_flags), .rd3_ready_i(rd3_ready_i), .rd3_ready_o(rd3_ready_o)
+      .status(status), .sys_int_o(buffer_int), .debug(router_debug),
+
+      .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
+      .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),
+      .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
+      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
+
+      .ser_out_data({rd0_flags, rd0_dat}), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
+      .dsp_out_data({rd1_flags, rd1_dat}), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
+      .eth_out_data({rd2_flags, rd2_dat}), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
 
-   wire [31:0] 	 status_enc;
-   priority_enc priority_enc (.in({16'b0,status[15:0]}), .out(status_enc));
-   
    // /////////////////////////////////////////////////////////////////////////
    // SPI -- Slave #2
    spi_top shared_spi
@@ -378,23 +414,23 @@ module u2plus_core
        cycle_count <= cycle_count + 1;
 
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd3;
+   localparam compat_num = 32'd4;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
       
-      .word00(status_b0),.word01(status_b1),.word02(status_b2),.word03(status_b3),
-      .word04(status_b4),.word05(status_b5),.word06(status_b6),.word07(status_b7),
+      .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(status_enc),.word15(cycle_count)
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(32'b0),.word15(cycle_count)
       );
 
    // /////////////////////////////////////////////////////////////////////////
    // Ethernet MAC  Slave #6
 
    wire [18:0] 	 rx_f19_data, tx_f19_data;
-   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, rx_f36_src_rdy, rx_f36_dst_rdy;
+   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, tx_f19_src_rdy, tx_f19_dst_rdy;
    
    simple_gemac_wrapper19 #(.RXFIFOSIZE(11), .TXFIFOSIZE(6)) simple_gemac_wrapper19
      (.clk125(clk_to_mac),  .reset(wb_rst),
@@ -410,36 +446,38 @@ module u2plus_core
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
 
-   wire [35:0] 	 udp_tx_data, udp_rx_data;
-   wire 	 udp_tx_src_rdy, udp_tx_dst_rdy, udp_rx_src_rdy, udp_rx_dst_rdy;
-   
-   udp_wrapper #(.BASE(SR_UDP_SM)) udp_wrapper
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .rx_f19_data(rx_f19_data), .rx_f19_src_rdy_i(rx_f19_src_rdy), .rx_f19_dst_rdy_o(rx_f19_dst_rdy),
-      .tx_f19_data(tx_f19_data), .tx_f19_src_rdy_o(tx_f19_src_rdy), .tx_f19_dst_rdy_i(tx_f19_dst_rdy),
-      .rx_f36_data(udp_rx_data), .rx_f36_src_rdy_o(udp_rx_src_rdy), .rx_f36_dst_rdy_i(udp_rx_dst_rdy),
-      .tx_f36_data(udp_tx_data), .tx_f36_src_rdy_i(udp_tx_src_rdy), .tx_f36_dst_rdy_o(udp_tx_dst_rdy),
-      .debug(debug_udp) );
+   wire [35:0] 	 rx_f36_data, tx_f36_data;
+   wire 	 rx_f36_src_rdy, rx_f36_dst_rdy, tx_f36_src_rdy, tx_f36_dst_rdy;
 
-   wire [35:0] 	 tx_err_data, udp1_tx_data;
-   wire 	 tx_err_src_rdy, tx_err_dst_rdy, udp1_tx_src_rdy, udp1_tx_dst_rdy;
-   
+   wire [18:0] 	 _rx_f19_data;
+   wire 	 _rx_f19_src_rdy, _rx_f19_dst_rdy;
+
+   //mac rx to eth input...
+   fifo19_rxrealign fifo19_rxrealign
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain(rx_f19_data), .src_rdy_i(rx_f19_src_rdy), .dst_rdy_o(rx_f19_dst_rdy),
+      .dataout(_rx_f19_data), .src_rdy_o(_rx_f19_src_rdy), .dst_rdy_i(_rx_f19_dst_rdy) );
+
+   fifo19_to_fifo36 eth_inp_fifo19_to_fifo36
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .f19_datain(_rx_f19_data),  .f19_src_rdy_i(_rx_f19_src_rdy), .f19_dst_rdy_o(_rx_f19_dst_rdy),
+      .f36_dataout(rx_f36_data), .f36_src_rdy_o(rx_f36_src_rdy), .f36_dst_rdy_i(rx_f36_dst_rdy) );
+
+   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
+      .datain(rx_f36_data), .src_rdy_i(rx_f36_src_rdy), .dst_rdy_o(rx_f36_dst_rdy),
+      .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
+
+   //eth output to mac tx...
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(udp1_tx_data), .src_rdy_o(udp1_tx_src_rdy), .dst_rdy_i(udp1_tx_dst_rdy));
+      .dataout(tx_f36_data), .src_rdy_o(tx_f36_src_rdy), .dst_rdy_i(tx_f36_dst_rdy));
 
-   fifo36_mux #(.prio(0)) mux_err_stream
-     (.clk(dsp_clk), .reset(dsp_reset), .clear(0),
-      .data0_i(udp1_tx_data), .src0_rdy_i(udp1_tx_src_rdy), .dst0_rdy_o(udp1_tx_dst_rdy),
-      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
-      .data_o(udp_tx_data), .src_rdy_o(udp_tx_src_rdy), .dst_rdy_i(udp_tx_dst_rdy));
-   
-   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
+   fifo36_to_fifo19 eth_out_fifo36_to_fifo19
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(udp_rx_data), .src_rdy_i(udp_rx_src_rdy), .dst_rdy_o(udp_rx_dst_rdy),
-      .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
+      .f36_datain(tx_f36_data),  .f36_src_rdy_i(tx_f36_src_rdy), .f36_dst_rdy_o(tx_f36_dst_rdy),
+      .f19_dataout(tx_f19_data), .f19_src_rdy_o(tx_f19_src_rdy), .f19_dst_rdy_i(tx_f19_dst_rdy) );
    
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #7
@@ -471,6 +509,8 @@ module u2plus_core
 				      .in(set_data),.out(adc_outs),.changed());
    setting_reg #(.my_addr(4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(phy_reset),.changed());
+   setting_reg #(.my_addr(5),.width(1)) sr_bldr (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+				      .in(set_data),.out(bldr_done),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
    //  LEDS
@@ -652,7 +692,8 @@ module u2plus_core
 
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
-		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1)) 
+		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
+		   .DSP_NUMBER(0))
    vita_tx_chain
      (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
