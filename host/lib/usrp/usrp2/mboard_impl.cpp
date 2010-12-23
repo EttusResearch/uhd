@@ -140,6 +140,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     else {
         _mimo_clocking_mode_is_master = bool(_iface->peek32(_iface->regs.status) & (1 << 8));
     }
+    std::cout << boost::format("mboard%d MIMO %s") % _index %
+        (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
     init_clock_config();
 
     //init the codec before the dboard
