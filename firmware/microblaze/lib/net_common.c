@@ -64,6 +64,12 @@ struct listener_entry {
 
 static struct listener_entry listeners[MAX_UDP_LISTENERS];
 
+void init_udp_listeners(void){
+    for (int i = 0; i < MAX_UDP_LISTENERS; i++){
+        listeners[i].rcvr = NULL;
+    }
+}
+
 static struct listener_entry *
 find_listener_by_port(unsigned short port)
 {
@@ -78,7 +84,7 @@ static struct listener_entry *
 find_free_listener(void)
 {
   for (int i = 0; i < MAX_UDP_LISTENERS; i++){
-    if (listeners[i].rcvr == 0)
+    if (listeners[i].rcvr == NULL)
       return &listeners[i];
   }
   abort();

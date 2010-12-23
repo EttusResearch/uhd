@@ -33,6 +33,8 @@ unsigned int CHKSUM(unsigned int x, unsigned int *chksum);
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);
 
+void init_udp_listeners(void);
+
 void register_addrs(const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr);
 
 void register_udp_listener(int port, udp_receiver_t rcvr);

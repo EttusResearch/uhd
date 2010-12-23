@@ -46,6 +46,7 @@ static inline bool is_status_bit_set(int bit){
 #define CPU_INP_HS_BIT 1 //from CPU to packet router
 
 void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
+    buffer_pool_ctrl->cpu_out_ctrl = 0;
     if (!is_status_bit_set(CPU_OUT_HS_BIT)) return NULL;
     *num_lines = (buffer_pool_status->status >> 16) & 0xffff;
     return buffer_ram(0);
@@ -58,6 +59,7 @@ void pkt_ctrl_release_incoming_buffer(void){
 }
 
 void *pkt_ctrl_claim_outgoing_buffer(void){
+    buffer_pool_ctrl->cpu_inp_ctrl = 0;
     while (!is_status_bit_set(CPU_INP_HS_BIT)){}
     return buffer_ram(1);
 }

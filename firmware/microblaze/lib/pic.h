@@ -24,7 +24,7 @@ typedef void (*irq_handler_t)(unsigned irq);
 void pic_init(void);
 void pic_register_handler(unsigned irq, irq_handler_t handler);
 
-void nop_handler(unsigned irq);	// default handler does nothing
+void pic_nop_handler(unsigned irq);	// default handler does nothing
 
 // FIXME inline assembler
 int  pic_disable_interrupts();

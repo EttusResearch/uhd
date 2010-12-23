@@ -363,6 +363,7 @@ main(void)
   pkt_ctrl_program_inspector(get_ip_addr(), USRP2_UDP_CTRL_PORT, USRP2_UDP_DATA_PORT);
 
   //2) register callbacks for udp ports we service
+  init_udp_listeners();
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_err0_packet);

@@ -26,17 +26,7 @@
 /*
  * Our secondary interrupt vector.
  */
-irq_handler_t pic_vector[NVECTORS] = {
-  nop_handler,
-  nop_handler,
-  nop_handler,
-  nop_handler,
-  nop_handler,
-  nop_handler,
-  nop_handler,
-  nop_handler
-};
-
+irq_handler_t pic_vector[NVECTORS];
 
 void
 pic_init(void)
@@ -47,6 +37,10 @@ pic_init(void)
   pic_regs->edge_enable = PIC_ONETIME_INT | PIC_UNDERRUN_INT | PIC_OVERRUN_INT | PIC_PPS_INT;
   pic_regs->polarity = ~0 & ~PIC_PHY_INT;	       // rising edge
   pic_regs->pending = ~0;			       // clear all pending ints
+
+  for (int i = 0; i < NVECTORS; i++){
+    pic_vector[i] = pic_nop_handler;
+  }
 }
 
 /*
@@ -89,7 +83,7 @@ pic_register_handler(unsigned irq, irq_handler_t handler)
 }
 
 void
-nop_handler(unsigned irq)
+pic_nop_handler(unsigned irq)
 {
   // nop
 }
