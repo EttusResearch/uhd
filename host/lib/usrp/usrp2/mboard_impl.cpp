@@ -42,6 +42,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
     transport::zero_copy_if::sptr data_transport,
+    transport::zero_copy_if::sptr err0_transport,
     const device_addr_t &device_args,
     size_t recv_samps_per_packet
 ):
@@ -51,11 +52,15 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //Send a small data packet so the usrp2 knows the udp source port.
     //This setup must happen before further initialization occurs
     //or the async update packets will cause ICMP destination unreachable.
-    transport::managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
+    transport::managed_send_buffer::sptr send_buff;
     static const boost::uint32_t data[2] = {
         uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
         uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
     };
+    send_buff = data_transport->get_send_buff();
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+    send_buff = err0_transport->get_send_buff();
     std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
     send_buff->commit(sizeof(data));
 

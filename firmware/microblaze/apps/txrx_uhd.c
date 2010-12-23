@@ -55,15 +55,26 @@ static void setup_network(void);
 static eth_mac_addr_t fp_mac_addr_src, fp_mac_addr_dst;
 extern struct socket_address fp_socket_src, fp_socket_dst;
 
-void handle_udp_data_packet(
+static void handle_udp_err0_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    //its a tiny payload, load the fast-path variables
+    sr_udp_sm->err0_port = (((uint32_t)dst.port) << 16) | src.port;
+    printf("Storing for async error path:\n");
+    printf("  source udp port: %d\n", dst.port);
+    printf("  destination udp port: %d\n", src.port);
+    newline();
+}
+
+static void handle_udp_data_packet(
+    struct socket_address src, struct socket_address dst,
+    unsigned char *payload, int payload_len
+){
     fp_mac_addr_src = *ethernet_mac_addr();
     arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
     fp_socket_src = dst;
     fp_socket_dst = src;
+    sr_udp_sm->dsp0_port = (((uint32_t)dst.port) << 16) | src.port;
     printf("Storing for fast path:\n");
     printf("  source mac addr: ");
     print_mac_addr(fp_mac_addr_src.addr); newline();
@@ -77,7 +88,7 @@ void handle_udp_data_packet(
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
 
-    //setup network and vrt
+    //setup network
     setup_network();
 
 }
@@ -85,7 +96,7 @@ void handle_udp_data_packet(
 #define OTW_GPIO_BANK_TO_NUM(bank) \
     (((bank) == USRP2_DIR_RX)? (GPIO_RX_BANK) : (GPIO_TX_BANK))
 
-void handle_udp_ctrl_packet(
+static void handle_udp_ctrl_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
@@ -319,8 +330,8 @@ static void setup_network(void){
   sr_udp_sm->ip_hdr.checksum = UDP_SM_INS_IP_HDR_CHKSUM | (chksum & 0xffff);
 
   //setup the udp header machine
-  sr_udp_sm->udp_hdr.src_port = fp_socket_src.port;
-  sr_udp_sm->udp_hdr.dst_port = fp_socket_dst.port;
+  sr_udp_sm->udp_hdr.src_port = UDP_SM_INS_UDP_SRC_PORT;
+  sr_udp_sm->udp_hdr.dst_port = UDP_SM_INS_UDP_DST_PORT;
   sr_udp_sm->udp_hdr.length = UDP_SM_INS_UDP_LEN;
   sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
 }
@@ -354,6 +365,7 @@ main(void)
   //2) register callbacks for udp ports we service
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_err0_packet);
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 
   //3) set the routing mode to slave and send a garp

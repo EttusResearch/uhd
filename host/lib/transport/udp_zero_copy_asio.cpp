@@ -37,14 +37,15 @@ namespace asio = boost::asio;
  **********************************************************************/
 //Define this to the the boost async io calls to perform receive.
 //Otherwise, get_recv_buff uses a blocking receive with timeout.
-//#define USE_ASIO_ASYNC_RECV
+#define USE_ASIO_ASYNC_RECV
 
 //Define this to the the boost async io calls to perform send.
 //Otherwise, the commit callback uses a blocking send.
 //#define USE_ASIO_ASYNC_SEND
 
-//enough buffering for half a second of samples at full rate on usrp2
-static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(4 * 25e6 * 0.5);
+//By default, this buffer is sized insufficiently small.
+//For peformance, this buffer should be 10s of megabytes.
+static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(10e3);
 
 //Large buffers cause more underflow at high rates.
 //Perhaps this is due to the kernel scheduling,

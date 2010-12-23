@@ -197,10 +197,18 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
  * Make
  **********************************************************************/
 static device::sptr usrp2_make(const device_addr_t &device_addr){
-sep_indexed_dev_addrs(device_addr);
+
+    //setup the dsp transport hints (default to a large recv buff)
+    device_addr_t dsp_xport_hints = device_addr;
+    if (not dsp_xport_hints.has_key("recv_buff_size")){
+        //set to half-a-second of buffering at max rate
+        dsp_xport_hints["recv_buff_size"] = "50e6";
+    }
+
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
     std::vector<zero_copy_if::sptr> data_transports;
+    std::vector<zero_copy_if::sptr> err0_transports;
     const device_addrs_t device_addrs = sep_indexed_dev_addrs(device_addr);
 
     BOOST_FOREACH(const device_addr_t &dev_addr_i, device_addrs){
@@ -208,14 +216,17 @@ sep_indexed_dev_addrs(device_addr);
             dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
         data_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), device_addr
+            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), dsp_xport_hints
+        ));
+        err0_transports.push_back(udp_zero_copy::make(
+            dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()
         ));
     }
 
     //create the usrp2 implementation guts
-    return device::sptr(
-        new usrp2_impl(ctrl_transports, data_transports, device_addrs)
-    );
+    return device::sptr(new usrp2_impl(
+        ctrl_transports, data_transports, err0_transports, device_addrs
+    ));
 }
 
 UHD_STATIC_BLOCK(register_usrp2_device){
@@ -228,9 +239,11 @@ UHD_STATIC_BLOCK(register_usrp2_device){
 usrp2_impl::usrp2_impl(
     std::vector<udp_simple::sptr> ctrl_transports,
     std::vector<zero_copy_if::sptr> data_transports,
+    std::vector<zero_copy_if::sptr> err0_transports,
     const device_addrs_t &device_args
 ):
-    _data_transports(data_transports)
+    _data_transports(data_transports),
+    _err0_transports(err0_transports)
 {
     //setup rx otw type
     _rx_otw_type.width = 16;
@@ -247,7 +260,8 @@ usrp2_impl::usrp2_impl(
     //create a new mboard handler for each control transport
     for(size_t i = 0; i < device_args.size(); i++){
         _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
-            i, ctrl_transports[i], data_transports[i], device_args[i],
+            i, ctrl_transports[i], data_transports[i],
+            err0_transports[i], device_args[i],
             this->get_max_recv_samps_per_packet()
         )));
         //use an empty name when there is only one mboard

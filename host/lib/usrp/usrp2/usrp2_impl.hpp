@@ -85,6 +85,7 @@ public:
         size_t index,
         uhd::transport::udp_simple::sptr,
         uhd::transport::zero_copy_if::sptr,
+        uhd::transport::zero_copy_if::sptr,
         const uhd::device_addr_t &device_args,
         size_t recv_samps_per_packet
     );
@@ -186,11 +187,13 @@ public:
      * Create a new usrp2 impl base.
      * \param ctrl_transports the udp transports for control
      * \param data_transports the udp transports for data
-     * \param flow_control_hints optional flow control params
+     * \param err0_transports the udp transports for error
+     * \param device_args optional misc device parameters
      */
     usrp2_impl(
         std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
         std::vector<uhd::transport::zero_copy_if::sptr> data_transports,
+        std::vector<uhd::transport::zero_copy_if::sptr> err0_transports,
         const uhd::device_addrs_t &device_args
     );
 
@@ -222,6 +225,7 @@ private:
 
     //io impl methods and members
     std::vector<uhd::transport::zero_copy_if::sptr> _data_transports;
+    std::vector<uhd::transport::zero_copy_if::sptr> _err0_transports;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
