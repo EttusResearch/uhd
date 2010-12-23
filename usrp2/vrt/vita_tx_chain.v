@@ -5,7 +5,8 @@ module vita_tx_chain
     parameter REPORT_ERROR=0,
     parameter DO_FLOW_CONTROL=0,
     parameter PROT_ENG_FLAGS=0,
-    parameter USE_TRANS_HEADER=0)
+    parameter USE_TRANS_HEADER=0,
+    parameter DSP_NUMBER=0)
    (input clk, input reset,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [63:0] vita_time,
@@ -71,7 +72,7 @@ module vita_tx_chain
    wire [35:0] 		flow_data, err_data_int;
    wire 		flow_src_rdy, flow_dst_rdy, err_src_rdy_int, err_dst_rdy_int;
    
-   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_flow_pkt
+   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS),.DSP_NUMBER(DSP_NUMBER)) gen_flow_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .trigger(trigger & (DO_FLOW_CONTROL==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(32'd0),
@@ -82,7 +83,7 @@ module vita_tx_chain
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .packet_consumed(packet_consumed), .trigger(trigger));
    
-   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) gen_tx_err_pkt
+   gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS),.DSP_NUMBER(DSP_NUMBER)) gen_tx_err_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .trigger((error|ack) & (REPORT_ERROR==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(message),
