@@ -197,7 +197,14 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
  * Make
  **********************************************************************/
 static device::sptr usrp2_make(const device_addr_t &device_addr){
-sep_indexed_dev_addrs(device_addr);
+
+    //setup the dsp transport hints (default to a large recv buff)
+    device_addr_t dsp_xport_hints = device_addr;
+    if (not dsp_xport_hints.has_key("recv_buff_size")){
+        //set to half-a-second of buffering at max rate
+        dsp_xport_hints["recv_buff_size"] = "50e6";
+    }
+
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
     std::vector<zero_copy_if::sptr> data_transports;
@@ -209,7 +216,7 @@ sep_indexed_dev_addrs(device_addr);
             dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
         data_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), device_addr
+            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), dsp_xport_hints
         ));
         err0_transports.push_back(udp_zero_copy::make(
             dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()

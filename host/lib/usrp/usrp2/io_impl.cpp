@@ -356,7 +356,7 @@ static UHD_INLINE void extract_packet_info(
 
     time = extract_time_spec(next_info);
     clear = extract_time_spec(prev_info) > time;
-    msg = prev_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA;
+    msg = next_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA;
     prev_info = next_info;
 }
 
