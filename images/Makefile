@@ -82,7 +82,7 @@ $(_usrp1_fpga_4rx_rbf):
 ########################################################################
 ifdef HAS_ZPU_GCC
 
-_usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
+_usrp2_fw_dir = $(TOP_FW_DIR)/zpu
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
 _usrp_n2xx_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n2xx_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
