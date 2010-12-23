@@ -39,7 +39,7 @@ Other compilers have not been tested yet or confirmed working.
 CMake
 ^^^^^^^^^^^^^^^^
 * **Purpose:** generates project build files
-* **Version:** at least 2.8
+* **Version:** at least 2.6
 * **Usage:** build time (required)
 * **Download URL:** http://www.cmake.org/cmake/resources/software.html
 

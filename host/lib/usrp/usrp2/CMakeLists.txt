@@ -15,32 +15,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
 ########################################################################
 # Conditionally configure the USRP2 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 TRUE)
+LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF)
 
 IF(ENABLE_USRP2)
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/clock_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/codec_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dboard_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/dsp_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/gps_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/gps_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/io_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/mboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_iface.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_impl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp2/usrp2_regs.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.cpp
     )
 ENDIF(ENABLE_USRP2)

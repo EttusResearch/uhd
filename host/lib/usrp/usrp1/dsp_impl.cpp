@@ -102,7 +102,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
                 ("0", FR_RX_FREQ_0) ("1", FR_RX_FREQ_1)
                 ("2", FR_RX_FREQ_2) ("3", FR_RX_FREQ_3)
             ;
-            _iface->poke32(freq_name_to_reg_val[key.name], reg_word);
+            _iface->poke32(freq_name_to_reg_val[key.name], ~reg_word + 1);
             _rx_dsp_freqs[key.name] = new_freq;
             return;
         }

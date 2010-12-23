@@ -15,33 +15,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
 ########################################################################
 # Conditionally configure the USRP-E100 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 FALSE)
+LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 OFF "ENABLE_LIBUHD" ON)
 
 IF(ENABLE_USRP_E100)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/clock_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/clock_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/codec_ctrl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/codec_ctrl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/codec_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/dboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/dboard_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/dsp_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/fpga-downloader.cc
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/io_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/mboard_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_impl.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_impl.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_iface.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_iface.hpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_mmap_zero_copy.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/usrp_e100_regs.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/fpga-downloader.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_impl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_iface.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_mmap_zero_copy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_regs.hpp
     )
 ENDIF(ENABLE_USRP_E100)

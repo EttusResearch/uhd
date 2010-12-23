@@ -376,7 +376,7 @@ void dbsrx::set_lo_freq(double target_freq){
         read_reg(0x0, 0x0);
 
         //allow for setup time before checking condition again
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
     }
       
     if(dbsrx_debug) std::cerr << boost::format(

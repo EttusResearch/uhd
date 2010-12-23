@@ -21,6 +21,8 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <algorithm>
 #include <cmath>
 
 using namespace uhd;
@@ -65,13 +67,16 @@ boost::uint32_t dsp_type1::calc_tx_mux_word(subdev_conn_t subdev_conn){
 }
 
 boost::uint32_t dsp_type1::calc_cordic_word_and_update(
-    double &freq,
-    double codec_rate
+    double &freq, double codec_rate
 ){
-    UHD_ASSERT_THROW(std::abs(freq) <= codec_rate/2.0);
-    static const double scale_factor = std::pow(2.0, 32);
+    //correct for outside of rate (wrap around)
+    freq = std::fmod(freq, codec_rate);
+    if (std::abs(freq) > codec_rate/2.0)
+        freq -= boost::math::sign(freq)*codec_rate;
 
     //calculate the freq register word (signed)
+    UHD_ASSERT_THROW(std::abs(freq) <= codec_rate/2.0);
+    static const double scale_factor = std::pow(2.0, 32);
     boost::int32_t freq_word = boost::int32_t(boost::math::round((freq / codec_rate) * scale_factor));
 
     //update the actual frequency

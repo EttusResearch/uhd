@@ -15,76 +15,78 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#This file will be included by cmake, use absolute paths!
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
 
-INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/ic_reg_maps)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_adf4350_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/adf4350_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_adf4350_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/adf4350_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_adf4360_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/adf4360_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_adf4360_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/adf4360_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad9510_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad9510_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ad9510_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ad9510_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad9777_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad9777_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ad9777_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ad9777_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad5623_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad5623_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ad5623_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ad5623_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad7922_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad7922_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ad7922_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ad7922_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_max2829_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/max2829_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_max2829_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/max2829_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_max2118_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/max2118_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_max2118_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/max2118_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_max2112_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/max2112_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_max2112_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/max2112_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_max2112_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/max2112_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_max2112_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/max2112_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad9862_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad9862_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ad9862_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ad9862_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ad9522_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ad9522_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ad9522_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ad9522_regs.hpp
 )
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_ads62p44_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/ads62p44_regs.hpp
-    )
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ads62p44_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ads62p44_regs.hpp
+)
 
 LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_SOURCE_DIR}/lib/ic_reg_maps/gen_tuner_4937di5_regs.py
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/tuner_4937di5_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_tuner_4937di5_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/tuner_4937di5_regs.hpp
 )

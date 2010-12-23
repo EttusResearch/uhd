@@ -20,6 +20,9 @@
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/bind.hpp>
+#include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <algorithm>
 #include <cmath>
 
 using namespace uhd;
@@ -177,11 +180,23 @@ void usrp2_mboard_impl::duc_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<dsp_prop_t>()){
 
     case DSP_PROP_FREQ_SHIFT:{
+            const double codec_rate = get_master_clock_freq();
             double new_freq = val.as<double>();
+
+            //calculate the DAC shift (multiples of rate)
+            const int sign = boost::math::sign(new_freq);
+            const int zone = std::min(boost::math::iround(new_freq/codec_rate), 2);
+            const double dac_shift = sign*zone*codec_rate;
+            new_freq -= dac_shift; //update FPGA DSP target freq
+
+            //set the DAC shift (modulation mode)
+            if (zone == 0) _codec_ctrl->set_tx_mod_mode(0); //no shift
+            else _codec_ctrl->set_tx_mod_mode(sign*4/zone); //DAC interp = 4
+
             _iface->poke32(_iface->regs.dsp_tx_freq,
-                dsp_type1::calc_cordic_word_and_update(new_freq, get_master_clock_freq())
+                dsp_type1::calc_cordic_word_and_update(new_freq, codec_rate)
             );
-            _duc_freq = new_freq; //shadow
+            _duc_freq = new_freq + dac_shift; //shadow
         }
         return;
 
