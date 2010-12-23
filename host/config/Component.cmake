@@ -21,9 +21,13 @@ SET(_uhd_disabled_components "" CACHE INTERNAL "" FORCE)
 
 ########################################################################
 # Register a component into the system
-# Usage: LIBUHD_REGISTER_COMPONENT(<name> <var> <enb> <deps> <dis>)
+#  - name the component string name
+#  - var the global enable variable
+#  - enb the default enable setting
+#  - deps a list of dependencies
+#  - dis the default disable setting
 ########################################################################
-FUNCTION(LIBUHD_REGISTER_COMPONENT name var)
+FUNCTION(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
     INCLUDE(CMakeDependentOption)
     MESSAGE(STATUS "")
     MESSAGE(STATUS "Configuring ${name} support...")
@@ -34,7 +38,7 @@ FUNCTION(LIBUHD_REGISTER_COMPONENT name var)
     ENDIF(DEFINED ${var})
 
     #setup the dependent option for this component
-    CMAKE_DEPENDENT_OPTION(${var} "enable ${name} support" ${ARGN})
+    CMAKE_DEPENDENT_OPTION(${var} "enable ${name} support" ${enb} "${deps}" ${dis})
 
     #remove previous occurrence of component in either list
     IF(DEFINED _uhd_enabled_components)
