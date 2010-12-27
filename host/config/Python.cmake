@@ -18,13 +18,33 @@
 ########################################################################
 # Setup Python
 ########################################################################
-IF(NOT DEFINED PYTHON_EXECUTABLE)
-    INCLUDE(FindPythonInterp)
+#this allows the user to override PYTHON_EXECUTABLE
+IF(PYTHON_EXECUTABLE)
 
+    SET(PYTHONINTERP_FOUND TRUE)
+
+#otherwise if not set, try to automatically find it
+ELSE(PYTHON_EXECUTABLE)
+
+    #use the built-in find script
+    FIND_PACKAGE(PythonInterp)
+
+    #and if that fails use the find program routine
     IF(NOT PYTHONINTERP_FOUND)
-        MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
+        FIND_PROGRAM(PYTHON_EXECUTABLE python)
+        IF(PYTHON_EXECUTABLE)
+            SET(PYTHONINTERP_FOUND TRUE)
+        ENDIF(PYTHON_EXECUTABLE)
     ENDIF(NOT PYTHONINTERP_FOUND)
-ENDIF(NOT DEFINED PYTHON_EXECUTABLE)
+
+ENDIF(PYTHON_EXECUTABLE)
+
+#make the path to the executable appear in the cmake gui
+SET(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE PYTHON_EXECUTABLE "python interpreter")
+
+IF(NOT PYTHONINTERP_FOUND)
+    MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
+ENDIF(NOT PYTHONINTERP_FOUND)
 
 MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
     MESSAGE(STATUS "")

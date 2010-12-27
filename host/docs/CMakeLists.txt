@@ -38,17 +38,15 @@ SET(manual_sources
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Checking for rst2html (docutils)")
 FIND_PROGRAM(RST2HTML rst2html)
-IF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
-    MESSAGE(STATUS "Checking for rst2html (docutils) - not found")
-    MESSAGE(STATUS "  Disabled generation of HTML manual.")
-    SET(HAVE_RST2HTML FALSE)
-ELSE(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
+IF(RST2HTML)
     MESSAGE(STATUS "Checking for rst2html (docutils) - found")
     MESSAGE(STATUS "  Enabled generation of HTML manual.")
-    SET(HAVE_RST2HTML TRUE)
-ENDIF(${RST2HTML} STREQUAL "RST2HTML-NOTFOUND")
+ELSE(RST2HTML)
+    MESSAGE(STATUS "Checking for rst2html (docutils) - not found")
+    MESSAGE(STATUS "  Disabled generation of HTML manual.")
+ENDIF(RST2HTML)
 
-LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "HAVE_RST2HTML" OFF)
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "RST2HTML" OFF)
 
 IF(ENABLE_MANUAL)
     #setup rst2html options

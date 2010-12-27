@@ -40,7 +40,7 @@ ENDFOREACH(example_source)
 ########################################################################
 # ASCII Art DFT - requires curses, so this part is optional
 ########################################################################
-INCLUDE(FindCurses)
+FIND_PACKAGE(Curses)
 
 IF(CURSES_FOUND)
     INCLUDE_DIRECTORIES(${CURSES_INCLUDE_DIR})
