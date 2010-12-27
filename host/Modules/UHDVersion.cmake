@@ -16,6 +16,9 @@
 #
 
 ########################################################################
+INCLUDE(UHDPython) #requires python for parsing
+
+########################################################################
 # Setup Version Numbers
 ########################################################################
 SET(UHD_VERSION_MAJOR 0001) #API compatibility number
@@ -28,9 +31,7 @@ SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Checking for git")
 FIND_PROGRAM(GIT git)
-IF(${GIT} STREQUAL "GIT-NOTFOUND")
-    MESSAGE(STATUS "Checking for git - not found")
-ELSE(${GIT} STREQUAL "GIT-NOTFOUND")
+IF(GIT)
     MESSAGE(STATUS "Checking for git - found")
 
     #grab the git log entry for the current head
@@ -62,4 +63,6 @@ ELSE(${GIT} STREQUAL "GIT-NOTFOUND")
     )
     SET(UHD_VERSION_PATCH ${_git_rev})
 
-ENDIF(${GIT} STREQUAL "GIT-NOTFOUND")
+ELSE(GIT)
+    MESSAGE(STATUS "Checking for git - not found")
+ENDIF(GIT)

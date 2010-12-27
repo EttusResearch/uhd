@@ -16,6 +16,9 @@
 #
 
 ########################################################################
+INCLUDE(UHDVersion) #sets version information
+
+########################################################################
 # Setup CPack
 ########################################################################
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - Universal Hardware Driver")
@@ -39,4 +42,3 @@ STRING(REPLACE "," ", " CPACK_DEBIAN_PACKAGE_DEPENDS
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel >= ${BOOST_MIN_VERSION}")
 INCLUDE(CPack) #include after setting vars
-MESSAGE(STATUS "Version: ${CPACK_PACKAGE_VERSION}")
