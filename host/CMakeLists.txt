@@ -16,9 +16,9 @@
 #
 
 ########################################################################
-IF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-    MESSAGE(FATAL_ERROR "Prevented in-tree built. This is bad practice.")
-ENDIF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+#IF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+#    MESSAGE(FATAL_ERROR "Prevented in-tree built. This is bad practice.")
+#ENDIF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 
 ########################################################################
 # Project setup
