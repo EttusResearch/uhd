@@ -18,6 +18,8 @@
 ########################################################################
 # Check Python Modules
 ########################################################################
+INCLUDE(UHDPython)
+
 PYTHON_CHECK_MODULE(
     "Python version 2.6 or greater"
     "platform" "platform.python_version() >= '2.6'"

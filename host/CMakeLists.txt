@@ -15,21 +15,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+########################################################################
+#IF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+#    MESSAGE(FATAL_ERROR "Prevented in-tree built. This is bad practice.")
+#ENDIF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+
+########################################################################
+# Project setup
+########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD CXX)
 ENABLE_TESTING()
-
-########################################################################
-# Config Files (include order is important)
-########################################################################
-INCLUDE(${CMAKE_SOURCE_DIR}/config/Component.cmake)
-INCLUDE(${CMAKE_SOURCE_DIR}/config/Python.cmake)
-INCLUDE(${CMAKE_SOURCE_DIR}/config/Version.cmake)
-INCLUDE(${CMAKE_SOURCE_DIR}/config/CPack.cmake)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Modules)
+INCLUDE(UHDComponent) #enable components
+INCLUDE(UHDPackage)   #setup cpack
 
 ########################################################################
 # Install Dirs
 ########################################################################
+SET(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
 SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib${LIB_SUFFIX})
 SET(INCLUDE_DIR include)
@@ -102,7 +106,7 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 # Create Uninstall Target
 ########################################################################
 CONFIGURE_FILE(
-    ${CMAKE_SOURCE_DIR}/config/cmake_uninstall.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 @ONLY)
 
@@ -168,4 +172,5 @@ ENDIF(ENABLE_UTILS)
 # Print Summary
 ########################################################################
 UHD_PRINT_COMPONENT_SUMMARY()
+MESSAGE(STATUS "Building version: ${CPACK_PACKAGE_VERSION}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

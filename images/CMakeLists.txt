@@ -15,14 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+########################################################################
+# Setup Project
+########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD-images NONE)
-
-########################################################################
-# Config Files (include order is important)
-########################################################################
-INCLUDE(${CMAKE_SOURCE_DIR}/../host/config/Python.cmake)
-INCLUDE(${CMAKE_SOURCE_DIR}/../host/config/Version.cmake)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../host/Modules)
+INCLUDE(UHDVersion) #sets version variables (used below)
 
 ########################################################################
 # Setup CPack

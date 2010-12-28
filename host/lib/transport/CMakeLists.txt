@@ -22,8 +22,7 @@
 ########################################################################
 # Setup libusb
 ########################################################################
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-FIND_PACKAGE(USB1 REQUIRED)
+FIND_PACKAGE(USB1)
 
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF)
 
