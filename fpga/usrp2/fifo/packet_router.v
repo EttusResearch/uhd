@@ -71,13 +71,14 @@ module packet_router
     //    - setting registers to program the inspector
     ////////////////////////////////////////////////////////////////////
 
-    //setting register to misc control
-    wire [31:0] _sreg_misc_ctrl;
-    wire master_mode_flag = _sreg_misc_ctrl[0];
-    setting_reg #(.my_addr(CTRL_BASE+0)) sreg_misc_ctrl(
+    //setting register for mode control
+    wire [31:0] _sreg_mode_ctrl;
+    wire master_mode_flag = _sreg_mode_ctrl[0];
+    wire mode_changed;
+    setting_reg #(.my_addr(CTRL_BASE+0)) sreg_mode_ctrl(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(_sreg_misc_ctrl),.changed()
+        .out(_sreg_mode_ctrl),.changed(mode_changed)
     );
 
     //setting register to program the IP address
@@ -88,19 +89,9 @@ module packet_router
         .out(my_ip_addr),.changed()
     );
 
-    //setting register to program the UDP ctrl ports
-    /*
-    wire [15:0] ctrl_udp_port, other_udp_port;
-    setting_reg #(.my_addr(CTRL_BASE+2)) sreg_ctrl_ports(
-        .clk(stream_clk),.rst(stream_rst),
-        .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out({other_udp_port, ctrl_udp_port}),.changed()
-    );
-    */
-
     //setting register to program the UDP data ports
     wire [15:0] dsp0_udp_port, dsp1_udp_port;
-    setting_reg #(.my_addr(CTRL_BASE+3)) sreg_data_ports(
+    setting_reg #(.my_addr(CTRL_BASE+2)) sreg_data_ports(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
         .out({dsp1_udp_port, dsp0_udp_port}),.changed()
@@ -109,8 +100,8 @@ module packet_router
     //setting register for CPU output handshake
     wire [31:0] _sreg_cpu_out_ctrl;
     wire cpu_out_hs_ctrl = _sreg_cpu_out_ctrl[0];
-    setting_reg #(.my_addr(CTRL_BASE+4)) sreg_cpu_out_ctrl(
-        .clk(stream_clk),.rst(stream_rst),
+    setting_reg #(.my_addr(CTRL_BASE+3)) sreg_cpu_out_ctrl(
+        .clk(stream_clk),.rst(stream_rst | mode_changed),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
         .out(_sreg_cpu_out_ctrl),.changed()
     );
@@ -119,8 +110,8 @@ module packet_router
     wire [31:0] _sreg_cpu_inp_ctrl;
     wire cpu_inp_hs_ctrl = _sreg_cpu_inp_ctrl[0];
     wire [BUF_SIZE-1:0] cpu_inp_line_count = _sreg_cpu_inp_ctrl[BUF_SIZE-1+16:0+16];
-    setting_reg #(.my_addr(CTRL_BASE+5)) sreg_cpu_inp_ctrl(
-        .clk(stream_clk),.rst(stream_rst),
+    setting_reg #(.my_addr(CTRL_BASE+4)) sreg_cpu_inp_ctrl(
+        .clk(stream_clk),.rst(stream_rst | mode_changed),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
         .out(_sreg_cpu_inp_ctrl),.changed()
     );
@@ -269,7 +260,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst | stream_clr) begin
+    if(stream_rst | stream_clr | mode_changed) begin
         cpu_out_state <= CPU_OUT_STATE_WAIT_SOF;
         cpu_out_addr <= 0;
     end
@@ -339,7 +330,7 @@ module packet_router
     );
 
     always @(posedge stream_clk)
-    if(stream_rst | stream_clr) begin
+    if(stream_rst | stream_clr | mode_changed) begin
         cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
         cpu_inp_addr <= 0;
     end
