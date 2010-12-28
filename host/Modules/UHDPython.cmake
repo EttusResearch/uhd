@@ -40,7 +40,7 @@ ELSE(PYTHON_EXECUTABLE)
 ENDIF(PYTHON_EXECUTABLE)
 
 #make the path to the executable appear in the cmake gui
-SET(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE PYTHON_EXECUTABLE "python interpreter")
+SET(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "python interpreter")
 
 IF(NOT PYTHONINTERP_FOUND)
     MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
