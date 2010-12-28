@@ -6,13 +6,9 @@
 module buffer_int2
   #(parameter BASE = 0,
     parameter BUF_SIZE = 9)
-    (// Control Interface
-     input clk,
-     input rst,
-
+    (input clk, input rst,
      input set_stb, input [7:0] set_addr, input [31:0] set_data,
      output [31:0] status,
-     output sys_int_o,   // unused
 
      // Wishbone interface to RAM
      input wb_clk_i,
