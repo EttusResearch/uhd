@@ -20,52 +20,45 @@
 #include <nonstdio.h>
 
 void pkt_ctrl_program_inspector(
-    const struct ip_addr *ip_addr, uint16_t ctrl_port, uint16_t data_port
+    const struct ip_addr *ip_addr, uint16_t data_port
 ){
-    buffer_pool_ctrl->ip_addr = ip_addr->addr;
-    buffer_pool_ctrl->ctrl_ports = ctrl_port;
-    buffer_pool_ctrl->data_ports = data_port;
+    router_ctrl->ip_addr = ip_addr->addr;
+    router_ctrl->data_ports = data_port;
 }
 
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
     switch(mode){
-    case PKT_CTRL_ROUTING_MODE_SLAVE:
-        buffer_pool_ctrl->misc_ctrl = 0;
-        break;
-    case PKT_CTRL_ROUTING_MODE_MASTER:
-        buffer_pool_ctrl->misc_ctrl = 1;
-        break;
+    case PKT_CTRL_ROUTING_MODE_SLAVE:  router_ctrl->mode_ctrl = 0; break;
+    case PKT_CTRL_ROUTING_MODE_MASTER: router_ctrl->mode_ctrl = 1; break;
     }
 }
 
 static inline bool is_status_bit_set(int bit){
-    return buffer_pool_status->status & (1 << bit);
+    return router_status->status & (1 << bit);
 }
 
 #define CPU_OUT_HS_BIT 0 //from packet router to CPU
 #define CPU_INP_HS_BIT 1 //from CPU to packet router
 
 void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
-    buffer_pool_ctrl->cpu_out_ctrl = 0;
     if (!is_status_bit_set(CPU_OUT_HS_BIT)) return NULL;
-    *num_lines = (buffer_pool_status->status >> 16) & 0xffff;
-    return buffer_ram(0);
+    *num_lines = (router_status->status >> 16) & 0xffff;
+    return router_ram(0);
 }
 
 void pkt_ctrl_release_incoming_buffer(void){
-    buffer_pool_ctrl->cpu_out_ctrl = 1;
+    router_ctrl->cpu_out_ctrl = 1;
     while (is_status_bit_set(CPU_OUT_HS_BIT)){}
-    buffer_pool_ctrl->cpu_out_ctrl = 0;
+    router_ctrl->cpu_out_ctrl = 0;
 }
 
 void *pkt_ctrl_claim_outgoing_buffer(void){
-    buffer_pool_ctrl->cpu_inp_ctrl = 0;
     while (!is_status_bit_set(CPU_INP_HS_BIT)){}
-    return buffer_ram(1);
+    return router_ram(1);
 }
 
 void pkt_ctrl_commit_outgoing_buffer(size_t num_lines){
-    buffer_pool_ctrl->cpu_inp_ctrl = ((num_lines & 0xffff) << 16) | 1;
+    router_ctrl->cpu_inp_ctrl = ((num_lines & 0xffff) << 16) | 1;
     while (is_status_bit_set(CPU_INP_HS_BIT)){}
-    buffer_pool_ctrl->cpu_inp_ctrl = 0;
+    router_ctrl->cpu_inp_ctrl = 0;
 }

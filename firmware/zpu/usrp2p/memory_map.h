@@ -38,20 +38,18 @@
 
 
 ////////////////////////////////////////////////////////////////
-// Buffer Pool RAM, Slave 1
+// Packet Router RAM, Slave 1
 //
-// The buffers themselves are located in Slave 1, Buffer Pool RAM.
-// The status registers are in Slave 5, Buffer Pool Status.
+// The buffers themselves are located in Slave 1, Packet Router RAM.
+// The status registers are in Slave 5, Packet Router Status.
 // The control register is in Slave 7, Settings Bus.
 
-#define BUFFER_POOL_RAM_BASE 0x4000
+#define ROUTER_RAM_BASE 0x4000
 
-#define BP_NLINES	   0x0200	// number of 32-bit lines in a buffer
+#define RAM_NLINES	   0x0200	// number of 32-bit lines in a buffer
 
-#define buffer_pool_ram \
-  ((uint32_t *) BUFFER_POOL_RAM_BASE)
-
-#define buffer_ram(n) (&buffer_pool_ram[(n) * BP_NLINES])
+#define _router_ram ((uint32_t *) ROUTER_RAM_BASE)
+#define router_ram(n) (&_router_ram[(n) * RAM_NLINES])
 
 
 /////////////////////////////////////////////////////
@@ -155,13 +153,13 @@ typedef struct {
 #define gpio_base ((gpio_regs_t *) GPIO_BASE)
 
 ///////////////////////////////////////////////////
-// Buffer Pool Status, Slave 5
+// Packet Router Status, Slave 5
 //
-// The buffers themselves are located in Slave 1, Buffer Pool RAM.
-// The status registers are in Slave 5, Buffer Pool Status.
+// The buffers themselves are located in Slave 1, Packet Router RAM.
+// The status registers are in Slave 5, Packet Router Status.
 // The control register is in Slave 7, Settings Bus.
 
-#define BUFFER_POOL_STATUS_BASE 0x6300
+#define ROUTER_STATUS_BASE 0x6300
 
 typedef struct {
   volatile uint32_t _padding[8];
@@ -171,11 +169,11 @@ typedef struct {
   volatile uint32_t irqs;
   volatile uint32_t pri_enc_bp_status;
   volatile uint32_t cycle_count;
-} buffer_pool_status_t;
+} router_status_t;
 
-#define buffer_pool_status ((buffer_pool_status_t *) BUFFER_POOL_STATUS_BASE)
+#define router_status ((router_status_t *) ROUTER_STATUS_BASE)
 
-#define BUTTON_PUSHED ((buffer_pool_status->irqs & PIC_BUTTON) ? 0 : 1)
+#define BUTTON_PUSHED ((router_status->irqs & PIC_BUTTON) ? 0 : 1)
 
 // The hw_config register
 
@@ -188,7 +186,7 @@ typedef struct {
 inline static int
 hwconfig_simulation_p(void)
 {
-  return buffer_pool_status->hw_config & HWC_SIMULATION;
+  return router_status->hw_config & HWC_SIMULATION;
 }
 
 /*!
@@ -198,7 +196,7 @@ hwconfig_simulation_p(void)
 inline static int
 hwconfig_wishbone_divisor(void)
 {
-  return buffer_pool_status->hw_config & HWC_WB_CLK_DIV_MASK;
+  return router_status->hw_config & HWC_WB_CLK_DIV_MASK;
 }
 
 ///////////////////////////////////////////////////
@@ -222,7 +220,7 @@ hwconfig_wishbone_divisor(void)
 #define SR_MISC 0
 #define SR_TX_PROT_ENG 32
 #define SR_RX_PROT_ENG 48
-#define SR_BUFFER_POOL_CTRL 64
+#define SR_ROUTER_CTRL 64
 #define SR_UDP_SM 96
 #define SR_TX_DSP 208
 #define SR_TX_CTRL 224
@@ -236,18 +234,17 @@ hwconfig_wishbone_divisor(void)
 
 #define SR_ADDR_BLDRDONE _SR_ADDR(5)
 
-// --- buffer pool control regs ---
+// --- packet router control regs ---
 
 typedef struct {
-  volatile uint32_t misc_ctrl;
+  volatile uint32_t mode_ctrl;
   volatile uint32_t ip_addr;
-  volatile uint32_t ctrl_ports; //ctrl (low 16) other (high 16)
   volatile uint32_t data_ports; //dsp0 (low 16) dsp1 (high 16)
   volatile uint32_t cpu_out_ctrl;
   volatile uint32_t cpu_inp_ctrl;
-} buffer_pool_ctrl_t;
+} router_ctrl_t;
 
-#define buffer_pool_ctrl ((buffer_pool_ctrl_t *) _SR_ADDR(SR_BUFFER_POOL_CTRL))
+#define router_ctrl ((router_ctrl_t *) _SR_ADDR(SR_ROUTER_CTRL))
 
 // --- misc outputs ---
 
