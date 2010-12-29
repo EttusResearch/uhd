@@ -320,12 +320,6 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
   }
 }
 
-static void __attribute__((unused))
-print_arp_ip(const unsigned char ip[4])
-{
-  printf("%d.%d.%d.%d", ip[0], ip[1], ip[2],ip[3]);
-}
-
 static void
 send_arp_reply(struct arp_eth_ipv4 *req, eth_mac_addr_t our_mac)
 {
@@ -376,9 +370,9 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
     printf("ar_pln = %d\n", p->ar_pln);
     printf("ar_op  = %d\n", p->ar_op);
     printf("ar_sha = "); print_mac_addr(p->ar_sha); newline();
-    printf("ar_sip = "); print_arp_ip(p->ar_sip);    newline();
+    printf("ar_sip = "); print_ip_addr (p->ar_sip); newline();
     printf("ar_tha = "); print_mac_addr(p->ar_tha); newline();
-    printf("ar_tip = "); print_arp_ip(p->ar_tip);    newline();
+    printf("ar_tip = "); print_ip_addr (p->ar_tip); newline();
   }
 
   if (p->ar_hrd != ARPHRD_ETHER
@@ -447,17 +441,4 @@ handle_eth_packet(uint32_t *p, size_t nlines)
   }
   else
     return;	// Not ARP or IPV4, ignore
-}
-
-// ------------------------------------------------------------------------
-
-void
-print_ip(struct ip_addr ip)
-{
-  unsigned int t = ntohl(ip.addr);
-  printf("%d.%d.%d.%d",
-	 (t >> 24) & 0xff,
-	 (t >> 16) & 0xff,
-	 (t >>  8) & 0xff,
-	 t & 0xff);
 }
