@@ -11,9 +11,14 @@ module time_receiver
    reg [3:0]  bit_count;
    wire [8:0] dataout;
    reg [8:0]  dataout_reg;
- 	      
+
+   reg 	      exp_time_in_reg, exp_time_in_reg2;
+   
+   always @(posedge clk)  exp_time_in_reg <= exp_time_in;
+   always @(posedge clk)  exp_time_in_reg2 <= exp_time_in_reg;
+   
    always @(posedge clk)
-     shiftreg <= {exp_time_in, shiftreg[9:1]};
+     shiftreg <= {exp_time_in_reg2, shiftreg[9:1]};
 
    localparam COMMA_0 = 10'h283;
    localparam COMMA_1 = 10'h17c;
@@ -65,7 +70,9 @@ module time_receiver
    localparam TAIL = 9'h1F7;
    
    reg [3:0]  state;
-   
+   reg [63:0] vita_time_pre;
+   reg 	      sync_rcvd_pre;
+      
    always @(posedge clk)
      if(rst)
        state <= STATE_IDLE;
@@ -79,42 +86,42 @@ module time_receiver
 	       state <= STATE_T0;
 	   STATE_T0 :
 	     begin
-		vita_time[63:56] <= dataout_reg[7:0];
+		vita_time_pre[63:56] <= dataout_reg[7:0];
 		state <= STATE_T1;
 	     end
 	   STATE_T1 :
 	     begin
-		vita_time[55:48] <= dataout_reg[7:0];
+		vita_time_pre[55:48] <= dataout_reg[7:0];
 		state <= STATE_T2;
 	     end
 	   STATE_T2 :
 	     begin
-		vita_time[47:40] <= dataout_reg[7:0];
+		vita_time_pre[47:40] <= dataout_reg[7:0];
 		state <= STATE_T3;
 	     end
 	   STATE_T3 :
 	     begin
-		vita_time[39:32] <= dataout_reg[7:0];
+		vita_time_pre[39:32] <= dataout_reg[7:0];
 		state <= STATE_T4;
 	     end
 	   STATE_T4 :
 	     begin
-		vita_time[31:24] <= dataout_reg[7:0];
+		vita_time_pre[31:24] <= dataout_reg[7:0];
 		state <= STATE_T5;
 	     end
 	   STATE_T5 :
 	     begin
-		vita_time[23:16] <= dataout_reg[7:0];
+		vita_time_pre[23:16] <= dataout_reg[7:0];
 		state <= STATE_T6;
 	     end
 	   STATE_T6 :
 	     begin
-		vita_time[15:8] <= dataout_reg[7:0];
+		vita_time_pre[15:8] <= dataout_reg[7:0];
 		state <= STATE_T7;
 	     end
 	   STATE_T7 :
 	     begin
-		vita_time[7:0] <= dataout_reg[7:0];
+		vita_time_pre[7:0] <= dataout_reg[7:0];
 		state <= STATE_TAIL;
 	     end
 	   STATE_TAIL :
@@ -123,8 +130,11 @@ module time_receiver
    
    always @(posedge clk)
      if(rst)
-       sync_rcvd <= 0;
+       sync_rcvd_pre <= 0;
      else
-       sync_rcvd <= (complete_word & (state == STATE_TAIL) & (dataout_reg[8:0] == TAIL));
+       sync_rcvd_pre <= (complete_word & (state == STATE_TAIL) & (dataout_reg[8:0] == TAIL));
+
+   always @(posedge clk) sync_rcvd <= sync_rcvd_pre;
+   always @(posedge clk) vita_time <= vita_time_pre;
    
 endmodule // time_sender
