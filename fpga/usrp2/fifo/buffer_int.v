@@ -14,7 +14,6 @@ module buffer_int
      output done,
      output error,
      output idle,
-     output [1:0] flag,
      
      // Buffer Interface
      output en_o,

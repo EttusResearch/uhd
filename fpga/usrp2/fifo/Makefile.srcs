@@ -7,6 +7,7 @@
 ##################################################
 FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../fifo/, \
 buffer_int.v \
+buffer_int2.v \
 buffer_pool.v \
 crossbar36.v \
 dsp_framer36.v \
