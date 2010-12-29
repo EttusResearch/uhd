@@ -13,7 +13,7 @@ module packet_router
         input [15:0] wb_adr_i,
         input [31:0] wb_dat_i,
         output [31:0] wb_dat_o,
-        output reg wb_ack_o,
+        output wb_ack_o,
         output wb_err_o,
         output wb_rty_o,
 
@@ -45,11 +45,6 @@ module packet_router
 
     assign wb_err_o = 1'b0;  // Unused for now
     assign wb_rty_o = 1'b0;  // Unused for now
-    always @(posedge wb_clk_i)
-        wb_ack_o <= wb_stb_i & ~wb_ack_o;
-
-    //which buffer: 0 = CPU read buffer, 1 = CPU write buffer
-    wire which_buf = wb_adr_i[BUF_SIZE+2];
 
     ////////////////////////////////////////////////////////////////////
     // CPU interface to this packet router
@@ -97,33 +92,11 @@ module packet_router
         .out({dsp1_udp_port, dsp0_udp_port}),.changed()
     );
 
-    //setting register for CPU output handshake
-    wire [31:0] _sreg_cpu_out_ctrl;
-    wire cpu_out_hs_ctrl = _sreg_cpu_out_ctrl[0];
-    setting_reg #(.my_addr(CTRL_BASE+3)) sreg_cpu_out_ctrl(
-        .clk(stream_clk),.rst(stream_rst | mode_changed),
-        .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(_sreg_cpu_out_ctrl),.changed()
-    );
-
-    //setting register for CPU input handshake
-    wire [31:0] _sreg_cpu_inp_ctrl;
-    wire cpu_inp_hs_ctrl = _sreg_cpu_inp_ctrl[0];
-    wire [BUF_SIZE-1:0] cpu_inp_line_count = _sreg_cpu_inp_ctrl[BUF_SIZE-1+16:0+16];
-    setting_reg #(.my_addr(CTRL_BASE+4)) sreg_cpu_inp_ctrl(
-        .clk(stream_clk),.rst(stream_rst | mode_changed),
-        .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(_sreg_cpu_inp_ctrl),.changed()
-    );
-
     //assign status output signals
-    wire cpu_out_hs_stat;
-    assign status[0] = cpu_out_hs_stat;
-    wire [BUF_SIZE-1:0] cpu_out_line_count;
-    assign status[BUF_SIZE-1+16:0+16] = cpu_out_line_count;
-    wire cpu_inp_hs_stat;
-    assign status[1] = cpu_inp_hs_stat;
-    assign status[8] = master_mode_flag; //for the host to readback
+    wire [31:0] cpu_iface_status;
+    assign status = {
+        cpu_iface_status[31:9], master_mode_flag, cpu_iface_status[7:0]
+    };
 
     ////////////////////////////////////////////////////////////////////
     // Communication input source crossbar
@@ -232,138 +205,26 @@ module packet_router
     );
 
     ////////////////////////////////////////////////////////////////////
-    // Interface CPU output to memory mapped wishbone
+    // Interface CPU to memory mapped wishbone
     ////////////////////////////////////////////////////////////////////
-    localparam CPU_OUT_STATE_WAIT_SOF = 0;
-    localparam CPU_OUT_STATE_WAIT_EOF = 1;
-    localparam CPU_OUT_STATE_WAIT_CTRL_HI = 2;
-    localparam CPU_OUT_STATE_WAIT_CTRL_LO = 3;
-
-    reg [1:0] cpu_out_state;
-    reg [BUF_SIZE-1:0] cpu_out_addr;
-    assign cpu_out_line_count = cpu_out_addr;
-    wire [BUF_SIZE-1:0] cpu_out_addr_next = cpu_out_addr + 1'b1;
-
-    assign cpu_out_ready = (
-        cpu_out_state == CPU_OUT_STATE_WAIT_SOF ||
-        cpu_out_state == CPU_OUT_STATE_WAIT_EOF
-    )? 1'b1 : 1'b0;
-    assign cpu_out_hs_stat = (cpu_out_state == CPU_OUT_STATE_WAIT_CTRL_HI)? 1'b1 : 1'b0;
-
-    RAMB16_S36_S36 cpu_out_buff(
-        //port A = wishbone memory mapped address space (output only)
-        .DOA(wb_dat_o),.ADDRA(wb_adr_i[BUF_SIZE+1:2]),.CLKA(wb_clk_i),.DIA(36'b0),.DIPA(4'h0),
-        .ENA(wb_stb_i & (which_buf == 1'b0)),.SSRA(0),.WEA(wb_we_i),
-        //port B = packet router interface to CPU (input only)
-        .DOB(),.ADDRB(cpu_out_addr),.CLKB(stream_clk),.DIB(cpu_out_data[31:0]),.DIPB(4'h0),
-        .ENB(cpu_out_ready & cpu_out_valid),.SSRB(0),.WEB(cpu_out_ready & cpu_out_valid)
+    buffer_int2 #(.BASE(CTRL_BASE+3), .BUF_SIZE(BUF_SIZE)) cpu_to_wb(
+        .clk(stream_clk), .rst(stream_rst | stream_clr),
+        .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+        .status(cpu_iface_status),
+        // Wishbone interface to RAM
+        .wb_clk_i(wb_clk_i), .wb_rst_i(wb_rst_i),
+        .wb_we_i(wb_we_i),   .wb_stb_i(wb_stb_i),
+        .wb_adr_i(wb_adr_i), .wb_dat_i(wb_dat_i),
+        .wb_dat_o(wb_dat_o), .wb_ack_o(wb_ack_o),
+        // Write FIFO Interface (from PR and into WB)
+        .wr_data_i(cpu_out_data),
+        .wr_ready_i(cpu_out_valid),
+        .wr_ready_o(cpu_out_ready),
+        // Read FIFO Interface (from WB and into PR)
+        .rd_data_o(cpu_inp_data),
+        .rd_ready_o(cpu_inp_valid),
+        .rd_ready_i(cpu_inp_ready)
     );
-
-    always @(posedge stream_clk)
-    if(stream_rst | stream_clr | mode_changed) begin
-        cpu_out_state <= CPU_OUT_STATE_WAIT_SOF;
-        cpu_out_addr <= 0;
-    end
-    else begin
-        case(cpu_out_state)
-        CPU_OUT_STATE_WAIT_SOF: begin
-            if (cpu_out_ready & cpu_out_valid & cpu_out_data[32]) begin
-                cpu_out_state <= CPU_OUT_STATE_WAIT_EOF;
-                cpu_out_addr <= cpu_out_addr_next;
-            end
-        end
-
-        CPU_OUT_STATE_WAIT_EOF: begin
-            if (cpu_out_ready & cpu_out_valid & cpu_out_data[33]) begin
-                cpu_out_state <= CPU_OUT_STATE_WAIT_CTRL_HI;
-            end
-            if (cpu_out_ready & cpu_out_valid) begin
-                cpu_out_addr <= cpu_out_addr_next;
-            end
-        end
-
-        CPU_OUT_STATE_WAIT_CTRL_HI: begin
-            if (cpu_out_hs_ctrl == 1'b1) begin
-                cpu_out_state <= CPU_OUT_STATE_WAIT_CTRL_LO;
-            end
-        end
-
-        CPU_OUT_STATE_WAIT_CTRL_LO: begin
-            if (cpu_out_hs_ctrl == 1'b0) begin
-                cpu_out_state <= CPU_OUT_STATE_WAIT_SOF;
-            end
-            cpu_out_addr <= 0; //reset the address counter
-        end
-
-        endcase //cpu_out_state
-    end
-
-    ////////////////////////////////////////////////////////////////////
-    // Interface CPU input to memory mapped wishbone
-    ////////////////////////////////////////////////////////////////////
-    localparam CPU_INP_STATE_WAIT_CTRL_HI = 0;
-    localparam CPU_INP_STATE_WAIT_CTRL_LO = 1;
-    localparam CPU_INP_STATE_UNLOAD = 2;
-
-    reg [1:0] cpu_inp_state;
-    reg [BUF_SIZE-1:0] cpu_inp_addr;
-    wire [BUF_SIZE-1:0] cpu_inp_addr_next = cpu_inp_addr + 1'b1;
-
-    reg [BUF_SIZE-1:0] cpu_inp_line_count_reg;
-
-    assign cpu_inp_data[35:32] =
-        (cpu_inp_addr == 1                     )? 4'b0001 : (
-        (cpu_inp_addr == cpu_inp_line_count_reg)? 4'b0010 : (
-    4'b0000));
-
-    wire cpu_inp_enb = (cpu_inp_state == CPU_INP_STATE_UNLOAD)? (cpu_inp_ready & cpu_inp_valid) : 1'b1;
-    assign cpu_inp_valid = (cpu_inp_state == CPU_INP_STATE_UNLOAD)? 1'b1 : 1'b0;
-    assign cpu_inp_hs_stat = (cpu_inp_state == CPU_INP_STATE_WAIT_CTRL_HI)? 1'b1 : 1'b0;
-
-    RAMB16_S36_S36 cpu_inp_buff(
-        //port A = wishbone memory mapped address space (input only)
-        .DOA(),.ADDRA(wb_adr_i[BUF_SIZE+1:2]),.CLKA(wb_clk_i),.DIA(wb_dat_i),.DIPA(4'h0),
-        .ENA(wb_stb_i & (which_buf == 1'b1)),.SSRA(0),.WEA(wb_we_i),
-        //port B = packet router interface from CPU (output only)
-        .DOB(cpu_inp_data[31:0]),.ADDRB(cpu_inp_addr),.CLKB(stream_clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(cpu_inp_enb),.SSRB(0),.WEB(1'b0)
-    );
-
-    always @(posedge stream_clk)
-    if(stream_rst | stream_clr | mode_changed) begin
-        cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
-        cpu_inp_addr <= 0;
-    end
-    else begin
-        case(cpu_inp_state)
-        CPU_INP_STATE_WAIT_CTRL_HI: begin
-            if (cpu_inp_hs_ctrl == 1'b1) begin
-                cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_LO;
-            end
-            cpu_inp_line_count_reg <= cpu_inp_line_count;
-        end
-
-        CPU_INP_STATE_WAIT_CTRL_LO: begin
-            if (cpu_inp_hs_ctrl == 1'b0) begin
-                cpu_inp_state <= CPU_INP_STATE_UNLOAD;
-                cpu_inp_addr <= cpu_inp_addr_next;
-            end
-        end
-
-        CPU_INP_STATE_UNLOAD: begin
-            if (cpu_inp_ready & cpu_inp_valid) begin
-                if (cpu_inp_data[33]) begin
-                    cpu_inp_addr <= 0;
-                    cpu_inp_state <= CPU_INP_STATE_WAIT_CTRL_HI;
-                end
-                else begin
-                    cpu_inp_addr <= cpu_inp_addr_next;
-                end
-            end
-        end
-
-        endcase //cpu_inp_state
-    end
 
     ////////////////////////////////////////////////////////////////////
     // Communication input inspector

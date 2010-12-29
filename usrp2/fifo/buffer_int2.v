@@ -105,7 +105,7 @@ module buffer_int2
    
    // write state machine
    always @(posedge clk)
-     if(rst | wr_clear & go)
+     if(rst | (wr_clear & go))
        wr_state <= IDLE;
      else 
        case(wr_state)
