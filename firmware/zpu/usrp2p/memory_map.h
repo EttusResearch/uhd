@@ -46,12 +46,6 @@
 
 #define ROUTER_RAM_BASE 0x4000
 
-#define RAM_NLINES	   0x0200	// number of 32-bit lines in a buffer
-
-#define _router_ram ((uint32_t *) ROUTER_RAM_BASE)
-#define router_ram(n) (&_router_ram[(n) * RAM_NLINES])
-
-
 /////////////////////////////////////////////////////
 // SPI Core, Slave 2.  See core docs for more info
 #define SPI_BASE 0x6000   // Base address (16-bit) is base peripheral addr

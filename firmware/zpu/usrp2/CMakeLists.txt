@@ -23,7 +23,6 @@ ADD_LIBRARY(libusrp2fw STATIC
     ${COMMON_SRCS}
     sd.c
     ethernet.c
-    udp_fw_update.c
 )
 
 ########################################################################

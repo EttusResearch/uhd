@@ -70,7 +70,7 @@ void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
     //if done: clear the read and return the buffer
     if (status & CPU_STAT_RD_DONE){
         *num_lines = (router_status->status >> 16) & 0xffff;
-        return router_ram(0);
+        return ((uint32_t *) ROUTER_RAM_BASE);
     }
 
     //if error: drop the packet and start a new read
@@ -99,7 +99,7 @@ void *pkt_ctrl_claim_outgoing_buffer(void){
     }
     //wait for idle and return the buffer
     cpu_stat_wait_for(CPU_STAT_WR_IDLE);
-    return router_ram(0);
+    return ((uint32_t *) ROUTER_RAM_BASE);
 }
 
 void pkt_ctrl_commit_outgoing_buffer(size_t num_lines){

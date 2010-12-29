@@ -368,7 +368,9 @@ main(void)
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
   register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_err0_packet);
+#ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
+#endif
 
   //3) set the routing mode to slave and send a garp
   pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
