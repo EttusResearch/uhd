@@ -240,8 +240,7 @@ typedef struct {
   volatile uint32_t mode_ctrl;
   volatile uint32_t ip_addr;
   volatile uint32_t data_ports; //dsp0 (low 16) dsp1 (high 16)
-  volatile uint32_t cpu_out_ctrl;
-  volatile uint32_t cpu_inp_ctrl;
+  volatile uint32_t iface_ctrl;
 } router_ctrl_t;
 
 #define router_ctrl ((router_ctrl_t *) _SR_ADDR(SR_ROUTER_CTRL))

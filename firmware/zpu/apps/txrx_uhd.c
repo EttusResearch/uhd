@@ -340,6 +340,7 @@ int
 main(void)
 {
   u2_init();
+  pkt_ctrl_init();
 
 //we do this to see if we should set a default ip addr or not
 #ifdef USRP2P

@@ -23,6 +23,9 @@
 #include <stdbool.h>
 #include <lwip/ip_addr.h>
 
+//! Initialize the packet router into a good state
+void pkt_ctrl_init(void);
+
 typedef enum {
     PKT_CTRL_ROUTING_MODE_SLAVE,
     PKT_CTRL_ROUTING_MODE_MASTER,

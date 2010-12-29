@@ -33,32 +33,77 @@ void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
     }
 }
 
-static inline bool is_status_bit_set(int bit){
-    return router_status->status & (1 << bit);
+//status signals from WB into PR
+#define CPU_STAT_RD_DONE (1 << 0)
+#define CPU_STAT_RD_EROR (1 << 1)
+#define CPU_STAT_RD_IDLE (1 << 2)
+
+//status signals from PR into WB
+#define CPU_STAT_WR_DONE (1 << 4)
+#define CPU_STAT_WR_EROR (1 << 5)
+#define CPU_STAT_WR_IDLE (1 << 6)
+
+//control signals from WB into PR
+#define CPU_CTRL_RD_CLEAR (1 << 0)
+#define CPU_CTRL_RD_START (1 << 1)
+
+//control signals from PR into WB
+#define CPU_CTRL_WR_CLEAR (1 << 2)
+#define CPU_CTRL_WR_START (1 << 3)
+
+static bool i_am_writing;
+
+static inline void cpu_stat_wait_for(int bm){
+    while((router_status->status & bm) == 0){
+        /* NOP */
+    }
 }
 
-#define CPU_OUT_HS_BIT 0 //from packet router to CPU
-#define CPU_INP_HS_BIT 1 //from CPU to packet router
+void pkt_ctrl_init(void){
+    router_ctrl->iface_ctrl = CPU_CTRL_WR_CLEAR | CPU_CTRL_RD_START;
+    i_am_writing = false;
+}
 
 void *pkt_ctrl_claim_incoming_buffer(size_t *num_lines){
-    if (!is_status_bit_set(CPU_OUT_HS_BIT)) return NULL;
-    *num_lines = (router_status->status >> 16) & 0xffff;
-    return router_ram(0);
+    uint32_t status = router_status->status;
+
+    //if done: clear the read and return the buffer
+    if (status & CPU_STAT_RD_DONE){
+        *num_lines = (router_status->status >> 16) & 0xffff;
+        return router_ram(0);
+    }
+
+    //if error: drop the packet and start a new read
+    else if (status & CPU_STAT_RD_EROR){
+        putstr("E");
+        pkt_ctrl_release_incoming_buffer();
+    }
+
+    //otherwise null for nothing ready
+    return NULL;
 }
 
 void pkt_ctrl_release_incoming_buffer(void){
-    router_ctrl->cpu_out_ctrl = 1;
-    while (is_status_bit_set(CPU_OUT_HS_BIT)){}
-    router_ctrl->cpu_out_ctrl = 0;
+    //clear, wait for idle, and start a new read
+    router_ctrl->iface_ctrl = CPU_CTRL_RD_CLEAR;
+    cpu_stat_wait_for(CPU_STAT_RD_IDLE);
+    router_ctrl->iface_ctrl = CPU_CTRL_RD_START;
 }
 
 void *pkt_ctrl_claim_outgoing_buffer(void){
-    while (!is_status_bit_set(CPU_INP_HS_BIT)){}
-    return router_ram(1);
+    if (i_am_writing){
+        //wait for the write to become done
+        cpu_stat_wait_for(CPU_STAT_WR_DONE);
+        router_ctrl->iface_ctrl = CPU_CTRL_WR_CLEAR;
+        i_am_writing = false;
+    }
+    //wait for idle and return the buffer
+    cpu_stat_wait_for(CPU_STAT_WR_IDLE);
+    return router_ram(0);
 }
 
 void pkt_ctrl_commit_outgoing_buffer(size_t num_lines){
-    router_ctrl->cpu_inp_ctrl = ((num_lines & 0xffff) << 16) | 1;
-    while (is_status_bit_set(CPU_INP_HS_BIT)){}
-    router_ctrl->cpu_inp_ctrl = 0;
+    //start a new write with the given length
+    router_ctrl->iface_ctrl = ((num_lines & 0xffff) << 16) | CPU_CTRL_WR_START;
+    i_am_writing = true;
 }
