@@ -186,17 +186,14 @@ module vita_tx_control
 	  countdown <= 0;
        end
      else 
-       if (sample_fifo_src_rdy_i & sample_fifo_dst_rdy_o)
-	 begin
-	    if(eob & eop)
-	      run <= 0;
-	    else 
-	      if(sob)
-		begin
-		   run <= 1;
-		   countdown <= MAX_IDLE;
-		end
-	 end
+       if (ibs_state == IBS_RUN)
+	 if(eob & eop & strobe & sample_fifo_src_rdy_i)
+	   run <= 0;
+	 else 
+	   begin
+	      run <= 1;
+	      countdown <= MAX_IDLE;
+	   end
        else
 	 if (countdown == 0)
 	   run <= 0;
