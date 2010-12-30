@@ -322,12 +322,13 @@ private:
  **********************************************************************/
 template<typename Opt> static void resize_buff_helper(
     udp_zero_copy_asio_impl::sptr udp_trans,
-    size_t target_size,
+    const size_t target_size,
     const std::string &name
 ){
     size_t min_sock_buff_size = 0;
     if (name == "recv") min_sock_buff_size = MIN_RECV_SOCK_BUFF_SIZE;
     if (name == "send") min_sock_buff_size = MIN_SEND_SOCK_BUFF_SIZE;
+    min_sock_buff_size = std::max(min_sock_buff_size, target_size);
 
     std::string help_message;
     #if defined(UHD_PLATFORM_LINUX)
@@ -348,7 +349,7 @@ template<typename Opt> static void resize_buff_helper(
         ) % name % actual_size << std::endl;
         if (actual_size < target_size) uhd::warning::post(str(boost::format(
             "The %s buffer is smaller than the requested size.\n"
-            "The minimum recommended buffer size is %d bytes.\n"
+            "The minimum requested buffer size is %d bytes.\n"
             "See the transport application notes on buffer resizing.\n%s"
         ) % name % min_sock_buff_size % help_message));
     }
