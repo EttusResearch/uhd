@@ -55,7 +55,7 @@ MACRO(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
     #make the outfile depend on the python script
     ADD_CUSTOM_COMMAND(
         OUTPUT ${outfile} DEPENDS ${pyfile}
-        COMMAND ${PYTHON_EXECUTABLE} ${pyfile} ${outfile}
+        COMMAND ${PYTHON_EXECUTABLE} -B ${pyfile} ${outfile}
         COMMENT "Generating ${outfile}"
     )
 
