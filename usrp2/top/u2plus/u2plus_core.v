@@ -173,7 +173,7 @@ module u2plus_core
    wire 	serdes_link_up;
    wire 	epoch;
    wire [31:0] 	irq;
-   wire [63:0] 	vita_time;
+   wire [63:0] 	vita_time, vita_time_pps;
    wire 	run_rx, run_tx;
    
    // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -335,9 +335,6 @@ module u2plus_core
       .rd3_data_o(rd3_dat), .rd3_flags_o(rd3_flags), .rd3_ready_i(rd3_ready_i), .rd3_ready_o(rd3_ready_o)
       );
 
-   wire [31:0] 	 status_enc;
-   priority_enc priority_enc (.in({16'b0,status[15:0]}), .out(status_enc));
-   
    // /////////////////////////////////////////////////////////////////////////
    // SPI -- Slave #2
    spi_top shared_spi
@@ -370,13 +367,6 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
    
-   reg [31:0] 	 cycle_count;
-   always @(posedge wb_clk)
-     if(wb_rst)
-       cycle_count <= 0;
-     else
-       cycle_count <= cycle_count + 1;
-
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = 32'd3;
 
@@ -387,7 +377,8 @@ module u2plus_core
       .word00(status_b0),.word01(status_b1),.word02(status_b2),.word03(status_b3),
       .word04(status_b4),.word05(status_b5),.word06(status_b6),.word07(status_b7),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(status_enc),.word15(cycle_count)
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),
+      .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
    // /////////////////////////////////////////////////////////////////////////
@@ -681,10 +672,13 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
+   wire [31:0] 	 debug_sync;
+   
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int),
-      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out));
+      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
+      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out),
+      .debug(debug_sync));
    
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
