@@ -21,7 +21,8 @@
 #include <stdlib.h>		// abort
 #include <nonstdio.h>
 
-static size_t _spi_flash_log2_memory_size;
+//FIXME cannot be zero or it gets optimized out and the get size functions break...
+#define UNINITIALIZED 0xdeadbeef
 
 uint32_t 
 spi_flash_rdid(void)
@@ -32,42 +33,29 @@ spi_flash_rdid(void)
 size_t 
 spi_flash_log2_sector_size(void)
 {
-  static size_t _spi_flash_log2_sector_size;
-
-  if (_spi_flash_log2_sector_size != 0)
-    return _spi_flash_log2_sector_size;
-
-  
-  uint32_t id = spi_flash_rdid();
-  int type = (id >> 8) & 0xff;
-  int size = id & 0xff;
-  if (type != 0x20 || size < 22 || size > 24)
-    abort();
-
   static unsigned char log2_sector_size[3] = {
-    16,	/* M25P32  */
+    16, /* M25P32  */
     16, /* M25P64  */
     18, /* M25P128 */
   };
-
-  _spi_flash_log2_sector_size = log2_sector_size[size - 22];
-  _spi_flash_log2_memory_size = size; //while we're at it
-  return _spi_flash_log2_sector_size;
+  return log2_sector_size[spi_flash_log2_memory_size() - 22];
 }
 
 size_t
 spi_flash_log2_memory_size(void)
 {
-  if (_spi_flash_log2_memory_size != 0)
-    return _spi_flash_log2_memory_size;
+  static size_t _spi_flash_log2_memory_size = UNINITIALIZED;
 
-  uint32_t id = spi_flash_rdid();
-  int type = (id >> 8) & 0xff;
-  int size = id & 0xff;
-  if (type != 0x20 || size < 22 || size > 24)
-    abort();
+  if (_spi_flash_log2_memory_size == UNINITIALIZED){
+    uint32_t id = spi_flash_rdid();
+    uint8_t type = (id >> 8) & 0xff;
+    uint8_t size = (id >> 0) & 0xff;
+    if (type != 0x20 || size < 22 || size > 24)
+      abort();
 
-  _spi_flash_log2_memory_size = size;
+    _spi_flash_log2_memory_size = size;
+  }
+
   return _spi_flash_log2_memory_size;
 }
 
