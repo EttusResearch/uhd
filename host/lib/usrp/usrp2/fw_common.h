@@ -125,9 +125,8 @@ typedef struct{
         struct {
             __stdint(uint32_t) addr;
             __stdint(uint32_t) data;
-            __stdint(uint32_t) addrhi;
-            __stdint(uint32_t) datahi;
-            __stdint(uint8_t) num_bytes; //1, 2, 4, 8
+            __stdint(uint64_t) _pad;
+            __stdint(uint8_t) num_bytes; //1, 2, 4
         } poke_args;
         struct {
             __stdint(uint8_t) dev;

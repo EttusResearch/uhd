@@ -57,8 +57,10 @@ typedef struct {
     int time64_flags; // flags -- see chart below
     int time64_imm; // set immediate (0=latch on next pps, 1=latch immediate, default=0)
     int time64_tps; // ticks per second rollover count
-    int time64_secs_rb;
-    int time64_ticks_rb;
+    int time64_secs_rb_imm;
+    int time64_ticks_rb_imm;
+    int time64_secs_rb_pps;
+    int time64_ticks_rb_pps;
     int compat_num_rb;
     int dsp_tx_freq;
     int dsp_tx_scale_iq;

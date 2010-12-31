@@ -37,7 +37,6 @@
 class usrp2_iface : public uhd::i2c_iface, boost::noncopyable{
 public:
     typedef boost::shared_ptr<usrp2_iface> sptr;
-    typedef std::pair<boost::uint32_t, boost::uint32_t> pair64;
 
     /*!
      * Make a new usrp2 interface with the control transport.
@@ -52,14 +51,6 @@ public:
      * \return the result control data
      */
     virtual usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &data) = 0;
-
-    /*!
-     * Read a dual register (64 bits)
-     * \param addrlo the address for the low-32 bits
-     * \param addrhi the address for the high-32 bits
-     * \return a pair of 32 bit integers lo, hi
-     */
-    virtual pair64 peek64(boost::uint32_t addrlo, boost::uint32_t addrhi) = 0;
 
     /*!
      * Write a register (32 bits)

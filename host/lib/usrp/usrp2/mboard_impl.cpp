@@ -279,15 +279,21 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    case MBOARD_PROP_TIME_NOW:{
-            usrp2_iface::pair64 time64(
-                _iface->peek64(_iface->regs.time64_secs_rb, _iface->regs.time64_ticks_rb)
-            );
-            val = time_spec_t(
-                time64.first, time64.second, get_master_clock_freq()
-            );
-        }
+    case MBOARD_PROP_TIME_NOW: while(true){
+        uint32_t secs = _iface->peek32(_iface->regs.time64_secs_rb_imm);
+        uint32_t ticks = _iface->peek32(_iface->regs.time64_ticks_rb_imm);
+        if (secs != _iface->peek32(_iface->regs.time64_secs_rb_imm)) continue;
+        val = time_spec_t(secs, ticks, get_master_clock_freq());
         return;
+    }
+
+    case MBOARD_PROP_TIME_PPS: while(true){
+        uint32_t secs = _iface->peek32(_iface->regs.time64_secs_rb_pps);
+        uint32_t ticks = _iface->peek32(_iface->regs.time64_ticks_rb_pps);
+        if (secs != _iface->peek32(_iface->regs.time64_secs_rb_pps)) continue;
+        val = time_spec_t(secs, ticks, get_master_clock_freq());
+        return;
+    }
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         val = _rx_subdev_spec;
@@ -321,7 +327,7 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         set_time_spec(val.as<time_spec_t>(), true);
         return;
 
-    case MBOARD_PROP_TIME_NEXT_PPS:
+    case MBOARD_PROP_TIME_PPS:
         set_time_spec(val.as<time_spec_t>(), false);
         return;
 
