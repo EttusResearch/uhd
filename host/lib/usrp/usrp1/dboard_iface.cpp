@@ -267,22 +267,38 @@ void usrp1_dboard_iface::_set_atr_reg(unit_t unit,
                                      atr_reg_t atr, boost::uint16_t value)
 {
     // Ignore unsupported states
-    if ((atr == ATR_REG_IDLE) || (atr == ATR_REG_FULL_DUPLEX))
+    if ((atr == ATR_REG_IDLE))
         return;
-
-    switch(unit) {
-    case UNIT_RX:
-        if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
-            _iface->poke32(FR_ATR_RXVAL_1, value);
-        else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
-            _iface->poke32(FR_ATR_RXVAL_3, value);
-        break;
-    case UNIT_TX:
-        if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
-            _iface->poke32(FR_ATR_TXVAL_0, value);
-        else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
-            _iface->poke32(FR_ATR_TXVAL_2, value);
-        break;
+    if(atr == ATR_REG_RX_ONLY) {
+        switch(unit) {
+        case UNIT_RX:
+            if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
+                _iface->poke32(FR_ATR_RXVAL_1, value);
+            else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
+                _iface->poke32(FR_ATR_RXVAL_3, value);
+            break;
+        case UNIT_TX:
+            if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
+                _iface->poke32(FR_ATR_RXVAL_0, value);
+            else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
+                _iface->poke32(FR_ATR_RXVAL_2, value);
+            break;
+        }
+    } else if (atr == ATR_REG_TX_ONLY && atr == ATR_REG_FULL_DUPLEX) {
+        switch(unit) {
+        case UNIT_RX:
+            if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
+                _iface->poke32(FR_ATR_TXVAL_1, value);
+            else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
+                _iface->poke32(FR_ATR_TXVAL_3, value);
+            break;
+        case UNIT_TX:
+            if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
+                _iface->poke32(FR_ATR_TXVAL_0, value);
+            else if (_dboard_slot == usrp1_impl::DBOARD_SLOT_B)
+                _iface->poke32(FR_ATR_TXVAL_2, value);
+            break;
+        }
     }
 }
 /***********************************************************************
