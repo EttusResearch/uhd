@@ -245,7 +245,8 @@ void xcvr2450::update_atr(void){
     int band_sel   = (xcvr2450::is_highband(_lo_freq))? HB_PA_TXIO : LB_PA_TXIO;
     int tx_ant_sel = (_tx_ant == "J1")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
     int rx_ant_sel = (_rx_ant == "J2")? ANTSEL_TX1_RX2_TXIO : ANTSEL_TX2_RX1_TXIO;
-    int xx_ant_sel = tx_ant_sel; //prefer the tx antenna selection for full duplex (rx will get the other antenna)
+    int xx_ant_sel = tx_ant_sel; //Prefer the tx antenna selection for full duplex,
+    //due to the issue that USRP1 will take the value of full duplex for its TXATR.
     int ad9515div  = (_ad9515div == 3)? AD9515DIV_3_TXIO : AD9515DIV_2_TXIO;
 
     //set the tx registers
