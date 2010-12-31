@@ -135,8 +135,8 @@ public:
             if (get_time_last_pps() != time_start_last_pps) break;
             if ((get_time_now() - time_start) > time_spec_t(1.1)){
                 throw std::runtime_error(
-                    "The time at the last PPS has not changed.\n"
                     "Board 0 may not be getting a PPS signal.\n"
+                    "The time at the last PPS has not changed.\n"
                 );
             }
         }

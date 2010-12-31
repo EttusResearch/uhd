@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -31,7 +31,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    double seconds;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -52,35 +51,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
+    uhd::usrp::multi_usrp::sptr sdev = uhd::usrp::multi_usrp::make(args);
     uhd::device::sptr dev = sdev->get_device();
     std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
 
-    //set a known time value
-    std::cout << "Set time to known value (100.0) without regard to pps:" << std::endl;
-    sdev->set_time_now(uhd::time_spec_t(100.0));
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
-    std::cout << boost::format("Reading time 1 second later: %f\n") % (sdev->get_time_now().get_real_secs()) << std::endl;
-
-    //store the time to see if PPS resets it
-    seconds = sdev->get_time_now().get_real_secs();
-
-    //set a known time at next PPS, check that time increments
-    uhd::time_spec_t time_spec = uhd::time_spec_t(0.0);
-    std::cout << "Set time to known value (0.0) at next pps:" << std::endl;
-    sdev->set_time_next_pps(time_spec);
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
-    std::cout << boost::format("Reading time 1 second later: %f\n") % (sdev->get_time_now().get_real_secs()) << std::endl;
-
-    //finished
-    if (seconds > sdev->get_time_now().get_real_secs()){
-        std::cout << std::endl << "Success!" << std::endl << std::endl;
-        return 0;
-    } else {
-        std::cout << std::endl << "Failed!" << std::endl << std::endl 
-            << "If you expected PPS to work:" << std::endl
-            << "\tsee Device App Notes for PPS level information"
-            << std::endl << std::endl;
-        return -1;
-    }
+    //set the time at an unknown pps (will throw if no pps)
+    std::cout << std::endl << "Attempt to detect the PPS and set the time..." << std::endl << std::endl;
+    sdev->set_time_unknown_pps(uhd::time_spec_t(0.0));
+    std::cout << std::endl << "Success!" << std::endl << std::endl;
+    return 0;
 }

@@ -102,7 +102,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
     for (size_t i = 0; i < num_packets; i++){
         //setup the metadata flags and time spec
-        md.start_of_burst = true;                  //always SOB (good for continuous streaming)
+        md.start_of_burst = (i == 0);              //only first packet has SOB
         md.end_of_burst   = (i == num_packets-1);  //only last packet has EOB
         md.has_time_spec  = (i == 0);              //only first packet has time
         md.time_spec = uhd::time_spec_t(seconds_in_future);
