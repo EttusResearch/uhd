@@ -39,7 +39,7 @@ INCLUDE_DIRECTORIES(
 ########################################################################
 # misc flags for the gcc compiler
 ########################################################################
-SET(CMAKE_C_FLAGS -abel) #always needed compile time and link time
+SET(CMAKE_C_FLAGS -phi) #always needed compile time and link time
 ADD_DEFINITIONS(-Os --std=gnu99 -Wall -Werror-implicit-function-declaration -ffunction-sections)
 
 MACRO(ADD_LINKER_FLAGS flags)
