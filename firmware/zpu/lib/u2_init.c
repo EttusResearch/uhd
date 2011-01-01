@@ -51,10 +51,17 @@ u2_init(void)
   hal_enable_ints();
 
   // flash all leds to let us know board is alive
-  hal_set_leds(0x0, 0x1f);
-  mdelay(100);
-  hal_set_leds(0x1f, 0x1f);
-  mdelay(100);
+  hal_set_led_src(0x0, 0x1f); /* software ctrl */
+  hal_set_leds(0x0, 0x1f);    mdelay(300);
+  hal_set_leds(LED_E, LED_E); mdelay(300);
+  hal_set_leds(LED_C, LED_C); mdelay(300);
+  hal_set_leds(LED_A, LED_A); mdelay(300);
+  for (int i = 0; i < 3; i++){ //blink all
+    static const int blinks = LED_E | LED_C | LED_A;
+    hal_set_leds(0x0,    0x1f); mdelay(100);
+    hal_set_leds(blinks, 0x1f); mdelay(100);
+  }
+  hal_set_led_src(0x1f & ~LED_D, 0x1f); /* hardware ctrl */
   hal_set_leds(LED_D, 0x1f);  // Leave one on
 
 #if 0

@@ -159,10 +159,10 @@ typedef struct {
   volatile uint32_t _padding[8];
   volatile uint32_t status;
   volatile uint32_t hw_config;	         // see below
-  volatile uint32_t dummy[3];
+  volatile uint32_t time64_secs_rb;
+  volatile uint32_t time64_ticks_rb;
+  volatile uint32_t compat_num;
   volatile uint32_t irqs;
-  volatile uint32_t pri_enc_bp_status;
-  volatile uint32_t cycle_count;
 } router_status_t;
 
 #define router_status ((router_status_t *) ROUTER_STATUS_BASE)

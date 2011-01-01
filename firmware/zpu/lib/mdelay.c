@@ -19,56 +19,13 @@
 #include "mdelay.h"
 #include "memory_map.h"
 
-// Delay about one millisecond.
-//
-// Need 33,333 cycles at 33 MHz.
-// Each time around the loop is 10 cycles
-//
-
-#define LOOPCNT(wb_div) (MASTER_CLK_RATE/(wb_div) / 10000)
-
-inline static void
-delay_1ms(int loop_count)
-{
-/*  int	i;
-  for (i = 0; i < loop_count; i++){
-    asm volatile ("or  r0, r0, r0\n\
-		   or  r0, r0, r0\n\
-		   or  r0, r0, r0\n\
-		   or  r0, r0, r0\n\
-		   or  r0, r0, r0\n\
-		   or  r0, r0, r0\n\
-		   or  r0, r0, r0\n");
+void mdelay(int ms){
+  if (hwconfig_simulation_p()) return;
+  for(int i = 0; i < ms; i++){
+    static const uint32_t num_ticks = MASTER_CLK_RATE/1000;
+    const uint32_t ticks_begin = router_status->time64_ticks_rb;
+    while((router_status->time64_ticks_rb - ticks_begin) < num_ticks){
+      /*NOP*/
+    }
   }
-*/
-}
-
-// delay about ms milliseconds
-void
-mdelay(int ms)
-{
-  static int loop_count = -1;
-
-  if (hwconfig_simulation_p())
-    return;
-
-  if (loop_count < 0){
-    // set correct loop_count
-    static unsigned short lc[8] = {
-      0,
-      LOOPCNT(1),
-      LOOPCNT(2),
-      LOOPCNT(3),
-      LOOPCNT(4),
-      LOOPCNT(5),
-      LOOPCNT(6),
-      LOOPCNT(7)
-    };
-
-    loop_count = lc[hwconfig_wishbone_divisor() & 0x7];
-  }
-
-  int i;
-  for (i = 0; i < ms; i++)
-    delay_1ms(loop_count);
 }
