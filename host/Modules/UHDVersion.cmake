@@ -28,16 +28,13 @@ SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
 ########################################################################
 # Find GIT to get repo information
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Checking for git")
-FIND_PROGRAM(GIT git)
-IF(GIT)
-    MESSAGE(STATUS "Checking for git - found")
+FIND_PACKAGE(Git QUIET)
+IF(GIT_FOUND)
 
     #grab the git log entry for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT} log HEAD~..HEAD --date=raw
+        COMMAND ${GIT_EXECUTABLE} log HEAD~..HEAD --date=raw
         OUTPUT_VARIABLE _git_log OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
@@ -58,11 +55,8 @@ IF(GIT)
     #grab the git ref id for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT} rev-parse --short HEAD
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
         OUTPUT_VARIABLE _git_rev OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     SET(UHD_VERSION_PATCH ${_git_rev})
-
-ELSE(GIT)
-    MESSAGE(STATUS "Checking for git - not found")
-ENDIF(GIT)
+ENDIF(GIT_FOUND)

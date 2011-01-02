@@ -22,7 +22,8 @@
 ########################################################################
 # Setup libusb
 ########################################################################
-FIND_PACKAGE(USB1)
+MESSAGE(STATUS "")
+FIND_PACKAGE(USB1 REQUIRED)
 
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF)
 

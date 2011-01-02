@@ -36,17 +36,9 @@ SET(manual_sources
 # Setup Manual
 ########################################################################
 MESSAGE(STATUS "")
-MESSAGE(STATUS "Checking for rst2html (docutils)")
-FIND_PROGRAM(RST2HTML rst2html)
-IF(RST2HTML)
-    MESSAGE(STATUS "Checking for rst2html (docutils) - found")
-    MESSAGE(STATUS "  Enabled generation of HTML manual.")
-ELSE(RST2HTML)
-    MESSAGE(STATUS "Checking for rst2html (docutils) - not found")
-    MESSAGE(STATUS "  Disabled generation of HTML manual.")
-ENDIF(RST2HTML)
+FIND_PACKAGE(Docutils REQUIRED)
 
-LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "RST2HTML" OFF)
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOCUTILS_FOUND" OFF)
 
 IF(ENABLE_MANUAL)
     #setup rst2html options
@@ -66,7 +58,7 @@ IF(ENABLE_MANUAL)
         #make the html file depend on the rst file
         ADD_CUSTOM_COMMAND(
             OUTPUT ${htmlfile} DEPENDS ${rstfile} ${stylesheet}
-            COMMAND ${RST2HTML} ${rstfile} ${htmlfile} ${rst2html_options}
+            COMMAND ${RST2HTML_EXECUTABLE} ${rstfile} ${htmlfile} ${rst2html_options}
             COMMENT "Generating ${htmlfile}"
         )
 
@@ -85,14 +77,11 @@ INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst)
 # Setup Doxygen
 ########################################################################
 MESSAGE(STATUS "")
-MESSAGE(STATUS "Checking for doxygen")
-INCLUDE(FindDoxygen)
+FIND_PACKAGE(Doxygen)
 
 LIBUHD_REGISTER_COMPONENT("Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
 
 IF(ENABLE_DOXYGEN)
-    MESSAGE(STATUS "  Enabled generation of Doxygen documentation.")
-
     #generate the doxygen configuration file
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     CONFIGURE_FILE(
@@ -111,6 +100,4 @@ IF(ENABLE_DOXYGEN)
     #make the doxygen generation a built-time dependency
     ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
-ELSE(ENABLE_DOXYGEN)
-    MESSAGE(STATUS "  Disabled generation of Doxygen documentation.")
 ENDIF(ENABLE_DOXYGEN)
