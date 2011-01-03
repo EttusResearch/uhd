@@ -18,9 +18,10 @@
 #ifndef INCLUDED_UHD_CONFIG_HPP
 #define INCLUDED_UHD_CONFIG_HPP
 
-// suppress warnings
 #include <boost/config.hpp>
+
 #ifdef BOOST_MSVC
+// suppress warnings
 //# pragma warning(push)
 //# pragma warning(disable: 4511) // copy constructor can't not be generated
 //# pragma warning(disable: 4512) // assignment operator can't not be generated
@@ -37,70 +38,43 @@
 //# pragma warning(disable: 4511) // 'class' : copy constructor could not be generated
 //# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
 # pragma warning(disable: 4200) // nonstandard extension used : zero-sized array in struct/union
-#endif
 
 // define logical operators
-#ifdef BOOST_MSVC
-    #include <ciso646>
-#endif
+#include <ciso646>
 
 // define ssize_t
-#ifdef BOOST_MSVC
-    #include <cstddef>
-    typedef ptrdiff_t ssize_t;
-#endif
+#include <cstddef>
+typedef ptrdiff_t ssize_t;
 
-// http://gcc.gnu.org/wiki/Visibility
-// Generic helper definitions for shared library support
-#if defined(BOOST_HAS_DECLSPEC)
-    #define UHD_HELPER_DLL_IMPORT __declspec(dllimport)
-    #define UHD_HELPER_DLL_EXPORT __declspec(dllexport)
-    #define UHD_HELPER_DLL_LOCAL
+#endif //BOOST_MSVC
+
+//define cross platform attribute macros
+#if defined(BOOST_MSVC) || defined(BOOST_HAS_DECLSPEC)
+    #define UHD_EXPORT         __declspec(dllexport)
+    #define UHD_IMPORT         __declspec(dllimport)
+    #define UHD_INLINE         __forceinline
+    #define UHD_DEPRECATED     __declspec(deprecated)
+    #define UHD_ALIGNED(x)     __declspec(align(x))
 #elif defined(__GNUG__) && __GNUG__ >= 4
-    #define UHD_HELPER_DLL_IMPORT __attribute__ ((visibility("default")))
-    #define UHD_HELPER_DLL_EXPORT __attribute__ ((visibility("default")))
-    #define UHD_HELPER_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+    #define UHD_EXPORT         __attribute__((visibility("default")))
+    #define UHD_IMPORT         __attribute__((visibility("default")))
+    #define UHD_INLINE         inline __attribute__((always_inline))
+    #define UHD_DEPRECATED     __attribute__((deprecated))
+    #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
 #else
-    #define UHD_HELPER_DLL_IMPORT
-    #define UHD_HELPER_DLL_EXPORT
-    #define UHD_HELPER_DLL_LOCAL
-#endif
-
-// Now we use the generic helper definitions above to define UHD_API and UHD_LOCAL.
-// UHD_API is used for the public API symbols. It either DLL imports or DLL exports (or does nothing for static build)
-// UHD_LOCAL is used for non-api symbols.
-
-#define UHD_DLL // defined here, put into configuration if we need to make static libs
-
-#ifdef UHD_DLL // defined if UHD is compiled as a DLL
-    #ifdef UHD_DLL_EXPORTS // defined if we are building the UHD DLL (instead of using it)
-        #define UHD_API UHD_HELPER_DLL_EXPORT
-    #else
-        #define UHD_API UHD_HELPER_DLL_IMPORT
-    #endif // UHD_DLL_EXPORTS
-    #define UHD_LOCAL UHD_HELPER_DLL_LOCAL
-#else // UHD_DLL is not defined: this means UHD is a static lib.
-    #define UHD_API
-    #define UHD_LOCAL
-#endif // UHD_DLL
-
-// Define force inline macro
-#if defined(BOOST_MSVC)
-    #define UHD_INLINE __forceinline
-#elif defined(__GNUG__) && __GNUG__ >= 4
-    #define UHD_INLINE inline __attribute__((always_inline))
-#else
-    #define UHD_INLINE inline
-#endif
-
-// Define deprecated attribute macro
-#if defined(BOOST_MSVC)
-    #define UHD_DEPRECATED __declspec(deprecated)
-#elif defined(__GNUG__) && __GNUG__ >= 4
-    #define UHD_DEPRECATED __attribute__ ((deprecated))
-#else
+    #define UHD_EXPORT
+    #define UHD_IMPORT
+    #define UHD_INLINE         inline
     #define UHD_DEPRECATED
+    #define UHD_ALIGNED(x)
 #endif
+
+// Define API declaration macro
+#ifdef UHD_DLL_EXPORTS
+    #define UHD_API UHD_EXPORT
+#else
+    #define UHD_API UHD_IMPORT
+#endif // UHD_DLL_EXPORTS
 
 // Platform defines for conditional parts of headers:
 // Taken from boost/config/select_platform_config.hpp,
@@ -111,12 +85,14 @@
     #define UHD_PLATFORM_WIN32
 #elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
     #define UHD_PLATFORM_MACOS
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+    #define UHD_PLATFORM_BSD
 #endif
 
 //On macos platform, explicit templates must be:
 // - defined with extern in the header file
 // - defined as a symbol in the source file
-#ifdef UHD_PLATFORM_MACOS
+#if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
     #define UHD_EXIM_TMPL extern
     #define UHD_USE_EXIM_TMPL
 #else
