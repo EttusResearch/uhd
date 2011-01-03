@@ -109,6 +109,7 @@ SET_SOURCE_FILES_PROPERTIES(
 )
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy_asio.cpp

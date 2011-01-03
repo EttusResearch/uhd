@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_IFADDRS_HPP
-#define INCLUDED_UHD_IFADDRS_HPP
+#ifndef INCLUDED_UHD_TRANSPORT_IF_ADDRS_HPP
+#define INCLUDED_UHD_TRANSPORT_IF_ADDRS_HPP
 
 #include <uhd/config.hpp>
 #include <string>
@@ -44,4 +44,4 @@ namespace uhd{ namespace transport{
 }} //namespace
 
 
-#endif /* INCLUDED_UHD_IFADDRS_HPP */
+#endif /* INCLUDED_UHD_TRANSPORT_IF_ADDRS_HPP */

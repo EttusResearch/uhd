@@ -21,6 +21,7 @@ INSTALL(FILES
     alignment_buffer.ipp
     bounded_buffer.hpp
     bounded_buffer.ipp
+    buffer_pool.hpp
     convert_types.hpp
     convert_types.ipp
     if_addrs.hpp
