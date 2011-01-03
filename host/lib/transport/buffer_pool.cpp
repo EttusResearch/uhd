@@ -32,7 +32,7 @@ static size_t pad_to_boundary(const size_t bytes, const size_t alignment){
 class buffer_pool_impl : public buffer_pool{
 public:
     buffer_pool_impl(
-        const std::vector<buffer_pool::ptr_type> &ptrs,
+        const std::vector<ptr_type> &ptrs,
         boost::shared_array<char> mem
     ): _ptrs(ptrs), _mem(mem){
         /* NOP */
@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    std::vector<void *> _ptrs;
+    std::vector<ptr_type> _ptrs;
     boost::shared_array<char> _mem;
 };
 
@@ -63,7 +63,7 @@ buffer_pool::sptr buffer_pool::make(
     //2) pad the overall memory size for room after alignment
     //3) allocate the memory in one block of sufficient size
     const size_t padded_buff_size = pad_to_boundary(buff_size, alignment);
-    boost::shared_array<char> mem(new char[padded_buff_size*num_buffs + alignment]);
+    boost::shared_array<char> mem(new char[padded_buff_size*num_buffs + alignment-1]);
 
     //Fill a vector with boundary-aligned points in the memory
     const size_t mem_start = pad_to_boundary(size_t(mem.get()), alignment);
