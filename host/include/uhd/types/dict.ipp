@@ -59,7 +59,7 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
-    const std::vector<Key> dict<Key, Val>::keys(void) const{
+    std::vector<Key> dict<Key, Val>::keys(void) const{
         std::vector<Key> keys;
         BOOST_FOREACH(const pair_t &p, _map){
             keys.push_back(p.first);
@@ -68,7 +68,7 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
-    const std::vector<Val> dict<Key, Val>::vals(void) const{
+    std::vector<Val> dict<Key, Val>::vals(void) const{
         std::vector<Val> vals;
         BOOST_FOREACH(const pair_t &p, _map){
             vals.push_back(p.second);
