@@ -52,7 +52,7 @@ class gain_element2{
 public:
 
     gain_range_t get_range(void){
-        return gain_range_t(-20, 10, float(0.1));
+        return gain_range_t(-20, 10, 0.1);
     }
 
     float get_value(void){
@@ -94,17 +94,17 @@ static gain_group::sptr get_gain_group(size_t pri1 = 0, size_t pri2 = 0){
 /***********************************************************************
  * Test cases
  **********************************************************************/
-static const float tolerance = float(0.001);
+static const double tolerance = 0.001;
 
 BOOST_AUTO_TEST_CASE(test_gain_group_overall){
     gain_group::sptr gg = get_gain_group();
 
     //test the overall stuff
     gg->set_value(80);
-    BOOST_CHECK_CLOSE(gg->get_value(), float(80), tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().start(), float(-20), tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().stop(), float(100), tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().step(), float(0.1), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_value(), 80, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().start(), -20, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().stop(), 100, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().step(), 0.1, tolerance);
 }
 
 BOOST_AUTO_TEST_CASE(test_gain_group_priority){
@@ -112,10 +112,10 @@ BOOST_AUTO_TEST_CASE(test_gain_group_priority){
 
     //test the overall stuff
     gg->set_value(80);
-    BOOST_CHECK_CLOSE(gg->get_value(), float(80), tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().start(), float(-20), tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().stop(), float(100), tolerance);
-    BOOST_CHECK_CLOSE(gg->get_range().step(), float(0.1), tolerance);
+    BOOST_CHECK_CLOSE(gg->get_value(), 80, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().start(), -20, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().stop(), 100, tolerance);
+    BOOST_CHECK_CLOSE(gg->get_range().step(), 0.1, tolerance);
 
     //test the the higher priority gain got filled first (gain 2)
     BOOST_CHECK_CLOSE(g2.get_value(), g2.get_range().stop(), tolerance);

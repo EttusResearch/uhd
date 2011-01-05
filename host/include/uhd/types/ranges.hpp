@@ -30,14 +30,15 @@ namespace uhd{
      * A range object describes a set of discrete values of the form:
      * y = start + step*n, where n is an integer between 0 and (stop - start)/step
      */
-    template <typename T> class range_t{
+    class UHD_API range_t{
     public:
+
         /*!
          * Create a range from a single value.
          * The step size will be taken as zero.
          * \param value the only possible value in this range
          */
-        range_t(const T &value = T(0));
+        range_t(double value = 0);
 
         /*!
          * Create a range from a full set of values.
@@ -46,28 +47,27 @@ namespace uhd{
          * \param stop the maximum value for this range
          * \param step the step size for this range
          */
-        range_t(const T &start, const T &stop, const T &step = T(0));
+        range_t(double start, double stop, double step = 0);
 
         //! Get the start value for this range.
-        const T start(void) const;
+        double start(void) const;
 
         //! Get the stop value for this range.
-        const T stop(void) const;
+        double stop(void) const;
 
         //! Get the step value for this range.
-        const T step(void) const;
+        double step(void) const;
 
         //! Convert this range to a printable string
         const std::string to_pp_string(void) const;
 
-    private: 
-        UHD_PIMPL_DECL(impl) _impl;
+    private: UHD_PIMPL_DECL(impl) _impl;
     };
 
     /*!
      * A meta-range object holds a list of individual ranges.
      */
-    template <typename T> struct meta_range_t : std::vector<range_t<T> >{
+    struct UHD_API meta_range_t : std::vector<range_t>{
 
         //! A default constructor for an empty meta-range
         meta_range_t(void);
@@ -79,7 +79,8 @@ namespace uhd{
          * \param last the end iterator
          */
         template <typename InputIterator>
-        meta_range_t(InputIterator first, InputIterator last);
+        meta_range_t(InputIterator first, InputIterator last):
+            std::vector<range_t>(first, last){ /* NOP */ }
 
         /*!
          * A convenience constructor for a single range.
@@ -88,16 +89,16 @@ namespace uhd{
          * \param stop the maximum value for this range
          * \param step the step size for this range
          */
-        meta_range_t(const T &start, const T &stop, const T &step = T(0));
+        meta_range_t(double start, double stop, double step = 0);
 
         //! Get the overall start value for this meta-range.
-        const T start(void) const;
+        double start(void) const;
 
         //! Get the overall stop value for this meta-range.
-        const T stop(void) const;
+        double stop(void) const;
 
         //! Get the overall step value for this meta-range.
-        const T step(void) const;
+        double step(void) const;
 
         /*!
          * Clip the target value to a possible range value.
@@ -105,22 +106,16 @@ namespace uhd{
          * \param clip_step if true, clip to steps as well
          * \return a value that is in one of the ranges
          */
-         const T clip(const T &value, bool clip_step = false) const;
+        double clip(double value, bool clip_step = false) const;
 
         //! Convert this meta-range to a printable string
         const std::string to_pp_string(void) const;
 
     };
 
-    //!typedef for a gain meta-range
-    typedef meta_range_t<float> gain_range_t;
-
-    //!typedef for a frequency meta-range
-    typedef meta_range_t<double> freq_range_t;
-
+    typedef meta_range_t gain_range_t;
+    typedef meta_range_t freq_range_t;
 
 } //namespace uhd
-
-#include <uhd/types/ranges.ipp>
 
 #endif /* INCLUDED_UHD_TYPES_RANGES_HPP */

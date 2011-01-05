@@ -73,8 +73,8 @@ using namespace boost::assign;
 static const bool xcvr2450_debug = false;
 
 static const freq_range_t xcvr_freq_range = list_of
-    (range_t<double>(2.4e9, 2.5e9))
-    (range_t<double>(4.9e9, 6.0e9))
+    (range_t(2.4e9, 2.5e9))
+    (range_t(4.9e9, 6.0e9))
 ;
 
 static const prop_names_t xcvr_antennas = list_of("J1")("J2");
@@ -85,9 +85,9 @@ static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list
 ;
 static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list_of
     ("LNA", gain_range_t(list_of
-        (range_t<float>(0))
-        (range_t<float>(15))
-        (range_t<float>(30.5))
+        (range_t(0))
+        (range_t(15))
+        (range_t(30.5))
     ))
     ("VGA", gain_range_t(0, 62, 2.0))
 ;

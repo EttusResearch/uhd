@@ -89,14 +89,4 @@ typedef ptrdiff_t ssize_t;
     #define UHD_PLATFORM_BSD
 #endif
 
-//On macos platform, explicit templates must be:
-// - defined with extern in the header file
-// - defined as a symbol in the source file
-#if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
-    #define UHD_EXIM_TMPL extern
-    #define UHD_USE_EXIM_TMPL
-#else
-    #define UHD_EXIM_TMPL
-#endif
-
 #endif /* INCLUDED_UHD_CONFIG_HPP */

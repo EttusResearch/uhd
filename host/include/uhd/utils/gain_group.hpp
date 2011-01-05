@@ -28,13 +28,16 @@
 
 namespace uhd{
 
+//! the data type that represents a gain
+typedef double gain_t;
+
 /*!
  * A set of function to control a gain element.
  */
 struct UHD_API gain_fcns_t{
     boost::function<gain_range_t(void)> get_range;
-    boost::function<float(void)>        get_value;
-    boost::function<void(float)>        set_value;
+    boost::function<gain_t(void)>        get_value;
+    boost::function<void(gain_t)>        set_value;
 };
 
 class UHD_API gain_group : boost::noncopyable{
@@ -56,7 +59,7 @@ public:
      * \param name name of the gain element (optional)
      * \return a gain value of the element or all elements
      */
-    virtual float get_value(const std::string &name = "") = 0;
+    virtual gain_t get_value(const std::string &name = "") = 0;
 
     /*!
      * Set the gain value for the gain element specified by name.
@@ -66,7 +69,7 @@ public:
      * \param gain the gain to set for the lement or across the group
      * \param name name of the gain element (optional)
      */
-    virtual void set_value(float gain, const std::string &name = "") = 0;
+    virtual void set_value(gain_t gain, const std::string &name = "") = 0;
 
     /*!
      * Get a list of names of registered gain elements.

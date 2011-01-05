@@ -24,13 +24,13 @@ using namespace uhd;
 static const double tolerance = 0.001;
 
 BOOST_AUTO_TEST_CASE(test_ranges_bounds){
-    meta_range_t<double> mr;
-    mr.push_back(range_t<double>(-1.0, +1.0, 0.1));
+    meta_range_t mr;
+    mr.push_back(range_t(-1.0, +1.0, 0.1));
     BOOST_CHECK_CLOSE(mr.start(), -1.0, tolerance);
     BOOST_CHECK_CLOSE(mr.stop(), +1.0, tolerance);
     BOOST_CHECK_CLOSE(mr.step(), 0.1, tolerance);
 
-    mr.push_back(range_t<double>(40.0, 60.0, 1.0));
+    mr.push_back(range_t(40.0, 60.0, 1.0));
     BOOST_CHECK_CLOSE(mr.start(), -1.0, tolerance);
     BOOST_CHECK_CLOSE(mr.stop(), 60.0, tolerance);
     BOOST_CHECK_CLOSE(mr.step(), 0.1, tolerance);
@@ -43,9 +43,9 @@ BOOST_AUTO_TEST_CASE(test_ranges_bounds){
 }
 
 BOOST_AUTO_TEST_CASE(test_ranges_clip){
-    meta_range_t<double> mr;
-    mr.push_back(range_t<double>(-1.0, +1.0, 0.1));
-    mr.push_back(range_t<double>(40.0, 60.0, 1.0));
+    meta_range_t mr;
+    mr.push_back(range_t(-1.0, +1.0, 0.1));
+    mr.push_back(range_t(40.0, 60.0, 1.0));
 
     BOOST_CHECK_CLOSE(mr.clip(-30.0), -1.0, tolerance);
     BOOST_CHECK_CLOSE(mr.clip(70.0), 60.0, tolerance);
