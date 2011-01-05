@@ -280,7 +280,7 @@ static float rf_gain_to_voltage(float gain, double lo_freq){
     gain = get_tvrx_gain_ranges()["RF"].clip(gain);
 
     //first we need to find out what band we're in, because gains are different across different bands
-    std::string band = get_band(lo_freq + tvrx_if_freq);
+    std::string band = get_band(lo_freq - tvrx_if_freq);
 
     //this is the voltage at the TVRX gain input
     double gain_volts = gain_interp(gain, tvrx_rf_gains_db[band], tvrx_gains_volts);

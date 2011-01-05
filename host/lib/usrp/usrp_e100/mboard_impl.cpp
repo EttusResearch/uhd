@@ -150,7 +150,7 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_TIME_NOW:
-    case MBOARD_PROP_TIME_NEXT_PPS:{
+    case MBOARD_PROP_TIME_PPS:{
             time_spec_t time_spec = val.as<time_spec_t>();
             _iface->poke32(UE_REG_TIME64_TICKS, time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
             boost::uint32_t imm_flags = (key.as<mboard_prop_t>() == MBOARD_PROP_TIME_NOW)? 1 : 0;

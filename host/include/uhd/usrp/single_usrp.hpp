@@ -77,10 +77,16 @@ public:
     virtual std::string get_mboard_name(void) = 0;
 
     /*!
-     * Gets the current time in the usrp time registers.
+     * Get the current time in the usrp time registers.
      * \return a timespec representing current usrp time
      */
     virtual time_spec_t get_time_now(void) = 0;
+
+    /*!
+     * Get the time when the last pps pulse occured.
+     * \return a timespec representing the last pps
+     */
+    virtual time_spec_t get_time_last_pps(void) = 0;
 
     /*!
      * Sets the time registers on the usrp immediately.

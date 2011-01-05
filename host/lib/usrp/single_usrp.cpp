@@ -106,12 +106,16 @@ public:
         return _mboard()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
 
+    time_spec_t get_time_last_pps(void){
+        return _mboard()[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
+    }
+
     void set_time_now(const time_spec_t &time_spec){
         _mboard()[MBOARD_PROP_TIME_NOW] = time_spec;
     }
 
     void set_time_next_pps(const time_spec_t &time_spec){
-        _mboard()[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+        _mboard()[MBOARD_PROP_TIME_PPS] = time_spec;
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){

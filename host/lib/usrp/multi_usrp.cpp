@@ -117,26 +117,31 @@ public:
         return _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
 
+    time_spec_t get_time_last_pps(void){
+        return _mboard(0)[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
+    }
+
     void set_time_next_pps(const time_spec_t &time_spec){
         for (size_t m = 0; m < get_num_mboards(); m++){
-            _mboard(m)[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+            _mboard(m)[MBOARD_PROP_TIME_PPS] = time_spec;
         }
     }
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
-        std::cout << "Set time with unknown pps edge:" << std::endl;
-        std::cout << "    1) set times next pps (race condition)" << std::endl;
-        set_time_next_pps(time_spec);
-        boost::this_thread::sleep(boost::posix_time::seconds(1));
-
-        std::cout << "    2) catch seconds rollover at pps edge" << std::endl;
-        time_t last_secs = 0, curr_secs = 0;
-        while(curr_secs == last_secs){
-            last_secs = curr_secs;
-            curr_secs = get_time_now().get_full_secs();
+        std::cout << "    1) catch time transition at pps edge" << std::endl;
+        time_spec_t time_start = get_time_now();
+        time_spec_t time_start_last_pps = get_time_last_pps();
+        while(true){
+            if (get_time_last_pps() != time_start_last_pps) break;
+            if ((get_time_now() - time_start) > time_spec_t(1.1)){
+                throw std::runtime_error(
+                    "Board 0 may not be getting a PPS signal.\n"
+                    "The time at the last PPS has not changed.\n"
+                );
+            }
         }
 
-        std::cout << "    3) set times next pps (synchronously)" << std::endl;
+        std::cout << "    2) set times next pps (synchronously)" << std::endl;
         set_time_next_pps(time_spec);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 

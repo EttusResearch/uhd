@@ -251,16 +251,6 @@ void usrp2_impl::io_init(void){
     //create new io impl
     _io_impl = UHD_PIMPL_MAKE(io_impl, (send_frame_size, _data_transports.size()));
 
-    //TODO temporary fix for weird power up state, remove when FPGA fixed
-    {
-        //send an initial packet to all transports
-        tx_metadata_t md; md.end_of_burst = true;
-        this->send(
-            std::vector<const void *>(_data_transports.size(), NULL), 0, md,
-            io_type_t::COMPLEX_FLOAT32, device::SEND_MODE_ONE_PACKET, 0
-        );
-    }
-
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){
         //lock the unlocked mutex (non-blocking)

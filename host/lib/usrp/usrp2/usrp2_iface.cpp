@@ -93,20 +93,6 @@ public:
         return this->peek<boost::uint16_t>(addr);
     }
 
-    pair64 peek64(boost::uint32_t addrlo, boost::uint32_t addrhi){
-        //setup the out data
-        usrp2_ctrl_data_t out_data;
-        out_data.id = htonl(USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO);
-        out_data.data.poke_args.addr = htonl(addrlo);
-        out_data.data.poke_args.addrhi = htonl(addrhi);
-        out_data.data.poke_args.num_bytes = sizeof(boost::uint64_t);
-
-        //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
-        return pair64(ntohl(in_data.data.poke_args.data), ntohl(in_data.data.poke_args.datahi));
-    }
-
 /***********************************************************************
  * SPI
  **********************************************************************/

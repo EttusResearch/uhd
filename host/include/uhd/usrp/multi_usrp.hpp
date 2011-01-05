@@ -108,10 +108,16 @@ public:
     virtual std::string get_mboard_name(size_t mboard) = 0;
 
     /*!
-     * Gets the current time in the usrp time registers.
+     * Get the current time in the usrp time registers.
      * \return a timespec representing current usrp time
      */
     virtual time_spec_t get_time_now(void) = 0;
+
+    /*!
+     * Get the time when the last pps pulse occured.
+     * \return a timespec representing the last pps
+     */
+    virtual time_spec_t get_time_last_pps(void) = 0;
 
     /*!
      * Set the time registers on the usrp at the next pps tick.
@@ -133,14 +139,13 @@ public:
      * Ex: Host machine is not attached to serial port of GPSDO
      * and can therefore not query the GPSDO for the PPS edge.
      *
-     * This is a 3-step process, and will take at most 3 seconds to complete.
+     * This is a 2-step process, and will take at most 2 seconds to complete.
      * Upon completion, the times will be synchronized to the time provided.
      *
-     * - Step1: set the time at the next pps (potential race condition)
-     * - Step2: wait for the seconds to rollover to catch the pps edge
-     * - Step3: set the time at the next pps (synchronous for all boards)
+     * - Step1: wait for the last pps time to transition to catch the edge
+     * - Step2: set the time at the next pps (synchronous for all boards)
      *
-     * \param time_spec the time to latch into the usrp device
+     * \param time_spec the time to latch at the next pps after catching the edge
      */
     virtual void set_time_unknown_pps(const time_spec_t &time_spec) = 0;
 
