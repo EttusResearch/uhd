@@ -43,8 +43,10 @@ using namespace uhd;
 /***********************************************************************
  * ranges template instantiation
  **********************************************************************/
+#ifdef UHD_USE_EXIM_TMPL
 template struct uhd::meta_range_t<float>;
 template struct uhd::meta_range_t<double>;
+#endif
 
 /***********************************************************************
  * tune request

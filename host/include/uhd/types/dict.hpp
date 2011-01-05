@@ -54,14 +54,14 @@ namespace uhd{
          * Key order depends on insertion precedence.
          * \return vector of keys
          */
-        const std::vector<Key> keys(void) const;
+        std::vector<Key> keys(void) const;
 
         /*!
          * Get a list of the values in this dict.
          * Value order depends on insertion precedence.
          * \return vector of values
          */
-        const std::vector<Val> vals(void) const;
+        std::vector<Val> vals(void) const;
 
         /*!
          * Does the dictionary contain this key?

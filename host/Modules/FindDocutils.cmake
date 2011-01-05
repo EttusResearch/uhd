@@ -15,20 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
-INSTALL(FILES
-    bounded_buffer.hpp
-    bounded_buffer.ipp
-    buffer_pool.hpp
-    convert_types.hpp
-    convert_types.ipp
-    if_addrs.hpp
-    udp_simple.hpp
-    udp_zero_copy.hpp
-    usb_control.hpp
-    usb_zero_copy.hpp
-    usb_device_handle.hpp
-    vrt_if_packet.hpp
-    zero_copy.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/transport
-)
+########################################################################
+FIND_PROGRAM(RST2HTML_EXECUTABLE rst2html)
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Docutils DEFAULT_MSG RST2HTML_EXECUTABLE)

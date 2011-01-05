@@ -22,7 +22,8 @@
 ########################################################################
 # Setup libusb
 ########################################################################
-FIND_PACKAGE(USB1)
+MESSAGE(STATUS "")
+FIND_PACKAGE(USB1 REQUIRED)
 
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF)
 
@@ -108,6 +109,7 @@ SET_SOURCE_FILES_PROPERTIES(
 )
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy_asio.cpp

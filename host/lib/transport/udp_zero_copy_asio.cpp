@@ -18,10 +18,10 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/warning.hpp>
-#include <boost/shared_array.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -124,16 +124,16 @@ public:
     void init(void){
         //allocate all recv frames and release them to begin xfers
         _pending_recv_buffs = pending_buffs_type::make(_num_recv_frames);
-        _recv_buffer = boost::shared_array<char>(new char[_num_recv_frames*_recv_frame_size]);
+        _recv_buffer_pool = buffer_pool::make(_num_recv_frames, _recv_frame_size);
         for (size_t i = 0; i < _num_recv_frames; i++){
-            release(_recv_buffer.get() + i*_recv_frame_size);
+            release(_recv_buffer_pool->at(i));
         }
 
         //allocate all send frames and push them into the fifo
         _pending_send_buffs = pending_buffs_type::make(_num_send_frames);
-        _send_buffer = boost::shared_array<char>(new char[_num_send_frames*_send_frame_size]);
+        _send_buffer_pool = buffer_pool::make(_num_send_frames, _send_frame_size);
         for (size_t i = 0; i < _num_send_frames; i++){
-            handle_send(_send_buffer.get() + i*_send_frame_size);
+            handle_send(_send_buffer_pool->at(i));
         }
 
         //spawn the service threads that will run the io service
@@ -303,7 +303,7 @@ public:
 private:
     //memory management -> buffers and fifos
     boost::thread_group _thread_group;
-    boost::shared_array<char> _send_buffer, _recv_buffer;
+    buffer_pool::sptr _send_buffer_pool, _recv_buffer_pool;
     typedef bounded_buffer<asio::mutable_buffer> pending_buffs_type;
     pending_buffs_type::sptr _pending_recv_buffs, _pending_send_buffs;
     const size_t _recv_frame_size, _num_recv_frames;
