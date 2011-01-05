@@ -20,8 +20,6 @@ INSTALL(FILES
     bounded_buffer.hpp
     bounded_buffer.ipp
     buffer_pool.hpp
-    convert_types.hpp
-    convert_types.ipp
     if_addrs.hpp
     udp_simple.hpp
     udp_zero_copy.hpp

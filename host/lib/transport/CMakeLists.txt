@@ -47,25 +47,6 @@ ELSE(ENABLE_USB)
 ENDIF(ENABLE_USB)
 
 ########################################################################
-# Check for SIMD headers
-########################################################################
-MESSAGE(STATUS "")
-
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
-
-IF(HAVE_EMMINTRIN_H)
-    ADD_DEFINITIONS(-DHAVE_EMMINTRIN_H)
-ENDIF(HAVE_EMMINTRIN_H)
-
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
-
-IF(HAVE_ARM_NEON_H)
-    ADD_DEFINITIONS(-DHAVE_ARM_NEON_H)
-ENDIF(HAVE_ARM_NEON_H)
-
-########################################################################
 # Setup defines for interface address discovery
 ########################################################################
 MESSAGE(STATUS "")
@@ -91,21 +72,6 @@ ENDIF(HAVE_IFADDRS_H)
 LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_vrt_if_packet.py
     ${CMAKE_CURRENT_BINARY_DIR}/vrt_if_packet.cpp
-)
-
-LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/gen_convert_types.py
-    ${CMAKE_CURRENT_BINARY_DIR}/convert_types.cpp
-)
-
-# append this directory to the include path so the generated convert types
-# can include the implementation convert types file in the source directory
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-# make the generated convert types depend on the implementation header
-SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_CURRENT_BINARY_DIR}/convert_types.cpp PROPERTIES
-    OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/convert_types_impl.hpp
 )
 
 LIBUHD_APPEND_SOURCES(

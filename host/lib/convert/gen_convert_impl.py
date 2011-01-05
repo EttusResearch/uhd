@@ -26,11 +26,19 @@ typedef size_t pred_type;
 \#include <uhd/utils/algorithm.hpp>
 \#include <boost/lexical_cast.hpp>
 \#include <boost/detail/endian.hpp>
+\#include <boost/cstdint.hpp>
 \#include <stdexcept>
 
 enum dir_type{
     DIR_OTW_TO_CPU = 0,
     DIR_CPU_TO_OTW = 1
+};
+
+struct pred_error : std::runtime_error{
+    pred_error(const std::string &what)
+    :std::runtime_error("convert::make_pred: " + what){
+        /* NOP */
+    }
 };
 
 pred_type make_pred(const std::string &markup, dir_type &dir){
@@ -60,10 +68,10 @@ pred_type make_pred(const std::string &markup, dir_type &dir){
 
         if      (cpu_type == "fc32") pred |= $ph.fc32_p;
         else if (cpu_type == "sc16") pred |= $ph.sc16_p;
-        else throw std::runtime_error("unhandled io type " + cpu_type);
+        else throw pred_error("unhandled io type " + cpu_type);
 
         if (otw_type == "item32") pred |= $ph.item32_p;
-        else throw std::runtime_error("unhandled otw type " + otw_type);
+        else throw pred_error("unhandled otw type " + otw_type);
 
         int num_inputs = boost::lexical_cast<int>(num_inps);
         int num_outputs = boost::lexical_cast<int>(num_outs);
@@ -73,16 +81,16 @@ pred_type make_pred(const std::string &markup, dir_type &dir){
         case 2: pred |= $ph.chan2_p; break;
         case 3: pred |= $ph.chan3_p; break;
         case 4: pred |= $ph.chan4_p; break;
-        default: throw std::runtime_error("unhandled number of channels");
+        default: throw pred_error("unhandled number of channels");
         }
 
         if      (swap_type == "bswap") pred |= $ph.bswap_p;
         else if (swap_type == "nswap") pred |= $ph.nswap_p;
-        else throw std::runtime_error("unhandled swap type");
+        else throw pred_error("unhandled swap type");
 
     }
     catch(...){
-        throw std::runtime_error("convert::make_pred: could not parse markup: " + markup);
+        throw pred_error("could not parse markup: " + markup);
     }
 
     return pred;
@@ -105,18 +113,18 @@ UHD_INLINE pred_type make_pred(
     case otw_type_t::BO_LITTLE_ENDIAN: pred |= $ph.nswap_p; break;
     \#endif
     case otw_type_t::BO_NATIVE:        pred |= $ph.nswap_p; break;
-    default: throw std::runtime_error("unhandled otw byteorder type");
+    default: throw pred_error("unhandled otw byteorder type");
     }
 
     switch(otw_type.get_sample_size()){
     case sizeof(boost::uint32_t): pred |= $ph.item32_p; break;
-    default: throw std::runtime_error("unhandled otw sample size");
+    default: throw pred_error("unhandled otw sample size");
     }
 
     switch(io_type.tid){
     case io_type_t::COMPLEX_FLOAT32: pred |= $ph.fc32_p; break;
     case io_type_t::COMPLEX_INT16:   pred |= $ph.sc16_p; break;
-    default: throw std::runtime_error("unhandled io type id");
+    default: throw pred_error("unhandled io type id");
     }
 
     switch(num_inputs*num_outputs){ //FIXME treated as one value
@@ -124,7 +132,7 @@ UHD_INLINE pred_type make_pred(
     case 2: pred |= $ph.chan2_p; break;
     case 3: pred |= $ph.chan3_p; break;
     case 4: pred |= $ph.chan4_p; break;
-    default: throw std::runtime_error("unhandled number of channels");
+    default: throw pred_error("unhandled number of channels");
     }
 
     return pred;
@@ -147,38 +155,6 @@ class ph:
     chan4_p  = 0b01100
 
     nbits = 4 #see above
-
-    @staticmethod
-    def has(pred, mask, flag): return (pred & mask) == flag
-
-    @staticmethod
-    def get_swap_type(pred):
-        mask = 0b1
-        if ph.has(pred, mask, ph.bswap_p): return 'bswap'
-        if ph.has(pred, mask, ph.nswap_p): return 'nswap'
-        raise NotImplementedError
-
-    @staticmethod
-    def get_dev_type(pred):
-        mask = 0b0
-        if ph.has(pred, mask, ph.item32_p): return 'item32'
-        raise NotImplementedError
-
-    @staticmethod
-    def get_host_type(pred):
-        mask = 0b10
-        if ph.has(pred, mask, ph.sc16_p): return 'sc16'
-        if ph.has(pred, mask, ph.fc32_p): return 'fc32'
-        raise NotImplementedError
-
-    @staticmethod
-    def get_num_chans(pred):
-        mask = 0b1100
-        if ph.has(pred, mask, ph.chan1_p): return 1
-        if ph.has(pred, mask, ph.chan2_p): return 2
-        if ph.has(pred, mask, ph.chan3_p): return 3
-        if ph.has(pred, mask, ph.chan4_p): return 4
-        raise NotImplementedError
 
 if __name__ == '__main__':
     import sys, os
