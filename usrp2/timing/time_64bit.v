@@ -6,7 +6,9 @@ module time_64bit
    (input clk, input rst,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,  
     input pps,
-    output [63:0] vita_time, output pps_int,
+    output [63:0] vita_time,
+    output reg [63:0] vita_time_pps,
+    output pps_int,
     input exp_time_in, output exp_time_out,
     output [31:0] debug
     );
@@ -74,6 +76,10 @@ module time_64bit
        pps_del <= {pps_del[0],pps_reg};
 
    assign pps_edge = pps_del[0] & ~pps_del[1];
+
+   always @(posedge clk)
+     if(pps_edge)
+       vita_time_pps <= vita_time;
    
    always @(posedge clk)
      if(rst)

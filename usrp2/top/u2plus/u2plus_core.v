@@ -173,7 +173,7 @@ module u2plus_core
    wire 	serdes_link_up;
    wire 	epoch;
    wire [31:0] 	irq;
-   wire [63:0] 	vita_time;
+   wire [63:0] 	vita_time, vita_time_pps;
    wire 	run_rx, run_tx;
    
    // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -406,13 +406,6 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
    
-   reg [31:0] 	 cycle_count;
-   always @(posedge wb_clk)
-     if(wb_rst)
-       cycle_count <= 0;
-     else
-       cycle_count <= cycle_count + 1;
-
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = 32'd4;
 
@@ -423,7 +416,8 @@ module u2plus_core
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),.word14(32'b0),.word15(cycle_count)
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),
+      .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
    // /////////////////////////////////////////////////////////////////////////
@@ -722,10 +716,13 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
+   wire [31:0] 	 debug_sync;
+   
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int),
-      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out));
+      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
+      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out),
+      .debug(debug_sync));
    
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins
