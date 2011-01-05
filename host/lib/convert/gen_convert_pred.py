@@ -23,11 +23,13 @@ TMPL_TEXT = """
  **********************************************************************/
 typedef size_t pred_type;
 
-\#include <uhd/utils/algorithm.hpp>
+\#include <boost/tokenizer.hpp>
 \#include <boost/lexical_cast.hpp>
 \#include <boost/detail/endian.hpp>
 \#include <boost/cstdint.hpp>
 \#include <stdexcept>
+\#include <string>
+\#include <vector>
 
 enum dir_type{
     DIR_OTW_TO_CPU = 0,
@@ -45,7 +47,8 @@ pred_type make_pred(const std::string &markup, dir_type &dir){
     pred_type pred = 0;
 
     try{
-        std::vector<std::string> tokens = std::split_string(markup, "_");
+        boost::tokenizer<boost::char_separator<char> > tokenizer(markup, boost::char_separator<char>("_"));
+        std::vector<std::string> tokens(tokenizer.begin(), tokenizer.end());
         //token 0 is <convert>
         std::string inp_type = tokens.at(1);
         std::string num_inps = tokens.at(2);
@@ -153,8 +156,6 @@ class ph:
     chan2_p  = 0b00100
     chan3_p  = 0b01000
     chan4_p  = 0b01100
-
-    nbits = 4 #see above
 
 if __name__ == '__main__':
     import sys, os

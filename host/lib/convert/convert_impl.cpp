@@ -22,7 +22,7 @@
 
 using namespace uhd;
 
-#include "convert_impl.hpp"
+#include "convert_pred.hpp"
 
 static const bool debug = false;
 
