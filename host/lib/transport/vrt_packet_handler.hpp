@@ -26,7 +26,7 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
-#include <uhd/transport/convert_types.hpp>
+#include <uhd/convert.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/function.hpp>
 #include <stdexcept>
@@ -199,8 +199,9 @@ template <typename T> UHD_INLINE T get_context_code(
             }
 
             //copy-convert the samples from the recv buffer
-            uhd::transport::convert_otw_type_to_io_type(
-                state.copy_buffs[i], otw_type, io_buffs, io_type, nsamps_to_copy_per_io_buff
+            uhd::convert::input_type otw_buffs(1, state.copy_buffs[i]);
+            uhd::convert::otw_type_to_io_type(
+                io_type, otw_type, otw_buffs, io_buffs, nsamps_to_copy_per_io_buff
             );
 
             //update the rx copy buffer to reflect the bytes copied
@@ -338,8 +339,9 @@ template <typename T> UHD_INLINE T get_context_code(
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            uhd::transport::convert_io_type_to_otw_type(
-                io_buffs, io_type, otw_mem, otw_type, num_samps
+            uhd::convert::output_type otw_buffs(1, otw_mem);
+            uhd::convert::io_type_to_otw_type(
+                io_type, otw_type, io_buffs, otw_buffs, num_samps
             );
 
             //commit the samples to the zero-copy interface

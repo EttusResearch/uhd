@@ -15,28 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/transport/convert_types.hpp>
+#include <uhd/convert.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/foreach.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/asio/buffer.hpp>
 #include <complex>
 #include <vector>
 #include <cstdlib>
+#include <iostream>
 
 using namespace uhd;
 
 //typedefs for complex types
 typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
-
-//extract pointer to POD since using &vector.front() throws in MSVC
-template <typename T> void * pod2ptr(T &pod){
-    return boost::asio::buffer_cast<void *>(boost::asio::buffer(pod));
-}
-template <typename T> const void * pod2ptr(const T &pod){
-    return boost::asio::buffer_cast<const void *>(boost::asio::buffer(pod));
-}
 
 #define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f) and std::abs(b) > (f))) \
     BOOST_CHECK_CLOSE_FRACTION(a, b, f)
@@ -54,20 +46,19 @@ template <typename Range> static void loopback(
     Range &output
 ){
     //item32 is largest device type
-    std::vector<boost::uint32_t> dev(nsamps);
+    std::vector<boost::uint32_t> interm(nsamps);
 
-    //convert to dev type
-    transport::convert_io_type_to_otw_type(
-        pod2ptr(input), io_type,
-        pod2ptr(dev), otw_type,
-        nsamps
+    convert::input_type input0(1, &input[0]), input1(1, &interm[0]);
+    convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
+
+    //convert to intermediate type
+    convert::io_type_to_otw_type(
+        io_type, otw_type, input0, output0, nsamps
     );
 
     //convert back to host type
-    transport::convert_otw_type_to_io_type(
-        pod2ptr(dev), otw_type,
-        pod2ptr(output), io_type,
-        nsamps
+    convert::otw_type_to_io_type(
+        io_type, otw_type, input1, output1, nsamps
     );
 }
 
@@ -98,7 +89,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16){
     otw_type.width = 16;
 
     //try various lengths to test edge cases
-    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_sc16(nsamps, io_type, otw_type);
     }
 }
@@ -110,7 +101,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
     otw_type.width = 16;
 
     //try various lengths to test edge cases
-    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_sc16(nsamps, io_type, otw_type);
     }
 }
@@ -145,7 +136,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
     otw_type.width = 16;
 
     //try various lengths to test edge cases
-    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_fc32(nsamps, io_type, otw_type);
     }
 }
@@ -157,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
     otw_type.width = 16;
 
     //try various lengths to test edge cases
-    for (size_t nsamps = 0; nsamps < 16; nsamps++){
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_fc32(nsamps, io_type, otw_type);
     }
 }
@@ -179,21 +170,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
         (std::rand()/float(RAND_MAX/2)) - 1,
         (std::rand()/float(RAND_MAX/2)) - 1
     );
+    std::vector<boost::uint32_t> interm(nsamps);
+    std::vector<sc16_t> output(nsamps);
 
-    //convert float to dev
-    std::vector<boost::uint32_t> tmp(nsamps);
-    transport::convert_io_type_to_otw_type(
-        pod2ptr(input), io_type_in,
-        pod2ptr(tmp), otw_type,
-        nsamps
+    convert::input_type input0(1, &input[0]), input1(1, &interm[0]);
+    convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
+
+    //convert float to intermediate
+    convert::io_type_to_otw_type(
+        io_type_in, otw_type, input0, output0, nsamps
     );
 
-    //convert dev to short
-    std::vector<sc16_t> output(nsamps);
-    transport::convert_otw_type_to_io_type(
-        pod2ptr(tmp), otw_type,
-        pod2ptr(output), io_type_out,
-        nsamps
+    //convert intermediate to short
+    convert::otw_type_to_io_type(
+        io_type_out, otw_type, input1, output1, nsamps
     );
 
     //test that the inputs and outputs match
@@ -220,21 +210,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
         std::rand()-(RAND_MAX/2),
         std::rand()-(RAND_MAX/2)
     );
+    std::vector<boost::uint32_t> interm(nsamps);
+    std::vector<fc32_t> output(nsamps);
 
-    //convert short to dev
-    std::vector<boost::uint32_t> tmp(nsamps);
-    transport::convert_io_type_to_otw_type(
-        pod2ptr(input), io_type_in,
-        pod2ptr(tmp), otw_type,
-        nsamps
+    convert::input_type input0(1, &input[0]), input1(1, &interm[0]);
+    convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
+
+    //convert short to intermediate
+    convert::io_type_to_otw_type(
+        io_type_in, otw_type, input0, output0, nsamps
     );
 
-    //convert dev to float
-    std::vector<fc32_t> output(nsamps);
-    transport::convert_otw_type_to_io_type(
-        pod2ptr(tmp), otw_type,
-        pod2ptr(output), io_type_out,
-        nsamps
+    //convert intermediate to float
+    convert::otw_type_to_io_type(
+        io_type_out, otw_type, input1, output1, nsamps
     );
 
     //test that the inputs and outputs match

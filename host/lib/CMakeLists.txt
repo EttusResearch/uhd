@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,6 +89,7 @@ ENDMACRO(INCLUDE_SUBDIRECTORY)
 # Include subdirectories (different than add)
 ########################################################################
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
+INCLUDE_SUBDIRECTORY(convert)
 INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(utils)

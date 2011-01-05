@@ -22,7 +22,7 @@ SET(test_sources
     addr_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
-    convert_types_test.cpp
+    convert_test.cpp
     dict_test.cpp
     error_test.cpp
     gain_group_test.cpp
