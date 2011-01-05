@@ -36,7 +36,7 @@ SET(manual_sources
 # Setup Manual
 ########################################################################
 MESSAGE(STATUS "")
-FIND_PACKAGE(Docutils REQUIRED)
+FIND_PACKAGE(Docutils)
 
 LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOCUTILS_FOUND" OFF)
 
