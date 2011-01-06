@@ -45,6 +45,7 @@ def fix_co_years(files):
             year_now = datetime.datetime.now().year
             all_years = min(log_years), max(list(log_years)+[year_now]) #add the current year
             all_years_str = '%s-%s'%all_years
+            if all_years[0] == all_years[1]: all_years_str = str(all_years[0])
             new_text = ''.join(lines[:num] + [line.replace(co_years_str, all_years_str)] + lines[num+1:])
             open(file, 'w').write(new_text)
 
