@@ -22,7 +22,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/warning.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <boost/algorithm/string.hpp> //for split
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -31,6 +31,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
+#include <vector>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -47,8 +48,8 @@ template <class T> std::string num2str(T num){
 //! separate indexed device addresses into a vector of device addresses
 device_addrs_t sep_indexed_dev_addrs(const device_addr_t &dev_addr){
     //------------ support old deprecated way and print warning --------
-    if (dev_addr.has_key("addr")){
-        std::vector<std::string> addrs = std::split_string(dev_addr["addr"]);
+    if (dev_addr.has_key("addr") and not dev_addr["addr"].empty()){
+        std::vector<std::string> addrs; boost::split(addrs, dev_addr["addr"], boost::is_any_of(" "));
         if (addrs.size() > 1){
             device_addr_t fixed_dev_addr = dev_addr;
             fixed_dev_addr.pop("addr");

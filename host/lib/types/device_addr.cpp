@@ -32,19 +32,15 @@ static std::string trim(const std::string &in){
     return boost::algorithm::trim_copy(in);
 }
 
-static boost::tokenizer<boost::char_separator<char> > tokenize(
-    const std::string &input, const std::string &tok
-){
-    return boost::tokenizer<boost::char_separator<char> >(
-        input, boost::char_separator<char>(tok.c_str())
-    );
-}
+#define tokenizer(inp, sep) \
+    boost::tokenizer<boost::char_separator<char> > \
+    (inp, boost::char_separator<char>(sep.c_str()))
 
 device_addr_t::device_addr_t(const std::string &args){
-    BOOST_FOREACH(const std::string &pair, tokenize(args, arg_delim)){
+    BOOST_FOREACH(const std::string &pair, tokenizer(args, arg_delim)){
         if (trim(pair) == "") continue;
         std::string key;
-        BOOST_FOREACH(const std::string &tok, tokenize(pair, pair_delim)){
+        BOOST_FOREACH(const std::string &tok, tokenizer(pair, pair_delim)){
             if (key.empty()) key = tok;
             else{
                 this->set(trim(key), trim(tok));
