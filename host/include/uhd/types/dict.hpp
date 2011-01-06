@@ -73,10 +73,24 @@ namespace uhd{
         /*!
          * Get a value in the dict or default.
          * \param key the key to look for
-         * \param def use if key not found
+         * \param other use if key not found
          * \return the value or default
          */
-        const Val &get(const Key &key, const Val &def) const;
+        const Val &get(const Key &key, const Val &other) const;
+
+        /*!
+         * Get a value in the dict or throw.
+         * \param key the key to look for
+         * \return the value or default
+         */
+        const Val &get(const Key &key) const;
+
+        /*!
+         * Set a value in the dict at the key.
+         * \param key the key to set at
+         * \param val the value to set
+         */
+        void set(const Key &key, const Val &val);
 
         /*!
          * Get a value for the given key if it exists.
