@@ -22,7 +22,6 @@
 #include <uhd/utils/pimpl.hpp>
 #include <string>
 #include <vector>
-#include <string>
 
 namespace uhd{
 

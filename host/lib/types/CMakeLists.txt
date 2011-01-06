@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,22 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
-INSTALL(FILES
-    clock_config.hpp
-    device_addr.hpp
-    dict.ipp
-    dict.hpp
-    io_type.hpp
-    mac_addr.hpp
-    metadata.hpp
-    otw_type.hpp
-    ranges.hpp
-    sensors.hpp
-    serial.hpp
-    stream_cmd.hpp
-    time_spec.hpp
-    tune_request.hpp
-    tune_result.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/types
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
+LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/ranges.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sensors.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
 )

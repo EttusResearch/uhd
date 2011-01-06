@@ -89,6 +89,7 @@ ENDMACRO(INCLUDE_SUBDIRECTORY)
 # Include subdirectories (different than add)
 ########################################################################
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
+INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)
 INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
@@ -117,8 +118,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ranges.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )
