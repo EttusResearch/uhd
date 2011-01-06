@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+
+import re
+import datetime
+import subprocess
+import multiprocessing
+
+co_line_matcher = re.compile('^.*Copyright (.*) Ettus Research LLC$')
+
+def command(*args): return subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
+
+def get_co_line(lines):
+    for i, line in enumerate(lines[:5]):
+        if co_line_matcher.match(line): return line, i
+    return None, None
+
+def fix_co_years(files):
+    for file in files:
+        print file
+        lines = open(file).readlines()
+        line, num = get_co_line(lines)
+        if line is None: continue
+
+        #extract the years from the git history
+        log_years = map(
+            lambda l: int(l.split()[-2]),
+            filter(
+                lambda l: l.startswith('Date'),
+                command('git', 'log', file).splitlines(),
+            ),
+        )
+        log_years = min(log_years), max(log_years)
+
+        #extract years from co string
+        try:
+            co_years_str = co_line_matcher.match(line).groups()[0]
+            co_years = map(int, co_years_str.split('-'))
+            co_years = min(co_years), max(co_years)
+        except Exception, e:
+            print '    format error on line %d: "%s"'%(num, line), e
+            continue
+
+        if log_years != co_years:
+            print '    log years: %s != copyright years: %s'%(log_years, co_years)
+            year_now = datetime.datetime.now().year
+            all_years = min(log_years), max(list(log_years)+[year_now]) #add the current year
+            all_years_str = '%s-%s'%all_years
+            new_text = ''.join(lines[:num] + [line.replace(co_years_str, all_years_str)] + lines[num+1:])
+            open(file, 'w').write(new_text)
+
+if __name__ == "__main__":
+    #get recursive list of files in the repo
+    files = command('git', 'ls-tree', '--name-only', 'HEAD', '-r').splitlines()
+
+    #start n+1 processes to handle the files
+    num_procs = multiprocessing.cpu_count()
+    procs = [multiprocessing.Process(
+        target=lambda *files: fix_co_years(files),
+        args=files[num::num_procs],
+    ) for num in range(num_procs)]
+    map(multiprocessing.Process.start, procs)
+    map(multiprocessing.Process.join, procs)
