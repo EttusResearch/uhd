@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,10 +78,26 @@ std::string tune_result_t::to_pp_string(void) const{
 /***********************************************************************
  * clock config
  **********************************************************************/
+clock_config_t clock_config_t::external(void){
+    clock_config_t clock_config;
+    clock_config.ref_source = clock_config_t::REF_SMA;
+    clock_config.pps_source = clock_config_t::PPS_SMA;
+    clock_config.pps_polarity = clock_config_t::PPS_POS;
+    return clock_config;
+}
+
+clock_config_t clock_config_t::internal(void){
+    clock_config_t clock_config;
+    clock_config.ref_source = clock_config_t::REF_INT;
+    clock_config.pps_source = clock_config_t::PPS_INT;
+    clock_config.pps_polarity = clock_config_t::PPS_POS;
+    return clock_config;
+}
+
 clock_config_t::clock_config_t(void):
     ref_source(REF_INT),
     pps_source(PPS_INT),
-    pps_polarity(PPS_NEG)
+    pps_polarity(PPS_POS)
 {
     /* NOP */
 }

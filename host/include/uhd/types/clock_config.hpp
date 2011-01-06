@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,11 @@ namespace uhd{
      * The source and polarity for the PPS clock.
      */
     struct UHD_API clock_config_t{
+        //------ simple usage --------//
+        static clock_config_t external(void);
+        static clock_config_t internal(void);
+
+        //------ advanced usage --------//
         enum ref_source_t {
             REF_AUTO = 'a', //automatic (device specific)
             REF_INT  = 'i', //internal reference
