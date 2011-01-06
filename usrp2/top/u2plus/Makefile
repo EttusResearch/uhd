@@ -45,6 +45,7 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 # Sources
 ##################################################
 TOP_SRCS = \
+capture_ddrlvds.v \
 u2plus_core.v \
 u2plus.v \
 u2plus.ucf

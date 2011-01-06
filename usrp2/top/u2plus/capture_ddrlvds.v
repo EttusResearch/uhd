@@ -16,13 +16,14 @@ module capture_ddrlvds
    wire [(2*WIDTH)-1:0]    out_pre1;
    reg [(2*WIDTH)-1:0] 	   out_pre2;
    
-   IBUFGDS #(.IOSTANDARD("LVDS_33"),.DIFF_TERM("TRUE")) clkbuf (.O(ssclk), .I(ssclk_p), .IB(ssclk_n));
+   IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("FALSE")) 
+   clkbuf (.O(ssclk), .I(ssclk_p), .IB(ssclk_n));
    
    genvar 	       i;
    generate
       for(i = 0; i < WIDTH; i = i + 1)
 	begin : gen_lvds_pins
-	   IBUFDS #(.IOSTANDARD("LVDS_33"),.DIFF_TERM("TRUE")) ibufds 
+	   IBUFDS #(.IOSTANDARD("LVDS_33"),.DIFF_TERM("FALSE")) ibufds 
 	      (.O(ddr_dat[i]), .I(in_p[i]), .IB(in_n[i]) );
 	   IDDR2 #(.DDR_ALIGNMENT("C1")) iddr2
 	     (.Q0(out_pre1[2*i]), .Q1(out_pre1[(2*i)+1]), .C0(ssclk), .C1(~ssclk),
