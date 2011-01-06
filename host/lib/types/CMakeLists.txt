@@ -19,7 +19,13 @@
 # This file included, use CMake directory variables
 ########################################################################
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/clock_config.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/device_addr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mac_addr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ranges.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sensors.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/serial.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/time_spec.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tune.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
 )
