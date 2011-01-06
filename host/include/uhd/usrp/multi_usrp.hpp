@@ -51,7 +51,8 @@ namespace uhd{ namespace usrp{
  *
  * //create a multi_usrp with two boards in the configuration
  * device_addr_t dev_addr;
- * dev_addr["addr"] = "192.168.10.2 192.168.10.3";
+ * dev_addr["addr0"] = "192.168.10.2"
+ * dev_addr["addr1"] = "192.168.10.3";
  * multi_usrp::sptr dev = multi_usrp::make(dev_addr);
  *
  * //set the board on 10.2 to use the A RX subdevice (RX channel 0)
