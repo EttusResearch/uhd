@@ -85,6 +85,18 @@ namespace uhd{
             const std::string &formatter = "%f"
         );
 
+        /*!
+         * Create a sensor value from a string.
+         * \param name the name of the sensor
+         * \param value the real number value
+         * \param unit the associated unit type
+         */
+        sensor_value_t(
+            const std::string &name,
+            const std::string &value,
+            const std::string &unit
+        );
+
         //! The name of the sensor value
         const std::string name;
 
@@ -106,7 +118,8 @@ namespace uhd{
         const enum{
             BOOLEAN = 'b',
             INTEGER = 'i',
-            REALNUM = 'r'
+            REALNUM = 'r',
+            STRING  = 's'
         } type;
 
         //! Convert this sensor value into a printable string

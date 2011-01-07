@@ -57,12 +57,24 @@ sensor_value_t::sensor_value_t(
     /* NOP */
 }
 
+sensor_value_t::sensor_value_t(
+    const std::string &name,
+    const std::string &value,
+    const std::string &unit
+):
+    name(name), value(value),
+    unit(unit), type(STRING)
+{
+    /* NOP */
+}
+
 std::string sensor_value_t::to_pp_string(void) const{
     switch(type){
     case BOOLEAN:
         return str(boost::format("%s: %s") % name % unit);
     case INTEGER:
     case REALNUM:
+    case STRING:
         return str(boost::format("%s: %s %s") % name % value % unit);
     }
     UHD_THROW_INVALID_CODE_PATH();
