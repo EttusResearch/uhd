@@ -18,15 +18,16 @@
 #include "nonstdio.h"
 
 void
-print_mac_addr(const unsigned char addr[6])
+print_mac_addr(const void *addr)
 {
+  uint8_t *p = (uint8_t *)addr;
   for(size_t i = 0; i < 6; i++){
     if(i) putchar(':');
-    puthex8(addr[i]);
+    puthex8(p[i]);
   }
 }
 
-void print_ip_addr(const void *t){
-    uint8_t *p = (uint8_t *)t;
+void print_ip_addr(const void *addr){
+    uint8_t *p = (uint8_t *)addr;
     printf("%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
 }

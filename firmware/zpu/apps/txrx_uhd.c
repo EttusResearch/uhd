@@ -77,14 +77,14 @@ static void handle_udp_data_packet(
     sr_udp_sm->dsp0_port = (((uint32_t)dst.port) << 16) | src.port;
     printf("Storing for fast path:\n");
     printf("  source mac addr: ");
-    print_mac_addr(fp_mac_addr_src.addr); newline();
+    print_mac_addr(&fp_mac_addr_src); newline();
     printf("  source ip addr: ");
-    print_ip_addr(&fp_socket_src.addr); newline();
+    print_ip_addr(&fp_socket_src); newline();
     printf("  source udp port: %d\n", fp_socket_src.port);
     printf("  destination mac addr: ");
-    print_mac_addr(fp_mac_addr_dst.addr); newline();
+    print_mac_addr(&fp_mac_addr_dst); newline();
     printf("  destination ip addr: ");
-    print_ip_addr(&fp_socket_dst.addr); newline();
+    print_ip_addr(&fp_socket_dst); newline();
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
 
@@ -332,7 +332,6 @@ int
 main(void)
 {
   u2_init();
-  pkt_ctrl_init();
 
 //we do this to see if we should set a default ip addr or not
 #ifdef USRP2P
@@ -344,9 +343,8 @@ main(void)
   }
 #endif
 
-  putstr("\nTxRx-NEWETH\n");
-  print_mac_addr(ethernet_mac_addr()->addr);
-  newline();
+  putstr("\nTxRx-UHD-ZPU\n");
+  print_mac_addr(ethernet_mac_addr()); newline();
   print_ip_addr(get_ip_addr()); newline();
   printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
@@ -364,9 +362,8 @@ main(void)
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 #endif
 
-  //3) set the routing mode to slave and send a garp
+  //3) set the routing mode to slave to set defaults
   pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
-  send_gratuitous_arp();
 
   //4) setup ethernet hardware to bring the link up
   ethernet_register_link_changed_callback(link_changed_callback);
@@ -390,7 +387,7 @@ main(void)
     }
 
     if (pending & PIC_OVERRUN_INT){
-      pic_regs->pending = PIC_OVERRUN_INT;	// clear pending interrupt
+      pic_regs->pending = PIC_OVERRUN_INT;	// clear interrupt
       putchar('O');
     }
   }

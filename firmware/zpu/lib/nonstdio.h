@@ -38,13 +38,10 @@ void puthex32_nl(unsigned long x);
 #define puthex_nl puthex32_nl
 void newline();				// putchar('\n')
 
-void print_mac_addr(const unsigned char addr[6]);
-void print_uint64(uint64_t v);
+void print_mac_addr(const void *addr);
+
+void print_ip_addr(const void *addr);
 
 void print_buffer(uint32_t *buf, size_t n);
-//char *itoa(signed long value, char *result, int base);
-//void reverse(char s[]);
-
-void print_ip_addr(const void *t);
 
 #endif /* INCLUDED_NONSTDIO_H */
