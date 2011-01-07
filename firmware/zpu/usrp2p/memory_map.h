@@ -267,11 +267,11 @@ typedef struct {
 
 // crazy order that matches the labels on the case
 
-#define	LED_A		(1 << 2)
-#define	LED_B		(1 << 0)
-#define	LED_E		(1 << 3)
-#define	LED_D		(1 << 1)
-#define	LED_C		(1 << 4)
+#define	LED_A		(1 << 4)
+#define	LED_B		(1 << 1)
+#define	LED_E		(1 << 2)
+#define	LED_D		(1 << 0)
+#define	LED_C		(1 << 3)
 //      LED_F		// controlled by CPLD
 #define	LED_RJ45	(1 << 5)
 
