@@ -46,7 +46,8 @@ MACRO(ADD_LINKER_FLAGS flags)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
 ENDMACRO(ADD_LINKER_FLAGS)
 
-ADD_LINKER_FLAGS("-Wl,--relax -Wl,--gc-sections")
+ADD_LINKER_FLAGS("-Wl,--gc-sections")
+ADD_LINKER_FLAGS("-Wl,--relax")
 
 ########################################################################
 # define for the hal io (FIXME move?)
