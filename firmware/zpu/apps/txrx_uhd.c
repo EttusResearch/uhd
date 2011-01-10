@@ -333,16 +333,6 @@ main(void)
 {
   u2_init();
 
-//we do this to see if we should set a default ip addr or not
-#ifdef USRP2P
-  bool safe_fw = find_safe_booted_flag();
-  set_safe_booted_flag(0);
-  if(safe_fw) {
-    set_default_ip_addr();
-    set_default_mac_addr();
-  }
-#endif
-
   putstr("\nTxRx-UHD-ZPU\n");
   print_mac_addr(ethernet_mac_addr()); newline();
   print_ip_addr(get_ip_addr()); newline();

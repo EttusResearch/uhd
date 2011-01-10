@@ -11,6 +11,7 @@
 #include <spi_flash.h>
 #include <spi_flash_private.h>
 //#include <clocks.h>
+#include <mdelay.h>
 #include <ihex.h>
 #include <bootloader_utils.h>
 #include <string.h>
@@ -49,17 +50,14 @@ void load_ihex(void) { //simple IHEX parser to load proper records into RAM. loa
 	}
 }
 
-void delay(uint32_t t) {
-	while(t-- != 0) asm("NOP");
-}
-
 int main(int argc, char *argv[]) {
-  hal_disable_ints();	// In case we got here via jmp 0x0
+	hal_disable_ints();	// In case we got here via jmp 0x0
 	output_regs->leds = 0xFF;
-	delay(5000);
+	mdelay(100);
 	output_regs->leds = 0x00;
 	hal_uart_init();
 	spif_init();
+	spi_flash_init();
 	i2c_init(); //for EEPROM
 	puts("USRP2+ bootloader super ultra ZPU edition\n");
 	
@@ -85,7 +83,7 @@ int main(int argc, char *argv[]) {
 		if(is_valid_fpga_image(PROD_FPGA_IMAGE_LOCATION_ADDR)) {
 			puts("Valid production FPGA image found. Attempting to boot.");
 			set_safe_booted_flag(1);
-			delay(300); //so serial output can finish
+			mdelay(300); //so serial output can finish
 			icap_reload_fpga(PROD_FPGA_IMAGE_LOCATION_ADDR);
 		}
 		puts("No valid production FPGA image found.\nAttempting to load production firmware...");
@@ -94,11 +92,11 @@ int main(int argc, char *argv[]) {
 		puts("Valid production firmware found. Loading...");
 		spi_flash_read(PROD_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 		puts("Finished loading. Starting image.");
-		delay(300);
+		mdelay(300);
 		start_program();
 		puts("ERROR: Return from main program! This should never happen!");
 		//if this happens, though, the safest thing to do is reboot the whole FPGA and start over.
-		delay(300);
+		mdelay(300);
 		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 		return 1;
 	}
@@ -106,10 +104,10 @@ int main(int argc, char *argv[]) {
 	if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
 		spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 		puts("Finished loading. Starting image.");
-		delay(300);
+		mdelay(300);
 		start_program();
 		puts("ERROR: return from main program! This should never happen!");
-		delay(300);
+		mdelay(300);
 		icap_reload_fpga(SAFE_FPGA_IMAGE_LOCATION_ADDR);
 		return 1;
 	}

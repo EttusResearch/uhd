@@ -30,6 +30,7 @@ ADD_LIBRARY(libusrp2pfw STATIC
     ethernet.c
     xilinx_s3_icap.c
     udp_fw_update.c
+    u2p_init.c
 )
 
 ADD_SUBDIRECTORY(bootloader)

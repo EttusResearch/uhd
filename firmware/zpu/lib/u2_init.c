@@ -26,6 +26,9 @@
 #include "clocks.h"
 #include "usrp2/fw_common.h"
 #include "nonstdio.h"
+#ifdef USRP2P
+#include "u2p_init.h"
+#endif
 
 /*
  * We ought to arrange for this to be called before main, but for now,
@@ -49,6 +52,10 @@ u2_init(void)
   pic_init();	// progammable interrupt controller
   i2c_init();
   hal_enable_ints();
+
+#ifdef USRP2P
+  u2p_init();
+#endif
 
   // flash all leds to let us know board is alive
   hal_set_led_src(0x0, 0x1f); /* software ctrl */
