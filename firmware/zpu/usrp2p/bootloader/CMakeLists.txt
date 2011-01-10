@@ -24,7 +24,7 @@ MACRO(GEN_RMI target)
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.rmi DEPENDS ${name}.bin
         COMMAND ${PYTHON_EXECUTABLE}
-        ARGS ${CMAKE_SOURCE_DIR}/bin/bin_to_ram_macro_init.py ${name}.bin ${name}.rmi
+        ${CMAKE_SOURCE_DIR}/bin/bin_to_ram_macro_init.py ${name}.bin ${name}.rmi
     )
     #add a top level target for output files
     ADD_CUSTOM_TARGET(
@@ -35,5 +35,5 @@ ENDMACRO(GEN_RMI)
 ########################################################################
 ADD_EXECUTABLE(init_bootloader.elf init_bootloader.c)
 TARGET_LINK_LIBRARIES(init_bootloader.elf libusrp2pfw)
-GEN_OUTPUTS(init_bootloader.elf)
+GEN_OUTPUTS(init_bootloader.elf 0x1fff)
 GEN_RMI(init_bootloader.bin)

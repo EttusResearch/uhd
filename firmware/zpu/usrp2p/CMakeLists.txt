@@ -38,12 +38,12 @@ ADD_SUBDIRECTORY(bootloader)
 ########################################################################
 ADD_EXECUTABLE(usrp2p_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
 TARGET_LINK_LIBRARIES(usrp2p_txrx_uhd.elf libusrp2pfw)
-GEN_OUTPUTS(usrp2p_txrx_uhd.elf)
+GEN_OUTPUTS(usrp2p_txrx_uhd.elf 0x3fff)
 
 ADD_EXECUTABLE(usrp2p_blinkenlights.elf ${CMAKE_SOURCE_DIR}/apps/blinkenlights.c)
 TARGET_LINK_LIBRARIES(usrp2p_blinkenlights.elf libusrp2pfw)
-GEN_OUTPUTS(usrp2p_blinkenlights.elf)
+GEN_OUTPUTS(usrp2p_blinkenlights.elf 0x3fff)
 
 ADD_EXECUTABLE(usrp2p_uart_flash_loader.elf ${CMAKE_SOURCE_DIR}/apps/uart_flash_loader.c)
 TARGET_LINK_LIBRARIES(usrp2p_uart_flash_loader.elf libusrp2pfw)
-GEN_OUTPUTS(usrp2p_uart_flash_loader.elf)
+GEN_OUTPUTS(usrp2p_uart_flash_loader.elf 0x3fff)

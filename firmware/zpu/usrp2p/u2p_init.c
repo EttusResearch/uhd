@@ -16,13 +16,10 @@
  */
 
 #include "u2p_init.h"
-#include "spi_flash.h"
 #include "i2c.h"
 #include "ethernet.h"
 
 void u2p_init(void){
-    spi_flash_init();
-
     //we do this to see if we should set a default ip addr or not
     bool safe_fw = find_safe_booted_flag();
     set_safe_booted_flag(0);

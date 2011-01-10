@@ -28,8 +28,8 @@ ADD_LIBRARY(libusrp2fw STATIC
 ########################################################################
 ADD_EXECUTABLE(usrp2_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
 TARGET_LINK_LIBRARIES(usrp2_txrx_uhd.elf libusrp2fw)
-GEN_OUTPUTS(usrp2_txrx_uhd.elf)
+GEN_OUTPUTS(usrp2_txrx_uhd.elf 0x3fff)
 
 ADD_EXECUTABLE(usrp2_blinkenlights.elf ${CMAKE_SOURCE_DIR}/apps/blinkenlights.c)
 TARGET_LINK_LIBRARIES(usrp2_blinkenlights.elf libusrp2fw)
-GEN_OUTPUTS(usrp2_blinkenlights.elf)
+GEN_OUTPUTS(usrp2_blinkenlights.elf 0x3fff)

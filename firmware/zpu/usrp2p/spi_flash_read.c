@@ -27,38 +27,39 @@ spi_flash_rdid(void)
   return spif_transact(SPI_TXRX, SPI_SS_FLASH, RDID_CMD << 24, 32, FLAGS) & 0xffffff;
 }
 
-static size_t _spi_flash_log2_memory_size, _spi_flash_log2_sector_size;
-
-void spi_flash_init(void)
+size_t spi_flash_log2_memory_size(void)
 {
-    uint32_t id = spi_flash_rdid();
-    uint8_t type = (id >> 8) & 0xff;
-    uint8_t size = (id >> 0) & 0xff;
-    if (type != 0x20 || size < 22 || size > 24)
-        abort();
-    _spi_flash_log2_memory_size = size;
+    static size_t _spi_flash_log2_memory_size = 0;
+    if (_spi_flash_log2_memory_size == 0){
+        uint32_t id = spi_flash_rdid();
+        uint8_t type = (id >> 8) & 0xff;
+        uint8_t size = (id >> 0) & 0xff;
+        if (type != 0x20) abort();
+        _spi_flash_log2_memory_size = size;
+    }
+    if (_spi_flash_log2_memory_size < 22 ||
+        _spi_flash_log2_memory_size > 24 ) abort();
+    return _spi_flash_log2_memory_size;
+}
 
+size_t spi_flash_log2_sector_size(void)
+{
     static unsigned char log2_sector_size[3] = {
         16, /* M25P32  */
         16, /* M25P64  */
         18, /* M25P128 */
     };
-    _spi_flash_log2_sector_size = log2_sector_size[_spi_flash_log2_memory_size - 22];
-}
-
-size_t spi_flash_log2_sector_size(void)
-{
-  return _spi_flash_log2_sector_size;
+    return log2_sector_size[spi_flash_log2_memory_size() - 22];
 }
 
 size_t spi_flash_sector_size(void)
 {
-  return ((size_t) 1) << _spi_flash_log2_sector_size;
+  return ((size_t) 1) << spi_flash_log2_sector_size();
 }
 
 size_t spi_flash_memory_size(void)
 {
-  return ((size_t) 1) << _spi_flash_log2_memory_size;
+  return ((size_t) 1) << spi_flash_log2_memory_size();
 }
 
 void 

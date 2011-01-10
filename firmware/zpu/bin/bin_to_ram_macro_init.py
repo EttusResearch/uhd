@@ -12,8 +12,9 @@ def bin_to_ram_macro_init(bin_input_file, ram_init_output_file):
     ifile = open(bin_input_file, 'rb')
     ofile = open(ram_init_output_file, 'w')
     idata = ifile.read()
-    fmt = ">%dI" % ((len(idata) / 4),)
-    words = struct.unpack(fmt, idata)
+    idata_words = len(idata) / 4
+    fmt = ">%dI"%idata_words
+    words = struct.unpack(fmt, idata[:idata_words*4])
 
     # pad to a multiple of 8 words
     r = len(words) % 8

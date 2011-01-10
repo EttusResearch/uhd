@@ -20,6 +20,7 @@
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(CMAKE_C_COMPILER zpu-elf-gcc)
+#force the compiler because the check wont use the special flag below
 SET(CMAKE_C_COMPILER_WORKS TRUE)
 SET(CMAKE_C_COMPILER_FORCED TRUE)
 PROJECT(USRP_NXXX_FW C)
@@ -40,7 +41,11 @@ INCLUDE_DIRECTORIES(
 # misc flags for the gcc compiler
 ########################################################################
 SET(CMAKE_C_FLAGS -phi) #always needed compile time and link time
-ADD_DEFINITIONS(-Os --std=gnu99 -Wall -Werror-implicit-function-declaration -ffunction-sections)
+ADD_DEFINITIONS(-Os)
+ADD_DEFINITIONS(--std=gnu99)
+ADD_DEFINITIONS(-Wall)
+ADD_DEFINITIONS(-Werror-implicit-function-declaration)
+ADD_DEFINITIONS(-ffunction-sections)
 
 MACRO(ADD_LINKER_FLAGS flags)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
@@ -74,37 +79,32 @@ FIND_PROGRAM(HEXDUMP hexdump)
 ########################################################################
 # helper functions to build output formats
 ########################################################################
-MACRO(GEN_OUTPUTS target)
+MACRO(GEN_OUTPUTS target pad)
     GET_FILENAME_COMPONENT(name ${target} NAME_WE)
     #command to create a map from elf
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.map DEPENDS ${target}
-        COMMAND ${LINKER}
-        ARGS -Map ${name}.map ${target}
+        COMMAND ${LINKER} -Map ${name}.map ${target}
     )
     #command to create a bin from elf
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.bin DEPENDS ${target}
-        COMMAND ${OBJCOPY}
-        ARGS -O binary ${target} ${name}.bin
+        COMMAND ${OBJCOPY} --pad-to ${pad} -O binary ${target} ${name}.bin
     )
     #command to create a ihx from elf
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.ihx DEPENDS ${target}
-        COMMAND ${OBJCOPY}
-        ARGS -O ihex ${target} ${name}.ihx
+        COMMAND ${OBJCOPY} --pad-to ${pad} -O ihex ${target} ${name}.ihx
     )
     #command to create a dump from elf
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.dump DEPENDS ${target}
-        COMMAND ${OBJDUMP}
-        ARGS -DSC ${target} > ${name}.dump
+        COMMAND ${OBJDUMP} -DSC ${target} > ${name}.dump
     )
     #command to create a rom from bin
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.rom DEPENDS ${name}.bin
-        COMMAND ${HEXDUMP}
-        ARGS -v -e'1/1 \"%.2X\\n\"' ${name}.bin > ${name}.rom
+        COMMAND ${HEXDUMP} -v -e'1/1 \"%.2X\\n\"' ${name}.bin > ${name}.rom
     )
     #add a top level target for output files
     ADD_CUSTOM_TARGET(

@@ -57,7 +57,6 @@ int main(int argc, char *argv[]) {
 	output_regs->leds = 0x00;
 	hal_uart_init();
 	spif_init();
-	spi_flash_init();
 	i2c_init(); //for EEPROM
 	puts("USRP2+ bootloader super ultra ZPU edition\n");
 	

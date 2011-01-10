@@ -31,13 +31,9 @@
 uint32_t spi_flash_rdid(void);	/* Read ID */
 uint32_t spi_flash_rdsr(void);	/* Read Status Register */
 
-//! call before using any spi flash utilities
-void spi_flash_init(void);
-
+size_t spi_flash_log2_memory_size(void);
 size_t spi_flash_log2_sector_size(void);
-
 size_t spi_flash_sector_size(void);
-
 size_t spi_flash_memory_size(void);
 
 void spi_flash_read(uint32_t flash_addr,  size_t nbytes, void *buf);
