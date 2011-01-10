@@ -79,12 +79,12 @@ static void handle_udp_data_packet(
     printf("  source mac addr: ");
     print_mac_addr(&fp_mac_addr_src); newline();
     printf("  source ip addr: ");
-    print_ip_addr(&fp_socket_src); newline();
+    print_ip_addr(&fp_socket_src.addr); newline();
     printf("  source udp port: %d\n", fp_socket_src.port);
     printf("  destination mac addr: ");
     print_mac_addr(&fp_mac_addr_dst); newline();
     printf("  destination ip addr: ");
-    print_ip_addr(&fp_socket_dst); newline();
+    print_ip_addr(&fp_socket_dst.addr); newline();
     printf("  destination udp port: %d\n", fp_socket_dst.port);
     newline();
 
