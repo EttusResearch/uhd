@@ -589,7 +589,7 @@ module u2plus_core
    // ICAP for reprogramming the FPGA, Slave #13 (D)
 
    s3a_icap_wb s3a_icap_wb
-     (.clk(wb_clk), .reset(wb_rst), .cyc_i(sd_cyc), .stb_i(sd_stb), 
+     (.clk(wb_clk), .reset(cpu_rst), .cyc_i(sd_cyc), .stb_i(sd_stb),
       .we_i(sd_we), .ack_o(sd_ack), .dat_i(sd_dat_o), .dat_o(sd_dat_i));
    
    // /////////////////////////////////////////////////////////////////////////
