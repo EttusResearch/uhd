@@ -79,7 +79,8 @@ FIND_PROGRAM(HEXDUMP hexdump)
 ########################################################################
 # helper functions to build output formats
 ########################################################################
-MACRO(GEN_OUTPUTS target pad)
+SET(GEN_OUTPUTS_BIN_SIZE "bin_size_not_set") #set before calling
+MACRO(GEN_OUTPUTS target)
     GET_FILENAME_COMPONENT(name ${target} NAME_WE)
     #command to create a map from elf
     ADD_CUSTOM_COMMAND(
@@ -89,12 +90,14 @@ MACRO(GEN_OUTPUTS target pad)
     #command to create a bin from elf
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.bin DEPENDS ${target}
-        COMMAND ${OBJCOPY} --pad-to ${pad} -O binary ${target} ${name}.bin
+        COMMAND ${OBJCOPY} -O binary ${target} ${name}.bin
+        --pad-to ${GEN_OUTPUTS_BIN_SIZE}
     )
     #command to create a ihx from elf
     ADD_CUSTOM_COMMAND(
         OUTPUT ${name}.ihx DEPENDS ${target}
-        COMMAND ${OBJCOPY} --pad-to ${pad} -O ihex ${target} ${name}.ihx
+        COMMAND ${OBJCOPY} -O ihex ${target} ${name}.ihx
+        --pad-to ${GEN_OUTPUTS_BIN_SIZE}
     )
     #command to create a dump from elf
     ADD_CUSTOM_COMMAND(
