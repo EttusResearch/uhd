@@ -20,7 +20,6 @@
 #include "usrp2_regs.hpp"
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
-#include <uhd/transport/convert_types.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>

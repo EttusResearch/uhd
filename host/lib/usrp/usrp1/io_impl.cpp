@@ -19,7 +19,6 @@
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
 #include <uhd/utils/thread_priority.hpp>
-#include <uhd/transport/convert_types.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
