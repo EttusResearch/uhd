@@ -153,7 +153,7 @@ module u2plus_core
    wire [31:0] 	set_data, set_data_dsp;
    wire 	set_stb, set_stb_dsp;
    
-   wire 	wb_rst, dsp_rst;
+   reg wb_rst; wire dsp_rst;
 
    wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
@@ -257,8 +257,7 @@ module u2plus_core
     localparam CPU_BLDR_CTRL_DONE = 1;
 
     wire bldr_done;
-    reg cpu_rst;
-    wire cpu_enb = ~cpu_rst;
+    wire por_rst;
     wire [aw-1:0] cpu_adr;
     wire [aw-1:0] cpu_sp_init = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)?
         16'hfff8 : //top of 8K boot ram re-purposed at 56K
@@ -272,24 +271,28 @@ module u2plus_core
         (cpu_adr[15:13] == 3'b111)?  {3'b000, cpu_adr[12:0]} : ( //map 56-64 to 0-8 (boot ram)
     cpu_adr))); //otherwise
 
+    system_control sysctrl (
+        .wb_clk_i(wb_clk), .wb_rst_o(por_rst), .ram_loader_done_i(1'b1)
+    );
+
     always @(posedge wb_clk)
-    if(wb_rst) begin
+    if(por_rst) begin
         cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_WAIT;
-        cpu_rst <= 1'b1;
+        wb_rst <= 1'b1;
     end
     else begin
         case(cpu_bldr_ctrl_state)
 
         CPU_BLDR_CTRL_WAIT: begin
-            cpu_rst <= 1'b0;
+            wb_rst <= 1'b0;
             if (bldr_done == 1'b1) begin //set by the bootloader
                 cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_DONE;
-                cpu_rst <= 1'b1;
+                wb_rst <= 1'b1;
             end
         end
 
         CPU_BLDR_CTRL_DONE: begin //stay here forever
-            cpu_rst <= 1'b0;
+            wb_rst <= 1'b0;
         end
 
         endcase //cpu_bldr_ctrl_state
@@ -302,7 +305,7 @@ module u2plus_core
 
    wire [63:0] zpu_status;
    zpu_wb_top #(.dat_w(dw), .adr_w(aw), .sel_w(sw))
-     zpu_top0 (.clk(wb_clk), .rst(wb_rst | cpu_rst), .enb(cpu_enb),
+     zpu_top0 (.clk(wb_clk), .rst(wb_rst), .enb(~wb_rst),
 	   // Data Wishbone bus to system bus fabric
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(cpu_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
@@ -589,7 +592,7 @@ module u2plus_core
    // ICAP for reprogramming the FPGA, Slave #13 (D)
 
    s3a_icap_wb s3a_icap_wb
-     (.clk(wb_clk), .reset(cpu_rst), .cyc_i(sd_cyc), .stb_i(sd_stb),
+     (.clk(wb_clk), .reset(wb_rst), .cyc_i(sd_cyc), .stb_i(sd_stb),
       .we_i(sd_we), .ack_o(sd_ack), .dat_i(sd_dat_o), .dat_o(sd_dat_i));
    
    // /////////////////////////////////////////////////////////////////////////
