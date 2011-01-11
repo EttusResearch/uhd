@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,9 @@
 # setup project and compiler
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-SET(CMAKE_C_COMPILER zpu-elf-gcc)
 #force the compiler because the check wont use the special flag below
-SET(CMAKE_C_COMPILER_WORKS TRUE)
-SET(CMAKE_C_COMPILER_FORCED TRUE)
+INCLUDE(CMakeForceCompiler)
+CMAKE_FORCE_C_COMPILER(zpu-elf-gcc GNU)
 PROJECT(USRP_NXXX_FW C)
 
 ########################################################################

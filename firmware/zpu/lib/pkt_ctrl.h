@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ettus Research LLC
+ * Copyright 2010-2011 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@
 #include <lwip/ip_addr.h>
 
 typedef enum {
-    PKT_CTRL_ROUTING_MODE_SLAVE,
-    PKT_CTRL_ROUTING_MODE_MASTER,
+    PKT_CTRL_ROUTING_MODE_SLAVE = 0,
+    PKT_CTRL_ROUTING_MODE_MASTER = 1
 } pkt_ctrl_routing_mode_t;
 
 //! Program the decision values into the packet inspector

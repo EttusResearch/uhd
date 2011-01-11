@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ettus Research LLC
+ * Copyright 2010-2011 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 #include "pkt_ctrl.h"
 #include "memory_map.h"
 #include <nonstdio.h>
-#include <mdelay.h>
 
 //status signals from WB into PR
 #define CPU_STAT_RD_DONE (1 << 0)
@@ -46,13 +45,12 @@ void pkt_ctrl_program_inspector(
 }
 
 void pkt_ctrl_set_routing_mode(pkt_ctrl_routing_mode_t mode){
-    mdelay(100); //give a little delay to space out subsequent calls
-    switch(mode){
-    case PKT_CTRL_ROUTING_MODE_SLAVE:  router_ctrl->mode_ctrl = 0; break;
-    case PKT_CTRL_ROUTING_MODE_MASTER: router_ctrl->mode_ctrl = 1; break;
-    }
-    router_ctrl->iface_ctrl = CPU_CTRL_WR_CLEAR; //reset the write state machine
-    pkt_ctrl_release_incoming_buffer(); //reset the read state machine, and read
+    //About to change the mode; ensure that we are accepting packets.
+    //The plumbing will not switch if it cannot pass an end of packet.
+    pkt_ctrl_release_incoming_buffer();
+
+    //Change the mode; this switches the valves and crossbars.
+    router_ctrl->mode_ctrl = mode;
 }
 
 static inline void cpu_stat_wait_for(int bm){
