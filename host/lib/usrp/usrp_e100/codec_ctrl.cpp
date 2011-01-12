@@ -31,7 +31,7 @@ using namespace uhd;
 
 static const bool codec_debug = false;
 
-const gain_range_t usrp_e100_codec_ctrl::tx_pga_gain_range(-20, 0, float(0.1));
+const gain_range_t usrp_e100_codec_ctrl::tx_pga_gain_range(-20, 0, double(0.1));
 const gain_range_t usrp_e100_codec_ctrl::rx_pga_gain_range(0, 20, 1);
 
 /***********************************************************************
@@ -44,14 +44,14 @@ public:
     ~usrp_e100_codec_ctrl_impl(void);
 
     //aux adc and dac control
-    float read_aux_adc(aux_adc_t which);
-    void write_aux_dac(aux_dac_t which, float volts);
+    double read_aux_adc(aux_adc_t which);
+    void write_aux_dac(aux_dac_t which, double volts);
 
     //pga gain control
-    void set_tx_pga_gain(float);
-    float get_tx_pga_gain(void);
-    void set_rx_pga_gain(float, char);
-    float get_rx_pga_gain(char);
+    void set_tx_pga_gain(double);
+    double get_tx_pga_gain(void);
+    void set_rx_pga_gain(double, char);
+    double get_rx_pga_gain(char);
 
 private:
     usrp_e100_iface::sptr _iface;
@@ -135,19 +135,19 @@ usrp_e100_codec_ctrl_impl::~usrp_e100_codec_ctrl_impl(void){
  **********************************************************************/
 static const int mtpgw = 255; //maximum tx pga gain word
 
-void usrp_e100_codec_ctrl_impl::set_tx_pga_gain(float gain){
+void usrp_e100_codec_ctrl_impl::set_tx_pga_gain(double gain){
     int gain_word = int(mtpgw*(gain - tx_pga_gain_range.start())/(tx_pga_gain_range.stop() - tx_pga_gain_range.start()));
     _ad9862_regs.tx_pga_gain = std::clip(gain_word, 0, mtpgw);
     this->send_reg(16);
 }
 
-float usrp_e100_codec_ctrl_impl::get_tx_pga_gain(void){
+double usrp_e100_codec_ctrl_impl::get_tx_pga_gain(void){
     return (_ad9862_regs.tx_pga_gain*(tx_pga_gain_range.stop() - tx_pga_gain_range.start())/mtpgw) + tx_pga_gain_range.start();
 }
 
 static const int mrpgw = 0x14; //maximum rx pga gain word
 
-void usrp_e100_codec_ctrl_impl::set_rx_pga_gain(float gain, char which){
+void usrp_e100_codec_ctrl_impl::set_rx_pga_gain(double gain, char which){
     int gain_word = int(mrpgw*(gain - rx_pga_gain_range.start())/(rx_pga_gain_range.stop() - rx_pga_gain_range.start()));
     gain_word = std::clip(gain_word, 0, mrpgw);
     switch(which){
@@ -163,7 +163,7 @@ void usrp_e100_codec_ctrl_impl::set_rx_pga_gain(float gain, char which){
     }
 }
 
-float usrp_e100_codec_ctrl_impl::get_rx_pga_gain(char which){
+double usrp_e100_codec_ctrl_impl::get_rx_pga_gain(char which){
     int gain_word;
     switch(which){
     case 'A': gain_word = _ad9862_regs.rx_pga_a; break;
@@ -176,11 +176,11 @@ float usrp_e100_codec_ctrl_impl::get_rx_pga_gain(char which){
 /***********************************************************************
  * Codec Control AUX ADC Methods
  **********************************************************************/
-static float aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low){
-    return float((boost::uint16_t(high) << 2) | low)*3.3/0x3ff;
+static double aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low){
+    return double((boost::uint16_t(high) << 2) | low)*3.3/0x3ff;
 }
 
-float usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
+double usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
     //check to see if the switch needs to be set
     bool write_switch = false;
     switch(which){
@@ -233,7 +233,7 @@ float usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
 /***********************************************************************
  * Codec Control AUX DAC Methods
  **********************************************************************/
-void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, float volts){
+void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
     //special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D){
         boost::uint16_t dac_word = std::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);

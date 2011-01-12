@@ -164,11 +164,11 @@ public:
         return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp());
     }
 
-    void set_rx_gain(float gain, const std::string &name, size_t chan){
+    void set_rx_gain(double gain, const std::string &name, size_t chan){
         return _rx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_rx_gain(const std::string &name, size_t chan){
+    double get_rx_gain(const std::string &name, size_t chan){
         return _rx_gain_group(chan)->get_value(name);
     }
 
@@ -204,8 +204,8 @@ public:
         return _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH].as<double>();
     }
 
-    float read_rssi(size_t chan){
-        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<float>();
+    double read_rssi(size_t chan){
+        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<double>();
     }
 
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
@@ -250,11 +250,11 @@ public:
         return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp());
     }
 
-    void set_tx_gain(float gain, const std::string &name, size_t chan){
+    void set_tx_gain(double gain, const std::string &name, size_t chan){
         return _tx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_tx_gain(const std::string &name, size_t chan){
+    double get_tx_gain(const std::string &name, size_t chan){
         return _tx_gain_group(chan)->get_value(name);
     }
 

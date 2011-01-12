@@ -39,7 +39,7 @@ static bool compare_by_step_size(
  * Get a multiple of step with the following relation:
  *     result = step*floor(num/step)
  *
- * Due to small gain_ting-point inaccuracies:
+ * Due to small doubleing-point inaccuracies:
  *     num = n*step + e, where e is a small inaccuracy.
  * When e is negative, floor would yeild (n-1)*step,
  * despite that n*step is really the desired result.
@@ -66,7 +66,7 @@ public:
     gain_range_t get_range(const std::string &name){
         if (not name.empty()) return _name_to_fcns[name].get_range();
 
-        gain_t overall_min = 0, overall_max = 0, overall_step = 0;
+        double overall_min = 0, overall_max = 0, overall_step = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
             const gain_range_t range = fcns.get_range();
             overall_min += range.start();
@@ -78,33 +78,33 @@ public:
         return gain_range_t(overall_min, overall_max, overall_step);
     }
 
-    gain_t get_value(const std::string &name){
+    double get_value(const std::string &name){
         if (not name.empty()) return _name_to_fcns[name].get_value();
 
-        gain_t overall_gain = 0;
+        double overall_gain = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
             overall_gain += fcns.get_value();
         }
         return overall_gain;
     }
 
-    void set_value(gain_t gain, const std::string &name){
+    void set_value(double gain, const std::string &name){
         if (not name.empty()) return _name_to_fcns[name].set_value(gain);
 
         std::vector<gain_fcns_t> all_fcns = get_all_fcns();
         if (all_fcns.size() == 0) return; //nothing to set!
 
         //get the max step size among the gains
-        gain_t max_step = 0;
+        double max_step = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             max_step = std::max(max_step, fcns.get_range().step());
         }
 
         //create gain bucket to distribute power
-        std::vector<gain_t> gain_bucket;
+        std::vector<double> gain_bucket;
 
         //distribute power according to priority (round to max step)
-        gain_t gain_left_to_distribute = gain;
+        double gain_left_to_distribute = gain;
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             const gain_range_t range = fcns.get_range();
             gain_bucket.push_back(floor_step(std::clip(
@@ -131,7 +131,7 @@ public:
         //fill in the largest step sizes first that are less than the remainder
         BOOST_FOREACH(size_t i, indexes_step_size_dec){
             const gain_range_t range = all_fcns.at(i).get_range();
-            gain_t additional_gain = floor_step(std::clip(
+            double additional_gain = floor_step(std::clip(
                 gain_bucket.at(i) + gain_left_to_distribute, range.start(), range.stop()
             ), range.step()) - gain_bucket.at(i);
             gain_bucket.at(i) += additional_gain;

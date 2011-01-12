@@ -257,10 +257,10 @@ public:
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_gain(float gain, const std::string &name, size_t chan) = 0;
+    virtual void set_rx_gain(double gain, const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for setting overall RX gain
-    void set_rx_gain(float gain, size_t chan){
+    void set_rx_gain(double gain, size_t chan){
         return this->set_rx_gain(gain, ALL_GAINS, chan);
     }
 
@@ -271,10 +271,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_rx_gain(const std::string &name, size_t chan) = 0;
+    virtual double get_rx_gain(const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for getting overall RX gain
-    float get_rx_gain(size_t chan){
+    double get_rx_gain(size_t chan){
         return this->get_rx_gain(ALL_GAINS, chan);
     }
 
@@ -348,7 +348,7 @@ public:
      * \return the rssi in dB
      * \throw exception if RSSI readback not supported
      */
-    virtual float read_rssi(size_t chan) = 0;
+    virtual double read_rssi(size_t chan) = 0;
 
     /*!
      * Get the dboard interface object for the RX subdevice.
@@ -436,10 +436,10 @@ public:
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_gain(float gain, const std::string &name, size_t chan) = 0;
+    virtual void set_tx_gain(double gain, const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for setting overall TX gain
-    void set_tx_gain(float gain, size_t chan){
+    void set_tx_gain(double gain, size_t chan){
         return this->set_tx_gain(gain, ALL_GAINS, chan);
     }
 
@@ -450,10 +450,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_tx_gain(const std::string &name, size_t chan) = 0;
+    virtual double get_tx_gain(const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for getting overall TX gain
-    float get_tx_gain(size_t chan){
+    double get_tx_gain(size_t chan){
         return this->get_tx_gain(ALL_GAINS, chan);
     }
 

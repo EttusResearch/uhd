@@ -123,7 +123,7 @@ public:
         this->send_ad9777_reg(0x01); //set the register
     }
 
-    void set_rx_digital_gain(float gain) {  //fine digital gain
+    void set_rx_digital_gain(double gain) {  //fine digital gain
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
@@ -135,7 +135,7 @@ public:
         }
     }
 
-    void set_rx_digital_fine_gain(float gain) { //gain correction      
+    void set_rx_digital_fine_gain(double gain) { //gain correction      
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:

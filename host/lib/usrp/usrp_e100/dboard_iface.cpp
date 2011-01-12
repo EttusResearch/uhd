@@ -60,8 +60,8 @@ public:
         return props;
     }
 
-    void write_aux_dac(unit_t, aux_dac_t, float);
-    float read_aux_adc(unit_t, aux_adc_t);
+    void write_aux_dac(unit_t, aux_dac_t, double);
+    double read_aux_adc(unit_t, aux_adc_t);
 
     void _set_pin_ctrl(unit_t, boost::uint16_t);
     void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
@@ -270,7 +270,7 @@ byte_vector_t usrp_e100_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_b
 /***********************************************************************
  * Aux DAX/ADC
  **********************************************************************/
-void usrp_e100_dboard_iface::write_aux_dac(dboard_iface::unit_t, aux_dac_t which, float value){
+void usrp_e100_dboard_iface::write_aux_dac(dboard_iface::unit_t, aux_dac_t which, double value){
     //same aux dacs for each unit
     static const uhd::dict<aux_dac_t, usrp_e100_codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
         (AUX_DAC_A, usrp_e100_codec_ctrl::AUX_DAC_A)
@@ -281,7 +281,7 @@ void usrp_e100_dboard_iface::write_aux_dac(dboard_iface::unit_t, aux_dac_t which
     _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
-float usrp_e100_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, aux_adc_t which){
+double usrp_e100_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, aux_adc_t which){
     static const uhd::dict<
         unit_t, uhd::dict<aux_adc_t, usrp_e100_codec_ctrl::aux_adc_t>
     > unit_to_which_to_aux_adc = map_list_of

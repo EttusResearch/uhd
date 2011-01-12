@@ -94,11 +94,11 @@ static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
 static const prop_names_t wbx_rx_antennas = list_of("TX/RX")("RX2");
 
 static const uhd::dict<std::string, gain_range_t> wbx_tx_gain_ranges = map_list_of
-    ("PGA0", gain_range_t(0, 25, float(0.05)))
+    ("PGA0", gain_range_t(0, 25, 0.05))
 ;
 
 static const uhd::dict<std::string, gain_range_t> wbx_rx_gain_ranges = map_list_of
-    ("PGA0", gain_range_t(0, 31.5, float(0.5)))
+    ("PGA0", gain_range_t(0, 31.5, 0.5))
 ;
 
 /***********************************************************************
@@ -116,7 +116,7 @@ public:
     void tx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    uhd::dict<std::string, float> _tx_gains, _rx_gains;
+    uhd::dict<std::string, double> _tx_gains, _rx_gains;
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _tx_ant, _rx_ant;
 
@@ -124,8 +124,8 @@ private:
     void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
-    void set_rx_gain(float gain, const std::string &name);
-    void set_tx_gain(float gain, const std::string &name);
+    void set_rx_gain(double gain, const std::string &name);
+    void set_tx_gain(double gain, const std::string &name);
 
     void update_atr(void);
 
@@ -196,12 +196,12 @@ wbx_xcvr::~wbx_xcvr(void){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-static int rx_pga0_gain_to_iobits(float &gain){
+static int rx_pga0_gain_to_iobits(double &gain){
     //clip the input
     gain = wbx_rx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
-    float attn = wbx_rx_gain_ranges["PGA0"].stop() - gain;
+    double attn = wbx_rx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the attenuation
     int attn_code = boost::math::iround(attn*2);
@@ -212,21 +212,21 @@ static int rx_pga0_gain_to_iobits(float &gain){
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = wbx_rx_gain_ranges["PGA0"].stop() - float(attn_code)/2;
+    gain = wbx_rx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
 
     return iobits;
 }
 
-static float tx_pga0_gain_to_dac_volts(float &gain){
+static double tx_pga0_gain_to_dac_volts(double &gain){
     //clip the input
     gain = wbx_tx_gain_ranges["PGA0"].clip(gain);
 
     //voltage level constants
-    static const float max_volts = float(0.5), min_volts = float(1.4);
-    static const float slope = (max_volts-min_volts)/wbx_tx_gain_ranges["PGA0"].stop();
+    static const double max_volts = 0.5, min_volts = 1.4;
+    static const double slope = (max_volts-min_volts)/wbx_tx_gain_ranges["PGA0"].stop();
 
     //calculate the voltage for the aux dac
-    float dac_volts = gain*slope + min_volts;
+    double dac_volts = gain*slope + min_volts;
 
     if (wbx_debug) std::cerr << boost::format(
         "WBX TX Gain: %f dB, dac_volts: %f V"
@@ -238,10 +238,10 @@ static float tx_pga0_gain_to_dac_volts(float &gain){
     return dac_volts;
 }
 
-void wbx_xcvr::set_tx_gain(float gain, const std::string &name){
+void wbx_xcvr::set_tx_gain(double gain, const std::string &name){
     assert_has(wbx_tx_gain_ranges.keys(), name, "wbx tx gain name");
     if(name == "PGA0"){
-        float dac_volts = tx_pga0_gain_to_dac_volts(gain);
+        double dac_volts = tx_pga0_gain_to_dac_volts(gain);
         _tx_gains[name] = gain;
 
         //write the new voltage to the aux dac
@@ -250,7 +250,7 @@ void wbx_xcvr::set_tx_gain(float gain, const std::string &name){
     else UHD_THROW_INVALID_CODE_PATH();
 }
 
-void wbx_xcvr::set_rx_gain(float gain, const std::string &name){
+void wbx_xcvr::set_rx_gain(double gain, const std::string &name){
     assert_has(wbx_rx_gain_ranges.keys(), name, "wbx rx gain name");
     if(name == "PGA0"){
         rx_pga0_gain_to_iobits(gain);
@@ -544,7 +544,7 @@ void wbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<float>(), key.name);
+        this->set_rx_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -645,7 +645,7 @@ void wbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<float>(), key.name);
+        this->set_tx_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:

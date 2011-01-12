@@ -70,7 +70,7 @@ public:
 private:
     double _lo_freq;
     double _bandwidth;
-    uhd::dict<std::string, float> _gains;
+    uhd::dict<std::string, double> _gains;
     max2118_write_regs_t _max2118_write_regs;
     max2118_read_regs_t _max2118_read_regs;
     boost::uint8_t _max2118_addr(void){
@@ -78,7 +78,7 @@ private:
     };
 
     void set_lo_freq(double target_freq);
-    void set_gain(float gain, const std::string &name);
+    void set_gain(double gain, const std::string &name);
     void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
@@ -418,17 +418,17 @@ void dbsrx::set_lo_freq(double target_freq){
  * \param gain the requested gain in dB
  * \return 5 bit the register value
  */
-static int gain_to_gc2_vga_reg(float &gain){
+static int gain_to_gc2_vga_reg(double &gain){
     int reg = 0;
     gain = dbsrx_gain_ranges["GC2"].clip(gain);
 
     // Half dB steps from 0-5dB, 1dB steps from 5-24dB
     if (gain < 5) {
         reg = boost::math::iround(31.0 - gain/0.5);
-        gain = float(boost::math::iround(gain) * 0.5);
+        gain = double(boost::math::iround(gain) * 0.5);
     } else {
         reg = boost::math::iround(22.0 - (gain - 4.0));
-        gain = float(boost::math::iround(gain));
+        gain = double(boost::math::iround(gain));
     }
 
     if (dbsrx_debug) std::cerr << boost::format(
@@ -444,16 +444,16 @@ static int gain_to_gc2_vga_reg(float &gain){
  * \param gain the requested gain in dB
  * \return dac voltage value
  */
-static float gain_to_gc1_rfvga_dac(float &gain){
+static double gain_to_gc1_rfvga_dac(double &gain){
     //clip the input
     gain = dbsrx_gain_ranges["GC1"].clip(gain);
 
     //voltage level constants
-    static const float max_volts = float(1.2), min_volts = float(2.7);
-    static const float slope = (max_volts-min_volts)/dbsrx_gain_ranges["GC1"].stop();
+    static const double max_volts = 1.2, min_volts = 2.7;
+    static const double slope = (max_volts-min_volts)/dbsrx_gain_ranges["GC1"].stop();
 
     //calculate the voltage for the aux dac
-    float dac_volts = gain*slope + min_volts;
+    double dac_volts = gain*slope + min_volts;
 
     if (dbsrx_debug) std::cerr << boost::format(
         "DBSRX GC1 Gain: %f dB, dac_volts: %f V"
@@ -465,7 +465,7 @@ static float gain_to_gc1_rfvga_dac(float &gain){
     return dac_volts;
 }
 
-void dbsrx::set_gain(float gain, const std::string &name){
+void dbsrx::set_gain(double gain, const std::string &name){
     assert_has(dbsrx_gain_ranges.keys(), name, "dbsrx gain name");
     if (name == "GC2"){
         _max2118_write_regs.gc2 = gain_to_gc2_vga_reg(gain);
@@ -584,7 +584,7 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<float>(), key.name);
+        this->set_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ENABLED:

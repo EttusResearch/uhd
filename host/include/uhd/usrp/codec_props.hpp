@@ -30,8 +30,8 @@ namespace uhd{ namespace usrp{
     enum codec_prop_t{
         CODEC_PROP_NAME           = 'n', //ro, std::string
         CODEC_PROP_OTHERS         = 'o', //ro, prop_names_t
-        CODEC_PROP_GAIN_I         = 'i', //rw, float
-        CODEC_PROP_GAIN_Q         = 'q', //rw, float
+        CODEC_PROP_GAIN_I         = 'i', //rw, double
+        CODEC_PROP_GAIN_Q         = 'q', //rw, double
         CODEC_PROP_GAIN_RANGE     = 'r', //ro, gain_range_t
         CODEC_PROP_GAIN_NAMES     = 'G'  //ro, prop_names_t
     };

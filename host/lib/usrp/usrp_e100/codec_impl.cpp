@@ -86,12 +86,12 @@ void usrp_e100_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<codec_prop_t>()){
     case CODEC_PROP_GAIN_I:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'A');
+        _codec_ctrl->set_rx_pga_gain(val.as<double>(), 'A');
         return;
 
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        _codec_ctrl->set_rx_pga_gain(val.as<float>(), 'B');
+        _codec_ctrl->set_rx_pga_gain(val.as<double>(), 'B');
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -141,7 +141,7 @@ void usrp_e100_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val){
     case CODEC_PROP_GAIN_I: //only one gain for I and Q
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == ad9862_pga_gain_name);
-        _codec_ctrl->set_tx_pga_gain(val.as<float>());
+        _codec_ctrl->set_tx_pga_gain(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

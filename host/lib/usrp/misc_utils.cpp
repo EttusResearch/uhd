@@ -39,24 +39,24 @@ static gain_range_t get_codec_gain_range(wax::obj codec, const std::string &name
     return codec[named_prop_t(CODEC_PROP_GAIN_RANGE, name)].as<gain_range_t>();
 }
 
-static float get_codec_gain_i(wax::obj codec, const std::string &name){
-    return codec[named_prop_t(CODEC_PROP_GAIN_I, name)].as<float>();
+static double get_codec_gain_i(wax::obj codec, const std::string &name){
+    return codec[named_prop_t(CODEC_PROP_GAIN_I, name)].as<double>();
 }
 
-static float get_codec_gain_q(wax::obj codec, const std::string &name){
-    return codec[named_prop_t(CODEC_PROP_GAIN_Q, name)].as<float>();
+static double get_codec_gain_q(wax::obj codec, const std::string &name){
+    return codec[named_prop_t(CODEC_PROP_GAIN_Q, name)].as<double>();
 }
 
-static void set_codec_gain_both(wax::obj codec, const std::string &name, float gain){
+static void set_codec_gain_both(wax::obj codec, const std::string &name, double gain){
     codec[named_prop_t(CODEC_PROP_GAIN_I, name)] = gain;
     codec[named_prop_t(CODEC_PROP_GAIN_Q, name)] = gain;
 }
 
-static void set_codec_gain_i(wax::obj codec, const std::string &name, float gain){
+static void set_codec_gain_i(wax::obj codec, const std::string &name, double gain){
     codec[named_prop_t(CODEC_PROP_GAIN_I, name)] = gain;
 }
 
-static void set_codec_gain_q(wax::obj codec, const std::string &name, float gain){
+static void set_codec_gain_q(wax::obj codec, const std::string &name, double gain){
     codec[named_prop_t(CODEC_PROP_GAIN_Q, name)] = gain;
 }
 
@@ -64,15 +64,15 @@ static void set_codec_gain_q(wax::obj codec, const std::string &name, float gain
  * subdev gain group helper functions:
  *    do this so we dont have to bind a templated function
  **********************************************************************/
-static float get_subdev_gain(wax::obj subdev, const std::string &name){
-    return subdev[named_prop_t(SUBDEV_PROP_GAIN, name)].as<float>();
+static double get_subdev_gain(wax::obj subdev, const std::string &name){
+    return subdev[named_prop_t(SUBDEV_PROP_GAIN, name)].as<double>();
 }
 
 static gain_range_t get_subdev_gain_range(wax::obj subdev, const std::string &name){
     return subdev[named_prop_t(SUBDEV_PROP_GAIN_RANGE, name)].as<gain_range_t>();
 }
 
-static void set_subdev_gain(wax::obj subdev, const std::string &name, float gain){
+static void set_subdev_gain(wax::obj subdev, const std::string &name, double gain){
     subdev[named_prop_t(SUBDEV_PROP_GAIN, name)] = gain;
 }
 

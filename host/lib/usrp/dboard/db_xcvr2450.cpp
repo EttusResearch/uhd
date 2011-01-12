@@ -109,7 +109,7 @@ public:
 private:
     double _lo_freq;
     double _rx_bandwidth, _tx_bandwidth;
-    uhd::dict<std::string, float> _tx_gains, _rx_gains;
+    uhd::dict<std::string, double> _tx_gains, _rx_gains;
     std::string _tx_ant, _rx_ant;
     int _ad9515div;
     max2829_regs_t _max2829_regs;
@@ -117,8 +117,8 @@ private:
     void set_lo_freq(double target_freq);
     void set_tx_ant(const std::string &ant);
     void set_rx_ant(const std::string &ant);
-    void set_tx_gain(float gain, const std::string &name);
-    void set_rx_gain(float gain, const std::string &name);
+    void set_tx_gain(double gain, const std::string &name);
+    void set_rx_gain(double gain, const std::string &name);
     void set_rx_bandwidth(double bandwidth);
     void set_tx_bandwidth(double bandwidth);
 
@@ -150,12 +150,12 @@ private:
      * Read the RSSI from the aux adc
      * \return the rssi in dB
      */
-    float get_rssi(void){
+    double get_rssi(void){
         //constants for the rssi calculation
-        static const float min_v = float(0.5), max_v = float(2.5);
-        static const float rssi_dyn_range = 60;
+        static const double min_v = 0.5, max_v = 2.5;
+        static const double rssi_dyn_range = 60;
         //calculate the rssi from the voltage
-        float voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
+        double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
         return rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
     }
 };
@@ -355,14 +355,14 @@ void xcvr2450::set_rx_ant(const std::string &ant){
  * \param gain the requested gain in dB
  * \return 6 bit the register value
  */
-static int gain_to_tx_vga_reg(float &gain){
+static int gain_to_tx_vga_reg(double &gain){
     //calculate the register value
     int reg = std::clip(boost::math::iround(gain*60/30.0) + 3, 0, 63);
 
     //calculate the actual gain value
     if (reg < 4)       gain = 0;
-    else if (reg < 48) gain = float(reg/2 - 1);
-    else               gain = float(reg/2.0 - 1.5);
+    else if (reg < 48) gain = double(reg/2 - 1);
+    else               gain = double(reg/2.0 - 1.5);
 
     //return register value
     return reg;
@@ -374,7 +374,7 @@ static int gain_to_tx_vga_reg(float &gain){
  * \param gain the requested gain in dB
  * \return gain enum value
  */
-static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
+static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(double &gain){
     int reg = std::clip(boost::math::iround(gain*3/5.0), 0, 3);
     switch(reg){
     case 0:
@@ -399,9 +399,9 @@ static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(float &gain){
  * \param gain the requested gain in dB
  * \return 5 bit the register value
  */
-static int gain_to_rx_vga_reg(float &gain){
+static int gain_to_rx_vga_reg(double &gain){
     int reg = std::clip(boost::math::iround(gain/2.0), 0, 31);
-    gain = float(reg*2);
+    gain = double(reg*2);
     return reg;
 }
 
@@ -411,7 +411,7 @@ static int gain_to_rx_vga_reg(float &gain){
  * \param gain the requested gain in dB
  * \return 2 bit the register value
  */
-static int gain_to_rx_lna_reg(float &gain){
+static int gain_to_rx_lna_reg(double &gain){
     int reg = std::clip(boost::math::iround(gain*2/30.5) + 1, 0, 3);
     switch(reg){
     case 0:
@@ -422,7 +422,7 @@ static int gain_to_rx_lna_reg(float &gain){
     return reg;
 }
 
-void xcvr2450::set_tx_gain(float gain, const std::string &name){
+void xcvr2450::set_tx_gain(double gain, const std::string &name){
     assert_has(xcvr_tx_gain_ranges.keys(), name, "xcvr tx gain name");
     if (name == "VGA"){
         _max2829_regs.tx_vga_gain = gain_to_tx_vga_reg(gain);
@@ -436,7 +436,7 @@ void xcvr2450::set_tx_gain(float gain, const std::string &name){
     _tx_gains[name] = gain;
 }
 
-void xcvr2450::set_rx_gain(float gain, const std::string &name){
+void xcvr2450::set_rx_gain(double gain, const std::string &name){
     assert_has(xcvr_rx_gain_ranges.keys(), name, "xcvr rx gain name");
     if (name == "VGA"){
         _max2829_regs.rx_vga_gain = gain_to_rx_vga_reg(gain);
@@ -643,7 +643,7 @@ void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<float>(), key.name);
+        this->set_rx_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -742,7 +742,7 @@ void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<float>(), key.name);
+        this->set_tx_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_BANDWIDTH:

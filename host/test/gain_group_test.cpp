@@ -35,17 +35,17 @@ public:
         return gain_range_t(0, 90, 1);
     }
 
-    float get_value(void){
+    double get_value(void){
         return _gain;
     }
 
-    void set_value(float gain){
-        float step = get_range().step();
+    void set_value(double gain){
+        double step = get_range().step();
         _gain = step*rint(gain/step);
     }
 
 private:
-    float _gain;
+    double _gain;
 };
 
 class gain_element2{
@@ -55,17 +55,17 @@ public:
         return gain_range_t(-20, 10, 0.1);
     }
 
-    float get_value(void){
+    double get_value(void){
         return _gain;
     }
 
-    void set_value(float gain){
-        float step = get_range().step();
+    void set_value(double gain){
+        double step = get_range().step();
         _gain = step*rint(gain/step);
     }
 
 private:
-    float _gain;
+    double _gain;
 };
 
 //create static instances of gain elements to be shared by the tests

@@ -63,8 +63,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, wave_type;
     size_t total_duration, spb;
-    double rate, freq, wave_freq;
-    float ampl, gain;
+    double rate, freq, gain, wave_freq;
+    float ampl;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -76,7 +76,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(1.5e6), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
-        ("gain", po::value<float>(&gain)->default_value(float(0)), "gain for the RF chain")
+        ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
     ;

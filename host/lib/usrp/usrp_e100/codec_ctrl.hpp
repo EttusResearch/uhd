@@ -57,7 +57,7 @@ public:
      * \param which which of the 4 adcs
      * \return a value in volts
      */
-    virtual float read_aux_adc(aux_adc_t which) = 0;
+    virtual double read_aux_adc(aux_adc_t which) = 0;
 
     //! aux dac identifier constants
     enum aux_dac_t{
@@ -72,19 +72,19 @@ public:
      * \param which which of the 4 dacs
      * \param volts the level in in volts
      */
-    virtual void write_aux_dac(aux_dac_t which, float volts) = 0;
+    virtual void write_aux_dac(aux_dac_t which, double volts) = 0;
 
     //! Set the TX PGA gain
-    virtual void set_tx_pga_gain(float gain) = 0;
+    virtual void set_tx_pga_gain(double gain) = 0;
 
     //! Get the TX PGA gain
-    virtual float get_tx_pga_gain(void) = 0;
+    virtual double get_tx_pga_gain(void) = 0;
 
     //! Set the RX PGA gain ('A' or 'B')
-    virtual void set_rx_pga_gain(float gain, char which) = 0;
+    virtual void set_rx_pga_gain(double gain, char which) = 0;
 
     //! Get the RX PGA gain ('A' or 'B')
-    virtual float get_rx_pga_gain(char which) = 0;
+    virtual double get_rx_pga_gain(char which) = 0;
 };
 
 #endif /* INCLUDED_USRP_E100_CODEC_CTRL_HPP */

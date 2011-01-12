@@ -132,8 +132,8 @@ private:
     wax_obj_proxy::sptr _rx_codec_proxy;
     wax_obj_proxy::sptr _tx_codec_proxy;
 
-    void rx_codec_set_gain(float, const std::string &);
-    uhd::dict<std::string, float> _codec_rx_gains;
+    void rx_codec_set_gain(double, const std::string &);
+    uhd::dict<std::string, double> _codec_rx_gains;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
