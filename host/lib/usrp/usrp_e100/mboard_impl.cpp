@@ -36,6 +36,11 @@ void usrp_e100_impl::mboard_init(void){
         boost::bind(&usrp_e100_impl::mboard_set, this, _1, _2)
     );
 
+    //set the ticks per seconds into the vita time control
+    _iface->poke32(UE_REG_TIME64_TPS,
+        boost::uint32_t(_clock_ctrl->get_fpga_clock_rate())
+    );
+
     //init the clock config
     _clock_config = clock_config_t::internal();
     update_clock_config();
@@ -130,6 +135,22 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     case MBOARD_PROP_EEPROM_MAP:
         val = _iface->mb_eeprom;
         return;
+
+    case MBOARD_PROP_TIME_NOW: while(true){
+        uint32_t secs = _iface->peek32(UE_REG_RB_TIME_NOW_SECS);
+        uint32_t ticks = _iface->peek32(UE_REG_RB_TIME_NOW_TICKS);
+        if (secs != _iface->peek32(UE_REG_RB_TIME_NOW_SECS)) continue;
+        val = time_spec_t(secs, ticks, _clock_ctrl->get_fpga_clock_rate());
+        return;
+    }
+
+    case MBOARD_PROP_TIME_PPS: while(true){
+        uint32_t secs = _iface->peek32(UE_REG_RB_TIME_PPS_SECS);
+        uint32_t ticks = _iface->peek32(UE_REG_RB_TIME_PPS_TICKS);
+        if (secs != _iface->peek32(UE_REG_RB_TIME_PPS_SECS)) continue;
+        val = time_spec_t(secs, ticks, _clock_ctrl->get_fpga_clock_rate());
+        return;
+    }
 
     default: UHD_THROW_PROP_GET_ERROR();
     }

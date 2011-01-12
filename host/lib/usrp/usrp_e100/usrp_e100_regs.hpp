@@ -114,6 +114,16 @@
 #define	UE_REG_ATR_FULL_RXSIDE  UE_REG_ATR_BASE + 12
 #define	UE_REG_ATR_FULL_TXSIDE  UE_REG_ATR_BASE + 14
 
+///////////////////////////////////////////////////
+// Slave 7 -- Readback Mux 32
+
+#define UE_REG_RB_MUX_32_BASE  UE_REG_SLAVE(7)
+
+#define UE_REG_RB_TIME_NOW_SECS   UE_REG_RB_MUX_32_BASE + 0
+#define UE_REG_RB_TIME_NOW_TICKS  UE_REG_RB_MUX_32_BASE + 4
+#define UE_REG_RB_TIME_PPS_SECS   UE_REG_RB_MUX_32_BASE + 8
+#define UE_REG_RB_TIME_PPS_TICKS  UE_REG_RB_MUX_32_BASE + 12
+
 /////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
