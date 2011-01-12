@@ -37,10 +37,7 @@ void usrp_e100_impl::mboard_init(void){
     );
 
     //init the clock config
-    _clock_config.ref_source = clock_config_t::REF_AUTO;
-    _clock_config.pps_source = clock_config_t::PPS_SMA;
-    _clock_config.pps_polarity = clock_config_t::PPS_NEG;
-
+    _clock_config = clock_config_t::internal();
     update_clock_config();
 }
 

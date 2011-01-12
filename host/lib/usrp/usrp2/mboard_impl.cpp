@@ -142,7 +142,10 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     }
     std::cout << boost::format("mboard%d MIMO %s") % _index %
         (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
-    init_clock_config();
+
+    //init the clock config
+    _clock_config = clock_config_t::internal();
+    update_clock_config();
 
     //init the codec before the dboard
     codec_init();
@@ -163,16 +166,6 @@ usrp2_mboard_impl::~usrp2_mboard_impl(void){
 /***********************************************************************
  * Helper Methods
  **********************************************************************/
-void usrp2_mboard_impl::init_clock_config(void){
-    //setup the clock configuration settings
-    _clock_config.ref_source = clock_config_t::REF_INT;
-    _clock_config.pps_source = clock_config_t::PPS_SMA;
-    _clock_config.pps_polarity = clock_config_t::PPS_NEG;
-
-    //update the clock config (sends a control packet)
-    update_clock_config();
-}
-
 void usrp2_mboard_impl::update_clock_config(void){
     boost::uint32_t pps_flags = 0;
 

@@ -120,7 +120,6 @@ private:
 
     //methods and shadows for clock configuration
     uhd::clock_config_t _clock_config;
-    void init_clock_config(void);
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
