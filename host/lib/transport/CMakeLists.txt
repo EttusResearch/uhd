@@ -37,9 +37,6 @@ IF(ENABLE_USB)
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.hpp
     )
-    IF(MSVC) #include our custom stdint for libusb
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/msvc)
-    ENDIF(MSVC)
 ELSE(ENABLE_USB)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_dummy_impl.cpp
