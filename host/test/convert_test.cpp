@@ -52,14 +52,14 @@ template <typename Range> static void loopback(
     convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert to intermediate type
-    convert::io_type_to_otw_type(
-        io_type, otw_type, input0, output0, nsamps
-    );
+    convert::get_converter_cpu_to_otw(
+        io_type, otw_type, input0.size(), output0.size()
+    )(input0, output0, nsamps);
 
     //convert back to host type
-    convert::otw_type_to_io_type(
-        io_type, otw_type, input1, output1, nsamps
-    );
+    convert::get_converter_otw_to_cpu(
+        io_type, otw_type, input1.size(), output1.size()
+    )(input1, output1, nsamps);
 }
 
 /***********************************************************************
@@ -177,14 +177,14 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
     convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert float to intermediate
-    convert::io_type_to_otw_type(
-        io_type_in, otw_type, input0, output0, nsamps
-    );
+    convert::get_converter_cpu_to_otw(
+        io_type_in, otw_type, input0.size(), output0.size()
+    )(input0, output0, nsamps);
 
     //convert intermediate to short
-    convert::otw_type_to_io_type(
-        io_type_out, otw_type, input1, output1, nsamps
-    );
+    convert::get_converter_otw_to_cpu(
+        io_type_out, otw_type, input1.size(), output1.size()
+    )(input1, output1, nsamps);
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){
@@ -217,14 +217,14 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
     convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert short to intermediate
-    convert::io_type_to_otw_type(
-        io_type_in, otw_type, input0, output0, nsamps
-    );
+    convert::get_converter_cpu_to_otw(
+        io_type_in, otw_type, input0.size(), output0.size()
+    )(input0, output0, nsamps);
 
     //convert intermediate to float
-    convert::otw_type_to_io_type(
-        io_type_out, otw_type, input1, output1, nsamps
-    );
+    convert::get_converter_otw_to_cpu(
+        io_type_out, otw_type, input1.size(), output1.size()
+    )(input1, output1, nsamps);
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){

@@ -58,37 +58,31 @@ namespace uhd{ namespace convert{
     );
 
     /*!
-     * Convert IO samples to OWT samples:
-     *
+     * Get a converter function that converts cpu to otw.
      * \param io_type the type of the input samples
      * \param otw_type the type of the output samples
-     * \param input_buffs input buffers to read samples
-     * \param output_buffs output buffers to write samples
-     * \param nsamps_per_io_buff samples per IO buffer
+     * \param num_input_buffs the number of inputs
+     * \param num_output_buffs the number of outputs
      */
-    UHD_API void io_type_to_otw_type(
+    UHD_API const function_type &get_converter_cpu_to_otw(
         const io_type_t &io_type,
         const otw_type_t &otw_type,
-        input_type &input_buffs,
-        output_type &output_buffs,
-        size_t nsamps_per_io_buff
+        size_t num_input_buffs,
+        size_t num_output_buffs
     );
 
     /*!
-     * Convert OTW samples to IO samples:
-     *
-     * \param io_type the type of the output samples
-     * \param otw_type the type of the input samples
-     * \param input_buffs input buffers to read samples
-     * \param output_buffs output buffers to write samples
-     * \param nsamps_per_io_buff samples per IO buffer
+     * Get a converter function that converts otw to cpu.
+     * \param io_type the type of the input samples
+     * \param otw_type the type of the output samples
+     * \param num_input_buffs the number of inputs
+     * \param num_output_buffs the number of outputs
      */
-    UHD_API void otw_type_to_io_type(
+    UHD_API const function_type &get_converter_otw_to_cpu(
         const io_type_t &io_type,
         const otw_type_t &otw_type,
-        input_type &input_buffs,
-        output_type &output_buffs,
-        size_t nsamps_per_io_buff
+        size_t num_input_buffs,
+        size_t num_output_buffs
     );
 
 }} //namespace

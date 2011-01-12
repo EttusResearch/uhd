@@ -90,28 +90,22 @@ void uhd::convert::register_converter(
 /***********************************************************************
  * The converter functions
  **********************************************************************/
-void uhd::convert::io_type_to_otw_type(
+const convert::function_type &convert::get_converter_cpu_to_otw(
     const io_type_t &io_type,
     const otw_type_t &otw_type,
-    input_type &input_buffs,
-    output_type &output_buffs,
-    size_t nsamps_per_io_buff
+    size_t num_input_buffs,
+    size_t num_output_buffs
 ){
-    pred_type pred = make_pred(io_type, otw_type, input_buffs.size(), output_buffs.size());
-    fcn_table_type table = get_cpu_to_otw_table();
-    function_type fcn = table.at(pred).fcn;
-    fcn(input_buffs, output_buffs, nsamps_per_io_buff);
+    pred_type pred = make_pred(io_type, otw_type, num_input_buffs, num_output_buffs);
+    return get_cpu_to_otw_table().at(pred).fcn;
 }
 
-void uhd::convert::otw_type_to_io_type(
+const convert::function_type &convert::get_converter_otw_to_cpu(
     const io_type_t &io_type,
     const otw_type_t &otw_type,
-    input_type &input_buffs,
-    output_type &output_buffs,
-    size_t nsamps_per_io_buff
+    size_t num_input_buffs,
+    size_t num_output_buffs
 ){
-    pred_type pred = make_pred(io_type, otw_type, input_buffs.size(), output_buffs.size());
-    fcn_table_type table = get_otw_to_cpu_table();
-    function_type fcn = table.at(pred).fcn;
-    fcn(input_buffs, output_buffs, nsamps_per_io_buff);
+    pred_type pred = make_pred(io_type, otw_type, num_input_buffs, num_output_buffs);
+    return get_otw_to_cpu_table().at(pred).fcn;
 }
