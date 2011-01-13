@@ -238,7 +238,7 @@ template <typename T> UHD_INLINE T get_context_code(
     ){
         uhd::convert::function_type converter(
             uhd::convert::get_converter_otw_to_cpu(
-                io_type, otw_type, 1, buffs.size()
+                io_type, otw_type, 1, chans_per_otw_buff
         ));
 
         switch(recv_mode){
@@ -374,7 +374,7 @@ template <typename T> UHD_INLINE T get_context_code(
     ){
         uhd::convert::function_type converter(
             uhd::convert::get_converter_cpu_to_otw(
-                io_type, otw_type, buffs.size(), 1
+                io_type, otw_type, chans_per_otw_buff, 1
         ));
 
         //translate the metadata to vrt if packet info
