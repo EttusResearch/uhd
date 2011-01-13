@@ -38,6 +38,7 @@ IF(ENABLE_USRP1)
         ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/soft_time_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.cpp

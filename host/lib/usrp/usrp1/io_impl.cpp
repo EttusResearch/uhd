@@ -208,6 +208,7 @@ size_t usrp1_impl::send(
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
+    _soft_time_ctrl->send_pre(metadata, timeout);
     size_t num_samps_sent = vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
@@ -294,6 +295,7 @@ size_t usrp1_impl::recv(
         0,                                         //vrt header offset
         _rx_subdev_spec.size()                     //num channels
     );
+    _soft_time_ctrl->recv_post(metadata, num_samps_recvd);
 
     //handle the polling for overflow conditions
     _io_impl->overflow_poll_samp_count += num_samps_recvd;

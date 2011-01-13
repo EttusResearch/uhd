@@ -161,6 +161,10 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
                        usrp_ctrl::sptr ctrl_transport)
  : _data_transport(data_transport), _ctrl_transport(ctrl_transport)
 {
+    _soft_time_ctrl = soft_time_ctrl::make(
+        boost::bind(&usrp1_impl::stream_on_off, this, _1)
+    );
+
     _iface = usrp1_iface::make(ctrl_transport);
 
     //create clock interface
