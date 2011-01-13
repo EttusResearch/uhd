@@ -29,7 +29,7 @@
 
 static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
 static const double mimo_clock_delay_usrp_n2xx = 0; //TODO
-static const int mimo_clock_sync_delay_cycles = 134;
+static const int mimo_clock_sync_delay_cycles = 137;
 
 using namespace uhd;
 using namespace uhd::usrp;
