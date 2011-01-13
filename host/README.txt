@@ -25,6 +25,7 @@ WBX + Simple GDB
 DBSRX
 DBSRX2
 TVRX
+TVRX2
 SBX
 
 ###############################################
