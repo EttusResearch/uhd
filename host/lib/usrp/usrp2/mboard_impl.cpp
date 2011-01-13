@@ -25,15 +25,12 @@
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
-static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
-static const double mimo_clock_delay_usrp_n2xx = 0; //TODO
-static const int mimo_clock_sync_delay_cycles = 137;
+static const double mimo_clock_delay_usrp_all = 4.18e-9;
+static const size_t mimo_clock_sync_delay_cycles = 137;
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::posix_time;
 
 /***********************************************************************
  * Structors
@@ -219,11 +216,8 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
-            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp_n2xx);
-            break;
-
         case usrp2_iface::USRP2_REV4:
-            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp2_rev4);
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp_all);
             break;
 
         default: break; //not handled
