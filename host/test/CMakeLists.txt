@@ -51,6 +51,7 @@ ENDFOREACH(test_source)
 # demo of a loadable module
 ########################################################################
 ADD_LIBRARY(module_test MODULE module_test.cpp)
+TARGET_LINK_LIBRARIES(module_test uhd)
 
 INSTALL(TARGETS
    RUNTIME DESTINATION ${PKG_DATA_DIR}/tests

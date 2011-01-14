@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(test_ranges_bounds){
     BOOST_CHECK_CLOSE(mr.stop(), 60.0, tolerance);
     BOOST_CHECK_CLOSE(mr.step(), 0.1, tolerance);
 
-    BOOST_CHECK_EQUAL(mr.size(), 2);
+    BOOST_CHECK_EQUAL(mr.size(), unsigned(2));
 
     BOOST_CHECK_CLOSE(mr[0].start(), -1.0, tolerance);
     BOOST_CHECK_CLOSE(mr[0].stop(), +1.0, tolerance);
