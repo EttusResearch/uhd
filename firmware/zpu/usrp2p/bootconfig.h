@@ -1,6 +1,6 @@
 /* -*- c -*- */
 /*
- * Copyright 2009 Ettus Research LLC
+ * Copyright 2009-2011 Ettus Research LLC
  * 
  * This file is part of GNU Radio
  * 

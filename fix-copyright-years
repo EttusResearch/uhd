@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import re
-import sys
+import optparse
 import datetime
 import subprocess
 import multiprocessing
@@ -15,7 +15,7 @@ def get_co_line(lines):
         if co_line_matcher.match(line): return line, i
     return None, None
 
-def fix_co_years(files):
+def fix_co_years(files, keep_years):
     for file in files:
         print file
         lines = open(file).readlines()
@@ -41,6 +41,9 @@ def fix_co_years(files):
             print '    format error on line %d: "%s"'%(num, line), e
             continue
 
+        #keep years means log years is a superset
+        if keep_years: log_years = min(co_years+log_years), max(co_years+log_years)
+
         if log_years != co_years:
             print '    log years: %s != copyright years: %s'%(log_years, co_years)
             year_now = datetime.datetime.now().year
@@ -51,15 +54,17 @@ def fix_co_years(files):
             open(file, 'w').write(new_text)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2: print "Usage: %s path/"%sys.argv[0]; exit()
+    parser = optparse.OptionParser(usage="usage: %prog [options] path")
+    parser.add_option("-k", "--keep", action="store_true", help="keep copyright years", default=False)
+    (options, args) = parser.parse_args()
 
     #get recursive list of files in the repo
-    files = command('git', 'ls-tree', '--name-only', 'HEAD', '-r', sys.argv[1]).splitlines()
+    files = command('git', 'ls-tree', '--name-only', 'HEAD', '-r', args[0]).splitlines()
 
     #start n+1 processes to handle the files
     num_procs = multiprocessing.cpu_count()
     procs = [multiprocessing.Process(
-        target=lambda *files: fix_co_years(files),
+        target=lambda *files: fix_co_years(files, keep_years=options.keep),
         args=files[num::num_procs],
     ) for num in range(num_procs)]
     map(multiprocessing.Process.start, procs)

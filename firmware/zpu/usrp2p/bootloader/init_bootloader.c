@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2010 Ettus Research LLC
+ * Copyright 2010-2011 Ettus Research LLC
  *
  */
 
