@@ -27,26 +27,14 @@ SET(_uhd_disabled_components "" CACHE INTERNAL "" FORCE)
 #  - deps a list of dependencies
 #  - dis the default disable setting
 ########################################################################
-FUNCTION(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
-    INCLUDE(CMakeDependentOption)
+MACRO(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
     MESSAGE(STATUS "")
     MESSAGE(STATUS "Configuring ${name} support...")
-    IF(DEFINED ${var})
-        MESSAGE(STATUS "${name} support configured ${var}=${${var}}")
-    ELSE(DEFINED ${var}) #not defined: automatic enabling of component
-        MESSAGE(STATUS "${name} support configured automatically")
-    ENDIF(DEFINED ${var})
+    MESSAGE(STATUS "Manually override with -D${var}=ON/OFF")
 
     #setup the dependent option for this component
+    INCLUDE(CMakeDependentOption)
     CMAKE_DEPENDENT_OPTION(${var} "enable ${name} support" ${enb} "${deps}" ${dis})
-
-    #remove previous occurrence of component in either list
-    IF(DEFINED _uhd_enabled_components)
-        LIST(REMOVE_ITEM _uhd_enabled_components ${name})
-    ENDIF(DEFINED _uhd_enabled_components)
-    IF(DEFINED _uhd_disabled_components)
-        LIST(REMOVE_ITEM _uhd_disabled_components ${name})
-    ENDIF(DEFINED _uhd_disabled_components)
 
     #append the component into one of the lists
     IF(${var})
@@ -60,7 +48,7 @@ FUNCTION(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
     #make components lists into global variables
     SET(_uhd_enabled_components ${_uhd_enabled_components} CACHE INTERNAL "" FORCE)
     SET(_uhd_disabled_components ${_uhd_disabled_components} CACHE INTERNAL "" FORCE)
-ENDFUNCTION(LIBUHD_REGISTER_COMPONENT)
+ENDMACRO(LIBUHD_REGISTER_COMPONENT)
 
 ########################################################################
 # Print the registered component summary
