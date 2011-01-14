@@ -97,8 +97,14 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
         N100_EEPROM_ADDR, USRP_N100_OFFSETS["name"], NAME_MAX_LEN
     ));
 
-    //empty serial correction: use the mac address
-    if (mb_eeprom["serial"].empty()) mb_eeprom["serial"] = mb_eeprom["mac-addr"];
+    //Empty serial correction: use the mac address to determine serial.
+    //Older usrp2 models don't have a serial burned into EEPROM.
+    //The lower mac address bits will function as the serial number.
+    if (mb_eeprom["serial"].empty()){
+        byte_vector_t mac_addr_bytes = mac_addr_t::from_string(mb_eeprom["mac-addr"]).to_bytes();
+        unsigned serial = mac_addr_bytes.at(5) | (unsigned(mac_addr_bytes.at(4) & 0x0f) << 8);
+        mb_eeprom["serial"] = boost::lexical_cast<std::string>(serial);
+    }
 }
 
 static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
