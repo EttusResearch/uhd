@@ -62,5 +62,4 @@ LIBUHD_PYTHON_GEN_SOURCE(
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_impl.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/convert_general.cpp
 )

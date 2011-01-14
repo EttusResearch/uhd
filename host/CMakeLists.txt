@@ -90,7 +90,7 @@ IF(UNIX AND EXISTS "/usr/lib64")
 ENDIF(UNIX AND EXISTS "/usr/lib64")
 
 SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43" "1.44.0" "1.44")
-FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS
     date_time
     filesystem
     program_options
@@ -102,6 +102,23 @@ FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+########################################################################
+# Check Python Modules
+########################################################################
+INCLUDE(UHDPython)
+
+PYTHON_CHECK_MODULE(
+    "Python version 2.6 or greater"
+    "platform" "platform.python_version() >= '2.6'"
+    HAVE_PYTHON_PLAT_MIN_VERSION
+)
+
+PYTHON_CHECK_MODULE(
+    "Cheetah templates 2.0.0 or greater"
+    "Cheetah" "Cheetah.Version >= '2.0.0'"
+    HAVE_PYTHON_MODULE_CHEETAH
+)
 
 ########################################################################
 # Create Uninstall Target
@@ -141,7 +158,7 @@ INSTALL(FILES
 ########################################################################
 # Register top level components
 ########################################################################
-SET(ENABLE_LIBUHD ON) #always enabled
+LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_CHEETAH" OFF)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)

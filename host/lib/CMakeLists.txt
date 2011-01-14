@@ -16,27 +16,6 @@
 #
 
 ########################################################################
-# Check Python Modules
-########################################################################
-INCLUDE(UHDPython)
-
-PYTHON_CHECK_MODULE(
-    "Python version 2.6 or greater"
-    "platform" "platform.python_version() >= '2.6'"
-    HAVE_PYTHON_PLAT_MIN_VERSION
-)
-
-PYTHON_CHECK_MODULE(
-    "Cheetah templates 2.0.0 or greater"
-    "Cheetah" "Cheetah.Version >= '2.0.0'"
-    HAVE_PYTHON_MODULE_CHEETAH
-)
-
-IF(NOT HAVE_PYTHON_PLAT_MIN_VERSION OR NOT HAVE_PYTHON_MODULE_CHEETAH)
-    MESSAGE(FATAL_ERROR "Error: python requirements not met for the build system.")
-ENDIF(NOT HAVE_PYTHON_PLAT_MIN_VERSION OR NOT HAVE_PYTHON_MODULE_CHEETAH)
-
-########################################################################
 # Helpful Macros
 ########################################################################
 MACRO(LIBUHD_APPEND_SOURCES)
@@ -128,6 +107,7 @@ LIBUHD_APPEND_SOURCES(
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
+SET_TARGET_PROPERTIES(uhd PROPERTIES SOVERSION ${UHD_VERSION_MAJOR})
 
 INSTALL(TARGETS uhd
     LIBRARY DESTINATION ${LIBRARY_DIR} # .so file
