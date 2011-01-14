@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import sys
 import datetime
 import subprocess
 import multiprocessing
@@ -50,8 +51,10 @@ def fix_co_years(files):
             open(file, 'w').write(new_text)
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2: print "Usage: %s path/"%sys.argv[0]; exit()
+
     #get recursive list of files in the repo
-    files = command('git', 'ls-tree', '--name-only', 'HEAD', '-r').splitlines()
+    files = command('git', 'ls-tree', '--name-only', 'HEAD', '-r', sys.argv[1]).splitlines()
 
     #start n+1 processes to handle the files
     num_procs = multiprocessing.cpu_count()
