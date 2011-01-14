@@ -36,13 +36,13 @@ module u1e_core
    localparam SR_TX_CTRL = 24;   // 2 regs
    localparam SR_TIME64 = 28;    // 4 regs
 
-   wire [7:0]	COMPAT_NUM = 8'd2;
+   wire [7:0]	COMPAT_NUM = 8'd3;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst = rst_fpga;
    
    wire 	pps_int;
-   wire [63:0] 	vita_time;
+   wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
    
    wire [7:0] 	set_addr;
@@ -299,7 +299,6 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s7_ack = 0;
    assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
@@ -427,13 +426,26 @@ module u1e_core
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
       .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
+   // /////////////////////////////////////////////////////////////////////////
+   // Readback mux 32 -- Slave #7
+
+   wb_readback_mux_16LE readback_mux_32
+     (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s7_stb),
+      .wb_adr_i(s7_adr), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
+
+      .word00(vita_time[63:32]),    .word01(vita_time[31:0]),
+      .word02(vita_time_pps[63:32]),.word03(vita_time_pps[31:0]),
+      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
+      .word08(32'b0),.word09(32'b0),.word10(32'b0),.word11(32'b0),
+      .word12(32'b0),.word13(32'b0),.word14(32'b0),.word15(32'b0)
+      );
 
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
    time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
      (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int));
+      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int));
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
