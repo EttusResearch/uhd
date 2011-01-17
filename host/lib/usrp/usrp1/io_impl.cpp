@@ -91,6 +91,7 @@ struct usrp1_impl::io_impl{
     void commit_send_buff(offset_send_buffer::sptr, offset_send_buffer::sptr, size_t);
     void flush_send_buff(void);
     bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &, double);
+    bool transmitting_enb;
 };
 
 /*!
@@ -183,6 +184,28 @@ void usrp1_impl::io_init(void){
     _tx_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
+
+    _soft_time_ctrl = soft_time_ctrl::make(
+        boost::bind(&usrp1_impl::rx_stream_on_off, this, _1)
+    );
+
+    rx_stream_on_off(false);
+    tx_stream_on_off(false);
+}
+
+void usrp1_impl::rx_stream_on_off(bool enb){
+    return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, enb, 0, 0, 0);
+    //drain any junk in the receive transport after stop streaming command
+    while(not enb and _data_transport->get_recv_buff().get() != NULL){
+        /* NOP */
+    }
+}
+
+void usrp1_impl::tx_stream_on_off(bool enb){
+    if (not enb) _io_impl->flush_send_buff();
+    _codec_ctrls[DBOARD_SLOT_A]->enable_tx_digital(enb);
+    _codec_ctrls[DBOARD_SLOT_B]->enable_tx_digital(enb);
+    _io_impl->transmitting_enb = enb;
 }
 
 /***********************************************************************
@@ -208,7 +231,9 @@ size_t usrp1_impl::send(
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
-    _soft_time_ctrl->send_pre(metadata, timeout);
+    if (_soft_time_ctrl->send_pre(metadata, timeout)) return num_samps;
+    if (not _io_impl->transmitting_enb) tx_stream_on_off(true);
+
     size_t num_samps_sent = vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
@@ -222,9 +247,11 @@ size_t usrp1_impl::send(
         _tx_subdev_spec.size()                     //num channels
     );
 
-    //Don't honor sob because it is normal to be always bursting...
-    //handle eob flag (commit the buffer)
-    if (metadata.end_of_burst) _io_impl->flush_send_buff();
+    //handle eob flag (commit the buffer, disable the DACs)
+    //check num samps sent to avoid flush on incomplete/timeout
+    if (metadata.end_of_burst and num_samps_sent == num_samps){
+        this->tx_stream_on_off(false);
+    }
 
     //handle the polling for underflow conditions
     _io_impl->underflow_poll_samp_count += num_samps_sent;
@@ -295,6 +322,7 @@ size_t usrp1_impl::recv(
         0,                                         //vrt header offset
         _rx_subdev_spec.size()                     //num channels
     );
+
     _soft_time_ctrl->recv_post(metadata, num_samps_recvd);
 
     //handle the polling for overflow conditions

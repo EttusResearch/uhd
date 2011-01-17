@@ -240,14 +240,6 @@ void usrp1_impl::mboard_init(void)
     }
 }
 
-void usrp1_impl::stream_on_off(bool stream){
-    return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, stream, 0, 0, 0);
-    //drain any junk in the receive transport after stop streaming command
-    while(not stream and _data_transport->get_recv_buff(0.0).get() != NULL){
-        /* NOP */
-    }
-}
-
 /***********************************************************************
  * Mboard Get
  **********************************************************************/

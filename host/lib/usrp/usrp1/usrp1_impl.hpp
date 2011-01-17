@@ -124,7 +124,8 @@ private:
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
-    void stream_on_off(bool);
+    void rx_stream_on_off(bool);
+    void tx_stream_on_off(bool);
     void handle_overrun(size_t);
 
     //underrun and overrun poll intervals

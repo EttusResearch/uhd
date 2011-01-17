@@ -55,6 +55,7 @@ public:
 
     //duc control
     void set_duc_freq(double freq);
+    void enable_tx_digital(bool enb);
 
     //pga gain control
     void set_tx_pga_gain(double);
@@ -419,6 +420,11 @@ void usrp1_codec_ctrl_impl::set_duc_freq(double freq)
     this->send_reg(21);
     this->send_reg(22);
     this->send_reg(23);
+}
+
+void usrp1_codec_ctrl_impl::enable_tx_digital(bool enb){
+    _ad9862_regs.tx_digital_pd = (enb)? 0 : 1;
+    this->send_reg(8);
 }
 
 /***********************************************************************
