@@ -29,24 +29,28 @@ using namespace uhd::transport;
 namespace pt = boost::posix_time;
 namespace lt = boost::local_time;
 
+static const time_spec_t TWIDDLE(0.0015);
+
 /***********************************************************************
  * Utility helper functions
  **********************************************************************/
 
 //TODO put these in time_spec_t (maybe useful)
 
+static const double time_dur_tps = double(pt::time_duration::ticks_per_second());
+
 time_spec_t time_dur_to_time_spec(const pt::time_duration &time_dur){
     return time_spec_t(
         time_dur.total_seconds(),
-        time_dur.fractional_seconds(),
-        pt::time_duration::ticks_per_second()
+        long(time_dur.fractional_seconds()),
+        time_dur_tps
     );
 }
 
 pt::time_duration time_spec_to_time_dur(const time_spec_t &time_spec){
     return pt::time_duration(
-        0, 0, time_spec.get_full_secs(),
-        time_spec.get_tick_count(pt::time_duration::ticks_per_second())
+        0, 0, long(time_spec.get_full_secs()),
+        time_spec.get_tick_count(time_dur_tps)
     );
 }
 
@@ -55,6 +59,7 @@ pt::time_duration time_spec_to_time_dur(const time_spec_t &time_spec){
  **********************************************************************/
 class soft_time_ctrl_impl : public soft_time_ctrl{
 public:
+
     soft_time_ctrl_impl(const cb_fcn_type &stream_on_off):
         _nsamps_remaining(0),
         _stream_mode(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS),
@@ -69,32 +74,53 @@ public:
     }
 
     ~soft_time_ctrl_impl(void){
-        _thread_running = false;
+        _thread_group.interrupt_all();
         _thread_group.join_all();
     }
 
+    /*******************************************************************
+     * Time control
+     ******************************************************************/
     void set_time(const time_spec_t &time){
-        _time_offset = pt::microsec_clock::universal_time() - time_spec_to_time_dur(time);
+        boost::mutex::scoped_lock lock(_update_mutex);
+        _time_offset = boost::get_system_time() - time_spec_to_time_dur(time);
     }
 
     time_spec_t get_time(void){
-        return time_dur_to_time_spec(pt::microsec_clock::universal_time() - _time_offset);
+        boost::mutex::scoped_lock lock(_update_mutex);
+        return time_now();
     }
 
-    void recv_post(rx_metadata_t &md, size_t &nsamps){
-        //load the metadata with the current time
-        md.has_time_spec = true;
-        md.time_spec = get_time();
+    UHD_INLINE time_spec_t time_now(void){
+        //internal get time without scoped lock
+        return time_dur_to_time_spec(boost::get_system_time() - _time_offset);
+    }
 
-        //lock the mutex here before changing state
+    UHD_INLINE void sleep_until_time(
+        boost::mutex::scoped_lock &lock, const time_spec_t &time
+    ){
+        boost::condition_variable cond;
+        //use a condition variable to unlock, sleep, lock
+        cond.timed_wait(lock, _time_offset + time_spec_to_time_dur(time));
+    }
+
+    /*******************************************************************
+     * Receive control
+     ******************************************************************/
+    void recv_post(rx_metadata_t &md, size_t &nsamps){
         boost::mutex::scoped_lock lock(_update_mutex);
+
+        //load the metadata with the expected time
+        md.has_time_spec = true;
+        md.time_spec = time_now();
+
+        //none of the stuff below matters in continuous streaming mode
+        if (_stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) return;
 
         //When to stop streaming:
         //The samples have been received and the stream mode is non-continuous.
         //Rewrite the sample count to clip to the requested number of samples.
-        if (_nsamps_remaining <= nsamps and
-            _stream_mode != stream_cmd_t::STREAM_MODE_START_CONTINUOUS
-        ){
+        if (_nsamps_remaining <= nsamps){
             nsamps = _nsamps_remaining; //set nsamps, then stop
             stream_on_off(false);
             return;
@@ -104,27 +130,52 @@ public:
         _nsamps_remaining -= nsamps;
     }
 
-    void send_pre(const tx_metadata_t &md, double /*TODO timeout*/){
-        if (not md.has_time_spec) return;
-        sleep_until_time(md.time_spec); //TODO late?
-    }
-
     void issue_stream_cmd(const stream_cmd_t &cmd){
         _cmd_queue->push_with_wait(cmd);
     }
 
-private:
-
-    void sleep_until_time(const time_spec_t &time){
-        boost::this_thread::sleep(_time_offset + time_spec_to_time_dur(time));
+    void stream_on_off(bool enb){
+        _stream_on_off(enb);
+        _nsamps_remaining = 0;
     }
 
-    void recv_cmd_handle_cmd(const stream_cmd_t &cmd){
-        //handle the stream at time by sleeping
-        if (not cmd.stream_now) sleep_until_time(cmd.time_spec); //TODO late?
+    /*******************************************************************
+     * Transmit control
+     ******************************************************************/
+    bool send_pre(const tx_metadata_t &md, double &timeout){
+        if (not md.has_time_spec) return false;
 
-        //lock the mutex here before changing state
         boost::mutex::scoped_lock lock(_update_mutex);
+
+        time_spec_t time_at(md.time_spec - TWIDDLE);
+
+        //handle late packets
+        if (time_at < time_now()){
+            //TODO post async message
+            return true;
+        }
+
+        timeout -= (time_at - time_now()).get_real_secs();
+        sleep_until_time(lock, time_at);
+        return false;
+    }
+
+    /*******************************************************************
+     * Thread control
+     ******************************************************************/
+    void recv_cmd_handle_cmd(const stream_cmd_t &cmd){
+        boost::mutex::scoped_lock lock(_update_mutex);
+
+        //handle the stream at time by sleeping
+        if (not cmd.stream_now){
+            time_spec_t time_at(cmd.time_spec - TWIDDLE);
+            if (time_at < time_now()){
+                //TODO inject late cmd inline error
+            }
+            else{
+                sleep_until_time(lock, time_at);
+            }
+        }
 
         //When to stop streaming:
         //Stop streaming when the command is a stop and streaming.
@@ -144,31 +195,24 @@ private:
     }
 
     void recv_cmd_dispatcher(void){
-        _thread_running = true;
         _update_mutex.unlock();
-
-        boost::any cmd;
-        while (_thread_running){
-            if (_cmd_queue->pop_with_timed_wait(cmd, 1.0)){
+        try{
+            boost::any cmd;
+            while (true){
+                _cmd_queue->pop_with_wait(cmd);
                 recv_cmd_handle_cmd(boost::any_cast<stream_cmd_t>(cmd));
             }
-        }
+        } catch(const boost::thread_interrupted &){}
     }
 
-    void stream_on_off(bool stream){
-        _stream_on_off(stream);
-        _nsamps_remaining = 0;
-    }
-
+private:
     boost::mutex _update_mutex;
     size_t _nsamps_remaining;
     stream_cmd_t::stream_mode_t _stream_mode;
-
     pt::ptime _time_offset;
     bounded_buffer<boost::any>::sptr _cmd_queue;
     const cb_fcn_type _stream_on_off;
     boost::thread_group _thread_group;
-    bool _thread_running;
 };
 
 /***********************************************************************

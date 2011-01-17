@@ -41,8 +41,7 @@ public:
 
     /*!
      * Make a new soft time control.
-     * \param start_streaming a function callback to start streaming
-     * \param stop_streaming a function callback to stop streaming
+     * \param stream_on_off a function to enable/disable rx
      * \return a new soft time control object
      */
     static sptr make(const cb_fcn_type &stream_on_off);
@@ -59,7 +58,7 @@ public:
     virtual void recv_post(rx_metadata_t &md, size_t &nsamps) = 0;
 
     //! Call before the internal send function
-    virtual void send_pre(const tx_metadata_t &md, double timeout) = 0;
+    virtual bool send_pre(const tx_metadata_t &md, double &timeout) = 0;
 
     //! Issue a stream command to receive
     virtual void issue_stream_cmd(const stream_cmd_t &cmd) = 0;

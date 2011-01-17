@@ -139,13 +139,6 @@ public:
         _ctrl_transport = ctrl_transport;
     }
 
-
-    ~usrp_ctrl_impl(void)
-    {
-        /* NOP */
-    }
-
-
     int usrp_load_firmware(std::string filestring, bool force)
     {
         const char *filename = filestring.c_str();
@@ -233,6 +226,20 @@ public:
         return -1;
     }
 
+    void usrp_init(void){
+        /* not calling because this causes junk to come at init
+         * and it does not seem to be necessary to call anyway
+        usrp_rx_enable(false);
+        usrp_rx_reset(true);
+        usrp_rx_reset(false);
+        usrp_rx_enable(true);
+        */
+
+        usrp_tx_enable(false);
+        usrp_tx_reset(true);
+        usrp_tx_reset(false);
+        usrp_tx_enable(true);
+    }
 
     int usrp_load_fpga(std::string filestring)
     {
@@ -288,7 +295,7 @@ public:
         usrp_set_fpga_hash(hash);
         file.close();
         if (load_img_msg) std::cout << " done" << std::endl;
-        return 0; 
+        return 0;
     }
 
     int usrp_load_eeprom(std::string filestring)
@@ -390,6 +397,12 @@ public:
     int usrp_tx_reset(bool on)
     {
         return usrp_control_write_cmd(VRQ_FPGA_SET_TX_RESET, on, 0); 
+    }
+
+
+    int usrp_rx_reset(bool on)
+    {
+        return usrp_control_write_cmd(VRQ_FPGA_SET_RX_RESET, on, 0); 
     }
 
 

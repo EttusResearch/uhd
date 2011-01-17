@@ -33,6 +33,9 @@ public:
      */
     static sptr make(uhd::transport::usb_control::sptr ctrl_transport);
 
+    //! Call init after the fpga is loaded
+    virtual void usrp_init(void) = 0;
+
     /*!
      * Load firmware in Intel HEX Format onto device 
      * \param filename name of firmware file
@@ -91,20 +94,6 @@ public:
      * \return 0 on success, error code otherwise
      */
     virtual int usrp_set_fpga_hash(size_t hash) = 0;
-
-    /*!
-     * Set rx enable or disable 
-     * \param on enable or disable value
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_rx_enable(bool on) = 0;
-
-    /*!
-     * Set rx enable or disable 
-     * \param on enable or disable value
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_tx_enable(bool on) = 0;
 
     /*!
      * Submit an IN transfer 
