@@ -28,7 +28,7 @@ char *gets(char * const s);
 int fputstr(hal_uart_name_t u, const char *s);
 int fnputstr(hal_uart_name_t u, const char *s, int len);
 int fngets(hal_uart_name_t u, char * const s, int len);
-int fngets_timeout(hal_uart_name_t u, char * const s, int len);
+int fngets_noblock(hal_uart_name_t u, char * const s, int len);
 
 /*
  * ------------------------------------------------------------------------

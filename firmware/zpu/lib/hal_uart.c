@@ -103,12 +103,13 @@ hal_uart_getc(hal_uart_name_t u)
 }
 
 int 
-hal_uart_getc_timeout(hal_uart_name_t u)
+hal_uart_getc_noblock(hal_uart_name_t u)
 {
-  int timeout = 0;
-  while (((uart_regs[u].rxlevel) == 0) && (timeout++ < HAL_UART_TIMEOUT_MS))
-    mdelay(1);
-  return (timeout >= HAL_UART_TIMEOUT_MS) ? -1 : uart_regs[u].rxchar; //return -1 if nothing there, cause fngets to quit
+//  int timeout = 0;
+//  while (((uart_regs[u].rxlevel) == 0) && (timeout++ < HAL_UART_TIMEOUT_MS))
+//    mdelay(1);
+  if(uart_regs[u].rxlevel == 0) return 255;
+  return uart_regs[u].rxchar;
 }
 
 int hal_uart_rx_flush(hal_uart_name_t u)

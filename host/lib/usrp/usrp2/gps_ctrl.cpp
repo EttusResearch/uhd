@@ -60,13 +60,14 @@ public:
       }
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
       else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
+      boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
     }
 
     if((i_heard_some_nmea) && (gps_type != GPS_TYPE_JACKSON_LABS)) gps_type = GPS_TYPE_GENERIC_NMEA;
 
     //otherwise, we can try some other common baud rates looking to see if a GPS is connected (todo, later)
     if((gps_type == GPS_TYPE_NONE) && i_heard_something_weird) {
-      std::cout << "Invalid reply, possible incorrect baud rate" << std::endl;
+      std::cout << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
     }
 
     bool found_gprmc = false;

@@ -65,7 +65,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    //_gps_ctrl = usrp2_gps_ctrl::make(_iface);
+    _gps_ctrl = usrp2_gps_ctrl::make(_iface);
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 

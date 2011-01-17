@@ -253,11 +253,11 @@ fngets(hal_uart_name_t u, char * const s, int len)
 }
 
 int
-fngets_timeout(hal_uart_name_t u, char * const s, int len)
+fngets_noblock(hal_uart_name_t u, char * const s, int len)
 {
   char *x = s;
 
-  while(((*x=(char)hal_uart_getc_timeout(u)) != '\n') && (*x != -1) && ((x-s) < len)) x++;
+  while(((*x=(char)hal_uart_getc_noblock(u)) != '\n') && (*x != 255) && ((x-s) < len)) x++;
   *x = 0;
   //printf("Returning from fngets() with string %d of length %d\n", s[0], x-s);
   return (x-s);
