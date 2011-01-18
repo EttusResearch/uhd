@@ -122,6 +122,7 @@ public:
         //Rewrite the sample count to clip to the requested number of samples.
         if (_nsamps_remaining <= nsamps){
             nsamps = _nsamps_remaining; //set nsamps, then stop
+            md.end_of_burst = true;
             stream_on_off(false);
             return;
         }

@@ -80,7 +80,7 @@ List of emulated features
 * Transmitting at a specific time
 * Receiving at a specific time
 * Receiving a specific number of samples
-* Start and end burst flags on transmit
+* End of burst flags for transmit/receive
 
 **Note:**
 These emulated features rely on the host system's clock for timed operations,
@@ -93,7 +93,7 @@ List of missing features
 * Notification on late transmit packet
 * Notification on broken chain error
 * Notification on underflow or overflow
-* Start and end burst flags for receive
+* Start of burst flags for transmit/receive
 
 ------------------------------------------------------------------------
 OS specific notes
