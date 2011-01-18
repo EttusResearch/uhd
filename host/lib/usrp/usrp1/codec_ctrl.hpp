@@ -92,7 +92,10 @@ public:
 
     //! Set the TX modulator frequency
     virtual void set_duc_freq(double freq) = 0;
-    
+
+    //! Enable or disable the digital part of the DAC
+    virtual void enable_tx_digital(bool enb) = 0;
+
     //! Enable or disable ADC buffer bypass
     virtual void bypass_adc_buffers(bool bypass) = 0;
 };

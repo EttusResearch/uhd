@@ -139,6 +139,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr){
     usb_control::sptr ctrl_transport = usb_control::make(handle);
     usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
     usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
+    usrp_ctrl->usrp_init();
     usb_zero_copy::sptr data_transport = usb_zero_copy::make(
         handle,        // identifier
         6,             // IN endpoint
@@ -161,10 +162,6 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
                        usrp_ctrl::sptr ctrl_transport)
  : _data_transport(data_transport), _ctrl_transport(ctrl_transport)
 {
-    _soft_time_ctrl = soft_time_ctrl::make(
-        boost::bind(&usrp1_impl::stream_on_off, this, _1)
-    );
-
     _iface = usrp1_iface::make(ctrl_transport);
 
     //create clock interface
@@ -195,9 +192,6 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
 
     //initialize the send/recv
     io_init();
-
-    //turn on the transmitter
-    _ctrl_transport->usrp_tx_enable(true);
 
     //init the subdev specs
     this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());

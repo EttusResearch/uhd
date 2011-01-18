@@ -134,7 +134,6 @@ static void callback(libusb_transfer *lut){
  * \param pointer to libusb_transfer
  */
 void usb_endpoint::callback_handle_transfer(libusb_transfer *lut){
-    boost::this_thread::disable_interruption di; //disable because the wait can throw
     _completed_list->push_with_wait(lut);
 }
 
@@ -272,7 +271,6 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut){
 }
 
 libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
-    boost::this_thread::disable_interruption di; //disable because the wait can throw
     libusb_transfer *lut;
     if (_completed_list->pop_with_timed_wait(lut, timeout)) return lut;
     return NULL;
@@ -293,6 +291,7 @@ public:
 
     ~libusb_zero_copy_impl(void){
         _threads_running = false;
+        _thread_group.interrupt_all();
         _thread_group.join_all();
     }
 
@@ -333,12 +332,14 @@ private:
         set_thread_priority_safe();
         libusb::session::sptr session = libusb::session::get_global_session();
         _threads_running = true;
-        while(_threads_running){
-            timeval tv;
-            tv.tv_sec = 0;
-            tv.tv_usec = 100000; //100ms
-            libusb_handle_events_timeout(session->get_context(), &tv);
-        }
+        try{
+            while(_threads_running){
+                timeval tv;
+                tv.tv_sec = 0;
+                tv.tv_usec = 100000; //100ms
+                libusb_handle_events_timeout(session->get_context(), &tv);
+            }
+        } catch(const boost::thread_interrupted &){}
     }
 };
 
