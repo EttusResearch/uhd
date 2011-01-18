@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "gps_ctrl.hpp"
+#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/utils/assert.hpp>
 #include <boost/cstdint.hpp>
 #include <string>
@@ -30,14 +30,15 @@ using namespace boost::posix_time;
 using namespace boost::algorithm;
 
 /*!
- * A usrp2 GPS control for Jackson Labs devices
+ * A GPS control for Jackson Labs devices (and other NMEA compatible GPS's)
  */
 
 //TODO: multiple baud rate support (requires mboard_impl changes for poking UART registers)
-class usrp2_gps_ctrl_impl : public usrp2_gps_ctrl{
+class gps_ctrl_impl : public gps_ctrl{
 public:
-  usrp2_gps_ctrl_impl(usrp2_iface::sptr iface){
-    _iface = iface;
+  gps_ctrl_impl(gps_send_fn_t send, gps_recv_fn_t recv){
+    _send = send;
+    _recv = recv;
 
     std::string reply;
     bool i_heard_some_nmea = false, i_heard_something_weird = false;
@@ -47,8 +48,8 @@ public:
 //    set_uart_baud_rate(GPS_UART, 115200);
     //first we look for a Jackson Labs Firefly (since that's what we sell with the USRP2+...)
 
-    _iface->read_uart(GPS_UART); //get whatever junk is in the rx buffer right now, and throw it away
-    _iface->write_uart(GPS_UART, "HAAAY GUYYYYS\n"); //to elicit a response from the Firefly
+    _recv(); //get whatever junk is in the rx buffer right now, and throw it away
+    _send("HAAAY GUYYYYS\n"); //to elicit a response from the Firefly
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
     int timeout = GPS_TIMEOUT_TRIES;
@@ -60,7 +61,7 @@ public:
       }
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
       else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
-      boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
+      boost::this_thread::sleep(boost::posix_time::milliseconds(200));
     }
 
     if((i_heard_some_nmea) && (gps_type != GPS_TYPE_JACKSON_LABS)) gps_type = GPS_TYPE_GENERIC_NMEA;
@@ -79,15 +80,15 @@ public:
       //none of these should issue replies so we don't bother looking for them
       //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
        boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _iface->write_uart(GPS_UART, "SYST:COMM:SER:ECHO OFF\n");
+      _send("SYST:COMM:SER:ECHO OFF\n");
        boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _iface->write_uart(GPS_UART, "SYST:COMM:SER:PRO OFF\n");
+      _send("SYST:COMM:SER:PRO OFF\n");
        boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _iface->write_uart(GPS_UART, "GPS:GPGGA 0\n");
+      _send("GPS:GPGGA 0\n");
        boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _iface->write_uart(GPS_UART, "GPS:GGAST 0\n");
+      _send("GPS:GGAST 0\n");
        boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _iface->write_uart(GPS_UART, "GPS:GPRMC 1\n");
+      _send("GPS:GPRMC 1\n");
        boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
 
 //      break;
@@ -120,15 +121,15 @@ public:
 
   }
 
-  ~usrp2_gps_ctrl_impl(void){
+  ~gps_ctrl_impl(void){
 
   }
 
+//TODO: this isn't generalizeable to non-USRP2 USRPs.
   std::string safe_gps_read() {
     std::string reply;
     try {
-        reply = _iface->read_uart(GPS_UART);
-  	    //std::cerr << "Got reply from GPS: " << reply.c_str() << " with length = " << reply.length() << std::endl;
+        reply = _recv();
     } catch (std::runtime_error err) {
       if(err.what() != std::string("usrp2 no control response")) throw; //sorry can't cope with that
       else { //we don't actually have a GPS installed
@@ -186,7 +187,8 @@ public:
   }
 
 private:
-  usrp2_iface::sptr _iface;
+  gps_send_fn_t _send;
+  gps_recv_fn_t _recv;
 
   enum {
     GPS_TYPE_JACKSON_LABS,
@@ -194,8 +196,8 @@ private:
     GPS_TYPE_NONE
   } gps_type;
 
-  static const int GPS_UART = 2; //TODO: this should be plucked from fw_common.h or memory_map.h or somewhere in common with the firmware
   static const int GPS_TIMEOUT_TRIES = 5;
+  static const int GPS_TIMEOUT_DELAY_MS = 200;
   static const int FIREFLY_STUPID_DELAY_MS = 200;
 
 };
@@ -203,6 +205,6 @@ private:
 /***********************************************************************
  * Public make function for the GPS control
  **********************************************************************/
-usrp2_gps_ctrl::sptr usrp2_gps_ctrl::make(usrp2_iface::sptr iface){
-    return sptr(new usrp2_gps_ctrl_impl(iface));
+gps_ctrl::sptr gps_ctrl::make(gps_send_fn_t send, gps_recv_fn_t recv){
+    return sptr(new gps_ctrl_impl(send, recv));
 }

@@ -18,21 +18,24 @@
 #ifndef INCLUDED_GPS_CTRL_HPP
 #define INCLUDED_GPS_CTRL_HPP
 
-#include "usrp2_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <boost/function.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 using namespace boost::posix_time;
 
-class usrp2_gps_ctrl : boost::noncopyable{
+typedef boost::function<void(std::string)> gps_send_fn_t;
+typedef boost::function<std::string(void)> gps_recv_fn_t;
+
+class gps_ctrl : boost::noncopyable{
 public:
-  typedef boost::shared_ptr<usrp2_gps_ctrl> sptr;
+  typedef boost::shared_ptr<gps_ctrl> sptr;
 
   /*!
    * Make a GPS config for Jackson Labs or generic NMEA GPS devices
    */
-  static sptr make(usrp2_iface::sptr iface);
+  static sptr make(gps_send_fn_t, gps_recv_fn_t);
 
   /*!
    * Get the current GPS time and date
@@ -50,4 +53,4 @@ public:
 
 };
 
-#endif /* INCLUDED_CLOCK_CTRL_HPP */
+#endif /* INCLUDED_GPS_CTRL_HPP */

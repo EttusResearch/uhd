@@ -28,7 +28,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
-//this only applies to USRP2P
+//this only applies to N2XX
 static const uhd::dict<std::string, gain_range_t> codec_rx_gain_ranges = map_list_of
                                   ("analog", gain_range_t(0, 3.5, 3.5))
                                   ("digital", gain_range_t(0, 6.0, 0.5))

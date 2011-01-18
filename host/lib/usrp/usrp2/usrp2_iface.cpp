@@ -218,6 +218,14 @@ public:
       }
       return result;
     }
+    
+    gps_send_fn_t get_gps_write_fn(void) {
+        return boost::bind(&usrp2_iface_impl::write_uart, this, 2, _1); //2 is the GPS UART port on USRP2
+    }
+    
+    gps_recv_fn_t get_gps_read_fn(void) {
+        return boost::bind(&usrp2_iface_impl::read_uart, this, 2); //2 is the GPS UART port on USRP2
+    }
 
 /***********************************************************************
  * Send/Recv over control

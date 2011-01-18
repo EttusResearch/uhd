@@ -34,8 +34,6 @@ IF(ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp

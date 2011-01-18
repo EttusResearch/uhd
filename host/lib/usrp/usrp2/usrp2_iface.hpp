@@ -24,10 +24,16 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/function.hpp>
 #include <utility>
 #include <string>
 #include "fw_common.h"
 #include "usrp2_regs.hpp"
+
+
+//TODO: kill this crap when you have the top level GPS include file
+typedef boost::function<void(std::string)> gps_send_fn_t;
+typedef boost::function<std::string(void)> gps_recv_fn_t;
 
 /*!
  * The usrp2 interface class:
@@ -100,6 +106,9 @@ public:
     virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
 
     virtual std::string read_uart(boost::uint8_t dev) = 0;
+    
+    virtual gps_recv_fn_t get_gps_read_fn(void) = 0;
+    virtual gps_send_fn_t get_gps_write_fn(void) = 0;
 
     //! The list of possible revision types
     enum rev_type {

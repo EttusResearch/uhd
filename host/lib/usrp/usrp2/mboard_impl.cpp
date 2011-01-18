@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -65,7 +66,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    _gps_ctrl = usrp2_gps_ctrl::make(_iface);
+    //_gps_ctrl = gps_ctrl::make(
+    //    _iface->get_gps_write_fn(),
+    //    _iface->get_gps_read_fn());
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
