@@ -34,7 +34,7 @@ IF(GIT_FOUND)
     #grab the git log entry for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT_EXECUTABLE} log HEAD~..HEAD --date=raw
+        COMMAND ${GIT_EXECUTABLE} log HEAD~..HEAD --date=raw -n1
         OUTPUT_VARIABLE _git_log OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
