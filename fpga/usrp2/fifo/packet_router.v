@@ -68,11 +68,10 @@ module packet_router
 
     //setting register for mode control
     wire [31:0] _sreg_mode_ctrl;
-    wire master_mode_flag = _sreg_mode_ctrl[0];
-    setting_reg #(.my_addr(CTRL_BASE+0)) sreg_mode_ctrl(
+    setting_reg #(.my_addr(CTRL_BASE+0), .width(1)) sreg_mode_ctrl(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(_sreg_mode_ctrl),.changed()
+        .out(master_mode_flag),.changed()
     );
 
     //setting register to program the IP address
