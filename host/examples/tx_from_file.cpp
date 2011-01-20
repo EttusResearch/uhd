@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,24 +31,23 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    time_t seconds_in_future;
+    double seconds_in_future;
     size_t total_num_samps;
     size_t samps_per_packet;
-    double tx_rate, freq;
+    double tx_rate, freq, gain;
     float ampl;
-    float tx_gain;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "simple uhd device address args")
-        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("txrate", po::value<double>(&tx_rate)->default_value(100e6/16), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
-        ("gain", po::value<float>(&tx_gain)->default_value(float(0)), "amplitude of each sample")
+        ("gain", po::value<double>(&gain)->default_value(0), "amplitude of each sample")
         ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
@@ -78,7 +77,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_tx_freq(freq);
     sdev->set_time_now(uhd::time_spec_t(0.0));
 
-    sdev->set_tx_gain(tx_gain);
+    sdev->set_gain(gain);
 
     //allocate data to send
     std::vector<std::complex<short> > buff;
@@ -102,7 +101,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
     for (size_t i = 0; i < num_packets; i++){
         //setup the metadata flags and time spec
-        md.start_of_burst = true;                  //always SOB (good for continuous streaming)
+        md.start_of_burst = (i == 0);              //only first packet has SOB
         md.end_of_burst   = (i == num_packets-1);  //only last packet has EOB
         md.has_time_spec  = (i == 0);              //only first packet has time
         md.time_spec = uhd::time_spec_t(seconds_in_future);

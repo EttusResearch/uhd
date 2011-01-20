@@ -17,13 +17,11 @@ module vita_tx_control
     
     // To DSP Core
     output [WIDTH-1:0] sample,
-    output run,
+    output reg run,
     input strobe,
 
     output [31:0] debug
     );
-
-   assign sample = sample_fifo_i[5+64+16+WIDTH-1:5+64+16];
 
    wire [63:0] send_time = sample_fifo_i[63:0];
    wire [15:0] seqnum = sample_fifo_i[79:64];
@@ -169,11 +167,39 @@ module vita_tx_control
 	   send_error <= 0;
        endcase // case (ibs_state)
 
+   
    assign sample_fifo_dst_rdy_o = (ibs_state == IBS_ERROR) | (strobe & (ibs_state == IBS_RUN));  // FIXME also cleanout
-   assign run = (ibs_state == IBS_RUN) | (ibs_state == IBS_CONT_BURST);
+
+   assign sample = (ibs_state == IBS_RUN) ? sample_fifo_i[5+64+16+WIDTH-1:5+64+16] : {WIDTH{1'b0}};
+   //assign run = (ibs_state == IBS_RUN) | (ibs_state == IBS_CONT_BURST);
    assign error = send_error;
    assign ack = send_ack;
 
+   localparam MAX_IDLE = 1000000; 
+   // approx 10 ms timeout with a 100 MHz clock, but burning samples will slow that down
+   reg [19:0] countdown;
+   
+   always @(posedge clk)
+     if(reset | clear)
+       begin
+	  run <= 0;
+	  countdown <= 0;
+       end
+     else 
+       if (ibs_state == IBS_RUN)
+	 if(eob & eop & strobe & sample_fifo_src_rdy_i)
+	   run <= 0;
+	 else 
+	   begin
+	      run <= 1;
+	      countdown <= MAX_IDLE;
+	   end
+       else
+	 if (countdown == 0)
+	   run <= 0;
+	 else
+	   countdown <= countdown - 1;
+   	   
    always @(posedge clk)
      if(reset | clear)
        packet_consumed <= 0;

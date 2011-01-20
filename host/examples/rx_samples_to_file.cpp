@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,8 +33,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, file;
     size_t total_num_samps;
-    double rate, freq;
-    float gain;
+    double rate, freq, gain;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -45,7 +44,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
-        ("gain", po::value<float>(&gain)->default_value(0), "gain for the RF chain")
+        ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

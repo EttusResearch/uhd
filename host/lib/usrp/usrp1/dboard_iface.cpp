@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,8 +72,8 @@ public:
         return props;
     }
 
-    void write_aux_dac(unit_t, aux_dac_t, float);
-    float read_aux_adc(unit_t, aux_adc_t);
+    void write_aux_dac(unit_t, aux_dac_t, double);
+    double read_aux_adc(unit_t, aux_adc_t);
 
     void _set_pin_ctrl(unit_t, boost::uint16_t);
     void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
@@ -369,7 +369,7 @@ byte_vector_t usrp1_dboard_iface::read_i2c(boost::uint8_t addr,
  * Aux DAX/ADC
  **********************************************************************/
 void usrp1_dboard_iface::write_aux_dac(dboard_iface::unit_t,
-                                       aux_dac_t which, float value)
+                                       aux_dac_t which, double value)
 {
     //same aux dacs for each unit
     static const uhd::dict<aux_dac_t, usrp1_codec_ctrl::aux_dac_t>
@@ -382,7 +382,7 @@ void usrp1_dboard_iface::write_aux_dac(dboard_iface::unit_t,
     _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
-float usrp1_dboard_iface::read_aux_adc(dboard_iface::unit_t unit,
+double usrp1_dboard_iface::read_aux_adc(dboard_iface::unit_t unit,
                                        aux_adc_t which)
 {
     static const

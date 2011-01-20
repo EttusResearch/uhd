@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
-#include <uhd/transport/convert_types.hpp>
+#include <uhd/convert.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/function.hpp>
 #include <stdexcept>
@@ -34,6 +34,9 @@
 #include <vector>
 
 namespace vrt_packet_handler{
+
+//this may change in the future but its a constant for now
+static const size_t OTW_BYTES_PER_SAMP = sizeof(boost::uint32_t);
 
 template <typename T> UHD_INLINE T get_context_code(
     const boost::uint32_t *vrt_hdr,
@@ -91,6 +94,7 @@ template <typename T> UHD_INLINE T get_context_code(
         //vrt unpack each managed buffer
         uhd::transport::vrt::if_packet_info_t if_packet_info;
         for (size_t i = 0; i < state.width; i++){
+            if (state.managed_buffs[i].get() == NULL) continue; //better have a message packet coming up...
 
             //extract packet words and check thats its enough to move on
             size_t num_packet_words32 = state.managed_buffs[i]->size()/sizeof(boost::uint32_t);
@@ -144,8 +148,7 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t offset_bytes,
         size_t total_samps,
         uhd::rx_metadata_t &metadata,
-        const uhd::io_type_t &io_type,
-        const uhd::otw_type_t &otw_type,
+        uhd::convert::function_type &converter,
         double tick_rate,
         const vrt_unpacker_t &vrt_unpacker,
         const get_recv_buffs_t &get_recv_buffs,
@@ -183,7 +186,7 @@ template <typename T> UHD_INLINE T get_context_code(
         }
 
         //extract the number of samples available to copy
-        size_t bytes_per_item = otw_type.get_sample_size();
+        size_t bytes_per_item = OTW_BYTES_PER_SAMP;
         size_t nsamps_available = state.size_of_copy_buffs/bytes_per_item;
         size_t nsamps_to_copy = std::min(total_samps*chans_per_otw_buff, nsamps_available);
         size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
@@ -198,9 +201,8 @@ template <typename T> UHD_INLINE T get_context_code(
             }
 
             //copy-convert the samples from the recv buffer
-            uhd::transport::convert_otw_type_to_io_type(
-                state.copy_buffs[i], otw_type, io_buffs, io_type, nsamps_to_copy_per_io_buff
-            );
+            uhd::convert::input_type otw_buffs(1, state.copy_buffs[i]);
+            converter(otw_buffs, io_buffs, nsamps_to_copy_per_io_buff);
 
             //update the rx copy buffer to reflect the bytes copied
             state.copy_buffs[i] += bytes_to_copy;
@@ -234,6 +236,11 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t vrt_header_offset_words32 = 0,
         size_t chans_per_otw_buff = 1
     ){
+        uhd::convert::function_type converter(
+            uhd::convert::get_converter_otw_to_cpu(
+                io_type, otw_type, 1, chans_per_otw_buff
+        ));
+
         switch(recv_mode){
 
         ////////////////////////////////////////////////////////////////
@@ -244,7 +251,7 @@ template <typename T> UHD_INLINE T get_context_code(
                 buffs, 0,
                 total_num_samps,
                 metadata,
-                io_type, otw_type,
+                converter,
                 tick_rate,
                 vrt_unpacker,
                 get_recv_buffs,
@@ -265,7 +272,7 @@ template <typename T> UHD_INLINE T get_context_code(
                     buffs, accum_num_samps*io_type.size,
                     total_num_samps - accum_num_samps,
                     (accum_num_samps == 0)? metadata : tmp_md, //only the first metadata gets kept
-                    io_type, otw_type,
+                    converter,
                     tick_rate,
                     vrt_unpacker,
                     get_recv_buffs,
@@ -309,15 +316,14 @@ template <typename T> UHD_INLINE T get_context_code(
         const size_t offset_bytes,
         const size_t num_samps,
         uhd::transport::vrt::if_packet_info_t &if_packet_info,
-        const uhd::io_type_t &io_type,
-        const uhd::otw_type_t &otw_type,
+        uhd::convert::function_type &converter,
         const vrt_packer_t &vrt_packer,
         const get_send_buffs_t &get_send_buffs,
         const size_t vrt_header_offset_words32,
         const size_t chans_per_otw_buff
     ){
         //load the rest of the if_packet_info in here
-        if_packet_info.num_payload_words32 = (num_samps*chans_per_otw_buff*otw_type.get_sample_size())/sizeof(boost::uint32_t);
+        if_packet_info.num_payload_words32 = (num_samps*chans_per_otw_buff*OTW_BYTES_PER_SAMP)/sizeof(boost::uint32_t);
         if_packet_info.packet_count = state.next_packet_seq;
 
         //get send buffers for each channel
@@ -337,9 +343,8 @@ template <typename T> UHD_INLINE T get_context_code(
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            uhd::transport::convert_io_type_to_otw_type(
-                io_buffs, io_type, otw_mem, otw_type, num_samps
-            );
+            uhd::convert::output_type otw_buffs(1, otw_mem);
+            converter(io_buffs, otw_buffs, num_samps);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
@@ -367,6 +372,11 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t vrt_header_offset_words32 = 0,
         size_t chans_per_otw_buff = 1
     ){
+        uhd::convert::function_type converter(
+            uhd::convert::get_converter_cpu_to_otw(
+                io_type, otw_type, chans_per_otw_buff, 1
+        ));
+
         //translate the metadata to vrt if packet info
         uhd::transport::vrt::if_packet_info_t if_packet_info;
         if_packet_info.has_sid = false;
@@ -402,7 +412,7 @@ template <typename T> UHD_INLINE T get_context_code(
                 buffs_, 0,
                 std::min(total_num_samps_, max_samples_per_packet),
                 if_packet_info,
-                io_type, otw_type,
+                converter,
                 vrt_packer,
                 get_send_buffs,
                 vrt_header_offset_words32,
@@ -435,7 +445,7 @@ template <typename T> UHD_INLINE T get_context_code(
                     buffs, total_num_samps_sent*io_type.size,
                     std::min(total_num_samps_unsent, max_samples_per_packet),
                     if_packet_info,
-                    io_type, otw_type,
+                    converter,
                     vrt_packer,
                     get_send_buffs,
                     vrt_header_offset_words32,

@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,27 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-########################################################################
-# Check Python Modules
-########################################################################
-INCLUDE(UHDPython)
-
-PYTHON_CHECK_MODULE(
-    "Python version 2.6 or greater"
-    "platform" "platform.python_version() >= '2.6'"
-    HAVE_PYTHON_PLAT_MIN_VERSION
-)
-
-PYTHON_CHECK_MODULE(
-    "Cheetah templates 2.0.0 or greater"
-    "Cheetah" "Cheetah.Version >= '2.0.0'"
-    HAVE_PYTHON_MODULE_CHEETAH
-)
-
-IF(NOT HAVE_PYTHON_PLAT_MIN_VERSION OR NOT HAVE_PYTHON_MODULE_CHEETAH)
-    MESSAGE(FATAL_ERROR "Error: python requirements not met for the build system.")
-ENDIF(NOT HAVE_PYTHON_PLAT_MIN_VERSION OR NOT HAVE_PYTHON_MODULE_CHEETAH)
 
 ########################################################################
 # Helpful Macros
@@ -89,6 +68,8 @@ ENDMACRO(INCLUDE_SUBDIRECTORY)
 # Include subdirectories (different than add)
 ########################################################################
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
+INCLUDE_SUBDIRECTORY(types)
+INCLUDE_SUBDIRECTORY(convert)
 INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(utils)
@@ -116,7 +97,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )
@@ -127,6 +107,7 @@ LIBUHD_APPEND_SOURCES(
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
+SET_TARGET_PROPERTIES(uhd PROPERTIES SOVERSION ${UHD_VERSION_MAJOR})
 
 INSTALL(TARGETS uhd
     LIBRARY DESTINATION ${LIBRARY_DIR} # .so file

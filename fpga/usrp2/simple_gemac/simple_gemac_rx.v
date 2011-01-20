@@ -56,10 +56,10 @@ module simple_gemac_rx
      else
        rx_ack <= (rx_state == RX_GOODFRAME);
 
-   wire is_ucast, is_bcast, is_mcast, is_pause;
-   wire keep_packet  = (pass_ucast & is_ucast) | (pass_mcast & is_mcast) | 
-	(pass_bcast & is_bcast) | (pass_pause & is_pause) | pass_all;
-   
+   wire is_ucast, is_bcast, is_mcast, is_pause, is_any_ucast;
+   wire keep_packet  = (pass_all & is_any_ucast) | (pass_ucast & is_ucast) | (pass_mcast & is_mcast) | 
+	(pass_bcast & is_bcast) | (pass_pause & is_pause);
+      
    assign rx_data   = rxd_del;
    assign rx_error  = (rx_state == RX_ERROR);
 
@@ -79,6 +79,8 @@ module simple_gemac_rx
 			    .address(48'hFFFF_FFFF_FFFF), .match(is_bcast), .done());
    address_filter af_pause (.clk(rx_clk), .reset(reset), .go(go_filt), .data(rxd_d1),
 			    .address(48'h0180_c200_0001), .match(is_pause), .done());
+   address_filter_promisc af_promisc (.clk(rx_clk), .reset(reset), .go(go_filt), .data(rxd_d1),
+				      .match(is_any_ucast), .done());
 
    always @(posedge rx_clk)
      go_filt 			 <= (rx_state==RX_PREAMBLE) & (rxd_d1 == 8'hD5);

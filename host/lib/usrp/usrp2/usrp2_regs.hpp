@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,10 +25,10 @@
 #define USRP2_ATR_BASE          0xE400
 #define USRP2_BP_STATUS_BASE    0xCC00
 
-#define USRP2P_MISC_OUTPUT_BASE 0x2000
-#define USRP2P_GPIO_BASE        0x3200
-#define USRP2P_ATR_BASE         0x3800
-#define USRP2P_BP_STATUS_BASE   0x3300
+#define USRP2P_MISC_OUTPUT_BASE 0x5000
+#define USRP2P_GPIO_BASE        0x6200
+#define USRP2P_ATR_BASE         0x6800
+#define USRP2P_BP_STATUS_BASE   0x6300
 
 typedef struct {
     int sr_misc;
@@ -57,8 +57,12 @@ typedef struct {
     int time64_flags; // flags -- see chart below
     int time64_imm; // set immediate (0=latch on next pps, 1=latch immediate, default=0)
     int time64_tps; // ticks per second rollover count
-    int time64_secs_rb;
-    int time64_ticks_rb;
+    int time64_mimo_sync;
+    int status;
+    int time64_secs_rb_imm;
+    int time64_ticks_rb_imm;
+    int time64_secs_rb_pps;
+    int time64_ticks_rb_pps;
     int compat_num_rb;
     int dsp_tx_freq;
     int dsp_tx_scale_iq;

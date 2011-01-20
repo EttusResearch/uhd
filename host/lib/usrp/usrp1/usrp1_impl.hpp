@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #include "usrp1_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include "soft_time_ctrl.hpp"
 #include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
@@ -114,13 +115,17 @@ private:
         const uhd::usrp::dboard_id_t &rx_dboard_id
     );
 
+    //soft time control emulation
+    uhd::usrp::soft_time_ctrl::sptr _soft_time_ctrl;
+
     //interface to ioctls and file descriptor
     usrp1_iface::sptr _iface;
 
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
+    void rx_stream_on_off(bool);
+    void tx_stream_on_off(bool);
     void handle_overrun(size_t);
 
     //underrun and overrun poll intervals

@@ -30,6 +30,12 @@ CMAKE_BUILD_DIR = $(TOP_DIR)/build
 ##filled in below
 IMAGES_LIST =
 
+##little rule to make the images directory
+$(BUILT_IMAGES_DIR):
+	mkdir $@
+
+GLOBAL_DEPS = $(BUILT_IMAGES_DIR)
+
 ########################################################################
 # Utility Checks
 ########################################################################
@@ -37,8 +43,8 @@ ifeq ($(shell sdcc --help > /dev/null 2>&1 && echo $$?),0)
 	HAS_SDCC=1
 endif
 
-ifeq ($(shell mb-gcc --help > /dev/null 2>&1 && echo $$?),0)
-	HAS_MB_GCC=1
+ifeq ($(shell zpu-elf-gcc --help > /dev/null 2>&1 && echo $$?),0)
+	HAS_ZPU_GCC=1
 endif
 
 ifeq ($(shell xtclsh -h > /dev/null 2>&1 && echo $$?),0)
@@ -54,7 +60,7 @@ _usrp1_fw_dir = $(TOP_FW_DIR)/fx2
 _usrp1_fw_ihx = $(BUILT_IMAGES_DIR)/usrp1_fw.ihx
 IMAGES_LIST += $(_usrp1_fw_ihx)
 
-$(_usrp1_fw_ihx):
+$(_usrp1_fw_ihx): $(GLOBAL_DEPS)
 	cd $(_usrp1_fw_dir) && rm -rf build
 	cd $(_usrp1_fw_dir) && mkdir build
 	cd $(_usrp1_fw_dir)/build && cmake ../
@@ -71,29 +77,29 @@ _usrp1_fpga_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga.rbf
 _usrp1_fpga_4rx_rbf = $(BUILT_IMAGES_DIR)/usrp1_fpga_4rx.rbf
 IMAGES_LIST += $(_usrp1_fpga_rbf) $(_usrp1_fpga_4rx_rbf)
 
-$(_usrp1_fpga_rbf):
+$(_usrp1_fpga_rbf): $(GLOBAL_DEPS)
 	cp $(_usrp1_fpga_dir)/std_2rxhb_2tx.rbf $@
 
-$(_usrp1_fpga_4rx_rbf):
+$(_usrp1_fpga_4rx_rbf): $(GLOBAL_DEPS)
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
 
 ########################################################################
-# USRP2 and USRP-N2XX firmware
+# USRP2 and N Series firmware
 ########################################################################
-ifdef HAS_MB_GCC
+ifdef HAS_ZPU_GCC
 
-_usrp2_fw_dir = $(TOP_FW_DIR)/microblaze
+_usrp2_fw_dir = $(TOP_FW_DIR)/zpu
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
 _usrp_n2xx_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n2xx_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin)
 
-$(_usrp2_fw_bin) $(_usrp_n2xx_fw_bin):
-	cd $(_usrp2_fw_dir) && ./bootstrap
-	cd $(_usrp2_fw_dir) && ./configure --host=mb
-	make -C $(_usrp2_fw_dir) clean
-	make -C $(_usrp2_fw_dir) all
-	cp $(_usrp2_fw_dir)/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
-	cp $(_usrp2_fw_dir)/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
+$(_usrp2_fw_bin) $(_usrp_n2xx_fw_bin): $(GLOBAL_DEPS)
+	cd $(_usrp2_fw_dir) && rm -rf build
+	cd $(_usrp2_fw_dir) && mkdir build
+	cd $(_usrp2_fw_dir)/build && cmake ../
+	cd $(_usrp2_fw_dir)/build && make
+	cp $(_usrp2_fw_dir)/build/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
 
 endif
 
@@ -106,7 +112,7 @@ _usrp2_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2_rev3
 _usrp2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2_fpga.bin
 IMAGES_LIST += $(_usrp2_fpga_bin)
 
-$(_usrp2_fpga_bin):
+$(_usrp2_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp2_fpga_dir) && make clean
 	cd $(_usrp2_fpga_dir) && make bin
 	cp $(_usrp2_fpga_dir)/build/u2_rev3.bin $@
@@ -122,7 +128,7 @@ _usrp_n210_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
 _usrp_n210_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_fpga.bin
 IMAGES_LIST += $(_usrp_n210_fpga_bin)
 
-$(_usrp_n210_fpga_bin):
+$(_usrp_n210_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n210_fpga_dir) && make clean
 	cd $(_usrp_n210_fpga_dir) && make bin
 	cp $(_usrp_n210_fpga_dir)/build/u2plus.bin $@
@@ -138,7 +144,7 @@ _usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e
 _usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga.bin
 IMAGES_LIST += $(_usrp_e100_fpga_bin)
 
-$(_usrp_e100_fpga_bin):
+$(_usrp_e100_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_e100_fpga_dir) && make clean
 	cd $(_usrp_e100_fpga_dir) && make bin
 	cp $(_usrp_e100_fpga_dir)/build/u1e.bin $@
@@ -148,11 +154,7 @@ endif
 ########################################################################
 # Build rules
 ########################################################################
-##little rule to make the images directory
-$(BUILT_IMAGES_DIR):
-	mkdir $@
-
-images: $(BUILT_IMAGES_DIR) $(IMAGES_LIST)
+images: $(IMAGES_LIST)
 	chmod -x $(BUILT_IMAGES_DIR)/*
 
 clean:

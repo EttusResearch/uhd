@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,8 @@ namespace uhd{ namespace usrp{
  *
  * //create a multi_usrp with two boards in the configuration
  * device_addr_t dev_addr;
- * dev_addr["addr"] = "192.168.10.2 192.168.10.3";
+ * dev_addr["addr0"] = "192.168.10.2"
+ * dev_addr["addr1"] = "192.168.10.3";
  * multi_usrp::sptr dev = multi_usrp::make(dev_addr);
  *
  * //set the board on 10.2 to use the A RX subdevice (RX channel 0)
@@ -108,10 +109,16 @@ public:
     virtual std::string get_mboard_name(size_t mboard) = 0;
 
     /*!
-     * Gets the current time in the usrp time registers.
+     * Get the current time in the usrp time registers.
      * \return a timespec representing current usrp time
      */
     virtual time_spec_t get_time_now(void) = 0;
+
+    /*!
+     * Get the time when the last pps pulse occured.
+     * \return a timespec representing the last pps
+     */
+    virtual time_spec_t get_time_last_pps(void) = 0;
 
     /*!
      * Set the time registers on the usrp at the next pps tick.
@@ -133,14 +140,13 @@ public:
      * Ex: Host machine is not attached to serial port of GPSDO
      * and can therefore not query the GPSDO for the PPS edge.
      *
-     * This is a 3-step process, and will take at most 3 seconds to complete.
+     * This is a 2-step process, and will take at most 2 seconds to complete.
      * Upon completion, the times will be synchronized to the time provided.
      *
-     * - Step1: set the time at the next pps (potential race condition)
-     * - Step2: wait for the seconds to rollover to catch the pps edge
-     * - Step3: set the time at the next pps (synchronous for all boards)
+     * - Step1: wait for the last pps time to transition to catch the edge
+     * - Step2: set the time at the next pps (synchronous for all boards)
      *
-     * \param time_spec the time to latch into the usrp device
+     * \param time_spec the time to latch at the next pps after catching the edge
      */
     virtual void set_time_unknown_pps(const time_spec_t &time_spec) = 0;
 
@@ -251,10 +257,10 @@ public:
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_gain(float gain, const std::string &name, size_t chan) = 0;
+    virtual void set_rx_gain(double gain, const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for setting overall RX gain
-    void set_rx_gain(float gain, size_t chan){
+    void set_rx_gain(double gain, size_t chan){
         return this->set_rx_gain(gain, ALL_GAINS, chan);
     }
 
@@ -265,10 +271,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_rx_gain(const std::string &name, size_t chan) = 0;
+    virtual double get_rx_gain(const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for getting overall RX gain
-    float get_rx_gain(size_t chan){
+    double get_rx_gain(size_t chan){
         return this->get_rx_gain(ALL_GAINS, chan);
     }
 
@@ -342,7 +348,7 @@ public:
      * \return the rssi in dB
      * \throw exception if RSSI readback not supported
      */
-    virtual float read_rssi(size_t chan) = 0;
+    virtual double read_rssi(size_t chan) = 0;
 
     /*!
      * Get the dboard interface object for the RX subdevice.
@@ -430,10 +436,10 @@ public:
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_gain(float gain, const std::string &name, size_t chan) = 0;
+    virtual void set_tx_gain(double gain, const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for setting overall TX gain
-    void set_tx_gain(float gain, size_t chan){
+    void set_tx_gain(double gain, size_t chan){
         return this->set_tx_gain(gain, ALL_GAINS, chan);
     }
 
@@ -444,10 +450,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual float get_tx_gain(const std::string &name, size_t chan) = 0;
+    virtual double get_tx_gain(const std::string &name, size_t chan) = 0;
 
     //! A convenience wrapper for getting overall TX gain
-    float get_tx_gain(size_t chan){
+    double get_tx_gain(size_t chan){
         return this->get_tx_gain(ALL_GAINS, chan);
     }
 

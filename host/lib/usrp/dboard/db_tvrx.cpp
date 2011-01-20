@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -119,8 +119,8 @@ static uhd::dict<std::string, gain_range_t> get_tvrx_gain_ranges(void) {
     double ifmax = tvrx_if_gains_db.back();
 
     return map_list_of
-        ("RF", gain_range_t(float(rfmin), float(rfmax), float((rfmax-rfmin)/4096.0)))
-        ("IF", gain_range_t(float(ifmin), float(ifmax), float((ifmax-ifmin)/4096.0)))
+        ("RF", gain_range_t(rfmin, rfmax, (rfmax-rfmin)/4096.0))
+        ("IF", gain_range_t(ifmin, ifmax, (ifmax-ifmin)/4096.0))
     ;
 }
 
@@ -141,14 +141,14 @@ public:
     void rx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    uhd::dict<std::string, float> _gains;
+    uhd::dict<std::string, double> _gains;
     double _lo_freq;
     tuner_4937di5_regs_t _tuner_4937di5_regs;
     boost::uint8_t _tuner_4937di5_addr(void){
         return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x61 : 0x60; //ok really? we could rename that call
     };
 
-    void set_gain(float gain, const std::string &name);
+    void set_gain(double gain, const std::string &name);
     void set_freq(double freq);
 
     void update_regs(void){
@@ -275,7 +275,7 @@ static double gain_interp(double gain, boost::array<double, 17> db_vector, boost
  * \return dac voltage value
  */
 
-static float rf_gain_to_voltage(float gain, double lo_freq){
+static double rf_gain_to_voltage(double gain, double lo_freq){
     //clip the input
     gain = get_tvrx_gain_ranges()["RF"].clip(gain);
 
@@ -293,7 +293,7 @@ static float rf_gain_to_voltage(float gain, double lo_freq){
         "tvrx RF AGC gain: %f dB, dac_volts: %f V"
     ) % gain % dac_volts << std::endl;
 
-    return float(dac_volts);
+    return dac_volts;
 }
 
 /*!
@@ -303,7 +303,7 @@ static float rf_gain_to_voltage(float gain, double lo_freq){
  * \return dac voltage value
  */
 
-static float if_gain_to_voltage(float gain){
+static double if_gain_to_voltage(double gain){
     //clip the input
     gain = get_tvrx_gain_ranges()["IF"].clip(gain);
 
@@ -316,10 +316,10 @@ static float if_gain_to_voltage(float gain){
         "tvrx IF AGC gain: %f dB, dac_volts: %f V"
     ) % gain % dac_volts << std::endl;
 
-    return float(dac_volts);
+    return dac_volts;
 }
 
-void tvrx::set_gain(float gain, const std::string &name){
+void tvrx::set_gain(double gain, const std::string &name){
     assert_has(get_tvrx_gain_ranges().keys(), name, "tvrx gain name");
     if (name == "RF"){
         this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_B, rf_gain_to_voltage(gain, _lo_freq));
@@ -473,7 +473,7 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<float>(), key.name);
+        this->set_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_FREQ:

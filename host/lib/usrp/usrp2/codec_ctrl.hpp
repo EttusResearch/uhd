@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,14 +54,14 @@ public:
      * \param gain from 0-6dB
      */
 
-    virtual void set_rx_digital_gain(float gain) = 0;
+    virtual void set_rx_digital_gain(double gain) = 0;
 
     /*!
      * Set the digital gain correction on the USRP2+ ADC (ADS62P44).
      * \param gain from 0-0.5dB
      */
 
-    virtual void set_rx_digital_fine_gain(float gain) = 0;
+    virtual void set_rx_digital_fine_gain(double gain) = 0;
 
 };
 

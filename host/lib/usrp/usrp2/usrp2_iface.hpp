@@ -24,10 +24,16 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/function.hpp>
 #include <utility>
 #include <string>
 #include "fw_common.h"
 #include "usrp2_regs.hpp"
+
+
+//TODO: kill this crap when you have the top level GPS include file
+typedef boost::function<void(std::string)> gps_send_fn_t;
+typedef boost::function<std::string(void)> gps_recv_fn_t;
 
 /*!
  * The usrp2 interface class:
@@ -37,7 +43,6 @@
 class usrp2_iface : public uhd::i2c_iface, boost::noncopyable{
 public:
     typedef boost::shared_ptr<usrp2_iface> sptr;
-    typedef std::pair<boost::uint32_t, boost::uint32_t> pair64;
 
     /*!
      * Make a new usrp2 interface with the control transport.
@@ -52,14 +57,6 @@ public:
      * \return the result control data
      */
     virtual usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &data) = 0;
-
-    /*!
-     * Read a dual register (64 bits)
-     * \param addrlo the address for the low-32 bits
-     * \param addrhi the address for the high-32 bits
-     * \return a pair of 32 bit integers lo, hi
-     */
-    virtual pair64 peek64(boost::uint32_t addrlo, boost::uint32_t addrhi) = 0;
 
     /*!
      * Write a register (32 bits)
@@ -109,6 +106,9 @@ public:
     virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
 
     virtual std::string read_uart(boost::uint8_t dev) = 0;
+    
+    virtual gps_recv_fn_t get_gps_read_fn(void) = 0;
+    virtual gps_send_fn_t get_gps_write_fn(void) = 0;
 
     //! The list of possible revision types
     enum rev_type {

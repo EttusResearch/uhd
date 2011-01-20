@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ public:
      * \param which_dac the dac index 0, 1, 2, 3...
      * \param value the value in volts
      */
-    virtual void write_aux_dac(unit_t unit, aux_dac_t which_dac, float value) = 0;
+    virtual void write_aux_dac(unit_t unit, aux_dac_t which_dac, double value) = 0;
 
     /*!
      * Read from an aux adc.
@@ -111,7 +111,7 @@ public:
      * \param which_adc the adc index 0, 1, 2, 3...
      * \return the value in volts
      */
-    virtual float read_aux_adc(unit_t unit, aux_adc_t which_adc) = 0;
+    virtual double read_aux_adc(unit_t unit, aux_adc_t which_adc) = 0;
 
     /*!
      * Set a daughterboard output pin control source.
@@ -190,8 +190,6 @@ public:
      * \return the 16-bit settings value
      */
     virtual boost::uint16_t get_gpio_out(unit_t unit);
-
-    UHD_DEPRECATED void write_gpio(unit_t unit, boost::uint16_t value){set_gpio_out(unit, value);}
 
     /*!
      * Setup the GPIO debug mux.

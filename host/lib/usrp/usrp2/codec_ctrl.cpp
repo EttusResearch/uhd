@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -124,7 +124,7 @@ public:
         this->send_ad9777_reg(0x01); //set the register
     }
 
-    void set_rx_digital_gain(float gain) {  //fine digital gain
+    void set_rx_digital_gain(double gain) {  //fine digital gain
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
@@ -136,7 +136,7 @@ public:
         }
     }
 
-    void set_rx_digital_fine_gain(float gain) { //gain correction      
+    void set_rx_digital_fine_gain(double gain) { //gain correction      
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
@@ -148,7 +148,7 @@ public:
         }
     }
 
-    void set_rx_analog_gain(bool gain) { //turns on/off analog 3.5dB preamp
+    void set_rx_analog_gain(bool /*gain*/) { //turns on/off analog 3.5dB preamp
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:

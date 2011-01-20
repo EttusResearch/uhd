@@ -1,0 +1,16 @@
+########################################################################
+# ZPU firmware code for USRP2 and N Series
+########################################################################
+This code requires the gcc-zpu tool-chain which can be found here:
+
+http://opensource.zylin.com/zpudownload.html
+
+zpu-elf-gcc should be in your $PATH
+
+########################################################################
+# Run the following commands to build
+########################################################################
+mkdir build
+cd build
+cmake ../
+make

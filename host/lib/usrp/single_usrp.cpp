@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -106,12 +106,16 @@ public:
         return _mboard()[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
 
+    time_spec_t get_time_last_pps(void){
+        return _mboard()[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
+    }
+
     void set_time_now(const time_spec_t &time_spec){
         _mboard()[MBOARD_PROP_TIME_NOW] = time_spec;
     }
 
     void set_time_next_pps(const time_spec_t &time_spec){
-        _mboard()[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+        _mboard()[MBOARD_PROP_TIME_PPS] = time_spec;
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd){
@@ -160,11 +164,11 @@ public:
         return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp());
     }
 
-    void set_rx_gain(float gain, const std::string &name, size_t chan){
+    void set_rx_gain(double gain, const std::string &name, size_t chan){
         return _rx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_rx_gain(const std::string &name, size_t chan){
+    double get_rx_gain(const std::string &name, size_t chan){
         return _rx_gain_group(chan)->get_value(name);
     }
 
@@ -200,8 +204,8 @@ public:
         return _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH].as<double>();
     }
 
-    float read_rssi(size_t chan){
-        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<float>();
+    double read_rssi(size_t chan){
+        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<double>();
     }
 
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
@@ -246,11 +250,11 @@ public:
         return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp());
     }
 
-    void set_tx_gain(float gain, const std::string &name, size_t chan){
+    void set_tx_gain(double gain, const std::string &name, size_t chan){
         return _tx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_tx_gain(const std::string &name, size_t chan){
+    double get_tx_gain(const std::string &name, size_t chan){
         return _tx_gain_group(chan)->get_value(name);
     }
 

@@ -4,11 +4,11 @@ task SendFlowCtrl;
    input [15:0] fc_len;
    begin
       $display("Sending Flow Control, quanta = %d, time = %d", fc_len,$time);
-      pause_time <= fc_len;
+      //pause_time <= fc_len;
       @(posedge eth_clk);
-      pause_req <= 1;
+      //pause_req <= 1;
       @(posedge eth_clk);
-      pause_req <= 0;
+      //pause_req <= 0;
       $display("Sent Flow Control");
    end
 endtask // SendFlowCtrl

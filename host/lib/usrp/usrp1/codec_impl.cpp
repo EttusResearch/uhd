@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -92,12 +92,12 @@ void usrp1_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val, dboard_
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_GAIN_I:
         UHD_ASSERT_THROW(key.name == adc_pga_gain_name);
-        _codec_ctrls[dboard_slot]->set_rx_pga_gain(val.as<float>(), 'A');
+        _codec_ctrls[dboard_slot]->set_rx_pga_gain(val.as<double>(), 'A');
         return;
 
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == adc_pga_gain_name);
-        _codec_ctrls[dboard_slot]->set_rx_pga_gain(val.as<float>(), 'B');
+        _codec_ctrls[dboard_slot]->set_rx_pga_gain(val.as<double>(), 'B');
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -151,7 +151,7 @@ void usrp1_impl::tx_codec_set(const wax::obj &key_, const wax::obj &val, dboard_
     case CODEC_PROP_GAIN_I: //only one gain for I and Q
     case CODEC_PROP_GAIN_Q:
         UHD_ASSERT_THROW(key.name == dac_pga_gain_name);
-        _codec_ctrls[dboard_slot]->set_tx_pga_gain(val.as<float>());
+        _codec_ctrls[dboard_slot]->set_tx_pga_gain(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

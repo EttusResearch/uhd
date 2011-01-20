@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,11 +36,13 @@ void usrp_e100_impl::mboard_init(void){
         boost::bind(&usrp_e100_impl::mboard_set, this, _1, _2)
     );
 
-    //init the clock config
-    _clock_config.ref_source = clock_config_t::REF_AUTO;
-    _clock_config.pps_source = clock_config_t::PPS_SMA;
-    _clock_config.pps_polarity = clock_config_t::PPS_NEG;
+    //set the ticks per seconds into the vita time control
+    _iface->poke32(UE_REG_TIME64_TPS,
+        boost::uint32_t(_clock_ctrl->get_fpga_clock_rate())
+    );
 
+    //init the clock config
+    _clock_config = clock_config_t::internal();
     update_clock_config();
 }
 
@@ -134,6 +136,22 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         val = _iface->mb_eeprom;
         return;
 
+    case MBOARD_PROP_TIME_NOW: while(true){
+        uint32_t secs = _iface->peek32(UE_REG_RB_TIME_NOW_SECS);
+        uint32_t ticks = _iface->peek32(UE_REG_RB_TIME_NOW_TICKS);
+        if (secs != _iface->peek32(UE_REG_RB_TIME_NOW_SECS)) continue;
+        val = time_spec_t(secs, ticks, _clock_ctrl->get_fpga_clock_rate());
+        return;
+    }
+
+    case MBOARD_PROP_TIME_PPS: while(true){
+        uint32_t secs = _iface->peek32(UE_REG_RB_TIME_PPS_SECS);
+        uint32_t ticks = _iface->peek32(UE_REG_RB_TIME_PPS_TICKS);
+        if (secs != _iface->peek32(UE_REG_RB_TIME_PPS_SECS)) continue;
+        val = time_spec_t(secs, ticks, _clock_ctrl->get_fpga_clock_rate());
+        return;
+    }
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -150,7 +168,7 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_TIME_NOW:
-    case MBOARD_PROP_TIME_NEXT_PPS:{
+    case MBOARD_PROP_TIME_PPS:{
             time_spec_t time_spec = val.as<time_spec_t>();
             _iface->poke32(UE_REG_TIME64_TICKS, time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
             boost::uint32_t imm_flags = (key.as<mboard_prop_t>() == MBOARD_PROP_TIME_NOW)? 1 : 0;

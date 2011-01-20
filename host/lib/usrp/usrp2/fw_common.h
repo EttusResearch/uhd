@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,23 +18,20 @@
 #ifndef INCLUDED_USRP2_FW_COMMON_H
 #define INCLUDED_USRP2_FW_COMMON_H
 
+#include <stdint.h>
+
 /*!
  * Structs and constants for usrp2 communication.
  * This header is shared by the firmware and host code.
  * Therefore, this header may only contain valid C code.
  */
 #ifdef __cplusplus
-    #include <boost/cstdint.hpp>
-    #define __stdint(type) boost::type
 extern "C" {
-#else
-    #include <stdint.h>
-    #define __stdint(type) type
 #endif
 
 //fpga and firmware compatibility numbers
-#define USRP2_FPGA_COMPAT_NUM 3
-#define USRP2_FW_COMPAT_NUM 7
+#define USRP2_FPGA_COMPAT_NUM 4
+#define USRP2_FW_COMPAT_NUM 8
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -42,7 +39,9 @@ extern "C" {
 // udp ports for the usrp2 communication
 // Dynamic and/or private ports: 49152-65535
 #define USRP2_UDP_CTRL_PORT 49152
-#define USRP2_UDP_DATA_PORT 49153
+//#define USRP2_UDP_UPDATE_PORT 49154
+#define USRP2_UDP_DATA_PORT 49156
+#define USRP2_UDP_ERR0_PORT 49157
 
 ////////////////////////////////////////////////////////////////////////
 // I2C addresses
@@ -104,40 +103,38 @@ typedef enum{
 } usrp2_clk_edge_t;
 
 typedef struct{
-    __stdint(uint32_t) proto_ver;
-    __stdint(uint32_t) id;
-    __stdint(uint32_t) seq;
+    uint32_t proto_ver;
+    uint32_t id;
+    uint32_t seq;
     union{
-        __stdint(uint32_t) ip_addr;
+        uint32_t ip_addr;
         struct {
-            __stdint(uint32_t) dev;
-            __stdint(uint32_t) data;
-            __stdint(uint8_t) miso_edge;
-            __stdint(uint8_t) mosi_edge;
-            __stdint(uint8_t) num_bits;
-            __stdint(uint8_t) readback;
+            uint32_t dev;
+            uint32_t data;
+            uint8_t miso_edge;
+            uint8_t mosi_edge;
+            uint8_t num_bits;
+            uint8_t readback;
         } spi_args;
         struct {
-            __stdint(uint8_t) addr;
-            __stdint(uint8_t) bytes;
-            __stdint(uint8_t) data[20];
+            uint8_t addr;
+            uint8_t bytes;
+            uint8_t data[20];
         } i2c_args;
         struct {
-            __stdint(uint32_t) addr;
-            __stdint(uint32_t) data;
-            __stdint(uint32_t) addrhi;
-            __stdint(uint32_t) datahi;
-            __stdint(uint8_t) num_bytes; //1, 2, 4, 8
+            uint32_t addr;
+            uint32_t data;
+            uint32_t _pad[2];
+            uint8_t num_bytes; //1, 2, 4
         } poke_args;
         struct {
-            __stdint(uint8_t) dev;
-            __stdint(uint8_t) bytes;
-            __stdint(uint8_t) data[20];
+            uint8_t dev;
+            uint8_t bytes;
+            uint8_t data[20];
         } uart_args;
     } data;
 } usrp2_ctrl_data_t;
 
-#undef __stdint
 #ifdef __cplusplus
 }
 #endif

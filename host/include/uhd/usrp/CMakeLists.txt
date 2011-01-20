@@ -34,6 +34,7 @@ INSTALL(FILES
 
     ### utilities ###
     dsp_utils.hpp
+    gps_ctrl.hpp
     mboard_eeprom.hpp
     misc_utils.hpp
     subdev_spec.hpp

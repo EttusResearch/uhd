@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        val = float(0);
+        val = double(0);
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
@@ -173,7 +173,7 @@ void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(val.as<float>() == float(0));
+        UHD_ASSERT_THROW(val.as<double>() == double(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -217,7 +217,7 @@ void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        val = float(0);
+        val = double(0);
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
@@ -275,7 +275,7 @@ void unknown_tx::tx_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<subdev_prop_t>()){
 
     case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(val.as<float>() == float(0));
+        UHD_ASSERT_THROW(val.as<double>() == double(0));
         return;
 
     case SUBDEV_PROP_ANTENNA:

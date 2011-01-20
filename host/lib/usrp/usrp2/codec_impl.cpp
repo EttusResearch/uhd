@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,10 +28,10 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
-//this only applies to USRP2P
+//this only applies to N2XX
 static const uhd::dict<std::string, gain_range_t> codec_rx_gain_ranges = map_list_of
-                                  ("digital", gain_range_t(0, float(6.0), float(0.5)))
-                                  ("digital-fine", gain_range_t(0, float(0.5), float(0.05)));
+                                  ("digital", gain_range_t(0, 6.0, 0.5))
+                                  ("digital-fine", gain_range_t(0, 0.5, 0.05));
 
 
 /***********************************************************************
@@ -111,7 +111,7 @@ void usrp2_mboard_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
     switch(key.as<codec_prop_t>()) {
     case CODEC_PROP_GAIN_I:
     case CODEC_PROP_GAIN_Q:
-        this->rx_codec_set_gain(val.as<float>(), key.name);
+        this->rx_codec_set_gain(val.as<double>(), key.name);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -122,7 +122,7 @@ void usrp2_mboard_impl::rx_codec_set(const wax::obj &key_, const wax::obj &val){
  * Helper function to set RX codec gain
  ***********************************************************************/
 
-void usrp2_mboard_impl::rx_codec_set_gain(float gain, const std::string &name){
+void usrp2_mboard_impl::rx_codec_set_gain(double gain, const std::string &name){
   assert_has(codec_rx_gain_ranges.keys(), name, "codec rx gain name");
 
   _codec_rx_gains[name] = gain;

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
-    const std::vector<Key> dict<Key, Val>::keys(void) const{
+    std::vector<Key> dict<Key, Val>::keys(void) const{
         std::vector<Key> keys;
         BOOST_FOREACH(const pair_t &p, _map){
             keys.push_back(p.first);
@@ -68,7 +68,7 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
-    const std::vector<Val> dict<Key, Val>::vals(void) const{
+    std::vector<Val> dict<Key, Val>::vals(void) const{
         std::vector<Val> vals;
         BOOST_FOREACH(const pair_t &p, _map){
             vals.push_back(p.second);
@@ -85,11 +85,24 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
-    const Val &dict<Key, Val>::get(const Key &key, const Val &def) const{
+    const Val &dict<Key, Val>::get(const Key &key, const Val &other) const{
         BOOST_FOREACH(const pair_t &p, _map){
             if (p.first == key) return p.second;
         }
-        return def;
+        return other;
+    }
+
+    template <typename Key, typename Val>
+    const Val &dict<Key, Val>::get(const Key &key) const{
+        BOOST_FOREACH(const pair_t &p, _map){
+            if (p.first == key) return p.second;
+        }
+        throw key_not_found<Key, Val>(key);
+    }
+
+    template <typename Key, typename Val>
+    void dict<Key, Val>::set(const Key &key, const Val &val){
+        (*this)[key] = val;
     }
 
     template <typename Key, typename Val>

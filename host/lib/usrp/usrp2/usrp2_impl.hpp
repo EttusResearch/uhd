@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,8 +21,7 @@
 #include "usrp2_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
-#include "gps_ctrl.hpp"
-#include "serdes_ctrl.hpp"
+#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
@@ -86,8 +85,9 @@ public:
         size_t index,
         uhd::transport::udp_simple::sptr,
         uhd::transport::zero_copy_if::sptr,
-        size_t recv_samps_per_packet,
-        const uhd::device_addr_t &flow_control_hints
+        uhd::transport::zero_copy_if::sptr,
+        const uhd::device_addr_t &device_args,
+        size_t recv_samps_per_packet
     );
     ~usrp2_mboard_impl(void);
 
@@ -100,13 +100,13 @@ public:
 private:
     size_t _index;
     bool _continuous_streaming;
+    bool _mimo_clocking_mode_is_master;
 
     //interfaces
     usrp2_iface::sptr _iface;
     usrp2_clock_ctrl::sptr _clock_ctrl;
     usrp2_codec_ctrl::sptr _codec_ctrl;
-    usrp2_serdes_ctrl::sptr _serdes_ctrl;
-    usrp2_gps_ctrl::sptr _gps_ctrl;
+    gps_ctrl::sptr _gps_ctrl;
 
     //properties for this mboard
     void get(const wax::obj &, wax::obj &);
@@ -120,7 +120,6 @@ private:
 
     //methods and shadows for clock configuration
     uhd::clock_config_t _clock_config;
-    void init_clock_config(void);
     void update_clock_config(void);
     void set_time_spec(const uhd::time_spec_t &time_spec, bool now);
 
@@ -133,8 +132,8 @@ private:
     wax_obj_proxy::sptr _rx_codec_proxy;
     wax_obj_proxy::sptr _tx_codec_proxy;
 
-    void rx_codec_set_gain(float, const std::string &);
-    uhd::dict<std::string, float> _codec_rx_gains;
+    void rx_codec_set_gain(double, const std::string &);
+    uhd::dict<std::string, double> _codec_rx_gains;
 
     //properties interface for rx dboard
     void rx_dboard_get(const wax::obj &, wax::obj &);
@@ -187,12 +186,14 @@ public:
      * Create a new usrp2 impl base.
      * \param ctrl_transports the udp transports for control
      * \param data_transports the udp transports for data
-     * \param flow_control_hints optional flow control params
+     * \param err0_transports the udp transports for error
+     * \param device_args optional misc device parameters
      */
     usrp2_impl(
         std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
         std::vector<uhd::transport::zero_copy_if::sptr> data_transports,
-        const uhd::device_addr_t &flow_control_hints
+        std::vector<uhd::transport::zero_copy_if::sptr> err0_transports,
+        const uhd::device_addrs_t &device_args
     );
 
     ~usrp2_impl(void);
@@ -223,6 +224,7 @@ private:
 
     //io impl methods and members
     std::vector<uhd::transport::zero_copy_if::sptr> _data_transports;
+    std::vector<uhd::transport::zero_copy_if::sptr> _err0_transports;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);

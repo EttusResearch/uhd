@@ -27,26 +27,16 @@ SET(_uhd_disabled_components "" CACHE INTERNAL "" FORCE)
 #  - deps a list of dependencies
 #  - dis the default disable setting
 ########################################################################
-FUNCTION(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
-    INCLUDE(CMakeDependentOption)
+MACRO(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
     MESSAGE(STATUS "")
     MESSAGE(STATUS "Configuring ${name} support...")
-    IF(DEFINED ${var})
-        MESSAGE(STATUS "${name} support configured ${var}=${${var}}")
-    ELSE(DEFINED ${var}) #not defined: automatic enabling of component
-        MESSAGE(STATUS "${name} support configured automatically")
-    ENDIF(DEFINED ${var})
+    FOREACH(dep ${deps})
+        MESSAGE(STATUS "  Dependency ${dep} = ${${dep}}")
+    ENDFOREACH(dep)
 
     #setup the dependent option for this component
+    INCLUDE(CMakeDependentOption)
     CMAKE_DEPENDENT_OPTION(${var} "enable ${name} support" ${enb} "${deps}" ${dis})
-
-    #remove previous occurrence of component in either list
-    IF(DEFINED _uhd_enabled_components)
-        LIST(REMOVE_ITEM _uhd_enabled_components ${name})
-    ENDIF(DEFINED _uhd_enabled_components)
-    IF(DEFINED _uhd_disabled_components)
-        LIST(REMOVE_ITEM _uhd_disabled_components ${name})
-    ENDIF(DEFINED _uhd_disabled_components)
 
     #append the component into one of the lists
     IF(${var})
@@ -56,11 +46,12 @@ FUNCTION(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
         MESSAGE(STATUS "  Disabling ${name} support.")
         LIST(APPEND _uhd_disabled_components ${name})
     ENDIF(${var})
+    MESSAGE(STATUS "  Override with -D${var}=ON/OFF")
 
     #make components lists into global variables
     SET(_uhd_enabled_components ${_uhd_enabled_components} CACHE INTERNAL "" FORCE)
     SET(_uhd_disabled_components ${_uhd_disabled_components} CACHE INTERNAL "" FORCE)
-ENDFUNCTION(LIBUHD_REGISTER_COMPONENT)
+ENDMACRO(LIBUHD_REGISTER_COMPONENT)
 
 ########################################################################
 # Print the registered component summary
@@ -68,7 +59,7 @@ ENDFUNCTION(LIBUHD_REGISTER_COMPONENT)
 FUNCTION(UHD_PRINT_COMPONENT_SUMMARY)
     MESSAGE(STATUS "")
     MESSAGE(STATUS "######################################################")
-    MESSAGE(STATUS "# LibUHD enabled components                           ")
+    MESSAGE(STATUS "# UHD enabled components                              ")
     MESSAGE(STATUS "######################################################")
     FOREACH(comp ${_uhd_enabled_components})
         MESSAGE(STATUS "  * ${comp}")
@@ -76,7 +67,7 @@ FUNCTION(UHD_PRINT_COMPONENT_SUMMARY)
 
     MESSAGE(STATUS "")
     MESSAGE(STATUS "######################################################")
-    MESSAGE(STATUS "# LibUHD disabled components                          ")
+    MESSAGE(STATUS "# UHD disabled components                             ")
     MESSAGE(STATUS "######################################################")
     FOREACH(comp ${_uhd_disabled_components})
         MESSAGE(STATUS "  * ${comp}")

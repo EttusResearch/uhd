@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 #include "libusb1_base.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/assert.hpp>
-#include <boost/shared_array.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -105,8 +105,8 @@ private:
     //! a list of all transfer structs we allocated
     std::vector<libusb_transfer *> _all_luts;
 
-    //! a block of memory for the transfer buffers
-    boost::shared_array<char> _buffer;
+    //! memory allocated for the transfer buffers
+    buffer_pool::sptr _buffer_pool;
 
     // Calls for processing asynchronous I/O
     libusb_transfer *allocate_transfer(void *mem, size_t len);
@@ -134,7 +134,6 @@ static void callback(libusb_transfer *lut){
  * \param pointer to libusb_transfer
  */
 void usb_endpoint::callback_handle_transfer(libusb_transfer *lut){
-    boost::this_thread::disable_interruption di; //disable because the wait can throw
     _completed_list->push_with_wait(lut);
 }
 
@@ -157,9 +156,9 @@ usb_endpoint::usb_endpoint(
     _input(input)
 {
     _completed_list = lut_buff_type::make(num_transfers);
-    _buffer = boost::shared_array<char>(new char[num_transfers*transfer_size]);
+    _buffer_pool = buffer_pool::make(num_transfers, transfer_size);
     for (size_t i = 0; i < num_transfers; i++){
-        _all_luts.push_back(allocate_transfer(_buffer.get() + i*transfer_size, transfer_size));
+        _all_luts.push_back(allocate_transfer(_buffer_pool->at(i), transfer_size));
 
         //input luts are immediately submitted to be filled
         //output luts go into the completed list as free buffers
@@ -272,7 +271,6 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut){
 }
 
 libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
-    boost::this_thread::disable_interruption di; //disable because the wait can throw
     libusb_transfer *lut;
     if (_completed_list->pop_with_timed_wait(lut, timeout)) return lut;
     return NULL;
@@ -293,6 +291,7 @@ public:
 
     ~libusb_zero_copy_impl(void){
         _threads_running = false;
+        _thread_group.interrupt_all();
         _thread_group.join_all();
     }
 
@@ -333,12 +332,14 @@ private:
         set_thread_priority_safe();
         libusb::session::sptr session = libusb::session::get_global_session();
         _threads_running = true;
-        while(_threads_running){
-            timeval tv;
-            tv.tv_sec = 0;
-            tv.tv_usec = 100000; //100ms
-            libusb_handle_events_timeout(session->get_context(), &tv);
-        }
+        try{
+            while(_threads_running){
+                timeval tv;
+                tv.tv_sec = 0;
+                tv.tv_usec = 100000; //100ms
+                libusb_handle_events_timeout(session->get_context(), &tv);
+            }
+        } catch(const boost::thread_interrupted &){}
     }
 };
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 #include "constants.hpp"
 #include <uhd/config.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <boost/tokenizer.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -37,6 +37,10 @@ namespace fs = boost::filesystem;
 #else
     static const std::string env_path_sep = ":";
 #endif /*UHD_PLATFORM_WIN32*/
+
+#define path_tokenizer(inp) \
+    boost::tokenizer<boost::char_separator<char> > \
+    (inp, boost::char_separator<char>(env_path_sep.c_str()))
 
 /***********************************************************************
  * Get a list of paths for an environment variable
@@ -60,7 +64,7 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
 
     //convert to filesystem path, filter blank paths
     std::vector<fs::path> paths;
-    BOOST_FOREACH(const std::string &path_string, std::split_string(var_value, env_path_sep)){
+    BOOST_FOREACH(const std::string &path_string, path_tokenizer(var_value)){
         if (path_string.empty()) continue;
         paths.push_back(fs::system_complete(path_string));
     }

@@ -4,9 +4,9 @@ UHD - USRP1 Application Notes
 
 .. contents:: Table of Contents
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------------------------
 Specify a non-standard image
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------------------------
 The standard USRP1 images installer comes with two FPGA images:
  * **usrp1_fpga.rbf:** 2 DDCs + 2 DUCs
  * **usrp1_fpga_4rx.rbf:** 4 DDCs + 0 DUCs
@@ -66,7 +66,37 @@ Notice that the subdevice name is always specified in the 3 possible cases.
     B:B
 
 ------------------------------------------------------------------------
-OS Specific Notes
+Missing and emulated features
+------------------------------------------------------------------------
+The USRP1 FPGA does not have the necessary space to support the advanced
+streaming capabilities that are possible with the newer USRP devices.
+Some of these features are emulated in software to support the API.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+List of emulated features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* Setting the current device time
+* Getting the current device time
+* Transmitting at a specific time
+* Receiving at a specific time
+* Receiving a specific number of samples
+* End of burst flags for transmit/receive
+
+**Note:**
+These emulated features rely on the host system's clock for timed operations,
+and therefore may not have sufficient precision for the application.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+List of missing features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* Notification on late stream command
+* Notification on late transmit packet
+* Notification on broken chain error
+* Notification on underflow or overflow
+* Start of burst flags for transmit/receive
+
+------------------------------------------------------------------------
+OS specific notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -90,13 +120,13 @@ On Windows, a driver must be installed the first time the USRP1 is attached to t
 A download link for this driver can be found on the UHD wiki page.
 Download and unpack the driver, and direct the Windows driver install wizard to the .inf file.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------------------------
 Hardware setup notes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------------------------
 
-------------------------------------------------------------------------
-External Clock Modification
-------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+External clock modification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The USRP can be modified to accept an external clock reference instead of the 64MHz onboard reference.
  * Solder SMA (LTI-SASF54GT) connector to J2001
  * Move 0 ohm 0603 resistor R2029 to R2930

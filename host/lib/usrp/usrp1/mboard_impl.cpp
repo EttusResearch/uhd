@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -240,19 +240,6 @@ void usrp1_impl::mboard_init(void)
     }
 }
 
-void usrp1_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd)
-{
-    switch(stream_cmd.stream_mode){
-    case stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, true, 0, 0, 0);
-
-    case stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS:
-        return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, false, 0, 0, 0);
-
-    default: throw std::runtime_error("unsupported stream command type for USRP1");
-    }
-}
-
 /***********************************************************************
  * Mboard Get
  **********************************************************************/
@@ -326,6 +313,10 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         val = _iface->mb_eeprom;
         return;
 
+    case MBOARD_PROP_TIME_NOW:
+        val = _soft_time_ctrl->get_time();
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -348,7 +339,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
     switch(key.as<mboard_prop_t>()){
 
     case MBOARD_PROP_STREAM_CMD:
-        issue_stream_cmd(val.as<stream_cmd_t>());
+        _soft_time_ctrl->issue_stream_cmd(val.as<stream_cmd_t>());
         return;
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
@@ -382,6 +373,10 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         // Step2: readback the entire eeprom map into the iface.
         val.as<mboard_eeprom_t>().commit(*_iface, mboard_eeprom_t::MAP_B000);
         _iface->mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_B000);
+        return;
+
+    case MBOARD_PROP_TIME_NOW:
+        _soft_time_ctrl->set_time(val.as<time_spec_t>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

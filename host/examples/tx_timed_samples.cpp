@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    time_t seconds_in_future;
+    double seconds_in_future;
     size_t total_num_samps;
     size_t samps_per_packet;
     double rate, freq;
@@ -41,7 +41,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("secs", po::value<time_t>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
         ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
@@ -84,15 +84,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //allocate data to send
     std::vector<std::complex<float> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
 
+    uhd::tx_metadata_t md;
+    md.time_spec = uhd::time_spec_t(seconds_in_future);
+
     //send the data in multiple packets
     size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
     for (size_t i = 0; i < num_packets; i++){
-        //setup the metadata flags and time spec
-        uhd::tx_metadata_t md;
-        md.start_of_burst = true;                  //always SOB (good for continuous streaming)
+
+        //setup the metadata flags per fragment
+        md.start_of_burst = (i == 0);              //only first packet has SOB
         md.end_of_burst   = (i == num_packets-1);  //only last packet has EOB
         md.has_time_spec  = (i == 0);              //only first packet has time
-        md.time_spec = uhd::time_spec_t(seconds_in_future);
 
         size_t samps_to_send = std::min(total_num_samps - samps_per_packet*i, samps_per_packet);
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,8 +34,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args;
     size_t num_bins;
-    double rate, freq, frame_rate;
-    float gain, ref_lvl, dyn_rng;
+    double rate, freq, gain, frame_rate;
+    float ref_lvl, dyn_rng;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -45,7 +45,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         // hardware parameters
         ("rate", po::value<double>(&rate), "rate of incoming samples (sps)")
         ("freq", po::value<double>(&freq)->default_value(0), "RF center frequency in Hz")
-        ("gain", po::value<float>(&gain)->default_value(0), "gain for the RF chain")
+        ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
         // display parameters
         ("num-bins", po::value<size_t>(&num_bins)->default_value(512), "the number of bins in the DFT")
         ("frame-rate", po::value<double>(&frame_rate)->default_value(5), "frame rate of the display (fps)")

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,26 +117,32 @@ public:
         return _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
 
+    time_spec_t get_time_last_pps(void){
+        return _mboard(0)[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
+    }
+
     void set_time_next_pps(const time_spec_t &time_spec){
         for (size_t m = 0; m < get_num_mboards(); m++){
-            _mboard(m)[MBOARD_PROP_TIME_NEXT_PPS] = time_spec;
+            _mboard(m)[MBOARD_PROP_TIME_PPS] = time_spec;
         }
     }
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
-        std::cout << "Set time with unknown pps edge:" << std::endl;
-        std::cout << "    1) set times next pps (race condition)" << std::endl;
-        set_time_next_pps(time_spec);
-        boost::this_thread::sleep(boost::posix_time::seconds(1));
-
-        std::cout << "    2) catch seconds rollover at pps edge" << std::endl;
-        time_t last_secs = 0, curr_secs = 0;
-        while(curr_secs == last_secs){
-            last_secs = curr_secs;
-            curr_secs = get_time_now().get_full_secs();
+        std::cout << "    1) catch time transition at pps edge" << std::endl;
+        time_spec_t time_start = get_time_now();
+        time_spec_t time_start_last_pps = get_time_last_pps();
+        while(true){
+            if (get_time_last_pps() != time_start_last_pps) break;
+            if ((get_time_now() - time_start) > time_spec_t(1.1)){
+                throw std::runtime_error(
+                    "Board 0 may not be getting a PPS signal!\n"
+                    "No PPS detected within the time interval.\n"
+                    "See the application notes for your device.\n"
+                );
+            }
         }
 
-        std::cout << "    3) set times next pps (synchronously)" << std::endl;
+        std::cout << "    2) set times next pps (synchronously)" << std::endl;
         set_time_next_pps(time_spec);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 
@@ -233,11 +239,11 @@ public:
         return add_dsp_shift(_rx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _rx_dsp(chan/rx_cpm()));
     }
 
-    void set_rx_gain(float gain, const std::string &name, size_t chan){
+    void set_rx_gain(double gain, const std::string &name, size_t chan){
         return _rx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_rx_gain(const std::string &name, size_t chan){
+    double get_rx_gain(const std::string &name, size_t chan){
         return _rx_gain_group(chan)->get_value(name);
     }
 
@@ -273,8 +279,8 @@ public:
         return _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH].as<double>();
     }
 
-    float read_rssi(size_t chan){
-        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<float>();
+    double read_rssi(size_t chan){
+        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<double>();
     }
 
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
@@ -331,11 +337,11 @@ public:
         return add_dsp_shift(_tx_subdev(chan)[SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>(), _tx_dsp(chan/tx_cpm()));
     }
 
-    void set_tx_gain(float gain, const std::string &name, size_t chan){
+    void set_tx_gain(double gain, const std::string &name, size_t chan){
         return _tx_gain_group(chan)->set_value(gain, name);
     }
 
-    float get_tx_gain(const std::string &name, size_t chan){
+    double get_tx_gain(const std::string &name, size_t chan){
         return _tx_gain_group(chan)->get_value(name);
     }
 

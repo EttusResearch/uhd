@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@ namespace uhd{
  */
 struct UHD_API gain_fcns_t{
     boost::function<gain_range_t(void)> get_range;
-    boost::function<float(void)>        get_value;
-    boost::function<void(float)>        set_value;
+    boost::function<double(void)>        get_value;
+    boost::function<void(double)>        set_value;
 };
 
 class UHD_API gain_group : boost::noncopyable{
@@ -56,7 +56,7 @@ public:
      * \param name name of the gain element (optional)
      * \return a gain value of the element or all elements
      */
-    virtual float get_value(const std::string &name = "") = 0;
+    virtual double get_value(const std::string &name = "") = 0;
 
     /*!
      * Set the gain value for the gain element specified by name.
@@ -66,7 +66,7 @@ public:
      * \param gain the gain to set for the lement or across the group
      * \param name name of the gain element (optional)
      */
-    virtual void set_value(float gain, const std::string &name = "") = 0;
+    virtual void set_value(double gain, const std::string &name = "") = 0;
 
     /*!
      * Get a list of names of registered gain elements.

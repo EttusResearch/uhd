@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,33 +22,12 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 #include <boost/range/size.hpp>
-#include <boost/algorithm/string.hpp>
-#include <vector>
-#include <string>
 
 /*! \file algorithm.hpp
  * Useful templated functions and classes that I like to pretend are part of stl.
  * Many of the range wrapper functions come with recent versions of boost (1.43).
  */
 namespace std{
-
-    /*!
-     * Split a string at the separation characters.
-     * \param string the string to split
-     * \param sep the separator characters
-     * \return a range of strings
-     */
-    inline std::vector<std::string> split_string(
-        const std::string &string, const std::string &sep = "\t "
-    ){
-        std::vector<std::string> strings;
-        if (not string.empty()) boost::split(
-            // do not split an empty string:
-            // let me tell you about the time when boost::split segfaulted...
-            strings, string, boost::is_any_of(sep)
-        );
-        return strings;
-    }
 
     /*!
      * A wrapper around std::copy that takes ranges instead of iterators.
@@ -164,8 +143,12 @@ namespace std{
      * \param bound2 the upper or lower bound
      * \return the value clipped at the bounds
      */
-    template<typename T> inline T clip(T val, T bound1, T bound2){
-        return std::min(std::max(val, std::min(bound1, bound2)), std::max(bound1, bound2));
+    template<typename T> inline T clip(const T &val, const T &bound1, const T &bound2){
+        const T minimum = std::min(bound1, bound2);
+        if (val < minimum) return minimum;
+        const T maximum = std::max(bound1, bound2);
+        if (val > maximum) return maximum;
+        return val;
     }
 
 }//namespace std

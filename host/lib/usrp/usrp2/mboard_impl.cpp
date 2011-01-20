@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -25,11 +26,13 @@
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
-#include <boost/date_time/posix_time/posix_time.hpp>
+
+static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
+static const double mimo_clock_delay_usrp_n2xx = 3.55e-9;
+static const size_t mimo_clock_sync_delay_cycles = 137;
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::posix_time;
 
 /***********************************************************************
  * Structors
@@ -38,8 +41,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     size_t index,
     transport::udp_simple::sptr ctrl_transport,
     transport::zero_copy_if::sptr data_transport,
-    size_t recv_samps_per_packet,
-    const device_addr_t &flow_control_hints
+    transport::zero_copy_if::sptr err0_transport,
+    const device_addr_t &device_args,
+    size_t recv_samps_per_packet
 ):
     _index(index),
     _iface(usrp2_iface::make(ctrl_transport))
@@ -47,19 +51,24 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //Send a small data packet so the usrp2 knows the udp source port.
     //This setup must happen before further initialization occurs
     //or the async update packets will cause ICMP destination unreachable.
-    transport::managed_send_buffer::sptr send_buff = data_transport->get_send_buff();
+    transport::managed_send_buffer::sptr send_buff;
     static const boost::uint32_t data[2] = {
         uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
         uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
     };
+    send_buff = data_transport->get_send_buff();
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+    send_buff = err0_transport->get_send_buff();
     std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
     send_buff->commit(sizeof(data));
 
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    _serdes_ctrl = usrp2_serdes_ctrl::make(_iface);
-    //_gps_ctrl = usrp2_gps_ctrl::make(_iface);
+    //_gps_ctrl = gps_ctrl::make(
+    //    _iface->get_gps_write_fn(),
+    //    _iface->get_gps_read_fn());
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
@@ -98,14 +107,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
 
     //setting the cycles per update (disabled by default)
-    const double ups_per_sec = flow_control_hints.cast<double>("ups_per_sec", 0.0);
+    const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
         _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
     }
 
     //setting the packets per update (enabled by default)
-    const double ups_per_fifo = flow_control_hints.cast<double>("ups_per_fifo", 8.0);
+    const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
         const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
@@ -118,7 +127,26 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     init_duc_config();
 
     //initialize the clock configuration
-    init_clock_config();
+    if (device_args.has_key("mimo_mode")){
+        if (device_args["mimo_mode"] == "master"){
+            _mimo_clocking_mode_is_master = true;
+        }
+        else if (device_args["mimo_mode"] == "slave"){
+            _mimo_clocking_mode_is_master = false;
+        }
+        else throw std::runtime_error(
+            "mimo_mode must be set to master or slave"
+        );
+    }
+    else {
+        _mimo_clocking_mode_is_master = (_iface->peek32(_iface->regs.status) & (1 << 8)) != 0;
+    }
+    std::cout << boost::format("mboard%d MIMO %s") % _index %
+        (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
+
+    //init the clock config
+    _clock_config = clock_config_t::internal();
+    update_clock_config();
 
     //init the codec before the dboard
     codec_init();
@@ -139,23 +167,12 @@ usrp2_mboard_impl::~usrp2_mboard_impl(void){
 /***********************************************************************
  * Helper Methods
  **********************************************************************/
-void usrp2_mboard_impl::init_clock_config(void){
-    //setup the clock configuration settings
-    _clock_config.ref_source = clock_config_t::REF_INT;
-    _clock_config.pps_source = clock_config_t::PPS_SMA;
-    _clock_config.pps_polarity = clock_config_t::PPS_NEG;
-
-    //update the clock config (sends a control packet)
-    update_clock_config();
-}
-
 void usrp2_mboard_impl::update_clock_config(void){
     boost::uint32_t pps_flags = 0;
 
     //translate pps source enums
     switch(_clock_config.pps_source){
     case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
-    case clock_config_t::PPS_MIMO: pps_flags |= U2_FLAG_TIME64_PPS_MIMO; break;
     default: throw std::runtime_error("unhandled clock configuration pps source");
     }
 
@@ -176,7 +193,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
@@ -187,7 +203,6 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw std::runtime_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
@@ -195,6 +210,36 @@ void usrp2_mboard_impl::update_clock_config(void){
 
     case usrp2_iface::USRP_NXXX: break;
     }
+
+    //Handle the serdes clocking based on master/slave mode:
+    //   - Masters always drive the clock over serdes.
+    //   - Slaves always lock to this serdes clock.
+    //   - Slaves lock their time over the serdes.
+    if (_mimo_clocking_mode_is_master){
+        _clock_ctrl->enable_mimo_clock_out(true);
+        switch(_iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp_n2xx);
+            break;
+
+        case usrp2_iface::USRP2_REV4:
+            _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp2_rev4);
+            break;
+
+        default: break; //not handled
+        }
+        _iface->poke32(_iface->regs.time64_mimo_sync, 0);
+    }
+    else{
+        _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
+        _clock_ctrl->enable_external_ref(true);
+        _clock_ctrl->enable_mimo_clock_out(false);
+        _iface->poke32(_iface->regs.time64_mimo_sync,
+            (1 << 8) | (mimo_clock_sync_delay_cycles & 0xff)
+        );
+    }
+
 }
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
@@ -279,15 +324,21 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         val = _clock_config;
         return;
 
-    case MBOARD_PROP_TIME_NOW:{
-            usrp2_iface::pair64 time64(
-                _iface->peek64(_iface->regs.time64_secs_rb, _iface->regs.time64_ticks_rb)
-            );
-            val = time_spec_t(
-                time64.first, time64.second, get_master_clock_freq()
-            );
-        }
+    case MBOARD_PROP_TIME_NOW: while(true){
+        uint32_t secs = _iface->peek32(_iface->regs.time64_secs_rb_imm);
+        uint32_t ticks = _iface->peek32(_iface->regs.time64_ticks_rb_imm);
+        if (secs != _iface->peek32(_iface->regs.time64_secs_rb_imm)) continue;
+        val = time_spec_t(secs, ticks, get_master_clock_freq());
         return;
+    }
+
+    case MBOARD_PROP_TIME_PPS: while(true){
+        uint32_t secs = _iface->peek32(_iface->regs.time64_secs_rb_pps);
+        uint32_t ticks = _iface->peek32(_iface->regs.time64_ticks_rb_pps);
+        if (secs != _iface->peek32(_iface->regs.time64_secs_rb_pps)) continue;
+        val = time_spec_t(secs, ticks, get_master_clock_freq());
+        return;
+    }
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         val = _rx_subdev_spec;
@@ -321,7 +372,7 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         set_time_spec(val.as<time_spec_t>(), true);
         return;
 
-    case MBOARD_PROP_TIME_NEXT_PPS:
+    case MBOARD_PROP_TIME_PPS:
         set_time_spec(val.as<time_spec_t>(), false);
         return;
 

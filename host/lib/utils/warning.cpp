@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 //
 
 #include <uhd/utils/warning.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <boost/tokenizer.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/foreach.hpp>
@@ -26,6 +26,10 @@
 #include <vector>
 
 using namespace uhd;
+
+#define tokenizer(inp, sep) \
+    boost::tokenizer<boost::char_separator<char> > \
+    (inp, boost::char_separator<char>(sep))
 
 /***********************************************************************
  * Registry implementation
@@ -52,7 +56,7 @@ void warning::post(const std::string &msg){
 
     //format the warning message
     ss << std::endl << "Warning:" << std::endl;
-    BOOST_FOREACH(const std::string &line, std::split_string(msg, "\n")){
+    BOOST_FOREACH(const std::string &line, tokenizer(msg, "\n")){
         ss << "    " << line << std::endl;
     }
 

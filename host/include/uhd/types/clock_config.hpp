@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,16 +28,19 @@ namespace uhd{
      * The source and polarity for the PPS clock.
      */
     struct UHD_API clock_config_t{
+        //------ simple usage --------//
+        static clock_config_t external(void);
+        static clock_config_t internal(void);
+
+        //------ advanced usage --------//
         enum ref_source_t {
             REF_AUTO = 'a', //automatic (device specific)
             REF_INT  = 'i', //internal reference
             REF_SMA  = 's', //external sma port
-            REF_MIMO = 'm'  //mimo cable (usrp2 only)
         } ref_source;
         enum pps_source_t {
             PPS_INT  = 'i', //there is no internal
             PPS_SMA  = 's', //external sma port
-            PPS_MIMO = 'm'  //mimo cable (usrp2 only)
         } pps_source;
         enum pps_polarity_t {
             PPS_NEG = 'n', //negative edge

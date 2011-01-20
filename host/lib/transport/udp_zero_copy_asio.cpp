@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/warning.hpp>
-#include <boost/shared_array.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -37,14 +37,15 @@ namespace asio = boost::asio;
  **********************************************************************/
 //Define this to the the boost async io calls to perform receive.
 //Otherwise, get_recv_buff uses a blocking receive with timeout.
-//#define USE_ASIO_ASYNC_RECV
+#define USE_ASIO_ASYNC_RECV
 
 //Define this to the the boost async io calls to perform send.
 //Otherwise, the commit callback uses a blocking send.
 //#define USE_ASIO_ASYNC_SEND
 
-//enough buffering for half a second of samples at full rate on usrp2
-static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(4 * 25e6 * 0.5);
+//By default, this buffer is sized insufficiently small.
+//For peformance, this buffer should be 10s of megabytes.
+static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(10e3);
 
 //Large buffers cause more underflow at high rates.
 //Perhaps this is due to the kernel scheduling,
@@ -123,16 +124,16 @@ public:
     void init(void){
         //allocate all recv frames and release them to begin xfers
         _pending_recv_buffs = pending_buffs_type::make(_num_recv_frames);
-        _recv_buffer = boost::shared_array<char>(new char[_num_recv_frames*_recv_frame_size]);
+        _recv_buffer_pool = buffer_pool::make(_num_recv_frames, _recv_frame_size);
         for (size_t i = 0; i < _num_recv_frames; i++){
-            release(_recv_buffer.get() + i*_recv_frame_size);
+            release(_recv_buffer_pool->at(i));
         }
 
         //allocate all send frames and push them into the fifo
         _pending_send_buffs = pending_buffs_type::make(_num_send_frames);
-        _send_buffer = boost::shared_array<char>(new char[_num_send_frames*_send_frame_size]);
+        _send_buffer_pool = buffer_pool::make(_num_send_frames, _send_frame_size);
         for (size_t i = 0; i < _num_send_frames; i++){
-            handle_send(_send_buffer.get() + i*_send_frame_size);
+            handle_send(_send_buffer_pool->at(i));
         }
 
         //spawn the service threads that will run the io service
@@ -302,7 +303,7 @@ public:
 private:
     //memory management -> buffers and fifos
     boost::thread_group _thread_group;
-    boost::shared_array<char> _send_buffer, _recv_buffer;
+    buffer_pool::sptr _send_buffer_pool, _recv_buffer_pool;
     typedef bounded_buffer<asio::mutable_buffer> pending_buffs_type;
     pending_buffs_type::sptr _pending_recv_buffs, _pending_send_buffs;
     const size_t _recv_frame_size, _num_recv_frames;
@@ -321,12 +322,13 @@ private:
  **********************************************************************/
 template<typename Opt> static void resize_buff_helper(
     udp_zero_copy_asio_impl::sptr udp_trans,
-    size_t target_size,
+    const size_t target_size,
     const std::string &name
 ){
     size_t min_sock_buff_size = 0;
     if (name == "recv") min_sock_buff_size = MIN_RECV_SOCK_BUFF_SIZE;
     if (name == "send") min_sock_buff_size = MIN_SEND_SOCK_BUFF_SIZE;
+    min_sock_buff_size = std::max(min_sock_buff_size, target_size);
 
     std::string help_message;
     #if defined(UHD_PLATFORM_LINUX)
@@ -347,7 +349,7 @@ template<typename Opt> static void resize_buff_helper(
         ) % name % actual_size << std::endl;
         if (actual_size < target_size) uhd::warning::post(str(boost::format(
             "The %s buffer is smaller than the requested size.\n"
-            "The minimum recommended buffer size is %d bytes.\n"
+            "The minimum requested buffer size is %d bytes.\n"
             "See the transport application notes on buffer resizing.\n%s"
         ) % name % min_sock_buff_size % help_message));
     }

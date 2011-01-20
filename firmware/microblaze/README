@@ -1,3 +1,0 @@
-./bootstrap
-./configure --host=mb
-make

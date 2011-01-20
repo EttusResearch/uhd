@@ -7,7 +7,7 @@
 #include <sys/ioctl.h>
 
 #include <linux/usrp_e.h>
-#include "usrp_e_regs.hpp"
+#include "usrp_e100_regs.hpp"
 
 // Usage: usrp_e_gpio <string>
 
@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 	test = 0;
 	if (argc < 2) {
 		printf("%s 0|1|off\n", argv[0]);
+		return -1;
 	}
 
         fp = open("/dev/usrp_e0", O_RDWR);

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,8 +30,17 @@
 
 /*!
  * Defines a static code block that will be called before main()
- * \param _x the name of the defined struct (must be unique in file)
+ * The static block will catch and print exceptions to std error.
+ * \param _x the unique name of the fixture (unique per source)
  */
-#define UHD_STATIC_BLOCK(_x) static struct _x{_x();}_x;_x::_x()
+#define UHD_STATIC_BLOCK(_x) \
+    void _x(void); \
+    static _uhd_static_fixture _x##_fixture(&_x, #_x); \
+    void _x(void)
+
+//! Helper for static block, constructor calls function
+struct UHD_API _uhd_static_fixture{
+    _uhd_static_fixture(void (*)(void), const char *);
+};
 
 #endif /* INCLUDED_UHD_UTILS_STATIC_HPP */

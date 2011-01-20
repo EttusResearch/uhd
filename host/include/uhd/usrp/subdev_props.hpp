@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ namespace uhd{ namespace usrp{
     enum subdev_prop_t{
         SUBDEV_PROP_NAME              = 'n', //ro, std::string
         SUBDEV_PROP_OTHERS            = 'o', //ro, prop_names_t
-        SUBDEV_PROP_GAIN              = 'g', //rw, float
+        SUBDEV_PROP_GAIN              = 'g', //rw, double
         SUBDEV_PROP_GAIN_RANGE        = 'r', //ro, gain_range_t
         SUBDEV_PROP_GAIN_NAMES        = 'G', //ro, prop_names_t
         SUBDEV_PROP_FREQ              = 'f', //rw, double
@@ -55,7 +55,7 @@ namespace uhd{ namespace usrp{
         SUBDEV_PROP_CONNECTION        = 'c', //ro, subdev_conn_t
         SUBDEV_PROP_ENABLED           = 'e', //rw, bool
         SUBDEV_PROP_USE_LO_OFFSET     = 'l', //ro, bool
-        SUBDEV_PROP_RSSI              = 'R', //ro, float
+        SUBDEV_PROP_RSSI              = 'R', //ro, double
         SUBDEV_PROP_BANDWIDTH         = 'B'  //rw, double
     };
 

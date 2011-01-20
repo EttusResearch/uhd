@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,8 +44,8 @@ public:
         return props;
     }
 
-    void write_aux_dac(unit_t, aux_dac_t, float);
-    float read_aux_adc(unit_t, aux_adc_t);
+    void write_aux_dac(unit_t, aux_dac_t, double);
+    double read_aux_adc(unit_t, aux_adc_t);
 
     void _set_pin_ctrl(unit_t, boost::uint16_t);
     void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
@@ -294,7 +294,7 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
     );
 }
 
-void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, float value){
+void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, double value){
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
 
@@ -317,7 +317,7 @@ void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, float value
     this->_write_aux_dac(unit);
 }
 
-float usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
+double usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
     static const uhd::dict<unit_t, int> unit_to_spi_adc = map_list_of
         (UNIT_RX, SPI_SS_RX_ADC)
         (UNIT_TX, SPI_SS_TX_ADC)
@@ -346,5 +346,5 @@ float usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
     )));
 
     //convert to voltage and return
-    return float(3.3*ad7922_regs.result/4095);
+    return 3.3*ad7922_regs.result/4095;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,14 +54,14 @@ namespace uhd{
          * Key order depends on insertion precedence.
          * \return vector of keys
          */
-        const std::vector<Key> keys(void) const;
+        std::vector<Key> keys(void) const;
 
         /*!
          * Get a list of the values in this dict.
          * Value order depends on insertion precedence.
          * \return vector of values
          */
-        const std::vector<Val> vals(void) const;
+        std::vector<Val> vals(void) const;
 
         /*!
          * Does the dictionary contain this key?
@@ -73,10 +73,24 @@ namespace uhd{
         /*!
          * Get a value in the dict or default.
          * \param key the key to look for
-         * \param def use if key not found
+         * \param other use if key not found
          * \return the value or default
          */
-        const Val &get(const Key &key, const Val &def) const;
+        const Val &get(const Key &key, const Val &other) const;
+
+        /*!
+         * Get a value in the dict or throw.
+         * \param key the key to look for
+         * \return the value or default
+         */
+        const Val &get(const Key &key) const;
+
+        /*!
+         * Set a value in the dict at the key.
+         * \param key the key to set at
+         * \param val the value to set
+         */
+        void set(const Key &key, const Val &val);
 
         /*!
          * Get a value for the given key if it exists.

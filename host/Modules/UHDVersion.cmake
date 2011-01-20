@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ INCLUDE(UHDPython) #requires python for parsing
 ########################################################################
 # Setup Version Numbers
 ########################################################################
-SET(UHD_VERSION_MAJOR 0001) #API compatibility number
+SET(UHD_VERSION_MAJOR 002)  #API compatibility number
 SET(UHD_VERSION_MINOR 0)    #Timestamp of git commit
 SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
 
@@ -34,7 +34,7 @@ IF(GIT_FOUND)
     #grab the git log entry for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT_EXECUTABLE} log HEAD~..HEAD --date=raw
+        COMMAND ${GIT_EXECUTABLE} log HEAD~..HEAD --date=raw -n1
         OUTPUT_VARIABLE _git_log OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 

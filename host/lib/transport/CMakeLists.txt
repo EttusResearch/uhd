@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 # Setup libusb
 ########################################################################
 MESSAGE(STATUS "")
-FIND_PACKAGE(USB1 REQUIRED)
+FIND_PACKAGE(USB1)
 
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF)
 
@@ -37,33 +37,11 @@ IF(ENABLE_USB)
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.hpp
     )
-    IF(MSVC) #include our custom stdint for libusb
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/msvc)
-    ENDIF(MSVC)
 ELSE(ENABLE_USB)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_dummy_impl.cpp
     )
 ENDIF(ENABLE_USB)
-
-########################################################################
-# Check for SIMD headers
-########################################################################
-MESSAGE(STATUS "")
-
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
-
-IF(HAVE_EMMINTRIN_H)
-    ADD_DEFINITIONS(-DHAVE_EMMINTRIN_H)
-ENDIF(HAVE_EMMINTRIN_H)
-
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
-
-IF(HAVE_ARM_NEON_H)
-    ADD_DEFINITIONS(-DHAVE_ARM_NEON_H)
-ENDIF(HAVE_ARM_NEON_H)
 
 ########################################################################
 # Setup defines for interface address discovery
@@ -93,22 +71,8 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_BINARY_DIR}/vrt_if_packet.cpp
 )
 
-LIBUHD_PYTHON_GEN_SOURCE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/gen_convert_types.py
-    ${CMAKE_CURRENT_BINARY_DIR}/convert_types.cpp
-)
-
-# append this directory to the include path so the generated convert types
-# can include the implementation convert types file in the source directory
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-# make the generated convert types depend on the implementation header
-SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_CURRENT_BINARY_DIR}/convert_types.cpp PROPERTIES
-    OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/convert_types_impl.hpp
-)
-
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy_asio.cpp

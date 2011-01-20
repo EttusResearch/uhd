@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/warning.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <boost/algorithm/string.hpp> //for split
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -31,6 +31,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <iostream>
+#include <vector>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -47,8 +48,8 @@ template <class T> std::string num2str(T num){
 //! separate indexed device addresses into a vector of device addresses
 device_addrs_t sep_indexed_dev_addrs(const device_addr_t &dev_addr){
     //------------ support old deprecated way and print warning --------
-    if (dev_addr.has_key("addr")){
-        std::vector<std::string> addrs = std::split_string(dev_addr["addr"]);
+    if (dev_addr.has_key("addr") and not dev_addr["addr"].empty()){
+        std::vector<std::string> addrs; boost::split(addrs, dev_addr["addr"], boost::is_any_of(" "));
         if (addrs.size() > 1){
             device_addr_t fixed_dev_addr = dev_addr;
             fixed_dev_addr.pop("addr");
@@ -197,24 +198,36 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
  * Make
  **********************************************************************/
 static device::sptr usrp2_make(const device_addr_t &device_addr){
-sep_indexed_dev_addrs(device_addr);
+
+    //setup the dsp transport hints (default to a large recv buff)
+    device_addr_t dsp_xport_hints = device_addr;
+    if (not dsp_xport_hints.has_key("recv_buff_size")){
+        //set to half-a-second of buffering at max rate
+        dsp_xport_hints["recv_buff_size"] = "50e6";
+    }
+
     //create a ctrl and data transport for each address
     std::vector<udp_simple::sptr> ctrl_transports;
     std::vector<zero_copy_if::sptr> data_transports;
+    std::vector<zero_copy_if::sptr> err0_transports;
+    const device_addrs_t device_addrs = sep_indexed_dev_addrs(device_addr);
 
-    BOOST_FOREACH(const device_addr_t &dev_addr_i, sep_indexed_dev_addrs(device_addr)){
+    BOOST_FOREACH(const device_addr_t &dev_addr_i, device_addrs){
         ctrl_transports.push_back(udp_simple::make_connected(
             dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
         data_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), device_addr
+            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), dsp_xport_hints
+        ));
+        err0_transports.push_back(udp_zero_copy::make(
+            dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()
         ));
     }
 
     //create the usrp2 implementation guts
-    return device::sptr(
-        new usrp2_impl(ctrl_transports, data_transports, device_addr)
-    );
+    return device::sptr(new usrp2_impl(
+        ctrl_transports, data_transports, err0_transports, device_addrs
+    ));
 }
 
 UHD_STATIC_BLOCK(register_usrp2_device){
@@ -227,9 +240,11 @@ UHD_STATIC_BLOCK(register_usrp2_device){
 usrp2_impl::usrp2_impl(
     std::vector<udp_simple::sptr> ctrl_transports,
     std::vector<zero_copy_if::sptr> data_transports,
-    const device_addr_t &flow_control_hints
+    std::vector<zero_copy_if::sptr> err0_transports,
+    const device_addrs_t &device_args
 ):
-    _data_transports(data_transports)
+    _data_transports(data_transports),
+    _err0_transports(err0_transports)
 {
     //setup rx otw type
     _rx_otw_type.width = 16;
@@ -244,11 +259,11 @@ usrp2_impl::usrp2_impl(
     //!!!!! set the otw type here before continuing, its used below
 
     //create a new mboard handler for each control transport
-    for(size_t i = 0; i < ctrl_transports.size(); i++){
+    for(size_t i = 0; i < device_args.size(); i++){
         _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
             i, ctrl_transports[i], data_transports[i],
-            this->get_max_recv_samps_per_packet(),
-            flow_control_hints
+            err0_transports[i], device_args[i],
+            this->get_max_recv_samps_per_packet()
         )));
         //use an empty name when there is only one mboard
         std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";

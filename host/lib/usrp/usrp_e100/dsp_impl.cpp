@@ -38,7 +38,7 @@ void usrp_e100_impl::rx_ddc_init(void){
 
     //initial config and update
     rx_ddc_set(DSP_PROP_FREQ_SHIFT, double(0));
-    rx_ddc_set(DSP_PROP_HOST_RATE, double(64e6/10));
+    rx_ddc_set(DSP_PROP_HOST_RATE, double(16e6));
 }
 
 /***********************************************************************
@@ -121,7 +121,7 @@ void usrp_e100_impl::tx_duc_init(void){
 
     //initial config and update
     tx_duc_set(DSP_PROP_FREQ_SHIFT, double(0));
-    tx_duc_set(DSP_PROP_HOST_RATE, double(64e6/10));
+    tx_duc_set(DSP_PROP_HOST_RATE, double(16e6));
 }
 
 /***********************************************************************

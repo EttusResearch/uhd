@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ static const int dbsrx2_ref_divider = 4; // Hitachi HMC426 divider (U7)
 static const prop_names_t dbsrx2_antennas = list_of("J3");
 
 static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges = map_list_of
-    ("GC1", gain_range_t(0, 73, float(0.05)))
+    ("GC1", gain_range_t(0, 73, 0.05))
     ("BBG", gain_range_t(0, 15, 1))
 ;
 
@@ -66,7 +66,7 @@ public:
 private:
     double _lo_freq;
     double _bandwidth;
-    uhd::dict<std::string, float> _gains;
+    uhd::dict<std::string, double> _gains;
     max2112_write_regs_t _max2112_write_regs;
     max2112_read_regs_t _max2112_read_regs;
     boost::uint8_t _max2112_addr(){ //0x60 or 0x61 depending on which side
@@ -74,7 +74,7 @@ private:
     }
 
     void set_lo_freq(double target_freq);
-    void set_gain(float gain, const std::string &name);
+    void set_gain(double gain, const std::string &name);
     void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
@@ -269,10 +269,10 @@ void dbsrx2::set_lo_freq(double target_freq){
  * \param gain the requested gain in dB
  * \return 4 bit the register value
  */
-static int gain_to_bbg_vga_reg(float &gain){
+static int gain_to_bbg_vga_reg(double &gain){
     int reg = boost::math::iround(dbsrx2_gain_ranges["BBG"].clip(gain));
 
-    gain = float(reg);
+    gain = double(reg);
 
     if (dbsrx2_debug) std::cerr 
         << boost::format("DBSRX2 BBG Gain:\n")
@@ -288,16 +288,16 @@ static int gain_to_bbg_vga_reg(float &gain){
  * \param gain the requested gain in dB
  * \return dac voltage value
  */
-static float gain_to_gc1_rfvga_dac(float &gain){
+static double gain_to_gc1_rfvga_dac(double &gain){
     //clip the input
     gain = dbsrx2_gain_ranges["GC1"].clip(gain);
 
     //voltage level constants
-    static const float max_volts = float(0.5), min_volts = float(2.7);
-    static const float slope = (max_volts-min_volts)/dbsrx2_gain_ranges["GC1"].stop();
+    static const double max_volts = 0.5, min_volts = 2.7;
+    static const double slope = (max_volts-min_volts)/dbsrx2_gain_ranges["GC1"].stop();
 
     //calculate the voltage for the aux dac
-    float dac_volts = gain*slope + min_volts;
+    double dac_volts = gain*slope + min_volts;
 
     if (dbsrx2_debug) std::cerr 
         << boost::format("DBSRX2 GC1 Gain:\n")
@@ -310,7 +310,7 @@ static float gain_to_gc1_rfvga_dac(float &gain){
     return dac_volts;
 }
 
-void dbsrx2::set_gain(float gain, const std::string &name){
+void dbsrx2::set_gain(double gain, const std::string &name){
     assert_has(dbsrx2_gain_ranges.keys(), name, "dbsrx2 gain name");
     if (name == "BBG"){
         _max2112_write_regs.bbg = gain_to_bbg_vga_reg(gain);
@@ -423,7 +423,7 @@ void dbsrx2::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<float>(), key.name);
+        this->set_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ENABLED:
