@@ -30,7 +30,6 @@ using namespace boost::assign;
 
 //this only applies to USRP2P
 static const uhd::dict<std::string, gain_range_t> codec_rx_gain_ranges = map_list_of
-                                  ("analog", gain_range_t(0, float(3.5), float(3.5)))
                                   ("digital", gain_range_t(0, float(6.0), float(0.5)))
                                   ("digital-fine", gain_range_t(0, float(0.5), float(0.05)));
 
@@ -127,11 +126,12 @@ void usrp2_mboard_impl::rx_codec_set_gain(float gain, const std::string &name){
   assert_has(codec_rx_gain_ranges.keys(), name, "codec rx gain name");
 
   _codec_rx_gains[name] = gain;
-
+/*
   if(name == "analog") {
     _codec_ctrl->set_rx_analog_gain(gain > 0); //just turn it on or off
     return;
   }
+*/
   if(name == "digital") {
     _codec_ctrl->set_rx_digital_gain(gain);
     return;

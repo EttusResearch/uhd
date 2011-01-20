@@ -74,6 +74,7 @@ public:
             //_ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
             _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
             this->send_ads62p44_reg(0x14);
+            this->set_rx_analog_gain(1);
             break;
 
         case usrp2_iface::USRP_NXXX: break;
@@ -151,7 +152,7 @@ public:
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
-            _ads62p44_regs.coarse_gain = gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
+            _ads62p44_regs.coarse_gain = ads62p44_regs_t::COARSE_GAIN_3_5DB;//gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
             this->send_ads62p44_reg(0x14);
             break;
 
