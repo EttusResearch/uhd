@@ -183,8 +183,8 @@ Open the Visual Studio Command Prompt Shorcut:
 ::
 
     cd <uhd-repo-path>\host\build
-    DevEnv ALL_BUILD.vcproj /Build Release
-    DevEnv INSTALL.vcproj /Build Release
+    DevEnv uhd.sln /build Release /project ALL_BUILD
+    DevEnv uhd.sln /build Release /project INSTALL
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable
