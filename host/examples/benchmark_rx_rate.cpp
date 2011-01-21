@@ -70,6 +70,7 @@ static inline void test_device(
             break;
 
         default:
+            std::cerr << "Error code: " << md.error_code << std::endl;
             std::cerr << "Unexpected error on recv, exit test..." << std::endl;
             return;
         }
