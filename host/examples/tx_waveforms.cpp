@@ -48,9 +48,9 @@ float gen_ramp(float x){
 #define sine_table_len 2048
 static float sine_table[sine_table_len];
 UHD_STATIC_BLOCK(gen_sine_table){
-    static const float m_pi = std::acos(float(-1));
+    static const double tau = 2*std::acos(-1.0);
     for (size_t i = 0; i < sine_table_len; i++)
-        sine_table[i] = std::sin((2*m_pi*i)/sine_table_len);
+        sine_table[i] = float(std::sin((tau*i)/sine_table_len));
 }
 
 float gen_sine(float x){
