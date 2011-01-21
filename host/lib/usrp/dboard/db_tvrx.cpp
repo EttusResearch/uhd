@@ -54,7 +54,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The tvrx constants
  **********************************************************************/
-static const bool tvrx_debug = false;
+static const bool tvrx_debug = true;
 
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
@@ -383,7 +383,7 @@ static double get_alias(double freq, double fs) {
     double alias;
     freq = fmod(freq, fs);
     if(freq >= (fs/2)) {
-        alias = fs - freq;
+        alias = freq - fs;
     } else {
         alias = freq;
     }
@@ -429,6 +429,14 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
      */
         codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
         val = (_lo_freq - tvrx_if_freq) + get_alias(tvrx_if_freq, codec_rate);
+        if(tvrx_debug) {
+            std::cout << "Getting TVRX freq..." << std::endl;
+            std::cout << "\tCodec rate: " << codec_rate << std::endl;
+            std::cout << "\tLO freq: " << _lo_freq << std::endl;
+            std::cout << "\tIF freq: " << tvrx_if_freq << std::endl;
+            std::cout << "\tAlias freq: " << get_alias(tvrx_if_freq, codec_rate) << std::endl;
+            std::cout << "\tCalculated freq: " << val.as<double>() << std::endl;
+        }
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
