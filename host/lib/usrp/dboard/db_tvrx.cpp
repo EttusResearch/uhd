@@ -54,7 +54,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The tvrx constants
  **********************************************************************/
-static const bool tvrx_debug = true;
+static const bool tvrx_debug = false;
 
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
