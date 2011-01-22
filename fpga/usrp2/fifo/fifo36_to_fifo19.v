@@ -16,7 +16,7 @@ module fifo36_to_fifo19
    
    wire   f36_sof  = f36_datain[32];
    wire   f36_eof  = f36_datain[33];
-   wire   f36_occ  = f36_datain[35:34];
+   wire [1:0] f36_occ  = f36_datain[35:34];
    
    reg 	  phase;
    

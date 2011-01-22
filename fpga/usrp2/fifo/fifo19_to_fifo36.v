@@ -36,42 +36,49 @@ module fifo19_to_fifo36
      if(f19_src_rdy_i & ((state != 2)|xfer_out))
        f36_eof 	<= f19_eof;
 
-   always @(posedge clk)    // FIXME check this
-     if(f19_eof)
-       f36_occ 	<= {state[0],f19_occ};
-     else
-       f36_occ 	<= 0;
-   
    always @(posedge clk)
      if(reset)
-       state 	<= 0;
+       begin
+	  state 	<= 0;
+	  f36_occ <= 0;
+       end
      else
        if(f19_src_rdy_i)
 	 case(state)
 	   0 : 
-	     if(f19_eof)
-	       state <= 2;
-	     else
-	       state <= 1;
+	     begin
+		dat0 <= f19_datain;
+		if(f19_eof)
+		  begin
+		     state <= 2;
+		     f36_occ <= f19_occ ? 2'b01 : 2'b10;
+		  end
+		else
+		  state <= 1;
+	     end
 	   1 : 
-	     state <= 2;
+	     begin
+		dat1 <= f19_datain;
+		state <= 2;
+		if(f19_eof)
+		  f36_occ <= f19_occ ? 2'b11 : 2'b00;
+	     end
 	   2 : 
 	     if(xfer_out)
-	       if(~f19_eof)
-		 state 	   <= 1;
-	   // remain in state 2 if we are at eof
+	       begin
+		  dat0 <= f19_datain;
+		  if(f19_eof) // remain in state 2 if we are at eof
+		    f36_occ <= f19_occ ? 2'b01 : 2'b10;
+		  else
+		    state 	   <= 1;
+	       end
 	 endcase // case(state)
        else
 	 if(xfer_out)
-	   state 	   <= 0;
-
-   always @(posedge clk)
-     if(f19_src_rdy_i & (state==1))
-       dat1 		   <= f19_datain;
-
-   always @(posedge clk)
-     if(f19_src_rdy_i & ((state==0) | xfer_out))
-       dat0 		   <= f19_datain;
+	   begin
+	      state 	   <= 0;
+	      f36_occ <= 0;
+	   end
    
    assign    f19_dst_rdy_o  = xfer_out | (state != 2);
    assign    f36_dataout    = LE ? {f36_occ,f36_eof,f36_sof,dat1,dat0} :
