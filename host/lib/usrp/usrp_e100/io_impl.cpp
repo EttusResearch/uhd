@@ -35,7 +35,8 @@ zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const size_t tx_async_report_sid = 1;
+static const size_t rx_data_inline_sid = 1;
+static const size_t tx_async_report_sid = 2;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
 static const bool recv_debug = false;
 
@@ -110,8 +111,17 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(usrp_e100_clock_ctrl::sptr clock_
             const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
             vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
 
+            //handle an rx data packet or inline message
+            if (if_packet_info.sid == rx_data_inline_sid){
+                if (recv_debug) std::cout << "this is rx_data_inline_sid\n";
+                //same number of frames as the data transport -> always immediate
+                recv_pirate_booty->push_with_wait(buff);
+                continue;
+            }
+
             //handle a tx async report message
             if (if_packet_info.sid == tx_async_report_sid and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+                if (recv_debug) std::cout << "this is tx_async_report_sid\n";
 
                 //fill in the async metadata
                 async_metadata_t metadata;
@@ -128,8 +138,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(usrp_e100_clock_ctrl::sptr clock_
                 continue;
             }
 
-            //same number of frames as the data transport -> always immediate
-            recv_pirate_booty->push_with_wait(buff);
+            if (recv_debug) std::cout << "this is unknown packet\n";
 
         }catch(const std::exception &e){
             std::cerr << "Error (usrp-e recv pirate loop): " << e.what() << std::endl;
@@ -153,17 +162,20 @@ void usrp_e100_impl::io_init(void){
     //setup before the registers (transport called to calculate max spp)
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface));
 
+    //clear state machines
+    _iface->poke32(UE_REG_CTRL_RX_CLEAR, 0);
+    _iface->poke32(UE_REG_CTRL_TX_CLEAR, 0);
+
     //setup rx data path
     _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
     _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
-    _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 1); //reset
     _iface->poke32(UE_REG_CTRL_RX_VRT_HEADER, 0
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
         | (0x1 << 20) //fractional time sample count
     );
-    _iface->poke32(UE_REG_CTRL_RX_VRT_STREAM_ID, 0);
+    _iface->poke32(UE_REG_CTRL_RX_VRT_STREAM_ID, rx_data_inline_sid);
     _iface->poke32(UE_REG_CTRL_RX_VRT_TRAILER, 0);
 
     //setup the tx policy
@@ -185,7 +197,6 @@ void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
 
 void usrp_e100_impl::handle_overrun(size_t){
     std::cerr << "O"; //the famous OOOOOOOOOOO
-    _iface->poke32(UE_REG_CTRL_RX_CLEAR_OVERRUN, 0);
     if (_io_impl->continuous_streaming){
         this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }

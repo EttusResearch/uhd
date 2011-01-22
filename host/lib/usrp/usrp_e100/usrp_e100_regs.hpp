@@ -126,6 +126,14 @@
 #define UE_REG_SR_MISC_TEST32        UE_REG_SETTINGS_BASE_ADDR(52)
 
 /////////////////////////////////////////////////
+// Magic reset regs
+////////////////////////////////////////////////
+#define UE_REG_CLEAR_ADDR(n)      (UE_REG_SETTINGS_BASE_ADDR(48) + (4*(n)))
+#define UE_REG_CLEAR_RX           UE_REG_CLEAR_ADDR(0)
+#define UE_REG_CLEAR_TX           UE_REG_CLEAR_ADDR(1)
+#define UE_REG_CLEAR_GLOBAL       UE_REG_CLEAR_ADDR(2)
+
+/////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
 #define UE_REG_DSP_RX_ADDR(n)      (UE_REG_SETTINGS_BASE_ADDR(16) + (4*(n)))
@@ -145,7 +153,7 @@
 #define UE_REG_CTRL_RX_STREAM_CMD        UE_REG_CTRL_RX_ADDR(0) // {now, chain, num_samples(30)
 #define UE_REG_CTRL_RX_TIME_SECS         UE_REG_CTRL_RX_ADDR(1)
 #define UE_REG_CTRL_RX_TIME_TICKS        UE_REG_CTRL_RX_ADDR(2)
-#define UE_REG_CTRL_RX_CLEAR_OVERRUN     UE_REG_CTRL_RX_ADDR(3) // write anything to clear overrun
+#define UE_REG_CTRL_RX_CLEAR             UE_REG_CTRL_RX_ADDR(3) // write anything to clear
 #define UE_REG_CTRL_RX_VRT_HEADER        UE_REG_CTRL_RX_ADDR(4) // word 0 of packet.  FPGA fills in packet counter
 #define UE_REG_CTRL_RX_VRT_STREAM_ID     UE_REG_CTRL_RX_ADDR(5) // word 1 of packet.
 #define UE_REG_CTRL_RX_VRT_TRAILER       UE_REG_CTRL_RX_ADDR(6)
@@ -167,7 +175,7 @@
 ////////////////////////////////////////////////
 #define UE_REG_CTRL_TX_ADDR(n)           (UE_REG_SETTINGS_BASE_ADDR(24) + (4*(n)))
 #define UE_REG_CTRL_TX_NCHANNELS         UE_REG_CTRL_TX_ADDR(0)
-#define UE_REG_CTRL_TX_CLEAR_UNDERRUN    UE_REG_CTRL_TX_ADDR(1)
+#define UE_REG_CTRL_TX_CLEAR             UE_REG_CTRL_TX_ADDR(1)
 #define UE_REG_CTRL_TX_REPORT_SID        UE_REG_CTRL_TX_ADDR(2)
 #define UE_REG_CTRL_TX_POLICY            UE_REG_CTRL_TX_ADDR(3)
 

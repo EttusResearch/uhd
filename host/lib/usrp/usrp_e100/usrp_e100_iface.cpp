@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //
 
 #include "usrp_e100_iface.hpp"
+#include "usrp_e100_regs.hpp"
 #include <uhd/utils/assert.hpp>
 #include <sys/ioctl.h> //ioctl
 #include <fcntl.h> //open, close
@@ -107,6 +108,9 @@ public:
         if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
             throw std::runtime_error("Failed to open " + node);
         }
+
+        //very first thing, reset all the wishbone, always do first!
+        this->poke32(UE_REG_CLEAR_GLOBAL, 0);
 
         mb_eeprom = mboard_eeprom_t(get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
     }
