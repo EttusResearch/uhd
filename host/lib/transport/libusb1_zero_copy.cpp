@@ -271,6 +271,7 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut){
 }
 
 libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
+    boost::this_thread::disable_interruption di; //disable because the wait can throw
     libusb_transfer *lut;
     if (_completed_list->pop_with_timed_wait(lut, timeout)) return lut;
     return NULL;
