@@ -94,7 +94,7 @@ public:
         const std::string &port,
         const device_addr_t &hints
     ):
-        _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu-4))), //TODO remove -4 when FPGA handles 2 byte pad correctly
+        _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
         _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_RECV_FRAMES))),
         _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
         _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_SEND_FRAMES))),
