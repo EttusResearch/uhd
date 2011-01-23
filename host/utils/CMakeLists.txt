@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,20 +44,6 @@ IF(ENABLE_USRP1)
         usrp1_init_eeprom.cpp
     )
 ENDIF(ENABLE_USRP1)
-
-IF(ENABLE_USRP_E100)
-    ENABLE_LANGUAGE(C)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
-    LIST(APPEND util_share_sources
-        fpga-downloader.cpp
-        clkgen-config.cpp
-        usrp-e-loopback.c
-        usrp-e-debug-pins.c
-        usrp-e-i2c.c
-        usrp-e-spi.c
-    )
-ENDIF(ENABLE_USRP_E100)
 
 #for each source: build an executable and install
 FOREACH(util_source ${util_share_sources})
