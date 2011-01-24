@@ -81,7 +81,7 @@ The safe-mode button is a pushbutton switch (S2) located inside the enclosure.
 To boot into the safe image, hold-down the safe-mode button while power-cycling the device.
 Continue to hold-down the button until the front-panel LEDs blink and remain solid.
 
-When in safe-mode, the USRP-N Series will always have the IP address 192.168.10.2
+When in safe-mode, the USRP-N device will always have the IP address 192.168.10.2
 
 ------------------------------------------------------------------------
 Setup networking
@@ -154,31 +154,53 @@ Run the following commands:
     cd <prefix>/share/uhd/utils
     sudo ./usrp2_recovery.py --ifc=eth0 --new-ip=192.168.10.3
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Debugging networking problems
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-**Disable the firewall:**
-If uhd_find_devices gives you nothing
-but uhd_find_devices --args addr=192.168.10.2 yeilds a discovered device,
-then your firewall may be blocking replies to UDP broadcast packets.
+------------------------------------------------------------------------
+Communication problems
+------------------------------------------------------------------------
+When setting up a development machine for the first time,
+you may have various difficulties communicating with the USRP device.
+The following tips are designed to help narrow-down and diagnose the problem.
 
-**Ping the USRP2:**
-The USRP2 will reply to icmp echo requests.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Firewall issues
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When the IP address is not specified,
+the device discovery sends broadcast UDP packets from each ethernet interface.
+Many firewalls will block the replies to these broadcast packets.
+If disabling your system's firewall,
+or specifying the IP address yeilds a discovered device,
+then your firewall may be blocking replies to UDP broadcast packets.
+If this is the case, we recommend that you disable the firewall,
+or create a rule to allow all incoming packets with UDP source port 49152.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ping the device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The USRP will reply to icmp echo requests.
+A successful ping response means that the device has booted properly,
+and that it is using the expected IP address.
+
 ::
 
     ping 192.168.10.2
 
-**Monitor the serial output:**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monitor the serial output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Read the serial port to get debug verbose from the embedded microcontroller.
-Use a standard USB to 3.3v-level serial converter at 230400 baud.
 The microcontroller prints useful information about IP addresses,
-MAC addresses, control packets, and fast-path settings.
+MAC addresses, control packets, fast-path settings, and bootloading.
+Use a standard USB to 3.3v-level serial converter at 230400 baud.
+Connect GND to the converter ground, and connect TXD to the converter receive.
+The RXD pin can be left unconnected as this is only a one-way communication.
 
 * **USRP2:** Serial port located on the rear edge
 * **N210:** Serial port located on the left side
 
-**Monitor the host network traffic:**
-Use wireshark to monitor packets sent to and received from the USRP2.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Monitor the host network traffic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use wireshark to monitor packets sent to and received from the device.
 
 ------------------------------------------------------------------------
 Addressing the device
