@@ -89,7 +89,8 @@ static inline void test_device(
             got_first_packet = true;
         }
 
-        total_lost_samples += boost::math::iround(rx_rate_sps*(md.time_spec - next_expected_time_spec).get_real_secs());
+        double approx_lost_samps = rx_rate_sps*(md.time_spec - next_expected_time_spec).get_real_secs();
+        total_lost_samples += std::max(0, boost::math::iround(approx_lost_samps));
         next_expected_time_spec = md.time_spec + uhd::time_spec_t(0, num_rx_samps, rx_rate_sps);
 
     } while((next_expected_time_spec - initial_time_spec) < uhd::time_spec_t(duration_secs));
