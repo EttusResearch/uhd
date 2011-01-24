@@ -30,10 +30,13 @@ On windows, install cygwin with git support to checkout the repository,
 or install msysgit from http://code.google.com/p/msysgit/downloads/list
 
 ^^^^^^^^^^^^^^^^
-C++
+C++ compiler
 ^^^^^^^^^^^^^^^^
-On Unix, this is GCC 4.0 and above. On Windows, this is MSVC 2008.
-Other compilers have not been tested yet or confirmed working.
+The following compilers are known to work:
+
+* GCC
+* Clang
+* MSVC
 
 ^^^^^^^^^^^^^^^^
 CMake
@@ -77,6 +80,10 @@ Cheetah
 * **Usage:** build time (required)
 * **Download URL:** http://www.cheetahtemplate.org/download.html
 * **Download URL (windows installer):** http://feisley.com/python/cheetah/
+
+**Alternative method:**
+Install setuptools, and use the easy_install command to install Cheetah.
+http://pypi.python.org/pypi/setuptools
 
 ^^^^^^^^^^^^^^^^
 Doxygen

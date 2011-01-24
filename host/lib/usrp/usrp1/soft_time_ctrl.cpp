@@ -20,14 +20,12 @@
 #include <boost/any.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/local_time/local_time.hpp>
 #include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace pt = boost::posix_time;
-namespace lt = boost::local_time;
 
 static const time_spec_t TWIDDLE(0.0015);
 

@@ -50,6 +50,8 @@ Load the images onto the on-board flash (USRP-N Series only)
 ------------------------------------------------------------------------
 The USRP-N Series can be reprogrammed over the network
 to update or change the firmware and FPGA images.
+When updating images, always burn both the FPGA and firmware images before power cycling.
+This ensures that when the device reboots, it has a compatible set of images to boot into.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the net burner tool (unix)
@@ -75,8 +77,11 @@ Its possible to put the device into an unusable state by loading bad images.
 Fortunately, the USRP-N Series can be booted into a safe (read-only) image.
 Once booted into the safe image, the user can once again load images onto the device.
 
-To boot into the safe image, hold down the reset button while power-cycling the device.
-The reset button is a pushbutton switch (S2) located inside the enclosure.
+The safe-mode button is a pushbutton switch (S2) located inside the enclosure.
+To boot into the safe image, hold-down the safe-mode button while power-cycling the device.
+Continue to hold-down the button until the front-panel LEDs blink and remain solid.
+
+When in safe-mode, the USRP-N Series will always have the IP address 192.168.10.2
 
 ------------------------------------------------------------------------
 Setup networking
@@ -163,12 +168,14 @@ The USRP2 will reply to icmp echo requests.
 
     ping 192.168.10.2
 
-**Monitor the USRP2:**
-You can read the serial port on the rear of the USRP2
-to get debug verbose from the embedded microcontroller.
+**Monitor the serial output:**
+Read the serial port to get debug verbose from the embedded microcontroller.
 Use a standard USB to 3.3v-level serial converter at 230400 baud.
 The microcontroller prints useful information about IP addresses,
 MAC addresses, control packets, and fast-path settings.
+
+* **USRP2:** Serial port located on the rear edge
+* **N210:** Serial port located on the left side
 
 **Monitor the host network traffic:**
 Use wireshark to monitor packets sent to and received from the USRP2.
