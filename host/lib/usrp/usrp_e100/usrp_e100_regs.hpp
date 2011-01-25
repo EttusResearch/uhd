@@ -112,6 +112,7 @@
 #define UE_REG_RB_TIME_NOW_TICKS  UE_REG_RB_MUX_32_BASE + 4
 #define UE_REG_RB_TIME_PPS_SECS   UE_REG_RB_MUX_32_BASE + 8
 #define UE_REG_RB_TIME_PPS_TICKS  UE_REG_RB_MUX_32_BASE + 12
+#define UE_REG_RB_MISC_TEST32     UE_REG_RB_MUX_32_BASE + 16
 
 ////////////////////////////////////////////////////
 // Slave 8 -- Settings Bus
@@ -121,6 +122,8 @@
 //  First the address xxx_xx00 and then xxx_xx10
 
 #define UE_REG_SETTINGS_BASE_ADDR(n) (UE_REG_SLAVE(8) + (4*(n)))
+
+#define UE_REG_SR_MISC_TEST32        UE_REG_SETTINGS_BASE_ADDR(52)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
