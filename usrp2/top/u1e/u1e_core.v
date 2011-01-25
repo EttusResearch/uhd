@@ -36,6 +36,7 @@ module u1e_core
    localparam SR_TX_DSP = 32;     // 5 regs (+0 to +4)
    localparam SR_TIME64 = 40;     // 6 regs (+0 to +5)
    localparam SR_CLEAR_FIFO = 48; // 1 reg
+   localparam SR_REG_TEST32 = 52; // 1 reg
 
    wire [7:0]	COMPAT_NUM = 8'd3;
    
@@ -302,7 +303,7 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
+   assign s5_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -412,7 +413,7 @@ module u1e_core
 		.gpio( {io_tx,io_rx} ) );
 
    // /////////////////////////////////////////////////////////////////////////
-   // Settings Bus -- Slave #5
+   // Settings Bus -- Slave #8 + 9
 
    // only have 64 regs, 32 bits each with current setup...
    settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
@@ -432,15 +433,24 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
 
+   wire [31:0] reg_test32;
+
+   setting_reg #(.my_addr(SR_REG_TEST32)) sr_reg_test32
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(reg_test32),.changed());
+
    wb_readback_mux_16LE readback_mux_32
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s7_stb),
       .wb_adr_i(s7_adr), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
 
-      .word00(vita_time[63:32]),    .word01(vita_time[31:0]),
-      .word02(vita_time_pps[63:32]),.word03(vita_time_pps[31:0]),
-      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
-      .word08(32'b0),.word09(32'b0),.word10(32'b0),.word11(32'b0),
-      .word12(32'b0),.word13(32'b0),.word14(32'b0),.word15(32'b0)
+      .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
+      .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
+      .word04(reg_test32),              .word05(32'b0),
+      .word06(32'b0),                   .word07(32'b0),
+      .word08(32'b0),                   .word09(32'b0),
+      .word10(32'b0),                   .word11(32'b0),
+      .word12(32'b0),                   .word13(32'b0),
+      .word14(32'b0),                   .word15(32'b0)
       );
 
    // /////////////////////////////////////////////////////////////////////////
