@@ -8,10 +8,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <poll.h>
+#include <sys/mman.h>
 #include "usrp_e.h"
 
 // max length #define PKT_DATA_LENGTH 1016
 static int packet_data_length;
+
+struct ring_buffer_info (*rxi)[];
+struct ring_buffer_info (*txi)[];
+__u8 *rx_buf;
+__u8 *tx_buf;
+static struct usrp_e_ring_buffer_size_t rb_size;
 
 static int fp;
 static u_int32_t crc_tab[256];
@@ -45,7 +53,7 @@ static void *read_thread(void *threadid)
 {
 	int cnt;
 	struct usrp_transfer_frame *rx_data;
-	int rx_pkt_cnt;
+	int rx_pkt_cnt, rb_read;
 	int i;
 	unsigned long crc;
 	unsigned int rx_crc;
@@ -53,7 +61,6 @@ static void *read_thread(void *threadid)
 	struct timeval start_time, finish_time;
 
 	__u8 *p;
-	__u32 *pi;
 
 	printf("Greetings from the reading thread!\n");
 
@@ -61,62 +68,45 @@ static void *read_thread(void *threadid)
 	rx_data = malloc(2048);
 
 	rx_pkt_cnt = 0;
+	rb_read = 0;
 
 	bytes_transfered = 0;
 	gettimeofday(&start_time, NULL);
 
 	while (1) {
 		
-		cnt = read(fp, rx_data, 2048);
-		if (cnt < 0)
-			printf("Error returned from read: %d\n", cnt);
+		if (!((*rxi)[rb_read].flags & RB_USER)) {
+			struct pollfd pfd;
+			pfd.fd = fp;
+			pfd.events = POLLIN;
+			ssize_t ret = poll(&pfd, 1, -1);
+		}
 
 		rx_pkt_cnt++;
+		cnt = (*rxi)[rb_read].len;
+		p = rx_buf + (rb_read * 2048);
 
-#if 0
-		if (rx_pkt_cnt  == 512) {
-			printf(".");
-			fflush(stdout);
-			rx_pkt_cnt = 0;
-		}
-#endif
-
-		if (rx_data->status & RB_OVERRUN)
-			printf("O");
-
-		printf("rx_data->len = %d\n", rx_data->len);
-
-	
+		rx_crc = *(int *) &p[cnt-4];
 		crc = 0xFFFFFFFF;
-		for (i = 0; i < rx_data->len - 4; i+=2) {
+		for (i = 0; i < cnt - 4; i+=2) {
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
-				crc_tab[(crc ^ rx_data->buf[i+1]) & 0xFF];
-printf("idx = %d, data = %X, crc = %X\n", i, rx_data->buf[i+1],crc);
+				crc_tab[(crc ^ p[i+1]) & 0xFF];
+printf("idx = %d, data = %X, crc = %X\n", i, p[i+1],crc);
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
-				crc_tab[(crc ^ rx_data->buf[i]) & 0xFF];
-printf("idx = %d, data = %X, crc = %X\n", i, rx_data->buf[i],crc);
+				crc_tab[(crc ^ p[i]) & 0xFF];
+printf("idx = %d, data = %X, crc = %X\n", i, p[i],crc);
 		}
-
-		p = &rx_data->buf[rx_data->len - 4];
-		pi = (__u32 *) p;
-		rx_crc = *pi;
-
-#if 1
-		printf("rx_data->len = %d\n", rx_data->len);
-		printf("rx_data->status = %d\n", rx_data->status);
-		for (i = 0; i < rx_data->len; i++)
-			printf("idx = %d, data = %X\n", i, rx_data->buf[i]);
-		printf("calc crc = %lX, rx crc = %X\n", crc, rx_crc); 
-		fflush(stdout);
-		break;
-#endif
 
 		if (rx_crc != (crc & 0xFFFFFFFF)) {
 			printf("CRC Error, calc crc: %X, rx_crc: %X\n",
 				(crc & 0xFFFFFFFF), rx_crc);
 		}
 
-		bytes_transfered += rx_data->len;
+		rb_read++;
+		if (rb_read == rb_size.num_rx_frames)
+			rb_read = 0;
+
+		bytes_transfered += cnt;
 
 		if (bytes_transfered > (100 * 1000000)) {
 			gettimeofday(&finish_time, NULL);
@@ -135,17 +125,17 @@ printf("idx = %d, data = %X, crc = %X\n", i, rx_data->buf[i],crc);
 	
 static void *write_thread(void *threadid)
 {
-	int seq_number, i, cnt, tx_pkt_cnt;
+	int i, tx_pkt_cnt, rb_write;
 	int tx_len;
 	unsigned long crc;
-	struct usrp_transfer_frame *tx_data;
 	unsigned long bytes_transfered, elapsed_seconds;
 	struct timeval start_time, finish_time;
+	__u8 *p;
 
 	printf("Greetings from the write thread!\n");
 
+	rb_write = 0;
 	tx_pkt_cnt = 0;
-	tx_data = malloc(2048);
 
 	bytes_transfered = 0;
 	gettimeofday(&start_time, NULL);
@@ -153,6 +143,12 @@ static void *write_thread(void *threadid)
 	while (1) {
 
 		tx_pkt_cnt++;
+		p = tx_buf + (rb_write * 2048);
+
+		if (packet_data_length > 0)
+			tx_len = packet_data_length;
+		else
+			tx_len = (random() & 0x1ff) + (2044 - 512);
 
 #if 0
 		if (tx_pkt_cnt  == 512) {
@@ -170,25 +166,27 @@ static void *write_thread(void *threadid)
 		}
 #endif
 
-		tx_len = 2048 - sizeof(struct usrp_transfer_frame) - sizeof(int);
-		tx_data->len = tx_len + sizeof(int);
+		if (!((*txi)[rb_write].flags & RB_KERNEL)) {
+			struct pollfd pfd;
+			pfd.fd = fp;
+			pfd.events = POLLOUT;
+			ssize_t ret = poll(&pfd, 1, -1);
+		}
 
 		crc = 0xFFFFFFFF;
-		for (i = 0; i < tx_len; i++) {
-			tx_data->buf[i] = i & 0xFF;
+		for (i = 0; i < tx_len-4; i++) {
+			p[i] = i & 0xFF;
 
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
-				crc_tab[(crc ^ tx_data->buf[i]) & 0xFF];
+				crc_tab[(crc ^ p[i]) & 0xFF];
 
 		}
-		*((int *) &tx_data[tx_len]) = crc;
+		*(int *) &p[tx_len-4] = crc;
 
-		cnt = write(fp, tx_data, 2048);
-		if (cnt < 0)
-			printf("Error returned from write: %d\n", cnt);
+		(*txi)[rb_write].len = tx_len;
+		(*txi)[rb_write].flags = RB_USER;
 
-
-		bytes_transfered += tx_data->len;
+		bytes_transfered += tx_len;
 
 		if (bytes_transfered > (100 * 1000000)) {
 			gettimeofday(&finish_time, NULL);
@@ -213,6 +211,9 @@ int main(int argc, char *argv[])
 	pthread_t tx, rx;
 	long int t;
 	int fpga_config_flag ,decimation;
+	int ret, map_size, page_size;
+	void *rb;
+
 	struct usrp_e_ctl16 d;
 	struct sched_param s = {
 		.sched_priority = 1
@@ -230,6 +231,29 @@ int main(int argc, char *argv[])
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+
+	page_size = getpagesize();
+
+	ret = ioctl(fp, USRP_E_GET_RB_INFO, &rb_size);
+
+	map_size = (rb_size.num_pages_rx_flags + rb_size.num_pages_tx_flags) * page_size +
+		(rb_size.num_rx_frames + rb_size.num_tx_frames) * (page_size >> 1);
+
+	rb = mmap(0, map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
+	if (rb == MAP_FAILED) {
+		perror("mmap failed");
+		return -1;
+	}
+
+	printf("rb = %X\n", rb);
+
+	rxi = rb;
+	rx_buf = rb + (rb_size.num_pages_rx_flags * page_size);
+	txi = rb + (rb_size.num_pages_rx_flags * page_size) +
+		(rb_size.num_rx_frames * page_size >> 1);
+	tx_buf = rb + (rb_size.num_pages_rx_flags * page_size) +
+		(rb_size.num_rx_frames * page_size >> 1) +
+		(rb_size.num_pages_tx_flags * page_size);
 
 	fpga_config_flag = 0;
 	if (strcmp(argv[1], "w") == 0)
