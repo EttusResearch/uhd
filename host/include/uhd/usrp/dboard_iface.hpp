@@ -29,7 +29,7 @@
 namespace uhd{ namespace usrp{
 
 //! Special properties that differentiate this daughterboard slot
-struct dboard_iface_special_props_t{
+struct UHD_API dboard_iface_special_props_t{
     /*!
      * Soft clock divider:
      * When a motherboard cannot provided a divided dboard clock,
