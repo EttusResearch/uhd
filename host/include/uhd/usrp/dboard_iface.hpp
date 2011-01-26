@@ -28,6 +28,27 @@
 
 namespace uhd{ namespace usrp{
 
+//! Special properties that differentiate this daughterboard slot
+struct dboard_iface_special_props_t{
+    /*!
+     * Soft clock divider:
+     * When a motherboard cannot provided a divided dboard clock,
+     * it may provided a "soft" divided clock over an FPGA GPIO.
+     * The implementation must know the type of clock provided.
+     */
+    bool soft_clock_divider;
+
+    /*!
+     * Mangle i2c addresses:
+     * When i2c is shared across multiple daugterboard slots,
+     * the i2c addresses will be mangled on the secondary slot
+     * to avoid conflicts between slots in the i2c address space.
+     * The mangling is daguhterboard specific so the implementation
+     * needs to know whether it should use mangled addresses or not.
+     */
+    bool mangle_i2c_addrs;
+};
+
 /*!
  * The daughter board dboard interface to be subclassed.
  * A dboard instance interfaces with the mboard though this api.
@@ -37,6 +58,7 @@ namespace uhd{ namespace usrp{
 class UHD_API dboard_iface{
 public:
     typedef boost::shared_ptr<dboard_iface> sptr;
+    typedef dboard_iface_special_props_t special_props_t;
 
     //! tells the host which unit to use
     enum unit_t{
@@ -64,27 +86,6 @@ public:
     enum aux_adc_t{
         AUX_ADC_A = 'a',
         AUX_ADC_B = 'b'
-    };
-
-    //! Special properties that differentiate this daughterboard slot
-    struct special_props_t{
-        /*!
-         * Soft clock divider:
-         * When a motherboard cannot provided a divided dboard clock,
-         * it may provided a "soft" divided clock over an FPGA GPIO.
-         * The implementation must know the type of clock provided.
-         */
-        bool soft_clock_divider;
-
-        /*!
-         * Mangle i2c addresses:
-         * When i2c is shared across multiple daugterboard slots,
-         * the i2c addresses will be mangled on the secondary slot
-         * to avoid conflicts between slots in the i2c address space.
-         * The mangling is daguhterboard specific so the implementation
-         * needs to know whether it should use mangled addresses or not.
-         */
-        bool mangle_i2c_addrs;
     };
 
     /*!
