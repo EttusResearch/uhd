@@ -64,6 +64,7 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
 
     //convert to filesystem path, filter blank paths
     std::vector<fs::path> paths;
+    if (var_value.empty()) return paths; //FIXME boost tokenizer throws w/ blank strings on some platforms
     BOOST_FOREACH(const std::string &path_string, path_tokenizer(var_value)){
         if (path_string.empty()) continue;
         paths.push_back(fs::system_complete(path_string));

@@ -46,7 +46,7 @@ bool usrp::operator==(const subdev_spec_pair_t &lhs, const subdev_spec_pair_t &r
 
 subdev_spec_t::subdev_spec_t(const std::string &markup){
     BOOST_FOREACH(const std::string &pair, pair_tokenizer(markup)){
-        if (pair == "") continue;
+        if (pair.empty()) continue;
         std::vector<std::string> db_sd; boost::split(db_sd, pair, boost::is_any_of(":"));
         switch(db_sd.size()){
         case 1: this->push_back(subdev_spec_pair_t("", db_sd.front())); break;
