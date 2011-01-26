@@ -28,6 +28,7 @@ IF(ENABLE_USRP_E_UTILS)
     ENABLE_LANGUAGE(C)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
+    INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/ic_reg_maps)
 
     SET(usrp_e_utils_sources
         fpga-downloader.cpp
