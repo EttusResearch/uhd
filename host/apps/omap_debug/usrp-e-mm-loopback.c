@@ -75,6 +75,8 @@ static void *read_thread(void *threadid)
 			ssize_t ret = poll(&pfd, 1, -1);
 		}
 
+		(*rxi)[rb_read].flags = RB_USER_PROCESS;
+
 //		printf("pkt received, rb_read = %d\n", rb_read);
 
 		cnt = (*rxi)[rb_read].len;
