@@ -50,4 +50,9 @@ bootram.v \
 nsgpio16LE.v \
 settings_bus_16LE.v \
 atr_controller16.v \
+newfifo/fifo_pacer.v \
+newfifo/packet_generator32.v \
+newfifo/packet_generator.v \
+newfifo/packet_verifier32.v \
+newfifo/packet_verifier.v \
 ))

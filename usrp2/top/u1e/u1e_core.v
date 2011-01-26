@@ -151,7 +151,8 @@ module u1e_core
       .src1_rdy_i(rx_src_rdy_int), .dst1_rdy_o(rx_dst_rdy_int),
       .src2_rdy_o(rx_src_rdy), .dst2_rdy_i(rx_dst_rdy),
       .underrun(), .overrun(rx_overrun));
-   
+
+   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
 `endif //  `ifdef TIMED
 
 `ifdef DSP
