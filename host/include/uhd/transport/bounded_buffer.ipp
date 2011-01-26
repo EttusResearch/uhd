@@ -22,6 +22,7 @@
 #include <boost/function.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
+#include <boost/thread/locks.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace uhd{ namespace transport{ namespace{ /*anon*/
@@ -36,7 +37,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE bool push_with_pop_on_full(const elem_type &elem){
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            boost::mutex::scoped_lock lock(_mutex);
             if(_buffer.full()){
                 _buffer.pop_back();
                 _buffer.push_front(elem);
@@ -53,7 +54,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE void push_with_wait(const elem_type &elem){
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            boost::mutex::scoped_lock lock(_mutex);
             _full_cond.wait(lock, _not_full_fcn);
             _buffer.push_front(elem);
             lock.unlock();
@@ -61,7 +62,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE bool push_with_timed_wait(const elem_type &elem, double timeout){
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            boost::mutex::scoped_lock lock(_mutex);
             if (not _full_cond.timed_wait(
                 lock, to_time_dur(timeout), _not_full_fcn
             )) return false;
@@ -72,7 +73,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE void pop_with_wait(elem_type &elem){
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            boost::mutex::scoped_lock lock(_mutex);
             _empty_cond.wait(lock, _not_empty_fcn);
             elem = this->pop_back();
             lock.unlock();
@@ -80,7 +81,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE bool pop_with_timed_wait(elem_type &elem, double timeout){
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            boost::mutex::scoped_lock lock(_mutex);
             if (not _empty_cond.timed_wait(
                 lock, to_time_dur(timeout), _not_empty_fcn
             )) return false;
@@ -91,7 +92,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
         UHD_INLINE void clear(void){
-            boost::unique_lock<boost::mutex> lock(_mutex);
+            boost::mutex::scoped_lock lock(_mutex);
             while (not_empty()) this->pop_back();
             lock.unlock();
             _full_cond.notify_one();
