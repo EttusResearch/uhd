@@ -29,7 +29,7 @@
 namespace uhd{ namespace usrp{
 
 //! Special properties that differentiate this daughterboard slot
-struct special_props_t{
+struct dboard_iface_special_props_t{
     /*!
      * Soft clock divider:
      * When a motherboard cannot provided a divided dboard clock,
@@ -58,6 +58,7 @@ struct special_props_t{
 class UHD_API dboard_iface{
 public:
     typedef boost::shared_ptr<dboard_iface> sptr;
+    typedef dboard_iface_special_props_t special_props_t;
 
     //! tells the host which unit to use
     enum unit_t{
