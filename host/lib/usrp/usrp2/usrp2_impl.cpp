@@ -202,8 +202,11 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
     //setup the dsp transport hints (default to a large recv buff)
     device_addr_t dsp_xport_hints = device_addr;
     if (not dsp_xport_hints.has_key("recv_buff_size")){
-        //set to half-a-second of buffering at max rate
-        dsp_xport_hints["recv_buff_size"] = "50e6";
+        //only enable on platforms that are happy with the large buffer resize
+        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
+            //set to half-a-second of buffering at max rate
+            dsp_xport_hints["recv_buff_size"] = "50e6";
+        #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
     }
 
     //create a ctrl and data transport for each address
