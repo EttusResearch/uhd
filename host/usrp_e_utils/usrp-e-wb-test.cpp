@@ -26,7 +26,7 @@
 #include <linux/usrp_e.h>
 #include "usrp_e100_regs.hpp"
 
-static const size_t num_test_iters = 432;
+static const size_t num_test_iters = 10000000;
 
 static int fp;
 
@@ -81,6 +81,10 @@ int main(int, char *[]){
 
     size_t num_pass = 0, num_fail = 0;
     for (size_t i = 0; i < num_test_iters; i++){
+	if(i%1000000 == 0) {
+	    std::cout << "num pass: " << num_pass;
+	    std::cout << "\tnum fail: " << num_fail << std::endl;
+	}
         //make random values
         int random_test32 = ::random();
         int random_test16 = ::random() & 0xffff;
@@ -98,7 +102,7 @@ int main(int, char *[]){
             (peek16(UE_REG_MISC_TEST) == random_test16) and
             (peek32(UE_REG_RB_MISC_TEST32) == random_test32) and
             (peek32(UE_REG_RB_TIME_NOW_SECS) == random_secs) and
-            (peek32(UE_REG_RB_TIME_NOW_TICKS) < 1000000) and
+//            (peek32(UE_REG_RB_TIME_NOW_TICKS) < 1000000) and
         true) num_pass++;
         else  num_fail++;
     }
