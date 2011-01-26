@@ -52,7 +52,6 @@ static u_int32_t chksum_crc32_gentab(void)
 static void *read_thread(void *threadid)
 {
 	int cnt;
-	struct usrp_transfer_frame *rx_data;
 	int rx_pkt_cnt, rb_read;
 	int i;
 	unsigned long crc;
@@ -65,8 +64,7 @@ static void *read_thread(void *threadid)
 	printf("Greetings from the reading thread!\n");
 
 	// IMPORTANT: must assume max length packet from fpga
-	rx_data = malloc(2048);
-
+	
 	rx_pkt_cnt = 0;
 	rb_read = 0;
 
@@ -75,12 +73,13 @@ static void *read_thread(void *threadid)
 
 	while (1) {
 		
-		if (!((*rxi)[rb_read].flags & RB_USER)) {
+		while (!((*rxi)[rb_read].flags & RB_USER)) {
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLIN;
 			ssize_t ret = poll(&pfd, 1, -1);
 		}
+		(*rxi)[rb_read].flags = RB_USER_PROCESS;
 
 		rx_pkt_cnt++;
 		cnt = (*rxi)[rb_read].len;
@@ -91,11 +90,13 @@ static void *read_thread(void *threadid)
 		for (i = 0; i < cnt - 4; i+=2) {
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ p[i+1]) & 0xFF];
-printf("idx = %d, data = %X, crc = %X\n", i, p[i+1],crc);
+//printf("idx = %d, data = %X, crc = %X\n", i, p[i+1],crc);
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ p[i]) & 0xFF];
-printf("idx = %d, data = %X, crc = %X\n", i, p[i],crc);
+//printf("idx = %d, data = %X, crc = %X\n", i, p[i],crc);
 		}
+
+		(*rxi)[rb_read].flags = RB_KERNEL;
 
 		if (rx_crc != (crc & 0xFFFFFFFF)) {
 			printf("CRC Error, calc crc: %X, rx_crc: %X\n",
@@ -145,6 +146,8 @@ static void *write_thread(void *threadid)
 		tx_pkt_cnt++;
 		p = tx_buf + (rb_write * 2048);
 
+//		printf("p = %p\n", p);
+
 		if (packet_data_length > 0)
 			tx_len = packet_data_length;
 		else
@@ -166,12 +169,14 @@ static void *write_thread(void *threadid)
 		}
 #endif
 
-		if (!((*txi)[rb_write].flags & RB_KERNEL)) {
+//		printf("Checking for space at rb entry = %d\n", rb_write);
+		while (!((*txi)[rb_write].flags & RB_KERNEL)) {
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLOUT;
 			ssize_t ret = poll(&pfd, 1, -1);
 		}
+//		printf("Got space\n");
 
 		crc = 0xFFFFFFFF;
 		for (i = 0; i < tx_len-4; i++) {
@@ -186,6 +191,10 @@ static void *write_thread(void *threadid)
 		(*txi)[rb_write].len = tx_len;
 		(*txi)[rb_write].flags = RB_USER;
 
+		rb_write++;
+		if (rb_write == rb_size.num_tx_frames)
+			rb_write = 0;
+
 		bytes_transfered += tx_len;
 
 		if (bytes_transfered > (100 * 1000000)) {
@@ -194,7 +203,7 @@ static void *write_thread(void *threadid)
 
 			printf("Bytes transfered = %d, elapsed seconds = %d\n", bytes_transfered, elapsed_seconds);
 			printf("TX data transfer rate = %f K Samples/second\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 250);
+				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
 			start_time = finish_time;
