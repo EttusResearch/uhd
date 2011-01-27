@@ -116,43 +116,46 @@ static clock_settings_type get_clock_settings(double rate){
         const size_t X = i*ref_rate/gcd;
         const size_t Y = i*out_rate/gcd;
 
-        //determine chan_div, vco_div, and r_div
-        //and fill in that order of preference
-        cs.chan_divider = greatest_divisor<size_t>(X, 32);
-        cs.vco_divider = greatest_divisor<size_t>(X/cs.chan_divider, 6);
-        cs.r_counter = X/cs.chan_divider/cs.vco_divider;
-
-        //avoid a vco divider of 1 (if possible)
-        if (cs.vco_divider == 1){
-            cs.vco_divider = least_divisor<size_t>(cs.chan_divider, 2);
-            cs.chan_divider /= cs.vco_divider;
-        }
-
         //determine A and B (P is fixed)
         cs.b_counter = Y/cs.prescaler;
         cs.a_counter = Y - cs.b_counter*cs.prescaler;
 
-        if (CLOCK_SETTINGS_DEBUG){
-            std::cout << "X " << X << std::endl;
-            std::cout << "Y " << Y << std::endl;
-            std::cout << cs.to_pp_string() << std::endl;
-        }
-
-        //filter limits on the counters
-        if (cs.vco_divider == 1) continue;
-        if (cs.r_counter >= (1<<14)) continue;
-        if (cs.b_counter == 2) continue;
-        if (cs.b_counter == 1 and cs.a_counter != 0) continue;
-        if (cs.b_counter >= (1<<13)) continue;
-        if (cs.a_counter >= (1<<6)) continue;
-
-        //check the bounds on the vco
         static const double vco_bound_pad = 100e6;
-        if (cs.get_vco_rate() > (1800e6 - vco_bound_pad)) continue;
-        if (cs.get_vco_rate() < (1400e6 + vco_bound_pad)) continue;
+        for ( //calculate an r divider that fits into the bounds of the vco
+            cs.r_counter  = size_t(cs.get_n_counter()*cs.get_ref_rate()/(1800e6 - vco_bound_pad));
+            cs.r_counter <= size_t(cs.get_n_counter()*cs.get_ref_rate()/(1400e6 + vco_bound_pad))
+            and cs.r_counter > 0; cs.r_counter++
+        ){
 
-        std::cout << "USRP-E100 clock control:" << std::endl << cs.to_pp_string() << std::endl;
-        return cs;
+            //determine chan_div and vco_div
+            //and fill in that order of preference
+            cs.chan_divider = greatest_divisor<size_t>(X/cs.r_counter, 32);
+            cs.vco_divider = greatest_divisor<size_t>(X/cs.chan_divider/cs.r_counter, 6);
+
+            //avoid a vco divider of 1 (if possible)
+            if (cs.vco_divider == 1){
+                cs.vco_divider = least_divisor<size_t>(cs.chan_divider, 2);
+                cs.chan_divider /= cs.vco_divider;
+            }
+
+            if (CLOCK_SETTINGS_DEBUG){
+                std::cout << "gcd " << gcd << std::endl;
+                std::cout << "X " << X << std::endl;
+                std::cout << "Y " << Y << std::endl;
+                std::cout << cs.to_pp_string() << std::endl;
+            }
+
+            //filter limits on the counters
+            if (cs.vco_divider == 1) continue;
+            if (cs.r_counter >= (1<<14)) continue;
+            if (cs.b_counter == 2) continue;
+            if (cs.b_counter == 1 and cs.a_counter != 0) continue;
+            if (cs.b_counter >= (1<<13)) continue;
+            if (cs.a_counter >= (1<<6)) continue;
+
+            std::cout << "USRP-E100 clock control: " << i << std::endl << cs.to_pp_string() << std::endl;
+            return cs;
+        }
     }
 
     throw std::runtime_error(str(boost::format(
