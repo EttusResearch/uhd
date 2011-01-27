@@ -243,6 +243,9 @@ void usrp2_mboard_impl::update_clock_config(void){
 }
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
+    //dont set the time for slave devices, they always take from mimo cable
+    if (not _mimo_clocking_mode_is_master) return;
+
     //set the ticks
     _iface->poke32(_iface->regs.time64_ticks, time_spec.get_tick_count(get_master_clock_freq()));
 
