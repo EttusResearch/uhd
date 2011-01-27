@@ -57,7 +57,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     if (vm.count("reclk") != 0){
-        std::cout << "USRP-E Utility running the clock recovery..." << std::endl << std::endl;
+        std::cout << "USRP-E Utility running the clock recovery..." << std::flush;
         //if an image was not loaded or specified, we load pass-through
         if (fpga_path.empty()) throw std::runtime_error(
             "Please specify the path to the pass-though FPGA image for your device.\n"
