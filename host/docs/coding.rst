@@ -23,40 +23,10 @@ The device API provides ways to:
 See the documentation in *device.hpp* for reference.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-High-Level: The single usrp
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The goal of the single usrp API is to wrap high level functions around the device properties.
-The single usrp provides a fat interface to access the most common properties.
-The single usrp provides ways to:
-
-* Set and get daughterboard gains.
-* Set and get daughterboard antennas.
-* Set and get the streaming rates.
-* Tune the DSPs and daughterboards.
-* Issue stream commands.
-* Set the clock configuration.
-* Set the usrp time registers.
-* Get the underlying device (as discussed above).
-
-See the documentation in *usrp/single_usrp.hpp* for reference.
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
 High-Level: The multi usrp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The multi usrp API provides a wrapper around a device that represents several motherboards.
-This API provides convenience calls just like the single usrp,
-however the calls either work across all channels in the configuration,
-or take a channel argument to specify which channel to configure.
-The multi usrp provides ways to:
-
-* Set and get the sample rate across all channels.
-* Issue a stream command across all channels.
-* Set the time registers across all channels.
-* Set and get individual daughterboard gains.
-* Set and get individual daughterboard antennas.
-* Tune individual DSPs and daughterboards.
-* Get the underlying device (as discussed above).
-
+The Multi-USRP class provides a FAT interface to a single USRP with
+one or more channels, or multiple USRPs in a homogeneous setup.
 See the documentation in *usrp/multi_usrp.hpp* for reference.
 
 ------------------------------------------------------------------------
