@@ -18,6 +18,7 @@
 
 # TODO: make it autodetect UHD devices
 # TODO: you should probably watch sequence numbers
+# TODO: validate images in 1) size and 2) header content so you can't write a Justin Bieber MP3 to Flash
 
 import optparse
 import math
@@ -35,7 +36,7 @@ UDP_MAX_XFER_BYTES = 1024
 UDP_TIMEOUT = 3
 UDP_POLL_INTERVAL = 0.10 #in seconds
 
-USRP2_FW_PROTO_VERSION = 7
+USRP2_FW_PROTO_VERSION = 7 #should be unused after r6
 
 #from bootloader_utils.h
 
@@ -144,6 +145,22 @@ def get_flash_info(ip):
 
 
   return (memory_size_bytes, sector_size_bytes)
+  
+def is_valid_fpga_image(fpga_image):
+    for i in range(0,63):
+      if ord(fpga_image[i]) == 0xFF:
+        continue
+      if ord(fpga_image[i]) == 0xAA and ord(fpga_image[i+1]) == 0x99:
+        return 1
+
+    return 0
+    
+def is_valid_fw_image(fw_image):
+    for i in range(0,4):
+      if ord(fw_image[i]) != 0x0B:
+          return 0;
+
+    return 1
 
 def burn_fw(ip, fw, fpga, reset, safe):
   init_update(ip)
@@ -159,6 +176,15 @@ def burn_fw(ip, fw, fpga, reset, safe):
     
     fpga_file = open(fpga, 'rb')
     fpga_image = fpga_file.read()
+    
+    if len(fpga_image) > FPGA_IMAGE_SIZE_BYTES:
+        print "Error: FPGA image file too large."
+        return 0
+    
+    if not is_valid_fpga_image(fpga_image):
+        print "Error: Invalid FPGA image file."
+        return 0
+    
     erase_image(ip, image_location, FPGA_IMAGE_SIZE_BYTES)
     write_image(ip, fpga_image, image_location)
     verify_image(ip, fpga_image, image_location)
@@ -171,6 +197,15 @@ def burn_fw(ip, fw, fpga, reset, safe):
         
     fw_file = open(fw, 'rb')
     fw_image = fw_file.read()
+    
+    if len(fw_image) > FW_IMAGE_SIZE_BYTES:
+        print "Error: Firmware image file too large."
+        return 0
+    
+    if not is_valid_fw_image(fw_image):
+        print "Error: Invalid firmware image file."
+        return 0    
+    
     erase_image(ip, image_location, FW_IMAGE_SIZE_BYTES)
     write_image(ip, fw_image, image_location)
     verify_image(ip, fw_image, image_location)
