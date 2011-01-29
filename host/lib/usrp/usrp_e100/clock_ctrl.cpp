@@ -33,8 +33,9 @@ using namespace uhd;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const bool ENABLE_THE_TEST_CLOCK_OUT = true;
+static const bool ENABLE_THE_TEST_OUT = false;
 static const double REFERENCE_INPUT_RATE = 10e6;
+static const double DEFAULT_OUTPUT_RATE = 64e6;
 
 /***********************************************************************
  * Helpers
@@ -138,21 +139,22 @@ public:
         _ad9522_regs.sdo_active = ad9522_regs_t::SDO_ACTIVE_SDO_SDIO;
         _ad9522_regs.enable_clock_doubler = 1; //enable ref clock doubler
         _ad9522_regs.enb_stat_eeprom_at_stat_pin = 0; //use status pin
-        _ad9522_regs.status_pin_control = 0x1; //n divider
+        _ad9522_regs.status_pin_control = 0x2; //r divider
         _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
+        _ad9522_regs.lock_detect_counter = ad9522_regs_t::LOCK_DETECT_COUNTER_255CYC;
 
         this->use_internal_ref();
 
-        this->set_fpga_clock_rate(64e6); //initialize to something
+        this->set_fpga_clock_rate(DEFAULT_OUTPUT_RATE); //initialize to something
 
-        this->enable_test_clock(ENABLE_THE_TEST_CLOCK_OUT);
+        this->enable_test_clock(ENABLE_THE_TEST_OUT);
         this->enable_rx_dboard_clock(false);
         this->enable_tx_dboard_clock(false);
     }
 
     ~usrp_e100_clock_ctrl_impl(void){
-        this->enable_test_clock(ENABLE_THE_TEST_CLOCK_OUT);
+        this->enable_test_clock(ENABLE_THE_TEST_OUT);
         this->enable_rx_dboard_clock(false);
         this->enable_tx_dboard_clock(false);
     }
@@ -217,13 +219,13 @@ public:
         _ad9522_regs.enable_clock_doubler = 1;
 
         //bypass prescalers and counters == 1
-        _ad9522_regs.set_r_counter(1);
+        _ad9522_regs.set_r_counter(125);
         _ad9522_regs.a_counter = 0;
-        _ad9522_regs.set_b_counter(1);
+        _ad9522_regs.set_b_counter(384);
         _ad9522_regs.prescaler_p = ad9522_regs_t::PRESCALER_P_DIV1;
 
         //setup external vcxo
-        _ad9522_regs.pll_power_down = ad9522_regs_t::PLL_POWER_DOWN_ASYNC;
+        _ad9522_regs.pll_power_down = ad9522_regs_t::PLL_POWER_DOWN_NORMAL;
         _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_1_2MA;
         _ad9522_regs.bypass_vco_divider = 1;
         _ad9522_regs.select_vco_or_clock = ad9522_regs_t::SELECT_VCO_OR_CLOCK_EXTERNAL;
