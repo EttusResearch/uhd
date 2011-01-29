@@ -24,6 +24,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/operators.hpp>
+#include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <utility>
 #include <iostream>
@@ -216,12 +217,14 @@ public:
         _chan_rate = rate;
         _out_rate = rate;
 
-        _ad9522_regs.enable_clock_doubler = 1;
+        _ad9522_regs.enable_clock_doubler = 1; //doubler always on
+        const double ref_rate = REFERENCE_INPUT_RATE*2;
 
-        //bypass prescalers and counters == 1
-        _ad9522_regs.set_r_counter(125);
+        //bypass prescaler such that N = B
+        long gcd = boost::math::gcd(long(ref_rate), long(rate));
+        _ad9522_regs.set_r_counter(int(ref_rate/gcd));
         _ad9522_regs.a_counter = 0;
-        _ad9522_regs.set_b_counter(384);
+        _ad9522_regs.set_b_counter(int(rate/gcd));
         _ad9522_regs.prescaler_p = ad9522_regs_t::PRESCALER_P_DIV1;
 
         //setup external vcxo
