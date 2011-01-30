@@ -152,6 +152,10 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
     }
 
+    case MBOARD_PROP_CLOCK_RATE:
+        val = _clock_ctrl->get_fpga_clock_rate();
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -209,6 +213,10 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     case MBOARD_PROP_CLOCK_CONFIG:
         _clock_config = val.as<clock_config_t>();
         update_clock_config();
+        return;
+
+    case MBOARD_PROP_CLOCK_RATE:
+        _clock_ctrl->set_fpga_clock_rate(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

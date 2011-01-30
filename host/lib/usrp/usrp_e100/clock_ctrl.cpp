@@ -115,12 +115,15 @@ static std::vector<clock_settings_type> _get_clock_settings(void){
         if (cs.get_out_rate() < 32e6) continue; //lowest we allow for GPMC interface
         clock_settings.push_back(cs);
     }}}}}
+
+    std::sort(clock_settings.begin(), clock_settings.end());
+    return clock_settings;
 }
 
-/***********************************************************************
- * Constants
- **********************************************************************/
-static const bool enable_test_clock = true;
+static std::vector<clock_settings_type> &get_clock_settings(void){
+    static std::vector<clock_settings_type> clock_settings = _get_clock_settings();
+    return clock_settings;
+}
 
 /***********************************************************************
  * Clock Control Implementation
@@ -135,7 +138,6 @@ public:
         //init the clock gen registers
         //Note: out0 should already be clocking the FPGA or this isnt going to work
         _ad9522_regs.sdo_active = ad9522_regs_t::SDO_ACTIVE_SDO_SDIO;
-        _ad9522_regs.enable_clock_doubler = 1; //enable ref clock doubler
         _ad9522_regs.enb_stat_eeprom_at_stat_pin = 0; //use status pin
         _ad9522_regs.status_pin_control = 0x2; //r divider
         _ad9522_regs.ld_pin_control = 0x00; //dld
