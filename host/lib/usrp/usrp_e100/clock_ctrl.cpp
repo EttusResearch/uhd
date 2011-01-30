@@ -23,7 +23,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <boost/operators.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <utility>
@@ -34,7 +34,8 @@ using namespace uhd;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const bool ENABLE_THE_TEST_OUT = false;
+static const bool CLOCK_SETTINGS_DEBUG = false;
+static const bool ENABLE_THE_TEST_OUT = true;
 static const double REFERENCE_INPUT_RATE = 10e6;
 static const double DEFAULT_OUTPUT_RATE = 64e6;
 
@@ -53,7 +54,7 @@ template <typename div_type, typename bypass_type> static void set_clock_divider
  * Clock rate calculation stuff:
  *   Using the internal VCO between 1400 and 1800 MHz
  **********************************************************************/
-struct clock_settings_type : boost::totally_ordered<clock_settings_type>{
+struct clock_settings_type{
     size_t ref_clock_doubler, r_counter, a_counter, b_counter, prescaler, vco_divider, chan_divider;
     size_t get_n_counter(void) const{return prescaler * b_counter + a_counter;}
     double get_ref_rate(void) const{return REFERENCE_INPUT_RATE * ref_clock_doubler;}
@@ -85,44 +86,78 @@ struct clock_settings_type : boost::totally_ordered<clock_settings_type>{
     }
 };
 
-bool operator<(const clock_settings_type &lhs, const clock_settings_type &rhs){
-    if (lhs.get_out_rate() != rhs.get_out_rate()) //sort small to large out rates
-        return lhs.get_out_rate() < rhs.get_out_rate();
-
-    if (lhs.r_counter != rhs.r_counter) //sort small to large r dividers
-        return lhs.r_counter < rhs.r_counter;
-
-    if (lhs.get_vco_rate() != rhs.get_vco_rate()) //sort large to small vco rates
-        return lhs.get_vco_rate() > rhs.get_vco_rate();
-
-    return false; //whatever case
+//! gives the greatest divisor of num between 1 and max inclusive
+template<typename T> static inline T greatest_divisor(T num, T max){
+    for (T i = max; i > 1; i--) if (num%i == 0) return i; return 1;
 }
 
-static std::vector<clock_settings_type> _get_clock_settings(void){
-    std::vector<clock_settings_type> clock_settings;
+//! gives the least divisor of num between min and num exclusive
+template<typename T> static inline T least_divisor(T num, T min){
+    for (T i = min; i < num; i++) if (num%i == 0) return i; return 1;
+}
 
+static clock_settings_type get_clock_settings(double rate){
     clock_settings_type cs;
     cs.ref_clock_doubler = 2; //always doubling
     cs.prescaler = 8; //set to 8 when input is under 2400 MHz
 
-    for (cs.r_counter = 1; cs.r_counter <= 3; cs.r_counter++){
-    for (cs.b_counter = 3; cs.b_counter <= 10; cs.b_counter++){
-    for (cs.a_counter = 0; cs.a_counter <= 10; cs.a_counter++){
-    for (cs.vco_divider = 2; cs.vco_divider <= 6; cs.vco_divider++){
-    for (cs.chan_divider = 1; cs.chan_divider <= 32; cs.chan_divider++){
-        if (cs.get_vco_rate() > 1800e6) continue;
-        if (cs.get_vco_rate() < 1400e6) continue;
-        if (cs.get_out_rate() < 32e6) continue; //lowest we allow for GPMC interface
-        clock_settings.push_back(cs);
-    }}}}}
+    //basic formulas used below:
+    //out_rate*X = ref_rate*Y
+    //X = i*ref_rate/gcd
+    //Y = i*out_rate/gcd
+    //X = chan_div * vco_div * R
+    //Y = P*B + A
 
-    std::sort(clock_settings.begin(), clock_settings.end());
-    return clock_settings;
-}
+    const boost::uint64_t out_rate = boost::uint64_t(rate);
+    const boost::uint64_t ref_rate = boost::uint64_t(cs.get_ref_rate());
+    const size_t gcd = size_t(boost::math::gcd(ref_rate, out_rate));
 
-static std::vector<clock_settings_type> &get_clock_settings(void){
-    static std::vector<clock_settings_type> clock_settings = _get_clock_settings();
-    return clock_settings;
+    for (size_t i = 1; i <= 100; i++){
+        const size_t X = i*ref_rate/gcd;
+        const size_t Y = i*out_rate/gcd;
+
+        //determine chan_div, vco_div, and r_div
+        //and fill in that order of preference
+        cs.chan_divider = greatest_divisor<size_t>(X, 32);
+        cs.vco_divider = greatest_divisor<size_t>(X/cs.chan_divider, 6);
+        cs.r_counter = X/cs.chan_divider/cs.vco_divider;
+
+        //avoid a vco divider of 1 (if possible)
+        if (cs.vco_divider == 1){
+            cs.vco_divider = least_divisor<size_t>(cs.chan_divider, 2);
+            cs.chan_divider /= cs.vco_divider;
+        }
+
+        //determine A and B (P is fixed)
+        cs.b_counter = Y/cs.prescaler;
+        cs.a_counter = Y - cs.b_counter*cs.prescaler;
+
+        if (CLOCK_SETTINGS_DEBUG){
+            std::cout << "X " << X << std::endl;
+            std::cout << "Y " << Y << std::endl;
+            std::cout << cs.to_pp_string() << std::endl;
+        }
+
+        //filter limits on the counters
+        if (cs.vco_divider == 1) continue;
+        if (cs.r_counter >= (1<<14)) continue;
+        if (cs.b_counter == 2) continue;
+        if (cs.b_counter == 1 and cs.a_counter != 0) continue;
+        if (cs.b_counter >= (1<<13)) continue;
+        if (cs.a_counter >= (1<<6)) continue;
+
+        //check the bounds on the vco
+        static const double vco_bound_pad = 100e6;
+        if (cs.get_vco_rate() > (1800e6 - vco_bound_pad)) continue;
+        if (cs.get_vco_rate() < (1400e6 + vco_bound_pad)) continue;
+
+        std::cout << "USRP-E100 clock control:" << std::endl << cs.to_pp_string() << std::endl;
+        return cs;
+    }
+
+    throw std::runtime_error(str(boost::format(
+        "USRP-E100 clock control: could not calculate settings for clock rate %fMHz"
+    ) % (rate/1e6)));
 }
 
 /***********************************************************************
@@ -139,10 +174,10 @@ public:
         //Note: out0 should already be clocking the FPGA or this isnt going to work
         _ad9522_regs.sdo_active = ad9522_regs_t::SDO_ACTIVE_SDO_SDIO;
         _ad9522_regs.enb_stat_eeprom_at_stat_pin = 0; //use status pin
-        _ad9522_regs.status_pin_control = 0x2; //r divider
+        _ad9522_regs.status_pin_control = 0x1; //n divider
         _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
-        _ad9522_regs.lock_detect_counter = ad9522_regs_t::LOCK_DETECT_COUNTER_255CYC;
+        _ad9522_regs.lock_detect_counter = ad9522_regs_t::LOCK_DETECT_COUNTER_16CYC;
 
         this->use_internal_ref();
 
@@ -164,7 +199,9 @@ public:
      *  - set clock rate w/ internal VCO
      *  - set clock rate w/ external VCXO
      **********************************************************************/
-    void set_clock_settings_with_internal_vco(const clock_settings_type &cs){
+    void set_clock_settings_with_internal_vco(double rate){
+        const clock_settings_type cs = get_clock_settings(rate);
+
         //set the rates to private variables so the implementation knows!
         _chan_rate = cs.get_chan_rate();
         _out_rate = cs.get_out_rate();
@@ -180,7 +217,6 @@ public:
         _ad9522_regs.pll_power_down = ad9522_regs_t::PLL_POWER_DOWN_NORMAL;
         _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_1_2MA;
 
-        _ad9522_regs.vco_calibration_now = 1; //calibrate it!
         _ad9522_regs.bypass_vco_divider = 0;
         switch(cs.vco_divider){
         case 1: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV1; break;
@@ -209,6 +245,7 @@ public:
         );
 
         this->send_all_regs();
+        calibrate_now();
     }
 
     void set_clock_settings_with_external_vcxo(double rate){
@@ -245,22 +282,8 @@ public:
 
     void set_fpga_clock_rate(double rate){
         if (_out_rate == rate) return;
-
-        if (rate == 61.44e6){
-            set_clock_settings_with_external_vcxo(rate);
-        }
-        else{
-            BOOST_FOREACH(const clock_settings_type &cs, get_clock_settings()){
-                //std::cout << cs.to_pp_string() << std::endl;
-                if (rate != cs.get_out_rate()) continue;
-                std::cout << "USRP-E100 clock control:" << std::endl << cs.to_pp_string() << std::endl;
-                set_clock_settings_with_internal_vco(cs);
-                return; //done here, exits loop
-            }
-            throw std::runtime_error(str(boost::format(
-                "USRP-E100 clock control: could not find settings for clock rate %fMHz"
-            ) % (rate/1e6)));
-        }
+        if (rate == 61.44e6) set_clock_settings_with_external_vcxo(rate);
+        else                 set_clock_settings_with_internal_vco(rate);
     }
 
     double get_fpga_clock_rate(void){
@@ -388,6 +411,28 @@ private:
             spi_config_t::EDGE_RISE,
             reg, 24, false /*no rb*/
         );
+    }
+
+    void calibrate_now(void){
+        //vco calibration routine:
+        _ad9522_regs.vco_calibration_now = 0;
+        this->send_reg(0x18);
+        this->latch_regs();
+        _ad9522_regs.vco_calibration_now = 1;
+        this->send_reg(0x18);
+        this->latch_regs();
+        //wait for calibration done:
+        static const boost::uint8_t addr = 0x01F;
+        for (size_t ms10 = 0; ms10 < 100; ms10++){
+            boost::uint32_t reg = _iface->transact_spi(
+                UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
+                _ad9522_regs.get_read_reg(addr), 24, true /*rb*/
+            );
+            _ad9522_regs.set_reg(addr, reg);
+            if (_ad9522_regs.vco_calibration_finished) return;
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        }
+        std::cerr << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
     }
 
     void send_all_regs(void){

@@ -80,6 +80,14 @@ external_zero_delay_fcds    0x01E[4:3]               0
 enable_external_zero_delay  0x01E[2]                 0
 enable_zero_delay           0x01E[1]                 0
 ########################################################################
+vco_calibration_finished    0x01F[6]                 0
+holdover_active             0x01F[5]                 0
+ref2_selected               0x01F[4]                 0
+vco_freq_gt_thresh          0x01F[3]                 0
+ref2_freq_gt_thresh         0x01F[2]                 0
+ref1_freq_gt_thresh         0x01F[1]                 0
+digital_lock_detect         0x01F[0]                 0
+########################################################################
 #for $i in range(12)
 #set $addr = ($i + 0x0F0)
 out$(i)_format              $(addr)[7]             0             lvds, cmos
