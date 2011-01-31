@@ -18,7 +18,8 @@
 #include "soft_time_ctrl.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/any.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
 
@@ -27,30 +28,7 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace pt = boost::posix_time;
 
-static const time_spec_t TWIDDLE(0.0015);
-
-/***********************************************************************
- * Utility helper functions
- **********************************************************************/
-
-//TODO put these in time_spec_t (maybe useful)
-
-static const double time_dur_tps = double(pt::time_duration::ticks_per_second());
-
-time_spec_t time_dur_to_time_spec(const pt::time_duration &time_dur){
-    return time_spec_t(
-        time_dur.total_seconds(),
-        long(time_dur.fractional_seconds()),
-        time_dur_tps
-    );
-}
-
-pt::time_duration time_spec_to_time_dur(const time_spec_t &time_spec){
-    return pt::time_duration(
-        0, 0, long(time_spec.get_full_secs()),
-        time_spec.get_tick_count(time_dur_tps)
-    );
-}
+static const time_spec_t TWIDDLE(0.0011);
 
 /***********************************************************************
  * Soft time control implementation
@@ -84,7 +62,7 @@ public:
      ******************************************************************/
     void set_time(const time_spec_t &time){
         boost::mutex::scoped_lock lock(_update_mutex);
-        _time_offset = boost::get_system_time() - time_spec_to_time_dur(time);
+        _time_offset = time_spec_t::get_system_time() - time;
     }
 
     time_spec_t get_time(void){
@@ -94,7 +72,7 @@ public:
 
     UHD_INLINE time_spec_t time_now(void){
         //internal get time without scoped lock
-        return time_dur_to_time_spec(boost::get_system_time() - _time_offset);
+        return time_spec_t::get_system_time() - _time_offset;
     }
 
     UHD_INLINE void sleep_until_time(
@@ -102,7 +80,8 @@ public:
     ){
         boost::condition_variable cond;
         //use a condition variable to unlock, sleep, lock
-        cond.timed_wait(lock, _time_offset + time_spec_to_time_dur(time));
+        double seconds_to_sleep = (time - time_now()).get_real_secs();
+        cond.timed_wait(lock, pt::microseconds(long(seconds_to_sleep*1e6)));
     }
 
     /*******************************************************************
@@ -211,7 +190,7 @@ private:
     boost::mutex _update_mutex;
     size_t _nsamps_remaining;
     stream_cmd_t::stream_mode_t _stream_mode;
-    pt::ptime _time_offset;
+    time_spec_t _time_offset;
     bounded_buffer<boost::any>::sptr _cmd_queue;
     const cb_fcn_type _stream_on_off;
     boost::thread_group _thread_group;
