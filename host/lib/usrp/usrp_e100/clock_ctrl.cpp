@@ -96,22 +96,7 @@ UHD_STATIC_BLOCK(libuhd_usrp_e100_reg_clock_rates){
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const bool enable_test_clock = false;
-static const size_t ref_clock_doubler = 2; //enabled below
-static const double ref_clock_rate = 10e6 * ref_clock_doubler;
-
-static const size_t r_counter = 1;
-static const size_t a_counter = 0;
-static const size_t b_counter = 20 / ref_clock_doubler;
-static const size_t prescaler = 8; //set below with enum, set to 8 when input is under 2400 MHz
-static const size_t vco_divider = 5; //set below with enum
-
-static const size_t n_counter = prescaler * b_counter + a_counter;
-static const size_t vco_clock_rate = ref_clock_rate/r_counter * n_counter; //between 1400 and 1800 MHz
-static const double master_clock_rate = vco_clock_rate/vco_divider;
-
-static const size_t fpga_clock_divider = size_t(master_clock_rate/64e6);
-static const size_t codec_clock_divider = size_t(master_clock_rate/64e6);
+static const bool enable_test_clock = true;
 
 /***********************************************************************
  * Clock Control Implementation
