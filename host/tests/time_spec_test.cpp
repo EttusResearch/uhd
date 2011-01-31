@@ -18,6 +18,7 @@
 #include <boost/test/unit_test.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp> //sleep
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_time_spec_compare){
@@ -58,4 +59,22 @@ BOOST_AUTO_TEST_CASE(test_time_spec_parts){
     BOOST_CHECK_EQUAL(uhd::time_spec_t(-1.1).get_full_secs(), -1);
     BOOST_CHECK_CLOSE(uhd::time_spec_t(-1.1).get_frac_secs(), -0.1, 0.001);
     BOOST_CHECK_EQUAL(uhd::time_spec_t(-1.1).get_tick_count(100), -10);
+}
+
+BOOST_AUTO_TEST_CASE(test_time_spec_get_system_time){
+    std::cout << "Testing time specification get system time..." << std::endl;
+
+    //Not really checking for high resolution timing here,
+    //just need to check that system time is minimally working.
+
+    uhd::time_spec_t start = uhd::time_spec_t::get_system_time();
+    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+    uhd::time_spec_t stop = uhd::time_spec_t::get_system_time();
+
+    uhd::time_spec_t diff = stop - start;
+    std::cout << "start: " << start.get_real_secs() << std::endl;
+    std::cout << "stop: " << stop.get_real_secs() << std::endl;
+    std::cout << "diff: " << diff.get_real_secs() << std::endl;
+    BOOST_CHECK(diff.get_real_secs() > 0); //assert positive
+    BOOST_CHECK(diff.get_real_secs() < 1.0); //assert under 1s
 }

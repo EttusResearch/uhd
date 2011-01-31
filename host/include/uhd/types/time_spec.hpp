@@ -40,6 +40,13 @@ namespace uhd{
     public:
 
         /*!
+         * Get the system time in time_spec_t format.
+         * Uses the highest precision clock available.
+         * \return the system time as a time_spec_t
+         */
+        static time_spec_t get_system_time(void);
+
+        /*!
          * Create a time_spec_t from a real-valued seconds count.
          * \param secs the real-valued seconds count (default = 0)
          */
