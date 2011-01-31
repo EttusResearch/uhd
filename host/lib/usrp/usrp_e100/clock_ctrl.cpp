@@ -18,10 +18,12 @@
 #include "clock_ctrl.hpp"
 #include "ad9522_regs.hpp"
 #include <uhd/utils/assert.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/cstdint.hpp>
 #include "usrp_e100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 #include <utility>
 #include <iostream>
 
@@ -33,6 +35,62 @@ template <typename div_type, typename bypass_type> static void set_clock_divider
     high = divider/2 - 1;
     low = divider - high - 2;
     bypass = (divider == 1)? 1 : 0;
+}
+
+/***********************************************************************
+ * Clock rate calculation stuff:
+ *   Using the internal VCO between 1400 and 1800 MHz
+ **********************************************************************/
+struct clock_settings_type{
+    size_t ref_clock_doubler, r_counter, a_counter, b_counter, prescaler, vco_divider, clk_divider;
+    size_t get_n_counter(void) const{return prescaler * b_counter + a_counter;}
+    double get_ref_rate(void) const{return 10e6 * ref_clock_doubler;}
+    double get_vco_rate(void) const{return get_ref_rate()/r_counter * get_n_counter();}
+    double get_clk_rate(void) const{return get_vco_rate()/vco_divider;}
+    double get_out_rate(void) const{return get_clk_rate()/clk_divider;}
+    std::string to_pp_string(void) const{
+        return str(boost::format(
+            "  r_counter: %d\n"
+            "  a_counter: %d\n"
+            "  b_counter: %d\n"
+            "  prescaler: %d\n"
+            "  vco_divider: %d\n"
+            "  clk_divider: %d\n"
+            "  vco_rate: %fMHz\n"
+            "  clk_rate: %fMHz\n"
+            "  out_rate: %fMHz\n"
+            )
+            % r_counter
+            % a_counter
+            % b_counter
+            % prescaler
+            % vco_divider
+            % clk_divider
+            % (get_vco_rate()/1e6)
+            % (get_clk_rate()/1e6)
+            % (get_out_rate()/1e6)
+        );
+    }
+};
+
+UHD_SINGLETON_FCN(std::vector<clock_settings_type>, get_clock_settings);
+
+UHD_STATIC_BLOCK(libuhd_usrp_e100_reg_clock_rates){
+    clock_settings_type cs;
+    cs.ref_clock_doubler = 2; //always doubling
+    cs.prescaler = 8; //set to 8 when input is under 2400 MHz
+
+    for (cs.r_counter = 1; cs.r_counter <= 1; cs.r_counter++){
+    for (cs.b_counter = 3; cs.b_counter <= 10; cs.b_counter++){
+    for (cs.a_counter = 0; cs.a_counter <= 10; cs.a_counter++){
+    for (cs.vco_divider = 2; cs.vco_divider <= 6; cs.vco_divider++){
+    for (cs.clk_divider = 1; cs.clk_divider <= 32; cs.clk_divider++){
+        if (cs.get_vco_rate() > 1800e6) continue;
+        if (cs.get_vco_rate() < 1400e6) continue;
+        if (cs.get_out_rate() < 32e6) continue; //lowest we allow for GPMC interface
+        //std::cout << (cs.get_out_rate()/1e6) << std::endl;
+        get_clock_settings().push_back(cs);
+    }}}}}
 }
 
 /***********************************************************************
@@ -72,25 +130,45 @@ public:
         _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
 
-        _ad9522_regs.enable_ref2 = 1;
-        _ad9522_regs.enable_ref1 = 0;
-        _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF2;
+        this->use_internal_ref();
 
-        _ad9522_regs.set_r_counter(r_counter);
-        _ad9522_regs.a_counter = a_counter;
-        _ad9522_regs.set_b_counter(b_counter);
+        this->set_fpga_clock_rate(64e6); //initialize to something
+
+        this->enable_rx_dboard_clock(false);
+        this->enable_tx_dboard_clock(false);
+    }
+
+    ~usrp_e100_clock_ctrl_impl(void){
+        this->enable_rx_dboard_clock(false);
+        this->enable_tx_dboard_clock(false);
+    }
+
+    void set_clock_settings_with_internal_vco(const clock_settings_type &cs){
+        _ad9522_regs.enable_clock_doubler = (cs.ref_clock_doubler == 2)? 1 : 0;
+
+        _ad9522_regs.set_r_counter(cs.r_counter);
+        _ad9522_regs.a_counter = cs.a_counter;
+        _ad9522_regs.set_b_counter(cs.b_counter);
+        UHD_ASSERT_THROW(cs.prescaler == 8); //assumes this below:
         _ad9522_regs.prescaler_p = ad9522_regs_t::PRESCALER_P_DIV8_9;
 
         _ad9522_regs.pll_power_down = ad9522_regs_t::PLL_POWER_DOWN_NORMAL;
         _ad9522_regs.cp_current = ad9522_regs_t::CP_CURRENT_1_2MA;
 
         _ad9522_regs.vco_calibration_now = 1; //calibrate it!
-        _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV5;
+        switch(cs.vco_divider){
+        case 1: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV1; break;
+        case 2: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV2; break;
+        case 3: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV3; break;
+        case 4: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV4; break;
+        case 5: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV5; break;
+        case 6: _ad9522_regs.vco_divider = ad9522_regs_t::VCO_DIVIDER_DIV6; break;
+        }
         _ad9522_regs.select_vco_or_clock = ad9522_regs_t::SELECT_VCO_OR_CLOCK_VCO;
 
         //setup fpga master clock
         _ad9522_regs.out0_format = ad9522_regs_t::OUT0_FORMAT_LVDS;
-        set_clock_divider(fpga_clock_divider,
+        set_clock_divider(cs.clk_divider,
             _ad9522_regs.divider0_low_cycles,
             _ad9522_regs.divider0_high_cycles,
             _ad9522_regs.divider0_bypass
@@ -98,7 +176,7 @@ public:
 
         //setup codec clock
         _ad9522_regs.out3_format = ad9522_regs_t::OUT3_FORMAT_LVDS;
-        set_clock_divider(codec_clock_divider,
+        set_clock_divider(cs.clk_divider,
             _ad9522_regs.divider1_low_cycles,
             _ad9522_regs.divider1_high_cycles,
             _ad9522_regs.divider1_bypass
@@ -125,21 +203,22 @@ public:
             }
         }
         this->latch_regs();
-        //test read:
-        //boost::uint32_t reg = _ad9522_regs.get_read_reg(0x01b);
-        //boost::uint32_t result = _iface->transact_spi(
-        //    UE_SPI_SS_AD9522,
-        //    spi_config_t::EDGE_RISE,
-        //    reg, 24, true /*no*/
-        //);
-        //std::cout << "result " << std::hex << result << std::endl;
-        this->enable_rx_dboard_clock(false);
-        this->enable_tx_dboard_clock(false);
     }
 
-    ~usrp_e100_clock_ctrl_impl(void){
-        this->enable_rx_dboard_clock(false);
-        this->enable_tx_dboard_clock(false);
+    void set_fpga_clock_rate(double rate){
+        if (rate == 61.44e6){
+            //TODO special settings for external VCXO
+        }
+        else{
+            BOOST_FOREACH(const clock_settings_type &cs, get_clock_settings()){
+                if (rate != cs.get_out_rate()) continue;
+                std::cout << "USRP-E100 clock control:" << std::endl << cs.to_pp_string() << std::endl;
+                set_clock_settings_with_internal_vco(cs);
+            }
+            throw std::runtime_error(str(boost::format(
+                "USRP-E100 clock control: could not find settings for clock rate %fMHz"
+            ) % (rate/1e6)));
+        }
     }
 
     double get_fpga_clock_rate(void){

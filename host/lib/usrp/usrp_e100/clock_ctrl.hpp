@@ -40,6 +40,13 @@ public:
     static sptr make(usrp_e100_iface::sptr iface);
 
     /*!
+     * Set the rate of the fpga clock line.
+     * Throws if rate is not valid.
+     * \param rate the new rate in Hz
+     */
+    virtual void set_fpga_clock_rate(double rate) = 0;
+
+    /*!
      * Get the rate of the fpga clock line.
      * \return the fpga clock rate in Hz
      */
