@@ -47,13 +47,10 @@ time_spec_t time_spec_t::get_system_time(void){
 
 #ifdef TIME_SPEC_USE_MACH_ABSOLUTE_TIME
 #include <mach/mach_time.h>
-static intmax_t get_freq(void){
-    mach_timebase_info_data_t info; mach_timebase_info(&info);
-    return intmax_t(1e9*(double(info.denom)/double(info.numer)));
-}
 time_spec_t time_spec_t::get_system_time(void){
-    static const intmax_t freq = get_freq();
-    return time_spec_t_from_counts(mach_absolute_time(), freq);
+    mach_timebase_info_data_t info; mach_timebase_info(&info);
+    intmax_t nanosecs = mach_absolute_time()*info.numer/info.denom;
+    return time_spec_t_from_counts(nanosecs, intmax_t(1e9));
 }
 #endif /* TIME_SPEC_USE_MACH_ABSOLUTE_TIME */
 
