@@ -26,13 +26,13 @@ LIBUHD_REGISTER_COMPONENT("USRP-E Utils" ENABLE_USRP_E_UTILS OFF "LINUX_TARGET" 
 
 IF(ENABLE_USRP_E_UTILS)
     ENABLE_LANGUAGE(C)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/usrp_e100/include)
     INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/ic_reg_maps)
 
     SET(usrp_e_utils_sources
-        fpga-downloader.cpp
-        clkgen-config.cpp
+        usrp-e-utility.cpp
         usrp-e-loopback.c
         usrp-e-wb-test.cpp
         usrp-e-debug-pins.c
@@ -44,7 +44,7 @@ IF(ENABLE_USRP_E_UTILS)
     FOREACH(util_source ${usrp_e_utils_sources})
         GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
         ADD_EXECUTABLE(${util_name} ${util_source})
-        TARGET_LINK_LIBRARIES(${util_name} -lpthread)
+        TARGET_LINK_LIBRARIES(${util_name} ${Boost_LIBRARIES})
         INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/usrp_e_utils)
     ENDFOREACH(util_source)
 

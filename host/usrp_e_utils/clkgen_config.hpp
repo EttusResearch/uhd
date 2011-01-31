@@ -1,24 +1,22 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2003,2004,2008,2009 Free Software Foundation, Inc.
- *
- * This file is part of UHD
- *
- * GNU Radio is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3, or (at your option)
- * any later version.
- *
- * GNU Radio is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with GNU Radio; see the file COPYING.  If not, write to
- * the Free Software Foundation, Inc., 51 Franklin Street,
- * Boston, MA 02110-1301, USA.
-*/
+//
+// Copyright 2011 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#ifndef USRP_E_UTILS_CLKGEN_CONFIG_HPP
+#define USRP_E_UTILS_CLKGEN_CONFIG_HPP
 
 #include <iostream>
 #include <sstream>
@@ -34,6 +32,7 @@
 
 #include <linux/spi/spidev.h>
 
+namespace usrp_e_clkgen_config_utility{
 
 const unsigned int CLKGEN_SELECT = 145;
 
@@ -73,6 +72,7 @@ class spidev {
 };
 
 gpio::gpio(unsigned int _gpio_num, gpio_direction pin_direction, bool close_action)
+:close_action(close_action)
 {
 	std::fstream export_file;
 
@@ -296,10 +296,15 @@ static void send_config_to_clkgen(gpio &chip_select)
 
 }
 
-int main(int argc, char *argv[])
+}//namespace usrp_e_clkgen_config_utility
+
+//int main(int argc, char *argv[])
+static void clock_genconfig_main(void)
 {
+	using namespace usrp_e_clkgen_config_utility;
 	gpio clkgen_select(CLKGEN_SELECT, OUT, true);
 
 	send_config_to_clkgen(clkgen_select);
 }
 
+#endif /*USRP_E_UTILS_CLKGEN_CONFIG_HPP*/
