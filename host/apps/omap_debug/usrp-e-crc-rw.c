@@ -98,10 +98,12 @@ static void *read_thread(void *threadid)
 
 		(*rxi)[rb_read].flags = RB_KERNEL;
 
+#if 0
 		if (rx_crc != (crc & 0xFFFFFFFF)) {
 			printf("CRC Error, calc crc: %X, rx_crc: %X\n",
 				(crc & 0xFFFFFFFF), rx_crc);
 		}
+#endif
 
 		rb_read++;
 		if (rb_read == rb_size.num_rx_frames)
@@ -115,7 +117,7 @@ static void *read_thread(void *threadid)
 
 			printf("Bytes transfered = %ld, elapsed seconds = %ld\n", bytes_transfered, elapsed_seconds);
 			printf("RX data transfer rate = %f K Samples/second\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 250);
+				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
 			start_time = finish_time;
