@@ -66,9 +66,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    //_gps_ctrl = gps_ctrl::make(
-    //    _iface->get_gps_write_fn(),
-    //    _iface->get_gps_read_fn());
+//    _gps_ctrl = gps_ctrl::make(
+//        _iface->get_gps_write_fn(),
+//        _iface->get_gps_read_fn());
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
@@ -243,6 +243,9 @@ void usrp2_mboard_impl::update_clock_config(void){
 }
 
 void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
+    //dont set the time for slave devices, they always take from mimo cable
+    if (not _mimo_clocking_mode_is_master) return;
+
     //set the ticks
     _iface->poke32(_iface->regs.time64_ticks, time_spec.get_tick_count(get_master_clock_freq()));
 
@@ -352,6 +355,10 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         val = _iface->mb_eeprom;
         return;
 
+    case MBOARD_PROP_CLOCK_RATE:
+        val = this->get_master_clock_freq();
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -407,6 +414,10 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         // Step2: readback the entire eeprom map into the iface.
         val.as<mboard_eeprom_t>().commit(*_iface, mboard_eeprom_t::MAP_N100);
         _iface->mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_N100);
+        return;
+
+    case MBOARD_PROP_CLOCK_RATE:
+        UHD_ASSERT_THROW(val.as<double>() == this->get_master_clock_freq());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

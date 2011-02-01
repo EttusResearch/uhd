@@ -24,7 +24,7 @@
 #include <uhd/utils/warning.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <iostream>
 
@@ -32,9 +32,6 @@ using namespace uhd;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-/***********************************************************************
- * Constants
- **********************************************************************/
 //Define this to the the boost async io calls to perform receive.
 //Otherwise, get_recv_buff uses a blocking receive with timeout.
 #define USE_ASIO_ASYNC_RECV
@@ -42,32 +39,6 @@ namespace asio = boost::asio;
 //Define this to the the boost async io calls to perform send.
 //Otherwise, the commit callback uses a blocking send.
 //#define USE_ASIO_ASYNC_SEND
-
-//By default, this buffer is sized insufficiently small.
-//For peformance, this buffer should be 10s of megabytes.
-static const size_t MIN_RECV_SOCK_BUFF_SIZE = size_t(10e3);
-
-//Large buffers cause more underflow at high rates.
-//Perhaps this is due to the kernel scheduling,
-//but may change with host-based flow control.
-static const size_t MIN_SEND_SOCK_BUFF_SIZE = size_t(10e3);
-
-//The number of async frames to allocate for each send and recv:
-//The non-async recv can have a very large number of recv frames
-//because the CPU overhead is independent of the number of frames.
-#ifdef USE_ASIO_ASYNC_RECV
-static const size_t DEFAULT_NUM_RECV_FRAMES = 32;
-#else
-static const size_t DEFAULT_NUM_RECV_FRAMES = MIN_RECV_SOCK_BUFF_SIZE/udp_simple::mtu;
-#endif
-
-//The non-async send only ever requires a single frame
-//because the buffer will be committed before a new get.
-#ifdef USE_ASIO_ASYNC_SEND
-static const size_t DEFAULT_NUM_SEND_FRAMES = 32;
-#else
-static const size_t DEFAULT_NUM_SEND_FRAMES = MIN_SEND_SOCK_BUFF_SIZE/udp_simple::mtu;
-#endif
 
 //The number of service threads to spawn for async ASIO:
 //A single concurrent thread for io_service seems to be the fastest.
@@ -77,6 +48,9 @@ static const size_t CONCURRENCY_HINT = 1;
 #else
 static const size_t CONCURRENCY_HINT = 0;
 #endif
+
+//A reasonable number of frames for send/recv and async/sync
+static const size_t DEFAULT_NUM_FRAMES = 32;
 
 /***********************************************************************
  * Zero Copy UDP implementation with ASIO:
@@ -95,9 +69,9 @@ public:
         const device_addr_t &hints
     ):
         _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
-        _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_RECV_FRAMES))),
+        _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_FRAMES))),
         _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
-        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_SEND_FRAMES))),
+        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES))),
         _concurrency_hint(hints.cast<size_t>("concurrency_hint", CONCURRENCY_HINT)),
         _io_service(_concurrency_hint)
     {
@@ -325,16 +299,11 @@ template<typename Opt> static void resize_buff_helper(
     const size_t target_size,
     const std::string &name
 ){
-    size_t min_sock_buff_size = 0;
-    if (name == "recv") min_sock_buff_size = MIN_RECV_SOCK_BUFF_SIZE;
-    if (name == "send") min_sock_buff_size = MIN_SEND_SOCK_BUFF_SIZE;
-    min_sock_buff_size = std::max(min_sock_buff_size, target_size);
-
     std::string help_message;
     #if defined(UHD_PLATFORM_LINUX)
         help_message = str(boost::format(
             "Please run: sudo sysctl -w net.core.%smem_max=%d\n"
-        ) % ((name == "recv")?"r":"w") % min_sock_buff_size);
+        ) % ((name == "recv")?"r":"w") % target_size);
     #endif /*defined(UHD_PLATFORM_LINUX)*/
 
     //resize the buffer if size was provided
@@ -348,19 +317,10 @@ template<typename Opt> static void resize_buff_helper(
             "Current %s sock buff size: %d bytes"
         ) % name % actual_size << std::endl;
         if (actual_size < target_size) uhd::warning::post(str(boost::format(
-            "The %s buffer is smaller than the requested size.\n"
-            "The minimum requested buffer size is %d bytes.\n"
+            "The %s buffer could not be resized sufficiently.\n"
             "See the transport application notes on buffer resizing.\n%s"
-        ) % name % min_sock_buff_size % help_message));
+        ) % name % help_message));
     }
-
-    //only enable on platforms that are happy with the large buffer resize
-    #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
-    //otherwise, ensure that the buffer is at least the minimum size
-    else if (udp_trans->get_buff_size<Opt>() < min_sock_buff_size){
-        resize_buff_helper<Opt>(udp_trans, min_sock_buff_size, name);
-    }
-    #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
 }
 
 udp_zero_copy::sptr udp_zero_copy::make(

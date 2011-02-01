@@ -29,7 +29,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/misc_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/single_usrp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tune_helper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wrapper_utils.hpp

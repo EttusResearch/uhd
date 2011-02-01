@@ -69,6 +69,9 @@ public:
         _thread_group.create_thread(boost::bind(&soft_time_ctrl_impl::recv_cmd_dispatcher, this));
         _update_mutex.lock(); //lock blocks until spawned
         _update_mutex.unlock(); //unlock mutex before done
+
+        //initialize the time to something
+        this->set_time(time_spec_t(0.0));
     }
 
     ~soft_time_ctrl_impl(void){

@@ -18,7 +18,7 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread_time.hpp> //system time
 #include <boost/math/special_functions/round.hpp>
@@ -93,35 +93,34 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
-    uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the tx sample rate
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    sdev->set_tx_rate(rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_tx_rate(rate);
+    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
     //set the tx center frequency
     std::cout << boost::format("Setting TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    sdev->set_tx_freq(freq);
-    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (sdev->get_tx_freq()/1e6) << std::endl << std::endl;
+    usrp->set_tx_freq(freq);
+    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
     //set the tx rf gain
     std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
-    sdev->set_tx_gain(gain);
-    std::cout << boost::format("Actual TX Gain: %f dB...") % sdev->get_tx_gain() << std::endl << std::endl;
+    usrp->set_tx_gain(gain);
+    std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain() << std::endl << std::endl;
 
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
-        wave_freq = sdev->get_tx_rate()/2;
+        wave_freq = usrp->get_tx_rate()/2;
     }
 
     //error when the waveform is not possible to generate
-    if (std::abs(wave_freq) > sdev->get_tx_rate()/2){
+    if (std::abs(wave_freq) > usrp->get_tx_rate()/2){
         throw std::runtime_error("wave freq out of Nyquist zone");
     }
-    if (sdev->get_tx_rate()/std::abs(wave_freq) > sine_table_len/2 and wave_type == "SINE"){
+    if (usrp->get_tx_rate()/std::abs(wave_freq) > sine_table_len/2 and wave_type == "SINE"){
         throw std::runtime_error("sine freq too small for table");
     }
 
@@ -135,7 +134,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //allocate the buffer and precalculate values
     std::vector<std::complex<float> > buff(spb);
-    const float cps = float(wave_freq/sdev->get_tx_rate());
+    const float cps = float(wave_freq/usrp->get_tx_rate());
     const float i_off = (wave_freq > 0)? float(0.25) : 0;
     const float q_off = (wave_freq < 0)? float(0.25) : 0;
     float theta = 0;
@@ -162,7 +161,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         theta = std::fmod(theta, 1);
 
         //send the entire contents of the buffer
-        dev->send(
+        usrp->get_device()->send(
             &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::SEND_MODE_FULL_BUFF
@@ -172,7 +171,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //send a mini EOB packet
     md.start_of_burst = false;
     md.end_of_burst   = true;
-    dev->send(NULL, 0, md,
+    usrp->get_device()->send(NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );

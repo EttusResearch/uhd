@@ -18,7 +18,7 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
@@ -35,8 +35,7 @@ namespace po = boost::program_options;
  *    Send a burst of many samples that will fragment internally.
  *    We expect to get an burst ack async message.
  */
-bool test_burst_ack_message(uhd::usrp::single_usrp::sptr sdev){
-    uhd::device::sptr dev = sdev->get_device();
+bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp){
     std::cout << "Test burst ack message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -45,16 +44,16 @@ bool test_burst_ack_message(uhd::usrp::single_usrp::sptr sdev){
     md.has_time_spec  = false;
 
     //3 times max-sps guarantees a SOB, no burst, and EOB packet
-    std::vector<std::complex<float> > buff(dev->get_max_send_samps_per_packet()*3);
+    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_send_samps_per_packet()*3);
 
-    dev->send(
+    usrp->get_device()->send(
         &buff.front(), buff.size(), md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
 
     uhd::async_metadata_t async_md;
-    if (not dev->recv_async_msg(async_md)){
+    if (not usrp->get_device()->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -84,8 +83,7 @@ bool test_burst_ack_message(uhd::usrp::single_usrp::sptr sdev){
  *    Send a start of burst packet with no following end of burst.
  *    We expect to get an underflow(within a burst) async message.
  */
-bool test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
-    uhd::device::sptr dev = sdev->get_device();
+bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp){
     std::cout << "Test underflow message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -93,14 +91,14 @@ bool test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
     md.end_of_burst   = false;
     md.has_time_spec  = false;
 
-    dev->send(
+    usrp->get_device()->send(
         NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
 
     uhd::async_metadata_t async_md;
-    if (not dev->recv_async_msg(async_md, 1)){
+    if (not usrp->get_device()->recv_async_msg(async_md, 1)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -130,8 +128,7 @@ bool test_underflow_message(uhd::usrp::single_usrp::sptr sdev){
  *    Send a burst packet that occurs at a time in the past.
  *    We expect to get a time error async message.
  */
-bool test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
-    uhd::device::sptr dev = sdev->get_device();
+bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp){
     std::cout << "Test time error message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -140,16 +137,16 @@ bool test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
     md.has_time_spec  = true;
     md.time_spec      = uhd::time_spec_t(100.0); //send at 100s
 
-    sdev->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
+    usrp->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
 
-    dev->send(
+    usrp->get_device()->send(
         NULL, 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
 
     uhd::async_metadata_t async_md;
-    if (not dev->recv_async_msg(async_md)){
+    if (not usrp->get_device()->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -174,10 +171,9 @@ bool test_time_error_message(uhd::usrp::single_usrp::sptr sdev){
     }
 }
 
-void flush_async_md(uhd::usrp::single_usrp::sptr sdev){
-    uhd::device::sptr dev = sdev->get_device();
+void flush_async_md(uhd::usrp::multi_usrp::sptr usrp){
     uhd::async_metadata_t async_md;
-    while (dev->recv_async_msg(async_md, 1.0)){}
+    while (usrp->get_device()->recv_async_msg(async_md, 1.0)){}
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -192,7 +188,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args",   po::value<std::string>(&args)->default_value(""), "single uhd device address args")
+        ("args",   po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("rate",   po::value<double>(&rate)->default_value(1.5e6),   "rate of outgoing samples")
         ("ntests", po::value<size_t>(&ntests)->default_value(10),    "number of tests to run")
     ;
@@ -209,18 +205,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the tx sample rate
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    sdev->set_tx_rate(rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_tx_rate(rate);
+    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
     //------------------------------------------------------------------
     // begin asyc messages test
     //------------------------------------------------------------------
-    static const uhd::dict<std::string, boost::function<bool(uhd::usrp::single_usrp::sptr)> >
+    static const uhd::dict<std::string, boost::function<bool(uhd::usrp::multi_usrp::sptr)> >
         tests = boost::assign::map_list_of
         ("Test Burst ACK ", &test_burst_ack_message)
         ("Test Underflow ", &test_underflow_message)
@@ -237,8 +233,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //run the tests, pick at random
     for (size_t n = 0; n < ntests; n++){
         std::string key = tests.keys()[std::rand() % tests.size()];
-        bool pass = tests[key](sdev);
-        flush_async_md(sdev);
+        bool pass = tests[key](usrp);
+        flush_async_md(usrp);
 
         //store result
         if (pass) successes[key]++;
