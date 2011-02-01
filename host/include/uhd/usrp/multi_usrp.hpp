@@ -106,6 +106,26 @@ public:
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
+
+    /*!
+     * Set the master clock rate.
+     * This controls the rate of the clock that feeds the FPGA DSP.
+     * On some devices, this re-tunes the clock to the specified rate.
+     * If the specified rate is not available, this method will throw.
+     * On other devices, this method notifies the software of the rate,
+     * but requires the the user has made the necessary hardware change.
+     * \param rate the new master clock rate in Hz
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void set_master_clock_rate(double rate, size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
+     * Get the master clock rate.
+     * \param mboard the motherboard index 0 to M-1
+     * \return the master clock rate in Hz.
+     */
+    virtual double get_master_clock_rate(size_t mboard = 0) = 0;
+
     /*!
      * Get a printable summary for this USRP configuration.
      * \return a printable string

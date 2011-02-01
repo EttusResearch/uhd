@@ -53,6 +53,20 @@ public:
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
+    void set_master_clock_rate(double rate, size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _mboard(mboard)[MBOARD_PROP_CLOCK_RATE] = rate;
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            set_master_clock_rate(rate, m);
+        }
+    }
+
+    double get_master_clock_rate(size_t mboard){
+        return _mboard(mboard)[MBOARD_PROP_CLOCK_RATE].as<double>();
+    }
+
     std::string get_pp_string(void){
         std::string buff = str(boost::format(
             "%s USRP:\n"
