@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -39,7 +39,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
+        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("file", po::value<std::string>(&file)->default_value("out.16sc.dat"), "name of the file to write binary samples to")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
@@ -52,49 +52,48 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("UHD RX to File %s") % desc << std::endl;
+        std::cout << boost::format("UHD RX samples to file %s") % desc << std::endl;
         return ~0;
     }
 
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
-    uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    sdev->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_rx_rate(rate);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
 
     //set the rx center frequency
     std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    sdev->set_rx_freq(freq);
-    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (sdev->get_rx_freq()/1e6) << std::endl << std::endl;
+    usrp->set_rx_freq(freq);
+    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
     //set the rx rf gain
     std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
-    sdev->set_rx_gain(gain);
-    std::cout << boost::format("Actual RX Gain: %f dB...") % sdev->get_rx_gain() << std::endl << std::endl;
+    usrp->set_rx_gain(gain);
+    std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
 
     boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
-    std::cout << "LO Locked = " << sdev->get_rx_lo_locked() << std::endl;
+    std::cout << "LO Locked = " << usrp->get_rx_lo_locked() << std::endl;
 
     //setup streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = true;
-    sdev->issue_stream_cmd(stream_cmd);
+    usrp->issue_stream_cmd(stream_cmd);
 
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
     uhd::rx_metadata_t md;
-    std::vector<std::complex<short> > buff(dev->get_max_recv_samps_per_packet());
+    std::vector<std::complex<short> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
     std::ofstream outfile(file.c_str(), std::ofstream::binary);
 
     while(num_acc_samps < total_num_samps){
-        size_t num_rx_samps = dev->recv(
+        size_t num_rx_samps = usrp->get_device()->recv(
             &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_INT16,
             uhd::device::RECV_MODE_ONE_PACKET

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -27,19 +27,19 @@
 namespace po = boost::program_options;
 
 static inline void test_device(
-    uhd::usrp::single_usrp::sptr sdev,
+    uhd::usrp::multi_usrp::sptr usrp,
     double rx_rate_sps,
     double duration_secs
 ){
-    uhd::device::sptr dev = sdev->get_device();
+    const size_t max_samps_per_packet = usrp->get_device()->get_max_recv_samps_per_packet();
     std::cout << boost::format("Testing receive rate %f Msps (%f second run)") % (rx_rate_sps/1e6) % duration_secs << std::endl;
 
     //allocate recv buffer and metatdata
     uhd::rx_metadata_t md;
-    std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
+    std::vector<std::complex<float> > buff(max_samps_per_packet);
 
     //flush the buffers in the recv path
-    while(dev->recv(
+    while(usrp->get_device()->recv(
         &buff.front(), buff.size(), md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::RECV_MODE_ONE_PACKET
@@ -55,9 +55,9 @@ static inline void test_device(
     uhd::time_spec_t initial_time_spec;
     uhd::time_spec_t next_expected_time_spec;
 
-    sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     do {
-        size_t num_rx_samps = dev->recv(
+        size_t num_rx_samps = usrp->get_device()->recv(
             &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
@@ -94,14 +94,14 @@ static inline void test_device(
         next_expected_time_spec = md.time_spec + uhd::time_spec_t(0, num_rx_samps, rx_rate_sps);
 
     } while((next_expected_time_spec - initial_time_spec) < uhd::time_spec_t(duration_secs));
-    sdev->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+    usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
     //print a summary
     std::cout << std::endl; //go to newline, recv may spew SXSYSZ...
     std::cout << boost::format("    Received packets: %d") % total_recv_packets << std::endl;
     std::cout << boost::format("    Received samples: %d") % total_recv_samples << std::endl;
     std::cout << boost::format("    Lost samples: %d") % total_lost_samples << std::endl;
-    size_t packets_lost = boost::math::iround(double(total_lost_samples)/dev->get_max_recv_samps_per_packet());
+    size_t packets_lost = boost::math::iround(double(total_lost_samples)/max_samps_per_packet);
     std::cout << boost::format("    Lost packets: %d (approximate)") % packets_lost << std::endl;
     double actual_rx_rate_sps = (total_recv_samples*rx_rate_sps)/(total_recv_samples+total_lost_samples);
     std::cout << boost::format("    Sustained receive rate: %f Msps") % (actual_rx_rate_sps/1e6) << std::endl;
@@ -137,22 +137,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     if (not vm.count("rate")){
-        sdev->set_rx_rate(500e3); //initial rate
+        usrp->set_rx_rate(500e3); //initial rate
         while(true){
-            double rate = sdev->get_rx_rate();
-            test_device(sdev, rate, duration);
-            sdev->set_rx_rate(rate*2); //double the rate
-            if (sdev->get_rx_rate() == rate) break;
+            double rate = usrp->get_rx_rate();
+            test_device(usrp, rate, duration);
+            usrp->set_rx_rate(rate*2); //double the rate
+            if (usrp->get_rx_rate() == rate) break;
         }
     }
     else{
-        sdev->set_rx_rate(only_rate);
-        double rate = sdev->get_rx_rate();
-        test_device(sdev, rate, duration);
+        usrp->set_rx_rate(only_rate);
+        double rate = usrp->get_rx_rate();
+        test_device(usrp, rate, duration);
     }
 
     //finished

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,13 +51,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::multi_usrp::sptr sdev = uhd::usrp::multi_usrp::make(args);
-    uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the time at an unknown pps (will throw if no pps)
     std::cout << std::endl << "Attempt to detect the PPS and set the time..." << std::endl << std::endl;
-    sdev->set_time_unknown_pps(uhd::time_spec_t(0.0));
+    usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
     std::cout << std::endl << "Success!" << std::endl << std::endl;
     return 0;
 }

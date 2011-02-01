@@ -17,7 +17,7 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -60,22 +60,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
-    uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    sdev->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (sdev->get_rx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_rx_rate(rate);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
 
     //set the rx center frequency
     std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    sdev->set_rx_freq(freq);
-    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (sdev->get_rx_freq()/1e6) << std::endl << std::endl;
+    usrp->set_rx_freq(freq);
+    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    sdev->set_time_now(uhd::time_spec_t(0.0));
+    usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //setup streaming
     std::cout << std::endl;
@@ -86,14 +85,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
-    sdev->issue_stream_cmd(stream_cmd);
+    usrp->issue_stream_cmd(stream_cmd);
+
+    //allocate buffer to receive
+    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
 
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
     while(num_acc_samps < total_num_samps){
         uhd::rx_metadata_t md;
-        std::vector<std::complex<float> > buff(dev->get_max_recv_samps_per_packet());
-        size_t num_rx_samps = dev->recv(
+        size_t num_rx_samps = usrp->get_device()->recv(
             &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET
