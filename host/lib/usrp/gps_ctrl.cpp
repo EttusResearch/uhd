@@ -58,7 +58,7 @@ public:
       if(trim_right_copy(reply) == "Command Error") {
         gps_type = GPS_TYPE_JACKSON_LABS;
         break;
-      }
+      } 
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
       else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
       boost::this_thread::sleep(boost::posix_time::milliseconds(200));
@@ -104,6 +104,7 @@ public:
           found_gprmc = true;
           break;
         }
+        boost::this_thread::sleep(boost::posix_time::milliseconds(200));
       }
       if(!found_gprmc) {
         if(gps_type == GPS_TYPE_JACKSON_LABS) std::cout << "Firefly GPS not locked or warming up." << std::endl;
@@ -127,16 +128,7 @@ public:
 
 //TODO: this isn't generalizeable to non-USRP2 USRPs.
   std::string safe_gps_read() {
-    std::string reply;
-    try {
-        reply = _recv();
-    } catch (std::runtime_error err) {
-      if(err.what() != std::string("usrp2 no control response")) throw; //sorry can't cope with that
-      else { //we don't actually have a GPS installed
-        reply = std::string();
-      }
-    }
-    return reply;
+    return _recv();
   }
 
   ptime get_time(void) {
@@ -196,7 +188,7 @@ private:
     GPS_TYPE_NONE
   } gps_type;
 
-  static const int GPS_TIMEOUT_TRIES = 5;
+  static const int GPS_TIMEOUT_TRIES = 10;
   static const int GPS_TIMEOUT_DELAY_MS = 200;
   static const int FIREFLY_STUPID_DELAY_MS = 200;
 

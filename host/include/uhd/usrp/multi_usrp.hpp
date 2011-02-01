@@ -34,19 +34,30 @@
 namespace uhd{ namespace usrp{
 
 /*!
- * The multi-USRP device class:
- * A multi-USRP facilitates ease-of-use for multiple USRP scenarios.
- * The wrapper provides convenience functions to control the group
- * of underlying devices as if they consisted of a single device.
+ * The Multi-USRP device class:
  *
- * A few notes about a multi-USRP configuration:
+ * This class facilitates ease-of-use for most use-case scenarios.
+ * The wrapper provides convenience functions to tune the devices,
+ * set the dboard gains, antennas, filters, and other properties.
+ * This class can be used to interface with a single USRP with
+ * one or more channels, or multiple USRPs in a homogeneous setup.
+ * All members take an optional parameter for board number or channel number.
+ * In the single device, single channel case, these parameters can be unspecified.
+ *
+ * When using a single device with multiple channels:
+ *  - Channel mapping is determined by the subdevice specifications
+ *  - All channels share a common RX sample rate
+ *  - All channels share a common TX sample rate
+ *
+ * When using multiple devices in a configuration:
+ *  - Channel mapping is determined by the device address arguments
  *  - All boards share a common RX sample rate
  *  - All boards share a common TX sample rate
  *  - All boards share a common RX subdevice specification size
  *  - All boards share a common TX subdevice specification size
  *  - All boards must have synchronized times (see the set_time_*() calls)
  *
- * Example to setup channel mapping:
+ * Example to setup channel mapping for multiple devices:
  * <pre>
  *
  * //create a multi_usrp with two boards in the configuration
@@ -95,6 +106,26 @@ public:
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
+
+    /*!
+     * Set the master clock rate.
+     * This controls the rate of the clock that feeds the FPGA DSP.
+     * On some devices, this re-tunes the clock to the specified rate.
+     * If the specified rate is not available, this method will throw.
+     * On other devices, this method notifies the software of the rate,
+     * but requires the the user has made the necessary hardware change.
+     * \param rate the new master clock rate in Hz
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void set_master_clock_rate(double rate, size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
+     * Get the master clock rate.
+     * \param mboard the motherboard index 0 to M-1
+     * \return the master clock rate in Hz.
+     */
+    virtual double get_master_clock_rate(size_t mboard = 0) = 0;
+
     /*!
      * Get a printable summary for this USRP configuration.
      * \return a printable string
@@ -106,7 +137,7 @@ public:
      * \param mboard which motherboard to query
      * \return a string representing the name
      */
-    virtual std::string get_mboard_name(size_t mboard) = 0;
+    virtual std::string get_mboard_name(size_t mboard = 0) = 0;
 
     /*!
      * Get the current time in the usrp time registers.
@@ -119,6 +150,19 @@ public:
      * \return a timespec representing the last pps
      */
     virtual time_spec_t get_time_last_pps(void) = 0;
+
+    /*!
+     * Sets the time registers on the usrp immediately.
+     *
+     * If only one MIMO master is present in your configuration, set_time_now is
+     * safe to use because the slave's time automatically follows the master's time.
+     * Otherwise, this call cannot set the time synchronously across multiple devices.
+     * Please use the set_time_next_pps or set_time_unknown_pps calls with a PPS signal.
+     *
+     * \param time_spec the time to latch into the usrp device
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void set_time_now(const time_spec_t &time_spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
      * Set the time registers on the usrp at the next pps tick.
@@ -162,6 +206,11 @@ public:
      * Issue a stream command to the usrp device.
      * This tells the usrp to send samples into the host.
      * See the documentation for stream_cmd_t for more info.
+     *
+     * With multiple devices, the first stream command in a chain of commands
+     * should have a time spec in the near future and stream_now = false;
+     * to ensure that the packets can be aligned by their time specs.
+     *
      * \param stream_cmd the stream command to issue
      */
     virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
@@ -173,7 +222,7 @@ public:
      * \param clock_config the clock configuration to set
      * \param mboard which motherboard to set the config
      */
-    virtual void set_clock_config(const clock_config_t &clock_config, size_t mboard) = 0;
+    virtual void set_clock_config(const clock_config_t &clock_config, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
      * Get the number of USRP motherboards in this configuration.
@@ -191,14 +240,14 @@ public:
      * \param spec the new subdevice specification
      * \param mboard the motherboard index 0 to M-1
      */
-    virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec, size_t mboard) = 0;
+    virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
      * Get the RX subdevice specification.
      * \param mboard the motherboard index 0 to M-1
      * \return the subdevice specification in use
      */
-    virtual uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard) = 0;
+    virtual uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard = 0) = 0;
 
     /*!
      * Get the number of RX channels in this configuration.
@@ -212,7 +261,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the subdevice name
      */
-    virtual std::string get_rx_subdev_name(size_t chan) = 0;
+    virtual std::string get_rx_subdev_name(size_t chan = 0) = 0;
 
     /*!
      * Set the RX sample rate across all channels.
@@ -241,14 +290,14 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the frequency in Hz
      */
-    virtual double get_rx_freq(size_t chan) = 0;
+    virtual double get_rx_freq(size_t chan = 0) = 0;
 
     /*!
      * Get the RX center frequency range.
      * \param chan the channel index 0 to N-1
      * \return a frequency range object
      */
-    virtual freq_range_t get_rx_freq_range(size_t chan) = 0;
+    virtual freq_range_t get_rx_freq_range(size_t chan = 0) = 0;
 
     /*!
      * Set the RX gain value for the specified gain element.
@@ -257,10 +306,10 @@ public:
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_gain(double gain, const std::string &name, size_t chan) = 0;
+    virtual void set_rx_gain(double gain, const std::string &name, size_t chan = 0) = 0;
 
     //! A convenience wrapper for setting overall RX gain
-    void set_rx_gain(double gain, size_t chan){
+    void set_rx_gain(double gain, size_t chan = 0){
         return this->set_rx_gain(gain, ALL_GAINS, chan);
     }
 
@@ -271,10 +320,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual double get_rx_gain(const std::string &name, size_t chan) = 0;
+    virtual double get_rx_gain(const std::string &name, size_t chan = 0) = 0;
 
     //! A convenience wrapper for getting overall RX gain
-    double get_rx_gain(size_t chan){
+    double get_rx_gain(size_t chan = 0){
         return this->get_rx_gain(ALL_GAINS, chan);
     }
 
@@ -285,10 +334,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a gain range object
      */
-    virtual gain_range_t get_rx_gain_range(const std::string &name, size_t chan) = 0;
+    virtual gain_range_t get_rx_gain_range(const std::string &name, size_t chan = 0) = 0;
 
     //! A convenience wrapper for getting overall RX gain range
-    gain_range_t get_rx_gain_range(size_t chan){
+    gain_range_t get_rx_gain_range(size_t chan = 0){
         return this->get_rx_gain_range(ALL_GAINS, chan);
     }
 
@@ -298,49 +347,49 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a vector of gain element names
      */
-    virtual std::vector<std::string> get_rx_gain_names(size_t chan) = 0;
+    virtual std::vector<std::string> get_rx_gain_names(size_t chan = 0) = 0;
 
     /*!
      * Select the RX antenna on the subdevice.
      * \param ant the antenna name
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_antenna(const std::string &ant, size_t chan) = 0;
+    virtual void set_rx_antenna(const std::string &ant, size_t chan = 0) = 0;
 
     /*!
      * Get the selected RX antenna on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return the antenna name
      */
-    virtual std::string get_rx_antenna(size_t chan) = 0;
+    virtual std::string get_rx_antenna(size_t chan = 0) = 0;
 
     /*!
      * Get a list of possible RX antennas on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return a vector of antenna names
      */
-    virtual std::vector<std::string> get_rx_antennas(size_t chan) = 0;
+    virtual std::vector<std::string> get_rx_antennas(size_t chan = 0) = 0;
 
     /*!
      * Get the locked status of the LO on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
-    virtual bool get_rx_lo_locked(size_t chan) = 0;
+    virtual bool get_rx_lo_locked(size_t chan = 0) = 0;
 
     /*!
      * Set the RX bandwidth on the subdevice.
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_bandwidth(double bandwidth, size_t chan) = 0;
+    virtual void set_rx_bandwidth(double bandwidth, size_t chan = 0) = 0;
 
     /*!
      * Get the RX bandwidth on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return the bandwidth in Hz
      */
-    virtual double get_rx_bandwidth(size_t chan) = 0;
+    virtual double get_rx_bandwidth(size_t chan = 0) = 0;
 
     /*!
      * Read the RSSI value on the RX subdevice.
@@ -348,7 +397,7 @@ public:
      * \return the rssi in dB
      * \throw exception if RSSI readback not supported
      */
-    virtual double read_rssi(size_t chan) = 0;
+    virtual double read_rssi(size_t chan = 0) = 0;
 
     /*!
      * Get the dboard interface object for the RX subdevice.
@@ -357,7 +406,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the dboard interface sptr
      */
-    virtual dboard_iface::sptr get_rx_dboard_iface(size_t chan) = 0;
+    virtual dboard_iface::sptr get_rx_dboard_iface(size_t chan = 0) = 0;
 
     /*******************************************************************
      * TX methods
@@ -370,14 +419,14 @@ public:
      * \param spec the new subdevice specification
      * \param mboard the motherboard index 0 to M-1
      */
-    virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec, size_t mboard) = 0;
+    virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
      * Get the TX subdevice specification.
      * \param mboard the motherboard index 0 to M-1
      * \return the subdevice specification in use
      */
-    virtual uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard) = 0;
+    virtual uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard = 0) = 0;
 
     /*!
      * Get the number of TX channels in this configuration.
@@ -391,7 +440,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the subdevice name
      */
-    virtual std::string get_tx_subdev_name(size_t chan) = 0;
+    virtual std::string get_tx_subdev_name(size_t chan = 0) = 0;
 
     /*!
      * Set the TX sample rate across all channels.
@@ -420,14 +469,14 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the frequency in Hz
      */
-    virtual double get_tx_freq(size_t chan) = 0;
+    virtual double get_tx_freq(size_t chan = 0) = 0;
 
     /*!
      * Get the TX center frequency range.
      * \param chan the channel index 0 to N-1
      * \return a frequency range object
      */
-    virtual freq_range_t get_tx_freq_range(size_t chan) = 0;
+    virtual freq_range_t get_tx_freq_range(size_t chan = 0) = 0;
 
     /*!
      * Set the TX gain value for the specified gain element.
@@ -436,10 +485,10 @@ public:
      * \param name the name of the gain element
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_gain(double gain, const std::string &name, size_t chan) = 0;
+    virtual void set_tx_gain(double gain, const std::string &name, size_t chan = 0) = 0;
 
     //! A convenience wrapper for setting overall TX gain
-    void set_tx_gain(double gain, size_t chan){
+    void set_tx_gain(double gain, size_t chan = 0){
         return this->set_tx_gain(gain, ALL_GAINS, chan);
     }
 
@@ -450,10 +499,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the gain in dB
      */
-    virtual double get_tx_gain(const std::string &name, size_t chan) = 0;
+    virtual double get_tx_gain(const std::string &name, size_t chan = 0) = 0;
 
     //! A convenience wrapper for getting overall TX gain
-    double get_tx_gain(size_t chan){
+    double get_tx_gain(size_t chan = 0){
         return this->get_tx_gain(ALL_GAINS, chan);
     }
 
@@ -464,10 +513,10 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a gain range object
      */
-    virtual gain_range_t get_tx_gain_range(const std::string &name, size_t chan) = 0;
+    virtual gain_range_t get_tx_gain_range(const std::string &name, size_t chan = 0) = 0;
 
     //! A convenience wrapper for getting overall TX gain range
-    gain_range_t get_tx_gain_range(size_t chan){
+    gain_range_t get_tx_gain_range(size_t chan = 0){
         return this->get_tx_gain_range(ALL_GAINS, chan);
     }
 
@@ -477,49 +526,49 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a vector of gain element names
      */
-    virtual std::vector<std::string> get_tx_gain_names(size_t chan) = 0;
+    virtual std::vector<std::string> get_tx_gain_names(size_t chan = 0) = 0;
 
     /*!
      * Select the TX antenna on the subdevice.
      * \param ant the antenna name
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_antenna(const std::string &ant, size_t chan) = 0;
+    virtual void set_tx_antenna(const std::string &ant, size_t chan = 0) = 0;
 
     /*!
      * Get the selected TX antenna on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return the antenna name
      */
-    virtual std::string get_tx_antenna(size_t chan) = 0;
+    virtual std::string get_tx_antenna(size_t chan = 0) = 0;
 
     /*!
      * Get a list of possible TX antennas on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return a vector of antenna names
      */
-    virtual std::vector<std::string> get_tx_antennas(size_t chan) = 0;
+    virtual std::vector<std::string> get_tx_antennas(size_t chan = 0) = 0;
 
     /*!
      * Get the locked status of the LO on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
-    virtual bool get_tx_lo_locked(size_t chan) = 0;
+    virtual bool get_tx_lo_locked(size_t chan = 0) = 0;
 
     /*!
      * Set the TX bandwidth on the subdevice.
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_bandwidth(double bandwidth, size_t chan) = 0;
+    virtual void set_tx_bandwidth(double bandwidth, size_t chan = 0) = 0;
 
     /*!
      * Get the TX bandwidth on the subdevice.
      * \param chan the channel index 0 to N-1
      * \return the bandwidth in Hz
      */
-    virtual double get_tx_bandwidth(size_t chan) = 0;
+    virtual double get_tx_bandwidth(size_t chan = 0) = 0;
 
     /*!
      * Get the dboard interface object for the TX subdevice.
@@ -528,7 +577,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the dboard interface sptr
      */
-    virtual dboard_iface::sptr get_tx_dboard_iface(size_t chan) = 0;
+    virtual dboard_iface::sptr get_tx_dboard_iface(size_t chan = 0) = 0;
 };
 
 }}

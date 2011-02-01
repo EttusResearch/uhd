@@ -42,6 +42,7 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
     if (getifaddrs(&ifap) == 0){
         for (struct ifaddrs *iter = ifap; iter != NULL; iter = iter->ifa_next){
             //ensure that the entries are valid
+            if (iter->ifa_addr == NULL) continue;
             if (iter->ifa_addr->sa_family != AF_INET) continue;
             if (iter->ifa_netmask->sa_family != AF_INET) continue;
             if (iter->ifa_broadaddr->sa_family != AF_INET) continue;

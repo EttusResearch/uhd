@@ -53,11 +53,26 @@ public:
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
+    void set_master_clock_rate(double rate, size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _mboard(mboard)[MBOARD_PROP_CLOCK_RATE] = rate;
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            set_master_clock_rate(rate, m);
+        }
+    }
+
+    double get_master_clock_rate(size_t mboard){
+        return _mboard(mboard)[MBOARD_PROP_CLOCK_RATE].as<double>();
+    }
+
     std::string get_pp_string(void){
         std::string buff = str(boost::format(
-            "Multi USRP:\n"
+            "%s USRP:\n"
             "  Device: %s\n"
         )
+            % ((get_num_mboards() > 1)? "Multi" : "Single")
             % (*_dev)[DEVICE_PROP_NAME].as<std::string>()
         );
         for (size_t m = 0; m < get_num_mboards(); m++){
@@ -119,6 +134,16 @@ public:
 
     time_spec_t get_time_last_pps(void){
         return _mboard(0)[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
+    }
+
+    void set_time_now(const time_spec_t &time_spec, size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _mboard(mboard)[MBOARD_PROP_TIME_NOW] = time_spec;
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            set_time_now(time_spec, m);
+        }
     }
 
     void set_time_next_pps(const time_spec_t &time_spec){
