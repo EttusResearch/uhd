@@ -91,7 +91,6 @@ struct usrp1_impl::io_impl{
     void commit_send_buff(offset_send_buffer::sptr, offset_send_buffer::sptr, size_t);
     void flush_send_buff(void);
     bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &, double);
-    bool transmitting_enb;
 };
 
 /*!
@@ -132,6 +131,9 @@ void usrp1_impl::io_impl::commit_send_buff(
 void usrp1_impl::io_impl::flush_send_buff(void){
     //calculate the number of bytes to alignment
     size_t bytes_to_pad = (-1*curr_buff->offset)%alignment_padding;
+
+    //send at least alignment_padding to guarantee zeros are sent
+    if (bytes_to_pad == 0) bytes_to_pad = alignment_padding;
 
     //get the buffer, clear, and commit (really current buffer)
     vrt_packet_handler::managed_send_buffs_t buffs(1);
@@ -190,7 +192,7 @@ void usrp1_impl::io_init(void){
     );
 
     rx_stream_on_off(false);
-    tx_stream_on_off(false);
+    _io_impl->flush_send_buff();
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){
@@ -199,13 +201,6 @@ void usrp1_impl::rx_stream_on_off(bool enb){
     while(not enb and _data_transport->get_recv_buff().get() != NULL){
         /* NOP */
     }
-}
-
-void usrp1_impl::tx_stream_on_off(bool enb){
-    if (not enb) _io_impl->flush_send_buff();
-    _codec_ctrls[DBOARD_SLOT_A]->enable_tx_digital(enb);
-    _codec_ctrls[DBOARD_SLOT_B]->enable_tx_digital(enb);
-    _io_impl->transmitting_enb = enb;
 }
 
 /***********************************************************************
@@ -232,7 +227,6 @@ size_t usrp1_impl::send(
     send_mode_t send_mode, double timeout
 ){
     if (_soft_time_ctrl->send_pre(metadata, timeout)) return num_samps;
-    if (not _io_impl->transmitting_enb) tx_stream_on_off(true);
 
     size_t num_samps_sent = vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
@@ -250,7 +244,7 @@ size_t usrp1_impl::send(
     //handle eob flag (commit the buffer, disable the DACs)
     //check num samps sent to avoid flush on incomplete/timeout
     if (metadata.end_of_burst and num_samps_sent == num_samps){
-        this->tx_stream_on_off(false);
+        _io_impl->flush_send_buff();
     }
 
     //handle the polling for underflow conditions
