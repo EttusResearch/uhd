@@ -40,6 +40,12 @@ namespace asio = boost::asio;
 //Otherwise, the commit callback uses a blocking send.
 //#define USE_ASIO_ASYNC_SEND
 
+//The asio async receive implementation is broken for some macos.
+//Just disable for all macos since we don't know the problem.
+#if defined(UHD_PLATFORM_MACOS) && defined(USE_ASIO_ASYNC_RECV)
+    #undef USE_ASIO_ASYNC_RECV
+#endif
+
 //The number of service threads to spawn for async ASIO:
 //A single concurrent thread for io_service seems to be the fastest.
 //Threads are disabled when no async implementations are enabled.
