@@ -18,14 +18,13 @@
 #include <uhd/utils/safe_main.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <stdexcept>
 #include <iostream>
 
 #include "fpga_downloader.cpp"
 #include "clkgen_config.hpp"
 
 namespace po = boost::program_options;
-
-static const std::string default_passthrough_path = "/usr/share/uhd/images/usrp_e1xx_passthrough.bin";
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
 
@@ -36,8 +35,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("fpga", po::value<std::string>(&fpga_path)->default_value(""), "loads the specified FPGA file")
-        ("reclk",                                                       "runs the clock recovery")
+        ("fpga", po::value<std::string>(&fpga_path), "loads the specified FPGA file")
+        ("reclk",                                    "runs the clock recovery")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -50,20 +49,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     bool loaded_fpga_image = false;
-    if (vm.count("fpga")){
+    if (vm.count("fpga") != 0){
         std::cout << "USRP-E Utility loading the FPGA..." << std::endl << std::endl;
         usrp_e100_load_fpga(fpga_path);
         loaded_fpga_image = true;
         sleep(1);
     }
 
-    if (vm.count("reclk")){
+    if (vm.count("reclk") != 0){
         std::cout << "USRP-E Utility running the clock recovery..." << std::endl << std::endl;
         //if an image was not loaded or specified, we load pass-through
-        if (fpga_path.empty()) fpga_path = default_passthrough_path;
-        if (not loaded_fpga_image) usrp_e100_load_fpga(fpga_path);
+        if (fpga_path.empty()) throw std::runtime_error(
+            "Please specify the path to the pass-though FPGA image for your device.\n"
+            "  usrp-e-utility --reclk --fpga=/usr/share/uhd/images/usrp_e1xx_pt_fpga.bin"
+        );
         clock_genconfig_main();
-        std::system("rm /tmp/usrp*hash"); //clear hash so driver must reload
+        if (std::system("rm /tmp/usrp*hash") != 0){ //clear hash so driver must reload
+            std::cerr << "No hash to remove! Don't worry, its not a problem." << std::endl;
+        }
     }
 
     std::cout << "Done!" << std::endl;

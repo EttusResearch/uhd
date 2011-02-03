@@ -152,6 +152,22 @@ $(_usrp_e100_fpga_bin): $(GLOBAL_DEPS)
 endif
 
 ########################################################################
+# USRP-E100 pass-through fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_e100_pt_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e_passthru
+_usrp_e100_pt_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_pt_fpga.bin
+IMAGES_LIST += $(_usrp_e100_pt_fpga_bin)
+
+$(_usrp_e100_pt_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_e100_pt_fpga_dir) && make clean
+	cd $(_usrp_e100_pt_fpga_dir) && make bin
+	cp $(_usrp_e100_pt_fpga_dir)/build/passthru.bin $@
+
+endif
+
+########################################################################
 # Build rules
 ########################################################################
 images: $(IMAGES_LIST)
