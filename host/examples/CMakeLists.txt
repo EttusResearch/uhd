@@ -27,6 +27,7 @@ SET(example_sources
     test_pps_input.cpp
     tx_timed_samples.cpp
     tx_waveforms.cpp
+    latency_test.cpp
 )
 
 #for each source: build an executable and install
