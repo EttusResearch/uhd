@@ -78,6 +78,7 @@ List of emulated features
 * Setting the current device time
 * Getting the current device time
 * Transmitting at a specific time
+* Transmitting a specific number of samples
 * Receiving at a specific time
 * Receiving a specific number of samples
 * End of burst flags for transmit/receive
