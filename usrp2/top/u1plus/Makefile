@@ -1,30 +1,6 @@
 #
 # Copyright 2008 Ettus Research LLC
-# 
-# This file is part of GNU Radio
-# 
-# GNU Radio is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-# 
-# GNU Radio is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with GNU Radio; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
-# 
-
-##################################################
-# xtclsh Shell and tcl Script Path
-##################################################
-#XTCLSH := /opt/Xilinx/10.1/ISE/bin/lin/xtclsh
-XTCLSH := xtclsh
-ISE_HELPER := ../tcl/ise_helper.tcl
+#
 
 ##################################################
 # Project Setup
@@ -80,8 +56,8 @@ $(GPIF_SRCS)
 ##################################################
 # Process Properties
 ##################################################
-export SYNTHESIZE_PROPERTIES := \
-"Number of Clock Buffers" 6 \
+SYNTHESIZE_PROPERTIES = \
+"Number of Clock Buffers" 8 \
 "Pack I/O Registers into IOBs" Yes \
 "Optimization Effort" High \
 "Optimize Instantiated Primitives" TRUE \
@@ -90,10 +66,10 @@ export SYNTHESIZE_PROPERTIES := \
 "Use Synchronous Reset" Auto \
 "Use Synchronous Set" Auto
 
-export TRANSLATE_PROPERTIES := \
+TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"
 
-export MAP_PROPERTIES := \
+MAP_PROPERTIES = \
 "Allow Logic Optimization Across Hierarchy" TRUE \
 "Map to Input Functions" 4 \
 "Optimization Strategy (Cover Mode)" Speed \
@@ -104,14 +80,14 @@ export MAP_PROPERTIES := \
 "Combinatorial Logic Optimization" TRUE \
 "Register Duplication" TRUE
 
-export PLACE_ROUTE_PROPERTIES := \
+PLACE_ROUTE_PROPERTIES = \
 "Place & Route Effort Level (Overall)" High 
 
-export STATIC_TIMING_PROPERTIES := \
+STATIC_TIMING_PROPERTIES = \
 "Number of Paths in Error/Verbose Report" 10 \
 "Report Type" "Error Report"
 
-export GEN_PROG_FILE_PROPERTIES := \
+GEN_PROG_FILE_PROPERTIES = \
 "Configuration Rate" 6 \
 "Create Binary Configuration File" TRUE \
 "Done (Output Events)" 5 \
@@ -119,27 +95,4 @@ export GEN_PROG_FILE_PROPERTIES := \
 "Enable Outputs (Output Events)" 6 \
 "Unused IOB Pins" "Pull Up"
 
-export SIM_MODEL_PROPERTIES := ""
-
-##################################################
-# Make Options
-##################################################
-all:
-	@echo make proj, check, synth, bin, or clean
-
-proj:
-	PROCESS_RUN="" $(XTCLSH) $(ISE_HELPER)	
-
-check:
-	PROCESS_RUN="Check Syntax" $(XTCLSH) $(ISE_HELPER)	
-
-synth:
-	PROCESS_RUN="Synthesize - XST" $(XTCLSH) $(ISE_HELPER)	
-
-bin:
-	PROCESS_RUN="Generate Programming File" $(XTCLSH) $(ISE_HELPER)		
-
-clean:
-	rm -rf $(BUILD_DIR)
-
-
+SIM_MODEL_PROPERTIES = ""
