@@ -35,14 +35,16 @@ module u1e_core
    localparam SR_TX_CTRL = 24;    // 6 regs (+0 to +5)
    localparam SR_TX_DSP = 32;     // 5 regs (+0 to +4)
    localparam SR_TIME64 = 40;     // 6 regs (+0 to +5)
-   localparam SR_CLEAR_FIFO = 48; // 1 reg
+   localparam SR_CLEAR_RX_FIFO = 48; // 1 reg
+   localparam SR_CLEAR_TX_FIFO = 49; // 1 reg
+   localparam SR_GLOBAL_RESET = 50; // 1 reg
    localparam SR_REG_TEST32 = 52; // 1 reg
 
    wire [7:0]	COMPAT_NUM = 8'd3;
    
    wire 	wb_clk = clk_fpga;
-   wire 	wb_rst = rst_fpga;
-   
+   wire 	wb_rst, global_reset;
+
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
@@ -53,6 +55,12 @@ module u1e_core
 
    wire [31:0] 	debug_vt;
 
+   setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(global_reset));
+
+   reset_sync reset_sync(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
+   
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPMC Slave to Wishbone Master
    localparam dw = 16;
@@ -74,15 +82,16 @@ module u1e_core
    wire [7:0] 	 rate;
 
    wire 	 bus_error;
-
-   wire 	 clear_rx_int, clear_tx_int, clear_tx, clear_rx, do_clear;
+   wire 	 clear_tx, clear_rx;
    
-   setting_reg #(.my_addr(SR_CLEAR_FIFO), .width(2)) sr_clear
+   setting_reg #(.my_addr(SR_CLEAR_RX_FIFO), .width(1)) sr_clear_rx
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({clear_tx_int,clear_rx_int}),.changed(do_clear));
-   assign clear_tx = clear_tx_int & do_clear;
-   assign clear_rx = clear_rx_int & do_clear;
-   
+      .in(set_data),.out(),.changed(clear_rx));
+
+   setting_reg #(.my_addr(SR_CLEAR_TX_FIFO), .width(1)) sr_clear_tx
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_tx));
+
    gpmc_async #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
    gpmc (.arst(wb_rst),
 	 .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
