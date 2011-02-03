@@ -317,6 +317,10 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         val = _soft_time_ctrl->get_time();
         return;
 
+    case MBOARD_PROP_CLOCK_RATE:
+        val = _clock_ctrl->get_master_clock_freq();
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -377,6 +381,10 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     case MBOARD_PROP_TIME_NOW:
         _soft_time_ctrl->set_time(val.as<time_spec_t>());
+        return;
+
+    case MBOARD_PROP_CLOCK_RATE:
+        _clock_ctrl->set_master_clock_freq(val.as<double>());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
