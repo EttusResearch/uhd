@@ -121,13 +121,12 @@ struct usrp2_impl::io_impl{
 
     io_impl(size_t send_frame_size, const std::vector<zero_copy_if::sptr> &xports):
         xports(xports),
+        get_recv_buffs_fcn(boost::bind(&usrp2_impl::io_impl::get_recv_buffs, this, _1)),
+        get_send_buffs_fcn(boost::bind(&usrp2_impl::io_impl::get_send_buffs, this, _1)),
         packet_handler_recv_state(xports.size()),
         packet_handler_send_state(xports.size()),
         async_msg_fifo(100/*messages deep*/)
     {
-        get_recv_buffs_fcn = boost::bind(&usrp2_impl::io_impl::get_recv_buffs, this, _1);
-        get_send_buffs_fcn = boost::bind(&usrp2_impl::io_impl::get_send_buffs, this, _1);
-
         for (size_t i = 0; i < xports.size(); i++){
             fc_mons.push_back(flow_control_monitor::sptr(
                 new flow_control_monitor(usrp2_impl::sram_bytes/send_frame_size)

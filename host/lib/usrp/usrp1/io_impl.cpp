@@ -103,13 +103,14 @@ private:
 struct usrp1_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport):
         data_transport(data_transport),
+        get_recv_buffs_fcn(boost::bind(&usrp1_impl::io_impl::get_recv_buffs, this, _1)),
+        get_send_buffs_fcn(boost::bind(&usrp1_impl::io_impl::get_send_buffs, this, _1)),
         underflow_poll_samp_count(0),
         overflow_poll_samp_count(0),
         curr_buff(offset_send_buffer(data_transport->get_send_buff())),
         omsb(boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, _1, _2, _3))
     {
-        get_recv_buffs_fcn = boost::bind(&usrp1_impl::io_impl::get_recv_buffs, this, _1);
-        get_send_buffs_fcn = boost::bind(&usrp1_impl::io_impl::get_send_buffs, this, _1);
+        /* NOP */
     }
 
     ~io_impl(void){

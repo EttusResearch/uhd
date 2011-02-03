@@ -48,13 +48,10 @@ static const bool recv_debug = false;
  * - vrt packet handler states
  **********************************************************************/
 struct usrp_e100_impl::io_impl{
-    //state management for the vrt packet handler code
-    vrt_packet_handler::recv_state packet_handler_recv_state;
-    vrt_packet_handler::send_state packet_handler_send_state;
-    zero_copy_if::sptr data_xport;
-    bool continuous_streaming;
     io_impl(usrp_e100_iface::sptr iface):
         data_xport(usrp_e100_make_mmap_zero_copy(iface)),
+        get_recv_buffs_fcn(boost::bind(&usrp_e100_impl::io_impl::get_recv_buffs, this, _1)),
+        get_send_buffs_fcn(boost::bind(&usrp_e100_impl::io_impl::get_send_buffs, this, _1)),
         recv_pirate_booty(data_xport->get_num_recv_frames()),
         async_msg_fifo(100/*messages deep*/)
     {
@@ -67,11 +64,33 @@ struct usrp_e100_impl::io_impl{
         recv_pirate_crew.join_all();
     }
 
-    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, double timeout){
+    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs){
         UHD_ASSERT_THROW(buffs.size() == 1);
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty.pop_with_timed_wait(buffs.front(), timeout);
+        return recv_pirate_booty.pop_with_timed_wait(buffs.front(), recv_timeout);
     }
+
+    bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &buffs){
+        UHD_ASSERT_THROW(buffs.size() == 1);
+        buffs[0] = data_xport->get_send_buff(send_timeout);
+        return buffs[0].get() != NULL;
+    }
+
+    //The data transport is listed first so that it is deconstructed last,
+    //which is after the states and booty which may hold managed buffers.
+    zero_copy_if::sptr data_xport;
+
+    //bound callbacks for get buffs (bound once here, not in fast-path)
+    vrt_packet_handler::get_recv_buffs_t get_recv_buffs_fcn;
+    vrt_packet_handler::get_send_buffs_t get_send_buffs_fcn;
+
+    //timeouts set on calls to recv/send (passed into get buffs methods)
+    double recv_timeout, send_timeout;
+
+    //state management for the vrt packet handler code
+    vrt_packet_handler::recv_state packet_handler_recv_state;
+    vrt_packet_handler::send_state packet_handler_send_state;
+    bool continuous_streaming;
 
     //a pirate's life is the life for me!
     void recv_pirate_loop(usrp_e100_clock_ctrl::sptr);
@@ -204,15 +223,6 @@ void usrp_e100_impl::handle_overrun(size_t){
 /***********************************************************************
  * Data Send
  **********************************************************************/
-bool get_send_buffs(
-    zero_copy_if::sptr trans, double timeout,
-    vrt_packet_handler::managed_send_buffs_t &buffs
-){
-    UHD_ASSERT_THROW(buffs.size() == 1);
-    buffs[0] = trans->get_send_buff(timeout);
-    return buffs[0].get() != NULL;
-}
-
 size_t usrp_e100_impl::get_max_send_samps_per_packet(void) const{
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
@@ -227,6 +237,7 @@ size_t usrp_e100_impl::send(
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
+    _io_impl->send_timeout = timeout;
     return vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
@@ -234,7 +245,7 @@ size_t usrp_e100_impl::send(
         io_type, _send_otw_type,                   //input and output types to convert
         _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_le,
-        boost::bind(&get_send_buffs, _io_impl->data_xport, timeout, _1),
+        _io_impl->get_send_buffs_fcn,
         get_max_send_samps_per_packet()
     );
 }
@@ -257,6 +268,7 @@ size_t usrp_e100_impl::recv(
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
+    _io_impl->recv_timeout = timeout;
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
@@ -264,7 +276,7 @@ size_t usrp_e100_impl::recv(
         io_type, _recv_otw_type,                   //input and output types to convert
         _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_le,
-        boost::bind(&usrp_e100_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
+        _io_impl->get_recv_buffs_fcn,
         boost::bind(&usrp_e100_impl::handle_overrun, this, _1)
     );
 }
