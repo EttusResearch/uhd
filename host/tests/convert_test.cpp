@@ -29,6 +29,7 @@ using namespace uhd;
 //typedefs for complex types
 typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
+typedef std::complex<double> fc64_t;
 
 #define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f) and std::abs(b) > (f))) \
     BOOST_CHECK_CLOSE_FRACTION(a, b, f)
@@ -109,23 +110,26 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
 /***********************************************************************
  * Test float conversion
  **********************************************************************/
-static void test_convert_types_fc32(
+template <typename data_type>
+static void test_convert_types_for_floats(
     size_t nsamps,
     const io_type_t &io_type,
     const otw_type_t &otw_type
 ){
+    typedef typename data_type::value_type value_type;
+
     //fill the input samples
-    std::vector<fc32_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
-        (std::rand()/float(RAND_MAX/2)) - 1,
-        (std::rand()/float(RAND_MAX/2)) - 1
+    std::vector<data_type> input(nsamps), output(nsamps);
+    BOOST_FOREACH(data_type &in, input) in = data_type(
+        (std::rand()/value_type(RAND_MAX/2)) - 1,
+        (std::rand()/value_type(RAND_MAX/2)) - 1
     );
 
     //run the loopback and test
     loopback(nsamps, io_type, otw_type, input, output);
     for (size_t i = 0; i < nsamps; i++){
-        MY_CHECK_CLOSE(input[i].real(), output[i].real(), float(0.01));
-        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), float(0.01));
+        MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(0.01));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(0.01));
     }
 }
 
@@ -137,7 +141,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_fc32(nsamps, io_type, otw_type);
+        test_convert_types_for_floats<fc32_t>(nsamps, io_type, otw_type);
     }
 }
 
@@ -149,7 +153,31 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_fc32(nsamps, io_type, otw_type);
+        test_convert_types_for_floats<fc32_t>(nsamps, io_type, otw_type);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64){
+    io_type_t io_type(io_type_t::COMPLEX_FLOAT64);
+    otw_type_t otw_type;
+    otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
+    otw_type.width = 16;
+
+    //try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc64_t>(nsamps, io_type, otw_type);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64){
+    io_type_t io_type(io_type_t::COMPLEX_FLOAT64);
+    otw_type_t otw_type;
+    otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+    otw_type.width = 16;
+
+    //try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc64_t>(nsamps, io_type, otw_type);
     }
 }
 

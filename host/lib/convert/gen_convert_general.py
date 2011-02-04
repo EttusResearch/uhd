@@ -85,7 +85,7 @@ if __name__ == '__main__':
     output = parse_tmpl(TMPL_HEADER, file=file)
     for width in 1, 2, 3, 4:
         for swap, swap_fcn in (('nswap', ''), ('bswap', 'uhd::byteswap')):
-            for cpu_type in 'fc32', 'sc16':
+            for cpu_type in 'fc64', 'fc32', 'sc16':
                 output += parse_tmpl(
                     TMPL_CONV_TO_FROM_ITEM32_1 if width == 1 else TMPL_CONV_TO_FROM_ITEM32_X,
                     width=width, swap=swap, swap_fcn=swap_fcn, cpu_type=cpu_type

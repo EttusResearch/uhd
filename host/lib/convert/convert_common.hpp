@@ -41,8 +41,10 @@
 /***********************************************************************
  * Typedefs
  **********************************************************************/
+typedef std::complex<double>         fc64_t;
 typedef std::complex<float>          fc32_t;
 typedef std::complex<boost::int16_t> sc16_t;
+typedef std::complex<boost::int8_t>  sc8_t;
 typedef boost::uint32_t              item32_t;
 
 /***********************************************************************
@@ -84,6 +86,29 @@ static UHD_INLINE fc32_t item32_to_fc32(item32_t item){
     return fc32_t(
         float(boost::int16_t(item >> 16)*floats_per_short),
         float(boost::int16_t(item >> 0)*floats_per_short)
+    );
+}
+
+/***********************************************************************
+ * Convert complex double buffer to items32 (no swap)
+ **********************************************************************/
+static const double shorts_per_double = double(32767);
+
+static UHD_INLINE item32_t fc64_to_item32(fc64_t num){
+    boost::uint16_t real = boost::int16_t(num.real()*shorts_per_double);
+    boost::uint16_t imag = boost::int16_t(num.imag()*shorts_per_double);
+    return (item32_t(real) << 16) | (item32_t(imag) << 0);
+}
+
+/***********************************************************************
+ * Convert items32 buffer to complex double
+ **********************************************************************/
+static const double doubles_per_short = double(1.0/shorts_per_double);
+
+static UHD_INLINE fc64_t item32_to_fc64(item32_t item){
+    return fc64_t(
+        float(boost::int16_t(item >> 16)*doubles_per_short),
+        float(boost::int16_t(item >> 0)*doubles_per_short)
     );
 }
 

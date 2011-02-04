@@ -35,6 +35,8 @@ namespace uhd{
         enum tid_t{
             //! Custom type (technically unsupported by implementation)
             CUSTOM_TYPE =     '?',
+            //! Complex floating point (64-bit floats) range [-1.0, +1.0]
+            COMPLEX_FLOAT64 = 'd',
             //! Complex floating point (32-bit floats) range [-1.0, +1.0]
             COMPLEX_FLOAT32 = 'f',
             //! Complex signed integer (16-bit integers) range [-32768, +32767]
