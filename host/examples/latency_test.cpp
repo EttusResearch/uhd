@@ -35,13 +35,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t samps_per_packet;
     double rate, freq;
     float ampl;
+    double delta_t;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("secs", po::value<double>(&wait_time)->default_value(0.1), "number of seconds in the future to transmit")
+        ("wait", po::value<double>(&wait_time)->default_value(0.1), "wait time between test cycles")
+        ("rtt", po::value<double>(&delta_t)->default_value(0.001), "Round-Trip time to test")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(100), "total number of samples to transmit")
         ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
         ("rate", po::value<double>(&rate)->default_value(100e6/4), "rate of outgoing samples")
@@ -103,7 +105,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
 
-    double delta_t = 0.0001;
     uhd::tx_metadata_t tx_md;
 
     size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
@@ -113,6 +114,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     sdev->set_time_now(uhd::time_spec_t(cur_time));
 
     for(int j=0;j<100;j++) {
+      int err = 0;
       cur_time += wait_time;
       stream_cmd.time_spec = uhd::time_spec_t(cur_time);
       sdev->issue_stream_cmd(stream_cmd);
@@ -133,9 +135,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 	  if (num_acc_samps == 0) continue;
 	  std::cout << boost::format
 	    ("Got timeout before all samples received, possible packet loss, exiting loop...") << std::endl;
+	  err = 1;
 	  goto done_loop;
         default:
 	  std::cout << boost::format("Got error code 0x%x, exiting loop...") % rx_md.error_code << std::endl;
+	  err = 1;
 	  goto done_loop;
         }
 	
@@ -146,7 +150,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       } done_loop:
       
       if(verbose) std::cout << "Done receiving samps" << std::endl;
-      
+      if(err)
+	continue;
       for (size_t i = 0; i < num_packets; i++){
         //setup the metadata flags per fragment
         tx_md.start_of_burst = (i == 0);              //only first packet has SOB
@@ -162,7 +167,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 	   uhd::io_type_t::COMPLEX_FLOAT32,
 	   uhd::device::SEND_MODE_FULL_BUFF,
 	   //send will backup into the host this many seconds before sending:
-	   cur_time + delta_t + 0.1 //timeout (delay before transmit + padding)
+	   0.1 //timeout (delay before transmit + padding)
 	   );
         if (num_tx_samps < samps_to_send) std::cout << "Send timeout..." << std::endl;
         if(verbose)
@@ -195,4 +200,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     std::cout << boost::format("ACK %d, UNDERFLOW %d, TIME_ERR %d, other %d") % ack 
       % underflow % time_error % other << std::endl;
+    return 0;
 }
