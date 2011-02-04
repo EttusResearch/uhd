@@ -36,6 +36,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     double rate, freq;
     float ampl;
     double delta_t;
+    size_t pkts;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -46,6 +47,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rtt", po::value<double>(&delta_t)->default_value(0.001), "Round-Trip time to test")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(100), "total number of samples to transmit")
         ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
+        ("pkts", po::value<size_t>(&pkts)->default_value(1000), "number of packets")
         ("rate", po::value<double>(&rate)->default_value(100e6/4), "rate of outgoing samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
@@ -110,12 +112,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
 
 
-    double cur_time = 0.0;
+    uhd::time_spec_t cur_time;
     sdev->set_time_now(uhd::time_spec_t(cur_time));
 
-    for(int j=0;j<100;j++) {
+    for(int j=0;j<pkts;j++) {
       int err = 0;
-      cur_time += wait_time;
+      //sleep(0.3);
+      cur_time = sdev->get_time_now() + uhd::time_spec_t(0.01);
       stream_cmd.time_spec = uhd::time_spec_t(cur_time);
       sdev->issue_stream_cmd(stream_cmd);
       size_t num_acc_samps = 0;
@@ -161,7 +164,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         size_t samps_to_send = std::min(total_num_samps - samps_per_packet*i, samps_per_packet);
 	
         //send the entire packet (driver fragments internally)
-	tx_md.time_spec = uhd::time_spec_t(cur_time+delta_t);
+	//tx_md.time_spec = rx_md.time_spec+uhd::time_spec_t(delta_t);
+	tx_md.time_spec = cur_time + uhd::time_spec_t(delta_t);
         size_t num_tx_samps = dev->send
 	  (&txbuff.front(), samps_to_send, tx_md,
 	   uhd::io_type_t::COMPLEX_FLOAT32,
