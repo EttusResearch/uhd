@@ -47,6 +47,12 @@ void usrp2_mboard_impl::codec_init(void){
         boost::bind(&usrp2_mboard_impl::tx_codec_get, this, _1, _2),
         boost::bind(&usrp2_mboard_impl::tx_codec_set, this, _1, _2)
     );
+    
+    //initialize gain names. keeps get_rx_gain() from getting a gain 
+    //that hasn't been set yet.
+    BOOST_FOREACH(std::string key, codec_rx_gain_ranges.keys()) {
+        _codec_rx_gains[key] = codec_rx_gain_ranges[key].start();
+    }
 }
 
 /***********************************************************************
