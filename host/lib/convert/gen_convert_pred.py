@@ -69,8 +69,10 @@ pred_type make_pred(const std::string &markup, dir_type &dir){
             dir = DIR_OTW_TO_CPU;
         }
 
-        if      (cpu_type == "fc32") pred |= $ph.fc32_p;
+        if      (cpu_type == "fc64") pred |= $ph.fc64_p;
+        else if (cpu_type == "fc32") pred |= $ph.fc32_p;
         else if (cpu_type == "sc16") pred |= $ph.sc16_p;
+        else if (cpu_type == "sc8")  pred |= $ph.sc8_p;
         else throw pred_error("unhandled io type " + cpu_type);
 
         if (otw_type == "item32") pred |= $ph.item32_p;
@@ -127,6 +129,8 @@ UHD_INLINE pred_type make_pred(
     switch(io_type.tid){
     case io_type_t::COMPLEX_FLOAT32: pred |= $ph.fc32_p; break;
     case io_type_t::COMPLEX_INT16:   pred |= $ph.sc16_p; break;
+    //case io_type_t::COMPLEX_INT8:    pred |= $ph.sc8_p; break;
+    case io_type_t::COMPLEX_FLOAT64: pred |= $ph.fc64_p; break;
     default: throw pred_error("unhandled io type id");
     }
 
@@ -150,12 +154,14 @@ class ph:
     bswap_p  = 0b00001
     nswap_p  = 0b00000
     item32_p = 0b00000
+    sc8_p    = 0b00000
     sc16_p   = 0b00010
-    fc32_p   = 0b00000
+    fc32_p   = 0b00100
+    fc64_p   = 0b00110
     chan1_p  = 0b00000
-    chan2_p  = 0b00100
-    chan3_p  = 0b01000
-    chan4_p  = 0b01100
+    chan2_p  = 0b01000
+    chan3_p  = 0b10000
+    chan4_p  = 0b11000
 
 if __name__ == '__main__':
     import sys, os

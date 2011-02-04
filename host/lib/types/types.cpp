@@ -68,6 +68,7 @@ otw_type_t::otw_type_t(void):
  **********************************************************************/
 static size_t tid_to_size(io_type_t::tid_t tid){
     switch(tid){
+    case io_type_t::COMPLEX_FLOAT64: return sizeof(std::complex<double>);
     case io_type_t::COMPLEX_FLOAT32: return sizeof(std::complex<float>);
     case io_type_t::COMPLEX_INT16:   return sizeof(std::complex<boost::int16_t>);
     case io_type_t::COMPLEX_INT8:    return sizeof(std::complex<boost::int8_t>);

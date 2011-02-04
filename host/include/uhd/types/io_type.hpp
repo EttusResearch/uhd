@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,9 +33,15 @@ namespace uhd{
          * Built in IO types known to the system.
          */
         enum tid_t{
+            //! Custom type (technically unsupported by implementation)
             CUSTOM_TYPE =     '?',
+            //! Complex floating point (64-bit floats) range [-1.0, +1.0]
+            COMPLEX_FLOAT64 = 'd',
+            //! Complex floating point (32-bit floats) range [-1.0, +1.0]
             COMPLEX_FLOAT32 = 'f',
+            //! Complex signed integer (16-bit integers) range [-32768, +32767]
             COMPLEX_INT16 =   's',
+            //! Complex signed integer (8-bit integers) range [-128, 127]
             COMPLEX_INT8 =    'b'
         };
 
