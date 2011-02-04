@@ -40,6 +40,13 @@ public:
     static sptr make(usrp1_iface::sptr iface);
 
     /*!
+     * Set the rate of the fpga clock line.
+     * Note: does not really set, its all software.
+     * \param freq the new clock rate in Hz
+     */
+    virtual void set_master_clock_freq(double freq) = 0;
+
+    /*!
      * Get the rate of the fpga clock line.
      * \return the fpga clock rate in Hz
      */

@@ -355,6 +355,10 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         val = _iface->mb_eeprom;
         return;
 
+    case MBOARD_PROP_CLOCK_RATE:
+        val = this->get_master_clock_freq();
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }
@@ -410,6 +414,10 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         // Step2: readback the entire eeprom map into the iface.
         val.as<mboard_eeprom_t>().commit(*_iface, mboard_eeprom_t::MAP_N100);
         _iface->mb_eeprom = mboard_eeprom_t(*_iface, mboard_eeprom_t::MAP_N100);
+        return;
+
+    case MBOARD_PROP_CLOCK_RATE:
+        UHD_ASSERT_THROW(val.as<double>() == this->get_master_clock_freq());
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

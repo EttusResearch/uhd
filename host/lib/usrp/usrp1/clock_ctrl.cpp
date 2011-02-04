@@ -29,32 +29,33 @@ using namespace uhd;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const double master_clock_rate = 64e6;
+static const double default_master_clock_rate = 64e6;
 
 /***********************************************************************
  * Clock Control Implementation
  **********************************************************************/
 class usrp1_clock_ctrl_impl : public usrp1_clock_ctrl {
 public:
-    usrp1_clock_ctrl_impl(usrp1_iface::sptr iface)
-    {
-        _iface = iface;
+    usrp1_clock_ctrl_impl(usrp1_iface::sptr iface): _iface(iface){
+        this->set_master_clock_freq(default_master_clock_rate);
     }
 
-    double get_master_clock_freq(void)
-    {
-        return master_clock_rate; 
+    void set_master_clock_freq(double freq){
+        _freq = freq;
+    }
+
+    double get_master_clock_freq(void){
+        return _freq;
     }
 
 private:
     usrp1_iface::sptr _iface;
-
+    double _freq;
 };
 
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-usrp1_clock_ctrl::sptr usrp1_clock_ctrl::make(usrp1_iface::sptr iface)
-{
+usrp1_clock_ctrl::sptr usrp1_clock_ctrl::make(usrp1_iface::sptr iface){
     return sptr(new usrp1_clock_ctrl_impl(iface));
 }

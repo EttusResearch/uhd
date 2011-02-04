@@ -17,8 +17,9 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/single_usrp.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 #include <complex>
@@ -64,22 +65,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::single_usrp::sptr sdev = uhd::usrp::single_usrp::make(args);
-    uhd::device::sptr dev = sdev->get_device();
-    std::cout << boost::format("Using Device: %s") % sdev->get_pp_string() << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the tx sample rate
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    sdev->set_tx_rate(rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (sdev->get_tx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_tx_rate(rate);
+    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
     //set the tx center frequency
     std::cout << boost::format("Setting TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    sdev->set_tx_freq(freq);
-    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (sdev->get_tx_freq()/1e6) << std::endl << std::endl;
+    usrp->set_tx_freq(freq);
+    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    sdev->set_time_now(uhd::time_spec_t(0.0));
+    usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //allocate data to send
     std::vector<std::complex<float> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
@@ -99,7 +99,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         size_t samps_to_send = std::min(total_num_samps - samps_per_packet*i, samps_per_packet);
 
         //send the entire packet (driver fragments internally)
-        size_t num_tx_samps = dev->send(
+        size_t num_tx_samps = usrp->get_device()->send(
             &buff.front(), samps_to_send, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::SEND_MODE_FULL_BUFF,
@@ -109,6 +109,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (num_tx_samps < samps_to_send) std::cout << "Send timeout..." << std::endl;
         if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
     }
+
+    //ensure that the buffers have flushed out to the device before deconstruction
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
