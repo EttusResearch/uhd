@@ -99,8 +99,7 @@ private:
     bool _input;
 
     //! hold a bounded buffer of completed transfers
-    typedef bounded_buffer<libusb_transfer *> lut_buff_type;
-    lut_buff_type::sptr _completed_list;
+    bounded_buffer<libusb_transfer *> _completed_list;
 
     //! a list of all transfer structs we allocated
     std::vector<libusb_transfer *> _all_luts;
@@ -134,7 +133,7 @@ static void callback(libusb_transfer *lut){
  * \param pointer to libusb_transfer
  */
 void usb_endpoint::callback_handle_transfer(libusb_transfer *lut){
-    _completed_list->push_with_wait(lut);
+    _completed_list.push_with_wait(lut);
 }
 
 
@@ -153,9 +152,9 @@ usb_endpoint::usb_endpoint(
 ):
     _handle(handle),
     _endpoint(endpoint),
-    _input(input)
+    _input(input),
+    _completed_list(num_transfers)
 {
-    _completed_list = lut_buff_type::make(num_transfers);
     _buffer_pool = buffer_pool::make(num_transfers, transfer_size);
     for (size_t i = 0; i < num_transfers; i++){
         _all_luts.push_back(allocate_transfer(_buffer_pool->at(i), transfer_size));
@@ -163,7 +162,7 @@ usb_endpoint::usb_endpoint(
         //input luts are immediately submitted to be filled
         //output luts go into the completed list as free buffers
         if (_input) this->submit(_all_luts.back());
-        else _completed_list->push_with_wait(_all_luts.back());
+        else _completed_list.push_with_wait(_all_luts.back());
     }
 }
 
@@ -272,8 +271,8 @@ void usb_endpoint::print_transfer_status(libusb_transfer *lut){
 
 libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
     boost::this_thread::disable_interruption di; //disable because the wait can throw
-    libusb_transfer *lut;
-    if (_completed_list->pop_with_timed_wait(lut, timeout)) return lut;
+    libusb_transfer *lut = NULL;
+    if (_completed_list.pop_with_timed_wait(lut, timeout)) return lut;
     return NULL;
 }
 

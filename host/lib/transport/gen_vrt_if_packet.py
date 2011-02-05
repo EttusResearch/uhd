@@ -205,7 +205,7 @@ void vrt::if_hdr_unpack_$(suffix)(
             if_packet_info.has_tsf = true;
             if_packet_info.tsf = boost::uint64_t($(XE_MACRO)(packet_buff[$num_header_words])) << 32;
             #set $num_header_words += 1
-            if_packet_info.tsf |= boost::uint64_t($(XE_MACRO)(packet_buff[$num_header_words])) << 0;
+            if_packet_info.tsf |= $(XE_MACRO)(packet_buff[$num_header_words]);
             #set $num_header_words += 1
         #else
             if_packet_info.has_tsf = false;

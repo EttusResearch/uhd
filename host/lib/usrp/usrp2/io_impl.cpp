@@ -114,7 +114,7 @@ struct usrp2_impl::io_impl{
         xports(xports),
         packet_handler_recv_state(xports.size()),
         packet_handler_send_state(xports.size()),
-        async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
+        async_msg_fifo(100/*messages deep*/)
     {
         for (size_t i = 0; i < xports.size(); i++){
             fc_mons.push_back(flow_control_monitor::sptr(
@@ -177,7 +177,7 @@ struct usrp2_impl::io_impl{
     void recv_pirate_loop(zero_copy_if::sptr, usrp2_mboard_impl::sptr, size_t);
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
-    bounded_buffer<async_metadata_t>::sptr async_msg_fifo;
+    bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::mutex spawn_mutex;
 };
 
@@ -230,7 +230,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //print the famous U, and push the metadata into the message queue
                 if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
                 //else std::cout << "metadata.event_code " << metadata.event_code << std::endl;
-                async_msg_fifo->push_with_pop_on_full(metadata);
+                async_msg_fifo.push_with_pop_on_full(metadata);
             }
             else{
                 //TODO unknown received packet, may want to print error...
@@ -276,7 +276,7 @@ bool usrp2_impl::recv_async_msg(
     async_metadata_t &async_metadata, double timeout
 ){
     boost::this_thread::disable_interruption di; //disable because the wait can throw
-    return _io_impl->async_msg_fifo->pop_with_timed_wait(async_metadata, timeout);
+    return _io_impl->async_msg_fifo.pop_with_timed_wait(async_metadata, timeout);
 }
 
 /***********************************************************************

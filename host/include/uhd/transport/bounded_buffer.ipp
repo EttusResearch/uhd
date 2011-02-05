@@ -18,22 +18,24 @@
 #ifndef INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_IPP
 #define INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_IPP
 
+#include <uhd/config.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/locks.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace uhd{ namespace transport{ namespace{ /*anon*/
 
-    template <typename elem_type>
-    class bounded_buffer_impl : public bounded_buffer<elem_type>{
+    template <typename elem_type> class bounded_buffer_detail{
     public:
 
-        bounded_buffer_impl(size_t capacity) : _buffer(capacity){
-            _not_full_fcn = boost::bind(&bounded_buffer_impl<elem_type>::not_full, this);
-            _not_empty_fcn = boost::bind(&bounded_buffer_impl<elem_type>::not_empty, this);
+        bounded_buffer_detail(size_t capacity):
+            _buffer(capacity),
+            _not_full_fcn(boost::bind(&bounded_buffer_detail<elem_type>::not_full, this)),
+            _not_empty_fcn(boost::bind(&bounded_buffer_detail<elem_type>::not_empty, this))
+        {
+            /* NOP */
         }
 
         UHD_INLINE bool push_with_pop_on_full(const elem_type &elem){
@@ -100,13 +102,6 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             return true;
         }
 
-        UHD_INLINE void clear(void){
-            boost::mutex::scoped_lock lock(_mutex);
-            while (not_empty()) this->pop_back();
-            lock.unlock();
-            _full_cond.notify_one();
-        }
-
     private:
         boost::mutex _mutex;
         boost::condition _empty_cond, _full_cond;
@@ -136,14 +131,5 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
 
     };
 }}} //namespace
-
-namespace uhd{ namespace transport{
-
-    template <typename elem_type> typename bounded_buffer<elem_type>::sptr
-    bounded_buffer<elem_type>::make(size_t capacity){
-        return typename bounded_buffer<elem_type>::sptr(new bounded_buffer_impl<elem_type>(capacity));
-    }
-
-}} //namespace
 
 #endif /* INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_IPP */

@@ -72,6 +72,9 @@ public:
         _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_FRAMES))),
         _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
         _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES))),
+        _recv_buffer_pool(buffer_pool::make(_num_recv_frames, _recv_frame_size)),
+        _send_buffer_pool(buffer_pool::make(_num_send_frames, _send_frame_size)),
+        _pending_recv_buffs(_num_recv_frames), _pending_send_buffs(_num_send_frames),
         _concurrency_hint(hints.cast<size_t>("concurrency_hint", CONCURRENCY_HINT)),
         _io_service(_concurrency_hint)
     {
@@ -96,17 +99,13 @@ public:
     }
 
     void init(void){
-        //allocate all recv frames and release them to begin xfers
-        _pending_recv_buffs = pending_buffs_type::make(_num_recv_frames);
-        _recv_buffer_pool = buffer_pool::make(_num_recv_frames, _recv_frame_size);
-        for (size_t i = 0; i < _num_recv_frames; i++){
+        //release recv frames for use
+        for (size_t i = 0; i < get_num_recv_frames(); i++){
             release(_recv_buffer_pool->at(i));
         }
 
-        //allocate all send frames and push them into the fifo
-        _pending_send_buffs = pending_buffs_type::make(_num_send_frames);
-        _send_buffer_pool = buffer_pool::make(_num_send_frames, _send_frame_size);
-        for (size_t i = 0; i < _num_send_frames; i++){
+        //push send frames into the fifo
+        for (size_t i = 0; i < get_num_send_frames(); i++){
             handle_send(_send_buffer_pool->at(i));
         }
 
@@ -138,7 +137,7 @@ public:
 
     //! handle a recv callback -> push the filled memory into the fifo
     UHD_INLINE void handle_recv(void *mem, size_t len){
-        _pending_recv_buffs->push_with_pop_on_full(boost::asio::buffer(mem, len));
+        _pending_recv_buffs.push_with_pop_on_full(boost::asio::buffer(mem, len));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -148,7 +147,7 @@ public:
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
         asio::mutable_buffer buff;
-        if (_pending_recv_buffs->pop_with_timed_wait(buff, timeout)){
+        if (_pending_recv_buffs.pop_with_timed_wait(buff, timeout)){
             return managed_recv_buffer::make_safe(
                 buff, boost::bind(
                     &udp_zero_copy_asio_impl::release, this,
@@ -191,7 +190,7 @@ public:
         //if the condition is true, call receive and return the managed buffer
         if (
             ::select(_sock_fd+1, &rset, NULL, NULL, &tv) > 0
-            and _pending_recv_buffs->pop_with_haste(buff)
+            and _pending_recv_buffs.pop_with_haste(buff)
         ){
             return managed_recv_buffer::make_safe(
                 asio::buffer(
@@ -220,7 +219,7 @@ public:
 
     //! handle a send callback -> push the emptied memory into the fifo
     UHD_INLINE void handle_send(void *mem){
-        _pending_send_buffs->push_with_pop_on_full(boost::asio::buffer(mem, this->get_send_frame_size()));
+        _pending_send_buffs.push_with_pop_on_full(boost::asio::buffer(mem, this->get_send_frame_size()));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -230,7 +229,7 @@ public:
     managed_send_buffer::sptr get_send_buff(double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
         asio::mutable_buffer buff;
-        if (_pending_send_buffs->pop_with_timed_wait(buff, timeout)){
+        if (_pending_send_buffs.pop_with_timed_wait(buff, timeout)){
             return managed_send_buffer::make_safe(
                 buff, boost::bind(
                     &udp_zero_copy_asio_impl::commit, this,
@@ -257,7 +256,7 @@ public:
     ////////////////////////////////////////////////////////////////////
     managed_send_buffer::sptr get_send_buff(double){
         asio::mutable_buffer buff;
-        if (_pending_send_buffs->pop_with_haste(buff)){
+        if (_pending_send_buffs.pop_with_haste(buff)){
             return managed_send_buffer::make_safe(
                 buff, boost::bind(
                     &udp_zero_copy_asio_impl::commit, this,
@@ -283,11 +282,10 @@ public:
 private:
     //memory management -> buffers and fifos
     boost::thread_group _thread_group;
-    buffer_pool::sptr _send_buffer_pool, _recv_buffer_pool;
-    typedef bounded_buffer<asio::mutable_buffer> pending_buffs_type;
-    pending_buffs_type::sptr _pending_recv_buffs, _pending_send_buffs;
     const size_t _recv_frame_size, _num_recv_frames;
     const size_t _send_frame_size, _num_send_frames;
+    buffer_pool::sptr _recv_buffer_pool, _send_buffer_pool;
+    bounded_buffer<asio::mutable_buffer> _pending_recv_buffs, _pending_send_buffs;
 
     //asio guts -> socket and service
     size_t                  _concurrency_hint;

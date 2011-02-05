@@ -39,7 +39,7 @@ public:
     soft_time_ctrl_impl(const cb_fcn_type &stream_on_off):
         _nsamps_remaining(0),
         _stream_mode(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS),
-        _cmd_queue(bounded_buffer<boost::any>::make(2)),
+        _cmd_queue(2),
         _stream_on_off(stream_on_off)
     {
         //synchronously spawn a new thread
@@ -112,7 +112,7 @@ public:
     }
 
     void issue_stream_cmd(const stream_cmd_t &cmd){
-        _cmd_queue->push_with_wait(cmd);
+        _cmd_queue.push_with_wait(cmd);
     }
 
     void stream_on_off(bool enb){
@@ -180,7 +180,7 @@ public:
         try{
             boost::any cmd;
             while (true){
-                _cmd_queue->pop_with_wait(cmd);
+                _cmd_queue.pop_with_wait(cmd);
                 recv_cmd_handle_cmd(boost::any_cast<stream_cmd_t>(cmd));
             }
         } catch(const boost::thread_interrupted &){}
@@ -191,7 +191,7 @@ private:
     size_t _nsamps_remaining;
     stream_cmd_t::stream_mode_t _stream_mode;
     time_spec_t _time_offset;
-    bounded_buffer<boost::any>::sptr _cmd_queue;
+    bounded_buffer<boost::any> _cmd_queue;
     const cb_fcn_type _stream_on_off;
     boost::thread_group _thread_group;
 };

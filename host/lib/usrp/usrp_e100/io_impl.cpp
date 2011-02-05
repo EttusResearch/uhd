@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,8 +54,8 @@ struct usrp_e100_impl::io_impl{
     bool continuous_streaming;
     io_impl(usrp_e100_iface::sptr iface):
         data_xport(usrp_e100_make_mmap_zero_copy(iface)),
-        recv_pirate_booty(recv_booty_type::make(data_xport->get_num_recv_frames())),
-        async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
+        recv_pirate_booty(data_xport->get_num_recv_frames()),
+        async_msg_fifo(100/*messages deep*/)
     {
         /* NOP */
     }
@@ -69,14 +69,13 @@ struct usrp_e100_impl::io_impl{
     bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs, double timeout){
         UHD_ASSERT_THROW(buffs.size() == 1);
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty->pop_with_timed_wait(buffs.front(), timeout);
+        return recv_pirate_booty.pop_with_timed_wait(buffs.front(), timeout);
     }
 
     //a pirate's life is the life for me!
     void recv_pirate_loop(usrp_e100_clock_ctrl::sptr);
-    typedef bounded_buffer<managed_recv_buffer::sptr> recv_booty_type;
-    recv_booty_type::sptr recv_pirate_booty;
-    bounded_buffer<async_metadata_t>::sptr async_msg_fifo;
+    bounded_buffer<managed_recv_buffer::sptr> recv_pirate_booty;
+    bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
 };
@@ -124,12 +123,12 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(usrp_e100_clock_ctrl::sptr clock_
 
                 //print the famous U, and push the metadata into the message queue
                 if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
-                async_msg_fifo->push_with_pop_on_full(metadata);
+                async_msg_fifo.push_with_pop_on_full(metadata);
                 continue;
             }
 
             //same number of frames as the data transport -> always immediate
-            recv_pirate_booty->push_with_wait(buff);
+            recv_pirate_booty.push_with_wait(buff);
 
         }catch(const std::exception &e){
             std::cerr << "Error (usrp-e recv pirate loop): " << e.what() << std::endl;
@@ -266,5 +265,5 @@ bool usrp_e100_impl::recv_async_msg(
     async_metadata_t &async_metadata, double timeout
 ){
     boost::this_thread::disable_interruption di; //disable because the wait can throw
-    return _io_impl->async_msg_fifo->pop_with_timed_wait(async_metadata, timeout);
+    return _io_impl->async_msg_fifo.pop_with_timed_wait(async_metadata, timeout);
 }

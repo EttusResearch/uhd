@@ -18,8 +18,7 @@
 #ifndef INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_HPP
 #define INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_HPP
 
-#include <uhd/config.hpp>
-#include <boost/shared_ptr.hpp>
+#include <uhd/transport/bounded_buffer.ipp> //detail
 
 namespace uhd{ namespace transport{
 
@@ -32,13 +31,16 @@ namespace uhd{ namespace transport{
      */
     template <typename elem_type> class bounded_buffer{
     public:
-        typedef boost::shared_ptr<bounded_buffer<elem_type> > sptr;
 
         /*!
-         * Make a new bounded buffer object.
+         * Create a new bounded buffer object.
          * \param capacity the bounded_buffer capacity
          */
-        static sptr make(size_t capacity);
+        bounded_buffer(size_t capacity):
+            _detail(capacity)
+        {
+            /* NOP */
+        }
 
         /*!
          * Push a new element into the bounded buffer.
@@ -47,14 +49,18 @@ namespace uhd{ namespace transport{
          * \param elem the new element to push
          * \return true if the element fit without popping for space
          */
-        virtual bool push_with_pop_on_full(const elem_type &elem) = 0;
+        bool push_with_pop_on_full(const elem_type &elem){
+            return _detail.push_with_pop_on_full(elem);
+        }
 
         /*!
          * Push a new element into the bounded_buffer.
          * Wait until the bounded_buffer becomes non-full.
          * \param elem the new element to push
          */
-        virtual void push_with_wait(const elem_type &elem) = 0;
+        void push_with_wait(const elem_type &elem){
+            return _detail.push_with_wait(elem);
+        }
 
         /*!
          * Push a new element into the bounded_buffer.
@@ -63,21 +69,27 @@ namespace uhd{ namespace transport{
          * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
-        virtual bool push_with_timed_wait(const elem_type &elem, double timeout) = 0;
+        bool push_with_timed_wait(const elem_type &elem, double timeout){
+            return _detail.push_with_timed_wait(elem, timeout);
+        }
 
         /*!
          * Pop an element from the bounded_buffer immediately.
          * \param elem the element reference pop to
          * \return false when the bounded_buffer is empty
          */
-        virtual bool pop_with_haste(elem_type &elem) = 0;
+        bool pop_with_haste(elem_type &elem){
+            return _detail.pop_with_haste(elem);
+        }
 
         /*!
          * Pop an element from the bounded_buffer.
          * Wait until the bounded_buffer becomes non-empty.
          * \param elem the element reference pop to
          */
-        virtual void pop_with_wait(elem_type &elem) = 0;
+        void pop_with_wait(elem_type &elem){
+            return _detail.pop_with_wait(elem);
+        }
 
         /*!
          * Pop an element from the bounded_buffer.
@@ -86,16 +98,13 @@ namespace uhd{ namespace transport{
          * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
-        virtual bool pop_with_timed_wait(elem_type &elem, double timeout) = 0;
+        bool pop_with_timed_wait(elem_type &elem, double timeout){
+            return _detail.pop_with_timed_wait(elem, timeout);
+        }
 
-        /*!
-         * Clear all elements from the bounded_buffer.
-         */
-        virtual void clear(void) = 0;
+    private: bounded_buffer_detail<elem_type> _detail;
     };
 
 }} //namespace
-
-#include <uhd/transport/bounded_buffer.ipp>
 
 #endif /* INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_HPP */
