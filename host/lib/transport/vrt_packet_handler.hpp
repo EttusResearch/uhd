@@ -67,13 +67,17 @@ template <typename T> UHD_INLINE T get_context_code(
         std::vector<const boost::uint8_t *> copy_buffs;
         size_t size_of_copy_buffs;
         size_t fragment_offset_in_samps;
+        std::vector<void *> io_buffs;
+        uhd::convert::input_type otw_buffs;
 
         recv_state(size_t width = 1):
             width(width),
             managed_buffs(width),
             copy_buffs(width, NULL),
             size_of_copy_buffs(0),
-            fragment_offset_in_samps(0)
+            fragment_offset_in_samps(0),
+            io_buffs(0), //resized later
+            otw_buffs(1) //always 1 for now
         {
             /* NOP */
         }
@@ -192,17 +196,17 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
         size_t nsamps_to_copy_per_io_buff = nsamps_to_copy/chans_per_otw_buff;
 
-        std::vector<void *> io_buffs(chans_per_otw_buff);
+        state.io_buffs.resize(chans_per_otw_buff);
         for (size_t i = 0; i < state.width; i+=chans_per_otw_buff){
 
             //fill a vector with pointers to the io buffers
             for (size_t j = 0; j < chans_per_otw_buff; j++){
-                io_buffs[j] = reinterpret_cast<boost::uint8_t *>(buffs[i+j]) + offset_bytes;
+                state.io_buffs[j] = reinterpret_cast<boost::uint8_t *>(buffs[i+j]) + offset_bytes;
             }
 
             //copy-convert the samples from the recv buffer
-            uhd::convert::input_type otw_buffs(1, state.copy_buffs[i]);
-            converter(otw_buffs, io_buffs, nsamps_to_copy_per_io_buff);
+            state.otw_buffs[0] = state.copy_buffs[i];
+            converter(state.otw_buffs, state.io_buffs, nsamps_to_copy_per_io_buff);
 
             //update the rx copy buffer to reflect the bytes copied
             state.copy_buffs[i] += bytes_to_copy;
@@ -300,12 +304,19 @@ template <typename T> UHD_INLINE T get_context_code(
     struct send_state{
         //init the expected seq number
         size_t next_packet_seq;
-
         managed_send_buffs_t managed_buffs;
+        const boost::uint64_t zeros;
+        std::vector<const void *> zero_buffs;
+        std::vector<const void *> io_buffs;
+        uhd::convert::output_type otw_buffs;
 
         send_state(size_t width = 1):
             next_packet_seq(0),
-            managed_buffs(width)
+            managed_buffs(width),
+            zeros(0),
+            zero_buffs(width, &zeros),
+            io_buffs(0), //resized later
+            otw_buffs(1) //always 1 for now
         {
             /* NOP */
         }
@@ -334,11 +345,11 @@ template <typename T> UHD_INLINE T get_context_code(
         //get send buffers for each otw channel
         if (not get_send_buffs(state.managed_buffs)) return 0;
 
-        std::vector<const void *> io_buffs(chans_per_otw_buff);
+        state.io_buffs.resize(chans_per_otw_buff);
         for (size_t i = 0; i < buffs.size(); i+=chans_per_otw_buff){
             //calculate pointers with offsets to io and otw memory
             for (size_t j = 0; j < chans_per_otw_buff; j++){
-                io_buffs[j] = reinterpret_cast<const boost::uint8_t *>(buffs[i+j]) + offset_bytes;
+                state.io_buffs[j] = reinterpret_cast<const boost::uint8_t *>(buffs[i+j]) + offset_bytes;
             }
             boost::uint32_t *otw_mem = state.managed_buffs[i]->cast<boost::uint32_t *>() + vrt_header_offset_words32;
 
@@ -347,8 +358,8 @@ template <typename T> UHD_INLINE T get_context_code(
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            uhd::convert::output_type otw_buffs(1, otw_mem);
-            converter(io_buffs, otw_buffs, num_samps);
+            state.otw_buffs[0] = otw_mem;
+            converter(state.io_buffs, state.otw_buffs, num_samps);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
@@ -402,19 +413,11 @@ template <typename T> UHD_INLINE T get_context_code(
             if_packet_info.sob = metadata.start_of_burst;
             if_packet_info.eob = metadata.end_of_burst;
 
-            //TODO remove this code when sample counts of zero are supported by hardware
-            std::vector<const void *> buffs_(buffs);
-            size_t total_num_samps_(total_num_samps);
-            if (total_num_samps == 0){
-                static const boost::uint64_t zeros = 0; //max size of a host sample
-                buffs_ = std::vector<const void *>(buffs.size(), &zeros);
-                total_num_samps_ = 1;
-            }
-
             return _send1(
                 state,
-                buffs_, 0,
-                std::min(total_num_samps_, max_samples_per_packet),
+                //TODO remove this code when sample counts of zero are supported by hardware
+                (total_num_samps)?buffs : state.zero_buffs, 0,
+                std::max<size_t>(1, std::min(total_num_samps, max_samples_per_packet)),
                 if_packet_info,
                 converter,
                 vrt_packer,
