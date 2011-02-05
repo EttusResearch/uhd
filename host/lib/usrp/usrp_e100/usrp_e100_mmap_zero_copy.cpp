@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include <unistd.h> //getpagesize
 #include <poll.h> //poll
 #include <boost/bind.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -36,7 +35,7 @@ static const size_t poll_breakout = 10; //how many poll timeouts constitute a fu
 /***********************************************************************
  * The zero copy interface implementation
  **********************************************************************/
-class usrp_e100_mmap_zero_copy_impl : public zero_copy_if, public boost::enable_shared_from_this<usrp_e100_mmap_zero_copy_impl> {
+class usrp_e100_mmap_zero_copy_impl : public zero_copy_if{
 public:
     usrp_e100_mmap_zero_copy_impl(usrp_e100_iface::sptr iface):
         _fd(iface->get_file_descriptor()), _recv_index(0), _send_index(0)
@@ -126,7 +125,7 @@ public:
         if (fp_verbose) std::cout << "  make_recv_buff: " << info->len << std::endl;
         return managed_recv_buffer::make_safe(
             boost::asio::const_buffer(mem, info->len),
-            boost::bind(&usrp_e100_mmap_zero_copy_impl::release, shared_from_this(), info)
+            boost::bind(&usrp_e100_mmap_zero_copy_impl::release, this, info)
         );
     }
 
@@ -162,7 +161,7 @@ public:
         if (fp_verbose) std::cout << "  make_send_buff: " << _frame_size << std::endl;
         return managed_send_buffer::make_safe(
             boost::asio::mutable_buffer(mem, _frame_size),
-            boost::bind(&usrp_e100_mmap_zero_copy_impl::commit, shared_from_this(), info, _1)
+            boost::bind(&usrp_e100_mmap_zero_copy_impl::commit, this, info, _1)
         );
     }
 

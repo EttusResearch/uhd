@@ -23,7 +23,6 @@
 #include <uhd/utils/assert.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <vector>
 #include <iostream>
 
@@ -279,7 +278,7 @@ libusb_transfer *usb_endpoint::get_lut_with_wait(double timeout){
 /***********************************************************************
  * USB zero_copy device class
  **********************************************************************/
-class libusb_zero_copy_impl : public usb_zero_copy, public boost::enable_shared_from_this<libusb_zero_copy_impl> {
+class libusb_zero_copy_impl : public usb_zero_copy{
 public:
 
     libusb_zero_copy_impl(
@@ -400,7 +399,7 @@ managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(double timeout){
     else {
         return managed_recv_buffer::make_safe(
             boost::asio::const_buffer(lut->buffer, lut->actual_length),
-            boost::bind(&libusb_zero_copy_impl::release, shared_from_this(), lut)
+            boost::bind(&libusb_zero_copy_impl::release, this, lut)
         );
     }
 }
@@ -420,7 +419,7 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(double timeout){
     else {
         return managed_send_buffer::make_safe(
             boost::asio::mutable_buffer(lut->buffer, this->get_send_frame_size()),
-            boost::bind(&libusb_zero_copy_impl::commit, shared_from_this(), lut, _1)
+            boost::bind(&libusb_zero_copy_impl::commit, this, lut, _1)
         );
     }
 }
