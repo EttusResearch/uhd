@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -69,6 +69,15 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             _buffer.push_front(elem);
             lock.unlock();
             _empty_cond.notify_one();
+            return true;
+        }
+
+        UHD_INLINE bool pop_with_haste(elem_type &elem){
+            boost::mutex::scoped_lock lock(_mutex);
+            if(_buffer.empty()) return false;
+            elem = this->pop_back();
+            lock.unlock();
+            _full_cond.notify_one();
             return true;
         }
 

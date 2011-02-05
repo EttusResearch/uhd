@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -64,6 +64,13 @@ namespace uhd{ namespace transport{
          * \return false when the operation times out
          */
         virtual bool push_with_timed_wait(const elem_type &elem, double timeout) = 0;
+
+        /*!
+         * Pop an element from the bounded_buffer immediately.
+         * \param elem the element reference pop to
+         * \return false when the bounded_buffer is empty
+         */
+        virtual bool pop_with_haste(elem_type &elem) = 0;
 
         /*!
          * Pop an element from the bounded_buffer.
