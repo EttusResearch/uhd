@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ TMPL_TEXT = """
 \#include <uhd/utils/byteswap.hpp>
 \#include <boost/detail/endian.hpp>
 \#include <stdexcept>
+\#include <vector>
 
 //define the endian macros to convert integers
 \#ifdef BOOST_BIG_ENDIAN
@@ -48,18 +49,26 @@ TMPL_TEXT = """
 using namespace uhd;
 using namespace uhd::transport;
 
+typedef size_t pred_type;
+typedef std::vector<pred_type> pred_table_type;
+#define pred_table_index(hdr) ((hdr >> 20) & 0x1ff)
+
+static pred_table_type get_pred_unpack_table(void){
+    pred_table_type table(1 << 9, 0); //only 9 bits useful here (20-28)
+    for (size_t i = 0; i < table.size(); i++){
+        boost::uint32_t vrt_hdr_word = i << 20;
+        if(vrt_hdr_word & $hex(0x1 << 28)) table[i] |= $hex($sid_p);
+        if(vrt_hdr_word & $hex(0x1 << 27)) table[i] |= $hex($cid_p);
+        if(vrt_hdr_word & $hex(0x3 << 22)) table[i] |= $hex($tsi_p);
+        if(vrt_hdr_word & $hex(0x3 << 20)) table[i] |= $hex($tsf_p);
+        if(vrt_hdr_word & $hex(0x1 << 26)) table[i] |= $hex($tlr_p);
+    }
+    return table;
+}
+
 ########################################################################
 #def gen_code($XE_MACRO, $suffix)
 ########################################################################
-
-########################################################################
-## setup predicates
-########################################################################
-#set $sid_p = 0b00001
-#set $cid_p = 0b00010
-#set $tsi_p = 0b00100
-#set $tsf_p = 0b01000
-#set $tlr_p = 0b10000
 
 void vrt::if_hdr_pack_$(suffix)(
     boost::uint32_t *packet_buff,
@@ -67,7 +76,7 @@ void vrt::if_hdr_pack_$(suffix)(
 ){
     boost::uint32_t vrt_hdr_flags = 0;
 
-    boost::uint8_t pred = 0;
+    pred_type pred = 0;
     if (if_packet_info.has_sid) pred |= $hex($sid_p);
     if (if_packet_info.has_cid) pred |= $hex($cid_p);
     if (if_packet_info.has_tsi) pred |= $hex($tsi_p);
@@ -159,12 +168,8 @@ void vrt::if_hdr_unpack_$(suffix)(
     //if_packet_info.sob = bool(vrt_hdr_word & $hex(0x1 << 25)); //not implemented
     //if_packet_info.eob = bool(vrt_hdr_word & $hex(0x1 << 24)); //not implemented
 
-    boost::uint8_t pred = 0;
-    if(vrt_hdr_word & $hex(0x1 << 28)) pred |= $hex($sid_p);
-    if(vrt_hdr_word & $hex(0x1 << 27)) pred |= $hex($cid_p);
-    if(vrt_hdr_word & $hex(0x3 << 22)) pred |= $hex($tsi_p);
-    if(vrt_hdr_word & $hex(0x3 << 20)) pred |= $hex($tsf_p);
-    if(vrt_hdr_word & $hex(0x1 << 26)) pred |= $hex($tlr_p);
+    static const pred_table_type pred_unpack_table(get_pred_unpack_table());
+    const pred_type pred = pred_unpack_table[pred_table_index(vrt_hdr_word)];
 
     switch(pred){
     #for $pred in range(2**5)
@@ -239,4 +244,12 @@ def parse_tmpl(_tmpl_text, **kwargs):
 
 if __name__ == '__main__':
     import sys
-    open(sys.argv[1], 'w').write(parse_tmpl(TMPL_TEXT, file=__file__))
+    open(sys.argv[1], 'w').write(parse_tmpl(
+        TMPL_TEXT,
+        file=__file__,
+        sid_p = 0b00001,
+        cid_p = 0b00010,
+        tsi_p = 0b00100,
+        tsf_p = 0b01000,
+        tlr_p = 0b10000,
+    ))

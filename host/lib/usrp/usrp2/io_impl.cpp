@@ -110,11 +110,13 @@ private:
  **********************************************************************/
 struct usrp2_impl::io_impl{
 
-    io_impl(size_t send_frame_size, size_t width):
-        packet_handler_recv_state(width),
+    io_impl(size_t send_frame_size, const std::vector<zero_copy_if::sptr> &xports):
+        xports(xports),
+        packet_handler_recv_state(xports.size()),
+        packet_handler_send_state(xports.size()),
         async_msg_fifo(bounded_buffer<async_metadata_t>::make(100/*messages deep*/))
     {
-        for (size_t i = 0; i < width; i++){
+        for (size_t i = 0; i < xports.size(); i++){
             fc_mons.push_back(flow_control_monitor::sptr(
                 new flow_control_monitor(usrp2_impl::sram_bytes/send_frame_size)
             ));
@@ -136,11 +138,10 @@ struct usrp2_impl::io_impl{
     }
 
     bool get_send_buffs(
-        const std::vector<zero_copy_if::sptr> &trans,
         vrt_packet_handler::managed_send_buffs_t &buffs,
         double timeout
     ){
-        UHD_ASSERT_THROW(trans.size() == buffs.size());
+        UHD_ASSERT_THROW(xports.size() == buffs.size());
 
         //calculate the flow control word
         const boost::uint32_t fc_word32 = packet_handler_send_state.next_packet_seq;
@@ -148,7 +149,7 @@ struct usrp2_impl::io_impl{
         //grab a managed buffer for each index
         for (size_t i = 0; i < buffs.size(); i++){
             if (not fc_mons[i]->check_fc_condition(fc_word32, timeout)) return false;
-            buffs[i] = trans[i]->get_send_buff(timeout);
+            buffs[i] = xports[i]->get_send_buff(timeout);
             if (not buffs[i].get()) return false;
             buffs[i]->cast<boost::uint32_t *>()[0] = uhd::htonx(fc_word32);
         }
@@ -156,10 +157,11 @@ struct usrp2_impl::io_impl{
     }
 
     bool get_recv_buffs(
-        const std::vector<zero_copy_if::sptr> &xports,
         vrt_packet_handler::managed_recv_buffs_t &buffs,
         double timeout
     );
+
+    const std::vector<zero_copy_if::sptr> &xports;
 
     //previous state for each buffer
     std::vector<vrt::if_packet_info_t> prev_infos;
@@ -248,7 +250,7 @@ void usrp2_impl::io_init(void){
     const size_t send_frame_size = _data_transports.front()->get_send_frame_size();
 
     //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (send_frame_size, _data_transports.size()));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (send_frame_size, _data_transports));
 
     //create a new pirate thread for each zc if (yarr!!)
     for (size_t i = 0; i < _data_transports.size(); i++){
@@ -302,7 +304,7 @@ size_t usrp2_impl::send(
         io_type, _tx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_be,
-        boost::bind(&usrp2_impl::io_impl::get_send_buffs, _io_impl.get(), _data_transports, _1, timeout),
+        boost::bind(&usrp2_impl::io_impl::get_send_buffs, _io_impl.get(), _1, timeout),
         get_max_send_samps_per_packet(),
         vrt_send_header_offset_words32
     );
@@ -360,7 +362,6 @@ static UHD_INLINE bool handle_msg_packet(
 }
 
 UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
-    const std::vector<zero_copy_if::sptr> &xports,
     vrt_packet_handler::managed_recv_buffs_t &buffs,
     double timeout
 ){
@@ -465,7 +466,7 @@ size_t usrp2_impl::recv(
         io_type, _rx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
-        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _data_transports, _1, timeout),
-        boost::bind(&handle_overflow, _mboards, _1)
+        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
+        boost::bind(&handle_overflow, boost::ref(_mboards), _1)
     );
 }

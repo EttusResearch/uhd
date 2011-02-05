@@ -301,7 +301,12 @@ template <typename T> UHD_INLINE T get_context_code(
         //init the expected seq number
         size_t next_packet_seq;
 
-        send_state(void) : next_packet_seq(0){
+        managed_send_buffs_t managed_buffs;
+
+        send_state(size_t width = 1):
+            next_packet_seq(0),
+            managed_buffs(width)
+        {
             /* NOP */
         }
     };
@@ -326,9 +331,8 @@ template <typename T> UHD_INLINE T get_context_code(
         if_packet_info.num_payload_words32 = (num_samps*chans_per_otw_buff*OTW_BYTES_PER_SAMP)/sizeof(boost::uint32_t);
         if_packet_info.packet_count = state.next_packet_seq;
 
-        //get send buffers for each channel
-        managed_send_buffs_t send_buffs(buffs.size()/chans_per_otw_buff);
-        if (not get_send_buffs(send_buffs)) return 0;
+        //get send buffers for each otw channel
+        if (not get_send_buffs(state.managed_buffs)) return 0;
 
         std::vector<const void *> io_buffs(chans_per_otw_buff);
         for (size_t i = 0; i < buffs.size(); i+=chans_per_otw_buff){
@@ -336,7 +340,7 @@ template <typename T> UHD_INLINE T get_context_code(
             for (size_t j = 0; j < chans_per_otw_buff; j++){
                 io_buffs[j] = reinterpret_cast<const boost::uint8_t *>(buffs[i+j]) + offset_bytes;
             }
-            boost::uint32_t *otw_mem = send_buffs[i]->cast<boost::uint32_t *>() + vrt_header_offset_words32;
+            boost::uint32_t *otw_mem = state.managed_buffs[i]->cast<boost::uint32_t *>() + vrt_header_offset_words32;
 
             //pack metadata into a vrt header
             vrt_packer(otw_mem, if_packet_info);
@@ -348,7 +352,7 @@ template <typename T> UHD_INLINE T get_context_code(
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
-            send_buffs[i]->commit(num_bytes_total);
+            state.managed_buffs[i]->commit(num_bytes_total);
         }
         state.next_packet_seq++; //increment sequence after commits
         return num_samps;

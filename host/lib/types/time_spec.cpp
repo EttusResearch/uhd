@@ -99,7 +99,7 @@ time_spec_t::time_spec_t(time_t full_secs, double frac_secs):
 
 time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate):
     _full_secs(full_secs),
-    _frac_secs(double(tick_count)/tick_rate)
+    _frac_secs(tick_count/tick_rate)
 {
     /* NOP */
 }
@@ -116,13 +116,11 @@ double time_spec_t::get_real_secs(void) const{
 }
 
 time_t time_spec_t::get_full_secs(void) const{
-    double intpart;
-    std::modf(this->_frac_secs, &intpart);
-    return this->_full_secs + time_t(intpart);
+    return this->_full_secs + time_t(this->_frac_secs);
 }
 
 double time_spec_t::get_frac_secs(void) const{
-    return std::fmod(this->_frac_secs, 1.0);
+    return this->_frac_secs - time_t(this->_frac_secs);
 }
 
 /***********************************************************************
