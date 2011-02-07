@@ -116,6 +116,9 @@ struct usrp2_impl::io_impl{
         packet_handler_send_state(xports.size()),
         async_msg_fifo(100/*messages deep*/)
     {
+        get_recv_buffs_fcn = boost::bind(&usrp2_impl::io_impl::get_recv_buffs, this, _1);
+        get_send_buffs_fcn = boost::bind(&usrp2_impl::io_impl::get_send_buffs, this, _1);
+
         for (size_t i = 0; i < xports.size(); i++){
             fc_mons.push_back(flow_control_monitor::sptr(
                 new flow_control_monitor(usrp2_impl::sram_bytes/send_frame_size)
@@ -137,10 +140,7 @@ struct usrp2_impl::io_impl{
         recv_pirate_crew.join_all();
     }
 
-    bool get_send_buffs(
-        vrt_packet_handler::managed_send_buffs_t &buffs,
-        double timeout
-    ){
+    bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &buffs){
         UHD_ASSERT_THROW(xports.size() == buffs.size());
 
         //calculate the flow control word
@@ -148,20 +148,24 @@ struct usrp2_impl::io_impl{
 
         //grab a managed buffer for each index
         for (size_t i = 0; i < buffs.size(); i++){
-            if (not fc_mons[i]->check_fc_condition(fc_word32, timeout)) return false;
-            buffs[i] = xports[i]->get_send_buff(timeout);
+            if (not fc_mons[i]->check_fc_condition(fc_word32, send_timeout)) return false;
+            buffs[i] = xports[i]->get_send_buff(send_timeout);
             if (not buffs[i].get()) return false;
             buffs[i]->cast<boost::uint32_t *>()[0] = uhd::htonx(fc_word32);
         }
         return true;
     }
 
-    bool get_recv_buffs(
-        vrt_packet_handler::managed_recv_buffs_t &buffs,
-        double timeout
-    );
+    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs);
 
     const std::vector<zero_copy_if::sptr> &xports;
+
+    //timeouts set on calls to recv/send (passed into get buffs methods)
+    double recv_timeout, send_timeout;
+
+    //bound callbacks for get buffs (bound once here, not in fast-path)
+    vrt_packet_handler::get_recv_buffs_t get_recv_buffs_fcn;
+    vrt_packet_handler::get_send_buffs_t get_send_buffs_fcn;
 
     //previous state for each buffer
     std::vector<vrt::if_packet_info_t> prev_infos;
@@ -297,6 +301,7 @@ size_t usrp2_impl::send(
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
+    _io_impl->send_timeout = timeout;
     return vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
@@ -304,7 +309,7 @@ size_t usrp2_impl::send(
         io_type, _tx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_pack_be,
-        boost::bind(&usrp2_impl::io_impl::get_send_buffs, _io_impl.get(), _1, timeout),
+        _io_impl->get_send_buffs_fcn,
         get_max_send_samps_per_packet(),
         vrt_send_header_offset_words32
     );
@@ -362,11 +367,10 @@ static UHD_INLINE bool handle_msg_packet(
 }
 
 UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
-    vrt_packet_handler::managed_recv_buffs_t &buffs,
-    double timeout
+    vrt_packet_handler::managed_recv_buffs_t &buffs
 ){
     if (buffs.size() == 1){
-        buffs[0] = xports[0]->get_recv_buff(timeout);
+        buffs[0] = xports[0]->get_recv_buff(recv_timeout);
         if (buffs[0].get() == NULL) return false;
         bool clear, msg; time_spec_t time; //unused variables
         //call extract_packet_info to handle printing the overflows
@@ -374,7 +378,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
         return true;
     }
     //-------------------- begin alignment logic ---------------------//
-    boost::system_time exit_time = boost::get_system_time() + to_time_dur(timeout);
+    boost::system_time exit_time = boost::get_system_time() + to_time_dur(recv_timeout);
     managed_recv_buffer::sptr buff_tmp;
     std::list<size_t> _all_indexes, indexes_to_do;
     for (size_t i = 0; i < buffs.size(); i++) _all_indexes.push_back(i);
@@ -459,6 +463,7 @@ size_t usrp2_impl::recv(
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
+    _io_impl->recv_timeout = timeout;
     return vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
@@ -466,7 +471,7 @@ size_t usrp2_impl::recv(
         io_type, _rx_otw_type,                     //input and output types to convert
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
-        boost::bind(&usrp2_impl::io_impl::get_recv_buffs, _io_impl.get(), _1, timeout),
+        _io_impl->get_recv_buffs_fcn,
         boost::bind(&handle_overflow, boost::ref(_mboards), _1)
     );
 }
