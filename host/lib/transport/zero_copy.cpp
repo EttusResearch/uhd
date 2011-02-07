@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,10 +29,9 @@ static void release_nop(void){
 class safe_managed_receive_buffer : public managed_recv_buffer{
 public:
     safe_managed_receive_buffer(
-        const boost::asio::const_buffer &buff,
-        const release_fcn_t &release_fcn
+        const void *buff, size_t size, const release_fcn_t &release_fcn
     ):
-        _buff(buff), _release_fcn(release_fcn)
+        _buff(buff), _size(size), _release_fcn(release_fcn)
     {
         /* NOP */
     }
@@ -48,19 +47,23 @@ public:
     }
 
 private:
-    const boost::asio::const_buffer &get(void) const{
+    const void *get_buff(void) const{
         return _buff;
     }
 
-    const boost::asio::const_buffer _buff;
+    size_t get_size(void) const{
+        return _size;
+    }
+
+    const void *_buff;
+    size_t _size;
     release_fcn_t _release_fcn;
 };
 
 managed_recv_buffer::sptr managed_recv_buffer::make_safe(
-    const boost::asio::const_buffer &buff,
-    const release_fcn_t &release_fcn
+    const void *buff, size_t size, const release_fcn_t &release_fcn
 ){
-    return sptr(new safe_managed_receive_buffer(buff, release_fcn));
+    return sptr(new safe_managed_receive_buffer(buff, size, release_fcn));
 }
 
 /***********************************************************************
@@ -73,10 +76,9 @@ static void commit_nop(size_t){
 class safe_managed_send_buffer : public managed_send_buffer{
 public:
     safe_managed_send_buffer(
-        const boost::asio::mutable_buffer &buff,
-        const commit_fcn_t &commit_fcn
+        void *buff, size_t size, const commit_fcn_t &commit_fcn
     ):
-        _buff(buff), _commit_fcn(commit_fcn)
+        _buff(buff), _size(size), _commit_fcn(commit_fcn)
     {
         /* NOP */
     }
@@ -92,17 +94,21 @@ public:
     }
 
 private:
-    const boost::asio::mutable_buffer &get(void) const{
+    void *get_buff(void) const{
         return _buff;
     }
 
-    const boost::asio::mutable_buffer _buff;
+    size_t get_size(void) const{
+        return _size;
+    }
+
+    void *_buff;
+    size_t _size;
     commit_fcn_t _commit_fcn;
 };
 
 safe_managed_send_buffer::sptr managed_send_buffer::make_safe(
-    const boost::asio::mutable_buffer &buff,
-    const commit_fcn_t &commit_fcn
+    void *buff, size_t size, const commit_fcn_t &commit_fcn
 ){
-    return sptr(new safe_managed_send_buffer(buff, commit_fcn));
+    return sptr(new safe_managed_send_buffer(buff, size, commit_fcn));
 }

@@ -124,7 +124,7 @@ public:
         //return the managed buffer for this frame
         if (fp_verbose) std::cout << "  make_recv_buff: " << info->len << std::endl;
         return managed_recv_buffer::make_safe(
-            boost::asio::const_buffer(mem, info->len),
+            mem, info->len,
             boost::bind(&usrp_e100_mmap_zero_copy_impl::release, this, info)
         );
     }
@@ -160,7 +160,7 @@ public:
         //return the managed buffer for this frame
         if (fp_verbose) std::cout << "  make_send_buff: " << _frame_size << std::endl;
         return managed_send_buffer::make_safe(
-            boost::asio::mutable_buffer(mem, _frame_size),
+            mem, _frame_size,
             boost::bind(&usrp_e100_mmap_zero_copy_impl::commit, this, info, _1)
         );
     }

@@ -159,10 +159,8 @@ bool usrp1_impl::io_impl::get_send_buffs(
     //calculate the buffer pointer and size given the offset
     //references to the buffers are held in the bound function
     buffs[0] = managed_send_buffer::make_safe(
-        boost::asio::buffer(
-            curr_buff->buff->cast<char *>() + curr_buff->offset,
-            curr_buff->buff->size()         - curr_buff->offset
-        ),
+        curr_buff->buff->cast<char *>() + curr_buff->offset,
+        curr_buff->buff->size()         - curr_buff->offset,
         boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, curr_buff, next_buff, _1)
     );
 

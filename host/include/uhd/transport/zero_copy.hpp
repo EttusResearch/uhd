@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_TRANSPORT_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
-#include <boost/asio/buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -40,13 +39,13 @@ namespace uhd{ namespace transport{
          * Make a safe managed receive buffer:
          * A safe managed buffer ensures that release is called once,
          * either by the user or automatically upon deconstruction.
-         * \param buff a reference to the constant buffer
+         * \param buff a pointer into read-only memory
+         * \param size the length of the buffer in bytes
          * \param release_fcn callback to release the memory
          * \return a new managed receive buffer
          */
         static sptr make_safe(
-            const boost::asio::const_buffer &buff,
-            const release_fcn_t &release_fcn
+            const void *buff, size_t size, const release_fcn_t &release_fcn
         );
 
         /*!
@@ -57,28 +56,24 @@ namespace uhd{ namespace transport{
         virtual void release(void) = 0;
 
         /*!
-         * Get the size of the underlying buffer.
-         * \return the number of bytes
-         */
-        inline size_t size(void) const{
-            return boost::asio::buffer_size(this->get());
-        }
-
-        /*!
          * Get a pointer to the underlying buffer.
          * \return a pointer into memory
          */
         template <class T> inline T cast(void) const{
-            return boost::asio::buffer_cast<T>(this->get());
+            return static_cast<T>(this->get_buff());
+        }
+
+        /*!
+         * Get the size of the underlying buffer.
+         * \return the number of bytes
+         */
+        inline size_t size(void) const{
+            return this->get_size();
         }
 
     private:
-        /*!
-         * Get a reference to the internal const buffer.
-         * The buffer has a reference to memory and a size.
-         * \return a boost asio const buffer
-         */
-        virtual const boost::asio::const_buffer &get(void) const = 0;
+        virtual const void *get_buff(void) const = 0;
+        virtual size_t get_size(void) const = 0;
     };
 
     /*!
@@ -96,13 +91,13 @@ namespace uhd{ namespace transport{
          * A safe managed buffer ensures that commit is called once,
          * either by the user or automatically upon deconstruction.
          * In the later case, the deconstructor will call commit(0).
-         * \param buff a reference to the mutable buffer
+         * \param buff a pointer into writable memory
+         * \param size the length of the buffer in bytes
          * \param commit_fcn callback to commit the memory
          * \return a new managed send buffer
          */
         static sptr make_safe(
-            const boost::asio::mutable_buffer &buff,
-            const commit_fcn_t &commit_fcn
+            void *buff, size_t size, const commit_fcn_t &commit_fcn
         );
 
         /*!
@@ -114,28 +109,24 @@ namespace uhd{ namespace transport{
         virtual void commit(size_t num_bytes) = 0;
 
         /*!
-         * Get the size of the underlying buffer.
-         * \return the number of bytes
-         */
-        inline size_t size(void) const{
-            return boost::asio::buffer_size(this->get());
-        }
-
-        /*!
          * Get a pointer to the underlying buffer.
          * \return a pointer into memory
          */
         template <class T> inline T cast(void) const{
-            return boost::asio::buffer_cast<T>(this->get());
+            return static_cast<T>(this->get_buff());
+        }
+
+        /*!
+         * Get the size of the underlying buffer.
+         * \return the number of bytes
+         */
+        inline size_t size(void) const{
+            return this->get_size();
         }
 
     private:
-        /*!
-         * Get a reference to the internal mutable buffer.
-         * The buffer has a reference to memory and a size.
-         * \return a boost asio mutable buffer
-         */
-        virtual const boost::asio::mutable_buffer &get(void) const = 0;
+        virtual void *get_buff(void) const = 0;
+        virtual size_t get_size(void) const = 0;
     };
 
     /*!

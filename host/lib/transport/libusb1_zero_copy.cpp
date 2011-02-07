@@ -398,7 +398,7 @@ managed_recv_buffer::sptr libusb_zero_copy_impl::get_recv_buff(double timeout){
     }
     else {
         return managed_recv_buffer::make_safe(
-            boost::asio::const_buffer(lut->buffer, lut->actual_length),
+            lut->buffer, lut->actual_length,
             boost::bind(&libusb_zero_copy_impl::release, this, lut)
         );
     }
@@ -418,7 +418,7 @@ managed_send_buffer::sptr libusb_zero_copy_impl::get_send_buff(double timeout){
     }
     else {
         return managed_send_buffer::make_safe(
-            boost::asio::mutable_buffer(lut->buffer, this->get_send_frame_size()),
+            lut->buffer, this->get_send_frame_size(),
             boost::bind(&libusb_zero_copy_impl::commit, this, lut, _1)
         );
     }

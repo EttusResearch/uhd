@@ -149,7 +149,8 @@ public:
         asio::mutable_buffer buff;
         if (_pending_recv_buffs.pop_with_timed_wait(buff, timeout)){
             return managed_recv_buffer::make_safe(
-                buff, boost::bind(
+                asio::buffer_cast<const void *>(buff),
+                asio::buffer_size(buff), boost::bind(
                     &udp_zero_copy_asio_impl::release, this,
                     asio::buffer_cast<void*>(buff)
                 )
@@ -193,10 +194,8 @@ public:
             and _pending_recv_buffs.pop_with_haste(buff)
         ){
             return managed_recv_buffer::make_safe(
-                asio::buffer(
-                    boost::asio::buffer_cast<void *>(buff),
-                    _socket->receive(asio::buffer(buff))
-                ),
+                boost::asio::buffer_cast<void *>(buff),
+                _socket->receive(asio::buffer(buff)),
                 boost::bind(
                     &udp_zero_copy_asio_impl::release, this,
                     asio::buffer_cast<void*>(buff)
@@ -231,7 +230,8 @@ public:
         asio::mutable_buffer buff;
         if (_pending_send_buffs.pop_with_timed_wait(buff, timeout)){
             return managed_send_buffer::make_safe(
-                buff, boost::bind(
+                asio::buffer_cast<void *>(buff),
+                asio::buffer_size(buff), boost::bind(
                     &udp_zero_copy_asio_impl::commit, this,
                     asio::buffer_cast<void*>(buff), _1
                 )
@@ -258,7 +258,8 @@ public:
         asio::mutable_buffer buff;
         if (_pending_send_buffs.pop_with_haste(buff)){
             return managed_send_buffer::make_safe(
-                buff, boost::bind(
+                asio::buffer_cast<void *>(buff),
+                asio::buffer_size(buff), boost::bind(
                     &udp_zero_copy_asio_impl::commit, this,
                     asio::buffer_cast<void*>(buff), _1
                 )
