@@ -49,3 +49,17 @@ To use other clock rates, the jumpers will need to be in the default position.
 
 For the correct clock settings, call usrp->set_master_clock_rate(rate)
 before any other parameters are set in your application.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Clock rate recovery - unbricking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+It is possible to set a clock rate such that the UHD can no longer communicate with the FPGA.
+When this occurs, it is necessary to use the usrp-e-utility to recover the clock generator.
+The recovery utility works by loading a special pass-through FPGA image so the computer
+can talk directly to the clock generator over a SPI interface.
+
+Run the following commands to restore the clock generator to a usable state:
+::
+
+    cd <prefix>/share/uhd/usrp_e_utilities
+    ./usrp-e-utility --fpga=../images/usrp_e100_pt_fpga.bin --reclk
