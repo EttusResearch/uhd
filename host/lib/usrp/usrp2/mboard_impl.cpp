@@ -157,6 +157,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //set default subdev specs
     (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
+
+    //This is a hack/fix for the lingering packet problem.
+    stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = 1;
+    this->issue_ddc_stream_cmd(stream_cmd);
+    data_transport->get_recv_buff().get(); //recv with timeout for lingering
+    data_transport->get_recv_buff().get(); //recv with timeout for expected
+    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //resets sequence
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
