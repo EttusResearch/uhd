@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 	};
 
 	if (argc < 4) {
-		printf("%s t|w|rw decimation data_size\n", argv[0]);
+		printf("%s r|w|rw decimation data_size\n", argv[0]);
 		return -1;
 	}
 
