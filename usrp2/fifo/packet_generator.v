@@ -32,14 +32,14 @@ module packet_generator
 
    always @*
      case(state)
-       0 :   data_o <= len[7:0];
-       1 :   data_o <= len[15:8];
-       2 :   data_o <= len[23:16];
-       3 :   data_o <= len[31:24];
-       4 :   data_o <= seq[7:0];
-       5 :   data_o <= seq[15:8];
-       6 :   data_o <= seq[23:16];
-       7 :   data_o <= seq[31:24];
+       0 :   data_o <= len[31:24];
+       1 :   data_o <= len[23:16];
+       2 :   data_o <= len[15:8];
+       3 :   data_o <= len[7:0];
+       4 :   data_o <= seq[31:24];
+       5 :   data_o <= seq[23:16];
+       6 :   data_o <= seq[15:8];
+       7 :   data_o <= seq[7:0];
        32'hFFFF_FFFC : data_o <= crc_out[31:24];
        32'hFFFF_FFFD : data_o <= crc_out[23:16];
        32'hFFFF_FFFE : data_o <= crc_out[15:8];
