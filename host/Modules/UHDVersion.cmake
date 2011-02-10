@@ -21,7 +21,7 @@ INCLUDE(UHDPython) #requires python for parsing
 ########################################################################
 # Setup Version Numbers
 ########################################################################
-SET(UHD_VERSION_MAJOR 002)  #API compatibility number
+SET(UHD_VERSION_MAJOR 003)  #API compatibility number
 SET(UHD_VERSION_MINOR 0)    #Timestamp of git commit
 SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
 
