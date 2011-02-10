@@ -58,7 +58,7 @@ public:
         return sptr(this, &udp_zero_copy_asio_mrb::fake_deleter);
     }
 
-    void *get(void) const{return _mem;}
+    template <class T> T cast(void) const{return static_cast<T>(_mem);}
 
 private:
     static void fake_deleter(void *obj){
@@ -210,7 +210,7 @@ public:
             ::select(_sock_fd+1, &rset, NULL, NULL, &tv) > 0
             and _pending_recv_buffs.pop_with_haste(mrb)
         ){
-            return mrb->get_new(::recv(_sock_fd, mrb->get(), _recv_frame_size, 0));
+            return mrb->get_new(::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0));
         }
         return managed_recv_buffer::sptr();
     }
@@ -235,7 +235,7 @@ public:
     }
 
     void commit(udp_zero_copy_asio_msb *msb, size_t len){
-        ::send(_sock_fd, msb->cast<const void *>(), len, 0);
+        ::send(_sock_fd, msb->cast<const char *>(), len, 0);
         handle_send(msb);
     }
 
