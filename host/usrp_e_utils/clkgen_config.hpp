@@ -1,24 +1,22 @@
-/* -*- c++ -*- */
-/*
- * Copyright 2003,2004,2008,2009 Free Software Foundation, Inc.
- *
- * This file is part of UHD
- *
- * GNU Radio is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3, or (at your option)
- * any later version.
- *
- * GNU Radio is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with GNU Radio; see the file COPYING.  If not, write to
- * the Free Software Foundation, Inc., 51 Franklin Street,
- * Boston, MA 02110-1301, USA.
-*/
+//
+// Copyright 2011 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#ifndef USRP_E_UTILS_CLKGEN_CONFIG_HPP
+#define USRP_E_UTILS_CLKGEN_CONFIG_HPP
 
 #include <iostream>
 #include <sstream>
@@ -33,6 +31,7 @@
 
 #include <linux/spi/spidev.h>
 
+namespace usrp_e_clkgen_config_utility{
 
 // Programming data for clock gen chip
 static const unsigned int config_data[] = {
@@ -73,7 +72,7 @@ static const unsigned int config_data[] = {
 	0x019021,
 	0x019100,
 	0x019200,
-	0x019333,
+	0x019321,
 	0x019400,
 	0x019500,
 	0x019611,
@@ -157,6 +156,7 @@ class spidev {
 };
 
 gpio::gpio(unsigned int _gpio_num, gpio_direction pin_direction, bool close_action)
+:close_action(close_action)
 {
 	std::fstream export_file;
 
@@ -264,10 +264,10 @@ void spidev::send(char *buf, char *rbuf, unsigned int nbytes)
 	tr.rx_buf = (unsigned long) rbuf;
 	tr.len = nbytes;
 	tr.delay_usecs = 0;
-	tr.speed_hz = 12000000;
+	tr.speed_hz = 12000;
 	tr.bits_per_word = 24;
 
-	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);	
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
 
 }
 
@@ -278,19 +278,28 @@ static void send_config_to_clkgen(gpio &chip_select, const unsigned int data[], 
 
 	for (unsigned int i = 0; i < data_size; i++) {
 
-		std::cout << "sending " << std::hex << data[i] << std::endl;
+		//std::cout << "sending " << std::hex << data[i] << std::endl;
 		chip_select.set_value(0);
 		spi.send((char *)&data[i], (char *)&rbuf, 4);
 		chip_select.set_value(1);
-
+		unsigned int addr = (data[i] >> 8) & 0xfff;
+		if (addr == 0x232 || addr == 0x000){
+			std::cout << "." << std::flush;
+			sleep(1);
+		}
 	};
+	std::cout << std::endl;
 }
 
-int main(int argc, char *argv[])
-{
+}//namespace usrp_e_clkgen_config_utility
 
+//int main(int argc, char *argv[])
+static void clock_genconfig_main(void)
+{
+	using namespace usrp_e_clkgen_config_utility;
 	gpio clkgen_select(CLKGEN_SELECT, OUT, true);
 
-	send_config_to_clkgen(clkgen_select, config_data, sizeof(config_data)/sizeof(unsigned int));
+	send_config_to_clkgen(clkgen_select, config_data, sizeof(config_data)/sizeof(config_data[0]));
 }
 
+#endif /*USRP_E_UTILS_CLKGEN_CONFIG_HPP*/

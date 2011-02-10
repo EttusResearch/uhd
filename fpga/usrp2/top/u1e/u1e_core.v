@@ -29,18 +29,22 @@ module u1e_core
    localparam TXFIFOSIZE = 13;
    localparam RXFIFOSIZE = 13;
 
-   localparam SR_RX_DSP = 0;     // 5 regs
-   localparam SR_CLEAR_FIFO = 6; // 1 reg
-   localparam SR_RX_CTRL = 8;    // 9 regs
-   localparam SR_TX_DSP = 17;    // 5 regs
-   localparam SR_TX_CTRL = 24;   // 2 regs
-   localparam SR_TIME64 = 28;    // 4 regs
+   // 64 total regs in address space
+   localparam SR_RX_CTRL = 0;     // 9 regs (+0 to +8)
+   localparam SR_RX_DSP = 16;     // 7 regs (+0 to +6)
+   localparam SR_TX_CTRL = 24;    // 6 regs (+0 to +5)
+   localparam SR_TX_DSP = 32;     // 5 regs (+0 to +4)
+   localparam SR_TIME64 = 40;     // 6 regs (+0 to +5)
+   localparam SR_CLEAR_RX_FIFO = 48; // 1 reg
+   localparam SR_CLEAR_TX_FIFO = 49; // 1 reg
+   localparam SR_GLOBAL_RESET = 50; // 1 reg
+   localparam SR_REG_TEST32 = 52; // 1 reg
 
    wire [7:0]	COMPAT_NUM = 8'd3;
    
    wire 	wb_clk = clk_fpga;
-   wire 	wb_rst = rst_fpga;
-   
+   wire 	wb_rst, global_reset;
+
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
@@ -51,6 +55,12 @@ module u1e_core
 
    wire [31:0] 	debug_vt;
 
+   setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(global_reset));
+
+   reset_sync reset_sync(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
+   
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPMC Slave to Wishbone Master
    localparam dw = 16;
@@ -72,15 +82,16 @@ module u1e_core
    wire [7:0] 	 rate;
 
    wire 	 bus_error;
-
-   wire 	 clear_rx_int, clear_tx_int, clear_tx, clear_rx, do_clear;
+   wire 	 clear_tx, clear_rx;
    
-   setting_reg #(.my_addr(SR_CLEAR_FIFO), .width(2)) sr_clear
+   setting_reg #(.my_addr(SR_CLEAR_RX_FIFO), .width(1)) sr_clear_rx
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({clear_tx_int,clear_rx_int}),.changed(do_clear));
-   assign clear_tx = clear_tx_int & do_clear;
-   assign clear_rx = clear_rx_int & do_clear;
-   
+      .in(set_data),.out(),.changed(clear_rx));
+
+   setting_reg #(.my_addr(SR_CLEAR_TX_FIFO), .width(1)) sr_clear_tx
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_tx));
+
    gpmc_async #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
    gpmc (.arst(wb_rst),
 	 .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
@@ -149,7 +160,8 @@ module u1e_core
       .src1_rdy_i(rx_src_rdy_int), .dst1_rdy_o(rx_dst_rdy_int),
       .src2_rdy_o(rx_src_rdy), .dst2_rdy_i(rx_dst_rdy),
       .underrun(), .overrun(rx_overrun));
-   
+
+   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
 `endif //  `ifdef TIMED
 
 `ifdef DSP
@@ -203,7 +215,9 @@ module u1e_core
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
-		   .REPORT_ERROR(1), .PROT_ENG_FLAGS(0)) 
+		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(0),
+		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
+		   .DSP_NUMBER(0)) 
    vita_tx_chain
      (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -258,7 +272,7 @@ module u1e_core
 		.s2_addr(4'h2), .s2_mask(4'hF),	.s3_addr(4'h3), .s3_mask(4'hF),
 		.s4_addr(4'h4), .s4_mask(4'hF),	.s5_addr(4'h5), .s5_mask(4'hF),
 		.s6_addr(4'h6), .s6_mask(4'hF),	.s7_addr(4'h7), .s7_mask(4'hF),
-		.s8_addr(4'h8), .s8_mask(4'hF),	.s9_addr(4'h9), .s9_mask(4'hF),
+		.s8_addr(4'h8), .s8_mask(4'hE),	.s9_addr(4'hf), .s9_mask(4'hF), // slave 8 is double wide
 		.sa_addr(4'ha), .sa_mask(4'hF),	.sb_addr(4'hb), .sb_mask(4'hF),
 		.sc_addr(4'hc), .sc_mask(4'hF),	.sd_addr(4'hd), .sd_mask(4'hF),
 		.se_addr(4'he), .se_mask(4'hF),	.sf_addr(4'hf), .sf_mask(4'hF))
@@ -299,7 +313,7 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
+   assign s5_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -409,12 +423,12 @@ module u1e_core
 		.gpio( {io_tx,io_rx} ) );
 
    // /////////////////////////////////////////////////////////////////////////
-   // Settings Bus -- Slave #5
+   // Settings Bus -- Slave #8 + 9
 
-   // only have 32 regs, 32 bits each with current setup...
-   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(11-4-2)) settings_bus_16LE
-     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s5_adr),.wb_dat_i(s5_dat_mosi),
-      .wb_stb_i(s5_stb),.wb_we_i(s5_we),.wb_ack_o(s5_ack),
+   // only have 64 regs, 32 bits each with current setup...
+   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
+     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
+      .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
    
    // /////////////////////////////////////////////////////////////////////////
@@ -429,15 +443,24 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
 
+   wire [31:0] reg_test32;
+
+   setting_reg #(.my_addr(SR_REG_TEST32)) sr_reg_test32
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(reg_test32),.changed());
+
    wb_readback_mux_16LE readback_mux_32
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s7_stb),
       .wb_adr_i(s7_adr), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
 
-      .word00(vita_time[63:32]),    .word01(vita_time[31:0]),
-      .word02(vita_time_pps[63:32]),.word03(vita_time_pps[31:0]),
-      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
-      .word08(32'b0),.word09(32'b0),.word10(32'b0),.word11(32'b0),
-      .word12(32'b0),.word13(32'b0),.word14(32'b0),.word15(32'b0)
+      .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
+      .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
+      .word04(reg_test32),              .word05(32'b0),
+      .word06(32'b0),                   .word07(32'b0),
+      .word08(32'b0),                   .word09(32'b0),
+      .word10(32'b0),                   .word11(32'b0),
+      .word12(32'b0),                   .word13(32'b0),
+      .word14(32'b0),                   .word15(32'b0)
       );
 
    // /////////////////////////////////////////////////////////////////////////

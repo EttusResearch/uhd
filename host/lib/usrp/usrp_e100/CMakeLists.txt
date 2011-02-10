@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ IF(ENABLE_USRP_E100)
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/fpga-downloader.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/fpga_downloader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_impl.cpp

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@
  * INIT_B - GPIO_114     - input  (change mux)
  *
 */
+
+namespace usrp_e_fpga_downloader_utility{
 
 const unsigned int PROG_B = 175;
 const unsigned int DONE   = 173;
@@ -209,11 +211,10 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 {
 	std::ifstream bitstream;
 
-	std::cout << "File name - " << file_name.c_str() << std::endl;
-
 	bitstream.open(file_name.c_str(), std::ios::binary);
-	if (!bitstream.is_open())
-		std::cout << "File " << file_name << " not opened succesfully." << std::endl;
+	if (!bitstream.is_open()) throw std::runtime_error(
+		"Coult not open the file: " + file_name
+	);
 
 	spidev spi("/dev/spidev1.0");
 	char buf[BUF_SIZE];
@@ -232,35 +233,20 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 	} while (bitstream.gcount() == BUF_SIZE);
 }
 
-/*
-int main(int argc, char *argv[])
-{
-
-	gpio gpio_prog_b(PROG_B, OUT);
-	gpio gpio_init_b(INIT_B, IN);
-	gpio gpio_done  (DONE,   IN);
-
-	if (argc == 2)
-		bit_file = argv[1];
-
-	std::cout << "FPGA config file: " << bit_file << std::endl;
-
-	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
-
-	std::cout << "Done = " << gpio_done.get_value() << std::endl;
-
-	send_file_to_fpga(bit_file, gpio_init_b, gpio_done);
-}
-*/
+}//namespace usrp_e_fpga_downloader_utility
 
 void usrp_e100_load_fpga(const std::string &bin_file){
+	using namespace usrp_e_fpga_downloader_utility;
+
 	gpio gpio_prog_b(PROG_B, OUT);
 	gpio gpio_init_b(INIT_B, IN);
 	gpio gpio_done  (DONE,   IN);
 
 	std::cout << "Loading FPGA image: " << bin_file << "... " << std::flush;
 
-	UHD_ASSERT_THROW(std::system("/sbin/rmmod usrp_e") == 0);
+	if(std::system("/sbin/rmmod usrp_e") != 0){
+		std::cerr << "USRP-E100 FPGA downloader: could not unload usrp_e module" << std::endl;
+	}
 
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
@@ -268,7 +254,9 @@ void usrp_e100_load_fpga(const std::string &bin_file){
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 
-	UHD_ASSERT_THROW(std::system("/sbin/modprobe usrp_e") == 0);
+	if(std::system("/sbin/modprobe usrp_e") != 0){
+		std::cerr << "USRP-E100 FPGA downloader: could not load usrp_e module" << std::endl;
+	}
 
 }
 
