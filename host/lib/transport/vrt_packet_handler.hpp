@@ -76,8 +76,7 @@ template <typename T> UHD_INLINE T get_context_code(
             copy_buffs(width, NULL),
             size_of_copy_buffs(0),
             fragment_offset_in_samps(0),
-            io_buffs(0), //resized later
-            otw_buffs(1) //always 1 for now
+            io_buffs(0) //resized later
         {
             /* NOP */
         }
@@ -204,8 +203,7 @@ template <typename T> UHD_INLINE T get_context_code(
             }
 
             //copy-convert the samples from the recv buffer
-            state.otw_buffs[0] = state.copy_buffs[i];
-            converter(state.otw_buffs, state.io_buffs, nsamps_to_copy_per_io_buff);
+            converter(state.copy_buffs[i], state.io_buffs, nsamps_to_copy_per_io_buff);
 
             //update the rx copy buffer to reflect the bytes copied
             state.copy_buffs[i] += bytes_to_copy;
@@ -309,15 +307,13 @@ template <typename T> UHD_INLINE T get_context_code(
         const boost::uint64_t zeros;
         std::vector<const void *> zero_buffs;
         std::vector<const void *> io_buffs;
-        std::vector<void *> otw_buffs;
 
         send_state(size_t width = 1):
             next_packet_seq(0),
             managed_buffs(width),
             zeros(0),
             zero_buffs(width, &zeros),
-            io_buffs(0), //resized later
-            otw_buffs(1) //always 1 for now
+            io_buffs(0) //resized later
         {
             /* NOP */
         }
@@ -358,8 +354,7 @@ template <typename T> UHD_INLINE T get_context_code(
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            state.otw_buffs[0] = otw_mem;
-            converter(state.io_buffs, state.otw_buffs, num_samps);
+            converter(state.io_buffs, otw_mem, num_samps);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
