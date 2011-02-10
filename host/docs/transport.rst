@@ -34,10 +34,9 @@ The following parameters can be used to alter the transport's default behavior:
 * **num_recv_frames:** The number of receive buffers to allocate
 * **send_frame_size:** The size of a single send buffer in bytes
 * **num_send_frames:** The number of send buffers to allocate
-* **concurrency_hint:** The number of threads to run the IO service
 
-**Note:** num_send_frames will not have an effect
-as the asynchronous send implementation is currently disabled.
+**Note:** num_recv_frames and num_send_frames will not have an effect
+as the asynchronous send implementation is currently unimplemented.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Flow control parameters
