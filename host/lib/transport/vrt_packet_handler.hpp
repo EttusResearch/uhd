@@ -148,7 +148,7 @@ template <typename T> UHD_INLINE T get_context_code(
      ******************************************************************/
     static UHD_INLINE size_t _recv1(
         recv_state &state,
-        const std::vector<void *> &buffs,
+        const uhd::device::recv_buffs_type &buffs,
         size_t offset_bytes,
         size_t total_samps,
         uhd::rx_metadata_t &metadata,
@@ -227,7 +227,7 @@ template <typename T> UHD_INLINE T get_context_code(
      ******************************************************************/
     static UHD_INLINE size_t recv(
         recv_state &state,
-        const std::vector<void *> &buffs,
+        const uhd::device::recv_buffs_type &buffs,
         const size_t total_num_samps,
         uhd::rx_metadata_t &metadata,
         uhd::device::recv_mode_t recv_mode,
@@ -328,7 +328,7 @@ template <typename T> UHD_INLINE T get_context_code(
      ******************************************************************/
     static UHD_INLINE size_t _send1(
         send_state &state,
-        const std::vector<const void *> &buffs,
+        const uhd::device::send_buffs_type &buffs,
         const size_t offset_bytes,
         const size_t num_samps,
         uhd::transport::vrt::if_packet_info_t &if_packet_info,
@@ -374,7 +374,7 @@ template <typename T> UHD_INLINE T get_context_code(
      ******************************************************************/
     static UHD_INLINE size_t send(
         send_state &state,
-        const std::vector<const void *> &buffs,
+        const uhd::device::send_buffs_type &buffs,
         const size_t total_num_samps,
         const uhd::tx_metadata_t &metadata,
         uhd::device::send_mode_t send_mode,

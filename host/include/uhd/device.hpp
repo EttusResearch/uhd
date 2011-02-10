@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/io_type.hpp>
+#include <uhd/types/ref_vector.hpp>
 #include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <vector>
 
 namespace uhd{
 
@@ -96,6 +96,12 @@ public:
         RECV_MODE_ONE_PACKET = 1
     };
 
+    //! Typedef for a pointer to a single, or a collection of send buffers
+    typedef ref_vector<const void *> send_buffs_type;
+
+    //! Typedef for a pointer to a single, or a collection of recv buffers
+    typedef ref_vector<void *> recv_buffs_type;
+
     /*!
      * Send buffers containing IF data described by the metadata.
      *
@@ -121,25 +127,13 @@ public:
      * \return the number of samples sent
      */
     virtual size_t send(
-        const std::vector<const void *> &buffs,
+        const send_buffs_type &buffs,
         size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const io_type_t &io_type,
         send_mode_t send_mode,
         double timeout = 0.1
     ) = 0;
-
-    /*!
-     * Convenience wrapper for send that takes a single buffer.
-     */
-    size_t send(
-        const void *buff,
-        size_t nsamps_per_buff,
-        const tx_metadata_t &metadata,
-        const io_type_t &io_type,
-        send_mode_t send_mode,
-        double timeout = 0.1
-    );
 
     /*!
      * Receive buffers containing IF data described by the metadata.
@@ -173,25 +167,13 @@ public:
      * \return the number of samples received or 0 on error
      */
     virtual size_t recv(
-        const std::vector<void *> &buffs,
+        const recv_buffs_type &buffs,
         size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         const io_type_t &io_type,
         recv_mode_t recv_mode,
         double timeout = 0.1
     ) = 0;
-
-    /*!
-     * Convenience wrapper for recv that takes a single buffer.
-     */
-    size_t recv(
-        void *buff,
-        size_t nsamps_per_buff,
-        rx_metadata_t &metadata,
-        const io_type_t &io_type,
-        recv_mode_t recv_mode,
-        double timeout = 0.1
-    );
 
     /*!
      * Get the maximum number of samples per packet on send.
@@ -218,7 +200,5 @@ public:
 };
 
 } //namespace uhd
-
-#include <uhd/device.ipp>
 
 #endif /* INCLUDED_UHD_DEVICE_HPP */

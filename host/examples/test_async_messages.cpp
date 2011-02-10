@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -91,8 +91,7 @@ bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp){
     md.end_of_burst   = false;
     md.has_time_spec  = false;
 
-    usrp->get_device()->send(
-        NULL, 0, md,
+    usrp->get_device()->send("", 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
@@ -139,8 +138,7 @@ bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp){
 
     usrp->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
 
-    usrp->get_device()->send(
-        NULL, 0, md,
+    usrp->get_device()->send("", 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );

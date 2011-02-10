@@ -212,7 +212,7 @@ size_t usrp_e100_impl::get_max_send_samps_per_packet(void) const{
 }
 
 size_t usrp_e100_impl::send(
-    const std::vector<const void *> &buffs, size_t num_samps,
+    const send_buffs_type &buffs, size_t num_samps,
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
@@ -242,7 +242,7 @@ size_t usrp_e100_impl::get_max_recv_samps_per_packet(void) const{
 }
 
 size_t usrp_e100_impl::recv(
-    const std::vector<void *> &buffs, size_t num_samps,
+    const recv_buffs_type &buffs, size_t num_samps,
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){

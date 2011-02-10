@@ -80,13 +80,13 @@ public:
     ~usrp1_impl(void);
 
     //the io interface
-    size_t send(const std::vector<const void *> &,
+    size_t send(const send_buffs_type &,
                 size_t,
                 const uhd::tx_metadata_t &,
                 const uhd::io_type_t &,
                 send_mode_t, double);
 
-    size_t recv(const std::vector<void *> &,
+    size_t recv(const recv_buffs_type &,
                 size_t, uhd::rx_metadata_t &,
                 const uhd::io_type_t &,
                 recv_mode_t, double);

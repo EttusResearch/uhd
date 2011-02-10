@@ -26,6 +26,7 @@ INSTALL(FILES
     metadata.hpp
     otw_type.hpp
     ranges.hpp
+    ref_vector.hpp
     sensors.hpp
     serial.hpp
     stream_cmd.hpp

@@ -171,7 +171,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //send a mini EOB packet
     md.start_of_burst = false;
     md.end_of_burst   = true;
-    usrp->get_device()->send(NULL, 0, md,
+    usrp->get_device()->send("", 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
         uhd::device::SEND_MODE_FULL_BUFF
     );
