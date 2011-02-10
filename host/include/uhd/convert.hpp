@@ -21,15 +21,15 @@
 #include <uhd/config.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
+#include <uhd/types/ref_vector.hpp>
 #include <boost/function.hpp>
 #include <string>
-#include <vector>
 
 namespace uhd{ namespace convert{
 
-    typedef std::vector<void *> output_type;
-    typedef std::vector<const void *> input_type;
-    typedef boost::function<void(input_type&, output_type&, size_t)> function_type;
+    typedef uhd::ref_vector<void *> output_type;
+    typedef uhd::ref_vector<const void *> input_type;
+    typedef boost::function<void(const input_type&, const output_type&, size_t)> function_type;
 
     /*!
      * Describe the priority of a converter function.

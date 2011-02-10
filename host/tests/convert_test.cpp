@@ -49,8 +49,8 @@ template <typename Range> static void loopback(
     //item32 is largest device type
     std::vector<boost::uint32_t> interm(nsamps);
 
-    convert::input_type input0(1, &input[0]), input1(1, &interm[0]);
-    convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
+    std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
+    std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert to intermediate type
     convert::get_converter_cpu_to_otw(
@@ -201,8 +201,8 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
     std::vector<boost::uint32_t> interm(nsamps);
     std::vector<sc16_t> output(nsamps);
 
-    convert::input_type input0(1, &input[0]), input1(1, &interm[0]);
-    convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
+    std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
+    std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert float to intermediate
     convert::get_converter_cpu_to_otw(
@@ -241,8 +241,8 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
     std::vector<boost::uint32_t> interm(nsamps);
     std::vector<fc32_t> output(nsamps);
 
-    convert::input_type input0(1, &input[0]), input1(1, &interm[0]);
-    convert::output_type output0(1, &interm[0]), output1(1, &output[0]);
+    std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
+    std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert short to intermediate
     convert::get_converter_cpu_to_otw(

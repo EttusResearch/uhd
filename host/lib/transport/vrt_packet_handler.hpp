@@ -68,7 +68,7 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t size_of_copy_buffs;
         size_t fragment_offset_in_samps;
         std::vector<void *> io_buffs;
-        uhd::convert::input_type otw_buffs;
+        std::vector<const void *> otw_buffs;
 
         recv_state(size_t width = 1):
             width(width),
@@ -309,7 +309,7 @@ template <typename T> UHD_INLINE T get_context_code(
         const boost::uint64_t zeros;
         std::vector<const void *> zero_buffs;
         std::vector<const void *> io_buffs;
-        uhd::convert::output_type otw_buffs;
+        std::vector<void *> otw_buffs;
 
         send_state(size_t width = 1):
             next_packet_seq(0),

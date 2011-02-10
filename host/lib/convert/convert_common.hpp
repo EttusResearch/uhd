@@ -25,16 +25,16 @@
 
 #define DECLARE_CONVERTER(fcn, prio) \
     static void fcn( \
-        uhd::convert::input_type &inputs, \
-        uhd::convert::output_type &outputs, \
+        const uhd::convert::input_type &inputs, \
+        const uhd::convert::output_type &outputs, \
         size_t nsamps \
     ); \
     UHD_STATIC_BLOCK(register_##fcn##_##prio){ \
         uhd::convert::register_converter(#fcn, fcn, prio); \
     } \
     static void fcn( \
-        uhd::convert::input_type &inputs, \
-        uhd::convert::output_type &outputs, \
+        const uhd::convert::input_type &inputs, \
+        const uhd::convert::output_type &outputs, \
         size_t nsamps \
     )
 
