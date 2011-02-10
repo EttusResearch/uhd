@@ -32,6 +32,18 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
+namespace pt = boost::posix_time;
+
+/***********************************************************************
+ * helpers
+ **********************************************************************/
+static UHD_INLINE pt::time_duration to_time_dur(double timeout){
+    return pt::microseconds(long(timeout*1e6));
+}
+
+static UHD_INLINE double from_time_dur(const pt::time_duration &time_dur){
+    return 1e-6*time_dur.total_microseconds();
+}
 
 /***********************************************************************
  * constants
@@ -61,6 +73,7 @@ public:
         _last_seq_out = 0;
         _last_seq_ack = 0;
         _max_seqs_out = max_seqs_out;
+        _ready_fcn = boost::bind(&flow_control_monitor::ready, this);
     }
 
     /*!
@@ -73,11 +86,8 @@ public:
         boost::this_thread::disable_interruption di; //disable because the wait can throw
         boost::unique_lock<boost::mutex> lock(_fc_mutex);
         _last_seq_out = seq;
-        return _fc_cond.timed_wait(
-            lock,
-            boost::posix_time::microseconds(long(timeout*1e6)),
-            boost::bind(&flow_control_monitor::ready, this)
-        );
+        if (this->ready()) return true;
+        return _fc_cond.timed_wait(lock, to_time_dur(timeout), _ready_fcn);
     }
 
     /*!
@@ -99,6 +109,7 @@ private:
     boost::mutex _fc_mutex;
     boost::condition _fc_cond;
     seq_type _last_seq_out, _last_seq_ack, _max_seqs_out;
+    boost::function<bool(void)> _ready_fcn;
 };
 
 /***********************************************************************
@@ -318,14 +329,6 @@ size_t usrp2_impl::send(
 /***********************************************************************
  * Alignment logic on receive
  **********************************************************************/
-static UHD_INLINE boost::posix_time::time_duration to_time_dur(double timeout){
-    return boost::posix_time::microseconds(long(timeout*1e6));
-}
-
-static UHD_INLINE double from_time_dur(const boost::posix_time::time_duration &time_dur){
-    return 1e-6*time_dur.total_microseconds();
-}
-
 static UHD_INLINE time_spec_t extract_time_spec(
     const vrt::if_packet_info_t &packet_info
 ){

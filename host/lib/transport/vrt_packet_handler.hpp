@@ -196,8 +196,7 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t bytes_to_copy = nsamps_to_copy*bytes_per_item;
         size_t nsamps_to_copy_per_io_buff = nsamps_to_copy/chans_per_otw_buff;
 
-        state.io_buffs.resize(chans_per_otw_buff);
-        for (size_t i = 0; i < state.width; i+=chans_per_otw_buff){
+        for (size_t i = 0; i < buffs.size(); i+=chans_per_otw_buff){
 
             //fill a vector with pointers to the io buffers
             for (size_t j = 0; j < chans_per_otw_buff; j++){
@@ -240,6 +239,8 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t vrt_header_offset_words32 = 0,
         size_t chans_per_otw_buff = 1
     ){
+        state.io_buffs.resize(chans_per_otw_buff);
+
         uhd::convert::function_type converter(
             uhd::convert::get_converter_otw_to_cpu(
                 io_type, otw_type, 1, chans_per_otw_buff
@@ -345,7 +346,6 @@ template <typename T> UHD_INLINE T get_context_code(
         //get send buffers for each otw channel
         if (not get_send_buffs(state.managed_buffs)) return 0;
 
-        state.io_buffs.resize(chans_per_otw_buff);
         for (size_t i = 0; i < buffs.size(); i+=chans_per_otw_buff){
             //calculate pointers with offsets to io and otw memory
             for (size_t j = 0; j < chans_per_otw_buff; j++){
@@ -387,6 +387,8 @@ template <typename T> UHD_INLINE T get_context_code(
         size_t vrt_header_offset_words32 = 0,
         size_t chans_per_otw_buff = 1
     ){
+        state.io_buffs.resize(chans_per_otw_buff);
+
         uhd::convert::function_type converter(
             uhd::convert::get_converter_cpu_to_otw(
                 io_type, otw_type, chans_per_otw_buff, 1
