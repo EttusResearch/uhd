@@ -132,7 +132,7 @@ static void callback(libusb_transfer *lut){
  * \param pointer to libusb_transfer
  */
 void usb_endpoint::callback_handle_transfer(libusb_transfer *lut){
-    _completed_list.push_with_wait(lut);
+    _completed_list.push_with_haste(lut);
 }
 
 
@@ -161,7 +161,7 @@ usb_endpoint::usb_endpoint(
         //input luts are immediately submitted to be filled
         //output luts go into the completed list as free buffers
         if (_input) this->submit(_all_luts.back());
-        else _completed_list.push_with_wait(_all_luts.back());
+        else _completed_list.push_with_haste(_all_luts.back());
     }
 }
 

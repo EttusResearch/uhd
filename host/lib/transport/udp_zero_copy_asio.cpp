@@ -216,14 +216,14 @@ public:
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         udp_zero_copy_asio_mrb *mrb = NULL;
-        if (is_recv_socket_ready(timeout) and _pending_recv_buffs.pop_with_haste(mrb)){
+        if (is_recv_socket_ready(timeout) and _pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
             return mrb->get_new(::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0));
         }
         return managed_recv_buffer::sptr();
     }
 
     UHD_INLINE void handle_recv(udp_zero_copy_asio_mrb *mrb){
-        _pending_recv_buffs.push_with_pop_on_full(mrb);
+        _pending_recv_buffs.push_with_haste(mrb);
     }
 
     void release(udp_zero_copy_asio_mrb *mrb){
@@ -245,16 +245,16 @@ public:
      *  - A managed buffer is always available.
      *  - The queue can never be over-filled.
      ******************************************************************/
-    managed_send_buffer::sptr get_send_buff(double){
+    managed_send_buffer::sptr get_send_buff(double timeout){
         udp_zero_copy_asio_msb *msb = NULL;
-        if (_pending_send_buffs.pop_with_haste(msb)){
+        if (_pending_send_buffs.pop_with_timed_wait(msb, timeout)){
             return msb->get_new(_send_frame_size);
         }
         return managed_send_buffer::sptr();
     }
 
     UHD_INLINE void handle_send(udp_zero_copy_asio_msb *msb){
-        _pending_send_buffs.push_with_pop_on_full(msb);
+        _pending_send_buffs.push_with_haste(msb);
     }
 
     void commit(udp_zero_copy_asio_msb *msb, size_t len){

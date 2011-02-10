@@ -43,6 +43,16 @@ namespace uhd{ namespace transport{
         }
 
         /*!
+         * Push a new element into the bounded buffer immediately.
+         * The element will not be pushed when the buffer is full.
+         * \param elem the element reference pop to
+         * \return false when the buffer is full
+         */
+        bool push_with_haste(const elem_type &elem){
+            return _detail.push_with_haste(elem);
+        }
+
+        /*!
          * Push a new element into the bounded buffer.
          * If the buffer is full prior to the push,
          * make room by poping the oldest element.
@@ -74,9 +84,10 @@ namespace uhd{ namespace transport{
         }
 
         /*!
-         * Pop an element from the bounded_buffer immediately.
+         * Pop an element from the bounded buffer immediately.
+         * The element will not be popped when the buffer is empty.
          * \param elem the element reference pop to
-         * \return false when the bounded_buffer is empty
+         * \return false when the buffer is empty
          */
         bool pop_with_haste(elem_type &elem){
             return _detail.pop_with_haste(elem);
