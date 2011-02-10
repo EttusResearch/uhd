@@ -194,12 +194,8 @@ public:
      * Return the managed receive buffer with the new length.
      * When the caller is finished with the managed buffer,
      * the managed receive buffer is released back into the queue.
-     *
-     * Assumptions:
-     *  - A managed buffer is always available.
-     *  - The queue can never be over-filled.
      ******************************************************************/
-    UHD_INLINE bool is_recv_socket_ready(double timeout){
+    UHD_INLINE bool is_recv_ready(double timeout){
         //setup timeval for timeout
         timeval tv;
         tv.tv_sec = 0;
@@ -216,7 +212,7 @@ public:
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         udp_zero_copy_asio_mrb *mrb = NULL;
-        if (is_recv_socket_ready(timeout) and _pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
+        if (is_recv_ready(timeout) and _pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
             return mrb->get_new(::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0));
         }
         return managed_recv_buffer::sptr();
@@ -240,10 +236,6 @@ public:
      * The caller will fill the buffer and commit it when finished.
      * The commit routine will perform a blocking send operation,
      * and push the managed send buffer back into the queue.
-     *
-     * Assumptions:
-     *  - A managed buffer is always available.
-     *  - The queue can never be over-filled.
      ******************************************************************/
     managed_send_buffer::sptr get_send_buff(double timeout){
         udp_zero_copy_asio_msb *msb = NULL;
