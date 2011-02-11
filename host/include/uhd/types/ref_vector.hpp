@@ -29,29 +29,22 @@ namespace uhd{
  */
 template <typename T> class ref_vector{
 public:
-    //! Create a reference vector of length one from a pointer
-    template <typename Ptr> ref_vector(Ptr *ptr):
-        _mem(memp_t(&ptr)), _size(1)
+    //! Create a reference vector from a pointer and size
+    template <typename Ptr> ref_vector(Ptr *ptr, size_t size = 1):
+        _mem(T(ptr)), _size(size)
     {
         /* NOP */
     }
 
     //! Create a reference vector from a std::vector container
     template <typename Range> ref_vector(const Range &range):
-        _mem(memp_t(&range[0])), _size(range.size())
+        _mem(T(range.front())), _size(range.size())
     {
         /* NOP */
     }
 
-    //! Create a reference vector from a memory pointer and size
-    ref_vector(T *mem, size_t size):
-        _mem(mem), _size(size)
-    {
-        /* NOP */
-    }
-
-    T &operator[](size_t index) const{
-        return _mem[index];
+    const T &operator[](size_t index) const{
+        return (&_mem)[index];
     }
 
     size_t size(void) const{
@@ -59,8 +52,7 @@ public:
     }
 
 private:
-    typedef T* memp_t;
-    const memp_t _mem;
+    const T      _mem;
     const size_t _size;
 };
 
