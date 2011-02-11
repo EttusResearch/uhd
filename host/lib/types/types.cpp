@@ -76,17 +76,16 @@ static std::vector<size_t> get_tid_size_table(void){
     return table;
 }
 
-static size_t tid_to_size(io_type_t::tid_t tid){
-    static const std::vector<size_t> size_table(get_tid_size_table());
-    return size_table[size_t(tid) & 0x7f];
-}
+static const std::vector<size_t> tid_size_table(get_tid_size_table());
 
-io_type_t::io_type_t(tid_t tid)
-: size(tid_to_size(tid)), tid(tid){
+io_type_t::io_type_t(tid_t tid):
+    size(tid_size_table[size_t(tid) & 0x7f]), tid(tid)
+{
     /* NOP */
 }
 
-io_type_t::io_type_t(size_t size)
-: size(size), tid(CUSTOM_TYPE){
+io_type_t::io_type_t(size_t size):
+    size(size), tid(CUSTOM_TYPE)
+{
     /* NOP */
 }
