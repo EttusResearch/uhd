@@ -141,15 +141,17 @@ public:
 
     /*!
      * Get the current time in the usrp time registers.
+     * \param mboard which motherboard to query
      * \return a timespec representing current usrp time
      */
-    virtual time_spec_t get_time_now(void) = 0;
+    virtual time_spec_t get_time_now(size_t mboard = 0) = 0;
 
     /*!
      * Get the time when the last pps pulse occured.
+     * \param mboard which motherboard to query
      * \return a timespec representing the last pps
      */
-    virtual time_spec_t get_time_last_pps(void) = 0;
+    virtual time_spec_t get_time_last_pps(size_t mboard = 0) = 0;
 
     /*!
      * Sets the time registers on the usrp immediately.
