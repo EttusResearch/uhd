@@ -66,6 +66,8 @@ static pred_table_type get_pred_unpack_table(void){
     return table;
 }
 
+static const pred_table_type pred_unpack_table(get_pred_unpack_table());
+
 ########################################################################
 #def gen_code($XE_MACRO, $suffix)
 ########################################################################
@@ -168,7 +170,6 @@ void vrt::if_hdr_unpack_$(suffix)(
     //if_packet_info.sob = bool(vrt_hdr_word & $hex(0x1 << 25)); //not implemented
     //if_packet_info.eob = bool(vrt_hdr_word & $hex(0x1 << 24)); //not implemented
 
-    static const pred_table_type pred_unpack_table(get_pred_unpack_table());
     const pred_type pred = pred_unpack_table[pred_table_index(vrt_hdr_word)];
 
     switch(pred){

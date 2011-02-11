@@ -22,6 +22,7 @@
 #include <boost/cstdint.hpp>
 #include <stdexcept>
 #include <complex>
+#include <vector>
 
 using namespace uhd;
 
@@ -66,14 +67,18 @@ otw_type_t::otw_type_t(void):
 /***********************************************************************
  * io type
  **********************************************************************/
+static std::vector<size_t> get_tid_size_table(void){
+    std::vector<size_t> table(128, 0);
+    table[size_t(io_type_t::COMPLEX_FLOAT64)] = sizeof(std::complex<double>);
+    table[size_t(io_type_t::COMPLEX_FLOAT32)] = sizeof(std::complex<float>);
+    table[size_t(io_type_t::COMPLEX_INT16)]   = sizeof(std::complex<boost::int16_t>);
+    table[size_t(io_type_t::COMPLEX_INT8)]    = sizeof(std::complex<boost::int8_t>);
+    return table;
+}
+
 static size_t tid_to_size(io_type_t::tid_t tid){
-    switch(tid){
-    case io_type_t::COMPLEX_FLOAT64: return sizeof(std::complex<double>);
-    case io_type_t::COMPLEX_FLOAT32: return sizeof(std::complex<float>);
-    case io_type_t::COMPLEX_INT16:   return sizeof(std::complex<boost::int16_t>);
-    case io_type_t::COMPLEX_INT8:    return sizeof(std::complex<boost::int8_t>);
-    default: throw std::runtime_error("unknown io type tid");
-    }
+    static const std::vector<size_t> size_table(get_tid_size_table());
+    return size_table[size_t(tid) & 0x7f];
 }
 
 io_type_t::io_type_t(tid_t tid)
