@@ -24,9 +24,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <iostream>
-#include <list>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -369,6 +367,19 @@ static UHD_INLINE bool handle_msg_packet(
     return true;
 }
 
+class alignment_indexes{
+public:
+    void reset(size_t len){_indexes = (1 << len) - 1;}
+    size_t front(void){ //TODO replace with look-up table
+        size_t index = 0;
+        while ((_indexes & (1 << index)) == 0) index++;
+        return index;
+    }
+    void remove(size_t index){_indexes &= ~(1 << index);}
+    bool empty(void){return _indexes == 0;}
+private: size_t _indexes;
+};
+
 UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     vrt_packet_handler::managed_recv_buffs_t &buffs
 ){
@@ -383,14 +394,13 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     //-------------------- begin alignment logic ---------------------//
     boost::system_time exit_time = boost::get_system_time() + to_time_dur(recv_timeout);
     managed_recv_buffer::sptr buff_tmp;
-    std::list<size_t> _all_indexes, indexes_to_do;
-    for (size_t i = 0; i < buffs.size(); i++) _all_indexes.push_back(i);
+    alignment_indexes indexes_to_do;
     bool clear, msg;
     time_spec_t expected_time;
 
     //respond to a clear by starting from scratch
     got_clear:
-    indexes_to_do = _all_indexes;
+    indexes_to_do.reset(buffs.size());
     clear = false;
 
     //do an initial pop to load an initial sequence id
@@ -401,10 +411,10 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     if (clear) goto got_clear;
     buffs[index] = buff_tmp;
     if (msg) return handle_msg_packet(buffs, index);
-    indexes_to_do.pop_front();
+    indexes_to_do.remove(index);
 
     //get an aligned set of elements from the buffers:
-    while(indexes_to_do.size() != 0){
+    while(not indexes_to_do.empty()){
 
         //pop an element off for this index
         index = indexes_to_do.front();
@@ -419,25 +429,22 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
         //if the sequence id matches:
         //  remove this index from the list and continue
         if (this_time == expected_time){
-            indexes_to_do.pop_front();
-            continue;
-        }
-
-        //if the sequence id is older:
-        //  continue with the same index to try again
-        else if (this_time < expected_time){
-            continue;
+            indexes_to_do.remove(index);
         }
 
         //if the sequence id is newer:
         //  use the new expected time for comparison
         //  add all other indexes back into the list
-        else{
+        else if (this_time > expected_time){
             expected_time = this_time;
-            indexes_to_do = _all_indexes;
+            indexes_to_do.reset(buffs.size());
             indexes_to_do.remove(index);
-            continue;
         }
+
+        //if the sequence id is older:
+        //  continue with the same index to try again
+        //else if (this_time < expected_time)...
+
     }
     return true;
     //-------------------- end alignment logic -----------------------//
