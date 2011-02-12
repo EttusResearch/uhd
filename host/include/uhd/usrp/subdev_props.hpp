@@ -53,11 +53,9 @@ namespace uhd{ namespace usrp{
         SUBDEV_PROP_FREQ_RANGE,         //ro, freq_range_t
         SUBDEV_PROP_ANTENNA,            //rw, std::string
         SUBDEV_PROP_ANTENNA_NAMES,      //ro, prop_names_t
-        SUBDEV_PROP_LO_LOCKED,          //ro, bool //TODO deprecate for sensors
         SUBDEV_PROP_CONNECTION,         //ro, subdev_conn_t
         SUBDEV_PROP_ENABLED,            //rw, bool
         SUBDEV_PROP_USE_LO_OFFSET,      //ro, bool
-        SUBDEV_PROP_RSSI,               //ro, double //TODO deprecate for sensors
         SUBDEV_PROP_BANDWIDTH           //rw, double
     };
 

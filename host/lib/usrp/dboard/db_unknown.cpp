@@ -154,10 +154,6 @@ void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_LOCKED:
-        val = true; //there is no LO, so it must be true!
-        return;
-
     case SUBDEV_PROP_BANDWIDTH:
         val = 0.0;
         return;
@@ -254,10 +250,6 @@ void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
-        return;
-
-    case SUBDEV_PROP_LO_LOCKED:
-        val = true; //there is no LO, so it must be true!
         return;
 
     case SUBDEV_PROP_BANDWIDTH:

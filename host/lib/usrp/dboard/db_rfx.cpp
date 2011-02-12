@@ -40,6 +40,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -451,8 +452,13 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_LOCKED:
-        val = this->get_locked(dboard_iface::UNIT_RX);
+    case SUBDEV_PROP_SENSOR:
+        UHD_ASSERT_THROW(key.name == "lo_locked");
+        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
+        return;
+
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = prop_names_t(1, "lo_locked");
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
@@ -548,8 +554,13 @@ void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = true;
         return;
 
-    case SUBDEV_PROP_LO_LOCKED:
-        val = this->get_locked(dboard_iface::UNIT_TX);
+    case SUBDEV_PROP_SENSOR:
+        UHD_ASSERT_THROW(key.name == "lo_locked");
+        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_TX), "locked", "unlocked");
+        return;
+
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = prop_names_t(1, "lo_locked");
         return;
 
     case SUBDEV_PROP_BANDWIDTH:

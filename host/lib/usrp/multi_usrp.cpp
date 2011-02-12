@@ -300,20 +300,12 @@ public:
         return _rx_subdev(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
     }
 
-    bool get_rx_lo_locked(size_t chan){
-        return _rx_subdev(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
-    }
-
     void set_rx_bandwidth(double bandwidth, size_t chan){
         _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH] = bandwidth;
     }
 
     double get_rx_bandwidth(size_t chan){
         return _rx_subdev(chan)[SUBDEV_PROP_BANDWIDTH].as<double>();
-    }
-
-    double read_rssi(size_t chan){
-        return _rx_subdev(chan)[SUBDEV_PROP_RSSI].as<double>();
     }
 
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
@@ -404,10 +396,6 @@ public:
 
     std::vector<std::string> get_tx_antennas(size_t chan){
         return _tx_subdev(chan)[SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>();
-    }
-
-    bool get_tx_lo_locked(size_t chan){
-        return _tx_subdev(chan)[SUBDEV_PROP_LO_LOCKED].as<bool>();
     }
 
     void set_tx_bandwidth(double bandwidth, size_t chan){

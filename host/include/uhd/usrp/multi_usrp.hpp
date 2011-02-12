@@ -28,6 +28,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
+#include <boost/lexical_cast.hpp> //needed until deprecated routines removed
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -393,7 +394,9 @@ public:
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
-    virtual bool get_rx_lo_locked(size_t chan = 0) = 0;
+    UHD_DEPRECATED bool get_rx_lo_locked(size_t chan = 0){
+        return this->get_rx_sensor("lo_locked", chan).value == "true";
+    }
 
     /*!
      * Set the RX bandwidth on the subdevice.
@@ -415,7 +418,9 @@ public:
      * \return the rssi in dB
      * \throw exception if RSSI readback not supported
      */
-    virtual double read_rssi(size_t chan = 0) = 0;
+    UHD_DEPRECATED double read_rssi(size_t chan = 0){
+        return boost::lexical_cast<double>(this->get_rx_sensor("rssi", chan).value);
+    }
 
     /*!
      * Get the dboard interface object for the RX subdevice.
@@ -587,7 +592,9 @@ public:
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
-    virtual bool get_tx_lo_locked(size_t chan = 0) = 0;
+    UHD_DEPRECATED bool get_tx_lo_locked(size_t chan = 0){
+        return this->get_tx_sensor("lo_locked", chan).value == "true";
+    }
 
     /*!
      * Set the TX bandwidth on the subdevice.
