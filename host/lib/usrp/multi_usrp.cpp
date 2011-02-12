@@ -214,6 +214,14 @@ public:
         return (*_dev)[DEVICE_PROP_MBOARD_NAMES].as<prop_names_t>().size();
     }
 
+    sensor_value_t get_mboard_sensor(const std::string &name, size_t mboard){
+        return _mboard(mboard)[named_prop_t(MBOARD_PROP_SENSOR, name)].as<sensor_value_t>();
+    }
+
+    std::vector<std::string> get_mboard_sensor_names(size_t mboard){
+        return _mboard(mboard)[MBOARD_PROP_SENSOR_NAMES].as<prop_names_t>();
+    }
+
     /*******************************************************************
      * RX methods
      ******************************************************************/
@@ -312,6 +320,14 @@ public:
         return _rx_dboard(chan)[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
     }
 
+    sensor_value_t get_rx_sensor(const std::string &name, size_t chan){
+        return _rx_subdev(chan)[named_prop_t(SUBDEV_PROP_SENSOR, name)].as<sensor_value_t>();
+    }
+
+    std::vector<std::string> get_rx_sensor_names(size_t chan){
+        return _rx_subdev(chan)[SUBDEV_PROP_SENSOR_NAMES].as<prop_names_t>();
+    }
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -404,6 +420,14 @@ public:
 
     dboard_iface::sptr get_tx_dboard_iface(size_t chan){
         return _tx_dboard(chan)[DBOARD_PROP_DBOARD_IFACE].as<dboard_iface::sptr>();
+    }
+
+    sensor_value_t get_tx_sensor(const std::string &name, size_t chan){
+        return _tx_subdev(chan)[named_prop_t(SUBDEV_PROP_SENSOR, name)].as<sensor_value_t>();
+    }
+
+    std::vector<std::string> get_tx_sensor_names(size_t chan){
+        return _tx_subdev(chan)[SUBDEV_PROP_SENSOR_NAMES].as<prop_names_t>();
     }
 
 private:
