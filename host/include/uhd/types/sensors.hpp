@@ -37,12 +37,6 @@ namespace uhd{
      */
     struct UHD_API sensor_value_t{
 
-        //! typedef for the signed integer type
-        typedef signed int_type;
-
-        //! typedef for the real number type
-        typedef double real_type;
-
         /*!
          * Create a sensor value from a boolean.
          * \param name the name of the sensor
@@ -66,7 +60,7 @@ namespace uhd{
          */
         sensor_value_t(
             const std::string &name,
-            int_type value,
+            signed value,
             const std::string &unit,
             const std::string &formatter = "%d"
         );
@@ -80,7 +74,7 @@ namespace uhd{
          */
         sensor_value_t(
             const std::string &name,
-            real_type value,
+            double value,
             const std::string &unit,
             const std::string &formatter = "%f"
         );
@@ -96,6 +90,15 @@ namespace uhd{
             const std::string &value,
             const std::string &unit
         );
+
+        //! convert the sensor value to a boolean
+        bool to_bool(void) const;
+
+        //! convert the sensor value to an integer
+        signed to_int(void) const;
+
+        //! convert the sensor value to real number
+        double to_real(void) const;
 
         //! The name of the sensor value
         const std::string name;
