@@ -42,21 +42,23 @@ namespace uhd{ namespace usrp{
      * Possible device subdev properties
      */
     enum subdev_prop_t{
-        SUBDEV_PROP_NAME              = 'n', //ro, std::string
-        SUBDEV_PROP_OTHERS            = 'o', //ro, prop_names_t
-        SUBDEV_PROP_GAIN              = 'g', //rw, double
-        SUBDEV_PROP_GAIN_RANGE        = 'r', //ro, gain_range_t
-        SUBDEV_PROP_GAIN_NAMES        = 'G', //ro, prop_names_t
-        SUBDEV_PROP_FREQ              = 'f', //rw, double
-        SUBDEV_PROP_FREQ_RANGE        = 'F', //ro, freq_range_t
-        SUBDEV_PROP_ANTENNA           = 'a', //rw, std::string
-        SUBDEV_PROP_ANTENNA_NAMES     = 'A', //ro, prop_names_t
-        SUBDEV_PROP_LO_LOCKED         = 'L', //ro, bool
-        SUBDEV_PROP_CONNECTION        = 'c', //ro, subdev_conn_t
-        SUBDEV_PROP_ENABLED           = 'e', //rw, bool
-        SUBDEV_PROP_USE_LO_OFFSET     = 'l', //ro, bool
-        SUBDEV_PROP_RSSI              = 'R', //ro, double
-        SUBDEV_PROP_BANDWIDTH         = 'B'  //rw, double
+        SUBDEV_PROP_NAME,               //ro, std::string
+        SUBDEV_PROP_OTHERS,             //ro, prop_names_t
+        SUBDEV_PROP_SENSOR,             //ro, sensor_value_t
+        SUBDEV_PROP_SENSOR_NAMES,       //ro, prop_names_t
+        SUBDEV_PROP_GAIN,               //rw, double
+        SUBDEV_PROP_GAIN_RANGE,         //ro, gain_range_t
+        SUBDEV_PROP_GAIN_NAMES,         //ro, prop_names_t
+        SUBDEV_PROP_FREQ,               //rw, double
+        SUBDEV_PROP_FREQ_RANGE,         //ro, freq_range_t
+        SUBDEV_PROP_ANTENNA,            //rw, std::string
+        SUBDEV_PROP_ANTENNA_NAMES,      //ro, prop_names_t
+        SUBDEV_PROP_LO_LOCKED,          //ro, bool //TODO deprecate for sensors
+        SUBDEV_PROP_CONNECTION,         //ro, subdev_conn_t
+        SUBDEV_PROP_ENABLED,            //rw, bool
+        SUBDEV_PROP_USE_LO_OFFSET,      //ro, bool
+        SUBDEV_PROP_RSSI,               //ro, double //TODO deprecate for sensors
+        SUBDEV_PROP_BANDWIDTH           //rw, double
     };
 
 }} //namespace
