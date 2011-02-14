@@ -37,21 +37,64 @@ static const size_t alignment_padding = 512;
 /***********************************************************************
  * Helper struct to associate an offset with a buffer
  **********************************************************************/
-class offset_send_buffer{
-public:
-    typedef boost::shared_ptr<offset_send_buffer> sptr;
+struct offset_send_buffer{
+    offset_send_buffer(void){
+        /* NOP */
+    }
 
-    static sptr make(managed_send_buffer::sptr buff, size_t offset = 0){
-        return sptr(new offset_send_buffer(buff, offset));
+    offset_send_buffer(managed_send_buffer::sptr buff, size_t offset = 0):
+        buff(buff), offset(offset)
+    {
+        /* NOP */
     }
 
     //member variables
     managed_send_buffer::sptr buff;
     size_t offset; /* in bytes */
+};
+
+/***********************************************************************
+ * Reusable managed send buffer to handle aligned commits
+ **********************************************************************/
+class offset_managed_send_buffer : public managed_send_buffer{
+public:
+    typedef boost::function<void(offset_send_buffer&, offset_send_buffer&, size_t)> commit_cb_type;
+    offset_managed_send_buffer(const commit_cb_type &commit_cb):
+        _expired(true), _commit_cb(commit_cb)
+    {
+        /* NOP */
+    }
+
+    bool expired(void){return _expired;}
+
+    void commit(size_t size){
+        if (_expired) return;
+        this->_commit_cb(_curr_buff, _next_buff, size);
+        _expired = true;
+    }
+
+    sptr get_new(
+        offset_send_buffer &curr_buff,
+        offset_send_buffer &next_buff
+    ){
+        _expired = false;
+        _curr_buff = curr_buff;
+        _next_buff = next_buff;
+        return sptr(this, &offset_managed_send_buffer::fake_deleter);
+    }
 
 private:
-    offset_send_buffer(managed_send_buffer::sptr buff, size_t offset):
-        buff(buff), offset(offset){/* NOP */}
+    static void fake_deleter(void */*obj*/){
+        //dont do anything and assume the bastard committed it
+        //static_cast<offset_managed_send_buffer *>(obj)->commit(0);
+    }
+
+    void  *get_buff(void) const{return _curr_buff.buff->cast<char *>() + _curr_buff.offset;}
+    size_t get_size(void) const{return _curr_buff.buff->size()         - _curr_buff.offset;}
+
+    bool _expired;
+    offset_send_buffer _curr_buff, _next_buff;
+    commit_cb_type _commit_cb;
 };
 
 /***********************************************************************
@@ -62,10 +105,11 @@ struct usrp1_impl::io_impl{
         data_transport(data_transport),
         underflow_poll_samp_count(0),
         overflow_poll_samp_count(0),
-        curr_buff_committed(true),
-        curr_buff(offset_send_buffer::make(data_transport->get_send_buff()))
+        curr_buff(offset_send_buffer(data_transport->get_send_buff())),
+        omsb(boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, _1, _2, _3))
     {
-        /* NOP */
+        get_recv_buffs_fcn = boost::bind(&usrp1_impl::io_impl::get_recv_buffs, this, _1);
+        get_send_buffs_fcn = boost::bind(&usrp1_impl::io_impl::get_send_buffs, this, _1);
     }
 
     ~io_impl(void){
@@ -73,6 +117,13 @@ struct usrp1_impl::io_impl{
     }
 
     zero_copy_if::sptr data_transport;
+
+    //timeouts set on calls to recv/send (passed into get buffs methods)
+    double recv_timeout, send_timeout;
+
+    //bound callbacks for get buffs (bound once here, not in fast-path)
+    vrt_packet_handler::get_recv_buffs_t get_recv_buffs_fcn;
+    vrt_packet_handler::get_send_buffs_t get_send_buffs_fcn;
 
     //state management for the vrt packet handler code
     vrt_packet_handler::recv_state packet_handler_recv_state;
@@ -86,11 +137,16 @@ struct usrp1_impl::io_impl{
     //all of this to ensure only aligned lengths are committed
     //NOTE: you must commit before getting a new buffer
     //since the vrt packet handler obeys this, we are ok
-    bool curr_buff_committed;
-    offset_send_buffer::sptr curr_buff;
-    void commit_send_buff(offset_send_buffer::sptr, offset_send_buffer::sptr, size_t);
+    offset_send_buffer curr_buff;
+    offset_managed_send_buffer omsb;
+    void commit_send_buff(offset_send_buffer&, offset_send_buffer&, size_t);
     void flush_send_buff(void);
-    bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &, double);
+    bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &);
+    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs){
+        UHD_ASSERT_THROW(buffs.size() == 1);
+        buffs[0] = data_transport->get_recv_buff(recv_timeout);
+        return buffs[0].get() != NULL;
+    }
 };
 
 /*!
@@ -99,12 +155,12 @@ struct usrp1_impl::io_impl{
  * Commit the current buffer at multiples of alignment.
  */
 void usrp1_impl::io_impl::commit_send_buff(
-    offset_send_buffer::sptr curr,
-    offset_send_buffer::sptr next,
+    offset_send_buffer &curr,
+    offset_send_buffer &next,
     size_t num_bytes
 ){
     //total number of bytes now in the current buffer
-    size_t bytes_in_curr_buffer = curr->offset + num_bytes;
+    size_t bytes_in_curr_buffer = curr.offset + num_bytes;
 
     //calculate how many to commit and remainder
     size_t num_bytes_remaining = bytes_in_curr_buffer % alignment_padding;
@@ -112,17 +168,16 @@ void usrp1_impl::io_impl::commit_send_buff(
 
     //copy the remainder into the next buffer
     std::memcpy(
-        next->buff->cast<char *>() + next->offset,
-        curr->buff->cast<char *>() + num_bytes_to_commit,
+        next.buff->cast<char *>() + next.offset,
+        curr.buff->cast<char *>() + num_bytes_to_commit,
         num_bytes_remaining
     );
 
     //update the offset into the next buffer
-    next->offset += num_bytes_remaining;
+    next.offset += num_bytes_remaining;
 
     //commit the current buffer
-    curr->buff->commit(num_bytes_to_commit);
-    curr_buff_committed = true;
+    curr.buff->commit(num_bytes_to_commit);
 }
 
 /*!
@@ -130,14 +185,14 @@ void usrp1_impl::io_impl::commit_send_buff(
  */
 void usrp1_impl::io_impl::flush_send_buff(void){
     //calculate the number of bytes to alignment
-    size_t bytes_to_pad = (-1*curr_buff->offset)%alignment_padding;
+    size_t bytes_to_pad = (-1*curr_buff.offset)%alignment_padding;
 
     //send at least alignment_padding to guarantee zeros are sent
     if (bytes_to_pad == 0) bytes_to_pad = alignment_padding;
 
     //get the buffer, clear, and commit (really current buffer)
     vrt_packet_handler::managed_send_buffs_t buffs(1);
-    if (this->get_send_buffs(buffs, 0.1)){
+    if (this->get_send_buffs(buffs)){
         std::memset(buffs[0]->cast<void *>(), 0, bytes_to_pad);
         buffs[0]->commit(bytes_to_pad);
     }
@@ -148,25 +203,19 @@ void usrp1_impl::io_impl::flush_send_buff(void){
  * Always grab the next send buffer so we can timeout here.
  */
 bool usrp1_impl::io_impl::get_send_buffs(
-    vrt_packet_handler::managed_send_buffs_t &buffs, double timeout
+    vrt_packet_handler::managed_send_buffs_t &buffs
 ){
-    UHD_ASSERT_THROW(curr_buff_committed and buffs.size() == 1);
+    UHD_ASSERT_THROW(omsb.expired() and buffs.size() == 1);
 
     //try to get a new managed buffer with timeout
-    offset_send_buffer::sptr next_buff(offset_send_buffer::make(data_transport->get_send_buff(timeout)));
-    if (not next_buff->buff.get()) return false; /* propagate timeout here */
+    offset_send_buffer next_buff(data_transport->get_send_buff(send_timeout));
+    if (not next_buff.buff.get()) return false; /* propagate timeout here */
 
-    //calculate the buffer pointer and size given the offset
-    //references to the buffers are held in the bound function
-    buffs[0] = managed_send_buffer::make_safe(
-        curr_buff->buff->cast<char *>() + curr_buff->offset,
-        curr_buff->buff->size()         - curr_buff->offset,
-        boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, curr_buff, next_buff, _1)
-    );
+    //make a new managed buffer with the offset buffs
+    buffs[0] = omsb.get_new(curr_buff, next_buff);
 
     //store the next buffer for the next call
     curr_buff = next_buff;
-    curr_buff_committed = false;
 
     return true;
 }
@@ -226,6 +275,7 @@ size_t usrp1_impl::send(
 ){
     if (_soft_time_ctrl->send_pre(metadata, timeout)) return num_samps;
 
+    _io_impl->send_timeout = timeout;
     size_t num_samps_sent = vrt_packet_handler::send(
         _io_impl->packet_handler_send_state,       //last state of the send handler
         buffs, num_samps,                          //buffer to fill
@@ -233,7 +283,7 @@ size_t usrp1_impl::send(
         io_type, _tx_otw_type,                     //input and output types to convert
         _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
         &usrp1_bs_vrt_packer,
-        boost::bind(&usrp1_impl::io_impl::get_send_buffs, _io_impl.get(), _1, timeout),
+        _io_impl->get_send_buffs_fcn,
         get_max_send_samps_per_packet(),
         0,                                         //vrt header offset
         _tx_subdev_spec.size()                     //num channels
@@ -281,15 +331,6 @@ static void usrp1_bs_vrt_unpacker(
     if_packet_info.has_tlr = false;
 }
 
-static bool get_recv_buffs(
-    zero_copy_if::sptr zc_if, double timeout,
-    vrt_packet_handler::managed_recv_buffs_t &buffs
-){
-    UHD_ASSERT_THROW(buffs.size() == 1);
-    buffs[0] = zc_if->get_recv_buff(timeout);
-    return buffs[0].get() != NULL;
-}
-
 size_t usrp1_impl::get_max_recv_samps_per_packet(void) const {
     return _data_transport->get_recv_frame_size()
         / _rx_otw_type.get_sample_size()
@@ -302,6 +343,7 @@ size_t usrp1_impl::recv(
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
+    _io_impl->recv_timeout = timeout;
     size_t num_samps_recvd = vrt_packet_handler::recv(
         _io_impl->packet_handler_recv_state,       //last state of the recv handler
         buffs, num_samps,                          //buffer to fill
@@ -309,7 +351,7 @@ size_t usrp1_impl::recv(
         io_type, _rx_otw_type,                     //input and output types to convert
         _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
         &usrp1_bs_vrt_unpacker,
-        boost::bind(&get_recv_buffs, _data_transport, timeout, _1),
+        _io_impl->get_recv_buffs_fcn,
         &vrt_packet_handler::handle_overflow_nop,
         0,                                         //vrt header offset
         _rx_subdev_spec.size()                     //num channels
