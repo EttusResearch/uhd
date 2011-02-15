@@ -374,7 +374,8 @@ module u2_core
       .status(status), .sys_int_o(buffer_int), .debug(router_debug),
 
       .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
-      .dsp_inp_data({wr1_flags, wr1_dat}), .dsp_inp_valid(wr1_ready_i), .dsp_inp_ready(wr1_ready_o),
+      .dsp0_inp_data({wr1_flags, wr1_dat}), .dsp0_inp_valid(wr1_ready_i), .dsp0_inp_ready(wr1_ready_o),
+      .dsp1_inp_data({wr3_flags, wr1_dat}), .dsp1_inp_valid(wr3_ready_i), .dsp1_inp_ready(wr3_ready_o),
       .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
       .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
 

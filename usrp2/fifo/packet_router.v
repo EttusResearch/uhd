@@ -33,7 +33,8 @@ module packet_router
 
         // Input Interfaces (in to router)
         input [35:0] ser_inp_data, input ser_inp_valid, output ser_inp_ready,
-        input [35:0] dsp_inp_data, input dsp_inp_valid, output dsp_inp_ready,
+        input [35:0] dsp0_inp_data, input dsp0_inp_valid, output dsp0_inp_ready,
+        input [35:0] dsp1_inp_data, input dsp1_inp_valid, output dsp1_inp_ready,
         input [35:0] eth_inp_data, input eth_inp_valid, output eth_inp_ready,
         input [35:0] err_inp_data, input err_inp_valid, output err_inp_ready,
 
@@ -83,11 +84,11 @@ module packet_router
     );
 
     //setting register to program the UDP data ports
-    wire [15:0] dsp0_udp_port, dsp1_udp_port;
-    setting_reg #(.my_addr(CTRL_BASE+2)) sreg_data_ports(
+    wire [15:0] dsp_udp_port;
+    setting_reg #(.my_addr(CTRL_BASE+2), .width(16)) sreg_data_ports(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out({dsp1_udp_port, dsp0_udp_port}),.changed()
+        .out(dsp_udp_port),.changed()
     );
 
     //assign status output signals
@@ -172,9 +173,9 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
 
     //streaming signals from the dsp framer to the combiner
-    wire [35:0] dsp_frm_data;
-    wire        dsp_frm_valid;
-    wire        dsp_frm_ready;
+    wire [35:0] dsp0_frm_data, dsp1_frm_data;
+    wire        dsp0_frm_valid, dsp1_frm_valid;
+    wire        dsp0_frm_ready, dsp1_frm_ready;
 
     //dummy signals to join the the muxes below
     wire [35:0] _combiner0_data, _combiner1_data;
@@ -183,14 +184,14 @@ module packet_router
 
     fifo36_mux _com_output_combiner0(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(dsp_frm_data), .src0_rdy_i(dsp_frm_valid), .dst0_rdy_o(dsp_frm_ready),
+        .data0_i(dsp0_frm_data), .src0_rdy_i(dsp0_frm_valid), .dst0_rdy_o(dsp0_frm_ready),
         .data1_i(err_inp_data), .src1_rdy_i(err_inp_valid), .dst1_rdy_o(err_inp_ready),
         .data_o(_combiner0_data), .src_rdy_o(_combiner0_valid), .dst_rdy_i(_combiner0_ready)
     );
 
     fifo36_mux _com_output_combiner1(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(32'b0), .src0_rdy_i(1'b0), .dst0_rdy_o(), //mux out from dsp1 can go here
+        .data0_i(dsp1_frm_data), .src0_rdy_i(dsp1_frm_valid), .dst0_rdy_o(dsp1_frm_ready),
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
         .data_o(_combiner1_data), .src_rdy_o(_combiner1_valid), .dst_rdy_i(_combiner1_ready)
     );
@@ -364,7 +365,7 @@ module packet_router
                     end
 
                     //UDP data port and VRT:
-                    else if ((com_insp_dregs_udp_dst_port == dsp0_udp_port) && (com_insp_dregs_vrt_size != 16'h0)) begin
+                    else if ((com_insp_dregs_udp_dst_port == dsp_udp_port) && (com_insp_dregs_vrt_size != 16'h0)) begin
                         com_insp_dest <= COM_INSP_DEST_DSP;
                         com_insp_dreg_count <= COM_INSP_DREGS_DSP_OFFSET;
                     end
@@ -448,11 +449,16 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
     // DSP input framer
     ////////////////////////////////////////////////////////////////////
-
     dsp_framer36 #(.BUF_SIZE(BUF_SIZE)) dsp0_framer36(
         .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
-        .inp_data(dsp_inp_data), .inp_valid(dsp_inp_valid), .inp_ready(dsp_inp_ready),
-        .out_data(dsp_frm_data), .out_valid(dsp_frm_valid), .out_ready(dsp_frm_ready)
+        .inp_data(dsp0_inp_data), .inp_valid(dsp0_inp_valid), .inp_ready(dsp0_inp_ready),
+        .out_data(dsp0_frm_data), .out_valid(dsp0_frm_valid), .out_ready(dsp0_frm_ready)
+    );
+
+    dsp_framer36 #(.BUF_SIZE(BUF_SIZE)) dsp1_framer36(
+        .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
+        .inp_data(dsp1_inp_data), .inp_valid(dsp1_inp_valid), .inp_ready(dsp1_inp_ready),
+        .out_data(dsp1_frm_data), .out_valid(dsp1_frm_valid), .out_ready(dsp1_frm_ready)
     );
 
     ////////////////////////////////////////////////////////////////////
@@ -508,7 +514,7 @@ module packet_router
 
     assign debug = {
         //inputs to the router (8)
-        dsp_inp_ready, dsp_inp_valid,
+        dsp0_inp_ready, dsp0_inp_valid,
         ser_inp_ready, ser_inp_valid,
         eth_inp_ready, eth_inp_valid,
         cpu_inp_ready, cpu_inp_valid,
