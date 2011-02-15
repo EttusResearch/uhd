@@ -137,15 +137,19 @@ module u2_core
    input [3:0] clock_divider
    );
 
-   localparam SR_BUF_POOL = 64;   // Uses 1 reg
+   localparam SR_MISC     =  0;   // Uses 9 regs
+   localparam SR_BUF_POOL = 64;   // Uses 4 regs
    localparam SR_UDP_SM   = 96;   // 64 regs
-   localparam SR_RX_DSP   = 160;  // 16
-   localparam SR_RX_CTRL  = 176;  // 16
+   localparam SR_RX_DSP0  = 160;  // 16
+   localparam SR_RX_CTRL0 = 176;  // 16
    localparam SR_TIME64   = 192;  //  3
    localparam SR_SIMTIMER = 198;  //  2
    localparam SR_TX_DSP   = 208;  // 16
    localparam SR_TX_CTRL  = 224;  // 16
-
+   localparam SR_RX_DSP1  = 240;
+   localparam SR_RX_CTRL1 = 32;
+   
+   
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
    localparam DSP_TX_FIFOSIZE = 10;
@@ -338,7 +342,7 @@ module u2_core
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
 	     .flush_icache(flush_icache));
    
-   setting_reg #(.my_addr(7)) sr_icache (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+7)) sr_icache (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 					 .in(set_data),.out(),.changed(flush_icache));
 
    // /////////////////////////////////////////////////////////////////////////
@@ -505,13 +509,13 @@ module u2_core
    wire 	 phy_reset;
    assign 	 PHY_RESETn = ~phy_reset;
    
-   setting_reg #(.my_addr(0),.width(8)) sr_clk (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+0),.width(8)) sr_clk (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),
 				      .in(set_data),.out(clock_outs),.changed());
-   setting_reg #(.my_addr(1),.width(8)) sr_ser (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+1),.width(8)) sr_ser (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(serdes_outs),.changed());
-   setting_reg #(.my_addr(2),.width(8)) sr_adc (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+2),.width(8)) sr_adc (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(adc_outs),.changed());
-   setting_reg #(.my_addr(4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(phy_reset),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
@@ -523,10 +527,10 @@ module u2_core
    wire [7:0] 	 led_src, led_sw;
    wire [7:0] 	 led_hw = {run_tx, run_rx, clk_status, serdes_link_up, 1'b0};
    
-   setting_reg #(.my_addr(3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
 
-   setting_reg #(.my_addr(8),.width(8), .at_reset(8'b0001_1110)) 
+   setting_reg #(.my_addr(SR_MISC+8),.width(8), .at_reset(8'b0001_1110)) 
    sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
@@ -609,7 +613,7 @@ module u2_core
    wire [99:0] 	 rx_data;
    wire [35:0] 	 rx1_data;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
+   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
@@ -619,12 +623,12 @@ module u2_core
    wire [31:0] 	 vrc_debug;
    wire 	 clear_rx;
    
-   setting_reg #(.my_addr(SR_RX_CTRL+3)) sr_clear
+   setting_reg #(.my_addr(SR_RX_CTRL0+3)) sr_clear
      (.clk(dsp_clk),.rst(dsp_rst),
       .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
       .out(),.changed(clear_rx));
 
-   vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
+   vita_rx_control #(.BASE(SR_RX_CTRL0), .WIDTH(32)) vita_rx_control
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun),
@@ -634,7 +638,7 @@ module u2_core
 
    wire [3:0] 	 vita_state;
    
-   vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
+   vita_rx_framer #(.BASE(SR_RX_CTRL0), .MAXCHAN(1)) vita_rx_framer
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .sample_fifo_i(rx_data), .sample_fifo_dst_rdy_o(rx_dst_rdy), .sample_fifo_src_rdy_i(rx_src_rdy),
