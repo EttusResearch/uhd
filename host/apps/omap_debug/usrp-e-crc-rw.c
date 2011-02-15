@@ -50,6 +50,22 @@ static u_int32_t chksum_crc32_gentab(void)
 	return 0;
 }
 
+struct timeval delta_time(struct timeval f, struct timeval s)
+{
+	struct timeval d;
+
+	if (f.tv_usec > s.tv_usec) {
+		d.tv_usec = f.tv_usec - s.tv_usec;
+		d.tv_sec = f.tv_sec - s.tv_sec;
+	} else {
+		d.tv_usec = f.tv_usec - s.tv_usec + 1e6;
+		d.tv_sec = f.tv_sec - s.tv_sec - 1;
+	}
+
+	return d;
+}
+
+
 static void *read_thread(void *threadid)
 {
 	int cnt;
@@ -58,8 +74,7 @@ static void *read_thread(void *threadid)
 	unsigned long crc, ck_sum;
 	unsigned int rx_crc, pkt_len, pkt_seq;
 	unsigned long bytes_transfered;
-	float elapsed_seconds, start_f, finish_f;
-	struct timeval start_time, finish_time;
+	struct timeval start_time;
 
 	__u8 *p;
 
@@ -72,7 +87,6 @@ static void *read_thread(void *threadid)
 
 	bytes_transfered = 0;
 	gettimeofday(&start_time, NULL);
-	start_f = (double)start_time.tv_sec + ((double)start_time.tv_usec)*1e-6f;
 
 	while (1) {
 		
@@ -129,20 +143,23 @@ static void *read_thread(void *threadid)
 		bytes_transfered += cnt;
 
 		if (bytes_transfered > (100 * 1000000)) {
+			struct timeval finish_time, d_time;
+			float elapsed_seconds;
+
 			gettimeofday(&finish_time, NULL);
 
-			printf("sec = %f, usec = %f\n", (float)finish_time.tv_sec, (float)finish_time.tv_usec);
+			printf("sec = %ld, usec = %ld\n", finish_time.tv_sec, finish_time.tv_usec);
 
-			finish_f = (double)finish_time.tv_sec + ((double)finish_time.tv_usec) * 1e-6d;
+			d_time = delta_time(finish_time, start_time);
 
-			elapsed_seconds = finish_f - start_f;
-			printf("Start time %f, finish time %f\n", start_f, finish_f);
+			elapsed_seconds = (float)d_time.tv_sec + ((float)d_time.tv_usec * 1e-6f);
+
 			printf("Bytes transfered = %ld, elapsed seconds = %f\n", bytes_transfered, elapsed_seconds);
 			printf("RX data transfer rate = %f K Samples/second\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
-			start_f = finish_f;
+			start_time = finish_time;
 			bytes_transfered = 0;
 		}
 	}	
@@ -153,8 +170,8 @@ static void *write_thread(void *threadid)
 	int i, tx_pkt_cnt, rb_write;
 	int tx_len;
 	unsigned long crc;
-	unsigned long bytes_transfered, elapsed_seconds;
-	struct timeval start_time, finish_time;
+	unsigned long bytes_transfered;
+	struct timeval start_time;
 	__u8 *p;
 
 	printf("Greetings from the write thread!\n");
@@ -205,13 +222,13 @@ static void *write_thread(void *threadid)
 		crc = 0xFFFFFFFF;
 		for (i = 0; i < tx_len-4; i++) {
 			p[i] = i & 0xFF;
-			printf("%X ", p[i]);
+//			printf("%X ", p[i]);
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ p[i]) & 0xFF];
 
 		}
 		*(int *) &p[tx_len-4] = crc;
-		printf("\n crc = %lX\n", crc);
+//		printf("\n crc = %lX\n", crc);
 
 		(*txi)[rb_write].len = tx_len;
 		(*txi)[rb_write].flags = RB_USER;
@@ -223,10 +240,16 @@ static void *write_thread(void *threadid)
 		bytes_transfered += tx_len;
 
 		if (bytes_transfered > (100 * 1000000)) {
-			gettimeofday(&finish_time, NULL);
-			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
+			struct timeval finish_time, d_time;
+			float elapsed_seconds;
 
-			printf("Bytes transfered = %ld, elapsed seconds = %ld\n", bytes_transfered, elapsed_seconds);
+			gettimeofday(&finish_time, NULL);
+
+			d_time = delta_time(finish_time, start_time);
+
+			elapsed_seconds = (float)d_time.tv_sec - ((float)d_time.tv_usec * 1e-6f);
+
+			printf("Bytes transfered = %ld, elapsed seconds = %f\n", bytes_transfered, elapsed_seconds);
 			printf("TX data transfer rate = %f K Samples/second\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
