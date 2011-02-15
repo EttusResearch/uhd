@@ -32,7 +32,7 @@ static u_int32_t chksum_crc32_gentab(void)
 	unsigned long crc, poly;
 	unsigned long i, j;
 
-	poly = 0xEDB88320L;
+	poly = 0x04C11DB7L;
 
 	for (i = 0; i < 256; i++) {
 		crc = i;
@@ -44,6 +44,7 @@ static u_int32_t chksum_crc32_gentab(void)
 			}
 		}
 		crc_tab[i] = crc;
+//		printf("crc_tab[%d] = %X\n", i , crc);
 	}
 
 	return 0;
@@ -54,9 +55,10 @@ static void *read_thread(void *threadid)
 	int cnt;
 	int rx_pkt_cnt, rb_read;
 	int i;
-	unsigned long crc;
-	unsigned int rx_crc;
-	unsigned long bytes_transfered, elapsed_seconds;
+	unsigned long crc, ck_sum;
+	unsigned int rx_crc, pkt_len, pkt_seq;
+	unsigned long bytes_transfered;
+	float elapsed_seconds, start_f, finish_f;
 	struct timeval start_time, finish_time;
 
 	__u8 *p;
@@ -70,6 +72,7 @@ static void *read_thread(void *threadid)
 
 	bytes_transfered = 0;
 	gettimeofday(&start_time, NULL);
+	start_f = (double)start_time.tv_sec + ((double)start_time.tv_usec)*1e-6f;
 
 	while (1) {
 		
@@ -87,16 +90,30 @@ static void *read_thread(void *threadid)
 
 		rx_crc = *(int *) &p[cnt-4];
 		crc = 0xFFFFFFFF;
-		for (i = 0; i < cnt - 4; i+=2) {
-			crc = ((crc >> 8) & 0x00FFFFFF) ^
-				crc_tab[(crc ^ p[i+1]) & 0xFF];
-//printf("idx = %d, data = %X, crc = %X\n", i, p[i+1],crc);
+		ck_sum = 0;
+
+		pkt_len = *(unsigned int *) &p[0];
+		pkt_seq = *(unsigned int *) &p[4];
+
+//		printf("Pkt len = %X, pkt seq = %X, driver len = %X\n", pkt_len, pkt_seq, cnt);
+
+		for (i = 0; i < cnt-4; i++) {
+			ck_sum += p[i];
+
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ p[i]) & 0xFF];
-//printf("idx = %d, data = %X, crc = %X\n", i, p[i],crc);
+//printf("idx = %d, data = %X, crc = %X, ck_sum = %X\n", i, p[i], crc, ck_sum);
+//			crc = ((crc >> 8) & 0x00FFFFFF) ^
+//				crc_tab[(crc ^ p[i+1]) & 0xFF];
+//printf("idx = %d, data = %X, crc = %X\n", i, p[i+1],crc);
 		}
 
 		(*rxi)[rb_read].flags = RB_KERNEL;
+
+
+		if (rx_crc != ck_sum)
+			printf("Ck_sum eror, calc ck_sum = %lX, rx ck_sum = %X\n",
+					ck_sum, rx_crc);
 
 #if 0
 		if (rx_crc != (crc & 0xFFFFFFFF)) {
@@ -113,14 +130,19 @@ static void *read_thread(void *threadid)
 
 		if (bytes_transfered > (100 * 1000000)) {
 			gettimeofday(&finish_time, NULL);
-			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("Bytes transfered = %ld, elapsed seconds = %ld\n", bytes_transfered, elapsed_seconds);
+			printf("sec = %f, usec = %f\n", (float)finish_time.tv_sec, (float)finish_time.tv_usec);
+
+			finish_f = (double)finish_time.tv_sec + ((double)finish_time.tv_usec) * 1e-6d;
+
+			elapsed_seconds = finish_f - start_f;
+			printf("Start time %f, finish time %f\n", start_f, finish_f);
+			printf("Bytes transfered = %ld, elapsed seconds = %f\n", bytes_transfered, elapsed_seconds);
 			printf("RX data transfer rate = %f K Samples/second\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
 
-			start_time = finish_time;
+			start_f = finish_f;
 			bytes_transfered = 0;
 		}
 	}	
@@ -183,12 +205,13 @@ static void *write_thread(void *threadid)
 		crc = 0xFFFFFFFF;
 		for (i = 0; i < tx_len-4; i++) {
 			p[i] = i & 0xFF;
-
+			printf("%X ", p[i]);
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ p[i]) & 0xFF];
 
 		}
 		*(int *) &p[tx_len-4] = crc;
+		printf("\n crc = %lX\n", crc);
 
 		(*txi)[rb_write].len = tx_len;
 		(*txi)[rb_write].flags = RB_USER;
@@ -203,7 +226,7 @@ static void *write_thread(void *threadid)
 			gettimeofday(&finish_time, NULL);
 			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
 
-			printf("Bytes transfered = %d, elapsed seconds = %d\n", bytes_transfered, elapsed_seconds);
+			printf("Bytes transfered = %ld, elapsed seconds = %ld\n", bytes_transfered, elapsed_seconds);
 			printf("TX data transfer rate = %f K Samples/second\n",
 				(float) bytes_transfered / (float) elapsed_seconds / 4000);
 
