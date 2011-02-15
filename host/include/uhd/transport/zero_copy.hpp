@@ -30,7 +30,7 @@ namespace uhd{ namespace transport{
      * Contains a reference to transport-managed memory,
      * and a method to release the memory after reading.
      */
-    class UHD_API managed_recv_buffer : boost::noncopyable{
+    class UHD_API managed_recv_buffer{
     public:
         typedef boost::shared_ptr<managed_recv_buffer> sptr;
         typedef boost::function<void(void)> release_fcn_t;
@@ -81,7 +81,7 @@ namespace uhd{ namespace transport{
      * Contains a reference to transport-managed memory,
      * and a method to commit the memory after writing.
      */
-    class UHD_API managed_send_buffer : boost::noncopyable{
+    class UHD_API managed_send_buffer{
     public:
         typedef boost::shared_ptr<managed_send_buffer> sptr;
         typedef boost::function<void(size_t)> commit_fcn_t;

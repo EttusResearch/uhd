@@ -24,7 +24,7 @@
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <iostream>
-#include <vector>
+#include <list>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -40,20 +40,18 @@ static const size_t DEFAULT_NUM_FRAMES = 32;
  **********************************************************************/
 class udp_zero_copy_asio_mrb : public managed_recv_buffer{
 public:
-    typedef boost::shared_ptr<udp_zero_copy_asio_mrb> sptr;
     typedef boost::function<void(udp_zero_copy_asio_mrb *)> release_cb_type;
 
     udp_zero_copy_asio_mrb(void *mem, const release_cb_type &release_cb):
-        _mem(mem), _release_cb(release_cb){/* NOP */}
+        _mem(mem), _len(0), _release_cb(release_cb){/* NOP */}
 
     void release(void){
-        if (_expired) return;
+        if (_len == 0) return;
         this->_release_cb(this);
-        _expired = true;
+        _len = 0;
     }
 
     sptr get_new(size_t len){
-        _expired = false;
         _len = len;
         return sptr(this, &udp_zero_copy_asio_mrb::fake_deleter);
     }
@@ -68,7 +66,6 @@ private:
     const void *get_buff(void) const{return _mem;}
     size_t get_size(void) const{return _len;}
 
-    bool _expired;
     void *_mem;
     size_t _len;
     release_cb_type _release_cb;
@@ -81,20 +78,18 @@ private:
  **********************************************************************/
 class udp_zero_copy_asio_msb : public managed_send_buffer{
 public:
-    typedef boost::shared_ptr<udp_zero_copy_asio_msb> sptr;
     typedef boost::function<void(udp_zero_copy_asio_msb *, size_t)> commit_cb_type;
 
     udp_zero_copy_asio_msb(void *mem, const commit_cb_type &commit_cb):
-        _mem(mem), _commit_cb(commit_cb){/* NOP */}
+        _mem(mem), _len(0), _commit_cb(commit_cb){/* NOP */}
 
     void commit(size_t len){
-        if (_expired) return;
+        if (_len == 0) return;
         this->_commit_cb(this, len);
-        _expired = true;
+        _len = 0;
     }
 
     sptr get_new(size_t len){
-        _expired = false;
         _len = len;
         return sptr(this, &udp_zero_copy_asio_msb::fake_deleter);
     }
@@ -107,7 +102,6 @@ private:
     void *get_buff(void) const{return _mem;}
     size_t get_size(void) const{return _len;}
 
-    bool _expired;
     void *_mem;
     size_t _len;
     commit_cb_type _commit_cb;
@@ -135,7 +129,8 @@ public:
         _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES))),
         _recv_buffer_pool(buffer_pool::make(_num_recv_frames, _recv_frame_size)),
         _send_buffer_pool(buffer_pool::make(_num_send_frames, _send_frame_size)),
-        _pending_recv_buffs(_num_recv_frames), _pending_send_buffs(_num_send_frames)
+        _pending_recv_buffs(_num_recv_frames),
+        _pending_send_buffs(_num_send_frames)
     {
         //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
@@ -152,20 +147,18 @@ public:
 
         //allocate re-usable managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
-            _mrb_pool.push_back(udp_zero_copy_asio_mrb::sptr(
-                new udp_zero_copy_asio_mrb(_recv_buffer_pool->at(i),
+            _mrb_pool.push_back(udp_zero_copy_asio_mrb(_recv_buffer_pool->at(i),
                 boost::bind(&udp_zero_copy_asio_impl::release, this, _1))
-            ));
-            handle_recv(_mrb_pool.back().get());
+            );
+            handle_recv(&_mrb_pool.back());
         }
 
         //allocate re-usable managed send buffers
         for (size_t i = 0; i < get_num_send_frames(); i++){
-            _msb_pool.push_back(udp_zero_copy_asio_msb::sptr(
-                new udp_zero_copy_asio_msb(_send_buffer_pool->at(i),
+            _msb_pool.push_back(udp_zero_copy_asio_msb(_send_buffer_pool->at(i),
                 boost::bind(&udp_zero_copy_asio_impl::commit, this, _1, _2))
-            ));
-            handle_send(_msb_pool.back().get());
+            );
+            handle_send(&_msb_pool.back());
         }
     }
 
@@ -264,8 +257,8 @@ private:
     buffer_pool::sptr _recv_buffer_pool, _send_buffer_pool;
     bounded_buffer<udp_zero_copy_asio_mrb *> _pending_recv_buffs;
     bounded_buffer<udp_zero_copy_asio_msb *> _pending_send_buffs;
-    std::vector<udp_zero_copy_asio_msb::sptr> _msb_pool;
-    std::vector<udp_zero_copy_asio_mrb::sptr> _mrb_pool;
+    std::list<udp_zero_copy_asio_msb> _msb_pool;
+    std::list<udp_zero_copy_asio_mrb> _mrb_pool;
 
     //asio guts -> socket and service
     asio::io_service        _io_service;
