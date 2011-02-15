@@ -128,12 +128,12 @@ public:
         return _mboard(mboard)[MBOARD_PROP_NAME].as<std::string>();
     }
 
-    time_spec_t get_time_now(void){
-        return _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
+    time_spec_t get_time_now(size_t mboard = 0){
+        return _mboard(mboard)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
     }
 
-    time_spec_t get_time_last_pps(void){
-        return _mboard(0)[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
+    time_spec_t get_time_last_pps(size_t mboard = 0){
+        return _mboard(mboard)[MBOARD_PROP_TIME_PPS].as<time_spec_t>();
     }
 
     void set_time_now(const time_spec_t &time_spec, size_t mboard){
