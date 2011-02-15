@@ -43,7 +43,7 @@ public:
     /*!
      * Create a reference vector from a std::vector container.
      * Therefore: rv[n] == vec[n] and rv.size() == vec.size()
-     * \param range a const reference to an std::vector
+     * \param vec a const reference to an std::vector
      */
     template <typename Vector> ref_vector(const Vector &vec):
         _ptr(T()), _mem(_mem_t(&vec.front())), _size(vec.size())
