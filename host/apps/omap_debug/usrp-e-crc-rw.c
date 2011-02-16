@@ -122,6 +122,7 @@ static void *read_thread(void *threadid)
 			printf("Sequence number check fail, pkt_seq = %ud, prev_seq = %ud\n",
 					pkt_seq, prev_seq);
 		first = 0;
+		prev_seq = pkt_seq;
 
 		for (i = 0; i < cnt-4; i++) {
 			ck_sum += p[i];
