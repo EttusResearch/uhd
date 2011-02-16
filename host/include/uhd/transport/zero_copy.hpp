@@ -21,7 +21,6 @@
 #include <uhd/config.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
 
 namespace uhd{ namespace transport{
 
@@ -33,20 +32,6 @@ namespace uhd{ namespace transport{
     class UHD_API managed_recv_buffer{
     public:
         typedef boost::shared_ptr<managed_recv_buffer> sptr;
-        typedef boost::function<void(void)> release_fcn_t;
-
-        /*!
-         * Make a safe managed receive buffer:
-         * A safe managed buffer ensures that release is called once,
-         * either by the user or automatically upon deconstruction.
-         * \param buff a pointer into read-only memory
-         * \param size the length of the buffer in bytes
-         * \param release_fcn callback to release the memory
-         * \return a new managed receive buffer
-         */
-        static sptr make_safe(
-            const void *buff, size_t size, const release_fcn_t &release_fcn
-        );
 
         /*!
          * Signal to the transport that we are done with the buffer.
@@ -84,21 +69,6 @@ namespace uhd{ namespace transport{
     class UHD_API managed_send_buffer{
     public:
         typedef boost::shared_ptr<managed_send_buffer> sptr;
-        typedef boost::function<void(size_t)> commit_fcn_t;
-
-        /*!
-         * Make a safe managed send buffer:
-         * A safe managed buffer ensures that commit is called once,
-         * either by the user or automatically upon deconstruction.
-         * In the later case, the deconstructor will call commit(0).
-         * \param buff a pointer into writable memory
-         * \param size the length of the buffer in bytes
-         * \param commit_fcn callback to commit the memory
-         * \return a new managed send buffer
-         */
-        static sptr make_safe(
-            void *buff, size_t size, const commit_fcn_t &commit_fcn
-        );
 
         /*!
          * Signal to the transport that we are done with the buffer.

@@ -77,5 +77,4 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy_asio.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vrt_packet_handler.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy.cpp
 )
