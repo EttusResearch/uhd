@@ -8,6 +8,7 @@
 VRT_SRCS = $(abspath $(addprefix $(BASE_DIR)/../vrt/, \
 vita_rx_control.v \
 vita_rx_framer.v \
+vita_rx_chain.v \
 vita_tx_control.v \
 vita_tx_deframer.v \
 vita_tx_chain.v \

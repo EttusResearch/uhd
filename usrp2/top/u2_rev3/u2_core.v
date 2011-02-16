@@ -351,15 +351,13 @@ module u2_core
    wire 	 rd1_ready_i, rd1_ready_o;
    wire 	 rd2_ready_i, rd2_ready_o;
    wire 	 rd3_ready_i, rd3_ready_o;
-   wire [3:0] 	 rd0_flags, rd1_flags, rd2_flags, rd3_flags;
-   wire [31:0] 	 rd0_dat, rd1_dat, rd2_dat, rd3_dat;
+   wire [35:0] 	 rd0_dat, rd1_dat, rd2_dat, rd3_dat;
 
    wire 	 wr0_ready_i, wr0_ready_o;
    wire 	 wr1_ready_i, wr1_ready_o;
    wire 	 wr2_ready_i, wr2_ready_o;
    wire 	 wr3_ready_i, wr3_ready_o;
-   wire [3:0] 	 wr0_flags, wr1_flags, wr2_flags, wr3_flags;
-   wire [31:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
+   wire [35:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
 
    wire [35:0] 	 tx_err_data;
    wire 	 tx_err_src_rdy, tx_err_dst_rdy;
@@ -377,15 +375,15 @@ module u2_core
 
       .status(status), .sys_int_o(buffer_int), .debug(router_debug),
 
-      .ser_inp_data({wr0_flags, wr0_dat}), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
-      .dsp0_inp_data({wr1_flags, wr1_dat}), .dsp0_inp_valid(wr1_ready_i), .dsp0_inp_ready(wr1_ready_o),
-      .dsp1_inp_data({wr3_flags, wr1_dat}), .dsp1_inp_valid(wr3_ready_i), .dsp1_inp_ready(wr3_ready_o),
-      .eth_inp_data({wr2_flags, wr2_dat}), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
+      .ser_inp_data(wr0_dat), .ser_inp_valid(wr0_ready_i), .ser_inp_ready(wr0_ready_o),
+      .dsp0_inp_data(wr1_dat), .dsp0_inp_valid(wr1_ready_i), .dsp0_inp_ready(wr1_ready_o),
+      .dsp1_inp_data(wr3_dat), .dsp1_inp_valid(wr3_ready_i), .dsp1_inp_ready(wr3_ready_o),
+      .eth_inp_data(wr2_dat), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
       .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
 
-      .ser_out_data({rd0_flags, rd0_dat}), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
-      .dsp_out_data({rd1_flags, rd1_dat}), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
-      .eth_out_data({rd2_flags, rd2_dat}), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
+      .ser_out_data(rd0_dat), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
+      .dsp_out_data(rd1_dat), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
+      .eth_out_data(rd2_dat), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
 
    // /////////////////////////////////////////////////////////////////////////
@@ -474,12 +472,12 @@ module u2_core
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
       .datain(rx_f36_data), .src_rdy_i(rx_f36_src_rdy), .dst_rdy_o(rx_f36_dst_rdy),
-      .dataout({wr2_flags,wr2_dat}), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
+      .dataout(wr2_dat), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
 
    //eth output to mac tx...
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain({rd2_flags,rd2_dat}), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
+      .datain(rd2_dat), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
       .dataout(tx_f36_data), .src_rdy_o(tx_f36_src_rdy), .dst_rdy_i(tx_f36_dst_rdy));
 
    fifo36_to_fifo19 eth_out_fifo36_to_fifo19
@@ -606,11 +604,10 @@ module u2_core
    assign sd_dat_i[31:8] = 0;
 
    // /////////////////////////////////////////////////////////////////////////
-   // DSP RX
+   // DSP RX 0
    wire [31:0] 	 sample_rx, sample_tx;
    wire 	 strobe_rx, strobe_tx;
    wire 	 rx_dst_rdy, rx_src_rdy, rx1_dst_rdy, rx1_src_rdy;
-   wire [99:0] 	 rx_data;
    wire [35:0] 	 rx1_data;
    
    dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx
@@ -620,7 +617,7 @@ module u2_core
       .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
-   wire [31:0] 	 vrc_debug;
+   wire [31:0] 	 vr_debug;
    wire 	 clear_rx;
    
    setting_reg #(.my_addr(SR_RX_CTRL0+3)) sr_clear
@@ -628,28 +625,18 @@ module u2_core
       .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
       .out(),.changed(clear_rx));
 
-   vita_rx_control #(.BASE(SR_RX_CTRL0), .WIDTH(32)) vita_rx_control
+   vita_rx_chain #(.BASE(SR_RX_CTRL0)) vita_rx_chain0
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .sample_fifo_o(rx_data), .sample_fifo_dst_rdy_i(rx_dst_rdy), .sample_fifo_src_rdy_o(rx_src_rdy),
-      .debug_rx(vrc_debug));
-
-   wire [3:0] 	 vita_state;
-   
-   vita_rx_framer #(.BASE(SR_RX_CTRL0), .MAXCHAN(1)) vita_rx_framer
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
-      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .sample_fifo_i(rx_data), .sample_fifo_dst_rdy_o(rx_dst_rdy), .sample_fifo_src_rdy_i(rx_src_rdy),
-      .data_o(rx1_data), .dst_rdy_i(rx1_dst_rdy), .src_rdy_o(rx1_src_rdy),
-      .fifo_occupied(), .fifo_full(), .fifo_empty(),
-      .debug_rx(vita_state) );
+      .rx_data_o(rx0_data), .rx_src_rdy_o(rx0_src_rdy), .rx_dst_rdy_i(rx0_dst_rdy),
+      .debug(vr_debug) );
 
    fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
-      .datain(rx1_data), .src_rdy_i(rx1_src_rdy), .dst_rdy_o(rx1_dst_rdy),
-      .dataout({wr1_flags,wr1_dat}), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
+      .datain(rx0_data), .src_rdy_i(rx0_src_rdy), .dst_rdy_o(rx0_dst_rdy),
+      .dataout(wr1_dat), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
 
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
@@ -677,7 +664,7 @@ module u2_core
 	.RAM_LDn(RAM_LDn),
 	.RAM_OEn(RAM_OEn),
 	.RAM_CE1n(RAM_CE1n),
-	.datain({rd1_flags[3:2],rd1_dat[31:16],rd1_flags[1:0],rd1_dat[15:0]}),
+	.datain({rd1_dat[35:34],rd1_dat[31:16],rd1_dat[33:32],rd1_dat[15:0]}),
 	.src_rdy_i(rd1_ready_o),
 	.dst_rdy_o(rd1_ready_i),
 	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
@@ -706,9 +693,9 @@ module u2_core
    serdes #(.TXFIFOSIZE(SERDES_TX_FIFOSIZE),.RXFIFOSIZE(SERDES_RX_FIFOSIZE)) serdes
      (.clk(dsp_clk),.rst(dsp_rst),
       .ser_tx_clk(ser_tx_clk),.ser_t(ser_t),.ser_tklsb(ser_tklsb),.ser_tkmsb(ser_tkmsb),
-      .rd_dat_i(rd0_dat),.rd_flags_i(rd0_flags),.rd_ready_o(rd0_ready_i),.rd_ready_i(rd0_ready_o),
+      .rd_dat_i(rd0_dat[31:0]),.rd_flags_i(rd0_dat[35:32]),.rd_ready_o(rd0_ready_i),.rd_ready_i(rd0_ready_o),
       .ser_rx_clk(ser_rx_clk),.ser_r(ser_r),.ser_rklsb(ser_rklsb),.ser_rkmsb(ser_rkmsb),
-      .wr_dat_o(wr0_dat),.wr_flags_o(wr0_flags),.wr_ready_o(wr0_ready_i),.wr_ready_i(wr0_ready_o),
+      .wr_dat_o(wr0_dat[31:0]),.wr_flags_o(wr0_dat[35:32]),.wr_ready_o(wr0_ready_i),.wr_ready_i(wr0_ready_o),
       .tx_occupied(ser_tx_occ),.tx_full(ser_tx_full),.tx_empty(ser_tx_empty),
       .rx_occupied(ser_rx_occ),.rx_full(ser_rx_full),.rx_empty(ser_rx_empty),
       .serdes_link_up(serdes_link_up),.debug0(debug_serdes0), .debug1(debug_serdes1) );
