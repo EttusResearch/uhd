@@ -1,6 +1,5 @@
-/* -*- c -*- */
 /*
- * Copyright 2009,2010 Ettus Research LLC
+ * Copyright 2009-2011 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -283,9 +282,9 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
       sr_tx_ctrl->cyc_per_up = 0;
 
       //the end continuous streaming command
-      sr_rx_ctrl->cmd = 1 << 31; //no samples now
-      sr_rx_ctrl->time_secs = 0;
-      sr_rx_ctrl->time_ticks = 0; //latch the command
+      sr_rx_ctrl0->cmd = 1 << 31; //no samples now
+      sr_rx_ctrl0->time_secs = 0;
+      sr_rx_ctrl0->time_ticks = 0; //latch the command
 
       //struct udp_hdr *udp = (struct udp_hdr *)((char *)icmp + 28);
       //printf("icmp port unr %d\n", udp->dest);
