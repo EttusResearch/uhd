@@ -7,20 +7,36 @@ UHD - Device Identification Notes
 ------------------------------------------------------------------------
 Identifying USRPs
 ------------------------------------------------------------------------
+Devices are addressed through key/value string pairs.
+These string pairs can be used to narrow down the search for a specific device or group of devices.
+Most UHD utility applications and examples have a --args parameter that takes a device address;
+where the device address is expressed as a delimited string.
+See the documentation in types/device_addr.hpp for reference.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Common device identifiers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Every device has several ways of identifying it on the host system:
 
-* **Serial:** A globally unique identifier.
-* **Address:** A unique identifier on a network.
-* **Name:** An optional user-set identifier.
-
-The address is only applicable for network-based devices.
-See the USRP2 application notes.
++------------+------------+--------------------------------------------+
+| Identifier | Key        | Notes                                      |
++============+============+============================================+
+| Serial     | serial     | globally unique identifier                 |
++------------+------------+--------------------------------------------+
+| Address    | addr       | unique identifier on a network             |
++------------+------------+--------------------------------------------+
+| Name       | name       | optional user-set identifier               |
++------------+------------+--------------------------------------------+
+| Type       | type       | hardware series identifier                 |
++------------+------------+--------------------------------------------+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device discovery via command line
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A "find devices" utility application comes bundled with the UHD.
-The find devices application will search for all devices on the host system and print the results.
+Devices attached to your system can be discovered using the "uhd_find_devices" program.
+The find devices program scans your system for supported devices and prints
+out an enumerated list of discovered devices and their addresses.
+The list of discovered devices can be narrowed down by specifying device address args.
 
 ::
 
@@ -59,6 +75,18 @@ The hint argument can be populated to narrow the scope of the search.
     uhd::device_addr_t hint;
     hint["serial"] = "12345678";
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Device properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Properties of devices attached to your system can be probed with the "uhd_usrp_probe" program.
+The usrp probe program constructs an instance of the device and prints out its properties;
+properties such as detected daughter-boards, frequency range, gain ranges, etc...
+
+**Usage:**
+::
+
+    uhd_usrp_probe --args <device-specific-address-args>
 
 ------------------------------------------------------------------------
 Naming a USRP
