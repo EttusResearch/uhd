@@ -75,8 +75,11 @@ static void *read_thread(void *threadid)
 	unsigned int rx_crc, pkt_len, pkt_seq;
 	unsigned long bytes_transfered;
 	struct timeval start_time;
+	unsigned int prev_seq = 0;
+	int first = 1;
 
 	__u8 *p;
+
 
 	printf("Greetings from the reading thread!\n");
 
@@ -110,6 +113,15 @@ static void *read_thread(void *threadid)
 		pkt_seq = *(unsigned int *) &p[4];
 
 //		printf("Pkt len = %X, pkt seq = %X, driver len = %X\n", pkt_len, pkt_seq, cnt);
+
+		if (pkt_len != (cnt - 4))
+			printf("Packet length check fail, driver len = %ud, content = %ud\n",
+					cnt, pkt_len);
+
+		if (!first && (pkt_seq != (prev_seq + 1)))
+			printf("Sequence number check fail, pkt_seq = %ud, prev_seq = %ud\n",
+					pkt_seq, prev_seq);
+		first = 0;
 
 		for (i = 0; i < cnt-4; i++) {
 			ck_sum += p[i];
