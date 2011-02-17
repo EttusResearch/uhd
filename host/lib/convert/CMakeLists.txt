@@ -22,15 +22,28 @@ INCLUDE(CheckIncludeFileCXX)
 MESSAGE(STATUS "")
 
 ########################################################################
-# Check for SIMD headers
+# Check for SSE2 SIMD headers
 ########################################################################
+IF(CMAKE_COMPILER_IS_GNUCXX)
+    SET(EMMINTRIN_FLAGS -msse2)
+ELSEIF(MSVC)
+    SET(EMMINTRIN_FLAGS /arch:SSE2)
+ENDIF()
+
+SET(CMAKE_REQUIRED_FLAGS ${EMMINTRIN_FLAGS})
 CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
+UNSET(CMAKE_REQUIRED_FLAGS)
+
 IF(HAVE_EMMINTRIN_H)
+    ADD_DEFINITIONS(${EMMINTRIN_FLAGS})
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_sse2.cpp
     )
 ENDIF(HAVE_EMMINTRIN_H)
 
+########################################################################
+# Check for NEON SIMD headers
+########################################################################
 CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
 IF(HAVE_ARM_NEON_H)
     LIBUHD_APPEND_SOURCES(
