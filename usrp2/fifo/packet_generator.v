@@ -2,7 +2,8 @@
 
 module packet_generator
   (input clk, input reset, input clear,
-   output reg [7:0] data_o, output sof_o, output eof_o, 
+   output reg [7:0] data_o, output sof_o, output eof_o,
+   input [127:0] header,
    output src_rdy_o, input dst_rdy_i);
 
    localparam len = 32'd2000;
@@ -40,6 +41,23 @@ module packet_generator
        5 :   data_o <= seq[23:16];
        6 :   data_o <= seq[15:8];
        7 :   data_o <= seq[7:0];
+       8 :   data_o <= header[7:0];
+       9 :   data_o <= header[15:8];
+       10 :  data_o <= header[23:16];
+       11 :  data_o <= header[31:24];
+       12 :  data_o <= header[39:32];
+       13 :  data_o <= header[47:40];
+       14 :  data_o <= header[55:48];
+       15 :  data_o <= header[63:56];
+       16 :  data_o <= header[71:64];
+       17 :  data_o <= header[79:72];
+       18 :  data_o <= header[87:80];
+       19 :  data_o <= header[95:88];
+       20 :  data_o <= header[103:96];
+       21 :  data_o <= header[111:104];
+       22 :  data_o <= header[119:112];
+       23 :  data_o <= header[127:120];
+
        32'hFFFF_FFFC : data_o <= crc_out[31:24];
        32'hFFFF_FFFD : data_o <= crc_out[23:16];
        32'hFFFF_FFFE : data_o <= crc_out[15:8];

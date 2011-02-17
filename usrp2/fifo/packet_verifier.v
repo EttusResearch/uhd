@@ -18,7 +18,7 @@ module packet_verifier
    reg [31:0] 	     length;
    wire 	     first_byte, last_byte;
    reg 		     second_byte, last_byte_d1;
-
+   wire 	     match_crc;
    wire 	     calc_crc = src_rdy_i & dst_rdy_o;
    
    crc crc(.clk(clk), .reset(reset), .clear(last_byte_d1), .data(data_i), 

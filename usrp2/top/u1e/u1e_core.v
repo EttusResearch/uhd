@@ -1,9 +1,5 @@
 
 
-//`define LOOPBACK 1
-//`define TIMED 1
-`define DSP 1
-
 module u1e_core
   (input clk_fpga, input rst_fpga,
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
@@ -117,56 +113,6 @@ module u1e_core
    wire 	 rx_eof = rx_data[33];
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
-`ifdef LOOPBACK
-   wire [7:0] 	 WHOAMI = 1;
-   
-   fifo_cascade #(.WIDTH(36), .SIZE(12)) loopback_fifo
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx | clear_rx),
-      .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-
-   assign tx_underrun = 0;
-   assign rx_overrun = 0;
-
-   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
-`endif // LOOPBACK
-
-`ifdef TIMED
-   wire [7:0] 	 WHOAMI = 2;
-   
-   // TX side
-   wire 	 tx_enable;
-   
-   fifo_pacer tx_pacer
-     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(tx_enable),
-      .src1_rdy_i(tx_src_rdy), .dst1_rdy_o(tx_dst_rdy),
-      .src2_rdy_o(tx_src_rdy_int), .dst2_rdy_i(tx_dst_rdy_int),
-      .underrun(tx_underrun), .overrun());
-   
-   packet_verifier32 pktver32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int),
-      .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
-
-   // RX side
-   wire 	 rx_enable;
-
-   packet_generator32 pktgen32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
-      .data_o(rx_data), .src_rdy_o(rx_src_rdy_int), .dst_rdy_i(rx_dst_rdy_int));
-
-   fifo_pacer rx_pacer
-     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(rx_enable),
-      .src1_rdy_i(rx_src_rdy_int), .dst1_rdy_o(rx_dst_rdy_int),
-      .src2_rdy_o(rx_src_rdy), .dst2_rdy_i(rx_dst_rdy),
-      .underrun(), .overrun(rx_overrun));
-
-   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
-`endif //  `ifdef TIMED
-
-`ifdef DSP
-   wire [7:0] 	 WHOAMI = 0;
-   
    wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
    
    // /////////////////////////////////////////////////////////////////////////
@@ -231,23 +177,6 @@ module u1e_core
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
    
-`else // !`ifdef DSP
-   // Dummy DSP signal generator for test purposes
-   wire [23:0] 	 tx_i_int, tx_q_int;
-   wire [23:0] 	 freq = {reg_test,8'd0};
-   reg [23:0] 	 phase;
-   
-   always @(posedge wb_clk)
-     phase <= phase + freq;
-   
-   cordic_z24 #(.bitwidth(24)) tx_cordic
-     (.clock(wb_clk), .reset(wb_rst), .enable(1),
-      .xi(24'd2500000), .yi(24'd0), .zi(phase), .xo(tx_i_int), .yo(tx_q_int), .zo());
-
-   assign tx_i = tx_i_int[23:10];
-   assign tx_q = tx_q_int[23:10];
-`endif // !`ifdef DSP
-      
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
@@ -320,7 +249,6 @@ module u1e_core
    // Slave 0, Misc LEDs, Switches, controls
    
    localparam REG_LEDS = 7'd0;         // out
-   localparam REG_SWITCHES = 7'd2;     // in
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
@@ -361,12 +289,11 @@ module u1e_core
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
-			(s0_adr[6:0] == REG_SWITCHES) ? { 16'd0 } :
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
 			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
-			(s0_adr[6:0] == REG_COMPAT) ? { WHOAMI, COMPAT_NUM } :
+			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;
