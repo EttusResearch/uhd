@@ -635,6 +635,40 @@ module u2_core
       .datain(rx0_data), .src_rdy_i(rx0_src_rdy), .dst_rdy_o(rx0_dst_rdy),
       .dataout(wr1_dat), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
 
+   // /////////////////////////////////////////////////////////////////////////
+   // DSP RX 1
+   wire [31:0] 	 sample_rx1;
+   wire [35:0] 	 rx1_data;
+   wire 	 clear_rx1, strobe_rx1, rx1_dst_rdy, rx1_src_rdy;
+
+   always @(posedge dsp_clk)
+     run_rx1_d1 <= run_rx1;
+   
+   dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
+      .sample(sample_rx1), .run(run_rx1_d1), .strobe(strobe_rx1),
+      .debug() );
+
+   setting_reg #(.my_addr(SR_RX_CTRL1+3)) sr_clear_rx1
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
+      .out(),.changed(clear_rx1));
+
+   vita_rx_chain #(.BASE(SR_RX_CTRL1)) vita_rx_chain1
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx1),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .vita_time(vita_time), .overrun(overrun1),
+      .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
+      .rx_data_o(rx1_data), .rx_src_rdy_o(rx1_src_rdy), .rx_dst_rdy_i(rx1_dst_rdy),
+      .debug() );
+
+   fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade1
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx1),
+      .datain(rx1_data), .src_rdy_i(rx1_src_rdy), .dst_rdy_o(rx1_dst_rdy),
+      .dataout(wr3_dat), .src_rdy_o(wr3_ready_i), .dst_rdy_i(wr3_ready_o));
+
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
