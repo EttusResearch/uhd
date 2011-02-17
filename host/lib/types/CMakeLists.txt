@@ -58,18 +58,23 @@ CHECK_CXX_SOURCE_COMPILES("
 
 IF(HAVE_CLOCK_GETTIME)
     MESSAGE(STATUS "  High resolution timing supported through clock_gettime.")
-    ADD_DEFINITIONS(-DTIME_SPEC_USE_CLOCK_GETTIME)
-    SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lrt")
+    SET(TIME_SPEC_DEFS HAVE_CLOCK_GETTIME)
+    LIBUHD_APPEND_LIBS("-lrt")
 ELSEIF(HAVE_MACH_ABSOLUTE_TIME)
     MESSAGE(STATUS "  High resolution timing supported through mach_absolute_time.")
-    ADD_DEFINITIONS(-DTIME_SPEC_USE_MACH_ABSOLUTE_TIME)
+    SET(TIME_SPEC_DEFS HAVE_MACH_ABSOLUTE_TIME)
 ELSEIF(HAVE_QUERY_PERFORMANCE_COUNTER)
     MESSAGE(STATUS "  High resolution timing supported through QueryPerformanceCounter.")
-    ADD_DEFINITIONS(-DTIME_SPEC_USE_QUERY_PERFORMANCE_COUNTER)
+    SET(TIME_SPEC_DEFS HAVE_QUERY_PERFORMANCE_COUNTER)
 ELSE()
     MESSAGE(STATUS "  High resolution timing supported though microsec_clock.")
-    ADD_DEFINITIONS(-DTIME_SPEC_USE_MICROSEC_CLOCK)
+    SET(TIME_SPEC_DEFS HAVE_MICROSEC_CLOCK)
 ENDIF()
+
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/time_spec.cpp
+    PROPERTIES COMPILE_DEFINITIONS "${TIME_SPEC_DEFS}"
+)
 
 ########################################################################
 # This file included, use CMake directory variables

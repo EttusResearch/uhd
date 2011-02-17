@@ -48,13 +48,18 @@ CHECK_CXX_SOURCE_COMPILES("
 
 IF(HAVE_PTHREAD_SETSCHEDPARAM)
     MESSAGE(STATUS "  Priority scheduling supported through pthread_setschedparam.")
-    ADD_DEFINITIONS(-DHAVE_PTHREAD_SETSCHEDPARAM)
+    SET(THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
 ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
     MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
-    ADD_DEFINITIONS(-DHAVE_WIN_SETTHREADPRIORITY)
+    SET(THREAD_PRIO_DEFS HAVE_WIN_SETTHREADPRIORITY)
 ELSE(HAVE_PTHREAD_SETSCHEDPARAM)
     MESSAGE(STATUS "  Priority scheduling not supported.")
 ENDIF(HAVE_PTHREAD_SETSCHEDPARAM)
+
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
+    PROPERTIES COMPILE_DEFINITIONS "${THREAD_PRIO_DEFS}"
+)
 
 ########################################################################
 # Setup defines for module loading
@@ -68,14 +73,19 @@ CHECK_INCLUDE_FILE_CXX(windows.h HAVE_WINDOWS_H)
 
 IF(HAVE_DLFCN_H)
     MESSAGE(STATUS "  Module loading supported through dlopen.")
-    ADD_DEFINITIONS(-DHAVE_DLFCN_H)
+    SET(LOAD_MODULES_DEFS HAVE_DLFCN_H)
     LIBUHD_APPEND_LIBS(${CMAKE_DL_LIBS})
 ELSEIF(HAVE_WINDOWS_H)
     MESSAGE(STATUS "  Module loading supported through LoadLibrary.")
-    ADD_DEFINITIONS(-DHAVE_WINDOWS_H)
+    SET(LOAD_MODULES_DEFS HAVE_WINDOWS_H)
 ELSE(HAVE_DLFCN_H)
     MESSAGE(STATUS "  Module loading not supported.")
 ENDIF(HAVE_DLFCN_H)
+
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
+    PROPERTIES COMPILE_DEFINITIONS "${LOAD_MODULES_DEFS}"
+)
 
 ########################################################################
 # Append sources
