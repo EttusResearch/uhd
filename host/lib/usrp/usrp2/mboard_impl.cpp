@@ -87,17 +87,17 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     }
 
     //setup the vrt rx registers
-    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
-    _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, recv_samps_per_packet);
-    _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
+    _iface->poke32(_iface->regs.rx_ctrl0_clear_overrun, 1); //reset
+    _iface->poke32(_iface->regs.rx_ctrl0_nsamps_per_pkt, recv_samps_per_packet);
+    _iface->poke32(_iface->regs.rx_ctrl0_nchannels, 1);
+    _iface->poke32(_iface->regs.rx_ctrl0_vrt_header, 0
         | (0x1 << 28) //if data with stream id
         | (0x1 << 26) //has trailer
         | (0x3 << 22) //integer time other
         | (0x1 << 20) //fractional time sample count
     );
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_stream_id, usrp2_impl::RECV_SID);
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_trailer, 0);
+    _iface->poke32(_iface->regs.rx_ctrl0_vrt_stream_id, usrp2_impl::RECV_SID);
+    _iface->poke32(_iface->regs.rx_ctrl0_vrt_trailer, 0);
     _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
 
     //init the tx control registers
@@ -164,7 +164,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     this->issue_ddc_stream_cmd(stream_cmd);
     data_transport->get_recv_buff().get(); //recv with timeout for lingering
     data_transport->get_recv_buff().get(); //recv with timeout for expected
-    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //resets sequence
+    _iface->poke32(_iface->regs.rx_ctrl0_clear_overrun, 1); //resets sequence
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
@@ -273,9 +273,9 @@ void usrp2_mboard_impl::handle_overflow(void){
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
     _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-    _iface->poke32(_iface->regs.rx_ctrl_stream_cmd, dsp_type1::calc_stream_cmd_word(stream_cmd));
-    _iface->poke32(_iface->regs.rx_ctrl_time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(_iface->regs.rx_ctrl_time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
+    _iface->poke32(_iface->regs.rx_ctrl0_stream_cmd, dsp_type1::calc_stream_cmd_word(stream_cmd));
+    _iface->poke32(_iface->regs.rx_ctrl0_time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
+    _iface->poke32(_iface->regs.rx_ctrl0_time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }
 
 /***********************************************************************
@@ -401,7 +401,7 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         //sanity check
         UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
         //set the mux
-        _iface->poke32(_iface->regs.dsp_rx_mux, dsp_type1::calc_rx_mux_word(
+        _iface->poke32(_iface->regs.dsp0_rx_mux, dsp_type1::calc_rx_mux_word(
             _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
         return;
