@@ -147,7 +147,7 @@ public:
                 (recv_endpoint & 0x7f) | 0x80,                          // endpoint
                 static_cast<unsigned char *>(_recv_buffer_pool->at(i)), // buffer
                 this->get_recv_frame_size(),                            // length
-                static_cast<libusb_transfer_cb_fn>(&libusb_async_cb),   // callback
+                libusb_transfer_cb_fn(&libusb_async_cb),                // callback
                 static_cast<void *>(&_callbacks.back()),                // user_data
                 0                                                       // timeout
             );
@@ -173,7 +173,7 @@ public:
                 (send_endpoint & 0x7f) | 0x00,                          // endpoint
                 static_cast<unsigned char *>(_send_buffer_pool->at(i)), // buffer
                 this->get_send_frame_size(),                            // length
-                static_cast<libusb_transfer_cb_fn>(&libusb_async_cb),   // callback
+                libusb_transfer_cb_fn(&libusb_async_cb),                // callback
                 static_cast<void *>(&_callbacks.back()),                // user_data
                 0                                                       // timeout
             );

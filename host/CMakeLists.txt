@@ -79,7 +79,12 @@ IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/msvc)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
-    ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS) #avoid warnings from boost::split
+    ADD_DEFINITIONS( #stop all kinds of compatibility warnings
+        -D_SCL_SECURE_NO_WARNINGS
+        -D_CRT_SECURE_NO_WARNINGS
+        -D_CRT_SECURE_NO_DEPRECATE
+        -D_CRT_NONSTDC_NO_DEPRECATE
+    )
     ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
 ENDIF(MSVC)
 

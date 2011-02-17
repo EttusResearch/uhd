@@ -84,7 +84,7 @@ public:
     }
 
 private:
-    static void fake_deleter(void */*obj*/){
+    static void fake_deleter(void *){
         //dont do anything and assume the bastard committed it
         //static_cast<offset_managed_send_buffer *>(obj)->commit(0);
     }

@@ -27,7 +27,7 @@ namespace uhd{
  *  - Provides a std::vector-like interface for an array.
  *  - Statically sized, and does not manage the memory.
  */
-template <typename T> class ref_vector{
+template <typename T> class UHD_API ref_vector{
 public:
     /*!
      * Create a reference vector of size 1 from a pointer.
