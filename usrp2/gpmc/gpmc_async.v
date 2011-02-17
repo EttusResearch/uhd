@@ -52,8 +52,8 @@ module gpmc_async
    wire [17:0] 	  tx18_data, tx18b_data;
    wire 	  tx18_src_rdy, tx18_dst_rdy, tx18b_src_rdy, tx18b_dst_rdy;
    wire [15:0] 	  tx_fifo_space;
-   wire [35:0] 	  tx36_data;
-   wire 	  tx36_src_rdy, tx36_dst_rdy;
+   wire [35:0] 	  tx36_data, tx_data;
+   wire 	  tx36_src_rdy, tx36_dst_rdy, tx_src_rdy, tx_dst_rdy;
    
    gpmc_to_fifo_async gpmc_to_fifo_async
      (.EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
@@ -83,8 +83,8 @@ module gpmc_async
    wire [17:0] 	  rx18_data, rx18b_data;
    wire 	  rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy;
    wire [15:0] 	  rx_fifo_space;
-   wire [35:0] 	  rx36_data;
-   wire 	  rx36_src_rdy, rx36_dst_rdy;
+   wire [35:0] 	  rx36_data, rx_data;
+   wire 	  rx36_src_rdy, rx36_dst_rdy, rx_src_rdy, rx_dst_rdy;
    wire 	  dummy;
    
    fifo_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_fifo36
@@ -134,12 +134,12 @@ module gpmc_async
    // Test support, traffic generator, loopback, etc.
 
    // RX side muxes test data into the same stream
-   wire [35:0] 	timedrx_data, loopbackrx_data, testrx_data, rx_data;
-   wire [35:0] 	timedtx_data, loopbacktx_data, testtx_data, tx_data;
+   wire [35:0] 	timedrx_data, loopbackrx_data, testrx_data;
+   wire [35:0] 	timedtx_data, loopbacktx_data, testtx_data;
    wire 	timedrx_src_rdy, timedrx_dst_rdy, loopbackrx_src_rdy, loopbackrx_dst_rdy,
-		testrx_src_rdy, testrx_dst_rdy, rx_src_rdy, rx_dst_rdy;
+		testrx_src_rdy, testrx_dst_rdy;
    wire 	timedtx_src_rdy, timedtx_dst_rdy, loopbacktx_src_rdy, loopbacktx_dst_rdy,
-		testtx_src_rdy, testtx_dst_rdy, tx_src_rdy, tx_dst_rdy;
+		testtx_src_rdy, testtx_dst_rdy;
    wire 	timedrx_src_rdy_int, timedrx_dst_rdy_int, timedtx_src_rdy_int, timedtx_dst_rdy_int;
 
    wire [31:0] 	total, crc_err, seq_err, len_err;
