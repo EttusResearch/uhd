@@ -449,13 +449,13 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
     // DSP input framer
     ////////////////////////////////////////////////////////////////////
-    dsp_framer36 #(.BUF_SIZE(BUF_SIZE)) dsp0_framer36(
+    dsp_framer36 #(.BUF_SIZE(BUF_SIZE), .PORT_SEL(0)) dsp0_framer36(
         .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
         .inp_data(dsp0_inp_data), .inp_valid(dsp0_inp_valid), .inp_ready(dsp0_inp_ready),
         .out_data(dsp0_frm_data), .out_valid(dsp0_frm_valid), .out_ready(dsp0_frm_ready)
     );
 
-    dsp_framer36 #(.BUF_SIZE(BUF_SIZE)) dsp1_framer36(
+    dsp_framer36 #(.BUF_SIZE(BUF_SIZE), .PORT_SEL(2)) dsp1_framer36(
         .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
         .inp_data(dsp1_inp_data), .inp_valid(dsp1_inp_valid), .inp_ready(dsp1_inp_ready),
         .out_data(dsp1_frm_data), .out_valid(dsp1_frm_valid), .out_ready(dsp1_frm_ready)
