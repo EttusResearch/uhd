@@ -50,7 +50,10 @@ module u1e_core
    wire 	set_stb;
 
    wire [31:0] 	debug_vt;
-
+   wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
+   assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp;
+   assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
+   
    setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(global_reset));
@@ -107,6 +110,7 @@ module u1e_core
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 
 	 .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
+	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
 	 .debug(debug_gpmc));
 
    wire 	 rx_sof = rx_data[32];
@@ -135,7 +139,7 @@ module u1e_core
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(rx_overrun),
+      .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
       .debug_rx(vrc_debug));
@@ -171,7 +175,7 @@ module u1e_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .underrun(underrun), .run(run_tx),
+      .underrun(tx_underrun_dsp), .run(run_tx),
       .debug(debug_vt));
    
    assign tx_i = tx_i_int[15:2];

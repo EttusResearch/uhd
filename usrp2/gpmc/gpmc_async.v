@@ -23,7 +23,8 @@ module gpmc_async
     input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
     
     input [15:0] tx_frame_len, output [15:0] rx_frame_len,
-    
+
+    output tx_underrun, output rx_overrun,
     output [31:0] debug
     );
 
@@ -144,7 +145,6 @@ module gpmc_async
    wire [31:0] 	total, crc_err, seq_err, len_err;
    wire [7:0] 	rx_rate, tx_rate;
    wire 	rx_enable, tx_enable;
-   wire 	underrun, overrun;
    wire 	sel_testtx, sel_loopbacktx;
    
    fifo36_mux rx_test_mux_lvl_1
@@ -186,7 +186,7 @@ module gpmc_async
      (.clk(fifo_clk), .reset(fifo_rst), .rate(tx_rate), .enable(tx_enable),
       .src1_rdy_i(timedtx_src_rdy), .dst1_rdy_o(timedtx_dst_rdy),
       .src2_rdy_o(timedtx_src_rdy_int), .dst2_rdy_i(timedtx_dst_rdy_int),
-      .underrun(underrun), .overrun());
+      .underrun(tx_underrun), .overrun());
 
    packet_verifier32 pktver32
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
@@ -203,10 +203,10 @@ module gpmc_async
      (.clk(fifo_clk), .reset(fifo_rst), .rate(rx_rate), .enable(rx_enable),
       .src1_rdy_i(timedrx_src_rdy_int), .dst1_rdy_o(timedrx_dst_rdy_int),
       .src2_rdy_o(timedrx_src_rdy), .dst2_rdy_i(timedrx_dst_rdy),
-      .underrun(), .overrun(overrun));
+      .underrun(), .overrun(rx_overrun));
 
    // FIXME -- hook up crossbar controls
-   // FIXME -- collect error stats
+   // // FIXME -- collect error stats
    // FIXME -- set rates and enables on pacers
    // FIXME -- make sure packet completes before we shutoff
    // FIXME -- handle overrun and underrun
