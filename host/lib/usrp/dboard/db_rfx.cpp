@@ -25,10 +25,6 @@
 #define MIXER_ENB    MIXER_IO
 #define MIXER_DIS    0
 
-// Power constants
-#define POWER_UP     0
-#define POWER_DOWN   POWER_IO
-
 // Antenna constants
 #define ANT_TX       0          //the tx line is transmitting
 #define ANT_RX       ANTSW_IO   //the tx line is receiving
@@ -99,6 +95,7 @@ private:
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _rx_ant;
     uhd::dict<std::string, double> _rx_gains;
+    boost::uint16_t _power_up;
 
     void set_rx_lo_freq(double freq);
     void set_tx_lo_freq(double freq);
@@ -129,7 +126,7 @@ private:
  * Register the RFX dboards (min freq, max freq, rx div2, tx div2)
  **********************************************************************/
 static dboard_base::sptr make_rfx_flex400(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(400e6, 500e6), false, true));
+    return dboard_base::sptr(new rfx_xcvr(args, freq_range_t(400e6, 500e6), true, true));
 }
 
 static dboard_base::sptr make_rfx_flex900(dboard_base::ctor_args_t args){
@@ -177,7 +174,8 @@ rfx_xcvr::rfx_xcvr(
     _div2(map_list_of
         (dboard_iface::UNIT_RX, rx_div2)
         (dboard_iface::UNIT_TX, tx_div2)
-    )
+    ),
+    _power_up((get_rx_id() == 0x0024 && get_tx_id() == 0x0028) ? POWER_IO : 0)
 {
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
@@ -191,15 +189,15 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, output_enables);
 
     //setup the tx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP | ANT_RX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_TX | MIXER_ENB);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_TX | MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | ANT_RX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TX | MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TX | MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP | ANT_XX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP | ANT_XX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP | ANT_RX2| MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
 
     //set some default values
     set_rx_lo_freq((_freq_range.start() + _freq_range.stop())/2.0);
@@ -225,7 +223,7 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(
         dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        POWER_UP | MIXER_ENB | ((ant == "TX/RX")? ANT_TXRX : ANT_RX2)
+        _power_up | MIXER_ENB | ((ant == "TX/RX")? ANT_TXRX : ANT_RX2)
     );
 
     //shadow the setting
@@ -362,7 +360,7 @@ double rfx_xcvr::set_lo_freq(
     regs.a_counter               = A;
     regs.b_counter               = B;
     regs.cp_gain_1               = adf4360_regs_t::CP_GAIN_1_SET1;
-    regs.divide_by_2_output      = (_div2[unit])?
+    regs.divide_by_2_output      = (_div2[unit] && (get_rx_id() != 0x0024)) ?  // Special case RFX400 RX Mixer divides by two
                                     adf4360_regs_t::DIVIDE_BY_2_OUTPUT_DIV2 :
                                     adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND ;
     regs.divide_by_2_prescaler   = adf4360_regs_t::DIVIDE_BY_2_PRESCALER_FUND;
