@@ -53,20 +53,34 @@ static void setup_network(void);
 // the fast-path setup global variables
 // ----------------------------------------------------------------
 static eth_mac_addr_t fp_mac_addr_src, fp_mac_addr_dst;
-extern struct socket_address fp_socket_src, fp_socket_dst;
+struct socket_address fp_socket_src, fp_socket_dst;
+extern uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
 static void handle_udp_err0_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
     sr_udp_sm->err0_port = (((uint32_t)dst.port) << 16) | src.port;
+    err0_dst_port = src.port;
     printf("Storing for async error path:\n");
     printf("  source udp port: %d\n", dst.port);
     printf("  destination udp port: %d\n", src.port);
     newline();
 }
 
-static void handle_udp_data_packet(
+static void handle_udp_dsp1_packet(
+    struct socket_address src, struct socket_address dst,
+    unsigned char *payload, int payload_len
+){
+    sr_udp_sm->dsp1_port = (((uint32_t)dst.port) << 16) | src.port;
+    dsp1_dst_port = src.port;
+    printf("Storing for dsp1 path:\n");
+    printf("  source udp port: %d\n", dst.port);
+    printf("  destination udp port: %d\n", src.port);
+    newline();
+}
+
+static void handle_udp_dsp0_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
@@ -75,7 +89,8 @@ static void handle_udp_data_packet(
     fp_socket_src = dst;
     fp_socket_dst = src;
     sr_udp_sm->dsp0_port = (((uint32_t)dst.port) << 16) | src.port;
-    printf("Storing for fast path:\n");
+    dsp0_dst_port = src.port;
+    printf("Storing for dsp0 path:\n");
     printf("  source mac addr: ");
     print_mac_addr(&fp_mac_addr_src); newline();
     printf("  source ip addr: ");
@@ -341,13 +356,14 @@ main(void)
 
   //1) register the addresses into the network stack
   register_addrs(ethernet_mac_addr(), get_ip_addr());
-  pkt_ctrl_program_inspector(get_ip_addr(), USRP2_UDP_DATA_PORT);
+  pkt_ctrl_program_inspector(get_ip_addr(), USRP2_UDP_DSP0_PORT);
 
   //2) register callbacks for udp ports we service
   init_udp_listeners();
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
-  register_udp_listener(USRP2_UDP_DATA_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_DSP0_PORT, handle_udp_dsp0_packet);
   register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_err0_packet);
+  register_udp_listener(USRP2_UDP_DSP1_PORT, handle_udp_dsp1_packet);
 #ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 #endif

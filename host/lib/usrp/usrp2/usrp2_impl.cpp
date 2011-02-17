@@ -220,7 +220,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
             dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
         data_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_DATA_PORT), dsp_xport_hints
+            dev_addr_i["addr"], num2str(USRP2_UDP_DSP0_PORT), dsp_xport_hints
         ));
         err0_transports.push_back(udp_zero_copy::make(
             dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()

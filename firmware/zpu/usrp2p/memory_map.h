@@ -218,8 +218,10 @@ hwconfig_wishbone_divisor(void)
 #define SR_UDP_SM 96
 #define SR_TX_DSP 208
 #define SR_TX_CTRL 224
-#define SR_RX_DSP 160
-#define SR_RX_CTRL 176
+#define SR_RX_DSP0 160
+#define SR_RX_DSP1 240
+#define SR_RX_CTRL0 176
+#define SR_RX_CTRL1 32
 #define SR_TIME64 192
 #define SR_SIMTIMER 198
 #define SR_LAST 255
@@ -365,7 +367,8 @@ typedef struct {
   volatile uint32_t	time_ticks;
 } sr_rx_ctrl_t;
 
-#define sr_rx_ctrl0 ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL))
+#define sr_rx_ctrl0 ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL0))
+#define sr_rx_ctrl1 ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL1))
 
 // ----------------------------------------------------------------
 // VITA49 64 bit time (write only)
