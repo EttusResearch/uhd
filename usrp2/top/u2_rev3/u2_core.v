@@ -169,7 +169,7 @@ module u2_core
 
    wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
-   wire 	proc_int, overrun, underrun, uart_tx_int, uart_rx_int;
+   wire 	proc_int, overrun0, overrun1, underrun, uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
    wire [31:0] 	atr_lines;
@@ -186,10 +186,8 @@ module u2_core
    wire [31:0] 	irq;
    wire [63:0] 	vita_time, vita_time_pps;
    
-   wire 	 run_rx, run_tx;
-   reg 		 run_rx_d1;
-   always @(posedge dsp_clk)
-     run_rx_d1 <= run_rx;
+   wire 	 run_rx0, run_rx1, run_tx;
+   reg 		 run_rx0_d1, run_rx1_d1;
    
    // ///////////////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Single Master INTERCON
@@ -523,7 +521,7 @@ module u2_core
    //    In Rev3 there are only 6 leds, and the highest one is on the ETH connector
    
    wire [7:0] 	 led_src, led_sw;
-   wire [7:0] 	 led_hw = {run_tx, run_rx, clk_status, serdes_link_up, 1'b0};
+   wire [7:0] 	 led_hw = {run_tx, (run_rx0_d1 | run_rx1_d1), clk_status, serdes_link_up, 1'b0};
    
    setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
@@ -540,7 +538,7 @@ module u2_core
    wire 	 underrun_wb, overrun_wb, pps_wb;
 
    oneshot_2clk underrun_1s (.clk_in(dsp_clk), .in(underrun), .clk_out(wb_clk), .out(underrun_wb));
-   oneshot_2clk overrun_1s (.clk_in(dsp_clk), .in(overrun), .clk_out(wb_clk), .out(overrun_wb));
+   oneshot_2clk overrun_1s (.clk_in(dsp_clk), .in(overrun0 | overrun1), .clk_out(wb_clk), .out(overrun_wb));
    oneshot_2clk pps_1s (.clk_in(dsp_clk), .in(pps_int), .clk_out(wb_clk), .out(pps_wb));
    
    assign irq= {{8'b0},
@@ -583,7 +581,7 @@ module u2_core
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
       .we_i(sb_we),.stb_i(sb_stb),.cyc_i(sb_cyc),.ack_o(sb_ack),
-      .run_rx(run_rx_d1),.run_tx(run_tx),.ctrl_lines(atr_lines) );
+      .run_rx(run_rx0_d1 | run_rx1_d1),.run_tx(run_tx),.ctrl_lines(atr_lines) );
    
    // //////////////////////////////////////////////////////////////////////////
    // Time Sync, Slave #12 
@@ -605,36 +603,35 @@ module u2_core
 
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
-   wire [31:0] 	 sample_rx, sample_tx;
-   wire 	 strobe_rx, strobe_tx;
-   wire 	 rx_dst_rdy, rx_src_rdy, rx0_dst_rdy, rx0_src_rdy;
+   wire [31:0] 	 sample_rx0;
    wire [35:0] 	 rx0_data;
+   wire 	 clear_rx0, strobe_rx0, rx0_dst_rdy, rx0_src_rdy;
+
+   always @(posedge dsp_clk)
+     run_rx0_d1 <= run_rx0;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx
+   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
-      .sample(sample_rx), .run(run_rx_d1), .strobe(strobe_rx),
-      .debug(debug_rx_dsp) );
+      .sample(sample_rx0), .run(run_rx0_d1), .strobe(strobe_rx0),
+      .debug() );
 
-   wire [31:0] 	 vr_debug;
-   wire 	 clear_rx;
-   
-   setting_reg #(.my_addr(SR_RX_CTRL0+3)) sr_clear
+   setting_reg #(.my_addr(SR_RX_CTRL0+3)) sr_clear_rx0
      (.clk(dsp_clk),.rst(dsp_rst),
       .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
-      .out(),.changed(clear_rx));
+      .out(),.changed(clear_rx0));
 
    vita_rx_chain #(.BASE(SR_RX_CTRL0)) vita_rx_chain0
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx0),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .vita_time(vita_time), .overrun(overrun),
-      .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
+      .vita_time(vita_time), .overrun(overrun0),
+      .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
       .rx_data_o(rx0_data), .rx_src_rdy_o(rx0_src_rdy), .rx_dst_rdy_i(rx0_dst_rdy),
-      .debug(vr_debug) );
+      .debug() );
 
-   fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx),
+   fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade0
+     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx0),
       .datain(rx0_data), .src_rdy_i(rx0_src_rdy), .dst_rdy_o(rx0_dst_rdy),
       .dataout(wr1_dat), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
 
