@@ -8,7 +8,7 @@ module vita_rx_chain
     output [35:0] rx_data_o, output rx_src_rdy_o, input rx_dst_rdy_i,
     output [31:0] debug );
        
-   wire [99:0] sample_data;
+   wire [100:0] sample_data;
    wire        sample_dst_rdy, sample_src_rdy;
    wire [31:0] vrc_debug, vrf_debug;
    
@@ -28,6 +28,6 @@ module vita_rx_chain
       .fifo_occupied(), .fifo_full(), .fifo_empty(),
       .debug_rx(vrf_debug) );
 
-   assign debug = vrc_debug | vrf_debug;
+   assign debug = vrc_debug; //  | vrf_debug;
    
 endmodule // vita_rx_chain

@@ -611,8 +611,8 @@ module u2plus_core
    // DSP RX 0
    wire [31:0] 	 sample_rx, sample_tx;
    wire 	 strobe_rx, strobe_tx;
-   wire 	 rx_dst_rdy, rx_src_rdy, rx1_dst_rdy, rx1_src_rdy;
-   wire [35:0] 	 rx1_data;
+   wire 	 rx_dst_rdy, rx_src_rdy, rx0_dst_rdy, rx0_src_rdy;
+   wire [35:0] 	 rx0_data;
    
    dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx
      (.clk(dsp_clk),.rst(dsp_rst),
@@ -670,10 +670,10 @@ module u2plus_core
 	.RAM_LDn(RAM_LDn),
 	.RAM_OEn(RAM_OEn),
 	.RAM_CE1n(RAM_CE1n),
-	.datain({rd1_dat[35:34],rd1_dat[31:16],rd1_dat[33:32],rd1_dat[15:0]}),
+	.datain(rd1_dat),
 	.src_rdy_i(rd1_ready_o),
 	.dst_rdy_o(rd1_ready_i),
-	.dataout({tx_data[35:34],tx_data[31:16],tx_data[33:32],tx_data[15:0]}),
+	.dataout(tx_data),
 	.src_rdy_o(tx_src_rdy),
 	.dst_rdy_i(tx_dst_rdy),
 	.debug(debug_extfifo),
@@ -723,7 +723,7 @@ module u2plus_core
    // Debug Pins
   
    assign debug_clk = 2'b00; // {dsp_clk, clk_to_mac};
-   assign debug = 32'd0; // debug_extfifo;
+   assign debug = 32'd0;
    assign debug_gpio_0 = 32'd0;
    assign debug_gpio_1 = 32'd0;
    
