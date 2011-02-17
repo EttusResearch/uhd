@@ -85,18 +85,12 @@ IF(MSVC)
         -D_CRT_SECURE_NO_DEPRECATE
         -D_CRT_NONSTDC_NO_DEPRECATE
     )
-    ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
 ENDIF(MSVC)
 
 ########################################################################
 # Setup Boost
 ########################################################################
-IF(UNIX AND EXISTS "/usr/lib64")
-    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-ENDIF(UNIX AND EXISTS "/usr/lib64")
-
-SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43" "1.44.0" "1.44")
-FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS
+SET(BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
     program_options
@@ -105,6 +99,22 @@ FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS
     thread
     unit_test_framework
 )
+
+IF(UNIX AND EXISTS "/usr/lib64")
+    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
+ENDIF(UNIX AND EXISTS "/usr/lib64")
+
+IF(MSVC)
+    SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
+    IF(BOOST_ALL_DYN_LINK)
+        ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+    ELSE(BOOST_ALL_DYN_LINK)
+        UNSET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+    ENDIF(BOOST_ALL_DYN_LINK)
+ENDIF(MSVC)
+
+SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43" "1.44.0" "1.44")
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
