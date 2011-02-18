@@ -86,6 +86,9 @@ public:
     //! A wildcard motherboard index
     static const size_t ALL_MBOARDS = size_t(~0);
 
+    //! A wildcard channel index
+    static const size_t ALL_CHANS = size_t(~0);
+
     //! A wildcard gain element name
     static const std::string ALL_GAINS;
 
@@ -214,8 +217,9 @@ public:
      * to ensure that the packets can be aligned by their time specs.
      *
      * \param stream_cmd the stream command to issue
+     * \param chan the channel index 0 to N-1
      */
-    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan = ALL_CHANS) = 0;
 
     /*!
      * Set the clock configuration for the usrp device.
@@ -266,16 +270,18 @@ public:
     virtual std::string get_rx_subdev_name(size_t chan = 0) = 0;
 
     /*!
-     * Set the RX sample rate across all channels.
+     * Set the RX sample rate.
      * \param rate the rate in Sps
+     * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_rate(double rate) = 0;
+    virtual void set_rx_rate(double rate, size_t chan = ALL_CHANS) = 0;
 
     /*!
-     * Gets the RX sample rate for all channels.
+     * Gets the RX sample rate.
+     * \param chan the channel index 0 to N-1
      * \return the rate in Sps
      */
-    virtual double get_rx_rate(void) = 0;
+    virtual double get_rx_rate(size_t chan = 0) = 0;
 
     /*!
      * Set the RX center frequency.
@@ -445,16 +451,18 @@ public:
     virtual std::string get_tx_subdev_name(size_t chan = 0) = 0;
 
     /*!
-     * Set the TX sample rate across all channels.
+     * Set the TX sample rate.
      * \param rate the rate in Sps
+     * \param chan the channel index 0 to N-1
      */
-    virtual void set_tx_rate(double rate) = 0;
+    virtual void set_tx_rate(double rate, size_t chan = ALL_CHANS) = 0;
 
     /*!
-     * Gets the TX sample rate for all channels.
+     * Gets the TX sample rate.
+     * \param chan the channel index 0 to N-1
      * \return the rate in Sps
      */
-    virtual double get_tx_rate(void) = 0;
+    virtual double get_tx_rate(size_t chan) = 0;
 
     /*!
      * Set the TX center frequency.

@@ -399,10 +399,13 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         _rx_subdev_spec = val.as<subdev_spec_t>();
         verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
         //set the mux
-        _iface->poke32(_iface->regs.dsp0_rx_mux, dsp_type1::calc_rx_mux_word(
-            _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        if (_rx_subdev_spec.size() >= 1) _iface->poke32(_iface->regs.dsp0_rx_mux, dsp_type1::calc_rx_mux_word(
+            _dboard_manager->get_rx_subdev(_rx_subdev_spec[0].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        ));
+        if (_rx_subdev_spec.size() >= 2)_iface->poke32(_iface->regs.dsp1_rx_mux, dsp_type1::calc_rx_mux_word(
+            _dboard_manager->get_rx_subdev(_rx_subdev_spec[1].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
         return;
 

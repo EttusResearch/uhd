@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,12 +37,12 @@ namespace uhd{ namespace usrp{
      *   Set the shift property and read it back to get actual shift.
      */
     enum dsp_prop_t{
-        DSP_PROP_NAME              = 'n', //ro, std::string
-        DSP_PROP_OTHERS            = 'o', //ro, prop_names_t
-        DSP_PROP_FREQ_SHIFT        = 'f', //rw, double Hz
-        DSP_PROP_FREQ_SHIFT_NAMES  = 'F', //ro, prop_names_t
-        DSP_PROP_CODEC_RATE        = 'c', //ro, double Sps
-        DSP_PROP_HOST_RATE         = 'h'  //rw, double Sps
+        DSP_PROP_NAME,               //ro, std::string
+        DSP_PROP_OTHERS,             //ro, prop_names_t
+        DSP_PROP_STREAM_CMD,         //wo, stream_cmd_t
+        DSP_PROP_FREQ_SHIFT,         //rw, double Hz
+        DSP_PROP_CODEC_RATE,         //ro, double Sps
+        DSP_PROP_HOST_RATE           //rw, double Sps
     };
 
 }} //namespace

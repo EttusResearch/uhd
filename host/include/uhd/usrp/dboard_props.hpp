@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,13 +28,13 @@ namespace uhd{ namespace usrp{
      *    A dboard is considered to be unidirectional (RX or TX).
      */
     enum dboard_prop_t{
-        DBOARD_PROP_NAME         = 'n', //ro, std::string
-        DBOARD_PROP_SUBDEV       = 's', //ro, wax::obj
-        DBOARD_PROP_SUBDEV_NAMES = 'S', //ro, prop_names_t
-        DBOARD_PROP_DBOARD_ID    = 'i', //rw, dboard_id_t
-        DBOARD_PROP_DBOARD_IFACE = 'f', //ro, dboard_iface::sptr
-        DBOARD_PROP_CODEC        = 'c', //ro, wax::obj
-        DBOARD_PROP_GAIN_GROUP   = 'g'  //ro, gain_group
+        DBOARD_PROP_NAME,           //ro, std::string
+        DBOARD_PROP_SUBDEV,         //ro, wax::obj
+        DBOARD_PROP_SUBDEV_NAMES,   //ro, prop_names_t
+        DBOARD_PROP_DBOARD_ID,      //rw, dboard_id_t
+        DBOARD_PROP_DBOARD_IFACE,   //ro, dboard_iface::sptr
+        DBOARD_PROP_CODEC,          //ro, wax::obj
+        DBOARD_PROP_GAIN_GROUP      //ro, gain_group
     }; 
 
 }} //namespace
