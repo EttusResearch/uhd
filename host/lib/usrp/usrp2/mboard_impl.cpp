@@ -56,40 +56,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
-    //TODO move to dsp impl...
-    //load the allowed decim/interp rates
-    //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
-    _allowed_decim_and_interp_rates.clear();
-    for (size_t i = 4; i <= 128; i+=1){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 130; i <= 256; i+=2){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 260; i <= 512; i+=4){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-
-    //setup the vrt rx registers
-    //TODO loop for 0, 1, in NUM_RX_DSPS
-    _iface->poke32(_iface->regs.rx_ctrl[0].clear_overrun, 1); //reset
-    _iface->poke32(_iface->regs.rx_ctrl[0].nsamps_per_pkt, recv_samps_per_packet);
-    _iface->poke32(_iface->regs.rx_ctrl[0].nchannels, 1);
-    _iface->poke32(_iface->regs.rx_ctrl[0].vrt_header, 0
-        | (0x1 << 28) //if data with stream id
-        | (0x1 << 26) //has trailer
-        | (0x3 << 22) //integer time other
-        | (0x1 << 20) //fractional time sample count
-    );
-    _iface->poke32(_iface->regs.rx_ctrl[0].vrt_stream_id, usrp2_impl::RECV_SID);
-    _iface->poke32(_iface->regs.rx_ctrl[0].vrt_trailer, 0);
-    _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
-
-    //init the tx control registers
-    _iface->poke32(_iface->regs.tx_ctrl_clear_state, 1); //reset
-    _iface->poke32(_iface->regs.tx_ctrl_num_chan, 0);    //1 channel
-    _iface->poke32(_iface->regs.tx_ctrl_report_sid, usrp2_impl::ASYNC_SID);
-    _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+    //init the dsp stuff (before setting update packets)
+    dsp_init(recv_samps_per_packet);
 
     //setting the cycles per update (disabled by default)
     const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
@@ -104,12 +72,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
     }
-
-    //init the ddc
-    init_ddc_config();
-
-    //init the duc
-    init_duc_config();
 
     //initialize the clock configuration
     if (device_args.has_key("mimo_mode")){
@@ -144,12 +106,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
 
     //This is a hack/fix for the lingering packet problem.
+    /*
     stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = 1;
     this->issue_ddc_stream_cmd(stream_cmd);
     data_transport->get_recv_buff().get(); //recv with timeout for lingering
     data_transport->get_recv_buff().get(); //recv with timeout for expected
     _iface->poke32(_iface->regs.rx_ctrl[0].clear_overrun, 1); //resets sequence
+    */
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
@@ -250,19 +214,6 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     _iface->poke32(_iface->regs.time64_secs, boost::uint32_t(time_spec.get_full_secs()));
 }
 
-void usrp2_mboard_impl::handle_overflow(void){
-    if (_continuous_streaming){ //re-issue the stream command if already continuous
-        this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    }
-}
-
-void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-    _iface->poke32(_iface->regs.rx_ctrl[0].stream_cmd, dsp_type1::calc_stream_cmd_word(stream_cmd));
-    _iface->poke32(_iface->regs.rx_ctrl[0].time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(_iface->regs.rx_ctrl[0].time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
-}
-
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
@@ -299,21 +250,19 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _rx_dsp_proxy->get_link();
+        val = _rx_dsp_proxies[key.name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _rx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _tx_dsp_proxy->get_link();
+        val = _tx_dsp_proxies[key.name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _tx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:
@@ -380,15 +329,13 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         _rx_subdev_spec = val.as<subdev_spec_t>();
         verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= 2);
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= NUM_RX_DSPS);
         //set the mux
-        if (_rx_subdev_spec.size() >= 1) _iface->poke32(_iface->regs.dsp_rx[0].mux, dsp_type1::calc_rx_mux_word(
-            _dboard_manager->get_rx_subdev(_rx_subdev_spec[0].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        ));
-        //TODO
-        //if (_rx_subdev_spec.size() >= 2) _iface->poke32(_iface->regs.dsp1_rx_mux, dsp_type1::calc_rx_mux_word(
-        //    _dboard_manager->get_rx_subdev(_rx_subdev_spec[1].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        //));
+        for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
+            if (_rx_subdev_spec.size() >= 1) _iface->poke32(_iface->regs.dsp_rx[i].mux, dsp_type1::calc_rx_mux_word(
+                _dboard_manager->get_rx_subdev(_rx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+            ));
+        }
         return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:

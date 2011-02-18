@@ -80,6 +80,9 @@ class usrp2_mboard_impl : public wax::obj{
 public:
     typedef boost::shared_ptr<usrp2_mboard_impl> sptr;
 
+    static const size_t NUM_RX_DSPS = 2;
+    static const size_t NUM_TX_DSPS = 1;
+
     //structors
     usrp2_mboard_impl(
         size_t index,
@@ -95,11 +98,10 @@ public:
         return _clock_ctrl->get_master_clock_rate();
     }
 
-    void handle_overflow(void);
+    void handle_overflow(size_t);
 
 private:
     size_t _index;
-    bool _continuous_streaming;
     bool _mimo_clocking_mode_is_master;
 
     //interfaces
@@ -147,27 +149,20 @@ private:
     wax_obj_proxy::sptr _tx_dboard_proxy;
     uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
 
-    //methods and shadows for the ddc dsp
-    std::vector<size_t> _allowed_decim_and_interp_rates;
-    size_t _ddc_decim;
-    double _ddc_freq;
-    void init_ddc_config(void);
-    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
-
-    //methods and shadows for the duc dsp
-    size_t _duc_interp;
-    double _duc_freq;
-    void init_duc_config(void);
+    //methods and shadows for the dsps
+    UHD_PIMPL_DECL(dsp_impl) _dsp_impl;
+    void dsp_init(size_t recv_samps_per_packet);
+    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &, size_t);
 
     //properties interface for ddc
-    void ddc_get(const wax::obj &, wax::obj &);
-    void ddc_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy::sptr _rx_dsp_proxy;
+    void ddc_get(const wax::obj &, wax::obj &, size_t);
+    void ddc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsp_proxies;
 
     //properties interface for duc
-    void duc_get(const wax::obj &, wax::obj &);
-    void duc_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy::sptr _tx_dsp_proxy;
+    void duc_get(const wax::obj &, wax::obj &, size_t);
+    void duc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
 
 };
 
@@ -181,8 +176,6 @@ public:
     static const size_t sram_bytes = size_t(1 << 20);
     static const boost::uint32_t RECV_SID = 1;
     static const boost::uint32_t ASYNC_SID = 2;
-    static const size_t NUM_RX_DSPS = 2;
-    static const size_t NUM_TX_DSPS = 1;
 
     /*!
      * Create a new usrp2 impl base.

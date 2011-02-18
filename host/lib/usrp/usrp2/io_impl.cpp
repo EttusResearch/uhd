@@ -464,7 +464,8 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
 
 static void handle_overflow(std::vector<usrp2_mboard_impl::sptr> &mboards, size_t chan){
     std::cerr << "O" << std::flush;
-    mboards.at(chan/mboards.size())->handle_overflow();
+    //TODO this is wrong way to determine the index...
+    mboards.at(chan/mboards.size())->handle_overflow(chan%mboards.size());
 }
 
 size_t usrp2_impl::recv(
