@@ -22,6 +22,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/warning.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <boost/algorithm/string.hpp> //for split
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -29,7 +30,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 #include <boost/bind.hpp>
-#include <boost/asio.hpp> //htonl and ntohl
+#include <boost/asio/ip/address_v4.hpp>
 #include <iostream>
 #include <vector>
 
@@ -147,8 +148,8 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out;
-    ctrl_data_out.proto_ver = htonl(USRP2_FW_COMPAT_NUM);
-    ctrl_data_out.id = htonl(USRP2_CTRL_ID_WAZZUP_BRO);
+    ctrl_data_out.proto_ver = uhd::htonx<boost::uint32_t>(USRP2_FW_COMPAT_NUM);
+    ctrl_data_out.id = uhd::htonx<boost::uint32_t>(USRP2_CTRL_ID_WAZZUP_BRO);
     udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
 
     //loop and recieve until the timeout
@@ -157,9 +158,9 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
         //std::cout << len << "\n";
-        if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
+        if (len > offsetof(usrp2_ctrl_data_t, data) and uhd::ntohx(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
             //make a boost asio ipv4 with the raw addr in host byte order
-            boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+            boost::asio::ip::address_v4 ip_addr(uhd::ntohx(ctrl_data_in->data.ip_addr));
             device_addr_t new_addr;
             new_addr["type"] = "usrp2";
             new_addr["addr"] = ip_addr.to_string();
@@ -215,16 +216,33 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
     std::vector<zero_copy_if::sptr> err0_transports;
     const device_addrs_t device_addrs = sep_indexed_dev_addrs(device_addr);
 
+    //Send a small data packet so the usrp2 knows the udp source port.
+    //This setup must happen before further initialization occurs
+    //or the async update packets will cause ICMP destination unreachable.
+    transport::managed_send_buffer::sptr send_buff;
+    static const boost::uint32_t data[2] = {
+        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    };
+
     BOOST_FOREACH(const device_addr_t &dev_addr_i, device_addrs){
         ctrl_transports.push_back(udp_simple::make_connected(
             dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
         ));
+
         data_transports.push_back(udp_zero_copy::make(
             dev_addr_i["addr"], num2str(USRP2_UDP_DSP0_PORT), dsp_xport_hints
         ));
+        send_buff = data_transports.back()->get_send_buff();
+        std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+        send_buff->commit(sizeof(data));
+
         err0_transports.push_back(udp_zero_copy::make(
             dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()
         ));
+        send_buff = err0_transports.back()->get_send_buff();
+        std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+        send_buff->commit(sizeof(data));
     }
 
     //create the usrp2 implementation guts

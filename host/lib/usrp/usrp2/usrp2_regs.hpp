@@ -70,12 +70,14 @@ typedef struct {
     int dsp_tx_scale_iq;
     int dsp_tx_interp_rate;
     int dsp_tx_mux;
-    int dsp0_rx_freq;
-    int dsp0_rx_scale_iq;
-    int dsp0_rx_decim_rate;
-    int dsp0_rx_dcoffset_i;
-    int dsp0_rx_dcoffset_q;
-    int dsp0_rx_mux;
+    struct{
+        int freq;
+        int scale_iq;
+        int decim_rate;
+        int dcoffset_i;
+        int dcoffset_q;
+        int mux;
+    } dsp_rx[2];
     int gpio_base;
     int gpio_io;
     int gpio_ddr;
@@ -90,15 +92,17 @@ typedef struct {
     int atr_inrx_rxside;
     int atr_full_txside;
     int atr_full_rxside;
-    int rx_ctrl0_stream_cmd;
-    int rx_ctrl0_time_secs;
-    int rx_ctrl0_time_ticks;
-    int rx_ctrl0_clear_overrun;
-    int rx_ctrl0_vrt_header;
-    int rx_ctrl0_vrt_stream_id;
-    int rx_ctrl0_vrt_trailer;
-    int rx_ctrl0_nsamps_per_pkt;
-    int rx_ctrl0_nchannels;
+    struct{
+        int stream_cmd;
+        int time_secs;
+        int time_ticks;
+        int clear_overrun;
+        int vrt_header;
+        int vrt_stream_id;
+        int vrt_trailer;
+        int nsamps_per_pkt;
+        int nchannels;
+    } rx_ctrl[2];
     int tx_ctrl_num_chan;
     int tx_ctrl_clear_state;
     int tx_ctrl_report_sid;

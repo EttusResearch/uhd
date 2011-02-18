@@ -98,7 +98,7 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(_iface->regs.dsp0_rx_freq,
+            _iface->poke32(_iface->regs.dsp_rx[0].freq,
                 dsp_type1::calc_cordic_word_and_update(new_freq, get_master_clock_freq())
             );
             _ddc_freq = new_freq; //shadow
@@ -110,11 +110,11 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val){
             _ddc_decim = pick_closest_rate(extact_rate, _allowed_decim_and_interp_rates);
 
             //set the decimation
-            _iface->poke32(_iface->regs.dsp0_rx_decim_rate, dsp_type1::calc_cic_filter_word(_ddc_decim));
+            _iface->poke32(_iface->regs.dsp_rx[0].decim_rate, dsp_type1::calc_cic_filter_word(_ddc_decim));
 
             //set the scaling
             static const boost::int16_t default_rx_scale_iq = 1024;
-            _iface->poke32(_iface->regs.dsp0_rx_scale_iq,
+            _iface->poke32(_iface->regs.dsp_rx[0].scale_iq,
                 dsp_type1::calc_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
             );
         }

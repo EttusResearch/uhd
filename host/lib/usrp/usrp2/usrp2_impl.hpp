@@ -181,6 +181,8 @@ public:
     static const size_t sram_bytes = size_t(1 << 20);
     static const boost::uint32_t RECV_SID = 1;
     static const boost::uint32_t ASYNC_SID = 2;
+    static const size_t NUM_RX_DSPS = 2;
+    static const size_t NUM_TX_DSPS = 1;
 
     /*!
      * Create a new usrp2 impl base.
