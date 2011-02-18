@@ -44,6 +44,8 @@ module u1e_core
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
+   wire [7:0] 	test_rate;
+   wire [3:0] 	test_ctrl;
    
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
@@ -78,7 +80,6 @@ module u1e_core
 		 tx_err_src_rdy, tx_err_dst_rdy;
    reg [15:0] 	 tx_frame_len;
    wire [15:0] 	 rx_frame_len;
-   wire [7:0] 	 rate;
 
    wire 	 bus_error;
    wire 	 clear_tx, clear_rx;
@@ -111,6 +112,8 @@ module u1e_core
 	 
 	 .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
 	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
+
+	 .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug(debug_gpmc));
 
    wire 	 rx_sof = rx_data[32];
@@ -285,9 +288,8 @@ module u1e_core
 	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
 
-   assign tx_enable = xfer_rate[15];
-   assign rx_enable = xfer_rate[14];
-   assign rate = xfer_rate[7:0];
+   assign test_ctrl = xfer_rate[11:8];
+   assign test_rate = xfer_rate[7:0];
    
    assign { debug_led[3:0] } = ~{run_rx,run_tx,reg_leds[1:0]};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;

@@ -25,6 +25,7 @@ module gpmc_async
     input [15:0] tx_frame_len, output [15:0] rx_frame_len,
 
     output tx_underrun, output rx_overrun,
+    input [7:0] test_rate, input [3:0] test_ctrl,
     output [31:0] debug
     );
 
@@ -143,9 +144,10 @@ module gpmc_async
    wire 	timedrx_src_rdy_int, timedrx_dst_rdy_int, timedtx_src_rdy_int, timedtx_dst_rdy_int;
 
    wire [31:0] 	total, crc_err, seq_err, len_err;
-   wire [7:0] 	rx_rate, tx_rate;
-   wire 	rx_enable, tx_enable;
-   wire 	sel_testtx, sel_loopbacktx;
+   wire 	sel_testtx = test_ctrl[0];
+   wire 	sel_loopbacktx = test_ctrl[1];
+   wire 	pkt_src_enable = test_ctrl[2];
+   wire 	pkt_sink_enable = test_ctrl[3];
    
    fifo36_mux rx_test_mux_lvl_1
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
@@ -183,7 +185,7 @@ module gpmc_async
    
    // Fixed rate TX traffic consumer
    fifo_pacer tx_pacer
-     (.clk(fifo_clk), .reset(fifo_rst), .rate(tx_rate), .enable(tx_enable),
+     (.clk(fifo_clk), .reset(fifo_rst), .rate(test_rate), .enable(pkt_sink_enable),
       .src1_rdy_i(timedtx_src_rdy), .dst1_rdy_o(timedtx_dst_rdy),
       .src2_rdy_o(timedtx_src_rdy_int), .dst2_rdy_i(timedtx_dst_rdy_int),
       .underrun(tx_underrun), .overrun());
@@ -200,7 +202,7 @@ module gpmc_async
       .data_o(timedrx_data), .src_rdy_o(timedrx_src_rdy_int), .dst_rdy_i(timedrx_dst_rdy_int));
 
    fifo_pacer rx_pacer
-     (.clk(fifo_clk), .reset(fifo_rst), .rate(rx_rate), .enable(rx_enable),
+     (.clk(fifo_clk), .reset(fifo_rst), .rate(test_rate), .enable(pkt_src_enable),
       .src1_rdy_i(timedrx_src_rdy_int), .dst1_rdy_o(timedrx_dst_rdy_int),
       .src2_rdy_o(timedrx_src_rdy), .dst2_rdy_i(timedrx_dst_rdy),
       .underrun(), .overrun(rx_overrun));
