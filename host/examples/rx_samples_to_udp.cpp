@@ -80,7 +80,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
 
     boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
-    std::cout << "LO Locked = " << usrp->get_rx_lo_locked() << std::endl;
 
     //setup streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);

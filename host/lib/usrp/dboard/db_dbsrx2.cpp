@@ -22,6 +22,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
@@ -400,8 +401,13 @@ void dbsrx2::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_LOCKED:
-        val = this->get_locked();
+    case SUBDEV_PROP_SENSOR:
+        UHD_ASSERT_THROW(key.name == "lo_locked");
+        val = sensor_value_t("LO", this->get_locked(), "locked", "unlocked");
+        return;
+
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = prop_names_t(1, "lo_locked");
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
