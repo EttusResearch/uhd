@@ -497,7 +497,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the rate in Sps
      */
-    virtual double get_tx_rate(size_t chan) = 0;
+    virtual double get_tx_rate(size_t chan = 0) = 0;
 
     /*!
      * Set the TX center frequency.

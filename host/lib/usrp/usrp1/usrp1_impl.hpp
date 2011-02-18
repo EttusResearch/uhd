@@ -182,19 +182,19 @@ private:
 
     //rx dsp functions and settings
     void rx_dsp_init(void);
-    void rx_dsp_get(const wax::obj &, wax::obj &);
-    void rx_dsp_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, double> _rx_dsp_freqs;
+    void rx_dsp_get(const wax::obj &, wax::obj &, size_t);
+    void rx_dsp_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<size_t, double> _rx_dsp_freqs;
     size_t _rx_dsp_decim;
-    wax_obj_proxy::sptr _rx_dsp_proxy;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsp_proxies;
 
     //tx dsp functions and settings
     void tx_dsp_init(void);
-    void tx_dsp_get(const wax::obj &, wax::obj &);
-    void tx_dsp_set(const wax::obj &, const wax::obj &);
-    uhd::dict<std::string, double> _tx_dsp_freqs;
+    void tx_dsp_get(const wax::obj &, wax::obj &, size_t);
+    void tx_dsp_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<size_t, double> _tx_dsp_freqs;
     size_t _tx_dsp_interp;
-    wax_obj_proxy::sptr _tx_dsp_proxy;
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
 
     //transports
     uhd::transport::usb_zero_copy::sptr _data_transport;

@@ -32,24 +32,21 @@ namespace uhd{ namespace usrp{
      * The ddc cordic is setup to bring the IF down to baseband.
      * \param subdev the dboard subdevice object with properties
      * \param ddc the mboard dsp object with properties
-     * \param chan the channel of the dsp to tune
      * \param tune_request tune request instructions
      * \return a tune result struct
      */
     UHD_API tune_result_t tune_rx_subdev_and_dsp(
-        wax::obj subdev, wax::obj ddc, size_t chan,
-        const tune_request_t &tune_request
+        wax::obj subdev, wax::obj ddc, const tune_request_t &tune_request
     );
 
     /*!
      * Calculate the overall frequency from the combination of dboard IF and DDC shift.
      * \param subdev the dboard subdevice object with properties
      * \param ddc the mboard dsp object with properties
-     * \param chan the channel of the dsp to tune
      * \return the overall tune frequency of the system in Hz
      */
     UHD_API double derive_freq_from_rx_subdev_and_dsp(
-        wax::obj subdev, wax::obj ddc, size_t chan
+        wax::obj subdev, wax::obj ddc
     );
 
     /*!
@@ -59,24 +56,21 @@ namespace uhd{ namespace usrp{
      * The duc cordic is setup to bring the baseband up to IF.
      * \param subdev the dboard subdevice object with properties
      * \param duc the mboard dsp object with properties
-     * \param chan the channel of the dsp to tune
      * \param tune_request tune request instructions
      * \return a tune result struct
      */
     UHD_API tune_result_t tune_tx_subdev_and_dsp(
-        wax::obj subdev, wax::obj duc, size_t chan,
-        const tune_request_t &tune_request
+        wax::obj subdev, wax::obj duc, const tune_request_t &tune_request
     );
 
     /*!
      * Calculate the overall frequency from the combination of dboard IF and DUC shift.
      * \param subdev the dboard subdevice object with properties
      * \param duc the mboard dsp object with properties
-     * \param chan the channel of the dsp to tune
      * \return the overall tune frequency of the system in Hz
      */
     UHD_API double derive_freq_from_tx_subdev_and_dsp(
-        wax::obj subdev, wax::obj duc, size_t chan
+        wax::obj subdev, wax::obj duc
     );
 
 }}
