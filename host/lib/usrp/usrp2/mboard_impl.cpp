@@ -391,10 +391,6 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         set_time_spec(val.as<time_spec_t>(), false);
         return;
 
-    case MBOARD_PROP_STREAM_CMD:
-        issue_ddc_stream_cmd(val.as<stream_cmd_t>());
-        return;
-
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();
         verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
@@ -404,9 +400,10 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         if (_rx_subdev_spec.size() >= 1) _iface->poke32(_iface->regs.dsp0_rx_mux, dsp_type1::calc_rx_mux_word(
             _dboard_manager->get_rx_subdev(_rx_subdev_spec[0].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
-        if (_rx_subdev_spec.size() >= 2)_iface->poke32(_iface->regs.dsp1_rx_mux, dsp_type1::calc_rx_mux_word(
-            _dboard_manager->get_rx_subdev(_rx_subdev_spec[1].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        ));
+        //TODO
+        //if (_rx_subdev_spec.size() >= 2) _iface->poke32(_iface->regs.dsp1_rx_mux, dsp_type1::calc_rx_mux_word(
+        //    _dboard_manager->get_rx_subdev(_rx_subdev_spec[1].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+        //));
         return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:

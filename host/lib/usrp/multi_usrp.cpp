@@ -238,7 +238,11 @@ public:
     }
 
     size_t get_rx_num_channels(void){
-        return rx_cpm()*get_num_mboards(); //total num channels
+        size_t sum = 0;
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            sum += get_rx_subdev_spec(m).size();
+        }
+        return sum;
     }
 
     std::string get_rx_subdev_name(size_t chan){
@@ -344,7 +348,11 @@ public:
     }
 
     size_t get_tx_num_channels(void){
-        return tx_cpm()*get_num_mboards(); //total num channels
+        size_t sum = 0;
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            sum += get_tx_subdev_spec(m).size();
+        }
+        return sum;
     }
 
     void set_tx_rate(double rate, size_t chan){
@@ -427,24 +435,31 @@ public:
 private:
     device::sptr _dev;
 
-    size_t rx_cpm(void){ //channels per mboard
-        size_t nchan = get_rx_subdev_spec(0).size();
-        for (size_t m = 1; m < get_num_mboards(); m++){
-            if (nchan != get_rx_subdev_spec(m).size()){
-                throw std::runtime_error("rx subdev spec size inconsistent across all mboards");
-            }
+    struct mboard_chan_pair{
+        size_t mboard, chan;
+        mboard_chan_pair(void): mboard(0), chan(0){}
+    };
+
+    mboard_chan_pair rx_chan_to_mcp(size_t chan){
+        mboard_chan_pair mcp;
+        mcp.chan = chan;
+        for (mcp.mboard = 0; mcp.mboard < get_num_mboards(); mcp.mboard++){
+            size_t sss = get_rx_subdev_spec(mcp.mboard).size();
+            if (mcp.chan < sss) break;
+            mcp.chan -= sss;
         }
-        return nchan;
+        return mcp;
     }
 
-    size_t tx_cpm(void){ //channels per mboard
-        size_t nchan = get_tx_subdev_spec(0).size();
-        for (size_t m = 1; m < get_num_mboards(); m++){
-            if (nchan != get_tx_subdev_spec(m).size()){
-                throw std::runtime_error("tx subdev spec size inconsistent across all mboards");
-            }
+    mboard_chan_pair tx_chan_to_mcp(size_t chan){
+        mboard_chan_pair mcp;
+        mcp.chan = chan;
+        for (mcp.mboard = 0; mcp.mboard < get_num_mboards(); mcp.mboard++){
+            size_t sss = get_tx_subdev_spec(mcp.mboard).size();
+            if (mcp.chan < sss) break;
+            mcp.chan -= sss;
         }
-        return nchan;
+        return mcp;
     }
 
     wax::obj _mboard(size_t mboard){
@@ -452,35 +467,43 @@ private:
         return (*_dev)[named_prop_t(DEVICE_PROP_MBOARD, mb_name)];
     }
     wax::obj _rx_dsp(size_t chan){
-        prop_names_t dsp_names = _mboard(chan/rx_cpm())[MBOARD_PROP_RX_DSP_NAMES].as<prop_names_t>();
-        return _mboard(chan/rx_cpm())[named_prop_t(MBOARD_PROP_RX_DSP, dsp_names.at(chan%rx_cpm()))];
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        prop_names_t dsp_names = _mboard(mcp.mboard)[MBOARD_PROP_RX_DSP_NAMES].as<prop_names_t>();
+        return _mboard(mcp.mboard)[named_prop_t(MBOARD_PROP_RX_DSP, dsp_names.at(mcp.chan))];
     }
     wax::obj _tx_dsp(size_t chan){
-        prop_names_t dsp_names = _mboard(chan/tx_cpm())[MBOARD_PROP_TX_DSP_NAMES].as<prop_names_t>();
-        return _mboard(chan/tx_cpm())[named_prop_t(MBOARD_PROP_TX_DSP, dsp_names.at(chan%tx_cpm()))];
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        prop_names_t dsp_names = _mboard(mcp.mboard)[MBOARD_PROP_TX_DSP_NAMES].as<prop_names_t>();
+        return _mboard(mcp.mboard)[named_prop_t(MBOARD_PROP_TX_DSP, dsp_names.at(mcp.chan))];
     }
     wax::obj _rx_dboard(size_t chan){
-        std::string db_name = get_rx_subdev_spec(chan/rx_cpm()).at(chan%rx_cpm()).db_name;
-        return _mboard(chan/rx_cpm())[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        std::string db_name = get_rx_subdev_spec(mcp.mboard).at(mcp.chan).db_name;
+        return _mboard(mcp.mboard)[named_prop_t(MBOARD_PROP_RX_DBOARD, db_name)];
     }
     wax::obj _tx_dboard(size_t chan){
-        std::string db_name = get_tx_subdev_spec(chan/tx_cpm()).at(chan%tx_cpm()).db_name;
-        return _mboard(chan/tx_cpm())[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        std::string db_name = get_tx_subdev_spec(mcp.mboard).at(mcp.chan).db_name;
+        return _mboard(mcp.mboard)[named_prop_t(MBOARD_PROP_TX_DBOARD, db_name)];
     }
     wax::obj _rx_subdev(size_t chan){
-        std::string sd_name = get_rx_subdev_spec(chan/rx_cpm()).at(chan%rx_cpm()).sd_name;
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        std::string sd_name = get_rx_subdev_spec(mcp.mboard).at(mcp.chan).sd_name;
         return _rx_dboard(chan)[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
     }
     wax::obj _tx_subdev(size_t chan){
-        std::string sd_name = get_tx_subdev_spec(chan/tx_cpm()).at(chan%tx_cpm()).sd_name;
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        std::string sd_name = get_tx_subdev_spec(mcp.mboard).at(mcp.chan).sd_name;
         return _tx_dboard(chan)[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)];
     }
     gain_group::sptr _rx_gain_group(size_t chan){
-        std::string sd_name = get_rx_subdev_spec(chan/rx_cpm()).at(chan%rx_cpm()).sd_name;
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        std::string sd_name = get_rx_subdev_spec(mcp.mboard).at(mcp.chan).sd_name;
         return _rx_dboard(chan)[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
     }
     gain_group::sptr _tx_gain_group(size_t chan){
-        std::string sd_name = get_tx_subdev_spec(chan/tx_cpm()).at(chan%tx_cpm()).sd_name;
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        std::string sd_name = get_tx_subdev_spec(mcp.mboard).at(mcp.chan).sd_name;
         return _tx_dboard(chan)[named_prop_t(DBOARD_PROP_GAIN_GROUP, sd_name)].as<gain_group::sptr>();
     }
 };

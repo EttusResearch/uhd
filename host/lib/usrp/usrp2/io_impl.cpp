@@ -265,7 +265,7 @@ void usrp2_impl::io_init(void){
     _io_impl = UHD_PIMPL_MAKE(io_impl, (send_frame_size, _data_transports));
 
     //create a new pirate thread for each zc if (yarr!!)
-    for (size_t i = 0; i < _data_transports.size(); i++){
+    for (size_t i = 0; i < _err0_transports.size(); i++){
         //lock the unlocked mutex (non-blocking)
         _io_impl->spawn_mutex.lock();
         //spawn a new pirate to plunder the recv booty

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ using namespace uhd::usrp;
 void usrp1_impl::rx_dsp_init(void)
 {
     for (size_t i = 0; i < this->get_num_ddcs(); i++){
-        _rx_dsp_proxies[str(boost::format("dsp%d")%i)] = wax_obj_proxy::make(
+        _rx_dsp_proxies[str(boost::format("DSP%d")%i)] = wax_obj_proxy::make(
             boost::bind(&usrp1_impl::rx_dsp_get, this, _1, _2, i),
             boost::bind(&usrp1_impl::rx_dsp_set, this, _1, _2, i)
         );
@@ -133,7 +133,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
 void usrp1_impl::tx_dsp_init(void)
 {
     for (size_t i = 0; i < this->get_num_ducs(); i++){
-        _tx_dsp_proxies[str(boost::format("dsp%d")%i)] = wax_obj_proxy::make(
+        _tx_dsp_proxies[str(boost::format("DSP%d")%i)] = wax_obj_proxy::make(
             boost::bind(&usrp1_impl::tx_dsp_get, this, _1, _2, i),
             boost::bind(&usrp1_impl::tx_dsp_set, this, _1, _2, i)
         );

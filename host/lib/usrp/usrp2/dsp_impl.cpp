@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,10 +75,6 @@ void usrp2_mboard_impl::ddc_get(const wax::obj &key_, wax::obj &val){
         val = _ddc_freq;
         return;
 
-    case DSP_PROP_FREQ_SHIFT_NAMES:
-        val = prop_names_t(1, "");
-        return;
-
     case DSP_PROP_CODEC_RATE:
         val = get_master_clock_freq();
         return;
@@ -95,6 +91,10 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
+
+    case DSP_PROP_STREAM_CMD:
+        issue_ddc_stream_cmd(val.as<stream_cmd_t>());
+        return;
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
@@ -156,10 +156,6 @@ void usrp2_mboard_impl::duc_get(const wax::obj &key_, wax::obj &val){
 
     case DSP_PROP_FREQ_SHIFT:
         val = _duc_freq;
-        return;
-
-    case DSP_PROP_FREQ_SHIFT_NAMES:
-        val = prop_names_t(1, "");
         return;
 
     case DSP_PROP_CODEC_RATE:
