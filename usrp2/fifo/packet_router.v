@@ -117,6 +117,11 @@ module packet_router
     wire        _eth_inp_valid;
     wire        _eth_inp_ready;
 
+    // dummy signals to connect fifo_short
+    wire [35:0]	_com_inp_data;
+    wire 	_com_inp_valid;
+    wire        _com_inp_ready;
+
     valve36 eth_inp_valve (
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr), .shutoff(~master_mode_flag),
         .data_i(eth_inp_data), .src_rdy_i(eth_inp_valid), .dst_rdy_o(eth_inp_ready),
@@ -127,9 +132,16 @@ module packet_router
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr), .cross(~master_mode_flag),
         .data0_i(_eth_inp_data), .src0_rdy_i(_eth_inp_valid), .dst0_rdy_o(_eth_inp_ready),
         .data1_i(ser_inp_data), .src1_rdy_i(ser_inp_valid), .dst1_rdy_o(ser_inp_ready),
-        .data0_o(com_inp_data), .src0_rdy_o(com_inp_valid), .dst0_rdy_i(com_inp_ready),
+        .data0_o(_com_inp_data), .src0_rdy_o(_com_inp_valid), .dst0_rdy_i(_com_inp_ready),
         .data1_o(ext_inp_data), .src1_rdy_o(ext_inp_valid), .dst1_rdy_i(ext_inp_ready)
     );
+
+    //  short fifo in the packet inspection path to help timing
+    fifo_short #(.WIDTH(36)) com_inp_fifo
+     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+      .datain(_com_inp_data),  .src_rdy_i(_com_inp_valid), .dst_rdy_o(_com_inp_ready),
+      .dataout(com_inp_data), .src_rdy_o(com_inp_valid), .dst_rdy_i(com_inp_ready),
+      .space(), .occupied() );
 
     ////////////////////////////////////////////////////////////////////
     // Communication output sink crossbar
