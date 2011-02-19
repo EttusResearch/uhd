@@ -27,6 +27,7 @@ import re
 import struct
 import socket
 import sys
+import time
 
 ########################################################################
 # constants
@@ -75,77 +76,28 @@ class update_id_t:
 
 _seq = -1
 def seq():
-  global _seq
-  _seq = _seq+1
-  return _seq 
+    global _seq
+    _seq = _seq+1
+    return _seq
 
 ########################################################################
 # helper functions
 ########################################################################
 def unpack_flash_args_fmt(s):
-  return struct.unpack(FLASH_ARGS_FMT, s) #(proto_ver, pktid, seq, flash_addr, length, data)
+    return struct.unpack(FLASH_ARGS_FMT, s) #(proto_ver, pktid, seq, flash_addr, length, data)
 
 def unpack_flash_info_fmt(s):
-  return struct.unpack(FLASH_INFO_FMT, s) #(proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes)
+    return struct.unpack(FLASH_INFO_FMT, s) #(proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes)
 
 def unpack_flash_ip_fmt(s):
-  return struct.unpack(FLASH_IP_FMT, s) #(proto_ver, pktid, seq, ip_addr)
+    return struct.unpack(FLASH_IP_FMT, s) #(proto_ver, pktid, seq, ip_addr)
 
 def pack_flash_args_fmt(proto_ver, pktid, seq, flash_addr, length, data):
-  return struct.pack(FLASH_ARGS_FMT, proto_ver, pktid, seq, flash_addr, length, data)
+    return struct.pack(FLASH_ARGS_FMT, proto_ver, pktid, seq, flash_addr, length, data)
 
 def pack_flash_info_fmt(proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes):
-  return struct.pack(FLASH_INFO_FMT, proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes)
+    return struct.pack(FLASH_INFO_FMT, proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes)
 
-def send_and_recv(pkt, ip):
-  update_socket = create_socket()
-
-  try:
-    update_socket.sendto(pkt, (ip, UDP_FW_UPDATE_PORT))
-  except Exception, e: 
-    print e
-    sys.exit(1)
-
-  try:
-    (recv_pkt, recv_addr) = update_socket.recvfrom(UDP_MAX_XFER_BYTES)
-  except Exception, e: 
-    print e
-    sys.exit(1)
-
-  if recv_addr != (options.ip, UDP_FW_UPDATE_PORT):
-    raise Exception, "Packet received from invalid IP %s, expected %s" % (recv_addr, options.ip)
-
-  return recv_pkt
-
-def create_socket():
-  socket.setdefaulttimeout(UDP_TIMEOUT)
-  update_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  return update_socket
-
-#just here to validate comms
-def init_update(ip):
-  out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0, "")
-  in_pkt = send_and_recv(out_pkt, ip)
-  (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(in_pkt)
-  if pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG:
-    print "USRP2P found."
-  else:
-    raise Exception, "Invalid reply received from device."
-
-#  print "Incoming:\n\tVer: %i\n\tID: %c\n\tSeq: %i\n\tIP: %i\n" % (proto_ver, chr(pktid), rxseq, ip_addr)
-
-def get_flash_info(ip):
-  out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL, seq(), 0, 0, "")
-  in_pkt = send_and_recv(out_pkt, ip)
-
-  (proto_ver, pktid, rxseq, sector_size_bytes, memory_size_bytes) = unpack_flash_info_fmt(in_pkt)
-
-  if pktid != update_id_t.USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG:
-    raise Exception, "Invalid reply %c from device." % (chr(pktid))
-
-
-  return (memory_size_bytes, sector_size_bytes)
-  
 def is_valid_fpga_image(fpga_image):
     for i in range(0,63):
       if ord(fpga_image[i]) == 0xFF:
@@ -154,7 +106,7 @@ def is_valid_fpga_image(fpga_image):
         return 1
 
     return 0
-    
+
 def is_valid_fw_image(fw_image):
     for i in range(0,4):
       if ord(fw_image[i]) != 0x0B:
@@ -162,132 +114,179 @@ def is_valid_fw_image(fw_image):
 
     return 1
 
-def burn_fw(ip, fw, fpga, reset, safe):
-  init_update(ip)
-  (flash_size, sector_size) = get_flash_info(ip)
+########################################################################
+# Burner class, holds a socket and send/recv routines
+########################################################################
+class burner_socket(object):
+    def __init__(self, ip):
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._sock.settimeout(UDP_TIMEOUT)
+        self._sock.connect((ip, UDP_FW_UPDATE_PORT))
 
-  print "Flash size: %i\nSector size: %i" % (flash_size, sector_size)
+    def send_and_recv(self, pkt):
+        try: self._sock.send(pkt)
+        except Exception, e:
+            print e
+            sys.exit(1)
 
-  if fpga:
-    if safe:
-        image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
-    else:
-        image_location = PROD_FPGA_IMAGE_LOCATION_ADDR
-    
-    fpga_file = open(fpga, 'rb')
-    fpga_image = fpga_file.read()
-    
-    if len(fpga_image) > FPGA_IMAGE_SIZE_BYTES:
-        print "Error: FPGA image file too large."
-        return 0
-    
-    if not is_valid_fpga_image(fpga_image):
-        print "Error: Invalid FPGA image file."
-        return 0
-    
-    erase_image(ip, image_location, FPGA_IMAGE_SIZE_BYTES)
-    write_image(ip, fpga_image, image_location)
-    verify_image(ip, fpga_image, image_location)
+        try: recv_pkt = self._sock.recv(UDP_MAX_XFER_BYTES)
+        except Exception, e:
+            print e
+            sys.exit(1)
 
-  if fw:
-    if safe:
-        image_location = SAFE_FW_IMAGE_LOCATION_ADDR
-    else:
-        image_location = PROD_FW_IMAGE_LOCATION_ADDR
-        
-    fw_file = open(fw, 'rb')
-    fw_image = fw_file.read()
-    
-    if len(fw_image) > FW_IMAGE_SIZE_BYTES:
-        print "Error: Firmware image file too large."
-        return 0
-    
-    if not is_valid_fw_image(fw_image):
-        print "Error: Invalid firmware image file."
-        return 0    
-    
-    erase_image(ip, image_location, FW_IMAGE_SIZE_BYTES)
-    write_image(ip, fw_image, image_location)
-    verify_image(ip, fw_image, image_location)
-    
-  if reset:
-    reset_usrp(ip)
+        return recv_pkt
 
-def write_image(ip, image, addr):
-  print "Writing image"
-#we split the image into smaller (256B) bits and send them down the wire
-  while image:
-    out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, image[:FLASH_DATA_PACKET_SIZE])
-    in_pkt = send_and_recv(out_pkt, ip)
+    #just here to validate comms
+    def init_update(self):
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0, "")
+        in_pkt = self.send_and_recv(out_pkt)
+        (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(in_pkt)
+        if pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG:
+            print "USRP2P found."
+        else:
+            raise Exception, "Invalid reply received from device."
 
-    (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+        #  print "Incoming:\n\tVer: %i\n\tID: %c\n\tSeq: %i\n\tIP: %i\n" % (proto_ver, chr(pktid), rxseq, ip_addr)
 
-    if pktid != update_id_t.USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG:
-      raise Exception, "Invalid reply %c from device." % (chr(pktid))
+    def get_flash_info(self):
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL, seq(), 0, 0, "")
+        in_pkt = self.send_and_recv(out_pkt)
 
-    image = image[FLASH_DATA_PACKET_SIZE:]
-    addr += FLASH_DATA_PACKET_SIZE
+        (proto_ver, pktid, rxseq, sector_size_bytes, memory_size_bytes) = unpack_flash_info_fmt(in_pkt)
 
-def verify_image(ip, image, addr):
-  print "Verifying data"
-  readsize = len(image)
-  readdata = str()
-  while readsize > 0:
-    if readsize < FLASH_DATA_PACKET_SIZE: thisreadsize = readsize
-    else: thisreadsize = FLASH_DATA_PACKET_SIZE
-    out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize, "")
-    in_pkt = send_and_recv(out_pkt, ip)
-    
-    (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+        if pktid != update_id_t.USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG:
+            raise Exception, "Invalid reply %c from device." % (chr(pktid))
 
-    if pktid != update_id_t.USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG:
-      raise Exception, "Invalid reply %c from device." % (chr(pktid))
+        return (memory_size_bytes, sector_size_bytes)
 
-    readdata += data[:thisreadsize]
-    readsize -= FLASH_DATA_PACKET_SIZE
-    addr += FLASH_DATA_PACKET_SIZE
+    def burn_fw(self, fw, fpga, reset, safe):
+        (flash_size, sector_size) = self.get_flash_info()
 
-  print "Read back %i bytes" % len(readdata)
-#  print readdata
+        print "Flash size: %i\nSector size: %i\n\n" % (flash_size, sector_size)
 
-#  for i in range(256, 512):
-#    print "out: %i in: %i" % (ord(image[i]), ord(readdata[i]))
+        if fpga:
+            if safe: image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
+            else:    image_location = PROD_FPGA_IMAGE_LOCATION_ADDR
 
-  if readdata != image:
-    print "Verify failed. Image did not write correctly."
-  else:
-    print "Success."
-    
-def reset_usrp(ip):
-    out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0, "")
-    in_pkt = send_and_recv(out_pkt, ip)
-    
-    (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
-    if pktid == update_id_t.USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG:
-        raise Exception, "Device failed to reset."
+            fpga_file = open(fpga, 'rb')
+            fpga_image = fpga_file.read()
 
-def erase_image(ip, addr, length):
-  #get flash info first
-  out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length, "")
-  in_pkt = send_and_recv(out_pkt, ip)
+            if len(fpga_image) > FPGA_IMAGE_SIZE_BYTES:
+                print "Error: FPGA image file too large."
+                return 0
 
-  (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+            if not is_valid_fpga_image(fpga_image):
+                print "Error: Invalid FPGA image file."
+                return 0
 
-  if pktid != update_id_t.USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG:
-    raise Exception, "Invalid reply %c from device." % (chr(pktid))
+            print "Begin FPGA write: this should take about 1 minute..."
+            start_time = time.time()
+            self.erase_image(image_location, FPGA_IMAGE_SIZE_BYTES)
+            self.write_image(fpga_image, image_location)
+            self.verify_image(fpga_image, image_location)
+            print "Time elapsed: %f seconds"%(time.time() - start_time)
+            print "\n\n"
 
-  print "Erasing %i bytes at %i" % (length, addr)
+        if fw:
+            if safe: image_location = SAFE_FW_IMAGE_LOCATION_ADDR
+            else:    image_location = PROD_FW_IMAGE_LOCATION_ADDR
 
-  #now wait for it to finish
-  while(1):
-    out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL, seq(), 0, 0, "")
-    in_pkt = send_and_recv(out_pkt, ip)
+            fw_file = open(fw, 'rb')
+            fw_image = fw_file.read()
 
-    (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+            if len(fw_image) > FW_IMAGE_SIZE_BYTES:
+                print "Error: Firmware image file too large."
+                return 0
 
-    if pktid == update_id_t.USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG: break
-    elif pktid != update_id_t.USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG:
-      raise Exception, "Invalid reply %c from device." % (chr(pktid))
+            if not is_valid_fw_image(fw_image):
+                print "Error: Invalid firmware image file."
+                return 0
+
+            print "Begin firmware write: this should take about 1 second..."
+            start_time = time.time()
+            self.erase_image(image_location, FW_IMAGE_SIZE_BYTES)
+            self.write_image(fw_image, image_location)
+            self.verify_image(fw_image, image_location)
+            print "Time elapsed: %f seconds"%(time.time() - start_time)
+            print "\n\n"
+
+        if reset: self.reset_usrp()
+
+    def write_image(self, image, addr):
+        print "Writing image"
+        #we split the image into smaller (256B) bits and send them down the wire
+        while image:
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, image[:FLASH_DATA_PACKET_SIZE])
+            in_pkt = self.send_and_recv(out_pkt)
+
+            (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+
+            if pktid != update_id_t.USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG:
+              raise Exception, "Invalid reply %c from device." % (chr(pktid))
+
+            image = image[FLASH_DATA_PACKET_SIZE:]
+            addr += FLASH_DATA_PACKET_SIZE
+
+    def verify_image(self, image, addr):
+        print "Verifying data"
+        readsize = len(image)
+        readdata = str()
+        while readsize > 0:
+            if readsize < FLASH_DATA_PACKET_SIZE: thisreadsize = readsize
+            else: thisreadsize = FLASH_DATA_PACKET_SIZE
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize, "")
+            in_pkt = self.send_and_recv(out_pkt)
+
+            (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+
+            if pktid != update_id_t.USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG:
+              raise Exception, "Invalid reply %c from device." % (chr(pktid))
+
+            readdata += data[:thisreadsize]
+            readsize -= FLASH_DATA_PACKET_SIZE
+            addr += FLASH_DATA_PACKET_SIZE
+
+        print "Read back %i bytes" % len(readdata)
+        #  print readdata
+
+        #  for i in range(256, 512):
+        #    print "out: %i in: %i" % (ord(image[i]), ord(readdata[i]))
+
+        if readdata != image:
+            print "Verify failed. Image did not write correctly."
+        else:
+            print "Success."
+
+    def reset_usrp(self):
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0, "")
+        in_pkt = self.send_and_recv(out_pkt)
+
+        (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+        if pktid == update_id_t.USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG:
+            raise Exception, "Device failed to reset."
+
+    def erase_image(self, addr, length):
+        #get flash info first
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length, "")
+        in_pkt = self.send_and_recv(out_pkt)
+
+        (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+
+        if pktid != update_id_t.USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG:
+            raise Exception, "Invalid reply %c from device." % (chr(pktid))
+
+        print "Erasing %i bytes at %i" % (length, addr)
+
+        #now wait for it to finish
+        while(True):
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL, seq(), 0, 0, "")
+            in_pkt = self.send_and_recv(out_pkt)
+
+            (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+
+            if pktid == update_id_t.USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG: break
+            elif pktid != update_id_t.USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG:
+                raise Exception, "Invalid reply %c from device." % (chr(pktid))
 
 
 ########################################################################
@@ -312,12 +311,12 @@ if __name__=='__main__':
     if not options.ip: raise Exception, 'no ip address specified'
 
     if not options.fpga and not options.fw and not options.reset: raise Exception, 'Must specify either a firmware image or FPGA image, and/or reset.'
-    
+
     if options.overwrite_safe:
         print("Are you REALLY, REALLY sure you want to overwrite the safe image? This is ALMOST ALWAYS a terrible idea.")
         print("If your image is faulty, your USRP2+ will become a brick until reprogrammed via JTAG.")
         response = raw_input("""Type "yes" to continue, or anything else to quit: """)
         if response != "yes":
             sys.exit(0)
-    
-    burn_fw(ip=options.ip, fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe)
+
+    burner_socket(ip=options.ip).burn_fw(fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe)
