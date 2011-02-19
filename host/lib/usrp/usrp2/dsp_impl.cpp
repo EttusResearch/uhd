@@ -40,7 +40,7 @@ struct usrp2_mboard_impl::dsp_impl{
     uhd::dict<size_t, bool> continuous_streaming;
 };
 
-void usrp2_mboard_impl::dsp_init(size_t recv_samps_per_packet){
+void usrp2_mboard_impl::dsp_init(void){
     //create new dsp impl
     _dsp_impl = UHD_PIMPL_MAKE(dsp_impl, ());
 
@@ -69,7 +69,7 @@ void usrp2_mboard_impl::dsp_init(size_t recv_samps_per_packet){
 
         //setup the rx control registers
         _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //reset
-        _iface->poke32(_iface->regs.rx_ctrl[i].nsamps_per_pkt, recv_samps_per_packet);
+        _iface->poke32(_iface->regs.rx_ctrl[i].nsamps_per_pkt, _device.get_max_recv_samps_per_packet());
         _iface->poke32(_iface->regs.rx_ctrl[i].nchannels, 1);
         _iface->poke32(_iface->regs.rx_ctrl[i].vrt_header, 0
             | (0x1 << 28) //if data with stream id

@@ -21,6 +21,7 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
+#include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
@@ -32,21 +33,72 @@ static const size_t mimo_clock_sync_delay_cycles = 137;
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::transport;
+
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
+static void init_xport(zero_copy_if::sptr xport){
+    //Send a small data packet so the usrp2 knows the udp source port.
+    //This setup must happen before further initialization occurs
+    //or the async update packets will cause ICMP destination unreachable.
+    static const boost::uint32_t data[2] = {
+        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    };
+
+    transport::managed_send_buffer::sptr send_buff = xport->get_send_buff();
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+}
 
 /***********************************************************************
  * Structors
  **********************************************************************/
 usrp2_mboard_impl::usrp2_mboard_impl(
-    size_t index,
-    transport::udp_simple::sptr ctrl_transport,
-    transport::zero_copy_if::sptr data_transport,
-    transport::zero_copy_if::sptr err0_transport,
-    const device_addr_t &device_args,
-    size_t recv_samps_per_packet
+    const device_addr_t &device_addr, //global args passed into make
+    const device_addr_t &device_args, //separated mboard specific args
+    size_t index, usrp2_impl &device
 ):
-    _index(index),
-    _iface(usrp2_iface::make(ctrl_transport))
+    _index(index), _device(device),
+    _iface(usrp2_iface::make(udp_simple::make_connected(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
+    )))
 {
+
+    //setup the dsp transport hints (default to a large recv buff)
+    device_addr_t dsp_xport_hints = device_addr;
+    if (not dsp_xport_hints.has_key("recv_buff_size")){
+        //only enable on platforms that are happy with the large buffer resize
+        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
+            //set to half-a-second of buffering at max rate
+            dsp_xport_hints["recv_buff_size"] = "50e6";
+        #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
+    }
+
+    //construct transports for dsp and async errors
+    std::cout << "Making transport for DSP0..." << std::endl;
+    dsp_xports.push_back(udp_zero_copy::make(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP0_PORT), dsp_xport_hints
+    ));
+    init_xport(dsp_xports.back());
+
+    std::cout << "Making transport for DSP1..." << std::endl;
+    dsp_xports.push_back(udp_zero_copy::make(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP1_PORT), dsp_xport_hints
+    ));
+    init_xport(dsp_xports.back());
+
+    std::cout << "Making transport for ERR0..." << std::endl;
+    err_xports.push_back(udp_zero_copy::make(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_ERR0_PORT), device_addr_t()
+    ));
+    init_xport(err_xports.back());
+
+    //set the frame sizes (assume homogeneous)
+    device.recv_frame_size = dsp_xports.front()->get_recv_frame_size();
+    device.send_frame_size = dsp_xports.front()->get_send_frame_size();
+
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
@@ -57,7 +109,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
     //init the dsp stuff (before setting update packets)
-    dsp_init(recv_samps_per_packet);
+    dsp_init();
 
     //setting the cycles per update (disabled by default)
     const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
@@ -69,7 +121,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //setting the packets per update (enabled by default)
     const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
-        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
+        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/dsp_xports[0]->get_send_frame_size());
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
     }
 
@@ -106,14 +158,14 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
 
     //This is a hack/fix for the lingering packet problem.
-    /*
     stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = 1;
-    this->issue_ddc_stream_cmd(stream_cmd);
-    data_transport->get_recv_buff().get(); //recv with timeout for lingering
-    data_transport->get_recv_buff().get(); //recv with timeout for expected
-    _iface->poke32(_iface->regs.rx_ctrl[0].clear_overrun, 1); //resets sequence
-    */
+    for (size_t i = 0; i < NUM_RX_DSPS; i++){
+        stream_cmd.num_samps = 1;
+        this->issue_ddc_stream_cmd(stream_cmd, i);
+        dsp_xports[i]->get_recv_buff().get(); //recv with timeout for lingering
+        dsp_xports[i]->get_recv_buff().get(); //recv with timeout for expected
+        _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //resets sequence
+    }
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
@@ -336,17 +388,21 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
                 _dboard_manager->get_rx_subdev(_rx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
             ));
         }
+        _device.update_xport_channel_mapping();
         return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
         verify_tx_subdev_spec(_tx_subdev_spec, this->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_tx_subdev_spec.size() == 1);
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() <= NUM_TX_DSPS);
         //set the mux
-        _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
-            _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        ));
+        for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
+            _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
+                _dboard_manager->get_tx_subdev(_tx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+            ));
+        }
+        _device.update_xport_channel_mapping();
         return;
 
     case MBOARD_PROP_EEPROM_MAP:

@@ -42,9 +42,6 @@ namespace asio = boost::asio;
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
-template <class T> std::string num2str(T num){
-    return boost::lexical_cast<std::string>(num);
-}
 
 //! separate indexed device addresses into a vector of device addresses
 device_addrs_t sep_indexed_dev_addrs(const device_addr_t &dev_addr){
@@ -168,9 +165,9 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
             //This operation can throw due to compatibility mismatch.
             //In this case, the discovered device will be ignored.
             try{
-                mboard_eeprom_t mb_eeprom = usrp2_iface::make(
-                    udp_simple::make_connected(new_addr["addr"], num2str(USRP2_UDP_CTRL_PORT))
-                )->mb_eeprom;
+                mboard_eeprom_t mb_eeprom = usrp2_iface::make(udp_simple::make_connected(
+                    new_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
+                ))->mb_eeprom;
                 new_addr["name"] = mb_eeprom["name"];
                 new_addr["serial"] = mb_eeprom["serial"];
                 if (
@@ -199,56 +196,7 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
  * Make
  **********************************************************************/
 static device::sptr usrp2_make(const device_addr_t &device_addr){
-
-    //setup the dsp transport hints (default to a large recv buff)
-    device_addr_t dsp_xport_hints = device_addr;
-    if (not dsp_xport_hints.has_key("recv_buff_size")){
-        //only enable on platforms that are happy with the large buffer resize
-        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
-            //set to half-a-second of buffering at max rate
-            dsp_xport_hints["recv_buff_size"] = "50e6";
-        #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
-    }
-
-    //create a ctrl and data transport for each address
-    std::vector<udp_simple::sptr> ctrl_transports;
-    std::vector<zero_copy_if::sptr> data_transports;
-    std::vector<zero_copy_if::sptr> err0_transports;
-    const device_addrs_t device_addrs = sep_indexed_dev_addrs(device_addr);
-
-    //Send a small data packet so the usrp2 knows the udp source port.
-    //This setup must happen before further initialization occurs
-    //or the async update packets will cause ICMP destination unreachable.
-    transport::managed_send_buffer::sptr send_buff;
-    static const boost::uint32_t data[2] = {
-        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
-        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
-    };
-
-    BOOST_FOREACH(const device_addr_t &dev_addr_i, device_addrs){
-        ctrl_transports.push_back(udp_simple::make_connected(
-            dev_addr_i["addr"], num2str(USRP2_UDP_CTRL_PORT)
-        ));
-
-        data_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_DSP0_PORT), dsp_xport_hints
-        ));
-        send_buff = data_transports.back()->get_send_buff();
-        std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
-        send_buff->commit(sizeof(data));
-
-        err0_transports.push_back(udp_zero_copy::make(
-            dev_addr_i["addr"], num2str(USRP2_UDP_ERR0_PORT), device_addr_t()
-        ));
-        send_buff = err0_transports.back()->get_send_buff();
-        std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
-        send_buff->commit(sizeof(data));
-    }
-
-    //create the usrp2 implementation guts
-    return device::sptr(new usrp2_impl(
-        ctrl_transports, data_transports, err0_transports, device_addrs
-    ));
+    return device::sptr(new usrp2_impl(device_addr));
 }
 
 UHD_STATIC_BLOCK(register_usrp2_device){
@@ -258,15 +206,9 @@ UHD_STATIC_BLOCK(register_usrp2_device){
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp2_impl::usrp2_impl(
-    std::vector<udp_simple::sptr> ctrl_transports,
-    std::vector<zero_copy_if::sptr> data_transports,
-    std::vector<zero_copy_if::sptr> err0_transports,
-    const device_addrs_t &device_args
-):
-    _data_transports(data_transports),
-    _err0_transports(err0_transports)
-{
+usrp2_impl::usrp2_impl(const device_addr_t &device_addr){
+    device_addrs_t device_args = sep_indexed_dev_addrs(device_addr);
+
     //setup rx otw type
     _rx_otw_type.width = 16;
     _rx_otw_type.shift = 0;
@@ -281,13 +223,11 @@ usrp2_impl::usrp2_impl(
 
     //create a new mboard handler for each control transport
     for(size_t i = 0; i < device_args.size(); i++){
-        _mboards.push_back(usrp2_mboard_impl::sptr(new usrp2_mboard_impl(
-            i, ctrl_transports[i], data_transports[i],
-            err0_transports[i], device_args[i],
-            this->get_max_recv_samps_per_packet()
-        )));
+        _mboards.push_back(usrp2_mboard_impl::sptr(
+            new usrp2_mboard_impl(device_addr, device_args[i], i, *this)
+        ));
         //use an empty name when there is only one mboard
-        std::string name = (ctrl_transports.size() > 1)? boost::lexical_cast<std::string>(i) : "";
+        std::string name = (device_args.size() > 1)? boost::lexical_cast<std::string>(i) : "";
         _mboard_dict[name] = _mboards.back();
     }
 

@@ -18,6 +18,7 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -119,16 +120,16 @@ private:
  **********************************************************************/
 struct usrp2_impl::io_impl{
 
-    io_impl(size_t send_frame_size, const std::vector<zero_copy_if::sptr> &xports):
-        xports(xports),
+    io_impl(size_t num_mboards, size_t send_frame_size):
+        //the assumption is that all data transports should be identical
         get_recv_buffs_fcn(boost::bind(&usrp2_impl::io_impl::get_recv_buffs, this, _1)),
         get_send_buffs_fcn(boost::bind(&usrp2_impl::io_impl::get_send_buffs, this, _1)),
-        packet_handler_recv_state(xports.size()),
-        packet_handler_send_state(xports.size()),
+        packet_handler_recv_state(num_mboards*usrp2_mboard_impl::NUM_RX_DSPS), //max chans
+        packet_handler_send_state(num_mboards*usrp2_mboard_impl::NUM_RX_DSPS), //max chans
         async_msg_fifo(100/*messages deep*/)
     {
-        for (size_t i = 0; i < xports.size(); i++){
-            fc_mons.push_back(flow_control_monitor::sptr(
+        for (size_t i = 0; i < num_mboards; i++){ //only one monitor per mboard (only 1 tx dsp so far)
+            fc_mons.push_back(flow_control_monitor::sptr( //OMG TODO this will not be mapped right when a tx is disabled
                 new flow_control_monitor(usrp2_impl::sram_bytes/send_frame_size)
             ));
             //init empty packet infos
@@ -149,7 +150,7 @@ struct usrp2_impl::io_impl{
     }
 
     bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &buffs){
-        UHD_ASSERT_THROW(xports.size() == buffs.size());
+        UHD_ASSERT_THROW(send_xports.size() == buffs.size());
 
         //calculate the flow control word
         const boost::uint32_t fc_word32 = packet_handler_send_state.next_packet_seq;
@@ -157,7 +158,7 @@ struct usrp2_impl::io_impl{
         //grab a managed buffer for each index
         for (size_t i = 0; i < buffs.size(); i++){
             if (not fc_mons[i]->check_fc_condition(fc_word32, send_timeout)) return false;
-            buffs[i] = xports[i]->get_send_buff(send_timeout);
+            buffs[i] = send_xports[i]->get_send_buff(send_timeout);
             if (not buffs[i].get()) return false;
             buffs[i]->cast<boost::uint32_t *>()[0] = uhd::htonx(fc_word32);
         }
@@ -166,7 +167,8 @@ struct usrp2_impl::io_impl{
 
     bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs);
 
-    const std::vector<zero_copy_if::sptr> &xports;
+    //vector of send and recv xports to be mapped to channels
+    std::vector<zero_copy_if::sptr> recv_xports, send_xports;
 
     //timeouts set on calls to recv/send (passed into get buffs methods)
     double recv_timeout, send_timeout;
@@ -186,7 +188,7 @@ struct usrp2_impl::io_impl{
     vrt_packet_handler::send_state packet_handler_send_state;
 
     //methods and variables for the pirate crew
-    void recv_pirate_loop(zero_copy_if::sptr, usrp2_mboard_impl::sptr, size_t);
+    void recv_pirate_loop(usrp2_mboard_impl::sptr, size_t);
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
     bounded_buffer<async_metadata_t> async_msg_fifo;
@@ -200,9 +202,7 @@ struct usrp2_impl::io_impl{
  * - put async message packets into queue
  **********************************************************************/
 void usrp2_impl::io_impl::recv_pirate_loop(
-    zero_copy_if::sptr zc_if_err0,
-    usrp2_mboard_impl::sptr mboard,
-    size_t index
+    usrp2_mboard_impl::sptr mboard, size_t index
 ){
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
@@ -210,7 +210,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     spawn_mutex.unlock();
 
     while(recv_pirate_crew_raiding){
-        managed_recv_buffer::sptr buff = zc_if_err0->get_recv_buff();
+        managed_recv_buffer::sptr buff = mboard->err_xports[0]->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
 
         try{
@@ -258,26 +258,45 @@ void usrp2_impl::io_impl::recv_pirate_loop(
  **********************************************************************/
 void usrp2_impl::io_init(void){
 
-    //the assumption is that all data transports should be identical
-    const size_t send_frame_size = _data_transports.front()->get_send_frame_size();
-
     //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (send_frame_size, _data_transports));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (_mboards.size(), this->send_frame_size));
 
     //create a new pirate thread for each zc if (yarr!!)
-    for (size_t i = 0; i < _err0_transports.size(); i++){
+    for (size_t i = 0; i < _mboards.size(); i++){
         //lock the unlocked mutex (non-blocking)
         _io_impl->spawn_mutex.lock();
         //spawn a new pirate to plunder the recv booty
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop,
-            _io_impl.get(), _err0_transports.at(i),
-            _mboards.at(i), i
+            _io_impl.get(), _mboards.at(i), i
         ));
         //block here until the spawned thread unlocks
         _io_impl->spawn_mutex.lock();
         //exit loop iteration in an unlocked condition
         _io_impl->spawn_mutex.unlock();
+    }
+
+    //update mapping here since it didnt b4 when io init not called first
+    update_xport_channel_mapping();
+}
+
+void usrp2_impl::update_xport_channel_mapping(void){
+    if (_io_impl.get() == NULL) return; //not inited yet
+
+    _io_impl->recv_xports.clear();
+    _io_impl->send_xports.clear();
+    BOOST_FOREACH(usrp2_mboard_impl::sptr mboard, _mboards){
+
+        subdev_spec_t rx_subdev_spec = mboard->get_link()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
+        for (size_t j = 0; j < rx_subdev_spec.size(); j++){
+            _io_impl->recv_xports.push_back(mboard->dsp_xports.at(j));
+        }
+
+        subdev_spec_t tx_subdev_spec = mboard->get_link()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
+        for (size_t j = 0; j < tx_subdev_spec.size(); j++){
+            _io_impl->send_xports.push_back(mboard->dsp_xports.at(j));
+        }
+
     }
 }
 
@@ -300,7 +319,7 @@ size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
         + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = _data_transports.front()->get_send_frame_size() - hdr_size;
+    const size_t bpp = this->send_frame_size - hdr_size;
     return bpp/_tx_otw_type.get_sample_size();
 }
 
@@ -383,7 +402,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     vrt_packet_handler::managed_recv_buffs_t &buffs
 ){
     if (buffs.size() == 1){
-        buffs[0] = xports[0]->get_recv_buff(recv_timeout);
+        buffs[0] = recv_xports[0]->get_recv_buff(recv_timeout);
         if (buffs[0].get() == NULL) return false;
         bool clear, msg; time_spec_t time; //unused variables
         //call extract_packet_info to handle printing the overflows
@@ -404,7 +423,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
 
     //do an initial pop to load an initial sequence id
     size_t index = indexes_to_do.front();
-    buff_tmp = xports[index]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
+    buff_tmp = recv_xports[index]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
     if (buff_tmp.get() == NULL) return false;
     extract_packet_info(buff_tmp, this->prev_infos[index], expected_time, clear, msg);
     if (clear) goto got_clear;
@@ -417,7 +436,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
 
         //pop an element off for this index
         index = indexes_to_do.front();
-        buff_tmp = xports[index]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
+        buff_tmp = recv_xports[index]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
         if (buff_tmp.get() == NULL) return false;
         time_spec_t this_time;
         extract_packet_info(buff_tmp, this->prev_infos[index], this_time, clear, msg);
@@ -458,7 +477,7 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = _data_transports.front()->get_recv_frame_size() - hdr_size;
+    const size_t bpp = this->recv_frame_size - hdr_size;
     return bpp/_rx_otw_type.get_sample_size();
 }
 
