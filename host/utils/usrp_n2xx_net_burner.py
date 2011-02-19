@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -257,6 +257,32 @@ class burner_socket(object):
         else:
             print "Success."
 
+    def read_image(self, image, size, addr):
+        print "Reading image"
+        readsize = size
+        readdata = str()
+        while readsize > 0:
+            if readsize < FLASH_DATA_PACKET_SIZE: thisreadsize = readsize
+            else: thisreadsize = FLASH_DATA_PACKET_SIZE
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize, "")
+            in_pkt = self.send_and_recv(out_pkt)
+
+            (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
+
+            if pktid != update_id_t.USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG:
+              raise Exception, "Invalid reply %c from device." % (chr(pktid))
+
+            readdata += data[:thisreadsize]
+            readsize -= FLASH_DATA_PACKET_SIZE
+            addr += FLASH_DATA_PACKET_SIZE
+
+        print "Read back %i bytes" % len(readdata)
+
+        #write to disk
+        f = open(image, 'w')
+        f.write(readdata)
+        f.close()
+
     def reset_usrp(self):
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0, "")
         in_pkt = self.send_and_recv(out_pkt)
@@ -298,6 +324,7 @@ def get_options():
     parser.add_option("--fw",   type="string",                 help="firmware image path (optional)", default='')
     parser.add_option("--fpga", type="string",                 help="fpga image path (optional)",     default='')
     parser.add_option("--reset", action="store_true",          help="reset the device after writing", default=False)
+    parser.add_option("--read", action="store_true",           help="read to file instead of write from file", default=False)
     parser.add_option("--overwrite-safe", action="store_true", help="never ever use this option", default=False)
     (options, args) = parser.parse_args()
 
@@ -312,11 +339,31 @@ if __name__=='__main__':
 
     if not options.fpga and not options.fw and not options.reset: raise Exception, 'Must specify either a firmware image or FPGA image, and/or reset.'
 
-    if options.overwrite_safe:
+    if options.overwrite_safe and not options.read:
         print("Are you REALLY, REALLY sure you want to overwrite the safe image? This is ALMOST ALWAYS a terrible idea.")
         print("If your image is faulty, your USRP2+ will become a brick until reprogrammed via JTAG.")
         response = raw_input("""Type "yes" to continue, or anything else to quit: """)
-        if response != "yes":
-            sys.exit(0)
+        if response != "yes": sys.exit(0)
 
-    burner_socket(ip=options.ip).burn_fw(fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe)
+    burner = burner_socket(ip=options.ip)
+
+    if options.read:
+        if options.fw:
+            file = options.fw
+            if os.path.isfile(file):
+                response = raw_input("File already exists -- overwrite? (y/n) ")
+                if response != "y": sys.exit(0)
+            size = FW_IMAGE_SIZE_BYTES
+            addr = SAFE_FW_IMAGE_LOCATION_ADDR if options.overwrite_safe else PROD_FW_IMAGE_LOCATION_ADDR
+            burner.read_image(file, size, addr)
+
+        if options.fpga:
+            file = options.fpga
+            if os.path.isfile(file):
+                response = raw_input("File already exists -- overwrite? (y/n) ")
+                if response != "y": sys.exit(0)
+            size = FPGA_IMAGE_SIZE_BYTES
+            addr = SAFE_FPGA_IMAGE_LOCATION_ADDR if options.overwrite_safe else PROD_FPGA_IMAGE_LOCATION_ADDR
+            burner.read_image(file, size, addr)
+
+    else: burner.burn_fw(fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe)
