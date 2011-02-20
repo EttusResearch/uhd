@@ -23,13 +23,15 @@
 
 namespace uhd{ namespace transport{
 
+    typedef boost::shared_ptr<boost::asio::ip::udp::socket> socket_sptr;
+
     /*!
      * Wait for the socket to become ready for a receive operation.
      * \param sock_fd the open socket file descriptor
      * \param timeout the timeout duration in seconds
      * \return true when the socket is ready for receive
      */
-    UHD_INLINE bool wait_for_recv(int sock_fd, double timeout){
+    UHD_INLINE bool wait_for_recv_ready(int sock_fd, double timeout){
         //setup timeval for timeout
         timeval tv;
         //If the tv_usec > 1 second on some platforms, select will

@@ -28,8 +28,6 @@ namespace asio = boost::asio;
  **********************************************************************/
 class udp_simple_impl : public udp_simple{
 public:
-    typedef boost::shared_ptr<asio::ip::udp::socket> socket_sptr;
-
     udp_simple_impl(
         const std::string &addr, const std::string &port, bool bcast, bool connect
     ):_connected(connect){
@@ -58,7 +56,7 @@ public:
     }
 
     size_t recv(const asio::mutable_buffer &buff, double timeout){
-        if (not wait_for_recv(_socket->native(), timeout)) return 0;
+        if (not wait_for_recv_ready(_socket->native(), timeout)) return 0;
         return _socket->receive(asio::buffer(buff));
     }
 

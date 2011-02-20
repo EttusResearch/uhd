@@ -139,7 +139,7 @@ public:
         asio::ip::udp::endpoint receiver_endpoint = *resolver.resolve(query);
 
         //create, open, and connect the socket
-        _socket = new asio::ip::udp::socket(_io_service);
+        _socket = socket_sptr(new asio::ip::udp::socket(_io_service));
         _socket->open(asio::ip::udp::v4());
         _socket->connect(receiver_endpoint);
         _sock_fd = _socket->native();
@@ -161,10 +161,6 @@ public:
         }
     }
 
-    ~udp_zero_copy_asio_impl(void){
-        delete _socket;
-    }
-
     //get size for internal socket buffer
     template <typename Opt> size_t get_buff_size(void) const{
         Opt option;
@@ -182,16 +178,24 @@ public:
     /*******************************************************************
      * Receive implementation:
      *
-     * Use select to perform a blocking receive with timeout.
+     * Perform a non-blocking receive for performance,
+     * and then fall back to a blocking receive with timeout.
      * Return the managed receive buffer with the new length.
      * When the caller is finished with the managed buffer,
      * the managed receive buffer is released back into the queue.
      ******************************************************************/
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         udp_zero_copy_asio_mrb *mrb = NULL;
-        bool recv_ready = wait_for_recv(_sock_fd, timeout);
-        if (recv_ready and _pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
-            return mrb->get_new(::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0));
+        if (_pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
+
+            #ifdef MSG_DONTWAIT //try a non-blocking recv() if supported
+            ssize_t ret = ::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, MSG_DONTWAIT);
+            if (ret > 0) return mrb->get_new(ret);
+            #endif
+
+            if (wait_for_recv_ready(_sock_fd, timeout)) return mrb->get_new(
+                ::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0)
+            );
         }
         return managed_recv_buffer::sptr();
     }
@@ -247,7 +251,7 @@ private:
 
     //asio guts -> socket and service
     asio::io_service        _io_service;
-    asio::ip::udp::socket   *_socket;
+    socket_sptr             _socket;
     int                     _sock_fd;
 };
 
