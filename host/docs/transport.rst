@@ -17,13 +17,9 @@ that are known to perform well on a variety of systems.
 The transport parameters are defined below for the various transports in the UHD:
 
 ------------------------------------------------------------------------
-UDP transport (ASIO)
+UDP transport (sockets)
 ------------------------------------------------------------------------
-The UDP transport is implemented with Boost's ASIO library.
-ASIO provides an asynchronous API for user-space sockets.
-The transport implementation allocates a number of buffers
-and submits asynchronous requests for send and receive.
-IO service threads run in the background to process these requests.
+The UDP transport is implemented with standard user-space/Berkeley sockets.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transport parameters
@@ -35,8 +31,12 @@ The following parameters can be used to alter the transport's default behavior:
 * **send_frame_size:** The size of a single send buffer in bytes
 * **num_send_frames:** The number of send buffers to allocate
 
-**Note:** num_recv_frames and num_send_frames will not have an effect
-as the asynchronous send implementation is currently unimplemented.
+**Note1:** num_recv_frames and num_send_frames do not affect performance.
+
+**Note2:** recv_frame_size and send_frame_size can be used to
+increase or decrease the maximum number of samples per packet.
+The frame sizes default to an MTU of 1472 bytes per IP/UDP packet,
+and may be increased if permitted by your network hardware.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Flow control parameters

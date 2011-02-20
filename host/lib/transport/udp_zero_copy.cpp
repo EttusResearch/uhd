@@ -15,13 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "udp_common.hpp"
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/assert.hpp>
 #include <uhd/utils/warning.hpp>
-#include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <iostream>
 #include <list>
@@ -188,24 +187,10 @@ public:
      * When the caller is finished with the managed buffer,
      * the managed receive buffer is released back into the queue.
      ******************************************************************/
-    UHD_INLINE bool is_recv_ready(double timeout){
-        //setup timeval for timeout
-        timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = long(timeout*1e6);
-
-        //setup rset for timeout
-        fd_set rset;
-        FD_ZERO(&rset);
-        FD_SET(_sock_fd, &rset);
-
-        //call select with timeout on receive socket
-        return ::select(_sock_fd+1, &rset, NULL, NULL, &tv) > 0;
-    }
-
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         udp_zero_copy_asio_mrb *mrb = NULL;
-        if (is_recv_ready(timeout) and _pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
+        bool recv_ready = wait_for_recv(_sock_fd, timeout);
+        if (recv_ready and _pending_recv_buffs.pop_with_timed_wait(mrb, timeout)){
             return mrb->get_new(::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0));
         }
         return managed_recv_buffer::sptr();
