@@ -84,6 +84,7 @@ public:
 
     static const size_t NUM_RX_DSPS = 2;
     static const size_t NUM_TX_DSPS = 1;
+    static const size_t MAX_NUM_DSPS = 2;
 
     //structors
     usrp2_mboard_impl(
@@ -98,9 +99,6 @@ public:
     }
 
     void handle_overflow(size_t);
-
-    std::vector<uhd::transport::zero_copy_if::sptr> dsp_xports;
-    std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
 
 private:
     size_t _index;
@@ -203,6 +201,9 @@ public:
 
     //public frame sizes, set by mboard, used by io impl
     size_t recv_frame_size, send_frame_size;
+
+    std::vector<uhd::transport::zero_copy_if::sptr> dsp_xports;
+    std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
 
 private:
     //device properties interface

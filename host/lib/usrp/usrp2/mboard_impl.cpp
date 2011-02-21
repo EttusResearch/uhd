@@ -78,26 +78,22 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //construct transports for dsp and async errors
     std::cout << "Making transport for DSP0..." << std::endl;
-    dsp_xports.push_back(udp_zero_copy::make(
+    device.dsp_xports.push_back(udp_zero_copy::make(
         device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP0_PORT), dsp_xport_hints
     ));
-    init_xport(dsp_xports.back());
+    init_xport(device.dsp_xports.back());
 
     std::cout << "Making transport for DSP1..." << std::endl;
-    dsp_xports.push_back(udp_zero_copy::make(
+    device.dsp_xports.push_back(udp_zero_copy::make(
         device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP1_PORT), dsp_xport_hints
     ));
-    init_xport(dsp_xports.back());
+    init_xport(device.dsp_xports.back());
 
     std::cout << "Making transport for ERR0..." << std::endl;
-    err_xports.push_back(udp_zero_copy::make(
+    device.err_xports.push_back(udp_zero_copy::make(
         device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_ERR0_PORT), device_addr_t()
     ));
-    init_xport(err_xports.back());
-
-    //set the frame sizes (assume homogeneous)
-    device.recv_frame_size = dsp_xports.front()->get_recv_frame_size();
-    device.send_frame_size = dsp_xports.front()->get_send_frame_size();
+    init_xport(device.err_xports.back());
 
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -119,9 +115,10 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     }
 
     //setting the packets per update (enabled by default)
+    size_t send_frame_size = device.dsp_xports[0]->get_send_frame_size();
     const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
-        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/dsp_xports[0]->get_send_frame_size());
+        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/send_frame_size);
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
     }
 
@@ -160,10 +157,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //This is a hack/fix for the lingering packet problem.
     stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     for (size_t i = 0; i < NUM_RX_DSPS; i++){
+        size_t index = device.dsp_xports.size() - NUM_RX_DSPS + i;
         stream_cmd.num_samps = 1;
         this->issue_ddc_stream_cmd(stream_cmd, i);
-        dsp_xports[i]->get_recv_buff().get(); //recv with timeout for lingering
-        dsp_xports[i]->get_recv_buff().get(); //recv with timeout for expected
+        device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for lingering
+        device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for expected
         _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //resets sequence
     }
 }

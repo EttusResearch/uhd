@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 //fpga and firmware compatibility numbers
-#define USRP2_FPGA_COMPAT_NUM 4
+#define USRP2_FPGA_COMPAT_NUM 5
 #define USRP2_FW_COMPAT_NUM 9
 
 //used to differentiate control packets over data port

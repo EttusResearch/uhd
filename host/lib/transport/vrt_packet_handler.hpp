@@ -300,18 +300,18 @@ template <typename T> UHD_INLINE T get_context_code(
     typedef boost::function<bool(managed_send_buffs_t &)> get_send_buffs_t;
     typedef boost::function<void(boost::uint32_t *, uhd::transport::vrt::if_packet_info_t &)> vrt_packer_t;
 
+    static const boost::uint64_t zeros = 0;
+
     struct send_state{
         //init the expected seq number
         size_t next_packet_seq;
         managed_send_buffs_t managed_buffs;
-        const boost::uint64_t zeros;
         std::vector<const void *> zero_buffs;
         std::vector<const void *> io_buffs;
 
         send_state(size_t width = 1):
             next_packet_seq(0),
             managed_buffs(width),
-            zeros(0),
             zero_buffs(width, &zeros),
             io_buffs(0) //resized later
         {
