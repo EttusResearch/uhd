@@ -3,7 +3,6 @@
 // ////////////////////////////////////////////////////////////////////////////////
 
 module u2_core
-  #(parameter RAM_SIZE=16384, parameter RAM_AW=14)
   (// Clocks
    input dsp_clk,
    input wb_clk,
@@ -152,9 +151,9 @@ module u2_core
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
-   localparam DSP_TX_FIFOSIZE = 10;
+   // localparam DSP_TX_FIFOSIZE = 9;  unused -- DSPTX uses extram fifo
    localparam DSP_RX_FIFOSIZE = 9;
-   localparam ETH_TX_FIFOSIZE = 10;
+   localparam ETH_TX_FIFOSIZE = 9;
    localparam ETH_RX_FIFOSIZE = 11;
    localparam SERDES_TX_FIFOSIZE = 9;
    localparam SERDES_RX_FIFOSIZE = 9;  // RX currently doesn't use a fifo?
@@ -163,13 +162,14 @@ module u2_core
    wire [31:0] 	set_data, set_data_dsp;
    wire 	set_stb, set_stb_dsp;
    
-   wire 	ram_loader_done;
-   wire 	ram_loader_rst, wb_rst, dsp_rst;
-   assign dsp_rst = wb_rst;
-
+   wire 	ram_loader_done, ram_loader_rst;
+   wire 	wb_rst;
+   wire 	dsp_rst = wb_rst;
+   
    wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
-   wire 	proc_int, overrun0, overrun1, underrun, uart_tx_int, uart_rx_int;
+   wire 	proc_int, overrun0, overrun1, underrun;
+   wire 	uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
    wire [31:0] 	atr_lines;
@@ -293,7 +293,7 @@ module u2_core
    wire [15:0] 	 ram_loader_adr;
    wire [3:0] 	 ram_loader_sel;
    wire 	 ram_loader_stb, ram_loader_we;
-   ram_loader #(.AWIDTH(aw),.RAM_SIZE(RAM_SIZE))
+   ram_loader #(.AWIDTH(aw),.RAM_SIZE(16384))
      ram_loader (.wb_clk(wb_clk),.dsp_clk(dsp_clk),.ram_loader_rst(ram_loader_rst),
 		 .wb_dat(ram_loader_dat),.wb_adr(ram_loader_adr),
 		 .wb_stb(ram_loader_stb),.wb_sel(ram_loader_sel),
@@ -326,17 +326,17 @@ module u2_core
    // I-port connects directly to processor and ram loader
 
    wire 	 flush_icache;
-   ram_harvard #(.AWIDTH(RAM_AW),.RAM_SIZE(RAM_SIZE),.ICWIDTH(7),.DCWIDTH(6))
+   ram_harvard #(.AWIDTH(14),.RAM_SIZE(16384),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
-	     .ram_loader_adr_i(ram_loader_adr[RAM_AW-1:0]), .ram_loader_dat_i(ram_loader_dat),
+	     .ram_loader_adr_i(ram_loader_adr[13:0]), .ram_loader_dat_i(ram_loader_dat),
 	     .ram_loader_stb_i(ram_loader_stb), .ram_loader_sel_i(ram_loader_sel),
 	     .ram_loader_we_i(ram_loader_we),
 	     .ram_loader_done_i(ram_loader_done),
 	     
 	     .if_adr(16'b0), .if_data(),
 	     
-	     .dwb_adr_i(s0_adr[RAM_AW-1:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+	     .dwb_adr_i(s0_adr[13:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
 	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
 	     .flush_icache(flush_icache));
    

@@ -146,9 +146,9 @@ module u2plus_core
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
-   localparam DSP_TX_FIFOSIZE = 10;
+   // localparam DSP_TX_FIFOSIZE = 9;  unused -- DSPTX uses extram fifo
    localparam DSP_RX_FIFOSIZE = 9;
-   localparam ETH_TX_FIFOSIZE = 10;
+   localparam ETH_TX_FIFOSIZE = 9;
    localparam ETH_RX_FIFOSIZE = 11;
    localparam SERDES_TX_FIFOSIZE = 9;
    localparam SERDES_RX_FIFOSIZE = 9;  // RX currently doesn't use a fifo?
@@ -157,11 +157,12 @@ module u2plus_core
    wire [31:0] 	set_data, set_data_dsp;
    wire 	set_stb, set_stb_dsp;
    
-   reg wb_rst; wire dsp_rst;
-
+   reg 		wb_rst; 
+   wire 	dsp_rst = wb_rst;
+   
    wire [31:0] 	status;
    wire 	bus_error, spi_int, i2c_int, pps_int, onetime_int, periodic_int, buffer_int;
-   wire 	proc_int, overrun, underrun;
+   wire 	proc_int, overrun0, overrun1, underrun;
    wire [3:0] 	uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
@@ -724,8 +725,6 @@ module u2plus_core
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
    
-   assign dsp_rst = wb_rst;
-
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
