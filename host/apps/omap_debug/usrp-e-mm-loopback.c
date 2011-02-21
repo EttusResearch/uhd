@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -7,6 +8,7 @@
 #include <unistd.h>
 #include <stddef.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <poll.h>
 #include "usrp_e.h"
 
@@ -72,7 +74,7 @@ static void *read_thread(void *threadid)
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLIN;
-			ssize_t ret = poll(&pfd, 1, -1);
+			poll(&pfd, 1, -1);
 		}
 
 		(*rxi)[rb_read].flags = RB_USER_PROCESS;
@@ -95,7 +97,7 @@ static void *read_thread(void *threadid)
 			printf("Sequence number fail, current = %d, previous = %d, pkt_count = %d\n",
 				p->seq_num, prev_seq_num, pkt_count);
 			printf("pkt received, rb_read = %d\n", rb_read);
-			printf("p = %X, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
+			printf("p = %p, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
 
 			seq_num_failure ++;
 			if (seq_num_failure > 2)
@@ -135,7 +137,7 @@ static void *read_thread(void *threadid)
 //		fflush(stdout);
 //		printf("\n");
 	}
-
+	return NULL;
 }
 
 static void *write_thread(void *threadid)
@@ -171,7 +173,7 @@ static void *write_thread(void *threadid)
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLOUT;
-			ssize_t ret = poll(&pfd, 1, -1);
+			poll(&pfd, 1, -1);
 		}
 
 		memcpy(&(*tx_buf)[rb_write], tx_data, p->len * 2 + 12);
@@ -188,18 +190,20 @@ static void *write_thread(void *threadid)
 //			printf("Error returned from write: %d\n", cnt);
 //		sleep(1);
 	}
+	return NULL;
 }
 
 
 int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
-	long int t;
+	long int t = 0;
 	struct sched_param s = {
 		.sched_priority = 1
 	};
 	int ret, map_size, page_size;
 	void *rb;
+	struct usrp_e_ctl16 d;
 
 	if (argc < 2) {
 		printf("%s data_size\n", argv[0]);
@@ -210,6 +214,11 @@ int main(int argc, char *argv[])
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
+
+	d.offset = 14;
+	d.count = 1;
+	d.buf[0] = (1<<8) | (1<<9);
+	ioctl(fp, USRP_E_WRITE_CTL16, &d);
 
 	page_size = getpagesize();
 
@@ -224,7 +233,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	printf("rb = %X\n", rb);
+	printf("rb = %p\n", rb);
 
 	rxi = rb;
 	rx_buf = rb + (rb_size.num_pages_rx_flags * page_size);
@@ -234,9 +243,11 @@ int main(int argc, char *argv[])
 		(rb_size.num_rx_frames * page_size >> 1) +
 		(rb_size.num_pages_tx_flags * page_size);
 
-	printf("rxi = %X, rx_buf = %X, txi = %X, tx_buf = %X\n", rxi, rx_buf, txi, tx_buf);
+	printf("rxi = %p, rx_buf = %p, txi = %p, tx_buf = %p\n", rxi, rx_buf, txi, tx_buf);
 
-	sched_setscheduler(0, SCHED_RR, &s);
+	if ((ret = sched_setscheduler(0, SCHED_RR, &s)))
+		perror("sched_setscheduler");
+
 	error = 0;
 
 #if 1
@@ -257,4 +268,6 @@ int main(int argc, char *argv[])
 		sleep(1000000000);
 
 	printf("Done sleeping\n");
+
+	return 0;
 }
