@@ -76,7 +76,7 @@ usrp2_regs_t usrp2_get_regs(bool use_n2xx_map) {
   x.dsp_rx[0].dcoffset_i = sr_addr(misc_output_base, x.sr_rx_dsp0 + 3);
   x.dsp_rx[0].dcoffset_q = sr_addr(misc_output_base, x.sr_rx_dsp0 + 4);
   x.dsp_rx[0].mux = sr_addr(misc_output_base, x.sr_rx_dsp0 + 5);
-  x.dsp_rx[1].freq = sr_addr(misc_output_base, x.sr_rx_dsp1 + 1);
+  x.dsp_rx[1].freq = sr_addr(misc_output_base, x.sr_rx_dsp1 + 0);
   x.dsp_rx[1].scale_iq = sr_addr(misc_output_base, x.sr_rx_dsp1 + 1);
   x.dsp_rx[1].decim_rate = sr_addr(misc_output_base, x.sr_rx_dsp1 + 2);
   x.dsp_rx[1].dcoffset_i = sr_addr(misc_output_base, x.sr_rx_dsp1 + 3);
@@ -103,7 +103,7 @@ usrp2_regs_t usrp2_get_regs(bool use_n2xx_map) {
   x.rx_ctrl[0].vrt_trailer = sr_addr(misc_output_base, x.sr_rx_ctrl0 + 6);
   x.rx_ctrl[0].nsamps_per_pkt = sr_addr(misc_output_base, x.sr_rx_ctrl0 + 7);
   x.rx_ctrl[0].nchannels = sr_addr(misc_output_base, x.sr_rx_ctrl0 + 8);
-  x.rx_ctrl[1].stream_cmd = sr_addr(misc_output_base, x.sr_rx_ctrl1 + 1);
+  x.rx_ctrl[1].stream_cmd = sr_addr(misc_output_base, x.sr_rx_ctrl1 + 0);
   x.rx_ctrl[1].time_secs = sr_addr(misc_output_base, x.sr_rx_ctrl1 + 1);
   x.rx_ctrl[1].time_ticks = sr_addr(misc_output_base, x.sr_rx_ctrl1 + 2);
   x.rx_ctrl[1].clear_overrun = sr_addr(misc_output_base, x.sr_rx_ctrl1 + 3);

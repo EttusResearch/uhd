@@ -153,6 +153,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
 
+    //------------------------------------------------------------------
     //This is a hack/fix for the lingering packet problem.
     stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     for (size_t i = 0; i < NUM_RX_DSPS; i++){
@@ -163,6 +164,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for expected
         _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //resets sequence
     }
+    //------------------------------------------------------------------
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){

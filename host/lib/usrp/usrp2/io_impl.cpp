@@ -130,16 +130,17 @@ struct usrp2_impl::io_impl{
         for (size_t i = 0; i < num_monitors; i++){
             fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
                 usrp2_impl::sram_bytes/dsp_xports.front()->get_send_frame_size()
-            )));
-            //init empty packet infos
-            vrt::if_packet_info_t packet_info;
-            packet_info.packet_count = 0xf;
-            packet_info.has_tsi = true;
-            packet_info.tsi = 0;
-            packet_info.has_tsf = true;
-            packet_info.tsf = 0;
-            prev_infos.push_back(packet_info);
+            )));;
         }
+
+        //init empty packet infos
+        vrt::if_packet_info_t packet_info = vrt::if_packet_info_t();
+        packet_info.packet_count = 0xf;
+        packet_info.has_tsi = true;
+        packet_info.tsi = 0;
+        packet_info.has_tsf = true;
+        packet_info.tsf = 0;
+        prev_infos.resize(dsp_xports.size(), packet_info);
     }
 
     ~io_impl(void){
@@ -413,10 +414,11 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
         if (buffs[0].get() == NULL) return false;
         bool clear, msg; time_spec_t time; //unused variables
         //call extract_packet_info to handle printing the overflows
-        extract_packet_info(buffs[0], this->prev_infos[0], time, clear, msg);
+        extract_packet_info(buffs[0], this->prev_infos[recv_map[0]], time, clear, msg);
         return true;
     }
     //-------------------- begin alignment logic ---------------------//
+    UHD_ASSERT_THROW(recv_map.size() == buffs.size());
     boost::system_time exit_time = boost::get_system_time() + to_time_dur(recv_timeout);
     managed_recv_buffer::sptr buff_tmp;
     alignment_indexes indexes_to_do;
@@ -432,7 +434,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     size_t index = indexes_to_do.front();
     buff_tmp = dsp_xports[recv_map[index]]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
     if (buff_tmp.get() == NULL) return false;
-    extract_packet_info(buff_tmp, this->prev_infos[index], expected_time, clear, msg);
+    extract_packet_info(buff_tmp, this->prev_infos[recv_map[index]], expected_time, clear, msg);
     if (clear) goto got_clear;
     buffs[index] = buff_tmp;
     if (msg) return handle_msg_packet(buffs, index);
@@ -446,7 +448,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
         buff_tmp = dsp_xports[recv_map[index]]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
         if (buff_tmp.get() == NULL) return false;
         time_spec_t this_time;
-        extract_packet_info(buff_tmp, this->prev_infos[index], this_time, clear, msg);
+        extract_packet_info(buff_tmp, this->prev_infos[recv_map[index]], this_time, clear, msg);
         if (clear) goto got_clear;
         buffs[index] = buff_tmp;
         if (msg) return handle_msg_packet(buffs, index);
@@ -488,10 +490,10 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
     return bpp/_rx_otw_type.get_sample_size();
 }
 
-static void handle_overflow(std::vector<usrp2_mboard_impl::sptr> &mboards, size_t chan){
+void usrp2_impl::handle_overflow(size_t chan){
     std::cerr << "O" << std::flush;
-    //TODO this is wrong way to determine the index...
-    mboards.at(chan/mboards.size())->handle_overflow(chan%mboards.size());
+    div_t indexes = div(chan, usrp2_mboard_impl::NUM_RX_DSPS);
+    _mboards.at(indexes.quot)->handle_overflow(indexes.rem);
 }
 
 size_t usrp2_impl::recv(
@@ -508,6 +510,6 @@ size_t usrp2_impl::recv(
         _mboards.front()->get_master_clock_freq(), //master clock tick rate
         uhd::transport::vrt::if_hdr_unpack_be,
         _io_impl->get_recv_buffs_fcn,
-        boost::bind(&handle_overflow, boost::ref(_mboards), _1)
+        boost::bind(&usrp2_impl::handle_overflow, this, _1)
     );
 }
