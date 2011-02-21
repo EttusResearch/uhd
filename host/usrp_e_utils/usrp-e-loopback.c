@@ -1,14 +1,18 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stddef.h>
 #include <sys/mman.h>
-#include <linux/usrp_e.h>
+#include <sys/time.h>
+#include <poll.h>
+#include "linux/usrp_e.h"
 
-#define MAX_PACKET_SIZE 1016
+// max length #define PKT_DATA_LENGTH 1016
 static int packet_data_length;
 static int error;
 
@@ -16,34 +20,16 @@ struct pkt {
 	int len;
 	int checksum;
 	int seq_num;
-	short data[];
+	short data[1024-6];
 };
 
-static int length_array[2048];
-static int length_array_tail = 0;
-static int length_array_head = 0;
-
-pthread_mutex_t length_array_mutex; //gotta lock the index to keep it from getting hosed
-
-//yes this is a circular buffer that does not check empty
-//no i don't want to hear about it
-void push_length_array(int length) {
-	pthread_mutex_lock(&length_array_mutex);
-	if(length_array_tail > 2047) length_array_tail = 0;
-	length_array[length_array_tail++] = length;
-	pthread_mutex_unlock(&length_array_mutex);
-}
-
-int pop_length_array(void) {
-	int retval;
-	pthread_mutex_lock(&length_array_mutex);
-	if(length_array_head > 2047) length_array_head = 0;
-	retval = length_array[length_array_head++];
-	pthread_mutex_unlock(&length_array_mutex);
-	return retval;
-}
+struct ring_buffer_info (*rxi)[];
+struct ring_buffer_info (*txi)[];
+struct pkt (*rx_buf)[200];
+struct pkt (*tx_buf)[200];
 
 static int fp;
+static struct usrp_e_ring_buffer_size_t rb_size;
 
 static int calc_checksum(struct pkt *p)
 {
@@ -53,31 +39,29 @@ static int calc_checksum(struct pkt *p)
 	sum = 0;
 
 	for (i=0; i < p->len; i++)
-		sum ^= p->data[i];
+		sum += p->data[i];
 
-	sum ^= p->seq_num;
-	sum ^= p->len;
+	sum += p->seq_num;
+	sum += p->len;
 
 	return sum;
 }
 
 static void *read_thread(void *threadid)
 {
-	char *rx_data;
 	int cnt, prev_seq_num, pkt_count, seq_num_failure;
 	struct pkt *p;
 	unsigned long bytes_transfered, elapsed_seconds;
 	struct timeval start_time, finish_time;
-	int expected_count;
+	int rb_read;
 
 	printf("Greetings from the reading thread!\n");
+	printf("sizeof pkt = %d\n", sizeof(struct pkt));
+
+	rb_read = 0;
 
 	bytes_transfered = 0;
 	gettimeofday(&start_time, NULL);
-
-	// IMPORTANT: must assume max length packet from fpga
-	rx_data = malloc(2048);
-	p = (struct pkt *) ((void *)rx_data);
 
 	prev_seq_num = 0;
 	pkt_count = 0;
@@ -85,11 +69,26 @@ static void *read_thread(void *threadid)
 
 	while (1) {
 
-		cnt = read(fp, rx_data, 2048);
-		if (cnt < 0)
-			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
+		if (!((*rxi)[rb_read].flags & RB_USER)) {
+//			printf("Waiting for data\n");
+			struct pollfd pfd;
+			pfd.fd = fp;
+			pfd.events = POLLIN;
+			poll(&pfd, 1, -1);
+		}
 
-//		printf("p->seq_num = %d\n", p->seq_num);
+		(*rxi)[rb_read].flags = RB_USER_PROCESS;
+
+//		printf("pkt received, rb_read = %d\n", rb_read);
+
+		cnt = (*rxi)[rb_read].len;
+		p = &(*rx_buf)[rb_read];
+
+//		cnt = read(fp, rx_data, 2048);
+//		if (cnt < 0)
+//			printf("Error returned from read: %d, sequence number = %d\n", cnt, p->seq_num);
+
+//		printf("p = %X, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
 
 
 		pkt_count++;
@@ -97,15 +96,12 @@ static void *read_thread(void *threadid)
 		if (p->seq_num != prev_seq_num + 1) {
 			printf("Sequence number fail, current = %d, previous = %d, pkt_count = %d\n",
 				p->seq_num, prev_seq_num, pkt_count);
+			printf("pkt received, rb_read = %d\n", rb_read);
+			printf("p = %p, p->seq_num = %d p->len = %d\n", p, p->seq_num, p->len);
 
 			seq_num_failure ++;
 			if (seq_num_failure > 2)
 				error = 1;
-		}
-
-		expected_count = pop_length_array()*2+12;
-		if(cnt != expected_count) {
-			printf("Received %d bytes, expected %d\n", cnt, expected_count);
 		}
 
 		prev_seq_num = p->seq_num;
@@ -115,6 +111,12 @@ static void *read_thread(void *threadid)
 				calc_checksum(p), p->checksum, pkt_count);
 			error = 1;
 		}
+
+		(*rxi)[rb_read].flags = RB_KERNEL;
+
+		rb_read++;
+		if (rb_read == rb_size.num_rx_frames)
+			rb_read = 0;
 
 		bytes_transfered += cnt;
 
@@ -135,12 +137,12 @@ static void *read_thread(void *threadid)
 //		fflush(stdout);
 //		printf("\n");
 	}
-
+	return NULL;
 }
 
 static void *write_thread(void *threadid)
 {
-	int seq_number, i, cnt;
+	int seq_number, i, cnt, rb_write;
 	void *tx_data;
 	struct pkt *p;
 
@@ -154,6 +156,7 @@ static void *write_thread(void *threadid)
 		p->data[i] = i;
 
 	seq_number = 1;
+	rb_write = 0;
 
 	while (1) {
 		p->seq_num = seq_number++;
@@ -161,30 +164,46 @@ static void *write_thread(void *threadid)
 		if (packet_data_length > 0)
 			p->len = packet_data_length;
 		else
-			p->len = (random()<<1 & 0x1ff) + (1004 - 512);
-
-		push_length_array(p->len);
+			p->len = (random() & 0x1ff) + (1004 - 512);
 
 		p->checksum = calc_checksum(p);
 
-		cnt = write(fp, tx_data, p->len * 2 + 12);
-		if (cnt < 0)
-			printf("Error returned from write: %d\n", cnt);
+		if (!((*txi)[rb_write].flags & RB_KERNEL)) {
+//			printf("Waiting for space\n");
+			struct pollfd pfd;
+			pfd.fd = fp;
+			pfd.events = POLLOUT;
+			poll(&pfd, 1, -1);
+		}
+
+		memcpy(&(*tx_buf)[rb_write], tx_data, p->len * 2 + 12);
+
+		(*txi)[rb_write].len = p->len * 2 + 12;
+		(*txi)[rb_write].flags = RB_USER;
+
+		rb_write++;
+		if (rb_write == rb_size.num_tx_frames)
+			rb_write = 0;
+
+		cnt = write(fp, NULL, 0);
+//		if (cnt < 0)
+//			printf("Error returned from write: %d\n", cnt);
 //		sleep(1);
 	}
+	return NULL;
 }
 
 
 int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
-	pthread_mutex_init(&length_array_mutex, 0);
-	long int t;
+	long int t = 0;
 	struct sched_param s = {
 		.sched_priority = 1
 	};
+	int ret, map_size, page_size;
 	void *rb;
-	struct usrp_transfer_frame *tx_rb, *rx_rb;
+	struct usrp_e_ctl16 d;
 
 	if (argc < 2) {
 		printf("%s data_size\n", argv[0]);
@@ -192,22 +211,43 @@ int main(int argc, char *argv[])
 	}
 
 	packet_data_length = atoi(argv[1]);
-	if(packet_data_length > MAX_PACKET_SIZE) {
-		printf("Packet size must be smaller than %i\n", MAX_PACKET_SIZE);
-		exit(-1);
-	}
 
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	rb = mmap(0, 202 * 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
-	if (!rb) {
-		printf("mmap failed\n");
-		exit;
+	d.offset = 14;
+	d.count = 1;
+	d.buf[0] = (1<<8) | (1<<9);
+	ioctl(fp, USRP_E_WRITE_CTL16, &d);
+
+	page_size = getpagesize();
+
+	ret = ioctl(fp, USRP_E_GET_RB_INFO, &rb_size);
+
+	map_size = (rb_size.num_pages_rx_flags + rb_size.num_pages_tx_flags) * page_size +
+		(rb_size.num_rx_frames + rb_size.num_tx_frames) * (page_size >> 1);
+
+	rb = mmap(0, map_size, PROT_READ|PROT_WRITE, MAP_SHARED, fp, 0);
+	if (rb == MAP_FAILED) {
+		perror("mmap failed");
+		return -1;
 	}
 
+	printf("rb = %p\n", rb);
 
-	sched_setscheduler(0, SCHED_RR, &s);
+	rxi = rb;
+	rx_buf = rb + (rb_size.num_pages_rx_flags * page_size);
+	txi = rb +  (rb_size.num_pages_rx_flags * page_size) +
+		(rb_size.num_rx_frames * page_size >> 1);
+	tx_buf = rb +  (rb_size.num_pages_rx_flags * page_size) +
+		(rb_size.num_rx_frames * page_size >> 1) +
+		(rb_size.num_pages_tx_flags * page_size);
+
+	printf("rxi = %p, rx_buf = %p, txi = %p, tx_buf = %p\n", rxi, rx_buf, txi, tx_buf);
+
+	if ((ret = sched_setscheduler(0, SCHED_RR, &s)))
+		perror("sched_setscheduler");
+
 	error = 0;
 
 #if 1
@@ -228,4 +268,6 @@ int main(int argc, char *argv[])
 		sleep(1000000000);
 
 	printf("Done sleeping\n");
+
+	return 0;
 }

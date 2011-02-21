@@ -34,6 +34,7 @@ IF(ENABLE_USRP_E_UTILS)
     SET(usrp_e_utils_sources
         usrp-e-utility.cpp
         usrp-e-loopback.c
+        usrp-e-timed.c
         usrp-e-wb-test.cpp
         usrp-e-debug-pins.c
         usrp-e-i2c.c
