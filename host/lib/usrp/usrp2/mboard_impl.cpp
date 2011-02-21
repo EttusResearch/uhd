@@ -56,8 +56,7 @@ static void init_xport(zero_copy_if::sptr xport){
  * Structors
  **********************************************************************/
 usrp2_mboard_impl::usrp2_mboard_impl(
-    const device_addr_t &device_addr, //global args passed into make
-    const device_addr_t &device_args, //separated mboard specific args
+    const device_addr_t &device_addr,
     size_t index, usrp2_impl &device
 ):
     _index(index), _device(device),
@@ -108,7 +107,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     dsp_init();
 
     //setting the cycles per update (disabled by default)
-    const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
+    const double ups_per_sec = device_addr.cast<double>("ups_per_sec", 0.0);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
         _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
@@ -116,18 +115,18 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //setting the packets per update (enabled by default)
     size_t send_frame_size = device.dsp_xports[0]->get_send_frame_size();
-    const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
+    const double ups_per_fifo = device_addr.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
         const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/send_frame_size);
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
     }
 
     //initialize the clock configuration
-    if (device_args.has_key("mimo_mode")){
-        if (device_args["mimo_mode"] == "master"){
+    if (device_addr.has_key("mimo_mode")){
+        if (device_addr["mimo_mode"] == "master"){
             _mimo_clocking_mode_is_master = true;
         }
-        else if (device_args["mimo_mode"] == "slave"){
+        else if (device_addr["mimo_mode"] == "slave"){
             _mimo_clocking_mode_is_master = false;
         }
         else throw std::runtime_error(

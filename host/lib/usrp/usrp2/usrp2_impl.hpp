@@ -89,7 +89,6 @@ public:
     //structors
     usrp2_mboard_impl(
         const uhd::device_addr_t &device_addr,
-        const uhd::device_addr_t &device_args,
         size_t index, usrp2_impl &device
     );
     ~usrp2_mboard_impl(void);

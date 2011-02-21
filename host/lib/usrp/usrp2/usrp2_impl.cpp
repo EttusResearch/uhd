@@ -23,12 +23,10 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <boost/algorithm/string.hpp> //for split
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <iostream>
@@ -40,63 +38,11 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 /***********************************************************************
- * Helper Functions
- **********************************************************************/
-
-//! separate indexed device addresses into a vector of device addresses
-device_addrs_t sep_indexed_dev_addrs(const device_addr_t &dev_addr){
-    //------------ support old deprecated way and print warning --------
-    if (dev_addr.has_key("addr") and not dev_addr["addr"].empty()){
-        std::vector<std::string> addrs; boost::split(addrs, dev_addr["addr"], boost::is_any_of(" "));
-        if (addrs.size() > 1){
-            device_addr_t fixed_dev_addr = dev_addr;
-            fixed_dev_addr.pop("addr");
-            for (size_t i = 0; i < addrs.size(); i++){
-                fixed_dev_addr[str(boost::format("addr%d") % i)] = addrs[i];
-            }
-            uhd::warning::post(
-                "addr = <space separated list of ip addresses> is deprecated.\n"
-                "To address a multi-device, use multiple <key><index> = <val>.\n"
-                "See the USRP-NXXX application notes. Two device example:\n"
-                "    addr0 = 192.168.10.2\n"
-                "    addr1 = 192.168.10.3\n"
-            );
-            return sep_indexed_dev_addrs(fixed_dev_addr);
-        }
-    }
-    //------------------------------------------------------------------
-    device_addrs_t dev_addrs;
-    BOOST_FOREACH(const std::string &key, dev_addr.keys()){
-        boost::cmatch matches;
-        if (not boost::regex_match(key.c_str(), matches, boost::regex("^(\\D+)(\\d*)$"))){
-            throw std::runtime_error("unknown key format: " + key);
-        }
-        std::string key_part(matches[1].first, matches[1].second);
-        std::string num_part(matches[2].first, matches[2].second);
-        size_t num = (num_part.empty())? 0 : boost::lexical_cast<size_t>(num_part);
-        dev_addrs.resize(std::max(num+1, dev_addrs.size()));
-        dev_addrs[num][key_part] = dev_addr[key];
-    }
-    return dev_addrs;
-}
-
-//! combine a vector in device addresses into an indexed device address
-device_addr_t combine_dev_addr_vector(const device_addrs_t &dev_addrs){
-    device_addr_t dev_addr;
-    for (size_t i = 0; i < dev_addrs.size(); i++){
-        BOOST_FOREACH(const std::string &key, dev_addrs[i].keys()){
-            dev_addr[str(boost::format("%s%d") % key % i)] = dev_addrs[i][key];
-        }
-    }
-    return dev_addr;
-}
-
-/***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
 static device_addrs_t usrp2_find(const device_addr_t &hint_){
     //handle the multi-device discovery
-    device_addrs_t hints = sep_indexed_dev_addrs(hint_);
+    device_addrs_t hints = separate_device_addr(hint_);
     if (hints.size() > 1){
         device_addrs_t found_devices;
         BOOST_FOREACH(const device_addr_t &hint_i, hints){
@@ -106,7 +52,7 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
             ) % hint_i.to_string()));
             found_devices.push_back(found_devices_i[0]);
         }
-        return device_addrs_t(1, combine_dev_addr_vector(found_devices));
+        return device_addrs_t(1, combine_device_addrs(found_devices));
     }
 
     //initialize the hint for a single device case
@@ -207,7 +153,7 @@ UHD_STATIC_BLOCK(register_usrp2_device){
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(const device_addr_t &device_addr){
-    device_addrs_t device_args = sep_indexed_dev_addrs(device_addr);
+    device_addrs_t device_args = separate_device_addr(device_addr);
 
     //setup rx otw type
     _rx_otw_type.width = 16;
@@ -223,8 +169,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &device_addr){
 
     //create a new mboard handler for each control transport
     for(size_t i = 0; i < device_args.size(); i++){
+        device_addr_t dev_addr_i = device_args[i];
+        BOOST_FOREACH(const std::string &key, device_addr.keys()){
+            if (dev_addr_i.has_key(key)) continue;
+            dev_addr_i[key] = device_addr[key];
+        }
         _mboards.push_back(usrp2_mboard_impl::sptr(
-            new usrp2_mboard_impl(device_addr, device_args[i], i, *this)
+            new usrp2_mboard_impl(dev_addr_i, i, *this)
         ));
         //use an empty name when there is only one mboard
         std::string name = (device_args.size() > 1)? boost::lexical_cast<std::string>(i) : "";
