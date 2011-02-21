@@ -97,7 +97,7 @@ static void *read_thread(void *threadid)
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLIN;
-			ssize_t ret = poll(&pfd, 1, -1);
+			poll(&pfd, 1, -1);
 		}
 		(*rxi)[rb_read].flags = RB_USER_PROCESS;
 
@@ -136,7 +136,7 @@ static void *read_thread(void *threadid)
 		}
 
 		(*rxi)[rb_read].flags = RB_KERNEL;
-
+		write(fp, NULL, 1);
 
 		if (rx_crc != ck_sum)
 			printf("Ck_sum eror, calc ck_sum = %lX, rx ck_sum = %X\n",
@@ -176,6 +176,7 @@ static void *read_thread(void *threadid)
 			bytes_transfered = 0;
 		}
 	}	
+	return NULL;
 }
 	
 static void *write_thread(void *threadid)
@@ -185,6 +186,7 @@ static void *write_thread(void *threadid)
 	unsigned long crc;
 	unsigned long bytes_transfered;
 	struct timeval start_time;
+	unsigned int pkt_seq = 0;
 	__u8 *p;
 
 	printf("Greetings from the write thread!\n");
@@ -228,19 +230,27 @@ static void *write_thread(void *threadid)
 			struct pollfd pfd;
 			pfd.fd = fp;
 			pfd.events = POLLOUT;
-			ssize_t ret = poll(&pfd, 1, -1);
+			poll(&pfd, 1, -1);
 		}
 //		printf("Got space\n");
 
+		for (i=8; i < tx_len-4; i++) {
+			p[i] = i & 0xFF;
+		}
+
+		*(unsigned int *) &p[0] = tx_len-4;
+		*(unsigned int *) &p[4] = pkt_seq;
+
+		pkt_seq++;
+
 		crc = 0xFFFFFFFF;
 		for (i = 0; i < tx_len-4; i++) {
-			p[i] = i & 0xFF;
 //			printf("%X ", p[i]);
 			crc = ((crc >> 8) & 0x00FFFFFF) ^
 				crc_tab[(crc ^ p[i]) & 0xFF];
 
 		}
-		*(int *) &p[tx_len-4] = crc;
+		*(unsigned int *) &p[tx_len-4] = crc;
 //		printf("\n crc = %lX\n", crc);
 
 		(*txi)[rb_write].len = tx_len;
@@ -273,13 +283,14 @@ static void *write_thread(void *threadid)
 
 //		sleep(1);
 	}
+	return NULL;
 }
 
 
 int main(int argc, char *argv[])
 {
 	pthread_t tx, rx;
-	long int t;
+	long int t=0;
 	int fpga_config_flag ,decimation;
 	int ret, map_size, page_size;
 	void *rb;
@@ -315,7 +326,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	printf("rb = %X\n", rb);
+	printf("rb = %p\n", rb);
 
 	rxi = rb;
 	rx_buf = rb + (rb_size.num_pages_rx_flags * page_size);
@@ -325,13 +336,13 @@ int main(int argc, char *argv[])
 		(rb_size.num_rx_frames * page_size >> 1) +
 		(rb_size.num_pages_tx_flags * page_size);
 
-	fpga_config_flag = 0;
+	fpga_config_flag = (1<<8);
 	if (strcmp(argv[1], "w") == 0)
-		fpga_config_flag |= (1 << 15);
+		fpga_config_flag |= (1 << 11);
 	else if (strcmp(argv[1], "r") == 0)
-		fpga_config_flag |= (1 << 14);
+		fpga_config_flag |= (1 << 10);
 	else if (strcmp(argv[1], "rw") == 0)
-		fpga_config_flag |= ((1 << 15) | (1 << 14));
+		fpga_config_flag |= ((1 << 10) | (1 << 11));
 
 	fpga_config_flag |= decimation;
 
@@ -344,7 +355,7 @@ int main(int argc, char *argv[])
 
 	sched_setscheduler(0, SCHED_RR, &s);
 
-	if (fpga_config_flag & (1 << 14)) {
+	if (fpga_config_flag & (1 << 10)) {
 		if (pthread_create(&rx, NULL, read_thread, (void *) t)) {
 			printf("Failed to create rx thread\n");
 			exit(-1);
@@ -353,7 +364,7 @@ int main(int argc, char *argv[])
 
 	sleep(1);
 
-	if (fpga_config_flag & (1 << 15)) {
+	if (fpga_config_flag & (1 << 11)) {
 		if (pthread_create(&tx, NULL, write_thread, (void *) t)) {
 			printf("Failed to create tx thread\n");
 			exit(-1);
