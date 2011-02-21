@@ -55,13 +55,18 @@ CHECK_INCLUDE_FILE_CXX(winsock2.h HAVE_WINSOCK2_H)
 
 IF(HAVE_IFADDRS_H)
     MESSAGE(STATUS "  Interface address discovery supported through getifaddrs.")
-    ADD_DEFINITIONS(-DHAVE_IFADDRS_H)
+    SET(IF_ADDRS_DEFS HAVE_IFADDRS_H)
 ELSEIF(HAVE_WINSOCK2_H)
     MESSAGE(STATUS "  Interface address discovery supported through SIO_GET_INTERFACE_LIST.")
-    ADD_DEFINITIONS(-DHAVE_WINSOCK2_H)
+    SET(IF_ADDRS_DEFS HAVE_WINSOCK2_H)
 ELSE(HAVE_IFADDRS_H)
     MESSAGE(STATUS "  Interface address discovery not supported.")
 ENDIF(HAVE_IFADDRS_H)
+
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
+    PROPERTIES COMPILE_DEFINITIONS "${IF_ADDRS_DEFS}"
+)
 
 ########################################################################
 # Append to the list of sources for lib uhd
@@ -75,6 +80,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy_asio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vrt_packet_handler.hpp
 )
