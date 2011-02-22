@@ -19,7 +19,7 @@
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/gain_group.hpp>
-#include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
@@ -147,7 +147,7 @@ static void verify_xx_subdev_spec(
                 wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
 
                 //if the dboard slot is populated, take the first subdevice
-                if (dboard[DBOARD_PROP_DBOARD_ID].as<dboard_id_t>() != dboard_id_t::none()){
+                if (dboard[DBOARD_PROP_DBOARD_EEPROM].as<dboard_eeprom_t>().id != dboard_id_t::none()){
                     std::string sd_name = dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>().front();
                     subdev_spec.push_back(subdev_spec_pair_t(db_name, sd_name));
                     break;

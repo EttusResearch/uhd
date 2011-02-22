@@ -73,8 +73,8 @@ void usrp_e100_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_rx_subdev_names();
         return;
 
-    case DBOARD_PROP_DBOARD_ID:
-        val = _rx_db_eeprom.id;
+    case DBOARD_PROP_DBOARD_EEPROM:
+        val = _rx_db_eeprom;
         return;
 
     case DBOARD_PROP_DBOARD_IFACE:
@@ -103,8 +103,8 @@ void usrp_e100_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
  **********************************************************************/
 void usrp_e100_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_DBOARD_ID:
-        _rx_db_eeprom.id = val.as<dboard_id_t>();
+    case DBOARD_PROP_DBOARD_EEPROM:
+        _rx_db_eeprom = val.as<dboard_eeprom_t>();
         _rx_db_eeprom.store(*_iface, I2C_ADDR_RX_DB);
         return;
 
@@ -132,8 +132,8 @@ void usrp_e100_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _dboard_manager->get_tx_subdev_names();
         return;
 
-    case DBOARD_PROP_DBOARD_ID:
-        val = _tx_db_eeprom.id;
+    case DBOARD_PROP_DBOARD_EEPROM:
+        val = _tx_db_eeprom;
         return;
 
     case DBOARD_PROP_DBOARD_IFACE:
@@ -162,8 +162,8 @@ void usrp_e100_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
  **********************************************************************/
 void usrp_e100_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
-    case DBOARD_PROP_DBOARD_ID:
-        _tx_db_eeprom.id = val.as<dboard_id_t>();
+    case DBOARD_PROP_DBOARD_EEPROM:
+        _tx_db_eeprom = val.as<dboard_eeprom_t>();
         _tx_db_eeprom.store(*_iface, I2C_ADDR_TX_DB);
         return;
 

@@ -31,7 +31,7 @@ namespace uhd{ namespace usrp{
         DBOARD_PROP_NAME,           //ro, std::string
         DBOARD_PROP_SUBDEV,         //ro, wax::obj
         DBOARD_PROP_SUBDEV_NAMES,   //ro, prop_names_t
-        DBOARD_PROP_DBOARD_ID,      //rw, dboard_id_t
+        DBOARD_PROP_DBOARD_EEPROM,  //rw, dboard_eeprom_t
         DBOARD_PROP_DBOARD_IFACE,   //ro, dboard_iface::sptr
         DBOARD_PROP_CODEC,          //ro, wax::obj
         DBOARD_PROP_GAIN_GROUP      //ro, gain_group

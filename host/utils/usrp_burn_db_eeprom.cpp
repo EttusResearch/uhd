@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert.hpp>
-#include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
@@ -50,6 +50,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("slot", po::value<std::string>(&slot)->default_value(""),    "dboard slot name [default is blank for automatic]")
         ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX or TX]")
         ("id",   po::value<std::string>(),                            "dboard id to burn, omit for readback")
+        ("ser",  po::value<std::string>(),                            "serial to burn, omit for readback")
     ;
 
     po::variables_map vm;
@@ -80,20 +81,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     wax::obj dboard = (*dev)[DEVICE_PROP_MBOARD][named_prop_t(unit_to_db_prop[unit], slot)];
     std::string prefix = unit + ":" + slot;
 
-    //read the current dboard id from eeprom
-    if (vm.count("id") == 0){
-        std::cout << boost::format("Getting dbid on %s dboard...") % prefix << std::endl;
-        dboard_id_t id = dboard[DBOARD_PROP_DBOARD_ID].as<dboard_id_t>();
-        std::cout << boost::format("  Current dbid: %s") % id.to_pp_string() << std::endl;
-    }
+    std::cout << boost::format("Reading EEPROM on %s dboard...") % prefix << std::endl;
+    dboard_eeprom_t db_eeprom = dboard[DBOARD_PROP_DBOARD_EEPROM].as<dboard_eeprom_t>();
 
-    //write a new dboard id to eeprom
-    else{
-        dboard_id_t id = dboard_id_t::from_string(vm["id"].as<std::string>());
-        std::cout << boost::format("Setting dbid on %s dboard...") % prefix << std::endl;
-        std::cout << boost::format("  New dbid: %s") % id.to_pp_string() << std::endl;
-        dboard[DBOARD_PROP_DBOARD_ID] = id;
+    //------------- handle the dboard ID -----------------------------//
+    if (vm.count("id")){
+        db_eeprom.id = dboard_id_t::from_string(vm["id"].as<std::string>());
+        dboard[DBOARD_PROP_DBOARD_EEPROM] = db_eeprom;
     }
+    std::cout << boost::format("  Current ID: %s") % db_eeprom.id.to_pp_string() << std::endl;
+
+    //------------- handle the dboard serial--------------------------//
+    if (vm.count("ser")){
+        db_eeprom.serial = vm["ser"].as<std::string>();
+        dboard[DBOARD_PROP_DBOARD_EEPROM] = db_eeprom;
+    }
+    std::cout << boost::format("  Current serial: \"%s\"") % db_eeprom.serial << std::endl;
 
     std::cout << "  Done" << std::endl << std::endl;
     return 0;

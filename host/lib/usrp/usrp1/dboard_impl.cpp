@@ -105,8 +105,8 @@ void usrp1_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
         val = _dboard_managers[dboard_slot]->get_rx_subdev_names();
         return;
 
-    case DBOARD_PROP_DBOARD_ID:
-        val = _rx_db_eeproms[dboard_slot].id;
+    case DBOARD_PROP_DBOARD_EEPROM:
+        val = _rx_db_eeproms[dboard_slot];
         return;
 
     case DBOARD_PROP_DBOARD_IFACE:
@@ -136,8 +136,8 @@ void usrp1_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
 void usrp1_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val, dboard_slot_t dboard_slot)
 {
     switch(key.as<dboard_prop_t>()) {
-    case DBOARD_PROP_DBOARD_ID:
-        _rx_db_eeproms[dboard_slot].id = val.as<dboard_id_t>();
+    case DBOARD_PROP_DBOARD_EEPROM:
+        _rx_db_eeproms[dboard_slot] = val.as<dboard_eeprom_t>();
         _rx_db_eeproms[dboard_slot].store(*_iface, get_rx_ee_addr(dboard_slot));
         return;
 
@@ -167,8 +167,8 @@ void usrp1_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
         val = _dboard_managers[dboard_slot]->get_tx_subdev_names();
         return;
 
-    case DBOARD_PROP_DBOARD_ID:
-        val = _tx_db_eeproms[dboard_slot].id;
+    case DBOARD_PROP_DBOARD_EEPROM:
+        val = _tx_db_eeproms[dboard_slot];
         return;
 
     case DBOARD_PROP_DBOARD_IFACE:
@@ -198,8 +198,8 @@ void usrp1_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
 void usrp1_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val, dboard_slot_t dboard_slot)
 {
     switch(key.as<dboard_prop_t>()) {
-    case DBOARD_PROP_DBOARD_ID:
-        _tx_db_eeproms[dboard_slot].id = val.as<dboard_id_t>();
+    case DBOARD_PROP_DBOARD_EEPROM:
+        _tx_db_eeproms[dboard_slot] = val.as<dboard_eeprom_t>();
         _tx_db_eeproms[dboard_slot].store(*_iface, get_tx_ee_addr(dboard_slot));
         return;
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -146,6 +146,7 @@ public:
     wax::obj get_tx_subdev(const std::string &subdev_name);
 
 private:
+    void init(dboard_id_t, dboard_id_t);
     //list of rx and tx dboards in this dboard_manager
     //each dboard here is actually a subdevice proxy
     //the subdevice proxy is internal to the cpp file
@@ -203,9 +204,21 @@ dboard_manager_impl::dboard_manager_impl(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
     dboard_iface::sptr iface
-){
-    _iface = iface;
+):
+    _iface(iface)
+{
+    try{
+        this->init(rx_dboard_id, tx_dboard_id);
+    }
+    catch(const std::exception &e){
+        uhd::warning::post(e.what());
+        this->init(dboard_id_t::none(), dboard_id_t::none());
+    }
+}
 
+void dboard_manager_impl::init(
+    dboard_id_t rx_dboard_id, dboard_id_t tx_dboard_id
+){
     //determine xcvr status
     bool rx_dboard_is_xcvr = get_xcvr_id_to_id_map().has_key(rx_dboard_id);
     bool tx_dboard_is_xcvr = get_xcvr_id_to_id_map().has_key(tx_dboard_id);
@@ -240,7 +253,7 @@ dboard_manager_impl::dboard_manager_impl(
 
     //dboard constructor args
     dboard_ctor_args_t db_ctor_args;
-    db_ctor_args.db_iface = iface;
+    db_ctor_args.db_iface = _iface;
 
     //make xcvr subdevs (make one subdev for both rx and tx dboards)
     if (this_dboard_is_xcvr){
