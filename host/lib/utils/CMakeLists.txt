@@ -24,8 +24,8 @@
 ########################################################################
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring priority scheduling...")
-
 INCLUDE(CheckCXXSourceCompiles)
+
 CHECK_CXX_SOURCE_COMPILES("
     #include <pthread.h>
     int main(){
@@ -52,9 +52,10 @@ IF(HAVE_PTHREAD_SETSCHEDPARAM)
 ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
     MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
     SET(THREAD_PRIO_DEFS HAVE_WIN_SETTHREADPRIORITY)
-ELSE(HAVE_PTHREAD_SETSCHEDPARAM)
+ELSE()
     MESSAGE(STATUS "  Priority scheduling not supported.")
-ENDIF(HAVE_PTHREAD_SETSCHEDPARAM)
+    SET(THREAD_PRIO_DEFS HAVE_THREAD_PRIO_DUMMY)
+ENDIF()
 
 SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
@@ -66,21 +67,39 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring module loading...")
+INCLUDE(CheckCXXSourceCompiles)
 
-INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILE_CXX(windows.h HAVE_WINDOWS_H)
+SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_DL_LIBS})
+CHECK_CXX_SOURCE_COMPILES("
+    #include <dlfcn.h>
+    int main(){
+        dlopen(0, 0);
+        return 0;
+    }
+    " HAVE_DLOPEN
+)
+UNSET(CMAKE_REQUIRED_LIBRARIES)
 
-IF(HAVE_DLFCN_H)
+CHECK_CXX_SOURCE_COMPILES("
+    #include <windows.h>
+    int main(){
+        LoadLibrary(0);
+        return 0;
+    }
+    " HAVE_LOAD_LIBRARY
+)
+
+IF(HAVE_DLOPEN)
     MESSAGE(STATUS "  Module loading supported through dlopen.")
-    SET(LOAD_MODULES_DEFS HAVE_DLFCN_H)
+    SET(LOAD_MODULES_DEFS HAVE_DLOPEN)
     LIBUHD_APPEND_LIBS(${CMAKE_DL_LIBS})
-ELSEIF(HAVE_WINDOWS_H)
+ELSEIF(HAVE_LOAD_LIBRARY)
     MESSAGE(STATUS "  Module loading supported through LoadLibrary.")
-    SET(LOAD_MODULES_DEFS HAVE_WINDOWS_H)
-ELSE(HAVE_DLFCN_H)
+    SET(LOAD_MODULES_DEFS HAVE_LOAD_LIBRARY)
+ELSE()
     MESSAGE(STATUS "  Module loading not supported.")
-ENDIF(HAVE_DLFCN_H)
+    SET(LOAD_MODULES_DEFS HAVE_LOAD_MODULES_DUMMY)
+ENDIF()
 
 SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp

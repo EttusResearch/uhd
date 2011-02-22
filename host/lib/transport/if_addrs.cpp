@@ -20,14 +20,10 @@
 #include <boost/cstdint.hpp>
 #include <iostream>
 
-uhd::transport::if_addrs_t::if_addrs_t(void){
-    /* NOP */
-}
-
 /***********************************************************************
  * Interface address discovery through ifaddrs api
  **********************************************************************/
-#if defined(HAVE_IFADDRS_H)
+#ifdef HAVE_GETIFADDRS
 #include <ifaddrs.h>
 
 static boost::asio::ip::address_v4 sockaddr_to_ip_addr(sockaddr *addr){
@@ -59,10 +55,12 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
     return if_addrs;
 }
 
+#endif /* HAVE_GETIFADDRS */
+
 /***********************************************************************
  * Interface address discovery through windows api
  **********************************************************************/
-#elif defined(HAVE_WINSOCK2_H)
+#ifdef HAVE_SIO_GET_INTERFACE_LIST
 #include <winsock2.h>
 
 std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
@@ -98,13 +96,15 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
     return if_addrs;
 }
 
+#endif /* HAVE_SIO_GET_INTERFACE_LIST */
+
 /***********************************************************************
  * Interface address discovery not included
  **********************************************************************/
-#else /* HAVE_IFADDRS_H */
+#ifdef HAVE_IF_ADDRS_DUMMY
 
 std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
     return std::vector<if_addrs_t>();
 }
 
-#endif /* HAVE_IFADDRS_H */
+#endif /* HAVE_IF_ADDRS_DUMMY */

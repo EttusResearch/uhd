@@ -48,20 +48,31 @@ ENDIF(ENABLE_USB)
 ########################################################################
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring interface address discovery...")
-
+INCLUDE(CheckCXXSourceCompiles)
 INCLUDE(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(ifaddrs.h HAVE_IFADDRS_H)
+
+CHECK_CXX_SOURCE_COMPILES("
+    #include <ifaddrs.h>
+    int main(){
+        struct ifaddrs *ifap;
+        getifaddrs(&ifap);
+        return 0;
+    }
+    " HAVE_GETIFADDRS
+)
+
 CHECK_INCLUDE_FILE_CXX(winsock2.h HAVE_WINSOCK2_H)
 
-IF(HAVE_IFADDRS_H)
+IF(HAVE_GETIFADDRS)
     MESSAGE(STATUS "  Interface address discovery supported through getifaddrs.")
-    SET(IF_ADDRS_DEFS HAVE_IFADDRS_H)
+    SET(IF_ADDRS_DEFS HAVE_GETIFADDRS)
 ELSEIF(HAVE_WINSOCK2_H)
     MESSAGE(STATUS "  Interface address discovery supported through SIO_GET_INTERFACE_LIST.")
-    SET(IF_ADDRS_DEFS HAVE_WINSOCK2_H)
-ELSE(HAVE_IFADDRS_H)
+    SET(IF_ADDRS_DEFS HAVE_SIO_GET_INTERFACE_LIST)
+ELSE()
     MESSAGE(STATUS "  Interface address discovery not supported.")
-ENDIF(HAVE_IFADDRS_H)
+    SET(IF_ADDRS_DEFS HAVE_IF_ADDRS_DUMMY)
+ENDIF()
 
 SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp

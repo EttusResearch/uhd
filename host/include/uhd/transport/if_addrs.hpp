@@ -31,7 +31,6 @@ namespace uhd{ namespace transport{
         std::string inet;
         std::string mask;
         std::string bcast;
-        if_addrs_t(void);
     };
 
     /*!
