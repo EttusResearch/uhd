@@ -141,7 +141,20 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
 /***********************************************************************
  * Make
  **********************************************************************/
-static device::sptr usrp2_make(const device_addr_t &device_addr){
+static device::sptr usrp2_make(const device_addr_t &_device_addr){
+    device_addr_t device_addr = _device_addr;
+
+    //setup the dsp transport hints (default to a large recv buff)
+    if (not device_addr.has_key("recv_buff_size")){
+        #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+            //limit buffer resize on macos or it will error
+            device_addr["recv_buff_size"] = "1e6";
+        #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
+            //set to half-a-second of buffering at max rate
+            device_addr["recv_buff_size"] = "50e6";
+        #endif
+    }
+
     return device::sptr(new usrp2_impl(device_addr));
 }
 

@@ -64,27 +64,16 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
     )))
 {
-
-    //setup the dsp transport hints (default to a large recv buff)
-    device_addr_t dsp_xport_hints = device_addr;
-    if (not dsp_xport_hints.has_key("recv_buff_size")){
-        //only enable on platforms that are happy with the large buffer resize
-        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
-            //set to half-a-second of buffering at max rate
-            dsp_xport_hints["recv_buff_size"] = "50e6";
-        #endif /*defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)*/
-    }
-
     //construct transports for dsp and async errors
     std::cout << "Making transport for DSP0..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
-        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP0_PORT), dsp_xport_hints
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP0_PORT), device_addr
     ));
     init_xport(device.dsp_xports.back());
 
     std::cout << "Making transport for DSP1..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
-        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP1_PORT), dsp_xport_hints
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP1_PORT), device_addr
     ));
     init_xport(device.dsp_xports.back());
 
