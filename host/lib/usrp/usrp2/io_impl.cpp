@@ -492,7 +492,7 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
 
 void usrp2_impl::handle_overflow(size_t chan){
     std::cerr << "O" << std::flush;
-    div_t indexes = div(chan, usrp2_mboard_impl::NUM_RX_DSPS);
+    ldiv_t indexes = ldiv(chan, usrp2_mboard_impl::NUM_RX_DSPS);
     _mboards.at(indexes.quot)->handle_overflow(indexes.rem);
 }
 
