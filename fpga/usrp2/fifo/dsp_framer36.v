@@ -2,7 +2,7 @@
 // Frame DSP packets with a header line to be handled by the protocol machine
 
 module dsp_framer36
-    #(parameter BUF_SIZE = 9)
+    #(parameter BUF_SIZE = 9, parameter PORT_SEL = 0)
     (
         input clk, input rst, input clr,
         input [35:0] inp_data, input inp_valid, output inp_ready,
@@ -29,8 +29,9 @@ module dsp_framer36
     //The header is generated here from the count.
     wire [31:0] dsp_frm_data_bram;
     wire [15:0] dsp_frm_bytes = {dsp_frm_count, 2'b00};
+    wire [1:0] port_sel_bits = PORT_SEL;
     assign out_data =
-        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR)? {4'b0001, 16'b1, dsp_frm_bytes} : (
+        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR)? {4'b0001, 13'b0, port_sel_bits, 1'b1, dsp_frm_bytes} : (
         (dsp_frm_addr == dsp_frm_count)           ? {4'b0010, dsp_frm_data_bram}    : (
     {4'b0000, dsp_frm_data_bram}));
     assign out_valid = (
