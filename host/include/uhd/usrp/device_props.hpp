@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@ namespace uhd{ namespace usrp{
      *   will be present in the interface for configuration.
      */
     enum device_prop_t{
-        DEVICE_PROP_NAME           = 'n', //ro, std::string
-        DEVICE_PROP_MBOARD         = 'm', //ro, wax::obj
-        DEVICE_PROP_MBOARD_NAMES   = 'M'  //ro, prop_names_t
+        DEVICE_PROP_NAME,            //ro, std::string
+        DEVICE_PROP_MBOARD,          //ro, wax::obj
+        DEVICE_PROP_MBOARD_NAMES,    //ro, prop_names_t
     };
 
 }} //namespace

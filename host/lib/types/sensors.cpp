@@ -17,6 +17,7 @@
 
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/exception.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd;
@@ -35,7 +36,7 @@ sensor_value_t::sensor_value_t(
 
 sensor_value_t::sensor_value_t(
     const std::string &name,
-    int_type value,
+    signed value,
     const std::string &unit,
     const std::string &formatter
 ):
@@ -47,7 +48,7 @@ sensor_value_t::sensor_value_t(
 
 sensor_value_t::sensor_value_t(
     const std::string &name,
-    real_type value,
+    double value,
     const std::string &unit,
     const std::string &formatter
 ):
@@ -78,4 +79,16 @@ std::string sensor_value_t::to_pp_string(void) const{
         return str(boost::format("%s: %s %s") % name % value % unit);
     }
     UHD_THROW_INVALID_CODE_PATH();
+}
+
+bool sensor_value_t::to_bool(void) const{
+    return value == "true";
+}
+
+signed sensor_value_t::to_int(void) const{
+    return boost::lexical_cast<signed>(value);
+}
+
+double sensor_value_t::to_real(void) const{
+    return boost::lexical_cast<double>(value);
 }

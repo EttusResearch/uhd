@@ -25,6 +25,7 @@
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
@@ -231,6 +232,21 @@ public:
      */
     virtual size_t get_num_mboards(void) = 0;
 
+    /*!
+     * Get a motherboard sensor value.
+     * \param name the name of the sensor
+     * \param mboard the motherboard index 0 to M-1
+     * \return a sensor value object
+     */
+    virtual sensor_value_t get_mboard_sensor(const std::string &name, size_t mboard = 0) = 0;
+
+    /*!
+     * Get a list of possible motherboard sensor names.
+     * \param mboard the motherboard index 0 to M-1
+     * \return a vector of sensor names
+     */
+    virtual std::vector<std::string> get_mboard_sensor_names(size_t mboard = 0) = 0;
+
     /*******************************************************************
      * RX methods
      ******************************************************************/
@@ -377,7 +393,9 @@ public:
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
-    virtual bool get_rx_lo_locked(size_t chan = 0) = 0;
+    UHD_DEPRECATED bool get_rx_lo_locked(size_t chan = 0){
+        return this->get_rx_sensor("lo_locked", chan).to_bool();
+    }
 
     /*!
      * Set the RX bandwidth on the subdevice.
@@ -399,7 +417,9 @@ public:
      * \return the rssi in dB
      * \throw exception if RSSI readback not supported
      */
-    virtual double read_rssi(size_t chan = 0) = 0;
+    UHD_DEPRECATED double read_rssi(size_t chan = 0){
+        return this->get_rx_sensor("rssi", chan).to_real();
+    }
 
     /*!
      * Get the dboard interface object for the RX subdevice.
@@ -409,6 +429,21 @@ public:
      * \return the dboard interface sptr
      */
     virtual dboard_iface::sptr get_rx_dboard_iface(size_t chan = 0) = 0;
+
+    /*!
+     * Get an RX subdevice sensor value.
+     * \param name the name of the sensor
+     * \param chan the channel index 0 to N-1
+     * \return a sensor value object
+     */
+    virtual sensor_value_t get_rx_sensor(const std::string &name, size_t chan = 0) = 0;
+
+    /*!
+     * Get a list of possible RX subdevice sensor names.
+     * \param chan the channel index 0 to N-1
+     * \return a vector of sensor names
+     */
+    virtual std::vector<std::string> get_rx_sensor_names(size_t chan = 0) = 0;
 
     /*******************************************************************
      * TX methods
@@ -556,7 +591,9 @@ public:
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
-    virtual bool get_tx_lo_locked(size_t chan = 0) = 0;
+    UHD_DEPRECATED bool get_tx_lo_locked(size_t chan = 0){
+        return this->get_tx_sensor("lo_locked", chan).to_bool();
+    }
 
     /*!
      * Set the TX bandwidth on the subdevice.
@@ -580,6 +617,21 @@ public:
      * \return the dboard interface sptr
      */
     virtual dboard_iface::sptr get_tx_dboard_iface(size_t chan = 0) = 0;
+
+    /*!
+     * Get an TX subdevice sensor value.
+     * \param name the name of the sensor
+     * \param chan the channel index 0 to N-1
+     * \return a sensor value object
+     */
+    virtual sensor_value_t get_tx_sensor(const std::string &name, size_t chan = 0) = 0;
+
+    /*!
+     * Get a list of possible TX subdevice sensor names.
+     * \param chan the channel index 0 to N-1
+     * \return a vector of sensor names
+     */
+    virtual std::vector<std::string> get_tx_sensor_names(size_t chan = 0) = 0;
 };
 
 }}

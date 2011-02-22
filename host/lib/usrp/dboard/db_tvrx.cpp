@@ -32,6 +32,7 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
@@ -461,10 +462,6 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
-        return;
-
-    case SUBDEV_PROP_LO_LOCKED:
-        val = true;
         return;
 
     case SUBDEV_PROP_BANDWIDTH:

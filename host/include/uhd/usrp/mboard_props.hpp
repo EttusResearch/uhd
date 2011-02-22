@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,24 +29,26 @@ namespace uhd{ namespace usrp{
      *   and discovered though the others property.
      */
     enum mboard_prop_t{
-        MBOARD_PROP_NAME            = 'n', //ro, std::string
-        MBOARD_PROP_OTHERS          = 'o', //ro, prop_names_t
-        MBOARD_PROP_CLOCK_RATE      = 'c', //rw, double
-        MBOARD_PROP_RX_DSP          = 'd', //ro, wax::obj
-        MBOARD_PROP_RX_DSP_NAMES    = 'D', //ro, prop_names_t
-        MBOARD_PROP_TX_DSP          = 'u', //ro, wax::obj
-        MBOARD_PROP_TX_DSP_NAMES    = 'U', //ro, prop_names_t
-        MBOARD_PROP_RX_DBOARD       = 'e', //ro, wax::obj
-        MBOARD_PROP_RX_DBOARD_NAMES = 'E', //ro, prop_names_t
-        MBOARD_PROP_TX_DBOARD       = 'v', //ro, wax::obj
-        MBOARD_PROP_TX_DBOARD_NAMES = 'V', //ro, prop_names_t
-        MBOARD_PROP_RX_SUBDEV_SPEC  = 'r', //rw, subdev_spec_t
-        MBOARD_PROP_TX_SUBDEV_SPEC  = 'R', //rw, subdev_spec_t
-        MBOARD_PROP_CLOCK_CONFIG    = 'C', //rw, clock_config_t
-        MBOARD_PROP_TIME_NOW        = 't', //rw, time_spec_t
-        MBOARD_PROP_TIME_PPS        = 'T', //wo, time_spec_t
-        MBOARD_PROP_STREAM_CMD      = 's', //wo, stream_cmd_t
-        MBOARD_PROP_EEPROM_MAP      = 'M'  //wr, mboard_eeprom_t::sptr
+        MBOARD_PROP_NAME,                    //ro, std::string
+        MBOARD_PROP_OTHERS,                  //ro, prop_names_t
+        MBOARD_PROP_SENSOR,                  //ro, sensor_value_t
+        MBOARD_PROP_SENSOR_NAMES,            //ro, prop_names_t
+        MBOARD_PROP_CLOCK_RATE,              //rw, double
+        MBOARD_PROP_RX_DSP,                  //ro, wax::obj
+        MBOARD_PROP_RX_DSP_NAMES,            //ro, prop_names_t
+        MBOARD_PROP_TX_DSP,                  //ro, wax::obj
+        MBOARD_PROP_TX_DSP_NAMES,            //ro, prop_names_t
+        MBOARD_PROP_RX_DBOARD,               //ro, wax::obj
+        MBOARD_PROP_RX_DBOARD_NAMES,         //ro, prop_names_t
+        MBOARD_PROP_TX_DBOARD,               //ro, wax::obj
+        MBOARD_PROP_TX_DBOARD_NAMES,         //ro, prop_names_t
+        MBOARD_PROP_RX_SUBDEV_SPEC,          //rw, subdev_spec_t
+        MBOARD_PROP_TX_SUBDEV_SPEC,          //rw, subdev_spec_t
+        MBOARD_PROP_CLOCK_CONFIG,            //rw, clock_config_t
+        MBOARD_PROP_TIME_NOW,                //rw, time_spec_t
+        MBOARD_PROP_TIME_PPS,                //wo, time_spec_t
+        MBOARD_PROP_STREAM_CMD,              //wo, stream_cmd_t
+        MBOARD_PROP_EEPROM_MAP               //wr, mboard_eeprom_t::sptr
     };
 
 }} //namespace
