@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 namespace uhd{ namespace usrp{
 
 struct UHD_API dboard_eeprom_t{
+
     //! The ID for the daughterboard type
     dboard_id_t id;
 
@@ -33,27 +34,24 @@ struct UHD_API dboard_eeprom_t{
     std::string serial;
 
     /*!
-     * Create a dboard eeprom struct from the bytes read out of eeprom.
-     * The constructor will parse out the dboard id from a vector of bytes.
-     * To be valid, the bytes vector should be at least num_bytes() long.
-     * If the parsing fails due to bad checksum or incomplete length,
-     * the dboard id in this struct will be set to dboard_id::NONE.
-     * \param bytes the vector of bytes
+     * Create an empty dboard eeprom struct.
      */
-    dboard_eeprom_t(const uhd::byte_vector_t &bytes = uhd::byte_vector_t(0));
+    dboard_eeprom_t(void);
 
     /*!
-     * Get the bytes that would be written to dboard eeprom.
-     * \return a vector of bytes
+     * Load the object with bytes from the eeprom.
+     * \param iface the serial interface with i2c
+     * \param addr the i2c address for the eeprom
      */
-    uhd::byte_vector_t get_eeprom_bytes(void);
+    void load(i2c_iface &iface, boost::uint8_t addr);
 
     /*!
-     * Get the number of bytes in the dboard eeprom segment.
-     * Use this value when reading out of the dboard eeprom.
-     * \return the number of bytes used by dboard eeprom
+     * Store the object to bytes in the eeprom.
+     * \param iface the serial interface with i2c
+     * \param addr the i2c address for the eeprom
      */
-    static size_t num_bytes(void);
+    void store(i2c_iface &iface, boost::uint8_t addr);
+
 };
 
 }} //namespace

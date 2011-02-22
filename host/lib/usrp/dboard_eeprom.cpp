@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -95,7 +95,14 @@ static boost::uint8_t checksum(const byte_vector_t &bytes){
     return boost::uint8_t(sum);
 }
 
-dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
+dboard_eeprom_t::dboard_eeprom_t(void){
+    id = dboard_id_t::none();
+    serial = "";
+}
+
+void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
+    byte_vector_t bytes = iface.read_eeprom(addr, 0, DB_EEPROM_CLEN);
+
     if (_dboard_eeprom_debug){
         for (size_t i = 0; i < bytes.size(); i++){
             std::cout << boost::format(
@@ -127,7 +134,7 @@ dboard_eeprom_t::dboard_eeprom_t(const byte_vector_t &bytes){
     }
 }
 
-byte_vector_t dboard_eeprom_t::get_eeprom_bytes(void){
+void dboard_eeprom_t::store(i2c_iface &iface, boost::uint8_t addr){
     byte_vector_t bytes(DB_EEPROM_CLEN, 0); //defaults to all zeros
     bytes[DB_EEPROM_MAGIC] = DB_EEPROM_MAGIC_VALUE;
 
@@ -141,9 +148,6 @@ byte_vector_t dboard_eeprom_t::get_eeprom_bytes(void){
 
     //load the checksum
     bytes[DB_EEPROM_CHKSUM] = checksum(bytes);
-    return bytes;
-}
 
-size_t dboard_eeprom_t::num_bytes(void){
-    return DB_EEPROM_CLEN;
+    iface.write_eeprom(addr, 0, bytes);
 }

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,13 +57,8 @@ void usrp1_impl::dboard_init(void)
     BOOST_FOREACH(dboard_slot_t dboard_slot, _dboard_slots){
 
         //read the tx and rx dboard eeproms
-        _rx_db_eeproms[dboard_slot] = dboard_eeprom_t(_iface->read_eeprom(
-            get_rx_ee_addr(dboard_slot), 0, dboard_eeprom_t::num_bytes()
-        ));
-
-        _tx_db_eeproms[dboard_slot] = dboard_eeprom_t(_iface->read_eeprom(
-            get_tx_ee_addr(dboard_slot), 0, dboard_eeprom_t::num_bytes()
-        ));
+        _rx_db_eeproms[dboard_slot].load(*_iface, get_rx_ee_addr(dboard_slot));
+        _tx_db_eeproms[dboard_slot].load(*_iface, get_tx_ee_addr(dboard_slot));
 
         //create a new dboard interface and manager
         _dboard_ifaces[dboard_slot] = make_dboard_iface(
@@ -143,10 +138,7 @@ void usrp1_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val, dboard_
     switch(key.as<dboard_prop_t>()) {
     case DBOARD_PROP_DBOARD_ID:
         _rx_db_eeproms[dboard_slot].id = val.as<dboard_id_t>();
-        _iface->write_eeprom(
-            get_rx_ee_addr(dboard_slot), 0,
-            _rx_db_eeproms[dboard_slot].get_eeprom_bytes()
-        );
+        _rx_db_eeproms[dboard_slot].store(*_iface, get_rx_ee_addr(dboard_slot));
         return;
 
     default:
@@ -208,10 +200,7 @@ void usrp1_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val, dboard_
     switch(key.as<dboard_prop_t>()) {
     case DBOARD_PROP_DBOARD_ID:
         _tx_db_eeproms[dboard_slot].id = val.as<dboard_id_t>();
-        _iface->write_eeprom(
-            get_tx_ee_addr(dboard_slot), 0,
-            _tx_db_eeproms[dboard_slot].get_eeprom_bytes()
-        );
+        _tx_db_eeproms[dboard_slot].store(*_iface, get_tx_ee_addr(dboard_slot));
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

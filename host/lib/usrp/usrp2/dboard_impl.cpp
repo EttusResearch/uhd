@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ using namespace uhd::usrp;
  **********************************************************************/
 void usrp2_mboard_impl::dboard_init(void){
     //read the dboard eeprom to extract the dboard ids
-    _rx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(USRP2_I2C_ADDR_RX_DB, 0, dboard_eeprom_t::num_bytes()));
-    _tx_db_eeprom = dboard_eeprom_t(_iface->read_eeprom(USRP2_I2C_ADDR_TX_DB, 0, dboard_eeprom_t::num_bytes()));
+    _rx_db_eeprom.load(*_iface, USRP2_I2C_ADDR_RX_DB);
+    _tx_db_eeprom.load(*_iface, USRP2_I2C_ADDR_TX_DB);
 
     //create a new dboard interface and manager
     _dboard_iface = make_usrp2_dboard_iface(_iface, _clock_ctrl);
@@ -105,7 +105,7 @@ void usrp2_mboard_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
 
     case DBOARD_PROP_DBOARD_ID:
         _rx_db_eeprom.id = val.as<dboard_id_t>();
-        _iface->write_eeprom(USRP2_I2C_ADDR_RX_DB, 0, _rx_db_eeprom.get_eeprom_bytes());
+        _rx_db_eeprom.store(*_iface, USRP2_I2C_ADDR_RX_DB);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -162,7 +162,7 @@ void usrp2_mboard_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
 
     case DBOARD_PROP_DBOARD_ID:
         _tx_db_eeprom.id = val.as<dboard_id_t>();
-        _iface->write_eeprom(USRP2_I2C_ADDR_TX_DB, 0, _tx_db_eeprom.get_eeprom_bytes());
+        _tx_db_eeprom.store(*_iface, USRP2_I2C_ADDR_TX_DB);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
