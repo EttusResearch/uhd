@@ -17,12 +17,12 @@
 
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/types/mac_addr.hpp>
-#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
+#include <algorithm>
 #include <cstddef>
 
 using namespace uhd;
@@ -37,6 +37,12 @@ static const size_t NAME_MAX_LEN = 32 - SERIAL_LEN;
 /***********************************************************************
  * Utility functions
  **********************************************************************/
+
+//! A wrapper around std::copy that takes ranges instead of iterators.
+template<typename RangeSrc, typename RangeDst> inline
+void byte_copy(const RangeSrc &src, RangeDst &dst){
+    std::copy(boost::begin(src), boost::end(src), boost::begin(dst));
+}
 
 //! create a string from a byte vector, return empty if invalid ascii
 static const std::string bytes_to_string(const byte_vector_t &bytes){
@@ -84,7 +90,7 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     )).to_string();
 
     boost::asio::ip::address_v4::bytes_type ip_addr_bytes;
-    std::copy(iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], 4), ip_addr_bytes);
+    byte_copy(iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], 4), ip_addr_bytes);
     mb_eeprom["ip-addr"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
 
     //extract the serial
@@ -126,7 +132,7 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     if (mb_eeprom.has_key("ip-addr")){
         byte_vector_t ip_addr_bytes(4);
-        std::copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
+        byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
         iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], ip_addr_bytes);
     }
 

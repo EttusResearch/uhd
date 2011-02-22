@@ -26,10 +26,11 @@
 namespace uhd{ namespace usrp{
 
 struct UHD_API dboard_eeprom_t{
-    /*!
-     * The dboard id that was read from eeprom or will be set to eeprom.
-     */
+    //! The ID for the daughterboard type
     dboard_id_t id;
+
+    //! The unique serial number
+    std::string serial;
 
     /*!
      * Create a dboard eeprom struct from the bytes read out of eeprom.

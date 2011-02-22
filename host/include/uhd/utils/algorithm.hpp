@@ -30,20 +30,6 @@
 namespace std{
 
     /*!
-     * A wrapper around std::copy that takes ranges instead of iterators.
-     *
-     * Copy the elements of the source range into the destination range.
-     * The destination range should be at least as large as the source range.
-     *
-     * \param src the range of elements to copy from
-     * \param dst the range of elements to be filled
-     */
-    template<typename RangeSrc, typename RangeDst> inline
-    void copy(const RangeSrc &src, RangeDst &dst){
-        std::copy(boost::begin(src), boost::end(src), boost::begin(dst));
-    }
-
-    /*!
      * A wrapper around std::sort that takes a range instead of an iterator.
      *
      * The elements are sorted into ascending order using the less-than operator.
