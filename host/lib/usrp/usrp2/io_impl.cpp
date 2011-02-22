@@ -126,8 +126,7 @@ struct usrp2_impl::io_impl{
         get_send_buffs_fcn(boost::bind(&usrp2_impl::io_impl::get_send_buffs, this, _1)),
         async_msg_fifo(100/*messages deep*/)
     {
-        size_t num_monitors = dsp_xports.size()/usrp2_mboard_impl::MAX_NUM_DSPS*usrp2_mboard_impl::NUM_TX_DSPS;
-        for (size_t i = 0; i < num_monitors; i++){
+        for (size_t i = 0; i < dsp_xports.size(); i++){
             fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
                 usrp2_impl::sram_bytes/dsp_xports.front()->get_send_frame_size()
             )));;
@@ -211,6 +210,9 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
     spawn_mutex.unlock();
 
+    //store a reference to the flow control monitor (offset by max dsps)
+    flow_control_monitor &fc_mon = *(this->fc_mons[index*usrp2_mboard_impl::MAX_NUM_DSPS]);
+
     while(recv_pirate_crew_raiding){
         managed_recv_buffer::sptr buff = err_xport->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
@@ -237,7 +239,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //catch the flow control packets and react
                 if (metadata.event_code == 0){
                     boost::uint32_t fc_word32 = (vrt_hdr + if_packet_info.num_header_words32)[1];
-                    this->fc_mons[index]->update_fc_condition(uhd::ntohx(fc_word32));
+                    fc_mon.update_fc_condition(uhd::ntohx(fc_word32));
                     continue;
                 }
 
