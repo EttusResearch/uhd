@@ -44,7 +44,7 @@ static void check_priority_range(float priority){
 /***********************************************************************
  * Pthread API to set priority
  **********************************************************************/
-#if defined(HAVE_PTHREAD_SETSCHEDPARAM)
+#ifdef HAVE_PTHREAD_SETSCHEDPARAM
     #include <pthread.h>
 
     void uhd::set_thread_priority(float priority, bool realtime){
@@ -67,11 +67,12 @@ static void check_priority_range(float priority){
         int ret = pthread_setschedparam(pthread_self(), policy, &sp);
         if (ret != 0) throw std::runtime_error("error in pthread_setschedparam");
     }
+#endif /* HAVE_PTHREAD_SETSCHEDPARAM */
 
 /***********************************************************************
  * Windows API to set priority
  **********************************************************************/
-#elif defined(HAVE_WIN_SETTHREADPRIORITY)
+#ifdef HAVE_WIN_SETTHREADPRIORITY
     #include <windows.h>
 
     void uhd::set_thread_priority(float priority, bool realtime){
@@ -93,13 +94,14 @@ static void check_priority_range(float priority){
         if (SetThreadPriority(GetCurrentThread(), priorities[pri_index]) == 0)
             throw std::runtime_error("error in SetThreadPriority");
     }
+#endif /* HAVE_WIN_SETTHREADPRIORITY */
 
 /***********************************************************************
  * Unimplemented API to set priority
  **********************************************************************/
-#else
+#ifdef HAVE_LOAD_MODULES_DUMMY
     void uhd::set_thread_priority(float, bool){
         throw std::runtime_error("set thread priority not implemented");
     }
 
-#endif /* HAVE_PTHREAD_SETSCHEDPARAM */
+#endif /* HAVE_LOAD_MODULES_DUMMY */

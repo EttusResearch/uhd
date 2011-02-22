@@ -29,9 +29,8 @@ namespace fs = boost::filesystem;
 /***********************************************************************
  * Module Load Function
  **********************************************************************/
-#if defined(HAVE_DLFCN_H)
+#ifdef HAVE_DLOPEN
 #include <dlfcn.h>
-
 static void load_module(const std::string &file_name){
     if (dlopen(file_name.c_str(), RTLD_LAZY) == NULL){
         throw std::runtime_error(str(
@@ -39,10 +38,11 @@ static void load_module(const std::string &file_name){
         ));
     }
 }
+#endif /* HAVE_DLOPEN */
 
-#elif defined(HAVE_WINDOWS_H)
+
+#ifdef HAVE_LOAD_LIBRARY
 #include <windows.h>
-
 static void load_module(const std::string &file_name){
     if (LoadLibrary(file_name.c_str()) == NULL){
         throw std::runtime_error(str(
@@ -50,16 +50,16 @@ static void load_module(const std::string &file_name){
         ));
     }
 }
+#endif /* HAVE_LOAD_LIBRARY */
 
-#else
 
+#ifdef HAVE_LOAD_MODULES_DUMMY
 static void load_module(const std::string &file_name){
     throw std::runtime_error(str(
         boost::format("Module loading not supported: Cannot load \"%s\"") % file_name
     ));
 }
-
-#endif
+#endif /* HAVE_LOAD_MODULES_DUMMY */
 
 /***********************************************************************
  * Load Modules
