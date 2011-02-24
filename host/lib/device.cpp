@@ -140,7 +140,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
         return hash_to_device[dev_hash].lock();
     }
     //create and register a new device
-    catch(const uhd::assert_error &){
+    catch(const uhd::assertion_error &){
         device::sptr dev = maker(dev_addr);
         hash_to_device[dev_hash] = dev;
         return dev;

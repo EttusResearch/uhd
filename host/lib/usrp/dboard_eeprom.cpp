@@ -128,7 +128,7 @@ void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
             &bytes.at(DB_EEPROM_SERIAL+DB_EEPROM_SERIAL_LEN))
         );
 
-    }catch(const uhd::assert_error &){
+    }catch(const uhd::assertion_error &){
         id = dboard_id_t::none();
         serial = "";
     }

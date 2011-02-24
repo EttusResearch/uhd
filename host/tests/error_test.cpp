@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,9 +16,20 @@
 //
 
 #include <boost/test/unit_test.hpp>
+#include <uhd/utils/exception.hpp>
 #include <uhd/utils/assert.hpp>
 #include <vector>
 #include <iostream>
+
+BOOST_AUTO_TEST_CASE(test_exception_methods){
+    try{
+        throw uhd::assertion_error("your assertion failed: 1 != 2");
+    }
+    catch(const uhd::exception &e){
+        std::cout << "what: " << e.what() << std::endl;
+        std::cout << "code: " << e.code() << std::endl;
+    }
+}
 
 BOOST_AUTO_TEST_CASE(test_assert_has){
     std::vector<int> vec;

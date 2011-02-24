@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,13 +25,8 @@
 
 namespace uhd{
 
-    //! The exception to throw when assertions fail
-    struct UHD_API assert_error : std::runtime_error{
-        assert_error(const std::string &what);
-    };
-
     //! Throw an assert error with throw-site information
-    #define UHD_ASSERT_THROW(_x) if (not (_x)) throw uhd::assert_error( \
+    #define UHD_ASSERT_THROW(_x) if (not (_x)) throw uhd::assertion_error( \
         UHD_THROW_SITE_INFO("assertion failed: " + std::string(#_x)) \
     ); else void(0)
 

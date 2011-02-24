@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ namespace uhd{
             if (i++ > 0) possible_values += ", ";
             possible_values += boost::lexical_cast<std::string>(v);
         }
-        throw uhd::assert_error(str(boost::format(
+        throw uhd::assertion_error(str(boost::format(
                 "assertion failed:\n"
                 "  %s is not a valid %s.\n"
                 "  possible values are: [%s].\n"
