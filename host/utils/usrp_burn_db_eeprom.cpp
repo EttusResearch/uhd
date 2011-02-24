@@ -19,7 +19,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>

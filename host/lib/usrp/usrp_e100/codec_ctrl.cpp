@@ -18,7 +18,7 @@
 #include "codec_ctrl.hpp"
 #include "ad9862_regs.hpp"
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -227,7 +227,7 @@ double usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
     case AUX_ADC_B1: return aux_adc_to_volts(_ad9862_regs.aux_adc_b1_9_2, _ad9862_regs.aux_adc_b1_1_0);
     case AUX_ADC_B2: return aux_adc_to_volts(_ad9862_regs.aux_adc_b2_9_2, _ad9862_regs.aux_adc_b2_1_0);
     }
-    UHD_ASSERT_THROW(false);
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 /***********************************************************************

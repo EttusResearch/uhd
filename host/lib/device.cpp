@@ -17,7 +17,7 @@
 
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/foreach.hpp>
@@ -25,7 +25,6 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <stdexcept>
 #include <iostream>
 
 using namespace uhd;

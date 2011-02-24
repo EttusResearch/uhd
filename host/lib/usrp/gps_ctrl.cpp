@@ -16,11 +16,10 @@
 //
 
 #include <uhd/usrp/gps_ctrl.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/cstdint.hpp>
-#include <string>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/tokenizer.hpp>
 

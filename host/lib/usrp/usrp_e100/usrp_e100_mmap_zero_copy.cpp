@@ -17,7 +17,7 @@
 
 #include "usrp_e100_iface.hpp"
 #include <uhd/transport/zero_copy.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <linux/usrp_e.h>
 #include <sys/mman.h> //mmap
 #include <unistd.h> //getpagesize

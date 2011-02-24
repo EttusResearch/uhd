@@ -17,7 +17,7 @@
 
 #include "clock_ctrl.hpp"
 #include "ad9522_regs.hpp"
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <boost/cstdint.hpp>
 #include "usrp_e100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>

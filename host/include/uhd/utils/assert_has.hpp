@@ -15,19 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_UTILS_ASSERT_HPP
-#define INCLUDED_UHD_UTILS_ASSERT_HPP
+#ifndef INCLUDED_UHD_UTILS_ASSERT_HAS_HPP
+#define INCLUDED_UHD_UTILS_ASSERT_HAS_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/exception.hpp>
 #include <string>
 
 namespace uhd{
-
-    //! Throw an assert error with throw-site information
-    #define UHD_ASSERT_THROW(_x) if (not (_x)) throw uhd::assertion_error( \
-        UHD_THROW_SITE_INFO("assertion failed: " + std::string(#_x)) \
-    ); else void(0)
 
     /*!
      * Check that an element is found in a container.
@@ -48,6 +42,6 @@ namespace uhd{
 
 }//namespace uhd
 
-#include <uhd/utils/assert.ipp>
+#include <uhd/utils/assert_has.ipp>
 
-#endif /* INCLUDED_UHD_UTILS_ASSERT_HPP */
+#endif /* INCLUDED_UHD_UTILS_ASSERT_HAS_HPP */

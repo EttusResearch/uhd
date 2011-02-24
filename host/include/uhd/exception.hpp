@@ -114,6 +114,15 @@ namespace uhd{
     #define UHD_THROW_INVALID_CODE_PATH() \
         throw uhd::system_error(UHD_THROW_SITE_INFO("invalid code path"))
 
+    /*!
+     * Assert the result of the code evaluation.
+     * If the code evaluates to false, throw an assertion error.
+     * \param code the code that resolved to a boolean
+     */
+    #define UHD_ASSERT_THROW(code) if (not (code)) \
+        throw uhd::assertion_error(UHD_THROW_SITE_INFO(#code)); \
+    else void(0)
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_EXCEPTION_HPP */

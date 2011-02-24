@@ -16,7 +16,7 @@
 //
 
 #include "libusb1_base.hpp"
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/foreach.hpp>

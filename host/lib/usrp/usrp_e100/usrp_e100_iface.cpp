@@ -17,7 +17,7 @@
 
 #include "usrp_e100_iface.hpp"
 #include "usrp_e100_regs.hpp"
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <sys/ioctl.h> //ioctl
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants

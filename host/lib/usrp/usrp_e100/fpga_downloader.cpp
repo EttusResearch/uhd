@@ -16,14 +16,13 @@
 //
 
 #include <uhd/config.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
 #include <cstdlib>
-#include <stdexcept>
 
 #include <fcntl.h>
 #include <sys/types.h>

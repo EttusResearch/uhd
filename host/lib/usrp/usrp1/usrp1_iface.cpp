@@ -17,7 +17,7 @@
 
 #include "usrp1_iface.hpp"
 #include "usrp_commands.h"
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>

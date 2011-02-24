@@ -20,7 +20,7 @@
 #include "usrp2_regs.hpp" //wishbone address constants
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp> //htonl and ntohl

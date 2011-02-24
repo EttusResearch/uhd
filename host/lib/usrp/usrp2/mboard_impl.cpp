@@ -22,7 +22,7 @@
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <iostream>

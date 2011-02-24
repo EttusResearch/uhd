@@ -19,7 +19,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/device_props.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/byteswap.hpp>

@@ -23,7 +23,7 @@
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/warning.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
 #include <boost/format.hpp>

@@ -21,7 +21,7 @@
 #include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/assign/list_of.hpp>
 #include <linux/usrp_e.h> //i2c and spi constants
 

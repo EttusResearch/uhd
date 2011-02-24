@@ -37,7 +37,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/warning.hpp>

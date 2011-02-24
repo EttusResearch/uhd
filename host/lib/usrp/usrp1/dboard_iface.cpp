@@ -24,7 +24,7 @@
 #include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <boost/assign/list_of.hpp>
 #include <iostream>
 

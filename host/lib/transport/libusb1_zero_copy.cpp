@@ -20,7 +20,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>

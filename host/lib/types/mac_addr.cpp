@@ -16,12 +16,11 @@
 //
 
 #include <uhd/types/mac_addr.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/cstdint.hpp>
-#include <stdexcept>
 #include <sstream>
 
 using namespace uhd;

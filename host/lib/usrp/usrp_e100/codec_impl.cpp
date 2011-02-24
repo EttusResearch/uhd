@@ -16,7 +16,7 @@
 //
 
 #include "usrp_e100_impl.hpp"
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/usrp/codec_props.hpp>
 #include <boost/bind.hpp>
 

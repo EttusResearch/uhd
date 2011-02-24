@@ -21,7 +21,7 @@
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp> //htonl and ntohl

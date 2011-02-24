@@ -25,7 +25,7 @@
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/warning.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/images.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>

@@ -16,7 +16,7 @@
 //
 
 #include <uhd/usrp/misc_utils.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>

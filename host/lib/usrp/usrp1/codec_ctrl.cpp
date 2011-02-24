@@ -20,7 +20,7 @@
 #include "clock_ctrl.hpp"
 #include "ad9862_regs.hpp"
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/cstdint.hpp>

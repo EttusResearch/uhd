@@ -19,7 +19,7 @@
 #include "usrp_i2c_addr.h"
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/misc_utils.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <boost/bind.hpp>

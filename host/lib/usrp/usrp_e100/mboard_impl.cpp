@@ -19,7 +19,7 @@
 #include "usrp_e100_regs.hpp"
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/misc_utils.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
 #include <iostream>

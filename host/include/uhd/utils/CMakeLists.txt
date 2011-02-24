@@ -17,8 +17,8 @@
 
 INSTALL(FILES
     algorithm.hpp
-    assert.hpp
-    assert.ipp
+    assert_has.hpp
+    assert_has.ipp
     byteswap.hpp
     byteswap.ipp
     gain_group.hpp

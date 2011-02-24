@@ -16,7 +16,7 @@
 //
 
 #include "usrp1_impl.hpp"
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/usrp/codec_props.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>

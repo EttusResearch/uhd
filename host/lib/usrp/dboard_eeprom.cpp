@@ -16,7 +16,8 @@
 //
 
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <algorithm>
 #include <iostream>

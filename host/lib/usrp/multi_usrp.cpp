@@ -18,7 +18,7 @@
 #include "wrapper_utils.hpp"
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/subdev_props.hpp>

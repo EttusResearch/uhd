@@ -20,7 +20,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>

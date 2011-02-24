@@ -15,10 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_UTILS_ASSERT_IPP
-#define INCLUDED_UHD_UTILS_ASSERT_IPP
+#ifndef INCLUDED_UHD_UTILS_ASSERT_HAS_IPP
+#define INCLUDED_UHD_UTILS_ASSERT_HAS_IPP
 
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -49,4 +50,4 @@ namespace uhd{
 
 }//namespace uhd
 
-#endif /* INCLUDED_UHD_UTILS_ASSERT_IPP */
+#endif /* INCLUDED_UHD_UTILS_ASSERT_HAS_IPP */

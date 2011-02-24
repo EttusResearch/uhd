@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>

@@ -17,7 +17,7 @@
 
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>

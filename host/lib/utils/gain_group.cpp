@@ -18,7 +18,7 @@
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <algorithm>
