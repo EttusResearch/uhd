@@ -167,10 +167,6 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
-    case MBOARD_PROP_STREAM_CMD:
-        issue_stream_cmd(val.as<stream_cmd_t>());
-        return;
-
     case MBOARD_PROP_TIME_NOW:
     case MBOARD_PROP_TIME_PPS:{
             time_spec_t time_spec = val.as<time_spec_t>();

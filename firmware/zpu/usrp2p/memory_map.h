@@ -1,4 +1,4 @@
-/* -*- c -*- */
+// Copyright 2010-2011 Ettus Research LLC
 /*
  * Copyright 2007,2008,2009 Free Software Foundation, Inc.
  *
@@ -218,8 +218,10 @@ hwconfig_wishbone_divisor(void)
 #define SR_UDP_SM 96
 #define SR_TX_DSP 208
 #define SR_TX_CTRL 224
-#define SR_RX_DSP 160
-#define SR_RX_CTRL 176
+#define SR_RX_DSP0 160
+#define SR_RX_DSP1 240
+#define SR_RX_CTRL0 176
+#define SR_RX_CTRL1 32
 #define SR_TIME64 192
 #define SR_SIMTIMER 198
 #define SR_LAST 255
@@ -343,10 +345,7 @@ typedef struct {
 
 #define sr_udp_sm ((sr_udp_sm_t *) _SR_ADDR(SR_UDP_SM))
 
-// --- dsp tx regs ---
-
-#define MIN_CIC_INTERP	1
-#define	MAX_CIC_INTERP  128
+// --- VITA TX CTRL regs ---
 
 typedef struct {
   volatile uint32_t     num_chan;
@@ -359,52 +358,6 @@ typedef struct {
 
 #define sr_tx_ctrl ((sr_tx_ctrl_t *) _SR_ADDR(SR_TX_CTRL))
 
-typedef struct {
-  volatile int32_t	freq;
-  volatile uint32_t	scale_iq;	// {scale_i,scale_q}
-  volatile uint32_t     interp_rate;
-  volatile uint32_t     _padding0;      // padding for the tx_mux
-                                        //   NOT freq, scale, interp
-  /*!
-   * \brief output mux configuration.
-   *
-   * <pre>
-   *     3                   2                   1                       
-   *   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   *  +-------------------------------+-------+-------+-------+-------+
-   *  |                                               | DAC1  |  DAC0 |
-   *  +-------------------------------+-------+-------+-------+-------+
-   * 
-   *  There are N DUCs (1 now) with complex inputs and outputs.
-   *  There are two DACs.
-   * 
-   *  Each 4-bit DACx field specifies the source for the DAC
-   *  Each subfield is coded like this: 
-   * 
-   *     3 2 1 0
-   *    +-------+
-   *    |   N   |
-   *    +-------+
-   * 
-   *  N specifies which DUC output is connected to this DAC.
-   * 
-   *   N   which interp output
-   *  ---  -------------------
-   *   0   DUC 0 I
-   *   1   DUC 0 Q
-   *   2   DUC 1 I
-   *   3   DUC 1 Q
-   *   F   All Zeros
-   *   
-   * The default value is 0x10
-   * </pre>
-   */
-  volatile uint32_t	tx_mux;
-
-} dsp_tx_regs_t;
-  
-#define dsp_tx_regs ((dsp_tx_regs_t *) _SR_ADDR(SR_TX_DSP))
-
 // --- VITA RX CTRL regs ---
 typedef struct {
   // The following 3 are logically a single command register.
@@ -412,81 +365,10 @@ typedef struct {
   volatile uint32_t	cmd;		// {now, chain, num_samples(30)
   volatile uint32_t	time_secs;
   volatile uint32_t	time_ticks;
-
-  volatile uint32_t	clear_overrun;	// write anything to clear overrun
-  volatile uint32_t	vrt_header;	// word 0 of packet.  FPGA fills in packet counter
-  volatile uint32_t	vrt_stream_id;	// word 1 of packet. 
-  volatile uint32_t	vrt_trailer;
-  volatile uint32_t	nsamples_per_pkt;
-  volatile uint32_t     nchannels;      // 1 in basic case, up to 4 for vector sources
-  volatile uint32_t     pad[7];         // Make each structure 16 elements long
 } sr_rx_ctrl_t;
 
-#define sr_rx_ctrl ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL))
-
-// --- dsp rx regs ---
-#define	MIN_CIC_DECIM	1
-#define	MAX_CIC_DECIM   128
-
-typedef struct {
-  volatile int32_t	freq;
-  volatile uint32_t	scale_iq;	// {scale_i,scale_q}
-  volatile uint32_t     decim_rate;
-  volatile uint32_t     dcoffset_i;     // Bit 31 high sets fixed offset mode, using lower 14 bits,
-                                        // otherwise it is automatic 
-  volatile uint32_t     dcoffset_q;     // Bit 31 high sets fixed offset mode, using lower 14 bits
-
-  /*!
-   * \brief input mux configuration.
-   *
-   * This determines which ADC (or constant zero) is connected to 
-   * each DDC input.  There are N DDCs (1 now).  Each has two inputs.
-   *
-   * <pre>
-   * Mux value:
-   *
-   *    3                   2                   1                       
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   * |                                                       |Q0 |I0 |
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   *
-   * Each 2-bit I field is either 00 (A/D A), 01 (A/D B) or 1X (const zero)
-   * Each 2-bit Q field is either 00 (A/D A), 01 (A/D B) or 1X (const zero)
-   *
-   * The default value is 0x4
-   * </pre>
-   */
-  volatile uint32_t     rx_mux;        // called adc_mux in dsp_core_rx.v
-
-  /*!
-   * \brief Streaming GPIO configuration
-   *
-   * This determines whether the LSBs of I and Q samples come from the DSP
-   * pipeline or from the io_rx GPIO pins.  To stream GPIO, one must first
-   * set the GPIO data direction register to have io_rx[15] and/or io_rx[14]
-   * configured as inputs.  The GPIO pins will be sampled at the time the
-   * remainder of the DSP sample is strobed into the RX sample FIFO.  There
-   * will be a decimation-dependent fixed time offset between the GPIO
-   * sample stream and the associated RF samples.
-   *
-   *    3                   2                   1                       
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   * |                           MBZ                             |Q|I|
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   *
-   * I         0=LSB comes from DSP pipeline (default)
-   *           1=LSB comes from io_rx[15]
-   * 
-   * Q         0=LSB comes from DSP pipeline (default)
-   *           1=LSB comes from io_rx[14]
-   */
-  volatile uint32_t gpio_stream_enable;
-
-} dsp_rx_regs_t;
-  
-#define dsp_rx_regs ((dsp_rx_regs_t *) _SR_ADDR(SR_RX_DSP))
+#define sr_rx_ctrl0 ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL0))
+#define sr_rx_ctrl1 ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL1))
 
 // ----------------------------------------------------------------
 // VITA49 64 bit time (write only)

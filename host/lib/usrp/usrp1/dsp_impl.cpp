@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,23 +34,25 @@ using namespace uhd::usrp;
  **********************************************************************/
 void usrp1_impl::rx_dsp_init(void)
 {
-    _rx_dsp_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp1_impl::rx_dsp_get, this, _1, _2),
-        boost::bind(&usrp1_impl::rx_dsp_set, this, _1, _2));
-
-    rx_dsp_set(DSP_PROP_HOST_RATE, _clock_ctrl->get_master_clock_freq() / 16);
+    for (size_t i = 0; i < this->get_num_ddcs(); i++){
+        _rx_dsp_proxies[str(boost::format("DSP%d")%i)] = wax_obj_proxy::make(
+            boost::bind(&usrp1_impl::rx_dsp_get, this, _1, _2, i),
+            boost::bind(&usrp1_impl::rx_dsp_set, this, _1, _2, i)
+        );
+        rx_dsp_set(DSP_PROP_HOST_RATE, _clock_ctrl->get_master_clock_freq() / 16, i);
+    }
 }
 
 /***********************************************************************
  * RX DDC Get
  **********************************************************************/
-void usrp1_impl::rx_dsp_get(const wax::obj &key_, wax::obj &val){
+void usrp1_impl::rx_dsp_get(const wax::obj &key_, wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = str(boost::format("usrp1 ddc %uX %s")
-            % this->get_num_ddcs()
+        val = str(boost::format("usrp1 ddc%d %s")
+            % which_dsp
             % (this->has_rx_halfband()? "+ hb" : "")
         );
         return;
@@ -60,16 +62,7 @@ void usrp1_impl::rx_dsp_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_FREQ_SHIFT:
-        val = _rx_dsp_freqs[key.name];
-        return;
-
-    case DSP_PROP_FREQ_SHIFT_NAMES:{
-            prop_names_t names;
-            for(size_t i = 0; i < this->get_num_ddcs(); i++){
-                names.push_back(boost::lexical_cast<std::string>(i));
-            }
-            val = names;
-        }
+        val = _rx_dsp_freqs[which_dsp];
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -88,7 +81,7 @@ void usrp1_impl::rx_dsp_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
-void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
+void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()) {
@@ -97,16 +90,17 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
             boost::uint32_t reg_word = dsp_type1::calc_cordic_word_and_update(
                 new_freq, _clock_ctrl->get_master_clock_freq());
 
-            static const uhd::dict<std::string, boost::uint32_t>
-            freq_name_to_reg_val = boost::assign::map_list_of
-                ("0", FR_RX_FREQ_0) ("1", FR_RX_FREQ_1)
-                ("2", FR_RX_FREQ_2) ("3", FR_RX_FREQ_3)
-            ;
-            _iface->poke32(freq_name_to_reg_val[key.name], ~reg_word + 1);
-            _rx_dsp_freqs[key.name] = new_freq;
+            static const boost::uint32_t dsp_index_to_reg_val[4] = {
+                FR_RX_FREQ_0, FR_RX_FREQ_1, FR_RX_FREQ_2, FR_RX_FREQ_3
+            };
+            _iface->poke32(dsp_index_to_reg_val[which_dsp], ~reg_word + 1);
+            _rx_dsp_freqs[which_dsp] = new_freq;
             return;
         }
-    case DSP_PROP_HOST_RATE: {
+
+    case DSP_PROP_HOST_RATE:
+        if (which_dsp != 0) return; //only for dsp[0] as this is vectorized
+        {
             size_t rate = size_t(_clock_ctrl->get_master_clock_freq() / val.as<double>());
 
             if ((rate & 0x01) || (rate < 4) || (rate > 256)) {
@@ -123,6 +117,11 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
         }
         return;
 
+    case DSP_PROP_STREAM_CMD:
+        if (which_dsp != 0) return; //only for dsp[0] as this is vectorized
+        _soft_time_ctrl->issue_stream_cmd(val.as<stream_cmd_t>());
+        return;
+
     default: UHD_THROW_PROP_SET_ERROR();
     }
 
@@ -133,24 +132,25 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val){
  **********************************************************************/
 void usrp1_impl::tx_dsp_init(void)
 {
-    _tx_dsp_proxy = wax_obj_proxy::make(
-                          boost::bind(&usrp1_impl::tx_dsp_get, this, _1, _2),
-                          boost::bind(&usrp1_impl::tx_dsp_set, this, _1, _2));
-
-    //initial config and update
-    tx_dsp_set(DSP_PROP_HOST_RATE, _clock_ctrl->get_master_clock_freq() * 2 / 16);
+    for (size_t i = 0; i < this->get_num_ducs(); i++){
+        _tx_dsp_proxies[str(boost::format("DSP%d")%i)] = wax_obj_proxy::make(
+            boost::bind(&usrp1_impl::tx_dsp_get, this, _1, _2, i),
+            boost::bind(&usrp1_impl::tx_dsp_set, this, _1, _2, i)
+        );
+        tx_dsp_set(DSP_PROP_HOST_RATE, _clock_ctrl->get_master_clock_freq() / 16, i);
+    }
 }
 
 /***********************************************************************
  * TX DUC Get
  **********************************************************************/
-void usrp1_impl::tx_dsp_get(const wax::obj &key_, wax::obj &val){
+void usrp1_impl::tx_dsp_get(const wax::obj &key_, wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()) {
     case DSP_PROP_NAME:
-        val = str(boost::format("usrp1 duc %uX %s")
-            % this->get_num_ducs()
+        val = str(boost::format("usrp1 duc%d %s")
+            % which_dsp
             % (this->has_tx_halfband()? "+ hb" : "")
         );
         return;
@@ -160,16 +160,7 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_FREQ_SHIFT:
-        val = _tx_dsp_freqs[key.name];
-        return;
-
-    case DSP_PROP_FREQ_SHIFT_NAMES:{
-            prop_names_t names;
-            for(size_t i = 0; i < this->get_num_ducs(); i++){
-                names.push_back(boost::lexical_cast<std::string>(i));
-            }
-            val = names;
-        }
+        val = _tx_dsp_freqs[which_dsp];
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -188,7 +179,7 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * TX DUC Set
  **********************************************************************/
-void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val){
+void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()) {
@@ -197,15 +188,17 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val){
             double new_freq = val.as<double>();
 
             //map the freq shift key to a subdev spec to a particular codec chip
-            std::string db_name = _tx_subdev_spec.at(boost::lexical_cast<size_t>(key.name)).db_name;
+            std::string db_name = _tx_subdev_spec.at(which_dsp).db_name;
             if (db_name == "A") _codec_ctrls[DBOARD_SLOT_A]->set_duc_freq(new_freq);
             if (db_name == "B") _codec_ctrls[DBOARD_SLOT_B]->set_duc_freq(new_freq);
 
-            _tx_dsp_freqs[key.name] = new_freq;
+            _tx_dsp_freqs[which_dsp] = new_freq;
             return;
         }
 
-    case DSP_PROP_HOST_RATE: {
+    case DSP_PROP_HOST_RATE:
+        if (which_dsp != 0) return; //only for dsp[0] as this is vectorized
+        {
             size_t rate = size_t(_clock_ctrl->get_master_clock_freq() * 2 / val.as<double>());
 
             if ((rate & 0x01) || (rate < 8) || (rate > 512)) {

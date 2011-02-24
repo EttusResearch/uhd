@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 /*
  * Copyright 2008 Free Software Foundation, Inc.
@@ -21,75 +21,10 @@
 #ifndef INCLUDED_CLOCKS_H
 #define INCLUDED_CLOCKS_H
 
-/*
- * Routines to configure our multitude of clocks
- */
-
-#include <stdbool.h>
-#include "clock_bits.h"
-
-
 /*!
- * One time call to initialize all clocks to a reasonable state.  We
- * come out of here using our free running 100MHz oscilator and not
- * providing a clock to the MIMO connector (CMC_WE_DONT_LOCK)
+ * One time call to initialize the master clock to a reasonable state.
+ * We come out of here using our free running 100MHz oscillator.
  */
 void clocks_init(void);
-
-
-/*!
- * \brief MIMO clock configuration.
- *
- * Configure our master clock source, and whether or not we drive a
- * clock onto the mimo connector.  See MC_flags in usrp2_mimo_config.h.
- */
-//void clocks_mimo_config(int flags);
-
-/*!
- * \brief Lock Detect -- Return True if our PLL is locked
- */
-bool clocks_lock_detect();
-
-/*!
- * \brief Enable or disable test clock (extra clock signal)
- */
-//void clocks_enable_test_clk(bool enable, int divisor);
-
-/*!
- * \brief Enable or disable fpga clock.  Disabling would wedge and require a power cycle.
- */
-void clocks_enable_fpga_clk(bool enable, int divisor);
-
-/*!
- * \brief Enable or disable clock output sent to MIMO connector
- */
-//void clocks_enable_clkexp_out(bool enable, int divisor);
-
-/*!
- * \brief Enable or disable ethernet phyclk, should always be disabled
- */
-//void clocks_enable_eth_phyclk(bool enable, int divisor);
-
-/*!
- * \brief Enable or disable clock to DAC
- */
-//void clocks_enable_dac_clk(bool enable, int divisor);
-
-/*!
- * \brief Enable or disable clock to ADC
- */
-//void clocks_enable_adc_clk(bool enable, int divisor);
-
-/*!
- * \brief Enable or disable clock to Rx daughterboard
- */
-//void clocks_enable_rx_dboard(bool enable, int divisor);
-
-
-/*!
- * \brief Enable or disable clock to Tx daughterboard
- */
-//void clocks_enable_tx_dboard(bool enable, int divisor);
-
 
 #endif /* INCLUDED_CLOCKS_H */

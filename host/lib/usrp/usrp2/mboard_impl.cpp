@@ -21,8 +21,8 @@
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
-#include <uhd/utils/assert.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/assert.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
@@ -33,35 +33,55 @@ static const size_t mimo_clock_sync_delay_cycles = 137;
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::transport;
+
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
+static void init_xport(zero_copy_if::sptr xport){
+    //Send a small data packet so the usrp2 knows the udp source port.
+    //This setup must happen before further initialization occurs
+    //or the async update packets will cause ICMP destination unreachable.
+    static const boost::uint32_t data[2] = {
+        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    };
+
+    transport::managed_send_buffer::sptr send_buff = xport->get_send_buff();
+    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
+    send_buff->commit(sizeof(data));
+}
 
 /***********************************************************************
  * Structors
  **********************************************************************/
 usrp2_mboard_impl::usrp2_mboard_impl(
-    size_t index,
-    transport::udp_simple::sptr ctrl_transport,
-    transport::zero_copy_if::sptr data_transport,
-    transport::zero_copy_if::sptr err0_transport,
-    const device_addr_t &device_args,
-    size_t recv_samps_per_packet
+    const device_addr_t &device_addr,
+    size_t index, usrp2_impl &device
 ):
-    _index(index),
-    _iface(usrp2_iface::make(ctrl_transport))
+    _index(index), _device(device),
+    _iface(usrp2_iface::make(udp_simple::make_connected(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
+    )))
 {
-    //Send a small data packet so the usrp2 knows the udp source port.
-    //This setup must happen before further initialization occurs
-    //or the async update packets will cause ICMP destination unreachable.
-    transport::managed_send_buffer::sptr send_buff;
-    static const boost::uint32_t data[2] = {
-        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
-        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
-    };
-    send_buff = data_transport->get_send_buff();
-    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
-    send_buff->commit(sizeof(data));
-    send_buff = err0_transport->get_send_buff();
-    std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
-    send_buff->commit(sizeof(data));
+    //construct transports for dsp and async errors
+    std::cout << "Making transport for DSP0..." << std::endl;
+    device.dsp_xports.push_back(udp_zero_copy::make(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP0_PORT), device_addr
+    ));
+    init_xport(device.dsp_xports.back());
+
+    std::cout << "Making transport for DSP1..." << std::endl;
+    device.dsp_xports.push_back(udp_zero_copy::make(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP1_PORT), device_addr
+    ));
+    init_xport(device.dsp_xports.back());
+
+    std::cout << "Making transport for ERR0..." << std::endl;
+    device.err_xports.push_back(udp_zero_copy::make(
+        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_ERR0_PORT), device_addr_t()
+    ));
+    init_xport(device.err_xports.back());
 
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
@@ -72,66 +92,30 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 
     //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
 
-    //TODO move to dsp impl...
-    //load the allowed decim/interp rates
-    //_USRP2_RATES = range(4, 128+1, 1) + range(130, 256+1, 2) + range(260, 512+1, 4)
-    _allowed_decim_and_interp_rates.clear();
-    for (size_t i = 4; i <= 128; i+=1){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 130; i <= 256; i+=2){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-    for (size_t i = 260; i <= 512; i+=4){
-        _allowed_decim_and_interp_rates.push_back(i);
-    }
-
-    //setup the vrt rx registers
-    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //reset
-    _iface->poke32(_iface->regs.rx_ctrl_nsamps_per_pkt, recv_samps_per_packet);
-    _iface->poke32(_iface->regs.rx_ctrl_nchannels, 1);
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_header, 0
-        | (0x1 << 28) //if data with stream id
-        | (0x1 << 26) //has trailer
-        | (0x3 << 22) //integer time other
-        | (0x1 << 20) //fractional time sample count
-    );
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_stream_id, usrp2_impl::RECV_SID);
-    _iface->poke32(_iface->regs.rx_ctrl_vrt_trailer, 0);
-    _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
-
-    //init the tx control registers
-    _iface->poke32(_iface->regs.tx_ctrl_clear_state, 1); //reset
-    _iface->poke32(_iface->regs.tx_ctrl_num_chan, 0);    //1 channel
-    _iface->poke32(_iface->regs.tx_ctrl_report_sid, usrp2_impl::ASYNC_SID);
-    _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+    //init the dsp stuff (before setting update packets)
+    dsp_init();
 
     //setting the cycles per update (disabled by default)
-    const double ups_per_sec = device_args.cast<double>("ups_per_sec", 0.0);
+    const double ups_per_sec = device_addr.cast<double>("ups_per_sec", 0.0);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
         _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
     }
 
     //setting the packets per update (enabled by default)
-    const double ups_per_fifo = device_args.cast<double>("ups_per_fifo", 8.0);
+    size_t send_frame_size = device.dsp_xports[0]->get_send_frame_size();
+    const double ups_per_fifo = device_addr.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
-        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/data_transport->get_send_frame_size());
+        const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/send_frame_size);
         _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
     }
 
-    //init the ddc
-    init_ddc_config();
-
-    //init the duc
-    init_duc_config();
-
     //initialize the clock configuration
-    if (device_args.has_key("mimo_mode")){
-        if (device_args["mimo_mode"] == "master"){
+    if (device_addr.has_key("mimo_mode")){
+        if (device_addr["mimo_mode"] == "master"){
             _mimo_clocking_mode_is_master = true;
         }
-        else if (device_args["mimo_mode"] == "slave"){
+        else if (device_addr["mimo_mode"] == "slave"){
             _mimo_clocking_mode_is_master = false;
         }
         else throw std::runtime_error(
@@ -158,13 +142,18 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     (*this)[MBOARD_PROP_RX_SUBDEV_SPEC] = subdev_spec_t();
     (*this)[MBOARD_PROP_TX_SUBDEV_SPEC] = subdev_spec_t();
 
+    //------------------------------------------------------------------
     //This is a hack/fix for the lingering packet problem.
     stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = 1;
-    this->issue_ddc_stream_cmd(stream_cmd);
-    data_transport->get_recv_buff().get(); //recv with timeout for lingering
-    data_transport->get_recv_buff().get(); //recv with timeout for expected
-    _iface->poke32(_iface->regs.rx_ctrl_clear_overrun, 1); //resets sequence
+    for (size_t i = 0; i < NUM_RX_DSPS; i++){
+        size_t index = device.dsp_xports.size() - NUM_RX_DSPS + i;
+        stream_cmd.num_samps = 1;
+        this->issue_ddc_stream_cmd(stream_cmd, i);
+        device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for lingering
+        device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for expected
+        _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //resets sequence
+    }
+    //------------------------------------------------------------------
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
@@ -265,19 +254,6 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     _iface->poke32(_iface->regs.time64_secs, boost::uint32_t(time_spec.get_full_secs()));
 }
 
-void usrp2_mboard_impl::handle_overflow(void){
-    if (_continuous_streaming){ //re-issue the stream command if already continuous
-        this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    }
-}
-
-void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd){
-    _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-    _iface->poke32(_iface->regs.rx_ctrl_stream_cmd, dsp_type1::calc_stream_cmd_word(stream_cmd));
-    _iface->poke32(_iface->regs.rx_ctrl_time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(_iface->regs.rx_ctrl_time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
-}
-
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
@@ -314,21 +290,19 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _rx_dsp_proxy->get_link();
+        val = _rx_dsp_proxies[key.name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _rx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _tx_dsp_proxy->get_link();
+        val = _tx_dsp_proxies[key.name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _tx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:
@@ -391,30 +365,32 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         set_time_spec(val.as<time_spec_t>(), false);
         return;
 
-    case MBOARD_PROP_STREAM_CMD:
-        issue_ddc_stream_cmd(val.as<stream_cmd_t>());
-        return;
-
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();
         verify_rx_subdev_spec(_rx_subdev_spec, this->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= NUM_RX_DSPS);
         //set the mux
-        _iface->poke32(_iface->regs.dsp_rx_mux, dsp_type1::calc_rx_mux_word(
-            _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        ));
+        for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
+            if (_rx_subdev_spec.size() >= 1) _iface->poke32(_iface->regs.dsp_rx[i].mux, dsp_type1::calc_rx_mux_word(
+                _dboard_manager->get_rx_subdev(_rx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+            ));
+        }
+        _device.update_xport_channel_mapping();
         return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
         verify_tx_subdev_spec(_tx_subdev_spec, this->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_tx_subdev_spec.size() == 1);
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() <= NUM_TX_DSPS);
         //set the mux
-        _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
-            _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        ));
+        for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
+            _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
+                _dboard_manager->get_tx_subdev(_tx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
+            ));
+        }
+        _device.update_xport_channel_mapping();
         return;
 
     case MBOARD_PROP_EEPROM_MAP:

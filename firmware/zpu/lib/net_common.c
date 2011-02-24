@@ -1,6 +1,5 @@
-/* -*- c -*- */
 /*
- * Copyright 2009,2010 Ettus Research LLC
+ * Copyright 2009-2011 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +41,7 @@ static const bool debug = false;
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
 //used in the top level application...
-struct socket_address fp_socket_src, fp_socket_dst;
+uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
 // ------------------------------------------------------------------------
 
@@ -277,15 +276,24 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
       //filter out non udp data response
       struct ip_hdr *ip = (struct ip_hdr *)(((uint8_t*)icmp) + sizeof(struct icmp_echo_hdr));
       struct udp_hdr *udp = (struct udp_hdr *)(((char *)ip) + IP_HLEN);
-      if (IPH_PROTO(ip) != IP_PROTO_UDP || udp->dest != fp_socket_dst.port) return;
+      if (IPH_PROTO(ip) != IP_PROTO_UDP) break;
 
-      //end async update packets per second
-      sr_tx_ctrl->cyc_per_up = 0;
-
-      //the end continuous streaming command
-      sr_rx_ctrl->cmd = 1 << 31; //no samples now
-      sr_rx_ctrl->time_secs = 0;
-      sr_rx_ctrl->time_ticks = 0; //latch the command
+      if (udp->dest == dsp0_dst_port){
+          //the end continuous streaming command
+          sr_rx_ctrl0->cmd = 1 << 31; //no samples now
+          sr_rx_ctrl0->time_secs = 0;
+          sr_rx_ctrl0->time_ticks = 0; //latch the command
+      }
+      else if (udp->dest == dsp1_dst_port){
+          //the end continuous streaming command
+          sr_rx_ctrl1->cmd = 1 << 31; //no samples now
+          sr_rx_ctrl1->time_secs = 0;
+          sr_rx_ctrl1->time_ticks = 0; //latch the command
+      }
+      else if (udp->dest == err0_dst_port){
+          //end async update packets per second
+          sr_tx_ctrl->cyc_per_up = 0;
+      }
 
       //struct udp_hdr *udp = (struct udp_hdr *)((char *)icmp + 28);
       //printf("icmp port unr %d\n", udp->dest);

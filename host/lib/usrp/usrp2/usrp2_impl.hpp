@@ -71,6 +71,8 @@ private:
     void set(const wax::obj &key, const wax::obj &val){return _set(key, val);}
 };
 
+class usrp2_impl;
+
 /*!
  * USRP2 mboard implementation guts:
  * The implementation details are encapsulated here.
@@ -80,14 +82,14 @@ class usrp2_mboard_impl : public wax::obj{
 public:
     typedef boost::shared_ptr<usrp2_mboard_impl> sptr;
 
+    static const size_t NUM_RX_DSPS = 2;
+    static const size_t NUM_TX_DSPS = 1;
+    static const size_t MAX_NUM_DSPS = 2;
+
     //structors
     usrp2_mboard_impl(
-        size_t index,
-        uhd::transport::udp_simple::sptr,
-        uhd::transport::zero_copy_if::sptr,
-        uhd::transport::zero_copy_if::sptr,
-        const uhd::device_addr_t &device_args,
-        size_t recv_samps_per_packet
+        const uhd::device_addr_t &device_addr,
+        size_t index, usrp2_impl &device
     );
     ~usrp2_mboard_impl(void);
 
@@ -95,11 +97,11 @@ public:
         return _clock_ctrl->get_master_clock_rate();
     }
 
-    void handle_overflow(void);
+    void handle_overflow(size_t);
 
 private:
     size_t _index;
-    bool _continuous_streaming;
+    usrp2_impl &_device;
     bool _mimo_clocking_mode_is_master;
 
     //interfaces
@@ -147,27 +149,20 @@ private:
     wax_obj_proxy::sptr _tx_dboard_proxy;
     uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
 
-    //methods and shadows for the ddc dsp
-    std::vector<size_t> _allowed_decim_and_interp_rates;
-    size_t _ddc_decim;
-    double _ddc_freq;
-    void init_ddc_config(void);
-    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
-
-    //methods and shadows for the duc dsp
-    size_t _duc_interp;
-    double _duc_freq;
-    void init_duc_config(void);
+    //methods and shadows for the dsps
+    UHD_PIMPL_DECL(dsp_impl) _dsp_impl;
+    void dsp_init(void);
+    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &, size_t);
 
     //properties interface for ddc
-    void ddc_get(const wax::obj &, wax::obj &);
-    void ddc_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy::sptr _rx_dsp_proxy;
+    void ddc_get(const wax::obj &, wax::obj &, size_t);
+    void ddc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsp_proxies;
 
     //properties interface for duc
-    void duc_get(const wax::obj &, wax::obj &);
-    void duc_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy::sptr _tx_dsp_proxy;
+    void duc_get(const wax::obj &, wax::obj &, size_t);
+    void duc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
 
 };
 
@@ -182,19 +177,7 @@ public:
     static const boost::uint32_t RECV_SID = 1;
     static const boost::uint32_t ASYNC_SID = 2;
 
-    /*!
-     * Create a new usrp2 impl base.
-     * \param ctrl_transports the udp transports for control
-     * \param data_transports the udp transports for data
-     * \param err0_transports the udp transports for error
-     * \param device_args optional misc device parameters
-     */
-    usrp2_impl(
-        std::vector<uhd::transport::udp_simple::sptr> ctrl_transports,
-        std::vector<uhd::transport::zero_copy_if::sptr> data_transports,
-        std::vector<uhd::transport::zero_copy_if::sptr> err0_transports,
-        const uhd::device_addrs_t &device_args
-    );
+    usrp2_impl(const uhd::device_addr_t &);
 
     ~usrp2_impl(void);
 
@@ -213,6 +196,14 @@ public:
     size_t get_max_recv_samps_per_packet(void) const;
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
+    void update_xport_channel_mapping(void);
+
+    //public frame sizes, set by mboard, used by io impl
+    size_t recv_frame_size, send_frame_size;
+
+    std::vector<uhd::transport::zero_copy_if::sptr> dsp_xports;
+    std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
+
 private:
     //device properties interface
     void get(const wax::obj &, wax::obj &);
@@ -223,11 +214,10 @@ private:
     uhd::dict<std::string, usrp2_mboard_impl::sptr> _mboard_dict;
 
     //io impl methods and members
-    std::vector<uhd::transport::zero_copy_if::sptr> _data_transports;
-    std::vector<uhd::transport::zero_copy_if::sptr> _err0_transports;
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
+    void handle_overflow(size_t);
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */

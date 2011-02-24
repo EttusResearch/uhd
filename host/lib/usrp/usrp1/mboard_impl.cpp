@@ -280,21 +280,19 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         return;
 
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _rx_dsp_proxy->get_link();
+        val = _rx_dsp_proxies.get(key.name)->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _rx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _tx_dsp_proxy->get_link();
+        val = _tx_dsp_proxies.get(key.name)->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _tx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:
@@ -341,10 +339,6 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
 
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
-
-    case MBOARD_PROP_STREAM_CMD:
-        _soft_time_ctrl->issue_stream_cmd(val.as<stream_cmd_t>());
-        return;
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();

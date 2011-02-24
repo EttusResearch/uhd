@@ -39,8 +39,8 @@ namespace uhd{ namespace usrp{
     enum dsp_prop_t{
         DSP_PROP_NAME,               //ro, std::string
         DSP_PROP_OTHERS,             //ro, prop_names_t
+        DSP_PROP_STREAM_CMD,         //wo, stream_cmd_t
         DSP_PROP_FREQ_SHIFT,         //rw, double Hz
-        DSP_PROP_FREQ_SHIFT_NAMES,   //ro, prop_names_t
         DSP_PROP_CODEC_RATE,         //ro, double Sps
         DSP_PROP_HOST_RATE           //rw, double Sps
     };
