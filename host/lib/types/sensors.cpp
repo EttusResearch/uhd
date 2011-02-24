@@ -16,7 +16,7 @@
 //
 
 #include <uhd/types/sensors.hpp>
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 

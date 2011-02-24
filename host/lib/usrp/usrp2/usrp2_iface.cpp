@@ -17,7 +17,7 @@
 
 #include "usrp2_regs.hpp"
 #include "usrp2_iface.hpp"
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>

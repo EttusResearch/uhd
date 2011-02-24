@@ -19,8 +19,7 @@
 #define INCLUDED_UHD_UTILS_ASSERT_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/utils/exception.hpp>
-#include <stdexcept>
+#include <uhd/exception.hpp>
 #include <string>
 
 namespace uhd{

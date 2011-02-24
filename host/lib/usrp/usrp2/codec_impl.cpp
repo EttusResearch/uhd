@@ -22,7 +22,7 @@
 #include <boost/bind.hpp>
 #include <boost/assign/list_of.hpp>
 #include <uhd/utils/assert.hpp>
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

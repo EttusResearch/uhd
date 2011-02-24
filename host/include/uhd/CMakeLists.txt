@@ -25,6 +25,7 @@ INSTALL(FILES
     config.hpp
     convert.hpp
     device.hpp
+    exception.hpp
     version.hpp
     wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd

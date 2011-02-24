@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/assert.hpp>
+#include <uhd/exception.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/format.hpp>
 

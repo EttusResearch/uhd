@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/wax.hpp>
-#include <uhd/utils/exception.hpp>
-#include <stdexcept>
+#include <uhd/exception.hpp>
 #include <vector>
 #include <string>
 
@@ -68,14 +67,14 @@ namespace uhd{
      * Throw-site information will be included with this error.
      */
     #define UHD_THROW_PROP_GET_ERROR() \
-        throw std::runtime_error(UHD_THROW_SITE_INFO("cannot get this property"))
+        throw uhd::key_error(UHD_THROW_SITE_INFO("cannot get this property"))
 
     /*!
      * Throw when setting a not-implemented or read-only property.
      * Throw-site information will be included with this error.
      */
     #define UHD_THROW_PROP_SET_ERROR() \
-        throw std::runtime_error(UHD_THROW_SITE_INFO("cannot set this property"))
+        throw uhd::key_error(UHD_THROW_SITE_INFO("cannot set this property"))
 
 } //namespace uhd
 

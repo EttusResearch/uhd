@@ -110,7 +110,6 @@ SET_SOURCE_FILES_PROPERTIES(
 # Append sources
 ########################################################################
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_group.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/images.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp

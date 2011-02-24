@@ -18,7 +18,7 @@
 #include <uhd/transport/usb_device_handle.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 
 using namespace uhd;
 using namespace uhd::transport;

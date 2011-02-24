@@ -17,7 +17,7 @@
 
 #include <uhd/convert.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 #include <iostream>
 
 using namespace uhd;

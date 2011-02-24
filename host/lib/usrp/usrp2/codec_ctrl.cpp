@@ -22,7 +22,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 
 static const bool codec_ctrl_debug = false;
 

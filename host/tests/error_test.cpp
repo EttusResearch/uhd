@@ -16,7 +16,7 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <uhd/utils/exception.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/utils/assert.hpp>
 #include <vector>
 #include <iostream>
