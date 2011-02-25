@@ -50,7 +50,7 @@ void dboard_manager::register_dboard(
 ){
     //std::cout << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_id)){
-        throw std::runtime_error(str(boost::format(
+        throw uhd::key_error(str(boost::format(
             "The dboard id %s is already registered to %s."
         ) % dboard_id.to_string() % dboard_id.to_pp_string()));
     }
@@ -315,7 +315,7 @@ prop_names_t dboard_manager_impl::get_tx_subdev_names(void){
 }
 
 wax::obj dboard_manager_impl::get_rx_subdev(const std::string &subdev_name){
-    if (not _rx_dboards.has_key(subdev_name)) throw std::invalid_argument(
+    if (not _rx_dboards.has_key(subdev_name)) throw uhd::key_error(
         str(boost::format("Unknown rx subdev name %s") % subdev_name)
     );
     //get a link to the rx subdev proxy
@@ -323,7 +323,7 @@ wax::obj dboard_manager_impl::get_rx_subdev(const std::string &subdev_name){
 }
 
 wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
-    if (not _tx_dboards.has_key(subdev_name)) throw std::invalid_argument(
+    if (not _tx_dboards.has_key(subdev_name)) throw uhd::key_error(
         str(boost::format("Unknown tx subdev name %s") % subdev_name)
     );
     //get a link to the tx subdev proxy

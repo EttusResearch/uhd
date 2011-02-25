@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/warning.hpp>
+#include <uhd/exception.hpp>
 #include <boost/format.hpp>
-#include <stdexcept>
 #include <iostream>
 
 bool uhd::set_thread_priority_safe(float priority, bool realtime){
@@ -59,13 +59,13 @@ static void check_priority_range(float priority){
         //get the priority bounds for the selected policy
         int min_pri = sched_get_priority_min(policy);
         int max_pri = sched_get_priority_max(policy);
-        if (min_pri == -1 or max_pri == -1) throw std::runtime_error("error in sched_get_priority_min/max");
+        if (min_pri == -1 or max_pri == -1) throw uhd::os_error("error in sched_get_priority_min/max");
 
         //set the new priority and policy
         sched_param sp;
         sp.sched_priority = int(priority*(max_pri - min_pri)) + min_pri;
         int ret = pthread_setschedparam(pthread_self(), policy, &sp);
-        if (ret != 0) throw std::runtime_error("error in pthread_setschedparam");
+        if (ret != 0) throw uhd::os_error("error in pthread_setschedparam");
     }
 #endif /* HAVE_PTHREAD_SETSCHEDPARAM */
 
@@ -81,7 +81,7 @@ static void check_priority_range(float priority){
         //set the priority class on the process
         int pri_class = (realtime)? REALTIME_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS;
         if (SetPriorityClass(GetCurrentProcess(), pri_class) == 0)
-            throw std::runtime_error("error in SetPriorityClass");
+            throw uhd::os_error("error in SetPriorityClass");
 
         //scale the priority value to the constants
         int priorities[] = {
@@ -92,7 +92,7 @@ static void check_priority_range(float priority){
 
         //set the thread priority on the thread
         if (SetThreadPriority(GetCurrentThread(), priorities[pri_index]) == 0)
-            throw std::runtime_error("error in SetThreadPriority");
+            throw uhd::os_error("error in SetThreadPriority");
     }
 #endif /* HAVE_WIN_SETTHREADPRIORITY */
 
@@ -101,7 +101,7 @@ static void check_priority_range(float priority){
  **********************************************************************/
 #ifdef HAVE_LOAD_MODULES_DUMMY
     void uhd::set_thread_priority(float, bool){
-        throw std::runtime_error("set thread priority not implemented");
+        throw uhd::not_implemented_error("set thread priority not implemented");
     }
 
 #endif /* HAVE_LOAD_MODULES_DUMMY */

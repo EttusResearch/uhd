@@ -25,7 +25,6 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
-#include <stdexcept>
 #include <algorithm>
 
 using namespace uhd;
@@ -63,7 +62,7 @@ public:
         //check the fpga compatibility number
         const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
         if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
-            throw std::runtime_error(str(boost::format(
+            throw uhd::runtime_error(str(boost::format(
                 "Expected fpga compatibility number %d, but got %d:\n"
                 "The fpga build is not compatible with the host code build."
             ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
@@ -245,7 +244,7 @@ public:
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CTRL_RECV_TIMEOUT);
             if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_FW_COMPAT_NUM){
-                throw std::runtime_error(str(boost::format(
+                throw uhd::runtime_error(str(boost::format(
                     "Expected protocol compatibility number %d, but got %d:\n"
                     "The firmware build is not compatible with the host code build."
                 ) % int(USRP2_FW_COMPAT_NUM) % ntohl(ctrl_data_in->proto_ver)));
@@ -256,7 +255,7 @@ public:
             if (len == 0) break; //timeout
             //didnt get seq or bad packet, continue looking...
         }
-        throw std::runtime_error("no control response");
+        throw uhd::runtime_error("no control response");
     }
 
     rev_type get_rev(void){

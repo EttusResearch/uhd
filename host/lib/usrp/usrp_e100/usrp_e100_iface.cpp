@@ -37,7 +37,7 @@ class i2c_dev_iface : public i2c_iface{
 public:
     i2c_dev_iface(const std::string &node){
         if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
-            throw std::runtime_error("Failed to open " + node);
+            throw uhd::io_error("Failed to open " + node);
         }
     }
 
@@ -106,7 +106,7 @@ public:
     {
         //open the device node and check file descriptor
         if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
-            throw std::runtime_error("Failed to open " + node);
+            throw uhd::io_error("Failed to open " + node);
         }
 
         //very first thing, reset all the wishbone, always do first!
@@ -127,7 +127,7 @@ public:
         boost::mutex::scoped_lock lock(_ctrl_mutex);
 
         if (::ioctl(_node_fd, request, mem) < 0){
-            throw std::runtime_error(str(
+            throw uhd::os_error(str(
                 boost::format("ioctl failed with request %d") % request
             ));
         }

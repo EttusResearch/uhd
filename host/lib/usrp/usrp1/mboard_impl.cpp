@@ -161,7 +161,7 @@ static boost::uint32_t calc_tx_mux(
         //sanity check, only 1 channel per slot
         slot_to_chan_count[pair.db_name]++;
         if (slot_to_chan_count[pair.db_name] > 1){
-            throw std::runtime_error(str(boost::format(
+            throw uhd::value_error(str(boost::format(
                 "dboard slot %s assigned to multiple channels in subdev spec %s"
             ) % pair.db_name % subdev_spec.to_string()));
         }
@@ -343,7 +343,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
     case MBOARD_PROP_RX_SUBDEV_SPEC:
         _rx_subdev_spec = val.as<subdev_spec_t>();
         if (_rx_subdev_spec.size() > this->get_num_ddcs()){
-            throw std::runtime_error(str(boost::format(
+            throw uhd::value_error(str(boost::format(
                 "USRP1 suports up to %u RX channels.\n"
                 "However, this RX subdev spec requires %u channels\n"
             ) % this->get_num_ddcs() % _rx_subdev_spec.size()));
@@ -356,7 +356,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
         if (_tx_subdev_spec.size() > this->get_num_ducs()){
-            throw std::runtime_error(str(boost::format(
+            throw uhd::value_error(str(boost::format(
                 "USRP1 suports up to %u TX channels.\n"
                 "However, this TX subdev spec requires %u channels\n"
             ) % this->get_num_ducs() % _tx_subdev_spec.size()));

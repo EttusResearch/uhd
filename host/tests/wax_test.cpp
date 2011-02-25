@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ enum opt_b_t{OPTION_B_0, OPTION_B_1};
 
 BOOST_AUTO_TEST_CASE(test_enums){
     wax::obj opta = OPTION_A_0;
-    BOOST_CHECK_THROW(opta.as<opt_b_t>(), wax::bad_cast);
+    BOOST_CHECK_THROW(opta.as<opt_b_t>(), std::exception);
     BOOST_CHECK_EQUAL(opta.as<opt_a_t>(), OPTION_A_0);
 }
 

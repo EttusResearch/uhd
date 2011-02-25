@@ -167,7 +167,7 @@ public:
       break;
     case GPS_TYPE_NONE:
     default:
-      throw std::runtime_error("get_time(): Unsupported GPS or no GPS detected\n");
+      throw uhd::runtime_error("get_time(): Unsupported GPS or no GPS detected\n");
       break;
     }
     return now;

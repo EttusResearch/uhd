@@ -48,7 +48,7 @@ device_addr_t::device_addr_t(const std::string &args){
                 goto continue_next_arg;
             }
         }
-        throw std::runtime_error("invalid args string: "+args);
+        throw uhd::value_error("invalid args string: "+args);
         continue_next_arg: continue;
     }
 }

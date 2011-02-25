@@ -16,10 +16,10 @@
 //
 
 #include <uhd/types/ranges.hpp>
+#include <uhd/exception.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
 #include <algorithm>
-#include <stdexcept>
 #include <sstream>
 
 using namespace uhd;
@@ -48,7 +48,7 @@ range_t::range_t(
     _impl(UHD_PIMPL_MAKE(impl, (start, stop, step)))
 {
     if (stop < start){
-        throw std::invalid_argument("cannot make range where stop < start");
+        throw uhd::value_error("cannot make range where stop < start");
     }
 }
 
@@ -78,11 +78,11 @@ const std::string range_t::to_pp_string(void) const{
  **********************************************************************/
 void check_meta_range_monotonic(const meta_range_t &mr){
     if (mr.empty()){
-        throw std::runtime_error("meta-range cannot be empty");
+        throw uhd::value_error("meta-range cannot be empty");
     }
     for (size_t i = 1; i < mr.size(); i++){
         if (mr.at(i).start() < mr.at(i-1).stop()){
-            throw std::runtime_error("meta-range is not monotonic");
+            throw uhd::value_error("meta-range is not monotonic");
         }
     }
 }

@@ -29,7 +29,6 @@
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <stdexcept>
 #include <iostream>
 
 using namespace uhd;
@@ -153,7 +152,7 @@ public:
         while(true){
             if (get_time_last_pps() != time_start_last_pps) break;
             if ((get_time_now() - time_start) > time_spec_t(1.1)){
-                throw std::runtime_error(
+                throw uhd::runtime_error(
                     "Board 0 may not be getting a PPS signal!\n"
                     "No PPS detected within the time interval.\n"
                     "See the application notes for your device.\n"

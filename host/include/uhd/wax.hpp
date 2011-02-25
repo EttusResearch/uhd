@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,10 @@
 #define INCLUDED_WAX_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/exception.hpp>
 #include <boost/any.hpp>
+#include <typeinfo>
+#include <string>
 
 /*!
  * WAX - it's a metaphor!
@@ -45,12 +48,6 @@
  */
 
 namespace wax{
-
-    /*!
-     * The wax::bad cast will be thrown when
-     * cast is called with the wrong typeid.
-     */
-    typedef boost::bad_any_cast bad_cast;
 
     /*!
      * WAX object base class:
@@ -140,7 +137,12 @@ namespace wax{
          * \throw wax::bad_cast when the cast fails
          */
         template<class T> T as(void) const{
-            return boost::any_cast<T>(resolve());
+            try{
+                return boost::any_cast<T>(resolve());
+            }
+            catch(const boost::bad_any_cast &e){
+                throw uhd::type_error(std::string("") + "Cannot wax cast " + type().name() + " to " + typeid(T).name() + " " + e.what());
+            }
         }
 
     private:

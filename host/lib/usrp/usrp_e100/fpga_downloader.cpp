@@ -87,7 +87,7 @@ gpio::gpio(unsigned int gpio_num, gpio_direction pin_direction)
 	std::fstream export_file;
 
 	export_file.open("/sys/class/gpio/export", std::ios::out);
-	if (not export_file.is_open()) throw std::runtime_error(
+	if (not export_file.is_open()) throw uhd::os_error(
 		"Failed to open gpio export file."
 	);
 
@@ -211,7 +211,7 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 	std::ifstream bitstream;
 
 	bitstream.open(file_name.c_str(), std::ios::binary);
-	if (!bitstream.is_open()) throw std::runtime_error(
+	if (!bitstream.is_open()) throw uhd::os_error(
 		"Coult not open the file: " + file_name
 	);
 

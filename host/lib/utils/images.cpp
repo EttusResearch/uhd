@@ -16,9 +16,9 @@
 //
 
 #include <uhd/utils/images.hpp>
+#include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
-#include <stdexcept>
 #include <vector>
 
 namespace fs = boost::filesystem;
@@ -36,5 +36,5 @@ std::string uhd::find_image_path(const std::string &image_name){
         fs::path image_path = path / image_name;
         if (fs::exists(image_path)) return image_path.file_string();
     }
-    throw std::runtime_error("Could not find path for image: " + image_name);
+    throw uhd::io_error("Could not find path for image: " + image_name);
 }

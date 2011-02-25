@@ -60,6 +60,11 @@ namespace uhd{
         virtual unsigned code(void) const;
     };
 
+    struct UHD_API type_error : exception{
+        type_error(const std::string &what);
+        virtual unsigned code(void) const;
+    };
+
     struct UHD_API value_error : exception{
         value_error(const std::string &what);
         virtual unsigned code(void) const;

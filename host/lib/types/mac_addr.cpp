@@ -39,7 +39,7 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
 
     try{
         if (mac_addr_str.size() != 17){
-            throw std::runtime_error("expected exactly 17 characters");
+            throw uhd::value_error("expected exactly 17 characters");
         }
 
         //split the mac addr hex string at the colons
@@ -54,7 +54,7 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
 
     }
     catch(std::exception const& e){
-        throw std::runtime_error(str(
+        throw uhd::value_error(str(
             boost::format("Invalid mac address: %s\n\t%s") % mac_addr_str % e.what()
         ));
     }

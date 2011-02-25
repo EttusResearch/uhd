@@ -193,7 +193,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         if (val.as<std::string>().empty()) return;
-        throw std::runtime_error("no selectable antennas on this board");
+        throw uhd::value_error("no selectable antennas on this board");
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
@@ -300,7 +300,7 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         if (val.as<std::string>().empty()) return;
-        throw std::runtime_error("no selectable antennas on this board");
+        throw uhd::value_error("no selectable antennas on this board");
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it

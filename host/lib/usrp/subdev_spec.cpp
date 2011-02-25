@@ -16,11 +16,11 @@
 //
 
 #include <uhd/usrp/subdev_spec.hpp>
+#include <uhd/exception.hpp>
 #include <boost/algorithm/string.hpp> //for split
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include <stdexcept>
 #include <sstream>
 #include <vector>
 
@@ -51,7 +51,7 @@ subdev_spec_t::subdev_spec_t(const std::string &markup){
         switch(db_sd.size()){
         case 1: this->push_back(subdev_spec_pair_t("", db_sd.front())); break;
         case 2: this->push_back(subdev_spec_pair_t(db_sd.front(), db_sd.back())); break;
-        default: throw std::runtime_error("invalid subdev-spec markup string: "+markup);
+        default: throw uhd::value_error("invalid subdev-spec markup string: "+markup);
         }
     }
 }

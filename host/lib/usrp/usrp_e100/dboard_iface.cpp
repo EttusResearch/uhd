@@ -235,7 +235,7 @@ static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
     case dboard_iface::UNIT_TX: return UE_SPI_SS_TX_DB;
     case dboard_iface::UNIT_RX: return UE_SPI_SS_RX_DB;
     }
-    throw std::invalid_argument("unknown unit type");
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void usrp_e100_dboard_iface::write_spi(

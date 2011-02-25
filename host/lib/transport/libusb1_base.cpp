@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ public:
         //allocate a new list of devices
         libusb_device** dev_list;
         ssize_t ret = libusb_get_device_list(sess->get_context(), &dev_list);
-        if (ret < 0) throw std::runtime_error("cannot enumerate usb devices");
+        if (ret < 0) throw uhd::os_error("cannot enumerate usb devices");
 
         //fill the vector of device references
         for (size_t i = 0; i < size_t(ret); i++) _devs.push_back(
@@ -206,9 +206,9 @@ libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::spt
         handles[dev->get()] = new_handle;
         return new_handle;
     }
-    catch(const std::exception &e){
+    catch(const uhd::exception &e){
         std::cerr << "USB open failed: see the application notes for your device." << std::endl;
-        throw std::runtime_error(e.what());
+        throw;
     }
 }
 

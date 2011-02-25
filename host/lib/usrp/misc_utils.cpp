@@ -167,7 +167,7 @@ static void verify_xx_subdev_spec(
         BOOST_FOREACH(subdev_spec_pair_t &pair, subdev_spec){
             //empty db name means select dboard automatically
             if (pair.db_name.empty()){
-                if (dboard_names.size() != 1) throw std::runtime_error(
+                if (dboard_names.size() != 1) throw uhd::value_error(
                     "A daughterboard name must be provided for multi-slot motherboards: " + subdev_spec.to_string()
                 );
                 pair.db_name = dboard_names.front();
@@ -178,7 +178,7 @@ static void verify_xx_subdev_spec(
 
             //empty sd name means select the subdev automatically
             if (pair.sd_name.empty()){
-                if (subdev_names.size() != 1) throw std::runtime_error(
+                if (subdev_names.size() != 1) throw uhd::value_error(
                     "A subdevice name must be provided for multi-subdev daughterboards: " + subdev_spec.to_string()
                 );
                 pair.sd_name = subdev_names.front();
@@ -186,7 +186,7 @@ static void verify_xx_subdev_spec(
             uhd::assert_has(subdev_names, pair.sd_name, xx_type + " subdev name");
         }
     }catch(const std::exception &e){
-        throw std::runtime_error(str(boost::format(
+        throw uhd::value_error(str(boost::format(
             "Validate %s subdev spec failed: %s\n    %s"
         ) % xx_type % subdev_spec.to_string() % e.what()));
     }
@@ -200,7 +200,7 @@ static void verify_xx_subdev_spec(
                 dboard[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)][SUBDEV_PROP_ENABLED] = enable;
             }
             catch(const std::exception &e){
-                throw std::runtime_error(str(boost::format(
+                throw uhd::runtime_error(str(boost::format(
                     "Cannot set enabled property on subdevice %s:%s\n    %s"
                 ) % db_name % sd_name % e.what()));
             }

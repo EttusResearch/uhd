@@ -19,10 +19,10 @@
 #include "ad9777_regs.hpp"
 #include "ads62p44_regs.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/exception.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
-#include <uhd/exception.hpp>
 
 static const bool codec_ctrl_debug = false;
 
@@ -118,7 +118,7 @@ public:
         case 2: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_FS_2; break;
         case 4: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_FS_4; break;
         case 8: _ad9777_regs.modulation_mode = ad9777_regs_t::MODULATION_MODE_FS_8; break;
-        default: throw std::runtime_error("unknown modulation mode for ad9777");
+        default: throw uhd::value_error("unknown modulation mode for ad9777");
         }
 
         this->send_ad9777_reg(0x01); //set the register

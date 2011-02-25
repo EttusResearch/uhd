@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //
 
 #include <uhd/wax.hpp>
+#include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
 
@@ -97,7 +98,7 @@ wax::obj wax::obj::operator[](const obj &key){
             return val.as<link_args_t>()()[key];
         }
         //unknown obj
-        throw std::runtime_error("cannot use [] on non wax::obj link");
+        throw uhd::type_error("cannot use [] on non wax::obj link");
     }
     else{
         return proxy_args_t(this, key);
@@ -142,9 +143,9 @@ boost::any wax::obj::resolve(void) const{
 }
 
 void wax::obj::get(const obj &, obj &){
-    throw std::runtime_error("Cannot call get on wax obj base class");
+    throw uhd::type_error("Cannot call get on wax obj base class");
 }
 
 void wax::obj::set(const obj &, const obj &){
-    throw std::runtime_error("Cannot call set on wax obj base class");
+    throw uhd::type_error("Cannot call set on wax obj base class");
 }

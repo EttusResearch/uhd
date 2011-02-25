@@ -17,12 +17,12 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/exception.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
@@ -118,7 +118,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         else if (device_addr["mimo_mode"] == "slave"){
             _mimo_clocking_mode_is_master = false;
         }
-        else throw std::runtime_error(
+        else throw uhd::value_error(
             "mimo_mode must be set to master or slave"
         );
     }
@@ -170,14 +170,14 @@ void usrp2_mboard_impl::update_clock_config(void){
     //translate pps source enums
     switch(_clock_config.pps_source){
     case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
-    default: throw std::runtime_error("unhandled clock configuration pps source");
+    default: throw uhd::value_error("unhandled clock configuration pps source");
     }
 
     //translate pps polarity enums
     switch(_clock_config.pps_polarity){
     case clock_config_t::PPS_POS: pps_flags |= U2_FLAG_TIME64_PPS_POSEDGE; break;
     case clock_config_t::PPS_NEG: pps_flags |= U2_FLAG_TIME64_PPS_NEGEDGE; break;
-    default: throw std::runtime_error("unhandled clock configuration pps polarity");
+    default: throw uhd::value_error("unhandled clock configuration pps polarity");
     }
 
     //set the pps flags
@@ -190,7 +190,7 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        default: throw std::runtime_error("unhandled clock configuration reference source");
+        default: throw uhd::value_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
         break;
@@ -200,7 +200,7 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        default: throw std::runtime_error("unhandled clock configuration reference source");
+        default: throw uhd::value_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
         break;

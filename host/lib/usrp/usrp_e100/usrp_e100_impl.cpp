@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     size_t fpga_hash = 0;
     {
         std::ifstream file(usrp_e100_fpga_image.c_str());
-        if (not file.good()) throw std::runtime_error(
+        if (not file.good()) throw uhd::io_error(
             "cannot open fpga file for read: " + usrp_e100_fpga_image
         );
         do{
@@ -132,7 +132,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     //check that the compatibility is correct
     fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
     if (fpga_compat_num != USRP_E_COMPAT_NUM){
-        throw std::runtime_error(str(boost::format(
+        throw uhd::runtime_error(str(boost::format(
             "Expected fpga compatibility number 0x%x, but got 0x%x:\n"
             "The fpga build is not compatible with the host code build."
         ) % USRP_E_COMPAT_NUM % fpga_compat_num));

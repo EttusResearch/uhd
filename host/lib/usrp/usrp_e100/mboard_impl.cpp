@@ -17,9 +17,9 @@
 
 #include "usrp_e100_impl.hpp"
 #include "usrp_e100_regs.hpp"
+#include <uhd/exception.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/misc_utils.hpp>
-#include <uhd/exception.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
@@ -53,7 +53,7 @@ void usrp_e100_impl::update_clock_config(void){
     switch(_clock_config.pps_polarity){
     case clock_config_t::PPS_POS: pps_flags |= UE_FLAG_TIME64_PPS_POSEDGE; break;
     case clock_config_t::PPS_NEG: pps_flags |= UE_FLAG_TIME64_PPS_NEGEDGE; break;
-    default: throw std::runtime_error("unhandled clock configuration pps polarity");
+    default: throw uhd::value_error("unhandled clock configuration pps polarity");
     }
 
     //set the pps flags
@@ -64,7 +64,7 @@ void usrp_e100_impl::update_clock_config(void){
     case clock_config_t::REF_AUTO: _clock_ctrl->use_auto_ref(); break;
     case clock_config_t::REF_INT: _clock_ctrl->use_internal_ref(); break;
     case clock_config_t::REF_SMA: _clock_ctrl->use_auto_ref(); break;
-    default: throw std::runtime_error("unhandled clock configuration ref source");
+    default: throw uhd::value_error("unhandled clock configuration ref source");
     }
 }
 

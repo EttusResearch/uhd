@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,11 +16,11 @@
 //
 
 #include <uhd/utils/static.hpp>
+#include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -33,7 +33,7 @@ namespace fs = boost::filesystem;
 #include <dlfcn.h>
 static void load_module(const std::string &file_name){
     if (dlopen(file_name.c_str(), RTLD_LAZY) == NULL){
-        throw std::runtime_error(str(
+        throw uhd::os_error(str(
             boost::format("dlopen failed to load \"%s\"") % file_name
         ));
     }
@@ -45,7 +45,7 @@ static void load_module(const std::string &file_name){
 #include <windows.h>
 static void load_module(const std::string &file_name){
     if (LoadLibrary(file_name.c_str()) == NULL){
-        throw std::runtime_error(str(
+        throw uhd::os_error(str(
             boost::format("LoadLibrary failed to load \"%s\"") % file_name
         ));
     }
@@ -55,7 +55,7 @@ static void load_module(const std::string &file_name){
 
 #ifdef HAVE_LOAD_MODULES_DUMMY
 static void load_module(const std::string &file_name){
-    throw std::runtime_error(str(
+    throw uhd::not_implemented_error(str(
         boost::format("Module loading not supported: Cannot load \"%s\"") % file_name
     ));
 }

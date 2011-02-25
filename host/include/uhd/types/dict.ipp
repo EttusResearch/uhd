@@ -18,18 +18,18 @@
 #ifndef INCLUDED_UHD_TYPES_DICT_IPP
 #define INCLUDED_UHD_TYPES_DICT_IPP
 
+#include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <stdexcept>
 #include <typeinfo>
 
 namespace uhd{
 
     namespace /*anon*/{
         template<typename Key, typename Val>
-        struct key_not_found: std::out_of_range{
-            key_not_found(const Key &key): std::out_of_range(
+        struct key_not_found: uhd::key_error{
+            key_not_found(const Key &key): uhd::key_error(
                 str(boost::format(
                     "key \"%s\" not found in dict(%s, %s)"
                     ) % boost::lexical_cast<std::string>(key)

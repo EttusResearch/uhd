@@ -16,6 +16,7 @@
 //
 
 #include "usrp2_impl.hpp"
+#include <uhd/exception.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/device_props.hpp>
@@ -47,7 +48,7 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
         device_addrs_t found_devices;
         BOOST_FOREACH(const device_addr_t &hint_i, hints){
             device_addrs_t found_devices_i = usrp2_find(hint_i);
-            if (found_devices_i.size() != 1) throw std::runtime_error(str(boost::format(
+            if (found_devices_i.size() != 1) throw uhd::value_error(str(boost::format(
                 "Could not resolve device hint \"%s\" to a single device."
             ) % hint_i.to_string()));
             found_devices.push_back(found_devices_i[0]);

@@ -16,12 +16,12 @@
 //
 
 #include <uhd/utils/warning.hpp>
+#include <uhd/exception.hpp>
 #include <boost/tokenizer.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/foreach.hpp>
 #include <sstream>
-#include <stdexcept>
 #include <iostream>
 #include <vector>
 
@@ -76,7 +76,7 @@ void warning::register_handler(
 }
 
 warning::handler_t warning::unregister_handler(const std::string &name){
-    if (not get_registry().has_key(name)) throw std::runtime_error(
+    if (not get_registry().has_key(name)) throw uhd::key_error(
         "The warning registry does not have a handler registered to " + name
     );
     return get_registry().pop(name);

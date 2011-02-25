@@ -30,8 +30,8 @@ COMMON_TMPL = """\
 \#define INCLUDED_$(name.upper())_HPP
 
 \#include <uhd/config.hpp>
+\#include <uhd/exception.hpp>
 \#include <boost/cstdint.hpp>
-\#include <stdexcept>
 \#include <set>
 
 class $(name)_t{
@@ -69,7 +69,7 @@ public:
     }
 
     template<typename T> std::set<T> get_changed_addrs(void){
-        if (_state == NULL) throw std::runtime_error("no saved state");
+        if (_state == NULL) throw uhd::runtime_error("no saved state");
         //check each register for changes
         std::set<T> addrs;
         #for $reg in $regs

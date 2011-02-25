@@ -329,7 +329,7 @@ static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit,
         else
             break;
     }
-    throw std::invalid_argument("unknown unit type");
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void usrp1_dboard_iface::write_spi(unit_t unit,

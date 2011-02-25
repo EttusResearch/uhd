@@ -22,7 +22,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
