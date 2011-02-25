@@ -129,7 +129,7 @@ module gpmc_async
       .wb_sel_o(wb_sel_o), .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o),
       .wb_ack_i(wb_ack_i) );
    
-      assign debug = pkt_count;
+//      assign debug = pkt_count;
 
    // ////////////////////////////////////////////
    // Test support, traffic generator, loopback, etc.
@@ -212,5 +212,15 @@ module gpmc_async
    // FIXME -- set rates and enables on pacers
    // FIXME -- make sure packet completes before we shutoff
    // FIXME -- handle overrun and underrun
+
+wire [0:17] dummy18;
+
+assign debug = {dummy18, timedrx_src_rdy_int, timedrx_dst_rdy_int,
+		timedrx_src_rdy, timedrx_dst_rdy,
+		testrx_src_rdy, testrx_dst_rdy,
+		rx_src_rdy, rx_dst_rdy,
+		rx36_src_rdy, rx36_dst_rdy,
+		rx18_src_rdy, rx18_dst_rdy,
+		rx18b_src_rdy, rx18b_dst_rdy};
 
 endmodule // gpmc_async

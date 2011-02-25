@@ -408,9 +408,13 @@ module u1e_core
 
    assign debug_clk = { EM_CLK, clk_fpga };
 
+/*
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS5, EM_NCS4, EM_NWE, EM_NOE, rx_overrun },
 		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
+
+*/
+   assign debug = debug_gpmc;
 
    assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
 			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
