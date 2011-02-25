@@ -16,7 +16,15 @@
 //
 
 #include <uhd/config.hpp>
+#ifdef UHD_DLL_EXPORTS
 #include <uhd/exception.hpp>
+#else //special case when this file is externally included
+#include <stdexcept>
+namespace uhd{
+    typedef std::runtime_error os_error;
+    typedef std::runtime_error io_error;
+}
+#endif
 
 #include <iostream>
 #include <sstream>
