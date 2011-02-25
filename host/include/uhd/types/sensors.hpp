@@ -117,13 +117,16 @@ namespace uhd{
          */
         const std::string unit;
 
-        //! The data type of the value
-        const enum{
+        //! Enumeration of possible data types in a sensor
+        enum data_type_t {
             BOOLEAN = 'b',
             INTEGER = 'i',
             REALNUM = 'r',
             STRING  = 's'
-        } type;
+        };
+
+        //! The data type of the value
+        const data_type_t type;
 
         //! Convert this sensor value into a printable string
         std::string to_pp_string(void) const;
