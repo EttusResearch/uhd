@@ -215,7 +215,9 @@ module gpmc_async
 
 wire [0:17] dummy18;
 
-assign debug = {dummy18, timedrx_src_rdy_int, timedrx_dst_rdy_int,
+assign debug = {8'd0,
+		test_rate,
+		pkt_src_enable, pkt_sink_enable, timedrx_src_rdy_int, timedrx_dst_rdy_int,
 		timedrx_src_rdy, timedrx_dst_rdy,
 		testrx_src_rdy, testrx_dst_rdy,
 		rx_src_rdy, rx_dst_rdy,
