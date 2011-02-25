@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 ########################################################################
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+SET(LIBUHD_PYTHON_GEN_SOURCE_DEPS ${CMAKE_CURRENT_SOURCE_DIR}/common.py)
 
 LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_adf4350_regs.py
@@ -90,3 +91,5 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_tuner_4937di5_regs.py
     ${CMAKE_CURRENT_BINARY_DIR}/tuner_4937di5_regs.hpp
 )
+
+UNSET(LIBUHD_PYTHON_GEN_SOURCE_DEPS)
