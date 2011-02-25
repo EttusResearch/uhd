@@ -43,7 +43,7 @@ static size_t hash_device_addr(
 ){
     //combine the hashes of sorted keys/value pairs
     size_t hash = 0;
-    BOOST_FOREACH(const std::string &key, std::sorted(dev_addr.keys())){
+    BOOST_FOREACH(const std::string &key, uhd::sorted(dev_addr.keys())){
         boost::hash_combine(hash, key);
         boost::hash_combine(hash, dev_addr[key]);
     }

@@ -31,7 +31,7 @@ namespace uhd{
         const T &value,
         const std::string &what
     ){
-        if (std::has(range, value)) return;
+        if (uhd::has(range, value)) return;
         std::string possible_values = "";
         size_t i = 0;
         BOOST_FOREACH(const T &v, range){

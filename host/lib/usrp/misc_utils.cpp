@@ -196,7 +196,7 @@ static void verify_xx_subdev_spec(
         wax::obj dboard = mboard[named_prop_t(dboard_prop, db_name)];
         BOOST_FOREACH(const std::string &sd_name, dboard[DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>()){
             try{
-                bool enable = std::has(subdev_spec, subdev_spec_pair_t(db_name, sd_name));
+                bool enable = uhd::has(subdev_spec, subdev_spec_pair_t(db_name, sd_name));
                 dboard[named_prop_t(DBOARD_PROP_SUBDEV, sd_name)][SUBDEV_PROP_ENABLED] = enable;
             }
             catch(const std::exception &e){

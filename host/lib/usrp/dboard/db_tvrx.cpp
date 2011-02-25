@@ -241,7 +241,7 @@ static std::string get_band(double freq) {
 
 static double gain_interp(double gain, boost::array<double, 17> db_vector, boost::array<double, 17> volts_vector) {
     double volts;
-    gain = std::clip<double>(gain, db_vector.front(), db_vector.back()); //let's not get carried away here
+    gain = uhd::clip<double>(gain, db_vector.front(), db_vector.back()); //let's not get carried away here
 
     boost::uint8_t gain_step = 0;
     //find which bin we're in
@@ -288,7 +288,7 @@ static double rf_gain_to_voltage(double gain, double lo_freq){
     //this is the voltage at the USRP DAC output
     double dac_volts = gain_volts / opamp_gain;
 
-    dac_volts = std::clip<double>(dac_volts, 0.0, 3.3);
+    dac_volts = uhd::clip<double>(dac_volts, 0.0, 3.3);
 
     if (tvrx_debug) std::cerr << boost::format(
         "tvrx RF AGC gain: %f dB, dac_volts: %f V"
@@ -311,7 +311,7 @@ static double if_gain_to_voltage(double gain){
     double gain_volts = gain_interp(gain, tvrx_if_gains_db, tvrx_gains_volts);
     double dac_volts = gain_volts / opamp_gain;
 
-    dac_volts = std::clip<double>(dac_volts, 0.0, 3.3);
+    dac_volts = uhd::clip<double>(dac_volts, 0.0, 3.3);
 
     if (tvrx_debug) std::cerr << boost::format(
         "tvrx IF AGC gain: %f dB, dac_volts: %f V"

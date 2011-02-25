@@ -79,8 +79,8 @@ private:
     void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
-        start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0xB));
-        stop_reg = boost::uint8_t(std::clip(int(stop_reg), 0x0, 0xB));
+        start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0xB));
+        stop_reg = boost::uint8_t(uhd::clip(int(stop_reg), 0x0, 0xB));
 
         for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t) - 1){
             int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) - 1 ? sizeof(boost::uint32_t) - 1 : stop_reg - start_addr + 1;
@@ -108,8 +108,8 @@ private:
 
     void read_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
         static const boost::uint8_t status_addr = 0xC;
-        start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0xD));
-        stop_reg = boost::uint8_t(std::clip(int(stop_reg), 0x0, 0xD));
+        start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0xD));
+        stop_reg = boost::uint8_t(uhd::clip(int(stop_reg), 0x0, 0xD));
 
         for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t)){
             int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) ? sizeof(boost::uint32_t) : stop_reg - start_addr + 1;
@@ -216,7 +216,7 @@ dbsrx2::~dbsrx2(void){
  * Tuning
  **********************************************************************/
 void dbsrx2::set_lo_freq(double target_freq){
-    //target_freq = std::clip(target_freq, dbsrx2_freq_range.min, dbsrx2_freq_range.max);
+    //target_freq = uhd::clip(target_freq, dbsrx2_freq_range.min, dbsrx2_freq_range.max);
 
     //variables used in the calculation below
     int scaler = target_freq > 1125e6 ? 2 : 4;
@@ -330,7 +330,7 @@ void dbsrx2::set_gain(double gain, const std::string &name){
  **********************************************************************/
 void dbsrx2::set_bandwidth(double bandwidth){
     //clip the input
-    bandwidth = std::clip<double>(bandwidth, 4e6, 40e6);
+    bandwidth = uhd::clip<double>(bandwidth, 4e6, 40e6);
 
     _max2112_write_regs.lp = int((bandwidth/1e6 - 4)/0.29 + 12);
     _bandwidth = double(4 + (_max2112_write_regs.lp - 12) * 0.29)*1e6;

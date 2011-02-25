@@ -107,7 +107,7 @@ public:
         double gain_left_to_distribute = gain;
         BOOST_FOREACH(const gain_fcns_t &fcns, all_fcns){
             const gain_range_t range = fcns.get_range();
-            gain_bucket.push_back(floor_step(std::clip(
+            gain_bucket.push_back(floor_step(uhd::clip(
                 gain_left_to_distribute, range.start(), range.stop()
             ), max_step));
             gain_left_to_distribute -= gain_bucket.back();
@@ -131,7 +131,7 @@ public:
         //fill in the largest step sizes first that are less than the remainder
         BOOST_FOREACH(size_t i, indexes_step_size_dec){
             const gain_range_t range = all_fcns.at(i).get_range();
-            double additional_gain = floor_step(std::clip(
+            double additional_gain = floor_step(uhd::clip(
                 gain_bucket.at(i) + gain_left_to_distribute, range.start(), range.stop()
             ), range.step()) - gain_bucket.at(i);
             gain_bucket.at(i) += additional_gain;
@@ -167,7 +167,7 @@ private:
     //! get the gain function sets in order (highest priority first)
     std::vector<gain_fcns_t> get_all_fcns(void){
         std::vector<gain_fcns_t> all_fcns;
-        BOOST_FOREACH(size_t key, std::sorted(_registry.keys())){
+        BOOST_FOREACH(size_t key, uhd::sorted(_registry.keys())){
             const std::vector<gain_fcns_t> &fcns = _registry[key];
             all_fcns.insert(all_fcns.begin(), fcns.begin(), fcns.end());
         }

@@ -137,7 +137,7 @@ static const int mtpgw = 255; //maximum tx pga gain word
 
 void usrp_e100_codec_ctrl_impl::set_tx_pga_gain(double gain){
     int gain_word = int(mtpgw*(gain - tx_pga_gain_range.start())/(tx_pga_gain_range.stop() - tx_pga_gain_range.start()));
-    _ad9862_regs.tx_pga_gain = std::clip(gain_word, 0, mtpgw);
+    _ad9862_regs.tx_pga_gain = uhd::clip(gain_word, 0, mtpgw);
     this->send_reg(16);
 }
 
@@ -149,7 +149,7 @@ static const int mrpgw = 0x14; //maximum rx pga gain word
 
 void usrp_e100_codec_ctrl_impl::set_rx_pga_gain(double gain, char which){
     int gain_word = int(mrpgw*(gain - rx_pga_gain_range.start())/(rx_pga_gain_range.stop() - rx_pga_gain_range.start()));
-    gain_word = std::clip(gain_word, 0, mrpgw);
+    gain_word = uhd::clip(gain_word, 0, mrpgw);
     switch(which){
     case 'A':
         _ad9862_regs.rx_pga_a = gain_word;
@@ -236,7 +236,7 @@ double usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
 void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
     //special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D){
-        boost::uint16_t dac_word = std::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);
+        boost::uint16_t dac_word = uhd::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);
         _ad9862_regs.sig_delt_11_4 = boost::uint8_t(dac_word >> 4);
         _ad9862_regs.sig_delt_3_0 = boost::uint8_t(dac_word & 0xf);
         this->send_reg(42);
@@ -245,7 +245,7 @@ void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
     }
 
     //calculate the dac word for aux dac a, b, c
-    boost::uint8_t dac_word = std::clip(boost::math::iround(volts*0xff/3.3), 0, 0xff);
+    boost::uint8_t dac_word = uhd::clip(boost::math::iround(volts*0xff/3.3), 0, 0xff);
 
     //setup a lookup table for the aux dac params (reg ref, reg addr)
     typedef boost::tuple<boost::uint8_t*, boost::uint8_t> dac_params_t;

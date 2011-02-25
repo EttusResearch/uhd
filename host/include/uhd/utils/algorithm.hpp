@@ -21,24 +21,12 @@
 #include <algorithm>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
-#include <boost/range/size.hpp>
 
-/*! \file algorithm.hpp
+/*!
  * Useful templated functions and classes that I like to pretend are part of stl.
  * Many of the range wrapper functions come with recent versions of boost (1.43).
  */
-namespace std{
-
-    /*!
-     * A wrapper around std::sort that takes a range instead of an iterator.
-     *
-     * The elements are sorted into ascending order using the less-than operator.
-     *
-     * \param range the range of elements to be sorted
-     */
-    template<typename Range> inline void sort(Range &range){
-        return std::sort(boost::begin(range), boost::end(range));
-    }
+namespace uhd{
 
     /*!
      * A wrapper around std::sort that takes a range instead of an iterator.
@@ -51,18 +39,7 @@ namespace std{
      * \return a new range with the elements sorted
      */
     template<typename Range> inline Range sorted(const Range &range){
-        Range srange(range); std::sort(srange); return srange;
-    }
-
-    /*!
-     * A wrapper around std::reverse that takes a range instead of an iterator.
-     *
-     * The elements are reversed into descending order using the less-than operator.
-     *
-     * \param range the range of elements to be reversed
-     */
-    template<typename Range> inline void reverse(Range &range){
-        return std::reverse(boost::begin(range), boost::end(range));
+        Range r(range); std::sort(boost::begin(r), boost::end(r)); return r;
     }
 
     /*!
@@ -76,7 +53,7 @@ namespace std{
      * \return a new range with the elements reversed
      */
     template<typename Range> inline Range reversed(const Range &range){
-        Range srange(range); std::reverse(srange); return srange;
+        Range r(range); std::reverse(boost::begin(r), boost::end(r)); return r;
     }
 
     /*!
@@ -94,35 +71,6 @@ namespace std{
     }
 
     /*!
-     * Count the number of appearances of a value in a range.
-     *
-     * Uses std::count to count the appearances in the range.
-     *
-     * \param range the elements to iterate through
-     * \param value the value to count in the range
-     * \return the number of appearances of the value
-     */
-    template<typename Range, typename T> inline
-    size_t count(const Range &range, const T &value){
-        return std::count(boost::begin(range), boost::end(range), value);
-    }
-
-    /*!
-     * Are the ranges equal (are their elements equivalent)?
-     *
-     * Uses std::equal to search the iterable for an element.
-     *
-     * \param range1 the first range of elements
-     * \param range2 the second range of elements
-     * \return true when the elements are equivalent
-     */
-    template<typename Range> inline
-    bool equal(const Range &range1, const Range &range2){
-        return (boost::size(range1) == boost::size(range2)) and
-        std::equal(boost::begin(range1), boost::end(range1), boost::begin(range2));
-    }
-
-    /*!
      * A templated clip implementation.
      * \param val the value to clip between an upper and lower limit
      * \param bound1 the upper or lower bound
@@ -137,6 +85,6 @@ namespace std{
         return val;
     }
 
-}//namespace std
+} //namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_ALGORITHM_HPP */

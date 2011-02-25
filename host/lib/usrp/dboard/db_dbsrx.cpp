@@ -83,8 +83,8 @@ private:
     void set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
-        start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0x5));
-        stop_reg = boost::uint8_t(std::clip(int(stop_reg), 0x0, 0x5));
+        start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0x5));
+        stop_reg = boost::uint8_t(uhd::clip(int(stop_reg), 0x0, 0x5));
 
         for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t) - 1){
             int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) - 1 ? sizeof(boost::uint32_t) - 1 : stop_reg - start_addr + 1;
@@ -112,8 +112,8 @@ private:
 
     void read_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
         static const boost::uint8_t status_addr = 0x0;
-        start_reg = boost::uint8_t(std::clip(int(start_reg), 0x0, 0x1));
-        stop_reg = boost::uint8_t(std::clip(int(stop_reg), 0x0, 0x1));
+        start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0x1));
+        stop_reg = boost::uint8_t(uhd::clip(int(stop_reg), 0x0, 0x1));
 
         for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t)){
             int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) ? sizeof(boost::uint32_t) : stop_reg - start_addr + 1;
@@ -237,8 +237,8 @@ void dbsrx::set_lo_freq(double target_freq){
     bool update_filter_settings = false;
     //choose refclock
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
-    const double max_clock_rate = std::sorted(clock_rates).back();
-    BOOST_FOREACH(ref_clock, std::reversed(std::sorted(clock_rates))){
+    const double max_clock_rate = uhd::sorted(clock_rates).back();
+    BOOST_FOREACH(ref_clock, uhd::reversed(uhd::sorted(clock_rates))){
         if (ref_clock > 27.0e6) continue;
         if (size_t(max_clock_rate/ref_clock)%2 == 1) continue; //reject asymmetric clocks (odd divisors)
 
@@ -485,14 +485,14 @@ void dbsrx::set_gain(double gain, const std::string &name){
  **********************************************************************/
 void dbsrx::set_bandwidth(double bandwidth){
     //clip the input
-    bandwidth = std::clip<double>(bandwidth, 4e6, 33e6);
+    bandwidth = uhd::clip<double>(bandwidth, 4e6, 33e6);
 
     double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     
     //NOTE: _max2118_write_regs.m_divider set in set_lo_freq
 
     //compute f_dac setting
-    _max2118_write_regs.f_dac = std::clip<int>(int((((bandwidth*_max2118_write_regs.m_divider)/ref_clock) - 4)/0.145),0,127);
+    _max2118_write_regs.f_dac = uhd::clip<int>(int((((bandwidth*_max2118_write_regs.m_divider)/ref_clock) - 4)/0.145),0,127);
 
     //determine actual bandwidth
     _bandwidth = double((ref_clock/(_max2118_write_regs.m_divider))*(4+0.145*_max2118_write_regs.f_dac));

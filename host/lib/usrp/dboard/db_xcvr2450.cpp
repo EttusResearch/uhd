@@ -358,7 +358,7 @@ void xcvr2450::set_rx_ant(const std::string &ant){
  */
 static int gain_to_tx_vga_reg(double &gain){
     //calculate the register value
-    int reg = std::clip(boost::math::iround(gain*60/30.0) + 3, 0, 63);
+    int reg = uhd::clip(boost::math::iround(gain*60/30.0) + 3, 0, 63);
 
     //calculate the actual gain value
     if (reg < 4)       gain = 0;
@@ -376,7 +376,7 @@ static int gain_to_tx_vga_reg(double &gain){
  * \return gain enum value
  */
 static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(double &gain){
-    int reg = std::clip(boost::math::iround(gain*3/5.0), 0, 3);
+    int reg = uhd::clip(boost::math::iround(gain*3/5.0), 0, 3);
     switch(reg){
     case 0:
         gain = 0;
@@ -401,7 +401,7 @@ static max2829_regs_t::tx_baseband_gain_t gain_to_tx_bb_reg(double &gain){
  * \return 5 bit the register value
  */
 static int gain_to_rx_vga_reg(double &gain){
-    int reg = std::clip(boost::math::iround(gain/2.0), 0, 31);
+    int reg = uhd::clip(boost::math::iround(gain/2.0), 0, 31);
     gain = double(reg*2);
     return reg;
 }
@@ -413,7 +413,7 @@ static int gain_to_rx_vga_reg(double &gain){
  * \return 2 bit the register value
  */
 static int gain_to_rx_lna_reg(double &gain){
-    int reg = std::clip(boost::math::iround(gain*2/30.5) + 1, 0, 3);
+    int reg = uhd::clip(boost::math::iround(gain*2/30.5) + 1, 0, 3);
     switch(reg){
     case 0:
     case 1: gain = 0;    break;
@@ -456,7 +456,7 @@ void xcvr2450::set_rx_gain(double gain, const std::string &name){
  * Bandwidth Handling
  **********************************************************************/
 static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(double &bandwidth){
-    int reg = std::clip(boost::math::iround((bandwidth-6.0e6)/6.0e6), 1, 3);
+    int reg = uhd::clip(boost::math::iround((bandwidth-6.0e6)/6.0e6), 1, 3);
 
     switch(reg){
     case 1: // bandwidth < 15MHz
@@ -473,7 +473,7 @@ static max2829_regs_t::tx_lpf_coarse_adj_t bandwidth_to_tx_lpf_coarse_reg(double
 }
 
 static max2829_regs_t::rx_lpf_fine_adj_t bandwidth_to_rx_lpf_fine_reg(double &bandwidth, double requested_bandwidth){
-    int reg = std::clip(boost::math::iround((requested_bandwidth/bandwidth)/0.05), 18, 22);
+    int reg = uhd::clip(boost::math::iround((requested_bandwidth/bandwidth)/0.05), 18, 22);
 
     switch(reg){
     case 18: // requested_bandwidth < 92.5%
@@ -496,7 +496,7 @@ static max2829_regs_t::rx_lpf_fine_adj_t bandwidth_to_rx_lpf_fine_reg(double &ba
 }
 
 static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(double &bandwidth){
-    int reg = std::clip(boost::math::iround((bandwidth-7.0e6)/1.0e6), 0, 11);
+    int reg = uhd::clip(boost::math::iround((bandwidth-7.0e6)/1.0e6), 0, 11);
 
     switch(reg){
     case 0: // bandwidth < 7.5MHz

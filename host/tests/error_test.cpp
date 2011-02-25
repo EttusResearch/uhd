@@ -37,9 +37,9 @@ BOOST_AUTO_TEST_CASE(test_assert_has){
     vec.push_back(3);
     vec.push_back(5);
 
-    //verify the std::has utility
-    BOOST_CHECK(std::has(vec, 2));
-    BOOST_CHECK(not std::has(vec, 1));
+    //verify the uhd::has utility
+    BOOST_CHECK(uhd::has(vec, 2));
+    BOOST_CHECK(not uhd::has(vec, 1));
 
     std::cout << "The output of the assert_has error:" << std::endl;
     try{

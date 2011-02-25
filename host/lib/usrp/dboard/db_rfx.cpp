@@ -245,7 +245,7 @@ static double rx_pga0_gain_to_dac_volts(double &gain, double range){
     static const double slope = (max_volts-min_volts)/(range);
 
     //calculate the voltage for the aux dac
-    double dac_volts = std::clip<double>(gain*slope + min_volts, max_volts, min_volts);
+    double dac_volts = uhd::clip<double>(gain*slope + min_volts, max_volts, min_volts);
 
     //the actual gain setting
     gain = (dac_volts - min_volts)/slope;
