@@ -212,6 +212,11 @@ int main(int argc, char *argv[])
 
 	packet_data_length = atoi(argv[1]);
 
+	if (packet_data_length > 1016) {
+		packet_data_length = 1016;
+		printf("Max data length = 1016, clamping.\n");
+	}
+
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
