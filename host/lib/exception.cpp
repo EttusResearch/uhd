@@ -21,18 +21,13 @@
 
 using namespace uhd;
 
-static unsigned make_code(const std::string &name){
-    boost::hash<std::string> string_hash;
-    return unsigned(string_hash(name) & 0xfff);
-};
-
 exception::exception(const std::string &what):
     std::runtime_error(what){/* NOP */}
 
 #define make_exception_impl(name, class, base) \
     class::class(const std::string &what): \
         base(str(boost::format("%s: %s") % name % what)){} \
-    unsigned class::code(void) const{return make_code(#class);}
+    unsigned class::code(void) const{return boost::hash<std::string>()(#class) & 0xfff;}
 
 make_exception_impl("AssertionError",        assertion_error,         exception)
 make_exception_impl("LookupError",           lookup_error,            exception)
