@@ -10,7 +10,7 @@ module packet_generator
 
    reg [31:0] state;
    reg [31:0] seq;
-   wire [31:0] crc_out;
+   reg [31:0] crc_out;
    wire        calc_crc = src_rdy_o & dst_rdy_i & ~(state[31:2] == 30'h3FFF_FFFF);
    
 	
@@ -71,7 +71,13 @@ module packet_generator
 
    wire        clear_crc = eof_o & src_rdy_o & dst_rdy_i;
    
-   crc crc(.clk(clk), .reset(reset), .clear(clear_crc), .data(data_o), 
-	   .calc(calc_crc), .crc_out(crc_out), .match());
+//   crc crc(.clk(clk), .reset(reset), .clear(clear_crc), .data(data_o), 
+//	   .calc(calc_crc), .crc_out(crc_out), .match());
+   always @(posedge clk)
+     if(reset | clear | clear_crc)
+       crc_out <= 0;
+     else
+       if(calc_crc)
+	 crc_out <= crc_out + data_o;
    
 endmodule // packet_generator
