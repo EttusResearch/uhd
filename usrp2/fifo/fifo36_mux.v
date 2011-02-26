@@ -15,12 +15,12 @@ module fifo36_mux
    
    fifo_short #(.WIDTH(36)) mux_fifo_in0
      (.clk(clk), .reset(reset), .clear(clear),
-      .datain(data0_i), .src_rdy_i(src0_rdy_i), .dst_rdy_o(dst0_rdy_i),
+      .datain(data0_i), .src_rdy_i(src0_rdy_i), .dst_rdy_o(dst0_rdy_o),
       .dataout(data0_int), .src_rdy_o(src0_rdy_int), .dst_rdy_i(dst0_rdy_int));
 
    fifo_short #(.WIDTH(36)) mux_fifo_in1
      (.clk(clk), .reset(reset), .clear(clear),
-      .datain(data1_i), .src_rdy_i(src1_rdy_i), .dst_rdy_o(dst1_rdy_i),
+      .datain(data1_i), .src_rdy_i(src1_rdy_i), .dst_rdy_o(dst1_rdy_o),
       .dataout(data1_int), .src_rdy_o(src1_rdy_int), .dst_rdy_i(dst1_rdy_int));
 
    localparam MUX_IDLE0 = 0;
