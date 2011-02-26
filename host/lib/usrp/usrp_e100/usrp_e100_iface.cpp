@@ -110,7 +110,7 @@ public:
         }
 
         //very first thing, reset all the wishbone, always do first!
-        this->poke32(UE_REG_CLEAR_GLOBAL, 0);
+        //disabled for now: this->poke32(UE_REG_CLEAR_GLOBAL, 0);
 
         mb_eeprom = mboard_eeprom_t(get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
     }
