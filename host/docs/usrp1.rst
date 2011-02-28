@@ -130,7 +130,7 @@ External clock modification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The USRP can be modified to accept an external clock reference instead of the 64MHz onboard reference.
  * Solder SMA (LTI-SASF54GT) connector to J2001
- * Move 0 ohm 0603 resistor R2029 to R2930
+ * Move 0 ohm 0603 resistor R2029 to R2030
  * Move 0.01uF 0603 capacitor C925 to C926
  * Remove 0.01uF 0603 capacitor C924
 
