@@ -24,6 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/cstdint.hpp>
+#include <uhd/usrp/mboard_iface.hpp>
 
 ////////////////////////////////////////////////////////////////////////
 // I2C addresses
@@ -39,7 +40,7 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp_e100_iface : boost::noncopyable, public uhd::i2c_iface{
+class usrp_e100_iface : boost::noncopyable, public uhd::usrp::mboard_iface{
 public:
     typedef boost::shared_ptr<usrp_e100_iface> sptr;
 
@@ -66,54 +67,6 @@ public:
 
     //! Get the I2C interface for the I2C device node
     virtual uhd::i2c_iface &get_i2c_dev_iface(void) = 0;
-
-    /*!
-     * Write a register (32 bits)
-     * \param addr the address
-     * \param data the 32bit data
-     */
-    virtual void poke32(boost::uint32_t addr, boost::uint32_t data) = 0;
-
-    /*!
-     * Read a register (32 bits)
-     * \param addr the address
-     * \return the 32bit data
-     */
-    virtual boost::uint32_t peek32(boost::uint32_t addr) = 0;
-
-    /*!
-     * Write a register (16 bits)
-     * \param addr the address
-     * \param data the 16bit data
-     */
-    virtual void poke16(boost::uint32_t addr, boost::uint16_t data) = 0;
-
-    /*!
-     * Read a register (16 bits)
-     * \param addr the address
-     * \return the 16bit data
-     */
-    virtual boost::uint16_t peek16(boost::uint32_t addr) = 0;
-
-    /*!
-     * Perform an spi transaction.
-     * \param which_slave the slave device number
-     * \param config spi config args
-     * \param data the bits to write
-     * \param num_bits how many bits in data
-     * \param readback true to readback a value
-     * \return spi data if readback set
-     */
-    virtual boost::uint32_t transact_spi(
-        int which_slave,
-        const uhd::spi_config_t &config,
-        boost::uint32_t data,
-        size_t num_bits,
-        bool readback
-    ) = 0;
-
-    //motherboard eeprom map structure
-    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP_E100_IFACE_HPP */

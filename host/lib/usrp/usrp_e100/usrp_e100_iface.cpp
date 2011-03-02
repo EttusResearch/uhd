@@ -257,6 +257,14 @@ public:
         //unload the data
         return data.data;
     }
+    
+    void write_uart(boost::uint8_t dev, const std::string &buf) {
+        throw std::runtime_error("Unhandled command write_uart()");
+    }
+    
+    std::string read_uart(boost::uint8_t dev) {
+        throw std::runtime_error("Unhandled command read_uart()");
+    }
 
 private:
     int _node_fd;
