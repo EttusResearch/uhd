@@ -27,7 +27,6 @@
 #include <boost/function.hpp>
 #include <utility>
 #include <string>
-#include "fw_common.h"
 #include "usrp2_regs.hpp"
 
 
@@ -50,13 +49,6 @@ public:
      * \return a new usrp2 interface object
      */
     static sptr make(uhd::transport::udp_simple::sptr ctrl_transport);
-
-    /*!
-     * Perform a control transaction.
-     * \param data a control data struct
-     * \return the result control data
-     */
-    virtual usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &data) = 0;
 
     /*!
      * Write a register (32 bits)

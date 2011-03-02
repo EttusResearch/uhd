@@ -16,6 +16,7 @@
 //
 
 #include "usrp2_regs.hpp"
+#include "fw_common.h"
 #include "usrp2_iface.hpp"
 #include <uhd/utils/exception.hpp>
 #include <uhd/utils/assert.hpp>

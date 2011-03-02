@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include "fw_common.h"
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/subdev_props.hpp>

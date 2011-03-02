@@ -16,6 +16,7 @@
 //
 
 #include "usrp2_impl.hpp"
+#include "fw_common.h"
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/device_props.hpp>
