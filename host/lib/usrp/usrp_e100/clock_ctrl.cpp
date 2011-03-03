@@ -409,10 +409,10 @@ private:
     void send_reg(boost::uint16_t addr){
         boost::uint32_t reg = _ad9522_regs.get_write_reg(addr);
         //std::cout << "clock control write reg: " << std::hex << reg << std::endl;
-        _iface->transact_spi(
+        _iface->write_spi(
             UE_SPI_SS_AD9522,
             spi_config_t::EDGE_RISE,
-            reg, 24, false /*no rb*/
+            reg, 24
         );
     }
 
@@ -427,9 +427,9 @@ private:
         //wait for calibration done:
         static const boost::uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
-            boost::uint32_t reg = _iface->transact_spi(
+            boost::uint32_t reg = _iface->read_spi(
                 UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
-                _ad9522_regs.get_read_reg(addr), 24, true /*rb*/
+                _ad9522_regs.get_read_reg(addr), 24
             );
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.vco_calibration_finished) return;

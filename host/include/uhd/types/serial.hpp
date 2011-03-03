@@ -116,6 +116,65 @@ namespace uhd{
          */
         spi_config_t(edge_t edge = EDGE_RISE);
     };
+    
+    /*!
+     * The SPI interface class.
+     * Provides routines to transact SPI and do other useful things which haven't been defined yet.
+     */
+    class UHD_API spi_iface{
+    public:
+        /*!
+        * Perform a spi transaction.
+        * \param which_slave the slave device number
+        * \param config spi config args
+        * \param data the bits to write
+        * \param num_bits how many bits in data
+        * \param readback true to readback a value
+        * \return spi data if readback set
+        */
+        virtual boost::uint32_t transact_spi(
+            int which_slave,
+            const uhd::spi_config_t &config,
+            boost::uint32_t data,
+            size_t num_bits,
+            bool readback
+        ) = 0;
+        
+        /*!
+        * Read from the SPI bus.
+        * \param which_slave the slave device number
+        * \param config spi config args
+        * \param data the bits to write out (be sure to set write bit) 
+        * \param num_bits how many bits in data
+        * \return spi data
+        */
+        boost::uint32_t read_spi(
+            int which_slave,
+            const uhd::spi_config_t &config,
+            boost::uint16_t data,
+            size_t num_bits) {
+                return transact_spi(
+                    which_slave, config, data, num_bits, true
+                );
+        }
+        
+        /*!
+        * Write to the SPI bus.
+        * \param which_slave the slave device number
+        * \param config spi config args
+        * \param data the bits to write
+        * \param num_bits how many bits in data
+        */
+        void write_spi(
+            int which_slave,
+            const uhd::spi_config_t &config,
+            boost::uint16_t data,
+            size_t num_bits) {
+                transact_spi(
+                    which_slave, config, data, num_bits, false
+                );
+        }
+    };
 
 } //namespace uhd
 

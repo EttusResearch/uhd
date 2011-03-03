@@ -244,7 +244,7 @@ void usrp_e100_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
+    _iface->write_spi(unit_to_otw_spi_dev(unit), config, data, num_bits);
 }
 
 boost::uint32_t usrp_e100_dboard_iface::read_write_spi(
@@ -253,7 +253,7 @@ boost::uint32_t usrp_e100_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
+    return _iface->read_spi(unit_to_otw_spi_dev(unit), config, data, num_bits);
 }
 
 /***********************************************************************

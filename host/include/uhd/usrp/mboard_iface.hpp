@@ -33,8 +33,9 @@ namespace uhd{ namespace usrp{
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class mboard_iface : public uhd::i2c_iface {
+class mboard_iface : public uhd::i2c_iface, public uhd::spi_iface {
 public:
+    typedef boost::shared_ptr<mboard_iface> sptr;
     /*!
      * Write a register (32 bits)
      * \param addr the address
@@ -62,23 +63,6 @@ public:
      * \return the 16bit data
      */
     virtual boost::uint16_t peek16(boost::uint32_t addr) = 0;
-
-    /*!
-     * Perform an spi transaction.
-     * \param which_slave the slave device number
-     * \param config spi config args
-     * \param data the bits to write
-     * \param num_bits how many bits in data
-     * \param readback true to readback a value
-     * \return spi data if readback set
-     */
-    virtual boost::uint32_t transact_spi(
-        int which_slave,
-        const uhd::spi_config_t &config,
-        boost::uint32_t data,
-        size_t num_bits,
-        bool readback
-    ) = 0;
 
     /*!
      * Write to a serial port.

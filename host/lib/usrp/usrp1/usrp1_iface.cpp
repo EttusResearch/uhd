@@ -95,20 +95,20 @@ public:
     }
     
     void poke16(boost::uint32_t addr, boost::uint16_t value) {
-        throw std::runtime_error("Unhandled command poke16()");
+        throw uhd::not_implemented_error("Unhandled command poke16()");
     }
     
     boost::uint16_t peek16(boost::uint32_t addr) {
-        throw std::runtime_error("Unhandled command peek16()");
+        throw uhd::not_implemented_error("Unhandled command peek16()");
         return 0;
     }
     
     void write_uart(boost::uint8_t dev, const std::string &buf) {
-        throw std::runtime_error("Unhandled command write_uart()");
+        throw uhd::not_implemented_error("Unhandled command write_uart()");
     }
     
     std::string read_uart(boost::uint8_t dev) {
-        throw std::runtime_error("Unhandled command read_uart()");
+        throw uhd::not_implemented_error("Unhandled command read_uart()");
     }
 
     /*******************************************************************
