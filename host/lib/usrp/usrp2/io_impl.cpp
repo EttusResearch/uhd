@@ -83,10 +83,10 @@ public:
      * \return false on timeout
      */
     UHD_INLINE bool check_fc_condition(seq_type seq, double timeout){
-        boost::this_thread::disable_interruption di; //disable because the wait can throw
         boost::unique_lock<boost::mutex> lock(_fc_mutex);
         _last_seq_out = seq;
         if (this->ready()) return true;
+        boost::this_thread::disable_interruption di; //disable because the wait can throw
         return _fc_cond.timed_wait(lock, to_time_dur(timeout), _ready_fcn);
     }
 

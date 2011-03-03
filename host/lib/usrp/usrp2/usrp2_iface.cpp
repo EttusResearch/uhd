@@ -16,6 +16,7 @@
 //
 
 #include "usrp2_regs.hpp"
+#include "fw_common.h"
 #include "usrp2_iface.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>

@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include "fw_common.h"
 #include <uhd/exception.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/misc_utils.hpp>

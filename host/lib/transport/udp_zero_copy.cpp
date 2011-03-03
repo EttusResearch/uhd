@@ -196,6 +196,8 @@ public:
             if (wait_for_recv_ready(_sock_fd, timeout)) return mrb->get_new(
                 ::recv(_sock_fd, mrb->cast<char *>(), _recv_frame_size, 0)
             );
+
+            this->handle_recv(mrb); //timeout: return the managed buffer to the queue
         }
         return managed_recv_buffer::sptr();
     }
