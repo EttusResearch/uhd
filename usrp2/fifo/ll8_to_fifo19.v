@@ -2,10 +2,10 @@
 module ll8_to_fifo19
   (input clk, input reset, input clear,
    input [7:0] ll_data,
-   input ll_sof_n,
-   input ll_eof_n,
-   input ll_src_rdy_n,
-   output ll_dst_rdy_n,
+   input ll_sof,
+   input ll_eof,
+   input ll_src_rdy,
+   output ll_dst_rdy,
 
    output [18:0] f19_data,
    output f19_src_rdy_o,
@@ -18,13 +18,11 @@ module ll8_to_fifo19
    
    ll8_shortfifo head_fifo
      (.clk(clk), .reset(reset), .clear(clear),
-      .datain(ll_data), .sof_i(~ll_sof_n), .eof_i(~ll_eof_n),
-      .error_i(0), .src_rdy_i(~ll_src_rdy_n), .dst_rdy_o(ll_dst_rdy),
+      .datain(ll_data), .sof_i(ll_sof), .eof_i(ll_eof),
+      .error_i(0), .src_rdy_i(ll_src_rdy), .dst_rdy_o(ll_dst_rdy),
       .dataout(ll_data_int), .sof_o(ll_sof_int), .eof_o(ll_eof_int),
       .error_o(), .src_rdy_o(ll_src_rdy_int), .dst_rdy_i(ll_dst_rdy_int));
 
-   assign ll_dst_rdy_n = ~ll_dst_rdy;
-   
    // Actual ll8_to_fifo19 which could deadlock if not connected to a shortfifo
    localparam XFER_EMPTY       = 0;
    localparam XFER_HALF        = 1;

@@ -68,11 +68,7 @@ module simple_gemac_wrapper19
 
    // RX FIFO Chain
    wire 	  rx_ll_sof, rx_ll_eof, rx_ll_src_rdy, rx_ll_dst_rdy;
-   
-   wire 	  rx_ll_sof2, rx_ll_eof2, rx_ll_src_rdy2, rx_ll_dst_rdy2;
-   wire 	  rx_ll_sof2_n, rx_ll_eof2_n, rx_ll_src_rdy2_n, rx_ll_dst_rdy2_n;
-   
-   wire [7:0] 	  rx_ll_data, rx_ll_data2;
+   wire [7:0] 	  rx_ll_data;
    
    wire [18:0] 	  rx_f19_data_int1;
    wire 	  rx_f19_src_rdy_int1, rx_f19_dst_rdy_int1;
@@ -83,22 +79,10 @@ module simple_gemac_wrapper19
       .ll_data(rx_ll_data), .ll_sof(rx_ll_sof), .ll_eof(rx_ll_eof), .ll_error(),  // error also encoded in sof/eof
       .ll_src_rdy(rx_ll_src_rdy), .ll_dst_rdy(rx_ll_dst_rdy));
 
-   ll8_shortfifo rx_sfifo
-     (.clk(rx_clk), .reset(rx_reset), .clear(0),
-      .datain(rx_ll_data), .sof_i(rx_ll_sof), .eof_i(rx_ll_eof),
-      .error_i(0), .src_rdy_i(rx_ll_src_rdy), .dst_rdy_o(rx_ll_dst_rdy),
-      .dataout(rx_ll_data2), .sof_o(rx_ll_sof2), .eof_o(rx_ll_eof2),
-      .error_o(), .src_rdy_o(rx_ll_src_rdy2), .dst_rdy_i(rx_ll_dst_rdy2));
-
-   assign rx_ll_dst_rdy2  = ~rx_ll_dst_rdy2_n;
-   assign rx_ll_src_rdy2_n = ~rx_ll_src_rdy2;
-   assign rx_ll_sof2_n 	  = ~rx_ll_sof2;
-   assign rx_ll_eof2_n 	  = ~rx_ll_eof2;
-   
    ll8_to_fifo19 ll8_to_fifo19
      (.clk(rx_clk), .reset(rx_reset), .clear(0),
-      .ll_data(rx_ll_data2), .ll_sof_n(rx_ll_sof2_n), .ll_eof_n(rx_ll_eof2_n),
-      .ll_src_rdy_n(rx_ll_src_rdy2_n), .ll_dst_rdy_n(rx_ll_dst_rdy2_n),
+      .ll_data(rx_ll_data), .ll_sof(rx_ll_sof), .ll_eof(rx_ll_eof),
+      .ll_src_rdy(rx_ll_src_rdy), .ll_dst_rdy(rx_ll_dst_rdy),
       .f19_data(rx_f19_data_int1), .f19_src_rdy_o(rx_f19_src_rdy_int1), .f19_dst_rdy_i(rx_f19_dst_rdy_int1));
 
    //fifo_2clock_cascade #(.WIDTH(19), .SIZE(RXFIFOSIZE)) rx_2clk_fifo
@@ -160,8 +144,7 @@ module simple_gemac_wrapper19
 			{ tx_valid, tx_error, tx_ack, tx_f19_src_rdy_int1, tx_f19_dst_rdy_int1, tx_f19_data_int1[18:16]},
 			{ tx_data} };
    assign debug_rx  = { { rx_f19_src_rdy, rx_f19_dst_rdy, debug_state[5:0] },
-			{ rx_ll_sof, rx_ll_eof, rx_ll_src_rdy, rx_ll_dst_rdy, 
-			  rx_ll_sof2, rx_ll_eof2, rx_ll_src_rdy2, rx_ll_dst_rdy2 },
+			{ rx_ll_sof, rx_ll_eof, rx_ll_src_rdy, rx_ll_dst_rdy, 4'b0 },
 			{ rx_valid, rx_error, rx_ack, rx_f19_src_rdy_int1, rx_f19_dst_rdy_int1, rx_f19_data_int1[18:16]},
 			{ rx_data} };
 
