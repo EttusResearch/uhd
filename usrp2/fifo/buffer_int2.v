@@ -32,12 +32,13 @@ module buffer_int2
      );
 
    reg [BUF_SIZE-1:0] rd_addr, wr_addr;
+   wire [BUF_SIZE-1:0] rd_addr_next = rd_addr + 1;
    wire [31:0] 	      ctrl;
    wire 	      wr_done, wr_error, wr_idle;
    wire 	      rd_done, rd_error, rd_idle;
    wire 	      we, en, go;
 
-   reg [BUF_SIZE-1:0] lastline;
+   reg [BUF_SIZE-1:0] rd_length;
    wire 	      read = ctrl[3];
    wire 	      rd_clear = ctrl[2];
    wire 	      write = ctrl[1];
@@ -72,13 +73,13 @@ module buffer_int2
 	     begin
 		rd_addr <= 0;
 		rd_state <= PRE_READ;
-		lastline <= ctrl[15+BUF_SIZE:16];
+		rd_length <= ctrl[15+BUF_SIZE:16];
 	     end
 	 
 	 PRE_READ :
 	   begin
 	      rd_state <= READING;
-	      rd_addr <= rd_addr + 1;
+	      rd_addr <= rd_addr_next;
 	      rd_occ <= 2'b00;
 	      rd_sop <= 1;
 	      rd_eop <= 0;
@@ -88,8 +89,8 @@ module buffer_int2
 	   if(rd_ready_i)
 	     begin
 		rd_sop <= 0;
-		rd_addr <= rd_addr + 1;
-		if(rd_addr == lastline)
+		rd_addr <= rd_addr_next;
+		if(rd_addr_next == rd_length)
 		  begin
 		     rd_eop <= 1;
 		     // FIXME assign occ here
