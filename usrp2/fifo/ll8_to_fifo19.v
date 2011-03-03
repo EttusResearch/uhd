@@ -14,7 +14,6 @@ module ll8_to_fifo19
    // Short FIFO on input to guarantee no deadlock
    wire [7:0] ll_data_int;
    wire       ll_sof_int, ll_eof_int, ll_src_rdy_int, ll_dst_rdy_int;
-   wire       ll_dst_rdy;
    
    ll8_shortfifo head_fifo
      (.clk(clk), .reset(reset), .clear(clear),
