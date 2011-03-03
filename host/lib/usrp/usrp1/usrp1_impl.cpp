@@ -60,20 +60,6 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //since an address is intended for a different, non-USB, device.
     if (hint.has_key("addr")) return usrp1_addrs;
 
-    //extract the firmware path for the USRP1
-    std::string usrp1_fw_image;
-    try{
-        usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
-    }
-    catch(...){
-        uhd::warning::post(
-            "Could not locate USRP1 firmware.\n"
-            "Please install the images package.\n"
-        );
-        return usrp1_addrs;
-    }
-    //std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
-
     boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : USRP1_VENDOR_ID;
     boost::uint16_t pid = hint.has_key("uninit") ? FX2_PRODUCT_ID : USRP1_PRODUCT_ID;
 
@@ -85,6 +71,20 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
 
     //find the usrps and load firmware
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+        //extract the firmware path for the USRP1
+        std::string usrp1_fw_image;
+        try{
+            usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
+        }
+        catch(...){
+            uhd::warning::post(
+                "Could not locate USRP1 firmware.\n"
+                "Please install the images package.\n"
+            );
+            return usrp1_addrs;
+        }
+        //std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
+
         usrp_ctrl::make(usb_control::make(handle))->usrp_load_firmware(usrp1_fw_image);
     }
 
