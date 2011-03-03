@@ -25,8 +25,8 @@ using namespace uhd;
 sensor_value_t::sensor_value_t(
     const std::string &name,
     bool value,
-    const std::string &ufalse,
-    const std::string &utrue
+    const std::string &utrue,
+    const std::string &ufalse
 ):
     name(name), value(value?"true":"false"),
     unit(value?utrue:ufalse), type(BOOLEAN)
