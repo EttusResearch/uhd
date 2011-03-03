@@ -453,18 +453,10 @@ module u2_core
    wire [35:0] 	 rx_f36_data, tx_f36_data;
    wire 	 rx_f36_src_rdy, rx_f36_dst_rdy, tx_f36_src_rdy, tx_f36_dst_rdy;
 
-   wire [18:0] 	 _rx_f19_data;
-   wire 	 _rx_f19_src_rdy, _rx_f19_dst_rdy;
-
    //mac rx to eth input...
-   fifo19_rxrealign fifo19_rxrealign
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(rx_f19_data), .src_rdy_i(rx_f19_src_rdy), .dst_rdy_o(rx_f19_dst_rdy),
-      .dataout(_rx_f19_data), .src_rdy_o(_rx_f19_src_rdy), .dst_rdy_i(_rx_f19_dst_rdy) );
-
    fifo19_to_fifo36 eth_inp_fifo19_to_fifo36
      (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .f19_datain(_rx_f19_data),  .f19_src_rdy_i(_rx_f19_src_rdy), .f19_dst_rdy_o(_rx_f19_dst_rdy),
+      .f19_datain(rx_f19_data),  .f19_src_rdy_i(rx_f19_src_rdy), .f19_dst_rdy_o(rx_f19_dst_rdy),
       .f36_dataout(rx_f36_data), .f36_src_rdy_o(rx_f36_src_rdy), .f36_dst_rdy_i(rx_f36_dst_rdy) );
 
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
