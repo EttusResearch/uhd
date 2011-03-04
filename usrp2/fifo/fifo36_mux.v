@@ -10,6 +10,19 @@ module fifo36_mux
     input [35:0] data1_i, input src1_rdy_i, output dst1_rdy_o,
     output [35:0] data_o, output src_rdy_o, input dst_rdy_i);
 
+   wire [35:0] 	  data0_int, data1_int;
+   wire 	  src0_rdy_int, dst0_rdy_int, src1_rdy_int, dst1_rdy_int;
+   
+   fifo_short #(.WIDTH(36)) mux_fifo_in0
+     (.clk(clk), .reset(reset), .clear(clear),
+      .datain(data0_i), .src_rdy_i(src0_rdy_i), .dst_rdy_o(dst0_rdy_o),
+      .dataout(data0_int), .src_rdy_o(src0_rdy_int), .dst_rdy_i(dst0_rdy_int));
+
+   fifo_short #(.WIDTH(36)) mux_fifo_in1
+     (.clk(clk), .reset(reset), .clear(clear),
+      .datain(data1_i), .src_rdy_i(src1_rdy_i), .dst_rdy_o(dst1_rdy_o),
+      .dataout(data1_int), .src_rdy_o(src1_rdy_int), .dst_rdy_i(dst1_rdy_int));
+
    localparam MUX_IDLE0 = 0;
    localparam MUX_DATA0 = 1;
    localparam MUX_IDLE1 = 2;
@@ -17,8 +30,8 @@ module fifo36_mux
    
    reg [1:0] 	  state;
 
-   wire 	  eof0 = data0_i[33];
-   wire 	  eof1 = data1_i[33];
+   wire 	  eof0 = data0_int[33];
+   wire 	  eof1 = data1_int[33];
    
    wire [35:0] 	  data_int;
    wire 	  src_rdy_int, dst_rdy_int;
@@ -29,33 +42,33 @@ module fifo36_mux
      else
        case(state)
 	 MUX_IDLE0 :
-	   if(src0_rdy_i)
+	   if(src0_rdy_int)
 	     state <= MUX_DATA0;
-	   else if(src1_rdy_i)
+	   else if(src1_rdy_int)
 	     state <= MUX_DATA1;
 
 	 MUX_DATA0 :
-	   if(src0_rdy_i & dst_rdy_int & eof0)
+	   if(src0_rdy_int & dst_rdy_int & eof0)
 	     state <= prio ? MUX_IDLE0 : MUX_IDLE1;
 
 	 MUX_IDLE1 :
-	   if(src1_rdy_i)
+	   if(src1_rdy_int)
 	     state <= MUX_DATA1;
-	   else if(src0_rdy_i)
+	   else if(src0_rdy_int)
 	     state <= MUX_DATA0;
 	   
 	 MUX_DATA1 :
-	   if(src1_rdy_i & dst_rdy_int & eof1)
+	   if(src1_rdy_int & dst_rdy_int & eof1)
 	     state <= MUX_IDLE0;
 	 
 	 default :
 	   state <= MUX_IDLE0;
        endcase // case (state)
 
-   assign dst0_rdy_o = (state==MUX_DATA0) ? dst_rdy_int : 0;
-   assign dst1_rdy_o = (state==MUX_DATA1) ? dst_rdy_int : 0;
-   assign src_rdy_int = (state==MUX_DATA0) ? src0_rdy_i : (state==MUX_DATA1) ? src1_rdy_i : 0;
-   assign data_int = (state==MUX_DATA0) ? data0_i : data1_i;
+   assign dst0_rdy_int = (state==MUX_DATA0) ? dst_rdy_int : 0;
+   assign dst1_rdy_int = (state==MUX_DATA1) ? dst_rdy_int : 0;
+   assign src_rdy_int = (state==MUX_DATA0) ? src0_rdy_int : (state==MUX_DATA1) ? src1_rdy_int : 0;
+   assign data_int = (state==MUX_DATA0) ? data0_int : data1_int;
    
    fifo_short #(.WIDTH(36)) mux_fifo
      (.clk(clk), .reset(reset), .clear(clear),

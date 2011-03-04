@@ -1,9 +1,5 @@
 
 
-//`define LOOPBACK 1
-//`define TIMED 1
-`define DSP 1
-
 module u1e_core
   (input clk_fpga, input rst_fpga,
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
@@ -48,13 +44,18 @@ module u1e_core
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
+   wire [7:0] 	test_rate;
+   wire [3:0] 	test_ctrl;
    
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
    wire 	set_stb;
 
    wire [31:0] 	debug_vt;
-
+   wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
+   assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp;
+   assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
+   
    setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(global_reset));
@@ -79,7 +80,6 @@ module u1e_core
 		 tx_err_src_rdy, tx_err_dst_rdy;
    reg [15:0] 	 tx_frame_len;
    wire [15:0] 	 rx_frame_len;
-   wire [7:0] 	 rate;
 
    wire 	 bus_error;
    wire 	 clear_tx, clear_rx;
@@ -111,61 +111,14 @@ module u1e_core
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 
 	 .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
+	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
+
+	 .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug(debug_gpmc));
 
    wire 	 rx_sof = rx_data[32];
    wire 	 rx_eof = rx_data[33];
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
-   
-`ifdef LOOPBACK
-   wire [7:0] 	 WHOAMI = 1;
-   
-   fifo_cascade #(.WIDTH(36), .SIZE(12)) loopback_fifo
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx | clear_rx),
-      .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-
-   assign tx_underrun = 0;
-   assign rx_overrun = 0;
-
-   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
-`endif // LOOPBACK
-
-`ifdef TIMED
-   wire [7:0] 	 WHOAMI = 2;
-   
-   // TX side
-   wire 	 tx_enable;
-   
-   fifo_pacer tx_pacer
-     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(tx_enable),
-      .src1_rdy_i(tx_src_rdy), .dst1_rdy_o(tx_dst_rdy),
-      .src2_rdy_o(tx_src_rdy_int), .dst2_rdy_i(tx_dst_rdy_int),
-      .underrun(tx_underrun), .overrun());
-   
-   packet_verifier32 pktver32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int),
-      .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
-
-   // RX side
-   wire 	 rx_enable;
-
-   packet_generator32 pktgen32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
-      .data_o(rx_data), .src_rdy_o(rx_src_rdy_int), .dst_rdy_i(rx_dst_rdy_int));
-
-   fifo_pacer rx_pacer
-     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(rx_enable),
-      .src1_rdy_i(rx_src_rdy_int), .dst1_rdy_o(rx_dst_rdy_int),
-      .src2_rdy_o(rx_src_rdy), .dst2_rdy_i(rx_dst_rdy),
-      .underrun(), .overrun(rx_overrun));
-
-   wire 	 run_tx, run_rx, strobe_tx, strobe_rx;
-`endif //  `ifdef TIMED
-
-`ifdef DSP
-   wire [7:0] 	 WHOAMI = 0;
    
    wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
    
@@ -189,7 +142,7 @@ module u1e_core
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(rx_overrun),
+      .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
       .debug_rx(vrc_debug));
@@ -225,29 +178,12 @@ module u1e_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .underrun(underrun), .run(run_tx),
+      .underrun(tx_underrun_dsp), .run(run_tx),
       .debug(debug_vt));
    
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
    
-`else // !`ifdef DSP
-   // Dummy DSP signal generator for test purposes
-   wire [23:0] 	 tx_i_int, tx_q_int;
-   wire [23:0] 	 freq = {reg_test,8'd0};
-   reg [23:0] 	 phase;
-   
-   always @(posedge wb_clk)
-     phase <= phase + freq;
-   
-   cordic_z24 #(.bitwidth(24)) tx_cordic
-     (.clock(wb_clk), .reset(wb_rst), .enable(1),
-      .xi(24'd2500000), .yi(24'd0), .zi(phase), .xo(tx_i_int), .yo(tx_q_int), .zo());
-
-   assign tx_i = tx_i_int[23:10];
-   assign tx_q = tx_q_int[23:10];
-`endif // !`ifdef DSP
-      
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
@@ -320,7 +256,6 @@ module u1e_core
    // Slave 0, Misc LEDs, Switches, controls
    
    localparam REG_LEDS = 7'd0;         // out
-   localparam REG_SWITCHES = 7'd2;     // in
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
@@ -353,20 +288,18 @@ module u1e_core
 	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
 
-   assign tx_enable = xfer_rate[15];
-   assign rx_enable = xfer_rate[14];
-   assign rate = xfer_rate[7:0];
+   assign test_ctrl = xfer_rate[11:8];
+   assign test_rate = xfer_rate[7:0];
    
    assign { debug_led[3:0] } = ~{run_rx,run_tx,reg_leds[1:0]};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
-			(s0_adr[6:0] == REG_SWITCHES) ? { 16'd0 } :
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
 			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
-			(s0_adr[6:0] == REG_COMPAT) ? { WHOAMI, COMPAT_NUM } :
+			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;
@@ -475,9 +408,13 @@ module u1e_core
 
    assign debug_clk = { EM_CLK, clk_fpga };
 
+/*
    assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS5, EM_NCS4, EM_NWE, EM_NOE, rx_overrun },
 		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
 		    { EM_D } };
+
+*/
+   assign debug = debug_gpmc;
 
    assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
 			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };

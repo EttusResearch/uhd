@@ -1,7 +1,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module gpmc_async
-  #(parameter TXFIFOSIZE = 11, parameter RXFIFOSIZE = 11)
+  #(parameter TXFIFOSIZE = 11, 
+    parameter RXFIFOSIZE = 11,
+    parameter BUSDEBUG = 1)
    (// GPMC signals
     input arst,
     input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
@@ -21,7 +23,9 @@ module gpmc_async
     input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
     
     input [15:0] tx_frame_len, output [15:0] rx_frame_len,
-    
+
+    output tx_underrun, output rx_overrun,
+    input [7:0] test_rate, input [3:0] test_ctrl,
     output [31:0] debug
     );
 
@@ -49,8 +53,8 @@ module gpmc_async
    wire [17:0] 	  tx18_data, tx18b_data;
    wire 	  tx18_src_rdy, tx18_dst_rdy, tx18b_src_rdy, tx18b_dst_rdy;
    wire [15:0] 	  tx_fifo_space;
-   wire [35:0] 	  tx36_data;
-   wire 	  tx36_src_rdy, tx36_dst_rdy;
+   wire [35:0] 	  tx36_data, tx_data;
+   wire 	  tx36_src_rdy, tx36_dst_rdy, tx_src_rdy, tx_dst_rdy;
    
    gpmc_to_fifo_async gpmc_to_fifo_async
      (.EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
@@ -70,9 +74,9 @@ module gpmc_async
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
    
    fifo_cascade #(.WIDTH(36), .SIZE(TXFIFOSIZE)) tx_fifo36
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_tx),
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
       .datain(tx36_data), .src_rdy_i(tx36_src_rdy), .dst_rdy_o(tx36_dst_rdy),
-      .dataout(tx_data_o), .src_rdy_o(tx_src_rdy_o), .dst_rdy_i(tx_dst_rdy_i));
+      .dataout(tx_data), .src_rdy_o(tx_src_rdy), .dst_rdy_i(tx_dst_rdy));
 
    // ////////////////////////////////////////////
    // RX Data Path
@@ -80,13 +84,13 @@ module gpmc_async
    wire [17:0] 	  rx18_data, rx18b_data;
    wire 	  rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy;
    wire [15:0] 	  rx_fifo_space;
-   wire [35:0] 	  rx36_data;
-   wire 	  rx36_src_rdy, rx36_dst_rdy;
+   wire [35:0] 	  rx36_data, rx_data;
+   wire 	  rx36_src_rdy, rx36_dst_rdy, rx_src_rdy, rx_dst_rdy;
    wire 	  dummy;
    
    fifo_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_fifo36
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
-      .datain(rx_data_i), .src_rdy_i(rx_src_rdy_i), .dst_rdy_o(rx_dst_rdy_o),
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .datain(rx_data), .src_rdy_i(rx_src_rdy), .dst_rdy_o(rx_dst_rdy),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
 
    fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // Little endian because ARM is LE
@@ -125,6 +129,100 @@ module gpmc_async
       .wb_sel_o(wb_sel_o), .wb_cyc_o(wb_cyc_o), .wb_stb_o(wb_stb_o), .wb_we_o(wb_we_o),
       .wb_ack_i(wb_ack_i) );
    
-      assign debug = pkt_count;
+//      assign debug = pkt_count;
+
+   // ////////////////////////////////////////////
+   // Test support, traffic generator, loopback, etc.
+
+   // RX side muxes test data into the same stream
+   wire [35:0] 	timedrx_data, loopbackrx_data, testrx_data;
+   wire [35:0] 	timedtx_data, loopbacktx_data, testtx_data;
+   wire 	timedrx_src_rdy, timedrx_dst_rdy, loopbackrx_src_rdy, loopbackrx_dst_rdy,
+		testrx_src_rdy, testrx_dst_rdy;
+   wire 	timedtx_src_rdy, timedtx_dst_rdy, loopbacktx_src_rdy, loopbacktx_dst_rdy,
+		testtx_src_rdy, testtx_dst_rdy;
+   wire 	timedrx_src_rdy_int, timedrx_dst_rdy_int, timedtx_src_rdy_int, timedtx_dst_rdy_int;
+
+   wire [31:0] 	total, crc_err, seq_err, len_err;
+   wire 	sel_testtx = test_ctrl[0];
+   wire 	sel_loopbacktx = test_ctrl[1];
+   wire 	pkt_src_enable = test_ctrl[2];
+   wire 	pkt_sink_enable = test_ctrl[3];
    
+   fifo36_mux rx_test_mux_lvl_1
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .data0_i(timedrx_data), .src0_rdy_i(timedrx_src_rdy), .dst0_rdy_o(timedrx_dst_rdy),
+      .data1_i(loopbackrx_data), .src1_rdy_i(loopbackrx_src_rdy), .dst1_rdy_o(loopbackrx_dst_rdy),
+      .data_o(testrx_data), .src_rdy_o(testrx_src_rdy), .dst_rdy_i(testrx_dst_rdy));
+   
+   fifo36_mux rx_test_mux_lvl_2
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .data0_i(testrx_data), .src0_rdy_i(testrx_src_rdy), .dst0_rdy_o(testrx_dst_rdy),
+      .data1_i(rx_data_i), .src1_rdy_i(rx_src_rdy_i), .dst1_rdy_o(rx_dst_rdy_o),
+      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+   
+   fifo_short #(.WIDTH(36)) loopback_fifo
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx | clear_rx),
+      .datain(loopbacktx_data), .src_rdy_i(loopbacktx_src_rdy), .dst_rdy_o(loopbacktx_dst_rdy),
+      .dataout(loopbackrx_data), .src_rdy_o(loopbackrx_src_rdy), .dst_rdy_i(loopbackrx_dst_rdy));
+   
+   // Crossbar used as a demux for switching TX stream to main DSP or to test logic
+   crossbar36 tx_crossbar_lvl_1
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
+      .cross(sel_testtx),
+      .data0_i(tx_data), .src0_rdy_i(tx_src_rdy), .dst0_rdy_o(tx_dst_rdy),
+      .data1_i(tx_data), .src1_rdy_i(1'b0), .dst1_rdy_o(),  // No 2nd input
+      .data0_o(tx_data_o), .src0_rdy_o(tx_src_rdy_o), .dst0_rdy_i(tx_dst_rdy_i),
+      .data1_o(testtx_data), .src1_rdy_o(testtx_src_rdy), .dst1_rdy_i(testtx_dst_rdy) );
+   
+   crossbar36 tx_crossbar_lvl_2
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
+      .cross(sel_loopbacktx),
+      .data0_i(testtx_data), .src0_rdy_i(testtx_src_rdy), .dst0_rdy_o(testtx_dst_rdy),
+      .data1_i(testtx_data), .src1_rdy_i(1'b0), .dst1_rdy_o(),  // No 2nd input
+      .data0_o(timedtx_data), .src0_rdy_o(timedtx_src_rdy), .dst0_rdy_i(timedtx_dst_rdy),
+      .data1_o(loopbacktx_data), .src1_rdy_o(loopbacktx_src_rdy), .dst1_rdy_i(loopbacktx_dst_rdy) );
+   
+   // Fixed rate TX traffic consumer
+   fifo_pacer tx_pacer
+     (.clk(fifo_clk), .reset(fifo_rst), .rate(test_rate), .enable(pkt_sink_enable),
+      .src1_rdy_i(timedtx_src_rdy), .dst1_rdy_o(timedtx_dst_rdy),
+      .src2_rdy_o(timedtx_src_rdy_int), .dst2_rdy_i(timedtx_dst_rdy_int),
+      .underrun(tx_underrun), .overrun());
+
+   packet_verifier32 pktver32
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
+      .data_i(timedtx_data), .src_rdy_i(timedtx_src_rdy_int), .dst_rdy_o(timedtx_dst_rdy_int),
+      .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
+
+   // Fixed rate RX traffic generator
+   packet_generator32 pktgen32
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .header({len_err,seq_err,crc_err,total}),
+      .data_o(timedrx_data), .src_rdy_o(timedrx_src_rdy_int), .dst_rdy_i(timedrx_dst_rdy_int));
+
+   fifo_pacer rx_pacer
+     (.clk(fifo_clk), .reset(fifo_rst), .rate(test_rate), .enable(pkt_src_enable),
+      .src1_rdy_i(timedrx_src_rdy_int), .dst1_rdy_o(timedrx_dst_rdy_int),
+      .src2_rdy_o(timedrx_src_rdy), .dst2_rdy_i(timedrx_dst_rdy),
+      .underrun(), .overrun(rx_overrun));
+
+   // FIXME -- hook up crossbar controls
+   // // FIXME -- collect error stats
+   // FIXME -- set rates and enables on pacers
+   // FIXME -- make sure packet completes before we shutoff
+   // FIXME -- handle overrun and underrun
+
+wire [0:17] dummy18;
+
+assign debug = {8'd0,
+		test_rate,
+		pkt_src_enable, pkt_sink_enable, timedrx_src_rdy_int, timedrx_dst_rdy_int,
+		timedrx_src_rdy, timedrx_dst_rdy,
+		testrx_src_rdy, testrx_dst_rdy,
+		rx_src_rdy, rx_dst_rdy,
+		rx36_src_rdy, rx36_dst_rdy,
+		rx18_src_rdy, rx18_dst_rdy,
+		rx18b_src_rdy, rx18b_dst_rdy};
+
 endmodule // gpmc_async
