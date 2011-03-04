@@ -194,21 +194,24 @@ module packet_router
     wire        _combiner0_valid, _combiner1_valid;
     wire        _combiner0_ready, _combiner1_ready;
 
-    fifo36_mux _com_output_combiner0(
+    fifo36_mux #(.prio(0)) // No priority, fair sharing
+     _com_output_combiner0(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(dsp0_frm_data), .src0_rdy_i(dsp0_frm_valid), .dst0_rdy_o(dsp0_frm_ready),
-        .data1_i(err_inp_data), .src1_rdy_i(err_inp_valid), .dst1_rdy_o(err_inp_ready),
+        .data0_i(err_inp_data), .src0_rdy_i(err_inp_valid), .dst0_rdy_o(err_inp_ready),
+        .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
         .data_o(_combiner0_data), .src_rdy_o(_combiner0_valid), .dst_rdy_i(_combiner0_ready)
     );
 
-    fifo36_mux _com_output_combiner1(
+    fifo36_mux #(.prio(0)) // No priority, fair sharing
+     _com_output_combiner1(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(dsp1_frm_data), .src0_rdy_i(dsp1_frm_valid), .dst0_rdy_o(dsp1_frm_ready),
-        .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
+        .data0_i(dsp0_frm_data), .src0_rdy_i(dsp0_frm_valid), .dst0_rdy_o(dsp0_frm_ready),
+        .data1_i(dsp1_frm_data), .src1_rdy_i(dsp1_frm_valid), .dst1_rdy_o(dsp1_frm_ready),
         .data_o(_combiner1_data), .src_rdy_o(_combiner1_valid), .dst_rdy_i(_combiner1_ready)
     );
 
-    fifo36_mux com_output_source(
+    fifo36_mux #(.prio(1)) // Give priority to err/cpu over dsp
+     com_output_source(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .data0_i(_combiner0_data), .src0_rdy_i(_combiner0_valid), .dst0_rdy_o(_combiner0_ready),
         .data1_i(_combiner1_data), .src1_rdy_i(_combiner1_valid), .dst1_rdy_o(_combiner1_ready),
