@@ -106,7 +106,6 @@ module simple_gemac_wrapper
    // TX FIFO Chain
    wire 	  tx_ll_sof, tx_ll_eof, tx_ll_src_rdy, tx_ll_dst_rdy;
    wire 	  tx_ll_sof2, tx_ll_eof2, tx_ll_src_rdy2, tx_ll_dst_rdy2;
-   wire 	  tx_ll_sof2_n, tx_ll_eof2_n, tx_ll_src_rdy2_n, tx_ll_dst_rdy2_n;
    wire [7:0] 	  tx_ll_data, tx_ll_data2;
    wire [35:0] 	  tx_f36_data_int1;
    wire 	  tx_f36_src_rdy_int1, tx_f36_dst_rdy_int1;
@@ -119,14 +118,9 @@ module simple_gemac_wrapper
    fifo36_to_ll8 fifo36_to_ll8
      (.clk(tx_clk), .reset(tx_reset), .clear(clear),
       .f36_data(tx_f36_data_int1), .f36_src_rdy_i(tx_f36_src_rdy_int1), .f36_dst_rdy_o(tx_f36_dst_rdy_int1),
-      .ll_data(tx_ll_data2), .ll_sof_n(tx_ll_sof2_n), .ll_eof_n(tx_ll_eof2_n),
-      .ll_src_rdy_n(tx_ll_src_rdy2_n), .ll_dst_rdy_n(tx_ll_dst_rdy2_n));
+      .ll_data(tx_ll_data2), .ll_sof(tx_ll_sof2), .ll_eof(tx_ll_eof2),
+      .ll_src_rdy(tx_ll_src_rdy2), .ll_dst_rdy(tx_ll_dst_rdy2));
 
-   assign tx_ll_sof2 	    = ~tx_ll_sof2_n;
-   assign tx_ll_eof2 	    = ~tx_ll_eof2_n;
-   assign tx_ll_src_rdy2    = ~tx_ll_src_rdy2_n;
-   assign tx_ll_dst_rdy2_n  = ~tx_ll_dst_rdy2;
-   
    ll8_shortfifo tx_sfifo
      (.clk(tx_clk), .reset(tx_reset), .clear(clear),
       .datain(tx_ll_data2), .sof_i(tx_ll_sof2), .eof_i(tx_ll_eof2),
