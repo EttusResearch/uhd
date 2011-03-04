@@ -13,25 +13,37 @@ module fifo36_to_fifo19
     output [18:0] f19_dataout,
     output f19_src_rdy_o,
     input f19_dst_rdy_i );
+      
+   wire [18:0] f19_data_int;
+   wire        f19_src_rdy_int, f19_dst_rdy_int;
+   wire [35:0] f36_data_int;
+   wire        f36_src_rdy_int, f36_dst_rdy_int;
    
-   wire   f36_sof  = f36_datain[32];
-   wire   f36_eof  = f36_datain[33];
-   wire [1:0] f36_occ  = f36_datain[35:34];
+   // Shortfifo on input to guarantee no deadlock
+   fifo_short #(.WIDTH(36)) head_fifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain(f36_datain), .src_rdy_i(f36_src_rdy_i), .dst_rdy_o(f36_dst_rdy_o),
+      .dataout(f36_data_int), .src_rdy_o(f36_src_rdy_int), .dst_rdy_i(f36_dst_rdy_int),
+      .space(),.occupied() );
+
+   // Main fifo36_to_fifo19, needs shortfifos to guarantee no deadlock
+   wire [1:0]  f36_occ_int  = f36_data_int[35:34];
+   wire        f36_sof_int  = f36_data_int[32];
+   wire        f36_eof_int  = f36_data_int[33];
    
    reg 	  phase;
+   wire   half_line 	   = f36_eof_int & ((f36_occ_int==1)|(f36_occ_int==2));
    
-   wire   half_line 	   = f36_eof & ((f36_occ==1)|(f36_occ==2));
+   assign f19_data_int[15:0] = (LE ^ phase) ? f36_data_int[15:0] : f36_data_int[31:16];
+   assign f19_data_int[16]   = phase ? 0 : f36_sof_int;
+   assign f19_data_int[17]   = phase ? f36_eof_int : half_line;
+   assign f19_data_int[18]   = f19_data_int[17] & ((f36_occ_int==1)|(f36_occ_int==3));
    
-   assign f19_dataout[15:0] = (LE ^ phase) ? f36_datain[15:0] : f36_datain[31:16];
-   assign f19_dataout[16]  = phase ? 0 : f36_sof;
-   assign f19_dataout[17]  = phase ? f36_eof : half_line;
-   assign f19_dataout[18]  = f19_dataout[17] & ((f36_occ==1)|(f36_occ==3));
+   assign f19_src_rdy_int    = f36_src_rdy_int;
+   assign f36_dst_rdy_int    = (phase | half_line) & f19_dst_rdy_int;
    
-   assign f19_src_rdy_o    = f36_src_rdy_i;
-   assign f36_dst_rdy_o    = (phase | half_line) & f19_dst_rdy_i;
-   
-   wire   f19_xfer 	   = f19_src_rdy_o & f19_dst_rdy_i;
-   wire   f36_xfer 	   = f36_src_rdy_i & f36_dst_rdy_o;
+   wire   f19_xfer 	   = f19_src_rdy_int & f19_dst_rdy_int;
+   wire   f36_xfer 	   = f36_src_rdy_int & f36_dst_rdy_int;
    
    always @(posedge clk)
      if(reset)
@@ -41,5 +53,11 @@ module fifo36_to_fifo19
      else if(f19_xfer)
        phase 		  <= 1;
    
-   
+   // Shortfifo on output to guarantee no deadlock
+   fifo_short #(.WIDTH(19)) tail_fifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain(f19_data_int), .src_rdy_i(f19_src_rdy_int), .dst_rdy_o(f19_dst_rdy_int),
+      .dataout(f19_dataout), .src_rdy_o(f19_src_rdy_o), .dst_rdy_i(f19_dst_rdy_i),
+      .space(),.occupied() );
+
 endmodule // fifo36_to_fifo19
