@@ -433,28 +433,22 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // Ethernet MAC  Slave #6
 
-   wire [35:0] 	 rx_f36_data, tx_f36_data;
-   wire 	 rx_f36_src_rdy, rx_f36_dst_rdy, tx_f36_src_rdy, tx_f36_dst_rdy;
+   wire [35:0] 	 tx_f36_data;
+   wire 	 tx_f36_src_rdy, tx_f36_dst_rdy;
 
-   simple_gemac_wrapper #(.RXFIFOSIZE(11), .TXFIFOSIZE(6)) simple_gemac_wrapper19
+   simple_gemac_wrapper #(.RXFIFOSIZE(ETH_RX_FIFOSIZE), .TXFIFOSIZE(6)) simple_gemac_wrapper19
      (.clk125(clk_to_mac),  .reset(wb_rst),
       .GMII_GTX_CLK(GMII_GTX_CLK), .GMII_TX_EN(GMII_TX_EN),  
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
       .GMII_RX_CLK(GMII_RX_CLK), .GMII_RX_DV(GMII_RX_DV),  
       .GMII_RX_ER(GMII_RX_ER), .GMII_RXD(GMII_RXD),
       .sys_clk(dsp_clk),
-      .rx_f36_data(rx_f36_data), .rx_f36_src_rdy(rx_f36_src_rdy), .rx_f36_dst_rdy(rx_f36_dst_rdy),
+      .rx_f36_data(wr2_dat), .rx_f36_src_rdy(wr2_ready_i), .rx_f36_dst_rdy(wr2_ready_o),
       .tx_f36_data(tx_f36_data), .tx_f36_src_rdy(tx_f36_src_rdy), .tx_f36_dst_rdy(tx_f36_dst_rdy),
       .wb_clk(wb_clk), .wb_rst(wb_rst), .wb_stb(s6_stb), .wb_cyc(s6_cyc), .wb_ack(s6_ack),
       .wb_we(s6_we), .wb_adr(s6_adr), .wb_dat_i(s6_dat_o), .wb_dat_o(s6_dat_i),
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
-
-   //mac rx to eth input...
-   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(rx_f36_data), .src_rdy_i(rx_f36_src_rdy), .dst_rdy_o(rx_f36_dst_rdy),
-      .dataout(wr2_dat), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
 
    //eth output to mac tx...
    fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
