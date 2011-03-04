@@ -70,6 +70,9 @@ public:
      * Register map selected from USRP2/USRP2+.
      */
     usrp2_regs_t regs;
+
+    //motherboard eeprom map structure
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP2_IFACE_HPP */

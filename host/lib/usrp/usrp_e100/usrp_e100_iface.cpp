@@ -258,11 +258,11 @@ public:
         return data.data;
     }
     
-    void write_uart(boost::uint8_t dev, const std::string &buf) {
+    void write_uart(boost::uint8_t, const std::string &) {
         throw uhd::not_implemented_error("Unhandled command write_uart()");
     }
     
-    std::string read_uart(boost::uint8_t dev) {
+    std::string read_uart(boost::uint8_t) {
         throw uhd::not_implemented_error("Unhandled command read_uart()");
     }
 

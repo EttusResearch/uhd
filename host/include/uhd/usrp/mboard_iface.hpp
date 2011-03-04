@@ -78,8 +78,6 @@ public:
      */
     virtual std::string read_uart(boost::uint8_t dev) = 0;
 
-    //motherboard eeprom map structure
-    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 }}

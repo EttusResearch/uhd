@@ -32,6 +32,9 @@ class usrp1_iface : public uhd::usrp::mboard_iface, boost::noncopyable{
 public:
     typedef boost::shared_ptr<usrp1_iface> sptr;
 
+    //motherboard eeprom map structure
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
+
     /*!
      * Make a new usrp1 interface with the control transport.
      * \param ctrl_transport the usrp controller object

@@ -67,6 +67,9 @@ public:
 
     //! Get the I2C interface for the I2C device node
     virtual uhd::i2c_iface &get_i2c_dev_iface(void) = 0;
+
+    //motherboard eeprom map structure
+    uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
 #endif /* INCLUDED_USRP_E100_IFACE_HPP */
