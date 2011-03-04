@@ -257,7 +257,7 @@ void usrp2_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    _iface->transact_spi(unit_to_spi_dev[unit], config, data, num_bits, false /*no rb*/);
+    _iface->write_spi(unit_to_spi_dev[unit], config, data, num_bits);
 }
 
 boost::uint32_t usrp2_dboard_iface::read_write_spi(
@@ -266,7 +266,7 @@ boost::uint32_t usrp2_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _iface->transact_spi(unit_to_spi_dev[unit], config, data, num_bits, true /*rb*/);
+    return _iface->read_spi(unit_to_spi_dev[unit], config, data, num_bits);
 }
 
 /***********************************************************************
@@ -288,9 +288,9 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
         (UNIT_RX, SPI_SS_RX_DAC)
         (UNIT_TX, SPI_SS_TX_DAC)
     ;
-    _iface->transact_spi(
+    _iface->write_spi(
         unit_to_spi_dac[unit], spi_config_t::EDGE_FALL, 
-        _dac_regs[unit].get_reg(), 24, false /*no rb*/
+        _dac_regs[unit].get_reg(), 24
     );
 }
 
@@ -336,13 +336,13 @@ double usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
     } ad7922_regs.chn = ad7922_regs.mod; //normal mode: mod == chn
 
     //write and read spi
-    _iface->transact_spi(
+    _iface->write_spi(
         unit_to_spi_adc[unit], config,
-        ad7922_regs.get_reg(), 16, false /*no rb*/
+        ad7922_regs.get_reg(), 16
     );
-    ad7922_regs.set_reg(boost::uint16_t(_iface->transact_spi(
+    ad7922_regs.set_reg(boost::uint16_t(_iface->read_spi(
         unit_to_spi_adc[unit], config,
-        ad7922_regs.get_reg(), 16, true /*rb*/
+        ad7922_regs.get_reg(), 16
     )));
 
     //convert to voltage and return

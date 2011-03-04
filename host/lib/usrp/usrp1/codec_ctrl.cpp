@@ -303,8 +303,8 @@ void usrp1_codec_ctrl_impl::send_reg(boost::uint8_t addr)
         std::cout << "codec control write reg: 0x";
         std::cout << std::setw(8) << std::hex << reg << std::endl;
     }
-    _iface->transact_spi(_spi_slave,
-                         spi_config_t::EDGE_RISE, reg, 16, false);
+    _iface->write_spi(_spi_slave,
+                         spi_config_t::EDGE_RISE, reg, 16);
 }
 
 void usrp1_codec_ctrl_impl::recv_reg(boost::uint8_t addr)
@@ -317,8 +317,8 @@ void usrp1_codec_ctrl_impl::recv_reg(boost::uint8_t addr)
         std::cout << std::setw(8) << std::hex << reg << std::endl;
     }
 
-    boost::uint32_t ret = _iface->transact_spi(_spi_slave,
-                                        spi_config_t::EDGE_RISE, reg, 16, true);
+    boost::uint32_t ret = _iface->read_spi(_spi_slave,
+                                        spi_config_t::EDGE_RISE, reg, 16);
 
     if (codec_debug) {
         std::cout.fill('0');

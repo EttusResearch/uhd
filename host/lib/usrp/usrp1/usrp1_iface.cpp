@@ -93,6 +93,23 @@ public:
 
         return uhd::ntohx(value_out);
     }
+    
+    void poke16(boost::uint32_t addr, boost::uint16_t value) {
+        throw uhd::not_implemented_error("Unhandled command poke16()");
+    }
+    
+    boost::uint16_t peek16(boost::uint32_t addr) {
+        throw uhd::not_implemented_error("Unhandled command peek16()");
+        return 0;
+    }
+    
+    void write_uart(boost::uint8_t dev, const std::string &buf) {
+        throw uhd::not_implemented_error("Unhandled command write_uart()");
+    }
+    
+    std::string read_uart(boost::uint8_t dev) {
+        throw uhd::not_implemented_error("Unhandled command read_uart()");
+    }
 
     /*******************************************************************
      * I2C

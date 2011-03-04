@@ -18,6 +18,7 @@
 #include "wrapper_utils.hpp"
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
+#include <uhd/usrp/mboard_iface.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/warning.hpp>
 #include <uhd/utils/gain_group.hpp>
@@ -217,6 +218,10 @@ public:
 
     std::vector<std::string> get_mboard_sensor_names(size_t mboard){
         return _mboard(mboard)[MBOARD_PROP_SENSOR_NAMES].as<prop_names_t>();
+    }
+    
+    mboard_iface::sptr get_mboard_iface(size_t mboard){
+        return _mboard(mboard)[MBOARD_PROP_IFACE].as<mboard_iface::sptr>();
     }
 
     /*******************************************************************

@@ -28,6 +28,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
+#include <uhd/usrp/mboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -250,6 +251,12 @@ public:
      * \return a vector of sensor names
      */
     virtual std::vector<std::string> get_mboard_sensor_names(size_t mboard = 0) = 0;
+    
+    /*!
+     * Get a handle to the mboard_iface object which controls peripheral access.
+     * \return a mboard_iface::sptr object
+     */
+    virtual mboard_iface::sptr get_mboard_iface(size_t mboard) = 0;
 
     /*******************************************************************
      * RX methods

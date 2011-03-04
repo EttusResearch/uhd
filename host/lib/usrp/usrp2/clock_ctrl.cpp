@@ -305,7 +305,7 @@ private:
      */
     void write_reg(boost::uint8_t addr){
         boost::uint32_t data = _ad9510_regs.get_write_reg(addr);
-        _iface->transact_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24, false /*no rb*/);
+        _iface->write_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24);
     }
 
     /*!
