@@ -23,7 +23,6 @@ include ../../opencores/Makefile.srcs
 include ../../vrt/Makefile.srcs
 include ../../udp/Makefile.srcs
 include ../../coregen/Makefile.srcs
-include ../../extram/Makefile.srcs
 include ../../gpmc/Makefile.srcs
 
 ##################################################
@@ -51,7 +50,7 @@ passthru.ucf
 SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) $(SDR_LIB_SRCS) $(SERDES_SRCS) \
 $(SIMPLE_GEMAC_SRCS) $(TIMING_SRCS) $(OPENCORES_SRCS) \
-$(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) $(EXTRAM_SRCS) \
+$(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) \
 $(GPMC_SRCS)
 
 ##################################################
