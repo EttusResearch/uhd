@@ -136,9 +136,6 @@ The USRP can be modified to accept an external clock reference instead of the 64
 
 The new external clock needs to be a square wave between +7dBm and +15dBm
 
-To configure UHD for the new reference clock, modify host/lib/usrp/usrp1/clock_ctrl.cpp:
-
-::
-
-    static const double master_clock_rate = <YOUR_NEW_REFERENCE_FREQUENCY>;
+For the correct clock settings, call usrp->set_master_clock_rate(EXT_CLOCK_FREQUENCY)
+before any other parameters are set in your application.
 

@@ -41,14 +41,14 @@ namespace uhd{
          * Create a sensor value from a boolean.
          * \param name the name of the sensor
          * \param value the value true or false
-         * \param ufalse the unit string when value is false
          * \param utrue the unit string when value is true
+         * \param ufalse the unit string when value is false
          */
         sensor_value_t(
             const std::string &name,
             bool value,
-            const std::string &ufalse,
-            const std::string &utrue
+            const std::string &utrue,
+            const std::string &ufalse
         );
 
         /*!
