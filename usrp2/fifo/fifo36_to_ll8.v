@@ -71,4 +71,4 @@ module fifo36_to_ll8
       .dataout(ll_data), .sof_o(ll_sof), .eof_o(ll_eof),
       .error_o(), .src_rdy_o(ll_src_rdy), .dst_rdy_i(ll_dst_rdy));
 
-endmodule // ll8_to_fifo36
+endmodule // fifo36_to_ll8
