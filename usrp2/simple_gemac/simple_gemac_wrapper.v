@@ -1,7 +1,7 @@
 
 module simple_gemac_wrapper
   #(parameter RXFIFOSIZE=9,
-    parameter TXFIFOSIZE=6)
+    parameter TXFIFOSIZE=9)
    (input clk125, input reset,
     // GMII
     output GMII_GTX_CLK, output GMII_TX_EN, output GMII_TX_ER, output [7:0] GMII_TXD,
