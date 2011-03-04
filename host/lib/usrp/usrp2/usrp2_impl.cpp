@@ -143,7 +143,75 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
 /***********************************************************************
  * Make
  **********************************************************************/
-static device::sptr usrp2_make(const device_addr_t &_device_addr){
+static device::sptr usrp2_make(const device_addr_t &device_addr){
+    return device::sptr(new usrp2_impl(device_addr));
+}
+
+UHD_STATIC_BLOCK(register_usrp2_device){
+    device::register_device(&usrp2_find, &usrp2_make);
+}
+
+/***********************************************************************
+ * MTU Discovery
+ **********************************************************************/
+struct mtu_result_t{
+    size_t recv_mtu, send_mtu;
+};
+
+static mtu_result_t determine_mtu(const std::string &addr){
+    udp_simple::sptr udp_sock = udp_simple::make_connected(
+        addr, BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
+    );
+
+    mtu_result_t mtu;
+    boost::uint8_t buffer[2000]; //FIXME use real FPGA buffer maximum
+    usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(buffer);
+    static const double echo_timeout = 0.010; //10 ms
+
+    size_t min_recv_mtu = sizeof(usrp2_ctrl_data_t), max_recv_mtu = sizeof(buffer);
+    size_t min_send_mtu = sizeof(usrp2_ctrl_data_t), max_send_mtu = sizeof(buffer);
+
+    while (min_recv_mtu + 4 < max_recv_mtu){
+
+        mtu.recv_mtu = (max_recv_mtu + min_recv_mtu)/2 & ~(4-1);
+        //std::cout << "recv_mtu " << mtu.recv_mtu << std::endl;
+
+        ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
+        ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
+        ctrl_data->data.echo_args.len = htonl(mtu.recv_mtu);
+        udp_sock->send(boost::asio::buffer(buffer, sizeof(usrp2_ctrl_data_t)));
+
+        size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
+
+        if (len >= mtu.recv_mtu) min_recv_mtu = mtu.recv_mtu;
+        else                     max_recv_mtu = mtu.recv_mtu;
+
+    }
+
+    while (min_send_mtu + 4 < max_send_mtu){
+
+        mtu.send_mtu = (max_send_mtu + min_send_mtu)/2 & ~(4-1);
+        //std::cout << "send_mtu " << mtu.send_mtu << std::endl;
+
+        ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
+        ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
+        ctrl_data->data.echo_args.len = htonl(sizeof(usrp2_ctrl_data_t));
+        udp_sock->send(boost::asio::buffer(buffer, mtu.send_mtu));
+
+        size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
+        if (len >= sizeof(usrp2_ctrl_data_t)) len = ntohl(ctrl_data->data.echo_args.len);
+
+        if (len >= mtu.send_mtu) min_send_mtu = mtu.send_mtu;
+        else                     max_send_mtu = mtu.send_mtu;
+    }
+
+    return mtu;
+}
+
+/***********************************************************************
+ * Structors
+ **********************************************************************/
+usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     device_addr_t device_addr = _device_addr;
 
     //setup the dsp transport hints (default to a large recv buff)
@@ -157,18 +225,24 @@ static device::sptr usrp2_make(const device_addr_t &_device_addr){
         #endif
     }
 
-    return device::sptr(new usrp2_impl(device_addr));
-}
-
-UHD_STATIC_BLOCK(register_usrp2_device){
-    device::register_device(&usrp2_find, &usrp2_make);
-}
-
-/***********************************************************************
- * Structors
- **********************************************************************/
-usrp2_impl::usrp2_impl(const device_addr_t &device_addr){
     device_addrs_t device_args = separate_device_addr(device_addr);
+
+    //calculate the minimum send and recv mtu of all devices
+    mtu_result_t mtu = determine_mtu(device_args[0]["addr"]);
+    for (size_t i = 1; i < device_args.size(); i++){
+        mtu_result_t mtu_i = determine_mtu(device_args[i]["addr"]);
+        mtu.recv_mtu = std::min(mtu.recv_mtu, mtu_i.recv_mtu);
+        mtu.send_mtu = std::min(mtu.send_mtu, mtu_i.send_mtu);
+    }
+
+    std::cout << "mtu recv bytes " << mtu.recv_mtu << std::endl;
+    std::cout << "mtu send bytes " << mtu.send_mtu << std::endl;
+
+    //use the discovered mtu if not specified by the user
+    if (not device_addr.has_key("recv_frame_size"))
+        device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
+    if (not device_addr.has_key("send_frame_size"))
+        device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
 
     //setup rx otw type
     _rx_otw_type.width = 16;

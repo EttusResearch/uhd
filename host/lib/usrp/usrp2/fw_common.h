@@ -89,6 +89,9 @@ typedef enum{
     USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO = 'v',
     USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE = 'V',
 
+    USRP2_CTRL_ID_HOLLER_AT_ME_BRO = 'l',
+    USRP2_CTRL_ID_HOLLER_BACK_DUDE = 'L',
+
     USRP2_CTRL_ID_PEACE_OUT = '~'
 
 } usrp2_ctrl_id_t;
@@ -133,6 +136,9 @@ typedef struct{
             uint8_t bytes;
             uint8_t data[20];
         } uart_args;
+        struct {
+            uint32_t len;
+        } echo_args;
     } data;
 } usrp2_ctrl_data_t;
 

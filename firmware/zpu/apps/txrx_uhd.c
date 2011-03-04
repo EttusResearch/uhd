@@ -203,10 +203,7 @@ static void handle_udp_ctrl_packet(
      * Peek and Poke Register
      ******************************************************************/
     case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
-        if (0){//ctrl_data_in->data.poke_args.addr < 0xC000){
-            printf("error! tried to poke into 0x%x\n", ctrl_data_in->data.poke_args.addr);
-        }
-        else switch(ctrl_data_in->data.poke_args.num_bytes){
+        switch(ctrl_data_in->data.poke_args.num_bytes){
         case sizeof(uint32_t):
             *((uint32_t *) ctrl_data_in->data.poke_args.addr) = (uint32_t)ctrl_data_in->data.poke_args.data;
             break;
@@ -241,6 +238,9 @@ static void handle_udp_ctrl_packet(
         ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
         break;
 
+    /*******************************************************************
+     * UART Control
+     ******************************************************************/
     case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
       //executes a readline()-style read, up to num_bytes long, up to and including newline
       int num_bytes = ctrl_data_in->data.uart_args.bytes;
@@ -262,6 +262,15 @@ static void handle_udp_ctrl_packet(
       ctrl_data_out.data.uart_args.bytes = num_bytes;
       break;
     }
+
+    /*******************************************************************
+     * Echo test
+     ******************************************************************/
+    case USRP2_CTRL_ID_HOLLER_AT_ME_BRO:
+        ctrl_data_out.data.echo_args.len = payload_len;
+        ctrl_data_out.id = USRP2_CTRL_ID_HOLLER_BACK_DUDE;
+        send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, ctrl_data_in->data.echo_args.len);
+        return;
 
     default:
         ctrl_data_out.id = USRP2_CTRL_ID_HUH_WHAT;

@@ -62,25 +62,25 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 ):
     _index(index), _device(device),
     _iface(usrp2_iface::make(udp_simple::make_connected(
-        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
+        device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
     )))
 {
     //construct transports for dsp and async errors
     std::cout << "Making transport for DSP0..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
-        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP0_PORT), device_addr
+        device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_DSP0_PORT), device_addr
     ));
     init_xport(device.dsp_xports.back());
 
     std::cout << "Making transport for DSP1..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
-        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_DSP1_PORT), device_addr
+        device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_DSP1_PORT), device_addr
     ));
     init_xport(device.dsp_xports.back());
 
     std::cout << "Making transport for ERR0..." << std::endl;
     device.err_xports.push_back(udp_zero_copy::make(
-        device_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_ERR0_PORT), device_addr_t()
+        device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_ERR0_PORT), device_addr_t()
     ));
     init_xport(device.err_xports.back());
 
