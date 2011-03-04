@@ -26,11 +26,12 @@ module fifo36_to_ll8
       .space(),.occupied() );
 
    // Actual fifo36 to ll8, can deadlock if not connected to shortfifo
-   wire   f36_sof_int = f36_data_int[32];
-   wire   f36_eof_int = f36_data_int[33];
-   wire   f36_occ_int = f36_data_int[35:34];
-   wire   advance, end_early;
-   reg [1:0] state;
+   wire [1:0] 	 f36_occ_int = f36_data_int[35:34];
+   wire 	 f36_sof_int = f36_data_int[32];
+   wire 	 f36_eof_int = f36_data_int[33];
+   wire 	 advance, end_early;
+   reg [1:0] 	 state;
+   
    assign debug    = {29'b0,state};
 
    always @(posedge clk)
@@ -54,9 +55,9 @@ module fifo36_to_ll8
    
    assign ll_sof_int 	 = (state==0) & f36_sof_int;
    assign ll_eof_int 	 = f36_eof_int & (((state==0)&(f36_occ_int==1)) |
-			       ((state==1)&(f36_occ_int==2)) |
-			       ((state==2)&(f36_occ_int==3)) |
-			       (state==3));
+					  ((state==1)&(f36_occ_int==2)) |
+					  ((state==2)&(f36_occ_int==3)) |
+					  (state==3));
    
    assign ll_src_rdy_int = f36_src_rdy_int;
    

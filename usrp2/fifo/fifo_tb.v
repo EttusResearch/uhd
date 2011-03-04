@@ -1,4 +1,4 @@
-module fifo_new_tb();
+module fifo_tb();
    
    reg clk = 0;
    reg rst = 1;
@@ -9,169 +9,47 @@ module fifo_new_tb();
    reg [31:0] f36_data = 0;
    reg [1:0] f36_occ = 0;
    reg f36_sof = 0, f36_eof = 0;
-   
-   wire [35:0] f36_in = {f36_occ,f36_eof,f36_sof,f36_data};
-   reg src_rdy_f36i  = 0;
-   wire dst_rdy_f36i;
-
-   wire [35:0] f36_out, f36_out2;
-   wire src_rdy_f36o;
-   reg dst_rdy_f36o  = 0;
-   
-   //fifo_cascade #(.WIDTH(36), .SIZE(4)) fifo_cascade36
-   //fifo_long #(.WIDTH(36), .SIZE(4)) fifo_cascade36
-
-   wire i1_sr, i1_dr;
-   wire i2_sr, i2_dr;
-   wire i3_sr, i3_dr;
-   wire i7_sr, i7_dr;
-   
-   reg i4_dr = 0;
-   wire i4_sr;
-      
-   wire [35:0] i1, i4, i7;
-   wire [18:0] i2, i3;
+   reg f36_src_rdy;
+   wire f36_dst_rdy;
    
    wire [7:0] ll_data;
-   wire ll_src_rdy_n, ll_dst_rdy_n, ll_sof_n, ll_eof_n;
+   wire ll_src_rdy, ll_dst_rdy, ll_sof, ll_eof;
    wire [35:0] err_dat;
    wire        err_src_rdy, err_dst_rdy;
 
-   reg 	       trigger = 0;
-   initial #10000 trigger = 1;
+   fifo36_to_ll8 fifo36_to_ll8
+     (.clk(clk),.reset(rst),.clear(clear),
+      .f36_data({f36_occ,f36_eof,f36_sof,f36_data}),.f36_src_rdy_i(f36_src_rdy),.f36_dst_rdy_o(f36_dst_rdy),
+      .ll_data(ll_data),.ll_sof(ll_sof),.ll_eof(ll_eof),
+      .ll_src_rdy(ll_src_rdy),.ll_dst_rdy(ll_dst_rdy));
+
+   assign ll_dst_rdy = 1;
    
-   fifo_short #(.WIDTH(36)) fifo_short1
-     (.clk(clk),.reset(rst),.clear(clear),
-      .datain(f36_in),.src_rdy_i(src_rdy_f36i),.dst_rdy_o(dst_rdy_f36i),
-      .dataout(i7),.src_rdy_o(i7_sr),.dst_rdy_i(i7_dr) );
-
-   gen_context_pkt #(.PROT_ENG_FLAGS(1)) gcp
-     (.clk(clk),.reset(rst),.clear(clear),
-      .trigger(trigger), .sent(),
-      .streamid(32'hDEAD_F00D), .vita_time(64'h01234567_89ABCDEF), .message(32'hBEEF_2940),
-      .data_o(err_dat), .src_rdy_o(err_src_rdy), .dst_rdy_i(err_dst_rdy));
+   always @(posedge clk)
+     if(ll_src_rdy)
+       $display("LL: SOF %d, EOF %d, DAT %x",ll_sof,ll_eof,ll_data);
    
-   fifo36_mux #(.prio(0)) fifo36_mux
-     (.clk(clk), .reset(rst), .clear(clear),
-      .data0_i(i7), .src0_rdy_i(i7_sr), .dst0_rdy_o(i7_dr),
-      .data1_i(err_dat), .src1_rdy_i(err_src_rdy), .dst1_rdy_o(err_dst_rdy),
-      .data_o(i1), .src_rdy_o(i1_sr), .dst_rdy_i(i1_dr));
-   
-   fifo36_to_fifo19 fifo36_to_fifo19
-     (.clk(clk),.reset(rst),.clear(clear),
-      .f36_datain(i1),.f36_src_rdy_i(i1_sr),.f36_dst_rdy_o(i1_dr),
-      .f19_dataout(i2),.f19_src_rdy_o(i2_sr),.f19_dst_rdy_i(i2_dr) );
+   initial $dumpfile("fifo_tb.vcd");
+   initial $dumpvars(0,fifo_tb);
 
-   fifo19_to_ll8 fifo19_to_ll8
-     (.clk(clk),.reset(rst),.clear(clear),
-      .f19_data(i2),.f19_src_rdy_i(i2_sr),.f19_dst_rdy_o(i2_dr),
-      .ll_data(ll_data),.ll_sof_n(ll_sof_n),.ll_eof_n(ll_eof_n),
-      .ll_src_rdy_n(ll_src_rdy_n),.ll_dst_rdy_n(ll_dst_rdy_n));
-
-   ll8_to_fifo19 ll8_to_fifo19
-     (.clk(clk),.reset(rst),.clear(clear),
-      .ll_data(ll_data),.ll_sof_n(ll_sof_n),.ll_eof_n(ll_eof_n),
-      .ll_src_rdy_n(ll_src_rdy_n),.ll_dst_rdy_n(ll_dst_rdy_n),
-      .f19_data(i3),.f19_src_rdy_o(i3_sr),.f19_dst_rdy_i(i3_dr) );
-
-   fifo19_to_fifo36 fifo19_to_fifo36
-     (.clk(clk),.reset(rst),.clear(clear),
-      .f19_datain(i3),.f19_src_rdy_i(i3_sr),.f19_dst_rdy_o(i3_dr),
-      .f36_dataout(i4),.f36_src_rdy_o(i4_sr),.f36_dst_rdy_i(i4_dr) );
-
-   task ReadFromFIFO36;
-      begin
-	 $display("Read from FIFO36");
-	 #1 i4_dr <= 1;
-	 while(1)
-	   begin
-	      while(~i4_sr)
-		@(posedge clk);
-	      $display("Read: %h",i4);
-	      @(posedge clk);
-	   end
-      end
-   endtask // ReadFromFIFO36
-
-   reg [15:0] count;
-   task PutPacketInFIFO36;
-      input [31:0] data_start;
-      input [31:0] data_len;
-      begin
-	 count 	      <= 4;
-	 src_rdy_f36i <= 1;
-	 f36_data     <= data_start;
-	 f36_sof      <= 1;
-	 f36_eof      <= 0;
-	 f36_occ      <= 0;
-	
-	 $display("Put Packet in FIFO36");
-	 while(~dst_rdy_f36i)
-	   @(posedge clk);
-	 @(posedge clk);
-	 $display("PPI_FIFO36: Entered First Line");
-	 f36_sof <= 0;
-	 while(count+4 < data_len)
-	   begin
-	      f36_data <= f36_data + 32'h01010101;
-	      count    <= count + 4;
-	      while(~dst_rdy_f36i)
-		@(posedge clk);
-	      @(posedge clk);
-	      $display("PPI_FIFO36: Entered New Line");
-	   end
-	 f36_data  <= f36_data + 32'h01010101;
-	 f36_eof   <= 1;
-	 if(count + 4 == data_len)
-	   f36_occ <= 0;
-	 else if(count + 3 == data_len)
-	   f36_occ <= 3;
-	 else if(count + 2 == data_len)
-	   f36_occ <= 2;
-	 else
-	   f36_occ <= 1;
-	 while(~dst_rdy_f36i)
-	   @(posedge clk);
-	 @(posedge clk);
-	 f36_occ      <= 0;
-	 f36_eof      <= 0;
-	 f36_data     <= 0;
-	 src_rdy_f36i <= 0;
-	 $display("PPI_FIFO36: Entered Last Line");
-      end
-   endtask // PutPacketInFIFO36
-   
-   initial $dumpfile("fifo_new_tb.vcd");
-   initial $dumpvars(0,fifo_new_tb);
-
-   initial
-     begin
-	@(negedge rst);
-	//#10000;
-	@(posedge clk);
-	@(posedge clk);
-	@(posedge clk);
-	@(posedge clk);
-	ReadFromFIFO36;
-     end
-   
    initial
      begin
 	@(negedge rst);
 	@(posedge clk);
 	@(posedge clk);
-	PutPacketInFIFO36(32'hA0B0C0D0,12);
 	@(posedge clk);
 	@(posedge clk);
-	#10000;
+	f36_src_rdy <= 1;
+	{f36_occ,f36_eof,f36_sof,f36_data} <= { 2'b00,1'b0,1'b1,32'h00010203};
 	@(posedge clk);
-	PutPacketInFIFO36(32'hE0F0A0B0,36);
+	{f36_occ,f36_eof,f36_sof,f36_data} <= { 2'b00,1'b0,1'b0,32'h04050607};
 	@(posedge clk);
+	{f36_occ,f36_eof,f36_sof,f36_data} <= { 2'b00,1'b0,1'b0,32'h08090a0b};
 	@(posedge clk);
+	{f36_occ,f36_eof,f36_sof,f36_data} <= { 2'b11,1'b1,1'b0,32'h0c0d0e0f};
 	@(posedge clk);
-	@(posedge clk);
-	@(posedge clk);
+	f36_src_rdy <= 0;
      end
-
-   initial #20000 $finish;
+   
+   initial #4000 $finish;
 endmodule // longfifo_tb
