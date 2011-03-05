@@ -171,9 +171,9 @@ static mtu_result_t determine_mtu(const std::string &addr){
     size_t min_recv_mtu = sizeof(usrp2_ctrl_data_t), max_recv_mtu = sizeof(buffer);
     size_t min_send_mtu = sizeof(usrp2_ctrl_data_t), max_send_mtu = sizeof(buffer);
 
-    while (min_recv_mtu + 4 < max_recv_mtu){
+    while (min_recv_mtu < max_recv_mtu){
 
-        mtu.recv_mtu = (max_recv_mtu + min_recv_mtu)/2 & ~(4-1);
+        mtu.recv_mtu = (max_recv_mtu/2 + min_recv_mtu/2 + 3) & ~3;
         //std::cout << "recv_mtu " << mtu.recv_mtu << std::endl;
 
         ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
@@ -184,13 +184,13 @@ static mtu_result_t determine_mtu(const std::string &addr){
         size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
 
         if (len >= mtu.recv_mtu) min_recv_mtu = mtu.recv_mtu;
-        else                     max_recv_mtu = mtu.recv_mtu;
+        else                     max_recv_mtu = mtu.recv_mtu - 4;
 
     }
 
-    while (min_send_mtu + 4 < max_send_mtu){
+    while (min_send_mtu < max_send_mtu){
 
-        mtu.send_mtu = (max_send_mtu + min_send_mtu)/2 & ~(4-1);
+        mtu.send_mtu = (max_send_mtu/2 + min_send_mtu/2 + 3) & ~3;
         //std::cout << "send_mtu " << mtu.send_mtu << std::endl;
 
         ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
@@ -202,7 +202,7 @@ static mtu_result_t determine_mtu(const std::string &addr){
         if (len >= sizeof(usrp2_ctrl_data_t)) len = ntohl(ctrl_data->data.echo_args.len);
 
         if (len >= mtu.send_mtu) min_send_mtu = mtu.send_mtu;
-        else                     max_send_mtu = mtu.send_mtu;
+        else                     max_send_mtu = mtu.send_mtu - 4;
     }
 
     return mtu;
