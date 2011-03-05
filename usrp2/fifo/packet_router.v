@@ -471,9 +471,9 @@ module packet_router
     );
 
     dsp_framer36 #(.BUF_SIZE(BUF_SIZE), .PORT_SEL(2)) dsp1_framer36(
-        .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
-        .inp_data(dsp1_inp_data), .inp_valid(dsp1_inp_valid), .inp_ready(dsp1_inp_ready),
-        .out_data(dsp1_frm_data), .out_valid(dsp1_frm_valid), .out_ready(dsp1_frm_ready)
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+        .data_i(dsp1_inp_data), .src_rdy_i(dsp1_inp_valid), .dst_rdy_o(dsp1_inp_ready),
+        .data_o(dsp1_frm_data), .src_rdy_o(dsp1_frm_valid), .dst_rdy_i(dsp1_frm_ready)
     );
 
     ////////////////////////////////////////////////////////////////////
