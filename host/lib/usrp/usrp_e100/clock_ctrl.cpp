@@ -425,6 +425,8 @@ private:
         this->send_reg(0x18);
         this->latch_regs();
         //wait for calibration done:
+        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        /* this routine seems to not work, just sleep and return...
         static const boost::uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
             boost::uint32_t reg = _iface->read_spi(
@@ -436,6 +438,7 @@ private:
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
         }
         std::cerr << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
+        */
     }
 
     void send_all_regs(void){
