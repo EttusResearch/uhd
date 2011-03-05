@@ -2,98 +2,67 @@
 // Frame DSP packets with a header line to be handled by the protocol machine
 
 module dsp_framer36
-    #(parameter BUF_SIZE = 9, parameter PORT_SEL = 0)
-    (
-        input clk, input rst, input clr,
-        input [35:0] inp_data, input inp_valid, output inp_ready,
-        output [35:0] out_data, output out_valid, input out_ready
-    );
+  #(parameter BUF_SIZE = 9, 
+    parameter PORT_SEL = 0)
+   (input clk, input reset, input clear,
+    input [35:0] data_i, input src_rdy_i, output dst_rdy_o,
+    output [35:0] data_o, output src_rdy_o, input dst_rdy_i);
 
-    localparam DSP_FRM_STATE_WAIT_SOF = 0;
-    localparam DSP_FRM_STATE_WAIT_EOF = 1;
-    localparam DSP_FRM_STATE_WRITE_HDR = 2;
-    localparam DSP_FRM_STATE_WRITE = 3;
+   wire 	  dfifo_in_dst_rdy, dfifo_in_src_rdy, dfifo_out_dst_rdy, dfifo_out_src_rdy;
+   wire 	  tfifo_in_dst_rdy, tfifo_in_src_rdy, tfifo_out_dst_rdy, tfifo_out_src_rdy;
 
-    reg [1:0] dsp_frm_state;
-    reg [BUF_SIZE-1:0] dsp_frm_addr;
-    reg [BUF_SIZE-1:0] dsp_frm_count;
-    wire [BUF_SIZE-1:0] dsp_frm_addr_next = dsp_frm_addr + 1'b1;
+   wire 	  do_xfer_in = dfifo_in_src_rdy & dfifo_in_dst_rdy;
+   wire 	  do_xfer_out = src_rdy_o & dst_rdy_i;
+   // dfifo_out_src_rdy & dfifo_out_dst_rdy;
+   
+   wire 	  have_space = dfifo_in_dst_rdy & tfifo_in_dst_rdy;
+   reg [15:0] 	  pkt_len_in, pkt_len_out;
+   wire [15:0] 	  tfifo_data;
+   wire [35:0] 	  dfifo_out_data;
+   
+   assign dst_rdy_o        = have_space;
+   assign dfifo_in_src_rdy = src_rdy_i & have_space;
+   
+   fifo_cascade #(.WIDTH(36), .SIZE(BUF_SIZE)) dfifo
+     (.clk(clk), .reset(reset), .clear(clear),
+      .datain(data_i), .src_rdy_i(dfifo_in_src_rdy), .dst_rdy_o(dfifo_in_dst_rdy),
+      .dataout(dfifo_out_data), .src_rdy_o(dfifo_out_src_rdy),  .dst_rdy_i(dfifo_out_dst_rdy) );
 
-    //DSP input stream ready in the following states
-    assign inp_ready = (
-        dsp_frm_state == DSP_FRM_STATE_WAIT_SOF ||
-        dsp_frm_state == DSP_FRM_STATE_WAIT_EOF
-    )? 1'b1 : 1'b0;
+   fifo_short #(.WIDTH(16)) tfifo
+     (.clk(clk), .reset(reset), .clear(clear),
+      .datain(pkt_len_in),  .src_rdy_i(tfifo_in_src_rdy), .dst_rdy_o(tfifo_in_dst_rdy),
+      .dataout(tfifo_data), .src_rdy_o(tfifo_out_src_rdy), .dst_rdy_i(tfifo_out_dst_rdy),
+      .space(), .occupied() );
 
-    //DSP framer output data mux (header or BRAM):
-    //The header is generated here from the count.
-    wire [31:0] dsp_frm_data_bram;
-    wire [15:0] dsp_frm_bytes = {dsp_frm_count, 2'b00};
-    wire [1:0] port_sel_bits = PORT_SEL;
-    assign out_data =
-        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR)? {4'b0001, 13'b0, port_sel_bits, 1'b1, dsp_frm_bytes} : (
-        (dsp_frm_addr == dsp_frm_count)           ? {4'b0010, dsp_frm_data_bram}    : (
-    {4'b0000, dsp_frm_data_bram}));
-    assign out_valid = (
-        (dsp_frm_state == DSP_FRM_STATE_WRITE_HDR) ||
-        (dsp_frm_state == DSP_FRM_STATE_WRITE)
-    )? 1'b1 : 1'b0;
+   always @(posedge clk)
+     if(reset | clear)
+       pkt_len_in <= 0;
+     else if(do_xfer_in)
+       if(data_i[32])   // sof
+	 pkt_len_in <= 1;
+       else
+	 pkt_len_in <= pkt_len_in + 1;
 
-    RAMB16_S36_S36 dsp_frm_buff(
-        //port A = DSP input interface (writes to BRAM)
-        .DOA(),.ADDRA(dsp_frm_addr),.CLKA(clk),.DIA(inp_data[31:0]),.DIPA(4'h0),
-        .ENA(inp_ready & inp_valid),.SSRA(0),.WEA(inp_ready & inp_valid),
-        //port B = DSP framer interface (reads from BRAM)
-        .DOB(dsp_frm_data_bram),.ADDRB(dsp_frm_addr),.CLKB(clk),.DIB(36'b0),.DIPB(4'h0),
-        .ENB(out_ready & out_valid),.SSRB(0),.WEB(1'b0)
-    );
+   assign tfifo_in_src_rdy = do_xfer_in & data_i[33]; // store length when at eof in
+   assign tfifo_out_dst_rdy = do_xfer_out & data_o[33]; // remove length from list at eof out
 
-    always @(posedge clk)
-    if(rst | clr) begin
-        dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
-        dsp_frm_addr <= 0;
-    end
-    else begin
-        case(dsp_frm_state)
-        DSP_FRM_STATE_WAIT_SOF: begin
-            if (inp_ready & inp_valid & inp_data[32]) begin
-                dsp_frm_addr <= dsp_frm_addr_next;
-                dsp_frm_state <= DSP_FRM_STATE_WAIT_EOF;
-            end
-        end
+   always @(posedge clk)
+     if(reset | clear)
+       pkt_len_out <= 0;
+     else if(do_xfer_out)
+       if(dfifo_out_data[33]) // eof
+	 pkt_len_out <= 0;
+       else
+	 pkt_len_out <= pkt_len_out + 1;
+   
+   assign dfifo_out_dst_rdy = do_xfer_out & (pkt_len_out != 0);
 
-        DSP_FRM_STATE_WAIT_EOF: begin
-            if (inp_ready & inp_valid) begin
-                if (inp_data[33]) begin
-                    dsp_frm_count <= dsp_frm_addr_next;
-                    dsp_frm_addr <= 0;
-                    dsp_frm_state <= DSP_FRM_STATE_WRITE_HDR;
-                end
-                else begin
-                    dsp_frm_addr <= dsp_frm_addr_next;
-                end
-            end
-        end
+   wire [1:0] 	  port_sel_bits = PORT_SEL;
+   
+   assign data_o = (pkt_len_out == 0) ? {4'b0001, 13'b0, port_sel_bits, 1'b1, tfifo_data[13:0],2'b00} :
+		   (pkt_len_out == 1) ? {4'b0000, dfifo_out_data[31:16],tfifo_data} : 
+		   {dfifo_out_data[35:33], 1'b0, dfifo_out_data[31:0] };
 
-        DSP_FRM_STATE_WRITE_HDR: begin
-            if (out_ready & out_valid) begin
-                dsp_frm_addr <= dsp_frm_addr_next;
-                dsp_frm_state <= DSP_FRM_STATE_WRITE;
-            end
-        end
-
-        DSP_FRM_STATE_WRITE: begin
-            if (out_ready & out_valid) begin
-                if (out_data[33]) begin
-                    dsp_frm_addr <= 0;
-                    dsp_frm_state <= DSP_FRM_STATE_WAIT_SOF;
-                end
-                else begin
-                    dsp_frm_addr <= dsp_frm_addr_next;
-                end
-            end
-        end
-        endcase //dsp_frm_state
-    end
-
-endmodule //dsp_framer36
+   assign src_rdy_o = dfifo_out_src_rdy & tfifo_out_src_rdy;
+   
+endmodule // dsp_framer36
