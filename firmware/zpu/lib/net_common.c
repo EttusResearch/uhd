@@ -38,6 +38,8 @@
 
 static const bool debug = false;
 
+static const size_t out_buff_size = 2048;
+
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 
 //used in the top level application...
@@ -118,58 +120,48 @@ register_udp_listener(int port, udp_receiver_t rcvr)
  * \param len2 length of third part of data
  */
 static void
-send_pkt(eth_mac_addr_t dst, int ethertype,
-	 const void *buf0, size_t len0,
-	 const void *buf1, size_t len1,
-	 const void *buf2, size_t len2)
-{
+send_pkt(
+    eth_mac_addr_t dst, int ethertype,
+    const void *buf0, size_t len0,
+    const void *buf1, size_t len1,
+    const void *buf2, size_t len2
+){
 
-  // Assemble the header
-  padded_eth_hdr_t	ehdr;
-  ehdr.pad = 0;
-  ehdr.dst = dst;
-  ehdr.src = _local_mac_addr;
-  ehdr.ethertype = ethertype;
+    //control word for framed data
+    uint32_t ctrl_word = 0x0;
 
-  uint32_t *buff = (uint32_t *)pkt_ctrl_claim_outgoing_buffer();
+    //assemble the ethernet header
+    padded_eth_hdr_t ehdr;
+    ehdr.pad = 0;
+    ehdr.dst = dst;
+    ehdr.src = _local_mac_addr;
+    ehdr.ethertype = ethertype;
 
-  // Copy the pieces into the buffer
-  uint32_t *p = buff;
-  *p++ = 0x0;  				  // slow path
-  memcpy_wa(p, &ehdr, sizeof(ehdr));      // 4 lines
-  p += sizeof(ehdr)/sizeof(uint32_t);
+    //grab an out buffer and pointer
+    uint8_t *buff = (uint8_t *)pkt_ctrl_claim_outgoing_buffer();
+    uint8_t *p = buff;
+    size_t total_len = 0;
 
+    //create a list of all buffers to copy
+    const void *buffs[] = {&ctrl_word, &ehdr, buf0, buf1, buf2};
+    size_t lens[] = {sizeof(ctrl_word), sizeof(ehdr), len0, len1, len2};
 
-  // FIXME modify memcpy_wa to do read/modify/write if reqd
+    //copy each buffer into the out buffer
+    for (size_t i = 0; i < sizeof(buffs)/sizeof(buffs[0]); i++){
+        total_len += lens[i]; //use full length (not clipped)
+        size_t bytes_remaining = out_buff_size - (size_t)(p - buff);
+        if (lens[i] > bytes_remaining) lens[i] = bytes_remaining;
+        if (lens[i] && ((lens[i] & 0x3) || (intptr_t) buffs[i] & 0x3))
+            printf("send_pkt: bad alignment of len and/or buf\n");
+        memcpy_wa(p, buffs[i], lens[i]);
+        p += lens[i];
+    }
 
-  if (len0 && ((len0 & 0x3) || (intptr_t) buf0 & 0x3))
-    printf("send_pkt: bad alignment of len0 and/or buf0\n");
+    //ensure that minimum length requirements are met
+    if (total_len < 64) total_len = 64; //60 + ctrl word
 
-  if (len1 && ((len1 & 0x3) || (intptr_t) buf1 & 0x3))
-    printf("send_pkt: bad alignment of len1 and/or buf1\n");
-
-  if (len2 && ((len2 & 0x3) || (intptr_t) buf2 & 0x3))
-    printf("send_pkt: bad alignment of len2 and/or buf2\n");
-
-  if (len0){
-    memcpy_wa(p, buf0, len0);
-    p += len0/sizeof(uint32_t);
-  }
-  if (len1){
-    memcpy_wa(p, buf1, len1);
-    p += len1/sizeof(uint32_t);
-  }
-  if (len2){
-    memcpy_wa(p, buf2, len2);
-    p += len2/sizeof(uint32_t);
-  }
-
-  size_t total_len = (p - buff) * sizeof(uint32_t);
-  if (total_len < 60)		// ensure that we don't try to send a short packet
-    total_len = 60;
-
-  pkt_ctrl_commit_outgoing_buffer(total_len/4);
-  if (debug) printf("sent %d bytes\n", (int)total_len);
+    pkt_ctrl_commit_outgoing_buffer(total_len/sizeof(uint32_t));
+    if (debug) printf("sent %d bytes\n", (int)total_len);
 }
 
 unsigned int CHKSUM(unsigned int x, unsigned int *chksum)
