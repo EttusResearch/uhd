@@ -152,7 +152,7 @@ module u2_core
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
    // localparam DSP_TX_FIFOSIZE = 9;  unused -- DSPTX uses extram fifo
-   localparam DSP_RX_FIFOSIZE = 9;
+   localparam DSP_RX_FIFOSIZE = 10;
    localparam ETH_TX_FIFOSIZE = 9;
    localparam ETH_RX_FIFOSIZE = 11;
    localparam SERDES_TX_FIFOSIZE = 9;
