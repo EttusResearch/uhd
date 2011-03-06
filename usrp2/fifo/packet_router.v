@@ -463,9 +463,9 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
 
     //dummy signals to connect the components below
-    wire [18:0] _udp_r2s_data, _udp_s2p_data, _udp_p2s_data, _udp_s2r_data;
-    wire _udp_r2s_valid, _udp_s2p_valid, _udp_p2s_valid, _udp_s2r_valid;
-    wire _udp_r2s_ready, _udp_s2p_ready, _udp_p2s_ready, _udp_s2r_ready;
+    wire [18:0] _udp_r2s_data, _udp_s2r_data;
+    wire _udp_r2s_valid, _udp_s2r_valid;
+    wire _udp_r2s_ready, _udp_s2r_ready;
 
     wire [35:0] _com_out_data;
     wire _com_out_valid, _com_out_ready;
@@ -475,23 +475,11 @@ module packet_router
       .f36_datain(udp_out_data),   .f36_src_rdy_i(udp_out_valid),  .f36_dst_rdy_o(udp_out_ready),
       .f19_dataout(_udp_r2s_data), .f19_src_rdy_o(_udp_r2s_valid), .f19_dst_rdy_i(_udp_r2s_ready) );
 
-    fifo_short #(.WIDTH(19)) udp_shortfifo19_inp
-     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-      .datain(_udp_r2s_data),  .src_rdy_i(_udp_r2s_valid), .dst_rdy_o(_udp_r2s_ready),
-      .dataout(_udp_s2p_data), .src_rdy_o(_udp_s2p_valid), .dst_rdy_i(_udp_s2p_ready),
-      .space(), .occupied() );
-
     prot_eng_tx #(.BASE(UDP_BASE)) udp_prot_eng_tx
      (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .datain(_udp_s2p_data),  .src_rdy_i(_udp_s2p_valid), .dst_rdy_o(_udp_s2p_ready),
-      .dataout(_udp_p2s_data), .src_rdy_o(_udp_p2s_valid), .dst_rdy_i(_udp_p2s_ready) );
-
-    fifo_short #(.WIDTH(19)) udp_shortfifo19_out
-     (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-      .datain(_udp_p2s_data),  .src_rdy_i(_udp_p2s_valid), .dst_rdy_o(_udp_p2s_ready),
-      .dataout(_udp_s2r_data), .src_rdy_o(_udp_s2r_valid), .dst_rdy_i(_udp_s2r_ready),
-      .space(), .occupied() );
+      .datain(_udp_r2s_data),  .src_rdy_i(_udp_r2s_valid), .dst_rdy_o(_udp_r2s_ready),
+      .dataout(_udp_s2r_data), .src_rdy_o(_udp_s2r_valid), .dst_rdy_i(_udp_s2r_ready) );
 
     fifo19_to_fifo36 udp_fifo19_to_fifo36
      (.clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
