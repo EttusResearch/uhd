@@ -69,6 +69,8 @@ module packet_router
 
     //setting register for mode control
     wire [31:0] _sreg_mode_ctrl;
+    wire 	master_mode_flag;
+   
     setting_reg #(.my_addr(CTRL_BASE+0), .width(1)) sreg_mode_ctrl(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
@@ -179,15 +181,10 @@ module packet_router
 
     ////////////////////////////////////////////////////////////////////
     // Communication output source combiner (feeds UDP proto machine)
-    //   - DSP framer
+    //   - DSP input
     //   - CPU input
     //   - ERR input
     ////////////////////////////////////////////////////////////////////
-
-    //streaming signals from the dsp framer to the combiner
-    wire [35:0] dsp0_frm_data, dsp1_frm_data;
-    wire        dsp0_frm_valid, dsp1_frm_valid;
-    wire        dsp0_frm_ready, dsp1_frm_ready;
 
     //dummy signals to join the the muxes below
     wire [35:0] _combiner0_data, _combiner1_data;
@@ -205,8 +202,8 @@ module packet_router
     fifo36_mux #(.prio(0)) // No priority, fair sharing
      _com_output_combiner1(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(dsp0_frm_data), .src0_rdy_i(dsp0_frm_valid), .dst0_rdy_o(dsp0_frm_ready),
-        .data1_i(dsp1_frm_data), .src1_rdy_i(dsp1_frm_valid), .dst1_rdy_o(dsp1_frm_ready),
+        .data0_i(dsp0_inp_data), .src0_rdy_i(dsp0_inp_valid), .dst0_rdy_o(dsp0_inp_ready),
+        .data1_i(dsp1_inp_data), .src1_rdy_i(dsp1_inp_valid), .dst1_rdy_o(dsp1_inp_ready),
         .data_o(_combiner1_data), .src_rdy_o(_combiner1_valid), .dst_rdy_i(_combiner1_ready)
     );
 
@@ -459,21 +456,6 @@ module packet_router
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
         .datain(_cpu_out_data), .src_rdy_i(_cpu_out_valid), .dst_rdy_o(_cpu_out_ready),
         .dataout(cpu_out_data), .src_rdy_o(cpu_out_valid),  .dst_rdy_i(cpu_out_ready)
-    );
-
-    ////////////////////////////////////////////////////////////////////
-    // DSP input framer
-    ////////////////////////////////////////////////////////////////////
-    dsp_framer36 #(.BUF_SIZE(BUF_SIZE), .PORT_SEL(0)) dsp0_framer36(
-        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data_i(dsp0_inp_data), .src_rdy_i(dsp0_inp_valid), .dst_rdy_o(dsp0_inp_ready),
-        .data_o(dsp0_frm_data), .src_rdy_o(dsp0_frm_valid), .dst_rdy_i(dsp0_frm_ready)
-    );
-
-    dsp_framer36 #(.BUF_SIZE(BUF_SIZE), .PORT_SEL(2)) dsp1_framer36(
-        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data_i(dsp1_inp_data), .src_rdy_i(dsp1_inp_valid), .dst_rdy_o(dsp1_inp_ready),
-        .data_o(dsp1_frm_data), .src_rdy_o(dsp1_frm_valid), .dst_rdy_i(dsp1_frm_ready)
     );
 
     ////////////////////////////////////////////////////////////////////
