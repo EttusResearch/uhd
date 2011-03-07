@@ -34,12 +34,13 @@ module dsp_framer36
       .dataout(tfifo_data), .src_rdy_o(tfifo_out_src_rdy), .dst_rdy_i(tfifo_out_dst_rdy),
       .space(), .occupied() );
 
+   // FIXME won't handle single-line packets, will show wrong length
    always @(posedge clk)
      if(reset | clear)
        pkt_len_in <= 0;
      else if(do_xfer_in)
        if(data_i[32])   // sof
-	 pkt_len_in <= 1;
+	 pkt_len_in <= 2;  // fixes off by one since number is stored before increment
        else
 	 pkt_len_in <= pkt_len_in + 1;
 
