@@ -13,7 +13,6 @@ module dsp_framer36
 
    wire 	  do_xfer_in = dfifo_in_src_rdy & dfifo_in_dst_rdy;
    wire 	  do_xfer_out = src_rdy_o & dst_rdy_i;
-   // dfifo_out_src_rdy & dfifo_out_dst_rdy;
    
    wire 	  have_space = dfifo_in_dst_rdy & tfifo_in_dst_rdy;
    reg [15:0] 	  pkt_len_in, pkt_len_out;

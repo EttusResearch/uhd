@@ -13,6 +13,9 @@ module vita_rx_chain
    wire [100:0] sample_data;
    wire 	sample_dst_rdy, sample_src_rdy;
    wire [31:0] 	vrc_debug, vrf_debug;
+
+   wire [35:0] 	rx_data_int;
+   wire 	rx_src_rdy_int, rx_dst_rdy_in;
    
    vita_rx_control #(.BASE(BASE), .WIDTH(32)) vita_rx_control
      (.clk(clk), .reset(reset), .clear(clear),
