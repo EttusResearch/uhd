@@ -614,7 +614,7 @@ module u2_core
       .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
       .out(),.changed(clear_rx1));
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL1),.UNIT(1),.FIFOSIZE(DSP_RX_FIFOSIZE)) vita_rx_chain1
+   vita_rx_chain #(.BASE(SR_RX_CTRL1),.UNIT(2),.FIFOSIZE(DSP_RX_FIFOSIZE)) vita_rx_chain1
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx1),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun1),
