@@ -62,6 +62,6 @@ module rx_dcoffset
      (.clk(clk), .rst(rst), .in1(integrator), .in2(q_err_ext), .sum(q_loop));
    
    add2_and_clip_reg #(.WIDTH(WIDTH)) add2_and_clip_reg
-     (.clk(clk), .in1(in), .in2(-quantized), .sum(out));
+     (.clk(clk), .rst(rst), .in1(in), .in2(-quantized), .sum(out));
 
 endmodule // rx_dcoffset

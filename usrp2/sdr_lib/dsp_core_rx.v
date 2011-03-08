@@ -21,8 +21,8 @@ module dsp_core_rx
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   input [13:0] adc_a, input adc_ovf_a,
-   input [13:0] adc_b, input adc_ovf_b,
+   input [17:0] adc_i, input adc_ovf_a,
+   input [17:0] adc_q, input adc_ovf_b,
    
    output [31:0] sample,
    input run,
@@ -60,40 +60,6 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_hb1, enable_hb2, cic_decim_rate}),.changed());
 
-   rx_dcoffset #(.WIDTH(14),.ADDR(BASE+3)) rx_dcoffset_a
-     (.clk(clk),.rst(rst),.set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .adc_in(adc_a),.adc_out(adc_a_ofs));
-   
-   rx_dcoffset #(.WIDTH(14),.ADDR(BASE+4)) rx_dcoffset_b
-     (.clk(clk),.rst(rst),.set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .adc_in(adc_b),.adc_out(adc_b_ofs));
-
-   wire [7:0]  muxctrl;
-   setting_reg #(.my_addr(BASE+5), .width(8)) sr_8
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(muxctrl),.changed());
-
-   wire [1:0] gpio_ena;
-   setting_reg #(.my_addr(BASE+6), .width(2)) sr_9
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(gpio_ena),.changed());
-
-   always @(posedge clk)
-     case(muxctrl[3:0])		// The I mapping
-       0: adc_i <= adc_a_ofs;
-       1: adc_i <= adc_b_ofs;
-       2: adc_i <= 0;
-       default: adc_i <= 0;
-     endcase // case (muxctrl[3:0])
-   
-   always @(posedge clk)
-     case(muxctrl[7:4])		// The Q mapping
-       0: adc_q <= adc_a_ofs;
-       1: adc_q <= adc_b_ofs;
-       2: adc_q <= 0;
-       default: adc_q <= 0;
-     endcase // case (muxctrl[7:4])
-          
    always @(posedge clk)
      if(rst)
        phase <= 0;
@@ -119,7 +85,6 @@ module dsp_core_rx
       .CE(1),  // Clock enable input
       .R(rst)     // Synchronous reset input
       ); 
-
    
    cordic_z24 #(.bitwidth(24))
      cordic(.clock(clk), .reset(rst), .enable(run),
@@ -164,10 +129,6 @@ module dsp_core_rx
    round #(.bits_in(18),.bits_out(16)) round_iout (.in(i_hb2),.out(i_out));
    round #(.bits_in(18),.bits_out(16)) round_qout (.in(q_hb2),.out(q_out));
 
-   reg [31:0] sample_reg;
-   always @(posedge clk)
-     sample_reg <= {i_out,q_out};
-   
    assign      sample = sample_reg;
    assign      strobe = strobe_hb2;
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_cic_d1, strobe_hb1, strobe_hb2};

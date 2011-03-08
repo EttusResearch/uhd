@@ -583,6 +583,17 @@ module u2_core
    assign sd_dat_i[31:8] = 0;
 
    // /////////////////////////////////////////////////////////////////////////
+   // ADC Frontend
+   wire [17:0] 	 adc_i, adc_q;
+   
+   rx_frontend #(.BASE()) rx_frontend
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .adc_a({adc_a,2'b00}),.adc_ovf_a(adc_ovf_a),
+      .adc_b({adc_b,2'b00}),.adc_ovf_b(adc_ovf_b),
+      .i_out(adc_i), .q_out(adc_q), .run(run_rx0_d1 | run_rx1_d1), .debug());
+   
+   // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
    wire [31:0] 	 sample_rx0;
    wire 	 clear_rx0, strobe_rx0;
@@ -593,7 +604,7 @@ module u2_core
    dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
+      .adc_a(adc_i),.adc_ovf_a(adc_ovf_a),.adc_b(adc_q),.adc_ovf_b(adc_ovf_b),
       .sample(sample_rx0), .run(run_rx0_d1), .strobe(strobe_rx0),
       .debug() );
 
@@ -621,7 +632,7 @@ module u2_core
    dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
+      .adc_a(adc_i),.adc_ovf_a(adc_ovf_a),.adc_b(adc_q),.adc_ovf_b(adc_ovf_b),
       .sample(sample_rx1), .run(run_rx1_d1), .strobe(strobe_rx1),
       .debug() );
 
