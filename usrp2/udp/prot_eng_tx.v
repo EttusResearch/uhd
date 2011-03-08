@@ -1,86 +1,39 @@
 
-// The input FIFO contents should be 16 bits wide
-//   The first word is 1 for fast path (accelerated protocol)
-//                     0 for software implemented protocol
-//   The second word is the number of bytes in the packet, 
-//         and must be valid even if we are in slow path mode
-//            Odd means the last word is half full
-//   Flags[1:0] is {eop, sop}
-//   Protocol word format is:
-//             21   UDP Source Port Here
-//             20   UDP Dest Port Here
-//             19   Last Header Line
-//             18   IP Header Checksum XOR
-//             17   IP Length Here
-//             16   UDP Length Here
-//           15:0   data word to be sent
+//   The first line:
+//          Bits 18:17   Select which source/dest pair
+//          Bit  16      1 for fast path (accelerated protocol)
+//          Bits 15:0    Length in bytes
 
 module prot_eng_tx
   #(parameter BASE=0)
    (input clk, input reset, input clear,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
-    input [18:0] datain, input src_rdy_i, output dst_rdy_o,
-    output [18:0] dataout, output src_rdy_o, input dst_rdy_i);
-
-   wire [2:0] flags_i = datain[18:16];
-   reg [15:0] dataout_int;
-   reg fast_path, sof_o;
-   
-   wire [2:0] flags_o 	 = {flags_i[2], flags_i[1], sof_o};  // OCC, EOF, SOF
-
-   assign dataout 	 = {flags_o[2:0], dataout_int[15:0]};
-
-   reg [4:0] state;
-   wire do_payload 	 = (state == 31);
-   
-   assign dst_rdy_o 	 = dst_rdy_i & (do_payload | (state==0) | (state==1) | (state==30));
-   assign src_rdy_o 	 = src_rdy_i & ~((state==0) | (state==1) | (state==30));
-   
-   localparam HDR_WIDTH  = 16 + 6;  // 16 bits plus flags
-   localparam HDR_LEN 	 = 32;      // Up to 64 bytes of protocol
+    input [35:0] datain, input src_rdy_i, output dst_rdy_o,
+    output [35:0] dataout, output src_rdy_o, input dst_rdy_i);
    
    // Store header values in a small dual-port (distributed) ram
-   reg [HDR_WIDTH-1:0] header_ram[0:HDR_LEN-1];
-   wire [HDR_WIDTH-1:0] header_word;
-
-   reg [1:0] 		port_sel;
-   reg [31:0] 		per_port_data[0:3];
-   reg [15:0] 		udp_src_port, udp_dst_port, chk_precompute;
-
-   always @(posedge clk) udp_src_port <= per_port_data[port_sel][31:16];
-   always @(posedge clk) udp_dst_port <= per_port_data[port_sel][15:0];
-
-   always @(posedge clk)
-     if(set_stb & ((set_addr & 8'hE0) == BASE))
-       header_ram[set_addr[4:0]] <= set_data;
-
-   always @(posedge clk)
-     if(set_stb & (set_addr == (BASE + 14)))
-       chk_precompute <= set_data[15:0];
-
-   always @(posedge clk)
-     if(set_stb & ((set_addr & 8'hFC) == (BASE+24)))
-       per_port_data[set_addr[1:0]] <= set_data;
+   reg [31:0] 	  header_ram[0:63];
+   wire [31:0] 	  header_word;
+   reg [3:0] 	  state;
+   reg [1:0] 	  port_sel;
    
-   wire do_udp_src_port = header_word[21];
-   wire do_udp_dst_port = header_word[20];
-   wire last_hdr_line   = header_word[19];
-   wire do_ip_chk       = header_word[18];
-   wire do_ip_len       = header_word[17];
-   wire do_udp_len      = header_word[16];
+   always @(posedge clk)
+     if(set_stb & ((set_addr & 8'hC0) == BASE))
+       header_ram[set_addr[5:0]] <= set_data;
 
-   assign header_word = header_ram[state];
-   
+   assign header_word = header_ram[{port_sel[1:0],state[3:0]}];
+
    // Protocol State Machine
    reg [15:0] length;
    wire [15:0] ip_length = length + 28;  // IP HDR + UDP HDR
    wire [15:0] udp_length = length + 8;  //  UDP HDR
- 
+   reg 	       sof_o;
+   reg [31:0]  dataout_int;
+   
    always @(posedge clk)
      if(reset)
        begin
-	  state     <= 0;
-	  fast_path <= 0;
+	  state   <= 0;
 	  sof_o   <= 0;
        end
      else
@@ -88,59 +41,49 @@ module prot_eng_tx
 	 case(state)
 	   0 :
 	     begin
-		fast_path <= datain[0];
-		port_sel <= datain[2:1];
-		state <= 1;
-	     end
-	   1 :
-	     begin
+		port_sel <= datain[18:17];
 		length 	<= datain[15:0];
 		sof_o <= 1;
-		if(fast_path)
-		  state <= 2;
+		if(datain[16])
+		  state <= 1;
 		else
-		  state <= 30;  // Skip 1 word for alignment
+		  state <= 12;
 	     end
-	   30 :
-	     state <= 31;
-	   31 :
+	   12 :
 	     begin
 		sof_o <= 0;
-		if(flags_i[1]) // eop
+		if(datain[33]) // eof
 		  state <= 0;
 	     end
 	   default :
 	     begin
 		sof_o 	<= 0;
-		if(~last_hdr_line)
-		  state <= state + 1;
-		else
-		  state <= 31;
+		state <= state + 1;
 	     end
 	 endcase // case (state)
 
-   wire [15:0] checksum;
+   wire [15:0] ip_checksum;
    add_onescomp #(.WIDTH(16)) add_onescomp 
-     (.A(chk_precompute),.B(ip_length),.SUM(checksum));
+     (.A(header_word[15:0]),.B(ip_length),.SUM(ip_checksum));
 
-   reg [15:0]  checksum_reg;
-   always @(posedge clk)
-     checksum_reg <= checksum;
-   
    always @*
-     if(do_payload)
-       dataout_int 	<= datain[15:0];
-     else if(do_ip_chk)
-       dataout_int 	<= 16'hFFFF ^ checksum_reg;
-     else if(do_ip_len)
-       dataout_int 	<= ip_length;
-     else if(do_udp_len)
-       dataout_int 	<= udp_length;
-     else if(do_udp_src_port)
-       dataout_int      <= udp_src_port;
-     else if(do_udp_dst_port)
-       dataout_int      <= udp_dst_port;
-     else
-       dataout_int 	<= header_word[15:0];
+     case(state[2:0])
+       1 : dataout_int <= header_word;  // ETH, top half ignored
+       2 : dataout_int <= header_word;  // ETH
+       3 : dataout_int <= header_word;  // ETH
+       4 : dataout_int <= header_word;  // ETH
+       5 : dataout_int <= { header_word[31:16], ip_length }; // IP
+       6 : dataout_int <= header_word; // IP
+       7 : dataout_int <= { header_word[31:16], (16'hFFFF ^ ip_checksum) }; // IP
+       8 : dataout_int <= header_word; // IP
+       9 : dataout_int <= header_word; // IP
+       10: dataout_int <= header_word;  // UDP 
+       11: dataout_int <= { udp_length, header_word[15:0]}; // UDP
+       default : dataout_int <= datain;
+     endcase // case (state[2:0])
+
+   assign dataout = { datain[35:33] & {3{state[3]}},  sof_o, dataout_int };
+   assign dst_rdy_o = dst_rdy_i & ((state == 0) | (state == 12));
+   assign src_rdy_o = src_rdy_i & (state != 0);
    
 endmodule // prot_eng_tx
