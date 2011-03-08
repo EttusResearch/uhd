@@ -69,28 +69,12 @@ module packet_router
 
     //setting register for mode control
     wire [31:0] _sreg_mode_ctrl;
-    wire 	master_mode_flag;
+    wire        master_mode_flag;
    
     setting_reg #(.my_addr(CTRL_BASE+0), .width(1)) sreg_mode_ctrl(
         .clk(stream_clk),.rst(stream_rst),
         .strobe(set_stb),.addr(set_addr),.in(set_data),
         .out(master_mode_flag),.changed()
-    );
-
-    //setting register to program the IP address
-    wire [31:0] my_ip_addr;
-    setting_reg #(.my_addr(CTRL_BASE+1)) sreg_ip_addr(
-        .clk(stream_clk),.rst(stream_rst),
-        .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(my_ip_addr),.changed()
-    );
-
-    //setting register to program the UDP data ports
-    wire [15:0] dsp_udp_port;
-    setting_reg #(.my_addr(CTRL_BASE+2), .width(16)) sreg_data_ports(
-        .clk(stream_clk),.rst(stream_rst),
-        .strobe(set_stb),.addr(set_addr),.in(set_data),
-        .out(dsp_udp_port),.changed()
     );
 
     //assign status output signals
@@ -120,8 +104,8 @@ module packet_router
     wire        _eth_inp_ready;
 
     // dummy signals to connect fifo_short
-    wire [35:0]	_com_inp_data;
-    wire 	_com_inp_valid;
+    wire [35:0] _com_inp_data;
+    wire        _com_inp_valid;
     wire        _com_inp_ready;
 
     valve36 eth_inp_valve (
@@ -217,6 +201,7 @@ module packet_router
 
     ////////////////////////////////////////////////////////////////////
     // Interface CPU to memory mapped wishbone
+    //   - Uses 1 setting register
     ////////////////////////////////////////////////////////////////////
     buffer_int2 #(.BASE(CTRL_BASE+3), .BUF_SIZE(BUF_SIZE)) cpu_to_wb(
         .clk(stream_clk), .rst(stream_rst | stream_clr),
@@ -238,218 +223,21 @@ module packet_router
     );
 
     ////////////////////////////////////////////////////////////////////
-    // Communication input inspector
-    //   - inspect com input and send it to DSP, EXT, CPU, or BOTH
+    // Packet Dispatcher
+    //   - Uses 2 setting registers
+    //   - provide buffering before cpu for random + small packet bursts
     ////////////////////////////////////////////////////////////////////
-    localparam COM_INSP_STATE_READ_COM_PRE = 0;
-    localparam COM_INSP_STATE_READ_COM = 1;
-    localparam COM_INSP_STATE_WRITE_REGS = 2;
-    localparam COM_INSP_STATE_WRITE_LIVE = 3;
+    wire [35:0] _cpu_out_data;
+    wire        _cpu_out_valid;
+    wire        _cpu_out_ready;
 
-    localparam COM_INSP_DEST_DSP = 0;
-    localparam COM_INSP_DEST_EXT = 1;
-    localparam COM_INSP_DEST_CPU = 2;
-    localparam COM_INSP_DEST_BOF = 3;
-
-    localparam COM_INSP_MAX_NUM_DREGS = 13; //padded_eth + ip + udp + seq + vrt_hdr
-    localparam COM_INSP_DREGS_DSP_OFFSET = 11; //offset to start dsp at
-
-    //output inspector interfaces
-    wire [35:0] com_insp_out_dsp_data;
-    wire        com_insp_out_dsp_valid;
-    wire        com_insp_out_dsp_ready;
-
-    wire [35:0] com_insp_out_ext_data;
-    wire        com_insp_out_ext_valid;
-    wire        com_insp_out_ext_ready;
-
-    wire [35:0] com_insp_out_cpu_data;
-    wire        com_insp_out_cpu_valid;
-    wire        com_insp_out_cpu_ready;
-
-    wire [35:0] com_insp_out_bof_data;
-    wire        com_insp_out_bof_valid;
-    wire        com_insp_out_bof_ready;
-
-    //connect this fast-path signals directly to the DSP out
-    assign dsp_out_data = com_insp_out_dsp_data;
-    assign dsp_out_valid = com_insp_out_dsp_valid;
-    assign com_insp_out_dsp_ready = dsp_out_ready;
-
-    reg [1:0] com_insp_state;
-    reg [1:0] com_insp_dest;
-    reg [3:0] com_insp_dreg_count; //data registers to buffer headers
-    wire [3:0] com_insp_dreg_count_next = com_insp_dreg_count + 1'b1;
-    wire com_insp_dreg_counter_done = (com_insp_dreg_count_next == COM_INSP_MAX_NUM_DREGS)? 1'b1 : 1'b0;
-    reg [35:0] com_insp_dregs [COM_INSP_MAX_NUM_DREGS-1:0];
-
-    //extract various packet components:
-    wire [47:0] com_insp_dregs_eth_dst_mac   = {com_insp_dregs[0][15:0], com_insp_dregs[1][31:0]};
-    wire [15:0] com_insp_dregs_eth_type      = com_insp_dregs[3][15:0];
-    wire [7:0]  com_insp_dregs_ipv4_proto    = com_insp_dregs[6][23:16];
-    wire [31:0] com_insp_dregs_ipv4_dst_addr = com_insp_dregs[8][31:0];
-    wire [15:0] com_insp_dregs_udp_dst_port  = com_insp_dregs[9][15:0];
-    wire [15:0] com_insp_dregs_vrt_size      = com_inp_data[15:0];
-
-    //Inspector output flags special case:
-    //Inject SOF into flags at first DSP line.
-    wire [3:0] com_insp_out_flags = (
-        (com_insp_dreg_count == COM_INSP_DREGS_DSP_OFFSET) &&
-        (com_insp_dest == COM_INSP_DEST_DSP)
-    )? 4'b0001 : com_insp_dregs[com_insp_dreg_count][35:32];
-
-    //The communication inspector ouput data and valid signals:
-    //Mux between com input and data registers based on the state.
-    wire [35:0] com_insp_out_data = (com_insp_state == COM_INSP_STATE_WRITE_REGS)?
-        {com_insp_out_flags, com_insp_dregs[com_insp_dreg_count][31:0]} : com_inp_data
-    ;
-    wire com_insp_out_valid =
-        (com_insp_state == COM_INSP_STATE_WRITE_REGS)? 1'b1          : (
-        (com_insp_state == COM_INSP_STATE_WRITE_LIVE)? com_inp_valid : (
-    1'b0));
-
-    //The communication inspector ouput ready signal:
-    //Mux between the various destination ready signals.
-    wire com_insp_out_ready =
-        (com_insp_dest == COM_INSP_DEST_DSP)? com_insp_out_dsp_ready : (
-        (com_insp_dest == COM_INSP_DEST_EXT)? com_insp_out_ext_ready : (
-        (com_insp_dest == COM_INSP_DEST_CPU)? com_insp_out_cpu_ready : (
-        (com_insp_dest == COM_INSP_DEST_BOF)? com_insp_out_bof_ready : (
-    1'b0))));
-
-    //Always connected output data lines.
-    assign com_insp_out_dsp_data = com_insp_out_data;
-    assign com_insp_out_ext_data = com_insp_out_data;
-    assign com_insp_out_cpu_data = com_insp_out_data;
-    assign com_insp_out_bof_data = com_insp_out_data;
-
-    //Destination output valid signals:
-    //Comes from inspector valid when destination is selected, and otherwise low.
-    assign com_insp_out_dsp_valid = (com_insp_dest == COM_INSP_DEST_DSP)? com_insp_out_valid : 1'b0;
-    assign com_insp_out_ext_valid = (com_insp_dest == COM_INSP_DEST_EXT)? com_insp_out_valid : 1'b0;
-    assign com_insp_out_cpu_valid = (com_insp_dest == COM_INSP_DEST_CPU)? com_insp_out_valid : 1'b0;
-    assign com_insp_out_bof_valid = (com_insp_dest == COM_INSP_DEST_BOF)? com_insp_out_valid : 1'b0;
-
-    //The communication inspector ouput ready signal:
-    //Always ready when storing to data registers,
-    //comes from inspector ready output when live,
-    //and otherwise low.
-    assign com_inp_ready =
-        (com_insp_state == COM_INSP_STATE_READ_COM_PRE)  ? 1'b1               : (
-        (com_insp_state == COM_INSP_STATE_READ_COM)      ? 1'b1               : (
-        (com_insp_state == COM_INSP_STATE_WRITE_LIVE)    ? com_insp_out_ready : (
-    1'b0)));
-
-    always @(posedge stream_clk)
-    if(stream_rst | stream_clr) begin
-        com_insp_state <= COM_INSP_STATE_READ_COM_PRE;
-        com_insp_dreg_count <= 0;
-    end
-    else begin
-        case(com_insp_state)
-        COM_INSP_STATE_READ_COM_PRE: begin
-            if (com_inp_ready & com_inp_valid & com_inp_data[32]) begin
-                com_insp_state <= COM_INSP_STATE_READ_COM;
-                com_insp_dreg_count <= com_insp_dreg_count_next;
-                com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
-            end
-        end
-
-        COM_INSP_STATE_READ_COM: begin
-            if (com_inp_ready & com_inp_valid) begin
-                com_insp_dregs[com_insp_dreg_count] <= com_inp_data;
-                if (com_insp_dreg_counter_done | com_inp_data[33]) begin
-                    com_insp_state <= COM_INSP_STATE_WRITE_REGS;
-                    com_insp_dreg_count <= 0;
-
-                    //---------- begin inspection decision -----------//
-                    //EOF or bcast or not IPv4 or not UDP:
-                    if (
-                        com_inp_data[33] || (com_insp_dregs_eth_dst_mac == 48'hffffffffffff) ||
-                        (com_insp_dregs_eth_type != 16'h800) || (com_insp_dregs_ipv4_proto != 8'h11)
-                    ) begin
-                        com_insp_dest <= COM_INSP_DEST_BOF;
-                    end
-
-                    //not my IP address:
-                    else if (com_insp_dregs_ipv4_dst_addr != my_ip_addr) begin
-                        com_insp_dest <= COM_INSP_DEST_EXT;
-                    end
-
-                    //UDP data port and VRT:
-                    else if ((com_insp_dregs_udp_dst_port == dsp_udp_port) && (com_insp_dregs_vrt_size != 16'h0)) begin
-                        com_insp_dest <= COM_INSP_DEST_DSP;
-                        com_insp_dreg_count <= COM_INSP_DREGS_DSP_OFFSET;
-                    end
-
-                    //other:
-                    else begin
-                        com_insp_dest <= COM_INSP_DEST_CPU;
-                    end
-                    //---------- end inspection decision -------------//
-
-                end
-                else begin
-                    com_insp_dreg_count <= com_insp_dreg_count_next;
-                end
-            end
-        end
-
-        COM_INSP_STATE_WRITE_REGS: begin
-            if (com_insp_out_ready & com_insp_out_valid) begin
-                if (com_insp_out_data[33]) begin
-                    com_insp_state <= COM_INSP_STATE_READ_COM_PRE;
-                    com_insp_dreg_count <= 0;
-                end
-                else if (com_insp_dreg_counter_done) begin
-                    com_insp_state <= COM_INSP_STATE_WRITE_LIVE;
-                    com_insp_dreg_count <= 0;
-                end
-                else begin
-                    com_insp_dreg_count <= com_insp_dreg_count_next;
-                end
-            end
-        end
-
-        COM_INSP_STATE_WRITE_LIVE: begin
-            if (com_insp_out_ready & com_insp_out_valid & com_insp_out_data[33]) begin
-                com_insp_state <= COM_INSP_STATE_READ_COM_PRE;
-            end
-        end
-
-        endcase //com_insp_state
-    end
-
-    ////////////////////////////////////////////////////////////////////
-    // Splitter and output muxes for the bof packets
-    //   - split the bof packets into two streams
-    //   - mux split packets into cpu out and ext out
-    ////////////////////////////////////////////////////////////////////
-
-    //dummy signals to join the the splitter and muxes below
-    wire [35:0] _split_to_ext_data,  _split_to_cpu_data,  _cpu_out_data;
-    wire        _split_to_ext_valid, _split_to_cpu_valid, _cpu_out_valid;
-    wire        _split_to_ext_ready, _split_to_cpu_ready, _cpu_out_ready;
-
-    splitter36 bof_out_splitter(
+    packet_dispatcher36_x3 #(.BASE(CTRL_BASE+1)) packet_dispatcher(
         .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
-        .inp_data(com_insp_out_bof_data), .inp_valid(com_insp_out_bof_valid), .inp_ready(com_insp_out_bof_ready),
-        .out0_data(_split_to_ext_data),   .out0_valid(_split_to_ext_valid),   .out0_ready(_split_to_ext_ready),
-        .out1_data(_split_to_cpu_data),   .out1_valid(_split_to_cpu_valid),   .out1_ready(_split_to_cpu_ready)
-    );
-
-    fifo36_mux ext_out_mux(
-        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(com_insp_out_ext_data), .src0_rdy_i(com_insp_out_ext_valid), .dst0_rdy_o(com_insp_out_ext_ready),
-        .data1_i(_split_to_ext_data),    .src1_rdy_i(_split_to_ext_valid),    .dst1_rdy_o(_split_to_ext_ready),
-        .data_o(ext_out_data),           .src_rdy_o(ext_out_valid),           .dst_rdy_i(ext_out_ready)
-    );
-
-    fifo36_mux cpu_out_mux(
-        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(com_insp_out_cpu_data), .src0_rdy_i(com_insp_out_cpu_valid), .dst0_rdy_o(com_insp_out_cpu_ready),
-        .data1_i(_split_to_cpu_data),    .src1_rdy_i(_split_to_cpu_valid),    .dst1_rdy_o(_split_to_cpu_ready),
-        .data_o(_cpu_out_data),          .src_rdy_o(_cpu_out_valid),          .dst_rdy_i(_cpu_out_ready)
+        .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+        .com_inp_data(com_inp_data), .com_inp_valid(com_inp_valid), .com_inp_ready(com_inp_ready),
+        .ext_out_data(ext_out_data), .ext_out_valid(ext_out_valid), .ext_out_ready(ext_out_ready),
+        .dsp_out_data(dsp_out_data), .dsp_out_valid(dsp_out_valid), .dsp_out_ready(dsp_out_ready),
+        .cpu_out_data(_cpu_out_data), .cpu_out_valid(_cpu_out_valid), .cpu_out_ready(_cpu_out_ready)
     );
 
     fifo_cascade #(.WIDTH(36), .SIZE(9/*512 lines plenty for short pkts*/)) cpu_out_fifo (
@@ -498,8 +286,10 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
 
     assign debug = {
-        //inputs to the router (8)
+        //inputs to the router (12)
         dsp0_inp_ready, dsp0_inp_valid,
+        dsp1_inp_ready, dsp1_inp_valid,
+        err_inp_ready, err_inp_valid,
         ser_inp_ready, ser_inp_valid,
         eth_inp_ready, eth_inp_valid,
         cpu_inp_ready, cpu_inp_valid,
@@ -510,17 +300,13 @@ module packet_router
         eth_out_ready, eth_out_valid,
         cpu_out_ready, cpu_out_valid,
 
-        //inspector interfaces (8)
-        com_insp_out_dsp_ready, com_insp_out_dsp_valid,
-        com_insp_out_ext_ready, com_insp_out_ext_valid,
-        com_insp_out_cpu_ready, com_insp_out_cpu_valid,
-        com_insp_out_bof_ready, com_insp_out_bof_valid,
-
         //other interfaces (8)
         ext_inp_ready, ext_inp_valid,
         com_out_ready, com_out_valid,
         ext_out_ready, ext_out_valid,
-        com_inp_ready, com_inp_valid
+        com_inp_ready, com_inp_valid,
+
+        4'b0
     };
 
 endmodule // packet_router
