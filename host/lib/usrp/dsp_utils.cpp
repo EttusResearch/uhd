@@ -44,7 +44,7 @@ boost::uint32_t dsp_type1::calc_rx_mux_word(subdev_conn_t subdev_conn){
     case SUBDEV_CONN_COMPLEX_IQ: return (0x1 << 4) | (0x0 << 0); //DDC0Q=ADC0Q, DDC0I=ADC0I
     case SUBDEV_CONN_COMPLEX_QI: return (0x0 << 4) | (0x1 << 0); //DDC0Q=ADC0I, DDC0I=ADC0Q
     case SUBDEV_CONN_REAL_I:     return (0xf << 4) | (0x0 << 0); //DDC0Q=ZERO,  DDC0I=ADC0I
-    case SUBDEV_CONN_REAL_Q:     return (0x1 << 4) | (0xf << 0); //DDC0Q=ADC0Q, DDC0I=ZERO
+    case SUBDEV_CONN_REAL_Q:     return (0xf << 4) | (0x1 << 0); //DDC0Q=ZERO,  DDC0I=ADC0Q
     default:                     UHD_THROW_INVALID_CODE_PATH();
     }
 }
