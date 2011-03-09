@@ -453,7 +453,7 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
+        val = SUBDEV_CONN_REAL_I;
         return;
 
     case SUBDEV_PROP_ENABLED:
