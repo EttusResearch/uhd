@@ -164,7 +164,10 @@ static mtu_result_t determine_mtu(const std::string &addr){
     );
 
     mtu_result_t mtu;
-    boost::uint8_t buffer[2000]; //FIXME use real FPGA buffer maximum
+    //The FPGA offers 4K buffers, and the user may manually request this.
+    //However, multiple simultaneous receives (2DSP slave + 2DSP master),
+    //require that buffering to be used internally, and this is a safe setting.
+    boost::uint8_t buffer[2000];
     usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(buffer);
     static const double echo_timeout = 0.010; //10 ms
 
