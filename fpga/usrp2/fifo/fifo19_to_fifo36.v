@@ -15,60 +15,73 @@ module fifo19_to_fifo36
     input f36_dst_rdy_i,
     output [31:0] debug
     );
-
-   reg 		  f36_sof, f36_eof;
-   reg [1:0] 	  f36_occ;
    
+   // Shortfifo on input to guarantee no deadlock
+   wire [18:0] 	  f19_data_int;
+   wire 	  f19_src_rdy_int, f19_dst_rdy_int;
+   
+   fifo_short #(.WIDTH(19)) head_fifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain(f19_datain), .src_rdy_i(f19_src_rdy_i), .dst_rdy_o(f19_dst_rdy_o),
+      .dataout(f19_data_int), .src_rdy_o(f19_src_rdy_int), .dst_rdy_i(f19_dst_rdy_int),
+      .space(),.occupied() );
+
+   // Actual f19 to f36 which could deadlock if not connected to shortfifos
+   reg 		  f36_sof_int, f36_eof_int;
+   reg [1:0] 	  f36_occ_int;
+   wire [35:0] 	  f36_data_int;
+   wire 	  f36_src_rdy_int, f36_dst_rdy_int;
+      
    reg [1:0] 	  state;
    reg [15:0] 	  dat0, dat1;
 
-   wire 	  f19_sof  = f19_datain[16];
-   wire 	  f19_eof  = f19_datain[17];
-   wire 	  f19_occ  = f19_datain[18];
+   wire 	  f19_sof_int  = f19_data_int[16];
+   wire 	  f19_eof_int  = f19_data_int[17];
+   wire 	  f19_occ_int  = f19_data_int[18];
 
-   wire 	  xfer_out = f36_src_rdy_o & f36_dst_rdy_i;
-
-   always @(posedge clk)
-     if(f19_src_rdy_i & ((state==0)|xfer_out))
-       f36_sof 	<= f19_sof;
+   wire 	  xfer_out = f36_src_rdy_int & f36_dst_rdy_int;
 
    always @(posedge clk)
-     if(f19_src_rdy_i & ((state != 2)|xfer_out))
-       f36_eof 	<= f19_eof;
+     if(f19_src_rdy_int & ((state==0)|xfer_out))
+       f36_sof_int 	<= f19_sof_int;
+
+   always @(posedge clk)
+     if(f19_src_rdy_int & ((state != 2)|xfer_out))
+       f36_eof_int 	<= f19_eof_int;
 
    always @(posedge clk)
      if(reset)
        begin
 	  state 	<= 0;
-	  f36_occ <= 0;
+	  f36_occ_int <= 0;
        end
      else
-       if(f19_src_rdy_i)
+       if(f19_src_rdy_int)
 	 case(state)
 	   0 : 
 	     begin
-		dat0 <= f19_datain;
-		if(f19_eof)
+		dat0 <= f19_data_int;
+		if(f19_eof_int)
 		  begin
 		     state <= 2;
-		     f36_occ <= f19_occ ? 2'b01 : 2'b10;
+		     f36_occ_int <= f19_occ_int ? 2'b01 : 2'b10;
 		  end
 		else
 		  state <= 1;
 	     end
 	   1 : 
 	     begin
-		dat1 <= f19_datain;
+		dat1 <= f19_data_int;
 		state <= 2;
-		if(f19_eof)
-		  f36_occ <= f19_occ ? 2'b11 : 2'b00;
+		if(f19_eof_int)
+		  f36_occ_int <= f19_occ_int ? 2'b11 : 2'b00;
 	     end
 	   2 : 
 	     if(xfer_out)
 	       begin
-		  dat0 <= f19_datain;
-		  if(f19_eof) // remain in state 2 if we are at eof
-		    f36_occ <= f19_occ ? 2'b01 : 2'b10;
+		  dat0 <= f19_data_int;
+		  if(f19_eof_int) // remain in state 2 if we are at eof
+		    f36_occ_int <= f19_occ_int ? 2'b01 : 2'b10;
 		  else
 		    state 	   <= 1;
 	       end
@@ -77,14 +90,21 @@ module fifo19_to_fifo36
 	 if(xfer_out)
 	   begin
 	      state 	   <= 0;
-	      f36_occ <= 0;
+	      f36_occ_int <= 0;
 	   end
    
-   assign    f19_dst_rdy_o  = xfer_out | (state != 2);
-   assign    f36_dataout    = LE ? {f36_occ,f36_eof,f36_sof,dat1,dat0} :
-			      {f36_occ,f36_eof,f36_sof,dat0,dat1};
-   assign    f36_src_rdy_o  = (state == 2);
+   assign    f19_dst_rdy_int  = xfer_out | (state != 2);
+   assign    f36_data_int     = LE ? {f36_occ_int,f36_eof_int,f36_sof_int,dat1,dat0} :
+				{f36_occ_int,f36_eof_int,f36_sof_int,dat0,dat1};
+   assign    f36_src_rdy_int  = (state == 2);
 
    assign    debug = state;
+
+   // Shortfifo on output to guarantee no deadlock
+   fifo_short #(.WIDTH(36)) tail_fifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain(f36_data_int), .src_rdy_i(f36_src_rdy_int), .dst_rdy_o(f36_dst_rdy_int),
+      .dataout(f36_dataout), .src_rdy_o(f36_src_rdy_o), .dst_rdy_i(f36_dst_rdy_i),
+      .space(),.occupied() );
    
 endmodule // fifo19_to_fifo36

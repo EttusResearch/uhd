@@ -196,4 +196,4 @@ module vita_rx_control
 		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, 1'b0, ~not_empty_ctrl },
 		       { 2'b0, overrun, chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
    
-endmodule // rx_control
+endmodule // vita_rx_control

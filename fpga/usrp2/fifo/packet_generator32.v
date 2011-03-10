@@ -2,6 +2,7 @@
 
 module packet_generator32
   (input clk, input reset, input clear,
+   input [127:0] header,
    output [35:0] data_o, output src_rdy_o, input dst_rdy_i);
 
    wire [7:0] 	     ll_data;
@@ -10,6 +11,7 @@ module packet_generator32
    packet_generator pkt_gen
      (.clk(clk), .reset(reset), .clear(clear),
       .data_o(ll_data), .sof_o(ll_sof), .eof_o(ll_eof),
+      .header(header),
       .src_rdy_o(ll_src_rdy), .dst_rdy_i(~ll_dst_rdy_n));
 
    ll8_to_fifo36 ll8_to_f36

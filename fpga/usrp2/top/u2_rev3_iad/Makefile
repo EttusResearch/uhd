@@ -120,7 +120,6 @@ eth/rtl/verilog/flow_ctrl_tx.v \
 eth/rtl/verilog/miim/eth_clockgen.v \
 eth/rtl/verilog/miim/eth_outputcontrol.v \
 eth/rtl/verilog/miim/eth_shiftreg.v \
-extram/wb_zbt16_b.v \
 opencores/8b10b/decode_8b10b.v \
 opencores/8b10b/encode_8b10b.v \
 opencores/aemb/rtl/verilog/aeMB_bpcu.v \

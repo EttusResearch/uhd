@@ -1,9 +1,4 @@
 
-// Assumes an asynchronous GPMC cycle
-//   If a packet bigger or smaller than we are told is sent, behavior is undefined.
-//   If dst_rdy_i is low when we get data, behavior is undefined and we signal bus error.
-//   If there is a bus error, we should be reset
-
 module fifo_to_gpmc_async
   (input clk, input reset, input clear,
    input [17:0] data_i, input src_rdy_i, output dst_rdy_o,

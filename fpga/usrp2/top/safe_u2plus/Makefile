@@ -117,7 +117,6 @@ coregen/fifo_xlnx_512x36_2clk.v \
 coregen/fifo_xlnx_512x36_2clk.xco \
 coregen/fifo_xlnx_64x36_2clk.v \
 coregen/fifo_xlnx_64x36_2clk.xco \
-extram/wb_zbt16_b.v \
 opencores/8b10b/decode_8b10b.v \
 opencores/8b10b/encode_8b10b.v \
 opencores/aemb/rtl/verilog/aeMB_bpcu.v \

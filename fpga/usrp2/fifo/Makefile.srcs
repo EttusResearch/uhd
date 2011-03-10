@@ -28,4 +28,10 @@ fifo36_demux.v \
 packet_router.v \
 splitter36.v \
 valve36.v \
+fifo_pacer.v \
+packet_dispatcher36_x3.v \
+packet_generator32.v \
+packet_generator.v \
+packet_verifier32.v \
+packet_verifier.v \
 ))

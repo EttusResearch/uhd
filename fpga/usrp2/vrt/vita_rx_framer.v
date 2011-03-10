@@ -15,11 +15,6 @@ module vita_rx_framer
     input sample_fifo_src_rdy_i,
     output sample_fifo_dst_rdy_o,
     
-    // FIFO Levels
-    output [15:0] fifo_occupied,
-    output fifo_full,
-    output fifo_empty,
-    
     output [31:0] debug_rx
     );
 
@@ -200,8 +195,8 @@ module vita_rx_framer
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(pkt_fifo_line), .src_rdy_i(req_write_pkt_fifo), .dst_rdy_o(pkt_fifo_rdy),
       .dataout(data_o[33:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i),
-      .space(),.occupied(fifo_occupied[4:0]) );
-   assign fifo_occupied[15:5] = 0;
+      .space(),.occupied() );
+
    assign data_o[35:34] = 2'b00;  // Always write full lines
    assign sample_fifo_dst_rdy_o  = pkt_fifo_rdy & 
 				   ( ((vita_state==VITA_PAYLOAD) & 
@@ -211,4 +206,4 @@ module vita_rx_framer
    
    assign debug_rx  = vita_state;
    
-endmodule // rx_control
+endmodule // vita_rx_framer

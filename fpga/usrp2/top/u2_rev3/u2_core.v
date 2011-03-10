@@ -152,7 +152,7 @@ module u2_core
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
    // localparam DSP_TX_FIFOSIZE = 9;  unused -- DSPTX uses extram fifo
-   localparam DSP_RX_FIFOSIZE = 9;
+   localparam DSP_RX_FIFOSIZE = 10;
    localparam ETH_TX_FIFOSIZE = 9;
    localparam ETH_RX_FIFOSIZE = 11;
    localparam SERDES_TX_FIFOSIZE = 9;
@@ -433,55 +433,20 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // Ethernet MAC  Slave #6
 
-   wire [18:0] 	 rx_f19_data, tx_f19_data;
-   wire 	 rx_f19_src_rdy, rx_f19_dst_rdy, tx_f19_src_rdy, tx_f19_dst_rdy;
-   
-   simple_gemac_wrapper19 #(.RXFIFOSIZE(11), .TXFIFOSIZE(6)) simple_gemac_wrapper19
+   simple_gemac_wrapper #(.RXFIFOSIZE(ETH_RX_FIFOSIZE), 
+			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper19
      (.clk125(clk_to_mac),  .reset(wb_rst),
       .GMII_GTX_CLK(GMII_GTX_CLK), .GMII_TX_EN(GMII_TX_EN),  
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
       .GMII_RX_CLK(GMII_RX_CLK), .GMII_RX_DV(GMII_RX_DV),  
       .GMII_RX_ER(GMII_RX_ER), .GMII_RXD(GMII_RXD),
       .sys_clk(dsp_clk),
-      .rx_f19_data(rx_f19_data), .rx_f19_src_rdy(rx_f19_src_rdy), .rx_f19_dst_rdy(rx_f19_dst_rdy),
-      .tx_f19_data(tx_f19_data), .tx_f19_src_rdy(tx_f19_src_rdy), .tx_f19_dst_rdy(tx_f19_dst_rdy),
+      .rx_f36_data(wr2_dat), .rx_f36_src_rdy(wr2_ready_i), .rx_f36_dst_rdy(wr2_ready_o),
+      .tx_f36_data(rd2_dat), .tx_f36_src_rdy(rd2_ready_o), .tx_f36_dst_rdy(rd2_ready_i),
       .wb_clk(wb_clk), .wb_rst(wb_rst), .wb_stb(s6_stb), .wb_cyc(s6_cyc), .wb_ack(s6_ack),
       .wb_we(s6_we), .wb_adr(s6_adr), .wb_dat_i(s6_dat_o), .wb_dat_o(s6_dat_i),
       .mdio(MDIO), .mdc(MDC),
       .debug(debug_mac));
-
-   wire [35:0] 	 rx_f36_data, tx_f36_data;
-   wire 	 rx_f36_src_rdy, rx_f36_dst_rdy, tx_f36_src_rdy, tx_f36_dst_rdy;
-
-   wire [18:0] 	 _rx_f19_data;
-   wire 	 _rx_f19_src_rdy, _rx_f19_dst_rdy;
-
-   //mac rx to eth input...
-   fifo19_rxrealign fifo19_rxrealign
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(rx_f19_data), .src_rdy_i(rx_f19_src_rdy), .dst_rdy_o(rx_f19_dst_rdy),
-      .dataout(_rx_f19_data), .src_rdy_o(_rx_f19_src_rdy), .dst_rdy_i(_rx_f19_dst_rdy) );
-
-   fifo19_to_fifo36 eth_inp_fifo19_to_fifo36
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .f19_datain(_rx_f19_data),  .f19_src_rdy_i(_rx_f19_src_rdy), .f19_dst_rdy_o(_rx_f19_dst_rdy),
-      .f36_dataout(rx_f36_data), .f36_src_rdy_o(rx_f36_src_rdy), .f36_dst_rdy_i(rx_f36_dst_rdy) );
-
-   fifo_cascade #(.WIDTH(36), .SIZE(ETH_RX_FIFOSIZE)) rx_eth_fifo
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(rx_f36_data), .src_rdy_i(rx_f36_src_rdy), .dst_rdy_o(rx_f36_dst_rdy),
-      .dataout(wr2_dat), .src_rdy_o(wr2_ready_i), .dst_rdy_i(wr2_ready_o));
-
-   //eth output to mac tx...
-   fifo_cascade #(.WIDTH(36), .SIZE(ETH_TX_FIFOSIZE)) tx_eth_fifo
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .datain(rd2_dat), .src_rdy_i(rd2_ready_o), .dst_rdy_o(rd2_ready_i),
-      .dataout(tx_f36_data), .src_rdy_o(tx_f36_src_rdy), .dst_rdy_i(tx_f36_dst_rdy));
-
-   fifo36_to_fifo19 eth_out_fifo36_to_fifo19
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(0),
-      .f36_datain(tx_f36_data),  .f36_src_rdy_i(tx_f36_src_rdy), .f36_dst_rdy_o(tx_f36_dst_rdy),
-      .f19_dataout(tx_f19_data), .f19_src_rdy_o(tx_f19_src_rdy), .f19_dst_rdy_i(tx_f19_dst_rdy) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #7
@@ -604,8 +569,7 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
    wire [31:0] 	 sample_rx0;
-   wire [35:0] 	 rx0_data;
-   wire 	 clear_rx0, strobe_rx0, rx0_dst_rdy, rx0_src_rdy;
+   wire 	 clear_rx0, strobe_rx0;
 
    always @(posedge dsp_clk)
      run_rx0_d1 <= run_rx0;
@@ -622,24 +586,18 @@ module u2_core
       .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
       .out(),.changed(clear_rx0));
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL0)) vita_rx_chain0
+   vita_rx_chain #(.BASE(SR_RX_CTRL0),.UNIT(0),.FIFOSIZE(DSP_RX_FIFOSIZE)) vita_rx_chain0
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx0),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun0),
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
-      .rx_data_o(rx0_data), .rx_src_rdy_o(rx0_src_rdy), .rx_dst_rdy_i(rx0_dst_rdy),
+      .rx_data_o(wr1_dat), .rx_src_rdy_o(wr1_ready_i), .rx_dst_rdy_i(wr1_ready_o),
       .debug() );
-
-   fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade0
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx0),
-      .datain(rx0_data), .src_rdy_i(rx0_src_rdy), .dst_rdy_o(rx0_dst_rdy),
-      .dataout(wr1_dat), .src_rdy_o(wr1_ready_i), .dst_rdy_i(wr1_ready_o));
 
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 1
    wire [31:0] 	 sample_rx1;
-   wire [35:0] 	 rx1_data;
-   wire 	 clear_rx1, strobe_rx1, rx1_dst_rdy, rx1_src_rdy;
+   wire 	 clear_rx1, strobe_rx1;
 
    always @(posedge dsp_clk)
      run_rx1_d1 <= run_rx1;
@@ -656,18 +614,13 @@ module u2_core
       .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
       .out(),.changed(clear_rx1));
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL1)) vita_rx_chain1
+   vita_rx_chain #(.BASE(SR_RX_CTRL1),.UNIT(2),.FIFOSIZE(DSP_RX_FIFOSIZE)) vita_rx_chain1
      (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx1),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun1),
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
-      .rx_data_o(rx1_data), .rx_src_rdy_o(rx1_src_rdy), .rx_dst_rdy_i(rx1_dst_rdy),
+      .rx_data_o(wr3_dat), .rx_src_rdy_o(wr3_ready_i), .rx_dst_rdy_i(wr3_ready_o),
       .debug() );
-
-   fifo_cascade #(.WIDTH(36), .SIZE(DSP_RX_FIFOSIZE)) rx_fifo_cascade1
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx1),
-      .datain(rx1_data), .src_rdy_i(rx1_src_rdy), .dst_rdy_o(rx1_dst_rdy),
-      .dataout(wr3_dat), .src_rdy_o(wr3_ready_i), .dst_rdy_i(wr3_ready_o));
 
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
