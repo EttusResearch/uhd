@@ -70,8 +70,7 @@ public:
                                           (unsigned char*) &swapped,
                                           sizeof(boost::uint32_t));
 
-        if (ret < 0)
-            std::cerr << "USRP: failed memory write: " << ret << std::endl;
+        if (ret < 0) throw uhd::io_error("USRP1: failed control write");
     }
 
     boost::uint32_t peek32(boost::uint32_t addr)
@@ -88,8 +87,7 @@ public:
                                           (unsigned char*) &value_out,
                                           sizeof(boost::uint32_t));
 
-        if (ret < 0)
-            std::cerr << "USRP: failed memory read: " << ret << std::endl;
+        if (ret < 0) throw uhd::io_error("USRP1: failed control read");
 
         return uhd::ntohx(value_out);
     }
@@ -193,10 +191,7 @@ public:
                                          buff,
                                          (w_len_h << 8) | (w_len_l << 0));
 
-            if (ret < 0) {
-                std::cout << "USRP: failed SPI readback transaction: "
-                          << std::dec << ret << std::endl;
-            }
+            if (ret < 0) throw uhd::io_error("USRP1: failed SPI readback transaction");
 
             boost::uint32_t val = (((boost::uint32_t)buff[0]) <<  0) |
                                   (((boost::uint32_t)buff[1]) <<  8) |
@@ -214,10 +209,7 @@ public:
                                           (w_index_h << 8) | (w_index_l << 0),
                                           buff, num_bytes);
 
-            if (ret < 0) {
-                std::cout << "USRP: failed SPI transaction: "
-                          << std::dec << ret << std::endl;
-            }
+            if (ret < 0) throw uhd::io_error("USRP1: failed SPI transaction");
 
             return 0;
         }
@@ -251,8 +243,7 @@ public:
                                                       length);
         }
 
-        if (ret < 0)
-            std::cerr << "USRP: failed firmware command: " << ret << std::endl;
+        if (ret < 0) throw uhd::io_error("USRP1: failed firmware command");
     }
 
 private:
