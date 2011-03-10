@@ -19,6 +19,7 @@
 #include "usrp1_ctrl.hpp"
 #include "fpga_regs_standard.h"
 #include "usrp_spi_defs.h"
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -199,7 +200,16 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
 }
 
 usrp1_impl::~usrp1_impl(void){
-    /* NOP */
+    //Safely destruct all RAII objects in a device.
+    //This prevents the mboard deconstructor from throwing,
+    //which allows the device to be safely deconstructed.
+    BOOST_FOREACH(dboard_slot_t slot, _dboard_slots){
+        UHD_SAFE_CALL(_dboard_managers[slot].reset();)
+        UHD_SAFE_CALL(_dboard_ifaces[slot].reset();)
+        UHD_SAFE_CALL(_codec_ctrls[slot].reset();)
+    }
+    UHD_SAFE_CALL(_clock_ctrl.reset();)
+    UHD_SAFE_CALL(_io_impl.reset();)
 }
 
 bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){

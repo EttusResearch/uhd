@@ -33,6 +33,11 @@ using namespace uhd::transport;
 static const size_t DEFAULT_NUM_XFERS = 16;     //num xfers
 static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
 
+//! helper function: handles all async callbacks
+static void libusb_async_cb(libusb_transfer *lut){
+    (*static_cast<boost::function<void()> *>(lut->user_data))();
+}
+
 /***********************************************************************
  * Reusable managed receiver buffer:
  *  - Associated with a particular libusb transfer struct.
@@ -79,7 +84,8 @@ public:
     void commit(size_t len){
         if (_expired) return;
         _lut->length = len;
-        UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
+        if(len == 0) libusb_async_cb(_lut);
+        else UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
         _expired = true;
     }
 
@@ -99,11 +105,6 @@ private:
     libusb_transfer *_lut;
     bool _expired;
 };
-
-//! helper function: handles all async callbacks
-static void libusb_async_cb(libusb_transfer *lut){
-    (*static_cast<boost::function<void()> *>(lut->user_data))();
-}
 
 /***********************************************************************
  * USB zero_copy device class

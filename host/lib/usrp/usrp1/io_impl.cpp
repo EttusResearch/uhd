@@ -18,6 +18,7 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
@@ -114,7 +115,7 @@ struct usrp1_impl::io_impl{
     }
 
     ~io_impl(void){
-        flush_send_buff();
+        UHD_SAFE_CALL(flush_send_buff();)
     }
 
     zero_copy_if::sptr data_transport;
