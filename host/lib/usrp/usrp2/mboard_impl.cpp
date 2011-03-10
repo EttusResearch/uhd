@@ -18,6 +18,7 @@
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
 #include "fw_common.h"
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/misc_utils.hpp>
@@ -158,8 +159,16 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){
-    _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, 0);
-    _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, 0);
+    //Safely destruct all RAII objects in an mboard.
+    //This prevents the mboard deconstructor from throwing,
+    //which allows the device to be safely deconstructed.
+    UHD_SAFE_CALL(_iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, 0);)
+    UHD_SAFE_CALL(_iface->poke32(_iface->regs.tx_ctrl_packets_per_up, 0);)
+    UHD_SAFE_CALL(_dboard_manager.reset();)
+    UHD_SAFE_CALL(_dboard_iface.reset();)
+    UHD_SAFE_CALL(_codec_ctrl.reset();)
+    UHD_SAFE_CALL(_clock_ctrl.reset();)
+    UHD_SAFE_CALL(_gps_ctrl.reset();)
 }
 
 /***********************************************************************

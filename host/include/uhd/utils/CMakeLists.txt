@@ -25,6 +25,7 @@ INSTALL(FILES
     images.hpp
     pimpl.hpp
     props.hpp
+    safe_call.hpp
     safe_main.hpp
     static.hpp
     thread_priority.hpp
