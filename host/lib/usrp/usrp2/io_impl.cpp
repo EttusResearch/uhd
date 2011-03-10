@@ -113,6 +113,23 @@ private:
 };
 
 /***********************************************************************
+ * Alignment indexes class: keeps track of indexes
+ **********************************************************************/
+class alignment_indexes{
+public:
+    alignment_indexes(void){_indexes = 0;}
+    void reset(size_t len){_indexes = (1 << len) - 1;}
+    size_t front(void){ //TODO replace with look-up table
+        size_t index = 0;
+        while ((_indexes & (1 << index)) == 0) index++;
+        return index;
+    }
+    void remove(size_t index){_indexes &= ~(1 << index);}
+    bool empty(void){return _indexes == 0;}
+private: size_t _indexes;
+};
+
+/***********************************************************************
  * io impl details (internal to this file)
  * - pirate crew
  * - alignment buffer
@@ -165,6 +182,7 @@ struct usrp2_impl::io_impl{
         return true;
     }
 
+    alignment_indexes indexes_to_do; //used in alignment logic
     bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs);
 
     std::vector<zero_copy_if::sptr> &dsp_xports;
@@ -396,19 +414,6 @@ static UHD_INLINE bool handle_msg_packet(
     return true;
 }
 
-class alignment_indexes{
-public:
-    void reset(size_t len){_indexes = (1 << len) - 1;}
-    size_t front(void){ //TODO replace with look-up table
-        size_t index = 0;
-        while ((_indexes & (1 << index)) == 0) index++;
-        return index;
-    }
-    void remove(size_t index){_indexes &= ~(1 << index);}
-    bool empty(void){return _indexes == 0;}
-private: size_t _indexes;
-};
-
 UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     vrt_packet_handler::managed_recv_buffs_t &buffs
 ){
@@ -424,13 +429,18 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     UHD_ASSERT_THROW(recv_map.size() == buffs.size());
     boost::system_time exit_time = boost::get_system_time() + to_time_dur(recv_timeout);
     managed_recv_buffer::sptr buff_tmp;
-    alignment_indexes indexes_to_do;
     bool clear, msg;
     time_spec_t expected_time;
+
+    //If we did not enter this routine with an empty indexes set,
+    //jump to after the clear so we can preserve the previous state.
+    //This saves buffers from being lost when using non-blocking recv.
+    if (not indexes_to_do.empty()) goto skip_reset;
 
     //respond to a clear by starting from scratch
     got_clear:
     indexes_to_do.reset(buffs.size());
+    skip_reset:
     clear = false;
 
     //do an initial pop to load an initial sequence id
