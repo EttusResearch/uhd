@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_UTILS_SAFE_CALL_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/exception.hpp>
+#include <uhd/utils/exception.hpp>
 #include <uhd/utils/warning.hpp>
 
 //! helper macro for safe call to produce warnings
