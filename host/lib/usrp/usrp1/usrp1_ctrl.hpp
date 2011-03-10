@@ -40,60 +40,21 @@ public:
      * Load firmware in Intel HEX Format onto device 
      * \param filename name of firmware file
      * \param force reload firmware if already loaded
-     * \return 0 on success, error code otherwise
      */
-    virtual int usrp_load_firmware(std::string filename,
+    virtual void usrp_load_firmware(std::string filename,
                                    bool force = false) = 0;
 
     /*!
      * Load fpga file onto usrp 
      * \param filename name of fpga image 
-     * \return 0 on success, error code otherwise
      */
-    virtual int usrp_load_fpga(std::string filename) = 0;
+    virtual void usrp_load_fpga(std::string filename) = 0;
 
     /*!
      * Load USB descriptor file in Intel HEX format into EEPROM
-     * \param filename name of EEPROM image 
-     * \return 0 on success, error code otherwise
+     * \param filename name of EEPROM image
      */
-    virtual int usrp_load_eeprom(std::string filestring) = 0;
-
-    /*!
-     * Set led usrp 
-     * \param led_num which LED to control (0 or 1)
-     * \param on turn LED on or off
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_set_led(int led_num, bool on) = 0;
-
-    /*!
-     * Get firmware hash 
-     * \param hash a size_t hash value
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_get_firmware_hash(size_t &hash) = 0;
-
-    /*!
-     * Set firmware hash 
-     * \param hash a size_t hash value
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_set_firmware_hash(size_t hash) = 0;
-                              
-    /*!
-     * Get fpga hash 
-     * \param hash a size_t hash value
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_get_fpga_hash(size_t &hash) = 0;
-
-    /*!
-     * Set fpga hash 
-     * \param hash a size_t hash value
-     * \return 0 on success, error code otherwise
-     */
-    virtual int usrp_set_fpga_hash(size_t hash) = 0;
+    virtual void usrp_load_eeprom(std::string filestring) = 0;
 
     /*!
      * Submit an IN transfer 
