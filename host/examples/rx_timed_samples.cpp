@@ -133,16 +133,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         num_acc_samps += num_rx_samps;
     } done_loop:
 
-    std::cout << "disconnect now!!!!!!!!\n";
-    sleep(3);
-
-    try{
-        usrp.reset();
-    }
-    catch(...){
-        std::cout << "error caught \n";
-    }
-
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
