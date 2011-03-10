@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "wrapper_utils.hpp"
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/usrp/mboard_iface.hpp>
@@ -31,6 +30,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <iostream>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -38,7 +38,48 @@ using namespace uhd::usrp;
 const std::string multi_usrp::ALL_GAINS = "";
 
 /***********************************************************************
- * Simple USRP Implementation
+ * Helper methods
+ **********************************************************************/
+static inline uhd::freq_range_t add_dsp_shift(
+    const uhd::freq_range_t &range,
+    wax::obj dsp
+){
+    double codec_rate = dsp[uhd::usrp::DSP_PROP_CODEC_RATE].as<double>();
+    return uhd::freq_range_t(range.start() - codec_rate/2.0, range.stop() + codec_rate/2.0);
+}
+
+static inline void do_samp_rate_warning_message(
+    double target_rate,
+    double actual_rate,
+    const std::string &xx
+){
+    static const double max_allowed_error = 1.0; //Sps
+    if (std::abs(target_rate - actual_rate) > max_allowed_error){
+        uhd::warning::post(str(boost::format(
+            "The hardware does not support the requested %s sample rate:\n"
+            "Target sample rate: %f MSps\n"
+            "Actual sample rate: %f MSps\n"
+        ) % xx % (target_rate/1e6) % (actual_rate/1e6)));
+    }
+}
+
+static inline void do_tune_freq_warning_message(
+    double target_freq,
+    double actual_freq,
+    const std::string &xx
+){
+    static const double max_allowed_error = 1.0; //Hz
+    if (std::abs(target_freq - actual_freq) > max_allowed_error){
+        uhd::warning::post(str(boost::format(
+            "The hardware does not support the requested %s frequency:\n"
+            "Target frequency: %f MHz\n"
+            "Actual frequency: %f MHz\n"
+        ) % xx % (target_freq/1e6) % (actual_freq/1e6)));
+    }
+}
+
+/***********************************************************************
+ * Multi USRP Implementation
  **********************************************************************/
 class multi_usrp_impl : public multi_usrp{
 public:
