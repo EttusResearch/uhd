@@ -21,8 +21,8 @@ module dsp_core_rx
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   input [17:0] adc_i, input adc_ovf_a,
-   input [17:0] adc_q, input adc_ovf_b,
+   input [17:0] adc_i, input adc_ovf_i,
+   input [17:0] adc_q, input adc_ovf_q,
    
    output [31:0] sample,
    input run,
@@ -31,7 +31,6 @@ module dsp_core_rx
    );
 
    wire [15:0] scale_i, scale_q;
-   reg [13:0] adc_i, adc_q;
    wire [31:0] phase_inc;
    reg [31:0]  phase;
 
@@ -69,7 +68,7 @@ module dsp_core_rx
 
    MULT18X18S mult_i
      (.P(prod_i),    // 36-bit multiplier output
-      .A({{4{adc_i[13]}},adc_i} ),    // 18-bit multiplier input
+      .A(adc_i),    // 18-bit multiplier input
       .B({{2{scale_i[15]}},scale_i}),    // 18-bit multiplier input
       .C(clk),    // Clock input
       .CE(1),  // Clock enable input
@@ -78,7 +77,7 @@ module dsp_core_rx
 
    MULT18X18S mult_q
      (.P(prod_q),    // 36-bit multiplier output
-      .A({{4{adc_q[13]}},adc_q} ),    // 18-bit multiplier input
+      .A(adc_q),    // 18-bit multiplier input
       .B({{2{scale_q[15]}},scale_q}),    // 18-bit multiplier input
       .C(clk),    // Clock input
       .CE(1),  // Clock enable input
@@ -125,11 +124,13 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
       .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
-   round #(.bits_in(18),.bits_out(16)) round_iout (.in(i_hb2),.out(i_out));
-   round #(.bits_in(18),.bits_out(16)) round_qout (.in(q_hb2),.out(q_out));
-
-   assign      sample = sample_reg;
-   assign      strobe = strobe_hb2;
+   round_reg #(.bits_in(18),.bits_out(16)) round_iout (.clk(clk),.in(i_hb2),.out(i_out));
+   round_reg #(.bits_in(18),.bits_out(16)) round_qout (.clk(clk),.in(q_hb2),.out(q_out));
+   reg 	       strobe_out;
+   always @(posedge clk) strobe_out <= strobe_hb2;
+   
+   assign      sample = {i_hb2,q_hb2};
+   assign      strobe = strobe_out;
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_cic_d1, strobe_hb1, strobe_hb2};
    
 endmodule // dsp_core_rx

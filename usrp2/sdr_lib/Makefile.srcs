@@ -30,6 +30,7 @@ round.v \
 round_reg.v \
 rx_control.v \
 rx_dcoffset.v \
+rx_frontend.v \
 sign_extend.v \
 small_hb_dec.v \
 small_hb_int.v \
