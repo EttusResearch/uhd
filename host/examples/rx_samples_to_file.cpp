@@ -78,11 +78,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate), "rate of incoming samples")
-        ("freq", po::value<double>(&freq), "rf center frequency in Hz")
+        ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "select antenna")
-        ("subdev", po::value<std::string>(&subdev), "select subdevice")
-        ("bw", po::value<double>(&bw), "select IF filter bandwidth in Hz")
+        ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
+        ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
+        ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
