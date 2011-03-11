@@ -73,9 +73,11 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/warning.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -181,15 +183,15 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ) % RXIO_MASK % TXIO_MASK << std::endl;
 
     //set some default values
-    set_rx_lo_freq((sbx_freq_range.min + sbx_freq_range.max)/2.0);
-    set_tx_lo_freq((sbx_freq_range.min + sbx_freq_range.max)/2.0);
+    set_rx_lo_freq((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
+    set_tx_lo_freq((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
     set_rx_ant("RX2");
 
     BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
-        set_tx_gain(sbx_tx_gain_ranges[name].min, name);
+        set_tx_gain(sbx_tx_gain_ranges[name].start(), name);
     }
     BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
-        set_rx_gain(sbx_rx_gain_ranges[name].min, name);
+        set_rx_gain(sbx_rx_gain_ranges[name].start(), name);
     }
 }
 
@@ -202,10 +204,10 @@ sbx_xcvr::~sbx_xcvr(void){
  **********************************************************************/
 static int rx_pga0_gain_to_iobits(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, sbx_rx_gain_ranges["PGA0"].min, sbx_rx_gain_ranges["PGA0"].max);
+    gain = sbx_rx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
-    float attn = sbx_rx_gain_ranges["PGA0"].max - gain;
+    float attn = sbx_rx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the RX attenuation
     int attn_code = int(floor(attn*2));
@@ -217,17 +219,17 @@ static int rx_pga0_gain_to_iobits(float &gain){
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = sbx_rx_gain_ranges["PGA0"].max - float(attn_code)/2;
+    gain = sbx_rx_gain_ranges["PGA0"].stop() - float(attn_code)/2;
 
     return iobits;
 }
 
 static int tx_pga0_gain_to_iobits(float &gain){
     //clip the input
-    gain = std::clip<float>(gain, sbx_tx_gain_ranges["PGA0"].min, sbx_tx_gain_ranges["PGA0"].max);
+    gain = sbx_tx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
-    float attn = sbx_tx_gain_ranges["PGA0"].max - gain;
+    float attn = sbx_tx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the TX attenuation
     int attn_code = int(floor(attn*2));
@@ -239,7 +241,7 @@ static int tx_pga0_gain_to_iobits(float &gain){
     ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = sbx_tx_gain_ranges["PGA0"].max - float(attn_code)/2;
+    gain = sbx_tx_gain_ranges["PGA0"].stop() - float(attn_code)/2;
 
     return iobits;
 }
@@ -338,7 +340,7 @@ double sbx_xcvr::set_lo_freq(
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = std::clip(target_freq, sbx_freq_range.min, sbx_freq_range.max);
+    target_freq = sbx_freq_range.clip(target_freq);
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of
@@ -528,8 +530,17 @@ void sbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_LOCKED:
-        val = this->get_locked(dboard_iface::UNIT_RX);
+    case SUBDEV_PROP_SENSOR:
+        UHD_ASSERT_THROW(key.name == "lo_locked");
+        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
+        return;
+
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = prop_names_t(1, "lo_locked");
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -552,6 +563,12 @@ void sbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         this->set_rx_ant(val.as<std::string>());
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::warning::post(
+            str(boost::format("SBX: No tunable bandwidth, fixed filtered to 40MHz"))
+        );
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -612,8 +629,17 @@ void sbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
-    case SUBDEV_PROP_LO_LOCKED:
-        val = this->get_locked(dboard_iface::UNIT_TX);
+    case SUBDEV_PROP_SENSOR:
+        UHD_ASSERT_THROW(key.name == "lo_locked");
+        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_TX), "locked", "unlocked");
+        return;
+
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = prop_names_t(1, "lo_locked");
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -636,6 +662,12 @@ void sbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_ANTENNA:
         this->set_tx_ant(val.as<std::string>());
+        return;
+
+    case SUBDEV_PROP_BANDWIDTH:
+        uhd::warning::post(
+            str(boost::format("SBX: No tunable bandwidth, fixed filtered to 40MHz"))
+        );
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
