@@ -31,7 +31,7 @@ ELSE(PYTHON_EXECUTABLE)
 
     #and if that fails use the find program routine
     IF(NOT PYTHONINTERP_FOUND)
-        FIND_PROGRAM(PYTHON_EXECUTABLE python)
+        FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python python2.7 python2.6)
         IF(PYTHON_EXECUTABLE)
             SET(PYTHONINTERP_FOUND TRUE)
         ENDIF(PYTHON_EXECUTABLE)
