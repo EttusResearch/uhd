@@ -169,7 +169,7 @@ static mtu_result_t determine_mtu(const std::string &addr){
     //require that buffering to be used internally, and this is a safe setting.
     boost::uint8_t buffer[2000];
     usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(buffer);
-    static const double echo_timeout = 0.010; //10 ms
+    static const double echo_timeout = 0.020; //20 ms
 
     size_t min_recv_mtu = sizeof(usrp2_ctrl_data_t), max_recv_mtu = sizeof(buffer);
     size_t min_send_mtu = sizeof(usrp2_ctrl_data_t), max_send_mtu = sizeof(buffer);
