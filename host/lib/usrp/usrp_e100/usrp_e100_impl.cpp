@@ -120,10 +120,10 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     try{std::ifstream(hash_file_path) >> loaded_hash;}catch(...){}
 
     //if not loaded: load the fpga image and write the hash-file
-    if (fpga_compat_num != USRP_E_COMPAT_NUM or loaded_hash != fpga_hash){
+    if (fpga_compat_num != USRP_E_FPGA_COMPAT_NUM or loaded_hash != fpga_hash){
         iface.reset();
         usrp_e100_load_fpga(usrp_e100_fpga_image);
-	sleep(1); ///\todo do this better one day.
+        sleep(1); ///\todo do this better one day.
         std::cout << boost::format("re-Opening USRP-E on %s") % node << std::endl;
         iface = usrp_e100_iface::make(node);
         try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
@@ -131,11 +131,11 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
 
     //check that the compatibility is correct
     fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
-    if (fpga_compat_num != USRP_E_COMPAT_NUM){
+    if (fpga_compat_num != USRP_E_FPGA_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
             "Expected fpga compatibility number 0x%x, but got 0x%x:\n"
             "The fpga build is not compatible with the host code build."
-        ) % USRP_E_COMPAT_NUM % fpga_compat_num));
+        ) % USRP_E_FPGA_COMPAT_NUM % fpga_compat_num));
     }
 
     return device::sptr(new usrp_e100_impl(iface));
