@@ -15,6 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+#Creating a shared pointer itself has allocation overhead.
+#Define the quick allocator to reduce fast-path overhead.
+ADD_DEFINITIONS(-DBOOST_SP_USE_QUICK_ALLOCATOR)
+
 ########################################################################
 # Helpful Macros
 ########################################################################

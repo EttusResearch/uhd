@@ -62,10 +62,6 @@ IF(NOT CMAKE_BUILD_TYPE)
    MESSAGE(STATUS "Build type not specified: defaulting to release.")
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
-#Creating a shared pointer itself has allocation overhead.
-#Define the quick allocator to reduce fast-path overhead.
-ADD_DEFINITIONS(-DBOOST_SP_USE_QUICK_ALLOCATOR)
-
 IF(CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-Wall)
     ADD_DEFINITIONS(-Wextra)
