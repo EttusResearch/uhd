@@ -31,7 +31,6 @@ module dsp_core_rx
    );
 
    wire [15:0] scale_i, scale_q;
-   wire [13:0] adc_a_ofs, adc_b_ofs;
    reg [13:0] adc_i, adc_q;
    wire [31:0] phase_inc;
    reg [31:0]  phase;
