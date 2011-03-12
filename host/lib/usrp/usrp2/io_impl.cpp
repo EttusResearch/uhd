@@ -183,6 +183,7 @@ struct usrp2_impl::io_impl{
     }
 
     alignment_indexes indexes_to_do; //used in alignment logic
+    time_spec_t expected_time; //used in alignment logic
     bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs);
 
     std::vector<zero_copy_if::sptr> &dsp_xports;
@@ -430,21 +431,20 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     boost::system_time exit_time = boost::get_system_time() + to_time_dur(recv_timeout);
     managed_recv_buffer::sptr buff_tmp;
     bool clear, msg;
-    time_spec_t expected_time;
+    size_t index;
 
     //If we did not enter this routine with an empty indexes set,
     //jump to after the clear so we can preserve the previous state.
     //This saves buffers from being lost when using non-blocking recv.
-    if (not indexes_to_do.empty()) goto skip_reset;
+    if (not indexes_to_do.empty()) goto skip_pop_initial;
 
     //respond to a clear by starting from scratch
     got_clear:
     indexes_to_do.reset(buffs.size());
-    skip_reset:
     clear = false;
 
     //do an initial pop to load an initial sequence id
-    size_t index = indexes_to_do.front();
+    index = indexes_to_do.front();
     buff_tmp = dsp_xports[recv_map[index]]->get_recv_buff(from_time_dur(exit_time - boost::get_system_time()));
     if (buff_tmp.get() == NULL) return false;
     extract_packet_info(buff_tmp, this->prev_infos[recv_map[index]], expected_time, clear, msg);
@@ -452,6 +452,7 @@ UHD_INLINE bool usrp2_impl::io_impl::get_recv_buffs(
     buffs[index] = buff_tmp;
     if (msg) return handle_msg_packet(buffs, index);
     indexes_to_do.remove(index);
+    skip_pop_initial:
 
     //get an aligned set of elements from the buffers:
     while(not indexes_to_do.empty()){
