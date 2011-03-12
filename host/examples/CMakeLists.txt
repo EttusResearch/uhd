@@ -20,6 +20,7 @@
 ########################################################################
 SET(example_sources
     benchmark_rx_rate.cpp
+    rx_multi_samples.cpp
     rx_samples_to_file.cpp
     rx_samples_to_udp.cpp
     rx_timed_samples.cpp

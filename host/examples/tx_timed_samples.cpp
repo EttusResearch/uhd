@@ -33,7 +33,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     double seconds_in_future;
     size_t total_num_samps;
-    double rate, freq;
+    double rate;
     float ampl;
 
     //setup the program options
@@ -44,7 +44,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to transmit")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
-        ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
         ("dilv", "specify to disable inner-loop verbose")
     ;
@@ -70,11 +69,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_tx_rate(rate);
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
-
-    //set the tx center frequency
-    std::cout << boost::format("Setting TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    usrp->set_tx_freq(freq);
-    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
