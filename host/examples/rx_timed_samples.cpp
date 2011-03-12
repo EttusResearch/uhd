@@ -39,8 +39,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("secs", po::value<double>(&seconds_in_future)->default_value(3), "number of seconds in the future to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
         ("clock", po::value<double>(&clock), "master clock frequency in Hz")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
@@ -94,44 +94,43 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
     usrp->issue_stream_cmd(stream_cmd);
 
-    //allocate buffer to receive
+    //meta-data will be filled in by recv()
+    uhd::rx_metadata_t md;
+
+    //allocate buffer to receive with samples
     std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
 
-    //loop until total number of samples reached
+    //the first call to recv() will block this many seconds before receiving
+    double timeout = seconds_in_future + 0.1; //timeout (delay before receive + padding)
+
     size_t num_acc_samps = 0; //number of accumulated samples
     while(num_acc_samps < total_num_samps){
-        uhd::rx_metadata_t md;
+        //receive a single packet
         size_t num_rx_samps = usrp->get_device()->recv(
             &buff.front(), buff.size(), md,
             uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET
+            uhd::device::RECV_MODE_ONE_PACKET, timeout
         );
 
-        //handle the error codes
-        switch(md.error_code){
-        case uhd::rx_metadata_t::ERROR_CODE_NONE:
-            break;
+        //use a small timeout for subsequent packets
+        timeout = 0.1;
 
-        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            if (num_acc_samps == 0) continue;
-            std::cout << boost::format(
-                "Got timeout before all samples received, possible packet loss, exiting loop..."
-            ) << std::endl;
-            goto done_loop;
-
-        default:
-            std::cout << boost::format(
-                "Got error code 0x%x, exiting loop..."
-            ) % md.error_code << std::endl;
-            goto done_loop;
+        //handle the error code
+        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
+        if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
+            throw std::runtime_error(str(boost::format(
+                "Unexpected error code 0x%x"
+            ) % md.error_code));
         }
 
         if(verbose) std::cout << boost::format(
-            "Got packet: %u samples, %u full secs, %f frac secs"
+            "Received packet: %u samples, %u full secs, %f frac secs"
         ) % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
 
         num_acc_samps += num_rx_samps;
-    } done_loop:
+    }
+
+    if (num_acc_samps < total_num_samps) std::cerr << "Receive timeout before all samples received..." << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

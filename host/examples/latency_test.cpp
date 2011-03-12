@@ -150,9 +150,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             break;
 
         default:
-            std::cout << boost::format
-                ("failed:\n    Got unexpected event code 0x%x.\n")
-                % async_md.event_code << std::endl;
+            std::cerr << boost::format(
+                "failed:\n    Got unexpected event code 0x%x.\n"
+            ) % async_md.event_code << std::endl;
             other++;
             break;
         }
