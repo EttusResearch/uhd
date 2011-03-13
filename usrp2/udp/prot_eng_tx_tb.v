@@ -8,39 +8,47 @@ module prot_eng_tx_tb();
    always #50 clk = ~clk;
    
    reg [31:0] f36_data;
-   reg [1:0] f36_occ;
-   reg f36_sof, f36_eof;
-   
+   reg [1:0]  f36_occ;
+   reg 	      f36_sof, f36_eof;
    wire [35:0] f36_in = {f36_occ,f36_eof,f36_sof,f36_data};
-   reg src_rdy_f36i  = 0;
-   reg [15:0] count;
+   reg 	       src_rdy_f36i  = 0;
+   wire        dst_rdy_f36i;
+
 
    wire [35:0] casc_do;
-   wire [18:0] final_out, prot_out;
+   wire        src_rdy_f36o, dst_rdy_f36o;
 
-   wire src_rdy_final, dst_rdy_final, src_rdy_prot;
-   reg dst_rdy_prot =0;
-   
-   wire dst_rdy_f36o ;
-   fifo_long #(.WIDTH(36), .SIZE(4)) fifo_cascade36
-     (.clk(clk),.reset(rst),.clear(clear),
-      .datain(f36_in),.src_rdy_i(src_rdy_f36i),.dst_rdy_o(dst_rdy_f36i),
-      .dataout(casc_do),.src_rdy_o(src_rdy_f36o),.dst_rdy_i(dst_rdy_f36o));
+   wire [35:0] prot_out;
+   wire        src_rdy_prot, dst_rdy_prot;
 
-   fifo36_to_fifo19 fifo_converter
-     (.clk(clk),.reset(rst),.clear(clear),
-      .f36_datain(casc_do),.f36_src_rdy_i(src_rdy_f36o),.f36_dst_rdy_o(dst_rdy_f36o),
-      .f19_dataout(final_out),.f19_src_rdy_o(src_rdy_final),.f19_dst_rdy_i(dst_rdy_final));
+   wire [35:0] realign_out;
+   wire        src_rdy_realign;
+   reg 	       dst_rdy_realign = 1;
+      
+   reg [15:0] count;
 
    reg set_stb;
    reg [7:0] set_addr;
    reg [31:0] set_data;
 	
+   fifo_short #(.WIDTH(36)) fifo_cascade36
+     (.clk(clk),.reset(rst),.clear(clear),
+      .datain(f36_in),.src_rdy_i(src_rdy_f36i),.dst_rdy_o(dst_rdy_f36i),
+      .dataout(casc_do),.src_rdy_o(src_rdy_f36o),.dst_rdy_i(dst_rdy_f36o));
+
+   /*
    prot_eng_tx #(.BASE(BASE)) prot_eng_tx
-     (.clk(clk), .reset(rst),
+     (.clk(clk), .reset(rst), .clear(0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .datain(final_out[18:0]),.src_rdy_i(src_rdy_final),.dst_rdy_o(dst_rdy_final),
-      .dataout(prot_out[18:0]),.src_rdy_o(src_rdy_prot),.dst_rdy_i(dst_rdy_prot));
+      .datain(casc_do),.src_rdy_i(src_rdy_f36o),.dst_rdy_o(dst_rdy_f36o),
+      .dataout(prot_out),.src_rdy_o(src_rdy_prot),.dst_rdy_i(dst_rdy_prot));
+*/
+   
+   ethtx_realign ethtx_realign
+     (.clk(clk), .reset(rst), .clear(0),
+      //.datain(prot_out),.src_rdy_i(src_rdy_prot),.dst_rdy_o(dst_rdy_prot),
+      .datain(casc_do),.src_rdy_i(src_rdy_f36o),.dst_rdy_o(dst_rdy_f36o),
+      .dataout(realign_out),.src_rdy_o(src_rdy_realign),.dst_rdy_i(dst_rdy_realign));
    
    reg [35:0] printer;
 
@@ -61,7 +69,7 @@ module prot_eng_tx_tb();
    task ReadFromFIFO36;
       begin
 	 $display("Read from FIFO36");
-	 #1 dst_rdy_prot <= 1;
+	 #1 dst_rdy_realign <= 1;
 	 while(~src_rdy_prot)
 	   @(posedge clk);
 	 while(1)
@@ -162,7 +170,7 @@ module prot_eng_tx_tb();
 	@(posedge clk);
 	#10000;
 	@(posedge clk);
-	PutPacketInFIFO36(32'hE0F0A0B0,36);
+	//PutPacketInFIFO36(32'hE0F0A0B0,36);
 	@(posedge clk);
 	@(posedge clk);
 	@(posedge clk);
