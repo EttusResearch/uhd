@@ -10,6 +10,17 @@ module prot_eng_tx
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [35:0] datain, input src_rdy_i, output dst_rdy_o,
     output [35:0] dataout, output src_rdy_o, input dst_rdy_i);
+
+   wire 	  src_rdy_int1, dst_rdy_int1;
+   wire 	  src_rdy_int2, dst_rdy_int2;
+   wire [35:0] 	  data_int1, data_int2;
+
+   // Shortfifo on input to guarantee no deadlock
+   fifo_short #(.WIDTH(36)) head_fifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain(datain), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o),
+      .dataout(data_int1), .src_rdy_o(src_rdy_int1), .dst_rdy_i(dst_rdy_int1),
+      .space(),.occupied() );
    
    // Store header values in a small dual-port (distributed) ram
    reg [31:0] 	  header_ram[0:63];
@@ -28,7 +39,7 @@ module prot_eng_tx
    wire [15:0] ip_length = length + 28;  // IP HDR + UDP HDR
    wire [15:0] udp_length = length + 8;  //  UDP HDR
    reg 	       sof_o;
-   reg [31:0]  dataout_int;
+   reg [31:0]  prot_data;
    
    always @(posedge clk)
      if(reset)
@@ -37,14 +48,14 @@ module prot_eng_tx
 	  sof_o   <= 0;
        end
      else
-       if(src_rdy_i & dst_rdy_i)
+       if(src_rdy_int1 & dst_rdy_int2)
 	 case(state)
 	   0 :
 	     begin
-		port_sel <= datain[18:17];
-		length 	<= datain[15:0];
+		port_sel <= data_int1[18:17];
+		length 	<= data_int1[15:0];
 		sof_o <= 1;
-		if(datain[16])
+		if(data_int1[16])
 		  state <= 1;
 		else
 		  state <= 12;
@@ -52,7 +63,7 @@ module prot_eng_tx
 	   12 :
 	     begin
 		sof_o <= 0;
-		if(datain[33]) // eof
+		if(data_int1[33]) // eof
 		  state <= 0;
 	     end
 	   default :
@@ -68,22 +79,29 @@ module prot_eng_tx
 
    always @*
      case(state)
-       1 : dataout_int <= header_word;  // ETH, top half ignored
-       2 : dataout_int <= header_word;  // ETH
-       3 : dataout_int <= header_word;  // ETH
-       4 : dataout_int <= header_word;  // ETH
-       5 : dataout_int <= { header_word[31:16], ip_length }; // IP
-       6 : dataout_int <= header_word; // IP
-       7 : dataout_int <= { header_word[31:16], (16'hFFFF ^ ip_checksum) }; // IP
-       8 : dataout_int <= header_word; // IP
-       9 : dataout_int <= header_word; // IP
-       10: dataout_int <= header_word;  // UDP 
-       11: dataout_int <= { udp_length, header_word[15:0]}; // UDP
-       default : dataout_int <= datain[31:0];
+       1 : prot_data <= header_word;  // ETH, top half ignored
+       2 : prot_data <= header_word;  // ETH
+       3 : prot_data <= header_word;  // ETH
+       4 : prot_data <= header_word;  // ETH
+       5 : prot_data <= { header_word[31:16], ip_length }; // IP
+       6 : prot_data <= header_word; // IP
+       7 : prot_data <= { header_word[31:16], (16'hFFFF ^ ip_checksum) }; // IP
+       8 : prot_data <= header_word; // IP
+       9 : prot_data <= header_word; // IP
+       10: prot_data <= header_word;  // UDP 
+       11: prot_data <= { udp_length, header_word[15:0]}; // UDP
+       default : prot_data <= data_int1[31:0];
      endcase // case (state)
 
-   assign dataout = { datain[35:33] & {3{state[3]}},  sof_o, dataout_int };
-   assign dst_rdy_o = dst_rdy_i & ((state == 0) | (state == 12));
-   assign src_rdy_o = src_rdy_i & (state != 0);
+   assign data_int2 = { data_int1[35:33] & {3{state[3]}},  sof_o, prot_data };
+   assign dst_rdy_int1 = dst_rdy_int2 & ((state == 0) | (state == 12));
+   assign src_rdy_int2 = src_rdy_int1 & (state != 0);
+   
+   // Shortfifo on output to guarantee no deadlock
+   fifo_short #(.WIDTH(36)) tail_fifo
+     (.clk(clk),.reset(reset),.clear(clear),
+      .datain(data_int2), .src_rdy_i(src_rdy_int2), .dst_rdy_o(dst_rdy_int2),
+      .dataout(dataout), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i),
+      .space(),.occupied() );
    
 endmodule // prot_eng_tx

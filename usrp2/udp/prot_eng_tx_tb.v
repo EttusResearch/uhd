@@ -63,6 +63,11 @@ module prot_eng_tx_tb();
       end
    endtask // WriteSREG
    	
+   always @(posedge clk)
+     if(src_rdy_realign)
+       $display("Read: %h",realign_out);
+
+   
    task ReadFromFIFO36;
       begin
 	 $display("Read from FIFO36");
@@ -137,7 +142,7 @@ module prot_eng_tx_tb();
      begin
 	#10000;
 	@(posedge clk);
-	ReadFromFIFO36;
+	//ReadFromFIFO36;
      end
    
    initial
