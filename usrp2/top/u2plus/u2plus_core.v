@@ -131,18 +131,22 @@ module u2plus_core
    output spiflash_cs, output spiflash_clk, input spiflash_miso, output spiflash_mosi
    );
 
-   localparam SR_MISC     =  0;   // Uses 9 regs
-   localparam SR_BUF_POOL = 64;   // Uses 4 regs
-   localparam SR_UDP_SM   = 96;   // 64 regs
-   localparam SR_RX_DSP0  = 160;  // 16
-   localparam SR_RX_CTRL0 = 176;  // 16
-   localparam SR_TIME64   = 192;  //  3
-   localparam SR_SIMTIMER = 198;  //  2
-   localparam SR_TX_DSP   = 208;  // 16
-   localparam SR_TX_CTRL  = 224;  // 16
-   localparam SR_RX_DSP1  = 240;
-   localparam SR_RX_CTRL1 = 32;
-   
+   localparam SR_MISC     =   0;   // 7 regs
+   localparam SR_SIMTIMER =   8;   // 2
+   localparam SR_TIME64   =  10;   // 6
+   localparam SR_BUF_POOL =  16;   // 4
+
+   localparam SR_RX_FRONT =  24;   // 5
+   localparam SR_RX_CTRL0 =  32;   // 9
+   localparam SR_RX_DSP0  =  48;   // 7
+   localparam SR_RX_CTRL1 =  80;   // 9
+   localparam SR_RX_DSP1  =  96;   // 7
+
+   localparam SR_TX_FRONT = 128;   // ?
+   localparam SR_TX_CTRL  = 144;   // 6
+   localparam SR_TX_DSP   = 160;   // 5
+
+   localparam SR_UDP_SM   = 192;   // 64
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
@@ -477,7 +481,7 @@ module u2plus_core
 				      .in(set_data),.out(adc_outs),.changed());
    setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(phy_reset),.changed());
-   setting_reg #(.my_addr(SR_MISC+5),.width(1)) sr_bldr (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+5),.width(1)) sr_bld (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(bldr_done),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
@@ -492,7 +496,7 @@ module u2plus_core
    setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
 
-   setting_reg #(.my_addr(SR_MISC+8),.width(8), .at_reset(8'b0001_1110)) 
+   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) 
    sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);

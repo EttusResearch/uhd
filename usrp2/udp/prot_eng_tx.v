@@ -1,9 +1,4 @@
 
-//   The first line:
-//          Bits 18:17   Select which source/dest pair
-//          Bit  16      1 for fast path (accelerated protocol)
-//          Bits 15:0    Length in bytes
-
 module prot_eng_tx
   #(parameter BASE=0)
    (input clk, input reset, input clear,
