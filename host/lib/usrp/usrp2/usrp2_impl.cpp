@@ -164,7 +164,6 @@ static mtu_result_t determine_mtu(const std::string &addr){
         addr, BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
     );
 
-    mtu_result_t mtu;
     //The FPGA offers 4K buffers, and the user may manually request this.
     //However, multiple simultaneous receives (2DSP slave + 2DSP master),
     //require that buffering to be used internally, and this is a safe setting.
@@ -177,44 +176,41 @@ static mtu_result_t determine_mtu(const std::string &addr){
 
     while (min_recv_mtu < max_recv_mtu){
 
-        mtu.recv_mtu = (max_recv_mtu/2 + min_recv_mtu/2 + 3) & ~3;
+        size_t test_mtu = (max_recv_mtu/2 + min_recv_mtu/2 + 3) & ~3;
         //std::cout << "recv_mtu " << mtu.recv_mtu << std::endl;
 
         ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
         ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
-        ctrl_data->data.echo_args.len = htonl(mtu.recv_mtu);
+        ctrl_data->data.echo_args.len = htonl(test_mtu);
         udp_sock->send(boost::asio::buffer(buffer, sizeof(usrp2_ctrl_data_t)));
 
         size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
 
-        if (len >= mtu.recv_mtu) min_recv_mtu = mtu.recv_mtu;
-        else                     max_recv_mtu = mtu.recv_mtu - 4;
+        if (len >= test_mtu) min_recv_mtu = test_mtu;
+        else                 max_recv_mtu = test_mtu - 4;
 
     }
 
     while (min_send_mtu < max_send_mtu){
 
-        mtu.send_mtu = (max_send_mtu/2 + min_send_mtu/2 + 3) & ~3;
+        size_t test_mtu = (max_send_mtu/2 + min_send_mtu/2 + 3) & ~3;
         //std::cout << "send_mtu " << mtu.send_mtu << std::endl;
 
         ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
         ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
         ctrl_data->data.echo_args.len = htonl(sizeof(usrp2_ctrl_data_t));
-        udp_sock->send(boost::asio::buffer(buffer, mtu.send_mtu));
+        udp_sock->send(boost::asio::buffer(buffer, test_mtu));
 
         size_t len = udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
         if (len >= sizeof(usrp2_ctrl_data_t)) len = ntohl(ctrl_data->data.echo_args.len);
 
-        if (len >= mtu.send_mtu) min_send_mtu = mtu.send_mtu;
-        else                     max_send_mtu = mtu.send_mtu - 4;
+        if (len >= test_mtu) min_send_mtu = test_mtu;
+        else                 max_send_mtu = test_mtu - 4;
     }
 
-    //don't trust the discovery if it lands slightly above default MTU
-    if (mtu.recv_mtu > udp_simple::mtu and mtu.recv_mtu <= udp_simple::mtu + 16)
-        mtu.recv_mtu = udp_simple::mtu;
-    if (mtu.send_mtu > udp_simple::mtu and mtu.send_mtu <= udp_simple::mtu + 16)
-        mtu.send_mtu = udp_simple::mtu;
-
+    mtu_result_t mtu;
+    mtu.recv_mtu = min_recv_mtu;
+    mtu.send_mtu = min_send_mtu;
     return mtu;
 }
 
