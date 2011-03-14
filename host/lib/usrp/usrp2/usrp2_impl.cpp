@@ -208,6 +208,12 @@ static mtu_result_t determine_mtu(const std::string &addr){
         else                     max_send_mtu = mtu.send_mtu - 4;
     }
 
+    //don't trust the discovery if it lands slightly above default MTU
+    if (mtu.recv_mtu > udp_simple::mtu and mtu.recv_mtu <= udp_simple::mtu + 16)
+        mtu.recv_mtu = udp_simple::mtu;
+    if (mtu.send_mtu > udp_simple::mtu and mtu.send_mtu <= udp_simple::mtu + 16)
+        mtu.send_mtu = udp_simple::mtu;
+
     return mtu;
 }
 
