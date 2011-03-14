@@ -131,7 +131,6 @@
 #define UE_REG_CLEAR_ADDR(n)      (UE_REG_SETTINGS_BASE_ADDR(48) + (4*(n)))
 #define UE_REG_CLEAR_RX           UE_REG_CLEAR_ADDR(0)
 #define UE_REG_CLEAR_TX           UE_REG_CLEAR_ADDR(1)
-#define UE_REG_CLEAR_GLOBAL       UE_REG_CLEAR_ADDR(2)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
