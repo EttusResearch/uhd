@@ -36,20 +36,17 @@ module prot_eng_tx_tb();
       .datain(f36_in),.src_rdy_i(src_rdy_f36i),.dst_rdy_o(dst_rdy_f36i),
       .dataout(casc_do),.src_rdy_o(src_rdy_f36o),.dst_rdy_i(dst_rdy_f36o));
 
-   /*
    prot_eng_tx #(.BASE(BASE)) prot_eng_tx
      (.clk(clk), .reset(rst), .clear(0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .datain(casc_do),.src_rdy_i(src_rdy_f36o),.dst_rdy_o(dst_rdy_f36o),
       .dataout(prot_out),.src_rdy_o(src_rdy_prot),.dst_rdy_i(dst_rdy_prot));
-*/
-   
+
    ethtx_realign ethtx_realign
      (.clk(clk), .reset(rst), .clear(0),
-      //.datain(prot_out),.src_rdy_i(src_rdy_prot),.dst_rdy_o(dst_rdy_prot),
-      .datain(casc_do),.src_rdy_i(src_rdy_f36o),.dst_rdy_o(dst_rdy_f36o),
+      .datain(prot_out),.src_rdy_i(src_rdy_prot),.dst_rdy_o(dst_rdy_prot),
       .dataout(realign_out),.src_rdy_o(src_rdy_realign),.dst_rdy_i(dst_rdy_realign));
-   
+
    reg [35:0] printer;
 
    task WriteSREG;
@@ -76,7 +73,7 @@ module prot_eng_tx_tb();
 	   begin
 	      while(~src_rdy_prot)
 		@(posedge clk);
-	      $display("Read: %h",prot_out);
+	      $display("Read: %h",realign_out);
 	      @(posedge clk);
 	   end
       end
@@ -88,7 +85,7 @@ module prot_eng_tx_tb();
       begin
 	 count 	      <= 4;
 	 src_rdy_f36i <= 1;
-	 f36_data     <= 32'h0003_000c;
+	 f36_data     <= 32'h0001_000c;
 	 f36_sof      <= 1;
 	 f36_eof      <= 0;
 	 f36_occ      <= 0;
@@ -147,23 +144,20 @@ module prot_eng_tx_tb();
      begin
 	@(negedge rst);
 	@(posedge clk);
-	WriteSREG(BASE, {12'b0, 4'h0, 16'h0000});
-	WriteSREG(BASE+1, {11'b0, 5'h00, 16'h0000});
-	WriteSREG(BASE+2, {11'b0, 5'h00, 16'hABCD});
-	WriteSREG(BASE+3, {11'b0, 5'h00, 16'h1234});
-	WriteSREG(BASE+4, {11'b0, 5'h00, 16'h5678});
-	WriteSREG(BASE+5, {11'b0, 5'h00, 16'hF00D});
-	WriteSREG(BASE+6, {11'b0, 5'h00, 16'hBEEF});
-	WriteSREG(BASE+7, {11'b0, 5'h10, 16'hDCBA});
-	WriteSREG(BASE+8, {11'b0, 5'h00, 16'h4321});
-	WriteSREG(BASE+9, {11'b0, 5'h04, 16'hABCD});
-	WriteSREG(BASE+10, {11'b0, 5'h08, 16'hABCD});
+	WriteSREG(BASE, 32'h89AB_CDEF);
+	WriteSREG(BASE+1, 32'h1111_2222);
+	WriteSREG(BASE+2, 32'h3333_4444);
+	WriteSREG(BASE+3, 32'h5555_6666);
+	WriteSREG(BASE+4, 32'h7777_8888);
+	WriteSREG(BASE+5, 32'h9999_aaaa);
+	WriteSREG(BASE+6, 32'hbbbb_cccc);
+	WriteSREG(BASE+7, 32'hdddd_eeee);
+	WriteSREG(BASE+8, 32'h0f0f_0011);
+	WriteSREG(BASE+9, 32'h0022_0033);
+	WriteSREG(BASE+10, 32'h0044_0055);
+	WriteSREG(BASE+11, 32'h0066_0077);
+	WriteSREG(BASE+12, 32'h0088_0099);
 	@(posedge clk);
-	
-	WriteSREG(BASE+24, 16'h6666);
-	WriteSREG(BASE+25, 16'h7777);
-	WriteSREG(BASE+26, 16'h8888);
-	WriteSREG(BASE+27, 16'h9999);
 	
 	PutPacketInFIFO36(32'hA0B0C0D0,16);
 	@(posedge clk);

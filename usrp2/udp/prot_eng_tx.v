@@ -67,7 +67,7 @@ module prot_eng_tx
      (.A(header_word[15:0]),.B(ip_length),.SUM(ip_checksum));
 
    always @*
-     case(state[2:0])
+     case(state)
        1 : dataout_int <= header_word;  // ETH, top half ignored
        2 : dataout_int <= header_word;  // ETH
        3 : dataout_int <= header_word;  // ETH
@@ -79,8 +79,8 @@ module prot_eng_tx
        9 : dataout_int <= header_word; // IP
        10: dataout_int <= header_word;  // UDP 
        11: dataout_int <= { udp_length, header_word[15:0]}; // UDP
-       default : dataout_int <= datain;
-     endcase // case (state[2:0])
+       default : dataout_int <= datain[31:0];
+     endcase // case (state)
 
    assign dataout = { datain[35:33] & {3{state[3]}},  sof_o, dataout_int };
    assign dst_rdy_o = dst_rdy_i & ((state == 0) | (state == 12));
