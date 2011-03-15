@@ -1,4 +1,5 @@
 /*
+ * Copyright 2011 Ettus Research LLC
  * Copyright 2007 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +19,6 @@
 #include "ethernet.h"
 #include "eth_phy.h"
 #include "eth_mac.h"
-#include "eth_mac_regs.h"
 #include "pic.h"
 #include "hal_io.h"
 #include "nonstdio.h"

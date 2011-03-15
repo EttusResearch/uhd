@@ -19,36 +19,14 @@
 #ifndef INCLUDED_MEMORY_MAP_H
 #define INCLUDED_MEMORY_MAP_H
 
+#include "slave_base.h"
 #include <stdint.h>
 
-
-#define MASTER_CLK_RATE        100000000		// 100 MHz
-
-
-////////////////////////////////////////////////////////////////
-//
-//         Memory map for embedded wishbone bus
-//
-////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////
-// Boot RAM, Slave 0
-
-#define BOOTRAM_BASE 0x0000
-
-
-////////////////////////////////////////////////////////////////
-// Packet Router RAM, Slave 1
-//
-// The buffers themselves are located in Slave 1, Packet Router RAM.
-// The status registers are in Slave 5, Packet Router Status.
-// The control register is in Slave 7, Settings Bus.
-
-#define ROUTER_RAM_BASE 0x4000
+#define MASTER_CLK_RATE 100000000 // 100 MHz
 
 /////////////////////////////////////////////////////
 // SPI Core, Slave 2.  See core docs for more info
-#define SPI_BASE 0x6000   // Base address (16-bit) is base peripheral addr
+/////////////////////////////////////////////////////
 
 typedef struct {
   volatile uint32_t	txrx0;
@@ -61,7 +39,6 @@ typedef struct {
 } spi_regs_t;
 
 #define spi_regs ((spi_regs_t *) SPI_BASE)
-
 
 // Masks for controlling different peripherals
 #define SPI_SS_AD9510    1
@@ -85,9 +62,7 @@ typedef struct {
 
 ////////////////////////////////////////////////
 // I2C, Slave 3
-// See Wishbone I2C-Master Core Specification.
-
-#define I2C_BASE 0x6100
+////////////////////////////////////////////////
 
 typedef struct {
   volatile uint32_t  prescaler_lo;	// r/w
@@ -123,37 +98,9 @@ typedef struct {
 #define I2C_ST_TIP	(1 << 1)	// Transfer-in-progress
 #define	I2C_ST_IP	(1 << 0)	// Interrupt pending
 
-
-////////////////////////////////////////////////
-// GPIO, Slave 4
-//
-// These go to the daughterboard i/o pins
-
-#define GPIO_BASE 0x6200
-
-typedef struct {
-  volatile uint32_t	io;	  // tx data in high 16, rx in low 16
-  volatile uint32_t     ddr;      // 32 bits, 1 means output. tx in high 16, rx in low 16
-  volatile uint32_t	tx_sel;   // 16 2-bit fields select which source goes to TX DB
-  volatile uint32_t	rx_sel;   // 16 2-bit fields select which source goes to RX DB
-} gpio_regs_t;
-
-// each 2-bit sel field is layed out this way
-#define GPIO_SEL_SW	   0 // if pin is an output, set by software in the io reg
-#define	GPIO_SEL_ATR	   1 // if pin is an output, set by ATR logic
-#define	GPIO_SEL_DEBUG_0   2 // if pin is an output, debug lines from FPGA fabric
-#define	GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric
-
-#define gpio_base ((gpio_regs_t *) GPIO_BASE)
-
 ///////////////////////////////////////////////////
 // Packet Router Status, Slave 5
-//
-// The buffers themselves are located in Slave 1, Packet Router RAM.
-// The status registers are in Slave 5, Packet Router Status.
-// The control register is in Slave 7, Settings Bus.
-
-#define ROUTER_STATUS_BASE 0x6300
+///////////////////////////////////////////////////
 
 typedef struct {
   volatile uint32_t _padding[8];
@@ -166,8 +113,6 @@ typedef struct {
 } router_status_t;
 
 #define router_status ((router_status_t *) ROUTER_STATUS_BASE)
-
-#define BUTTON_PUSHED ((router_status->irqs & PIC_BUTTON) ? 0 : 1)
 
 // The hw_config register
 
@@ -195,10 +140,43 @@ hwconfig_wishbone_divisor(void)
 
 ///////////////////////////////////////////////////
 // Ethernet Core, Slave 6
+///////////////////////////////////////////////////
 
-#define ETH_BASE 0x6400
+typedef struct {
+  volatile int settings;
+  volatile int ucast_hi;
+  volatile int ucast_lo;
+  volatile int mcast_hi;
+  volatile int mcast_lo;
+  volatile int miimoder;
+  volatile int miiaddress;
+  volatile int miitx_data;
+  volatile int miicommand;
+  volatile int miistatus;
+  volatile int miirx_data;
+  volatile int pause_time;
+  volatile int pause_thresh;
+} eth_mac_regs_t;
 
-#include "eth_mac_regs.h"
+// settings register
+#define MAC_SET_PAUSE_EN  (1 << 0)   // Makes us respect received pause frames (normally on)
+#define MAC_SET_PASS_ALL  (1 << 1)   // Enables promiscuous mode, currently broken
+#define MAC_SET_PASS_PAUSE (1 << 2)  // Sends pause frames through (normally off)
+#define MAC_SET_PASS_BCAST (1 << 3)  // Sends broadcast frames through (normally on)
+#define MAC_SET_PASS_MCAST (1 << 4)  // Sends multicast frames that match mcast addr (normally off)
+#define MAC_SET_PASS_UCAST (1 << 5)  // Sends unicast (normal) frames through if they hit in address filter (normally on)
+#define MAC_SET_PAUSE_SEND_EN (1 << 6) // Enables sending pause frames
+
+// miicommand register
+#define MIIC_SCANSSTAT	(1 << 0)	// Scan status
+#define MIIC_RSTAT      (1 << 1)	// Read status
+#define	MIIC_WCTRLDATA	(1 << 2)	// Write control data
+
+// miistatus register
+#define MIIS_LINKFAIL	(1 << 0)	// The link failed
+#define	MIIS_BUSY	(1 << 1)	// The MII is busy (operation in progress)
+#define	MIIS_NVALID	(1 << 2)	// The data in the status register is invalid
+					//   This it is only valid when the scan status is active.
 
 #define eth_mac ((eth_mac_regs_t *) ETH_BASE)
 
@@ -207,9 +185,7 @@ hwconfig_wishbone_divisor(void)
 //
 // Output-only from processor point-of-view.
 // 1KB of address space (== 256 32-bit write-only regs)
-
-
-#define MISC_OUTPUT_BASE        0x5000
+////////////////////////////////////////////////////
 
 #define SR_MISC 0
 #define SR_TX_PROT_ENG 32
@@ -397,66 +373,9 @@ typedef struct {
 
 #define sr_time64 ((sr_time64_t *) _SR_ADDR(SR_TIME64))
 
-
-/* 
- * --- ethernet tx protocol engine regs (write only) ---
- *
- * These registers control the transmit portion of the ethernet
- * protocol engine (out of USRP2).  The protocol engine handles fifo
- * status and sequence number insertion in outgoing packets, and
- * automagically generates status packets when required to inform the
- * host of changes in fifo availability.
- *
- * All outgoing packets have their fifo_status field set to the number
- * of 32-bit lines of fifo available in the ethernet Rx fifo (see
- * usrp2_eth_packet.h).  Seqno's are set if FIXME, else 0.
- *
- * FIXME clean this up once we know how it's supposed to behave.
- */
-
-typedef struct {
-  volatile uint32_t  flags;	     // not yet fully defined (channel?)
-  volatile uint32_t  mac_dst0123;    // 4 bytes of destination mac addr
-  volatile uint32_t  mac_dst45src01; // 2 bytes of dest mac addr; 2 bytes of src mac addr
-  volatile uint32_t  mac_src2345;    // 4 bytes of destination mac addr
-  volatile uint32_t  seqno;	     // Write to init seqno.  It autoincs on match
-} tx_proto_engine_regs_t;
-
-#define tx_proto_engine ((tx_proto_engine_regs_t *) _SR_ADDR(SR_TX_PROT_ENG))
-
-/*
- * --- ethernet rx protocol engine regs (write only) ---
- *
- * These registers control the receive portion of the ethernet
- * protocol engine (into USRP2).  The protocol engine offloads common
- * packet inspection operations so that firmware has less to do on
- * "fast path" packets.
- *
- * The registers define conditions which must be matched for a packet
- * to be considered a "fast path" packet.  If a received packet
- * matches the src and dst mac address, ethertype, flags field, and
- * expected seqno number it is considered a "fast path" packet, and
- * the expected seqno is updated.  If the packet fails to satisfy any
- * of the above conditions it's a "slow path" packet, and the
- * corresponding SLOWPATH flag will be set buffer_status register.
- */
-
-typedef struct {
-  volatile uint32_t  flags;	     // not yet fully defined (channel?)
-  volatile uint32_t  mac_dst0123;    // 4 bytes of destination mac addr
-  volatile uint32_t  mac_dst45src01; // 2 bytes of dest mac addr; 2 bytes of src mac addr
-  volatile uint32_t  mac_src2345;    // 4 bytes of destination mac addr
-  volatile uint32_t  ethertype_pad;  // ethertype in high 16-bits
-} rx_proto_engine_regs_t;
-
-#define rx_proto_engine ((rx_proto_engine_regs_t *) _SR_ADDR(SR_RX_PROT_ENG))
-
-
-
-///////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 // Simple Programmable Interrupt Controller, Slave 8
-
-#define PIC_BASE  0x6500
+///////////////////////////////////////////////////////
 
 // Interrupt request lines
 // Bit numbers (LSB == 0) that correpond to interrupts into PIC
@@ -511,12 +430,8 @@ typedef struct {
 #define sr_simple_timer ((sr_simple_timer_t *) _SR_ADDR(SR_SIMTIMER))
 
 ///////////////////////////////////////////////////
-// UNUSED, Slave 9
-
-///////////////////////////////////////////////////
 // UART, Slave 10
-
-#define UART_BASE  0x6700
+///////////////////////////////////////////////////
 
 typedef struct {
   //  All elements are 8 bits except for clkdiv (16), but we use uint32 to make 
@@ -526,34 +441,32 @@ typedef struct {
   volatile uint32_t rxlevel; // Number of available elements in the FIFO for reads
   volatile uint32_t txchar;  // Write characters to be sent here
   volatile uint32_t rxchar;  // Read received characters here
-  volatile uint32_t x[3]; //padding to reach 32B
 } uart_regs_t;
 
 #define uart_regs ((uart_regs_t *) UART_BASE)
 
 ///////////////////////////////////////////////////
-// ATR Controller, Slave 11
-
-#define ATR_BASE  0x6800
+// SD Card SPI interface, Slave 13
+//   All regs are 8 bits wide, but are accessed as if they are 32 bits
+///////////////////////////////////////////////////
+#ifdef USRP2
 
 typedef struct {
-  volatile uint32_t	v[16];
-} atr_regs_t;
+  volatile uint32_t status;  // Write a 1 or 0 for controlling CS
+  volatile uint32_t clkdiv;
+  volatile uint32_t send_dat;
+  volatile uint32_t receive_dat;
+} sdspi_regs_t;
 
-#define	ATR_IDLE	0x0	// indicies into v
-#define ATR_TX		0x1
-#define	ATR_RX		0x2
-#define	ATR_FULL	0x3
+#define sdspi_regs ((sdspi_regs_t *) SDSPI_BASE)
 
-#define atr_regs ((atr_regs_t *) ATR_BASE)
-
-///////////////////////////////////////////////////
-// UNUSED, Slave 12
+#endif //USRP2
 
 ///////////////////////////////////////////////////
 // ICAP, Slave 13
+///////////////////////////////////////////////////
+#ifdef USRP2P
 
-#define ICAP_BASE 0x6A00
 typedef struct {
   uint32_t icap; //only the lower 8 bits matter
 } icap_regs_t;
@@ -564,8 +477,8 @@ typedef struct {
 // SPI Flash interface, Slave 14
 // Control register definitions are the same as SPI, so use SPI_CTRL_ASS, etc.
 // Peripheral mask not needed since bus is dedicated (CE held low)
+///////////////////////////////////////////////////
 
-#define SPIF_BASE 0x6B00
 typedef struct {
   volatile uint32_t	txrx0;
   volatile uint32_t	txrx1;
@@ -578,13 +491,6 @@ typedef struct {
 
 #define spif_regs ((spif_regs_t *) SPIF_BASE)
 
-////////////////////////////////////////////////////////////////
-// Main RAM, Slave 15
+#endif //USRP2P
 
-#define RAM_BASE 0x8000
-
-
-
-///////////////////////////////////////////////////
-#endif
-
+#endif /* INCLUDED_MEMORY_MAP_H */
