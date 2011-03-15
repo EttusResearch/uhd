@@ -31,6 +31,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
+#include <boost/asio.hpp> //used for htonl and ntohl
 #include <iostream>
 #include <vector>
 
@@ -103,9 +104,9 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
         //std::cout << len << "\n";
-        if (len > offsetof(usrp2_ctrl_data_t, data) and uhd::ntohx(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
+        if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
             //make a boost asio ipv4 with the raw addr in host byte order
-            boost::asio::ip::address_v4 ip_addr(uhd::ntohx(ctrl_data_in->data.ip_addr));
+            boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
             device_addr_t new_addr;
             new_addr["type"] = "usrp2";
             new_addr["addr"] = ip_addr.to_string();
