@@ -71,7 +71,9 @@ module prot_eng_tx
    wire [15:0] ip_checksum;
    add_onescomp #(.WIDTH(16)) add_onescomp 
      (.A(header_word[15:0]),.B(ip_length),.SUM(ip_checksum));
-
+   reg [15:0]  ip_checksum_reg;
+   always @(posedge clk) ip_checksum_reg <= ip_checksum;
+   
    always @*
      case(state)
        1 : prot_data <= header_word;  // ETH, top half ignored
@@ -80,7 +82,7 @@ module prot_eng_tx
        4 : prot_data <= header_word;  // ETH
        5 : prot_data <= { header_word[31:16], ip_length }; // IP
        6 : prot_data <= header_word; // IP
-       7 : prot_data <= { header_word[31:16], (16'hFFFF ^ ip_checksum) }; // IP
+       7 : prot_data <= { header_word[31:16], (16'hFFFF ^ ip_checksum_reg) }; // IP
        8 : prot_data <= header_word; // IP
        9 : prot_data <= header_word; // IP
        10: prot_data <= header_word;  // UDP 
