@@ -24,4 +24,6 @@ miim/eth_miim.v \
 miim/eth_clockgen.v \
 miim/eth_outputcontrol.v \
 miim/eth_shiftreg.v \
+ethtx_realign.v \
+ethrx_realign.v \
 ))
