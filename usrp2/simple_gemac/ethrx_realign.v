@@ -1,7 +1,7 @@
 
 // NOTE:  Will not work with single-line frames
 
-module ethtx_realign
+module ethrx_realign
    (input clk, input reset, input clear,
     input [35:0] datain, input src_rdy_i, output dst_rdy_o,
     output [35:0] dataout, output src_rdy_o, input dst_rdy_i);
@@ -69,4 +69,4 @@ module ethtx_realign
    assign dataout = {occ_out,eof_out,sof_out,held,datain[31:16]};
    assign src_rdy_o = (state == RE_DONE) | src_rdy_i;
    assign dst_rdy_o = dst_rdy_i & ((state == RE_IDLE)|(state == RE_HELD));
-endmodule // ethtx_realign
+endmodule // ethrx_realign
