@@ -137,6 +137,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % usrp->get_tx_bandwidth() << std::endl << std::endl;
     }
 
+    //set the antenna
+    if (vm.count("ant")) usrp->set_tx_antenna(ant);
+
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
         wave_freq = usrp->get_tx_rate()/2;
