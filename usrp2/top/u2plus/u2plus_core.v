@@ -207,22 +207,22 @@ module u2plus_core
    wire 	 m0_we,s0_we,s1_we,s2_we,s3_we,s4_we,s5_we,s6_we,s7_we,s8_we,s9_we,sa_we,sb_we,sc_we,sd_we,se_we,sf_we;
    
    wb_1master #(.decode_w(8),
-		.s0_addr(8'b0000_0000),.s0_mask(8'b1110_0000),  // 0-8K, Boot RAM
-		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // 16K-20K, Buffer Pool
-		.s2_addr(8'b0110_0000),.s2_mask(8'b1111_1111),  // SPI
-		.s3_addr(8'b0110_0001),.s3_mask(8'b1111_1111),  // I2C
-		.s4_addr(8'b0110_0010),.s4_mask(8'b1111_1111),  // GPIO
-		.s5_addr(8'b0110_0011),.s5_mask(8'b1111_1111),  // Readback
-		.s6_addr(8'b0110_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
-		.s7_addr(8'b0101_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
-		.s8_addr(8'b0110_0101),.s8_mask(8'b1111_1111),  // PIC
-		.s9_addr(8'b0110_0110),.s9_mask(8'b1111_1111),  // Unused
-		.sa_addr(8'b0110_0111),.sa_mask(8'b1111_1111),  // UART
-		.sb_addr(8'b0110_1000),.sb_mask(8'b1111_1111),  // ATR
-		.sc_addr(8'b0110_1001),.sc_mask(8'b1111_1111),  // Unused
-		.sd_addr(8'b0110_1010),.sd_mask(8'b1111_1111),  // ICAP
-		.se_addr(8'b0110_1011),.se_mask(8'b1111_1111),  // SPI Flash
-		.sf_addr(8'b1000_0000),.sf_mask(8'b1100_0000),  // 32-48K, Main RAM
+		.s0_addr(8'b0000_0000),.s0_mask(8'b1100_0000),  // Main RAM (0-16K)
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // Packet Router (16-20K)
+ 		.s2_addr(8'b0101_0000),.s2_mask(8'b1111_1100),  // SPI
+		.s3_addr(8'b0101_0100),.s3_mask(8'b1111_1100),  // I2C
+		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
+		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
+		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
+		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s8_addr(8'b1000_0000),.s8_mask(8'b1111_1100),  // PIC
+		.s9_addr(8'b1000_0100),.s9_mask(8'b1111_1100),  // Unused
+		.sa_addr(8'b1000_1000),.sa_mask(8'b1111_1100),  // UART
+		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // ATR
+		.sc_addr(8'b1001_0000),.sc_mask(8'b1111_0000),  // Unused
+		.sd_addr(8'b1010_0000),.sd_mask(8'b1111_0000),  // ICAP
+		.se_addr(8'b1011_0000),.se_mask(8'b1111_0000),  // SPI Flash
+		.sf_addr(8'b1100_0000),.sf_mask(8'b1100_0000),  // 48K-64K, Boot RAM
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
@@ -270,17 +270,12 @@ module u2plus_core
     wire bldr_done;
     wire por_rst;
     wire [aw-1:0] cpu_adr;
-    wire [aw-1:0] cpu_sp_init = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)?
-        16'hfff8 : //top of 8K boot ram re-purposed at 56K
-        16'h1ff8 ; //top of 8K boot ram
 
-    //When the main program runs, it will try to access system ram at 0.
-    //This logic re-maps the cpu address to force select the system ram.
-    assign m0_adr =
-        (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_WAIT)? cpu_adr : ( //in bootloader
-        (cpu_adr[15:14] == 2'b00)?   {2'b10, cpu_adr[13:0]}  : ( //map 0-16 to 32-48 (main ram)
-        (cpu_adr[15:13] == 3'b111)?  {3'b000, cpu_adr[12:0]} : ( //map 56-64 to 0-8 (boot ram)
-    cpu_adr))); //otherwise
+   //When the main program runs, it will try to access system ram at 0.
+   //This logic re-maps the cpu address to force select the system ram.
+   assign m0_adr = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE) ? 
+		   cpu_adr : //main ram after bootloader
+		   cpu_adr ^ 16'hC000;  //swap 0-16K with 48-64K
 
     system_control sysctrl (
         .wb_clk_i(wb_clk), .wb_rst_o(por_rst), .ram_loader_done_i(1'b1)
@@ -321,9 +316,8 @@ module u2plus_core
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(cpu_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .stack_start(cpu_sp_init), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
-
-
+	   .stack_start(16'h3ff8), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
+   
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported Boot RAM -- D-Port is Slave #0 on main Wishbone
    // Dual Ported Main RAM -- D-Port is Slave #F on main Wishbone
@@ -331,8 +325,8 @@ module u2plus_core
 
    bootram bootram(.clk(wb_clk), .reset(wb_rst),
 		   .if_adr(13'b0), .if_data(),
-		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
-		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
+		   .dwb_adr_i(sf_adr[12:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
+		   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
 
 ////blinkenlights v0.1
 //defparam bootram.RAM0.INIT_00=256'hbc32fff0_aa43502b_b00000fe_30630001_80000000_10600000_a48500ff_10a00000;
@@ -343,8 +337,8 @@ module u2plus_core
    ram_harvard2 #(.AWIDTH(14),.RAM_SIZE(16384))
    sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
 	   .if_adr(14'b0), .if_data(),
-	   .dwb_adr_i(sf_adr[13:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
-	   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
+	   .dwb_adr_i(s0_adr[13:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+	   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
    
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool, slave #1

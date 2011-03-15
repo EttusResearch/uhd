@@ -212,23 +212,23 @@ module u2_core
    wire 	 m0_err, m0_rty;
    wire 	 m0_we,s0_we,s1_we,s2_we,s3_we,s4_we,s5_we,s6_we,s7_we,s8_we,s9_we,sa_we,sb_we,sc_we,sd_we,se_we,sf_we;
    
-   wb_1master #(.decode_w(6),
-		.s0_addr(6'b0000_00),.s0_mask(6'b100000),
-		.s1_addr(6'b1000_00),.s1_mask(6'b110000),
- 		.s2_addr(6'b1100_00),.s2_mask(6'b111111),
-		.s3_addr(6'b1100_01),.s3_mask(6'b111111),
-		.s4_addr(6'b1100_10),.s4_mask(6'b111111),
-		.s5_addr(6'b1100_11),.s5_mask(6'b111111),
-		.s6_addr(6'b1101_00),.s6_mask(6'b111111),
-		.s7_addr(6'b1101_01),.s7_mask(6'b111111),
-		.s8_addr(6'b1101_10),.s8_mask(6'b111111),
-		.s9_addr(6'b1101_11),.s9_mask(6'b111111),
-		.sa_addr(6'b1110_00),.sa_mask(6'b111111),
-		.sb_addr(6'b1110_01),.sb_mask(6'b111111),
-		.sc_addr(6'b1110_10),.sc_mask(6'b111111),
-		.sd_addr(6'b1110_11),.sd_mask(6'b111111),
-		.se_addr(6'b1111_00),.se_mask(6'b111111),
-		.sf_addr(6'b1111_01),.sf_mask(6'b111111),
+   wb_1master #(.decode_w(8),
+		.s0_addr(8'b0000_0000),.s0_mask(8'b1100_0000),  // Main RAM (0-16K)
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // Packet Router (16-20K)
+ 		.s2_addr(8'b0101_0000),.s2_mask(8'b1111_1100),  // SPI
+		.s3_addr(8'b0101_0100),.s3_mask(8'b1111_1100),  // I2C
+		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
+		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
+		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
+		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s8_addr(8'b1000_0000),.s8_mask(8'b1111_1100),  // PIC
+		.s9_addr(8'b1000_0100),.s9_mask(8'b1111_1100),  // Unused
+		.sa_addr(8'b1000_1000),.sa_mask(8'b1111_1100),  // UART
+		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // ATR
+		.sc_addr(8'b1001_0000),.sc_mask(8'b1111_0000),  // Unused
+		.sd_addr(8'b1010_0000),.sd_mask(8'b1111_0000),  // SD Card access
+		.se_addr(8'b1011_0000),.se_mask(8'b1111_0000),  // Unused
+		.sf_addr(8'b1100_0000),.sf_mask(8'b1100_0000),  // Unused
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
