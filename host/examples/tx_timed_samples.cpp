@@ -33,8 +33,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     double seconds_in_future;
     size_t total_num_samps;
-    size_t samps_per_packet;
-    double rate, freq;
+    double rate;
     float ampl;
 
     //setup the program options
@@ -42,11 +41,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("secs", po::value<double>(&seconds_in_future)->default_value(3), "number of seconds in the future to transmit")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to transmit")
-        ("spp", po::value<size_t>(&samps_per_packet)->default_value(1000), "number of samples per packet")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to transmit")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to transmit")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
-        ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
         ("dilv", "specify to disable inner-loop verbose")
     ;
@@ -73,45 +70,56 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_tx_rate(rate);
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
-    //set the tx center frequency
-    std::cout << boost::format("Setting TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    usrp->set_tx_freq(freq);
-    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
-
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
-    //allocate data to send
-    std::vector<std::complex<float> > buff(samps_per_packet, std::complex<float>(ampl, ampl));
+    //allocate buffer with data to send
+    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_send_samps_per_packet(), std::complex<float>(ampl, ampl));
 
+    //setup metadata for the first packet
     uhd::tx_metadata_t md;
+    md.start_of_burst = false;
+    md.end_of_burst = false;
+    md.has_time_spec = true;
     md.time_spec = uhd::time_spec_t(seconds_in_future);
 
-    //send the data in multiple packets
-    size_t num_packets = (total_num_samps+samps_per_packet-1)/samps_per_packet;
-    for (size_t i = 0; i < num_packets; i++){
+    //the first call to send() will block this many seconds before sending:
+    double timeout = seconds_in_future + 0.1; //timeout (delay before transmit + padding)
 
-        //setup the metadata flags per fragment
-        md.start_of_burst = (i == 0);              //only first packet has SOB
-        md.end_of_burst   = (i == num_packets-1);  //only last packet has EOB
-        md.has_time_spec  = (i == 0);              //only first packet has time
+    size_t num_acc_samps = 0; //number of accumulated samples
+    while(num_acc_samps < total_num_samps){
+        size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
 
-        size_t samps_to_send = std::min(total_num_samps - samps_per_packet*i, samps_per_packet);
+        //ensure the the last packet has EOB set
+        md.end_of_burst = samps_to_send <= buff.size();
 
-        //send the entire packet (driver fragments internally)
+        //send a single packet
         size_t num_tx_samps = usrp->get_device()->send(
             &buff.front(), samps_to_send, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_FULL_BUFF,
-            //send will backup into the host this many seconds before sending:
-            seconds_in_future + 0.1 //timeout (delay before transmit + padding)
+            uhd::device::SEND_MODE_ONE_PACKET, timeout
         );
-        if (num_tx_samps < samps_to_send) std::cout << "Send timeout..." << std::endl;
-        if(verbose) std::cout << std::endl << boost::format("Sent %d samples") % num_tx_samps << std::endl;
+
+        //use a small timeout for subsequent packets
+        timeout = 0.1;
+
+        //do not use time spec for subsequent packets
+        md.has_time_spec = false;
+
+        if (num_tx_samps < samps_to_send) std::cerr << "Send timeout..." << std::endl;
+        if(verbose) std::cout << boost::format("Sent packet: %u samples") % num_tx_samps << std::endl;
+
+        num_acc_samps += num_tx_samps;
     }
 
-    //ensure that the buffers have flushed out to the device before deconstruction
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    std::cout << std::endl << "Waiting for async burst ACK... " << std::flush;
+    uhd::async_metadata_t async_md;
+    bool got_async_burst_ack = false;
+    //loop through all messages for the ACK packet (may have underflow messages in queue)
+    while (not got_async_burst_ack and usrp->get_device()->recv_async_msg(async_md, seconds_in_future)){
+        got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+    }
+    std::cout << (got_async_burst_ack? "success" : "fail") << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

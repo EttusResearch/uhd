@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,41 +23,37 @@
 #include <boost/thread.hpp>
 #include <iostream>
 #include <fstream>
-#include <csignal>
 #include <complex>
 
 namespace po = boost::program_options;
 
-static bool stop_signal_called = false;
-void sig_int_handler(int){stop_signal_called = true;}
-
-template<typename samp_type> void recv_to_file(
+template<typename samp_type> void send_from_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const uhd::io_type_t &io_type,
     const std::string &file,
     size_t samps_per_buff
 ){
-    uhd::rx_metadata_t md;
+    uhd::tx_metadata_t md;
+    md.start_of_burst = false;
+    md.end_of_burst = false;
     std::vector<samp_type> buff(samps_per_buff);
-    std::ofstream outfile(file.c_str(), std::ofstream::binary);
+    std::ifstream infile(file.c_str(), std::ifstream::binary);
 
-    while(not stop_signal_called){
-        size_t num_rx_samps = usrp->get_device()->recv(
-            &buff.front(), buff.size(), md, io_type,
-            uhd::device::RECV_MODE_FULL_BUFF
+    //loop until the entire file has been read
+    while(not md.end_of_burst){
+
+        infile.read((char*)&buff.front(), buff.size()*sizeof(samp_type));
+        size_t num_tx_samps = infile.gcount()/sizeof(samp_type);
+
+        md.end_of_burst = infile.eof();
+
+        usrp->get_device()->send(
+            &buff.front(), num_tx_samps, md, io_type,
+            uhd::device::SEND_MODE_FULL_BUFF
         );
-
-        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
-        if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-            throw std::runtime_error(str(boost::format(
-                "Unexpected error code 0x%x"
-            ) % md.error_code));
-        }
-
-        outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
     }
 
-    outfile.close();
+    infile.close();
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -65,7 +61,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, file, type, ant, subdev;
-    size_t total_num_samps, spb;
+    size_t spb;
     double rate, freq, gain, bw;
 
     //setup the program options
@@ -73,11 +69,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
+        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to read binary samples from")
         ("type", po::value<std::string>(&type)->default_value("float"), "sample type: double, float, or short")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("rate", po::value<double>(&rate), "rate of incoming samples")
+        ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
@@ -90,7 +85,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("UHD RX samples to file %s") % desc << std::endl;
+        std::cout << boost::format("UHD TX samples from file %s") % desc << std::endl;
         return ~0;
     }
 
@@ -100,7 +95,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     //always select the subdevice first, the channel mapping affects the other settings
-    if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
+    if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
 
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
@@ -109,55 +104,42 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cerr << "Please specify the sample rate with --rate" << std::endl;
         return ~0;
     }
-    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
+    usrp->set_tx_rate(rate);
+    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
     //set the center frequency
     if (not vm.count("freq")){
         std::cerr << "Please specify the center frequency with --freq" << std::endl;
         return ~0;
     }
-    std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
-    usrp->set_rx_freq(freq);
-    std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
+    usrp->set_tx_freq(freq);
+    std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
     //set the rf gain
     if (vm.count("gain")){
-        std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
-        usrp->set_rx_gain(gain);
-        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+        std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
+        usrp->set_tx_gain(gain);
+        std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain() << std::endl << std::endl;
     }
 
     //set the IF filter bandwidth
     if (vm.count("bw")){
-        std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % bw << std::endl;
-        usrp->set_rx_bandwidth(bw);
-        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % usrp->get_rx_bandwidth() << std::endl << std::endl;
+        std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw << std::endl;
+        usrp->set_tx_bandwidth(bw);
+        std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % usrp->get_tx_bandwidth() << std::endl << std::endl;
     }
 
     //set the antenna
-    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+    if (vm.count("ant")) usrp->set_tx_antenna(ant);
 
     boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
 
-    //setup streaming
-    uhd::stream_cmd_t stream_cmd((total_num_samps == 0)?
-        uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
-    );
-    stream_cmd.num_samps = total_num_samps;
-    stream_cmd.stream_now = true;
-    usrp->issue_stream_cmd(stream_cmd);
-    if (total_num_samps == 0){
-        std::signal(SIGINT, &sig_int_handler);
-        std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
-    }
-
-    //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >(usrp, uhd::io_type_t::COMPLEX_FLOAT64, file, spb);
-    else if (type == "float") recv_to_file<std::complex<float> >(usrp, uhd::io_type_t::COMPLEX_FLOAT32, file, spb);
-    else if (type == "short") recv_to_file<std::complex<short> >(usrp, uhd::io_type_t::COMPLEX_INT16, file, spb);
+    //send from file
+    if (type == "double") send_from_file<std::complex<double> >(usrp, uhd::io_type_t::COMPLEX_FLOAT64, file, spb);
+    else if (type == "float") send_from_file<std::complex<float> >(usrp, uhd::io_type_t::COMPLEX_FLOAT32, file, spb);
+    else if (type == "short") send_from_file<std::complex<short> >(usrp, uhd::io_type_t::COMPLEX_INT16, file, spb);
     else throw std::runtime_error("Unknown type " + type);
 
     //finished

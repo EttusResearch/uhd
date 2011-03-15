@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 #include <complex>
 
@@ -29,10 +30,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args;
+    std::string args, sync, subdev;
     double seconds_in_future;
     size_t total_num_samps;
-    double rate, clock;
+    double rate;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -41,8 +42,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
-        ("clock", po::value<double>(&clock), "master clock frequency in Hz")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
+        ("sync", po::value<std::string>(&sync)->default_value("now"), "synchronization method: now, pps")
+        ("subdev", po::value<std::string>(&subdev)->default_value(""), "subdev spec (homogeneous across motherboards)")
         ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
@@ -51,7 +53,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("UHD RX Timed Samples %s") % desc << std::endl;
+        std::cout << boost::format("UHD RX Multi Samples %s") % desc << std::endl;
+        std::cout <<
+        "    This is a demonstration of how to receive aligned data from multiple channels.\n"
+        "    This example can receive from multiple DSPs, multiple motherboards, or both.\n"
+        "    The MIMO cable or PPS can be used to synchronize the configuration. See --sync\n"
+        "\n"
+        "    Specify --subdev to select multiple channels per motherboard.\n"
+        "      Ex: --subdev=\"0:A 0:B\" to get 2 channels on a Basic RX.\n"
+        "\n"
+        "    Specify --args to select multiple motherboards in a configuration.\n"
+        "      Ex: --args=\"addr0=192.168.10.2, addr1=192.168.10.3\"\n"
+        << std::endl;
         return ~0;
     }
 
@@ -61,21 +74,26 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev); //sets across all mboards
+
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    //optionally set the clock rate (do before setting anything else)
-    if (vm.count("clock")){
-        std::cout << boost::format("Setting master clock rate: %f MHz...") % (clock/1e6) << std::endl;
-        usrp->set_master_clock_rate(clock);
-    }
-
-    //set the rx sample rate
+    //set the rx sample rate (sets across all channels)
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_rx_rate(rate);
     std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    usrp->set_time_now(uhd::time_spec_t(0.0));
+    if (sync == "now"){
+        usrp->set_time_now(uhd::time_spec_t(0.0));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(50)); //wait for mimo cable time sync
+    }
+    else if (sync == "pps"){
+        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+        boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+    }
 
     //setup streaming
     std::cout << std::endl;
@@ -86,13 +104,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
-    usrp->issue_stream_cmd(stream_cmd);
+    usrp->issue_stream_cmd(stream_cmd); //tells all channels to stream
 
     //meta-data will be filled in by recv()
     uhd::rx_metadata_t md;
 
-    //allocate buffer to receive with samples
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    //allocate buffers to receive with samples (one buffer per channel)
+    size_t samps_per_buff = usrp->get_device()->get_max_recv_samps_per_packet();
+    std::vector<std::vector<std::complex<float> > > buffs(
+        usrp->get_rx_num_channels(), std::vector<std::complex<float> >(samps_per_buff)
+    );
+
+    //create a vector of pointers to point to each of the channel buffers
+    std::vector<std::complex<float> *> buff_ptrs;
+    for (size_t i = 0; i < buffs.size(); i++) buff_ptrs.push_back(&buffs[i].front());
 
     //the first call to recv() will block this many seconds before receiving
     double timeout = seconds_in_future + 0.1; //timeout (delay before receive + padding)
@@ -101,7 +126,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(num_acc_samps < total_num_samps){
         //receive a single packet
         size_t num_rx_samps = usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
+            buff_ptrs, samps_per_buff, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::RECV_MODE_ONE_PACKET, timeout
         );

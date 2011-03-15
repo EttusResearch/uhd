@@ -20,15 +20,18 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/thread_time.hpp> //system time
 #include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <iostream>
 #include <complex>
+#include <csignal>
 #include <cmath>
 
 namespace po = boost::program_options;
+
+static bool stop_signal_called = false;
+void sig_int_handler(int){stop_signal_called = true;}
 
 /***********************************************************************
  * Waveform generators
@@ -61,9 +64,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, wave_type;
-    size_t total_duration, spb;
-    double rate, freq, gain, wave_freq;
+    std::string args, wave_type, ant, subdev;
+    size_t spb;
+    double rate, freq, gain, wave_freq, bw;
     float ampl;
 
     //setup the program options
@@ -71,12 +74,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("duration", po::value<size_t>(&total_duration)->default_value(3), "number of seconds to transmit")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("rate", po::value<double>(&rate)->default_value(1.5e6), "rate of outgoing samples")
-        ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
+        ("rate", po::value<double>(&rate), "rate of outgoing samples")
+        ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
-        ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
+        ("gain", po::value<double>(&gain), "gain for the RF chain")
+        ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
+        ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
+        ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
     ;
@@ -94,22 +99,46 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
+
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    //set the tx sample rate
+    //set the sample rate
+    if (not vm.count("rate")){
+        std::cerr << "Please specify the sample rate with --rate" << std::endl;
+        return ~0;
+    }
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_tx_rate(rate);
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
-    //set the tx center frequency
-    std::cout << boost::format("Setting TX Freq: %f Mhz...") % (freq/1e6) << std::endl;
+    //set the center frequency
+    if (not vm.count("freq")){
+        std::cerr << "Please specify the center frequency with --freq" << std::endl;
+        return ~0;
+    }
+    std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
     usrp->set_tx_freq(freq);
-    std::cout << boost::format("Actual TX Freq: %f Mhz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
-    //set the tx rf gain
-    std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
-    usrp->set_tx_gain(gain);
-    std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain() << std::endl << std::endl;
+    //set the rf gain
+    if (vm.count("gain")){
+        std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
+        usrp->set_tx_gain(gain);
+        std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain() << std::endl << std::endl;
+    }
+
+    //set the IF filter bandwidth
+    if (vm.count("bw")){
+        std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw << std::endl;
+        usrp->set_tx_bandwidth(bw);
+        std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % usrp->get_tx_bandwidth() << std::endl << std::endl;
+    }
+
+    //set the antenna
+    if (vm.count("ant")) usrp->set_tx_antenna(ant);
 
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
@@ -144,9 +173,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     md.start_of_burst = false; //never SOB when continuous
     md.end_of_burst   = false;
 
-    //send the data in multiple packets
-    boost::system_time end_time(boost::get_system_time() + boost::posix_time::seconds(total_duration));
-    while(end_time > boost::get_system_time()){
+    std::signal(SIGINT, &sig_int_handler);
+    std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
+
+    //send data until the signal handler gets called
+    while(not stop_signal_called){
 
         //fill the buffer with the waveform
         for (size_t n = 0; n < buff.size(); n++){
