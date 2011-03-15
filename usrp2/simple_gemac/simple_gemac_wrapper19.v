@@ -90,7 +90,6 @@ module simple_gemac_wrapper19
       .datain(rx_f19_data_int1), .src_rdy_i(rx_f19_src_rdy_int1), .dst_rdy_o(rx_f19_dst_rdy_int1),
       .dataout(rx_f19_data_int2), .src_rdy_o(rx_f19_src_rdy_int2), .dst_rdy_i(rx_f19_dst_rdy_int2) );
 
-   //fifo_2clock_cascade #(.WIDTH(19), .SIZE(RXFIFOSIZE)) rx_2clk_fifo
    fifo_2clock_cascade #(.WIDTH(36), .SIZE(RXFIFOSIZE)) rx_2clk_fifo
      (.wclk(rx_clk), .datain(rx_f19_data_int2), 
       .src_rdy_i(rx_f19_src_rdy_int2), .dst_rdy_o(rx_f19_dst_rdy_int2), .space(rx_fifo_space),
