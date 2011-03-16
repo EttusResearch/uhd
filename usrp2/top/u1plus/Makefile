@@ -20,7 +20,6 @@ include ../../opencores/Makefile.srcs
 include ../../vrt/Makefile.srcs
 include ../../udp/Makefile.srcs
 include ../../coregen/Makefile.srcs
-include ../../extram/Makefile.srcs
 include ../../gpif/Makefile.srcs
 
 ##################################################
