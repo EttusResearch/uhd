@@ -260,50 +260,47 @@ module u2plus_core
       .sf_dat_o(sf_dat_o),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
       
-   //////////////////////////////////////////////////////////////////////////////////////////
+   // ////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
 
-    reg cpu_bldr_ctrl_state;
-    localparam CPU_BLDR_CTRL_WAIT = 0;
-    localparam CPU_BLDR_CTRL_DONE = 1;
+   reg 		 cpu_bldr_ctrl_state;
+   localparam CPU_BLDR_CTRL_WAIT = 0;
+   localparam CPU_BLDR_CTRL_DONE = 1;
+   
+   wire 	 bldr_done;
+   wire 	 por_rst;
+   wire [aw-1:0] cpu_adr;
 
-    wire bldr_done;
-    wire por_rst;
-    wire [aw-1:0] cpu_adr;
-
-   //When the main program runs, it will try to access system ram at 0.
-   //This logic re-maps the cpu address to force select the system ram.
-   assign m0_adr = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE) ? 
-		   cpu_adr : //main ram after bootloader
-		   cpu_adr ^ 16'hC000;  //swap 0-16K with 48-64K
-
-    system_control sysctrl (
-        .wb_clk_i(wb_clk), .wb_rst_o(por_rst), .ram_loader_done_i(1'b1)
-    );
-
-    always @(posedge wb_clk)
-    if(por_rst) begin
+   // Swap boot ram and main ram when in bootloader mode
+   assign m0_adr = (^cpu_adr[15:14] | (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)) ? cpu_adr :
+		   cpu_adr ^ 16'hC000;
+   
+   system_control sysctrl 
+     (.wb_clk_i(wb_clk), .wb_rst_o(por_rst), .ram_loader_done_i(1'b1) );
+   
+   always @(posedge wb_clk)
+     if(por_rst) begin
         cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_WAIT;
         wb_rst <= 1'b1;
-    end
-    else begin
+     end
+     else begin
         case(cpu_bldr_ctrl_state)
-
-        CPU_BLDR_CTRL_WAIT: begin
-            wb_rst <= 1'b0;
-            if (bldr_done == 1'b1) begin //set by the bootloader
+	  
+          CPU_BLDR_CTRL_WAIT: begin
+             wb_rst <= 1'b0;
+             if (bldr_done == 1'b1) begin //set by the bootloader
                 cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_DONE;
                 wb_rst <= 1'b1;
-            end
-        end
-
-        CPU_BLDR_CTRL_DONE: begin //stay here forever
-            wb_rst <= 1'b0;
-        end
-
+             end
+          end
+	  
+          CPU_BLDR_CTRL_DONE: begin //stay here forever
+             wb_rst <= 1'b0;
+          end
+	  
         endcase //cpu_bldr_ctrl_state
-    end
-
+     end
+   
    // /////////////////////////////////////////////////////////////////////////
    // Processor
 
