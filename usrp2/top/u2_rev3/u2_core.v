@@ -433,7 +433,7 @@ module u2_core
    // Ethernet MAC  Slave #6
 
    simple_gemac_wrapper #(.RXFIFOSIZE(ETH_RX_FIFOSIZE), 
-			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper19
+			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper
      (.clk125(clk_to_mac),  .reset(wb_rst),
       .GMII_GTX_CLK(GMII_GTX_CLK), .GMII_TX_EN(GMII_TX_EN),  
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
