@@ -36,27 +36,46 @@
 #include <string.h>
 #include "pkt_ctrl.h"
 
+/***********************************************************************
+ * Constants + Globals
+ **********************************************************************/
 static const bool debug = false;
-
 static const size_t out_buff_size = 2048;
-
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
+#define MAX_UDP_LISTENERS 6
 
 //used in the top level application...
 uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
-// ------------------------------------------------------------------------
+/***********************************************************************
+ * Checksum routines
+ **********************************************************************/
+static unsigned int CHKSUM(unsigned int x, unsigned int *chksum){
+  *chksum += x;
+  *chksum = (*chksum & 0xffff) + (*chksum>>16);
+  *chksum = (*chksum & 0xffff) + (*chksum>>16);
+  return x;
+}
 
+static unsigned int chksum_buffer(
+    unsigned short *buf, int nshorts,
+    unsigned int initial_chksum
+){
+    unsigned int chksum = initial_chksum;
+    for (int i = 0; i < nshorts; i++) CHKSUM(buf[i], &chksum);
+
+    return chksum;
+}
+
+/***********************************************************************
+ * Listener registry
+ **********************************************************************/
 static eth_mac_addr_t _local_mac_addr;
 static struct ip_addr _local_ip_addr;
 void register_addrs(const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr){
     _local_mac_addr = *mac_addr;
     _local_ip_addr = *ip_addr;
 }
-
-//-------------------------------------------------------------------------
-
-#define	MAX_UDP_LISTENERS	6
 
 struct listener_entry {
   unsigned short	port;
@@ -104,9 +123,55 @@ register_udp_listener(int port, udp_receiver_t rcvr)
   }
 }
 
-// ------------------------------------------------------------------------
+/***********************************************************************
+ * Protocol framer
+ **********************************************************************/
+void setup_framer(
+    eth_mac_addr_t eth_dst,
+    eth_mac_addr_t eth_src,
+    struct socket_address sock_dst,
+    struct socket_address sock_src,
+    size_t which
+){
+    struct {
+        padded_eth_hdr_t eth;
+        struct ip_hdr ip;
+        struct udp_hdr udp;
+    } frame;
 
+    //-- load Ethernet header --//
+    frame.eth.dst = eth_dst;
+    frame.eth.src = eth_src;
+    frame.eth.ethertype = ETHERTYPE_IPV4;
 
+    //-- load IPv4 header --//
+    IPH_VHLTOS_SET(&frame.ip, 4, 5, 0);
+    IPH_LEN_SET(&frame.ip, 0);
+    IPH_ID_SET(&frame.ip, 0);
+    IPH_OFFSET_SET(&frame.ip, IP_DF); // don't fragment
+    const int ttl = 32;
+    frame.ip._ttl_proto = (ttl << 8) | (IP_PROTO_UDP & 0xff);
+    frame.ip._chksum = 0;
+    frame.ip.src = sock_src.addr;
+    frame.ip.dest = sock_dst.addr;
+    frame.ip._chksum = ~chksum_buffer(
+        (unsigned short *) &frame.ip,
+        sizeof(frame.ip)/sizeof(short), 0
+    );
+
+    //-- load UDP header --//
+    frame.udp.src = sock_src.port;
+    frame.udp.dest = sock_dst.port;
+    frame.udp.len = 0;
+    frame.udp.chksum = 0;
+
+    //copy into the framer table registers
+    memcpy_wa((void *)(sr_proto_framer_regs->table[which].entry + 1), &frame, sizeof(frame));
+}
+
+/***********************************************************************
+ * Slow-path packet framing and transmission
+ **********************************************************************/
 /*!
  * low level routine to assembly an ethernet frame and send it.
  *
@@ -162,24 +227,6 @@ send_pkt(
 
     pkt_ctrl_commit_outgoing_buffer(total_len/sizeof(uint32_t));
     if (debug) printf("sent %d bytes\n", (int)total_len);
-}
-
-unsigned int CHKSUM(unsigned int x, unsigned int *chksum)
-{
-  *chksum += x;
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  return x;
-}
-
-static unsigned int
-chksum_buffer(unsigned short *buf, int nshorts, unsigned int initial_chksum)
-{
-  unsigned int chksum = initial_chksum;
-  for (int i = 0; i < nshorts; i++)
-    CHKSUM(buf[i], &chksum);
-
-  return chksum;
 }
 
 void

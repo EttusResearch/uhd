@@ -1,6 +1,5 @@
-/* -*- c++ -*- */
 /*
- * Copyright 2009,2010 Ettus Research LLC
+ * Copyright 2009-2011 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +22,22 @@
 #include <net/socket_address.h>
 #include <net/eth_mac_addr.h>
 
-/*
- * 1's complement sum for IP and UDP headers
+/*!
+ * Setup an entry in the protocol framer for a UDP socket.
  *
- * init chksum to zero to start.
+ * \param eth_dst ethernet destination mac addr
+ * \param eth_src ethernet source mac addr
+ * \param sock_dst udp/ip socket destination
+ * \param sock_src udp/ip socket source
+ * \param which the index into the table
  */
-unsigned int CHKSUM(unsigned int x, unsigned int *chksum);
+void setup_framer(
+    eth_mac_addr_t eth_dst,
+    eth_mac_addr_t eth_src,
+    struct socket_address sock_dst,
+    struct socket_address sock_src,
+    size_t which
+);
 
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);

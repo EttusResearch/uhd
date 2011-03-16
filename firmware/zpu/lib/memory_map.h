@@ -187,22 +187,24 @@ typedef struct {
 // 1KB of address space (== 256 32-bit write-only regs)
 ////////////////////////////////////////////////////
 
-#define SR_MISC 0
-#define SR_TX_PROT_ENG 32
-#define SR_RX_PROT_ENG 48
-#define SR_ROUTER_CTRL 64
-#define SR_UDP_SM 96
-#define SR_TX_DSP 208
-#define SR_TX_CTRL 224
-#define SR_RX_DSP0 160
-#define SR_RX_DSP1 240
-#define SR_RX_CTRL0 176
-#define SR_RX_CTRL1 32
-#define SR_TIME64 192
-#define SR_SIMTIMER 198
-#define SR_LAST 255
+#define SR_MISC       0   // 7 regs
+#define SR_SIMTIMER   8   // 2
+#define SR_TIME64    10   // 6
+#define SR_BUF_POOL  16   // 4
 
-#define	_SR_ADDR(sr)	(MISC_OUTPUT_BASE + (sr) * sizeof(uint32_t))
+#define SR_RX_FRONT  24   // 5
+#define SR_RX_CTRL0  32   // 9
+#define SR_RX_DSP0   48   // 7
+#define SR_RX_CTRL1  80   // 9
+#define SR_RX_DSP1   96   // 7
+
+#define SR_TX_FRONT 128   // ?
+#define SR_TX_CTRL  144   // 6
+#define SR_TX_DSP   160   // 5
+
+#define SR_UDP_SM   192   // 64
+
+#define	_SR_ADDR(sr) (MISC_OUTPUT_BASE + (sr) * sizeof(uint32_t))
 
 #define SR_ADDR_BLDRDONE _SR_ADDR(5)
 
@@ -215,20 +217,19 @@ typedef struct {
   volatile uint32_t iface_ctrl;
 } router_ctrl_t;
 
-#define router_ctrl ((router_ctrl_t *) _SR_ADDR(SR_ROUTER_CTRL))
+#define router_ctrl ((router_ctrl_t *) _SR_ADDR(SR_BUF_POOL))
 
 // --- misc outputs ---
 
 typedef struct {
-  volatile uint32_t	clk_ctrl;
-  volatile uint32_t	serdes_ctrl;
-  volatile uint32_t	adc_ctrl;
-  volatile uint32_t	leds;
-  volatile uint32_t	phy_ctrl;	// LSB is reset line to eth phy
-  volatile uint32_t	debug_mux_ctrl;
-  volatile uint32_t     ram_page;       // FIXME should go somewhere else...
-  volatile uint32_t     flush_icache;   // Flush the icache
-  volatile uint32_t     led_src;        // HW or SW control for LEDs
+  volatile uint32_t clk_ctrl;
+  volatile uint32_t serdes_ctrl;
+  volatile uint32_t adc_ctrl;
+  volatile uint32_t leds;
+  volatile uint32_t phy_ctrl;        // LSB is reset line to eth phy
+  volatile uint32_t debug_mux_ctrl;
+  volatile uint32_t led_src;         // HW or SW control for LEDs
+  volatile uint32_t flush_icache;    // Flush the icache
 } output_regs_t;
 
 #define CLK_RESET  (1<<4)
@@ -255,71 +256,15 @@ typedef struct {
 
 #define output_regs ((output_regs_t *) MISC_OUTPUT_BASE)
 
-// --- udp tx regs ---
+// --- protocol framer regs ---
 
-typedef struct {
-  // Bits 19:16 are control info; bits 15:0 are data (see below)
-  // First two words are unused.
-  volatile uint32_t _nope[2];
-  //--- ethernet header - 14 bytes---
-  volatile struct{
-    uint32_t mac_dst_0_1; //word 2
-    uint32_t mac_dst_2_3;
-    uint32_t mac_dst_4_5;
-    uint32_t mac_src_0_1;
-    uint32_t mac_src_2_3;
-    uint32_t mac_src_4_5;
-    uint32_t ether_type; //word 8
-  } eth_hdr;
-  //--- ip header - 20 bytes ---
-  volatile struct{
-    uint32_t ver_ihl_tos; //word 9
-    uint32_t total_length;
-    uint32_t identification;
-    uint32_t flags_frag_off;
-    uint32_t ttl_proto;
-    uint32_t checksum;
-    uint32_t src_addr_high;
-    uint32_t src_addr_low;
-    uint32_t dst_addr_high;
-    uint32_t dst_addr_low; //word 18
-  } ip_hdr;
-  //--- udp header - 8 bytes ---
-  volatile struct{
-    uint32_t src_port; //word 19
-    uint32_t dst_port;
-    uint32_t length;
-    uint32_t checksum; //word 22
-  } udp_hdr;
-  volatile uint32_t _pad[1];
-  volatile uint32_t dsp0_port;
-  volatile uint32_t err0_port;
-  volatile uint32_t dsp1_port;
-  volatile uint32_t err1_port;
-} sr_udp_sm_t;
+typedef struct{
+    struct{
+        volatile uint32_t entry[16];
+    } table[4];
+} sr_proto_framer_t;
 
-// control bits (all expect UDP_SM_LAST_WORD are mutually exclusive)
-
-// Insert a UDP source port from the table
-#define UDP_SM_INS_UDP_SRC_PORT     (1 << 21)
-
-// Insert a UDP dest port from the table
-#define UDP_SM_INS_UDP_DST_PORT     (1 << 20)
-
-// This is the last word of the header
-#define	UDP_SM_LAST_WORD		(1 << 19)
-
-// Insert IP header checksum here.  Data is the xor of 16'hFFFF and
-// the values written into regs 9-13 and 15-18.
-#define	UDP_SM_INS_IP_HDR_CHKSUM	(1 << 18)
-
-// Insert IP Length here (data ignored)
-#define	UDP_SM_INS_IP_LEN		(1 << 17)
-
-// Insert UDP Length here (data ignore)
-#define	UDP_SM_INS_UDP_LEN		(1 << 16)
-
-#define sr_udp_sm ((sr_udp_sm_t *) _SR_ADDR(SR_UDP_SM))
+#define sr_proto_framer_regs ((sr_proto_framer_t *) _SR_ADDR(SR_UDP_SM))
 
 // --- VITA TX CTRL regs ---
 

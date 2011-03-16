@@ -1,8 +1,5 @@
-//
-// Copyright 2010-2011 Ettus Research LLC
-//
 /*
- * Copyright 2007,2008 Free Software Foundation, Inc.
+ * Copyright 2010-2011 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,94 +15,58 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <lwip/ip.h>
-#include <lwip/udp.h>
+//peripheral headers
 #include "u2_init.h"
-#include "memory_map.h"
 #include "spi.h"
+#include "i2c.h"
 #include "hal_io.h"
 #include "pic.h"
-#include <stdbool.h>
-#include "ethernet.h"
+
+//printf headers
 #include "nonstdio.h"
-#include <net/padded_eth_hdr.h>
-#include <net_common.h>
-#include "memcpy_wa.h"
+
+//network headers
+#include "arp_cache.h"
+#include "ethernet.h"
+#include "net_common.h"
+#include "usrp2/fw_common.h"
+#include "udp_fw_update.h"
+#include "pkt_ctrl.h"
+
+//standard headers
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "clocks.h"
-#include "usrp2/fw_common.h"
-#include <i2c.h>
-#include <ethertype.h>
-#include <arp_cache.h>
-#include "udp_fw_update.h"
-#include "pkt_ctrl.h"
-#include "banal.h"
+#include <stdbool.h>
 
-static void setup_network(void);
-
-// ----------------------------------------------------------------
-// the fast-path setup global variables
-// ----------------------------------------------------------------
-static eth_mac_addr_t fp_mac_addr_src, fp_mac_addr_dst;
-struct socket_address fp_socket_src, fp_socket_dst;
 extern uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
-static void handle_udp_err0_packet(
+static void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    sr_udp_sm->err0_port = (((uint32_t)dst.port) << 16) | src.port;
-    err0_dst_port = src.port;
-    printf("Storing for async error path:\n");
-    printf("  source udp port: %d\n", dst.port);
-    printf("  destination udp port: %d\n", src.port);
-    newline();
-}
+    size_t which;
+    switch(dst.port){
+    case USRP2_UDP_DSP0_PORT:
+        which = 0;
+        dsp0_dst_port = src.port;
+        break;
 
-static void handle_udp_dsp1_packet(
-    struct socket_address src, struct socket_address dst,
-    unsigned char *payload, int payload_len
-){
-    sr_udp_sm->dsp1_port = (((uint32_t)dst.port) << 16) | src.port;
-    dsp1_dst_port = src.port;
-    printf("Storing for dsp1 path:\n");
-    printf("  source udp port: %d\n", dst.port);
-    printf("  destination udp port: %d\n", src.port);
-    newline();
-}
+    case USRP2_UDP_DSP1_PORT:
+        which = 2;
+        dsp1_dst_port = src.port;
+        break;
 
-static void handle_udp_dsp0_packet(
-    struct socket_address src, struct socket_address dst,
-    unsigned char *payload, int payload_len
-){
-    fp_mac_addr_src = *ethernet_mac_addr();
-    arp_cache_lookup_mac(&src.addr, &fp_mac_addr_dst);
-    fp_socket_src = dst;
-    fp_socket_dst = src;
-    sr_udp_sm->dsp0_port = (((uint32_t)dst.port) << 16) | src.port;
-    dsp0_dst_port = src.port;
-    printf("Storing for dsp0 path:\n");
-    printf("  source mac addr: ");
-    print_mac_addr(&fp_mac_addr_src); newline();
-    printf("  source ip addr: ");
-    print_ip_addr(&fp_socket_src.addr); newline();
-    printf("  source udp port: %d\n", fp_socket_src.port);
-    printf("  destination mac addr: ");
-    print_mac_addr(&fp_mac_addr_dst); newline();
-    printf("  destination ip addr: ");
-    print_ip_addr(&fp_socket_dst.addr); newline();
-    printf("  destination udp port: %d\n", fp_socket_dst.port);
-    newline();
+    case USRP2_UDP_ERR0_PORT:
+        which = 1;
+        err0_dst_port = src.port;
+        break;
 
-    //setup network
-    setup_network();
+    default: return;
+    }
 
+    eth_mac_addr_t eth_mac_host; arp_cache_lookup_mac(&src.addr, &eth_mac_host);
+    setup_framer(eth_mac_host, *ethernet_mac_addr(), src, dst, which);
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \
@@ -278,6 +239,7 @@ static void handle_udp_ctrl_packet(
     send_udp_pkt(USRP2_UDP_CTRL_PORT, src, &ctrl_data_out, sizeof(ctrl_data_out));
 }
 
+#include <net/padded_eth_hdr.h>
 static void handle_inp_packet(uint32_t *buff, size_t num_lines){
 
   //test if its an ip recovery packet
@@ -318,40 +280,6 @@ void link_changed_callback(int speed){
     }
 }
 
-static void setup_network(void){
-
-  //setup ethernet header machine
-  sr_udp_sm->eth_hdr.mac_dst_0_1 = (fp_mac_addr_dst.addr[0] << 8) | fp_mac_addr_dst.addr[1];
-  sr_udp_sm->eth_hdr.mac_dst_2_3 = (fp_mac_addr_dst.addr[2] << 8) | fp_mac_addr_dst.addr[3];
-  sr_udp_sm->eth_hdr.mac_dst_4_5 = (fp_mac_addr_dst.addr[4] << 8) | fp_mac_addr_dst.addr[5];
-  sr_udp_sm->eth_hdr.mac_src_0_1 = (fp_mac_addr_src.addr[0] << 8) | fp_mac_addr_src.addr[1];
-  sr_udp_sm->eth_hdr.mac_src_2_3 = (fp_mac_addr_src.addr[2] << 8) | fp_mac_addr_src.addr[3];
-  sr_udp_sm->eth_hdr.mac_src_4_5 = (fp_mac_addr_src.addr[4] << 8) | fp_mac_addr_src.addr[5];
-  sr_udp_sm->eth_hdr.ether_type = ETHERTYPE_IPV4;
-
-  //setup ip header machine
-  unsigned int chksum = 0;
-  sr_udp_sm->ip_hdr.ver_ihl_tos = CHKSUM(0x4500, &chksum);    // IPV4,  5 words of header (20 bytes), TOS=0
-  sr_udp_sm->ip_hdr.total_length = UDP_SM_INS_IP_LEN;             // Don't checksum this line in SW
-  sr_udp_sm->ip_hdr.identification = CHKSUM(0x0000, &chksum);    // ID
-  sr_udp_sm->ip_hdr.flags_frag_off = CHKSUM(0x4000, &chksum);    // don't fragment
-  sr_udp_sm->ip_hdr.ttl_proto = CHKSUM(0x2011, &chksum);    // TTL=32, protocol = UDP (17 decimal)
-  //sr_udp_sm->ip_hdr.checksum .... filled in below
-  uint32_t src_ip_addr = fp_socket_src.addr.addr;
-  uint32_t dst_ip_addr = fp_socket_dst.addr.addr;
-  sr_udp_sm->ip_hdr.src_addr_high = CHKSUM(src_ip_addr >> 16, &chksum);    // IP src high
-  sr_udp_sm->ip_hdr.src_addr_low = CHKSUM(src_ip_addr & 0xffff, &chksum); // IP src low
-  sr_udp_sm->ip_hdr.dst_addr_high = CHKSUM(dst_ip_addr >> 16, &chksum);    // IP dst high
-  sr_udp_sm->ip_hdr.dst_addr_low = CHKSUM(dst_ip_addr & 0xffff, &chksum); // IP dst low
-  sr_udp_sm->ip_hdr.checksum = UDP_SM_INS_IP_HDR_CHKSUM | (chksum & 0xffff);
-
-  //setup the udp header machine
-  sr_udp_sm->udp_hdr.src_port = UDP_SM_INS_UDP_SRC_PORT;
-  sr_udp_sm->udp_hdr.dst_port = UDP_SM_INS_UDP_DST_PORT;
-  sr_udp_sm->udp_hdr.length = UDP_SM_INS_UDP_LEN;
-  sr_udp_sm->udp_hdr.checksum = UDP_SM_LAST_WORD;		// zero UDP checksum
-}
-
 int
 main(void)
 {
@@ -370,9 +298,9 @@ main(void)
   //2) register callbacks for udp ports we service
   init_udp_listeners();
   register_udp_listener(USRP2_UDP_CTRL_PORT, handle_udp_ctrl_packet);
-  register_udp_listener(USRP2_UDP_DSP0_PORT, handle_udp_dsp0_packet);
-  register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_err0_packet);
-  register_udp_listener(USRP2_UDP_DSP1_PORT, handle_udp_dsp1_packet);
+  register_udp_listener(USRP2_UDP_DSP0_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_ERR0_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_DSP1_PORT, handle_udp_data_packet);
 #ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
 #endif
