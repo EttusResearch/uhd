@@ -1,9 +1,5 @@
 
 
-`define LOOPBACK 1
-//`define TIMED 1
-//`define DSP 1
-
 module u1plus_core
   (input clk_fpga, input rst_fpga,
    output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
@@ -26,18 +22,27 @@ module u1plus_core
    localparam TXFIFOSIZE = 11;
    localparam RXFIFOSIZE = 11;
 
-   localparam SR_RX_DSP = 0;    // 5 regs
-   localparam SR_RX_CTRL = 8;   // 9 regs
-   localparam SR_TX_DSP = 17;   // 5 regs
-   localparam SR_TX_CTRL = 24;  // 2 regs
-   localparam SR_TIME64 = 28;    // 4 regs
-      
-   wire 	wb_clk = clk_fpga;
-   wire 	wb_rst = rst_fpga;
+   // 64 total regs in address space
+   localparam SR_RX_CTRL = 0;     // 9 regs (+0 to +8)
+   localparam SR_RX_DSP = 16;     // 7 regs (+0 to +6)
+   localparam SR_TX_CTRL = 24;    // 6 regs (+0 to +5)
+   localparam SR_TX_DSP = 32;     // 5 regs (+0 to +4)
+   localparam SR_TIME64 = 40;     // 6 regs (+0 to +5)
+   localparam SR_CLEAR_RX_FIFO = 48; // 1 reg
+   localparam SR_CLEAR_TX_FIFO = 49; // 1 reg
+   localparam SR_GLOBAL_RESET = 50; // 1 reg
+   localparam SR_REG_TEST32 = 52; // 1 reg
+
+   wire [7:0]	COMPAT_NUM = 8'd3;
    
+   wire 	wb_clk = clk_fpga;
+   wire 	wb_rst, global_reset;
+
    wire 	pps_int;
-   wire [63:0] 	vita_time;
+   wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
+   wire [7:0] 	test_rate;
+   wire [3:0] 	test_ctrl;
    
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
@@ -54,15 +59,26 @@ module u1plus_core
    wire [sw-1:0] m0_sel;
    wire 	 m0_cyc, m0_stb, m0_we, m0_ack, m0_err, m0_rty;
 
-   wire [31:0] 	 debug_gpmc, debug0, debug1;
+   wire [31:0] 	 debug_gpmc;
 
-   wire [35:0] 	 tx_data, rx_data;
-   wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy;
-   wire [7:0] 	 rate;
+   wire [35:0] 	 tx_data, rx_data, tx_err_data;
+   wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy, 
+		 tx_err_src_rdy, tx_err_dst_rdy;
+   reg [15:0] 	 tx_frame_len;
+   wire [15:0] 	 rx_frame_len;
 
    wire 	 bus_error;
    wire 	 gpif_rst = 0;
+   wire 	 clear_tx, clear_rx;
    
+   setting_reg #(.my_addr(SR_CLEAR_RX_FIFO), .width(1)) sr_clear_rx
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_rx));
+
+   setting_reg #(.my_addr(SR_CLEAR_TX_FIFO), .width(1)) sr_clear_tx
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear_tx));
+
    gpif #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
    gpif (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), .gpif_d(gpif_d),
 	 .gpif_ctl(gpif_ctl), .gpif_rdy(gpif_rdy), .gpif_misc(gpif_misc),
@@ -72,7 +88,7 @@ module u1plus_core
 	 .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
 	 .wb_ack_i(m0_ack), .triggers(8'd0),
 	 
-	 .fifo_clk(wb_clk), .fifo_rst(wb_rst),
+	 .fifo_clk(wb_clk), .fifo_rst(wb_rst), .clear_tx(clear_tx), .clear_rx(clear_rx),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 
@@ -82,45 +98,6 @@ module u1plus_core
    wire 	 rx_eof = rx_data[33];
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
-`ifdef LOOPBACK
-   fifo_cascade #(.WIDTH(36), .SIZE(9)) loopback_fifo
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .datain(tx_data), .src_rdy_i(tx_src_rdy), .dst_rdy_o(tx_dst_rdy),
-      .dataout(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-`endif // LOOPBACK
-
-`ifdef TIMED
-
-   // TX side
-   wire 	 tx_enable;
-   
-   fifo_pacer tx_pacer
-     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(tx_enable),
-      .src1_rdy_i(tx_src_rdy), .dst1_rdy_o(tx_dst_rdy),
-      .src2_rdy_o(tx_src_rdy_int), .dst2_rdy_i(tx_dst_rdy_int),
-      .underrun(tx_underrun), .overrun());
-   
-   packet_verifier32 pktver32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
-      .data_i(tx_data), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int),
-      .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
-
-   // RX side
-   wire 	 rx_enable;
-
-   packet_generator32 pktgen32
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear),
-      .data_o(rx_data), .src_rdy_o(rx_src_rdy_int), .dst_rdy_i(rx_dst_rdy_int));
-
-   fifo_pacer rx_pacer
-     (.clk(wb_clk), .reset(wb_rst), .rate(rate), .enable(rx_enable),
-      .src1_rdy_i(rx_src_rdy_int), .dst1_rdy_o(rx_dst_rdy_int),
-      .src2_rdy_o(rx_src_rdy), .dst2_rdy_i(rx_dst_rdy),
-      .underrun(), .overrun(rx_overrun));
-   
-`endif //  `ifdef TIMED
-
-`ifdef DSP
    wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
    
    // /////////////////////////////////////////////////////////////////////////
@@ -130,8 +107,9 @@ module u1plus_core
    wire 	 rx1_dst_rdy, rx1_src_rdy;
    wire [99:0] 	 rx1_data;
    wire 	 run_rx;
-   
-   
+   wire [35:0] 	 vita_rx_data;
+   wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
+      
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -140,34 +118,36 @@ module u1plus_core
       .debug(debug_rx_dsp) );
 
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(overrun),
+      .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
       .debug_rx(vrc_debug));
 
    vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
-      .data_o(rx_data), .dst_rdy_i(rx_dst_rdy), .src_rdy_o(rx_src_rdy),
-      .fifo_occupied(), .fifo_full(), .fifo_empty(),
+      .data_o(vita_rx_data), .dst_rdy_i(vita_rx_dst_rdy), .src_rdy_o(vita_rx_src_rdy),
       .debug_rx(vrf_debug) );
-
+   
+   fifo36_mux #(.prio(0)) mux_err_stream
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+      .data0_i(vita_rx_data), .src0_rdy_i(vita_rx_src_rdy), .dst0_rdy_o(vita_rx_dst_rdy),
+      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
+      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
+   
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
    wire [15:0] 	 tx_i_int, tx_q_int;
-   wire [31:0] 	 debug_vt;
    wire 	 run_tx;
-
-   wire [31:0] 	 tx_err_data;
-   wire 	 tx_err_src_rdy, tx_err_dst_rdy;
-   assign tx_err_dst_rdy = 1'b1;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
-		   .REPORT_ERROR(0), .PROT_ENG_FLAGS(0)) 
+		   .REPORT_ERROR(0), .DO_FLOW_CONTROL(0),
+		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
+		   .DSP_NUMBER(0)) 
    vita_tx_chain
      (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -175,29 +155,12 @@ module u1plus_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .underrun(underrun), .run(run_tx),
+      .underrun(tx_underrun_dsp), .run(run_tx),
       .debug(debug_vt));
    
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
    
-`else // !`ifdef DSP
-   // Dummy DSP signal generator for test purposes
-   wire [23:0] 	 tx_i_int, tx_q_int;
-   wire [23:0] 	 freq = {reg_test,8'd0};
-   reg [23:0] 	 phase;
-   
-   always @(posedge wb_clk)
-     phase <= phase + freq;
-   
-   cordic_z24 #(.bitwidth(24)) tx_cordic
-     (.clock(wb_clk), .reset(wb_rst), .enable(1),
-      .xi(24'd2500000), .yi(24'd0), .zi(phase), .xo(tx_i_int), .yo(tx_q_int), .zo());
-
-   assign tx_i = tx_i_int[23:10];
-   assign tx_q = tx_q_int[23:10];
-`endif // !`ifdef DSP
-      
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
@@ -222,7 +185,7 @@ module u1plus_core
 		.s2_addr(4'h2), .s2_mask(4'hF),	.s3_addr(4'h3), .s3_mask(4'hF),
 		.s4_addr(4'h4), .s4_mask(4'hF),	.s5_addr(4'h5), .s5_mask(4'hF),
 		.s6_addr(4'h6), .s6_mask(4'hF),	.s7_addr(4'h7), .s7_mask(4'hF),
-		.s8_addr(4'h8), .s8_mask(4'hF),	.s9_addr(4'h9), .s9_mask(4'hF),
+		.s8_addr(4'h8), .s8_mask(4'hE),	.s9_addr(4'hf), .s9_mask(4'hF), // slave 8 is double wide
 		.sa_addr(4'ha), .sa_mask(4'hF),	.sb_addr(4'hb), .sb_mask(4'hF),
 		.sc_addr(4'hc), .sc_mask(4'hF),	.sd_addr(4'hd), .sd_mask(4'hF),
 		.se_addr(4'he), .se_mask(4'hF),	.sf_addr(4'hf), .sf_mask(4'hF))
@@ -263,21 +226,20 @@ module u1plus_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s7_ack = 0;
-   assign s8_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
+   assign s5_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 0, Misc LEDs, Switches, controls
    
    localparam REG_LEDS = 7'd0;         // out
-   localparam REG_SWITCHES = 7'd2;     // in
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
-   localparam REG_RX_FRAMELEN = 7'd10; // out
-   localparam REG_TX_FRAMELEN = 7'd12; // in
-   localparam REG_XFER_RATE = 7'd14;   // in
+   localparam REG_RX_FRAMELEN = 7'd10; // in
+   localparam REG_TX_FRAMELEN = 7'd12; // out
+   localparam REG_XFER_RATE = 7'd14;   // out
+   localparam REG_COMPAT = 7'd16;      // in
    
    always @(posedge wb_clk)
      if(wb_rst)
@@ -300,18 +262,18 @@ module u1plus_core
 	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
 
-   assign tx_enable = xfer_rate[15];
-   assign rx_enable = xfer_rate[14];
-   assign rate = xfer_rate[7:0];
+   assign test_ctrl = xfer_rate[11:8];
+   assign test_rate = xfer_rate[7:0];
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
-			//(s0_adr[6:0] == REG_SWITCHES) ? {5'b0,debug_pb[2:0],dip_sw[7:0]} :
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
+			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
+			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;
@@ -368,12 +330,12 @@ module u1plus_core
 		.gpio( {io_tx,io_rx} ) );
 
    // /////////////////////////////////////////////////////////////////////////
-   // Settings Bus -- Slave #5
+   // Settings Bus -- Slave #8 + 9
 
-   // only have 32 regs, 32 bits each with current setup...
-   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(11-4-2)) settings_bus_16LE
-     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s5_adr),.wb_dat_i(s5_dat_mosi),
-      .wb_stb_i(s5_stb),.wb_we_i(s5_we),.wb_ack_o(s5_ack),
+   // only have 64 regs, 32 bits each with current setup...
+   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
+     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
+      .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
    
    // /////////////////////////////////////////////////////////////////////////
@@ -383,15 +345,37 @@ module u1plus_core
      (.clk_i(wb_clk), .rst_i(wb_rst),
       .adr_i(s6_adr), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(0), .run_tx(0), .ctrl_lines(atr_lines));
+      .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
+   // /////////////////////////////////////////////////////////////////////////
+   // Readback mux 32 -- Slave #7
+
+   wire [31:0] reg_test32;
+
+   setting_reg #(.my_addr(SR_REG_TEST32)) sr_reg_test32
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(reg_test32),.changed());
+
+   wb_readback_mux_16LE readback_mux_32
+     (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s7_stb),
+      .wb_adr_i(s7_adr), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
+
+      .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
+      .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
+      .word04(reg_test32),              .word05(32'b0),
+      .word06(32'b0),                   .word07(32'b0),
+      .word08(32'b0),                   .word09(32'b0),
+      .word10(32'b0),                   .word11(32'b0),
+      .word12(32'b0),                   .word13(32'b0),
+      .word14(32'b0),                   .word15(32'b0)
+      );
 
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
    time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
      (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .pps(pps_in), .vita_time(vita_time), .pps_int(pps_int));
+      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int));
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
