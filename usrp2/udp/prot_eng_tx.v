@@ -30,7 +30,7 @@ module prot_eng_tx
 
    reg [15:0] 	  pre_checksums [0:3];
    always @(posedge clk)
-     if(set_stb & (set_addr == (BASE+7)))
+     if(set_stb & ((set_addr & 8'hCF)== (BASE+7)))
        pre_checksums[set_addr[5:4]] <= set_data[15:0];
 
    wire [15:0] 	  pre_checksum = pre_checksums[port_sel[1:0]];
