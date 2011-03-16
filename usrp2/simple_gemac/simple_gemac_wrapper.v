@@ -115,7 +115,7 @@ module simple_gemac_wrapper
       .arst(reset));
 
    ethtx_realign ethtx_realign
-     (.clk(rx_clk), .reset(tx_reset), .clear(clear),
+     (.clk(tx_clk), .reset(tx_reset), .clear(clear),
       .datain(tx_f36_data_int1), .src_rdy_i(tx_f36_src_rdy_int1), .dst_rdy_o(tx_f36_dst_rdy_int1),
       .dataout(tx_f36_data_int2), .src_rdy_o(tx_f36_src_rdy_int2), .dst_rdy_i(tx_f36_dst_rdy_int2) );
      
