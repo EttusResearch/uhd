@@ -149,15 +149,15 @@ void setup_framer(
     IPH_LEN_SET(&frame.ip, 0);
     IPH_ID_SET(&frame.ip, 0);
     IPH_OFFSET_SET(&frame.ip, IP_DF); // don't fragment
-    const int ttl = 32;
-    frame.ip._ttl_proto = (ttl << 8) | (IP_PROTO_UDP & 0xff);
-    frame.ip._chksum = 0;
+    IPH_TTL_SET(&frame.ip, 32);
+    IPH_PROTO_SET(&frame.ip, IP_PROTO_UDP);
+    IPH_CHKSUM_SET(&frame.ip, 0);
     frame.ip.src = sock_src.addr;
     frame.ip.dest = sock_dst.addr;
-    frame.ip._chksum = ~chksum_buffer(
+    IPH_CHKSUM_SET(&frame.ip, ~chksum_buffer(
         (unsigned short *) &frame.ip,
         sizeof(frame.ip)/sizeof(short), 0
-    );
+    ));
 
     //-- load UDP header --//
     frame.udp.src = sock_src.port;
@@ -234,20 +234,20 @@ send_ip_pkt(struct ip_addr dst, int protocol,
 	    const void *buf0, size_t len0,
 	    const void *buf1, size_t len1)
 {
-  int ttl = 32;
-
   struct ip_hdr ip;
   IPH_VHLTOS_SET(&ip, 4, 5, 0);
   IPH_LEN_SET(&ip, IP_HLEN + len0 + len1);
   IPH_ID_SET(&ip, 0);
   IPH_OFFSET_SET(&ip, IP_DF);	/* don't fragment */
-  ip._ttl_proto = (ttl << 8) | (protocol & 0xff);
-  ip._chksum = 0;
+  IPH_TTL_SET(&ip, 32);
+  IPH_PROTO_SET(&ip, protocol);
+  IPH_CHKSUM_SET(&ip, 0);
   ip.src = _local_ip_addr;
   ip.dest = dst;
 
-  ip._chksum = ~chksum_buffer((unsigned short *) &ip,
-			      sizeof(ip)/sizeof(short), 0);
+  IPH_CHKSUM_SET(&ip, ~chksum_buffer(
+    (unsigned short *) &ip, sizeof(ip)/sizeof(short), 0
+  ));
 
   eth_mac_addr_t dst_mac;
   bool found = arp_cache_lookup_mac(&ip.dest, &dst_mac);
