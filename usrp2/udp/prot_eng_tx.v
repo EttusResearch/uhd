@@ -19,7 +19,6 @@ module prot_eng_tx
    
    // Store header values in a small dual-port (distributed) ram
    reg [31:0] 	  header_ram[0:63];
-   wire [31:0] 	  header_word;
    reg [3:0] 	  state;
    reg [1:0] 	  port_sel;
    
@@ -27,7 +26,14 @@ module prot_eng_tx
      if(set_stb & ((set_addr & 8'hC0) == BASE))
        header_ram[set_addr[5:0]] <= set_data;
 
-   assign header_word = header_ram[{port_sel[1:0],state[3:0]}];
+   wire [31:0] 	  header_word = header_ram[{port_sel[1:0],state[3:0]}];
+
+   reg [15:0] 	  pre_checksums [0:3];
+   always @(posedge clk)
+     if(set_stb & (set_addr == (BASE+6)))
+       pre_checksums[set_addr[5:4]] <= set_data[15:0];
+
+   wire [15:0] 	  pre_checksum = header_ram[port_sel[1:0]];
 
    // Protocol State Machine
    reg [15:0] length;
@@ -70,7 +76,7 @@ module prot_eng_tx
 
    wire [15:0] ip_checksum;
    add_onescomp #(.WIDTH(16)) add_onescomp 
-     (.A(header_word[15:0]),.B(ip_length),.SUM(ip_checksum));
+     (.A(pre_checksum),.B(ip_length),.SUM(ip_checksum));
    reg [15:0]  ip_checksum_reg;
    always @(posedge clk) ip_checksum_reg <= ip_checksum;
    
