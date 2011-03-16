@@ -30,11 +30,11 @@ std::vector<fs::path> get_image_paths(void); //defined in paths.cpp
  **********************************************************************/
 std::string uhd::find_image_path(const std::string &image_name){
     if (fs::exists(image_name)){
-        return fs::system_complete(image_name).file_string();
+        return fs::system_complete(image_name).string();
     }
     BOOST_FOREACH(const fs::path &path, get_image_paths()){
         fs::path image_path = path / image_name;
-        if (fs::exists(image_path)) return image_path.file_string();
+        if (fs::exists(image_path)) return image_path.string();
     }
     throw std::runtime_error("Could not find path for image: " + image_name);
 }
