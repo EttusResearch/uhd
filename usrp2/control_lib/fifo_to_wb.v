@@ -2,23 +2,23 @@
 module fifo_to_wb
   #(parameter PKT_LEN = 16)
    (input clk, input reset, input clear,
-    input [17:0] data_i, input src_rdy_i, output dst_rdy_o,
-    output [17:0] data_o, output src_rdy_o, input dst_rdy_i,
+    input [18:0] data_i, input src_rdy_i, output dst_rdy_o,
+    output [18:0] data_o, output src_rdy_o, input dst_rdy_i,
     output reg [15:0] wb_adr_o, output [15:0] wb_dat_mosi, input [15:0] wb_dat_miso,
     output [1:0] wb_sel_o, output wb_cyc_o, output wb_stb_o, output wb_we_o, input wb_ack_i,
     input [7:0] triggers,
     output [31:0] debug0, output [31:0] debug1);
    
-   wire [17:0] 	  ctrl_data;
-   reg [17:0] 	  resp_data;
+   wire [18:0] 	  ctrl_data;
+   reg [18:0] 	  resp_data;
    wire 	  ctrl_src_rdy, ctrl_dst_rdy, resp_src_rdy, resp_dst_rdy;
    
-   fifo_short #(.WIDTH(18)) ctrl_sfifo
+   fifo_short #(.WIDTH(19)) ctrl_sfifo
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o),
       .dataout(ctrl_data), .src_rdy_o(ctrl_src_rdy), .dst_rdy_i(ctrl_dst_rdy));
    
-   fifo_short #(.WIDTH(18)) resp_sfifo
+   fifo_short #(.WIDTH(19)) resp_sfifo
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(resp_data), .src_rdy_i(resp_src_rdy), .dst_rdy_o(resp_dst_rdy),
       .dataout(data_o), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));
@@ -133,11 +133,11 @@ module fifo_to_wb
 
    always @*
      case(resp_state)
-       RESP_RCMD : resp_data <= { 2'b01, 8'hAA, seqnum };
-       RESP_RLEN : resp_data <= { 2'b00, length };
-       RESP_RADDR_LSW : resp_data <= { 2'b00, base_addr };
-       RESP_RADDR_MSW : resp_data <= { 2'b00, 16'd0 };
-       default : resp_data <= { (count==1), 1'b0, wb_dat_miso };
+       RESP_RCMD : resp_data <= { 3'b001, 8'hAA, seqnum };
+       RESP_RLEN : resp_data <= { 3'b000, length };
+       RESP_RADDR_LSW : resp_data <= { 3'b000, base_addr };
+       RESP_RADDR_MSW : resp_data <= { 3'b000, 16'd0 };
+       default : resp_data <= { 1'b0, (count==1), 1'b0, wb_dat_miso };
      endcase // case (resp_state)
    
    assign ctrl_dst_rdy = (resp_state == RESP_IDLE) |

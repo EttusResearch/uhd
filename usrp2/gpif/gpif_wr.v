@@ -5,8 +5,8 @@ module gpif_wr
    output reg gpif_full_d, output reg gpif_full_c,
 
    input sys_clk, input sys_rst,
-   output [17:0] data_o, output src_rdy_o, input dst_rdy_i,
-   output [17:0] ctrl_o, output ctrl_src_rdy_o, input ctrl_dst_rdy_i,
+   output [18:0] data_o, output src_rdy_o, input dst_rdy_i,
+   output [18:0] ctrl_o, output ctrl_src_rdy_o, input ctrl_dst_rdy_i,
    output [31:0] debug );
 
    reg 		 wr_reg, ep_reg;
@@ -44,17 +44,17 @@ module gpif_wr
      else
        gpif_full_d <= fifo_space < 256;
 
-   wire [17:0] data_int;
+   wire [18:0] data_int;
    wire        src_rdy_int, dst_rdy_int;
 
-   fifo_cascade #(.WIDTH(18), .SIZE(9)) wr_fifo
+   fifo_cascade #(.WIDTH(19), .SIZE(9)) wr_fifo
      (.clk(gpif_clk), .reset(gpif_rst), .clear(0),
-      .datain({eop,sop,gpif_data_reg}), .src_rdy_i(~ep_reg & wr_reg & ~write_count[8]), .dst_rdy_o(), .space(fifo_space),
+      .datain({1'b0,eop,sop,gpif_data_reg}), .src_rdy_i(~ep_reg & wr_reg & ~write_count[8]), .dst_rdy_o(), .space(fifo_space),
       .dataout(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int), .occupied());
    
-   fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) wr_fifo_2clk
+   fifo_2clock_cascade #(.WIDTH(19), .SIZE(4)) wr_fifo_2clk
      (.wclk(gpif_clk), .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int), .space(),
-      .rclk(sys_clk), .dataout(data_o[17:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i), .occupied(),
+      .rclk(sys_clk), .dataout(data_o[18:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i), .occupied(),
       .arst(sys_rst));
 
    // Control Path
@@ -65,10 +65,10 @@ module gpif_wr
      else
        gpif_full_c <= ctrl_fifo_space < 16;
    
-   fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) ctrl_fifo_2clk
-     (.wclk(gpif_clk), .datain({eop_ctrl,sop,gpif_data_reg}), 
+   fifo_2clock_cascade #(.WIDTH(19), .SIZE(4)) ctrl_fifo_2clk
+     (.wclk(gpif_clk), .datain({1'b0,eop_ctrl,sop,gpif_data_reg}), 
       .src_rdy_i(ep_reg & wr_reg & ~write_count[4]), .dst_rdy_o(), .space(ctrl_fifo_space),
-      .rclk(sys_clk), .dataout(ctrl_o[17:0]), 
+      .rclk(sys_clk), .dataout(ctrl_o[18:0]), 
       .src_rdy_o(ctrl_src_rdy_o), .dst_rdy_i(ctrl_dst_rdy_i), .occupied(),
       .arst(sys_rst));
 

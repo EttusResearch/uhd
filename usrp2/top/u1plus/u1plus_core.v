@@ -10,7 +10,7 @@ module u1plus_core
    input [2:0] gpif_misc, input gpif_clk,
    
    inout db_sda, inout db_scl,
-   output sclk, output [7:0] sen, output mosi, input miso,
+   output sclk, output [15:0] sen, output mosi, input miso,
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
    inout [15:0] io_tx, inout [15:0] io_rx, 
@@ -54,7 +54,7 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
    localparam dw = 16;
-   localparam aw = 11;
+   localparam aw = 16;
    localparam sw = 2;
    
    wire [dw-1:0] m0_dat_mosi, m0_dat_miso;
@@ -108,7 +108,7 @@ module u1plus_core
    wire [31:0] 	 sample_rx, sample_tx;
    wire 	 strobe_rx, strobe_tx;
    wire 	 rx1_dst_rdy, rx1_src_rdy;
-   wire [99:0] 	 rx1_data;
+   wire [100:0]  rx1_data;
    wire 	 run_rx;
    wire [35:0] 	 vita_rx_data;
    wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
@@ -123,7 +123,7 @@ module u1plus_core
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(rx_overrun_dsp),
+      .vita_time(vita_time), .overrun(),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
       .debug_rx(vrc_debug));
@@ -158,8 +158,8 @@ module u1plus_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .underrun(tx_underrun_dsp), .run(run_tx),
-      .debug(debug_vt));
+      .underrun(), .run(run_tx),
+      .debug());
    
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
@@ -337,7 +337,7 @@ module u1plus_core
 
    // only have 64 regs, 32 bits each with current setup...
    settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
-     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
+     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr[10:0]),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
    
@@ -346,7 +346,7 @@ module u1plus_core
 
    atr_controller16 atr_controller16
      (.clk_i(wb_clk), .rst_i(wb_rst),
-      .adr_i(s6_adr), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
+      .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
       .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
@@ -378,7 +378,8 @@ module u1plus_core
 
    time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
      (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int));
+      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
+      .exp_time_in(0));
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
