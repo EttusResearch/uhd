@@ -10,7 +10,7 @@ module trigger_context_pkt
    wire [15:0] packets;
    wire [6:0]  dummy1;
    wire [14:0] dummy2;
-   wire        enable_timed, enable_consumed;
+   wire        enable_cycle, enable_consumed;
    reg [30:0]  cycle_count, packet_count;
 
    
