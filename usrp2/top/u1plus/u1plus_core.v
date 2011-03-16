@@ -47,6 +47,9 @@ module u1plus_core
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
    wire 	set_stb;
+   
+   wire [31:0]  debug0;
+   wire [31:0]  debug1;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
