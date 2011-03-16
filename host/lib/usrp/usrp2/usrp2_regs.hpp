@@ -18,33 +18,7 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
-#include <boost/cstdint.hpp>
-
-#define USRP2_MISC_OUTPUT_BASE  0xD400
-#define USRP2_GPIO_BASE         0xC800
-#define USRP2_ATR_BASE          0xE400
-#define USRP2_BP_STATUS_BASE    0xCC00
-
-#define USRP2P_MISC_OUTPUT_BASE 0x5000
-#define USRP2P_GPIO_BASE        0x6200
-#define USRP2P_ATR_BASE         0x6800
-#define USRP2P_BP_STATUS_BASE   0x6300
-
 typedef struct {
-    int sr_misc;
-    int sr_tx_prot_eng;
-    int sr_rx_prot_eng;
-    int sr_buffer_pool_ctrl;
-    int sr_udp_sm;
-    int sr_tx_dsp;
-    int sr_tx_ctrl;
-    int sr_rx_dsp0;
-    int sr_rx_ctrl0;
-    int sr_rx_dsp1;
-    int sr_rx_ctrl1;
-    int sr_time64;
-    int sr_simtimer;
-    int sr_last;
     int misc_ctrl_clock;
     int misc_ctrl_serdes;
     int misc_ctrl_adc;
