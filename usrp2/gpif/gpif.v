@@ -14,7 +14,7 @@ module gpif
     input [7:0] triggers,
     
     // FIFO interface
-    input fifo_clk, input fifo_rst,
+    input fifo_clk, input fifo_rst, input clear_tx, input clear_rx,
     output [35:0] tx_data_o, output tx_src_rdy_o, input tx_dst_rdy_i,
     input [35:0] rx_data_i, input rx_src_rdy_i, output rx_dst_rdy_o,
     
