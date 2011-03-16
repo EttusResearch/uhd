@@ -105,6 +105,12 @@ static void libusb_async_cb(libusb_transfer *lut){
     (*static_cast<boost::function<void()> *>(lut->user_data))();
 }
 
+//! callback to free transfer upon cancellation
+static void cancel_transfer_cb(libusb_transfer *lut) {
+    if(lut->status == LIBUSB_TRANSFER_CANCELLED) libusb_free_transfer(lut);
+    else std::cout << "cancel_transfer unexpected status " << lut->status << std::endl;
+}
+
 /***********************************************************************
  * USB zero_copy device class
  **********************************************************************/
@@ -190,16 +196,18 @@ public:
     }
 
     ~libusb_zero_copy_impl(void){
+        //cancel and free all transfers
+        BOOST_FOREACH(libusb_transfer *lut, _all_luts){
+            lut->callback = &cancel_transfer_cb;
+            libusb_cancel_transfer(lut);
+            while(lut->status != LIBUSB_TRANSFER_CANCELLED && lut->status != LIBUSB_TRANSFER_COMPLETED) {
+                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            }
+        }
         //shutdown the threads
         _threads_running = false;
         _thread_group.interrupt_all();
         _thread_group.join_all();
-
-        //cancel and free all transfers
-        BOOST_FOREACH(libusb_transfer *lut, _all_luts){
-            libusb_cancel_transfer(lut);
-            libusb_free_transfer(lut);
-        }
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
