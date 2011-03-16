@@ -48,21 +48,16 @@ static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xf
 uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
 /***********************************************************************
- * Checksum routines
+ * 16-bit one's complement sum
  **********************************************************************/
-static unsigned int CHKSUM(unsigned int x, unsigned int *chksum){
-  *chksum += x;
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  *chksum = (*chksum & 0xffff) + (*chksum>>16);
-  return x;
-}
-
-static unsigned int chksum_buffer(
-    unsigned short *buf, int nshorts,
-    unsigned int initial_chksum
+static uint32_t chksum_buffer(
+    uint16_t *buf, size_t nshorts,
+    uint32_t initial_chksum
 ){
-    unsigned int chksum = initial_chksum;
-    for (int i = 0; i < nshorts; i++) CHKSUM(buf[i], &chksum);
+    uint32_t chksum = initial_chksum;
+    for (size_t i = 0; i < nshorts; i++) chksum += buf[i];
+
+    while (chksum >> 16) chksum = (chksum & 0xffff) + (chksum >> 16);
 
     return chksum;
 }
@@ -154,7 +149,7 @@ void setup_framer(
     IPH_CHKSUM_SET(&frame.ip, 0);
     frame.ip.src = sock_src.addr;
     frame.ip.dest = sock_dst.addr;
-    IPH_CHKSUM_SET(&frame.ip, ~chksum_buffer(
+    IPH_CHKSUM_SET(&frame.ip, chksum_buffer(
         (unsigned short *) &frame.ip,
         sizeof(frame.ip)/sizeof(short), 0
     ));
