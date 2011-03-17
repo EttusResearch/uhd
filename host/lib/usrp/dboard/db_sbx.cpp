@@ -16,18 +16,19 @@
 //
 
 // Common IO Pins
+#define LO_LPF_EN       (1 << 15)
 #define ADF4350_CE      (1 << 3)
 #define ADF4350_PDBRF   (1 << 2)
 #define ADF4350_MUXOUT  (1 << 1)                // INPUT!!!
 #define LOCKDET_MASK    (1 << 0)                // INPUT!!!
 
 // TX IO Pins
+#define TRSW            (1 << 14)               // 0 = TX, 1 = RX 
 #define TX_PUP_5V       (1 << 7)                // enables 5.0V power supply
 #define TX_PUP_3V       (1 << 6)                // enables 3.3V supply
 #define TXMOD_EN        (1 << 4)                // on UNIT_TX, 1 enables TX Modulator
 
 // RX IO Pins
-#define TRSW            (1 << 15)               // 0 = TX, 1 = RX 
 #define LNASW           (1 << 14)               // 0 = TX/RX, 1 = RX2
 #define RX_PUP_5V       (1 << 7)                // enables 5.0V power supply
 #define RX_PUP_3V       (1 << 6)                // enables 3.3V supply
@@ -45,15 +46,15 @@
 #define TX_MIXER_ENB    (TXMOD_EN|ADF4350_PDBRF)
 #define TX_MIXER_DIS    0
 
-#define RX_MIXER_ENB    (ADF4350_PDBRF)
+#define RX_MIXER_ENB    (LO_LPF_EN|ADF4350_PDBRF)
 #define RX_MIXER_DIS    0
 
 // Pin functions
 #define TX_POWER_IO     (TX_PUP_5V|TX_PUP_3V)   // high enables power supply
-#define TXIO_MASK       (TX_POWER_IO|ADF4350_CE|ADF4350_PDBRF|TXMOD_EN|TX_ATTN_MASK)
+#define TXIO_MASK       (LO_LPF_EN|TX_POWER_IO|TRSW|ADF4350_CE|ADF4350_PDBRF|TXMOD_EN|TX_ATTN_MASK)
 
 #define RX_POWER_IO     (RX_PUP_5V|RX_PUP_3V)   // high enables power supply
-#define RXIO_MASK       (RX_POWER_IO|TRSW|LNASW|ADF4350_CE|ADF4350_PDBRF|RXBB_PDB|RX_ATTN_MASK)
+#define RXIO_MASK       (LO_LPF_EN|RX_POWER_IO|LNASW|ADF4350_CE|ADF4350_PDBRF|RXBB_PDB|RX_ATTN_MASK)
 
 // Power functions
 #define TX_POWER_UP     (TX_POWER_IO|ADF4350_CE)
@@ -63,11 +64,11 @@
 #define RX_POWER_DOWN   0
 
 // Antenna constants
-#define ANT_TX          TRSW                       //the tx line is transmitting
-#define ANT_RX          TRSW                    //the tx line is receiving
-#define ANT_TXRX        TRSW                       //the rx line is on txrx
-#define ANT_RX2         (TRSW|LNASW)                   //the rx line in on rx2
-#define ANT_XX          TRSW                       //dont care how the antenna is set
+#define ANT_TX          0                       //the tx line is transmitting
+#define ANT_RX          0                    //the tx line is receiving
+#define ANT_TXRX        LNASW                       //the rx line is on txrx
+#define ANT_RX2         LNASW                   //the rx line in on rx2
+#define ANT_XX          LNASW                       //dont care how the antenna is set
 
 #include "adf4350_regs.hpp"
 #include <uhd/types/dict.hpp>
@@ -100,11 +101,11 @@ static const prop_names_t sbx_tx_antennas = list_of("TX/RX");
 static const prop_names_t sbx_rx_antennas = list_of("TX/RX")("RX2");
 
 static const uhd::dict<std::string, gain_range_t> sbx_tx_gain_ranges = map_list_of
-    ("PGA0", gain_range_t(0, 31.5, float(0.5)))
+    ("PGA0", gain_range_t(0, 31.5, double(0.5)))
 ;
 
 static const uhd::dict<std::string, gain_range_t> sbx_rx_gain_ranges = map_list_of
-    ("PGA0", gain_range_t(0, 31.5, float(0.5)))
+    ("PGA0", gain_range_t(0, 31.5, double(0.5)))
 ;
 
 /***********************************************************************
@@ -122,7 +123,7 @@ public:
     void tx_set(const wax::obj &key, const wax::obj &val);
 
 private:
-    uhd::dict<std::string, float> _tx_gains, _rx_gains;
+    uhd::dict<std::string, double> _tx_gains, _rx_gains;
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _tx_ant, _rx_ant;
 
@@ -130,8 +131,8 @@ private:
     void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
-    void set_rx_gain(float gain, const std::string &name);
-    void set_tx_gain(float gain, const std::string &name);
+    void set_rx_gain(double gain, const std::string &name);
+    void set_tx_gain(double gain, const std::string &name);
 
     void update_atr(void);
 
@@ -202,12 +203,12 @@ sbx_xcvr::~sbx_xcvr(void){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-static int rx_pga0_gain_to_iobits(float &gain){
+static int rx_pga0_gain_to_iobits(double &gain){
     //clip the input
     gain = sbx_rx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
-    float attn = sbx_rx_gain_ranges["PGA0"].stop() - gain;
+    double attn = sbx_rx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the RX attenuation
     int attn_code = int(floor(attn*2));
@@ -219,17 +220,17 @@ static int rx_pga0_gain_to_iobits(float &gain){
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = sbx_rx_gain_ranges["PGA0"].stop() - float(attn_code)/2;
+    gain = sbx_rx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
 
     return iobits;
 }
 
-static int tx_pga0_gain_to_iobits(float &gain){
+static int tx_pga0_gain_to_iobits(double &gain){
     //clip the input
     gain = sbx_tx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
-    float attn = sbx_tx_gain_ranges["PGA0"].stop() - gain;
+    double attn = sbx_tx_gain_ranges["PGA0"].stop() - gain;
 
     //calculate the TX attenuation
     int attn_code = int(floor(attn*2));
@@ -241,12 +242,12 @@ static int tx_pga0_gain_to_iobits(float &gain){
     ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = sbx_tx_gain_ranges["PGA0"].stop() - float(attn_code)/2;
+    gain = sbx_tx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
 
     return iobits;
 }
 
-void sbx_xcvr::set_tx_gain(float gain, const std::string &name){
+void sbx_xcvr::set_tx_gain(double gain, const std::string &name){
     assert_has(sbx_tx_gain_ranges.keys(), name, "sbx tx gain name");
     if(name == "PGA0"){
         tx_pga0_gain_to_iobits(gain);
@@ -258,7 +259,7 @@ void sbx_xcvr::set_tx_gain(float gain, const std::string &name){
     else UHD_THROW_INVALID_CODE_PATH();
 }
 
-void sbx_xcvr::set_rx_gain(float gain, const std::string &name){
+void sbx_xcvr::set_rx_gain(double gain, const std::string &name){
     assert_has(sbx_rx_gain_ranges.keys(), name, "sbx rx gain name");
     if(name == "PGA0"){
         rx_pga0_gain_to_iobits(gain);
@@ -280,25 +281,25 @@ void sbx_xcvr::update_atr(void){
 
     //setup the tx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,
-        tx_pga0_iobits | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
+        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,
-        tx_pga0_iobits | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
+        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,
-        tx_pga0_iobits | TX_POWER_UP | ANT_XX | TX_MIXER_ENB);
+        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_ENB);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        tx_pga0_iobits | TX_POWER_UP | ANT_XX | TX_MIXER_ENB);
+        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,
-        rx_pga0_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
+        rx_pga0_iobits | RX_POWER_UP | LNASW | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
-        rx_pga0_iobits | RX_POWER_UP | ANT_TX | RX_MIXER_DIS);
+        rx_pga0_iobits | RX_POWER_UP | LNASW | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        rx_pga0_iobits | RX_POWER_UP | ANT_RX2| RX_MIXER_ENB);
+        rx_pga0_iobits | RX_POWER_UP | LNASW | RX_MIXER_ENB);
 
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+        rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | LNASW); //((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
     if (sbx_debug) std::cerr << boost::format(
         "SBX RXONLY ATR REG: 0x%08x"
     ) % (rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
@@ -530,6 +531,10 @@ void sbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_SENSOR:
         UHD_ASSERT_THROW(key.name == "lo_locked");
         val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
@@ -558,12 +563,15 @@ void sbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<float>(), key.name);
+        this->set_rx_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
         this->set_rx_ant(val.as<std::string>());
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
         uhd::warning::post(
@@ -629,6 +637,10 @@ void sbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         val = false;
         return;
 
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
+        return;
+
     case SUBDEV_PROP_SENSOR:
         UHD_ASSERT_THROW(key.name == "lo_locked");
         val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_TX), "locked", "unlocked");
@@ -657,12 +669,15 @@ void sbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<float>(), key.name);
+        this->set_tx_gain(val.as<double>(), key.name);
         return;
 
     case SUBDEV_PROP_ANTENNA:
         this->set_tx_ant(val.as<std::string>());
         return;
+
+    case SUBDEV_PROP_ENABLED:
+        return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
         uhd::warning::post(
