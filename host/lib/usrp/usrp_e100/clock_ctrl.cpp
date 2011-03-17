@@ -302,7 +302,7 @@ public:
         _ad9522_regs.out4_cmos_configuration = (enb)?
             ad9522_regs_t::OUT4_CMOS_CONFIGURATION_A_ON :
             ad9522_regs_t::OUT4_CMOS_CONFIGURATION_OFF;
-        this->send_reg(0x0F0);
+        this->send_reg(0x0F4);
         this->latch_regs();
     }
 
