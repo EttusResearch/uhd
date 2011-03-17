@@ -136,18 +136,22 @@ module u2_core
    input [3:0] clock_divider
    );
 
-   localparam SR_MISC     =  0;   // Uses 9 regs
-   localparam SR_BUF_POOL = 64;   // Uses 4 regs
-   localparam SR_UDP_SM   = 96;   // 64 regs
-   localparam SR_RX_DSP0  = 160;  // 16
-   localparam SR_RX_CTRL0 = 176;  // 16
-   localparam SR_TIME64   = 192;  //  3
-   localparam SR_SIMTIMER = 198;  //  2
-   localparam SR_TX_DSP   = 208;  // 16
-   localparam SR_TX_CTRL  = 224;  // 16
-   localparam SR_RX_DSP1  = 240;
-   localparam SR_RX_CTRL1 = 32;
-   
+   localparam SR_MISC     =   0;   // 7 regs
+   localparam SR_SIMTIMER =   8;   // 2
+   localparam SR_TIME64   =  10;   // 6
+   localparam SR_BUF_POOL =  16;   // 4
+
+   localparam SR_RX_FRONT =  24;   // 5
+   localparam SR_RX_CTRL0 =  32;   // 9
+   localparam SR_RX_DSP0  =  48;   // 7
+   localparam SR_RX_CTRL1 =  80;   // 9
+   localparam SR_RX_DSP1  =  96;   // 7
+
+   localparam SR_TX_FRONT = 128;   // ?
+   localparam SR_TX_CTRL  = 144;   // 6
+   localparam SR_TX_DSP   = 160;   // 5
+
+   localparam SR_UDP_SM   = 192;   // 64
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
@@ -208,23 +212,23 @@ module u2_core
    wire 	 m0_err, m0_rty;
    wire 	 m0_we,s0_we,s1_we,s2_we,s3_we,s4_we,s5_we,s6_we,s7_we,s8_we,s9_we,sa_we,sb_we,sc_we,sd_we,se_we,sf_we;
    
-   wb_1master #(.decode_w(6),
-		.s0_addr(6'b0000_00),.s0_mask(6'b100000),
-		.s1_addr(6'b1000_00),.s1_mask(6'b110000),
- 		.s2_addr(6'b1100_00),.s2_mask(6'b111111),
-		.s3_addr(6'b1100_01),.s3_mask(6'b111111),
-		.s4_addr(6'b1100_10),.s4_mask(6'b111111),
-		.s5_addr(6'b1100_11),.s5_mask(6'b111111),
-		.s6_addr(6'b1101_00),.s6_mask(6'b111111),
-		.s7_addr(6'b1101_01),.s7_mask(6'b111111),
-		.s8_addr(6'b1101_10),.s8_mask(6'b111111),
-		.s9_addr(6'b1101_11),.s9_mask(6'b111111),
-		.sa_addr(6'b1110_00),.sa_mask(6'b111111),
-		.sb_addr(6'b1110_01),.sb_mask(6'b111111),
-		.sc_addr(6'b1110_10),.sc_mask(6'b111111),
-		.sd_addr(6'b1110_11),.sd_mask(6'b111111),
-		.se_addr(6'b1111_00),.se_mask(6'b111111),
-		.sf_addr(6'b1111_01),.sf_mask(6'b111111),
+   wb_1master #(.decode_w(8),
+		.s0_addr(8'b0000_0000),.s0_mask(8'b1100_0000),  // Main RAM (0-16K)
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // Packet Router (16-20K)
+ 		.s2_addr(8'b0101_0000),.s2_mask(8'b1111_1100),  // SPI
+		.s3_addr(8'b0101_0100),.s3_mask(8'b1111_1100),  // I2C
+		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
+		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
+		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
+		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s8_addr(8'b1000_0000),.s8_mask(8'b1111_1100),  // PIC
+		.s9_addr(8'b1000_0100),.s9_mask(8'b1111_1100),  // Unused
+		.sa_addr(8'b1000_1000),.sa_mask(8'b1111_1100),  // UART
+		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // ATR
+		.sc_addr(8'b1001_0000),.sc_mask(8'b1111_0000),  // Unused
+		.sd_addr(8'b1010_0000),.sd_mask(8'b1111_0000),  // SD Card access
+		.se_addr(8'b1011_0000),.se_mask(8'b1111_0000),  // Unused
+		.sf_addr(8'b1100_0000),.sf_mask(8'b1100_0000),  // Unused
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
@@ -319,13 +323,12 @@ module u2_core
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(m0_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .stack_start(16'h3ff8), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
+	   .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported RAM -- D-Port is Slave #0 on main Wishbone
    // I-port connects directly to processor and ram loader
 
-   wire 	 flush_icache;
    ram_harvard #(.AWIDTH(14),.RAM_SIZE(16384),.ICWIDTH(7),.DCWIDTH(6))
      sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),
 	     
@@ -337,12 +340,8 @@ module u2_core
 	     .if_adr(16'b0), .if_data(),
 	     
 	     .dwb_adr_i(s0_adr[13:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
-	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel),
-	     .flush_icache(flush_icache));
+	     .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
    
-   setting_reg #(.my_addr(SR_MISC+7)) sr_icache (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-					 .in(set_data),.out(),.changed(flush_icache));
-
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool, slave #1
    wire 	 rd0_ready_i, rd0_ready_o;
@@ -417,7 +416,7 @@ module u2_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd5;
+   localparam compat_num = 32'd6;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -434,7 +433,7 @@ module u2_core
    // Ethernet MAC  Slave #6
 
    simple_gemac_wrapper #(.RXFIFOSIZE(ETH_RX_FIFOSIZE), 
-			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper19
+			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper
      (.clk125(clk_to_mac),  .reset(wb_rst),
       .GMII_GTX_CLK(GMII_GTX_CLK), .GMII_TX_EN(GMII_TX_EN),  
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
@@ -491,7 +490,7 @@ module u2_core
    setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
 
-   setting_reg #(.my_addr(SR_MISC+8),.width(8), .at_reset(8'b0001_1110)) 
+   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) 
    sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);

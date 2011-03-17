@@ -27,9 +27,7 @@ module ram_harvard
      input dwb_we_i,
      output dwb_ack_o,
      input dwb_stb_i,
-     input [3:0] dwb_sel_i,
-
-     input flush_icache );
+     input [3:0] dwb_sel_i );
 
    reg 	   ack_d1;
    reg 	   stb_d1;

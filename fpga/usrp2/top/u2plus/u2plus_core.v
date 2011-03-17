@@ -131,18 +131,22 @@ module u2plus_core
    output spiflash_cs, output spiflash_clk, input spiflash_miso, output spiflash_mosi
    );
 
-   localparam SR_MISC     =  0;   // Uses 9 regs
-   localparam SR_BUF_POOL = 64;   // Uses 4 regs
-   localparam SR_UDP_SM   = 96;   // 64 regs
-   localparam SR_RX_DSP0  = 160;  // 16
-   localparam SR_RX_CTRL0 = 176;  // 16
-   localparam SR_TIME64   = 192;  //  3
-   localparam SR_SIMTIMER = 198;  //  2
-   localparam SR_TX_DSP   = 208;  // 16
-   localparam SR_TX_CTRL  = 224;  // 16
-   localparam SR_RX_DSP1  = 240;
-   localparam SR_RX_CTRL1 = 32;
-   
+   localparam SR_MISC     =   0;   // 7 regs
+   localparam SR_SIMTIMER =   8;   // 2
+   localparam SR_TIME64   =  10;   // 6
+   localparam SR_BUF_POOL =  16;   // 4
+
+   localparam SR_RX_FRONT =  24;   // 5
+   localparam SR_RX_CTRL0 =  32;   // 9
+   localparam SR_RX_DSP0  =  48;   // 7
+   localparam SR_RX_CTRL1 =  80;   // 9
+   localparam SR_RX_DSP1  =  96;   // 7
+
+   localparam SR_TX_FRONT = 128;   // ?
+   localparam SR_TX_CTRL  = 144;   // 6
+   localparam SR_TX_DSP   = 160;   // 5
+
+   localparam SR_UDP_SM   = 192;   // 64
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
@@ -203,22 +207,22 @@ module u2plus_core
    wire 	 m0_we,s0_we,s1_we,s2_we,s3_we,s4_we,s5_we,s6_we,s7_we,s8_we,s9_we,sa_we,sb_we,sc_we,sd_we,se_we,sf_we;
    
    wb_1master #(.decode_w(8),
-		.s0_addr(8'b0000_0000),.s0_mask(8'b1110_0000),  // 0-8K, Boot RAM
-		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // 16K-20K, Buffer Pool
-		.s2_addr(8'b0110_0000),.s2_mask(8'b1111_1111),  // SPI
-		.s3_addr(8'b0110_0001),.s3_mask(8'b1111_1111),  // I2C
-		.s4_addr(8'b0110_0010),.s4_mask(8'b1111_1111),  // GPIO
-		.s5_addr(8'b0110_0011),.s5_mask(8'b1111_1111),  // Readback
-		.s6_addr(8'b0110_0100),.s6_mask(8'b1111_1111),  // Ethernet MAC
-		.s7_addr(8'b0101_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
-		.s8_addr(8'b0110_0101),.s8_mask(8'b1111_1111),  // PIC
-		.s9_addr(8'b0110_0110),.s9_mask(8'b1111_1111),  // Unused
-		.sa_addr(8'b0110_0111),.sa_mask(8'b1111_1111),  // UART
-		.sb_addr(8'b0110_1000),.sb_mask(8'b1111_1111),  // ATR
-		.sc_addr(8'b0110_1001),.sc_mask(8'b1111_1111),  // Unused
-		.sd_addr(8'b0110_1010),.sd_mask(8'b1111_1111),  // ICAP
-		.se_addr(8'b0110_1011),.se_mask(8'b1111_1111),  // SPI Flash
-		.sf_addr(8'b1000_0000),.sf_mask(8'b1100_0000),  // 32-48K, Main RAM
+		.s0_addr(8'b0000_0000),.s0_mask(8'b1100_0000),  // Main RAM (0-16K)
+		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // Packet Router (16-20K)
+ 		.s2_addr(8'b0101_0000),.s2_mask(8'b1111_1100),  // SPI
+		.s3_addr(8'b0101_0100),.s3_mask(8'b1111_1100),  // I2C
+		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
+		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
+		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
+		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s8_addr(8'b1000_0000),.s8_mask(8'b1111_1100),  // PIC
+		.s9_addr(8'b1000_0100),.s9_mask(8'b1111_1100),  // Unused
+		.sa_addr(8'b1000_1000),.sa_mask(8'b1111_1100),  // UART
+		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // ATR
+		.sc_addr(8'b1001_0000),.sc_mask(8'b1111_0000),  // Unused
+		.sd_addr(8'b1010_0000),.sd_mask(8'b1111_0000),  // ICAP
+		.se_addr(8'b1011_0000),.se_mask(8'b1111_0000),  // SPI Flash
+		.sf_addr(8'b1100_0000),.sf_mask(8'b1100_0000),  // 48K-64K, Boot RAM
 		.dw(dw),.aw(aw),.sw(sw)) wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_o),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_i),
@@ -256,55 +260,47 @@ module u2plus_core
       .sf_dat_o(sf_dat_o),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
       
-   //////////////////////////////////////////////////////////////////////////////////////////
+   // ////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
 
-    reg cpu_bldr_ctrl_state;
-    localparam CPU_BLDR_CTRL_WAIT = 0;
-    localparam CPU_BLDR_CTRL_DONE = 1;
+   reg 		 cpu_bldr_ctrl_state;
+   localparam CPU_BLDR_CTRL_WAIT = 0;
+   localparam CPU_BLDR_CTRL_DONE = 1;
+   
+   wire 	 bldr_done;
+   wire 	 por_rst;
+   wire [aw-1:0] cpu_adr;
 
-    wire bldr_done;
-    wire por_rst;
-    wire [aw-1:0] cpu_adr;
-    wire [aw-1:0] cpu_sp_init = (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)?
-        16'hfff8 : //top of 8K boot ram re-purposed at 56K
-        16'h1ff8 ; //top of 8K boot ram
-
-    //When the main program runs, it will try to access system ram at 0.
-    //This logic re-maps the cpu address to force select the system ram.
-    assign m0_adr =
-        (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_WAIT)? cpu_adr : ( //in bootloader
-        (cpu_adr[15:14] == 2'b00)?   {2'b10, cpu_adr[13:0]}  : ( //map 0-16 to 32-48 (main ram)
-        (cpu_adr[15:13] == 3'b111)?  {3'b000, cpu_adr[12:0]} : ( //map 56-64 to 0-8 (boot ram)
-    cpu_adr))); //otherwise
-
-    system_control sysctrl (
-        .wb_clk_i(wb_clk), .wb_rst_o(por_rst), .ram_loader_done_i(1'b1)
-    );
-
-    always @(posedge wb_clk)
-    if(por_rst) begin
+   // Swap boot ram and main ram when in bootloader mode
+   assign m0_adr = (^cpu_adr[15:14] | (cpu_bldr_ctrl_state == CPU_BLDR_CTRL_DONE)) ? cpu_adr :
+		   cpu_adr ^ 16'hC000;
+   
+   system_control sysctrl 
+     (.wb_clk_i(wb_clk), .wb_rst_o(por_rst), .ram_loader_done_i(1'b1) );
+   
+   always @(posedge wb_clk)
+     if(por_rst) begin
         cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_WAIT;
         wb_rst <= 1'b1;
-    end
-    else begin
+     end
+     else begin
         case(cpu_bldr_ctrl_state)
-
-        CPU_BLDR_CTRL_WAIT: begin
-            wb_rst <= 1'b0;
-            if (bldr_done == 1'b1) begin //set by the bootloader
+	  
+          CPU_BLDR_CTRL_WAIT: begin
+             wb_rst <= 1'b0;
+             if (bldr_done == 1'b1) begin //set by the bootloader
                 cpu_bldr_ctrl_state <= CPU_BLDR_CTRL_DONE;
                 wb_rst <= 1'b1;
-            end
-        end
-
-        CPU_BLDR_CTRL_DONE: begin //stay here forever
-            wb_rst <= 1'b0;
-        end
-
+             end
+          end
+	  
+          CPU_BLDR_CTRL_DONE: begin //stay here forever
+             wb_rst <= 1'b0;
+          end
+	  
         endcase //cpu_bldr_ctrl_state
-    end
-
+     end
+   
    // /////////////////////////////////////////////////////////////////////////
    // Processor
 
@@ -317,9 +313,8 @@ module u2plus_core
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(cpu_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .stack_start(cpu_sp_init), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
-
-
+	   .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
+   
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported Boot RAM -- D-Port is Slave #0 on main Wishbone
    // Dual Ported Main RAM -- D-Port is Slave #F on main Wishbone
@@ -327,8 +322,8 @@ module u2plus_core
 
    bootram bootram(.clk(wb_clk), .reset(wb_rst),
 		   .if_adr(13'b0), .if_data(),
-		   .dwb_adr_i(s0_adr[12:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
-		   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
+		   .dwb_adr_i(sf_adr[12:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
+		   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
 
 ////blinkenlights v0.1
 //defparam bootram.RAM0.INIT_00=256'hbc32fff0_aa43502b_b00000fe_30630001_80000000_10600000_a48500ff_10a00000;
@@ -339,8 +334,8 @@ module u2plus_core
    ram_harvard2 #(.AWIDTH(14),.RAM_SIZE(16384))
    sys_ram(.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),	     
 	   .if_adr(14'b0), .if_data(),
-	   .dwb_adr_i(sf_adr[13:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
-	   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
+	   .dwb_adr_i(s0_adr[13:0]), .dwb_dat_i(s0_dat_o), .dwb_dat_o(s0_dat_i),
+	   .dwb_we_i(s0_we), .dwb_ack_o(s0_ack), .dwb_stb_i(s0_stb), .dwb_sel_i(s0_sel));
    
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool, slave #1
@@ -416,7 +411,7 @@ module u2plus_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd5;
+   localparam compat_num = 32'd6;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -433,7 +428,7 @@ module u2plus_core
    // Ethernet MAC  Slave #6
 
    simple_gemac_wrapper #(.RXFIFOSIZE(ETH_RX_FIFOSIZE), 
-			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper19
+			  .TXFIFOSIZE(ETH_TX_FIFOSIZE)) simple_gemac_wrapper
      (.clk125(clk_to_mac),  .reset(wb_rst),
       .GMII_GTX_CLK(GMII_GTX_CLK), .GMII_TX_EN(GMII_TX_EN),  
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
@@ -477,7 +472,7 @@ module u2plus_core
 				      .in(set_data),.out(adc_outs),.changed());
    setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(phy_reset),.changed());
-   setting_reg #(.my_addr(SR_MISC+5),.width(1)) sr_bldr (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+   setting_reg #(.my_addr(SR_MISC+5),.width(1)) sr_bld (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(bldr_done),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
@@ -492,7 +487,7 @@ module u2plus_core
    setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
 
-   setting_reg #(.my_addr(SR_MISC+8),.width(8), .at_reset(8'b0001_1110)) 
+   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) 
    sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);

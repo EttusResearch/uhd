@@ -152,7 +152,6 @@ module u1e_core
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
       .data_o(vita_rx_data), .dst_rdy_i(vita_rx_dst_rdy), .src_rdy_o(vita_rx_src_rdy),
-      .fifo_occupied(), .fifo_full(), .fifo_empty(),
       .debug_rx(vrf_debug) );
    
    fifo36_mux #(.prio(0)) mux_err_stream
