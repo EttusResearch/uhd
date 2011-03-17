@@ -53,7 +53,7 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
     if (fs::exists(hint["node"])){
         device_addr_t new_addr;
         new_addr["type"] = "usrp-e";
-        new_addr["node"] = fs::system_complete(fs::path(hint["node"])).file_string();
+        new_addr["node"] = fs::system_complete(fs::path(hint["node"])).string();
         try{
             usrp_e100_iface::sptr iface = usrp_e100_iface::make(new_addr["node"]);
             new_addr["name"] = iface->mb_eeprom["name"];
