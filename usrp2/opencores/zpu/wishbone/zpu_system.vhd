@@ -51,7 +51,7 @@ entity zpu_system is
 			-- ZPU Control signals
 			enable			: in std_logic;
 			interrupt		: in std_logic;
-			stack_start		: in std_logic_vector(maxAddrBitIncIO downto 0);
+
 			zpu_status		: out std_logic_vector(63 downto 0);
 
 			-- wishbone interfaces
@@ -84,7 +84,6 @@ begin
 	 	mem_write 			=> mem_write,
 		out_mem_addr 		=> out_mem_addr,
 	 	mem_writeMask		=> mem_writeMask,
-	 	stack_start			=> stack_start,
 	 	interrupt			=> interrupt,
 	 	zpu_status			=> zpu_status,
 	 	break				=> open);

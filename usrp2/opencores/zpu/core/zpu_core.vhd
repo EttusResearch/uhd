@@ -26,7 +26,6 @@ entity zpu_core is
 	 		  mem_write : out std_logic_vector(wordSize-1 downto 0);
 			  out_mem_addr : out std_logic_vector(maxAddrBitIncIO downto 0);
 	 		  mem_writeMask: out std_logic_vector(wordBytes-1 downto 0);
-			  stack_start : in std_logic_vector(maxAddrBitIncIO downto 0);
 	 		  interrupt : in std_logic;
 	 		  break : out std_logic;
 	 		  zpu_status : out std_logic_vector(63 downto 0));
@@ -203,7 +202,7 @@ begin
 		if areset = '1' then
 			state <= State_Idle;
 			break <= '0';
-			sp <= stack_start(maxAddrBitIncIO downto minAddrBit);
+			sp <= spStart(maxAddrBitIncIO downto minAddrBit);
 			 
 			pc <= (others => '0');
 			idim_flag <= '0';

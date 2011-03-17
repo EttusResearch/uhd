@@ -313,7 +313,7 @@ module u2plus_core
 	   .we_o(m0_we),.stb_o(m0_stb),.dat_o(m0_dat_i),.adr_o(cpu_adr),
 	   .dat_i(m0_dat_o),.ack_i(m0_ack),.sel_o(m0_sel),.cyc_o(m0_cyc),
 	   // Interrupts and exceptions
-	   .stack_start(16'h3ff8), .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
+	   .zpu_status(zpu_status), .interrupt(proc_int & 1'b0));
    
    // /////////////////////////////////////////////////////////////////////////
    // Dual Ported Boot RAM -- D-Port is Slave #0 on main Wishbone
@@ -411,7 +411,7 @@ module u2plus_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd5;
+   localparam compat_num = 32'd6;
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
