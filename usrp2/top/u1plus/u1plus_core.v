@@ -54,7 +54,7 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
    localparam dw = 16;
-   localparam aw = 16;
+   localparam aw = 11;
    localparam sw = 2;
    
    wire [dw-1:0] m0_dat_mosi, m0_dat_miso;
@@ -361,7 +361,7 @@ module u1plus_core
 
    wb_readback_mux_16LE readback_mux_32
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s7_stb),
-      .wb_adr_i(s7_adr), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
+      .wb_adr_i({5'b0,s7_adr}), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
 
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
