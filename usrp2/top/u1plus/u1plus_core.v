@@ -13,6 +13,7 @@ module u1plus_core
    output sclk, output [15:0] sen, output mosi, input miso,
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
+   output tx_underrun, output rx_overrun,
    inout [15:0] io_tx, inout [15:0] io_rx, 
    output [13:0] tx_i, output [13:0] tx_q, 
    input [11:0] rx_i, input [11:0] rx_q, 
@@ -51,6 +52,17 @@ module u1plus_core
    wire [31:0]  debug0;
    wire [31:0]  debug1;
 
+   wire [31:0] 	debug_vt;
+   wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
+   assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp;
+   assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
+   
+   setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(global_reset));
+
+   reset_sync reset_sync(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
+   
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
    localparam dw = 16;
@@ -67,8 +79,6 @@ module u1plus_core
    wire [35:0] 	 tx_data, rx_data, tx_err_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy, 
 		 tx_err_src_rdy, tx_err_dst_rdy;
-   reg [15:0] 	 tx_frame_len;
-   wire [15:0] 	 rx_frame_len;
 
    wire 	 bus_error;
    wire 	 gpif_rst = 0;
@@ -94,7 +104,10 @@ module u1plus_core
 	 .fifo_clk(wb_clk), .fifo_rst(wb_rst), .clear_tx(clear_tx), .clear_rx(clear_rx),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
-	 
+	
+	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
+
+	 .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug0(debug0), .debug1(debug1));
 
    wire 	 rx_sof = rx_data[32];
@@ -123,7 +136,7 @@ module u1plus_core
    vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(),
+      .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
       .debug_rx(vrc_debug));
@@ -158,8 +171,8 @@ module u1plus_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .dac_a(tx_i_int),.dac_b(tx_q_int),
-      .underrun(), .run(run_tx),
-      .debug());
+      .underrun(tx_underrun_dsp), .run(run_tx),
+      .debug(debug_vt));
    
    assign tx_i = tx_i_int[15:2];
    assign tx_q = tx_q_int[15:2];
@@ -275,7 +288,6 @@ module u1plus_core
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
-			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
 			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
