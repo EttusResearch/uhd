@@ -38,11 +38,15 @@ static int calc_checksum(struct pkt *p)
 	i = 0;
 	sum = 0;
 
-	for (i=0; i < p->len; i++)
-		sum += p->data[i];
-
-	sum += p->seq_num;
-	sum += p->len;
+	if (p->len < 1016) {
+		for (i=0; i < p->len; i++)
+			sum += p->data[i];
+	
+		sum += p->seq_num;
+		sum += p->len;
+	} else {	
+		printf("Bad packet length = %d received.\n", p->len);
+	}
 
 	return sum;
 }
