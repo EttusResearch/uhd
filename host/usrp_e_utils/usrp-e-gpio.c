@@ -6,8 +6,8 @@
 #include <string.h>
 #include <sys/ioctl.h>
 
-#include "usrp_e.h"
-#include "usrp_e_regs.hpp"
+#include "linux/usrp_e.h"
+#include "usrp_e100_regs.hpp"
 
 // Usage: usrp_e_gpio <string>
 
