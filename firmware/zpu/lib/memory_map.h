@@ -19,10 +19,31 @@
 #ifndef INCLUDED_MEMORY_MAP_H
 #define INCLUDED_MEMORY_MAP_H
 
-#include "slave_base.h"
 #include <stdint.h>
 
 #define MASTER_CLK_RATE 100000000 // 100 MHz
+
+////////////////////////////////////////////////////////////////////////
+// Define slave bases
+////////////////////////////////////////////////////////////////////////
+#define ROUTER_RAM_BASE     0x4000
+#define SPI_BASE            0x5000
+#define I2C_BASE            0x5400
+#define GPIO_BASE           0x5800
+#define READBACK_BASE       0x5C00
+#define ETH_BASE            0x6000
+#define SETTING_REGS_BASE   0x7000
+#define PIC_BASE            0x8000
+#define UART_BASE           0x8800
+#define ATR_BASE            0x8C00
+#ifdef USRP2
+#define SDSPI_BASE          0xB000
+#endif
+#ifdef USRP2P
+#define ICAP_BASE           0xA000
+#define SPIF_BASE           0xB000
+#define RAM_BASE            0xC000
+#endif
 
 /////////////////////////////////////////////////////
 // SPI Core, Slave 2.  See core docs for more info
@@ -112,7 +133,7 @@ typedef struct {
   volatile uint32_t irqs;
 } router_status_t;
 
-#define router_status ((router_status_t *) ROUTER_STATUS_BASE)
+#define router_status ((router_status_t *) READBACK_BASE)
 
 // The hw_config register
 
@@ -204,7 +225,7 @@ typedef struct {
 
 #define SR_UDP_SM   192   // 64
 
-#define	_SR_ADDR(sr) (MISC_OUTPUT_BASE + (sr) * sizeof(uint32_t))
+#define	_SR_ADDR(sr) (SETTING_REGS_BASE + (sr) * sizeof(uint32_t))
 
 #define SR_ADDR_BLDRDONE _SR_ADDR(5)
 
@@ -254,7 +275,7 @@ typedef struct {
 //      LED_F		// controlled by CPLD
 #define	LED_RJ45	(1 << 5)
 
-#define output_regs ((output_regs_t *) MISC_OUTPUT_BASE)
+#define output_regs ((output_regs_t *) SETTING_REGS_BASE)
 
 // --- protocol framer regs ---
 
