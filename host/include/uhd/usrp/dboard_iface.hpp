@@ -55,7 +55,7 @@ struct UHD_API dboard_iface_special_props_t{
  * This interface provides i2c, spi, gpio, atr, aux dac/adc access.
  * Each mboard should have a specially tailored iface for its dboard.
  */
-class UHD_API dboard_iface{
+class UHD_API dboard_iface : public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<dboard_iface> sptr;
     typedef dboard_iface_special_props_t special_props_t;
@@ -207,23 +207,6 @@ public:
      * \return the value of the gpio unit
      */
     virtual boost::uint16_t read_gpio(unit_t unit) = 0;
-
-    /*!
-     * Write to an I2C peripheral.
-     *
-     * \param addr I2C bus address (7-bits)
-     * \param bytes the data to write
-     */
-    virtual void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes) = 0;
-
-    /*!
-     * Read from an I2C peripheral.
-     *
-     * \param addr I2C bus address (7-bits)
-     * \param num_bytes number of bytes to read
-     * \return the data read if successful, else a zero length string.
-     */
-    virtual byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes) = 0;
 
     /*!
      * Write data to SPI bus peripheral.
