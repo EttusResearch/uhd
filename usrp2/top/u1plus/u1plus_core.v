@@ -104,7 +104,8 @@ module u1plus_core
 	 .fifo_clk(wb_clk), .fifo_rst(wb_rst), .clear_tx(clear_tx), .clear_rx(clear_rx),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
-	
+	 .tx_err_data_i(tx_err_data), .tx_err_src_rdy_i(tx_err_src_rdy), .tx_err_dst_rdy_o(tx_err_dst_rdy),
+	 
 	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
 
 	 .test_rate(test_rate), .test_ctrl(test_ctrl),
@@ -123,8 +124,6 @@ module u1plus_core
    wire 	 rx1_dst_rdy, rx1_src_rdy;
    wire [100:0]  rx1_data;
    wire 	 run_rx;
-   wire [35:0] 	 vita_rx_data;
-   wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
       
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
@@ -145,14 +144,8 @@ module u1plus_core
      (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
-      .data_o(vita_rx_data), .dst_rdy_i(vita_rx_dst_rdy), .src_rdy_o(vita_rx_src_rdy),
+      .data_o(rx_data), .dst_rdy_i(rx_dst_rdy), .src_rdy_o(rx_src_rdy),
       .debug_rx(vrf_debug) );
-   
-   fifo36_mux #(.prio(0)) mux_err_stream
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .data0_i(vita_rx_data), .src0_rdy_i(vita_rx_src_rdy), .dst0_rdy_o(vita_rx_dst_rdy),
-      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
-      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
    
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
@@ -161,8 +154,8 @@ module u1plus_core
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
-		   .REPORT_ERROR(0), .DO_FLOW_CONTROL(0),
-		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
+		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(0),
+		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(0),
 		   .DSP_NUMBER(0)) 
    vita_tx_chain
      (.clk(wb_clk), .reset(wb_rst),

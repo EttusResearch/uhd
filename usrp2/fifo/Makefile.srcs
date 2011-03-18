@@ -23,6 +23,7 @@ fifo19_to_ll8.v \
 ll8_to_fifo19.v \
 fifo36_to_fifo19.v \
 fifo19_to_fifo36.v \
+fifo19_mux.v \
 fifo36_mux.v \
 fifo36_demux.v \
 packet_router.v \
