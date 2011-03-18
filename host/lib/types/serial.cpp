@@ -58,7 +58,7 @@ byte_vector_t i2c_iface::read_eeprom(
 boost::uint32_t spi_iface::read_spi(
     int which_slave,
     const spi_config_t &config,
-    boost::uint16_t data,
+    boost::uint32_t data,
     size_t num_bits
 ){
     return transact_spi(
@@ -69,7 +69,7 @@ boost::uint32_t spi_iface::read_spi(
 void spi_iface::write_spi(
     int which_slave,
     const spi_config_t &config,
-    boost::uint16_t data,
+    boost::uint32_t data,
     size_t num_bits
 ){
     transact_spi(

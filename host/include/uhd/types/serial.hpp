@@ -151,7 +151,7 @@ namespace uhd{
         virtual boost::uint32_t read_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint16_t data,
+            boost::uint32_t data,
             size_t num_bits
         );
         
@@ -165,7 +165,7 @@ namespace uhd{
         virtual void write_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint16_t data,
+            boost::uint32_t data,
             size_t num_bits
         );
     };
