@@ -44,19 +44,20 @@ module gpif_wr
      else
        gpif_full_d <= fifo_space < 256;
 
-   wire [18:0] data_int;
+   wire [17:0] data_int;
    wire        src_rdy_int, dst_rdy_int;
 
-   fifo_cascade #(.WIDTH(19), .SIZE(9)) wr_fifo
+   fifo_cascade #(.WIDTH(18), .SIZE(10)) wr_fifo
      (.clk(gpif_clk), .reset(gpif_rst), .clear(0),
-      .datain({1'b0,eop,sop,gpif_data_reg}), .src_rdy_i(~ep_reg & wr_reg & ~write_count[8]), .dst_rdy_o(), .space(fifo_space),
+      .datain({eop,sop,gpif_data_reg}), .src_rdy_i(~ep_reg & wr_reg & ~write_count[8]), .dst_rdy_o(), .space(fifo_space),
       .dataout(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int), .occupied());
    
-   fifo_2clock_cascade #(.WIDTH(19), .SIZE(4)) wr_fifo_2clk
+   fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) wr_fifo_2clk
      (.wclk(gpif_clk), .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int), .space(),
-      .rclk(sys_clk), .dataout(data_o[18:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i), .occupied(),
+      .rclk(sys_clk), .dataout(data_o[17:0]), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i), .occupied(),
       .arst(sys_rst));
-
+   assign data_o[18] = 1'b0;
+   
    // Control Path
    wire [15:0] ctrl_fifo_space;
    always @(posedge gpif_clk)

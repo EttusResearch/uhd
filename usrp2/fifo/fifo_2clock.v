@@ -14,7 +14,8 @@ module fifo_2clock
    assign src_rdy_o  = ~empty;
    assign write      = src_rdy_i & dst_rdy_o;
    assign read 	     = src_rdy_o & dst_rdy_i;
-
+   wire 	 dummy;
+   
    generate
       if(WIDTH==36)
 	if(SIZE==9)
@@ -37,12 +38,16 @@ module fifo_2clock
 	       (.rst(arst),
 		.wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
 		.rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
-      else if((WIDTH==19)|(WIDTH==18))
-	if(SIZE==4)
-	  fifo_xlnx_16x19_2clk fifo_xlnx_16x19_2clk
-		     (.rst(arst),
-		      .wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-		      .rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+      else if((WIDTH==19) & (SIZE==4))
+	fifo_xlnx_16x19_2clk fifo_xlnx_16x19_2clk
+	  (.rst(arst),
+	   .wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+	   .rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+      else if((WIDTH==18) & (SIZE==4))
+	fifo_xlnx_16x19_2clk fifo_xlnx_16x19_2clk
+	  (.rst(arst),
+	   .wr_clk(wclk),.din({1'b0,datain}),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+	   .rd_clk(rclk),.dout({dummy,dataout}),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
    endgenerate
    
    assign occupied  = {{(16-SIZE-1){1'b0}},level_rclk};
