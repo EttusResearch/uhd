@@ -241,14 +241,17 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         mtu.send_mtu = std::min(mtu.send_mtu, mtu_i.send_mtu);
     }
 
-    std::cout << "mtu recv bytes " << mtu.recv_mtu << std::endl;
-    std::cout << "mtu send bytes " << mtu.send_mtu << std::endl;
+    //use the discovered mtu or clip the users requested mtu
+    mtu.recv_mtu = std::min(size_t(device_addr.cast<double>("recv_frame_size", 9000)), mtu.recv_mtu);
+    mtu.send_mtu = std::min(size_t(device_addr.cast<double>("send_frame_size", 9000)), mtu.send_mtu);
 
-    //use the discovered mtu if not specified by the user
-    if (not device_addr.has_key("recv_frame_size"))
-        device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
-    if (not device_addr.has_key("send_frame_size"))
-        device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
+    device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
+    device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
+
+    std::cout << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu << std::endl;
+    std::cout << boost::format("Current send frame size: %d bytes") % mtu.send_mtu << std::endl;
+
+    device_args = separate_device_addr(device_addr); //update args for new frame sizes
 
     //setup rx otw type
     _rx_otw_type.width = 16;
