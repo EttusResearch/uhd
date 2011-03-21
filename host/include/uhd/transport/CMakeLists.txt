@@ -29,4 +29,5 @@ INSTALL(FILES
     vrt_if_packet.hpp
     zero_copy.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/transport
+    COMPONENT headers
 )

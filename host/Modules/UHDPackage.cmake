@@ -19,7 +19,7 @@
 INCLUDE(UHDVersion) #sets version information
 
 ########################################################################
-# Setup CPack
+# Setup CPack General
 ########################################################################
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - Universal Hardware Driver")
 SET(CPACK_PACKAGE_VENDOR              "Ettus Research LLC")
@@ -29,6 +29,35 @@ SET(CPACK_PACKAGE_VERSION_MINOR ${UHD_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${UHD_VERSION_PATCH})
 SET(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/README)
 SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
+
+########################################################################
+# Setup CPack Components
+########################################################################
+SET(CPACK_COMPONENT_LIBRARIES_GROUP      "Development")
+SET(CPACK_COMPONENT_HEADERS_GROUP        "Development")
+SET(CPACK_COMPONENT_UTILITIES_GROUP      "Runtime")
+SET(CPACK_COMPONENT_EXAMPLES_GROUP       "Runtime")
+SET(CPACK_COMPONENT_TESTS_GROUP          "Runtime")
+SET(CPACK_COMPONENT_MANUAL_GROUP         "Documentation")
+SET(CPACK_COMPONENT_DOXYGEN_GROUP        "Documentation")
+
+SET(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME      "Libraries")
+SET(CPACK_COMPONENT_HEADERS_DISPLAY_NAME        "C++ Headers")
+SET(CPACK_COMPONENT_UTILITIES_DISPLAY_NAME      "Utilities")
+SET(CPACK_COMPONENT_EXAMPLES_DISPLAY_NAME       "Examples")
+SET(CPACK_COMPONENT_TESTS_DISPLAY_NAME          "Unit Tests")
+SET(CPACK_COMPONENT_MANUAL_DISPLAY_NAME         "Manual")
+SET(CPACK_COMPONENT_DOXYGEN_DISPLAY_NAME        "Doxygen")
+
+SET(CPACK_COMPONENT_UTILITIES_DEPENDS libraries)
+SET(CPACK_COMPONENT_EXAMPLES_DEPENDS libraries)
+SET(CPACK_COMPONENT_TESTS_DEPENDS libraries)
+
+SET(CPACK_COMPONENTS_ALL libraries headers utilities examples tests manual doxygen)
+
+########################################################################
+# Setup CPack Debian
+########################################################################
 SET(BOOST_MIN_VERSION 1.36) #used in setup for boost
 STRING(REPLACE "," ", " CPACK_DEBIAN_PACKAGE_DEPENDS
     "libboost-date-time-dev          (>= ${BOOST_MIN_VERSION}),"
@@ -40,5 +69,11 @@ STRING(REPLACE "," ", " CPACK_DEBIAN_PACKAGE_DEPENDS
     "libboost-thread-dev             (>= ${BOOST_MIN_VERSION})"
 )
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
+
+########################################################################
+# Setup CPack RPM
+########################################################################
 SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel >= ${BOOST_MIN_VERSION}")
+
+########################################################################
 INCLUDE(CPack) #include after setting vars

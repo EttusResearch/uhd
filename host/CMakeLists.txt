@@ -156,6 +156,7 @@ CONFIGURE_FILE(
 INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
     DESTINATION ${LIBRARY_DIR}/pkgconfig
+    COMPONENT libraries
 )
 
 ########################################################################
@@ -166,6 +167,7 @@ INSTALL(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
     ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS
     DESTINATION ${PKG_DOC_DIR}
+    COMPONENT libraries
 )
 
 ########################################################################

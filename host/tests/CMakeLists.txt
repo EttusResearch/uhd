@@ -44,7 +44,7 @@ FOREACH(test_source ${test_sources})
     ADD_EXECUTABLE(${test_name} ${test_source})
     TARGET_LINK_LIBRARIES(${test_name} uhd)
     ADD_TEST(${test_name} ${test_name})
-    INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/tests)
+    INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/tests COMPONENT tests)
 ENDFOREACH(test_source)
 
 ########################################################################
@@ -52,7 +52,3 @@ ENDFOREACH(test_source)
 ########################################################################
 ADD_LIBRARY(module_test MODULE module_test.cpp)
 TARGET_LINK_LIBRARIES(module_test uhd)
-
-INSTALL(TARGETS
-   RUNTIME DESTINATION ${PKG_DATA_DIR}/tests
-)

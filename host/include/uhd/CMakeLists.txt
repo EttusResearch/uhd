@@ -29,4 +29,5 @@ INSTALL(FILES
     version.hpp
     wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
+    COMPONENT headers
 )
