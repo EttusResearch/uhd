@@ -199,7 +199,7 @@ public:
     ~libusb_zero_copy_impl(void){
         //cancel and free all transfers
         BOOST_FOREACH(libusb_transfer *lut, _all_luts){
-            lut->callback = &cancel_transfer_cb;
+            lut->callback = libusb_transfer_cb_fn(&cancel_transfer_cb);
             libusb_cancel_transfer(lut);
             while(lut->status != LIBUSB_TRANSFER_CANCELLED && lut->status != LIBUSB_TRANSFER_COMPLETED) {
                 boost::this_thread::sleep(boost::posix_time::milliseconds(10));
