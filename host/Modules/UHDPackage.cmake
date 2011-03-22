@@ -72,7 +72,7 @@ SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 ########################################################################
 # Setup CPack RPM
 ########################################################################
-SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel")
+SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, libusb1")
 
 ########################################################################
 INCLUDE(CPack) #include after setting vars
