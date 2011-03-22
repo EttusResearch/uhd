@@ -19,6 +19,14 @@
 INCLUDE(UHDVersion) #sets version information
 
 ########################################################################
+# Setup package file name
+########################################################################
+SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}")
+IF(DEFINED UHD_PACKAGE_SUFFIX) #append optional suffix (usually system type)
+    SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-${UHD_PACKAGE_SUFFIX})
+ENDIF(DEFINED UHD_PACKAGE_SUFFIX)
+
+########################################################################
 # Setup CPack General
 ########################################################################
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - Universal Hardware Driver")
