@@ -23,7 +23,7 @@ INCLUDE(UHDVersion) #sets version information
 ########################################################################
 SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}")
 IF(DEFINED UHD_PACKAGE_SUFFIX) #append optional suffix (usually system type)
-    SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-${UHD_PACKAGE_SUFFIX})
+    SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-${UHD_PACKAGE_SUFFIX}")
 ENDIF(DEFINED UHD_PACKAGE_SUFFIX)
 
 ########################################################################
@@ -66,22 +66,13 @@ SET(CPACK_COMPONENTS_ALL libraries headers utilities examples tests manual doxyg
 ########################################################################
 # Setup CPack Debian
 ########################################################################
-SET(BOOST_MIN_VERSION 1.36) #used in setup for boost
-STRING(REPLACE "," ", " CPACK_DEBIAN_PACKAGE_DEPENDS
-    "libboost-date-time-dev          (>= ${BOOST_MIN_VERSION}),"
-    "libboost-filesystem-dev         (>= ${BOOST_MIN_VERSION}),"
-    "libboost-program-options-dev    (>= ${BOOST_MIN_VERSION}),"
-    "libboost-regex-dev              (>= ${BOOST_MIN_VERSION}),"
-    "libboost-system-dev             (>= ${BOOST_MIN_VERSION}),"
-    "libboost-test-dev               (>= ${BOOST_MIN_VERSION}),"
-    "libboost-thread-dev             (>= ${BOOST_MIN_VERSION})"
-)
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libusb-1.0-0, libboost-dev")
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 
 ########################################################################
 # Setup CPack RPM
 ########################################################################
-SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel >= ${BOOST_MIN_VERSION}")
+SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel")
 
 ########################################################################
 INCLUDE(CPack) #include after setting vars
