@@ -21,10 +21,38 @@ INCLUDE(UHDVersion) #sets version information
 ########################################################################
 # Setup package file name
 ########################################################################
-SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}")
-IF(DEFINED UHD_PACKAGE_SUFFIX) #append optional suffix (usually system type)
-    SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-${UHD_PACKAGE_SUFFIX}")
-ENDIF(DEFINED UHD_PACKAGE_SUFFIX)
+IF(UHD_PACKAGE_MODE STREQUAL AUTO)
+    FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
+    FIND_PROGRAM(UNAME_EXECUTABLE uname)
+    IF(LSB_RELEASE_EXECUTABLE AND UNAME_EXECUTABLE)
+
+        #extract system information by executing the commands
+        EXECUTE_PROCESS(
+            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
+            OUTPUT_VARIABLE _os_name OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        EXECUTE_PROCESS(
+            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
+            OUTPUT_VARIABLE _os_version OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        EXECUTE_PROCESS(
+            COMMAND ${UNAME_EXECUTABLE} --machine
+            OUTPUT_VARIABLE _machine OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        #set generator type for recognized systems
+        IF(${_os_name} STREQUAL Ubuntu)
+            SET(CPACK_GENERATOR DEB)
+        ENDIF()
+        IF(${_os_name} STREQUAL Fedora)
+            SET(CPACK_GENERATOR RPM)
+        ENDIF()
+
+        #set a more sensible package name for this system
+        SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}-${_os_name}-${_os_version}-${_machine}")
+
+    ENDIF(LSB_RELEASE_EXECUTABLE AND UNAME_EXECUTABLE)
+ENDIF(UHD_PACKAGE_MODE STREQUAL AUTO)
 
 ########################################################################
 # Setup CPack General
