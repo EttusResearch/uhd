@@ -61,9 +61,18 @@ module gpif
       .ctrl_o(ctrl_data), .ctrl_src_rdy_o(ctrl_src_rdy), .ctrl_dst_rdy_i(ctrl_dst_rdy),
       .debug(debug_wr) );
 
+   // join vita packets which are longer than one frame, drop frame padding
+   wire [18:0] 	  refr_data;
+   wire 	  refr_src_rdy, refr_dst_rdy;
+   
+   packet_reframer tx_packet_reframer 
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
+      .data_i(tx19_data), .src_rdy_i(tx19_src_rdy), .dst_rdy_o(tx19_dst_rdy),
+      .data_o(refr_data), .src_rdy_o(refr_src_rdy), .dst_rdy_i(refr_dst_rdy));
+
    fifo19_to_fifo36 #(.LE(1)) f19_to_f36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
-      .f19_datain(tx19_data), .f19_src_rdy_i(tx19_src_rdy), .f19_dst_rdy_o(tx19_dst_rdy),
+      .f19_datain(refr_data), .f19_src_rdy_i(refr_src_rdy), .f19_dst_rdy_o(refr_dst_rdy),
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
    
    fifo_cascade #(.WIDTH(36), .SIZE(TXFIFOSIZE)) tx_fifo36

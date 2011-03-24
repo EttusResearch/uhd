@@ -26,6 +26,9 @@ module gpif_wr_tb();
    initial #1000 sys_rst = 0;
    always #64 gpif_clk <= ~gpif_clk;
    always #47.9 sys_clk <= ~sys_clk;
+
+   wire [18:0] data_int;
+   wire        src_rdy_int, dst_rdy_int;
    
    gpif_wr gpif_write
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), 
@@ -33,8 +36,13 @@ module gpif_wr_tb();
       .gpif_full_d(DF), .gpif_full_c(CF),
       
       .sys_clk(sys_clk), .sys_rst(sys_rst),
-      .data_o(data_o), .src_rdy_o(src_rdy), .dst_rdy_i(dst_rdy),
+      .data_o(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int),
       .ctrl_o(ctrl_o), .ctrl_src_rdy_o(ctrl_src_rdy), .ctrl_dst_rdy_i(ctrl_dst_rdy) );
+
+   packet_reframer tx_packet_reframer 
+     (.clk(sys_clk), .reset(sys_rst), .clear(0),
+      .data_i(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int),
+      .data_o(data_o), .src_rdy_o(src_rdy), .dst_rdy_i(dst_rdy));
 
    always @(posedge sys_clk)
      if(ctrl_src_rdy & ctrl_dst_rdy)
@@ -56,7 +64,7 @@ module gpif_wr_tb();
 	repeat (1)
 	  begin
 	     WR <= 1;
-	     gpif_data <= 150;  // Length
+	     gpif_data <= 10;  // Length
 	     @(posedge gpif_clk);
 	     gpif_data <= 16'h00;
 	     @(posedge gpif_clk);
@@ -69,14 +77,13 @@ module gpif_wr_tb();
 	     repeat (20)
 	       @(posedge gpif_clk);
 	     WR <= 1;
-	     gpif_data <= 16'hFF;
+	     gpif_data <= 16'h5;
 	     @(posedge gpif_clk);
 	     repeat(254)
 	       begin
 		  gpif_data <= gpif_data - 1;
 		  @(posedge gpif_clk);
 	       end
-	     
 	  end
      end // initial begin
    
