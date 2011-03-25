@@ -111,37 +111,26 @@ module u1plus_core
 	 .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug0(debug0), .debug1(debug1));
 
-   wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
-   
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX
-   wire [31:0] 	 sample_rx, sample_tx;
-   wire 	 strobe_rx, strobe_tx;
-   wire 	 rx1_dst_rdy, rx1_src_rdy;
-   wire [100:0]  rx1_data;
-   wire 	 run_rx;
-      
+   wire [31:0] 	 sample_rx;
+   wire 	 strobe_rx, run_rx;
+   wire [31:0] 	 debug_rx_dsp, vr_debug;
+   
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_a({rx_i,2'b0}),.adc_ovf_a(0),.adc_b({rx_q,2'b0}),.adc_ovf_b(0),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
-
-   vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
+   
+   vita_rx_chain #(.BASE(SR_RX_CTRL), .UNIT(0), .FIFOSIZE(9)) vita_rx_chain
+     (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
-      .debug_rx(vrc_debug));
-
-   vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
-      .data_o(rx_data), .dst_rdy_i(rx_dst_rdy), .src_rdy_o(rx_src_rdy),
-      .debug_rx(vrf_debug) );
+      .rx_data_o(rx_data), .rx_dst_rdy_i(rx_dst_rdy), .rx_src_rdy_o(rx_src_rdy),
+      .debug(vr_debug) );
    
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
@@ -389,7 +378,6 @@ module u1plus_core
    assign debug = debug0;
    assign debug_gpio_0 = 0;
    assign debug_gpio_1 = 0;
-   assign {io_tx,io_rx} = vrc_debug | vrf_debug;
-   
+   assign {io_tx,io_rx} = vr_debug;
    
 endmodule // u1plus_core
