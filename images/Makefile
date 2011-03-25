@@ -94,14 +94,18 @@ _usrp_n200_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n200_fw.bin
 _usrp_n210_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n210_fw.bin
 IMAGES_LIST += $(_usrp2_fw_bin) $(_usrp_n200_fw_bin) $(_usrp_n210_fw_bin)
 
-$(_usrp2_fw_bin) $(_usrp_n200_fw_bin) $(_usrp_n210_fw_bin): $(GLOBAL_DEPS)
+$(_usrp2_fw_bin): $(GLOBAL_DEPS)
 	cd $(_usrp2_fw_dir) && rm -rf build
 	cd $(_usrp2_fw_dir) && mkdir build
 	cd $(_usrp2_fw_dir)/build && cmake ../
 	cd $(_usrp2_fw_dir)/build && make
-	cp $(_usrp2_fw_dir)/build/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
-	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n200_fw_bin)
-	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n210_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2/usrp2_txrx_uhd.bin $@
+
+$(_usrp_n200_fw_bin): $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $@
+
+$(_usrp_n210_fw_bin): $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $@
 
 endif
 
