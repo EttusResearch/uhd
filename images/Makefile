@@ -132,7 +132,7 @@ ifdef HAS_XTCLSH
 
 _usrp_n200_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
 _usrp_n200_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_fpga.bin
-IMAGES_LIST += $(_usrp_n210_fpga_bin)
+IMAGES_LIST += $(_usrp_n200_fpga_bin)
 
 $(_usrp_n200_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n200_fpga_dir) && make -f Makefile.N200 clean
