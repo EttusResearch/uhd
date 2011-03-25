@@ -163,9 +163,9 @@ INSTALL(
 # Install Package Docs
 ########################################################################
 INSTALL(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-    ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS.txt
     DESTINATION ${PKG_DOC_DIR}
     COMPONENT libraries
 )
