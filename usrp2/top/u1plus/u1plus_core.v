@@ -331,7 +331,7 @@ module u1plus_core
 		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		.gpio( {io_tx,io_rx} ) );
+		.gpio( /*{io_tx,io_rx}*/ ) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #8 + 9
@@ -389,6 +389,7 @@ module u1plus_core
    assign debug = debug0;
    assign debug_gpio_0 = 0;
    assign debug_gpio_1 = 0;
-
+   assign {io_tx,io_rx} = vrc_debug | vrf_debug;
+   
    
 endmodule // u1plus_core

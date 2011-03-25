@@ -220,7 +220,9 @@ module gpif
    // ////////////////////////////////////////////
    //    DEBUG
    
-   assign debug0 = { 5'd0, gpif_misc[2:0], gpif_ctl[3:0], gpif_rdy[3:0], gpif_d_copy[15:0] };
+   assign debug0 = { rx19_src_rdy, rx19_dst_rdy, resp_src_rdy, resp_dst_rdy, gpif_ctl[3:0], gpif_rdy[3:0], 
+		     gpif_d_copy[15:0] };
+   
    assign debug1 = { { debug_rd[15:8] },
 		     { debug_rd[7:0] },
 		     { rx_src_rdy_i, rx_dst_rdy_o, rx36_src_rdy, rx36_dst_rdy, rx19_src_rdy, rx19_dst_rdy, resp_src_rdy, resp_dst_rdy},
