@@ -111,10 +111,6 @@ module u1plus_core
 	 .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug0(debug0), .debug1(debug1));
 
-   wire 	 rx_sof = rx_data[32];
-   wire 	 rx_eof = rx_data[33];
-   wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
-   
    wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
    
    // /////////////////////////////////////////////////////////////////////////
