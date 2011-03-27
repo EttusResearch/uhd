@@ -32,7 +32,7 @@ SET(UHD_VERSION_PATCH 000)
 ########################################################################
 # Version information discovery through git log
 ########################################################################
-IF(UHD_PACKAGE_MODE STREQUAL AUTO)
+IF(UHD_RELEASE_MODE)
     SET(UHD_VERSION_DISCOVERY FALSE)
 ELSE()
     SET(UHD_VERSION_DISCOVERY GIT_FOUND)

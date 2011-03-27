@@ -21,7 +21,7 @@ INCLUDE(UHDVersion) #sets version information
 ########################################################################
 # Setup package file name
 ########################################################################
-IF(UHD_PACKAGE_MODE STREQUAL AUTO)
+IF(UHD_RELEASE_MODE)
     FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
     FIND_PROGRAM(UNAME_EXECUTABLE uname)
     IF(LSB_RELEASE_EXECUTABLE AND UNAME_EXECUTABLE)
@@ -59,7 +59,7 @@ IF(UHD_PACKAGE_MODE STREQUAL AUTO)
         SET(CPACK_GENERATOR NSIS)
     ENDIF()
 
-ENDIF(UHD_PACKAGE_MODE STREQUAL AUTO)
+ENDIF(UHD_RELEASE_MODE)
 
 ########################################################################
 # Setup CPack General
