@@ -118,31 +118,29 @@ def is_valid_fw_image(fw_image):
 # Burner class, holds a socket and send/recv routines
 ########################################################################
 class burner_socket(object):
-    def __init__(self, ip):
+    def __init__(self, addr):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.settimeout(UDP_TIMEOUT)
-        self._sock.connect((ip, UDP_FW_UPDATE_PORT))
+        self._sock.connect((addr, UDP_FW_UPDATE_PORT))
+        self.set_callbacks(lambda *a: None, lambda *a: None)
+        self.init_update() #check that the device is there
+
+    def set_callbacks(self, progress_cb, status_cb):
+        self._progress_cb = progress_cb
+        self._status_cb = status_cb
 
     def send_and_recv(self, pkt):
-        try: self._sock.send(pkt)
-        except Exception, e:
-            print e
-            sys.exit(1)
-
-        try: recv_pkt = self._sock.recv(UDP_MAX_XFER_BYTES)
-        except Exception, e:
-            print e
-            sys.exit(1)
-
-        return recv_pkt
+        self._sock.send(pkt)
+        return self._sock.recv(UDP_MAX_XFER_BYTES)
 
     #just here to validate comms
     def init_update(self):
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0, "")
-        in_pkt = self.send_and_recv(out_pkt)
+        try: in_pkt = self.send_and_recv(out_pkt)
+        except socket.timeout: raise Exception, "No response from device"
         (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(in_pkt)
         if pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG:
-            print "USRP2P found."
+            print "USRP-N2XX found."
         else:
             raise Exception, "Invalid reply received from device."
 
@@ -214,9 +212,11 @@ class burner_socket(object):
 
     def write_image(self, image, addr):
         print "Writing image"
+        self._status_cb("Writing")
+        writedata = image
         #we split the image into smaller (256B) bits and send them down the wire
-        while image:
-            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, image[:FLASH_DATA_PACKET_SIZE])
+        while writedata:
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, writedata[:FLASH_DATA_PACKET_SIZE])
             in_pkt = self.send_and_recv(out_pkt)
 
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
@@ -224,11 +224,13 @@ class burner_socket(object):
             if pktid != update_id_t.USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG:
               raise Exception, "Invalid reply %c from device." % (chr(pktid))
 
-            image = image[FLASH_DATA_PACKET_SIZE:]
+            writedata = writedata[FLASH_DATA_PACKET_SIZE:]
             addr += FLASH_DATA_PACKET_SIZE
+            self._progress_cb(float(len(image)-len(writedata))/len(image))
 
     def verify_image(self, image, addr):
         print "Verifying data"
+        self._status_cb("Verifying")
         readsize = len(image)
         readdata = str()
         while readsize > 0:
@@ -245,6 +247,7 @@ class burner_socket(object):
             readdata += data[:thisreadsize]
             readsize -= FLASH_DATA_PACKET_SIZE
             addr += FLASH_DATA_PACKET_SIZE
+            self._progress_cb(float(len(readdata))/len(image))
 
         print "Read back %i bytes" % len(readdata)
         #  print readdata
@@ -253,7 +256,7 @@ class burner_socket(object):
         #    print "out: %i in: %i" % (ord(image[i]), ord(readdata[i]))
 
         if readdata != image:
-            print "Verify failed. Image did not write correctly."
+            raise Exception, "Verify failed. Image did not write correctly."
         else:
             print "Success."
 
@@ -285,13 +288,15 @@ class burner_socket(object):
 
     def reset_usrp(self):
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0, "")
-        in_pkt = self.send_and_recv(out_pkt)
+        try: in_pkt = self.send_and_recv(out_pkt)
+        except socket.timeout: return
 
         (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
         if pktid == update_id_t.USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG:
             raise Exception, "Device failed to reset."
 
     def erase_image(self, addr, length):
+        self._status_cb("Erasing")
         #get flash info first
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length, "")
         in_pkt = self.send_and_recv(out_pkt)
@@ -302,6 +307,7 @@ class burner_socket(object):
             raise Exception, "Invalid reply %c from device." % (chr(pktid))
 
         print "Erasing %i bytes at %i" % (length, addr)
+        start_time = time.time()
 
         #now wait for it to finish
         while(True):
@@ -313,6 +319,8 @@ class burner_socket(object):
             if pktid == update_id_t.USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG: break
             elif pktid != update_id_t.USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG:
                 raise Exception, "Invalid reply %c from device." % (chr(pktid))
+            time.sleep(0.01) #decrease network overhead by waiting a bit before polling
+            self._progress_cb(min(1.0, (time.time() - start_time)/(length/80e3)))
 
 
 ########################################################################
@@ -320,7 +328,7 @@ class burner_socket(object):
 ########################################################################
 def get_options():
     parser = optparse.OptionParser()
-    parser.add_option("--ip",   type="string",                 help="USRP2P firmware address",        default='')
+    parser.add_option("--addr", type="string",                 help="USRP-N2XX device address",       default='')
     parser.add_option("--fw",   type="string",                 help="firmware image path (optional)", default='')
     parser.add_option("--fpga", type="string",                 help="fpga image path (optional)",     default='')
     parser.add_option("--reset", action="store_true",          help="reset the device after writing", default=False)
@@ -335,7 +343,7 @@ def get_options():
 ########################################################################
 if __name__=='__main__':
     options = get_options()
-    if not options.ip: raise Exception, 'no ip address specified'
+    if not options.addr: raise Exception, 'no address specified'
 
     if not options.fpga and not options.fw and not options.reset: raise Exception, 'Must specify either a firmware image or FPGA image, and/or reset.'
 
@@ -345,7 +353,7 @@ if __name__=='__main__':
         response = raw_input("""Type "yes" to continue, or anything else to quit: """)
         if response != "yes": sys.exit(0)
 
-    burner = burner_socket(ip=options.ip)
+    burner = burner_socket(addr=options.addr)
 
     if options.read:
         if options.fw:

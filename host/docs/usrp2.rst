@@ -58,17 +58,20 @@ Use the net burner tool (unix)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
+    sudo <prefix>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
+
+    -- OR --
+
     cd <prefix>/share/uhd/utils
-    ./usrp_n2xx_net_burner.py --ip=<ip address> --fw=<path for firmware image>
-    ./usrp_n2xx_net_burner.py --ip=<ip address> --fpga=<path to FPGA image>
+    ./usrp_n2xx_net_burner.py --addr=<ip address> --fw=<path for firmware image>
+    ./usrp_n2xx_net_burner.py --addr=<ip address> --fpga=<path to FPGA image>
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the net burner tool (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner.py --ip=<ip address> --fw=<path for firmware image>
-    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner.py --ip=<ip address> --fpga=<path to FPGA image>
+    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device recovery and bricking
