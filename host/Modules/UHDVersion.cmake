@@ -17,19 +17,28 @@
 
 ########################################################################
 INCLUDE(UHDPython) #requires python for parsing
+FIND_PACKAGE(Git QUIET)
 
 ########################################################################
 # Setup Version Numbers
+#  - increment major on api compatibility changes
+#  - increment minor on feature-level changes
+#  - increment patch on for bug fixes and docs
 ########################################################################
-SET(UHD_VERSION_MAJOR 003)  #API compatibility number
-SET(UHD_VERSION_MINOR 0)    #Timestamp of git commit
-SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
+SET(UHD_VERSION_MAJOR 003)
+SET(UHD_VERSION_MINOR 000)
+SET(UHD_VERSION_PATCH 000)
 
 ########################################################################
-# Find GIT to get repo information
+# Version information discovery through git log
 ########################################################################
-FIND_PACKAGE(Git QUIET)
-IF(GIT_FOUND)
+IF(UHD_PACKAGE_MODE STREQUAL AUTO)
+    SET(UHD_VERSION_DISCOVERY FALSE)
+ELSE()
+    SET(UHD_VERSION_DISCOVERY GIT_FOUND)
+ENDIF()
+
+IF(UHD_VERSION_DISCOVERY)
 
     #grab the git log entry for the current head
     EXECUTE_PROCESS(
@@ -50,7 +59,7 @@ IF(GIT_FOUND)
         COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d%H%M%S', time.gmtime(${_git_timestamp}))"
         OUTPUT_VARIABLE _git_date OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    SET(UHD_VERSION_MINOR ${_git_date})
+    #SET(UHD_VERSION_MINOR ${_git_date})
 
     #grab the git ref id for the current head
     EXECUTE_PROCESS(
@@ -59,7 +68,7 @@ IF(GIT_FOUND)
         OUTPUT_VARIABLE _git_rev OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     SET(UHD_VERSION_PATCH ${_git_rev})
-ENDIF(GIT_FOUND)
+ENDIF(UHD_VERSION_DISCOVERY)
 
 ########################################################################
 SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}")
