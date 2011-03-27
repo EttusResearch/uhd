@@ -1,11 +1,13 @@
 Matt Ettus - matt@ettus.com
     USRP1 FPGA code
-    USRP2 FPGA code
+    USRP2/N200 FPGA code
+    USRP-E100 FPGA code
 
 Josh Blum - josh@ettus.com
     driver framework
-    USRP2 firmware
-    USRP2 host code
+    USRP2/N200 firmware
+    USRP2/N200 host code
+    USRP-E100 host code
     Basic/LF host code
     XCVR2450 host code
     RFX Series host code
@@ -13,6 +15,8 @@ Josh Blum - josh@ettus.com
 Jason Abele - jason@ettus.com
     RFX Series host code
     WBX host code
+    DBSRX host code
+    DBSRX2 host code
 
 Eric Blossom - eb@comsec.com
     USRP1 firmware
@@ -28,3 +32,9 @@ Nick Foster - nick@ettus.com
     LIBUSB host code
     USRP1 host code
     TVRX host code
+    USRP-N200 firmware
+    USRP-N200 host code
+
+Philip Balister - philip@opensdr.com
+    USRP-E100 kernel module
+    USRP-E100 utilities
