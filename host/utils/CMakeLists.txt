@@ -59,6 +59,7 @@ IF(ENABLE_USRP2)
         usrp2_card_burner.py
         usrp2_card_burner_gui.py
         usrp_n2xx_net_burner.py
+        usrp_n2xx_net_burner_gui.py
         DESTINATION ${PKG_DATA_DIR}/utils
         COMPONENT utilities
     )
