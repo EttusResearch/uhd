@@ -140,7 +140,7 @@ module u1plus_core
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(0),
-		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(0),
+		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
 		   .DSP_NUMBER(0)) 
    vita_tx_chain
      (.clk(wb_clk), .reset(wb_rst),
