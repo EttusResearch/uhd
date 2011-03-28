@@ -48,6 +48,11 @@ IF(UHD_RELEASE_MODE)
             SET(CPACK_GENERATOR RPM)
         ENDIF()
 
+        #when the library suffix should be 64 (applies to redhat linux family)
+        IF(EXISTS "/etc/redhat-release" AND _machine MATCHES "64$")
+            SET(LIB_SUFFIX 64)
+        ENDIF()
+
         #set a more sensible package name for this system
         SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}-${_os_name}-${_os_version}-${_machine}")
 
