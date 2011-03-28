@@ -124,7 +124,7 @@ module u1plus_core
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
    
-   vita_rx_chain #(.BASE(SR_RX_CTRL), .UNIT(0), .FIFOSIZE(9)) vita_rx_chain
+   vita_rx_chain #(.BASE(SR_RX_CTRL), .UNIT(0), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain
      (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp),
