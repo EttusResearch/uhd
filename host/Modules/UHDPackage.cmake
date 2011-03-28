@@ -22,6 +22,20 @@ INCLUDE(UHDVersion) #sets version information
 # Setup package file name
 ########################################################################
 IF(UHD_RELEASE_MODE)
+
+    #set generator type for recognized systems
+    IF(APPLE)
+        SET(CPACK_GENERATOR PackageMaker)
+    ELSEIF(WIN32)
+        SET(CPACK_GENERATOR NSIS)
+    ELSEIF(UNIX AND EXISTS "/etc/debian_version")
+        SET(CPACK_GENERATOR DEB)
+    ELSEIF(UNIX AND EXISTS "/etc/redhat-release")
+        SET(CPACK_GENERATOR RPM)
+    ELSE()
+        SET(CPACK_GENERATOR TGZ)
+    ENDIF()
+
     FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
     FIND_PROGRAM(UNAME_EXECUTABLE uname)
     IF(LSB_RELEASE_EXECUTABLE AND UNAME_EXECUTABLE)
@@ -40,16 +54,8 @@ IF(UHD_RELEASE_MODE)
             OUTPUT_VARIABLE _machine OUTPUT_STRIP_TRAILING_WHITESPACE
         )
 
-        #set generator type for recognized systems
-        IF(${_os_name} STREQUAL Ubuntu)
-            SET(CPACK_GENERATOR DEB)
-        ENDIF()
-        IF(${_os_name} STREQUAL Fedora)
-            SET(CPACK_GENERATOR RPM)
-        ENDIF()
-
         #when the library suffix should be 64 (applies to redhat linux family)
-        IF(EXISTS "/etc/redhat-release" AND _machine MATCHES "64$")
+        IF(CPACK_GENERATOR STREQUAL RPM AND _machine MATCHES "64$")
             SET(LIB_SUFFIX 64)
         ENDIF()
 
@@ -57,12 +63,6 @@ IF(UHD_RELEASE_MODE)
         SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}-${_os_name}-${_os_version}-${_machine}")
 
     ENDIF(LSB_RELEASE_EXECUTABLE AND UNAME_EXECUTABLE)
-
-    IF(APPLE)
-        SET(CPACK_GENERATOR PackageMaker)
-    ELSEIF(WIN32)
-        SET(CPACK_GENERATOR NSIS)
-    ENDIF()
 
 ENDIF(UHD_RELEASE_MODE)
 
