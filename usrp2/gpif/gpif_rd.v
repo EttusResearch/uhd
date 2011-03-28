@@ -32,8 +32,7 @@ module gpif_rd
       .arst(sys_rst));
 
    reg [7:0] 	packet_count;
-   reg 		do_padding;
-   wire 	consume_data_line = gpif_rd & ~gpif_ep & ~read_count[8] & ~do_padding;
+   wire 	consume_data_line = gpif_rd & ~gpif_ep & ~read_count[8];
    wire 	produce_eop = src_rdy_int & dst_rdy_int & data_int[17];
    wire 	consume_sop = consume_data_line & final_rdy_data & data_o[16];
    wire 	consume_eop = consume_data_line & final_rdy_data & data_o[17];
@@ -52,14 +51,6 @@ module gpif_rd
        else if(consume_sop & ~produce_eop)
 	 packet_count <= packet_count - 1;
 
-   always @(negedge gpif_clk)
-     if(gpif_rst)
-       do_padding <= 0;
-     else if(~gpif_rd)
-       do_padding <= 0;
-     else if(consume_eop)
-       do_padding <= 1;   
-       
    always @(negedge gpif_clk)
      if(gpif_rst)
        gpif_empty_d <= 1;

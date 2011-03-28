@@ -85,8 +85,8 @@ module gpif
 
    wire [35:0] 	  rx36_data, rx_data;
    wire 	  rx36_src_rdy, rx36_dst_rdy, rx_src_rdy, rx_dst_rdy;
-   wire [18:0] 	  rx19_data;
-   wire 	  rx19_src_rdy, rx19_dst_rdy;
+   wire [18:0] 	  rx19_data, splt_data;
+   wire 	  rx19_src_rdy, rx19_dst_rdy, splt_src_rdy, splt_dst_rdy;
    wire [18:0] 	  resp_data, resp_int1, resp_int2;
    wire 	  resp_src_rdy, resp_dst_rdy;
    wire 	  resp_src_rdy_int1, resp_dst_rdy_int1, resp_src_rdy_int2, resp_dst_rdy_int2;
@@ -96,18 +96,23 @@ module gpif
       .datain(rx_data), .src_rdy_i(rx_src_rdy), .dst_rdy_o(rx_dst_rdy),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
 
-   fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // FIXME Endianness?
+   fifo36_to_fifo19 #(.LE(1)) f36_to_f19
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
       .f19_dataout(rx19_data), .f19_src_rdy_o(rx19_src_rdy), .f19_dst_rdy_i(rx19_dst_rdy) );
 
+   packet_splitter #(.FRAME_LEN(256)) packet_splitter
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy),
+      .data_o(splt_data), .src_rdy_o(splt_src_rdy), .dst_rdy_i(splt_dst_rdy));
+     
    gpif_rd gpif_rd
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst),
       .gpif_data(gpif_d_out), .gpif_rd(RD), .gpif_ep(EP),
       .gpif_empty_d(DE), .gpif_empty_c(CE),
       
       .sys_clk(fifo_clk), .sys_rst(fifo_rst),
-      .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy),
+      .data_i(splt_data), .src_rdy_i(splt_src_rdy), .dst_rdy_o(splt_dst_rdy),
       .resp_i(resp_data), .resp_src_rdy_i(resp_src_rdy), .resp_dst_rdy_o(resp_dst_rdy),
       .debug(debug_rd) );
 
