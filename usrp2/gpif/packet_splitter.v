@@ -19,6 +19,8 @@ module packet_splitter
    localparam PS_FRAME = 1;
    localparam PS_NEW_FRAME = 2;
    localparam PS_PAD = 3;
+
+   wire       eof_i = data_i[17];
    
    always @(posedge clk)
      if(reset | clear)
@@ -34,30 +36,33 @@ module packet_splitter
 	     end
 	 PS_FRAME :
 	   if(src_rdy_i & dst_rdy_i)
-	     if(frame_len == 0)
-	       if(length == 0)
-		 state <= PS_IDLE;
-	       else
-		 begin
-		    state <= PS_NEW_FRAME;
-		    frame_len <= FRAME_LEN;
-		    length <= length - 1;
-		 end
+	     if((frame_len == 2) & ((length == 2) | eof_i))
+	       state <= PS_IDLE;
+	     else if(frame_len == 2)
+	       begin
+		  state <= PS_NEW_FRAME;
+		  length <= length - 1;
+	       end
+	     else if((length == 2)|eof_i)
+	       begin
+		  frame_len <= frame_len - 1;
+		  state <= PS_PAD;
+	       end
 	     else
-	       if(length == 0)
-		 begin
-		    frame_len <= frame_len - 1;
-		    state <= PS_PAD;
-		 end
+	       begin
+		  frame_len <= frame_len - 1;
+		  length <= length - 1;
+	       end
 	 PS_NEW_FRAME :
 	   if(src_rdy_i & dst_rdy_i)
 	     begin
-		frame_len <= frame_len - 1;
+		frame_len <= FRAME_LEN;
 		state <= PS_FRAME;
+		length <= length - 1;
 	     end
 	 PS_PAD :
 	   if(dst_rdy_i)
-	     if(frame_len == 0)
+	     if(frame_len == 2)
 	       state <= PS_IDLE;
 	     else
 	       frame_len <= frame_len - 1;
@@ -70,7 +75,7 @@ module packet_splitter
    assign src_rdy_o = src_rdy_i | (state == PS_PAD);
    
    wire occ_out = 0;
-   wire eof_out = (frame_len == 0) & (state != PS_IDLE);
+   wire eof_out = (frame_len == 2) & (state != PS_IDLE) & (state != PS_NEW_FRAME);
    wire sof_out = (state == PS_IDLE) | (state == PS_NEW_FRAME);
 
    wire [15:0] data_out = data_i[15:0];
