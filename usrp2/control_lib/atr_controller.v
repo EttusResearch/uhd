@@ -7,7 +7,7 @@ module atr_controller
   (input clk_i, input rst_i,
    input [5:0] adr_i, input [3:0] sel_i, input [31:0] dat_i, output reg [31:0] dat_o,
    input we_i, input stb_i, input cyc_i, output reg ack_o,
-   input run_rx, input run_tx, input [31:0] master_time,
+   input run_rx, input run_tx,
    output [31:0] ctrl_lines);
    
    reg [3:0] state;

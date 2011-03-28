@@ -38,8 +38,8 @@ module vita_tx_deframer
    assign has_secs 	= ~(data_i[23:22]==2'b00);
    assign has_tics 	= ~(data_i[21:20]==2'b00);
    assign has_trailer 	= data_i[26];
-   assign is_sob = data_i[25];
-   assign is_eob = data_i[24];
+   wire      is_sob = data_i[25];
+   wire      is_eob = data_i[24];
    wire      eof = data_i[33];
    reg 	     has_streamid_reg, has_classid_reg, has_secs_reg, has_tics_reg;
    reg 	     has_trailer_reg, is_sob_reg, is_eob_reg;
