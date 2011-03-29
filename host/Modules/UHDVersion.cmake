@@ -33,12 +33,14 @@ SET(UHD_VERSION_PATCH 000)
 # Version information discovery through git log
 ########################################################################
 IF(UHD_RELEASE_MODE)
-    SET(UHD_VERSION_DISCOVERY FALSE)
+    SET(UHD_BUILD_INFO_DISCOVERY FALSE)
+    SET(UHD_BUILD_INFO "release")
 ELSE()
-    SET(UHD_VERSION_DISCOVERY GIT_FOUND)
+    SET(UHD_BUILD_INFO_DISCOVERY GIT_FOUND)
+    SET(UHD_BUILD_INFO "unknown")
 ENDIF()
 
-IF(UHD_VERSION_DISCOVERY)
+IF(UHD_BUILD_INFO_DISCOVERY)
 
     #grab the git log entry for the current head
     EXECUTE_PROCESS(
@@ -59,7 +61,6 @@ IF(UHD_VERSION_DISCOVERY)
         COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d%H%M%S', time.gmtime(${_git_timestamp}))"
         OUTPUT_VARIABLE _git_date OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    #SET(UHD_VERSION_MINOR ${_git_date})
 
     #grab the git ref id for the current head
     EXECUTE_PROCESS(
@@ -67,8 +68,9 @@ IF(UHD_VERSION_DISCOVERY)
         COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
         OUTPUT_VARIABLE _git_rev OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    SET(UHD_VERSION_PATCH ${_git_rev})
-ENDIF(UHD_VERSION_DISCOVERY)
+
+    SET(UHD_BUILD_INFO ${_git_rev})
+ENDIF(UHD_BUILD_INFO_DISCOVERY)
 
 ########################################################################
 SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}")

@@ -211,5 +211,5 @@ ADD_SUBDIRECTORY(usrp_e_utils)
 # Print Summary
 ########################################################################
 UHD_PRINT_COMPONENT_SUMMARY()
-MESSAGE(STATUS "Building version: ${CPACK_PACKAGE_VERSION}")
+MESSAGE(STATUS "Building version: ${CPACK_PACKAGE_VERSION}-${UHD_BUILD_INFO}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

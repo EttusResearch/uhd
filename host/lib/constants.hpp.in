@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #define INCLUDED_LIBUHD_CONSTANTS_HPP
 
 //these should be pre-processor macros to avoid static initialization issues
-#define UHD_VERSION_STRING "@CPACK_PACKAGE_VERSION@"
+#define UHD_VERSION_STRING "@UHD_VERSION@-@UHD_BUILD_INFO@"
 #define LOCAL_PKG_DATA_DIR "@LOCAL_PKG_DATA_DIR@"
 #define INSTALLER_PKG_DATA_DIR "@INSTALLER_PKG_DATA_DIR@"
 
