@@ -287,6 +287,7 @@ public:
         if (_out_rate == rate) return;
         if (rate == 61.44e6) set_clock_settings_with_external_vcxo(rate);
         else                 set_clock_settings_with_internal_vco(rate);
+        _iface->poke32(UE_REG_TIME64_TPS, boost::uint32_t(get_fpga_clock_rate()));
     }
 
     double get_fpga_clock_rate(void){
