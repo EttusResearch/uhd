@@ -31,6 +31,10 @@ IF(ENABLE_USB)
     MESSAGE(STATUS "USB support enabled via libusb.")
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIR})
     LIBUHD_APPEND_LIBS(${LIBUSB_LIBRARIES})
+    IF(WIN32)
+        #needed when statically linking libusb
+        LIBUHD_APPEND_LIBS(Setupapi.lib)
+    ENDIF(WIN32)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_control.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_zero_copy.cpp
