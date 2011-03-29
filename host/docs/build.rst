@@ -165,12 +165,13 @@ LibUSB cmake notes
 On Windows, cmake does not have the advantage of pkg-config,
 so we must manually tell cmake how to locate the LibUSB header and lib.
 
-From the cmake gui, select "Advanded View":
-
+* From the cmake gui, select "Advanded View"
 * Set LIBUSB_INCLUDE_DIR to the directory with "libusb.h".
 * Set LIBUSB_LIBRARIES to the full path for "libusb-1.0.lib".
 
-Then check the boxes to enable USRP1 support, click configure and generate.
+  * Recommend the static libusb-1.0.lib to simplify runtime dependencies.
+
+* Check the box to enable USB support, click configure and generate.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build the project in MSVC
