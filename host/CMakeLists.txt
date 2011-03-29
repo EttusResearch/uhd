@@ -33,6 +33,10 @@ INCLUDE(UHDPackage)   #setup cpack
 ########################################################################
 # Install Dirs
 ########################################################################
+#when the library suffix should be 64 (applies to redhat linux family)
+IF(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
+    SET(LIB_SUFFIX 64)
+ENDIF()
 SET(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
 SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib${LIB_SUFFIX})
