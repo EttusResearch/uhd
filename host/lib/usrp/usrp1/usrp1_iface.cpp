@@ -175,24 +175,31 @@ public:
         UHD_ASSERT_THROW((num_bits <= 32) && !(num_bits % 8));
         size_t num_bytes = num_bits / 8;
 
-        // Byteswap on num_bytes
-        unsigned char buff[4] = { 0 };
-        for (size_t i = 1; i <= num_bytes; i++)
-            buff[num_bytes - i] = (bits >> ((i - 1) * 8)) & 0xff;
-
         if (readback) {
-            boost::uint8_t w_len_h = which_slave & 0xff;
-            boost::uint8_t w_len_l = num_bytes & 0xff;
+            unsigned char buff[4] = {
+                (bits >> 0) & 0xff, (bits >> 8) & 0xff,
+                (bits >> 16) & 0xff, (bits >> 24) & 0xff
+            };
+            //conditions where there are two header bytes
+            if (num_bytes >= 3 and buff[num_bytes-1] != 0 and buff[num_bytes-2] != 0 and buff[num_bytes-3] == 0){
+                if (int(num_bytes-2) != _ctrl_transport->usrp_control_read(
+                    VRQ_SPI_READ, (buff[num_bytes-1] << 8) | (buff[num_bytes-2] << 0),
+                    (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_2,
+                    buff, num_bytes-2
+                )) throw uhd::io_error("USRP1: failed SPI readback transaction");
+            }
 
-            int ret = _ctrl_transport->usrp_control_read(
-                                         VRQ_SPI_TRANSACT,
-                                         (buff[0] << 8) | (buff[1] << 0), 
-                                         (buff[2] << 8) | (buff[3] << 0),
-                                         buff,
-                                         (w_len_h << 8) | (w_len_l << 0));
-
-            if (ret < 0) throw uhd::io_error("USRP1: failed SPI readback transaction");
-
+            //conditions where there is one header byte
+            else if (num_bytes >= 2 and buff[num_bytes-1] != 0 and buff[num_bytes-2] == 0){
+                if (int(num_bytes-1) != _ctrl_transport->usrp_control_read(
+                    VRQ_SPI_READ, buff[num_bytes-1],
+                    (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_1,
+                    buff, num_bytes-1
+                )) throw uhd::io_error("USRP1: failed SPI readback transaction");
+            }
+            else{
+                throw uhd::io_error("USRP1: invalid input data for SPI readback");
+            }
             boost::uint32_t val = (((boost::uint32_t)buff[0]) <<  0) |
                                   (((boost::uint32_t)buff[1]) <<  8) |
                                   (((boost::uint32_t)buff[2]) << 16) |
@@ -200,6 +207,11 @@ public:
             return val; 
         }
         else {
+            // Byteswap on num_bytes
+            unsigned char buff[4] = { 0 };
+            for (size_t i = 1; i <= num_bytes; i++)
+                buff[num_bytes - i] = (bits >> ((i - 1) * 8)) & 0xff;
+
             boost::uint8_t w_index_h = which_slave & 0xff;
             boost::uint8_t w_index_l = (SPI_FMT_MSB | SPI_FMT_HDR_0) & 0xff;
 
