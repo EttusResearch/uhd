@@ -24,6 +24,7 @@
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/barrier.hpp>
 #include <list>
 #include <iostream>
 
@@ -191,9 +192,11 @@ public:
 
         //spawn the event handler threads
         size_t concurrency = hints.cast<size_t>("concurrency_hint", 1);
+        boost::barrier spawn_barrier(concurrency+1);
         for (size_t i = 0; i < concurrency; i++) _thread_group.create_thread(
-            boost::bind(&libusb_zero_copy_impl::run_event_loop, this)
+            boost::bind(&libusb_zero_copy_impl::run_event_loop, this, boost::ref(spawn_barrier))
         );
+        spawn_barrier.wait();
     }
 
     ~libusb_zero_copy_impl(void){
@@ -263,7 +266,8 @@ private:
     boost::thread_group _thread_group;
     bool _threads_running;
 
-    void run_event_loop(void){
+    void run_event_loop(boost::barrier &spawn_barrier){
+        spawn_barrier.wait();
         set_thread_priority_safe();
         libusb_context *context = libusb::session::get_global_session()->get_context();
         _threads_running = true;
