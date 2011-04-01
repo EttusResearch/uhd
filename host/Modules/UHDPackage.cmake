@@ -90,6 +90,7 @@ SET(CPACK_COMPONENT_EXAMPLES_GROUP       "Runtime")
 SET(CPACK_COMPONENT_TESTS_GROUP          "Runtime")
 SET(CPACK_COMPONENT_MANUAL_GROUP         "Documentation")
 SET(CPACK_COMPONENT_DOXYGEN_GROUP        "Documentation")
+SET(CPACK_COMPONENT_README_GROUP         "Documentation")
 
 SET(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME      "Libraries")
 SET(CPACK_COMPONENT_HEADERS_DISPLAY_NAME        "C++ Headers")
@@ -98,12 +99,26 @@ SET(CPACK_COMPONENT_EXAMPLES_DISPLAY_NAME       "Examples")
 SET(CPACK_COMPONENT_TESTS_DISPLAY_NAME          "Unit Tests")
 SET(CPACK_COMPONENT_MANUAL_DISPLAY_NAME         "Manual")
 SET(CPACK_COMPONENT_DOXYGEN_DISPLAY_NAME        "Doxygen")
+SET(CPACK_COMPONENT_README_DISPLAY_NAME         "Readme")
+SET(CPACK_COMPONENT_IMAGES_DISPLAY_NAME         "Images")
+
+SET(CPACK_COMPONENT_LIBRARIES_DESCRIPTION     "Dynamic link library")
+SET(CPACK_COMPONENT_HEADERS_DESCRIPTION       "C++ development headers")
+SET(CPACK_COMPONENT_UTILITIES_DESCRIPTION     "Utility executables and python scripts")
+SET(CPACK_COMPONENT_EXAMPLES_DESCRIPTION      "Example executables")
+SET(CPACK_COMPONENT_TESTS_DESCRIPTION         "Unit test executables")
+SET(CPACK_COMPONENT_MANUAL_DESCRIPTION        "Manual/application notes (rst and html)")
+SET(CPACK_COMPONENT_DOXYGEN_DESCRIPTION       "API documentation (html)")
+SET(CPACK_COMPONENT_README_DESCRIPTION        "Readme files (txt)")
+SET(CPACK_COMPONENT_IMAGES_DESCRIPTION        "FPGA and firmware images")
+
+SET(CPACK_COMPONENT_README_REQUIRED TRUE)
 
 SET(CPACK_COMPONENT_UTILITIES_DEPENDS libraries)
 SET(CPACK_COMPONENT_EXAMPLES_DEPENDS libraries)
 SET(CPACK_COMPONENT_TESTS_DEPENDS libraries)
 
-SET(CPACK_COMPONENTS_ALL libraries headers utilities examples tests manual doxygen)
+SET(CPACK_COMPONENTS_ALL libraries headers utilities examples tests manual doxygen readme images)
 
 ########################################################################
 # Setup CPack Debian
