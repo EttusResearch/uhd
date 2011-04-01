@@ -46,7 +46,7 @@
 #define TX_MIXER_ENB    (TXMOD_EN|ADF4350_PDBRF)
 #define TX_MIXER_DIS    0
 
-#define RX_MIXER_ENB    (LO_LPF_EN|ADF4350_PDBRF)
+#define RX_MIXER_ENB    (ADF4350_PDBRF)
 #define RX_MIXER_DIS    0
 
 // Pin functions
@@ -75,7 +75,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/utils/assert.hpp>
+#include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/warning.hpp>
@@ -92,9 +92,21 @@ using namespace boost::assign;
 /***********************************************************************
  * The SBX dboard constants
  **********************************************************************/
-static const bool sbx_debug = true;
+static const bool sbx_debug = false;
 
 static const freq_range_t sbx_freq_range(68.75e6, 4.4e9);
+
+static const freq_range_t sbx_tx_lo_2dbm = list_of
+    (range_t(0.35e9, 0.37e9))
+;
+
+static const freq_range_t sbx_enable_tx_lo_filter = list_of
+    (range_t(0.4e9, 1.5e9))
+;
+
+static const freq_range_t sbx_enable_rx_lo_filter = list_of
+    (range_t(0.4e9, 1.5e9))
+;
 
 static const prop_names_t sbx_tx_antennas = list_of("TX/RX");
 
@@ -278,28 +290,31 @@ void sbx_xcvr::update_atr(void){
     //calculate atr pins
     int rx_pga0_iobits = rx_pga0_gain_to_iobits(_rx_gains["PGA0"]);
     int tx_pga0_iobits = tx_pga0_gain_to_iobits(_tx_gains["PGA0"]);
+    int rx_lo_lpf_en = (_rx_lo_freq == sbx_enable_rx_lo_filter.clip(_rx_lo_freq)) ? LO_LPF_EN : 0;
+    int tx_lo_lpf_en = (_tx_lo_freq == sbx_enable_tx_lo_filter.clip(_tx_lo_freq)) ? LO_LPF_EN : 0;
 
     //setup the tx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,
-        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_DIS);
+        tx_pga0_iobits | tx_lo_lpf_en | TX_POWER_UP | TRSW | TX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,
-        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_DIS);
+        tx_pga0_iobits | tx_lo_lpf_en | TX_POWER_UP | TRSW | TX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,
-        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_ENB);
+        tx_pga0_iobits | tx_lo_lpf_en | TX_POWER_UP | TRSW | TX_MIXER_ENB);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        tx_pga0_iobits | TX_POWER_UP | TRSW | TX_MIXER_ENB);
+        tx_pga0_iobits | tx_lo_lpf_en | TX_POWER_UP | TRSW | TX_MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,
-        rx_pga0_iobits | RX_POWER_UP | LNASW | RX_MIXER_DIS);
+        rx_pga0_iobits | rx_lo_lpf_en | RX_POWER_UP | LNASW | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
-        rx_pga0_iobits | RX_POWER_UP | LNASW | RX_MIXER_DIS);
+        rx_pga0_iobits | rx_lo_lpf_en | RX_POWER_UP | LNASW | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        rx_pga0_iobits | RX_POWER_UP | LNASW | RX_MIXER_ENB);
+        rx_pga0_iobits | rx_lo_lpf_en | RX_POWER_UP | LNASW | RX_MIXER_ENB);
 
     //set the rx atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | LNASW); //((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+        rx_pga0_iobits | rx_lo_lpf_en | RX_POWER_UP | RX_MIXER_ENB | LNASW); 
+            //((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
     if (sbx_debug) std::cerr << boost::format(
         "SBX RXONLY ATR REG: 0x%08x"
     ) % (rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
@@ -432,7 +447,6 @@ double sbx_xcvr::set_lo_freq(
     //actual frequency calculation
     actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv);
 
-
     if (sbx_debug) {
         std::cerr << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl;
 
@@ -444,6 +458,11 @@ double sbx_xcvr::set_lo_freq(
 
     //load the register values
     adf4350_regs_t regs;
+
+    if ((unit == dboard_iface::UNIT_TX) and (actual_freq == sbx_tx_lo_2dbm.clip(actual_freq))) 
+        regs.output_power = adf4350_regs_t::OUTPUT_POWER_2DBM;
+    else
+        regs.output_power = adf4350_regs_t::OUTPUT_POWER_5DBM;
 
     regs.frac_12_bit = FRAC;
     regs.int_16_bit = N;
