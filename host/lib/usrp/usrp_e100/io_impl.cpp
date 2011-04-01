@@ -23,7 +23,8 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/barrier.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -93,7 +94,7 @@ struct usrp_e100_impl::io_impl{
     bool continuous_streaming;
 
     //a pirate's life is the life for me!
-    void recv_pirate_loop(usrp_e100_clock_ctrl::sptr);
+    void recv_pirate_loop(boost::barrier &, usrp_e100_clock_ctrl::sptr);
     bounded_buffer<managed_recv_buffer::sptr> recv_pirate_booty;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group recv_pirate_crew;
@@ -105,8 +106,10 @@ struct usrp_e100_impl::io_impl{
  * - while raiding, loot for recv buffers
  * - put booty into the alignment buffer
  **********************************************************************/
-void usrp_e100_impl::io_impl::recv_pirate_loop(usrp_e100_clock_ctrl::sptr clock_ctrl)
-{
+void usrp_e100_impl::io_impl::recv_pirate_loop(
+    boost::barrier &spawn_barrier, usrp_e100_clock_ctrl::sptr clock_ctrl
+){
+    spawn_barrier.wait();
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
 
@@ -201,9 +204,12 @@ void usrp_e100_impl::io_init(void){
     _iface->poke32(UE_REG_CTRL_TX_POLICY, UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET);
 
     //spawn a pirate, yarrr!
+    boost::barrier spawn_barrier(2);
     _io_impl->recv_pirate_crew.create_thread(boost::bind(
-        &usrp_e100_impl::io_impl::recv_pirate_loop, _io_impl.get(), _clock_ctrl
+        &usrp_e100_impl::io_impl::recv_pirate_loop, _io_impl.get(),
+        boost::ref(spawn_barrier), _clock_ctrl
     ));
+    spawn_barrier.wait();
 }
 
 void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
