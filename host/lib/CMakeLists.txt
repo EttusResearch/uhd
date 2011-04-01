@@ -79,7 +79,7 @@ INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(utils)
 
 ########################################################################
-# Append to the list of sources for lib uhd
+# Setup compiled-in constants for data directories
 ########################################################################
 FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} LOCAL_PKG_DATA_DIR)
 STRING(REPLACE "\\" "\\\\" LOCAL_PKG_DATA_DIR ${LOCAL_PKG_DATA_DIR})
@@ -88,9 +88,12 @@ MESSAGE(STATUS "Local package data directory: ${LOCAL_PKG_DATA_DIR}")
 IF(UNIX)
     #on unix systems, installers will use this directory for the package data
     FILE(TO_NATIVE_PATH /usr/${PKG_DATA_DIR} INSTALLER_PKG_DATA_DIR)
-    STRING(REPLACE "\\" "\\\\" INSTALLER_PKG_DATA_DIR ${INSTALLER_PKG_DATA_DIR})
-    MESSAGE(STATUS "Installer package data directory: ${INSTALLER_PKG_DATA_DIR}")
-ENDIF(UNIX)
+ELSE()
+    #for the NSIS installer, this will be the default path for package data
+    FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX} ${UHD_VERSION}/${PKG_DATA_DIR}" INSTALLER_PKG_DATA_DIR)
+ENDIF()
+STRING(REPLACE "\\" "\\\\" INSTALLER_PKG_DATA_DIR ${INSTALLER_PKG_DATA_DIR})
+MESSAGE(STATUS "Installer package data directory: ${INSTALLER_PKG_DATA_DIR}")
 
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
@@ -98,6 +101,9 @@ CONFIGURE_FILE(
 @ONLY)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+########################################################################
+# Append to the list of sources for lib uhd
+########################################################################
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
