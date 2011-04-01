@@ -39,12 +39,5 @@ spi_write (unsigned char header_hi, unsigned char header_lo,
 	   unsigned char enables, unsigned char format,
 	   const xdata unsigned char *buf, unsigned char len);
 
-// returns non-zero if successful, else 0
-unsigned char
-spi_transact (unsigned char data0, unsigned char data1,
-              unsigned char data2, unsigned char data3,
-	      unsigned char enables, xdata unsigned char *buf,
-              unsigned char len);
-
 
 #endif /* INCLUDED_SPI_H */
