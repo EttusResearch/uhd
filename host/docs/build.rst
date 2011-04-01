@@ -197,9 +197,7 @@ Open the Visual Studio Command Prompt Shorcut:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Add the boost library path to %PATH% (usually c:\\program files\\boost\\<version>\\lib)
-* Add the uhd library path to %PATH% (usually c:\\program files\\uhd\\lib)
-* Add the libusb library to %PATH% (if using usb support)
+* Add the uhd bin path to %PATH% (usually c:\\program files\\uhd\\bin)
 
 **Note:**
 The interface for editing environment variable paths in Windows is very poor.
