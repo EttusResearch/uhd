@@ -29,6 +29,10 @@ IF(UNIX AND EXISTS "/etc/redhat-release")
     SET(REDHAT TRUE)
 ENDIF()
 
+IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    SET(LINUX TRUE)
+ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
 ########################################################################
 # Setup package file name
 ########################################################################

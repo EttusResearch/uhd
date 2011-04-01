@@ -18,11 +18,7 @@
 ########################################################################
 # USRP embedded utilities that get installed into the share path
 ########################################################################
-IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    SET(LINUX_TARGET TRUE)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
-LIBUHD_REGISTER_COMPONENT("USRP-E Utils" ENABLE_USRP_E_UTILS OFF "LINUX_TARGET" OFF)
+LIBUHD_REGISTER_COMPONENT("USRP-E Utils" ENABLE_USRP_E_UTILS OFF "LINUX" OFF)
 
 IF(ENABLE_USRP_E_UTILS)
     ENABLE_LANGUAGE(C)
