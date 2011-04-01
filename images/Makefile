@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -198,19 +198,3 @@ images: $(IMAGES_LIST)
 clean:
 	$(RM) -rf $(BUILT_IMAGES_DIR)
 	$(RM) -rf $(CMAKE_BUILD_DIR)
-
-#packages that a linux machine can build
-linux-packages:
-	mkdir -p $(CMAKE_BUILD_DIR)
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=TGZ $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=ZIP $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=DEB $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=RPM $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
