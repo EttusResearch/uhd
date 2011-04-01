@@ -294,6 +294,9 @@ double rfx_xcvr::set_lo_freq(
     target_freq = _freq_range.clip(target_freq);
     if (_div2[unit]) target_freq *= 2;
 
+    //rfx400 rx is a special case with div2 in mixer, so adf4360 must output fundamental
+    bool is_rx_rfx400 = ((get_rx_id() == 0x0024) && unit != dboard_iface::UNIT_TX);
+
     //map prescalers to the register enums
     static const uhd::dict<int, adf4360_regs_t::prescaler_value_t> prescaler_to_enum = map_list_of
         (8,  adf4360_regs_t::PRESCALER_VALUE_8_9)
@@ -341,8 +344,8 @@ double rfx_xcvr::set_lo_freq(
     } done_loop:
 
     if (rfx_debug) std::cerr << boost::format(
-        "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d"
-    ) % R % BS % P % B % A << std::endl;
+        "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d"
+    ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) << std::endl;
 
     //load the register values
     adf4360_regs_t regs;
@@ -361,7 +364,7 @@ double rfx_xcvr::set_lo_freq(
     regs.a_counter               = A;
     regs.b_counter               = B;
     regs.cp_gain_1               = adf4360_regs_t::CP_GAIN_1_SET1;
-    regs.divide_by_2_output      = (_div2[unit] && (get_rx_id() != 0x0024)) ?  // Special case RFX400 RX Mixer divides by two
+    regs.divide_by_2_output      = (_div2[unit] && (!is_rx_rfx400)) ?  // Special case RFX400 RX Mixer divides by two
                                     adf4360_regs_t::DIVIDE_BY_2_OUTPUT_DIV2 :
                                     adf4360_regs_t::DIVIDE_BY_2_OUTPUT_FUND ;
     regs.divide_by_2_prescaler   = adf4360_regs_t::DIVIDE_BY_2_PRESCALER_FUND;
