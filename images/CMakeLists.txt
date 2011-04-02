@@ -40,4 +40,6 @@ MESSAGE(STATUS "Version: ${CPACK_PACKAGE_VERSION}")
 ########################################################################
 # Install Images
 ########################################################################
+#tag the images with a version number (something identifiable)
+FILE(WRITE ${CMAKE_SOURCE_DIR}/images/${CPACK_PACKAGE_VERSION}.tag ${UHD_BUILD_INFO})
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/images DESTINATION share/uhd)
