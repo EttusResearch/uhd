@@ -69,6 +69,10 @@ IF(UHD_RELEASE_MODE)
 
     ENDIF(LSB_RELEASE_EXECUTABLE)
 
+    IF(${CPACK_GENERATOR} STREQUAL NSIS)
+        SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${CMAKE_PROJECT_NAME}")
+    ENDIF()
+
 ENDIF(UHD_RELEASE_MODE)
 
 ########################################################################
