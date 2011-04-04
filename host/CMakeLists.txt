@@ -80,15 +80,20 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/msvc)
-    ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
-    ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
     ADD_DEFINITIONS( #stop all kinds of compatibility warnings
         -D_SCL_SECURE_NO_WARNINGS
+        -D_SCL_SECURE_NO_DEPRECATE
         -D_CRT_SECURE_NO_WARNINGS
         -D_CRT_SECURE_NO_DEPRECATE
+        -D_CRT_NONSTDC_NO_WARNINGS
         -D_CRT_NONSTDC_NO_DEPRECATE
     )
 ENDIF(MSVC)
+
+IF(WIN32)
+    ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
+    ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+ENDIF(WIN32)
 
 ########################################################################
 # Setup Boost

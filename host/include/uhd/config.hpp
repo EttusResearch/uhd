@@ -49,7 +49,7 @@ typedef ptrdiff_t ssize_t;
 #endif //BOOST_MSVC
 
 //define cross platform attribute macros
-#if defined(BOOST_HAS_DECLSPEC)
+#if defined(BOOST_MSVC)
     #define UHD_EXPORT         __declspec(dllexport)
     #define UHD_IMPORT         __declspec(dllimport)
     #define UHD_INLINE         __forceinline

@@ -21,17 +21,17 @@ INCLUDE(UHDVersion) #sets version information
 ########################################################################
 # Setup additional defines for OS types
 ########################################################################
-IF(UNIX AND EXISTS "/etc/debian_version")
+IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    SET(LINUX TRUE)
+ENDIF()
+
+IF(LINUX AND EXISTS "/etc/debian_version")
     SET(DEBIAN TRUE)
 ENDIF()
 
-IF(UNIX AND EXISTS "/etc/redhat-release")
+IF(LINUX AND EXISTS "/etc/redhat-release")
     SET(REDHAT TRUE)
 ENDIF()
-
-IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    SET(LINUX TRUE)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 ########################################################################
 # Setup package file name
