@@ -69,6 +69,14 @@ MACRO(INCLUDE_SUBDIRECTORY subdir)
 ENDMACRO(INCLUDE_SUBDIRECTORY)
 
 ########################################################################
+# Cygwin special
+########################################################################
+IF(CYGWIN)
+    ADD_DEFINITIONS(-D__USE_W32_SOCKETS) #boost asio says we need this
+    LIBUHD_APPEND_LIBS(ws2_32)
+ENDIF(CYGWIN)
+
+########################################################################
 # Include subdirectories (different than add)
 ########################################################################
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
