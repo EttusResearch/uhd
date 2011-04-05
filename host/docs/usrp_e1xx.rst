@@ -61,5 +61,5 @@ can talk directly to the clock generator over a SPI interface.
 Run the following commands to restore the clock generator to a usable state:
 ::
 
-    cd <prefix>/share/uhd/usrp_e_utilities
+    cd <install-path>/share/uhd/usrp_e_utilities
     ./usrp-e-utility --fpga=../images/usrp_e100_pt_fpga.bin --reclk

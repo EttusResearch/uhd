@@ -116,7 +116,7 @@ Generate Makefiles with cmake
 Additionally, configuration variables can be passed into cmake via the command line.
 The following common-use configuration variables are listed below:
 
-* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<prefix>
+* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<install-path>
 * To install libs into lib64: cmake -DLIB_SUFFIX=64
 
 Example usage:

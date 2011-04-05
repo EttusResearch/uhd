@@ -54,8 +54,8 @@ When installing images from an archive, there are two options:
 **Option 1:**
 
 Unpack the archive into the UHD installation prefix.
-The UHD will always search <prefix>/share/uhd/images for image files.
-Where <prefix> was set by the CMAKE_INSTALL_PREFIX at configure-time.
+The UHD will always search <install-path>/share/uhd/images for image files.
+Where <install-path> was set by the CMAKE_INSTALL_PREFIX at configure-time.
 
 **Option 2:**
 

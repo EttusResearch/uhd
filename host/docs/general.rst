@@ -52,5 +52,5 @@ Support for dynamically loadable modules
 For a module to be loaded at runtime, it must be:
 
 * found in the UHD_MODULE_PATH environment variable,
-* installed into the <prefix>/share/uhd/modules directory,
+* installed into the <install-path>/share/uhd/modules directory,
 * or installed into /usr/share/uhd/modules directory (unix only).

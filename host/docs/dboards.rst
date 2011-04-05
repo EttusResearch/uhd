@@ -182,7 +182,7 @@ If you lose R193, you can use anything from 0 to 10 ohms there.
 With the daughterboard plugged-in, run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
 * <args> are device address arguments (optional if only one USRP is on your machine)
@@ -209,7 +209,7 @@ These are all 0-ohm, so if you lose one, just short across the appropriate pads
 With the daughterboard plugged-in, run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     ./usrp_burn_db_eeprom --id=<rx_id> --unit=RX --args=<args> --slot=<slot>
     ./usrp_burn_db_eeprom --id=<tx_id> --unit=TX --args=<args> --slot=<slot>
 
