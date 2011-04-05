@@ -26,6 +26,7 @@
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/types/sensors.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -362,9 +363,30 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     case MBOARD_PROP_CLOCK_RATE:
         val = this->get_master_clock_freq();
         return;
+        
+    case MBOARD_PROP_SENSOR:
+        if(key.name == "mimo_locked") {
+            val = sensor_value_t("MIMO", this->get_mimo_locked(), "locked", "unlocked");
+            return;
+        }
+        else if(key.name == "ref_locked") {
+            val = sensor_value_t("Ref", this->get_ref_locked(), "locked", "unlocked");
+            return;
+        } else {
+            UHD_THROW_PROP_GET_ERROR();
+        }
+        break;
 
     default: UHD_THROW_PROP_GET_ERROR();
     }
+}
+
+bool usrp2_mboard_impl::get_mimo_locked(void) {
+  return bool((_iface->peek32(_iface->regs.irq_rb) & (1<<10)) > 0);
+}
+
+bool usrp2_mboard_impl::get_ref_locked(void) {
+  return bool((_iface->peek32(_iface->regs.irq_rb) & (1<<11)) > 0);
 }
 
 /***********************************************************************

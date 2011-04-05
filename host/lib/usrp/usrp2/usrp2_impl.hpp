@@ -163,7 +163,10 @@ private:
     void duc_get(const wax::obj &, wax::obj &, size_t);
     void duc_set(const wax::obj &, const wax::obj &, size_t);
     uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
-
+    
+    //sensors methods for mboard
+    bool get_mimo_locked(void);
+    bool get_ref_locked(void);
 };
 
 /*!

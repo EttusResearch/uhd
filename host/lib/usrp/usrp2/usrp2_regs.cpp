@@ -64,6 +64,7 @@ usrp2_regs_t usrp2_get_regs(bool use_n2xx_map) {
   x.time64_secs_rb_imm = bp_base + 4*10;
   x.time64_ticks_rb_imm = bp_base + 4*11;
   x.compat_num_rb = bp_base + 4*12;
+  x.irq_rb = bp_base + 4*13;
   x.time64_secs_rb_pps = bp_base + 4*14;
   x.time64_ticks_rb_pps = bp_base + 4*15;
   x.dsp_tx_freq = sr_addr(misc_output_base, x.sr_tx_dsp + 0);
