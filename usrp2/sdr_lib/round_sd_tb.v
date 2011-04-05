@@ -30,15 +30,17 @@ module round_sd_tb();
 	     $write("-%d\t",-adc_out);
 	   else
 	     $write("%d\t",adc_out);
-	   $write("%f\t",adc_in_del/factor);
-	   $write("%f\n",adc_in_del/factor-adc_out);
+	   $write("\n");
+	   
+	   //$write("%f\t",adc_in_del/factor);
+	   //$write("%f\n",adc_in_del/factor-adc_out);
 	end	
    
    round_sd #(.WIDTH_IN(WIDTH_IN),.WIDTH_OUT(WIDTH_OUT)) 
    round_sd(.clk(clk),.reset(rst), .in(adc_in),.out(adc_out));
 
    always @(posedge clk)
-     adc_in <= 4734;
+     adc_in <= 14'h1FDF;
      //adc_in <= $random % 4739;
 
    always @(posedge clk)
