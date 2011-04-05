@@ -79,6 +79,10 @@ SET_SOURCE_FILES_PROPERTIES(
     PROPERTIES COMPILE_DEFINITIONS "${IF_ADDRS_DEFS}"
 )
 
+IF(WIN32 AND UNIX) #MinGW/Cygwin needs winsock2
+    LIBUHD_APPEND_LIBS(ws2_32)
+ENDIF()
+
 ########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################
