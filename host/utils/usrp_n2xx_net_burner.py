@@ -137,12 +137,12 @@ class burner_socket(object):
     def init_update(self):
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0, "")
         try: in_pkt = self.send_and_recv(out_pkt)
-        except socket.timeout: raise Exception, "No response from device"
+        except socket.timeout: raise Exception("No response from device")
         (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(in_pkt)
         if pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG:
-            print "USRP-N2XX found."
+            print("USRP-N2XX found.")
         else:
-            raise Exception, "Invalid reply received from device."
+            raise Exception("Invalid reply received from device.")
 
         #  print "Incoming:\n\tVer: %i\n\tID: %c\n\tSeq: %i\n\tIP: %i\n" % (proto_ver, chr(pktid), rxseq, ip_addr)
 
@@ -153,14 +153,14 @@ class burner_socket(object):
         (proto_ver, pktid, rxseq, sector_size_bytes, memory_size_bytes) = unpack_flash_info_fmt(in_pkt)
 
         if pktid != update_id_t.USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG:
-            raise Exception, "Invalid reply %c from device." % (chr(pktid))
+            raise Exception("Invalid reply %c from device." % (chr(pktid)))
 
         return (memory_size_bytes, sector_size_bytes)
 
     def burn_fw(self, fw, fpga, reset, safe):
         (flash_size, sector_size) = self.get_flash_info()
 
-        print "Flash size: %i\nSector size: %i\n\n" % (flash_size, sector_size)
+        print("Flash size: %i\nSector size: %i\n\n" % (flash_size, sector_size))
 
         if fpga:
             if safe: image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
@@ -170,20 +170,20 @@ class burner_socket(object):
             fpga_image = fpga_file.read()
 
             if len(fpga_image) > FPGA_IMAGE_SIZE_BYTES:
-                print "Error: FPGA image file too large."
+                print("Error: FPGA image file too large.")
                 return 0
 
             if not is_valid_fpga_image(fpga_image):
-                print "Error: Invalid FPGA image file."
+                print("Error: Invalid FPGA image file.")
                 return 0
 
-            print "Begin FPGA write: this should take about 1 minute..."
+            print("Begin FPGA write: this should take about 1 minute...")
             start_time = time.time()
             self.erase_image(image_location, FPGA_IMAGE_SIZE_BYTES)
             self.write_image(fpga_image, image_location)
             self.verify_image(fpga_image, image_location)
-            print "Time elapsed: %f seconds"%(time.time() - start_time)
-            print "\n\n"
+            print("Time elapsed: %f seconds"%(time.time() - start_time))
+            print("\n\n")
 
         if fw:
             if safe: image_location = SAFE_FW_IMAGE_LOCATION_ADDR
@@ -193,25 +193,25 @@ class burner_socket(object):
             fw_image = fw_file.read()
 
             if len(fw_image) > FW_IMAGE_SIZE_BYTES:
-                print "Error: Firmware image file too large."
+                print("Error: Firmware image file too large.")
                 return 0
 
             if not is_valid_fw_image(fw_image):
-                print "Error: Invalid firmware image file."
+                print("Error: Invalid firmware image file.")
                 return 0
 
-            print "Begin firmware write: this should take about 1 second..."
+            print("Begin firmware write: this should take about 1 second...")
             start_time = time.time()
             self.erase_image(image_location, FW_IMAGE_SIZE_BYTES)
             self.write_image(fw_image, image_location)
             self.verify_image(fw_image, image_location)
-            print "Time elapsed: %f seconds"%(time.time() - start_time)
-            print "\n\n"
+            print("Time elapsed: %f seconds"%(time.time() - start_time))
+            print("\n\n")
 
         if reset: self.reset_usrp()
 
     def write_image(self, image, addr):
-        print "Writing image"
+        print("Writing image")
         self._status_cb("Writing")
         writedata = image
         #we split the image into smaller (256B) bits and send them down the wire
@@ -222,14 +222,14 @@ class burner_socket(object):
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
 
             if pktid != update_id_t.USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG:
-              raise Exception, "Invalid reply %c from device." % (chr(pktid))
+              raise Exception("Invalid reply %c from device." % (chr(pktid)))
 
             writedata = writedata[FLASH_DATA_PACKET_SIZE:]
             addr += FLASH_DATA_PACKET_SIZE
             self._progress_cb(float(len(image)-len(writedata))/len(image))
 
     def verify_image(self, image, addr):
-        print "Verifying data"
+        print("Verifying data")
         self._status_cb("Verifying")
         readsize = len(image)
         readdata = str()
@@ -242,26 +242,26 @@ class burner_socket(object):
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
 
             if pktid != update_id_t.USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG:
-              raise Exception, "Invalid reply %c from device." % (chr(pktid))
+              raise Exception("Invalid reply %c from device." % (chr(pktid)))
 
             readdata += data[:thisreadsize]
             readsize -= FLASH_DATA_PACKET_SIZE
             addr += FLASH_DATA_PACKET_SIZE
             self._progress_cb(float(len(readdata))/len(image))
 
-        print "Read back %i bytes" % len(readdata)
+        print("Read back %i bytes" % len(readdata))
         #  print readdata
 
         #  for i in range(256, 512):
         #    print "out: %i in: %i" % (ord(image[i]), ord(readdata[i]))
 
         if readdata != image:
-            raise Exception, "Verify failed. Image did not write correctly."
+            raise Exception("Verify failed. Image did not write correctly.")
         else:
-            print "Success."
+            print("Success.")
 
     def read_image(self, image, size, addr):
-        print "Reading image"
+        print("Reading image")
         readsize = size
         readdata = str()
         while readsize > 0:
@@ -273,13 +273,13 @@ class burner_socket(object):
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
 
             if pktid != update_id_t.USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG:
-              raise Exception, "Invalid reply %c from device." % (chr(pktid))
+              raise Exception("Invalid reply %c from device." % (chr(pktid)))
 
             readdata += data[:thisreadsize]
             readsize -= FLASH_DATA_PACKET_SIZE
             addr += FLASH_DATA_PACKET_SIZE
 
-        print "Read back %i bytes" % len(readdata)
+        print("Read back %i bytes" % len(readdata))
 
         #write to disk
         f = open(image, 'w')
@@ -293,7 +293,7 @@ class burner_socket(object):
 
         (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
         if pktid == update_id_t.USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG:
-            raise Exception, "Device failed to reset."
+            raise Exception("Device failed to reset.")
 
     def erase_image(self, addr, length):
         self._status_cb("Erasing")
@@ -304,9 +304,9 @@ class burner_socket(object):
         (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
 
         if pktid != update_id_t.USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG:
-            raise Exception, "Invalid reply %c from device." % (chr(pktid))
+            raise Exception("Invalid reply %c from device." % (chr(pktid)))
 
-        print "Erasing %i bytes at %i" % (length, addr)
+        print("Erasing %i bytes at %i" % (length, addr))
         start_time = time.time()
 
         #now wait for it to finish
@@ -318,7 +318,7 @@ class burner_socket(object):
 
             if pktid == update_id_t.USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG: break
             elif pktid != update_id_t.USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG:
-                raise Exception, "Invalid reply %c from device." % (chr(pktid))
+                raise Exception("Invalid reply %c from device." % (chr(pktid)))
             time.sleep(0.01) #decrease network overhead by waiting a bit before polling
             self._progress_cb(min(1.0, (time.time() - start_time)/(length/80e3)))
 
@@ -343,14 +343,14 @@ def get_options():
 ########################################################################
 if __name__=='__main__':
     options = get_options()
-    if not options.addr: raise Exception, 'no address specified'
+    if not options.addr: raise Exception('no address specified')
 
-    if not options.fpga and not options.fw and not options.reset: raise Exception, 'Must specify either a firmware image or FPGA image, and/or reset.'
+    if not options.fpga and not options.fw and not options.reset: raise Exception('Must specify either a firmware image or FPGA image, and/or reset.')
 
     if options.overwrite_safe and not options.read:
         print("Are you REALLY, REALLY sure you want to overwrite the safe image? This is ALMOST ALWAYS a terrible idea.")
         print("If your image is faulty, your USRP2+ will become a brick until reprogrammed via JTAG.")
-        response = raw_input("""Type "yes" to continue, or anything else to quit: """)
+        response = input("""Type "yes" to continue, or anything else to quit: """)
         if response != "yes": sys.exit(0)
 
     burner = burner_socket(addr=options.addr)
@@ -359,7 +359,7 @@ if __name__=='__main__':
         if options.fw:
             file = options.fw
             if os.path.isfile(file):
-                response = raw_input("File already exists -- overwrite? (y/n) ")
+                response = input("File already exists -- overwrite? (y/n) ")
                 if response != "y": sys.exit(0)
             size = FW_IMAGE_SIZE_BYTES
             addr = SAFE_FW_IMAGE_LOCATION_ADDR if options.overwrite_safe else PROD_FW_IMAGE_LOCATION_ADDR
@@ -368,7 +368,7 @@ if __name__=='__main__':
         if options.fpga:
             file = options.fpga
             if os.path.isfile(file):
-                response = raw_input("File already exists -- overwrite? (y/n) ")
+                response = input("File already exists -- overwrite? (y/n) ")
                 if response != "y": sys.exit(0)
             size = FPGA_IMAGE_SIZE_BYTES
             addr = SAFE_FPGA_IMAGE_LOCATION_ADDR if options.overwrite_safe else PROD_FPGA_IMAGE_LOCATION_ADDR

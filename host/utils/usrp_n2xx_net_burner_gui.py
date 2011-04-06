@@ -18,10 +18,17 @@
 
 import threading
 import usrp_n2xx_net_burner #import implementation
-import Tkinter, tkFileDialog, tkFont, tkMessageBox
+try:
+    import tkinter, tkinter.filedialog, tkinter.font, tkinter.messagebox
+except ImportError:
+    import tkFileDialog, tkFont, tkMessageBox
+    import Tkinter as tkinter
+    tkinter.filedialog = tkFileDialog
+    tkinter.font = tkFont
+    tkinter.messagebox = tkMessageBox
 import os
 
-class BinFileEntry(Tkinter.Frame):
+class BinFileEntry(tkinter.Frame):
     """
     Simple file entry widget for getting the file path of bin files.
     Combines a label, entry, and button with file dialog callback.
@@ -29,15 +36,15 @@ class BinFileEntry(Tkinter.Frame):
 
     def __init__(self, root, what, def_path=''):
         self._what = what
-        Tkinter.Frame.__init__(self, root)
-        Tkinter.Label(self, text=what+":").pack(side=Tkinter.LEFT)
-        self._entry = Tkinter.Entry(self, width=50)
-        self._entry.insert(Tkinter.END, def_path)
-        self._entry.pack(side=Tkinter.LEFT)
-        Tkinter.Button(self, text="...", command=self._button_cb).pack(side=Tkinter.LEFT)
+        tkinter.Frame.__init__(self, root)
+        tkinter.Label(self, text=what+":").pack(side=tkinter.LEFT)
+        self._entry = tkinter.Entry(self, width=50)
+        self._entry.insert(tkinter.END, def_path)
+        self._entry.pack(side=tkinter.LEFT)
+        tkinter.Button(self, text="...", command=self._button_cb).pack(side=tkinter.LEFT)
 
     def _button_cb(self):
-        filename = tkFileDialog.askopenfilename(
+        filename = tkinter.filedialog.askopenfilename(
             parent=self,
             filetypes=[('bin files', '*.bin'), ('all files', '*.*')],
             title="Select bin file for %s"%self._what,
@@ -46,13 +53,13 @@ class BinFileEntry(Tkinter.Frame):
 
         # open file on your own
         if filename:
-            self._entry.delete(0, Tkinter.END)
+            self._entry.delete(0, tkinter.END)
             self._entry.insert(0, filename)
 
     def get_filename(self):
         return self._entry.get()
 
-class ProgressBar(Tkinter.Canvas):
+class ProgressBar(tkinter.Canvas):
     """
     A simple implementation of a progress bar.
     Draws rectangle that fills from left to right.
@@ -61,7 +68,7 @@ class ProgressBar(Tkinter.Canvas):
     def __init__(self, root, width=500, height=20):
         self._width = width
         self._height = height
-        Tkinter.Canvas.__init__(self, root, relief="sunken", borderwidth=2, width=self._width-2, height=self._height-2)
+        tkinter.Canvas.__init__(self, root, relief="sunken", borderwidth=2, width=self._width-2, height=self._height-2)
         self._last_fill_pixels = None
         self.set(0.0)
 
@@ -78,20 +85,20 @@ class ProgressBar(Tkinter.Canvas):
         if frac: self.create_rectangle(0, 0, fill_pixels, self._height, fill="#357EC7")
         else:    self.create_rectangle(0, 0, self._width, self._height, fill="#E8E8E8")
 
-class SectionLabel(Tkinter.Label):
+class SectionLabel(tkinter.Label):
     """
     Make a text label with bold font.
     """
 
     def __init__(self, root, text):
-        Tkinter.Label.__init__(self, root, text=text)
+        tkinter.Label.__init__(self, root, text=text)
 
         #set the font bold
-        f = tkFont.Font(font=self['font'])
+        f = tkinter.font.Font(font=self['font'])
         f['weight'] = 'bold'
         self['font'] = f.name
 
-class USRPN2XXNetBurnerApp(Tkinter.Frame):
+class USRPN2XXNetBurnerApp(tkinter.Frame):
     """
     The top level gui application for the usrp-n2xx network burner.
     Creates entry widgets and button with callback to write images.
@@ -99,7 +106,7 @@ class USRPN2XXNetBurnerApp(Tkinter.Frame):
 
     def __init__(self, root, addr, fw, fpga):
 
-        Tkinter.Frame.__init__(self, root)
+        tkinter.Frame.__init__(self, root)
 
         #pack the file entry widgets
         SectionLabel(self, text="Select Images").pack(pady=5)
@@ -110,24 +117,24 @@ class USRPN2XXNetBurnerApp(Tkinter.Frame):
 
         #pack the destination entry widget
         SectionLabel(self, text="Select Address").pack(pady=5)
-        self._addr_entry = Tkinter.Entry(self, width=30)
-        self._addr_entry.insert(Tkinter.END, addr)
+        self._addr_entry = tkinter.Entry(self, width=30)
+        self._addr_entry.insert(tkinter.END, addr)
         self._addr_entry.pack()
 
         #the do it button
         SectionLabel(self, text="").pack(pady=5)
-        button = Tkinter.Button(self, text="Burn Images", command=self._burn)
-        self._enable_input = lambda: button.configure(state=Tkinter.NORMAL)
-        self._disable_input = lambda: button.configure(state=Tkinter.DISABLED)
+        button = tkinter.Button(self, text="Burn Images", command=self._burn)
+        self._enable_input = lambda: button.configure(state=tkinter.NORMAL)
+        self._disable_input = lambda: button.configure(state=tkinter.DISABLED)
         button.pack()
 
         #a progress bar to monitor the status
-        progress_frame = Tkinter.Frame(self)
+        progress_frame = tkinter.Frame(self)
         progress_frame.pack()
-        self._status = Tkinter.StringVar()
-        Tkinter.Label(progress_frame, textvariable=self._status).pack(side=Tkinter.LEFT)
+        self._status = tkinter.StringVar()
+        tkinter.Label(progress_frame, textvariable=self._status).pack(side=tkinter.LEFT)
         self._pbar = ProgressBar(progress_frame)
-        self._pbar.pack(side=Tkinter.RIGHT, expand=True)
+        self._pbar.pack(side=tkinter.RIGHT, expand=True)
 
     def _burn(self):
         self._disable_input()
@@ -141,16 +148,16 @@ class USRPN2XXNetBurnerApp(Tkinter.Frame):
 
         #check input
         if not addr:
-            tkMessageBox.showerror('Error:', 'No address specified!')
+            tkinter.messagebox.showerror('Error:', 'No address specified!')
             return
         if not fw and not fpga:
-            tkMessageBox.showerror('Error:', 'No images specified!')
+            tkinter.messagebox.showerror('Error:', 'No images specified!')
             return
         if fw and not os.path.exists(fw):
-            tkMessageBox.showerror('Error:', 'Firmware image not found!')
+            tkinter.messagebox.showerror('Error:', 'Firmware image not found!')
             return
         if fpga and not os.path.exists(fpga):
-            tkMessageBox.showerror('Error:', 'FPGA image not found!')
+            tkinter.messagebox.showerror('Error:', 'FPGA image not found!')
             return
 
         try:
@@ -165,11 +172,11 @@ class USRPN2XXNetBurnerApp(Tkinter.Frame):
                 burner.set_callbacks(progress_cb=self._pbar.set, status_cb=status_cb)
                 burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False)
 
-            if tkMessageBox.askyesno("Burn was successful!", "Reset the device?"):
+            if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
                 burner.reset_usrp()
 
-        except Exception, e:
-            tkMessageBox.showerror('Verbose:', 'Error: %s'%str(e))
+        except Exception as e:
+            tkinter.messagebox.showerror('Verbose:', 'Error: %s'%str(e))
 
         #reset the progress bar
         self._pbar.set(0.0)
@@ -181,7 +188,7 @@ class USRPN2XXNetBurnerApp(Tkinter.Frame):
 ########################################################################
 if __name__=='__main__':
     options = usrp_n2xx_net_burner.get_options()
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
     root.title('USRP-N2XX Net Burner')
     USRPN2XXNetBurnerApp(root, addr=options.addr, fw=options.fw, fpga=options.fpga).pack()
     root.mainloop()

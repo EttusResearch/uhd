@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,11 @@
 import platform
 import tempfile
 import subprocess
-import urllib
+try:
+    import urllib.request
+except ImportError:
+    import urllib
+    urllib.request = urllib
 import optparse
 import math
 import os
@@ -47,15 +51,15 @@ def command(*args):
     )
     ret = p.wait()
     verbose = p.stdout.read()
-    if ret != 0: raise Exception, verbose
+    if ret != 0: raise Exception(verbose)
     return verbose
 
 def get_dd_path():
     if platform.system() == 'Windows':
         dd_path = os.path.join(tempfile.gettempdir(), 'dd.exe')
         if not os.path.exists(dd_path):
-            print 'Downloading dd.exe to %s'%dd_path
-            dd_bin = urllib.urlopen('http://www.ettus.com/downloads/dd.exe').read()
+            print('Downloading dd.exe to %s'%dd_path)
+            dd_bin = urllib.request.urlopen('http://www.ettus.com/downloads/dd.exe').read()
             open(dd_path, 'wb').write(dd_bin)
         return dd_path
     return 'dd'
@@ -80,7 +84,7 @@ def get_raw_device_hints():
             return info.split(key)[-1].split()[0]
         def get_info_list(output):
             in_info = False
-            for line in output.splitlines():
+            for line in str(output).splitlines():
                 if line.startswith('\\\\'): in_info = True; info = ''
                 elif in_info and not line.strip(): in_info = False; yield info
                 if in_info: info += '\n'+line.strip()
@@ -97,7 +101,7 @@ def get_raw_device_hints():
                 if key in info: return extract_info_value(info, key)
             return info.splitlines()[0].strip()
 
-        return sorted(set(map(extract_info_name, filter(is_info_valid, get_info_list(command(get_dd_path(), '--list'))))))
+        return sorted(set(map(extract_info_name, list(filter(is_info_valid, get_info_list(command(get_dd_path(), '--list')))))))
 
     ####################################################################
     # Platform Linux: parse procfs /proc/partitions
@@ -120,15 +124,15 @@ def get_raw_device_hints():
     # Platform Mac OS X: parse diskutil list and info commands
     ####################################################################
     if platform.system() == 'Darwin':
-        devs = map(lambda d: d.split()[0], filter(lambda l: l.startswith('/dev'), command('diskutil', 'list').splitlines()))
+        devs = [d.split()[0] for d in [l for l in command('diskutil', 'list').splitlines() if l.startswith('/dev')]]
         def output_to_info(output):
-            return dict([map(str.strip, pair.lower().split(':')) for pair in filter(lambda l: ':' in l, output.splitlines())])
+            return dict([list(map(str.strip, pair.lower().split(':'))) for pair in [l for l in output.splitlines() if ':' in l]])
         def is_dev_valid(dev):
             info = output_to_info(command('diskutil', 'info', dev))
             try:
-                if info.has_key('internal'): assert info['internal'] == 'no'
-                if info.has_key('ejectable'): assert info['ejectable'] == 'yes'
-                if info.has_key('total size'):
+                if 'internal' in info: assert info['internal'] == 'no'
+                if 'ejectable' in info: assert info['ejectable'] == 'yes'
+                if 'total size' in info:
                     size_match = re.match('^.*\((\d+)\s*bytes\).*$', info['total size'])
                     if size_match: assert int(size_match.groups()[0]) <= MAX_SD_CARD_SIZE
                 return True
@@ -196,7 +200,7 @@ def write_image(image_file, device_file, offset):
 
 def write_and_verify(image_file, device_file, offset):
     if os.path.getsize(image_file) > MAX_FILE_SIZE:
-        raise Exception, 'Image file larger than %d bytes!'%MAX_FILE_SIZE
+        raise Exception('Image file larger than %d bytes!'%MAX_FILE_SIZE)
     return '%s\n%s'%(
         write_image(
             image_file=image_file,
@@ -231,8 +235,8 @@ def get_options():
     (options, args) = parser.parse_args()
 
     if options.list:
-        print 'Possible raw devices:'
-        print '  ' + '\n  '.join(get_raw_device_hints())
+        print('Possible raw devices:')
+        print('  ' + '\n  '.join(get_raw_device_hints()))
         exit()
 
     return options
@@ -242,5 +246,5 @@ def get_options():
 ########################################################################
 if __name__=='__main__':
     options = get_options()
-    if not options.dev: raise Exception, 'no raw device path specified'
-    print burn_sd_card(dev=options.dev, fw=options.fw, fpga=options.fpga)
+    if not options.dev: raise Exception('no raw device path specified')
+    print(burn_sd_card(dev=options.dev, fw=options.fw, fpga=options.fpga))
