@@ -50,7 +50,7 @@ def command(*args):
         stderr=subprocess.STDOUT,
     )
     ret = p.wait()
-    verbose = p.stdout.read()
+    verbose = p.stdout.read().decode('ascii')
     if ret != 0: raise Exception(verbose)
     return verbose
 
@@ -84,7 +84,7 @@ def get_raw_device_hints():
             return info.split(key)[-1].split()[0]
         def get_info_list(output):
             in_info = False
-            for line in str(output).splitlines():
+            for line in output.splitlines():
                 if line.startswith('\\\\'): in_info = True; info = ''
                 elif in_info and not line.strip(): in_info = False; yield info
                 if in_info: info += '\n'+line.strip()
@@ -108,7 +108,7 @@ def get_raw_device_hints():
     ####################################################################
     if platform.system() == 'Linux':
         devs = list()
-        try: output = open('/proc/partitions', 'r').read()
+        try: output = open('/proc/partitions', 'r').read().decode('ascii')
         except: return devs
         for line in output.splitlines():
             try:
