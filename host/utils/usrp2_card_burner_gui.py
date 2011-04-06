@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +17,17 @@
 #
 
 import usrp2_card_burner #import implementation
-import Tkinter, tkFileDialog, tkFont, tkMessageBox
+try:
+    import tkinter, tkinter.filedialog, tkinter.font, tkinter.messagebox
+except ImportError:
+    import tkFileDialog, tkFont, tkMessageBox
+    import Tkinter as tkinter
+    tkinter.filedialog = tkFileDialog
+    tkinter.font = tkFont
+    tkinter.messagebox = tkMessageBox
 import os
 
-class BinFileEntry(Tkinter.Frame):
+class BinFileEntry(tkinter.Frame):
     """
     Simple file entry widget for getting the file path of bin files.
     Combines a label, entry, and button with file dialog callback.
@@ -28,15 +35,15 @@ class BinFileEntry(Tkinter.Frame):
 
     def __init__(self, root, what, def_path=''):
         self._what = what
-        Tkinter.Frame.__init__(self, root)
-        Tkinter.Label(self, text=what+":").pack(side=Tkinter.LEFT)
-        self._entry = Tkinter.Entry(self, width=50)
-        self._entry.insert(Tkinter.END, def_path)
-        self._entry.pack(side=Tkinter.LEFT)
-        Tkinter.Button(self, text="...", command=self._button_cb).pack(side=Tkinter.LEFT)
+        tkinter.Frame.__init__(self, root)
+        tkinter.Label(self, text=what+":").pack(side=tkinter.LEFT)
+        self._entry = tkinter.Entry(self, width=50)
+        self._entry.insert(tkinter.END, def_path)
+        self._entry.pack(side=tkinter.LEFT)
+        tkinter.Button(self, text="...", command=self._button_cb).pack(side=tkinter.LEFT)
 
     def _button_cb(self):
-        filename = tkFileDialog.askopenfilename(
+        filename = tkinter.filedialog.askopenfilename(
             parent=self,
             filetypes=[('bin files', '*.bin'), ('all files', '*.*')],
             title="Select bin file for %s"%self._what,
@@ -45,65 +52,65 @@ class BinFileEntry(Tkinter.Frame):
 
         # open file on your own
         if filename:
-            self._entry.delete(0, Tkinter.END)
+            self._entry.delete(0, tkinter.END)
             self._entry.insert(0, filename)
 
     def get_filename(self):
         return self._entry.get()
 
-class DeviceEntryWidget(Tkinter.Frame):
+class DeviceEntryWidget(tkinter.Frame):
     """
     Simple entry widget for getting the raw device name.
     Combines a label, entry, and helpful text box with hints.
     """
 
     def __init__(self, root, text=''):
-        Tkinter.Frame.__init__(self, root)
+        tkinter.Frame.__init__(self, root)
 
-        Tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
+        tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
 
-        self._hints = Tkinter.Listbox(self)
+        self._hints = tkinter.Listbox(self)
         self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
         self._reload_cb()
-        self._hints.pack(expand=Tkinter.YES, fill=Tkinter.X)
+        self._hints.pack(expand=tkinter.YES, fill=tkinter.X)
 
-        frame = Tkinter.Frame(self)
+        frame = tkinter.Frame(self)
         frame.pack()
 
-        Tkinter.Label(frame, text="Raw Device:").pack(side=Tkinter.LEFT)
-        self._entry = Tkinter.Entry(frame, width=50)
-        self._entry.insert(Tkinter.END, text)
-        self._entry.pack(side=Tkinter.LEFT)
+        tkinter.Label(frame, text="Raw Device:").pack(side=tkinter.LEFT)
+        self._entry = tkinter.Entry(frame, width=50)
+        self._entry.insert(tkinter.END, text)
+        self._entry.pack(side=tkinter.LEFT)
 
     def _reload_cb(self):
-        self._hints.delete(0, Tkinter.END)
+        self._hints.delete(0, tkinter.END)
         for hint in usrp2_card_burner.get_raw_device_hints():
-            self._hints.insert(Tkinter.END, hint)
+            self._hints.insert(tkinter.END, hint)
 
     def _listbox_cb(self, event):
         try:
             sel = self._hints.get(self._hints.curselection()[0])
-            self._entry.delete(0, Tkinter.END)
+            self._entry.delete(0, tkinter.END)
             self._entry.insert(0, sel)
-        except Exception, e: print e
+        except Exception as e: print(e)
 
     def get_devname(self):
         return self._entry.get()
 
-class SectionLabel(Tkinter.Label):
+class SectionLabel(tkinter.Label):
     """
     Make a text label with bold font.
     """
 
     def __init__(self, root, text):
-        Tkinter.Label.__init__(self, root, text=text)
+        tkinter.Label.__init__(self, root, text=text)
 
         #set the font bold
-        f = tkFont.Font(font=self['font'])
+        f = tkinter.font.Font(font=self['font'])
         f['weight'] = 'bold'
         self['font'] = f.name
 
-class USRP2CardBurnerApp(Tkinter.Frame):
+class USRP2CardBurnerApp(tkinter.Frame):
     """
     The top level gui application for the usrp2 sd card burner.
     Creates entry widgets and button with callback to write images.
@@ -111,7 +118,7 @@ class USRP2CardBurnerApp(Tkinter.Frame):
 
     def __init__(self, root, dev, fw, fpga):
 
-        Tkinter.Frame.__init__(self, root)
+        tkinter.Frame.__init__(self, root)
 
         #pack the file entry widgets
         SectionLabel(self, text="Select Images").pack(pady=5)
@@ -127,8 +134,8 @@ class USRP2CardBurnerApp(Tkinter.Frame):
 
         #the do it button
         SectionLabel(self, text="").pack(pady=5)
-        Tkinter.Label(self, text="Warning! This tool can overwrite your hard drive. Use with caution.").pack()
-        Tkinter.Button(self, text="Burn SD Card", command=self._burn).pack()
+        tkinter.Label(self, text="Warning! This tool can overwrite your hard drive. Use with caution.").pack()
+        tkinter.Button(self, text="Burn SD Card", command=self._burn).pack()
 
     def _burn(self):
         #grab strings from the gui
@@ -138,31 +145,31 @@ class USRP2CardBurnerApp(Tkinter.Frame):
 
         #check input
         if not dev:
-            tkMessageBox.showerror('Error:', 'No device specified!')
+            tkinter.messagebox.showerror('Error:', 'No device specified!')
             return
         if not fw and not fpga:
-            tkMessageBox.showerror('Error:', 'No images specified!')
+            tkinter.messagebox.showerror('Error:', 'No images specified!')
             return
         if fw and not os.path.exists(fw):
-            tkMessageBox.showerror('Error:', 'Firmware image not found!')
+            tkinter.messagebox.showerror('Error:', 'Firmware image not found!')
             return
         if fpga and not os.path.exists(fpga):
-            tkMessageBox.showerror('Error:', 'FPGA image not found!')
+            tkinter.messagebox.showerror('Error:', 'FPGA image not found!')
             return
 
         #burn the sd card
         try:
             verbose = usrp2_card_burner.burn_sd_card(dev=dev, fw=fw, fpga=fpga)
-            tkMessageBox.showinfo('Verbose:', verbose)
-        except Exception, e:
-            tkMessageBox.showerror('Verbose:', 'Error: %s'%str(e))
+            tkinter.messagebox.showinfo('Verbose:', verbose)
+        except Exception as e:
+            tkinter.messagebox.showerror('Verbose:', 'Error: %s'%str(e))
 
 ########################################################################
 # main
 ########################################################################
 if __name__=='__main__':
     options = usrp2_card_burner.get_options()
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
     root.title('USRP2 SD Card Burner')
     USRP2CardBurnerApp(root, dev=options.dev, fw=options.fw, fpga=options.fpga).pack()
     root.mainloop()

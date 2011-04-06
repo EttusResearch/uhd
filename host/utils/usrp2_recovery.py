@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ RECOVERY_ETHERTYPE = 0xbeee
 IP_RECOVERY_CODE = 'addr'
 
 def mac_addr_repr_to_binary_string(mac_addr):
-    return ''.join(map(lambda x: chr(int(x, 16)), mac_addr.split(':')))
+    return ''.join([chr(int(x, 16)) for x in mac_addr.split(':')])
 
 if __name__ == '__main__':
     parser = optparse.OptionParser(usage='usage: %prog [options]\n'+__doc__)
@@ -48,12 +48,12 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     #create the raw socket
-    print "Opening raw socket on interface:", options.ifc
+    print("Opening raw socket on interface:", options.ifc)
     soc = socket.socket(socket.PF_PACKET, socket.SOCK_RAW)
     soc.bind((options.ifc, RECOVERY_ETHERTYPE))
 
     #create the recovery packet
-    print "Loading packet with ip address:", options.new_ip
+    print("Loading packet with ip address:", options.new_ip)
     packet = struct.pack(
         '!6s6sH4s4s',
         mac_addr_repr_to_binary_string(BCAST_MAC_ADDR),
@@ -63,6 +63,6 @@ if __name__ == '__main__':
         socket.inet_aton(options.new_ip),
     )
 
-    print "Sending packet (%d bytes)"%len(packet)
+    print("Sending packet (%d bytes)"%len(packet))
     soc.send(packet)
-    print "Done"
+    print("Done")
