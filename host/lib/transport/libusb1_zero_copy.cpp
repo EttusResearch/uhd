@@ -34,13 +34,23 @@ using namespace uhd::transport;
 static const size_t DEFAULT_NUM_XFERS = 16;     //num xfers
 static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
 
+//! Define LIBUSB_CALL when its missing (non-windows)
+#ifndef LIBUSB_CALL
+    #define LIBUSB_CALL
+#endif /*LIBUSB_CALL*/
+
+/*!
+ * All libusb callback functions should be marked with the LIBUSB_CALL macro
+ * to ensure that they are compiled with the same calling convention as libusb.
+ */
+
 //! helper function: handles all async callbacks
-static void libusb_async_cb(libusb_transfer *lut){
+static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut){
     (*static_cast<boost::function<void()> *>(lut->user_data))();
 }
 
 //! callback to free transfer upon cancellation
-static void cancel_transfer_cb(libusb_transfer *lut){
+static void LIBUSB_CALL cancel_transfer_cb(libusb_transfer *lut){
     if (lut->status == LIBUSB_TRANSFER_CANCELLED) libusb_free_transfer(lut);
     else std::cout << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
 }
