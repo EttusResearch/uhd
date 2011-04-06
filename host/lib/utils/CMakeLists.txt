@@ -36,6 +36,11 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_PTHREAD_SETSCHEDPARAM
 )
 
+IF(CYGWIN)
+    #SCHED_RR non-operational on cygwin
+    SET(HAVE_PTHREAD_SETSCHEDPARAM False)
+ENDIF(CYGWIN)
+
 CHECK_CXX_SOURCE_COMPILES("
     #include <windows.h>
     int main(){
