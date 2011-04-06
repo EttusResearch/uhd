@@ -92,7 +92,7 @@ def unpack_flash_info_fmt(s):
 def unpack_flash_ip_fmt(s):
     return struct.unpack(FLASH_IP_FMT, s) #(proto_ver, pktid, seq, ip_addr)
 
-def pack_flash_args_fmt(proto_ver, pktid, seq, flash_addr, length, data):
+def pack_flash_args_fmt(proto_ver, pktid, seq, flash_addr, length, data=bytes()):
     return struct.pack(FLASH_ARGS_FMT, proto_ver, pktid, seq, flash_addr, length, data)
 
 def pack_flash_info_fmt(proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes):
@@ -100,19 +100,12 @@ def pack_flash_info_fmt(proto_ver, pktid, seq, sector_size_bytes, memory_size_by
 
 def is_valid_fpga_image(fpga_image):
     for i in range(0,63):
-      if ord(fpga_image[i]) == 0xFF:
-        continue
-      if ord(fpga_image[i]) == 0xAA and ord(fpga_image[i+1]) == 0x99:
-        return 1
-
-    return 0
+        if fpga_image[i:i+1] == bytes(b'\xFF'): continue
+        if fpga_image[i:i+2] == bytes(b'\xAA\x99'): return True
+    return False
 
 def is_valid_fw_image(fw_image):
-    for i in range(0,4):
-      if ord(fw_image[i]) != 0x0B:
-          return 0;
-
-    return 1
+    return fw_image[:4] == bytes(b'\x0B\x0B\x0B\x0B')
 
 ########################################################################
 # Burner class, holds a socket and send/recv routines
@@ -135,7 +128,7 @@ class burner_socket(object):
 
     #just here to validate comms
     def init_update(self):
-        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0, "")
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0)
         try: in_pkt = self.send_and_recv(out_pkt)
         except socket.timeout: raise Exception("No response from device")
         (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(in_pkt)
@@ -147,7 +140,7 @@ class burner_socket(object):
         #  print "Incoming:\n\tVer: %i\n\tID: %c\n\tSeq: %i\n\tIP: %i\n" % (proto_ver, chr(pktid), rxseq, ip_addr)
 
     def get_flash_info(self):
-        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL, seq(), 0, 0, "")
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL, seq(), 0, 0)
         in_pkt = self.send_and_recv(out_pkt)
 
         (proto_ver, pktid, rxseq, sector_size_bytes, memory_size_bytes) = unpack_flash_info_fmt(in_pkt)
@@ -170,12 +163,10 @@ class burner_socket(object):
             fpga_image = fpga_file.read()
 
             if len(fpga_image) > FPGA_IMAGE_SIZE_BYTES:
-                print("Error: FPGA image file too large.")
-                return 0
+                raise Exception("Error: FPGA image file too large.")
 
             if not is_valid_fpga_image(fpga_image):
-                print("Error: Invalid FPGA image file.")
-                return 0
+                raise Exception("Error: Invalid FPGA image file.")
 
             print("Begin FPGA write: this should take about 1 minute...")
             start_time = time.time()
@@ -193,12 +184,10 @@ class burner_socket(object):
             fw_image = fw_file.read()
 
             if len(fw_image) > FW_IMAGE_SIZE_BYTES:
-                print("Error: Firmware image file too large.")
-                return 0
+                raise Exception("Error: Firmware image file too large.")
 
             if not is_valid_fw_image(fw_image):
-                print("Error: Invalid firmware image file.")
-                return 0
+                raise Exception("Error: Invalid firmware image file.")
 
             print("Begin firmware write: this should take about 1 second...")
             start_time = time.time()
@@ -232,11 +221,11 @@ class burner_socket(object):
         print("Verifying data")
         self._status_cb("Verifying")
         readsize = len(image)
-        readdata = str()
+        readdata = bytes()
         while readsize > 0:
             if readsize < FLASH_DATA_PACKET_SIZE: thisreadsize = readsize
             else: thisreadsize = FLASH_DATA_PACKET_SIZE
-            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize, "")
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize)
             in_pkt = self.send_and_recv(out_pkt)
 
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
@@ -267,7 +256,7 @@ class burner_socket(object):
         while readsize > 0:
             if readsize < FLASH_DATA_PACKET_SIZE: thisreadsize = readsize
             else: thisreadsize = FLASH_DATA_PACKET_SIZE
-            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize, "")
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL, seq(), addr, thisreadsize)
             in_pkt = self.send_and_recv(out_pkt)
 
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
@@ -287,7 +276,7 @@ class burner_socket(object):
         f.close()
 
     def reset_usrp(self):
-        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0, "")
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL, seq(), 0, 0)
         try: in_pkt = self.send_and_recv(out_pkt)
         except socket.timeout: return
 
@@ -298,7 +287,7 @@ class burner_socket(object):
     def erase_image(self, addr, length):
         self._status_cb("Erasing")
         #get flash info first
-        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length, "")
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length)
         in_pkt = self.send_and_recv(out_pkt)
 
         (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
@@ -311,7 +300,7 @@ class burner_socket(object):
 
         #now wait for it to finish
         while(True):
-            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL, seq(), 0, 0, "")
+            out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL, seq(), 0, 0)
             in_pkt = self.send_and_recv(out_pkt)
 
             (proto_ver, pktid, rxseq, flash_addr, rxlength, data) = unpack_flash_args_fmt(in_pkt)
