@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import threading
 import usrp_n2xx_net_burner #import implementation
 try:
     import tkinter, tkinter.filedialog, tkinter.font, tkinter.messagebox
@@ -138,9 +137,7 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
 
     def _burn(self):
         self._disable_input()
-        threading.Thread(target=self._burn_bg).start()
 
-    def _burn_bg(self):
         #grab strings from the gui
         fw = self._fw_img_entry.get_filename()
         fpga = self._fpga_img_entry.get_filename()
@@ -169,7 +166,11 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
                 def status_cb(status):
                     self._pbar.set(0.0) #status change, reset the progress
                     self._status.set("%s %s "%(status.title(), image_type))
-                burner.set_callbacks(progress_cb=self._pbar.set, status_cb=status_cb)
+                    self.update()
+                def progress_cb(progress):
+                    self._pbar.set(progress)
+                    self.update()
+                burner.set_callbacks(progress_cb=progress_cb, status_cb=status_cb)
                 burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False)
 
             if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
