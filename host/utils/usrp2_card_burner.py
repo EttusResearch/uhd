@@ -179,8 +179,8 @@ def write_image(image_file, device_file, offset):
     img_data = open(image_file, 'rb').read()
     count = int_ceil_div(len(img_data), SECTOR_SIZE)
     pad_len = SECTOR_SIZE*count - len(img_data)
-    pad_str = ''.join([chr(0)]*pad_len) #zero-padding
-    open(tmp_file, 'wb').write(img_data + pad_str)
+    padding = bytes(b'\x00')*pad_len #zero-padding
+    open(tmp_file, 'wb').write(img_data + padding)
 
     #execute a dd subprocess
     verbose = command(
