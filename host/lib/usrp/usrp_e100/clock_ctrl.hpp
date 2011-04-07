@@ -79,6 +79,18 @@ public:
     virtual void set_tx_dboard_clock_rate(double rate) = 0;
 
     /*!
+     * Get the current rx dboard clock rate.
+     * \return the clock rate in Hz
+     */
+    virtual double get_rx_clock_rate(void) = 0;
+
+    /*!
+     * Get the current tx dboard clock rate.
+     * \return the clock rate in Hz
+     */
+    virtual double get_tx_clock_rate(void) = 0;
+
+    /*!
      * Enable/disable the rx dboard clock.
      * \param enb true to enable
      */

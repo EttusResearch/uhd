@@ -97,7 +97,6 @@ private:
     usrp_e100_iface::sptr _iface;
     usrp_e100_clock_ctrl::sptr _clock;
     usrp_e100_codec_ctrl::sptr _codec;
-    uhd::dict<unit_t, double> _clock_rates;
 };
 
 /***********************************************************************
@@ -115,7 +114,6 @@ dboard_iface::sptr make_usrp_e100_dboard_iface(
  * Clock Rates
  **********************************************************************/
 void usrp_e100_dboard_iface::set_clock_rate(unit_t unit, double rate){
-    _clock_rates[unit] = rate;
     switch(unit){
     case UNIT_RX: return _clock->set_rx_dboard_clock_rate(rate);
     case UNIT_TX: return _clock->set_tx_dboard_clock_rate(rate);
@@ -131,7 +129,11 @@ std::vector<double> usrp_e100_dboard_iface::get_clock_rates(unit_t unit){
 }
 
 double usrp_e100_dboard_iface::get_clock_rate(unit_t unit){
-    return _clock_rates[unit];
+    switch(unit){
+    case UNIT_RX: return _clock->get_rx_clock_rate();
+    case UNIT_TX: return _clock->get_tx_clock_rate();
+    }
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void usrp_e100_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
