@@ -90,6 +90,10 @@ IF(MSVC)
     )
 ENDIF(MSVC)
 
+IF(CYGWIN)
+    ADD_DEFINITIONS(-D__USE_W32_SOCKETS) #boost asio says we need this
+ENDIF(CYGWIN)
+
 IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
