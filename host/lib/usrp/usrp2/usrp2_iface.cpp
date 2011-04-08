@@ -34,6 +34,13 @@ using namespace uhd::transport;
 
 static const double CTRL_RECV_TIMEOUT = 1.0;
 
+static const boost::uint32_t MIN_PROTO_COMPAT_SPI = 7;
+static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
+// The register compat number must reflect the protocol compatibility
+// and the compatibility of the register mapping (more likely to change).
+static const boost::uint32_t MIN_PROTO_COMPAT_REG = USRP2_FW_COMPAT_NUM;
+static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
+
 class usrp2_iface_impl : public usrp2_iface{
 public:
 /***********************************************************************
@@ -58,15 +65,6 @@ public:
         case USRP_NXXX: //fallthough case is old register map (USRP2)
             regs = usrp2_get_regs(false);
             break;
-        }
-
-        //check the fpga compatibility number
-        const boost::uint32_t fpga_compat_num = this->peek32(this->regs.compat_num_rb);
-        if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
-            throw uhd::runtime_error(str(boost::format(
-                "Expected fpga compatibility number %d, but got %d:\n"
-                "The fpga build is not compatible with the host code build."
-            ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
         }
     }
 
@@ -115,7 +113,7 @@ public:
         out_data.data.spi_args.data = htonl(data);
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_SPI);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_TRANSACTED_SPI_DUDE);
 
         return ntohl(in_data.data.spi_args.data);
@@ -138,7 +136,7 @@ public:
         std::copy(buf.begin(), buf.end(), out_data.data.i2c_args.data);
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_I2C);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
     }
 
@@ -153,7 +151,7 @@ public:
         UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.i2c_args.data));
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_I2C);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
         UHD_ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
 
@@ -186,7 +184,7 @@ public:
         std::copy(item.begin(), item.end(), out_data.data.uart_args.data);
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_UART);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE);
       }
     }
@@ -205,7 +203,7 @@ public:
         //UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.uart_args.data));
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_UART);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE);
         readlen = in_data.data.uart_args.bytes;
 
@@ -226,8 +224,17 @@ public:
 /***********************************************************************
  * Send/Recv over control
  **********************************************************************/
-    usrp2_ctrl_data_t ctrl_send_and_recv(const usrp2_ctrl_data_t &out_data){
+    usrp2_ctrl_data_t ctrl_send_and_recv(
+        const usrp2_ctrl_data_t &out_data,
+        boost::uint32_t lo = USRP2_FW_COMPAT_NUM,
+        boost::uint32_t hi = USRP2_FW_COMPAT_NUM
+    ){
         boost::mutex::scoped_lock lock(_ctrl_mutex);
+
+        std::string range = (lo == hi)?
+            str(boost::format("%d") % hi) :
+            str(boost::format("[%d to %d]") % lo % hi)
+        ;
 
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
@@ -240,11 +247,12 @@ public:
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CTRL_RECV_TIMEOUT);
-            if(len >= sizeof(boost::uint32_t) and ntohl(ctrl_data_in->proto_ver) != USRP2_FW_COMPAT_NUM){
+            boost::uint32_t compat = ntohl(ctrl_data_in->proto_ver);
+            if(len >= sizeof(boost::uint32_t) and hi >= compat and lo <= compat){
                 throw uhd::runtime_error(str(boost::format(
-                    "Expected protocol compatibility number %d, but got %d:\n"
+                    "Expected protocol compatibility number %s, but got %d:\n"
                     "The firmware build is not compatible with the host code build."
-                ) % int(USRP2_FW_COMPAT_NUM) % ntohl(ctrl_data_in->proto_ver)));
+                ) % range % compat));
             }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(ctrl_data_in->seq) == _ctrl_seq_num){
                 return *ctrl_data_in;
@@ -297,7 +305,7 @@ private:
         out_data.data.poke_args.num_bytes = sizeof(T);
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
     }
 
@@ -309,7 +317,7 @@ private:
         out_data.data.poke_args.num_bytes = sizeof(T);
 
         //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data);
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
         return T(ntohl(in_data.data.poke_args.data));
     }
