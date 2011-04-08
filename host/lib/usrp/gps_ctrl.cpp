@@ -172,6 +172,10 @@ public:
     }
     return now;
   }
+  
+  time_t get_epoch_time(void) {
+      return (get_time() - boost::posix_time::from_time_t(0)).total_seconds();
+  }
 
   bool gps_detected(void) {
     return (gps_type != GPS_TYPE_NONE);

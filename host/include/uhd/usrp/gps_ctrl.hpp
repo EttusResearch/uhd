@@ -42,6 +42,12 @@ public:
    * \return current GPS time and date as boost::posix_time::ptime object
    */
   virtual ptime get_time(void) = 0;
+  
+  /*!
+   * Get the epoch time (as time_t, which is int)
+   * \return current GPS time and date as time_t
+   */
+   virtual time_t get_epoch_time(void) = 0;
 
   /*!
    * Tell you if there's a supported GPS connected or not

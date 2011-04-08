@@ -372,7 +372,11 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         else if(key.name == "ref_locked") {
             val = sensor_value_t("Ref", this->get_ref_locked(), "locked", "unlocked");
             return;
-        } else {
+        }
+        else if(key.name == "gps_time") {
+            val = sensor_value_t("GPS time", int(_gps_ctrl->get_epoch_time()), "seconds");
+        }
+        else {
             UHD_THROW_PROP_GET_ERROR();
         }
         break;
