@@ -27,18 +27,17 @@ bool uhd::set_thread_priority_safe(float priority, bool realtime){
         return true;
     }catch(const std::exception &e){
         uhd::warning::post(str(boost::format(
+            "Unable to set the thread priority. Performance may be negatively affected.\n"
+            "Please see the general application notes in the manual for instructions.\n"
             "%s\n"
-            "Failed to set thread priority %d (%s):\n"
-            "Performance may be negatively affected.\n"
-            "See the general application notes.\n"
-        ) % e.what() % priority % (realtime?"realtime":"")));
+        ) % e.what()));
         return false;
     }
 }
 
 static void check_priority_range(float priority){
     if (priority > +1.0 or priority < -1.0)
-        throw std::range_error("priority out of range [-1.0, +1.0]");
+        throw uhd::value_error("priority out of range [-1.0, +1.0]");
 }
 
 /***********************************************************************
