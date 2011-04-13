@@ -125,7 +125,6 @@ public:
 
   }
 
-//TODO: this isn't generalizeable to non-USRP2 USRPs.
   std::string safe_gps_read() {
     return _recv();
   }
@@ -147,18 +146,19 @@ public:
           found_gprmc = true;
           break;
         }
+        boost::this_thread::sleep(boost::posix_time::milliseconds(200));
       }
       UHD_ASSERT_THROW(found_gprmc);
 
       tok.assign(reply);
       toked.assign(tok.begin(), tok.end());
 
-      UHD_ASSERT_THROW(toked.size() == 11); //if it's not we got something weird in there
+      UHD_ASSERT_THROW(toked.size() == 12); //if it's not we got something weird in there
 
       now = ptime( date( 
-                         greg_year(boost::lexical_cast<int>(toked[8].substr(4, 2)) + 2000), //just trust me on this one
-                         greg_month(boost::lexical_cast<int>(toked[8].substr(2, 2))), 
-                         greg_day(boost::lexical_cast<int>(toked[8].substr(0, 2))) 
+                         greg_year(boost::lexical_cast<int>(toked[9].substr(4, 2)) + 2000), //just trust me on this one
+                         greg_month(boost::lexical_cast<int>(toked[9].substr(2, 2))), 
+                         greg_day(boost::lexical_cast<int>(toked[9].substr(0, 2))) 
                        ),
                    hours(  boost::lexical_cast<int>(toked[1].substr(0, 2)))
                  + minutes(boost::lexical_cast<int>(toked[1].substr(2, 2)))

@@ -105,8 +105,6 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _iface->get_gps_write_fn(),
         _iface->get_gps_read_fn());
 
-    //if(_gps_ctrl->gps_detected()) std::cout << "GPS time: " << _gps_ctrl->get_time() << std::endl;
-
     //init the dsp stuff (before setting update packets)
     dsp_init();
 
