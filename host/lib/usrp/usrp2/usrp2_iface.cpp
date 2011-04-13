@@ -248,7 +248,7 @@ public:
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CTRL_RECV_TIMEOUT);
             boost::uint32_t compat = ntohl(ctrl_data_in->proto_ver);
-            if(len >= sizeof(boost::uint32_t) and hi >= compat and lo <= compat){
+            if(len >= sizeof(boost::uint32_t) and (hi < compat or lo > compat)){
                 throw uhd::runtime_error(str(boost::format(
                     "Expected protocol compatibility number %s, but got %d:\n"
                     "The firmware build is not compatible with the host code build."
