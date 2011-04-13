@@ -102,6 +102,8 @@ ENDIF(WIN32)
 ########################################################################
 # Setup Boost
 ########################################################################
+MESSAGE(STATUS "")
+MESSAGE(STATUS "Configuring Boost C++ Libraries...")
 SET(BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
@@ -130,6 +132,10 @@ FIND_PACKAGE(Boost 1.36 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
 ########################################################################
 # Check Python Modules
