@@ -287,6 +287,9 @@ public:
         if (_out_rate == rate) return;
         if (rate == 61.44e6) set_clock_settings_with_external_vcxo(rate);
         else                 set_clock_settings_with_internal_vco(rate);
+        //clock rate changed! update dboard clocks and FPGA ticks per second
+        set_rx_dboard_clock_rate(rate);
+        set_tx_dboard_clock_rate(rate);
         _iface->poke32(UE_REG_TIME64_TPS, boost::uint32_t(get_fpga_clock_rate()));
     }
 
@@ -328,6 +331,7 @@ public:
 
     void set_rx_dboard_clock_rate(double rate){
         assert_has(get_rx_dboard_clock_rates(), rate, "rx dboard clock rate");
+        _rx_clock_rate = rate;
         size_t divider = size_t(this->_chan_rate/rate);
         //set the divider registers
         set_clock_divider(divider,
@@ -338,6 +342,10 @@ public:
         this->send_reg(0x199);
         this->send_reg(0x19a);
         this->latch_regs();
+    }
+
+    double get_rx_clock_rate(void){
+        return _rx_clock_rate;
     }
 
     /***********************************************************************
@@ -358,6 +366,7 @@ public:
 
     void set_tx_dboard_clock_rate(double rate){
         assert_has(get_tx_dboard_clock_rates(), rate, "tx dboard clock rate");
+        _tx_clock_rate = rate;
         size_t divider = size_t(this->_chan_rate/rate);
         //set the divider registers
         set_clock_divider(divider,
@@ -369,7 +378,11 @@ public:
         this->send_reg(0x197);
         this->latch_regs();
     }
-    
+
+    double get_tx_clock_rate(void){
+        return _tx_clock_rate;
+    }
+
     /***********************************************************************
      * Clock reference control
      **********************************************************************/
@@ -401,6 +414,7 @@ private:
     ad9522_regs_t _ad9522_regs;
     double _out_rate; //rate at the fpga and codec
     double _chan_rate; //rate before final dividers
+    double _rx_clock_rate, _tx_clock_rate;
 
     void latch_regs(void){
         _ad9522_regs.io_update = 1;
