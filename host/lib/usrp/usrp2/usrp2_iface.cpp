@@ -46,9 +46,20 @@ public:
 /***********************************************************************
  * Structors
  **********************************************************************/
-    usrp2_iface_impl(udp_simple::sptr ctrl_transport){
-        _ctrl_transport = ctrl_transport;
-        _ctrl_seq_num = 0;
+    usrp2_iface_impl(udp_simple::sptr ctrl_transport):
+        _ctrl_transport(ctrl_transport),
+        _ctrl_seq_num(0),
+        _protocol_compat(0) //initialized below...
+    {
+        //Obtain the firmware's compat number.
+        //Save the response compat number for communication.
+        //TODO can choose to reject certain older compat numbers
+        usrp2_ctrl_data_t ctrl_data;
+        ctrl_data.id = htonl(USRP2_CTRL_ID_WAZZUP_BRO);
+        ctrl_data = ctrl_send_and_recv(ctrl_data, 0, ~0);
+        if (ntohl(ctrl_data.id) != USRP2_CTRL_ID_WAZZUP_DUDE)
+            throw uhd::runtime_error("firmware not responding");
+        _protocol_compat = ntohl(ctrl_data.proto_ver);
 
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
         switch(this->get_rev()){
@@ -238,7 +249,7 @@ public:
 
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
-        out_copy.proto_ver = htonl(USRP2_FW_COMPAT_NUM);
+        out_copy.proto_ver = htonl(_protocol_compat);
         out_copy.seq = htonl(++_ctrl_seq_num);
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
@@ -292,6 +303,7 @@ private:
     //used in send/recv
     boost::mutex _ctrl_mutex;
     boost::uint32_t _ctrl_seq_num;
+    boost::uint32_t _protocol_compat;
 
 /***********************************************************************
  * Private Templated Peek and Poke
