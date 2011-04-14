@@ -62,6 +62,7 @@ module u1plus_core
       .in(set_data),.out(),.changed(global_reset));
 
    reset_sync reset_sync(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
+   wire [15:0] 	test_len;
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
