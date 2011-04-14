@@ -31,8 +31,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
-
 /***********************************************************************
  * Constants
  **********************************************************************/
@@ -49,8 +47,8 @@ static const bool recv_debug = false;
  * - vrt packet handler states
  **********************************************************************/
 struct usrp_e100_impl::io_impl{
-    io_impl(usrp_e100_iface::sptr iface):
-        data_xport(usrp_e100_make_mmap_zero_copy(iface)),
+    io_impl(zero_copy_if::sptr &xport):
+        data_xport(xport),
         get_recv_buffs_fcn(boost::bind(&usrp_e100_impl::io_impl::get_recv_buffs, this, _1)),
         get_send_buffs_fcn(boost::bind(&usrp_e100_impl::io_impl::get_send_buffs, this, _1)),
         recv_pirate_booty(data_xport->get_num_recv_frames()),
@@ -79,7 +77,8 @@ struct usrp_e100_impl::io_impl{
 
     //The data transport is listed first so that it is deconstructed last,
     //which is after the states and booty which may hold managed buffers.
-    zero_copy_if::sptr data_xport;
+    //This comment is invalid because its now a reference and not stored here.
+    zero_copy_if::sptr &data_xport;
 
     //bound callbacks for get buffs (bound once here, not in fast-path)
     vrt_packet_handler::get_recv_buffs_t get_recv_buffs_fcn;
@@ -181,7 +180,7 @@ void usrp_e100_impl::io_init(void){
     _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     //setup before the registers (transport called to calculate max spp)
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_iface));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_xport));
 
     //clear state machines
     _iface->poke32(UE_REG_CTRL_RX_CLEAR, 0);
@@ -234,7 +233,7 @@ size_t usrp_e100_impl::get_max_send_samps_per_packet(void) const{
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    size_t bpp = _io_impl->data_xport->get_send_frame_size() - hdr_size;
+    size_t bpp = _send_frame_size - hdr_size;
     return bpp/_send_otw_type.get_sample_size();
 }
 
@@ -265,7 +264,7 @@ size_t usrp_e100_impl::get_max_recv_samps_per_packet(void) const{
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    size_t bpp = _io_impl->data_xport->get_recv_frame_size() - hdr_size;
+    size_t bpp = _recv_frame_size - hdr_size;
     return bpp/_recv_otw_type.get_sample_size();
 }
 

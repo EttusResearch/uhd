@@ -138,7 +138,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
         ) % USRP_E_FPGA_COMPAT_NUM % fpga_compat_num));
     }
 
-    return device::sptr(new usrp_e100_impl(iface));
+    return device::sptr(new usrp_e100_impl(iface, device_addr));
 }
 
 UHD_STATIC_BLOCK(register_usrp_e100_device){
@@ -148,7 +148,15 @@ UHD_STATIC_BLOCK(register_usrp_e100_device){
 /***********************************************************************
  * Structors
  **********************************************************************/
-usrp_e100_impl::usrp_e100_impl(usrp_e100_iface::sptr iface): _iface(iface){
+usrp_e100_impl::usrp_e100_impl(
+    usrp_e100_iface::sptr iface,
+    const device_addr_t &device_addr
+):
+    _iface(iface),
+    _data_xport(usrp_e100_make_mmap_zero_copy(_iface)),
+    _recv_frame_size(std::min(_data_xport->get_recv_frame_size(), size_t(device_addr.cast<double>("recv_frame_size", 1e9)))),
+    _send_frame_size(std::min(_data_xport->get_send_frame_size(), size_t(device_addr.cast<double>("send_frame_size", 1e9))))
+{
 
     //setup interfaces into hardware
     _clock_ctrl = usrp_e100_clock_ctrl::make(_iface);
