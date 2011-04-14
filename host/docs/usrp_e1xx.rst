@@ -63,3 +63,41 @@ Run the following commands to restore the clock generator to a usable state:
 
     cd <install-path>/share/uhd/usrp_e_utilities
     ./usrp-e-utility --fpga=../images/usrp_e100_pt_fpga.bin --reclk
+
+
+------------------------------------------------------------------------
+Clock Synchronization
+------------------------------------------------------------------------
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ref Clock - 10MHz
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The E1xx has a 10MHz TCXO which can be used to discipline the flexible clocking by 
+selecting REF_INT for the clock_config_t.
+
+Alternately, an external 10MHz reference clock can be supplied by soldering a connector.
+
+* Connector J10 (REF_IN) needs MCX connector WM5541-ND or similar
+* Square wave will offer the best phase noise performance, but sinusoid is acceptable
+* Power level: 0 to 15dBm
+* Select REF_SMA in clock_config_t
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PPS - Pulse Per Second
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+An exteral PPS signal for timestamp synchronization can be supplied by soldering a connector.
+
+* Connector J13 (PPS) needs MCX connector WM5541-ND or similar
+* Requires a square wave signal
+* Amplitude: 3.3 to 5Vpp
+
+Test the PPS input with the following app:
+
+* <args> are device address arguments (optional if only one USRP is on your machine)
+
+::
+
+    cd <install-path>/share/uhd/examples
+    ./test_pps_input --args=<args>
