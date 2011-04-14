@@ -20,7 +20,6 @@
 
 //these should be pre-processor macros to avoid static initialization issues
 #define UHD_VERSION_STRING "@UHD_VERSION@-@UHD_BUILD_INFO@"
-#define LOCAL_PKG_DATA_DIR "@LOCAL_PKG_DATA_DIR@"
-#define INSTALLER_PKG_DATA_DIR "@INSTALLER_PKG_DATA_DIR@"
+#define UHD_PKG_DATA_PATH "@UHD_PKG_DATA_PATH@"
 
 #endif /* INCLUDED_LIBUHD_CONSTANTS_HPP */

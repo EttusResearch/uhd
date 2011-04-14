@@ -76,16 +76,12 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
  **********************************************************************/
 std::vector<fs::path> get_image_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_IMAGE_PATH");
-    paths.push_back(fs::path(LOCAL_PKG_DATA_DIR) / "images");
-    if (not std::string(INSTALLER_PKG_DATA_DIR).empty())
-        paths.push_back(fs::path(INSTALLER_PKG_DATA_DIR) / "images");
+    paths.push_back(fs::path(UHD_PKG_DATA_PATH) / "images");
     return paths;
 }
 
 std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
-    paths.push_back(fs::path(LOCAL_PKG_DATA_DIR) / "modules");
-    if (not std::string(INSTALLER_PKG_DATA_DIR).empty())
-        paths.push_back(fs::path(INSTALLER_PKG_DATA_DIR) / "modules");
+    paths.push_back(fs::path(UHD_PKG_DATA_PATH) / "modules");
     return paths;
 }

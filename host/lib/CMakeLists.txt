@@ -81,19 +81,9 @@ INCLUDE_SUBDIRECTORY(utils)
 ########################################################################
 # Setup compiled-in constants for data directories
 ########################################################################
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} LOCAL_PKG_DATA_DIR)
-STRING(REPLACE "\\" "\\\\" LOCAL_PKG_DATA_DIR ${LOCAL_PKG_DATA_DIR})
-MESSAGE(STATUS "Local package data directory: ${LOCAL_PKG_DATA_DIR}")
-
-IF(UNIX)
-    #on unix systems, installers will use this directory for the package data
-    FILE(TO_NATIVE_PATH /usr/${PKG_DATA_DIR} INSTALLER_PKG_DATA_DIR)
-ELSE()
-    #for the NSIS installer, this will be the default path for package data
-    FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}" INSTALLER_PKG_DATA_DIR)
-ENDIF()
-STRING(REPLACE "\\" "\\\\" INSTALLER_PKG_DATA_DIR ${INSTALLER_PKG_DATA_DIR})
-MESSAGE(STATUS "Installer package data directory: ${INSTALLER_PKG_DATA_DIR}")
+FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} UHD_PKG_DATA_PATH)
+STRING(REPLACE "\\" "\\\\" UHD_PKG_DATA_PATH ${UHD_PKG_DATA_PATH})
+MESSAGE(STATUS "Full package data directory: ${UHD_PKG_DATA_PATH}")
 
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
