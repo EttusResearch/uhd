@@ -108,7 +108,7 @@ module u1plus_core
 	 
 	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
 
-	 .test_rate(test_rate), .test_ctrl(test_ctrl),
+	 .test_len(test_len), .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug0(debug0), .debug1(debug1));
 
    // /////////////////////////////////////////////////////////////////////////
@@ -258,6 +258,7 @@ module u1plus_core
 
    assign test_ctrl = xfer_rate[11:8];
    assign test_rate = xfer_rate[7:0];
+   assign test_len = reg_test[15:0];
    
    assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;

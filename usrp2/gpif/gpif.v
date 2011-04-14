@@ -20,7 +20,7 @@ module gpif
     input [35:0] tx_err_data_i, input tx_err_src_rdy_i, output tx_err_dst_rdy_o,
     
     output tx_underrun, output rx_overrun,
-    input [7:0] test_rate, input [3:0] test_ctrl,
+    input [15:0] test_len, input [7:0] test_rate, input [3:0] test_ctrl,
     output [31:0] debug0, output [31:0] debug1
     );
 
@@ -211,9 +211,9 @@ module gpif
       .total(total), .crc_err(crc_err), .seq_err(seq_err), .len_err(len_err));
 
    // Fixed rate RX traffic generator
-   packet_generator32 pktgen32
+   vita_pkt_gen pktgen
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .header({len_err,seq_err,crc_err,total}),
+      .len(test_len),
       .data_o(timedrx_data), .src_rdy_o(timedrx_src_rdy_int), .dst_rdy_i(timedrx_dst_rdy_int));
 
    fifo_pacer rx_pacer
