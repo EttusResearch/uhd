@@ -140,4 +140,9 @@ SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, libusb1")
 
 ########################################################################
+# Setup CPack NSIS
+########################################################################
+SET(CPACK_NSIS_MODIFY_PATH ON)
+
+########################################################################
 INCLUDE(CPack) #include after setting vars
