@@ -5,7 +5,7 @@ module gpif
    (// GPIF signals
     input gpif_clk, input gpif_rst,
     inout [15:0] gpif_d, input [3:0] gpif_ctl, output [3:0] gpif_rdy,
-    input [2:0] gpif_misc,
+    output [2:0] gpif_misc,
     
     // Wishbone signals
     input wb_clk, input wb_rst,
@@ -20,7 +20,7 @@ module gpif
     input [35:0] tx_err_data_i, input tx_err_src_rdy_i, output tx_err_dst_rdy_o,
     
     output tx_underrun, output rx_overrun,
-    input [15:0] test_len, input [7:0] test_rate, input [3:0] test_ctrl,
+    input [7:0] frames_per_packet, input [15:0] test_len, input [7:0] test_rate, input [3:0] test_ctrl,
     output [31:0] debug0, output [31:0] debug1
     );
 
@@ -103,13 +103,14 @@ module gpif
 
    packet_splitter #(.FRAME_LEN(256)) packet_splitter
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .frames_per_packet(),
       .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy),
       .data_o(splt_data), .src_rdy_o(splt_src_rdy), .dst_rdy_i(splt_dst_rdy));
      
    gpif_rd gpif_rd
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst),
       .gpif_data(gpif_d_out), .gpif_rd(RD), .gpif_ep(EP),
-      .gpif_empty_d(DE), .gpif_empty_c(CE),
+      .gpif_empty_d(DE), .gpif_empty_c(CE), .gpif_flush(gpif_misc[0]),
       
       .sys_clk(fifo_clk), .sys_rst(fifo_rst),
       .data_i(splt_data), .src_rdy_i(splt_src_rdy), .dst_rdy_o(splt_dst_rdy),

@@ -1,5 +1,5 @@
 
-module gpif_tb();
+module packet_splitter_tb();
    
    reg sys_clk = 0;
    reg sys_rst = 1;
@@ -18,36 +18,31 @@ module gpif_tb();
 
    assign ctrl_dst_rdy = 1;
    
-   initial $dumpfile("gpif_tb.vcd");
-   initial $dumpvars(0,gpif_tb);
+   initial $dumpfile("packet_splitter_tb.vcd");
+   initial $dumpvars(0,packet_splitter_tb);
 
    initial #1000 gpif_rst = 0;
    initial #1000 sys_rst = 0;
    always #64 gpif_clk <= ~gpif_clk;
    always #47.9 sys_clk <= ~sys_clk;
 
-   wire [18:0] data_int;
+   wire [35:0] data_int;
    wire        src_rdy_int, dst_rdy_int;
 
    assign dst_rdy_splt = 1;
-   
-   gpif_wr gpif_write
-     (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), 
-      .gpif_data(gpif_data), .gpif_wr(WR), .gpif_ep(EP),
-      .gpif_full_d(DF), .gpif_full_c(CF),
-      
-      .sys_clk(sys_clk), .sys_rst(sys_rst),
-      .data_o(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int),
-      .ctrl_o(ctrl_o), .ctrl_src_rdy_o(ctrl_src_rdy), .ctrl_dst_rdy_i(ctrl_dst_rdy) );
 
-   packet_reframer tx_packet_reframer 
-     (.clk(sys_clk), .reset(sys_rst), .clear(0),
-      .data_i(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int),
-      .data_o(data_o), .src_rdy_o(src_rdy), .dst_rdy_i(dst_rdy));
+   vita_pkt_gen vita_pkt_gen
+     (.clk(sys_clk), .reset(sys_rst) , .clear(0),
+      .len(7),.data_o(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int));
 
-   packet_splitter #(.FRAME_LEN(256)) rx_packet_splitter
+   fifo36_to_fifo19 #(.LE(1)) f36_to_f19
      (.clk(sys_clk), .reset(sys_rst), .clear(0),
-      .frames_per_packet(2),
+      .f36_datain(data_int), .f36_src_rdy_i(src_rdy_int), .f36_dst_rdy_o(dst_rdy_int),
+      .f19_dataout(data_o), .f19_src_rdy_o(src_rdy), .f19_dst_rdy_i(dst_rdy));
+   		 
+   packet_splitter #(.FRAME_LEN(13)) rx_packet_splitter
+     (.clk(sys_clk), .reset(sys_rst), .clear(0),
+      .frames_per_packet(3),
       .data_i(data_o), .src_rdy_i(src_rdy), .dst_rdy_o(dst_rdy),
       .data_o(data_splt), .src_rdy_o(src_rdy_splt), .dst_rdy_i(dst_rdy_splt));
 
@@ -122,4 +117,4 @@ module gpif_tb();
    initial #200000 $finish;
    
      
-endmodule // gpif_tb
+endmodule // packet_splitter_tb

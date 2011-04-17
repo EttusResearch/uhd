@@ -4,6 +4,7 @@
 module packet_splitter
   #(parameter FRAME_LEN=256)
    (input clk, input reset, input clear,
+    input  [7:0] frames_per_packet,
     input [18:0] data_i,
     input src_rdy_i,
     output dst_rdy_o,
@@ -14,6 +15,7 @@ module packet_splitter
    reg [1:0] state;
    reg [15:0] length;
    reg [15:0] frame_len;
+   reg [7:0]  frame_count;
    
    localparam PS_IDLE = 0;
    localparam PS_FRAME = 1;
@@ -24,7 +26,10 @@ module packet_splitter
    
    always @(posedge clk)
      if(reset | clear)
-       state <= PS_IDLE;
+       begin
+	  state <= PS_IDLE;
+	  frame_count <= 0;
+       end
      else
        case(state)
 	 PS_IDLE :
@@ -33,6 +38,7 @@ module packet_splitter
 		length <= { data_i[14:0],1'b0};
 		frame_len <= FRAME_LEN;
 		state <= PS_FRAME;
+		frame_count <= 1;
 	     end
 	 PS_FRAME :
 	   if(src_rdy_i & dst_rdy_i)
@@ -40,8 +46,9 @@ module packet_splitter
 	       state <= PS_IDLE;
 	     else if(frame_len == 2)
 	       begin
-		  state <= PS_NEW_FRAME;
 		  length <= length - 1;
+		  state <= PS_NEW_FRAME;
+		  frame_count <= frame_count + 1;
 	       end
 	     else if((length == 2)|eof_i)
 	       begin
@@ -57,9 +64,15 @@ module packet_splitter
 	   if(src_rdy_i & dst_rdy_i)
 	     begin
 		frame_len <= FRAME_LEN;
-		state <= PS_FRAME;
-		length <= length - 1;
-	     end
+		if((length == 2)|eof_i)
+		  state <= PS_PAD;
+		else
+		  begin
+		     state <= PS_FRAME;
+		     length <= length - 1;
+		  end // else: !if((length == 2)|eof_i)
+	     end // if (src_rdy_i & dst_rdy_i)
+	 
 	 PS_PAD :
 	   if(dst_rdy_i)
 	     if(frame_len == 2)
@@ -68,16 +81,20 @@ module packet_splitter
 	       frame_len <= frame_len - 1;
 
        endcase // case (state)
-   
+
+   wire next_state_is_idle = dst_rdy_i & (frame_len==2) & 
+	( (state==PS_PAD) | ( (state==PS_FRAME) & src_rdy_i & ((length==2)|eof_i) ) );
+	  
+	 
 	
    
    assign dst_rdy_o = dst_rdy_i & (state != PS_PAD);
    assign src_rdy_o = src_rdy_i | (state == PS_PAD);
    
-   wire occ_out = 0;
    wire eof_out = (frame_len == 2) & (state != PS_IDLE) & (state != PS_NEW_FRAME);
    wire sof_out = (state == PS_IDLE) | (state == PS_NEW_FRAME);
-
+   wire occ_out = eof_out & next_state_is_idle & (frames_per_packet != frame_count);
+   
    wire [15:0] data_out = data_i[15:0];
    assign data_o = {occ_out, eof_out, sof_out, data_out};
    

@@ -7,7 +7,7 @@ module u1plus_core
    
    // GPIF
    inout [15:0] gpif_d, input [3:0] gpif_ctl, output [3:0] gpif_rdy,
-   input [2:0] gpif_misc, input gpif_clk,
+   output [2:0] gpif_misc, input gpif_clk,
    
    inout db_sda, inout db_scl,
    output sclk, output [15:0] sen, output mosi, input miso,
@@ -54,6 +54,8 @@ module u1plus_core
 
    wire [31:0] 	debug_vt;
    wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
+   reg [7:0] 	frames_per_packet;
+   
    assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp;
    assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
    
@@ -109,7 +111,7 @@ module u1plus_core
 	 
 	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
 
-	 .test_len(test_len), .test_rate(test_rate), .test_ctrl(test_ctrl),
+	 .frames_per_packet(frames_per_packet), .test_len(test_len), .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug0(debug0), .debug1(debug1));
 
    // /////////////////////////////////////////////////////////////////////////
@@ -243,6 +245,7 @@ module u1plus_core
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
 	  xfer_rate <= 0;
+	  frames_per_packet <= 0;
        end
      else
        if(s0_cyc & s0_stb & s0_we) 
@@ -253,6 +256,8 @@ module u1plus_core
 	     reg_cgen_ctrl <= s0_dat_mosi;
 	   REG_TEST :
 	     reg_test <= s0_dat_mosi;
+	   REG_RX_FRAMELEN :
+	     frames_per_packet <= s0_dat_mosi[7:0];
 	   REG_XFER_RATE :
 	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])

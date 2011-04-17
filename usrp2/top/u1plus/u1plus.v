@@ -8,7 +8,7 @@ module u1plus
 
    // GPIF
    inout [15:0] GPIF_D, input [3:0] GPIF_CTL, output [3:0] GPIF_RDY,
-   input FX2_PA7_FLAGD, input FX2_PA6_PKTEND, input FX2_PA2_SLOE,
+   output FX2_PA7_FLAGD, output FX2_PA6_PKTEND, output FX2_PA2_SLOE,
    input IFCLK,
    
    inout SDA_FPGA, inout SCL_FPGA, // I2C
@@ -141,7 +141,7 @@ module u1plus
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
 		     .gpif_d(GPIF_D), .gpif_ctl(GPIF_CTL), .gpif_rdy(GPIF_RDY),
-		     .gpif_misc({FX2_PA7_FLAGD,FX_PA6_PKTEND,FX2_PA2_SLOE}),
+		     .gpif_misc({FX2_PA7_FLAGD,FX2_PA6_PKTEND,FX2_PA2_SLOE}),
 		     .gpif_clk(IFCLK),
 
 		     .db_sda(SDA_FPGA), .db_scl(SCL_FPGA),
