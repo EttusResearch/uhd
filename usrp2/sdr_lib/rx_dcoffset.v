@@ -32,7 +32,8 @@ module rx_dcoffset
 
    localparam int_width = WIDTH + alpha_shift;
    reg [int_width-1:0] integrator;
-   
+   wire [WIDTH-1:0]    quantized;
+
    always @(posedge clk)
      if(rst)
        begin
@@ -47,19 +48,8 @@ module rx_dcoffset
      else if(~fixed)
        integrator <= integrator +  {{(alpha_shift){out[WIDTH-1]}},out};
 
-   wire [WIDTH-1:0] quantized;
-   wire [int_width-WIDTH:0] q_err;
-   wire [int_width-1:0]     q_err_ext;
-   wire [int_width-1:0]     q_loop;
-
-   round #(.bits_in(int_width), .bits_out(WIDTH)) quantizer
-     (.in(q_loop), .out(quantized), .err(q_err));
-   
-   sign_extend #(.bits_in(int_width-WIDTH+1),.bits_out(int_width)) sign_extend
-     (.in(q_err), .out(q_err_ext));
-   
-   add2_and_clip_reg #(.WIDTH(int_width)) sd_fixed
-     (.clk(clk), .rst(rst), .in1(integrator), .in2(q_err_ext), .sum(q_loop));
+   round_sd #(.WIDTH_IN(int_width),.WIDTH_OUT(WIDTH)) round_sd
+     (.clk(clk), .reset(rst), .in(integrator), .out(quantized));
    
    add2_and_clip_reg #(.WIDTH(WIDTH)) add2_and_clip_reg
      (.clk(clk), .rst(rst), .in1(in), .in2(-quantized), .sum(out));

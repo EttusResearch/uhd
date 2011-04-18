@@ -102,8 +102,8 @@ module dsp_core_rx
 	      .rate(cic_decim_rate),.strobe_in(1'b1),.strobe_out(strobe_cic),
 	      .signal_in(q_cordic),.signal_out(q_cic));
 
-   round_reg #(.bits_in(24),.bits_out(18)) round_icic (.clk(clk),.in(i_cic),.out(i_cic_scaled));
-   round_reg #(.bits_in(24),.bits_out(18)) round_qcic (.clk(clk),.in(q_cic),.out(q_cic_scaled));
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_icic (.clk(clk),.in(i_cic),.out(i_cic_scaled));
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_qcic (.clk(clk),.in(q_cic),.out(q_cic_scaled));
    reg 	       strobe_cic_d1;
    always @(posedge clk) strobe_cic_d1 <= strobe_cic;
    
