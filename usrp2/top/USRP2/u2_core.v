@@ -283,7 +283,7 @@ module u2_core
       .sf_dat_o(sf_dat_o),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
       
-   //////////////////////////////////////////////////////////////////////////////////////////
+   // ////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
    system_control sysctrl (.wb_clk_i(wb_clk), // .por_i(por),
 			   .ram_loader_rst_o(ram_loader_rst),
@@ -586,7 +586,7 @@ module u2_core
    // ADC Frontend
    wire [17:0] 	 adc_i, adc_q;
    
-   rx_frontend #(.BASE()) rx_frontend
+   rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a({adc_a,2'b00}),.adc_ovf_a(adc_ovf_a),

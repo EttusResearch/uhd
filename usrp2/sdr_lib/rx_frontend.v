@@ -69,7 +69,7 @@ module rx_frontend
      (.clk(clk), .rst(rst), 
       .in1({adc_q_ofs,6'd0}), .in2({{4{corr_q[35]}},corr_q[35:16]}), .sum(q_final));
 
-   assign i_out = i_final[23:6];
-   assign q_out = q_final[23:6];
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_i (.clk(clk), .reset(rst), .in(i_final), .out(i_out));
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_q (.clk(clk), .reset(rst), .in(q_final), .out(q_out));
    
 endmodule // rx_frontend
