@@ -71,8 +71,10 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     const boost::uint32_t fpga_compat_num = _iface->peek32(_iface->regs.compat_num_rb);
     if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
-            "Expected fpga compatibility number %d, but got %d:\n"
-            "The fpga build is not compatible with the host code build."
+            "\nPlease update the firmware and FPGA images for your device.\n"
+            "See the application notes for USRP2/N-Series for instructions.\n"
+            "Expected FPGA compatibility number %d, but got %d:\n"
+            "The FPGA build is not compatible with the host code build."
         ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
     }
 

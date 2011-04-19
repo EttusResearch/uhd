@@ -242,11 +242,6 @@ public:
     ){
         boost::mutex::scoped_lock lock(_ctrl_mutex);
 
-        std::string range = (lo == hi)?
-            str(boost::format("%d") % hi) :
-            str(boost::format("[%d to %d]") % lo % hi)
-        ;
-
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
         out_copy.proto_ver = htonl(_protocol_compat);
@@ -261,9 +256,11 @@ public:
             boost::uint32_t compat = ntohl(ctrl_data_in->proto_ver);
             if(len >= sizeof(boost::uint32_t) and (hi < compat or lo > compat)){
                 throw uhd::runtime_error(str(boost::format(
+                    "\nPlease update the firmware and FPGA images for your device.\n"
+                    "See the application notes for USRP2/N-Series for instructions.\n"
                     "Expected protocol compatibility number %s, but got %d:\n"
                     "The firmware build is not compatible with the host code build."
-                ) % range % compat));
+                ) % ((lo == hi)? (boost::format("%d") % hi) : (boost::format("[%d to %d]") % lo % hi)) % compat));
             }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(ctrl_data_in->seq) == _ctrl_seq_num){
                 return *ctrl_data_in;
