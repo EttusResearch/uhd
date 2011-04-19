@@ -18,14 +18,13 @@
 #include "constants.hpp"
 #include <uhd/config.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
-namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 /***********************************************************************
@@ -44,22 +43,14 @@ namespace fs = boost::filesystem;
 /***********************************************************************
  * Get a list of paths for an environment variable
  **********************************************************************/
-static std::string name_mapper(const std::string &key, const std::string &var_name){
-    return (var_name == key)? var_name : "";
+static std::string get_env_var(const std::string &var_name, const std::string &def_val = ""){
+    const char *var_value_ptr = std::getenv(var_name.c_str());
+    return (var_value_ptr == NULL)? def_val : var_value_ptr;
 }
 
 static std::vector<fs::path> get_env_paths(const std::string &var_name){
-    //register the options
-    std::string var_value;
-    po::options_description desc;
-    desc.add_options()
-        (var_name.c_str(), po::value<std::string>(&var_value)->default_value(""))
-    ;
 
-    //parse environment variables
-    po::variables_map vm;
-    po::store(po::parse_environment(desc, boost::bind(&name_mapper, var_name, _1)), vm);
-    po::notify(vm);
+    std::string var_value = get_env_var(var_name);
 
     //convert to filesystem path, filter blank paths
     std::vector<fs::path> paths;
@@ -74,14 +65,18 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
 /***********************************************************************
  * Get a list of special purpose paths
  **********************************************************************/
+static fs::path get_uhd_pkg_data_path(void){
+    return fs::path(get_env_var("UHD_PKG_DATA_PATH", UHD_PKG_DATA_PATH));
+}
+
 std::vector<fs::path> get_image_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_IMAGE_PATH");
-    paths.push_back(fs::path(UHD_PKG_DATA_PATH) / "images");
+    paths.push_back(get_uhd_pkg_data_path() / "images");
     return paths;
 }
 
 std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
-    paths.push_back(fs::path(UHD_PKG_DATA_PATH) / "modules");
+    paths.push_back(get_uhd_pkg_data_path() / "modules");
     return paths;
 }

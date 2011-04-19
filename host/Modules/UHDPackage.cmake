@@ -144,5 +144,15 @@ SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, libusb1")
 ########################################################################
 SET(CPACK_NSIS_MODIFY_PATH ON)
 
+SET(HLKM_ENV "\\\"SYSTEM\\\\CurrentControlSet\\\\Control\\\\Session Manager\\\\Environment\\\"")
+
+SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+    WriteRegStr HKLM ${HLKM_ENV} \\\"UHD_PKG_DATA_PATH\\\" \\\"$INSTDIR\\\\share\\\\uhd\\\"
+")
+
+SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+    DeleteRegValue HKLM ${HLKM_ENV} \\\"UHD_PKG_DATA_PATH\\\"
+")
+
 ########################################################################
 INCLUDE(CPack) #include after setting vars
