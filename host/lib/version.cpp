@@ -15,13 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "constants.hpp"
 #include <uhd/version.hpp>
-
-std::string uhd::get_version_string(void){
-    return UHD_VERSION_STRING;
-}
-
 #include <uhd/utils/static.hpp>
 #include <boost/version.hpp>
 #include <iostream>
@@ -31,7 +25,7 @@ UHD_STATIC_BLOCK(print_system_info){
         << BOOST_PLATFORM << "; "
         << BOOST_COMPILER << "; "
         << "Boost_" << BOOST_VERSION << "; "
-        << "UHD_" << uhd::get_version_string()
+        << "UHD_" << UHD_VERSION_STRING
         << std::endl << std::endl
     ;
 }
