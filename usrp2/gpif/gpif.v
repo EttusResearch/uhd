@@ -103,7 +103,7 @@ module gpif
 
    packet_splitter #(.FRAME_LEN(256)) packet_splitter
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .frames_per_packet(),
+      .frames_per_packet(frames_per_packet),
       .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy),
       .data_o(splt_data), .src_rdy_o(splt_src_rdy), .dst_rdy_i(splt_dst_rdy));
      
