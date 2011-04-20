@@ -79,23 +79,18 @@ INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(utils)
 
 ########################################################################
-# Setup compiled-in constants for data directories
+# Setup UHD_VERSION_STRING for version.cpp
 ########################################################################
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} UHD_PKG_DATA_PATH)
-STRING(REPLACE "\\" "\\\\" UHD_PKG_DATA_PATH ${UHD_PKG_DATA_PATH})
-MESSAGE(STATUS "Full package data directory: ${UHD_PKG_DATA_PATH}")
-
-CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
-@ONLY)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+    PROPERTIES COMPILE_DEFINITIONS
+    "UHD_VERSION_STRING=\"${UHD_VERSION}-${UHD_BUILD_INFO}\""
+)
 
 ########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp

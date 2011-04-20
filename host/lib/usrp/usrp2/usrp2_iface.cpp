@@ -46,9 +46,20 @@ public:
 /***********************************************************************
  * Structors
  **********************************************************************/
-    usrp2_iface_impl(udp_simple::sptr ctrl_transport){
-        _ctrl_transport = ctrl_transport;
-        _ctrl_seq_num = 0;
+    usrp2_iface_impl(udp_simple::sptr ctrl_transport):
+        _ctrl_transport(ctrl_transport),
+        _ctrl_seq_num(0),
+        _protocol_compat(0) //initialized below...
+    {
+        //Obtain the firmware's compat number.
+        //Save the response compat number for communication.
+        //TODO can choose to reject certain older compat numbers
+        usrp2_ctrl_data_t ctrl_data;
+        ctrl_data.id = htonl(USRP2_CTRL_ID_WAZZUP_BRO);
+        ctrl_data = ctrl_send_and_recv(ctrl_data, 0, ~0);
+        if (ntohl(ctrl_data.id) != USRP2_CTRL_ID_WAZZUP_DUDE)
+            throw uhd::runtime_error("firmware not responding");
+        _protocol_compat = ntohl(ctrl_data.proto_ver);
 
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
         switch(this->get_rev()){
@@ -231,14 +242,9 @@ public:
     ){
         boost::mutex::scoped_lock lock(_ctrl_mutex);
 
-        std::string range = (lo == hi)?
-            str(boost::format("%d") % hi) :
-            str(boost::format("[%d to %d]") % lo % hi)
-        ;
-
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
-        out_copy.proto_ver = htonl(USRP2_FW_COMPAT_NUM);
+        out_copy.proto_ver = htonl(_protocol_compat);
         out_copy.seq = htonl(++_ctrl_seq_num);
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
@@ -248,11 +254,13 @@ public:
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CTRL_RECV_TIMEOUT);
             boost::uint32_t compat = ntohl(ctrl_data_in->proto_ver);
-            if(len >= sizeof(boost::uint32_t) and hi >= compat and lo <= compat){
+            if(len >= sizeof(boost::uint32_t) and (hi < compat or lo > compat)){
                 throw uhd::runtime_error(str(boost::format(
+                    "\nPlease update the firmware and FPGA images for your device.\n"
+                    "See the application notes for USRP2/N-Series for instructions.\n"
                     "Expected protocol compatibility number %s, but got %d:\n"
                     "The firmware build is not compatible with the host code build."
-                ) % range % compat));
+                ) % ((lo == hi)? (boost::format("%d") % hi) : (boost::format("[%d to %d]") % lo % hi)) % compat));
             }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(ctrl_data_in->seq) == _ctrl_seq_num){
                 return *ctrl_data_in;
@@ -292,6 +300,7 @@ private:
     //used in send/recv
     boost::mutex _ctrl_mutex;
     boost::uint32_t _ctrl_seq_num;
+    boost::uint32_t _protocol_compat;
 
 /***********************************************************************
  * Private Templated Peek and Poke
