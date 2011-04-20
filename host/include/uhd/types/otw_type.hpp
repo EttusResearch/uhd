@@ -49,10 +49,10 @@ namespace uhd{
          * Constants for byte order (borrowed from numpy's dtype)
          */
         enum /*bo_t*/ {
-            BO_NATIVE         = '=',
-            BO_LITTLE_ENDIAN  = '<',
-            BO_BIG_ENDIAN     = '>',
-            BO_NOT_APPLICABLE = '|'
+            BO_NATIVE         = int('='),
+            BO_LITTLE_ENDIAN  = int('<'),
+            BO_BIG_ENDIAN     = int('>'),
+            BO_NOT_APPLICABLE = int('|')
         } byteorder;
 
         /*!

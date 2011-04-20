@@ -51,11 +51,11 @@ namespace uhd{
         //! Policy options for tunable elements in the RF chain.
         enum policy_t {
             //! Do not set this argument, use current setting.
-            POLICY_NONE   = 'N',
+            POLICY_NONE   = int('N'),
             //! Automatically determine the argument's value.
-            POLICY_AUTO   = 'A',
+            POLICY_AUTO   = int('A'),
             //! Use the argument's value for the setting.
-            POLICY_MANUAL = 'M'
+            POLICY_MANUAL = int('M')
         };
 
         /*!

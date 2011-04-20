@@ -34,15 +34,15 @@ namespace uhd{
          */
         enum tid_t{
             //! Custom type (technically unsupported by implementation)
-            CUSTOM_TYPE =     '?',
+            CUSTOM_TYPE =     int('?'),
             //! Complex floating point (64-bit floats) range [-1.0, +1.0]
-            COMPLEX_FLOAT64 = 'd',
+            COMPLEX_FLOAT64 = int('d'),
             //! Complex floating point (32-bit floats) range [-1.0, +1.0]
-            COMPLEX_FLOAT32 = 'f',
+            COMPLEX_FLOAT32 = int('f'),
             //! Complex signed integer (16-bit integers) range [-32768, +32767]
-            COMPLEX_INT16 =   's',
+            COMPLEX_INT16 =   int('s'),
             //! Complex signed integer (8-bit integers) range [-128, 127]
-            COMPLEX_INT8 =    'b'
+            COMPLEX_INT8 =    int('b')
         };
 
         /*!

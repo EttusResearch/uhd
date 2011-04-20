@@ -62,30 +62,30 @@ public:
 
     //! tells the host which unit to use
     enum unit_t{
-        UNIT_RX = 'r',
-        UNIT_TX = 't'
+        UNIT_RX = int('r'),
+        UNIT_TX = int('t')
     };
 
     //! possible atr registers
     enum atr_reg_t{
-        ATR_REG_IDLE        = 'i',
-        ATR_REG_TX_ONLY     = 't',
-        ATR_REG_RX_ONLY     = 'r',
-        ATR_REG_FULL_DUPLEX = 'f'
+        ATR_REG_IDLE        = int('i'),
+        ATR_REG_TX_ONLY     = int('t'),
+        ATR_REG_RX_ONLY     = int('r'),
+        ATR_REG_FULL_DUPLEX = int('f')
     };
 
     //! aux dac selection enums (per unit)
     enum aux_dac_t{
-        AUX_DAC_A = 'a',
-        AUX_DAC_B = 'b',
-        AUX_DAC_C = 'c',
-        AUX_DAC_D = 'd'
+        AUX_DAC_A = int('a'),
+        AUX_DAC_B = int('b'),
+        AUX_DAC_C = int('c'),
+        AUX_DAC_D = int('d')
     };
 
     //! aux adc selection enums (per unit)
     enum aux_adc_t{
-        AUX_ADC_A = 'a',
-        AUX_ADC_B = 'b'
+        AUX_ADC_A = int('a'),
+        AUX_ADC_B = int('b')
     };
 
     /*!
