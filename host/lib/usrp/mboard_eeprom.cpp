@@ -23,6 +23,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <algorithm>
+#include <iostream>
 #include <cstddef>
 
 using namespace uhd;
@@ -251,8 +252,8 @@ struct e100_eeprom_map{
     unsigned char env_var[16];
     unsigned char env_setting[64];
     unsigned char serial[10];
-    unsigned char name[NAME_MAX_LEN];
-    float mcr;
+    unsigned char name[16];
+    unsigned char mcr[sizeof(float)];
 };
 
 template <typename T> static const byte_vector_t to_bytes(const T &item){
