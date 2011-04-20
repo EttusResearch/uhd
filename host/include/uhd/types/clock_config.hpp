@@ -41,17 +41,17 @@ namespace uhd{
 
         //------ advanced usage --------//
         enum ref_source_t {
-            REF_AUTO = 'a', //automatic (device specific)
-            REF_INT  = 'i', //internal reference
-            REF_SMA  = 's', //external sma port
+            REF_AUTO = int('a'), //automatic (device specific)
+            REF_INT  = int('i'), //internal reference
+            REF_SMA  = int('s'), //external sma port
         } ref_source;
         enum pps_source_t {
-            PPS_INT  = 'i', //there is no internal
-            PPS_SMA  = 's', //external sma port
+            PPS_INT  = int('i'), //there is no internal
+            PPS_SMA  = int('s'), //external sma port
         } pps_source;
         enum pps_polarity_t {
-            PPS_NEG = 'n', //negative edge
-            PPS_POS = 'p'  //positive edge
+            PPS_NEG = int('n'), //negative edge
+            PPS_POS = int('p')  //positive edge
         } pps_polarity;
         clock_config_t(void);
     };
