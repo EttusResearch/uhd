@@ -86,7 +86,11 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         }
         //std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
-        usrp_ctrl::make(usb_control::make(handle))->usrp_load_firmware(usrp1_fw_image);
+        usb_control::sptr control;
+        try{control = usb_control::make(handle);}
+        catch(const uhd::exception &){continue;} //ignore claimed
+
+        usrp_ctrl::make(control)->usrp_load_firmware(usrp1_fw_image);
     }
 
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
@@ -94,7 +98,11 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     pid = USRP1_PRODUCT_ID;
 
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
-        usrp1_iface::sptr iface = usrp1_iface::make(usrp_ctrl::make(usb_control::make(handle)));
+        usb_control::sptr control;
+        try{control = usb_control::make(handle);}
+        catch(const uhd::exception &){continue;} //ignore claimed
+
+        usrp1_iface::sptr iface = usrp1_iface::make(usrp_ctrl::make(control));
         device_addr_t new_addr;
         new_addr["type"] = "usrp1";
         new_addr["name"] = iface->mb_eeprom["name"];

@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,16 +90,22 @@ ifdef HAS_ZPU_GCC
 
 _usrp2_fw_dir = $(TOP_FW_DIR)/zpu
 _usrp2_fw_bin = $(BUILT_IMAGES_DIR)/usrp2_fw.bin
-_usrp_n2xx_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n2xx_fw.bin
-IMAGES_LIST += $(_usrp2_fw_bin)
+_usrp_n200_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n200_fw.bin
+_usrp_n210_fw_bin = $(BUILT_IMAGES_DIR)/usrp_n210_fw.bin
+IMAGES_LIST += $(_usrp2_fw_bin) $(_usrp_n200_fw_bin) $(_usrp_n210_fw_bin)
 
-$(_usrp2_fw_bin) $(_usrp_n2xx_fw_bin): $(GLOBAL_DEPS)
+$(_usrp2_fw_bin): $(GLOBAL_DEPS)
 	cd $(_usrp2_fw_dir) && rm -rf build
 	cd $(_usrp2_fw_dir) && mkdir build
 	cd $(_usrp2_fw_dir)/build && cmake ../
 	cd $(_usrp2_fw_dir)/build && make
-	cp $(_usrp2_fw_dir)/build/usrp2/usrp2_txrx_uhd.bin $(_usrp2_fw_bin)
-	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $(_usrp_n2xx_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2/usrp2_txrx_uhd.bin $@
+
+$(_usrp_n200_fw_bin): $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $@
+
+$(_usrp_n210_fw_bin): $(_usrp2_fw_bin)
+	cp $(_usrp2_fw_dir)/build/usrp2p/usrp2p_txrx_uhd.bin $@
 
 endif
 
@@ -116,6 +122,22 @@ $(_usrp2_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp2_fpga_dir) && make clean
 	cd $(_usrp2_fpga_dir) && make bin
 	cp $(_usrp2_fpga_dir)/build/u2_rev3.bin $@
+
+endif
+
+########################################################################
+# USRP-N200 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_n200_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
+_usrp_n200_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_fpga.bin
+IMAGES_LIST += $(_usrp_n200_fpga_bin)
+
+$(_usrp_n200_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_n200_fpga_dir) && make -f Makefile.N200 clean
+	cd $(_usrp_n200_fpga_dir) && make -f Makefile.N200 bin
+	cp $(_usrp_n200_fpga_dir)/build-N200/u2plus.bin $@
 
 endif
 
@@ -176,19 +198,3 @@ images: $(IMAGES_LIST)
 clean:
 	$(RM) -rf $(BUILT_IMAGES_DIR)
 	$(RM) -rf $(CMAKE_BUILD_DIR)
-
-#packages that a linux machine can build
-linux-packages:
-	mkdir -p $(CMAKE_BUILD_DIR)
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=TGZ $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=ZIP $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=DEB $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package
-
-	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=RPM $(TOP_DIR)
-	make -C $(CMAKE_BUILD_DIR) package

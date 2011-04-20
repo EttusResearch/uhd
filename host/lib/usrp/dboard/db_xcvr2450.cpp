@@ -152,12 +152,21 @@ private:
      * \return the rssi in dB
      */
     double get_rssi(void){
+        //*FIXME* RSSI depends on LNA Gain Setting (datasheet pg 16 top middle chart)
+        double max_power;
+        switch(_max2829_regs.rx_lna_gain){
+        case 0:
+        case 1: max_power = 0;    break;
+        case 2: max_power = -15;   break;
+        case 3: max_power = -30.5; break;
+        }
+
         //constants for the rssi calculation
         static const double min_v = 0.5, max_v = 2.5;
         static const double rssi_dyn_range = 60;
         //calculate the rssi from the voltage
         double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
-        return rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+        return max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
     }
 };
 
@@ -621,7 +630,7 @@ void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
         if (key.name == "lo_locked")
             val = sensor_value_t("LO", this->get_locked(), "locked", "unlocked");
         else if (key.name == "rssi")
-            val = sensor_value_t("RSSI", this->get_rssi(), "dB");
+            val = sensor_value_t("RSSI", this->get_rssi(), "dBm");
         else
             UHD_THROW_INVALID_CODE_PATH();
         return;

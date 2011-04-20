@@ -25,11 +25,11 @@ Use the card burner tool (unix)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    sudo <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
+    sudo <install-path>/share/uhd/utils/usrp2_card_burner_gui.py
 
     -- OR --
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fpga=<path_to_fpga_image>
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fw=<path_to_firmware_image>
 
@@ -42,7 +42,7 @@ Use the card burner tool (windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <path_to_python.exe> <prefix>/share/uhd/utils/usrp2_card_burner_gui.py
+    <path_to_python.exe> <install-path>/share/uhd/utils/usrp2_card_burner_gui.py
 
 
 ------------------------------------------------------------------------
@@ -58,17 +58,20 @@ Use the net burner tool (unix)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    cd <prefix>/share/uhd/utils
-    ./usrp_n2xx_net_burner.py --ip=<ip address> --fw=<path for firmware image>
-    ./usrp_n2xx_net_burner.py --ip=<ip address> --fpga=<path to FPGA image>
+    sudo <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
+
+    -- OR --
+
+    cd <install-path>/share/uhd/utils
+    ./usrp_n2xx_net_burner.py --addr=<ip address> --fw=<path for firmware image>
+    ./usrp_n2xx_net_burner.py --addr=<ip address> --fpga=<path to FPGA image>
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the net burner tool (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner.py --ip=<ip address> --fw=<path for firmware image>
-    <path_to_python.exe> <prefix>/share/uhd/utils/usrp_n2xx_net_burner.py --ip=<ip address> --fpga=<path to FPGA image>
+    <path_to_python.exe> <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device recovery and bricking
@@ -142,7 +145,7 @@ and the network must be setup properly as described above.
 Run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=ip-addr --val=192.168.10.3
 
 **Method 2 (Linux Only):**
@@ -151,7 +154,7 @@ It uses raw ethernet packets to bypass the IP/UDP layer to communicate with the 
 Run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     sudo ./usrp2_recovery.py --ifc=eth0 --new-ip=192.168.10.3
 
 ------------------------------------------------------------------------
@@ -340,5 +343,5 @@ Test the PPS input with the following app:
 
 ::
 
-    cd <prefix>/share/uhd/examples
+    cd <install-path>/share/uhd/examples
     ./test_pps_input --args=<args>

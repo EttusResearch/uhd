@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,6 +77,18 @@ public:
      * \throw exception when rate cannot be achieved
      */
     virtual void set_tx_dboard_clock_rate(double rate) = 0;
+
+    /*!
+     * Get the current rx dboard clock rate.
+     * \return the clock rate in Hz
+     */
+    virtual double get_rx_clock_rate(void) = 0;
+
+    /*!
+     * Get the current tx dboard clock rate.
+     * \return the clock rate in Hz
+     */
+    virtual double get_tx_clock_rate(void) = 0;
 
     /*!
      * Enable/disable the rx dboard clock.

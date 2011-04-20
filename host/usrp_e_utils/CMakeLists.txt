@@ -18,11 +18,7 @@
 ########################################################################
 # USRP embedded utilities that get installed into the share path
 ########################################################################
-IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    SET(LINUX_TARGET TRUE)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
-LIBUHD_REGISTER_COMPONENT("USRP-E Utils" ENABLE_USRP_E_UTILS OFF "LINUX_TARGET" OFF)
+LIBUHD_REGISTER_COMPONENT("USRP-E Utils" ENABLE_USRP_E_UTILS OFF "LINUX" OFF)
 
 IF(ENABLE_USRP_E_UTILS)
     ENABLE_LANGUAGE(C)
@@ -37,6 +33,7 @@ IF(ENABLE_USRP_E_UTILS)
         usrp-e-timed.c
         usrp-e-wb-test.cpp
         usrp-e-debug-pins.c
+        usrp-e-gpio.c
         usrp-e-i2c.c
         usrp-e-spi.c
     )

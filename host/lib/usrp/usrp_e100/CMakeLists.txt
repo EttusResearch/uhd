@@ -22,11 +22,7 @@
 ########################################################################
 # Conditionally configure the USRP-E100 support
 ########################################################################
-IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    SET(LINUX_TARGET TRUE)
-ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
-LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 OFF "ENABLE_LIBUHD;LINUX_TARGET" OFF)
+LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 OFF "ENABLE_LIBUHD;LINUX" OFF)
 
 IF(ENABLE_USRP_E100)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)

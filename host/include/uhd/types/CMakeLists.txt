@@ -34,4 +34,5 @@ INSTALL(FILES
     tune_request.hpp
     tune_result.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
+    COMPONENT headers
 )

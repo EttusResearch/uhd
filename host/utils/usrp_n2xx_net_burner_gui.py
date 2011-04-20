@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import usrp2_card_burner #import implementation
+import usrp_n2xx_net_burner #import implementation
 try:
     import tkinter, tkinter.filedialog, tkinter.font, tkinter.messagebox
 except ImportError:
@@ -58,44 +58,31 @@ class BinFileEntry(tkinter.Frame):
     def get_filename(self):
         return self._entry.get()
 
-class DeviceEntryWidget(tkinter.Frame):
+class ProgressBar(tkinter.Canvas):
     """
-    Simple entry widget for getting the raw device name.
-    Combines a label, entry, and helpful text box with hints.
+    A simple implementation of a progress bar.
+    Draws rectangle that fills from left to right.
     """
 
-    def __init__(self, root, text=''):
-        tkinter.Frame.__init__(self, root)
+    def __init__(self, root, width=500, height=20):
+        self._width = width
+        self._height = height
+        tkinter.Canvas.__init__(self, root, relief="sunken", borderwidth=2, width=self._width-2, height=self._height-2)
+        self._last_fill_pixels = None
+        self.set(0.0)
 
-        tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
+    def set(self, frac):
+        """
+        Update the progress where fraction is between 0.0 and 1.0
+        """
+        #determine the number of pixels to draw
+        fill_pixels = int(round(self._width*frac))
+        if fill_pixels == self._last_fill_pixels: return
+        self._last_fill_pixels = fill_pixels
 
-        self._hints = tkinter.Listbox(self)
-        self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
-        self._reload_cb()
-        self._hints.pack(expand=tkinter.YES, fill=tkinter.X)
-
-        frame = tkinter.Frame(self)
-        frame.pack()
-
-        tkinter.Label(frame, text="Raw Device:").pack(side=tkinter.LEFT)
-        self._entry = tkinter.Entry(frame, width=50)
-        self._entry.insert(tkinter.END, text)
-        self._entry.pack(side=tkinter.LEFT)
-
-    def _reload_cb(self):
-        self._hints.delete(0, tkinter.END)
-        for hint in usrp2_card_burner.get_raw_device_hints():
-            self._hints.insert(tkinter.END, hint)
-
-    def _listbox_cb(self, event):
-        try:
-            sel = self._hints.get(self._hints.curselection()[0])
-            self._entry.delete(0, tkinter.END)
-            self._entry.insert(0, sel)
-        except Exception as e: print(e)
-
-    def get_devname(self):
-        return self._entry.get()
+        #draw a rectangle representing the progress
+        if frac: self.create_rectangle(0, 0, fill_pixels, self._height, fill="#357EC7")
+        else:    self.create_rectangle(0, 0, self._width, self._height, fill="#E8E8E8")
 
 class SectionLabel(tkinter.Label):
     """
@@ -110,13 +97,13 @@ class SectionLabel(tkinter.Label):
         f['weight'] = 'bold'
         self['font'] = f.name
 
-class USRP2CardBurnerApp(tkinter.Frame):
+class USRPN2XXNetBurnerApp(tkinter.Frame):
     """
-    The top level gui application for the usrp2 sd card burner.
+    The top level gui application for the usrp-n2xx network burner.
     Creates entry widgets and button with callback to write images.
     """
 
-    def __init__(self, root, dev, fw, fpga):
+    def __init__(self, root, addr, fw, fpga):
 
         tkinter.Frame.__init__(self, root)
 
@@ -128,24 +115,37 @@ class USRP2CardBurnerApp(tkinter.Frame):
         self._fpga_img_entry.pack()
 
         #pack the destination entry widget
-        SectionLabel(self, text="Select Device").pack(pady=5)
-        self._raw_dev_entry = DeviceEntryWidget(self, text=dev)
-        self._raw_dev_entry.pack()
+        SectionLabel(self, text="Select Address").pack(pady=5)
+        self._addr_entry = tkinter.Entry(self, width=30)
+        self._addr_entry.insert(tkinter.END, addr)
+        self._addr_entry.pack()
 
         #the do it button
         SectionLabel(self, text="").pack(pady=5)
-        tkinter.Label(self, text="Warning! This tool can overwrite your hard drive. Use with caution.").pack()
-        tkinter.Button(self, text="Burn SD Card", command=self._burn).pack()
+        button = tkinter.Button(self, text="Burn Images", command=self._burn)
+        self._enable_input = lambda: button.configure(state=tkinter.NORMAL)
+        self._disable_input = lambda: button.configure(state=tkinter.DISABLED)
+        button.pack()
+
+        #a progress bar to monitor the status
+        progress_frame = tkinter.Frame(self)
+        progress_frame.pack()
+        self._status = tkinter.StringVar()
+        tkinter.Label(progress_frame, textvariable=self._status).pack(side=tkinter.LEFT)
+        self._pbar = ProgressBar(progress_frame)
+        self._pbar.pack(side=tkinter.RIGHT, expand=True)
 
     def _burn(self):
+        self._disable_input()
+
         #grab strings from the gui
         fw = self._fw_img_entry.get_filename()
         fpga = self._fpga_img_entry.get_filename()
-        dev = self._raw_dev_entry.get_devname()
+        addr = self._addr_entry.get()
 
         #check input
-        if not dev:
-            tkinter.messagebox.showerror('Error:', 'No device specified!')
+        if not addr:
+            tkinter.messagebox.showerror('Error:', 'No address specified!')
             return
         if not fw and not fpga:
             tkinter.messagebox.showerror('Error:', 'No images specified!')
@@ -157,20 +157,40 @@ class USRP2CardBurnerApp(tkinter.Frame):
             tkinter.messagebox.showerror('Error:', 'FPGA image not found!')
             return
 
-        #burn the sd card
         try:
-            verbose = usrp2_card_burner.burn_sd_card(dev=dev, fw=fw, fpga=fpga)
-            tkinter.messagebox.showinfo('Verbose:', verbose)
+            #make a new burner object and attempt the burner operation
+            burner = usrp_n2xx_net_burner.burner_socket(addr=addr)
+
+            for (image_type, fw_img, fpga_img) in (('FPGA', '', fpga), ('Firmware', fw, '')):
+                #setup callbacks that update the gui
+                def status_cb(status):
+                    self._pbar.set(0.0) #status change, reset the progress
+                    self._status.set("%s %s "%(status.title(), image_type))
+                    self.update()
+                def progress_cb(progress):
+                    self._pbar.set(progress)
+                    self.update()
+                burner.set_callbacks(progress_cb=progress_cb, status_cb=status_cb)
+                burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False)
+
+            if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
+                burner.reset_usrp()
+
         except Exception as e:
             tkinter.messagebox.showerror('Verbose:', 'Error: %s'%str(e))
+
+        #reset the progress bar
+        self._pbar.set(0.0)
+        self._status.set("")
+        self._enable_input()
 
 ########################################################################
 # main
 ########################################################################
 if __name__=='__main__':
-    options = usrp2_card_burner.get_options()
+    options = usrp_n2xx_net_burner.get_options()
     root = tkinter.Tk()
-    root.title('USRP2 SD Card Burner')
-    USRP2CardBurnerApp(root, dev=options.dev, fw=options.fw, fpga=options.fpga).pack()
+    root.title('USRP-N2XX Net Burner')
+    USRPN2XXNetBurnerApp(root, addr=options.addr, fw=options.fw, fpga=options.fpga).pack()
     root.mainloop()
     exit()

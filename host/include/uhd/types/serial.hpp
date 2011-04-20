@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ namespace uhd{
         virtual boost::uint32_t read_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint16_t data,
+            boost::uint32_t data,
             size_t num_bits
         );
         
@@ -165,7 +165,7 @@ namespace uhd{
         virtual void write_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint16_t data,
+            boost::uint32_t data,
             size_t num_bits
         );
     };

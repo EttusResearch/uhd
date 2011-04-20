@@ -30,7 +30,7 @@
 #ifndef INCLUDED_USRP_E100_IMPL_HPP
 #define INCLUDED_USRP_E100_IMPL_HPP
 
-static const boost::uint16_t USRP_E_COMPAT_NUM = 0x03;
+static const boost::uint16_t USRP_E_FPGA_COMPAT_NUM = 0x03;
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void usrp_e100_load_fpga(const std::string &bin_file);

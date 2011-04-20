@@ -17,46 +17,44 @@
 
 ########################################################################
 INCLUDE(UHDPython) #requires python for parsing
+FIND_PACKAGE(Git QUIET)
 
 ########################################################################
 # Setup Version Numbers
+#  - increment major on api compatibility changes
+#  - increment minor on feature-level changes
+#  - increment patch on for bug fixes and docs
 ########################################################################
-SET(UHD_VERSION_MAJOR 003)  #API compatibility number
-SET(UHD_VERSION_MINOR 0)    #Timestamp of git commit
-SET(UHD_VERSION_PATCH 0)    #Short hash of git commit
+SET(UHD_VERSION_MAJOR 003)
+SET(UHD_VERSION_MINOR 000)
+SET(UHD_VERSION_PATCH 001)
 
 ########################################################################
-# Find GIT to get repo information
+# Version information discovery through git log
 ########################################################################
-FIND_PACKAGE(Git QUIET)
-IF(GIT_FOUND)
+IF(UHD_RELEASE_MODE)
+    SET(UHD_BUILD_INFO_DISCOVERY FALSE)
+    SET(UHD_BUILD_INFO "release")
+ELSE()
+    SET(UHD_BUILD_INFO_DISCOVERY GIT_FOUND)
+    SET(UHD_BUILD_INFO "unknown")
+ENDIF()
 
-    #grab the git log entry for the current head
-    EXECUTE_PROCESS(
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT_EXECUTABLE} log HEAD~..HEAD --date=raw -n1
-        OUTPUT_VARIABLE _git_log OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    #extract the timestamp from the git log entry
-    EXECUTE_PROCESS(
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "import re; print re.match('^.*Date:\\s*(\\d*).*$', ''' ${_git_log} ''', re.MULTILINE | re.DOTALL).groups()[0]"
-        OUTPUT_VARIABLE _git_timestamp OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    #format the timestamp into YYYY-MM-DD-HH-MM-SS
-    EXECUTE_PROCESS(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import time; print time.strftime('%Y%m%d%H%M%S', time.gmtime(${_git_timestamp}))"
-        OUTPUT_VARIABLE _git_date OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    SET(UHD_VERSION_MINOR ${_git_date})
+IF(UHD_BUILD_INFO_DISCOVERY)
 
     #grab the git ref id for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
         OUTPUT_VARIABLE _git_rev OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _git_rev_result
     )
-    SET(UHD_VERSION_PATCH ${_git_rev})
-ENDIF(GIT_FOUND)
+
+    #only set the build info on success
+    IF(_git_rev_result EQUAL 0)
+        SET(UHD_BUILD_INFO ${_git_rev})
+    ENDIF()
+ENDIF(UHD_BUILD_INFO_DISCOVERY)
+
+########################################################################
+SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}")

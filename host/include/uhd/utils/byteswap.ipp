@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 /***********************************************************************
  * Platform-specific implementation details for byteswap below:
  **********************************************************************/
-#if defined(UHD_PLATFORM_WIN32) //http://msdn.microsoft.com/en-us/library/a3140177%28VS.80%29.aspx
-    #include <stdlib.h>
+#if defined(BOOST_MSVC) //http://msdn.microsoft.com/en-us/library/a3140177%28VS.80%29.aspx
+    #include <cstdlib>
 
     UHD_INLINE boost::uint16_t uhd::byteswap(boost::uint16_t x){
         return _byteswap_ushort(x);

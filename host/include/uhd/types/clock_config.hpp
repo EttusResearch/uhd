@@ -26,10 +26,17 @@ namespace uhd{
      * Clock configuration settings:
      * The source for the 10MHz reference clock.
      * The source and polarity for the PPS clock.
+     *
+     * Use the convenience functions external() and internal(),
+     * unless you have a special purpose and cannot use them.
      */
     struct UHD_API clock_config_t{
         //------ simple usage --------//
+
+        //! A convenience function to create an external clock configuration
         static clock_config_t external(void);
+
+        //! A convenience function to create an internal clock configuration
         static clock_config_t internal(void);
 
         //------ advanced usage --------//

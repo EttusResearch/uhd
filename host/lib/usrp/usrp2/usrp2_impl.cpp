@@ -171,6 +171,15 @@ static mtu_result_t determine_mtu(const std::string &addr){
     usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(buffer);
     static const double echo_timeout = 0.020; //20 ms
 
+    //test holler - check if its supported in this fw version
+    ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
+    ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
+    ctrl_data->data.echo_args.len = htonl(sizeof(usrp2_ctrl_data_t));
+    udp_sock->send(boost::asio::buffer(buffer, sizeof(usrp2_ctrl_data_t)));
+    udp_sock->recv(boost::asio::buffer(buffer), echo_timeout);
+    if (ntohl(ctrl_data->id) != USRP2_CTRL_ID_HOLLER_BACK_DUDE)
+        throw uhd::not_implemented_error("holler protocol not implemented");
+
     size_t min_recv_mtu = sizeof(usrp2_ctrl_data_t), max_recv_mtu = sizeof(buffer);
     size_t min_send_mtu = sizeof(usrp2_ctrl_data_t), max_send_mtu = sizeof(buffer);
 
@@ -233,22 +242,30 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
     device_addrs_t device_args = separate_device_addr(device_addr);
 
-    //calculate the minimum send and recv mtu of all devices
-    mtu_result_t mtu = determine_mtu(device_args[0]["addr"]);
-    for (size_t i = 1; i < device_args.size(); i++){
-        mtu_result_t mtu_i = determine_mtu(device_args[i]["addr"]);
-        mtu.recv_mtu = std::min(mtu.recv_mtu, mtu_i.recv_mtu);
-        mtu.send_mtu = std::min(mtu.send_mtu, mtu_i.send_mtu);
+    try{
+        //calculate the minimum send and recv mtu of all devices
+        mtu_result_t mtu = determine_mtu(device_args[0]["addr"]);
+        for (size_t i = 1; i < device_args.size(); i++){
+            mtu_result_t mtu_i = determine_mtu(device_args[i]["addr"]);
+            mtu.recv_mtu = std::min(mtu.recv_mtu, mtu_i.recv_mtu);
+            mtu.send_mtu = std::min(mtu.send_mtu, mtu_i.send_mtu);
+        }
+
+        //use the discovered mtu or clip the users requested mtu
+        mtu.recv_mtu = std::min(size_t(device_addr.cast<double>("recv_frame_size", 9000)), mtu.recv_mtu);
+        mtu.send_mtu = std::min(size_t(device_addr.cast<double>("send_frame_size", 9000)), mtu.send_mtu);
+
+        device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
+        device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
+
+        std::cout << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu << std::endl;
+        std::cout << boost::format("Current send frame size: %d bytes") % mtu.send_mtu << std::endl;
+    }
+    catch(const uhd::not_implemented_error &){
+        //just ignore this error, makes older fw work...
     }
 
-    std::cout << "mtu recv bytes " << mtu.recv_mtu << std::endl;
-    std::cout << "mtu send bytes " << mtu.send_mtu << std::endl;
-
-    //use the discovered mtu if not specified by the user
-    if (not device_addr.has_key("recv_frame_size"))
-        device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
-    if (not device_addr.has_key("send_frame_size"))
-        device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
+    device_args = separate_device_addr(device_addr); //update args for new frame sizes
 
     //setup rx otw type
     _rx_otw_type.width = 16;

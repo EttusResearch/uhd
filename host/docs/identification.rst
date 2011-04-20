@@ -107,7 +107,7 @@ Set a custom name
 Run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=name --val=lab1_xcvr
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

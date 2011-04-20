@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,11 +30,11 @@ std::vector<fs::path> get_image_paths(void); //defined in paths.cpp
  **********************************************************************/
 std::string uhd::find_image_path(const std::string &image_name){
     if (fs::exists(image_name)){
-        return fs::system_complete(image_name).file_string();
+        return fs::system_complete(image_name).string();
     }
     BOOST_FOREACH(const fs::path &path, get_image_paths()){
         fs::path image_path = path / image_name;
-        if (fs::exists(image_path)) return image_path.file_string();
+        if (fs::exists(image_path)) return image_path.string();
     }
     throw uhd::io_error("Could not find path for image: " + image_name);
 }

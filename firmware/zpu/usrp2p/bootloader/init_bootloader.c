@@ -42,15 +42,16 @@ void load_ihex(void) { //simple IHEX parser to load proper records into RAM. loa
 		gets(buf);
 
 		if(!ihex_parse(buf, &ihex_record)) { //RAM data record is valid
-			if(ihex_record.addr >= RAM_BASE) { //it's expecting to see FULLY RELOCATED IHX RECORDS. every address referenced to 0x8000, including vectors.
-				memcpy((void *) (ihex_record.addr), ihex_record.data, ihex_record.length);
-				puts("OK");
-			} else if(ihex_record.type == 1) { //end of record
+			if(ihex_record.type == 1) { //end of record
 				puts("OK");
 				//load main firmware
 				start_program();
 				puts("ERROR: main image returned! Back in IHEX load mode.");
-			} else puts("NOK"); //RAM loads do not support extended segment address records (04) -- upper 16 bits are always "0".
+			} else {
+				const uint8_t *destination = (uint8_t *)ihex_record.addr + RAM_BASE;
+				memcpy((void *) destination, ihex_record.data, ihex_record.length);
+				puts("OK");
+			}
 		} else puts("NOK");
 	}
 }

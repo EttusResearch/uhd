@@ -64,14 +64,14 @@ IF(ENABLE_MANUAL)
 
         #make the manual target depend on the html file
         LIST(APPEND manual_html_files ${htmlfile})
-        INSTALL(FILES ${htmlfile} DESTINATION ${PKG_DOC_DIR}/manual/html)
+        INSTALL(FILES ${htmlfile} DESTINATION ${PKG_DOC_DIR}/manual/html COMPONENT manual)
     ENDFOREACH(rstfile ${manual_sources})
 
     #make the html manual a build-time dependency
     ADD_CUSTOM_TARGET(manual_html ALL DEPENDS ${manual_html_files})
 ENDIF(ENABLE_MANUAL)
 
-INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst)
+INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst COMPONENT manual)
 
 ########################################################################
 # Setup Doxygen
@@ -99,5 +99,5 @@ IF(ENABLE_DOXYGEN)
 
     #make the doxygen generation a built-time dependency
     ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
-    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR})
+    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT doxygen)
 ENDIF(ENABLE_DOXYGEN)

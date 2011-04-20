@@ -19,6 +19,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/any.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/barrier.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
@@ -43,10 +44,11 @@ public:
         _stream_on_off(stream_on_off)
     {
         //synchronously spawn a new thread
-        _update_mutex.lock(); //lock mutex before spawned
-        _thread_group.create_thread(boost::bind(&soft_time_ctrl_impl::recv_cmd_dispatcher, this));
-        _update_mutex.lock(); //lock blocks until spawned
-        _update_mutex.unlock(); //unlock mutex before done
+        boost::barrier spawn_barrier(2);
+        _thread_group.create_thread(boost::bind(
+            &soft_time_ctrl_impl::recv_cmd_dispatcher, this, boost::ref(spawn_barrier))
+        );
+        spawn_barrier.wait();
 
         //initialize the time to something
         this->set_time(time_spec_t(0.0));
@@ -175,8 +177,8 @@ public:
         _stream_mode = cmd.stream_mode;
     }
 
-    void recv_cmd_dispatcher(void){
-        _update_mutex.unlock();
+    void recv_cmd_dispatcher(boost::barrier &spawn_barrier){
+        spawn_barrier.wait();
         try{
             boost::any cmd;
             while (true){

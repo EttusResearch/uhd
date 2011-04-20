@@ -72,7 +72,7 @@ static void load_module(const std::string &file_name){
  */
 static void load_module_path(const fs::path &path){
     if (not fs::exists(path)){
-        //std::cerr << boost::format("Module path \"%s\" not found.") % path.file_string() << std::endl;
+        //std::cerr << boost::format("Module path \"%s\" not found.") % path.string() << std::endl;
         return;
     }
 
@@ -90,7 +90,7 @@ static void load_module_path(const fs::path &path){
 
     //its not a directory, try to load it
     try{
-        load_module(path.file_string());
+        load_module(path.string());
     }
     catch(const std::exception &err){
         std::cerr << boost::format("Error: %s") % err.what() << std::endl;

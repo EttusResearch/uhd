@@ -25,7 +25,8 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/barrier.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -209,11 +210,10 @@ struct usrp2_impl::io_impl{
     vrt_packet_handler::send_state packet_handler_send_state;
 
     //methods and variables for the pirate crew
-    void recv_pirate_loop(usrp2_mboard_impl::sptr, zero_copy_if::sptr, size_t);
+    void recv_pirate_loop(boost::barrier &, usrp2_mboard_impl::sptr, zero_copy_if::sptr, size_t);
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
     bounded_buffer<async_metadata_t> async_msg_fifo;
-    boost::mutex spawn_mutex;
 };
 
 /***********************************************************************
@@ -223,12 +223,14 @@ struct usrp2_impl::io_impl{
  * - put async message packets into queue
  **********************************************************************/
 void usrp2_impl::io_impl::recv_pirate_loop(
-    usrp2_mboard_impl::sptr mboard, zero_copy_if::sptr err_xport, size_t index
+    boost::barrier &spawn_barrier,
+    usrp2_mboard_impl::sptr mboard,
+    zero_copy_if::sptr err_xport,
+    size_t index
 ){
+    spawn_barrier.wait();
     set_thread_priority_safe();
     recv_pirate_crew_raiding = true;
-
-    spawn_mutex.unlock();
 
     //store a reference to the flow control monitor (offset by max dsps)
     flow_control_monitor &fc_mon = *(this->fc_mons[index*usrp2_mboard_impl::MAX_NUM_DSPS]);
@@ -286,19 +288,16 @@ void usrp2_impl::io_init(void){
     _io_impl = UHD_PIMPL_MAKE(io_impl, (dsp_xports));
 
     //create a new pirate thread for each zc if (yarr!!)
+    boost::barrier spawn_barrier(_mboards.size()+1);
     for (size_t i = 0; i < _mboards.size(); i++){
-        //lock the unlocked mutex (non-blocking)
-        _io_impl->spawn_mutex.lock();
         //spawn a new pirate to plunder the recv booty
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop,
-            _io_impl.get(), _mboards.at(i), err_xports.at(i), i
+            _io_impl.get(), boost::ref(spawn_barrier),
+            _mboards.at(i), err_xports.at(i), i
         ));
-        //block here until the spawned thread unlocks
-        _io_impl->spawn_mutex.lock();
-        //exit loop iteration in an unlocked condition
-        _io_impl->spawn_mutex.unlock();
     }
+    spawn_barrier.wait();
 
     //update mapping here since it didnt b4 when io init not called first
     update_xport_channel_mapping();

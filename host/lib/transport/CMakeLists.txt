@@ -79,6 +79,12 @@ SET_SOURCE_FILES_PROPERTIES(
     PROPERTIES COMPILE_DEFINITIONS "${IF_ADDRS_DEFS}"
 )
 
+#On windows, the boost asio implementation uses the winsock2 library.
+#Note: we exclude the .lib extension for cygwin and mingw platforms.
+IF(WIN32)
+    LIBUHD_APPEND_LIBS(ws2_32)
+ENDIF()
+
 ########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################

@@ -36,11 +36,6 @@ void usrp_e100_impl::mboard_init(void){
         boost::bind(&usrp_e100_impl::mboard_set, this, _1, _2)
     );
 
-    //set the ticks per seconds into the vita time control
-    _iface->poke32(UE_REG_TIME64_TPS,
-        boost::uint32_t(_clock_ctrl->get_fpga_clock_rate())
-    );
-
     //init the clock config
     _clock_config = clock_config_t::internal();
     update_clock_config();

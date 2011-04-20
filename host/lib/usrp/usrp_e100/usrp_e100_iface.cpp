@@ -22,7 +22,7 @@
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/format.hpp>
-#include <boost/thread.hpp> //mutex
+#include <boost/thread/mutex.hpp>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <stdexcept>
@@ -108,6 +108,15 @@ public:
         if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
             throw uhd::io_error("Failed to open " + node);
         }
+
+        //check the module compatibility number
+        int module_compat_num = ::ioctl(_node_fd, USRP_E_GET_COMPAT_NUMBER, NULL);
+        if (module_compat_num != USRP_E_COMPAT_NUMBER){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected module compatibility number 0x%x, but got 0x%x:\n"
+            "The module build is not compatible with the host code build."
+        ) % USRP_E_COMPAT_NUMBER % module_compat_num));
+    }
 
         mb_eeprom = mboard_eeprom_t(get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
     }

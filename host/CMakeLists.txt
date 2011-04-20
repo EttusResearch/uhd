@@ -33,6 +33,10 @@ INCLUDE(UHDPackage)   #setup cpack
 ########################################################################
 # Install Dirs
 ########################################################################
+#when the library suffix should be 64 (applies to redhat linux family)
+IF(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
+    SET(LIB_SUFFIX 64)
+ENDIF()
 SET(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
 SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib${LIB_SUFFIX})
@@ -68,25 +72,38 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-Wextra)
     #ADD_DEFINITIONS(-pedantic)
     #ADD_DEFINITIONS(-ansi)
-    #only export symbols that are declared to be part of the uhd api:
-    UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
+    IF(NOT WIN32)
+        #only export symbols that are declared to be part of the uhd api (non dll platforms)
+        UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
+    ENDIF(NOT WIN32)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/msvc)
-    ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
-    ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
     ADD_DEFINITIONS( #stop all kinds of compatibility warnings
         -D_SCL_SECURE_NO_WARNINGS
+        -D_SCL_SECURE_NO_DEPRECATE
         -D_CRT_SECURE_NO_WARNINGS
         -D_CRT_SECURE_NO_DEPRECATE
+        -D_CRT_NONSTDC_NO_WARNINGS
         -D_CRT_NONSTDC_NO_DEPRECATE
     )
 ENDIF(MSVC)
 
+IF(CYGWIN)
+    ADD_DEFINITIONS(-D__USE_W32_SOCKETS) #boost asio says we need this
+ENDIF(CYGWIN)
+
+IF(WIN32)
+    ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
+    ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+ENDIF(WIN32)
+
 ########################################################################
 # Setup Boost
 ########################################################################
+MESSAGE(STATUS "")
+MESSAGE(STATUS "Configuring Boost C++ Libraries...")
 SET(BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
@@ -110,11 +127,15 @@ IF(MSVC)
     ENDIF(BOOST_ALL_DYN_LINK)
 ENDIF(MSVC)
 
-SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43" "1.44.0" "1.44")
-FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+SET(Boost_ADDITIONAL_VERSIONS "1.42.0" "1.42" "1.43.0" "1.43" "1.44.0" "1.44" "1.45.0" "1.45" "1.46.0" "1.46")
+FIND_PACKAGE(Boost 1.36 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
 ########################################################################
 # Check Python Modules
@@ -156,16 +177,18 @@ CONFIGURE_FILE(
 INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
     DESTINATION ${LIBRARY_DIR}/pkgconfig
+    COMPONENT libraries
 )
 
 ########################################################################
 # Install Package Docs
 ########################################################################
 INSTALL(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-    ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS.txt
     DESTINATION ${PKG_DOC_DIR}
+    COMPONENT readme
 )
 
 ########################################################################
@@ -202,8 +225,17 @@ ENDIF(ENABLE_UTILS)
 ADD_SUBDIRECTORY(usrp_e_utils)
 
 ########################################################################
+# Handle pre-built images
+########################################################################
+IF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
+    FILE(GLOB _image_files "${UHD_IMAGES_DIR}/*.*")
+    MESSAGE(STATUS "Using images: ${_image_files}")
+    INSTALL(FILES ${_image_files} DESTINATION ${PKG_DATA_DIR}/images COMPONENT images)
+ENDIF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
+
+########################################################################
 # Print Summary
 ########################################################################
 UHD_PRINT_COMPONENT_SUMMARY()
-MESSAGE(STATUS "Building version: ${CPACK_PACKAGE_VERSION}")
+MESSAGE(STATUS "Building version: ${CPACK_PACKAGE_VERSION}-${UHD_BUILD_INFO}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

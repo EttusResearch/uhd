@@ -116,7 +116,7 @@ Generate Makefiles with cmake
 Additionally, configuration variables can be passed into cmake via the command line.
 The following common-use configuration variables are listed below:
 
-* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<prefix>
+* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<install-path>
 * To install libs into lib64: cmake -DLIB_SUFFIX=64
 
 Example usage:
@@ -165,12 +165,13 @@ LibUSB cmake notes
 On Windows, cmake does not have the advantage of pkg-config,
 so we must manually tell cmake how to locate the LibUSB header and lib.
 
-From the cmake gui, select "Advanded View":
-
+* From the cmake gui, select "Advanded View"
 * Set LIBUSB_INCLUDE_DIR to the directory with "libusb.h".
 * Set LIBUSB_LIBRARIES to the full path for "libusb-1.0.lib".
 
-Then check the boxes to enable USRP1 support, click configure and generate.
+  * Recommend the static libusb-1.0.lib to simplify runtime dependencies.
+
+* Check the box to enable USB support, click configure and generate.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build the project in MSVC
@@ -196,9 +197,7 @@ Open the Visual Studio Command Prompt Shorcut:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Add the boost library path to %PATH% (usually c:\\program files\\boost\\<version>\\lib)
-* Add the uhd library path to %PATH% (usually c:\\program files\\uhd\\lib)
-* Add the libusb library to %PATH% (if using usb support)
+* Add the uhd bin path to %PATH% (usually c:\\program files\\uhd\\bin)
 
 **Note:**
 The interface for editing environment variable paths in Windows is very poor.

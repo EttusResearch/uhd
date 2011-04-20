@@ -32,7 +32,7 @@ SET(CPACK_PACKAGE_CONTACT             "support@ettus.com")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${UHD_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${UHD_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${UHD_VERSION_PATCH})
-SET(CPACK_PACKAGE_FILE_NAME "UHD-images-${UHD_VERSION_MAJOR}-${UHD_VERSION_MINOR}-${UHD_VERSION_PATCH}")
+SET(CPACK_PACKAGE_FILE_NAME "UHD-images-${UHD_VERSION}")
 SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "all")
 INCLUDE(CPack) #include after setting vars
 MESSAGE(STATUS "Version: ${CPACK_PACKAGE_VERSION}")
@@ -40,4 +40,6 @@ MESSAGE(STATUS "Version: ${CPACK_PACKAGE_VERSION}")
 ########################################################################
 # Install Images
 ########################################################################
+#tag the images with a version number (something identifiable)
+FILE(WRITE ${CMAKE_SOURCE_DIR}/images/${CPACK_PACKAGE_VERSION}.tag ${UHD_BUILD_INFO})
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/images DESTINATION share/uhd)

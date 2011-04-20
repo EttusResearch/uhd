@@ -71,7 +71,6 @@ private:
     usrp1_clock_ctrl::sptr _clock_ctrl;
     int _spi_slave;
     ad9862_regs_t _ad9862_regs;
-    aux_adc_t _last_aux_adc_a, _last_aux_adc_b;
     void send_reg(boost::uint8_t addr);
     void recv_reg(boost::uint8_t addr);
 
@@ -133,6 +132,10 @@ usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface,
     for (boost::uint8_t addr = 0; addr <= 25; addr++) {
         this->send_reg(addr);
     }
+
+    //always start conversions for aux ADC
+    _ad9862_regs.start_a = 1;
+    _ad9862_regs.start_b = 1;
 
     //aux adc clock
     _ad9862_regs.clk_4 = ad9862_regs_t::CLK_4_1_4;
@@ -206,55 +209,37 @@ static double aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low)
     return double(((boost::uint16_t(high) << 2) | low)*3.3)/0x3ff;
 }
 
-double usrp1_codec_ctrl_impl::read_aux_adc(aux_adc_t which)
-{
-    //check to see if the switch needs to be set
-    bool write_switch = false;
-    switch(which) {
-
+double usrp1_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
+    switch(which){
     case AUX_ADC_A1:
+        _ad9862_regs.select_a = ad9862_regs_t::SELECT_A_AUX_ADC1;
+        this->send_reg(34); //start conversion and select mux
+        this->recv_reg(28); //read the value (2 bytes, 2 reads)
+        this->recv_reg(29);
+        return aux_adc_to_volts(_ad9862_regs.aux_adc_a1_9_2, _ad9862_regs.aux_adc_a1_1_0);
+
     case AUX_ADC_A2:
-        if (which != _last_aux_adc_a) {
-            _ad9862_regs.select_a = (which == AUX_ADC_A1)?
-                ad9862_regs_t::SELECT_A_AUX_ADC1: ad9862_regs_t::SELECT_A_AUX_ADC2;
-            _last_aux_adc_a = which;
-            write_switch = true;
-        }
-        break;
+        _ad9862_regs.select_a = ad9862_regs_t::SELECT_A_AUX_ADC2;
+        this->send_reg(34); //start conversion and select mux
+        this->recv_reg(26); //read the value (2 bytes, 2 reads)
+        this->recv_reg(27);
+        return aux_adc_to_volts(_ad9862_regs.aux_adc_a2_9_2, _ad9862_regs.aux_adc_a2_1_0);
 
     case AUX_ADC_B1:
+        _ad9862_regs.select_b = ad9862_regs_t::SELECT_B_AUX_ADC1;
+        this->send_reg(34); //start conversion and select mux
+        this->recv_reg(32); //read the value (2 bytes, 2 reads)
+        this->recv_reg(33);
+        return aux_adc_to_volts(_ad9862_regs.aux_adc_b1_9_2, _ad9862_regs.aux_adc_b1_1_0);
+
     case AUX_ADC_B2:
-        if (which != _last_aux_adc_b) {
-            _ad9862_regs.select_b = (which == AUX_ADC_B1)?
-                ad9862_regs_t::SELECT_B_AUX_ADC1: ad9862_regs_t::SELECT_B_AUX_ADC2;
-            _last_aux_adc_b = which;
-            write_switch = true;
-        }
-        break;
-
+        _ad9862_regs.select_b = ad9862_regs_t::SELECT_B_AUX_ADC2;
+        this->send_reg(34); //start conversion and select mux
+        this->recv_reg(30); //read the value (2 bytes, 2 reads)
+        this->recv_reg(31);
+        return aux_adc_to_volts(_ad9862_regs.aux_adc_b2_9_2, _ad9862_regs.aux_adc_b2_1_0);
     }
-
-    //write the switch if it changed
-    if(write_switch) this->send_reg(34);
-
-    //map aux adcs to register values to read
-    static const uhd::dict<aux_adc_t, boost::uint8_t> aux_dac_to_addr = boost::assign::map_list_of
-        (AUX_ADC_A2, 26) (AUX_ADC_A1, 28)
-        (AUX_ADC_B2, 30) (AUX_ADC_B1, 32)
-    ;
-
-    //read the value
-    this->recv_reg(aux_dac_to_addr[which]+0);
-    this->recv_reg(aux_dac_to_addr[which]+1);
-
-    //return the value scaled to volts
-    switch(which) {
-    case AUX_ADC_A1: return aux_adc_to_volts(_ad9862_regs.aux_adc_a1_9_2, _ad9862_regs.aux_adc_a1_1_0);
-    case AUX_ADC_A2: return aux_adc_to_volts(_ad9862_regs.aux_adc_a2_9_2, _ad9862_regs.aux_adc_a2_1_0);
-    case AUX_ADC_B1: return aux_adc_to_volts(_ad9862_regs.aux_adc_b1_9_2, _ad9862_regs.aux_adc_b1_1_0);
-    case AUX_ADC_B2: return aux_adc_to_volts(_ad9862_regs.aux_adc_b2_9_2, _ad9862_regs.aux_adc_b2_1_0);
-    }
-    UHD_ASSERT_THROW(false);
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 /***********************************************************************

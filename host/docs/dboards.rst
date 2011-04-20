@@ -27,12 +27,14 @@ Though the magic of aliasing, you can down-convert signals
 greater than the Nyquist rate of the ADC.
 
 BasicRX Bandwidth (Hz): 
-    For Real-Mode (A or B subdevice): 250M
-    For Complex (AB or BA subdevice): 500M
+
+* For Real-Mode (A or B subdevice): 250M
+* For Complex (AB or BA subdevice): 500M
 
 LFRX Bandwidth (Hz):
-    For Real-Mode (A or B subdevice): 33M
-    For Complex (AB or BA subdevice): 66M
+
+* For Real-Mode (A or B subdevice): 33M
+* For Complex (AB or BA subdevice): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
@@ -49,31 +51,67 @@ Though the magic of aliasing, you can up-convert signals
 greater than the Nyquist rate of the DAC.
 
 BasicTX Bandwidth (Hz): 250M
-    For Real-Mode (A or B subdevice): 250M
-    For Complex (AB or BA subdevice): 500M
+
+* For Real-Mode (A or B subdevice): 250M
+* For Complex (AB or BA subdevice): 500M
 
 LFTX Bandwidth (Hz): 33M
-    For Real-Mode (A or B subdevice): 33M
-    For Complex (AB or BA subdevice): 66M
+
+* For Real-Mode (A or B subdevice): 33M
+* For Complex (AB or BA subdevice): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The DBSRX board has 1 quadrature subdevice.
+The DBSRX board has 1 quadrature subdevice.  
+It defaults to direct conversion, but can use a low IF through lo_offset in uhd::tune_request_t
 
 Receive Antennas: **J3**
 
 The board has no user selectable antenna setting
 
-Receive Gains: 
-    **GC1**, Range: 0-56dB
-    **GC2**, Range: 0-24dB
+Receive Gains:
+
+* **GC1**, Range: 0-56dB
+* **GC2**, Range: 0-24dB
 
 Bandwidth (Hz): 8M-66M
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DBSRX2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The DBSRX2 board has 1 quadrature subdevice.
+It defaults to direct conversion, but can use a low IF through lo_offset in uhd::tune_request_t
+
+Receive Antennas: **J3**
+
+The board has no user selectable antenna setting
+
+Receive Gains:
+
+* **GC1**, Range: 0-73dB
+* **BBG**, Range: 0-15dB
+
+Bandwidth (Hz): 8M-80M
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The RFX Series boards have 2 quadrature subdevices, one transmit, one receive.
+Transmit defaults to low IF and Receive defaults to direct conversion.
+The IF can be adjusted through lo_offset in uhd::tune_request_t
+
+The RFX Series boards have independent receive and transmit LO's and synthesizers 
+allowing full-duplex operation on different transmit and receive frequencies.
+
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
@@ -85,12 +123,21 @@ the receive antenna will always be set to RX2, regardless of the settings.
 Receive Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
 
 Bandwidths (Hz):
- * **RX**: 40M
- * **TX**: 40M
+
+* **RX**: 40M
+* **TX**: 40M
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The XCVR2450 has 2 quadrature subdevices, one transmit, one receive.
+Transmit and Receive default to direct conversion but
+can be used in low IF mode through lo_offset in uhd::tune_request_t
+
 The XCVR2450 has a non-contiguous tuning range consisting of a 
 high band (4.9-6.0GHz) and a low band (2.4-2.5GHz).
 
@@ -106,20 +153,35 @@ The XCVR2450 does not support full-duplex mode, attempting to operate
 in full-duplex will result in transmit-only operation.
 
 Transmit Gains:
- * **VGA**, Range: 0-30dB
- * **BB**, Range: 0-5dB
+
+* **VGA**, Range: 0-30dB
+* **BB**, Range: 0-5dB
 
 Receive Gains:
- * **LNA**, Range: 0-30.5dB
- * **VGA**, Range: 0-62dB
+
+* **LNA**, Range: 0-30.5dB
+* **VGA**, Range: 0-62dB
 
 Bandwidths (Hz):
- * **RX**: 15M, 19M, 28M, 36M; (each +-0, 5, or 10%)
- * **TX**: 24M, 36M, 48M
+
+* **RX**: 15M, 19M, 28M, 36M; (each +-0, 5, or 10%)
+* **TX**: 24M, 36M, 48M
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
+* **rssi**:      float for rssi in dBm
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The WBX Series boards have 2 quadrature subdevices, one transmit, one receive.
+Transmit and Receive default to direct conversion but
+can be used in low IF mode through lo_offset in uhd::tune_request_t
+
+The WBX Series boards have independent receive and transmit LO's and synthesizers 
+allowing full-duplex operation on different transmit and receive frequencies.
+
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
@@ -133,17 +195,26 @@ Transmit Gains: **PGA0**, Range: 0-25dB
 Receive Gains: **PGA0**, Range: 0-31.5dB
 
 Bandwidths (Hz):
- * **RX**: 40M
- * **TX**: 40M
+
+* **RX**: 40M
+* **TX**: 40M
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The TVRX board has 1 real-mode subdevice.
+It is operated at a low IF.
+
 Receive Antennas: RX
 
 Receive Gains:
- * **RF**, Range: -13.3-50.3dB (frequency-dependent)
- * **IF**, Range: -1.5-32.5dB
+
+* **RF**, Range: -13.3-50.3dB (frequency-dependent)
+* **IF**, Range: -1.5-32.5dB
 
 Bandwidth: 6MHz
 
@@ -182,7 +253,7 @@ If you lose R193, you can use anything from 0 to 10 ohms there.
 With the daughterboard plugged-in, run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
 * <args> are device address arguments (optional if only one USRP is on your machine)
@@ -209,7 +280,7 @@ These are all 0-ohm, so if you lose one, just short across the appropriate pads
 With the daughterboard plugged-in, run the following commands:
 ::
 
-    cd <prefix>/share/uhd/utils
+    cd <install-path>/share/uhd/utils
     ./usrp_burn_db_eeprom --id=<rx_id> --unit=RX --args=<args> --slot=<slot>
     ./usrp_burn_db_eeprom --id=<tx_id> --unit=TX --args=<args> --slot=<slot>
 

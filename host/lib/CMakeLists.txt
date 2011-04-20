@@ -79,27 +79,18 @@ INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(utils)
 
 ########################################################################
+# Setup UHD_VERSION_STRING for version.cpp
+########################################################################
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+    PROPERTIES COMPILE_DEFINITIONS
+    "UHD_VERSION_STRING=\"${UHD_VERSION}-${UHD_BUILD_INFO}\""
+)
+
+########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} LOCAL_PKG_DATA_DIR)
-STRING(REPLACE "\\" "\\\\" LOCAL_PKG_DATA_DIR ${LOCAL_PKG_DATA_DIR})
-MESSAGE(STATUS "Local package data directory: ${LOCAL_PKG_DATA_DIR}")
-
-IF(UNIX)
-    #on unix systems, installers will use this directory for the package data
-    FILE(TO_NATIVE_PATH /usr/${PKG_DATA_DIR} INSTALLER_PKG_DATA_DIR)
-    STRING(REPLACE "\\" "\\\\" INSTALLER_PKG_DATA_DIR ${INSTALLER_PKG_DATA_DIR})
-    MESSAGE(STATUS "Installer package data directory: ${INSTALLER_PKG_DATA_DIR}")
-ENDIF(UNIX)
-
-CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
-@ONLY)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
@@ -112,13 +103,14 @@ LIBUHD_APPEND_SOURCES(
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
-SET_TARGET_PROPERTIES(uhd PROPERTIES SOVERSION ${UHD_VERSION_MAJOR})
+SET_TARGET_PROPERTIES(uhd PROPERTIES SOVERSION "${UHD_VERSION_MAJOR}")
+SET_TARGET_PROPERTIES(uhd PROPERTIES VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}")
 IF(DEFINED LIBUHD_OUTPUT_NAME)
     SET_TARGET_PROPERTIES(uhd PROPERTIES OUTPUT_NAME ${LIBUHD_OUTPUT_NAME})
 ENDIF(DEFINED LIBUHD_OUTPUT_NAME)
 
 INSTALL(TARGETS uhd
-    LIBRARY DESTINATION ${LIBRARY_DIR} # .so file
-    ARCHIVE DESTINATION ${LIBRARY_DIR} # .lib file
-    RUNTIME DESTINATION ${LIBRARY_DIR} # .dll file
+    LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .so file
+    ARCHIVE DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .lib file
+    RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT libraries # .dll file
 )

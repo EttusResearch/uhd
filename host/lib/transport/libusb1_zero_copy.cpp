@@ -24,6 +24,7 @@
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/barrier.hpp>
 #include <list>
 #include <iostream>
 
@@ -33,9 +34,25 @@ using namespace uhd::transport;
 static const size_t DEFAULT_NUM_XFERS = 16;     //num xfers
 static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
 
+//! Define LIBUSB_CALL when its missing (non-windows)
+#ifndef LIBUSB_CALL
+    #define LIBUSB_CALL
+#endif /*LIBUSB_CALL*/
+
+/*!
+ * All libusb callback functions should be marked with the LIBUSB_CALL macro
+ * to ensure that they are compiled with the same calling convention as libusb.
+ */
+
 //! helper function: handles all async callbacks
-static void libusb_async_cb(libusb_transfer *lut){
+static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut){
     (*static_cast<boost::function<void()> *>(lut->user_data))();
+}
+
+//! callback to free transfer upon cancellation
+static void LIBUSB_CALL cancel_transfer_cb(libusb_transfer *lut){
+    if (lut->status == LIBUSB_TRANSFER_CANCELLED) libusb_free_transfer(lut);
+    else std::cout << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
 }
 
 /***********************************************************************
@@ -185,22 +202,26 @@ public:
 
         //spawn the event handler threads
         size_t concurrency = hints.cast<size_t>("concurrency_hint", 1);
+        boost::barrier spawn_barrier(concurrency+1);
         for (size_t i = 0; i < concurrency; i++) _thread_group.create_thread(
-            boost::bind(&libusb_zero_copy_impl::run_event_loop, this)
+            boost::bind(&libusb_zero_copy_impl::run_event_loop, this, boost::ref(spawn_barrier))
         );
+        spawn_barrier.wait();
     }
 
     ~libusb_zero_copy_impl(void){
+        //cancel and free all transfers
+        BOOST_FOREACH(libusb_transfer *lut, _all_luts){
+            lut->callback = libusb_transfer_cb_fn(&cancel_transfer_cb);
+            libusb_cancel_transfer(lut);
+            while(lut->status != LIBUSB_TRANSFER_CANCELLED && lut->status != LIBUSB_TRANSFER_COMPLETED) {
+                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            }
+        }
         //shutdown the threads
         _threads_running = false;
         _thread_group.interrupt_all();
         _thread_group.join_all();
-
-        //cancel and free all transfers
-        BOOST_FOREACH(libusb_transfer *lut, _all_luts){
-            libusb_cancel_transfer(lut);
-            libusb_free_transfer(lut);
-        }
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
@@ -255,7 +276,8 @@ private:
     boost::thread_group _thread_group;
     bool _threads_running;
 
-    void run_event_loop(void){
+    void run_event_loop(boost::barrier &spawn_barrier){
+        spawn_barrier.wait();
         set_thread_priority_safe();
         libusb_context *context = libusb::session::get_global_session()->get_context();
         _threads_running = true;

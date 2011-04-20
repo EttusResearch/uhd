@@ -36,6 +36,11 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_PTHREAD_SETSCHEDPARAM
 )
 
+IF(CYGWIN)
+    #SCHED_RR non-operational on cygwin
+    SET(HAVE_PTHREAD_SETSCHEDPARAM False)
+ENDIF(CYGWIN)
+
 CHECK_CXX_SOURCE_COMPILES("
     #include <windows.h>
     int main(){
@@ -104,6 +109,19 @@ ENDIF()
 SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
     PROPERTIES COMPILE_DEFINITIONS "${LOAD_MODULES_DEFS}"
+)
+
+########################################################################
+# Define UHD_PKG_DATA_PATH for paths.cpp
+########################################################################
+FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} UHD_PKG_DATA_PATH)
+STRING(REPLACE "\\" "\\\\" UHD_PKG_DATA_PATH ${UHD_PKG_DATA_PATH})
+MESSAGE(STATUS "Full package data directory: ${UHD_PKG_DATA_PATH}")
+
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
+    PROPERTIES COMPILE_DEFINITIONS
+    "UHD_PKG_DATA_PATH=\"${UHD_PKG_DATA_PATH}\""
 )
 
 ########################################################################

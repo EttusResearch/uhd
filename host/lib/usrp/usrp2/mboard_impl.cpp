@@ -66,6 +66,18 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
     )))
 {
+
+    //check the fpga compatibility number
+    const boost::uint32_t fpga_compat_num = _iface->peek32(_iface->regs.compat_num_rb);
+    if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
+        throw uhd::runtime_error(str(boost::format(
+            "\nPlease update the firmware and FPGA images for your device.\n"
+            "See the application notes for USRP2/N-Series for instructions.\n"
+            "Expected FPGA compatibility number %d, but got %d:\n"
+            "The FPGA build is not compatible with the host code build."
+        ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
+    }
+
     //construct transports for dsp and async errors
     std::cout << "Making transport for DSP0..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
