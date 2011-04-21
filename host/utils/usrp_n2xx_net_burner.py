@@ -358,7 +358,7 @@ if __name__=='__main__':
     if options.overwrite_safe and not options.read:
         print("Are you REALLY, REALLY sure you want to overwrite the safe image? This is ALMOST ALWAYS a terrible idea.")
         print("If your image is faulty, your USRP2+ will become a brick until reprogrammed via JTAG.")
-        response = input("""Type "yes" to continue, or anything else to quit: """)
+        response = raw_input("""Type "yes" to continue, or anything else to quit: """)
         if response != "yes": sys.exit(0)
 
     burner = burner_socket(addr=options.addr)
@@ -367,7 +367,7 @@ if __name__=='__main__':
         if options.fw:
             file = options.fw
             if os.path.isfile(file):
-                response = input("File already exists -- overwrite? (y/n) ")
+                response = raw_input("File already exists -- overwrite? (y/n) ")
                 if response != "y": sys.exit(0)
             size = FW_IMAGE_SIZE_BYTES
             addr = SAFE_FW_IMAGE_LOCATION_ADDR if options.overwrite_safe else PROD_FW_IMAGE_LOCATION_ADDR

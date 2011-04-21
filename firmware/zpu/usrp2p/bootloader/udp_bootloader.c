@@ -167,12 +167,13 @@ main(void)
   //1) register the addresses into the network stack
   //TODO: make this a fixed IP address, don't depend on EEPROM
   register_addrs(ethernet_mac_addr(), get_ip_addr());
+  pkt_ctrl_program_inspector(get_ip_addr(), USRP2_UDP_DSP0_PORT);
 
   //2) register callbacks for udp ports we service
   init_udp_listeners();
-#ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
-#endif
+  
+  pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
 
   //4) setup ethernet hardware to bring the link up
   ethernet_register_link_changed_callback(link_changed_callback);
