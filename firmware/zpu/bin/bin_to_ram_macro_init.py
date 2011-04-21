@@ -21,8 +21,8 @@ def bin_to_ram_macro_init(bin_input_file, ram_init_output_file):
     if r != 0:
         words += (8 - r) * (0,)
 
-    if len(words) > 2048:
-        sys.stderr.write("bin_to_macro_init: error: input file %s is > 8KiB\n" % (bin_input_file,))
+    if len(words) > 4096:
+        sys.stderr.write("bin_to_macro_init: error: input file %s is > 16KiB\n" % (bin_input_file,))
         sys.exit(1)
 
     # first 2KB

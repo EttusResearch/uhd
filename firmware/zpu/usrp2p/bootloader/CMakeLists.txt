@@ -33,8 +33,8 @@ MACRO(GEN_RMI target)
 ENDMACRO(GEN_RMI)
 
 ########################################################################
-ADD_EXECUTABLE(init_bootloader.elf init_bootloader.c)
-TARGET_LINK_LIBRARIES(init_bootloader.elf libusrp2pfw)
-SET(GEN_OUTPUTS_BIN_SIZE 0x1fff)
-GEN_OUTPUTS(init_bootloader.elf)
-GEN_RMI(init_bootloader.bin)
+ADD_EXECUTABLE(udp_bootloader.elf udp_bootloader.c)
+TARGET_LINK_LIBRARIES(udp_bootloader.elf libusrp2pfw)
+SET(GEN_OUTPUTS_BIN_SIZE 0x3fff)
+GEN_OUTPUTS(udp_bootloader.elf)
+GEN_RMI(udp_bootloader.bin)
