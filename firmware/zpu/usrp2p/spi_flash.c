@@ -51,6 +51,8 @@ void
 spi_flash_erase_sector_start(uint32_t flash_addr)
 {
   //uprintf(UART_DEBUG, "spi_flash_erase_sector_start: addr = 0x%x\n", flash_addr);
+  if(flash_addr > spi_flash_memory_size())
+    return;
 
   spi_flash_wait();
   spi_flash_write_enable();
@@ -63,6 +65,10 @@ bool
 spi_flash_page_program_start(uint32_t flash_addr, size_t nbytes, const void *buf)
 {
   if (nbytes == 0 || nbytes > SPI_FLASH_PAGE_SIZE)
+    return false;
+
+  //please to not be writing past the end of the device
+  if ((flash_addr + nbytes) > spi_flash_memory_size())
     return false;
 
   uint32_t local_buf[SPI_FLASH_PAGE_SIZE / sizeof(uint32_t)];
@@ -130,6 +136,8 @@ spi_flash_program(uint32_t flash_addr, size_t nbytes, const void *buf)
   const unsigned char *p = (const unsigned char *) buf;
   size_t n;
 
+  if ((nbytes + flash_addr) > spi_flash_memory_size())
+    return false;
   if (nbytes == 0)
     return true;
 
@@ -158,7 +166,7 @@ void
 spi_flash_async_erase_start(spi_flash_async_state_t *s,
 			    uint32_t flash_addr, size_t nbytes)
 {
-  if (nbytes == 0){
+  if ((nbytes == 0) || ((flash_addr + nbytes) > spi_flash_memory_size())){
     s->first = s->last = s->current = 0;
     return;
   }

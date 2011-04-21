@@ -139,16 +139,21 @@ class burner_socket(object):
 
         #  print "Incoming:\n\tVer: %i\n\tID: %c\n\tSeq: %i\n\tIP: %i\n" % (proto_ver, chr(pktid), rxseq, ip_addr)
 
+    memory_size_bytes = 0
+    sector_size_bytes = 0
     def get_flash_info(self):
+        if (self.memory_size_bytes != 0) and (self.sector_size_bytes != 0):
+            return (self.memory_size_bytes, self.sector_size_bytes)
+            
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL, seq(), 0, 0)
         in_pkt = self.send_and_recv(out_pkt)
 
-        (proto_ver, pktid, rxseq, sector_size_bytes, memory_size_bytes) = unpack_flash_info_fmt(in_pkt)
+        (proto_ver, pktid, rxseq, self.sector_size_bytes, self.memory_size_bytes) = unpack_flash_info_fmt(in_pkt)
 
         if pktid != update_id_t.USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG:
             raise Exception("Invalid reply %c from device." % (chr(pktid)))
 
-        return (memory_size_bytes, sector_size_bytes)
+        return (self.memory_size_bytes, self.sector_size_bytes)
 
     def burn_fw(self, fw, fpga, reset, safe):
         (flash_size, sector_size) = self.get_flash_info()
@@ -167,6 +172,9 @@ class burner_socket(object):
 
             if not is_valid_fpga_image(fpga_image):
                 raise Exception("Error: Invalid FPGA image file.")
+                
+            if (len(fpga_image) + image_location) > flash_size:
+                raise Exception("Error: Cannot write past end of device")
 
             print("Begin FPGA write: this should take about 1 minute...")
             start_time = time.time()
@@ -188,6 +196,9 @@ class burner_socket(object):
 
             if not is_valid_fw_image(fw_image):
                 raise Exception("Error: Invalid firmware image file.")
+                
+            if (len(fw_image) + image_location) > flash_size:
+                raise Exception("Error: Cannot write past end of device")
 
             print("Begin firmware write: this should take about 1 second...")
             start_time = time.time()
@@ -204,6 +215,10 @@ class burner_socket(object):
         self._status_cb("Writing")
         writedata = image
         #we split the image into smaller (256B) bits and send them down the wire
+        (mem_size, sector_size) = self.get_flash_info()
+        if (addr + len(writedata)) > mem_size:
+            raise Exception("Error: Cannot write past end of device")
+            
         while writedata:
             out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, writedata[:FLASH_DATA_PACKET_SIZE])
             in_pkt = self.send_and_recv(out_pkt)
@@ -287,6 +302,10 @@ class burner_socket(object):
     def erase_image(self, addr, length):
         self._status_cb("Erasing")
         #get flash info first
+        (flash_size, sector_size) = self.get_flash_info()
+        if (addr + length) > flash_size:
+            raise Exception("Cannot erase past end of device")
+            
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length)
         in_pkt = self.send_and_recv(out_pkt)
 
