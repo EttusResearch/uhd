@@ -34,6 +34,3 @@ ADD_EXECUTABLE(usrp2_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
 TARGET_LINK_LIBRARIES(usrp2_txrx_uhd.elf libusrp2fw)
 GEN_OUTPUTS(usrp2_txrx_uhd.elf)
 
-ADD_EXECUTABLE(usrp2_blinkenlights.elf ${CMAKE_SOURCE_DIR}/apps/blinkenlights.c)
-TARGET_LINK_LIBRARIES(usrp2_blinkenlights.elf libusrp2fw)
-GEN_OUTPUTS(usrp2_blinkenlights.elf)

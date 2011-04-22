@@ -39,8 +39,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-#ifdef USRP2P
-#include "u2p_init.h"
+#ifdef BOOTLOADER
+#include <bootloader_utils.h>
 #endif
 
 extern uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
@@ -265,7 +265,6 @@ static void handle_inp_packet(uint32_t *buff, size_t num_lines){
   handle_eth_packet(buff, num_lines);
 }
 
-
 //------------------------------------------------------------------
 
 /*
@@ -288,15 +287,23 @@ int
 main(void)
 {
   u2_init();
-#ifdef USRP2P
-  u2p_init();
-#endif
-
+#ifdef BOOTLOADER
+  spif_init();
+  set_default_mac_addr();
+  set_default_ip_addr();
+  putstr("\nUSRP N210 UDP bootloader\n");
+#else
   putstr("\nTxRx-UHD-ZPU\n");
+#endif
   print_mac_addr(ethernet_mac_addr()); newline();
   print_ip_addr(get_ip_addr()); newline();
   printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
+  
+#ifdef BOOTLOADER
+  //load the production FPGA image or firmware if appropriate
+  do_the_bootload_thing();
+#endif
 
   //1) register the addresses into the network stack
   register_addrs(ethernet_mac_addr(), get_ip_addr());

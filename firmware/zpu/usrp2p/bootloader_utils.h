@@ -20,3 +20,4 @@
 int is_valid_fpga_image(uint32_t addr);
 int is_valid_fw_image(uint32_t addr);
 void start_program(void);
+void do_the_bootload_thing(void);
