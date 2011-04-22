@@ -51,6 +51,8 @@
 #include <xilinx_s3_icap.h>
 #include <mdelay.h>
 
+#define BUTTON_PUSHED ((router_status->irqs & PIC_BUTTON) ? 0 : 1)
+
 static void handle_inp_packet(uint32_t *buff, size_t num_lines){
 
   //test if its an ip recovery packet
@@ -97,8 +99,11 @@ static void do_the_bootload_thing(void) {
 	set_safe_booted_flag(0); //haven't booted yet
 	
 	if(BUTTON_PUSHED) { //see memory_map.h
-		puts("Starting USRP2+ in safe mode.");
-		if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
+		puts("Starting USRP2+ in safe mode. I am a brick. Feel free to reprogram me via the UDP burner.");
+        return;
+        //no longer necessary since we can just burn from UDP via the bootloader now
+/*
+        if(is_valid_fw_image(SAFE_FW_IMAGE_LOCATION_ADDR)) {
 				set_safe_booted_flag(1); //let the firmware know it's the safe image
 				spi_flash_read(SAFE_FW_IMAGE_LOCATION_ADDR, FW_IMAGE_SIZE_BYTES, (void *)RAM_BASE);
 				start_program();
@@ -108,6 +113,7 @@ static void do_the_bootload_thing(void) {
 				puts("ERROR: no safe firmware image available. I am a brick. Feel free to reprogram me via the UDP burner.");
 				return;
 			}
+*/
 	}
 	
 	if(!production_image) {
@@ -150,6 +156,7 @@ int
 main(void)
 {
   u2_init();
+  spif_init();
 
   set_default_mac_addr();
   set_default_ip_addr();

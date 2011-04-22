@@ -3,6 +3,8 @@
 import struct
 import sys
 
+BOOTRAM_SIZE = 16384
+
 def do_8_words(ofile, which_ram, row, words):
     ofile.write("defparam bootram.RAM%d.INIT_%02X=256'h" % (which_ram, row))
     ofile.write("%08x_%08x_%08x_%08x_%08x_%08x_%08x_%08x;\n" % (
@@ -21,25 +23,13 @@ def bin_to_ram_macro_init(bin_input_file, ram_init_output_file):
     if r != 0:
         words += (8 - r) * (0,)
 
-    if len(words) > 4096:
-        sys.stderr.write("bin_to_macro_init: error: input file %s is > 16KiB\n" % (bin_input_file,))
+    if len(words) > (BOOTRAM_SIZE / 4):
+        sys.stderr.write("bin_to_macro_init: error: input file %s is > %dKiB\n" % (bin_input_file,BOOTRAM_SIZE))
         sys.exit(1)
 
-    # first 2KB
-    for i in range(0, min(512, len(words)), 8):
-        do_8_words(ofile, 0, i/8, words[i:i+8])
-
-    # second 2KB
-    for i in range(512, min(1024, len(words)), 8):
-        do_8_words(ofile, 1, (i/8) % 64, words[i:i+8])
-
-		# third 2KB
-    for i in range(1024, min(1536, len(words)), 8):
-        do_8_words(ofile, 2, (i/8) % 64, words[i:i+8])
-
-		# last 2KB
-    for i in range(1536, len(words), 8):
-        do_8_words(ofile, 3, (i/8) % 64, words[i:i+8])
+    for q in range(0, BOOTRAM_SIZE/4, 512):
+        for i in range(q, min(q+512, len(words)), 8):
+            do_8_words(ofile, int(q / 512), (i/8) % 64, words[i:i+8])
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:

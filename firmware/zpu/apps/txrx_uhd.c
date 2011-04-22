@@ -39,6 +39,10 @@
 #include <string.h>
 #include <stdbool.h>
 
+#ifdef USRP2P
+#include "u2p_init.h"
+#endif
+
 extern uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
 static void handle_udp_data_packet(
@@ -284,6 +288,9 @@ int
 main(void)
 {
   u2_init();
+#ifdef USRP2P
+  u2p_init();
+#endif
 
   putstr("\nTxRx-UHD-ZPU\n");
   print_mac_addr(ethernet_mac_addr()); newline();
