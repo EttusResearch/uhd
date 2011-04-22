@@ -297,8 +297,8 @@ main(void)
   
 #ifdef BOOTLOADER
   //load the production FPGA image or firmware if appropriate
-  spif_init();
   do_the_bootload_thing();
+  //if we get here we've fallen through to safe firmware
   set_default_mac_addr();
   set_default_ip_addr();
 #endif

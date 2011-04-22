@@ -15,6 +15,7 @@
 #include <nonstdio.h>
 #include <xilinx_s3_icap.h>
 #include <mdelay.h>
+#include "spi.h"
 
 #define BUTTON_PUSHED ((router_status->irqs & PIC_BUTTON) ? 0 : 1)
 
@@ -53,6 +54,8 @@ void start_program(void)
 }
 
 void do_the_bootload_thing(void) {
+	spif_init(); //initialize SPI flash clock
+	
     bool production_image = find_safe_booted_flag();
 	set_safe_booted_flag(0); //haven't booted yet
 	
