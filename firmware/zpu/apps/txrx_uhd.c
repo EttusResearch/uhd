@@ -288,22 +288,23 @@ main(void)
 {
   u2_init();
 #ifdef BOOTLOADER
-  spif_init();
-  set_default_mac_addr();
-  set_default_ip_addr();
   putstr("\nUSRP N210 UDP bootloader\n");
 #else
   putstr("\nTxRx-UHD-ZPU\n");
 #endif
-  print_mac_addr(ethernet_mac_addr()); newline();
-  print_ip_addr(get_ip_addr()); newline();
   printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
   
 #ifdef BOOTLOADER
   //load the production FPGA image or firmware if appropriate
+  spif_init();
   do_the_bootload_thing();
+  set_default_mac_addr();
+  set_default_ip_addr();
 #endif
+
+  print_mac_addr(ethernet_mac_addr()); newline();
+  print_ip_addr(get_ip_addr()); newline();
 
   //1) register the addresses into the network stack
   register_addrs(ethernet_mac_addr(), get_ip_addr());
