@@ -53,6 +53,8 @@ module u1plus_core
    wire [31:0]  debug1;
 
    wire [31:0] 	debug_vt;
+   wire 	gpif_rst;
+   
    wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
    reg [7:0] 	frames_per_packet;
    
@@ -63,7 +65,8 @@ module u1plus_core
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(global_reset));
 
-   reset_sync reset_sync(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
+   reset_sync reset_sync_wb(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
+   reset_sync reset_sync_gp(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(gpif_rst));
    wire [15:0] 	test_len;
    
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -84,7 +87,6 @@ module u1plus_core
 		 tx_err_src_rdy, tx_err_dst_rdy;
 
    wire 	 bus_error;
-   wire 	 gpif_rst = 0;
    wire 	 clear_tx, clear_rx;
    
    setting_reg #(.my_addr(SR_CLEAR_RX_FIFO), .width(1)) sr_clear_rx

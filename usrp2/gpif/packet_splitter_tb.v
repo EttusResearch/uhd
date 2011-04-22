@@ -33,7 +33,7 @@ module packet_splitter_tb();
 
    vita_pkt_gen vita_pkt_gen
      (.clk(sys_clk), .reset(sys_rst) , .clear(0),
-      .len(7),.data_o(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int));
+      .len(512),.data_o(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int));
 
    fifo36_to_fifo19 #(.LE(1)) f36_to_f19
      (.clk(sys_clk), .reset(sys_rst), .clear(0),
@@ -42,7 +42,7 @@ module packet_splitter_tb();
    		 
    packet_splitter #(.FRAME_LEN(13)) rx_packet_splitter
      (.clk(sys_clk), .reset(sys_rst), .clear(0),
-      .frames_per_packet(3),
+      .frames_per_packet(4),
       .data_i(data_o), .src_rdy_i(src_rdy), .dst_rdy_o(dst_rdy),
       .data_o(data_splt), .src_rdy_o(src_rdy_splt), .dst_rdy_i(dst_rdy_splt));
 
