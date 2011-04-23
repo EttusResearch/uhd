@@ -109,9 +109,9 @@ struct usrp_e100_impl::io_impl{
 void usrp_e100_impl::io_impl::recv_pirate_loop(
     boost::barrier &spawn_barrier, usrp_e100_clock_ctrl::sptr clock_ctrl
 ){
+    recv_pirate_crew_raiding = true;
     spawn_barrier.wait();
     set_thread_priority_safe();
-    recv_pirate_crew_raiding = true;
 
     while(recv_pirate_crew_raiding){
         managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff();
