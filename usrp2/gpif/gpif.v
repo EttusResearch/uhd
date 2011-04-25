@@ -38,7 +38,7 @@ module gpif
 
    wire [15:0] 	  gpif_d_copy = gpif_d;
 
-   wire [31:0] 	  debug_rd, debug_wr;
+   wire [31:0] 	  debug_rd, debug_wr, debug_split0, debug_split1;
    
    // ////////////////////////////////////////////////////////////////////
    // TX Data Path
@@ -105,7 +105,8 @@ module gpif
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
       .frames_per_packet(frames_per_packet),
       .data_i(rx19_data), .src_rdy_i(rx19_src_rdy), .dst_rdy_o(rx19_dst_rdy),
-      .data_o(splt_data), .src_rdy_o(splt_src_rdy), .dst_rdy_i(splt_dst_rdy));
+      .data_o(splt_data), .src_rdy_o(splt_src_rdy), .dst_rdy_i(splt_dst_rdy),
+      .debug0(debug_split0), .debug1(debug_split1));
      
    gpif_rd gpif_rd
      (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst),
@@ -226,12 +227,14 @@ module gpif
    // ////////////////////////////////////////////
    //    DEBUG
    
-   assign debug0 = { rx19_src_rdy, rx19_dst_rdy, resp_src_rdy, resp_dst_rdy, gpif_ctl[3:0], gpif_rdy[3:0], 
-		     gpif_d_copy[15:0] };
+   //assign debug0 = { rx19_src_rdy, rx19_dst_rdy, resp_src_rdy, resp_dst_rdy, gpif_ctl[3:0], gpif_rdy[3:0], 
+	//	     gpif_d_copy[15:0] };
    
-   assign debug1 = { { debug_rd[15:8] },
-		     { debug_rd[7:0] },
-		     { rx_src_rdy_i, rx_dst_rdy_o, rx36_src_rdy, rx36_dst_rdy, rx19_src_rdy, rx19_dst_rdy, resp_src_rdy, resp_dst_rdy},
-		     { tx_src_rdy_o, tx_dst_rdy_i, tx19_src_rdy, tx19_dst_rdy, tx36_src_rdy, tx36_dst_rdy, ctrl_src_rdy, ctrl_dst_rdy} };
+   //assign debug1 = { { debug_rd[15:8] },
+	//	     { debug_rd[7:0] },
+		//     { rx_src_rdy_i, rx_dst_rdy_o, rx36_src_rdy, rx36_dst_rdy, rx19_src_rdy, rx19_dst_rdy, resp_src_rdy, resp_dst_rdy},
+		  //   { tx_src_rdy_o, tx_dst_rdy_i, tx19_src_rdy, tx19_dst_rdy, tx36_src_rdy, tx36_dst_rdy, ctrl_src_rdy, ctrl_dst_rdy} };
    
+   assign debug0 = { gpif_ctl[3:0], gpif_rdy[3:0], debug_split0[23:0] };
+   assign debug1 = { gpif_misc[0], debug_rd[14:0], debug_split1[15:8], debug_split1[7:0] };
 endmodule // gpif

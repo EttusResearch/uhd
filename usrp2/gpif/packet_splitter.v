@@ -10,7 +10,9 @@ module packet_splitter
     output dst_rdy_o,
     output [18:0] data_o,
     output src_rdy_o,
-    input dst_rdy_i);
+    input dst_rdy_i,
+    output [31:0] debug0,
+    output [31:0] debug1);
    
    reg [1:0] state;
    reg [15:0] length;
@@ -97,5 +99,8 @@ module packet_splitter
    
    wire [15:0] data_out = data_i[15:0];
    assign data_o = {occ_out, eof_out, sof_out, data_out};
+   
+   assign debug0 = { 8'd0, dst_rdy_o, src_rdy_o, next_state_is_idle, eof_out, sof_out, occ_out, state[1:0], frame_count[7:0], frames_per_packet[7:0] };
+   assign debug1 = { length[15:0], frame_len[15:0] };
    
 endmodule // packet_splitter

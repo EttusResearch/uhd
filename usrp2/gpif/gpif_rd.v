@@ -89,6 +89,6 @@ module gpif_rd
 
    assign debug = { { 16'd0 },
 		    { data_int[17:16], data_o[17:16], packet_count[3:0] },
-		    { 2'b0,final_rdy_data, final_rdy_resp, consume_data_line, consume_resp_line, src_rdy_int, dst_rdy_int} };
+		    { consume_sop, consume_eop, final_rdy_data, data_o[18], consume_data_line, consume_resp_line, src_rdy_int, dst_rdy_int} };
    
 endmodule // gpif_rd

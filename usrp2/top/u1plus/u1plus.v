@@ -126,13 +126,13 @@ module u1plus
    always @(posedge clk_fpga)
      if(rxsync_0)
        begin
-	  rx_i <= rx_a;
-	  rx_q <= rx_b;
+	  rx_i <= rx_b;
+	  rx_q <= rx_a;
        end
      else
        begin
-	  rx_i <= rx_b;
-	  rx_q <= rx_a;
+	  rx_i <= rx_a;
+	  rx_q <= rx_b;
        end
    
    // /////////////////////////////////////////////////////////////////////////
