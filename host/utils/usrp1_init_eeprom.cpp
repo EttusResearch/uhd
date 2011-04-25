@@ -21,6 +21,7 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 
@@ -39,6 +40,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("help")){
         std::cout << boost::format("USRP EEPROM initialization %s") % desc << std::endl;
         return ~0;
+    }
+
+    //cant find a uninitialized usrp with this mystery module in the way...
+    if (std::system("/sbin/rmmod usbtest") != 0){
+        std::cerr << "Did not rmmod usbtest, this may be ok..." << std::endl;
     }
 
     //load the options into the address
