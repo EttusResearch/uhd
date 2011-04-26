@@ -329,6 +329,35 @@ double wbx_base::set_lo_freq(
     UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
     regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
 
+    if (unit == dboard_iface::UNIT_RX) {
+        freq_range_t rx_lo_5dbm = list_of
+            (range_t(0.05e9, 1.4e9))
+        ;
+
+        freq_range_t rx_lo_2dbm = list_of
+            (range_t(1.4e9, 2.2e9))
+        ;
+
+        if (actual_freq == rx_lo_5dbm.clip(actual_freq)) regs.output_power = adf4350_regs_t::OUTPUT_POWER_5DBM;
+
+        if (actual_freq == rx_lo_2dbm.clip(actual_freq)) regs.output_power = adf4350_regs_t::OUTPUT_POWER_2DBM;
+
+    } else if (unit == dboard_iface::UNIT_TX) {
+        freq_range_t tx_lo_5dbm = list_of
+            (range_t(0.05e9, 1.7e9))
+            (range_t(1.9e9, 2.2e9))
+        ;
+
+        freq_range_t tx_lo_m1dbm = list_of
+            (range_t(1.7e9, 1.9e9))
+        ;
+
+        if (actual_freq == tx_lo_5dbm.clip(actual_freq)) regs.output_power = adf4350_regs_t::OUTPUT_POWER_5DBM;
+
+        if (actual_freq == tx_lo_m1dbm.clip(actual_freq)) regs.output_power = adf4350_regs_t::OUTPUT_POWER_M1DBM;
+
+    }
+
     //write the registers
     //correct power-up sequence to write registers (5, 4, 3, 2, 1, 0)
     int addr;
