@@ -132,7 +132,7 @@ private:
     wax_obj_proxy::sptr _rx_dboard_proxy;
 
     //tx dboard functions and settings
-    uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
+    uhd::usrp::dboard_eeprom_t _tx_db_eeprom, _gdb_eeprom;
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
