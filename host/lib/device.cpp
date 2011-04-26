@@ -25,9 +25,12 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/thread/mutex.hpp>
 #include <iostream>
 
 using namespace uhd;
+
+static boost::mutex _device_mutex;
 
 /***********************************************************************
  * Helper Functions
@@ -70,6 +73,8 @@ void device::register_device(
  * Discover
  **********************************************************************/
 device_addrs_t device::find(const device_addr_t &hint){
+    boost::mutex::scoped_lock lock(_device_mutex);
+
     device_addrs_t device_addrs;
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
@@ -93,6 +98,8 @@ device_addrs_t device::find(const device_addr_t &hint){
  * Make
  **********************************************************************/
 device::sptr device::make(const device_addr_t &hint, size_t which){
+    boost::mutex::scoped_lock lock(_device_mutex);
+
     typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
 
