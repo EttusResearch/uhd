@@ -153,7 +153,7 @@ private:
      */
     double get_rssi(void){
         //*FIXME* RSSI depends on LNA Gain Setting (datasheet pg 16 top middle chart)
-        double max_power;
+        double max_power = 0.0;
         switch(_max2829_regs.rx_lna_gain){
         case 0:
         case 1: max_power = 0;    break;
