@@ -175,7 +175,7 @@ private:
     uhd::dict<dboard_slot_t, wax_obj_proxy::sptr> _rx_dboard_proxies;
 
     //tx dboard functions and settings
-    uhd::dict<dboard_slot_t, uhd::usrp::dboard_eeprom_t> _tx_db_eeproms;
+    uhd::dict<dboard_slot_t, uhd::usrp::dboard_eeprom_t> _tx_db_eeproms, _gdb_eeproms;
     void tx_dboard_get(const wax::obj &, wax::obj &, dboard_slot_t);
     void tx_dboard_set(const wax::obj &, const wax::obj &, dboard_slot_t);
     uhd::dict<dboard_slot_t, wax_obj_proxy::sptr> _tx_dboard_proxies;

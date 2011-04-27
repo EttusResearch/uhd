@@ -38,11 +38,14 @@ void usrp2_mboard_impl::dboard_init(void){
     //read the dboard eeprom to extract the dboard ids
     _rx_db_eeprom.load(*_iface, USRP2_I2C_ADDR_RX_DB);
     _tx_db_eeprom.load(*_iface, USRP2_I2C_ADDR_TX_DB);
+    _gdb_eeprom.load(*_iface, USRP2_I2C_ADDR_TX_DB ^ 5);
 
     //create a new dboard interface and manager
     _dboard_iface = make_usrp2_dboard_iface(_iface, _clock_ctrl);
     _dboard_manager = dboard_manager::make(
-        _rx_db_eeprom.id, _tx_db_eeprom.id, _dboard_iface
+        _rx_db_eeprom.id,
+        ((_gdb_eeprom.id == dboard_id_t::none())? _tx_db_eeprom : _gdb_eeprom).id,
+        _dboard_iface
     );
 
     //load dboards
@@ -137,6 +140,10 @@ void usrp2_mboard_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
         val = _tx_db_eeprom;
         return;
 
+    case DBOARD_PROP_GBOARD_EEPROM:
+        val = _gdb_eeprom;
+        return;
+
     case DBOARD_PROP_DBOARD_IFACE:
         val = _dboard_iface;
         return;
@@ -164,6 +171,11 @@ void usrp2_mboard_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     case DBOARD_PROP_DBOARD_EEPROM:
         _tx_db_eeprom = val.as<dboard_eeprom_t>();
         _tx_db_eeprom.store(*_iface, USRP2_I2C_ADDR_TX_DB);
+        return;
+
+    case DBOARD_PROP_GBOARD_EEPROM:
+        _gdb_eeprom = val.as<dboard_eeprom_t>();
+        _gdb_eeprom.store(*_iface, USRP2_I2C_ADDR_TX_DB ^ 5);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

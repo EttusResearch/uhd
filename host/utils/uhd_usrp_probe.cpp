@@ -27,6 +27,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -46,12 +47,12 @@ static std::string make_border(const std::string &text){
     ss << boost::format("  _____________________________________________________") << std::endl;
     ss << boost::format(" /") << std::endl;
     std::vector<std::string> lines; boost::split(lines, text, boost::is_any_of("\n"));
-    while (lines.back() == "") lines.pop_back(); //strip trailing newlines
+    while (lines.back().empty()) lines.pop_back(); //strip trailing newlines
     if (lines.size()) lines[0] = "    " + lines[0]; //indent the title line
     BOOST_FOREACH(const std::string &line, lines){
         ss << boost::format("|   %s") % line << std::endl;
     }
-    //ss << boost::format(" \\____________________________________________________") << std::endl;
+    //ss << boost::format(" \\_____________________________________________________") << std::endl;
     return ss.str();
 }
 
@@ -114,6 +115,14 @@ static std::string get_dboard_pp_string(const std::string &type, wax::obj dboard
     std::stringstream ss;
     ss << boost::format("%s Dboard: %s") % type % dboard[usrp::DBOARD_PROP_NAME].as<std::string>() << std::endl;
     //ss << std::endl;
+    usrp::dboard_eeprom_t db_eeprom = dboard[usrp::DBOARD_PROP_DBOARD_EEPROM].as<usrp::dboard_eeprom_t>();
+    if (db_eeprom.id != usrp::dboard_id_t::none()) ss << boost::format("ID: %s") % db_eeprom.id.to_pp_string() << std::endl;
+    if (not db_eeprom.serial.empty()) ss << boost::format("Serial: %s") % db_eeprom.serial << std::endl;
+    if (type == "TX"){
+        usrp::dboard_eeprom_t gdb_eeprom = dboard[usrp::DBOARD_PROP_GBOARD_EEPROM].as<usrp::dboard_eeprom_t>();
+        if (gdb_eeprom.id != usrp::dboard_id_t::none()) ss << boost::format("GDB ID: %s") % gdb_eeprom.id.to_pp_string() << std::endl;
+        if (not gdb_eeprom.serial.empty()) ss << boost::format("GDB Serial: %s") % gdb_eeprom.serial << std::endl;
+    }
     BOOST_FOREACH(const std::string &subdev_name, dboard[usrp::DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>()){
         ss << make_border(get_subdev_pp_string(type, dboard[named_prop_t(usrp::DBOARD_PROP_SUBDEV, subdev_name)]));
     }
@@ -132,14 +141,14 @@ static std::string get_mboard_pp_string(wax::obj mboard){
     BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_RX_DSP_NAMES].as<prop_names_t>()){
         ss << make_border(get_dsp_pp_string("RX", mboard[named_prop_t(usrp::MBOARD_PROP_RX_DSP, dsp_name)]));
     }
+    BOOST_FOREACH(const std::string &db_name, mboard[usrp::MBOARD_PROP_RX_DBOARD_NAMES].as<prop_names_t>()){
+        ss << make_border(get_dboard_pp_string("RX", mboard[named_prop_t(usrp::MBOARD_PROP_RX_DBOARD, db_name)]));
+    }
     BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_TX_DSP_NAMES].as<prop_names_t>()){
         ss << make_border(get_dsp_pp_string("TX", mboard[named_prop_t(usrp::MBOARD_PROP_TX_DSP, dsp_name)]));
     }
-    BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_RX_DBOARD_NAMES].as<prop_names_t>()){
-        ss << make_border(get_dboard_pp_string("RX", mboard[named_prop_t(usrp::MBOARD_PROP_RX_DBOARD, dsp_name)]));
-    }
-    BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_TX_DBOARD_NAMES].as<prop_names_t>()){
-        ss << make_border(get_dboard_pp_string("TX", mboard[named_prop_t(usrp::MBOARD_PROP_TX_DBOARD, dsp_name)]));
+    BOOST_FOREACH(const std::string &db_name, mboard[usrp::MBOARD_PROP_TX_DBOARD_NAMES].as<prop_names_t>()){
+        ss << make_border(get_dboard_pp_string("TX", mboard[named_prop_t(usrp::MBOARD_PROP_TX_DBOARD, db_name)]));
     }
     return ss.str();
 }

@@ -37,10 +37,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //command line variables
     std::string args, slot, unit;
     static const uhd::dict<std::string, mboard_prop_t> unit_to_db_prop = boost::assign::map_list_of
-        ("RX", MBOARD_PROP_RX_DBOARD) ("TX", MBOARD_PROP_TX_DBOARD)
+        ("RX", MBOARD_PROP_RX_DBOARD) ("TX", MBOARD_PROP_TX_DBOARD) ("GDB", MBOARD_PROP_TX_DBOARD)
     ;
     static const uhd::dict<std::string, mboard_prop_t> unit_to_db_names_prop = boost::assign::map_list_of
-        ("RX", MBOARD_PROP_RX_DBOARD_NAMES) ("TX", MBOARD_PROP_TX_DBOARD_NAMES)
+        ("RX", MBOARD_PROP_RX_DBOARD_NAMES) ("TX", MBOARD_PROP_TX_DBOARD_NAMES) ("GDB", MBOARD_PROP_TX_DBOARD_NAMES)
+    ;
+    static const uhd::dict<std::string, dboard_prop_t> unit_to_db_eeprom_prop = boost::assign::map_list_of
+        ("RX", DBOARD_PROP_DBOARD_EEPROM) ("TX", DBOARD_PROP_DBOARD_EEPROM) ("GDB", DBOARD_PROP_GBOARD_EEPROM)
     ;
 
     po::options_description desc("Allowed options");
@@ -48,7 +51,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""),    "device address args [default = \"\"]")
         ("slot", po::value<std::string>(&slot)->default_value(""),    "dboard slot name [default is blank for automatic]")
-        ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX or TX]")
+        ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX, TX, or GDB]")
         ("id",   po::value<std::string>(),                            "dboard id to burn, omit for readback")
         ("ser",  po::value<std::string>(),                            "serial to burn, omit for readback")
     ;
@@ -82,19 +85,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string prefix = unit + ":" + slot;
 
     std::cout << boost::format("Reading EEPROM on %s dboard...") % prefix << std::endl;
-    dboard_eeprom_t db_eeprom = dboard[DBOARD_PROP_DBOARD_EEPROM].as<dboard_eeprom_t>();
+    dboard_eeprom_t db_eeprom = dboard[unit_to_db_eeprom_prop[unit]].as<dboard_eeprom_t>();
 
     //------------- handle the dboard ID -----------------------------//
     if (vm.count("id")){
         db_eeprom.id = dboard_id_t::from_string(vm["id"].as<std::string>());
-        dboard[DBOARD_PROP_DBOARD_EEPROM] = db_eeprom;
+        dboard[unit_to_db_eeprom_prop[unit]] = db_eeprom;
     }
     std::cout << boost::format("  Current ID: %s") % db_eeprom.id.to_pp_string() << std::endl;
 
     //------------- handle the dboard serial--------------------------//
     if (vm.count("ser")){
         db_eeprom.serial = vm["ser"].as<std::string>();
-        dboard[DBOARD_PROP_DBOARD_EEPROM] = db_eeprom;
+        dboard[unit_to_db_eeprom_prop[unit]] = db_eeprom;
     }
     std::cout << boost::format("  Current serial: \"%s\"") % db_eeprom.serial << std::endl;
 

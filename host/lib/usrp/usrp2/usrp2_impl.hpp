@@ -147,7 +147,7 @@ private:
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
-    uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
+    uhd::usrp::dboard_eeprom_t _tx_db_eeprom, _gdb_eeprom;
 
     //methods and shadows for the dsps
     UHD_PIMPL_DECL(dsp_impl) _dsp_impl;
