@@ -21,10 +21,11 @@ LF RX
 LF TX
 RFX Series
 XCVR 2450
-WBX Series
+WBX + Simple GDB
 DBSRX
 DBSRX2
 TVRX
+SBX
 
 ###############################################
 # Documentation
