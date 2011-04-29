@@ -27,6 +27,7 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/sensors.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -101,9 +102,11 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //contruct the interfaces to mboard perifs
     _clock_ctrl = usrp2_clock_ctrl::make(_iface);
     _codec_ctrl = usrp2_codec_ctrl::make(_iface);
-    _gps_ctrl = gps_ctrl::make(
-        _iface->get_gps_write_fn(),
-        _iface->get_gps_read_fn());
+    if (_iface->mb_eeprom["gpsdo"] == "internal"){
+        _gps_ctrl = gps_ctrl::make(
+            _iface->get_gps_write_fn(),
+            _iface->get_gps_read_fn());
+    }
 
     //init the dsp stuff (before setting update packets)
     dsp_init();
@@ -361,7 +364,14 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     case MBOARD_PROP_CLOCK_RATE:
         val = this->get_master_clock_freq();
         return;
-        
+
+    case SUBDEV_PROP_SENSOR_NAMES:{
+            prop_names_t names = boost::assign::list_of("mimo_locked")("ref_locked");
+            if (_gps_ctrl.get()) names.push_back("gps_time");
+            val = names;
+        }
+        return;
+
     case MBOARD_PROP_SENSOR:
         if(key.name == "mimo_locked") {
             val = sensor_value_t("MIMO", this->get_mimo_locked(), "locked", "unlocked");
@@ -371,7 +381,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
             val = sensor_value_t("Ref", this->get_ref_locked(), "locked", "unlocked");
             return;
         }
-        else if(key.name == "gps_time") {
+        else if(key.name == "gps_time" and _gps_ctrl.get()) {
             val = sensor_value_t("GPS time", int(_gps_ctrl->get_epoch_time()), "seconds");
         }
         else {

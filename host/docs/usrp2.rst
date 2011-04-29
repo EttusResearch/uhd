@@ -345,3 +345,51 @@ Test the PPS input with the following app:
 
     cd <install-path>/share/uhd/examples
     ./test_pps_input --args=<args>
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Internal GPSDO
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+USRP-N2XX models can have an optional internal GPSDO.
+To use the GPSDO with UHD, you must burn an EEPROM setting
+so that UHD knows that the internal GPSDO was installed.
+
+**Installation instructions:**
+
+1. Remove the daughterboard.
+2. Move J510 jumper on the motherboard from 1-2 to 2-3 in order to switch from external 10 MHz Ref Clock to GPSDO’s 10 MHz Ref Clock
+3. Screw the GPSDO module in place with the screws provided. The screws are treated to avoid loosening with vibration.
+4. Connect the GPSDO power cable to J509 on the motherboard, and then to connector D on the GPSDO module
+5. Connect an SMB to SMA cable between connectors B and J506 (PPS2)
+6. Connect an SMB to SMA cable between connectors C and J507 (CLK REF2)
+7. Connect the serial cable between connectors A and J312 (RS232-3) on the motherboard. If J312 on your USRP isn’t a keyed connector, please ensure to connect pin1 (TX) of connector A to pin3 (RX) on J312.
+8. Remove the washer and nut from the MMCX to SMA-Bulkhead cable. Connect it to connector E and then insert SMA-Bulkhead connector through the hole in the rear panel. Tighten nut to fasten in place.
+9. Replace the daughterboard pushing all the cables underneath.
+
+Then run the following commands:
+::
+
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=internal
+
+**Removal instructions:**
+
+Restore the jumper setting, disconnect the cables, and unscrew the GPSDO unit.
+Then run the following commands:
+::
+
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=none
+
+------------------------------------------------------------------------
+Miscellaneous
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Available Sensors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following sensors are available for the USRP2/N-Series motherboards;
+they can be queried through the API.
+
+* mimo_locked - clock reference locked over the MIMO cable
+* ref_locked - clock reference locked (internal/external)
+* gps_time - GPS seconds (available when GPSDO installed)

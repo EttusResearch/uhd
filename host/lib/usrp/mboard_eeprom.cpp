@@ -74,9 +74,16 @@ static const uhd::dict<std::string, boost::uint8_t> USRP_N100_OFFSETS = boost::a
     ("mac-addr", 0x02)
     ("ip-addr", 0x0C)
     //leave space here for other addresses (perhaps)
+    ("gpsdo", 0x17)
     ("serial", 0x18)
     ("name", 0x18 + SERIAL_LEN)
 ;
+
+enum n200_gpsdo_type{
+    N200_GPSDO_NONE = 0,
+    N200_GPSDO_INTERNAL = 1,
+    N200_GPSDO_ONBOARD = 2
+};
 
 static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //extract the revision number
@@ -92,6 +99,14 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     boost::asio::ip::address_v4::bytes_type ip_addr_bytes;
     byte_copy(iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], 4), ip_addr_bytes);
     mb_eeprom["ip-addr"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+
+    //gpsdo capabilities
+    boost::uint8_t gpsdo_byte = iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["gpsdo"], 1).at(0);
+    switch(n200_gpsdo_type(gpsdo_byte)){
+    case N200_GPSDO_INTERNAL: mb_eeprom["gpsdo"] = "internal"; break;
+    case N200_GPSDO_ONBOARD: mb_eeprom["gpsdo"] = "onboard"; break;
+    default: mb_eeprom["gpsdo"] = "none";
+    }
 
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
@@ -134,6 +149,14 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
         byte_vector_t ip_addr_bytes(4);
         byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
         iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], ip_addr_bytes);
+    }
+
+    //gpsdo capabilities
+    if (mb_eeprom.has_key("gpsdo")){
+        boost::uint8_t gpsdo_byte = N200_GPSDO_NONE;
+        if (mb_eeprom["gpsdo"] == "internal") gpsdo_byte = N200_GPSDO_INTERNAL;
+        if (mb_eeprom["gpsdo"] == "onboard") gpsdo_byte = N200_GPSDO_ONBOARD;
+        iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["gpsdo"], byte_vector_t(1, gpsdo_byte));
     }
 
     //store the serial
