@@ -56,6 +56,8 @@ def command(*args):
 
 def get_dd_path():
     if platform.system() == 'Windows':
+        dd_path = os.path.join(os.path.dirname(__file__), 'dd.exe')
+        if os.path.exists(dd_path): return dd_path
         dd_path = os.path.join(tempfile.gettempdir(), 'dd.exe')
         if not os.path.exists(dd_path):
             print('Downloading dd.exe to %s'%dd_path)

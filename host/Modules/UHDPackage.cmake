@@ -18,6 +18,8 @@
 ########################################################################
 INCLUDE(UHDVersion) #sets version information
 
+SET(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE BOOL "set UHD to release mode to build installers")
+
 ########################################################################
 # Setup additional defines for OS types
 ########################################################################
