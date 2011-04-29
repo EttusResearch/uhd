@@ -543,7 +543,7 @@ void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        val = std::string("J3");
+        val = dbsrx_antennas.at(0);
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
@@ -587,6 +587,10 @@ void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_FREQ:
         this->set_lo_freq(val.as<double>());
+        return;
+
+    case SUBDEV_PROP_ANTENNA:
+        assert_has(dbsrx_antennas, val.as<std::string>(), "DBSRX antenna name");
         return;
 
     case SUBDEV_PROP_GAIN:
