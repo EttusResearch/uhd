@@ -234,11 +234,21 @@ def get_options():
     parser.add_option("--fw",   type="string",       help="firmware image path (optional)", default='')
     parser.add_option("--fpga", type="string",       help="fpga image path (optional)",     default='')
     parser.add_option("--list", action="store_true", help="list possible raw devices",      default=False)
+    parser.add_option("--force", action="store_true", help="override safety check",         default=False)
     (options, args) = parser.parse_args()
 
-    if options.list:
+    device_hints = get_raw_device_hints()
+    show_listing = options.list
+
+    if not show_listing and not options.force and options.dev not in device_hints:
+        print('The device "%s" was not in the list of possible raw devices.'%options.dev)
+        print('The card burner application will now exit without burning your card.')
+        print('To override this safety check, specify the --force option.\n')
+        show_listing = True
+
+    if show_listing:
         print('Possible raw devices:')
-        print('  ' + '\n  '.join(get_raw_device_hints()))
+        print('  ' + '\n  '.join(device_hints))
         exit()
 
     return options
