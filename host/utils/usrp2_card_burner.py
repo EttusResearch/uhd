@@ -237,10 +237,17 @@ def get_options():
     parser.add_option("--force", action="store_true", help="override safety check",         default=False)
     (options, args) = parser.parse_args()
 
+    return options
+
+########################################################################
+# main
+########################################################################
+if __name__=='__main__':
+    options = get_options()
     device_hints = get_raw_device_hints()
     show_listing = options.list
 
-    if not show_listing and not options.force and options.dev not in device_hints:
+    if not show_listing and not options.force and options.dev and options.dev not in device_hints:
         print('The device "%s" was not in the list of possible raw devices.'%options.dev)
         print('The card burner application will now exit without burning your card.')
         print('To override this safety check, specify the --force option.\n')
@@ -251,12 +258,5 @@ def get_options():
         print('  ' + '\n  '.join(device_hints))
         exit()
 
-    return options
-
-########################################################################
-# main
-########################################################################
-if __name__=='__main__':
-    options = get_options()
     if not options.dev: raise Exception('no raw device path specified')
     print(burn_sd_card(dev=options.dev, fw=options.fw, fpga=options.fpga))
