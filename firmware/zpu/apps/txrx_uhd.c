@@ -43,6 +43,9 @@
 #include <bootloader_utils.h>
 #endif
 
+//virtual registers in the firmware to store persistent values
+static uint32_t fw_regs[8];
+
 extern uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
 
 static void handle_udp_data_packet(
@@ -167,40 +170,34 @@ static void handle_udp_ctrl_packet(
     /*******************************************************************
      * Peek and Poke Register
      ******************************************************************/
-    case USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO:
-        switch(ctrl_data_in->data.poke_args.num_bytes){
-        case sizeof(uint32_t):
-            *((uint32_t *) ctrl_data_in->data.poke_args.addr) = (uint32_t)ctrl_data_in->data.poke_args.data;
-            break;
+    case USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO:
+        switch(ctrl_data_in->data.reg_args.action){
+            case USRP2_REG_ACTION_FPGA_PEEK32:
+                ctrl_data_out.data.reg_args.data = *((uint32_t *) ctrl_data_in->data.reg_args.addr);
+                break;
 
-        case sizeof(uint16_t):
-            *((uint16_t *) ctrl_data_in->data.poke_args.addr) = (uint16_t)ctrl_data_in->data.poke_args.data;
-            break;
+            case USRP2_REG_ACTION_FPGA_PEEK16:
+                ctrl_data_out.data.reg_args.data = *((uint16_t *) ctrl_data_in->data.reg_args.addr);
+                break;
 
-        case sizeof(uint8_t):
-            *((uint8_t *) ctrl_data_in->data.poke_args.addr) = (uint8_t)ctrl_data_in->data.poke_args.data;
-            break;
+            case USRP2_REG_ACTION_FPGA_POKE32:
+                *((uint32_t *) ctrl_data_in->data.reg_args.addr) = (uint32_t)ctrl_data_in->data.reg_args.data;
+                break;
 
-        }
-        ctrl_data_out.id = USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE;
-        break;
+            case USRP2_REG_ACTION_FPGA_POKE16:
+                *((uint16_t *) ctrl_data_in->data.reg_args.addr) = (uint16_t)ctrl_data_in->data.reg_args.data;
+                break;
 
-    case USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO:
-        switch(ctrl_data_in->data.poke_args.num_bytes){
-        case sizeof(uint32_t):
-            ctrl_data_out.data.poke_args.data = *((uint32_t *) ctrl_data_in->data.poke_args.addr);
-            break;
+            case USRP2_REG_ACTION_FW_PEEK32:
+                ctrl_data_out.data.reg_args.data = fw_regs[(ctrl_data_in->data.reg_args.addr)];
+                break;
 
-        case sizeof(uint16_t):
-            ctrl_data_out.data.poke_args.data = *((uint16_t *) ctrl_data_in->data.poke_args.addr);
-            break;
-
-        case sizeof(uint8_t):
-            ctrl_data_out.data.poke_args.data = *((uint8_t *) ctrl_data_in->data.poke_args.addr);
-            break;
+            case USRP2_REG_ACTION_FW_POKE32:
+                fw_regs[(ctrl_data_in->data.reg_args.addr)] = ctrl_data_in->data.reg_args.data;
+                break;
 
         }
-        ctrl_data_out.id = USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE;
+        ctrl_data_out.id = USRP2_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE;
         break;
 
     /*******************************************************************

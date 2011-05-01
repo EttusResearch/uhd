@@ -83,19 +83,19 @@ public:
  * Peek and Poke
  **********************************************************************/
     void poke32(boost::uint32_t addr, boost::uint32_t data){
-        return this->poke<boost::uint32_t>(addr, data);
+        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_POKE32>(addr, data);
     }
 
     boost::uint32_t peek32(boost::uint32_t addr){
-        return this->peek<boost::uint32_t>(addr);
+        return this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_PEEK32>(addr);
     }
 
     void poke16(boost::uint32_t addr, boost::uint16_t data){
-        return this->poke<boost::uint16_t>(addr, data);
+        this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_POKE16>(addr, data);
     }
 
     boost::uint16_t peek16(boost::uint32_t addr){
-        return this->peek<boost::uint16_t>(addr);
+        return this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
     }
 
 /***********************************************************************
@@ -201,9 +201,9 @@ public:
     }
 
     std::string read_uart(boost::uint8_t dev){
-    	int readlen = 20;
+      int readlen = 20;
       std::string result;
-    	while(readlen == 20) { //while we keep receiving full packets
+      while(readlen == 20) { //while we keep receiving full packets
         //setup the out data
         usrp2_ctrl_data_t out_data;
         out_data.id = htonl(USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO);
@@ -305,30 +305,19 @@ private:
 /***********************************************************************
  * Private Templated Peek and Poke
  **********************************************************************/
-    template <class T> void poke(boost::uint32_t addr, T data){
+    template <class T, usrp2_reg_action_t action>
+    T get_reg(boost::uint32_t addr, T data = 0){
         //setup the out data
         usrp2_ctrl_data_t out_data;
-        out_data.id = htonl(USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO);
-        out_data.data.poke_args.addr = htonl(addr);
-        out_data.data.poke_args.data = htonl(boost::uint32_t(data));
-        out_data.data.poke_args.num_bytes = sizeof(T);
+        out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
+        out_data.data.reg_args.addr = htonl(addr);
+        out_data.data.reg_args.data = htonl(boost::uint32_t(data));
+        out_data.data.reg_args.action = action;
 
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE);
-    }
-
-    template <class T> T peek(boost::uint32_t addr){
-        //setup the out data
-        usrp2_ctrl_data_t out_data;
-        out_data.id = htonl(USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO);
-        out_data.data.poke_args.addr = htonl(addr);
-        out_data.data.poke_args.num_bytes = sizeof(T);
-
-        //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE);
-        return T(ntohl(in_data.data.poke_args.data));
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE);
+        return T(ntohl(in_data.data.reg_args.data));
     }
 };
 

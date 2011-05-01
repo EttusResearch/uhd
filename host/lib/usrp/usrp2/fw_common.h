@@ -77,11 +77,8 @@ typedef enum{
     USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO = 'h',
     USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE = 'H',
 
-    USRP2_CTRL_ID_POKE_THIS_REGISTER_FOR_ME_BRO = 'p',
-    USRP2_CTRL_ID_OMG_POKED_REGISTER_SO_BAD_DUDE = 'P',
-
-    USRP2_CTRL_ID_PEEK_AT_THIS_REGISTER_FOR_ME_BRO = 'r',
-    USRP2_CTRL_ID_WOAH_I_DEFINITELY_PEEKED_IT_DUDE = 'R',
+    USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO = 'r',
+    USRP2_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE = 'R',
 
     USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO = 'u',
     USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE = 'U',
@@ -106,6 +103,15 @@ typedef enum{
     USRP2_CLK_EDGE_FALL = 'f'
 } usrp2_clk_edge_t;
 
+typedef enum{
+    USRP2_REG_ACTION_FPGA_PEEK32 = 1,
+    USRP2_REG_ACTION_FPGA_PEEK16 = 2,
+    USRP2_REG_ACTION_FPGA_POKE32 = 3,
+    USRP2_REG_ACTION_FPGA_POKE16 = 4,
+    USRP2_REG_ACTION_FW_PEEK32   = 5,
+    USRP2_REG_ACTION_FW_POKE32   = 6
+} usrp2_reg_action_t;
+
 typedef struct{
     uint32_t proto_ver;
     uint32_t id;
@@ -128,9 +134,8 @@ typedef struct{
         struct {
             uint32_t addr;
             uint32_t data;
-            uint32_t _pad[2];
-            uint8_t num_bytes; //1, 2, 4
-        } poke_args;
+            uint8_t action;
+        } reg_args;
         struct {
             uint8_t dev;
             uint8_t bytes;
