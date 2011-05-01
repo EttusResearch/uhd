@@ -56,6 +56,8 @@ def command(*args):
 
 def get_dd_path():
     if platform.system() == 'Windows':
+        dd_path = os.path.join(os.path.dirname(__file__), 'dd.exe')
+        if os.path.exists(dd_path): return dd_path
         dd_path = os.path.join(tempfile.gettempdir(), 'dd.exe')
         if not os.path.exists(dd_path):
             print('Downloading dd.exe to %s'%dd_path)
@@ -232,12 +234,8 @@ def get_options():
     parser.add_option("--fw",   type="string",       help="firmware image path (optional)", default='')
     parser.add_option("--fpga", type="string",       help="fpga image path (optional)",     default='')
     parser.add_option("--list", action="store_true", help="list possible raw devices",      default=False)
+    parser.add_option("--force", action="store_true", help="override safety check",         default=False)
     (options, args) = parser.parse_args()
-
-    if options.list:
-        print('Possible raw devices:')
-        print('  ' + '\n  '.join(get_raw_device_hints()))
-        exit()
 
     return options
 
@@ -246,5 +244,19 @@ def get_options():
 ########################################################################
 if __name__=='__main__':
     options = get_options()
+    device_hints = get_raw_device_hints()
+    show_listing = options.list
+
+    if not show_listing and not options.force and options.dev and options.dev not in device_hints:
+        print('The device "%s" was not in the list of possible raw devices.'%options.dev)
+        print('The card burner application will now exit without burning your card.')
+        print('To override this safety check, specify the --force option.\n')
+        show_listing = True
+
+    if show_listing:
+        print('Possible raw devices:')
+        print('  ' + '\n  '.join(device_hints))
+        exit()
+
     if not options.dev: raise Exception('no raw device path specified')
     print(burn_sd_card(dev=options.dev, fw=options.fw, fpga=options.fpga))

@@ -33,14 +33,78 @@ using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
+ * dboard key class to use for look-up
+ **********************************************************************/
+class dboard_key_t{
+public:
+    dboard_key_t(const dboard_id_t &id = dboard_id_t::none()):
+        _rx_id(id), _tx_id(id), _xcvr(false){}
+
+    dboard_key_t(const dboard_id_t &rx_id, const dboard_id_t &tx_id):
+        _rx_id(rx_id), _tx_id(tx_id), _xcvr(true){}
+
+    dboard_id_t xx_id(void) const{
+        UHD_ASSERT_THROW(not this->is_xcvr());
+        return this->_rx_id;
+    }
+
+    dboard_id_t rx_id(void) const{
+        UHD_ASSERT_THROW(this->is_xcvr());
+        return this->_rx_id;
+    }
+
+    dboard_id_t tx_id(void) const{
+        UHD_ASSERT_THROW(this->is_xcvr());
+        return this->_tx_id;
+    }
+
+    bool is_xcvr(void) const{
+        return this->_xcvr;
+    }
+
+private:
+    dboard_id_t _rx_id, _tx_id;
+    bool _xcvr;
+};
+
+bool operator==(const dboard_key_t &lhs, const dboard_key_t &rhs){
+    if (lhs.is_xcvr() and rhs.is_xcvr())
+        return lhs.rx_id() == rhs.rx_id() and lhs.tx_id() == rhs.tx_id();
+    if (not lhs.is_xcvr() and not rhs.is_xcvr())
+        return lhs.xx_id() == rhs.xx_id();
+    return false;
+}
+
+/***********************************************************************
  * storage and registering for dboards
  **********************************************************************/
 //dboard registry tuple: dboard constructor, canonical name, subdev names
 typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, prop_names_t> args_t;
 
 //map a dboard id to a dboard constructor
-typedef uhd::dict<dboard_id_t, args_t> id_to_args_map_t;
+typedef uhd::dict<dboard_key_t, args_t> id_to_args_map_t;
 UHD_SINGLETON_FCN(id_to_args_map_t, get_id_to_args_map)
+
+static void register_dboard_key(
+    const dboard_key_t &dboard_key,
+    dboard_manager::dboard_ctor_t dboard_ctor,
+    const std::string &name,
+    const prop_names_t &subdev_names
+){
+    //std::cout << "registering: " << name << std::endl;
+    if (get_id_to_args_map().has_key(dboard_key)){
+
+        if (dboard_key.is_xcvr()) throw uhd::key_error(str(boost::format(
+            "The dboard id pair [%s, %s] is already registered to %s."
+        ) % dboard_key.rx_id().to_string() % dboard_key.tx_id().to_string() % get_id_to_args_map()[dboard_key].get<1>()));
+
+        else throw uhd::key_error(str(boost::format(
+            "The dboard id %s is already registered to %s."
+        ) % dboard_key.xx_id().to_string() % get_id_to_args_map()[dboard_key].get<1>()));
+
+    }
+    get_id_to_args_map()[dboard_key] = args_t(dboard_ctor, name, subdev_names);
+}
 
 void dboard_manager::register_dboard(
     const dboard_id_t &dboard_id,
@@ -48,18 +112,8 @@ void dboard_manager::register_dboard(
     const std::string &name,
     const prop_names_t &subdev_names
 ){
-    //std::cout << "registering: " << name << std::endl;
-    if (get_id_to_args_map().has_key(dboard_id)){
-        throw uhd::key_error(str(boost::format(
-            "The dboard id %s is already registered to %s."
-        ) % dboard_id.to_string() % dboard_id.to_pp_string()));
-    }
-    get_id_to_args_map()[dboard_id] = args_t(dboard_ctor, name, subdev_names);
+    register_dboard_key(dboard_key_t(dboard_id), dboard_ctor, name, subdev_names);
 }
-
-//map an xcvr dboard id to its partner dboard id
-typedef uhd::dict<dboard_id_t, dboard_id_t> xcvr_id_to_id_map_t;
-UHD_SINGLETON_FCN(xcvr_id_to_id_map_t, get_xcvr_id_to_id_map)
 
 void dboard_manager::register_dboard(
     const dboard_id_t &rx_dboard_id,
@@ -68,18 +122,21 @@ void dboard_manager::register_dboard(
     const std::string &name,
     const prop_names_t &subdev_names
 ){
-    //regular registration for ids
-    register_dboard(rx_dboard_id, dboard_ctor, name, subdev_names);
-    register_dboard(tx_dboard_id, dboard_ctor, name, subdev_names);
-
-    //register xcvr mapping for ids
-    get_xcvr_id_to_id_map()[rx_dboard_id] = tx_dboard_id;
-    get_xcvr_id_to_id_map()[tx_dboard_id] = rx_dboard_id;
+    register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id), dboard_ctor, name, subdev_names);
 }
 
 std::string dboard_id_t::to_cname(void) const{
-    if (not get_id_to_args_map().has_key(*this)) return "Unknown";
-    return get_id_to_args_map()[*this].get<1>();
+    std::string cname;
+    BOOST_FOREACH(const dboard_key_t &key, get_id_to_args_map().keys()){
+        if (
+            (not key.is_xcvr() and *this == key.xx_id()) or
+            (key.is_xcvr() and (*this == key.rx_id() or *this == key.tx_id()))
+        ){
+            if (not cname.empty()) cname += ", ";
+            cname += get_id_to_args_map()[key].get<1>();
+        }
+    }
+    return (cname.empty())? "Unknown" : cname;
 }
 
 std::string dboard_id_t::to_pp_string(void) const{
@@ -172,34 +229,6 @@ dboard_manager::sptr dboard_manager::make(
 /***********************************************************************
  * implementation class methods
  **********************************************************************/
-static args_t get_dboard_args(
-    dboard_iface::unit_t unit,
-    dboard_id_t dboard_id,
-    bool force_to_unknown = false
-){
-    //special case, the none id was provided, use the following ids
-    if (dboard_id == dboard_id_t::none() or force_to_unknown){
-        UHD_ASSERT_THROW(get_id_to_args_map().has_key(0xfff1));
-        UHD_ASSERT_THROW(get_id_to_args_map().has_key(0xfff0));
-        switch(unit){
-        case dboard_iface::UNIT_RX: return get_dboard_args(unit, 0xfff1);
-        case dboard_iface::UNIT_TX: return get_dboard_args(unit, 0xfff0);
-        default: UHD_THROW_INVALID_CODE_PATH();
-        }
-    }
-
-    //verify that there is a registered constructor for this id
-    if (not get_id_to_args_map().has_key(dboard_id)){
-        uhd::warning::post(str(boost::format(
-            "Unknown dboard ID: %s.\n"
-        ) % dboard_id.to_pp_string()));
-        return get_dboard_args(unit, dboard_id, true);
-    }
-
-    //return the dboard args for this id
-    return get_id_to_args_map()[dboard_id];
-}
-
 dboard_manager_impl::dboard_manager_impl(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
@@ -219,34 +248,29 @@ dboard_manager_impl::dboard_manager_impl(
 void dboard_manager_impl::init(
     dboard_id_t rx_dboard_id, dboard_id_t tx_dboard_id
 ){
-    //determine xcvr status
-    bool rx_dboard_is_xcvr = get_xcvr_id_to_id_map().has_key(rx_dboard_id);
-    bool tx_dboard_is_xcvr = get_xcvr_id_to_id_map().has_key(tx_dboard_id);
-    bool this_dboard_is_xcvr = (
-        rx_dboard_is_xcvr and tx_dboard_is_xcvr and
-        (get_xcvr_id_to_id_map()[rx_dboard_id] == tx_dboard_id) and
-        (get_xcvr_id_to_id_map()[tx_dboard_id] == rx_dboard_id)
-    );
+    //find the dboard key matches for the dboard ids
+    dboard_key_t rx_dboard_key, tx_dboard_key, xcvr_dboard_key;
+    BOOST_FOREACH(const dboard_key_t &key, get_id_to_args_map().keys()){
+        if (key.is_xcvr()){
+            if (rx_dboard_id == key.rx_id() and tx_dboard_id == key.tx_id()) xcvr_dboard_key = key;
+            if (rx_dboard_id == key.rx_id()) rx_dboard_key = key; //kept to handle warning
+            if (tx_dboard_id == key.tx_id()) tx_dboard_key = key; //kept to handle warning
+        }
+        else{
+            if (rx_dboard_id == key.xx_id()) rx_dboard_key = key;
+            if (tx_dboard_id == key.xx_id()) tx_dboard_key = key;
+        }
+    }
 
     //warn for invalid dboard id xcvr combinations
-    if (rx_dboard_is_xcvr != this_dboard_is_xcvr or tx_dboard_is_xcvr != this_dboard_is_xcvr){
+    if (not xcvr_dboard_key.is_xcvr() and (rx_dboard_key.is_xcvr() or tx_dboard_key.is_xcvr())){
         uhd::warning::post(str(boost::format(
-            "Unknown transceiver board ID combination...\n"
+            "Unknown transceiver board ID combination.\n"
+            "Is your daughter-board mounted properly?\n"
             "RX dboard ID: %s\n"
             "TX dboard ID: %s\n"
         ) % rx_dboard_id.to_pp_string() % tx_dboard_id.to_pp_string()));
     }
-
-    //extract dboard constructor and settings (force to unknown for messed up xcvr status)
-    dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
-    boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_dboard_args(
-        dboard_iface::UNIT_RX, rx_dboard_id, rx_dboard_is_xcvr != this_dboard_is_xcvr
-    );
-
-    dboard_ctor_t tx_dboard_ctor; std::string tx_name; prop_names_t tx_subdevs;
-    boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_dboard_args(
-        dboard_iface::UNIT_TX, tx_dboard_id, tx_dboard_is_xcvr != this_dboard_is_xcvr
-    );
 
     //initialize the gpio pins before creating subdevs
     set_nice_dboard_if();
@@ -255,15 +279,19 @@ void dboard_manager_impl::init(
     dboard_ctor_args_t db_ctor_args;
     db_ctor_args.db_iface = _iface;
 
-    //make xcvr subdevs (make one subdev for both rx and tx dboards)
-    if (this_dboard_is_xcvr){
-        UHD_ASSERT_THROW(rx_dboard_ctor == tx_dboard_ctor);
-        UHD_ASSERT_THROW(rx_subdevs == tx_subdevs);
-        BOOST_FOREACH(const std::string &subdev, rx_subdevs){
+    //make xcvr subdevs
+    if (xcvr_dboard_key.is_xcvr()){
+
+        //extract data for the xcvr dboard key
+        dboard_ctor_t dboard_ctor; std::string name; prop_names_t subdevs;
+        boost::tie(dboard_ctor, name, subdevs) = get_id_to_args_map()[xcvr_dboard_key];
+
+        //create the xcvr object for each subdevice
+        BOOST_FOREACH(const std::string &subdev, subdevs){
             db_ctor_args.sd_name = subdev;
             db_ctor_args.rx_id = rx_dboard_id;
             db_ctor_args.tx_id = tx_dboard_id;
-            dboard_base::sptr xcvr_dboard = rx_dboard_ctor(&db_ctor_args);
+            dboard_base::sptr xcvr_dboard = dboard_ctor(&db_ctor_args);
             //create a rx proxy for this xcvr board
             _rx_dboards[subdev] = subdev_proxy::sptr(
                 new subdev_proxy(xcvr_dboard, subdev_proxy::RX_TYPE)
@@ -277,6 +305,16 @@ void dboard_manager_impl::init(
 
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
     else{
+
+        //force the rx key to the unknown board for bad combinations
+        if (rx_dboard_key.is_xcvr() or rx_dboard_key.xx_id() == dboard_id_t::none()){
+            rx_dboard_key = dboard_key_t(0xfff1);
+        }
+
+        //extract data for the rx dboard key
+        dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
+        boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_id_to_args_map()[rx_dboard_key];
+
         //make the rx subdevs
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             db_ctor_args.sd_name = subdev;
@@ -288,6 +326,16 @@ void dboard_manager_impl::init(
                 new subdev_proxy(rx_dboard, subdev_proxy::RX_TYPE)
             );
         }
+
+        //force the tx key to the unknown board for bad combinations
+        if (tx_dboard_key.is_xcvr() or tx_dboard_key.xx_id() == dboard_id_t::none()){
+            tx_dboard_key = dboard_key_t(0xfff0);
+        }
+
+        //extract data for the tx dboard key
+        dboard_ctor_t tx_dboard_ctor; std::string tx_name; prop_names_t tx_subdevs;
+        boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_id_to_args_map()[tx_dboard_key];
+
         //make the tx subdevs
         BOOST_FOREACH(const std::string &subdev, tx_subdevs){
             db_ctor_args.sd_name = subdev;

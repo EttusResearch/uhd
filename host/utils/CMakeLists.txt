@@ -54,6 +54,17 @@ FOREACH(util_source ${util_share_sources})
 ENDFOREACH(util_source)
 
 IF(ENABLE_USRP2)
+    IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
+        FILE(DOWNLOAD
+            "http://www.ettus.com/downloads/dd.exe"
+            ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
+        )
+        INSTALL(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
+            DESTINATION ${PKG_DATA_DIR}/utils
+            COMPONENT utilities
+        )
+    ENDIF(WIN32 AND UHD_RELEASE_MODE)
     INSTALL(PROGRAMS
         usrp2_recovery.py
         usrp2_card_burner.py

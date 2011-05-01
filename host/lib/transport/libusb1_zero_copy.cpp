@@ -277,10 +277,10 @@ private:
     bool _threads_running;
 
     void run_event_loop(boost::barrier &spawn_barrier){
+        _threads_running = true;
         spawn_barrier.wait();
         set_thread_priority_safe();
         libusb_context *context = libusb::session::get_global_session()->get_context();
-        _threads_running = true;
         try{
             while(_threads_running){
                 timeval tv;

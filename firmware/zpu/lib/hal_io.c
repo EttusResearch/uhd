@@ -255,12 +255,14 @@ fngets(hal_uart_name_t u, char * const s, int len)
 int
 fngets_noblock(hal_uart_name_t u, char * const s, int len)
 {
-  char *x = s;
+  int i;
+  for(i=0; i < len; i++) {
+      s[i] = (char) hal_uart_getc_noblock(u);
+      if((s[i] == 255) || (s[i] == '\n')) break;
+  }
+  s[i] = 0;
 
-  while(((*x=(char)hal_uart_getc_noblock(u)) != '\n') && (*x != 255) && ((x-s) < len)) x++;
-  *x = 0;
-  //printf("Returning from fngets() with string %d of length %d\n", s[0], x-s);
-  return (x-s);
+  return i;
 }
 
 char *

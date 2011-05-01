@@ -228,9 +228,9 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     zero_copy_if::sptr err_xport,
     size_t index
 ){
+    recv_pirate_crew_raiding = true;
     spawn_barrier.wait();
     set_thread_priority_safe();
-    recv_pirate_crew_raiding = true;
 
     //store a reference to the flow control monitor (offset by max dsps)
     flow_control_monitor &fc_mon = *(this->fc_mons[index*usrp2_mboard_impl::MAX_NUM_DSPS]);

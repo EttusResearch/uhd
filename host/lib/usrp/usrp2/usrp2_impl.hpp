@@ -147,7 +147,7 @@ private:
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
-    uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
+    uhd::usrp::dboard_eeprom_t _tx_db_eeprom, _gdb_eeprom;
 
     //methods and shadows for the dsps
     UHD_PIMPL_DECL(dsp_impl) _dsp_impl;
@@ -163,7 +163,10 @@ private:
     void duc_get(const wax::obj &, wax::obj &, size_t);
     void duc_set(const wax::obj &, const wax::obj &, size_t);
     uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
-
+    
+    //sensors methods for mboard
+    bool get_mimo_locked(void);
+    bool get_ref_locked(void);
 };
 
 /*!

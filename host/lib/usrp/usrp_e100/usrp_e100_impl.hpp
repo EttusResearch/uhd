@@ -26,9 +26,12 @@
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/transport/zero_copy.hpp>
 
 #ifndef INCLUDED_USRP_E100_IMPL_HPP
 #define INCLUDED_USRP_E100_IMPL_HPP
+
+uhd::transport::zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
 
 static const boost::uint16_t USRP_E_FPGA_COMPAT_NUM = 0x03;
 
@@ -79,7 +82,7 @@ private:
 class usrp_e100_impl : public uhd::device{
 public:
     //structors
-    usrp_e100_impl(usrp_e100_iface::sptr);
+    usrp_e100_impl(usrp_e100_iface::sptr, const uhd::device_addr_t &);
     ~usrp_e100_impl(void);
 
     //the io interface
@@ -94,7 +97,9 @@ private:
     usrp_e100_iface::sptr _iface;
 
     //handle io stuff
+    uhd::transport::zero_copy_if::sptr _data_xport;
     UHD_PIMPL_DECL(io_impl) _io_impl;
+    size_t _recv_frame_size, _send_frame_size;
     uhd::otw_type_t _send_otw_type, _recv_otw_type;
     void io_init(void);
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
@@ -132,7 +137,7 @@ private:
     wax_obj_proxy::sptr _rx_dboard_proxy;
 
     //tx dboard functions and settings
-    uhd::usrp::dboard_eeprom_t _tx_db_eeprom;
+    uhd::usrp::dboard_eeprom_t _tx_db_eeprom, _gdb_eeprom;
     void tx_dboard_get(const wax::obj &, wax::obj &);
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;

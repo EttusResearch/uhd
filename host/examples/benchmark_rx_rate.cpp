@@ -114,7 +114,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args;
     double duration;
-    double only_rate;
+    double rate;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -122,7 +122,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for each test in seconds")
-        ("rate", po::value<double>(&only_rate), "specify to perform a single test as this rate (sps)")
+        ("rate", po::value<double>(&rate), "specify to perform a single test as this rate (sps)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -134,26 +134,31 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
+    //verify that rate was specified
+    if (not vm.count("rate")){
+        std::cerr << "Please specify the sample rate with --rate" << std::endl;
+        return ~0;
+    }
+
     //create a usrp device
     std::cout << std::endl;
+    uhd::device_addrs_t device_addrs = uhd::device::find(args);
+    if (device_addrs.empty()){
+        std::cerr << "Could not find any devices for: " << args << std::endl;
+        return ~0;
+    }
+    if (device_addrs.at(0).get("type", "") == "usrp1"){
+        std::cerr << "*** Warning! ***" << std::endl;
+        std::cerr << "Benchmark RX results will be inaccurate on USRP1 due to soft-time control.\n" << std::endl;
+    }
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(device_addrs.at(0));
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    if (not vm.count("rate")){
-        usrp->set_rx_rate(500e3); //initial rate
-        while(true){
-            double rate = usrp->get_rx_rate();
-            test_device(usrp, rate, duration);
-            usrp->set_rx_rate(rate*2); //double the rate
-            if (usrp->get_rx_rate() == rate) break;
-        }
-    }
-    else{
-        usrp->set_rx_rate(only_rate);
-        double rate = usrp->get_rx_rate();
-        test_device(usrp, rate, duration);
-    }
+    //start the test
+    usrp->set_rx_rate(rate);
+    rate = usrp->get_rx_rate();
+    test_device(usrp, rate, duration);
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

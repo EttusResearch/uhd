@@ -32,9 +32,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args;
+    std::string args, ant, subdev;
     size_t num_bins;
-    double rate, freq, gain, frame_rate;
+    double rate, freq, gain, bw, frame_rate;
     float ref_lvl, dyn_rng;
 
     //setup the program options
@@ -44,8 +44,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         // hardware parameters
         ("rate", po::value<double>(&rate), "rate of incoming samples (sps)")
-        ("freq", po::value<double>(&freq)->default_value(0), "RF center frequency in Hz")
-        ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
+        ("freq", po::value<double>(&freq), "RF center frequency in Hz")
+        ("gain", po::value<double>(&gain), "gain for the RF chain")
+        ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
+        ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
+        ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         // display parameters
         ("num-bins", po::value<size_t>(&num_bins)->default_value(512), "the number of bins in the DFT")
         ("frame-rate", po::value<double>(&frame_rate)->default_value(5), "frame rate of the display (fps)")
@@ -66,22 +69,48 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
+
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    //set the rx sample rate
+    //set the sample rate
+    if (not vm.count("rate")){
+        std::cerr << "Please specify the sample rate with --rate" << std::endl;
+        return ~0;
+    }
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_rx_rate(rate);
     std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
 
-    //set the rx center frequency
-    std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
+    //set the center frequency
+    if (not vm.count("freq")){
+        std::cerr << "Please specify the center frequency with --freq" << std::endl;
+        return ~0;
+    }
+    std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
     usrp->set_rx_freq(freq);
-    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
-    //set the rx rf gain
-    std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
-    usrp->set_rx_gain(gain);
-    std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+    //set the rf gain
+    if (vm.count("gain")){
+        std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
+        usrp->set_rx_gain(gain);
+        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+    }
+
+    //set the IF filter bandwidth
+    if (vm.count("bw")){
+        std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % bw << std::endl;
+        usrp->set_rx_bandwidth(bw);
+        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % usrp->get_rx_bandwidth() << std::endl << std::endl;
+    }
+
+    //set the antenna
+    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+
+    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
 
     //allocate recv buffer and metatdata
     uhd::rx_metadata_t md;

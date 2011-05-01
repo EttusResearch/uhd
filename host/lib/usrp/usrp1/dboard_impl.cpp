@@ -59,6 +59,7 @@ void usrp1_impl::dboard_init(void)
         //read the tx and rx dboard eeproms
         _rx_db_eeproms[dboard_slot].load(*_iface, get_rx_ee_addr(dboard_slot));
         _tx_db_eeproms[dboard_slot].load(*_iface, get_tx_ee_addr(dboard_slot));
+        _gdb_eeproms[dboard_slot].load(*_iface, get_tx_ee_addr(dboard_slot) ^ 5);
 
         //create a new dboard interface and manager
         _dboard_ifaces[dboard_slot] = make_dboard_iface(
@@ -68,7 +69,7 @@ void usrp1_impl::dboard_init(void)
 
         _dboard_managers[dboard_slot] = dboard_manager::make(
             _rx_db_eeproms[dboard_slot].id,
-            _tx_db_eeproms[dboard_slot].id,
+            ((_gdb_eeproms[dboard_slot].id == dboard_id_t::none())? _tx_db_eeproms[dboard_slot] : _gdb_eeproms[dboard_slot]).id,
             _dboard_ifaces[dboard_slot]
         );
 
@@ -171,6 +172,10 @@ void usrp1_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val, dboard_slot_
         val = _tx_db_eeproms[dboard_slot];
         return;
 
+    case DBOARD_PROP_GBOARD_EEPROM:
+        val = _gdb_eeproms[dboard_slot];
+        return;
+
     case DBOARD_PROP_DBOARD_IFACE:
         val = _dboard_ifaces[dboard_slot];
         return;
@@ -201,6 +206,11 @@ void usrp1_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val, dboard_
     case DBOARD_PROP_DBOARD_EEPROM:
         _tx_db_eeproms[dboard_slot] = val.as<dboard_eeprom_t>();
         _tx_db_eeproms[dboard_slot].store(*_iface, get_tx_ee_addr(dboard_slot));
+        return;
+
+    case DBOARD_PROP_GBOARD_EEPROM:
+        _gdb_eeproms[dboard_slot] = val.as<dboard_eeprom_t>();
+        _gdb_eeproms[dboard_slot].store(*_iface, get_tx_ee_addr(dboard_slot) ^ 5);
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

@@ -312,8 +312,7 @@ double rfx_xcvr::set_lo_freq(
         (8, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8)
     ;
 
-    std::vector<double> clock_rates = this->get_iface()->get_clock_rates(unit);
-    double actual_freq = 0, ref_freq = 0;
+    double actual_freq=0, ref_freq = this->get_iface()->get_clock_rate(unit);
     int R=0, BS=0, P=0, B=0, A=0;
 
     /*
@@ -326,31 +325,27 @@ double rfx_xcvr::set_lo_freq(
      * fvco = [P*B + A] * fref/R
      * fvco*R/fref = P*B + A = N
      */
-    for(R = 1; R <= 32; R+=((R==1)?1:2)){
-        BOOST_FOREACH(ref_freq, uhd::reversed(uhd::sorted(clock_rates))){
-            BOOST_FOREACH(BS, bandsel_to_enum.keys()){
-                if (ref_freq/R/BS > 1e6) continue; //constraint on band select clock
-                BOOST_FOREACH(P, prescaler_to_enum.keys()){
-                    //calculate B and A from N
-                    double N = target_freq*R/ref_freq;
-                    B = int(std::floor(N/P));
-                    A = boost::math::iround(N - P*B);
-                    if (B < A or B > 8191 or B < 3 or A > 31) continue; //constraints on A, B
-                    //calculate the actual frequency
-                    actual_freq = double(P*B + A)*ref_freq/R;
-                    if (actual_freq/P > 300e6) continue; //constraint on prescaler output
-                    //constraints met: exit loop
-                    goto done_loop;
-                }
+    for(R = 2; R <= 32; R+=2){
+        BOOST_FOREACH(BS, bandsel_to_enum.keys()){
+            if (ref_freq/R/BS > 1e6) continue; //constraint on band select clock
+            BOOST_FOREACH(P, prescaler_to_enum.keys()){
+                //calculate B and A from N
+                double N = target_freq*R/ref_freq;
+                B = int(std::floor(N/P));
+                A = boost::math::iround(N - P*B);
+                if (B < A or B > 8191 or B < 3 or A > 31) continue; //constraints on A, B
+                //calculate the actual frequency
+                actual_freq = double(P*B + A)*ref_freq/R;
+                if (actual_freq/P > 300e6) continue; //constraint on prescaler output
+                //constraints met: exit loop
+                goto done_loop;
             }
         }
     } done_loop:
 
     if (rfx_debug) std::cerr << boost::format(
-        "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d, ref=%fMHz"
-    ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) % (ref_freq/1e6) << std::endl;
-
-    this->get_iface()->set_clock_rate(unit, ref_freq);
+        "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d"
+    ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) << std::endl;
 
     //load the register values
     adf4360_regs_t regs;

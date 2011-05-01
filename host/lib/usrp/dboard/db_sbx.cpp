@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,53 +16,61 @@
 //
 
 // Common IO Pins
-#define ANTSW_IO        ((1 << 5)|(1 << 15))    // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
+#define LO_LPF_EN       (1 << 15)
 #define ADF4350_CE      (1 << 3)
 #define ADF4350_PDBRF   (1 << 2)
 #define ADF4350_MUXOUT  (1 << 1)                // INPUT!!!
 #define LOCKDET_MASK    (1 << 0)                // INPUT!!!
 
 // TX IO Pins
-#define TX_PUP_5V       (1 << 7)                // enables 5.0V power supply
-#define TX_PUP_3V       (1 << 6)                // enables 3.3V supply
-#define TXMOD_EN        (1 << 4)                // on UNIT_TX, 1 enables TX Modulator
+#define TRSW            (1 << 14)               // 0 = TX, 1 = RX 
+#define TX_LED_TXRX     (1 << 7)                // LED for TX Antenna Selection TX/RX
+#define TX_LED_LD       (1 << 6)                // LED for TX Lock Detect
+#define DIS_POWER_TX    (1 << 5)                // on UNIT_TX, 0 powers up TX
+#define TX_ENABLE       (1 << 4)                // on UNIT_TX, 0 disables TX Mixer
 
 // RX IO Pins
-#define RX_PUP_5V       (1 << 7)                // enables 5.0V power supply
-#define RX_PUP_3V       (1 << 6)                // enables 3.3V supply
-#define RXBB_PDB        (1 << 4)                // on UNIT_RX, 1 powers up RX baseband
+#define LNASW           (1 << 14)               // 0 = TX/RX, 1 = RX2
+#define RX_LED_RX1RX2   (1 << 7)                // LED for RX Antenna Selection RX1/RX2
+#define RX_LED_LD       (1 << 6)                // LED for RX Lock Detect
+#define DIS_POWER_RX    (1 << 5)                // on UNIT_RX, 0 powers up RX
+#define RX_DISABLE      (1 << 4)                // on UNIT_RX, 1 disables RX Mixer and Baseband
 
 // RX Attenuator Pins
 #define RX_ATTN_SHIFT   8                       // lsb of RX Attenuator Control
-#define RX_ATTN_MASK    (63 << RX_ATTN_SHIFT)      // valid bits of RX Attenuator Control
+#define RX_ATTN_MASK    (63 << RX_ATTN_SHIFT)   // valid bits of RX Attenuator Control
+
+// TX Attenuator Pins
+#define TX_ATTN_SHIFT   8                       // lsb of RX Attenuator Control
+#define TX_ATTN_MASK    (63 << TX_ATTN_SHIFT)   // valid bits of RX Attenuator Control
 
 // Mixer functions
-#define TX_MIXER_ENB    (TXMOD_EN|ADF4350_PDBRF)
+#define TX_MIXER_ENB    (ADF4350_PDBRF)
 #define TX_MIXER_DIS    0
 
-#define RX_MIXER_ENB    (RXBB_PDB|ADF4350_PDBRF)
+#define RX_MIXER_ENB    (ADF4350_PDBRF)
 #define RX_MIXER_DIS    0
 
 // Pin functions
-#define TX_POWER_IO     (TX_PUP_5V|TX_PUP_3V)   // high enables power supply
-#define TXIO_MASK       (TX_POWER_IO|ANTSW_IO|ADF4350_CE|ADF4350_PDBRF|TXMOD_EN)
+#define TX_LED_IO       (TX_LED_TXRX|TX_LED_LD)     // LED gpio lines, pull down for LED
+#define TXIO_MASK       (LO_LPF_EN|TRSW|ADF4350_CE|ADF4350_PDBRF|TX_ATTN_MASK|DIS_POWER_TX|TX_ENABLE)
 
-#define RX_POWER_IO     (RX_PUP_5V|RX_PUP_3V)   // high enables power supply
-#define RXIO_MASK       (RX_POWER_IO|ANTSW_IO|ADF4350_CE|ADF4350_PDBRF|RXBB_PDB|RX_ATTN_MASK)
+#define RX_LED_IO       (RX_LED_RX1RX2|RX_LED_LD)   // LED gpio lines, pull down for LED
+#define RXIO_MASK       (LO_LPF_EN|LNASW|ADF4350_CE|ADF4350_PDBRF|RX_ATTN_MASK|DIS_POWER_RX|RX_DISABLE)
 
 // Power functions
-#define TX_POWER_UP     (TX_POWER_IO|ADF4350_CE)
-#define TX_POWER_DOWN   0
+#define TX_POWER_UP     (ADF4350_CE|TX_ENABLE)
+#define TX_POWER_DOWN   (DIS_POWER_TX)
 
-#define RX_POWER_UP     (RX_POWER_IO|ADF4350_CE)
-#define RX_POWER_DOWN   0
+#define RX_POWER_UP     (ADF4350_CE)
+#define RX_POWER_DOWN   (DIS_POWER_RX)
 
 // Antenna constants
-#define ANT_TX          0                       //the tx line is transmitting
-#define ANT_RX          ANTSW_IO                //the tx line is receiving
+#define ANT_TX          TRSW                    //the tx line is transmitting
+#define ANT_RX          0                       //the tx line is receiving
 #define ANT_TXRX        0                       //the rx line is on txrx
-#define ANT_RX2         ANTSW_IO                //the rx line in on rx2
-#define ANT_XX          0                       //dont care how the antenna is set
+#define ANT_RX2         LNASW                   //the rx line in on rx2
+#define ANT_XX          LNASW                   //dont care how the antenna is set
 
 #include "adf4350_regs.hpp"
 #include <uhd/types/dict.hpp>
@@ -78,37 +86,50 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/thread.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
 /***********************************************************************
- * The WBX dboard constants
+ * The SBX dboard constants
  **********************************************************************/
-static const bool wbx_debug = false;
+static const bool sbx_debug = false;
 
-static const freq_range_t wbx_freq_range(68.75e6, 2.2e9);
+static const freq_range_t sbx_freq_range(68.75e6, 4.4e9);
 
-static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
-
-static const prop_names_t wbx_rx_antennas = list_of("TX/RX")("RX2");
-
-static const uhd::dict<std::string, gain_range_t> wbx_tx_gain_ranges = map_list_of
-    ("PGA0", gain_range_t(0, 25, 0.05))
+static const freq_range_t sbx_tx_lo_2dbm = list_of
+    (range_t(0.35e9, 0.37e9))
 ;
 
-static const uhd::dict<std::string, gain_range_t> wbx_rx_gain_ranges = map_list_of
-    ("PGA0", gain_range_t(0, 31.5, 0.5))
+static const freq_range_t sbx_enable_tx_lo_filter = list_of
+    (range_t(0.4e9, 1.5e9))
+;
+
+static const freq_range_t sbx_enable_rx_lo_filter = list_of
+    (range_t(0.4e9, 1.5e9))
+;
+
+static const prop_names_t sbx_tx_antennas = list_of("TX/RX");
+
+static const prop_names_t sbx_rx_antennas = list_of("TX/RX")("RX2");
+
+static const uhd::dict<std::string, gain_range_t> sbx_tx_gain_ranges = map_list_of
+    ("PGA0", gain_range_t(0, 31.5, double(0.5)))
+;
+
+static const uhd::dict<std::string, gain_range_t> sbx_rx_gain_ranges = map_list_of
+    ("PGA0", gain_range_t(0, 31.5, double(0.5)))
 ;
 
 /***********************************************************************
- * The WBX dboard
+ * The SBX dboard
  **********************************************************************/
-class wbx_xcvr : public xcvr_dboard_base{
+class sbx_xcvr : public xcvr_dboard_base{
 public:
-    wbx_xcvr(ctor_args_t args);
-    ~wbx_xcvr(void);
+    sbx_xcvr(ctor_args_t args);
+    ~sbx_xcvr(void);
 
     void rx_get(const wax::obj &key, wax::obj &val);
     void rx_set(const wax::obj &key, const wax::obj &val);
@@ -146,51 +167,126 @@ private:
     bool get_locked(dboard_iface::unit_t unit){
         return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
     }
+
+    /*!
+     * Flash the LEDs
+     */
+    void flash_leds(void) {
+        //Remove LED gpios from ATR control temporarily and set to outputs
+        this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
+        this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|RX_LED_IO));
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
+
+        /*
+        //flash All LEDs
+        for (int i = 0; i < 3; i++) {
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_IO, RX_LED_IO);
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_IO, TX_LED_IO);
+
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
+
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        }
+        */
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_TXRX|TX_LED_LD, TX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_RX1RX2|RX_LED_LD, RX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+        /*
+        //flash All LEDs
+        for (int i = 0; i < 3; i++) {
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
+
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_IO, RX_LED_IO);
+            this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_IO, TX_LED_IO);
+
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        }
+        */
+        //Put LED gpios back in ATR control and update atr
+        this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
+        this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
+    }
+
 };
 
 /***********************************************************************
- * Register the WBX dboard (min freq, max freq, rx div2, tx div2)
+ * Register the SBX dboard (min freq, max freq, rx div2, tx div2)
  **********************************************************************/
-static dboard_base::sptr make_wbx(dboard_base::ctor_args_t args){
-    return dboard_base::sptr(new wbx_xcvr(args));
+static dboard_base::sptr make_sbx(dboard_base::ctor_args_t args){
+    return dboard_base::sptr(new sbx_xcvr(args));
 }
 
-UHD_STATIC_BLOCK(reg_wbx_dboards){
-    dboard_manager::register_dboard(0x0053, 0x0052, &make_wbx, "WBX");
+UHD_STATIC_BLOCK(reg_sbx_dboards){
+    dboard_manager::register_dboard(0x0054, 0x0055, &make_sbx, "SBX");
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
-wbx_xcvr::wbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
+sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
 
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions and atr controls (identically)
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
+    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
+    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
+
+    //flash LEDs
+    flash_leds();
+
+    if (sbx_debug) std::cerr << boost::format(
+        "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
     ) % RXIO_MASK % TXIO_MASK << std::endl;
 
     //set some default values
-    set_rx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
-    set_tx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
+    set_rx_lo_freq((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
+    set_tx_lo_freq((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
     set_rx_ant("RX2");
 
-    BOOST_FOREACH(const std::string &name, wbx_tx_gain_ranges.keys()){
-        set_tx_gain(wbx_tx_gain_ranges[name].start(), name);
+    BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
+        set_tx_gain(sbx_tx_gain_ranges[name].start(), name);
     }
-    BOOST_FOREACH(const std::string &name, wbx_rx_gain_ranges.keys()){
-        set_rx_gain(wbx_rx_gain_ranges[name].start(), name);
+    BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
+        set_rx_gain(sbx_rx_gain_ranges[name].start(), name);
     }
 }
 
-wbx_xcvr::~wbx_xcvr(void){
+sbx_xcvr::~sbx_xcvr(void){
     /* NOP */
 }
 
@@ -199,60 +295,62 @@ wbx_xcvr::~wbx_xcvr(void){
  **********************************************************************/
 static int rx_pga0_gain_to_iobits(double &gain){
     //clip the input
-    gain = wbx_rx_gain_ranges["PGA0"].clip(gain);
+    gain = sbx_rx_gain_ranges["PGA0"].clip(gain);
 
     //convert to attenuation and update iobits for atr
-    double attn = wbx_rx_gain_ranges["PGA0"].stop() - gain;
+    double attn = sbx_rx_gain_ranges["PGA0"].stop() - gain;
 
-    //calculate the attenuation
-    int attn_code = boost::math::iround(attn*2);
+    //calculate the RX attenuation
+    int attn_code = int(floor(attn*2));
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
+    
+    if (sbx_debug) std::cerr << boost::format(
+        "SBX TX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = wbx_rx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
+    gain = sbx_rx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
 
     return iobits;
 }
 
-static double tx_pga0_gain_to_dac_volts(double &gain){
+static int tx_pga0_gain_to_iobits(double &gain){
     //clip the input
-    gain = wbx_tx_gain_ranges["PGA0"].clip(gain);
+    gain = sbx_tx_gain_ranges["PGA0"].clip(gain);
 
-    //voltage level constants
-    static const double max_volts = 0.5, min_volts = 1.4;
-    static const double slope = (max_volts-min_volts)/wbx_tx_gain_ranges["PGA0"].stop();
+    //convert to attenuation and update iobits for atr
+    double attn = sbx_tx_gain_ranges["PGA0"].stop() - gain;
 
-    //calculate the voltage for the aux dac
-    double dac_volts = gain*slope + min_volts;
+    //calculate the TX attenuation
+    int attn_code = int(floor(attn*2));
+    int iobits = ((~attn_code) << TX_ATTN_SHIFT) & TX_ATTN_MASK;
 
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX TX Gain: %f dB, dac_volts: %f V"
-    ) % gain % dac_volts << std::endl;
+    
+    if (sbx_debug) std::cerr << boost::format(
+        "SBX TX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
+    ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = (dac_volts - min_volts)/slope;
+    gain = sbx_tx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
 
-    return dac_volts;
+    return iobits;
 }
 
-void wbx_xcvr::set_tx_gain(double gain, const std::string &name){
-    assert_has(wbx_tx_gain_ranges.keys(), name, "wbx tx gain name");
+void sbx_xcvr::set_tx_gain(double gain, const std::string &name){
+    assert_has(sbx_tx_gain_ranges.keys(), name, "sbx tx gain name");
     if(name == "PGA0"){
-        double dac_volts = tx_pga0_gain_to_dac_volts(gain);
+        tx_pga0_gain_to_iobits(gain);
         _tx_gains[name] = gain;
 
-        //write the new voltage to the aux dac
-        this->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, dboard_iface::AUX_DAC_A, dac_volts);
+        //write the new gain to atr regs
+        update_atr();
     }
     else UHD_THROW_INVALID_CODE_PATH();
 }
 
-void wbx_xcvr::set_rx_gain(double gain, const std::string &name){
-    assert_has(wbx_rx_gain_ranges.keys(), name, "wbx rx gain name");
+void sbx_xcvr::set_rx_gain(double gain, const std::string &name){
+    assert_has(sbx_rx_gain_ranges.keys(), name, "sbx rx gain name");
     if(name == "PGA0"){
         rx_pga0_gain_to_iobits(gain);
         _rx_gains[name] = gain;
@@ -266,35 +364,49 @@ void wbx_xcvr::set_rx_gain(double gain, const std::string &name){
 /***********************************************************************
  * Antenna Handling
  **********************************************************************/
-void wbx_xcvr::update_atr(void){
+void sbx_xcvr::update_atr(void){
     //calculate atr pins
-    int pga0_iobits = rx_pga0_gain_to_iobits(_rx_gains["PGA0"]);
+    int rx_pga0_iobits = rx_pga0_gain_to_iobits(_rx_gains["PGA0"]);
+    int tx_pga0_iobits = tx_pga0_gain_to_iobits(_tx_gains["PGA0"]);
+    int rx_lo_lpf_en = (_rx_lo_freq == sbx_enable_rx_lo_filter.clip(_rx_lo_freq)) ? LO_LPF_EN : 0;
+    int tx_lo_lpf_en = (_tx_lo_freq == sbx_enable_tx_lo_filter.clip(_tx_lo_freq)) ? LO_LPF_EN : 0;
+    int rx_ld_led = get_locked(dboard_iface::UNIT_RX) ? 0 : RX_LED_LD;
+    int tx_ld_led = get_locked(dboard_iface::UNIT_TX) ? 0 : TX_LED_LD;
+    int rx_ant_led = _rx_ant == "TX/RX" ? RX_LED_RX1RX2 : 0;
+    int tx_ant_led = _rx_ant == "TX/RX" ? 0 : TX_LED_TXRX;
 
     //setup the tx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     TX_POWER_UP | ANT_RX | TX_MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     TX_POWER_UP | ANT_TX | TX_MIXER_ENB);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, TX_POWER_UP | ANT_TX | TX_MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_TX | TX_MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_TX | TX_MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,
-        pga0_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
+        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
-        pga0_iobits | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
+        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_RX2 | RX_MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        pga0_iobits | RX_POWER_UP | ANT_RX2| RX_MIXER_ENB);
+        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_RX2 | RX_MIXER_ENB);
 
-    //set the rx atr regs that change with antenna setting
+    //set the atr regs that change with antenna setting
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_DIS |
+            ((_rx_ant == "TX/RX")? ANT_RX : ANT_TX));
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX RXONLY ATR REG: 0x%08x"
-    ) % (pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
+        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB | 
+            ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+
+    if (sbx_debug) std::cerr << boost::format(
+        "SBX RXONLY ATR REG: 0x%08x"
+    ) % (rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
 }
 
-void wbx_xcvr::set_rx_ant(const std::string &ant){
+void sbx_xcvr::set_rx_ant(const std::string &ant){
     //validate input
-    assert_has(wbx_rx_antennas, ant, "wbx rx antenna name");
+    assert_has(sbx_rx_antennas, ant, "sbx rx antenna name");
 
     //shadow the setting
     _rx_ant = ant;
@@ -303,32 +415,32 @@ void wbx_xcvr::set_rx_ant(const std::string &ant){
     update_atr();
 }
 
-void wbx_xcvr::set_tx_ant(const std::string &ant){
-    assert_has(wbx_tx_antennas, ant, "wbx tx antenna name");
+void sbx_xcvr::set_tx_ant(const std::string &ant){
+    assert_has(sbx_tx_antennas, ant, "sbx tx antenna name");
     //only one antenna option, do nothing
 }
 
 /***********************************************************************
  * Tuning
  **********************************************************************/
-void wbx_xcvr::set_rx_lo_freq(double freq){
+void sbx_xcvr::set_rx_lo_freq(double freq){
     _rx_lo_freq = set_lo_freq(dboard_iface::UNIT_RX, freq);
 }
 
-void wbx_xcvr::set_tx_lo_freq(double freq){
+void sbx_xcvr::set_tx_lo_freq(double freq){
     _tx_lo_freq = set_lo_freq(dboard_iface::UNIT_TX, freq);
 }
 
-double wbx_xcvr::set_lo_freq(
+double sbx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX tune: target frequency %f Mhz"
+    if (sbx_debug) std::cerr << boost::format(
+        "SBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
-    target_freq = wbx_freq_range.clip(target_freq);
+    target_freq = sbx_freq_range.clip(target_freq);
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of
@@ -358,7 +470,7 @@ double wbx_xcvr::set_lo_freq(
 
     //increase RF divider until acceptable VCO frequency
     //start with target_freq*2 because mixer has divide by 2
-    double vco_freq = target_freq*2;
+    double vco_freq = target_freq;
     while (vco_freq < 2.2e9) {
         vco_freq *= 2;
         RFdiv *= 2;
@@ -417,20 +529,24 @@ double wbx_xcvr::set_lo_freq(
     }
 
     //actual frequency calculation
-    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv/2);
+    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv);
 
+    if (sbx_debug) {
+        std::cerr << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl;
 
-    if (wbx_debug) {
-        std::cerr << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl;
-
-        std::cerr << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
+        std::cerr << boost::format("SBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
             ) % R % BS % N % FRAC % MOD % T % D % RFdiv % get_locked(unit)<< std::endl
-        << boost::format("WBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
+        << boost::format("SBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
             ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
     }
 
     //load the register values
     adf4350_regs_t regs;
+
+    if ((unit == dboard_iface::UNIT_TX) and (actual_freq == sbx_tx_lo_2dbm.clip(actual_freq))) 
+        regs.output_power = adf4350_regs_t::OUTPUT_POWER_2DBM;
+    else
+        regs.output_power = adf4350_regs_t::OUTPUT_POWER_5DBM;
 
     regs.frac_12_bit = FRAC;
     regs.int_16_bit = N;
@@ -448,8 +564,8 @@ double wbx_xcvr::set_lo_freq(
     int addr;
 
     for(addr=5; addr>=0; addr--){
-        if (wbx_debug) std::cerr << boost::format(
-            "WBX SPI Reg (0x%02x): 0x%08x"
+        if (sbx_debug) std::cerr << boost::format(
+            "SBX SPI Reg (0x%02x): 0x%08x"
         ) % addr % regs.get_reg(addr) << std::endl;
         this->get_iface()->write_spi(
             unit, spi_config_t::EDGE_RISE,
@@ -458,8 +574,8 @@ double wbx_xcvr::set_lo_freq(
     }
 
     //return the actual frequency
-    if (wbx_debug) std::cerr << boost::format(
-        "WBX tune: actual frequency %f Mhz"
+    if (sbx_debug) std::cerr << boost::format(
+        "SBX tune: actual frequency %f Mhz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }
@@ -467,7 +583,7 @@ double wbx_xcvr::set_lo_freq(
 /***********************************************************************
  * RX Get and Set
  **********************************************************************/
-void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
+void sbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -481,17 +597,17 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        assert_has(_rx_gains.keys(), key.name, "wbx rx gain name");
+        assert_has(_rx_gains.keys(), key.name, "sbx rx gain name");
         val = _rx_gains[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(wbx_rx_gain_ranges.keys(), key.name, "wbx rx gain name");
-        val = wbx_rx_gain_ranges[key.name];
+        assert_has(sbx_rx_gain_ranges.keys(), key.name, "sbx rx gain name");
+        val = sbx_rx_gain_ranges[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(wbx_rx_gain_ranges.keys());
+        val = prop_names_t(sbx_rx_gain_ranges.keys());
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -499,7 +615,7 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = wbx_freq_range;
+        val = sbx_freq_range;
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -507,19 +623,19 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
-        val = wbx_rx_antennas;
+        val = sbx_rx_antennas;
         return;
 
     case SUBDEV_PROP_CONNECTION:
         val = SUBDEV_CONN_COMPLEX_IQ;
         return;
 
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
+        return;
+
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
         return;
 
     case SUBDEV_PROP_SENSOR:
@@ -539,7 +655,7 @@ void wbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
     }
 }
 
-void wbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
+void sbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -562,7 +678,7 @@ void wbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_BANDWIDTH:
         uhd::warning::post(
-            str(boost::format("WBX: No tunable bandwidth, fixed filtered to 40MHz"))
+            str(boost::format("SBX: No tunable bandwidth, fixed filtered to 40MHz"))
         );
         return;
 
@@ -573,7 +689,7 @@ void wbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
 /***********************************************************************
  * TX Get and Set
  **********************************************************************/
-void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
+void sbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -587,17 +703,17 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_GAIN:
-        assert_has(_tx_gains.keys(), key.name, "wbx tx gain name");
+        assert_has(_tx_gains.keys(), key.name, "sbx tx gain name");
         val = _tx_gains[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(wbx_tx_gain_ranges.keys(), key.name, "wbx tx gain name");
-        val = wbx_tx_gain_ranges[key.name];
+        assert_has(sbx_tx_gain_ranges.keys(), key.name, "sbx tx gain name");
+        val = sbx_tx_gain_ranges[key.name];
         return;
 
     case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(wbx_tx_gain_ranges.keys());
+        val = prop_names_t(sbx_tx_gain_ranges.keys());
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -605,7 +721,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
-        val = wbx_freq_range;
+        val = sbx_freq_range;
         return;
 
     case SUBDEV_PROP_ANTENNA:
@@ -613,19 +729,19 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
-        val = wbx_tx_antennas;
+        val = sbx_tx_antennas;
         return;
 
     case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
+        val = SUBDEV_CONN_COMPLEX_QI;
         return;
 
     case SUBDEV_PROP_USE_LO_OFFSET:
         val = false;
+        return;
+
+    case SUBDEV_PROP_ENABLED:
+        val = true; //always enabled
         return;
 
     case SUBDEV_PROP_SENSOR:
@@ -645,7 +761,7 @@ void wbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
     }
 }
 
-void wbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
+void sbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -668,7 +784,7 @@ void wbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
 
     case SUBDEV_PROP_BANDWIDTH:
         uhd::warning::post(
-            str(boost::format("WBX: No tunable bandwidth, fixed filtered to 40MHz"))
+            str(boost::format("SBX: No tunable bandwidth, fixed filtered to 40MHz"))
         );
         return;
 

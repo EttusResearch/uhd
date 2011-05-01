@@ -180,6 +180,9 @@ void usrp1_impl::io_impl::commit_send_buff(
 
     //commit the current buffer
     curr.buff->commit(num_bytes_to_commit);
+
+    //store the next buffer for the next call
+    curr_buff = next;
 }
 
 /*!
@@ -215,9 +218,6 @@ bool usrp1_impl::io_impl::get_send_buffs(
 
     //make a new managed buffer with the offset buffs
     buffs[0] = omsb.get_new(curr_buff, next_buff);
-
-    //store the next buffer for the next call
-    curr_buff = next_buff;
 
     return true;
 }
