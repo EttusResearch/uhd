@@ -26,7 +26,10 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/barrier.hpp>
 #include <algorithm>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -40,6 +43,9 @@ static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
 // and the compatibility of the register mapping (more likely to change).
 static const boost::uint32_t MIN_PROTO_COMPAT_REG = USRP2_FW_COMPAT_NUM;
 static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
+
+// Map for virtual firmware regs (not very big so we can keep it here for now)
+#define U2_FW_REG_LOCK_TIME 0
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
@@ -62,21 +68,50 @@ public:
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
-        switch(this->get_rev()){
-        case USRP2_REV3:
-        case USRP2_REV4:
-            regs = usrp2_get_regs(false);
-            break;
+        regs = usrp2_get_regs(); //reg map identical across all boards
+    }
 
-        case USRP_N200:
-        case USRP_N210:
-            regs = usrp2_get_regs(true);
-            break;
+    ~usrp2_iface_impl(void){
+        this->lock_device(false);
+    }
 
-        case USRP_NXXX: //fallthough case is old register map (USRP2)
-            regs = usrp2_get_regs(false);
-            break;
+/***********************************************************************
+ * Device locking
+ **********************************************************************/
+
+    void lock_device(bool lock){
+        if (lock){
+            boost::barrier spawn_barrier(2);
+            _lock_thread_group.create_thread(boost::bind(&usrp2_iface_impl::lock_loop, this, boost::ref(spawn_barrier)));
+            spawn_barrier.wait();
         }
+        else{
+            _lock_thread_group.interrupt_all();
+            _lock_thread_group.join_all();
+        }
+    }
+
+    bool is_device_locked(void){
+        boost::uint32_t lock_secs = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
+        boost::uint32_t curr_secs = this->peek32(this->regs.time64_secs_rb_imm);
+        return (curr_secs - lock_secs < 3); //if the difference is larger, assume not locked anymore
+    }
+
+    void lock_loop(boost::barrier &spawn_barrier){
+        spawn_barrier.wait();
+
+        try{
+            while(true){
+                //re-lock in loop
+                boost::uint32_t curr_secs = this->peek32(this->regs.time64_secs_rb_imm);
+                this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, curr_secs);
+                //sleep for a bit
+                boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
+            }
+        } catch(const boost::thread_interrupted &){}
+
+        //unlock on exit
+        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0);
     }
 
 /***********************************************************************
@@ -96,6 +131,21 @@ public:
 
     boost::uint16_t peek16(boost::uint32_t addr){
         return this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
+    }
+
+    template <class T, usrp2_reg_action_t action>
+    T get_reg(boost::uint32_t addr, T data = 0){
+        //setup the out data
+        usrp2_ctrl_data_t out_data;
+        out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
+        out_data.data.reg_args.addr = htonl(addr);
+        out_data.data.reg_args.data = htonl(boost::uint32_t(data));
+        out_data.data.reg_args.action = action;
+
+        //send and recv
+        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
+        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE);
+        return T(ntohl(in_data.data.reg_args.data));
     }
 
 /***********************************************************************
@@ -302,23 +352,8 @@ private:
     boost::uint32_t _ctrl_seq_num;
     boost::uint32_t _protocol_compat;
 
-/***********************************************************************
- * Private Templated Peek and Poke
- **********************************************************************/
-    template <class T, usrp2_reg_action_t action>
-    T get_reg(boost::uint32_t addr, T data = 0){
-        //setup the out data
-        usrp2_ctrl_data_t out_data;
-        out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
-        out_data.data.reg_args.addr = htonl(addr);
-        out_data.data.reg_args.data = htonl(boost::uint32_t(data));
-        out_data.data.reg_args.action = action;
-
-        //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_REG);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_OMG_GOT_REGISTER_SO_BAD_DUDE);
-        return T(ntohl(in_data.data.reg_args.data));
-    }
+    //lock thread stuff
+    boost::thread_group _lock_thread_group;
 };
 
 /***********************************************************************

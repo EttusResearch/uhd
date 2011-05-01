@@ -115,9 +115,11 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
             //Attempt to read the name from the EEPROM and perform filtering.
             //This operation can throw due to compatibility mismatch.
             try{
-                mboard_eeprom_t mb_eeprom = usrp2_iface::make(udp_simple::make_connected(
-                    new_addr["addr"], boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT)
-                ))->mb_eeprom;
+                usrp2_iface::sptr iface = usrp2_iface::make(udp_simple::make_connected(
+                    new_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
+                ));
+                if (iface->is_device_locked()) continue; //ignore locked devices
+                mboard_eeprom_t mb_eeprom = iface->mb_eeprom;
                 new_addr["name"] = mb_eeprom["name"];
                 new_addr["serial"] = mb_eeprom["serial"];
             }

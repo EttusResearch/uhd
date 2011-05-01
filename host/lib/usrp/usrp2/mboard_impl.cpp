@@ -80,6 +80,9 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_compat_num));
     }
 
+    //lock the device/motherboard to this process
+    _iface->lock_device(true);
+
     //construct transports for dsp and async errors
     std::cout << "Making transport for DSP0..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(

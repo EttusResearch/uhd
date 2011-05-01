@@ -66,6 +66,12 @@ public:
     //! Get the canonical name for this device
     virtual const std::string get_cname(void) = 0;
 
+    //! Lock the device to this iface
+    virtual void lock_device(bool lock) = 0;
+
+    //! Is this device locked?
+    virtual bool is_device_locked(void) = 0;
+
     /*!
      * Register map selected from USRP2/USRP2+.
      */

@@ -56,7 +56,7 @@ int sr_addr(int sr) {
     return SETTING_REGS_BASE + (4 * sr);
 }
 
-usrp2_regs_t usrp2_get_regs(bool) {
+usrp2_regs_t usrp2_get_regs(void) {
   usrp2_regs_t x;
   x.misc_ctrl_clock = sr_addr(0);
   x.misc_ctrl_serdes = sr_addr(1);

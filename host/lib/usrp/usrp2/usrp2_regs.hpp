@@ -88,7 +88,7 @@ typedef struct {
 
 extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
 
-usrp2_regs_t usrp2_get_regs(bool);
+usrp2_regs_t usrp2_get_regs(void);
 
 ////////////////////////////////////////////////////
 // Settings Bus, Slave #7, Not Byte Addressable!
