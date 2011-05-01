@@ -49,28 +49,28 @@ static tune_result_t tune_xx_subdev_and_dsp(
     }
 
     //------------------------------------------------------------------
-    //-- set the intermediate frequency depending upon the IF policy
+    //-- set the RF frequency depending upon the policy
     //------------------------------------------------------------------
-    double target_inter_freq = 0.0;
-    switch (tune_request.inter_freq_policy){
+    double target_rf_freq = 0.0;
+    switch (tune_request.rf_freq_policy){
     case tune_request_t::POLICY_AUTO:
-        target_inter_freq = tune_request.target_freq + lo_offset;
-        subdev_freq_proxy = target_inter_freq;
+        target_rf_freq = tune_request.target_freq + lo_offset;
+        subdev_freq_proxy = target_rf_freq;
         break;
 
     case tune_request_t::POLICY_MANUAL:
-        target_inter_freq = tune_request.inter_freq;
-        subdev_freq_proxy = target_inter_freq;
+        target_rf_freq = tune_request.rf_freq;
+        subdev_freq_proxy = target_rf_freq;
         break;
 
     case tune_request_t::POLICY_NONE: break; //does not set
     }
-    double actual_inter_freq = subdev_freq_proxy.as<double>();
+    double actual_rf_freq = subdev_freq_proxy.as<double>();
 
     //------------------------------------------------------------------
     //-- calculate the dsp freq, only used with automatic policy
     //------------------------------------------------------------------
-    double target_dsp_freq = actual_inter_freq - tune_request.target_freq;
+    double target_dsp_freq = actual_rf_freq - tune_request.target_freq;
 
     //invert the sign on the dsp freq given the following conditions
     if (unit == dboard_iface::UNIT_TX) target_dsp_freq *= -1.0;
@@ -96,8 +96,8 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //-- load and return the tune result
     //------------------------------------------------------------------
     tune_result_t tune_result;
-    tune_result.target_inter_freq = target_inter_freq;
-    tune_result.actual_inter_freq = actual_inter_freq;
+    tune_result.target_rf_freq = target_rf_freq;
+    tune_result.actual_rf_freq = actual_rf_freq;
     tune_result.target_dsp_freq = target_dsp_freq;
     tune_result.actual_dsp_freq = actual_dsp_freq;
     return tune_result;
@@ -107,13 +107,13 @@ static double derive_freq_from_xx_subdev_and_dsp(
     dboard_iface::unit_t unit, wax::obj subdev, wax::obj dsp
 ){
     //extract actual dsp and IF frequencies
-    double actual_inter_freq = subdev[SUBDEV_PROP_FREQ].as<double>();
+    double actual_rf_freq = subdev[SUBDEV_PROP_FREQ].as<double>();
     double actual_dsp_freq = dsp[DSP_PROP_FREQ_SHIFT].as<double>();
 
     //invert the sign on the dsp freq given the following conditions
     if (unit == dboard_iface::UNIT_TX) actual_dsp_freq *= -1.0;
 
-    return actual_inter_freq - actual_dsp_freq;
+    return actual_rf_freq - actual_dsp_freq;
 }
 
 /***********************************************************************

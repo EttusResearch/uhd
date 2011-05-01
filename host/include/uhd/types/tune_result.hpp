@@ -24,15 +24,11 @@
 namespace uhd{
 
     /*!
-     * The tune result struct holds result of a 2-phase tuning:
-     * The struct hold the result of tuning the dboard as
-     * the target and actual intermediate frequency.
-     * The struct hold the result of tuning the DSP as
-     * the target and actual digital converter frequency.
+     * The tune result struct holds result of a 2-phase tuning.
      */
     struct UHD_API tune_result_t{
-        double target_inter_freq;
-        double actual_inter_freq;
+        double target_rf_freq;
+        double actual_rf_freq;
         double target_dsp_freq;
         double actual_dsp_freq;
 
