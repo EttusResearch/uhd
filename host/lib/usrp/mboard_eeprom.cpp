@@ -223,6 +223,7 @@ struct e100_eeprom_map{
     unsigned char env_setting[64];
     unsigned char serial[10];
     unsigned char name[NAME_MAX_LEN];
+    float master_clock_rate;
 };
 
 template <typename T> static const byte_vector_t to_bytes(const T &item){
@@ -254,6 +255,19 @@ static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     load_e100_string_xx(env_setting);
     load_e100_string_xx(serial);
     load_e100_string_xx(name);
+
+    //extract the master clock rate
+    float master_clock_rate = 0;
+    const byte_vector_t rate_bytes = iface.read_eeprom(
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, master_clock_rate), sizeof(master_clock_rate)
+    );
+    std::copy(
+        rate_bytes.begin(), rate_bytes.end(), //source
+        reinterpret_cast<boost::uint8_t *>(&master_clock_rate) //destination
+    );
+    if (master_clock_rate > 1e6 and master_clock_rate < 1e9){
+        mb_eeprom["master_clock_rate"] = boost::lexical_cast<std::string>(master_clock_rate);
+    }
 }
 
 static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
@@ -289,6 +303,17 @@ static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     store_e100_string_xx(serial);
     store_e100_string_xx(name);
 
+    //store the master clock rate
+    if (mb_eeprom.has_key("master_clock_rate")){
+        const float master_clock_rate = float(boost::lexical_cast<double>(mb_eeprom["master_clock_rate"]));
+        const byte_vector_t rate_bytes(
+            reinterpret_cast<const boost::uint8_t *>(&master_clock_rate),
+            reinterpret_cast<const boost::uint8_t *>(&master_clock_rate) + sizeof(master_clock_rate)
+        );
+        iface.write_eeprom(
+            E100_EEPROM_ADDR, offsetof(e100_eeprom_map, master_clock_rate), rate_bytes
+        );
+    }
 }
 
 /***********************************************************************

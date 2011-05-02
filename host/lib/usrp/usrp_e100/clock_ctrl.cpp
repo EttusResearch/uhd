@@ -184,7 +184,24 @@ public:
 
         this->use_internal_ref();
 
-        this->set_fpga_clock_rate(DEFAULT_OUTPUT_RATE); //initialize to something
+        //initialize the FPGA clock to something
+        bool fpga_clock_initialized = false;
+        try{
+            if (_iface->mb_eeprom.has_key("master_clock_rate")){
+                std::cout << "Read FPGA clock rate from EEPROM setting." << std::endl;
+                const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["master_clock_rate"]);
+                std::cout << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
+                this->set_fpga_clock_rate(master_clock_rate);
+                fpga_clock_initialized = true;
+            }
+        }
+        catch(const std::exception &e){
+            std::cerr << "Error setting FPGA clock rate from EEPROM: " << e.what() << std::endl;
+        }
+        if (not fpga_clock_initialized){ //was not set... use the default rate
+            std::cout << boost::format("Initializing FPGA clock to %fMHz...") % (DEFAULT_OUTPUT_RATE/1e6) << std::endl;
+            this->set_fpga_clock_rate(DEFAULT_OUTPUT_RATE);
+        }
 
         this->enable_test_clock(ENABLE_THE_TEST_OUT);
         this->enable_rx_dboard_clock(false);

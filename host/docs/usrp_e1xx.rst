@@ -20,7 +20,6 @@ Example device address string representations to specify non-standard FPGA image
 Changing the master clock rate
 ------------------------------------------------------------------------
 The master clock rate of the USRP embedded feeds both the FPGA DSP and the codec chip.
-UHD can dynamically reconfigure the clock rate though the set_master_clock_rate() API call.
 Hundreds of rates between 32MHz and 64MHz are available.
 A few notable rates are:
 
@@ -36,8 +35,12 @@ To use the 61.44MHz clock rate, the USRP embedded will require two jumpers to be
 * J16 is a two pin header, remove the jumper (or leave it on pin1 only)
 * J15 is a three pin header, move the jumper to (pin1, pin2)
 
-For the correct clock settings, call usrp->set_master_clock_rate(61.44e6)
-before any other parameters are set in your application.
+Then run the following commands to record the setting in the EEPROM:
+::
+
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --key=master_clock_rate --val=61.44e6
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set other rates - uses internal VCO
@@ -47,8 +50,11 @@ To use other clock rates, the jumpers will need to be in the default position.
 * J16 is a two pin header, move the jumper to (pin1, pin2)
 * J15 is a three pin header, move the jumper to (pin2, pin3)
 
-For the correct clock settings, call usrp->set_master_clock_rate(rate)
-before any other parameters are set in your application.
+Then run the following commands to record the setting in the EEPROM:
+::
+
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --key=master_clock_rate --val=<rate>
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Clock rate recovery - unbricking

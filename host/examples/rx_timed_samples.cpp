@@ -32,7 +32,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     double seconds_in_future;
     size_t total_num_samps;
-    double rate, clock;
+    double rate;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -41,7 +41,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
-        ("clock", po::value<double>(&clock), "master clock frequency in Hz")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("dilv", "specify to disable inner-loop verbose")
     ;
@@ -62,12 +61,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
-
-    //optionally set the clock rate (do before setting anything else)
-    if (vm.count("clock")){
-        std::cout << boost::format("Setting master clock rate: %f MHz...") % (clock/1e6) << std::endl;
-        usrp->set_master_clock_rate(clock);
-    }
 
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
