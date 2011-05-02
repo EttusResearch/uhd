@@ -187,9 +187,9 @@ public:
         //initialize the FPGA clock to something
         bool fpga_clock_initialized = false;
         try{
-            if (_iface->mb_eeprom.has_key("master_clock_rate")){
+            if (not _iface->mb_eeprom["mcr"].empty()){
                 std::cout << "Read FPGA clock rate from EEPROM setting." << std::endl;
-                const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["master_clock_rate"]);
+                const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["mcr"]);
                 std::cout << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
                 this->set_fpga_clock_rate(master_clock_rate);
                 fpga_clock_initialized = true;

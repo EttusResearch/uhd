@@ -136,6 +136,11 @@ The USRP can be modified to accept an external clock reference instead of the 64
 
 The new external clock needs to be a square wave between +7dBm and +15dBm
 
-For the correct clock settings, call usrp->set_master_clock_rate(EXT_CLOCK_FREQUENCY)
-before any other parameters are set in your application.
+After the hardware modification,
+the user should burn the setting into the EEPROM,
+so UHD can initialize with the correct clock rate.
+Run the following commands to record the setting into the EEPROM:
+::
 
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=mcr --val=<rate>

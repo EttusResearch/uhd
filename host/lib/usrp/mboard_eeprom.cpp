@@ -181,6 +181,7 @@ static const size_t B000_SERIAL_LEN = 8;
 static const uhd::dict<std::string, boost::uint8_t> USRP_B000_OFFSETS = boost::assign::map_list_of
     ("serial", 0xf8)
     ("name", 0xf8 - NAME_MAX_LEN)
+    ("mcr", 0xf8 - NAME_MAX_LEN - sizeof(boost::uint32_t))
 ;
 
 static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
@@ -193,6 +194,21 @@ static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
         B000_EEPROM_ADDR, USRP_B000_OFFSETS["name"], NAME_MAX_LEN
     ));
+
+    //extract master clock rate as a 32-bit uint in Hz
+    boost::uint32_t master_clock_rate;
+    const byte_vector_t rate_bytes = iface.read_eeprom(
+        B000_EEPROM_ADDR, USRP_B000_OFFSETS["mcr"], sizeof(master_clock_rate)
+    );
+    std::copy(
+        rate_bytes.begin(), rate_bytes.end(), //input
+        reinterpret_cast<boost::uint8_t *>(&master_clock_rate) //output
+    );
+    master_clock_rate = ntohl(master_clock_rate);
+    if (master_clock_rate > 1e6 and master_clock_rate < 1e9){
+        mb_eeprom["mcr"] = boost::lexical_cast<std::string>(master_clock_rate);
+    }
+    else mb_eeprom["mcr"] = "";
 }
 
 static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
@@ -207,6 +223,19 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
         B000_EEPROM_ADDR, USRP_B000_OFFSETS["name"],
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
+
+    //store the master clock rate as a 32-bit uint in Hz
+    if (mb_eeprom.has_key("mcr")){
+        boost::uint32_t master_clock_rate = boost::uint32_t(boost::lexical_cast<double>(mb_eeprom["mcr"]));
+        master_clock_rate = htonl(master_clock_rate);
+        const byte_vector_t rate_bytes(
+            reinterpret_cast<const boost::uint8_t *>(&master_clock_rate),
+            reinterpret_cast<const boost::uint8_t *>(&master_clock_rate) + sizeof(master_clock_rate)
+        );
+        iface.write_eeprom(
+            B000_EEPROM_ADDR, USRP_B000_OFFSETS["mcr"], rate_bytes
+        );
+    }
 }
 /***********************************************************************
  * Implementation of E100 load/store
@@ -223,7 +252,7 @@ struct e100_eeprom_map{
     unsigned char env_setting[64];
     unsigned char serial[10];
     unsigned char name[NAME_MAX_LEN];
-    float master_clock_rate;
+    float mcr;
 };
 
 template <typename T> static const byte_vector_t to_bytes(const T &item){
@@ -259,15 +288,16 @@ static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //extract the master clock rate
     float master_clock_rate = 0;
     const byte_vector_t rate_bytes = iface.read_eeprom(
-        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, master_clock_rate), sizeof(master_clock_rate)
+        E100_EEPROM_ADDR, offsetof(e100_eeprom_map, mcr), sizeof(master_clock_rate)
     );
     std::copy(
         rate_bytes.begin(), rate_bytes.end(), //source
         reinterpret_cast<boost::uint8_t *>(&master_clock_rate) //destination
     );
     if (master_clock_rate > 1e6 and master_clock_rate < 1e9){
-        mb_eeprom["master_clock_rate"] = boost::lexical_cast<std::string>(master_clock_rate);
+        mb_eeprom["mcr"] = boost::lexical_cast<std::string>(master_clock_rate);
     }
+    else mb_eeprom["mcr"] = "";
 }
 
 static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
@@ -304,14 +334,14 @@ static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     store_e100_string_xx(name);
 
     //store the master clock rate
-    if (mb_eeprom.has_key("master_clock_rate")){
-        const float master_clock_rate = float(boost::lexical_cast<double>(mb_eeprom["master_clock_rate"]));
+    if (mb_eeprom.has_key("mcr")){
+        const float master_clock_rate = float(boost::lexical_cast<double>(mb_eeprom["mcr"]));
         const byte_vector_t rate_bytes(
             reinterpret_cast<const boost::uint8_t *>(&master_clock_rate),
             reinterpret_cast<const boost::uint8_t *>(&master_clock_rate) + sizeof(master_clock_rate)
         );
         iface.write_eeprom(
-            E100_EEPROM_ADDR, offsetof(e100_eeprom_map, master_clock_rate), rate_bytes
+            E100_EEPROM_ADDR, offsetof(e100_eeprom_map, mcr), rate_bytes
         );
     }
 }

@@ -35,11 +35,11 @@ To use the 61.44MHz clock rate, the USRP embedded will require two jumpers to be
 * J16 is a two pin header, remove the jumper (or leave it on pin1 only)
 * J15 is a three pin header, move the jumper to (pin1, pin2)
 
-Then run the following commands to record the setting in the EEPROM:
+Then run the following commands to record the setting into the EEPROM:
 ::
 
     cd <install-path>/share/uhd/utils
-    ./usrp_burn_mb_eeprom --key=master_clock_rate --val=61.44e6
+    ./usrp_burn_mb_eeprom --key=mcr --val=61.44e6
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -50,11 +50,11 @@ To use other clock rates, the jumpers will need to be in the default position.
 * J16 is a two pin header, move the jumper to (pin1, pin2)
 * J15 is a three pin header, move the jumper to (pin2, pin3)
 
-Then run the following commands to record the setting in the EEPROM:
+Then run the following commands to record the setting into the EEPROM:
 ::
 
     cd <install-path>/share/uhd/utils
-    ./usrp_burn_mb_eeprom --key=master_clock_rate --val=<rate>
+    ./usrp_burn_mb_eeprom --key=mcr --val=<rate>
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Clock rate recovery - unbricking
