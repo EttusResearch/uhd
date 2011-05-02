@@ -121,6 +121,22 @@ private:
     bool get_locked(dboard_iface::unit_t unit){
         return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
     }
+
+    /*!
+     * Read the RSSI from the aux adc
+     * \return the rssi in dB
+     */
+    double get_rssi(void){
+        //RSSI from VAGC vs RF Power, Fig 34, pg 13
+        double max_power = -3.0;
+
+        //constants for the rssi calculation
+        static const double min_v = 0.35, max_v = 1.0;
+        static const double rssi_dyn_range = 60;
+        //calculate the rssi from the voltage
+        double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
+        return max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+    }
 };
 
 /***********************************************************************
@@ -454,12 +470,19 @@ void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
+        if (key.name == "lo_locked")
+            val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
+        else if ((key.name == "rssi") and (get_rx_id() != 0x0024))
+            val = sensor_value_t("RSSI", this->get_rssi(), "dBm");
+        else
+            UHD_THROW_INVALID_CODE_PATH();
         return;
 
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
+    case SUBDEV_PROP_SENSOR_NAMES:{
+            prop_names_t names = list_of("lo_locked");
+            if (get_rx_id() != 0x0024) names.push_back("rssi");
+            val = names;
+        }
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
