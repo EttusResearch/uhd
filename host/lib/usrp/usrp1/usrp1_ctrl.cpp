@@ -201,18 +201,19 @@ public:
     }
 
     void usrp_init(void){
-        /* not calling because this causes junk to come at init
-         * and it does not seem to be necessary to call anyway
+        //disable
         usrp_rx_enable(false);
-        usrp_rx_reset(true);
-        usrp_rx_reset(false);
-        usrp_rx_enable(true);
-        */
-
         usrp_tx_enable(false);
+
+        //toggle resets
+        usrp_rx_reset(true);
         usrp_tx_reset(true);
+        usrp_rx_reset(false);
         usrp_tx_reset(false);
-        usrp_tx_enable(true);
+
+        //enable
+        //usrp_rx_enable(true); //dont enable, enable means dont work
+        //usrp_tx_enable(true);
     }
 
     void usrp_load_fpga(std::string filestring)
@@ -234,6 +235,8 @@ public:
             throw uhd::io_error("usrp_load_fpga: cannot open fpga input file");
         }
 
+        usrp_fpga_reset(true); //holding the fpga in reset while loading
+
         if (usrp_control_write_cmd(VRQ_FPGA_LOAD, 0, FL_BEGIN) < 0) {
             throw uhd::io_error("usrp_load_fpga: fpga load error");
         }
@@ -252,6 +255,9 @@ public:
         }
 
         usrp_set_fpga_hash(hash);
+
+        usrp_fpga_reset(false); //done loading, take fpga out of reset
+
         file.close();
         if (load_img_msg) std::cout << " done" << std::endl;
     }
@@ -355,6 +361,10 @@ public:
         UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_RX_RESET, on, 0) >= 0);
     }
 
+    void usrp_fpga_reset(bool on)
+    {
+        UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_RESET, on, 0) >= 0);
+    }
 
     int usrp_control_write(boost::uint8_t request,
                            boost::uint16_t value,
