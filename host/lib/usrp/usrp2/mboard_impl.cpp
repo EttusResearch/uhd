@@ -191,9 +191,25 @@ usrp2_mboard_impl::~usrp2_mboard_impl(void){
 void usrp2_mboard_impl::update_clock_config(void){
     boost::uint32_t pps_flags = 0;
 
+    //slave mode overrides clock config settings
+    if (not _mimo_clocking_mode_is_master){
+        _clock_config.ref_source = clock_config_t::REF_MIMO;
+        _clock_config.pps_source = clock_config_t::PPS_MIMO;
+    }
+
     //translate pps source enums
     switch(_clock_config.pps_source){
-    case clock_config_t::PPS_SMA:  pps_flags |= U2_FLAG_TIME64_PPS_SMA;  break;
+    case clock_config_t::PPS_MIMO:
+        _iface->poke32(_iface->regs.time64_mimo_sync,
+            (1 << 8) | (mimo_clock_sync_delay_cycles & 0xff)
+        );
+        break;
+
+    case clock_config_t::PPS_SMA:
+        _iface->poke32(_iface->regs.time64_mimo_sync, 0);
+        pps_flags |= U2_FLAG_TIME64_PPS_SMA;
+        break;
+
     default: throw uhd::value_error("unhandled clock configuration pps source");
     }
 
@@ -214,6 +230,7 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
+        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw uhd::value_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
@@ -224,6 +241,7 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
         case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
+        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
         default: throw uhd::value_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
@@ -232,12 +250,11 @@ void usrp2_mboard_impl::update_clock_config(void){
     case usrp2_iface::USRP_NXXX: break;
     }
 
-    //Handle the serdes clocking based on master/slave mode:
-    //   - Masters always drive the clock over serdes.
-    //   - Slaves always lock to this serdes clock.
-    //   - Slaves lock their time over the serdes.
+    //masters always drive the clock over serdes
+    _clock_ctrl->enable_mimo_clock_out(_mimo_clocking_mode_is_master);
+
+    //set the mimo clock delay over the serdes
     if (_mimo_clocking_mode_is_master){
-        _clock_ctrl->enable_mimo_clock_out(true);
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
@@ -250,15 +267,6 @@ void usrp2_mboard_impl::update_clock_config(void){
 
         default: break; //not handled
         }
-        _iface->poke32(_iface->regs.time64_mimo_sync, 0);
-    }
-    else{
-        _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15);
-        _clock_ctrl->enable_external_ref(true);
-        _clock_ctrl->enable_mimo_clock_out(false);
-        _iface->poke32(_iface->regs.time64_mimo_sync,
-            (1 << 8) | (mimo_clock_sync_delay_cycles & 0xff)
-        );
     }
 
 }
