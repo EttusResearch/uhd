@@ -32,7 +32,7 @@ namespace uhd{
     struct UHD_API tune_request_t{
         /*!
          * Make a new tune request for a particular center frequency.
-         * Use an automatic policy for the intermediate and DSP frequency
+         * Use an automatic policy for the RF and DSP frequency
          * to tune the chain as close as possible to the target frequency.
          * \param target_freq the target frequency in Hz
          */
@@ -40,7 +40,7 @@ namespace uhd{
 
         /*!
          * Make a new tune request for a particular center frequency.
-         * Use a manual policy for the intermediate frequency,
+         * Use a manual policy for the RF frequency,
          * and an automatic policy for the DSP frequency,
          * to tune the chain as close as possible to the target frequency.
          * \param target_freq the target frequency in Hz
@@ -65,16 +65,16 @@ namespace uhd{
         double target_freq;
 
         /*!
-         * The policy for the intermediate frequency.
+         * The policy for the RF frequency.
          * Automatic behavior: the target frequency + default LO offset.
          */
-        policy_t inter_freq_policy;
+        policy_t rf_freq_policy;
 
         /*!
-         * The intermediate frequency in Hz.
+         * The RF frequency in Hz.
          * Set when the policy is set to manual.
          */
-        double inter_freq;
+        double rf_freq;
 
         /*!
          * The policy for the DSP frequency.

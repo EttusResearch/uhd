@@ -44,10 +44,12 @@ namespace uhd{
             REF_AUTO = int('a'), //automatic (device specific)
             REF_INT  = int('i'), //internal reference
             REF_SMA  = int('s'), //external sma port
+            REF_MIMO = int('m'), //reference from mimo cable
         } ref_source;
         enum pps_source_t {
             PPS_INT  = int('i'), //there is no internal
             PPS_SMA  = int('s'), //external sma port
+            PPS_MIMO = int('m'), //time sync from mimo cable
         } pps_source;
         enum pps_polarity_t {
             PPS_NEG = int('n'), //negative edge

@@ -378,6 +378,10 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         return;
 
     case MBOARD_PROP_CLOCK_RATE:
+        std::cerr << "Helpful message:" << std::endl;
+        std::cerr << "    I see that you are setting the master clock rate from the API." << std::endl;
+        std::cerr << "    You may find it more convenient to burn this setting into the EEPROM." << std::endl;
+        std::cerr << "    See the application notes for USRP1 for further instructions." << std::endl;
         _clock_ctrl->set_master_clock_freq(val.as<double>());
         return;
 

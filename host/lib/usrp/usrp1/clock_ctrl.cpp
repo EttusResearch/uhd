@@ -16,6 +16,9 @@
 //
 
 #include "clock_ctrl.hpp"
+#include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
+#include <iostream>
 
 using namespace uhd;
 
@@ -31,6 +34,17 @@ class usrp1_clock_ctrl_impl : public usrp1_clock_ctrl {
 public:
     usrp1_clock_ctrl_impl(usrp1_iface::sptr iface): _iface(iface){
         this->set_master_clock_freq(default_master_clock_rate);
+        try{
+            if (not _iface->mb_eeprom["mcr"].empty()){
+                std::cout << "Read FPGA clock rate from EEPROM setting." << std::endl;
+                const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["mcr"]);
+                std::cout << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
+                this->set_master_clock_freq(master_clock_rate);
+            }
+        }
+        catch(const std::exception &e){
+            std::cerr << "Error setting FPGA clock rate from EEPROM: " << e.what() << std::endl;
+        }
     }
 
     void set_master_clock_freq(double freq){

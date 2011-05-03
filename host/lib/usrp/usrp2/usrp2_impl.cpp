@@ -165,7 +165,7 @@ struct mtu_result_t{
     size_t recv_mtu, send_mtu;
 };
 
-static mtu_result_t determine_mtu(const std::string &addr){
+static mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &user_mtu){
     udp_simple::sptr udp_sock = udp_simple::make_connected(
         addr, BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
     );
@@ -173,8 +173,8 @@ static mtu_result_t determine_mtu(const std::string &addr){
     //The FPGA offers 4K buffers, and the user may manually request this.
     //However, multiple simultaneous receives (2DSP slave + 2DSP master),
     //require that buffering to be used internally, and this is a safe setting.
-    boost::uint8_t buffer[2000];
-    usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(buffer);
+    std::vector<boost::uint8_t> buffer(std::max(user_mtu.recv_mtu, user_mtu.send_mtu));
+    usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(&buffer.front());
     static const double echo_timeout = 0.020; //20 ms
 
     //test holler - check if its supported in this fw version
@@ -186,8 +186,8 @@ static mtu_result_t determine_mtu(const std::string &addr){
     if (ntohl(ctrl_data->id) != USRP2_CTRL_ID_HOLLER_BACK_DUDE)
         throw uhd::not_implemented_error("holler protocol not implemented");
 
-    size_t min_recv_mtu = sizeof(usrp2_ctrl_data_t), max_recv_mtu = sizeof(buffer);
-    size_t min_send_mtu = sizeof(usrp2_ctrl_data_t), max_send_mtu = sizeof(buffer);
+    size_t min_recv_mtu = sizeof(usrp2_ctrl_data_t), max_recv_mtu = user_mtu.recv_mtu;
+    size_t min_send_mtu = sizeof(usrp2_ctrl_data_t), max_send_mtu = user_mtu.send_mtu;
 
     while (min_recv_mtu < max_recv_mtu){
 
@@ -248,18 +248,19 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
     device_addrs_t device_args = separate_device_addr(device_addr);
 
+    //extract the user's requested MTU size or default
+    mtu_result_t user_mtu;
+    user_mtu.recv_mtu = size_t(device_addr.cast<double>("recv_frame_size", udp_simple::mtu));
+    user_mtu.send_mtu = size_t(device_addr.cast<double>("recv_frame_size", udp_simple::mtu));
+
     try{
         //calculate the minimum send and recv mtu of all devices
-        mtu_result_t mtu = determine_mtu(device_args[0]["addr"]);
+        mtu_result_t mtu = determine_mtu(device_args[0]["addr"], user_mtu);
         for (size_t i = 1; i < device_args.size(); i++){
-            mtu_result_t mtu_i = determine_mtu(device_args[i]["addr"]);
+            mtu_result_t mtu_i = determine_mtu(device_args[i]["addr"], user_mtu);
             mtu.recv_mtu = std::min(mtu.recv_mtu, mtu_i.recv_mtu);
             mtu.send_mtu = std::min(mtu.send_mtu, mtu_i.send_mtu);
         }
-
-        //use the discovered mtu or clip the users requested mtu
-        mtu.recv_mtu = std::min(size_t(device_addr.cast<double>("recv_frame_size", 9000)), mtu.recv_mtu);
-        mtu.send_mtu = std::min(size_t(device_addr.cast<double>("send_frame_size", 9000)), mtu.send_mtu);
 
         device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
         device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);

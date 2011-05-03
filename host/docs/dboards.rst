@@ -130,6 +130,7 @@ Bandwidths (Hz):
 Sensors:
 
 * **lo_locked**: boolean for LO lock state
+* **rssi**:      float for rssi in dBm
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
@@ -202,6 +203,45 @@ Bandwidths (Hz):
 Sensors:
 
 * **lo_locked**: boolean for LO lock state
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SBX Series
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The SBX Series boards have 2 quadrature subdevices, one transmit, one receive.
+Transmit and Receive default to direct conversion but
+can be used in low IF mode through lo_offset in uhd::tune_request_t
+
+The SBX Series boards have independent receive and transmit LO's and synthesizers 
+allowing full-duplex operation on different transmit and receive frequencies.
+
+Transmit Antennas: **TX/RX**
+
+Receive Antennas: **TX/RX** or **RX2**
+
+The user may set the receive antenna to be TX/RX or RX2.
+However, when using an SBX board in full-duplex mode,
+the receive antenna will always be set to RX2, regardless of the settings.
+
+Transmit Gains: **PGA0**, Range: 0-31.5dB
+
+Receive Gains: **PGA0**, Range: 0-31.5dB
+
+Bandwidths (Hz):
+
+* **RX**: 40M
+* **TX**: 40M
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
+
+LEDs:
+
+* All LEDs flash when dboard control is initialized
+* **TX LD**: Transmit Synthesizer Lock Detect
+* **TX/RX**: Receiver on TX/RX antenna port (No TX)
+* **RX LD**: Receive Synthesizer Lock Detect
+* **RX1/RX2**: Receiver on RX2 antenna port
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX

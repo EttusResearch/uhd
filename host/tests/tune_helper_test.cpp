@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx){
     std::cout << "Testing tune helper RX automatic IF offset" << std::endl;
     tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.3451e9);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_rf_freq, 2.345e9, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, -100e3, tolerance);
 
     double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_tx){
     std::cout << "Testing tune helper TX automatic IF offset" << std::endl;
     tune_result_t tr = tune_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.3451e9);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.345e9, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_rf_freq, 2.345e9, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 100e3, tolerance);
 
     double freq_derived = derive_freq_from_tx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx_nyquist){
     std::cout << "Testing tune helper RX dummy basic board" << std::endl;
     tune_result_t tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 55e6);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 0.0, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_rf_freq, 0.0, tolerance);
     BOOST_CHECK_CLOSE(tr.actual_dsp_freq, 45e6, tolerance);
 
     double freq_derived = derive_freq_from_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link());
@@ -233,19 +233,19 @@ BOOST_AUTO_TEST_CASE(test_tune_helper_rx_lo_off){
     dsp[DSP_PROP_HOST_RATE] = double(4e6);
     tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.45e9);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.45e9+4e6/2, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_rf_freq, 2.45e9+4e6/2, tolerance);
 
     std::cout << "Testing tune helper RX automatic LO offset B > fs" << std::endl;
     subdev[SUBDEV_PROP_BANDWIDTH] = double(40e6);
     dsp[DSP_PROP_HOST_RATE] = double(25e6);
     tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.45e9);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.45e9+(40e6-25e6)/2, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_rf_freq, 2.45e9+(40e6-25e6)/2, tolerance);
 
     std::cout << "Testing tune helper RX automatic LO offset B < fs" << std::endl;
     subdev[SUBDEV_PROP_BANDWIDTH] = double(20e6);
     dsp[DSP_PROP_HOST_RATE] = double(25e6);
     tr = tune_rx_subdev_and_dsp(subdev.get_link(), dsp.get_link(), 2.45e9);
     std::cout << tr.to_pp_string() << std::endl;
-    BOOST_CHECK_CLOSE(tr.actual_inter_freq, 2.45e9, tolerance);
+    BOOST_CHECK_CLOSE(tr.actual_rf_freq, 2.45e9, tolerance);
 }
