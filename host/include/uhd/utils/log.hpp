@@ -49,18 +49,19 @@
  */
 
 /*!
- * A UHD logger macro with default verbosity.
- * Usage: UHD_LOG << "the log message" << std::endl;
- */
-#define UHD_LOG \
-    uhd::_log::log(uhd::_log::regularly, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
-
-/*!
  * A UHD logger macro with configurable verbosity.
  * Usage: UHD_LOGV(very_rarely) << "the log message" << std::endl;
  */
 #define UHD_LOGV(verbosity) \
     uhd::_log::log(uhd::_log::verbosity, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
+
+/*!
+ * A UHD logger macro with default verbosity.
+ * Usage: UHD_LOG << "the log message" << std::endl;
+ */
+#define UHD_LOG \
+    UHD_LOGV(regularly)
+
 
 namespace uhd{ namespace _log{
 
@@ -74,7 +75,7 @@ namespace uhd{ namespace _log{
     };
 
     //! Internal logging object (called by UHD_LOG macros)
-    struct UHD_API log{
+    struct /*UHD_API*/ log{
         log(
             const verbosity_t verbosity,
             const std::string &file,

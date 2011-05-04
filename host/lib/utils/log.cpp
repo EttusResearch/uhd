@@ -142,6 +142,17 @@ UHD_SINGLETON_FCN(uhd_logger_stream_resource_class, uhd_logger_stream_resource);
 /***********************************************************************
  * The logger function implementation
  **********************************************************************/
+//! get the relative file path from the host directory
+static std::string get_rel_file_path(const fs::path &file){
+    fs::path abs_path = file.branch_path();
+    fs::path rel_path = file.leaf();
+    while (not abs_path.empty() and abs_path.leaf() != "host"){
+        rel_path = abs_path.leaf() / rel_path;
+        abs_path = abs_path.branch_path();
+    }
+    return rel_path.string();
+}
+
 uhd::_log::log::log(
     const verbosity_t verbosity,
     const std::string &file,
@@ -151,18 +162,22 @@ uhd::_log::log::log(
     uhd_logger_stream_resource().aquire(true);
     uhd_logger_stream_resource().set_verbosity(verbosity);
     const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
-    const std::string header = str(boost::format(
-        "-- %s - lvl %d - %s @ %s:%u"
-    ) % time % int(verbosity) % function % fs::path(file).leaf() % line);
+    const std::string header1 = str(boost::format("-- %s - level %d") % time % int(verbosity));
+    const std::string header2 = str(boost::format("-- %s") % function).substr(0, 80);
+    const std::string header3 = str(boost::format("-- %s:%u") % get_rel_file_path(file) % line);
+    const std::string border = std::string(std::max(std::max(header1.size(), header2.size()), header3.size()), '-');
     uhd_logger_stream_resource().get()
         << std::endl
-        << std::string(header.size(), '-') << std::endl
-        << header << std::endl
-        << std::string(header.size(), '-') << std::endl
+        << border << std::endl
+        << header1 << std::endl
+        << header2 << std::endl
+        << header3 << std::endl
+        << border << std::endl
     ;
 }
 
 uhd::_log::log::~log(void){
+    uhd_logger_stream_resource().get() << std::endl;
     uhd_logger_stream_resource().aquire(false);
 }
 
