@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_LOG_HPP
-#define INCLUDED_UHD_LOG_HPP
+#ifndef INCLUDED_UHD_UTILS_LOG_HPP
+#define INCLUDED_UHD_UTILS_LOG_HPP
 
 #include <uhd/config.hpp>
 #include <boost/current_function.hpp>
@@ -29,6 +29,10 @@
  * The logger enables UHD library code to easily log events into a file.
  * Log entries are time-stamped and stored with file, line, and function.
  * Each call to the UHD_LOG macros is synchronous and thread-safe.
+ *
+ * The log file can be found in the path <temp-directory>/uhd.log,
+ * where <temp-directory> is the user or system's temporary directory.
+ * To override <temp-directory>, set the UHD_TEMP_PATH environment variable.
  *
  * All log messages with verbosity greater than or equal to the log level
  * are recorded into the log file. All other messages are sent to null.
@@ -88,4 +92,4 @@ namespace uhd{ namespace _log{
 
 }} //namespace uhd::_log
 
-#endif /* INCLUDED_UHD_LOG_HPP */
+#endif /* INCLUDED_UHD_UTILS_LOG_HPP */

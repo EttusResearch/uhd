@@ -23,6 +23,7 @@ INSTALL(FILES
     byteswap.ipp
     gain_group.hpp
     images.hpp
+    log.hpp
     pimpl.hpp
     props.hpp
     safe_call.hpp
