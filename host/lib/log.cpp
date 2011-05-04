@@ -28,6 +28,7 @@
 #include <stdio.h> //P_tmpdir
 #include <cstdlib> //getenv
 #include <fstream>
+#include <cctype>
 
 namespace fs = boost::filesystem;
 namespace pt = boost::posix_time;
@@ -44,8 +45,8 @@ static fs::path get_temp_path(void){
 
     //try the windows function if available
     #ifdef USE_GET_TEMP_PATH
-    LPTSTR lpBuffer[2048];
-    if (GetTempPath(sizeof(lpBuffer)/sizeof(*lpBuffer), lpBuffer)) return lpBuffer;
+    char lpBuffer[2048];
+    if (GetTempPath(sizeof(lpBuffer), lpBuffer)) return lpBuffer;
     #endif
 
     //try windows environment variables
@@ -71,19 +72,38 @@ static fs::path get_temp_path(void){
 /***********************************************************************
  * The library's streamer resource (static initialization)
  **********************************************************************/
+class null_streambuf_class : public std::streambuf{
+    int overflow(int c) { return c; }
+};
+UHD_SINGLETON_FCN(null_streambuf_class, null_streambuf);
+
 class uhd_logger_stream_resource_class{
 public:
-    uhd_logger_stream_resource_class(void){
+    uhd_logger_stream_resource_class(void) : _null_stream(&null_streambuf()){
         const std::string log_path = (get_temp_path() / "uhd.log").string();
-        _streamer.open(log_path.c_str(), std::fstream::out | std::fstream::app);
+        _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
+
+        //set the default log level
+        _log_level = uhd::_log::regularly;
+
+        //allow override from macro definition
+        #ifdef UHD_LOG_LEVEL
+        _set_log_level(BOOST_STRINGIZE(UHD_LOG_LEVEL));
+        #endif
+
+        //allow override from environment variable
+        const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
+        if (log_level_env != NULL) _set_log_level(log_level_env);
+
     }
 
     ~uhd_logger_stream_resource_class(void){
-        _streamer.close();
+        _file_stream.close();
     }
 
     std::ostream &get(void){
-        return _streamer;
+        if (_verbosity >= _log_level) return _file_stream;
+        return _null_stream;
     }
 
     void aquire(bool lock){
@@ -91,9 +111,30 @@ public:
         else _mutex.unlock();
     }
 
+    void set_verbosity(uhd::_log::verbosity_t verbosity){
+        _verbosity = verbosity;
+    }
+
 private:
-    std::ofstream _streamer;
+    //! set the log level from a string that is either a digit or an enum name
+    void _set_log_level(const std::string &log_level_str){
+        const uhd::_log::verbosity_t log_level = uhd::_log::verbosity_t(log_level_str[0]-'0');
+        if (std::isdigit(log_level_str[0]) and log_level >= uhd::_log::always and log_level <= uhd::_log::very_rarely){
+            _log_level = log_level;
+        }
+        #define if_lls_equal(name) else if(log_level_str == #name) _log_level = uhd::_log::name
+        if_lls_equal(always);
+        if_lls_equal(often);
+        if_lls_equal(regularly);
+        if_lls_equal(rarely);
+        if_lls_equal(very_rarely);
+    }
+
+    std::ofstream _file_stream;
+    std::ostream _null_stream;
     boost::mutex _mutex;
+    uhd::_log::verbosity_t _verbosity;
+    uhd::_log::verbosity_t _log_level;
 };
 
 UHD_SINGLETON_FCN(uhd_logger_stream_resource_class, uhd_logger_stream_resource);
@@ -108,6 +149,7 @@ uhd::_log::log::log(
     const std::string &function
 ){
     uhd_logger_stream_resource().aquire(true);
+    uhd_logger_stream_resource().set_verbosity(verbosity);
     const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
     const std::string header = str(boost::format(
         "-- %s - lvl %d - %s @ %s:%u"
@@ -130,4 +172,6 @@ std::ostream & uhd::_log::log::get(void){
 
 UHD_STATIC_BLOCK(logger_begin){
     UHD_LOG << "Logger has started" << std::endl;
+    UHD_LOGV(always) << "always" << std::endl;
+    UHD_LOGV(rarely) << "rarely" << std::endl;
 }

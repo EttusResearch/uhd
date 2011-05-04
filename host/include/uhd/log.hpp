@@ -23,11 +23,38 @@
 #include <ostream>
 #include <string>
 
-//! uhd logger macro with default verbosity
+/*!
+ * The UHD logging facility.
+ *
+ * The logger enables UHD library code to easily log events into a file.
+ * Log entries are time-stamped and stored with file, line, and function.
+ * Each call to the UHD_LOG macros is synchronous and thread-safe.
+ *
+ * All log messages with verbosity greater than or equal to the log level
+ * are recorded into the log file. All other messages are sent to null.
+ *
+ * The default log level is "regular", but can be overridden:
+ *  - at compile time by setting the pre-processor define UHD_LOG_LEVEL.
+ *  - at runtime by setting the environment variable UHD_LOG_LEVEL.
+ *
+ * UHD_LOG_LEVEL can be the name of a verbosity enum or integer value:
+ *   - Example pre-processor define: -DUHD_LOG_LEVEL=3
+ *   - Example pre-processor define: -DUHD_LOG_LEVEL=regularly
+ *   - Example environment variable: export UHD_LOG_LEVEL=3
+ *   - Example environment variable: export UHD_LOG_LEVEL=regularly
+ */
+
+/*!
+ * A UHD logger macro with default verbosity.
+ * Usage: UHD_LOG << "the log message" << std::endl;
+ */
 #define UHD_LOG \
     uhd::_log::log(uhd::_log::regularly, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
 
-//! uhd logger macro with configurable verbosity
+/*!
+ * A UHD logger macro with configurable verbosity.
+ * Usage: UHD_LOGV(very_rarely) << "the log message" << std::endl;
+ */
 #define UHD_LOGV(verbosity) \
     uhd::_log::log(uhd::_log::verbosity, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
 
