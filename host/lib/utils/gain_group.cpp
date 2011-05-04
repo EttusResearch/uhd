@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/gain_group.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/exception.hpp>
@@ -23,7 +24,6 @@
 #include <boost/bind.hpp>
 #include <algorithm>
 #include <vector>
-#include <iostream>
 
 using namespace uhd;
 
@@ -137,11 +137,11 @@ public:
             gain_bucket.at(i) += additional_gain;
             gain_left_to_distribute -= additional_gain;
         }
-        if (verbose) std::cout << "gain_left_to_distribute " << gain_left_to_distribute << std::endl;
+        UHD_LOGV(often) << "gain_left_to_distribute " << gain_left_to_distribute << std::endl;
 
         //now write the bucket out to the individual gain values
         for (size_t i = 0; i < gain_bucket.size(); i++){
-            if (verbose) std::cout << gain_bucket.at(i) << std::endl;
+            UHD_LOGV(often) << i << ": " << gain_bucket.at(i) << std::endl;
             all_fcns.at(i).set_value(gain_bucket.at(i));
         }
     }

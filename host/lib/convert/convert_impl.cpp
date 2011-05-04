@@ -16,15 +16,13 @@
 //
 
 #include <uhd/convert.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/exception.hpp>
-#include <iostream>
 
 using namespace uhd;
 
 #include "convert_pred.hpp"
-
-static const bool debug = false;
 
 /***********************************************************************
  * Define types for the function tables
@@ -78,7 +76,7 @@ void uhd::convert::register_converter(
     }
 
     //----------------------------------------------------------------//
-    if (debug) std::cout << "register_converter: " << markup << std::endl
+    UHD_LOGV(always) << "register_converter: " << markup << std::endl
         << "    prio: " << prio << std::endl
         << "    pred: " << pred << std::endl
         << "    dir: " << dir << std::endl

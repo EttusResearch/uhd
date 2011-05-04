@@ -23,7 +23,7 @@
 #include <ostream>
 #include <string>
 
-/*!
+/*! \file log.hpp
  * The UHD logging facility.
  *
  * The logger enables UHD library code to easily log events into a file.
@@ -35,6 +35,7 @@
  * To override <temp-directory>, set the UHD_TEMP_PATH environment variable.
  *
  * All log messages with verbosity greater than or equal to the log level
+ * (in other words, as often or less often than the current log level)
  * are recorded into the log file. All other messages are sent to null.
  *
  * The default log level is "regular", but can be overridden:

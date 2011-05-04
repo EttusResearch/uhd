@@ -19,6 +19,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/warning.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
@@ -27,7 +28,6 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/assign/list_of.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -91,7 +91,7 @@ static void register_dboard_key(
     const std::string &name,
     const prop_names_t &subdev_names
 ){
-    //std::cout << "registering: " << name << std::endl;
+    UHD_LOGV(always) << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_key)){
 
         if (dboard_key.is_xcvr()) throw uhd::key_error(str(boost::format(

@@ -17,8 +17,8 @@
 
 #include "udp_common.hpp"
 #include <uhd/transport/udp_simple.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
-#include <iostream>
 
 using namespace uhd::transport;
 namespace asio = boost::asio;
@@ -31,7 +31,7 @@ public:
     udp_simple_impl(
         const std::string &addr, const std::string &port, bool bcast, bool connect
     ):_connected(connect){
-        //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
+        UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
         //resolve the address
         asio::ip::udp::resolver resolver(_io_service);
