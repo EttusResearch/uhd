@@ -169,9 +169,3 @@ uhd::_log::log::~log(void){
 std::ostream & uhd::_log::log::get(void){
     return uhd_logger_stream_resource().get();
 }
-
-UHD_STATIC_BLOCK(logger_begin){
-    UHD_LOG << "Logger has started" << std::endl;
-    UHD_LOGV(always) << "always" << std::endl;
-    UHD_LOGV(rarely) << "rarely" << std::endl;
-}

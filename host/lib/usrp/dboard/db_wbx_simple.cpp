@@ -37,8 +37,6 @@ using namespace boost::assign;
 /***********************************************************************
  * The WBX Simple dboard constants
  **********************************************************************/
-static const bool wbx_debug = false;
-
 static const freq_range_t wbx_freq_range(68.75e6, 2.2e9);
 
 static const prop_names_t wbx_tx_antennas = list_of("TX/RX");

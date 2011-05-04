@@ -78,6 +78,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/warning.hpp>
@@ -95,8 +96,6 @@ using namespace boost::assign;
 /***********************************************************************
  * The SBX dboard constants
  **********************************************************************/
-static const bool sbx_debug = false;
-
 static const freq_range_t sbx_freq_range(68.75e6, 4.4e9);
 
 static const freq_range_t sbx_tx_lo_2dbm = list_of
@@ -269,7 +268,7 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     //flash LEDs
     flash_leds();
 
-    if (sbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
     ) % RXIO_MASK % TXIO_MASK << std::endl;
 
@@ -305,7 +304,7 @@ static int rx_pga0_gain_to_iobits(double &gain){
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
     
-    if (sbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "SBX TX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
@@ -327,7 +326,7 @@ static int tx_pga0_gain_to_iobits(double &gain){
     int iobits = ((~attn_code) << TX_ATTN_SHIFT) & TX_ATTN_MASK;
 
     
-    if (sbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "SBX TX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK << std::endl;
 
@@ -399,7 +398,7 @@ void sbx_xcvr::update_atr(void){
         rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB | 
             ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
 
-    if (sbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "SBX RXONLY ATR REG: 0x%08x"
     ) % (rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
 }
@@ -435,7 +434,7 @@ double sbx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
-    if (sbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "SBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
@@ -531,14 +530,12 @@ double sbx_xcvr::set_lo_freq(
     //actual frequency calculation
     actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv);
 
-    if (sbx_debug) {
-        std::cerr << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl;
-
-        std::cerr << boost::format("SBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
+    UHD_LOGV(often)
+        << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
+        << boost::format("SBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
             ) % R % BS % N % FRAC % MOD % T % D % RFdiv % get_locked(unit)<< std::endl
         << boost::format("SBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
             ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
-    }
 
     //load the register values
     adf4350_regs_t regs;
@@ -564,7 +561,7 @@ double sbx_xcvr::set_lo_freq(
     int addr;
 
     for(addr=5; addr>=0; addr--){
-        if (sbx_debug) std::cerr << boost::format(
+        UHD_LOGV(often) << boost::format(
             "SBX SPI Reg (0x%02x): 0x%08x"
         ) % addr % regs.get_reg(addr) << std::endl;
         this->get_iface()->write_spi(
@@ -574,7 +571,7 @@ double sbx_xcvr::set_lo_freq(
     }
 
     //return the actual frequency
-    if (sbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "SBX tune: actual frequency %f Mhz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
