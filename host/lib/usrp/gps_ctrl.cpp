@@ -16,6 +16,7 @@
 //
 
 #include <uhd/usrp/gps_ctrl.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -67,14 +68,14 @@ public:
 
     //otherwise, we can try some other common baud rates looking to see if a GPS is connected (todo, later)
     if((gps_type == GPS_TYPE_NONE) && i_heard_something_weird) {
-      std::cout << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
+      UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
     }
 
     bool found_gprmc = false;
 
     switch(gps_type) {
     case GPS_TYPE_JACKSON_LABS:
-      std::cout << "Found a Jackson Labs GPS" << std::endl;
+      UHD_MSG(status) << "Found a Jackson Labs GPS" << std::endl;
       //issue some setup stuff so it spits out the appropriate data
       //none of these should issue replies so we don't bother looking for them
       //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
@@ -93,7 +94,7 @@ public:
 //      break;
 
     case GPS_TYPE_GENERIC_NMEA:
-      if(gps_type == GPS_TYPE_GENERIC_NMEA) std::cout << "Found a generic NMEA GPS device" << std::endl;
+      if(gps_type == GPS_TYPE_GENERIC_NMEA) UHD_MSG(status) << "Found a generic NMEA GPS device" << std::endl;
       found_gprmc = false;
       //here we loop around looking for a GPRMC packet. if we don't get one, we don't have a usable GPS.
       timeout = GPS_TIMEOUT_TRIES;
@@ -106,8 +107,8 @@ public:
         boost::this_thread::sleep(boost::posix_time::milliseconds(200));
       }
       if(!found_gprmc) {
-        if(gps_type == GPS_TYPE_JACKSON_LABS) std::cout << "Firefly GPS not locked or warming up." << std::endl;
-        else std::cout << "GPS does not output GPRMC packets. Cannot retrieve time." << std::endl;
+        if(gps_type == GPS_TYPE_JACKSON_LABS) UHD_MSG(error) << "Firefly GPS not locked or warming up." << std::endl;
+        else UHD_MSG(error) << "GPS does not output GPRMC packets. Cannot retrieve time." << std::endl;
         gps_type = GPS_TYPE_NONE;
       }
       break;

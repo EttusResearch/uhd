@@ -17,18 +17,16 @@
 
 #include "usrp1_iface.hpp"
 #include "usrp_commands.h"
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
-#include <iostream>
 #include <iomanip>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-
-static const bool iface_debug = false;
 
 class usrp1_iface_impl : public usrp1_iface{
 public:
@@ -53,12 +51,11 @@ public:
     {
         boost::uint32_t swapped = uhd::htonx(value);
 
-        if (iface_debug) {
-            std::cout.fill('0');
-            std::cout << "poke32(";
-            std::cout << std::dec << std::setw(2) << addr << ", 0x";
-            std::cout << std::hex << std::setw(8) << value << ")" << std::endl;
-        }
+        UHD_LOGV(always)
+            << "poke32("
+            << std::dec << std::setw(2) << addr << ", 0x"
+            << std::hex << std::setw(8) << value << ")" << std::endl
+        ;
 
         boost::uint8_t w_index_h = SPI_ENABLE_FPGA & 0xff;
         boost::uint8_t w_index_l = (SPI_FMT_MSB | SPI_FMT_HDR_1) & 0xff;
@@ -129,8 +126,8 @@ public:
                                              bytes.size());
 
         // TODO throw and catch i2c failures during eeprom read
-        if (iface_debug && (ret < 0))
-            std::cerr << "USRP: failed i2c write: " << ret << std::endl;
+        if (ret < 0)
+            UHD_LOGV(often) << "USRP: failed i2c write: " << ret << std::endl;
     }
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes)
@@ -143,8 +140,8 @@ public:
                                             num_bytes);
 
         // TODO throw and catch i2c failures during eeprom read
-        if (iface_debug && ((ret < 0) || (unsigned)ret < (num_bytes))) {
-            std::cerr << "USRP: failed i2c read: " << ret << std::endl;
+        if (ret < 0 or (unsigned)ret < num_bytes) {
+            UHD_LOGV(often) << "USRP: failed i2c read: " << ret << std::endl;
             return byte_vector_t(num_bytes, 0xff); 
         }
 

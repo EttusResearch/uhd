@@ -17,6 +17,8 @@
 
 #include "usrp2_impl.hpp"
 #include "fw_common.h"
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -31,7 +33,6 @@
 #include <boost/bind.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
-#include <iostream>
 #include <vector>
 
 using namespace uhd;
@@ -102,7 +103,6 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
     const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
-        //std::cout << len << "\n";
         if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
 
             //make a boost asio ipv4 with the raw addr in host byte order
@@ -189,7 +189,6 @@ static mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &u
     while (min_recv_mtu < max_recv_mtu){
 
         size_t test_mtu = (max_recv_mtu/2 + min_recv_mtu/2 + 3) & ~3;
-        //std::cout << "recv_mtu " << mtu.recv_mtu << std::endl;
 
         ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
         ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
@@ -206,7 +205,6 @@ static mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &u
     while (min_send_mtu < max_send_mtu){
 
         size_t test_mtu = (max_send_mtu/2 + min_send_mtu/2 + 3) & ~3;
-        //std::cout << "send_mtu " << mtu.send_mtu << std::endl;
 
         ctrl_data->id = htonl(USRP2_CTRL_ID_HOLLER_AT_ME_BRO);
         ctrl_data->proto_ver = htonl(USRP2_FW_COMPAT_NUM);
@@ -262,8 +260,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
         device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
 
-        std::cout << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu << std::endl;
-        std::cout << boost::format("Current send frame size: %d bytes") % mtu.send_mtu << std::endl;
+        UHD_MSG(status) << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu << std::endl;
+        UHD_MSG(status) << boost::format("Current send frame size: %d bytes") % mtu.send_mtu << std::endl;
     }
     catch(const uhd::not_implemented_error &){
         //just ignore this error, makes older fw work...

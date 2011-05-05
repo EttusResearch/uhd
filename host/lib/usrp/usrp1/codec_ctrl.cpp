@@ -19,6 +19,7 @@
 #include "usrp_commands.h"
 #include "clock_ctrl.hpp"
 #include "ad9862_regs.hpp"
+#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -28,12 +29,9 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/assign/list_of.hpp>
-#include <iostream>
 #include <iomanip>
 
 using namespace uhd;
-
-static const bool codec_debug = false;
 
 const gain_range_t usrp1_codec_ctrl::tx_pga_gain_range(-20, 0, double(0.1));
 const gain_range_t usrp1_codec_ctrl::rx_pga_gain_range(0, 20, 1);
@@ -283,11 +281,10 @@ void usrp1_codec_ctrl_impl::send_reg(boost::uint8_t addr)
 {
     boost::uint32_t reg = _ad9862_regs.get_write_reg(addr);
 
-    if (codec_debug) {
-        std::cout.fill('0');
-        std::cout << "codec control write reg: 0x";
-        std::cout << std::setw(8) << std::hex << reg << std::endl;
-    }
+    UHD_LOGV(often)
+        << "codec control write reg: 0x"
+        << std::setw(8) << std::hex << reg << std::endl
+    ;
     _iface->write_spi(_spi_slave,
                          spi_config_t::EDGE_RISE, reg, 16);
 }
@@ -296,20 +293,18 @@ void usrp1_codec_ctrl_impl::recv_reg(boost::uint8_t addr)
 {
     boost::uint32_t reg = _ad9862_regs.get_read_reg(addr);
 
-    if (codec_debug) {
-        std::cout.fill('0');
-        std::cout << "codec control read reg: 0x";
-        std::cout << std::setw(8) << std::hex << reg << std::endl;
-    }
+    UHD_LOGV(often)
+        << "codec control read reg: 0x"
+        << std::setw(8) << std::hex << reg << std::endl
+    ;
 
     boost::uint32_t ret = _iface->read_spi(_spi_slave,
                                         spi_config_t::EDGE_RISE, reg, 16);
 
-    if (codec_debug) {
-        std::cout.fill('0');
-        std::cout << "codec control read ret: 0x";
-        std::cout << std::setw(8) << std::hex << ret << std::endl;
-    }
+    UHD_LOGV(often)
+        << "codec control read ret: 0x"
+        << std::setw(8) << std::hex << ret << std::endl
+    ;
 
     _ad9862_regs.set_reg(addr, boost::uint16_t(ret));
 }
@@ -392,14 +387,14 @@ void usrp1_codec_ctrl_impl::set_duc_freq(double freq)
     double coarse_freq = coarse_tune(codec_rate, freq);
     double fine_freq = fine_tune(codec_rate / 4, freq - coarse_freq);
 
-    if (codec_debug) {
-        std::cout << "ad9862 tuning result:" << std::endl;
-        std::cout << "   requested:   " << freq << std::endl;
-        std::cout << "   actual:      " << coarse_freq + fine_freq << std::endl;
-        std::cout << "   coarse freq: " << coarse_freq << std::endl;
-        std::cout << "   fine freq:   " << fine_freq << std::endl;
-        std::cout << "   codec rate:  " << codec_rate << std::endl;
-    }    
+    UHD_LOG
+        << "ad9862 tuning result:" << std::endl
+        << "   requested:   " << freq << std::endl
+        << "   actual:      " << coarse_freq + fine_freq << std::endl
+        << "   coarse freq: " << coarse_freq << std::endl
+        << "   fine freq:   " << fine_freq << std::endl
+        << "   codec rate:  " << codec_rate << std::endl
+    ;
 
     this->send_reg(20);
     this->send_reg(21);

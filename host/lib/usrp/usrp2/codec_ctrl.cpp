@@ -19,12 +19,10 @@
 #include "ad9777_regs.hpp"
 #include "ads62p44_regs.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
-#include <iostream>
-
-static const bool codec_ctrl_debug = false;
 
 using namespace uhd;
 
@@ -167,7 +165,7 @@ private:
 
     void send_ad9777_reg(boost::uint8_t addr){
         boost::uint16_t reg = _ad9777_regs.get_write_reg(addr);
-        if (codec_ctrl_debug) std::cout << "send_ad9777_reg: " << std::hex << reg << std::endl;
+        UHD_LOGV(always) << "send_ad9777_reg: " << std::hex << reg << std::endl;
         _iface->write_spi(
             SPI_SS_AD9777, spi_config_t::EDGE_RISE,
             reg, 16

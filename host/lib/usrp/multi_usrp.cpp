@@ -18,6 +18,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/usrp/mboard_iface.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/gain_group.hpp>
@@ -29,7 +30,6 @@
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <iostream>
 #include <cmath>
 
 using namespace uhd;
@@ -188,7 +188,7 @@ public:
     }
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
-        std::cout << "    1) catch time transition at pps edge" << std::endl;
+        UHD_MSG(status) << "    1) catch time transition at pps edge" << std::endl;
         time_spec_t time_start = get_time_now();
         time_spec_t time_start_last_pps = get_time_last_pps();
         while(true){
@@ -202,7 +202,7 @@ public:
             }
         }
 
-        std::cout << "    2) set times next pps (synchronously)" << std::endl;
+        UHD_MSG(status) << "    2) set times next pps (synchronously)" << std::endl;
         set_time_next_pps(time_spec);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 

@@ -140,7 +140,7 @@ private:
     //! set the log level from a string that is either a digit or an enum name
     void _set_log_level(const std::string &log_level_str){
         const uhd::_log::verbosity_t log_level = uhd::_log::verbosity_t(log_level_str[0]-'0');
-        if (std::isdigit(log_level_str[0]) and log_level >= uhd::_log::always and log_level <= uhd::_log::very_rarely){
+        if (std::isdigit(log_level_str[0]) and log_level >= uhd::_log::always and log_level <= uhd::_log::never){
             _log_level = log_level;
         }
         #define if_lls_equal(name) else if(log_level_str == #name) _log_level = uhd::_log::name
@@ -149,6 +149,7 @@ private:
         if_lls_equal(regularly);
         if_lls_equal(rarely);
         if_lls_equal(very_rarely);
+        if_lls_equal(never);
     }
 
     //available stream objects

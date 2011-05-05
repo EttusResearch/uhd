@@ -17,13 +17,13 @@
 
 #include "usrp1_impl.hpp"
 #include "fpga_regs_standard.h"
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/dsp_props.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/assign/list_of.hpp>
-#include <iostream>
 #include <cmath>
 
 using namespace uhd;
@@ -104,7 +104,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
             size_t rate = size_t(_clock_ctrl->get_master_clock_freq() / val.as<double>());
 
             if ((rate & 0x01) || (rate < 4) || (rate > 256)) {
-                std::cerr << "Decimation must be even and between 4 and 256"
+                UHD_MSG(error) << "Decimation must be even and between 4 and 256"
                           << std::endl;
                 return;
             }
@@ -202,7 +202,7 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
             size_t rate = size_t(_clock_ctrl->get_master_clock_freq() * 2 / val.as<double>());
 
             if ((rate & 0x01) || (rate < 8) || (rate > 512)) {
-                std::cerr << "Interpolation rate must be even and between 8 and 512"
+                UHD_MSG(error) << "Interpolation rate must be even and between 8 and 512"
                           << std::endl;
                 return;
             }

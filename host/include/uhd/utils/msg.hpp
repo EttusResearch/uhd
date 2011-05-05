@@ -37,6 +37,7 @@ namespace uhd{ namespace msg{
         status  = 's',
         warning = 'w',
         error   = 'e',
+        fastpath= 'f'
     };
 
     //! Typedef for a user-registered message handler

@@ -134,7 +134,7 @@ private:
                 if (i + start_addr >= status_addr){
                     _max2112_read_regs.set_reg(i + start_addr, regs_vector[i]);
                     /*
-                    if(dbsrx2_debug) std::cerr << boost::format(
+                    UHD_LOGV(always) << boost::format(
                         "DBSRX2: set reg 0x%02x, value 0x%04x"
                     ) % int(i + start_addr) % int(_max2112_read_regs.get_reg(i + start_addr)) << std::endl;
                     */

@@ -71,16 +71,23 @@ void uhd::msg::register_handler(const handler_t &handler){
 
 static void default_msg_handler(uhd::msg::type_t type, const std::string &msg){
     switch(type){
+    case uhd::msg::fastpath:
+        std::cerr << msg << std::flush;
+        break;
+
     case uhd::msg::status:
         msg_to_cout(msg);
+        UHD_LOG << "Status message" << std::endl << msg;
         break;
 
     case uhd::msg::warning:
         msg_to_cerr("UHD Warning", msg);
+        UHD_LOG << "Warning message" << std::endl << msg;
         break;
 
     case uhd::msg::error:
         msg_to_cerr("UHD Error", msg);
+        UHD_LOG << "Error message" << std::endl << msg;
         break;
     }
 }
@@ -99,7 +106,6 @@ uhd::msg::_msg::_msg(const type_t type){
 
 uhd::msg::_msg::~_msg(void){
     msg_handler(msg_type, msg_ss.str());
-    UHD_LOG << "Message " << char(msg_type) << std::endl << msg_ss.str();
     msg_ss.str(""); //clear for next call
     msg_mutex.unlock();
 }

@@ -19,6 +19,7 @@
 #include "usrp1_ctrl.hpp"
 #include "fpga_regs_standard.h"
 #include "usrp_spi_defs.h"
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
@@ -32,7 +33,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -84,7 +84,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             );
             return usrp1_addrs;
         }
-        //std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
+        UHD_LOG << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
         usb_control::sptr control;
         try{control = usb_control::make(handle);}
@@ -128,7 +128,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr){
     std::string usrp1_fpga_image = find_image_path(
         device_addr.get("fpga", "usrp1_fpga.rbf")
     );
-    //std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
+    UHD_LOG << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
 
     //try to match the given device address with something on the USB bus
     std::vector<usb_device_handle::sptr> device_list =

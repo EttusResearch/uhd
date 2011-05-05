@@ -73,6 +73,7 @@ namespace uhd{ namespace _log{
         regularly   = 3,
         rarely      = 4,
         very_rarely = 5,
+        never       = 6,
     };
 
     //! Internal logging object (called by UHD_LOG macros)

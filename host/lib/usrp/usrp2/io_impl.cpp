@@ -18,6 +18,8 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -266,15 +268,15 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 }
 
                 //print the famous U, and push the metadata into the message queue
-                if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
-                //else std::cout << "metadata.event_code " << metadata.event_code << std::endl;
+                if (metadata.event_code & underflow_flags) UHD_MSG(fastpath) << "U";
+                //else UHD_MSG(often) << "metadata.event_code " << metadata.event_code << std::endl;
                 async_msg_fifo.push_with_pop_on_full(metadata);
             }
             else{
                 //TODO unknown received packet, may want to print error...
             }
         }catch(const std::exception &e){
-            std::cerr << "Error (usrp2 recv pirate loop): " << e.what() << std::endl;
+            UHD_MSG(error) << "Error (usrp2 recv pirate loop): " << e.what() << std::endl;
         }
     }
 }
@@ -314,13 +316,13 @@ void usrp2_impl::update_xport_channel_mapping(void){
         subdev_spec_t rx_subdev_spec = _mboards[i]->get_link()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
         for (size_t j = 0; j < rx_subdev_spec.size(); j++){
             _io_impl->recv_map.push_back(i*usrp2_mboard_impl::MAX_NUM_DSPS+j);
-            //std::cout << "recv_map.back() " << _io_impl->recv_map.back() << std::endl;
+            UHD_LOG << "recv_map.back() " << _io_impl->recv_map.back() << std::endl;
         }
 
         subdev_spec_t tx_subdev_spec = _mboards[i]->get_link()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
         for (size_t j = 0; j < tx_subdev_spec.size(); j++){
             _io_impl->send_map.push_back(i*usrp2_mboard_impl::MAX_NUM_DSPS+j);
-            //std::cout << "send_map.back() " << _io_impl->send_map.back() << std::endl;
+            UHD_LOG << "send_map.back() " << _io_impl->send_map.back() << std::endl;
         }
 
     }
@@ -395,7 +397,7 @@ static UHD_INLINE void extract_packet_info(
 
     //handle the packet count / sequence number
     if ((prev_info.packet_count+1)%16 != next_info.packet_count){
-        std::cerr << "O" << std::flush; //report overflow (drops in the kernel)
+        UHD_MSG(fastpath) << "O"; //report overflow (drops in the kernel)
     }
 
     time = extract_time_spec(next_info);
@@ -504,7 +506,7 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
 }
 
 void usrp2_impl::handle_overflow(size_t chan){
-    std::cerr << "O" << std::flush;
+    UHD_MSG(fastpath) << "O";
     ldiv_t indexes = ldiv(chan, usrp2_mboard_impl::NUM_RX_DSPS);
     _mboards.at(indexes.quot)->handle_overflow(indexes.rem);
 }

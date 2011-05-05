@@ -28,7 +28,6 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
 #include <sstream>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -158,7 +157,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
                 metadata.event_code = vrt_packet_handler::get_context_code<async_metadata_t::event_code_t>(vrt_hdr, if_packet_info);
 
                 //print the famous U, and push the metadata into the message queue
-                if (metadata.event_code & underflow_flags) std::cerr << "U" << std::flush;
+                if (metadata.event_code & underflow_flags) UHD_MSG(fastpath) << "U";
                 async_msg_fifo.push_with_pop_on_full(metadata);
                 continue;
             }
@@ -224,7 +223,7 @@ void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
 }
 
 void usrp_e100_impl::handle_overrun(size_t){
-    std::cerr << "O"; //the famous OOOOOOOOOOO
+    UHD_MSG(fastpath) << "O"; //the famous OOOOOOOOOOO
     if (_io_impl->continuous_streaming){
         this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
