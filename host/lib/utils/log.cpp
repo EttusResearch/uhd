@@ -96,7 +96,7 @@ public:
     uhd_logger_stream_resource_class(void) : _null_stream(&null_streambuf()){
         const std::string log_path = (get_temp_path() / "uhd.log").string();
         _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
-        _file_lock = ip::file_lock(log_path.c_str());
+        _file_lock = new ip::file_lock(log_path.c_str());
 
         //set the default log level
         _log_level = uhd::_log::regularly;
@@ -114,6 +114,7 @@ public:
 
     ~uhd_logger_stream_resource_class(void){
         _file_stream.close();
+        delete _file_lock;
     }
 
     std::ostream &get(void){
@@ -124,10 +125,10 @@ public:
     void aquire(bool lock){
         if (lock){
             _mutex.lock();
-            _file_lock.lock();
+            _file_lock->lock();
         }
         else{
-            _file_lock.unlock();
+            _file_lock->unlock();
             _mutex.unlock();
         }
     }
@@ -158,7 +159,7 @@ private:
 
     //synchronization mechanisms
     boost::mutex _mutex; //process-level
-    ip::file_lock _file_lock; //system-level
+    ip::file_lock *_file_lock; //system-level
 
     //log-level settings
     uhd::_log::verbosity_t _verbosity;
