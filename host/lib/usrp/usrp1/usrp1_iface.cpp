@@ -72,6 +72,11 @@ public:
 
     boost::uint32_t peek32(boost::uint32_t addr)
     {
+        UHD_LOGV(always)
+            << "peek32("
+            << std::dec << std::setw(2) << addr << ")" << std::endl
+        ;
+
         boost::uint32_t value_out;
 
         boost::uint8_t w_index_h = SPI_ENABLE_FPGA & 0xff;
@@ -116,6 +121,10 @@ public:
 
     void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes)
     {
+        UHD_LOGV(always) << "write_i2c:" << std::endl
+            << "  addr 0x" << std::hex << int(addr) << std::endl
+            << "  len " << bytes.size() << std::endl
+        ;
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
         unsigned char buff[max_i2c_data_bytes];
@@ -132,6 +141,10 @@ public:
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes)
     {
+        UHD_LOGV(always) << "read_i2c:" << std::endl
+            << "  addr 0x" << std::hex << int(addr) << std::endl
+            << "  len " << num_bytes << std::endl
+        ;
         UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 
         unsigned char buff[max_i2c_data_bytes];
@@ -169,6 +182,13 @@ public:
                                  size_t num_bits,
                                  bool readback)
     {
+        UHD_LOGV(always)
+            << "transact_spi: " << std::endl
+            << "  slave: " << which_slave << std::endl
+            << "  bits: " << bits << std::endl
+            << "  num_bits: " << num_bits << std::endl
+            << "  readback: " << readback << std::endl
+        ;
         UHD_ASSERT_THROW((num_bits <= 32) && !(num_bits % 8));
         size_t num_bytes = num_bits / 8;
 
