@@ -18,6 +18,7 @@
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/foreach.hpp>
@@ -26,7 +27,6 @@
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/thread/mutex.hpp>
-#include <iostream>
 
 using namespace uhd;
 
@@ -87,7 +87,7 @@ device_addrs_t device::find(const device_addr_t &hint){
             );
         }
         catch(const std::exception &e){
-            std::cerr << "Device discovery error: " << e.what() << std::endl;
+            UHD_MSG(error) << "Device discovery error: " << e.what() << std::endl;
         }
     }
 

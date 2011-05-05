@@ -17,6 +17,8 @@
 
 #include "usrp_e100_impl.hpp"
 #include "usrp_e100_regs.hpp"
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -25,6 +27,7 @@
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
+#include <sstream>
 #include <iostream>
 
 using namespace uhd;
@@ -37,7 +40,7 @@ using namespace uhd::transport;
 static const size_t rx_data_inline_sid = 1;
 static const size_t tx_async_report_sid = 2;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
-static const bool recv_debug = false;
+#define fp_recv_debug false
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -116,12 +119,14 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
         managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
 
-        if (recv_debug){
-            std::cout << "len " << buff->size() << std::endl;
+        if (fp_recv_debug){
+            std::ostringstream ss;
+            ss << "len " << buff->size() << std::endl;
             for (size_t i = 0; i < 9; i++){
-                std::cout << boost::format("    0x%08x") % buff->cast<const boost::uint32_t *>()[i] << std::endl;
+                ss << boost::format("    0x%08x") % buff->cast<const boost::uint32_t *>()[i] << std::endl;
             }
-            std::cout << std::endl << std::endl;
+            ss << std::endl << std::endl;
+            UHD_LOGV(always) << ss.str();
         }
 
         try{
@@ -133,7 +138,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
 
             //handle an rx data packet or inline message
             if (if_packet_info.sid == rx_data_inline_sid){
-                if (recv_debug) std::cout << "this is rx_data_inline_sid\n";
+                if (fp_recv_debug) UHD_LOGV(always) << "this is rx_data_inline_sid\n";
                 //same number of frames as the data transport -> always immediate
                 recv_pirate_booty.push_with_wait(buff);
                 continue;
@@ -141,7 +146,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
 
             //handle a tx async report message
             if (if_packet_info.sid == tx_async_report_sid and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
-                if (recv_debug) std::cout << "this is tx_async_report_sid\n";
+                if (fp_recv_debug) UHD_LOGV(always) << "this is tx_async_report_sid\n";
 
                 //fill in the async metadata
                 async_metadata_t metadata;
@@ -158,10 +163,10 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
                 continue;
             }
 
-            if (recv_debug) std::cout << "this is unknown packet\n";
+            if (fp_recv_debug) UHD_LOGV(always) << "this is unknown packet\n";
 
         }catch(const std::exception &e){
-            std::cerr << "Error (usrp-e recv pirate loop): " << e.what() << std::endl;
+            UHD_MSG(error) << "Error (usrp-e recv pirate loop): " << e.what() << std::endl;
         }
     }
 }

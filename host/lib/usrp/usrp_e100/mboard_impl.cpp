@@ -17,12 +17,12 @@
 
 #include "usrp_e100_impl.hpp"
 #include "usrp_e100_regs.hpp"
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <boost/bind.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -207,10 +207,11 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         return;
 
     case MBOARD_PROP_CLOCK_RATE:
-        std::cerr << "Helpful message:" << std::endl;
-        std::cerr << "    I see that you are setting the master clock rate from the API." << std::endl;
-        std::cerr << "    You may find it more convenient to burn this setting into the EEPROM." << std::endl;
-        std::cerr << "    See the application notes for USRP-E1XX for further instructions." << std::endl;
+        UHD_MSG(warning)
+            << "I see that you are setting the master clock rate from the API.\n"
+            << "You may find it more convenient to burn this setting into the EEPROM.\n"
+            << "See the application notes for USRP-E1XX for further instructions.\n"
+        ;
         _clock_ctrl->set_fpga_clock_rate(val.as<double>());
         return;
 

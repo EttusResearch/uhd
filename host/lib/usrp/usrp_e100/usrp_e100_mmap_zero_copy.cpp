@@ -17,19 +17,18 @@
 
 #include "usrp_e100_iface.hpp"
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <linux/usrp_e.h>
 #include <sys/mman.h> //mmap
 #include <unistd.h> //getpagesize
 #include <poll.h> //poll
 #include <vector>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::transport;
 
-static const bool fp_verbose = false; //fast-path verbose
-static const bool sp_verbose = false; //slow-path verbose
+#define fp_verbose false //fast-path verbose
 static const size_t poll_breakout = 10; //how many poll timeouts constitute a full timeout
 
 /***********************************************************************
@@ -43,14 +42,14 @@ public:
 
     void release(void){
         if (_info->flags != RB_USER_PROCESS) return;
-        if (fp_verbose) std::cout << "recv buff: release" << std::endl;
+        if (fp_verbose) UHD_LOGV(always) << "recv buff: release" << std::endl;
         _info->flags = RB_KERNEL; //release the frame
     }
 
     bool ready(void){return _info->flags & RB_USER;}
 
     sptr get_new(void){
-        if (fp_verbose) std::cout << "  make_recv_buff: " << get_size() << std::endl;
+        if (fp_verbose) UHD_LOGV(always) << "  make_recv_buff: " << get_size() << std::endl;
         _info->flags = RB_USER_PROCESS; //claim the frame
         return sptr(this, &usrp_e100_mmap_zero_copy_mrb::fake_deleter);
     }
@@ -78,18 +77,18 @@ public:
 
     void commit(size_t len){
         if (_info->flags != RB_USER_PROCESS) return;
-        if (fp_verbose) std::cout << "send buff: commit " << len << std::endl;
+        if (fp_verbose) UHD_LOGV(always) << "send buff: commit " << len << std::endl;
         _info->len = len;
         _info->flags = RB_USER; //release the frame
         if (::write(_fd, NULL, 0) < 0){ //notifies the kernel
-            std::cerr << UHD_THROW_SITE_INFO("write error") << std::endl;
+            UHD_LOGV(rarely) << UHD_THROW_SITE_INFO("write error") << std::endl;
         }
     }
 
     bool ready(void){return _info->flags & RB_KERNEL;}
 
     sptr get_new(void){
-        if (fp_verbose) std::cout << "  make_send_buff: " << get_size() << std::endl;
+        if (fp_verbose) UHD_LOGV(always) << "  make_send_buff: " << get_size() << std::endl;
         _info->flags = RB_USER_PROCESS; //claim the frame
         return sptr(this, &usrp_e100_mmap_zero_copy_msb::fake_deleter);
     }
@@ -127,15 +126,15 @@ public:
             (_rb_size.num_rx_frames + _rb_size.num_tx_frames) * _frame_size;
 
         //print sizes summary
-        if (sp_verbose){
-            std::cout << "page_size:          " << page_size                   << std::endl;
-            std::cout << "frame_size:         " << _frame_size                 << std::endl;
-            std::cout << "num_pages_rx_flags: " << _rb_size.num_pages_rx_flags << std::endl;
-            std::cout << "num_rx_frames:      " << _rb_size.num_rx_frames      << std::endl;
-            std::cout << "num_pages_tx_flags: " << _rb_size.num_pages_tx_flags << std::endl;
-            std::cout << "num_tx_frames:      " << _rb_size.num_tx_frames      << std::endl;
-            std::cout << "map_size:           " << _map_size                   << std::endl;
-        }
+        UHD_LOG
+            << "page_size:          " << page_size                   << std::endl
+            << "frame_size:         " << _frame_size                 << std::endl
+            << "num_pages_rx_flags: " << _rb_size.num_pages_rx_flags << std::endl
+            << "num_rx_frames:      " << _rb_size.num_rx_frames      << std::endl
+            << "num_pages_tx_flags: " << _rb_size.num_pages_tx_flags << std::endl
+            << "num_tx_frames:      " << _rb_size.num_tx_frames      << std::endl
+            << "map_size:           " << _map_size                   << std::endl
+        ;
 
         //call mmap to get the memory
         _mapped_mem = ::mmap(
@@ -150,12 +149,12 @@ public:
         size_t send_buff_off = send_info_off + (_rb_size.num_pages_tx_flags * page_size);
 
         //print offset summary
-        if (sp_verbose){
-            std::cout << "recv_info_off: " << recv_info_off << std::endl;
-            std::cout << "recv_buff_off: " << recv_buff_off << std::endl;
-            std::cout << "send_info_off: " << send_info_off << std::endl;
-            std::cout << "send_buff_off: " << send_buff_off << std::endl;
-        }
+        UHD_LOG
+            << "recv_info_off: " << recv_info_off << std::endl
+            << "recv_buff_off: " << recv_buff_off << std::endl
+            << "send_info_off: " << send_info_off << std::endl
+            << "send_buff_off: " << send_buff_off << std::endl
+        ;
 
         //pointers to sections in the mapped memory
         ring_buffer_info (*recv_info)[], (*send_info)[];
@@ -186,12 +185,12 @@ public:
     }
 
     ~usrp_e100_mmap_zero_copy_impl(void){
-        if (sp_verbose) std::cout << "cleanup: munmap" << std::endl;
+        UHD_LOG << "cleanup: munmap" << std::endl;
         ::munmap(_mapped_mem, _map_size);
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
-        if (fp_verbose) std::cout << "get_recv_buff: " << _recv_index << std::endl;
+        if (fp_verbose) UHD_LOGV(always) << "get_recv_buff: " << _recv_index << std::endl;
         usrp_e100_mmap_zero_copy_mrb &mrb = _mrb_pool[_recv_index];
 
         //poll/wait for a ready frame
@@ -201,7 +200,7 @@ public:
                 pfd.fd = _fd;
                 pfd.events = POLLIN;
                 ssize_t poll_ret = ::poll(&pfd, 1, size_t(timeout*1e3/poll_breakout));
-                if (fp_verbose) std::cout << "  POLLIN: " << poll_ret << std::endl;
+                if (fp_verbose) UHD_LOGV(always) << "  POLLIN: " << poll_ret << std::endl;
                 if (poll_ret > 0) goto found_user_frame; //good poll, continue on
             }
             return managed_recv_buffer::sptr(); //timed-out for real
@@ -223,7 +222,7 @@ public:
     }
 
     managed_send_buffer::sptr get_send_buff(double timeout){
-        if (fp_verbose) std::cout << "get_send_buff: " << _send_index << std::endl;
+        if (fp_verbose) UHD_LOGV(always) << "get_send_buff: " << _send_index << std::endl;
         usrp_e100_mmap_zero_copy_msb &msb = _msb_pool[_send_index];
 
         //poll/wait for a ready frame
@@ -232,7 +231,7 @@ public:
             pfd.fd = _fd;
             pfd.events = POLLOUT;
             ssize_t poll_ret = ::poll(&pfd, 1, size_t(timeout*1e3));
-            if (fp_verbose) std::cout << "  POLLOUT: " << poll_ret << std::endl;
+            if (fp_verbose) UHD_LOGV(always) << "  POLLOUT: " << poll_ret << std::endl;
             if (poll_ret <= 0) return managed_send_buffer::sptr();
         }
 

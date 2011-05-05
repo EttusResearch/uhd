@@ -17,6 +17,7 @@
 
 #include "codec_ctrl.hpp"
 #include "ad9862_regs.hpp"
+#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -25,11 +26,8 @@
 #include <boost/math/special_functions/round.hpp>
 #include "usrp_e100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
-#include <iostream>
 
 using namespace uhd;
-
-static const bool codec_debug = false;
 
 const gain_range_t usrp_e100_codec_ctrl::tx_pga_gain_range(-20, 0, double(0.1));
 const gain_range_t usrp_e100_codec_ctrl::rx_pga_gain_range(0, 20, 1);
@@ -268,7 +266,7 @@ void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
  **********************************************************************/
 void usrp_e100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
     boost::uint32_t reg = _ad9862_regs.get_write_reg(addr);
-    if (codec_debug) std::cout << "codec control write reg: " << std::hex << reg << std::endl;
+    UHD_LOGV(often) << "codec control write reg: " << std::hex << reg << std::endl;
     _iface->write_spi(
         UE_SPI_SS_AD9862,
         spi_config_t::EDGE_RISE,
@@ -278,13 +276,13 @@ void usrp_e100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
 
 void usrp_e100_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
     boost::uint32_t reg = _ad9862_regs.get_read_reg(addr);
-    if (codec_debug) std::cout << "codec control read reg: " << std::hex << reg << std::endl;
+    UHD_LOGV(often) << "codec control read reg: " << std::hex << reg << std::endl;
     boost::uint32_t ret = _iface->read_spi(
         UE_SPI_SS_AD9862,
         spi_config_t::EDGE_RISE,
         reg, 16
     );
-    if (codec_debug) std::cout << "codec control read ret: " << std::hex << ret << std::endl;
+    UHD_LOGV(often) << "codec control read ret: " << std::hex << ret << std::endl;
     _ad9862_regs.set_reg(addr, boost::uint16_t(ret));
 }
 

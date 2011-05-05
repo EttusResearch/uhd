@@ -18,15 +18,17 @@
 #include <uhd/config.hpp>
 #ifdef UHD_DLL_EXPORTS
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #else //special case when this file is externally included
 #include <stdexcept>
+#include <iostream>
+#define UHD_MSG(type) std::cout
 namespace uhd{
     typedef std::runtime_error os_error;
     typedef std::runtime_error io_error;
 }
 #endif
 
-#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
@@ -110,8 +112,9 @@ gpio::gpio(unsigned int gpio_num, gpio_direction pin_direction)
 		direction_file_name = base_path.str() + "/direction";
 
 		direction_file.open(direction_file_name.c_str());
-		if (!direction_file.is_open())
-			std::cout << "Failed to open direction file." << std::endl;
+		if (!direction_file.is_open()) throw uhd::os_error(
+			"Failed to open direction file."
+		);
 		if (pin_direction == OUT)
 			direction_file << "out" << std::endl;
 		else
@@ -123,8 +126,9 @@ gpio::gpio(unsigned int gpio_num, gpio_direction pin_direction)
 	value_file_name = base_path.str() + "/value";
 
 	value_file.open(value_file_name.c_str(), std::ios_base::in | std::ios_base::out);
-	if (!value_file.is_open())
-		std::cout << "Failed to open value file." << std::endl;
+	if (!value_file.is_open()) throw uhd::os_error(
+		"Failed to open value file."
+	);
 }
 
 bool gpio::get_value()
@@ -140,7 +144,7 @@ bool gpio::get_value()
 	else if (val == "1")
 		return true;
 	else
-		std::cout << "Data read from value file|" << val << "|" << std::endl;
+		throw uhd::os_error("Data read from value file|" + val + "|");
 
 	return false;
 }
@@ -172,8 +176,7 @@ static void prepare_fpga_for_configuration(gpio &prog, gpio &)//init)
 	} while (count < 10 && !ready_to_program);
 
 	if (count == 10) {
-		std::cout << "FPGA not ready for programming." << std::endl;
-		exit(-1);
+		throw uhd::os_error("FPGA not ready for programming.");
 	}
 #endif
 }
@@ -232,10 +235,10 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 		spi.send(buf, rbuf, bitstream.gcount());
 
 		if (error.get_value())
-			std::cout << "INIT_B went high, error occured." << std::endl;
+			throw uhd::os_error("INIT_B went high, error occured.");
 
 		if (!done.get_value())
-			std::cout << "Configuration complete." << std::endl;
+			UHD_MSG(status) << "Configuration complete." << std::endl;
 
 	} while (bitstream.gcount() == BUF_SIZE);
 }
@@ -249,20 +252,20 @@ void usrp_e100_load_fpga(const std::string &bin_file){
 	gpio gpio_init_b(INIT_B, IN);
 	gpio gpio_done  (DONE,   IN);
 
-	std::cout << "Loading FPGA image: " << bin_file << "... " << std::flush;
+	UHD_MSG(status) << "Loading FPGA image: " << bin_file << "... " << std::flush;
 
 	if(std::system("/sbin/rmmod usrp_e") != 0){
-		std::cerr << "USRP-E100 FPGA downloader: could not unload usrp_e module" << std::endl;
+		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not unload usrp_e module" << std::endl;
 	}
 
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
-	std::cout << "done = " << gpio_done.get_value() << std::endl;
+	UHD_MSG(status) << "done = " << gpio_done.get_value() << std::endl;
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 
 	if(std::system("/sbin/modprobe usrp_e") != 0){
-		std::cerr << "USRP-E100 FPGA downloader: could not load usrp_e module" << std::endl;
+		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not load usrp_e module" << std::endl;
 	}
 
 }
