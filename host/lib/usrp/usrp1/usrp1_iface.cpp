@@ -165,6 +165,17 @@ public:
         return out_bytes; 
     }
 
+    //! overload read_eeprom to handle multi-byte reads
+    byte_vector_t read_eeprom(
+        boost::uint8_t addr,
+        boost::uint8_t offset,
+        size_t num_bytes
+    ){
+        //do a zero byte write to start read cycle
+        this->write_i2c(addr, byte_vector_t(1, offset));
+        return this->read_i2c(addr, num_bytes); //read all bytes
+    }
+
     /*******************************************************************
      * SPI
      *

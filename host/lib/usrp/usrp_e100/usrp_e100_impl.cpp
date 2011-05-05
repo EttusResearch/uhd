@@ -77,7 +77,6 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
  * Make
  **********************************************************************/
 static device::sptr usrp_e100_make(const device_addr_t &device_addr){
-    UHD_MSG(status) << "Opening a USRP E-Series device..." << std::endl;
 
     //setup the main interface into fpga
     std::string node = device_addr["node"];
