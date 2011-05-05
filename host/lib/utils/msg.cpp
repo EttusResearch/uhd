@@ -34,11 +34,19 @@
 static void msg_to_cout(const std::string &msg){
     std::stringstream ss;
 
-    BOOST_FOREACH(const std::string &line, tokenizer(msg, "\n")){
-        ss << "-- " << line << std::endl;
+    static bool just_had_a_newline = true;
+    BOOST_FOREACH(char ch, msg){
+        if (just_had_a_newline){
+            just_had_a_newline = false;
+            ss << "-- ";
+        }
+        if (ch == '\n'){
+            just_had_a_newline = true;
+        }
+        ss << ch;
     }
 
-    std::cout << ss.str();
+    std::cout << ss.str() << std::flush;
 }
 
 static void msg_to_cerr(const std::string &title, const std::string &msg){
@@ -49,7 +57,7 @@ static void msg_to_cerr(const std::string &title, const std::string &msg){
         ss << "    " << line << std::endl;
     }
 
-    std::cerr << ss.str();
+    std::cerr << ss.str() << std::flush;
 }
 
 /***********************************************************************
@@ -110,6 +118,6 @@ uhd::msg::_msg::~_msg(void){
     msg_mutex.unlock();
 }
 
-std::ostream & uhd::msg::_msg::get(void){
+std::ostream & uhd::msg::_msg::operator()(void){
     return msg_ss;
 }

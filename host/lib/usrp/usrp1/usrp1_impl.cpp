@@ -123,6 +123,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
  * Make
  **********************************************************************/
 static device::sptr usrp1_make(const device_addr_t &device_addr){
+    UHD_MSG(status) << "Opening a USRP1 device..." << std::endl;
 
     //extract the FPGA path for the USRP1
     std::string usrp1_fpga_image = find_image_path(

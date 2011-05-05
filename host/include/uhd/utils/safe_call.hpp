@@ -20,10 +20,10 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 //! helper macro for safe call to produce warnings
-#define _UHD_SAFE_CALL_WARNING(code, what) UHD_MSG(warning) << \
+#define _UHD_SAFE_CALL_WARNING(code, what) UHD_LOGV(rarely) << \
     UHD_THROW_SITE_INFO("Exception caught in safe-call.") + #code + " -> " + what \
 ;
 

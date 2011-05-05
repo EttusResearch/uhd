@@ -228,6 +228,7 @@ static mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &u
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
+    UHD_MSG(status) << "Opening a USRP2/N-Series device..." << std::endl;
     device_addr_t device_addr = _device_addr;
 
     //setup the dsp transport hints (default to a large recv buff)

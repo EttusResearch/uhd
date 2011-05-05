@@ -18,6 +18,7 @@
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -65,7 +66,7 @@ void device::register_device(
     const find_t &find,
     const make_t &make
 ){
-    //std::cout << "registering device" << std::endl;
+    UHD_LOGV(always) << "registering device" << std::endl;
     get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make));
 }
 
@@ -128,7 +129,7 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
     device_addr_t dev_addr; make_t maker;
     boost::tie(dev_addr, maker) = dev_addr_makers.at(which);
     size_t dev_hash = hash_device_addr(dev_addr);
-    //std::cout << boost::format("Hash: %u") % dev_hash << std::endl;
+    UHD_LOG << boost::format("Device hash: %u") % dev_hash << std::endl;
 
     //copy keys that were in hint but not in dev_addr
     //this way, we can pass additional transport arguments

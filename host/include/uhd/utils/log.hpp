@@ -54,7 +54,7 @@
  * Usage: UHD_LOGV(very_rarely) << "the log message" << std::endl;
  */
 #define UHD_LOGV(verbosity) \
-    uhd::_log::log(uhd::_log::verbosity, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
+    uhd::_log::log(uhd::_log::verbosity, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)()
 
 /*!
  * A UHD logger macro with default verbosity.
@@ -85,12 +85,7 @@ namespace uhd{ namespace _log{
             const std::string &function
         );
         ~log(void);
-
-        std::ostream &get(void);
-
-        template <typename T> std::ostream &operator<<(const T &x){
-            return get() << x;
-        }
+        std::ostream &operator()(void);
     };
 
 }} //namespace uhd::_log

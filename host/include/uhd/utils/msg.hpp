@@ -27,7 +27,7 @@
  * Usage: UHD_MSG(warning) << "some warning message" << std::endl;
  */
 #define UHD_MSG(type) \
-    uhd::msg::_msg(uhd::msg::type)
+    uhd::msg::_msg(uhd::msg::type)()
 
 
 namespace uhd{ namespace msg{
@@ -55,12 +55,7 @@ namespace uhd{ namespace msg{
     struct UHD_API_FUTURE _msg{
         _msg(const type_t type);
         ~_msg(void);
-
-        std::ostream &get(void);
-
-        template <typename T> std::ostream &operator<<(const T &x){
-            return get() << x;
-        }
+        std::ostream &operator()(void);
     };
 
 }} //namespace uhd::msg

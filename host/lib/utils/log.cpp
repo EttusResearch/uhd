@@ -209,6 +209,6 @@ uhd::_log::log::~log(void){
     uhd_logger_stream_resource().aquire(false);
 }
 
-std::ostream & uhd::_log::log::get(void){
+std::ostream & uhd::_log::log::operator()(void){
     return uhd_logger_stream_resource().get();
 }

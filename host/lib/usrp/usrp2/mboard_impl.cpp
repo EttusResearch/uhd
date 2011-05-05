@@ -142,7 +142,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     else {
         _mimo_clocking_mode_is_master = (_iface->peek32(_iface->regs.status) & (1 << 8)) != 0;
     }
-    UHD_MSG(status) << boost::format("mboard%d MIMO %s") % _index %
+    UHD_MSG(status) << boost::format("mboard%d is MIMO %s") % _index %
         (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
 
     //init the clock config
