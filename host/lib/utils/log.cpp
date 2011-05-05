@@ -22,6 +22,19 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #ifdef BOOST_MSVC
+//whoops! https://svn.boost.org/trac/boost/ticket/5287
+//enjoy this useless dummy class instead
+namespace boost{ namespace interprocess{
+    struct file_lock{
+        file_lock(const char * = NULL){}
+        void lock(void){}
+        void unlock(void){}
+    };
+}} //namespace
+#else
+#include <boost/interprocess/sync/file_lock.hpp>
+#endif
+#ifdef BOOST_MSVC
 #define USE_GET_TEMP_PATH
 #include <Windows.h> //GetTempPath
 #endif
@@ -32,6 +45,7 @@
 
 namespace fs = boost::filesystem;
 namespace pt = boost::posix_time;
+namespace ip = boost::interprocess;
 
 /***********************************************************************
  * Helper function to get the system's temporary path
@@ -82,6 +96,7 @@ public:
     uhd_logger_stream_resource_class(void) : _null_stream(&null_streambuf()){
         const std::string log_path = (get_temp_path() / "uhd.log").string();
         _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
+        _file_lock = ip::file_lock(log_path.c_str());
 
         //set the default log level
         _log_level = uhd::_log::regularly;
@@ -107,8 +122,14 @@ public:
     }
 
     void aquire(bool lock){
-        if (lock) _mutex.lock();
-        else _mutex.unlock();
+        if (lock){
+            _mutex.lock();
+            _file_lock.lock();
+        }
+        else{
+            _file_lock.unlock();
+            _mutex.unlock();
+        }
     }
 
     void set_verbosity(uhd::_log::verbosity_t verbosity){
@@ -130,9 +151,15 @@ private:
         if_lls_equal(very_rarely);
     }
 
+    //available stream objects
     std::ofstream _file_stream;
     std::ostream _null_stream;
-    boost::mutex _mutex;
+
+    //synchronization mechanisms
+    boost::mutex _mutex; //process-level
+    ip::file_lock _file_lock; //system-level
+
+    //log-level settings
     uhd::_log::verbosity_t _verbosity;
     uhd::_log::verbosity_t _log_level;
 };
