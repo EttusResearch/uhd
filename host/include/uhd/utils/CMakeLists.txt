@@ -24,6 +24,7 @@ INSTALL(FILES
     gain_group.hpp
     images.hpp
     log.hpp
+    msg.hpp
     pimpl.hpp
     props.hpp
     safe_call.hpp

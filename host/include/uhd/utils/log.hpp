@@ -76,7 +76,7 @@ namespace uhd{ namespace _log{
     };
 
     //! Internal logging object (called by UHD_LOG macros)
-    struct /*UHD_API*/ log{
+    struct UHD_API_FUTURE log{
         log(
             const verbosity_t verbosity,
             const std::string &file,

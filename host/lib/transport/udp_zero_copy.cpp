@@ -20,7 +20,7 @@
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
 #include <list>
@@ -279,12 +279,12 @@ template<typename Opt> static void resize_buff_helper(
             "Target %s sock buff size: %d bytes\n"
             "Actual %s sock buff size: %d bytes"
         ) % name % target_size % name % actual_size << std::endl;
-        if (actual_size < target_size) uhd::warning::post(str(boost::format(
+        if (actual_size < target_size) UHD_MSG(warning) << boost::format(
             "The %s buffer could not be resized sufficiently.\n"
             "Target sock buff size: %d bytes.\n"
             "Actual sock buff size: %d bytes.\n"
             "See the transport application notes on buffer resizing.\n%s"
-        ) % name % target_size % actual_size % help_message));
+        ) % name % target_size % actual_size % help_message;
     }
 }
 

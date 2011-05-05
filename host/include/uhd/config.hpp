@@ -76,6 +76,13 @@ typedef ptrdiff_t ssize_t;
     #define UHD_API UHD_IMPORT
 #endif // UHD_DLL_EXPORTS
 
+// The user can enable this with -DUHD_FUTURE
+#ifdef UHD_FUTURE
+    #define UHD_API_FUTURE UHD_API
+#else
+    #define UHD_API_FUTURE
+#endif
+
 // Platform defines for conditional parts of headers:
 // Taken from boost/config/select_platform_config.hpp,
 // however, we define macros, not strings for platforms.

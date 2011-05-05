@@ -167,7 +167,7 @@ private:
 UHD_SINGLETON_FCN(uhd_logger_stream_resource_class, uhd_logger_stream_resource);
 
 /***********************************************************************
- * The logger function implementation
+ * The logger object implementation
  **********************************************************************/
 //! get the relative file path from the host directory
 static std::string get_rel_file_path(const fs::path &file){

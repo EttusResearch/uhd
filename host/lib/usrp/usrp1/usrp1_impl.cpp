@@ -23,7 +23,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -78,7 +78,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
         }
         catch(...){
-            uhd::warning::post(
+            UHD_MSG(warning) << boost::format(
                 "Could not locate USRP1 firmware.\n"
                 "Please install the images package.\n"
             );

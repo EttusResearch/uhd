@@ -41,7 +41,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -514,9 +514,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("RFX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "RFX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -616,9 +614,7 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("RFX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "RFX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

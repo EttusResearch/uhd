@@ -22,7 +22,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
-#include <uhd/utils/warning.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
@@ -58,18 +57,16 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
             usrp_e100_iface::sptr iface = usrp_e100_iface::make(new_addr["node"]);
             new_addr["name"] = iface->mb_eeprom["name"];
             new_addr["serial"] = iface->mb_eeprom["serial"];
-            if (
-                (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
-                (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
-            ){
-                usrp_e100_addrs.push_back(new_addr);
-            }
         }
         catch(const std::exception &e){
-            uhd::warning::post(
-                std::string("Ignoring discovered device\n")
-                + e.what()
-            );
+            new_addr["name"] = "";
+            new_addr["serial"] = "";
+        }
+        if (
+            (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+            (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+        ){
+            usrp_e100_addrs.push_back(new_addr);
         }
     }
 

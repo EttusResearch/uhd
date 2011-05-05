@@ -24,7 +24,7 @@
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/images.hpp>
 #include <boost/assign/list_of.hpp>
@@ -98,7 +98,7 @@ static boost::uint32_t calc_rx_mux(
     //    for all quadrature sources: Z = 0
     //    for mixed sources: warning + Z = 0
     int Z = (num_quads > 0)? 0 : 1;
-    if (num_quads != 0 and num_reals != 0) uhd::warning::post(
+    if (num_quads != 0 and num_reals != 0) UHD_MSG(warning) << boost::format(
         "Mixing real and quadrature rx subdevices is not supported.\n"
         "The Q input to the real source(s) will be non-zero.\n"
     );

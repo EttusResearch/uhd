@@ -81,7 +81,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -674,9 +674,7 @@ void sbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("SBX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "SBX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -780,9 +778,7 @@ void sbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("SBX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "SBX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

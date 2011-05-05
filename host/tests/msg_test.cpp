@@ -16,14 +16,24 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <iostream>
 
-BOOST_AUTO_TEST_CASE(test_warning_post){
+BOOST_AUTO_TEST_CASE(test_messages){
+    #ifdef UHD_FUTURE
     std::cerr << "---begin print test ---" << std::endl;
-    uhd::warning::post(
+    UHD_MSG(status) <<
+        "This is a test print for a status message.\n"
+        "And this is the second line of the test print.\n"
+    ;
+    UHD_MSG(warning) <<
         "This is a test print for a warning message.\n"
         "And this is the second line of the test print.\n"
-    );
+    ;
+    UHD_MSG(error) <<
+        "This is a test print for an error message.\n"
+        "And this is the second line of the test print.\n"
+    ;
     std::cerr << "---end print test ---" << std::endl;
+    #endif
 }

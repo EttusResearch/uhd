@@ -31,7 +31,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
@@ -485,9 +485,7 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("TVRX: No tunable bandwidth, fixed filtered to 6MHz"))
-        );
+        UHD_MSG(warning) << "TVRX: No tunable bandwidth, fixed filtered to 6MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
