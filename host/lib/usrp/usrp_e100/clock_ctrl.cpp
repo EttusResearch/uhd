@@ -409,6 +409,7 @@ public:
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF2;
         _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_MANUAL;
         this->send_reg(0x01C);
+        this->latch_regs();
     }
     
     void use_external_ref(void) {
@@ -417,6 +418,7 @@ public:
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF1;
         _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_MANUAL;
         this->send_reg(0x01C);
+        this->latch_regs();
     }
     
     void use_auto_ref(void) {
@@ -424,6 +426,8 @@ public:
         _ad9522_regs.enable_ref1 = 1;
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF1;
         _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_AUTO;
+        this->send_reg(0x01C);
+        this->latch_regs();
     }
 
 private:
@@ -459,15 +463,27 @@ private:
         //wait for calibration done:
         static const boost::uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             boost::uint32_t reg = _iface->read_spi(
                 UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
                 _ad9522_regs.get_read_reg(addr), 24
             );
             _ad9522_regs.set_reg(addr, reg);
-            if (_ad9522_regs.vco_calibration_finished) return;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            if (_ad9522_regs.vco_calibration_finished) goto wait_for_ld;
         }
         UHD_MSG(error) << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
+        wait_for_ld:
+        //wait for digital lock detect:
+        for (size_t ms10 = 0; ms10 < 100; ms10++){
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            boost::uint32_t reg = _iface->read_spi(
+                UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
+                _ad9522_regs.get_read_reg(addr), 24
+            );
+            _ad9522_regs.set_reg(addr, reg);
+            if (_ad9522_regs.digital_lock_detect) return;
+        }
+        UHD_MSG(error) << "USRP-E100 clock control: lock detection timeout" << std::endl;
     }
 
     void send_all_regs(void){
