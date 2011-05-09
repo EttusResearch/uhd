@@ -120,18 +120,15 @@ module u1e_core
    wire 	 rx_eof = rx_data[33];
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
-   wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
+   wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug, vr_debug;
    
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX
-   wire [31:0] 	 sample_rx, sample_tx;
-   wire 	 strobe_rx, strobe_tx;
-   wire 	 rx1_dst_rdy, rx1_src_rdy;
-   wire [100:0]  rx1_data;
-   wire 	 run_rx;
+   wire [31:0] 	 sample_rx;
+   wire 	 strobe_rx, run_rx;
    wire [35:0] 	 vita_rx_data;
    wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
-      
+   
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -139,20 +136,13 @@ module u1e_core
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
-   vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
+   vita_rx_chain #(.BASE(SR_RX_CTRL), .UNIT(0), .FIFOSIZE(9)) vita_rx_chain
+     (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
-      .debug_rx(vrc_debug));
-
-   vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
-      .data_o(vita_rx_data), .dst_rdy_i(vita_rx_dst_rdy), .src_rdy_o(vita_rx_src_rdy),
-      .debug_rx(vrf_debug) );
+      .rx_data_o(vita_rx_data), .rx_dst_rdy_i(vita_rx_dst_rdy), .rx_src_rdy_o(vita_rx_src_rdy),
+      .debug(vr_debug) );
    
    fifo36_mux #(.prio(0)) mux_err_stream
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
@@ -416,7 +406,7 @@ module u1e_core
 */
    assign debug = debug_gpmc;
 
-   assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
+   assign debug_gpio_0 = { {run_tx, 1'b0, run_rx, strobe_rx, tx_i[11:0]}, 
 			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
 
    assign debug_gpio_1 = debug_vt;
