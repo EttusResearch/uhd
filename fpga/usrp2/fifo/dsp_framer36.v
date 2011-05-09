@@ -1,9 +1,13 @@
 
-// Frame DSP packets with a header line to be handled by the protocol machine
+// This has 3 functions:
+//   Correct the VITA packet length
+//   [optional] Frame DSP packets with an header line to be handled by the protocol machine
+//   Hold on to the packet until there is a complete one before allowing to leave
 
 module dsp_framer36
   #(parameter BUF_SIZE = 9, 
-    parameter PORT_SEL = 0)
+    parameter PORT_SEL = 0,
+    parameter PROT_ENG_FLAGS = 1)
    (input clk, input reset, input clear,
     input [35:0] data_i, input src_rdy_i, output dst_rdy_o,
     output [35:0] data_o, output src_rdy_o, input dst_rdy_i);
@@ -48,10 +52,10 @@ module dsp_framer36
 
    always @(posedge clk)
      if(reset | clear)
-       pkt_len_out <= 0;
+       pkt_len_out <= (PROT_ENG_FLAGS ? 1'b0 : 1'b1);
      else if(do_xfer_out)
        if(dfifo_out_data[33]) // eof
-	 pkt_len_out <= 0;
+	 pkt_len_out <= (PROT_ENG_FLAGS ? 1'b0 : 1'b1);
        else
 	 pkt_len_out <= pkt_len_out + 1;
    
@@ -59,8 +63,8 @@ module dsp_framer36
 
    wire [1:0] 	  port_sel_bits = PORT_SEL;
    
-   assign data_o = (pkt_len_out == 0) ? {4'b0001, 13'b0, port_sel_bits, 1'b1, tfifo_data[13:0],2'b00} :
-		   (pkt_len_out == 1) ? {4'b0000, dfifo_out_data[31:16],tfifo_data} : 
+   assign data_o = (pkt_len_out == 0) ? {3'b000, 1'b1, 13'b0, port_sel_bits, 1'b1, tfifo_data[13:0],2'b00} :
+		   (pkt_len_out == 1) ? {3'b000, (PROT_ENG_FLAGS ? 1'b0: 1'b1), dfifo_out_data[31:16],tfifo_data} : 
 		   {dfifo_out_data[35:33], 1'b0, dfifo_out_data[31:0] };
 
    assign src_rdy_o = dfifo_out_src_rdy & tfifo_out_src_rdy;

@@ -7,8 +7,6 @@ module dsp_core_rx
    input [13:0] adc_a, input adc_ovf_a,
    input [13:0] adc_b, input adc_ovf_b,
    
-   input [15:0] io_rx,
-
    output [31:0] sample,
    input run,
    output strobe,
@@ -33,10 +31,6 @@ module dsp_core_rx
    wire        enable_hb1, enable_hb2;
    wire [7:0]  cic_decim_rate;
 
-   wire [31:10] UNUSED_1;
-   wire [31:4] 	UNUSED_2;
-   wire [31:2] 	UNUSED_3;
-   
    setting_reg #(.my_addr(BASE+0)) sr_0
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(phase_inc),.changed());
@@ -45,9 +39,9 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({scale_i,scale_q}),.changed());
    
-   setting_reg #(.my_addr(BASE+2)) sr_2
+   setting_reg #(.my_addr(BASE+2), .width(10)) sr_2
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({UNUSED_1, enable_hb1, enable_hb2, cic_decim_rate}),.changed());
+      .in(set_data),.out({enable_hb1, enable_hb2, cic_decim_rate}),.changed());
 
    rx_dcoffset #(.WIDTH(14),.ADDR(BASE+3)) rx_dcoffset_a
      (.clk(clk),.rst(rst),.set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -60,12 +54,12 @@ module dsp_core_rx
    wire [7:0]  muxctrl;
    setting_reg #(.my_addr(BASE+5), .width(8)) sr_8
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({UNUSED_2,muxctrl}),.changed());
+      .in(set_data),.out(muxctrl),.changed());
 
    wire [1:0] gpio_ena;
    setting_reg #(.my_addr(BASE+6), .width(2)) sr_9
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({UNUSED_3,gpio_ena}),.changed());
+      .in(set_data),.out(gpio_ena),.changed());
 
    always @(posedge clk)
      case(muxctrl[3:0])		// The I mapping
@@ -153,19 +147,9 @@ module dsp_core_rx
    round #(.bits_in(18),.bits_out(16)) round_iout (.in(i_hb2),.out(i_out));
    round #(.bits_in(18),.bits_out(16)) round_qout (.in(q_hb2),.out(q_out));
 
-   // Streaming GPIO
-   //
-   // io_rx[15] => I channel LSB if gpio_ena[0] high
-   // io_rx[14] => Q channel LSB if gpio_ena[1] high
-
    reg [31:0] sample_reg;
    always @(posedge clk)
-     begin
-	sample_reg[31:17] <= i_out[15:1];
-	sample_reg[15:1]  <= q_out[15:1];
-	sample_reg[16]    <= gpio_ena[0] ? io_rx[15] : i_out[0]; 
-	sample_reg[0]     <= gpio_ena[1] ? io_rx[14] : q_out[0];
-     end
+     sample_reg <= {i_out,q_out};
    
    assign      sample = sample_reg;
    assign      strobe = strobe_hb2;
