@@ -181,6 +181,7 @@ public:
         _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
         _ad9522_regs.lock_detect_counter = ad9522_regs_t::LOCK_DETECT_COUNTER_16CYC;
+        _ad9522_regs.divider0_ignore_sync = 1; // master FPGA clock ignores sync (always on, cannot be disabled by sync pulse)
 
         this->use_internal_ref();
 
@@ -358,7 +359,7 @@ public:
         );
         this->send_reg(0x199);
         this->send_reg(0x19a);
-        this->latch_regs();
+        this->soft_sync();
     }
 
     double get_rx_clock_rate(void){
@@ -393,7 +394,7 @@ public:
         );
         this->send_reg(0x196);
         this->send_reg(0x197);
-        this->latch_regs();
+        this->soft_sync();
     }
 
     double get_tx_clock_rate(void){
@@ -484,6 +485,15 @@ private:
             if (_ad9522_regs.digital_lock_detect) return;
         }
         UHD_MSG(error) << "USRP-E100 clock control: lock detection timeout" << std::endl;
+    }
+
+    void soft_sync(void){
+        _ad9522_regs.soft_sync = 1;
+        this->send_reg(0x230);
+        this->latch_regs();
+        _ad9522_regs.soft_sync = 0;
+        this->send_reg(0x230);
+        this->latch_regs();
     }
 
     void send_all_regs(void){
