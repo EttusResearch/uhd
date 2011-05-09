@@ -2,7 +2,8 @@
 module vita_rx_chain
   #(parameter BASE=0,
     parameter UNIT=0,
-    parameter FIFOSIZE=10)
+    parameter FIFOSIZE=10,
+    parameter PROT_ENG_FLAGS=1)
    (input clk, input reset, input clear,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [63:0] vita_time, output overrun,
@@ -15,7 +16,7 @@ module vita_rx_chain
    wire [31:0] 	vrc_debug, vrf_debug;
 
    wire [35:0] 	rx_data_int;
-   wire 	rx_src_rdy_int, rx_dst_rdy_in;
+   wire 	rx_src_rdy_int, rx_dst_rdy_int;
    
    vita_rx_control #(.BASE(BASE), .WIDTH(32)) vita_rx_control
      (.clk(clk), .reset(reset), .clear(clear),
@@ -32,7 +33,9 @@ module vita_rx_chain
       .data_o(rx_data_int), .src_rdy_o(rx_src_rdy_int), .dst_rdy_i(rx_dst_rdy_int),
       .debug_rx(vrf_debug) );
 
-   dsp_framer36 #(.BUF_SIZE(FIFOSIZE), .PORT_SEL(UNIT)) dsp0_framer36
+   dsp_framer36 #(.BUF_SIZE(FIFOSIZE), 
+		  .PORT_SEL(UNIT), 
+		  .PROT_ENG_FLAGS(PROT_ENG_FLAGS)) dsp0_framer36
      (.clk(clk), .reset(reset), .clear(clear),
       .data_i(rx_data_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int),
       .data_o(rx_data_o), .src_rdy_o(rx_src_rdy_o), .dst_rdy_i(rx_dst_rdy_i) );
