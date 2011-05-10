@@ -5,7 +5,9 @@ module add2_and_clip_reg
      input rst,
      input [WIDTH-1:0] in1,
      input [WIDTH-1:0] in2,
-     output reg [WIDTH-1:0] sum);
+     input strobe_in,
+     output reg [WIDTH-1:0] sum,
+     output reg strobe_out);
 
    wire [WIDTH-1:0] sum_int;
    
@@ -14,7 +16,10 @@ module add2_and_clip_reg
    always @(posedge clk)
      if(rst)
        sum <= 0;
-     else
+     else if(strobe_in)
        sum <= sum_int;
+
+   always @(posedge clk)
+     strobe_out <= strobe_in;
    
 endmodule // add2_and_clip_reg

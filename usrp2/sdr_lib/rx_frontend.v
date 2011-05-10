@@ -63,13 +63,18 @@ module rx_frontend
    
    add2_and_clip_reg #(.WIDTH(24)) add_clip_i
      (.clk(clk), .rst(rst), 
-      .in1({adc_i_ofs,6'd0}), .in2({{4{corr_i[35]}},corr_i[35:16]}), .sum(i_final));
+      .in1({adc_i_ofs,6'd0}), .in2({{4{corr_i[35]}},corr_i[35:16]}), .strobe_in(1'b1), 
+      .sum(i_final), .strobe_out());
    
    add2_and_clip_reg #(.WIDTH(24)) add_clip_q
      (.clk(clk), .rst(rst), 
-      .in1({adc_q_ofs,6'd0}), .in2({{4{corr_q[35]}},corr_q[35:16]}), .sum(q_final));
+      .in1({adc_q_ofs,6'd0}), .in2({{4{corr_q[35]}},corr_q[35:16]}), .strobe_in(1'b1),
+      .sum(q_final), .strobe_out());
 
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_i (.clk(clk), .reset(rst), .in(i_final), .out(i_out));
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_q (.clk(clk), .reset(rst), .in(q_final), .out(q_out));
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) 
+   round_i (.clk(clk), .reset(rst), .in(i_final), .strobe_in(1'b1), .out(i_out), .strobe_out());
+   
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) 
+   round_q (.clk(clk), .reset(rst), .in(q_final), .strobe_in(1'b1), .out(q_out), .strobe_out());
    
 endmodule // rx_frontend

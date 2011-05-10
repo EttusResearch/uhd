@@ -11,8 +11,8 @@ module round_sd_tb();
    initial $dumpfile("round_sd_tb.vcd");
    initial $dumpvars(0,round_sd_tb);
 
-   localparam WIDTH_IN = 14;
-   localparam WIDTH_OUT = 10;
+   localparam WIDTH_IN = 8;
+   localparam WIDTH_OUT = 5;
    
    reg [WIDTH_IN-1:0] adc_in, adc_in_del;
    wire [WIDTH_OUT-1:0] adc_out;
@@ -37,15 +37,22 @@ module round_sd_tb();
 	end	
    
    round_sd #(.WIDTH_IN(WIDTH_IN),.WIDTH_OUT(WIDTH_OUT)) 
-   round_sd(.clk(clk),.reset(rst), .in(adc_in),.out(adc_out));
+   round_sd(.clk(clk),.reset(rst), .in(adc_in), .strobe_in(1'b1), .out(adc_out), .strobe_out());
 
+   reg [5:0] counter = 0;
+   
    always @(posedge clk)
-     adc_in <= 14'h1FDF;
-     //adc_in <= $random % 4739;
-
+     counter <= counter+1;
+   
    always @(posedge clk)
      adc_in_del <= adc_in;
 
-   initial #10000 $finish;
+   always @(posedge clk)
+     if(rst)
+       adc_in <= 0;
+     else if(counter == 63)
+       adc_in <= adc_in + 1;
+   
+   initial #300000 $finish;
    
 endmodule // longfifo_tb
