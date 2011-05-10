@@ -8,6 +8,8 @@
 SDR_LIB_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sdr_lib/, \
 acc.v \
 add2.v \
+add2_and_clip.v \
+add2_and_clip_reg.v \
 add2_and_round.v \
 add2_and_round_reg.v \
 add2_reg.v \
@@ -28,6 +30,7 @@ hb_dec.v \
 hb_interp.v \
 round.v \
 round_reg.v \
+round_sd.v \
 rx_control.v \
 rx_dcoffset.v \
 rx_frontend.v \
