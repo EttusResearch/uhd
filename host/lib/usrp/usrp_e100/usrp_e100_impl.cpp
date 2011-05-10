@@ -76,6 +76,15 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
+static size_t hash_fpga_file(const std::string &file_path){
+    size_t hash = 0;
+    std::ifstream file(file_path.c_str());
+    if (not file.good()) throw uhd::io_error("cannot open fpga file for read: " + file_path);
+    while (file.good()) boost::hash_combine(hash, file.get());
+    file.close();
+    return hash;
+}
+
 static device::sptr usrp_e100_make(const device_addr_t &device_addr){
 
     //setup the main interface into fpga
@@ -83,55 +92,44 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     UHD_MSG(status) << boost::format("Opening USRP-E on %s") % node << std::endl;
     usrp_e100_iface::sptr iface = usrp_e100_iface::make(node);
 
-    //------------------------------------------------------------------
-    //-- Handle the FPGA loading...
-    //-- The image can be confimed as already loaded when:
-    //--   1) The compatibility number matches.
-    //--   2) The hash in the hash-file matches.
-    //------------------------------------------------------------------
-    static const char *hash_file_path = "/tmp/usrp_e100_hash";
-
     //extract the fpga path for usrp-e
-    std::string usrp_e100_fpga_image = find_image_path(
-        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_e100_fpga.bin"
-    );
+    std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", "usrp_e100_fpga.bin"));
 
-    //calculate a hash of the fpga file
-    size_t fpga_hash = 0;
-    {
-        std::ifstream file(usrp_e100_fpga_image.c_str());
-        if (not file.good()) throw uhd::io_error(
-            "cannot open fpga file for read: " + usrp_e100_fpga_image
-        );
-        do{
-            boost::hash_combine(fpga_hash, file.get());
-        } while (file.good());
-        file.close();
-    }
+    //compute a hash of the fpga file
+    const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(usrp_e100_fpga_image));
 
-    //read the compatibility number
-    boost::uint16_t fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
-
-    //read the hash in the hash-file
-    size_t loaded_hash = 0;
-    try{std::ifstream(hash_file_path) >> loaded_hash;}catch(...){}
-
-    //if not loaded: load the fpga image and write the hash-file
-    if (fpga_compat_num != USRP_E_FPGA_COMPAT_NUM or loaded_hash != fpga_hash){
+    //When the hash does not match:
+    // - unload the iface to free the node
+    // - load the fpga configuration file
+    // - re-open the iface on the node
+    if (iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash){
         iface.reset();
         usrp_e100_load_fpga(usrp_e100_fpga_image);
         sleep(1); ///\todo do this better one day.
         UHD_MSG(status) << boost::format("re-Opening USRP-E on %s") % node << std::endl;
         iface = usrp_e100_iface::make(node);
-        try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
+    }
+
+    //store the hash into the FPGA register
+    iface->poke32(UE_REG_SR_MISC_TEST32, file_hash);
+
+    //check that the hash can be readback correctly
+    if (iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash){
+        UHD_MSG(error) << boost::format(
+            "The FPGA hash readback failed!\n"
+            "The FPGA is either clocked improperly\n"
+            "or the FPGA build is not compatible.\n"
+        );
     }
 
     //check that the compatibility is correct
-    fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
+    const boost::uint16_t fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
     if (fpga_compat_num != USRP_E_FPGA_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
-            "Expected fpga compatibility number 0x%x, but got 0x%x:\n"
-            "The fpga build is not compatible with the host code build."
+            "\nPlease update the FPGA image for your device.\n"
+            "See the application notes for USRP E-Series for instructions.\n"
+            "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
+            "The FPGA build is not compatible with the host code build."
         ) % USRP_E_FPGA_COMPAT_NUM % fpga_compat_num));
     }
 
