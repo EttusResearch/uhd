@@ -71,10 +71,10 @@ module rx_frontend
       .in1({adc_q_ofs,6'd0}), .in2({{4{corr_q[35]}},corr_q[35:16]}), .strobe_in(1'b1),
       .sum(q_final), .strobe_out());
 
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) 
-   round_i (.clk(clk), .reset(rst), .in(i_final), .strobe_in(1'b1), .out(i_out), .strobe_out());
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_i
+     (.clk(clk), .reset(rst), .in(i_final), .strobe_in(1'b1), .out(i_out), .strobe_out());
    
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) 
-   round_q (.clk(clk), .reset(rst), .in(q_final), .strobe_in(1'b1), .out(q_out), .strobe_out());
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_q
+     (.clk(clk), .reset(rst), .in(q_final), .strobe_in(1'b1), .out(q_out), .strobe_out());
    
 endmodule // rx_frontend

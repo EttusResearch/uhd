@@ -49,9 +49,9 @@ module rx_dcoffset
        integrator <= integrator +  {{(alpha_shift){out[WIDTH-1]}},out};
 
    round_sd #(.WIDTH_IN(int_width),.WIDTH_OUT(WIDTH)) round_sd
-     (.clk(clk), .reset(rst), .in(integrator), .strobe_in(1'b1), .out(quantized), strobe_out());
+     (.clk(clk), .reset(rst), .in(integrator), .strobe_in(1'b1), .out(quantized), .strobe_out());
    
    add2_and_clip_reg #(.WIDTH(WIDTH)) add2_and_clip_reg
-     (.clk(clk), .rst(rst), .in1(in), .in2(-quantized), .strobe_in(1'b1), .sum(out), strobe_out());
+     (.clk(clk), .rst(rst), .in1(in), .in2(-quantized), .strobe_in(1'b1), .sum(out), .strobe_out());
 
 endmodule // rx_dcoffset

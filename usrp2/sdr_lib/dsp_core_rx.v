@@ -103,11 +103,11 @@ module dsp_core_rx
 	      .signal_in(q_cordic),.signal_out(q_cic));
 
    wire        strobe_cic_d1;
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) 
-   round_icic (.clk(clk),. in(i_cic), .strobe_in(strobe_cic), .out(i_cic_scaled), .strobe_out(strobe_cic_d1));
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_icic
+     (.clk(clk),. in(i_cic), .strobe_in(strobe_cic), .out(i_cic_scaled), .strobe_out(strobe_cic_d1));
    
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) 
-   round_qcic (.clk(clk), .in(q_cic), .strobe_in(strobe_cic), .out(q_cic_scaled), .strobe_out());
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_qcic
+     (.clk(clk), .in(q_cic), .strobe_in(strobe_cic), .out(q_cic_scaled), .strobe_out());
    
    small_hb_dec #(.WIDTH(18)) small_hb_i
      (.clk(clk),.rst(rst),.bypass(~enable_hb1),.run(run),
@@ -126,11 +126,11 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
       .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
-   round_sd #(.bits_in(18),.bits_out(16)) 
-   round_iout (.clk(clk), .in(i_hb2), .strobe_in(strobe_hb2), .out(i_out), .strobe_out(strobe));
+   round_sd #(.bits_in(18),.bits_out(16)) round_iout
+     (.clk(clk), .in(i_hb2), .strobe_in(strobe_hb2), .out(i_out), .strobe_out(strobe));
    
-   round_sd #(.bits_in(18),.bits_out(16)) 
-   round_qout (.clk(clk), .in(q_hb2), .strobe_in(strobe_hb2), .out(q_out), .strobe_out());
+   round_sd #(.bits_in(18),.bits_out(16)) round_qout
+     (.clk(clk), .in(q_hb2), .strobe_in(strobe_hb2), .out(q_out), .strobe_out());
    
    assign      sample = {i_hb2,q_hb2};
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_cic_d1, strobe_hb1, strobe_hb2};
