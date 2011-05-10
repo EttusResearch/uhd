@@ -126,10 +126,10 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
       .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
-   round_sd #(.bits_in(18),.bits_out(16)) round_iout
+   round_sd #(.WIDTH_IN(18),.WIDTH_OUT(16)) round_iout
      (.clk(clk), .in(i_hb2), .strobe_in(strobe_hb2), .out(i_out), .strobe_out(strobe));
    
-   round_sd #(.bits_in(18),.bits_out(16)) round_qout
+   round_sd #(.WIDTH_IN(18),.WIDTH_OUT(16)) round_qout
      (.clk(clk), .in(q_hb2), .strobe_in(strobe_hb2), .out(q_out), .strobe_out());
    
    assign      sample = {i_hb2,q_hb2};
