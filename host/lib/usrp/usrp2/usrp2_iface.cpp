@@ -28,6 +28,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
+#include <boost/functional/hash.hpp>
 #include <algorithm>
 #include <iostream>
 
@@ -46,6 +47,34 @@ static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
 
 // Map for virtual firmware regs (not very big so we can keep it here for now)
 #define U2_FW_REG_LOCK_TIME 0
+#define U2_FW_REG_LOCK_GPID 1
+
+//Define get_gpid() to get a globally unique identifier for this process.
+//The gpid is implemented as a hash of the pid and a unique machine identifier.
+#ifdef UHD_PLATFORM_WIN32
+#include <Windows.h>
+static inline size_t get_gpid(void){
+    //extract volume serial number
+    char szVolName[MAX_PATH+1], szFileSysName[MAX_PATH+1];
+    DWORD dwSerialNumber, dwMaxComponentLen, dwFileSysFlags;
+    GetVolumeInformation("C:\\", szVolName, MAX_PATH,
+        &dwSerialNumber, &dwMaxComponentLen,
+        &dwFileSysFlags, szFileSysName, sizeof(szFileSysName));
+
+    size_t hash = 0;
+    boost::hash_combine(hash, GetCurrentProcessId());
+    boost::hash_combine(hash, dwSerialNumber);
+    return hash;
+}
+#else
+#include <unistd.h>
+static inline size_t get_gpid(void){
+    size_t hash = 0;
+    boost::hash_combine(hash, getpid());
+    boost::hash_combine(hash, gethostid());
+    return hash;
+}
+#endif
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
@@ -93,14 +122,21 @@ public:
 
     bool is_device_locked(void){
         boost::uint32_t lock_secs = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
+        boost::uint32_t lock_gpid = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_GPID);
         boost::uint32_t curr_secs = this->peek32(this->regs.time64_secs_rb_imm);
-        return (curr_secs - lock_secs < 3); //if the difference is larger, assume not locked anymore
+
+        //if the difference is larger, assume not locked anymore
+        if (curr_secs - lock_secs >= 3) return false;
+
+        //otherwise only lock if the device hash is different that ours
+        return lock_gpid != boost::uint32_t(get_gpid());
     }
 
     void lock_loop(boost::barrier &spawn_barrier){
         spawn_barrier.wait();
 
         try{
+            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
             while(true){
                 //re-lock in loop
                 boost::uint32_t curr_secs = this->peek32(this->regs.time64_secs_rb_imm);
