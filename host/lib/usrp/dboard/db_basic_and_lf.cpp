@@ -20,7 +20,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
@@ -202,11 +202,9 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("%s: No tunable bandwidth, fixed filtered to %0.2fMHz")
-                % get_rx_id().to_pp_string() % _max_freq
-            )
-        );
+        UHD_MSG(warning) << boost::format(
+            "%s: No tunable bandwidth, fixed filtered to %0.2fMHz"
+        ) % get_rx_id().to_pp_string() % _max_freq;
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -309,11 +307,9 @@ void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("%s: No tunable bandwidth, fixed filtered to %0.2fMHz")
-                % get_tx_id().to_pp_string() % _max_freq
-            )
-        );
+        UHD_MSG(warning) << boost::format(
+            "%s: No tunable bandwidth, fixed filtered to %0.2fMHz"
+        ) % get_tx_id().to_pp_string() % _max_freq;
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

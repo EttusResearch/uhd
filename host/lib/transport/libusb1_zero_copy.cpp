@@ -20,13 +20,13 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
 #include <list>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -52,7 +52,7 @@ static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut){
 //! callback to free transfer upon cancellation
 static void LIBUSB_CALL cancel_transfer_cb(libusb_transfer *lut){
     if (lut->status == LIBUSB_TRANSFER_CANCELLED) libusb_free_transfer(lut);
-    else std::cout << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
+    else UHD_LOGV(rarely) << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
 }
 
 /***********************************************************************

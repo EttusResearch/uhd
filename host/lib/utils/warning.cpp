@@ -39,13 +39,13 @@ typedef uhd::dict<std::string, warning::handler_t> registry_t;
 UHD_SINGLETON_FCN(registry_t, get_registry)
 
 //the default warning handler
-static void stderr_warning(const std::string &msg){
-    std::cerr << msg;
-}
+//static void stderr_warning(const std::string &msg){
+//    std::cerr << msg;
+//}
 
 //register a default handler
 UHD_STATIC_BLOCK(warning_register_default){
-    warning::register_handler("default", &stderr_warning);
+    //warning::register_handler("default", &stderr_warning);
 }
 
 /***********************************************************************

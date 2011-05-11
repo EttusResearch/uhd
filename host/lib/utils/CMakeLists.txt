@@ -131,6 +131,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_group.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/images.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/msg.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/props.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp

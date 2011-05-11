@@ -26,12 +26,12 @@ SET(test_sources
     dict_test.cpp
     error_test.cpp
     gain_group_test.cpp
+    msg_test.cpp
     ranges_test.cpp
     subdev_spec_test.cpp
     time_spec_test.cpp
     tune_helper_test.cpp
     vrt_test.cpp
-    warning_test.cpp
     wax_test.cpp
 )
 

@@ -18,6 +18,7 @@
 #include "../../transport/vrt_packet_handler.hpp"
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -26,7 +27,6 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -306,8 +306,8 @@ size_t usrp1_impl::send(
             VRQ_GET_STATUS, 0, GS_TX_UNDERRUN,
             &underflow, sizeof(underflow)
         );
-        if (ret < 0)        std::cerr << "USRP: underflow check failed" << std::endl;
-        else if (underflow) std::cerr << "U" << std::flush;
+        if (ret < 0)        UHD_MSG(error) << "USRP: underflow check failed" << std::endl;
+        else if (underflow) UHD_MSG(fastpath) << "U";
     }
 
     return num_samps_sent;
@@ -370,8 +370,8 @@ size_t usrp1_impl::recv(
             VRQ_GET_STATUS, 0, GS_RX_OVERRUN,
             &overflow, sizeof(overflow)
         );
-        if (ret < 0)       std::cerr << "USRP: overflow check failed" << std::endl;
-        else if (overflow) std::cerr << "O" << std::flush;
+        if (ret < 0)       UHD_MSG(error) << "USRP: overflow check failed" << std::endl;
+        else if (overflow) UHD_MSG(fastpath) << "O";
     }
 
     return num_samps_recvd;

@@ -17,6 +17,8 @@
 
 #include "clock_ctrl.hpp"
 #include "ad9522_regs.hpp"
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <boost/cstdint.hpp>
 #include "usrp_e100_regs.hpp" //spi slave constants
@@ -27,14 +29,12 @@
 #include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <utility>
-#include <iostream>
 
 using namespace uhd;
 
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const bool CLOCK_SETTINGS_DEBUG = false;
 static const bool ENABLE_THE_TEST_OUT = true;
 static const double REFERENCE_INPUT_RATE = 10e6;
 static const double DEFAULT_OUTPUT_RATE = 64e6;
@@ -138,12 +138,12 @@ static clock_settings_type get_clock_settings(double rate){
                 cs.chan_divider /= cs.vco_divider;
             }
 
-            if (CLOCK_SETTINGS_DEBUG){
-                std::cout << "gcd " << gcd << std::endl;
-                std::cout << "X " << X << std::endl;
-                std::cout << "Y " << Y << std::endl;
-                std::cout << cs.to_pp_string() << std::endl;
-            }
+            UHD_LOGV(always)
+                << "gcd " << gcd << std::endl
+                << "X " << X << std::endl
+                << "Y " << Y << std::endl
+                << cs.to_pp_string() << std::endl
+            ;
 
             //filter limits on the counters
             if (cs.vco_divider == 1) continue;
@@ -153,7 +153,7 @@ static clock_settings_type get_clock_settings(double rate){
             if (cs.b_counter >= (1<<13)) continue;
             if (cs.a_counter >= (1<<6)) continue;
 
-            std::cout << "USRP-E100 clock control: " << i << std::endl << cs.to_pp_string() << std::endl;
+            UHD_MSG(status) << "USRP-E100 clock control: " << i << std::endl << cs.to_pp_string() << std::endl;
             return cs;
         }
     }
@@ -188,18 +188,18 @@ public:
         bool fpga_clock_initialized = false;
         try{
             if (not _iface->mb_eeprom["mcr"].empty()){
-                std::cout << "Read FPGA clock rate from EEPROM setting." << std::endl;
+                UHD_MSG(status) << "Read FPGA clock rate from EEPROM setting." << std::endl;
                 const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["mcr"]);
-                std::cout << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
+                UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
                 this->set_fpga_clock_rate(master_clock_rate);
                 fpga_clock_initialized = true;
             }
         }
         catch(const std::exception &e){
-            std::cerr << "Error setting FPGA clock rate from EEPROM: " << e.what() << std::endl;
+            UHD_MSG(error) << "Error setting FPGA clock rate from EEPROM: " << e.what() << std::endl;
         }
         if (not fpga_clock_initialized){ //was not set... use the default rate
-            std::cout << boost::format("Initializing FPGA clock to %fMHz...") % (DEFAULT_OUTPUT_RATE/1e6) << std::endl;
+            UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (DEFAULT_OUTPUT_RATE/1e6) << std::endl;
             this->set_fpga_clock_rate(DEFAULT_OUTPUT_RATE);
         }
 
@@ -440,7 +440,7 @@ private:
 
     void send_reg(boost::uint16_t addr){
         boost::uint32_t reg = _ad9522_regs.get_write_reg(addr);
-        //std::cout << "clock control write reg: " << std::hex << reg << std::endl;
+        UHD_LOGV(often) << "clock control write reg: " << std::hex << reg << std::endl;
         _iface->write_spi(
             UE_SPI_SS_AD9522,
             spi_config_t::EDGE_RISE,
@@ -467,7 +467,7 @@ private:
             if (_ad9522_regs.vco_calibration_finished) return;
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
         }
-        std::cerr << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
+        UHD_MSG(error) << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
     }
 
     void send_all_regs(void){

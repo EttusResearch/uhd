@@ -20,23 +20,22 @@
 #include "fpga_regs_standard.h"
 #include "fpga_regs_common.h"
 #include "usrp_i2c_addr.h"
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/usrp/misc_utils.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/images.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-static const bool usrp1_mboard_verbose = false;
 
 /***********************************************************************
  * Calculate the RX mux value:
@@ -98,7 +97,7 @@ static boost::uint32_t calc_rx_mux(
     //    for all quadrature sources: Z = 0
     //    for mixed sources: warning + Z = 0
     int Z = (num_quads > 0)? 0 : 1;
-    if (num_quads != 0 and num_reals != 0) uhd::warning::post(
+    if (num_quads != 0 and num_reals != 0) UHD_MSG(warning) << boost::format(
         "Mixing real and quadrature rx subdevices is not supported.\n"
         "The Q input to the real source(s) will be non-zero.\n"
     );
@@ -231,13 +230,13 @@ void usrp1_impl::mboard_init(void)
     // Set default for TX format to 16-bit I&Q
     _iface->poke32(FR_TX_FORMAT, 0x00000000);
 
-    if (usrp1_mboard_verbose){
-        std::cout << "USRP1 Capabilities" << std::endl;
-        std::cout << "    number of duc's: " << get_num_ddcs() << std::endl;
-        std::cout << "    number of ddc's: " << get_num_ducs() << std::endl;
-        std::cout << "    rx halfband:     " << has_rx_halfband() << std::endl;
-        std::cout << "    tx halfband:     " << has_tx_halfband() << std::endl;
-    }
+    UHD_LOG
+        << "USRP1 Capabilities" << std::endl
+        << "    number of duc's: " << get_num_ddcs() << std::endl
+        << "    number of ddc's: " << get_num_ducs() << std::endl
+        << "    rx halfband:     " << has_rx_halfband() << std::endl
+        << "    tx halfband:     " << has_tx_halfband() << std::endl
+    ;
 }
 
 /***********************************************************************
@@ -331,7 +330,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
     if(key.type() == typeid(std::string)) {
       if(key.as<std::string>() == "load_eeprom") {
         std::string usrp1_eeprom_image = val.as<std::string>();
-        std::cout << "USRP1 EEPROM image: " << usrp1_eeprom_image << std::endl;
+        UHD_MSG(status) << "USRP1 EEPROM image: " << usrp1_eeprom_image << std::endl;
         _ctrl_transport->usrp_load_eeprom(val.as<std::string>());
       }
       return;
@@ -378,10 +377,11 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         return;
 
     case MBOARD_PROP_CLOCK_RATE:
-        std::cerr << "Helpful message:" << std::endl;
-        std::cerr << "    I see that you are setting the master clock rate from the API." << std::endl;
-        std::cerr << "    You may find it more convenient to burn this setting into the EEPROM." << std::endl;
-        std::cerr << "    See the application notes for USRP1 for further instructions." << std::endl;
+        UHD_MSG(warning)
+            << "I see that you are setting the master clock rate from the API.\n"
+            << "You may find it more convenient to burn this setting into the EEPROM.\n"
+            << "See the application notes for USRP1 for further instructions.\n"
+        ;
         _clock_ctrl->set_master_clock_freq(val.as<double>());
         return;
 

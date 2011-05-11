@@ -17,16 +17,15 @@
 
 #include "usrp_e100_impl.hpp"
 #include "usrp_e100_regs.hpp"
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
-#include <uhd/utils/warning.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
-#include <iostream>
 #include <fstream>
 
 using namespace uhd;
@@ -58,18 +57,16 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
             usrp_e100_iface::sptr iface = usrp_e100_iface::make(new_addr["node"]);
             new_addr["name"] = iface->mb_eeprom["name"];
             new_addr["serial"] = iface->mb_eeprom["serial"];
-            if (
-                (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
-                (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
-            ){
-                usrp_e100_addrs.push_back(new_addr);
-            }
         }
         catch(const std::exception &e){
-            uhd::warning::post(
-                std::string("Ignoring discovered device\n")
-                + e.what()
-            );
+            new_addr["name"] = "";
+            new_addr["serial"] = "";
+        }
+        if (
+            (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+            (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+        ){
+            usrp_e100_addrs.push_back(new_addr);
         }
     }
 
@@ -83,7 +80,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
 
     //setup the main interface into fpga
     std::string node = device_addr["node"];
-    std::cout << boost::format("Opening USRP-E on %s") % node << std::endl;
+    UHD_MSG(status) << boost::format("Opening USRP-E on %s") % node << std::endl;
     usrp_e100_iface::sptr iface = usrp_e100_iface::make(node);
 
     //------------------------------------------------------------------
@@ -124,7 +121,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
         iface.reset();
         usrp_e100_load_fpga(usrp_e100_fpga_image);
         sleep(1); ///\todo do this better one day.
-        std::cout << boost::format("re-Opening USRP-E on %s") % node << std::endl;
+        UHD_MSG(status) << boost::format("re-Opening USRP-E on %s") % node << std::endl;
         iface = usrp_e100_iface::make(node);
         try{std::ofstream(hash_file_path) << fpga_hash;}catch(...){}
     }

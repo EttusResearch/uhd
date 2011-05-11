@@ -19,11 +19,12 @@
 #include "usrp1_ctrl.hpp"
 #include "fpga_regs_standard.h"
 #include "usrp_spi_defs.h"
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/usrp/device_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -32,7 +33,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -78,13 +78,13 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
         }
         catch(...){
-            uhd::warning::post(
+            UHD_MSG(warning) << boost::format(
                 "Could not locate USRP1 firmware.\n"
                 "Please install the images package.\n"
             );
             return usrp1_addrs;
         }
-        //std::cout << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
+        UHD_LOG << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
         usb_control::sptr control;
         try{control = usb_control::make(handle);}
@@ -123,12 +123,13 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
  * Make
  **********************************************************************/
 static device::sptr usrp1_make(const device_addr_t &device_addr){
+    UHD_MSG(status) << "Opening a USRP1 device..." << std::endl;
 
     //extract the FPGA path for the USRP1
     std::string usrp1_fpga_image = find_image_path(
         device_addr.get("fpga", "usrp1_fpga.rbf")
     );
-    //std::cout << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
+    UHD_LOG << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
 
     //try to match the given device address with something on the USB bus
     std::vector<usb_device_handle::sptr> device_list =

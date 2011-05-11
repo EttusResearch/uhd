@@ -23,6 +23,10 @@
 #include <vector>
 #include <string>
 
+/*! \file warning.hpp
+ * EVERYTHING IN THIS FILE IS TOTALLY DEPRECATED! DO NOT USE IT!
+ */
+
 namespace uhd{ namespace warning{
 
     //! Callback function type for a message handler
@@ -32,7 +36,7 @@ namespace uhd{ namespace warning{
      * Post a warning message to all registered handlers.
      * \param msg the multiline warning message
      */
-    UHD_API void post(const std::string &msg);
+    UHD_API UHD_DEPRECATED void post(const std::string &msg);
 
     /*!
      * Register a new handler with this name.
@@ -41,7 +45,7 @@ namespace uhd{ namespace warning{
      * \param name a unique name for this handler
      * \param handler the callback handler function
      */
-    UHD_API void register_handler(const std::string &name, const handler_t &handler);
+    UHD_API UHD_DEPRECATED void register_handler(const std::string &name, const handler_t &handler);
 
     /*!
      * Unregister a handler for this name.
@@ -49,13 +53,13 @@ namespace uhd{ namespace warning{
      * \return the handler that was registered
      * \throw error when the name was not found in the registry
      */
-    UHD_API handler_t unregister_handler(const std::string &name);
+    UHD_API UHD_DEPRECATED handler_t unregister_handler(const std::string &name);
 
     /*!
      * Get a list of registered handler names.
      * \return a vector of unique string names
      */
-    UHD_API const std::vector<std::string> registry_names(void);
+    UHD_API UHD_DEPRECATED const std::vector<std::string> registry_names(void);
 
 }} //namespace uhd::warning
 

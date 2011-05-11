@@ -18,6 +18,8 @@
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
 #include "fw_common.h"
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
@@ -29,7 +31,6 @@
 #include <uhd/types/sensors.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
-#include <iostream>
 
 static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
 static const double mimo_clock_delay_usrp_n2xx = 3.55e-9;
@@ -84,19 +85,19 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     _iface->lock_device(true);
 
     //construct transports for dsp and async errors
-    std::cout << "Making transport for DSP0..." << std::endl;
+    UHD_LOG << "Making transport for DSP0..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
         device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_DSP0_PORT), device_addr
     ));
     init_xport(device.dsp_xports.back());
 
-    std::cout << "Making transport for DSP1..." << std::endl;
+    UHD_LOG << "Making transport for DSP1..." << std::endl;
     device.dsp_xports.push_back(udp_zero_copy::make(
         device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_DSP1_PORT), device_addr
     ));
     init_xport(device.dsp_xports.back());
 
-    std::cout << "Making transport for ERR0..." << std::endl;
+    UHD_LOG << "Making transport for ERR0..." << std::endl;
     device.err_xports.push_back(udp_zero_copy::make(
         device_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_ERR0_PORT), device_addr_t()
     ));
@@ -144,7 +145,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     else {
         _mimo_clocking_mode_is_master = (_iface->peek32(_iface->regs.status) & (1 << 8)) != 0;
     }
-    std::cout << boost::format("mboard%d MIMO %s") % _index %
+    UHD_MSG(status) << boost::format("mboard%d is MIMO %s") % _index %
         (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
 
     //init the clock config

@@ -27,10 +27,11 @@
 //max freq: 860e6
 //gain range: [0:1dB:115dB]
 
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
@@ -55,8 +56,6 @@ using namespace boost::assign;
 /***********************************************************************
  * The tvrx constants
  **********************************************************************/
-static const bool tvrx_debug = false;
-
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
 static const prop_names_t tvrx_antennas = list_of("RX");
@@ -158,7 +157,7 @@ private:
         //get the register data
         for(int i=0; i<4; i++){
             regs_vector[i] = _tuner_4937di5_regs.get_reg(i);
-            if(tvrx_debug) std::cerr << boost::format(
+            UHD_LOGV(often) << boost::format(
                 "tvrx: send reg 0x%02x, value 0x%04x"
             ) % int(i) % int(regs_vector[i]) << std::endl;
         }
@@ -221,7 +220,7 @@ tvrx::~tvrx(void){
 static std::string get_band(double freq) {
     BOOST_FOREACH(const std::string &band, tvrx_freq_ranges.keys()) {
         if(freq >= tvrx_freq_ranges[band].start() && freq <= tvrx_freq_ranges[band].stop()){
-            if(tvrx_debug) std::cout << "Band: " << band << std::endl;
+            UHD_LOGV(often) << "Band: " << band << std::endl;
             return band;
         }
     }
@@ -263,8 +262,7 @@ static double gain_interp(double gain, boost::array<double, 17> db_vector, boost
     //use the volts per dB slope to find the final interpolated voltage
     volts = volts_vector[gain_step] + (slope * (gain - db_vector[gain_step]));
 
-    if(tvrx_debug)
-        std::cout << "Gain interp: gain: " << gain << ", gain_step: " << int(gain_step) << ", slope: " << slope << ", volts: " << volts << std::endl;
+    UHD_LOGV(often) << "Gain interp: gain: " << gain << ", gain_step: " << int(gain_step) << ", slope: " << slope << ", volts: " << volts << std::endl;
 
     return volts;
 }
@@ -290,7 +288,7 @@ static double rf_gain_to_voltage(double gain, double lo_freq){
 
     dac_volts = uhd::clip<double>(dac_volts, 0.0, 3.3);
 
-    if (tvrx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "tvrx RF AGC gain: %f dB, dac_volts: %f V"
     ) % gain % dac_volts << std::endl;
 
@@ -313,7 +311,7 @@ static double if_gain_to_voltage(double gain){
 
     dac_volts = uhd::clip<double>(dac_volts, 0.0, 3.3);
 
-    if (tvrx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "tvrx IF AGC gain: %f dB, dac_volts: %f V"
     ) % gain % dac_volts << std::endl;
 
@@ -367,8 +365,7 @@ void tvrx::set_freq(double freq) {
     //not FAR off, but we do this to be consistent
     if(prev_band != new_band) set_gain(_gains["RF"], "RF");
 
-    if(tvrx_debug)
-        std::cout << boost::format("set_freq: target LO: %f f_ref: %f divisor: %i actual LO: %f") % target_lo_freq % f_ref % divisor % actual_lo_freq << std::endl;
+    UHD_LOGV(often) << boost::format("set_freq: target LO: %f f_ref: %f divisor: %i actual LO: %f") % target_lo_freq % f_ref % divisor % actual_lo_freq << std::endl;
 
     _lo_freq = actual_lo_freq; //for rx props
 }
@@ -430,14 +427,13 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
      */
         codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
         val = (_lo_freq - tvrx_if_freq) + get_alias(tvrx_if_freq, codec_rate);
-        if(tvrx_debug) {
-            std::cout << "Getting TVRX freq..." << std::endl;
-            std::cout << "\tCodec rate: " << codec_rate << std::endl;
-            std::cout << "\tLO freq: " << _lo_freq << std::endl;
-            std::cout << "\tIF freq: " << tvrx_if_freq << std::endl;
-            std::cout << "\tAlias freq: " << get_alias(tvrx_if_freq, codec_rate) << std::endl;
-            std::cout << "\tCalculated freq: " << val.as<double>() << std::endl;
-        }
+        UHD_LOGV(often)
+            << "Getting TVRX freq..." << std::endl
+            << "\tCodec rate: " << codec_rate << std::endl
+            << "\tLO freq: " << _lo_freq << std::endl
+            << "\tIF freq: " << tvrx_if_freq << std::endl
+            << "\tAlias freq: " << get_alias(tvrx_if_freq, codec_rate) << std::endl
+            << "\tCalculated freq: " << val.as<double>() << std::endl;
         return;
 
     case SUBDEV_PROP_FREQ_RANGE:
@@ -489,9 +485,7 @@ void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("TVRX: No tunable bandwidth, fixed filtered to 6MHz"))
-        );
+        UHD_MSG(warning) << "TVRX: No tunable bandwidth, fixed filtered to 6MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

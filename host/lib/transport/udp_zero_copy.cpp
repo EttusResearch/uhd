@@ -20,9 +20,9 @@
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
-#include <iostream>
 #include <list>
 
 using namespace uhd;
@@ -131,7 +131,7 @@ public:
         _pending_recv_buffs(_num_recv_frames),
         _pending_send_buffs(_num_send_frames)
     {
-        //std::cout << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
+        UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
         //resolve the address
         asio::ip::udp::resolver resolver(_io_service);
@@ -275,17 +275,16 @@ template<typename Opt> static void resize_buff_helper(
     //resize the buffer if size was provided
     if (target_size > 0){
         size_t actual_size = udp_trans->resize_buff<Opt>(target_size);
-        if (target_size != actual_size) std::cout << boost::format(
+        UHD_LOG << boost::format(
             "Target %s sock buff size: %d bytes\n"
             "Actual %s sock buff size: %d bytes"
         ) % name % target_size % name % actual_size << std::endl;
-        else std::cout << boost::format(
-            "Current %s sock buff size: %d bytes"
-        ) % name % actual_size << std::endl;
-        if (actual_size < target_size) uhd::warning::post(str(boost::format(
+        if (actual_size < target_size) UHD_MSG(warning) << boost::format(
             "The %s buffer could not be resized sufficiently.\n"
+            "Target sock buff size: %d bytes.\n"
+            "Actual sock buff size: %d bytes.\n"
             "See the transport application notes on buffer resizing.\n%s"
-        ) % name % help_message));
+        ) % name % target_size % actual_size % help_message;
     }
 }
 

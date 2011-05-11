@@ -73,7 +73,7 @@ std::string device_addr_t::to_string(void) const{
     return args_str;
 }
 
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 
 device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
     //------------ support old deprecated way and print warning --------
@@ -85,13 +85,13 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
             for (size_t i = 0; i < addrs.size(); i++){
                 fixed_dev_addr[str(boost::format("addr%d") % i)] = addrs[i];
             }
-            uhd::warning::post(
+            UHD_MSG(warning) <<
                 "addr = <space separated list of ip addresses> is deprecated.\n"
                 "To address a multi-device, use multiple <key><index> = <val>.\n"
                 "See the USRP-NXXX application notes. Two device example:\n"
                 "    addr0 = 192.168.10.2\n"
                 "    addr1 = 192.168.10.3\n"
-            );
+            ;
             return separate_device_addr(fixed_dev_addr);
         }
     }

@@ -18,7 +18,8 @@
 #include "dboard_ctor_args.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_props.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
@@ -27,7 +28,6 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/assign/list_of.hpp>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -91,7 +91,7 @@ static void register_dboard_key(
     const std::string &name,
     const prop_names_t &subdev_names
 ){
-    //std::cout << "registering: " << name << std::endl;
+    UHD_LOGV(always) << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_key)){
 
         if (dboard_key.is_xcvr()) throw uhd::key_error(str(boost::format(
@@ -240,7 +240,7 @@ dboard_manager_impl::dboard_manager_impl(
         this->init(rx_dboard_id, tx_dboard_id);
     }
     catch(const std::exception &e){
-        uhd::warning::post(e.what());
+        UHD_MSG(error) << "The daughterboard manager encountered a recoverable error in init" << std::endl << e.what();
         this->init(dboard_id_t::none(), dboard_id_t::none());
     }
 }
@@ -264,12 +264,12 @@ void dboard_manager_impl::init(
 
     //warn for invalid dboard id xcvr combinations
     if (not xcvr_dboard_key.is_xcvr() and (rx_dboard_key.is_xcvr() or tx_dboard_key.is_xcvr())){
-        uhd::warning::post(str(boost::format(
+        UHD_MSG(warning) << boost::format(
             "Unknown transceiver board ID combination.\n"
             "Is your daughter-board mounted properly?\n"
             "RX dboard ID: %s\n"
             "TX dboard ID: %s\n"
-        ) % rx_dboard_id.to_pp_string() % tx_dboard_id.to_pp_string()));
+        ) % rx_dboard_id.to_pp_string() % tx_dboard_id.to_pp_string();
     }
 
     //initialize the gpio pins before creating subdevs

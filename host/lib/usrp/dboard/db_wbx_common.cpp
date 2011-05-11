@@ -51,13 +51,14 @@
 
 #include "db_wbx_common.hpp"
 #include "adf4350_regs.hpp"
+#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -70,8 +71,6 @@ using namespace boost::assign;
 /***********************************************************************
  * The WBX Common dboard constants
  **********************************************************************/
-static const bool wbx_debug = false;
-
 static const uhd::dict<std::string, gain_range_t> wbx_tx_gain_ranges = map_list_of
     ("PGA0", gain_range_t(0, 25, 0.05))
 ;
@@ -150,7 +149,7 @@ static int rx_pga0_gain_to_iobits(double &gain){
     int attn_code = boost::math::iround(attn*2);
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
-    if (wbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "WBX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
 
@@ -171,7 +170,7 @@ static double tx_pga0_gain_to_dac_volts(double &gain){
     //calculate the voltage for the aux dac
     double dac_volts = gain*slope + min_volts;
 
-    if (wbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "WBX TX Gain: %f dB, dac_volts: %f V"
     ) % gain % dac_volts << std::endl;
 
@@ -212,7 +211,7 @@ double wbx_base::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
-    if (wbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "WBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
@@ -306,14 +305,13 @@ double wbx_base::set_lo_freq(
     actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv/2);
 
 
-    if (wbx_debug) {
-        std::cerr << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl;
+    UHD_LOGV(often)
+        << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
 
-        std::cerr << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
+        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
             ) % R % BS % N % FRAC % MOD % T % D % RFdiv % get_locked(unit)<< std::endl
         << boost::format("WBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
             ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
-    }
 
     //load the register values
     adf4350_regs_t regs;
@@ -363,7 +361,7 @@ double wbx_base::set_lo_freq(
     int addr;
 
     for(addr=5; addr>=0; addr--){
-        if (wbx_debug) std::cerr << boost::format(
+        UHD_LOGV(often) << boost::format(
             "WBX SPI Reg (0x%02x): 0x%08x"
         ) % addr % regs.get_reg(addr) << std::endl;
         this->get_iface()->write_spi(
@@ -373,7 +371,7 @@ double wbx_base::set_lo_freq(
     }
 
     //return the actual frequency
-    if (wbx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "WBX tune: actual frequency %f Mhz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
@@ -474,9 +472,7 @@ void wbx_base::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("WBX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "WBX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -574,9 +570,7 @@ void wbx_base::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("WBX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "WBX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

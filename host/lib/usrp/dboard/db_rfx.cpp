@@ -38,9 +38,10 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -55,8 +56,6 @@ using namespace boost::assign;
 /***********************************************************************
  * The RFX Series constants
  **********************************************************************/
-static const bool rfx_debug = false;
-
 static const prop_names_t rfx_tx_antennas = list_of("TX/RX");
 
 static const prop_names_t rfx_rx_antennas = list_of("TX/RX")("RX2");
@@ -302,7 +301,7 @@ double rfx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
-    if (rfx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "RFX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
@@ -359,7 +358,7 @@ double rfx_xcvr::set_lo_freq(
         }
     } done_loop:
 
-    if (rfx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d"
     ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) << std::endl;
 
@@ -405,7 +404,7 @@ double rfx_xcvr::set_lo_freq(
 
     //return the actual frequency
     if (_div2[unit]) actual_freq /= 2;
-    if (rfx_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "RFX tune: actual frequency %f Mhz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
@@ -515,9 +514,7 @@ void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("RFX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "RFX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -617,9 +614,7 @@ void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
         return; //always enabled
 
     case SUBDEV_PROP_BANDWIDTH:
-        uhd::warning::post(
-            str(boost::format("RFX: No tunable bandwidth, fixed filtered to 40MHz"))
-        );
+        UHD_MSG(warning) << "RFX: No tunable bandwidth, fixed filtered to 40MHz";
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

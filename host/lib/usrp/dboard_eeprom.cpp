@@ -17,15 +17,14 @@
 
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <algorithm>
-#include <iostream>
+#include <sstream>
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-static const bool _dboard_eeprom_debug = false;
 
 /***********************************************************************
  * Utility functions
@@ -91,8 +90,7 @@ static boost::uint8_t checksum(const byte_vector_t &bytes){
     for (size_t i = 0; i < std::min(bytes.size(), size_t(DB_EEPROM_CHKSUM)); i++){
         sum -= int(bytes.at(i));
     }
-    if (_dboard_eeprom_debug)
-        std::cout << boost::format("sum: 0x%02x") % sum << std::endl;
+    UHD_LOGV(often) << boost::format("sum: 0x%02x") % sum << std::endl;
     return boost::uint8_t(sum);
 }
 
@@ -104,13 +102,13 @@ dboard_eeprom_t::dboard_eeprom_t(void){
 void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
     byte_vector_t bytes = iface.read_eeprom(addr, 0, DB_EEPROM_CLEN);
 
-    if (_dboard_eeprom_debug){
-        for (size_t i = 0; i < bytes.size(); i++){
-            std::cout << boost::format(
-                "eeprom byte[0x%02x] = 0x%02x") % i % int(bytes.at(i)
-            ) << std::endl;
-        }
+    std::ostringstream ss;
+    for (size_t i = 0; i < bytes.size(); i++){
+        ss << boost::format(
+            "eeprom byte[0x%02x] = 0x%02x") % i % int(bytes.at(i)
+        ) << std::endl;
     }
+    UHD_LOGV(often) << ss.str() << std::endl;
 
     try{
         UHD_ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);

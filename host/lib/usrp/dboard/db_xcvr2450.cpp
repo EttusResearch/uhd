@@ -48,10 +48,10 @@
 #define RX_DIS_RXIO              0
 
 #include "max2829_regs.hpp"
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/warning.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
@@ -71,8 +71,6 @@ using namespace boost::assign;
 /***********************************************************************
  * The XCVR 2450 constants
  **********************************************************************/
-static const bool xcvr2450_debug = false;
-
 static const freq_range_t xcvr_freq_range = list_of
     (range_t(2.4e9, 2.5e9))
     (range_t(4.9e9, 6.0e9))
@@ -127,7 +125,7 @@ private:
     void spi_reset(void);
     void send_reg(boost::uint8_t addr){
         boost::uint32_t value = _max2829_regs.get_reg(addr);
-        if(xcvr2450_debug) std::cerr << boost::format(
+        UHD_LOGV(often) << boost::format(
             "XCVR2450: send reg 0x%02x, value 0x%05x"
         ) % int(addr) % value << std::endl;
         this->get_iface()->write_spi(
@@ -302,7 +300,7 @@ void xcvr2450::set_lo_freq(double target_freq){
     double N = double(intdiv) + double(fracdiv)/double(1 << 16);
     _lo_freq = (N*ref_freq)/(scaler*R*_ad9515div);
 
-    if (xcvr2450_debug) std::cerr
+    UHD_LOGV(often)
         << boost::format("XCVR2450 tune:\n")
         << boost::format("    R=%d, N=%f, ad9515=%d, scaler=%f\n") % R % N % _ad9515div % scaler
         << boost::format("    Ref    Freq=%fMHz\n") % (ref_freq/1e6)
@@ -312,10 +310,10 @@ void xcvr2450::set_lo_freq(double target_freq){
 
     //high-high band or low-high band?
     if(_lo_freq > (5.35e9 + 5.47e9)/2.0){
-        if (xcvr2450_debug) std::cerr << "XCVR2450 tune: Using  high-high band" << std::endl;
+        UHD_LOGV(often) << "XCVR2450 tune: Using  high-high band" << std::endl;
         _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_5_47GHZ_TO_5_875GHZ;
     }else{
-        if (xcvr2450_debug) std::cerr << "XCVR2450 tune: Using  low-high band" << std::endl;
+        UHD_LOGV(often) << "XCVR2450 tune: Using  low-high band" << std::endl;
         _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_4_9GHZ_TO_5_35GHZ;
     }
 
@@ -547,7 +545,7 @@ void xcvr2450::set_rx_bandwidth(double bandwidth){
     //update register
     send_reg(0x7);
 
-    if (xcvr2450_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "XCVR2450 RX Bandwidth (lp_fc): %f Hz, coarse reg: %d, fine reg: %d"
     ) % _rx_bandwidth % (int(_max2829_regs.rx_lpf_coarse_adj)) % (int(_max2829_regs.rx_lpf_fine_adj)) << std::endl;
 }
@@ -562,7 +560,7 @@ void xcvr2450::set_tx_bandwidth(double bandwidth){
     //update register
     send_reg(0x7);
 
-    if (xcvr2450_debug) std::cerr << boost::format(
+    UHD_LOGV(often) << boost::format(
         "XCVR2450 TX Bandwidth (lp_fc): %f Hz, coarse reg: %d"
     ) % _tx_bandwidth % (int(_max2829_regs.tx_lpf_coarse_adj)) << std::endl;
 }

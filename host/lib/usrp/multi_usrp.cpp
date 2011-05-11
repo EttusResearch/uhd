@@ -18,8 +18,9 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/tune_helper.hpp>
 #include <uhd/usrp/mboard_iface.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/warning.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/mboard_props.hpp>
@@ -29,7 +30,6 @@
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <iostream>
 #include <cmath>
 
 using namespace uhd;
@@ -55,11 +55,11 @@ static inline void do_samp_rate_warning_message(
 ){
     static const double max_allowed_error = 1.0; //Sps
     if (std::abs(target_rate - actual_rate) > max_allowed_error){
-        uhd::warning::post(str(boost::format(
+        UHD_MSG(warning) << boost::format(
             "The hardware does not support the requested %s sample rate:\n"
             "Target sample rate: %f MSps\n"
             "Actual sample rate: %f MSps\n"
-        ) % xx % (target_rate/1e6) % (actual_rate/1e6)));
+        ) % xx % (target_rate/1e6) % (actual_rate/1e6);
     }
 }
 
@@ -70,11 +70,11 @@ static inline void do_tune_freq_warning_message(
 ){
     static const double max_allowed_error = 1.0; //Hz
     if (std::abs(target_freq - actual_freq) > max_allowed_error){
-        uhd::warning::post(str(boost::format(
+        UHD_MSG(warning) << boost::format(
             "The hardware does not support the requested %s frequency:\n"
             "Target frequency: %f MHz\n"
             "Actual frequency: %f MHz\n"
-        ) % xx % (target_freq/1e6) % (actual_freq/1e6)));
+        ) % xx % (target_freq/1e6) % (actual_freq/1e6);
     }
 }
 
@@ -188,7 +188,7 @@ public:
     }
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
-        std::cout << "    1) catch time transition at pps edge" << std::endl;
+        UHD_MSG(status) << "    1) catch time transition at pps edge" << std::endl;
         time_spec_t time_start = get_time_now();
         time_spec_t time_start_last_pps = get_time_last_pps();
         while(true){
@@ -202,7 +202,7 @@ public:
             }
         }
 
-        std::cout << "    2) set times next pps (synchronously)" << std::endl;
+        UHD_MSG(status) << "    2) set times next pps (synchronously)" << std::endl;
         set_time_next_pps(time_spec);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 
@@ -211,11 +211,11 @@ public:
             time_spec_t time_0 = _mboard(0)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             time_spec_t time_i = _mboard(m)[MBOARD_PROP_TIME_NOW].as<time_spec_t>();
             if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
-                uhd::warning::post(str(boost::format(
+                UHD_MSG(warning) << boost::format(
                     "Detected time deviation between board %d and board 0.\n"
                     "Board 0 time is %f seconds.\n"
                     "Board %d time is %f seconds.\n"
-                ) % m % time_0.get_real_secs() % m % time_i.get_real_secs()));
+                ) % m % time_0.get_real_secs() % m % time_i.get_real_secs();
             }
         }
     }
