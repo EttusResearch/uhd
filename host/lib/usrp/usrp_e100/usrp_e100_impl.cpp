@@ -156,7 +156,8 @@ usrp_e100_impl::usrp_e100_impl(
 {
 
     //setup interfaces into hardware
-    _clock_ctrl = usrp_e100_clock_ctrl::make(_iface);
+    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", 64e6);
+    _clock_ctrl = usrp_e100_clock_ctrl::make(_iface, master_clock_rate);
     _codec_ctrl = usrp_e100_codec_ctrl::make(_iface);
 
     //initialize the mboard

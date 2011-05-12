@@ -209,7 +209,8 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     case MBOARD_PROP_CLOCK_RATE:
         UHD_MSG(warning)
             << "I see that you are setting the master clock rate from the API.\n"
-            << "You may find it more convenient to burn this setting into the EEPROM.\n"
+            << "You may want to pass this into the device address as mcr=<rate>.\n"
+            << "This way, the clock rate is guaranteed to be initialized first.\n"
             << "See the application notes for USRP-E1XX for further instructions.\n"
         ;
         _clock_ctrl->set_fpga_clock_rate(val.as<double>());

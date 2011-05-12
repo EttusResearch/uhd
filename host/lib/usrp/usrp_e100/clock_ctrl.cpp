@@ -37,7 +37,6 @@ using namespace uhd;
  **********************************************************************/
 static const bool ENABLE_THE_TEST_OUT = true;
 static const double REFERENCE_INPUT_RATE = 10e6;
-static const double DEFAULT_OUTPUT_RATE = 64e6;
 
 /***********************************************************************
  * Helpers
@@ -168,7 +167,7 @@ static clock_settings_type get_clock_settings(double rate){
  **********************************************************************/
 class usrp_e100_clock_ctrl_impl : public usrp_e100_clock_ctrl{
 public:
-    usrp_e100_clock_ctrl_impl(usrp_e100_iface::sptr iface){
+    usrp_e100_clock_ctrl_impl(usrp_e100_iface::sptr iface, double master_clock_rate){
         _iface = iface;
         _chan_rate = 0.0;
         _out_rate = 0.0;
@@ -185,24 +184,9 @@ public:
 
         this->use_internal_ref();
 
-        //initialize the FPGA clock to something
-        bool fpga_clock_initialized = false;
-        try{
-            if (not _iface->mb_eeprom["mcr"].empty()){
-                UHD_MSG(status) << "Read FPGA clock rate from EEPROM setting." << std::endl;
-                const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["mcr"]);
-                UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
-                this->set_fpga_clock_rate(master_clock_rate);
-                fpga_clock_initialized = true;
-            }
-        }
-        catch(const std::exception &e){
-            UHD_MSG(error) << "Error setting FPGA clock rate from EEPROM: " << e.what() << std::endl;
-        }
-        if (not fpga_clock_initialized){ //was not set... use the default rate
-            UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (DEFAULT_OUTPUT_RATE/1e6) << std::endl;
-            this->set_fpga_clock_rate(DEFAULT_OUTPUT_RATE);
-        }
+        //initialize the FPGA clock rate
+        UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
+        this->set_fpga_clock_rate(master_clock_rate);
 
         this->enable_test_clock(ENABLE_THE_TEST_OUT);
         this->enable_rx_dboard_clock(false);
@@ -518,6 +502,6 @@ private:
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-usrp_e100_clock_ctrl::sptr usrp_e100_clock_ctrl::make(usrp_e100_iface::sptr iface){
-    return sptr(new usrp_e100_clock_ctrl_impl(iface));
+usrp_e100_clock_ctrl::sptr usrp_e100_clock_ctrl::make(usrp_e100_iface::sptr iface, double master_clock_rate){
+    return sptr(new usrp_e100_clock_ctrl_impl(iface, master_clock_rate));
 }
