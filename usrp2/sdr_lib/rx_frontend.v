@@ -14,31 +14,20 @@ module rx_frontend
    
    reg [15:0] 	  adc_i, adc_q;
    wire [17:0] 	  adc_i_ofs, adc_q_ofs;
-   wire [35:0] 	  corr_i, corr_q;
-   wire [17:0] 	  mag_corr,phase_corr;
-   wire [7:0] 	  muxctrl;
+   wire [35:0] 	  corr_i, corr_q; wire [17:0] 	  mag_corr,phase_corr;
+   wire 	  swap_iq;
    wire [23:0] 	  i_final, q_final;
    
-   setting_reg #(.my_addr(BASE), .width(8)) sr_8
+   setting_reg #(.my_addr(BASE), .width(1)) sr_8
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(muxctrl),.changed());
+      .in(set_data),.out(swap_iq),.changed());
 
    always @(posedge clk)
-     case(muxctrl[3:0])		// The I mapping
-       0: adc_i <= adc_a;
-       1: adc_i <= adc_b;
-       2: adc_i <= 0;
-       default: adc_i <= 0;
-     endcase // case (muxctrl[3:0])
-   
-   always @(posedge clk)
-     case(muxctrl[7:4])		// The Q mapping
-       0: adc_q <= adc_a;
-       1: adc_q <= adc_b;
-       2: adc_q <= 0;
-       default: adc_q <= 0;
-     endcase // case (muxctrl[7:4])
-   
+     if(swap_iq) // Swap
+       {adc_i,adc_q} <= {adc_b,adc_a};
+     else
+       {adc_i,adc_q} <= {adc_a,adc_b};
+       
    setting_reg #(.my_addr(BASE+1),.width(18)) sr_1
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(mag_corr),.changed());

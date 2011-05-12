@@ -46,6 +46,10 @@ module dsp_core_rx
    wire        enable_hb1, enable_hb2;
    wire [7:0]  cic_decim_rate;
 
+   reg [17:0]  adc_i_mux, adc_q_mux;
+   wire        realmode;
+   wire        swap_iq;
+   
    setting_reg #(.my_addr(BASE+0)) sr_0
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(phase_inc),.changed());
@@ -58,6 +62,22 @@ module dsp_core_rx
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_hb1, enable_hb2, cic_decim_rate}),.changed());
 
+   setting_reg #(.my_addr(BASE+3), .width(2)) sr_3
+     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out({realmode,swap_iq}),.changed());
+
+   always @(posedge clk)
+     if(swap_iq)
+       begin
+	  adc_i_mux <= adc_q;
+	  adc_q_mux <= realmode ? 18'd0 : adc_i;
+       end
+     else
+       begin
+	  adc_i_mux <= adc_i;
+	  adc_q_mux <= realmode ? 18'd0 : adc_q;
+       end
+   
    always @(posedge clk)
      if(rst)
        phase <= 0;
@@ -68,7 +88,7 @@ module dsp_core_rx
 
    MULT18X18S mult_i
      (.P(prod_i),    // 36-bit multiplier output
-      .A(adc_i),    // 18-bit multiplier input
+      .A(adc_i_mux),    // 18-bit multiplier input
       .B({{2{scale_i[15]}},scale_i}),    // 18-bit multiplier input
       .C(clk),    // Clock input
       .CE(1),  // Clock enable input
@@ -77,7 +97,7 @@ module dsp_core_rx
 
    MULT18X18S mult_q
      (.P(prod_q),    // 36-bit multiplier output
-      .A(adc_q),    // 18-bit multiplier input
+      .A(adc_q_mux),    // 18-bit multiplier input
       .B({{2{scale_q[15]}},scale_q}),    // 18-bit multiplier input
       .C(clk),    // Clock input
       .CE(1),  // Clock enable input
