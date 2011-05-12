@@ -152,7 +152,7 @@ module dsp_core_rx
    round_sd #(.WIDTH_IN(18),.WIDTH_OUT(16)) round_qout
      (.clk(clk), .in(q_hb2), .strobe_in(strobe_hb2), .out(q_out), .strobe_out());
    
-   assign      sample = {i_hb2,q_hb2};
+   assign      sample = {i_out,q_out};
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_cic_d1, strobe_hb1, strobe_hb2};
    
 endmodule // dsp_core_rx
