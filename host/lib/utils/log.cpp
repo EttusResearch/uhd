@@ -95,6 +95,10 @@ public:
     uhd::_log::verbosity_t verbosity, level;
 
     log_resource_type(void){
+
+        //file lock pointer must be null
+        _file_lock = NULL;
+
         //set the default log level
         level = uhd::_log::never;
 
