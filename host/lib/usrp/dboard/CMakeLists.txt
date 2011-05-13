@@ -30,5 +30,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/db_unknown.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_tvrx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_dbsrx2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_tvrx2.cpp
 )
 
