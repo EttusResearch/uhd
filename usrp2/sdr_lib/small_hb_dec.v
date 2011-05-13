@@ -111,8 +111,8 @@ module small_hb_dec
    
    wire 	 stb_round;
    
-   round_sd #(.WIDTH_IN(36),.WIDTH_OUT(19)) round_acc 
-     (.clk(clk), .reset(rst), .in(accum), .strobe_in(go_d4), .out(accum_rnd), .strobe_out(stb_round));
+   round_sd #(.WIDTH_IN(25),.WIDTH_OUT(19)) round_acc 
+     (.clk(clk), .reset(rst), .in(accum[35:11]), .strobe_in(go_d4), .out(accum_rnd), .strobe_out(stb_round));
 
    clip #(.bits_in(19),.bits_out(18)) clip (.in(accum_rnd), .out(accum_rnd_clip));
    
