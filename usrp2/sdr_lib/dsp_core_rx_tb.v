@@ -46,11 +46,11 @@ module dsp_core_rx_tb();
 	@(negedge rst);
 	@(posedge clk);
 	set_addr <= 1;
-	set_data <= {16'd64,16'd64};
+	set_data <= {16'd64,16'd64};  // set gains
 	set_stb <= 1;
 	@(posedge clk);
 	set_addr <= 2;
-	set_data <= {16'd0,8'd3,8'd8};
+	set_data <= {16'd0,8'd0,8'd8}; // set decim
 	set_stb <= 1;
 	@(posedge clk);
 	set_stb <= 0;
