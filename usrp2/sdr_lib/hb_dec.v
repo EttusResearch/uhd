@@ -30,8 +30,8 @@ module hb_dec
      input [8:0] cpi,  // Clocks per input -- equal to the decimation ratio ahead of this block
      input stb_in,
      input [IWIDTH-1:0] data_in,
-     output reg stb_out,
-     output reg [OWIDTH-1:0] data_out);
+     output stb_out,
+     output [OWIDTH-1:0] data_out);
 
    // Control
    reg [3:0] 		addr_odd_a, addr_odd_b, addr_odd_c, addr_odd_d;
@@ -167,22 +167,21 @@ module hb_dec
    add2_reg /* add2_and_round_reg */ #(.WIDTH(ACCWIDTH+1)) 
      final_adder (.clk(clk), .in1({acc_out,1'b0}), .in2({data_even_signext,1'b0}), .sum(final_sum_unrounded));
 
-   round_reg #(.bits_in(ACCWIDTH-4),.bits_out(OWIDTH))
-     final_round (.clk(clk),.in(final_sum_unrounded[ACCWIDTH-5:0]),.out(final_sum));
+   wire [OWIDTH-1:0] 	bypass_data;
+   wire 		stb_final, stb_bypass;
+   
+   round_sd #(.WIDTH_IN(ACCWIDTH-4),.WIDTH_OUT(OWIDTH))
+   final_round (.clk(clk),.reset(rst),
+		.in(final_sum_unrounded[ACCWIDTH-5:0]),.strobe_in(stb_out_pre[9]),
+		.out(final_sum), .strobe_out(stb_final));
+
+   round_sd #(.WIDTH_IN(IWIDTH),.WIDTH_OUT(OWIDTH))
+   bypass_round (.clk(clk),.reset(rst),
+		 .in(data_in),.strobe_in(stb_in),
+		 .out(bypass_data), .strobe_out(stb_bypass));
 
    // Output
-   always @(posedge clk)
-     if(bypass)
-       data_out <= data_in;
-     else if(stb_out_pre[9])
-       data_out <= final_sum;
-
-   always @(posedge clk)
-     if(rst)
-       stb_out <= 0;
-     else if(bypass)
-       stb_out <= stb_in;
-     else
-       stb_out <= stb_out_pre[9];
- 
+   assign stb_out = bypass ? stb_bypass : stb_final;
+   assign data_out = bypass ? bypass_data : final_sum;
+   
 endmodule // hb_dec

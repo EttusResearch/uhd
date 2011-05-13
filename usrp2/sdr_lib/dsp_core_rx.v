@@ -39,8 +39,7 @@ module dsp_core_rx
    wire [23:0] i_cic, q_cic;
    wire [17:0] i_cic_scaled, q_cic_scaled;
    wire [17:0] i_hb1, q_hb1;
-   wire [17:0] i_hb2, q_hb2;
-   wire [15:0] i_out, q_out;
+   wire [15:0] i_hb2, q_hb2;
 
    wire        strobe_cic, strobe_hb1, strobe_hb2;
    wire        enable_hb1, enable_hb2;
@@ -86,27 +85,9 @@ module dsp_core_rx
      else
        phase <= phase + phase_inc;
 
-   MULT18X18S mult_i
-     (.P(prod_i),    // 36-bit multiplier output
-      .A(adc_i_mux),    // 18-bit multiplier input
-      .B({{2{scale_i[15]}},scale_i}),    // 18-bit multiplier input
-      .C(clk),    // Clock input
-      .CE(1),  // Clock enable input
-      .R(rst)     // Synchronous reset input
-      );
-
-   MULT18X18S mult_q
-     (.P(prod_q),    // 36-bit multiplier output
-      .A(adc_q_mux),    // 18-bit multiplier input
-      .B({{2{scale_q[15]}},scale_q}),    // 18-bit multiplier input
-      .C(clk),    // Clock input
-      .CE(1),  // Clock enable input
-      .R(rst)     // Synchronous reset input
-      ); 
-   
    cordic_z24 #(.bitwidth(24))
      cordic(.clock(clk), .reset(rst), .enable(run),
-	    .xi(prod_i[23:0]),. yi(prod_q[23:0]), .zi(phase[31:8]),
+	    .xi({adc_i_mux,6'd0}),. yi({adc_q_mux,6'd0}), .zi(phase[31:8]),
 	    .xo(i_cordic),.yo(q_cordic),.zo() );
 
    cic_strober cic_strober(.clock(clk),.reset(rst),.enable(run),.rate(cic_decim_rate),
@@ -138,21 +119,38 @@ module dsp_core_rx
       .stb_in(strobe_cic_d1),.data_in(q_cic_scaled),.stb_out(),.data_out(q_hb1));
 
    wire [8:0]  cpi_hb = enable_hb1 ? {cic_decim_rate,1'b0} : {1'b0,cic_decim_rate};
-   hb_dec #(.IWIDTH(18), .OWIDTH(18), .CWIDTH(18), .ACCWIDTH(24)) hb_i
+   hb_dec #(.IWIDTH(18), .OWIDTH(16), .CWIDTH(18), .ACCWIDTH(24)) hb_i
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
       .stb_in(strobe_hb1),.data_in(i_hb1),.stb_out(strobe_hb2),.data_out(i_hb2));
 
-   hb_dec #(.IWIDTH(18), .OWIDTH(18), .CWIDTH(18), .ACCWIDTH(24)) hb_q
+   hb_dec #(.IWIDTH(18), .OWIDTH(16), .CWIDTH(18), .ACCWIDTH(24)) hb_q
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
       .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
-   round_sd #(.WIDTH_IN(18),.WIDTH_OUT(16)) round_iout
-     (.clk(clk), .reset(rst), .in(i_hb2), .strobe_in(strobe_hb2), .out(i_out), .strobe_out(strobe));
+   assign      sample = {i_hb2,q_hb2};
+   assign      strobe = strobe_hb2;
    
-   round_sd #(.WIDTH_IN(18),.WIDTH_OUT(16)) round_qout
-     (.clk(clk), .reset(rst), .in(q_hb2), .strobe_in(strobe_hb2), .out(q_out), .strobe_out());
-   
-   assign      sample = {i_out,q_out};
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_cic_d1, strobe_hb1, strobe_hb2};
    
 endmodule // dsp_core_rx
+
+/*
+   MULT18X18S mult_i
+     (.P(prod_i),    // 36-bit multiplier output
+      .A(adc_i_mux),    // 18-bit multiplier input
+      .B({{2{scale_i[15]}},scale_i}),    // 18-bit multiplier input
+      .C(clk),    // Clock input
+      .CE(1),  // Clock enable input
+      .R(rst)     // Synchronous reset input
+      );
+
+   MULT18X18S mult_q
+     (.P(prod_q),    // 36-bit multiplier output
+      .A(adc_q_mux),    // 18-bit multiplier input
+      .B({{2{scale_q[15]}},scale_q}),    // 18-bit multiplier input
+      .C(clk),    // Clock input
+      .CE(1),  // Clock enable input
+      .R(rst)     // Synchronous reset input
+      ); 
+   
+*/
