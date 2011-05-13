@@ -107,13 +107,16 @@ module small_hb_dec
        accum <= accum + {prod};
    
    wire [17:0] 	 accum_rnd;
-   round #(.bits_in(36),.bits_out(18)) round_acc (.in(accum),.out(accum_rnd));
+   wire 	 stb_round;
+   
+   round_sd #(.WIDTH_IN(36),.WIDTH_OUT(18)) round_acc 
+     (.clk(clk), .reset(rst), .in(accum), .strobe_in(go_d4), .out(accum_rnd), .strobe_out(stb_round));
 
    reg [17:0] 	 final_sum;
    always @(posedge clk)
      if(bypass)
        final_sum <= data_in_d1;
-     else if(go_d4)
+     else if(stb_round)
        final_sum <= accum_rnd;
 
    assign 	 data_out = final_sum;
@@ -124,5 +127,5 @@ module small_hb_dec
      else if(bypass)
        stb_out <= stb_in_d1;
      else
-       stb_out <= go_d4;
+       stb_out <= stb_round;
 endmodule // small_hb_dec
