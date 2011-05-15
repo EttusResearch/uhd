@@ -172,7 +172,7 @@ module hb_dec
    
    round_sd #(.WIDTH_IN(ACCWIDTH-4),.WIDTH_OUT(OWIDTH))
    final_round (.clk(clk),.reset(rst),
-		.in(final_sum_unrounded[ACCWIDTH-5:0]),.strobe_in(stb_out_pre[9]),
+		.in(final_sum_unrounded[ACCWIDTH-5:0]),.strobe_in(stb_out_pre[8]),
 		.out(final_sum), .strobe_out(stb_final));
 
    round_sd #(.WIDTH_IN(IWIDTH),.WIDTH_OUT(OWIDTH))
