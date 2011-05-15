@@ -28,7 +28,7 @@ module hb_dec_tb( ) ;
     reg                     strobe_in ;
     reg     signed  [17:0]  data_in ;
     wire                    strobe_out ;
-    wire    signed  [17:0]  data_out ;
+    wire    signed  [15:0]  data_out ;
 
    initial
      begin
@@ -65,8 +65,8 @@ module hb_dec_tb( ) ;
     */
 
    
-   hb_dec #(.IWIDTH(18),.OWIDTH(18),.CWIDTH(18),.ACCWIDTH(24)) uut
-     (.clk(clock),.rst(reset),.bypass(0),.cpi(clocks),.stb_in(strobe_in),.data_in(data_in),
+   hb_dec #(.IWIDTH(18),.OWIDTH(16),.CWIDTH(18),.ACCWIDTH(24)) uut
+     (.clk(clock),.rst(reset),.bypass(0),.run(1),.cpi(clocks),.stb_in(strobe_in),.data_in(data_in),
       .stb_out(strobe_out),.data_out(data_out) );
    
     integer i, ri, ro, infile, outfile ;

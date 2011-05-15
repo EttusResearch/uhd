@@ -30,8 +30,8 @@ module hb_dec
      input [8:0] cpi,  // Clocks per input -- equal to the decimation ratio ahead of this block
      input stb_in,
      input [IWIDTH-1:0] data_in,
-     output stb_out,
-     output [OWIDTH-1:0] data_out);
+     output reg stb_out,
+     output reg [OWIDTH-1:0] data_out);
 
    // Control
    reg [3:0] 		addr_odd_a, addr_odd_b, addr_odd_c, addr_odd_d;
@@ -126,8 +126,8 @@ module hb_dec
    srl #(.WIDTH(IWIDTH)) srl_odd_d
      (.clk(clk),.write(write_odd),.in(data_in),.addr(addr_odd_d),.out(data_odd_d));
 
-   add2_reg /*_and_round_reg*/ #(.WIDTH(IWIDTH)) add1 (.clk(clk),.in1(data_odd_a),.in2(data_odd_b),.sum(sum1));
-   add2_reg /*_and_round_reg*/ #(.WIDTH(IWIDTH)) add2 (.clk(clk),.in1(data_odd_c),.in2(data_odd_d),.sum(sum2));
+   add2_reg #(.WIDTH(IWIDTH)) add1 (.clk(clk),.in1(data_odd_a),.in2(data_odd_b),.sum(sum1));
+   add2_reg #(.WIDTH(IWIDTH)) add2 (.clk(clk),.in1(data_odd_c),.in2(data_odd_d),.sum(sum2));
 
    wire [IWIDTH-1:0] data_even;
    reg [3:0] 	     addr_even;
@@ -164,7 +164,7 @@ module hb_dec
      signext_data_even (.in(data_even),.out(data_even_signext[ACCWIDTH-1:SHIFT_FACTOR]));
    assign 		data_even_signext[SHIFT_FACTOR-1:0] = 0;
    
-   add2_reg /* add2_and_round_reg */ #(.WIDTH(ACCWIDTH+1)) 
+   add2_reg #(.WIDTH(ACCWIDTH+1)) 
      final_adder (.clk(clk), .in1({acc_out,1'b0}), .in2({data_even_signext,1'b0}), .sum(final_sum_unrounded));
 
    wire [OWIDTH-1:0] 	bypass_data;
@@ -181,7 +181,10 @@ module hb_dec
 		 .out(bypass_data), .strobe_out(stb_bypass));
 
    // Output
-   assign stb_out = bypass ? stb_bypass : stb_final;
-   assign data_out = bypass ? bypass_data : final_sum;
+   always @(posedge clk)
+     begin
+	stb_out  <= bypass ? stb_bypass : stb_final;
+	data_out <= bypass ? bypass_data : final_sum;
+     end
    
 endmodule // hb_dec

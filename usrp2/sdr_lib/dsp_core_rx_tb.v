@@ -50,7 +50,7 @@ module dsp_core_rx_tb();
 	set_stb <= 1;
 	@(posedge clk);
 	set_addr <= 2;
-	set_data <= {16'd0,8'd0,8'd8}; // set decim
+	set_data <= {16'd0,8'd3,8'd1}; // set decim
 	set_stb <= 1;
 	@(posedge clk);
 	set_stb <= 0;
