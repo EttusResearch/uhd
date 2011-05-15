@@ -52,16 +52,12 @@ public:
 
     sptr get_new(size_t len){
         _len = len;
-        return sptr(this, &udp_zero_copy_asio_mrb::fake_deleter);
+        return make_managed_buffer(this);
     }
 
     template <class T> T cast(void) const{return static_cast<T>(_mem);}
 
 private:
-    static void fake_deleter(void *obj){
-        static_cast<udp_zero_copy_asio_mrb *>(obj)->release();
-    }
-
     const void *get_buff(void) const{return _mem;}
     size_t get_size(void) const{return _len;}
 
@@ -90,14 +86,10 @@ public:
 
     sptr get_new(size_t len){
         _len = len;
-        return sptr(this, &udp_zero_copy_asio_msb::fake_deleter);
+        return make_managed_buffer(this);
     }
 
 private:
-    static void fake_deleter(void *obj){
-        static_cast<udp_zero_copy_asio_msb *>(obj)->commit(0);
-    }
-
     void *get_buff(void) const{return _mem;}
     size_t get_size(void) const{return _len;}
 

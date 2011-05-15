@@ -73,14 +73,10 @@ public:
 
     sptr get_new(void){
         _expired = false;
-        return sptr(this, &libusb_zero_copy_mrb::fake_deleter);
+        return make_managed_buffer(this);
     }
 
 private:
-    static void fake_deleter(void *obj){
-        static_cast<libusb_zero_copy_mrb *>(obj)->release();
-    }
-
     const void *get_buff(void) const{return _lut->buffer;}
     size_t get_size(void) const{return _lut->actual_length;}
 
@@ -108,14 +104,10 @@ public:
 
     sptr get_new(void){
         _expired = false;
-        return sptr(this, &libusb_zero_copy_msb::fake_deleter);
+        return make_managed_buffer(this);
     }
 
 private:
-    static void fake_deleter(void *obj){
-        static_cast<libusb_zero_copy_msb *>(obj)->commit(0);
-    }
-
     void *get_buff(void) const{return _lut->buffer;}
     size_t get_size(void) const{return _lut->length;}
 

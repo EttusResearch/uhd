@@ -21,8 +21,15 @@
 #include <uhd/config.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace uhd{ namespace transport{
+
+    //! Create smart pointer to a reusable managed buffer
+    template <typename T> UHD_INLINE boost::intrusive_ptr<T> make_managed_buffer(T *p){
+        p->_ref_count = 1; //reset the count to 1 reference
+        return boost::intrusive_ptr<T>(p, false);
+    }
 
     /*!
      * A managed receive buffer:
@@ -31,7 +38,7 @@ namespace uhd{ namespace transport{
      */
     class UHD_API managed_recv_buffer{
     public:
-        typedef boost::shared_ptr<managed_recv_buffer> sptr;
+        typedef boost::intrusive_ptr<managed_recv_buffer> sptr;
 
         /*!
          * Signal to the transport that we are done with the buffer.
@@ -59,7 +66,17 @@ namespace uhd{ namespace transport{
     private:
         virtual const void *get_buff(void) const = 0;
         virtual size_t get_size(void) const = 0;
+
+    public: int _ref_count;
     };
+
+    UHD_INLINE void intrusive_ptr_add_ref(managed_recv_buffer *p){
+        ++(p->_ref_count);
+    }
+
+    UHD_INLINE void intrusive_ptr_release(managed_recv_buffer *p){
+        if (--(p->_ref_count) == 0) p->release();
+    }
 
     /*!
      * A managed send buffer:
@@ -68,7 +85,7 @@ namespace uhd{ namespace transport{
      */
     class UHD_API managed_send_buffer{
     public:
-        typedef boost::shared_ptr<managed_send_buffer> sptr;
+        typedef boost::intrusive_ptr<managed_send_buffer> sptr;
 
         /*!
          * Signal to the transport that we are done with the buffer.
@@ -97,7 +114,17 @@ namespace uhd{ namespace transport{
     private:
         virtual void *get_buff(void) const = 0;
         virtual size_t get_size(void) const = 0;
+
+    public: int _ref_count;
     };
+
+    UHD_INLINE void intrusive_ptr_add_ref(managed_send_buffer *p){
+        ++(p->_ref_count);
+    }
+
+    UHD_INLINE void intrusive_ptr_release(managed_send_buffer *p){
+        if (--(p->_ref_count) == 0) p->commit(0);
+    }
 
     /*!
      * A zero-copy interface for transport objects.
