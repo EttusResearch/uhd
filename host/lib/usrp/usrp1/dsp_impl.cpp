@@ -113,7 +113,9 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
             //TODO Poll every 100ms. Make it selectable?
             _rx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() / rate);
 
+            bool s = this->disable_rx();
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
+            this->restore_rx(s);
         }
         return;
 
@@ -212,7 +214,9 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
             //TODO Poll every 100ms. Make it selectable? 
             _tx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate);
 
+            bool s = this->disable_tx();
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
+            this->restore_tx(s);
             return;
         }
     default: UHD_THROW_PROP_SET_ERROR();

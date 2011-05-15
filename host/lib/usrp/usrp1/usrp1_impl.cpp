@@ -209,6 +209,8 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
 }
 
 usrp1_impl::~usrp1_impl(void){
+    UHD_SAFE_CALL(this->enable_rx(false);)
+    UHD_SAFE_CALL(this->enable_tx(false);)
     //Safely destruct all RAII objects in a device.
     //This prevents the mboard deconstructor from throwing,
     //which allows the device to be safely deconstructed.

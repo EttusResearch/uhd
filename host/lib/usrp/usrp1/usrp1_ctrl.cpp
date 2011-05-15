@@ -210,10 +210,6 @@ public:
         usrp_tx_reset(true);
         usrp_rx_reset(false);
         usrp_tx_reset(false);
-
-        //enable
-        //usrp_rx_enable(true); //dont enable, enable means dont work
-        //usrp_tx_enable(true);
     }
 
     void usrp_load_fpga(std::string filestring)

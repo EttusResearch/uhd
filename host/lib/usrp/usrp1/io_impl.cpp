@@ -240,12 +240,13 @@ void usrp1_impl::io_init(void){
         boost::bind(&usrp1_impl::rx_stream_on_off, this, _1)
     );
 
+    this->enable_tx(true); //always enabled
     rx_stream_on_off(false);
     _io_impl->flush_send_buff();
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){
-    return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, enb, 0, 0, 0);
+    this->enable_rx(enb);
     //drain any junk in the receive transport after stop streaming command
     while(not enb and _data_transport->get_recv_buff().get() != NULL){
         /* NOP */

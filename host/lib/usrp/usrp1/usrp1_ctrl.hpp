@@ -108,6 +108,11 @@ public:
                                unsigned char *buf, 
                                boost::uint16_t len) = 0;
 
+    //! enable/disable the rx path
+    virtual void usrp_rx_enable(bool on) = 0;
+
+    //! enable/disable the tx path
+    virtual void usrp_tx_enable(bool on) = 0;
 };
 
 #endif /* INCLUDED_USRP_CTRL_HPP */
