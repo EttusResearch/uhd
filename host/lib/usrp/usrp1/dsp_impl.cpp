@@ -103,11 +103,8 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
         {
             size_t rate = size_t(_clock_ctrl->get_master_clock_freq() / val.as<double>());
 
-            if ((rate & 0x01) || (rate < 4) || (rate > 256)) {
-                UHD_MSG(error) << "Decimation must be even and between 4 and 256"
-                          << std::endl;
-                return;
-            }
+            //clip the rate to something in range:
+            rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
 
             _rx_dsp_decim = rate;
             //TODO Poll every 100ms. Make it selectable?
@@ -166,11 +163,11 @@ void usrp1_impl::tx_dsp_get(const wax::obj &key_, wax::obj &val, size_t which_ds
         return;
 
     case DSP_PROP_CODEC_RATE:
-        val = _clock_ctrl->get_master_clock_freq() * 2;
+        val = _clock_ctrl->get_master_clock_freq();
         return;
 
     case DSP_PROP_HOST_RATE:
-        val = _clock_ctrl->get_master_clock_freq() * 2 / _tx_dsp_interp;
+        val = _clock_ctrl->get_master_clock_freq() / _tx_dsp_interp;
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -201,21 +198,18 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
     case DSP_PROP_HOST_RATE:
         if (which_dsp != 0) return; //only for dsp[0] as this is vectorized
         {
-            size_t rate = size_t(_clock_ctrl->get_master_clock_freq() * 2 / val.as<double>());
+            size_t rate = size_t(_clock_ctrl->get_master_clock_freq() / val.as<double>());
 
-            if ((rate & 0x01) || (rate < 8) || (rate > 512)) {
-                UHD_MSG(error) << "Interpolation rate must be even and between 8 and 512"
-                          << std::endl;
-                return;
-            }
+            //clip the rate to something in range:
+            rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
 
             _tx_dsp_interp = rate;
 
             //TODO Poll every 100ms. Make it selectable? 
-            _tx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() * 2 / rate);
+            _tx_samps_per_poll_interval = size_t(0.1 * _clock_ctrl->get_master_clock_freq() / rate);
 
             bool s = this->disable_tx();
-            _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp / 4 - 1);
+            _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp/2 - 1);
             this->restore_tx(s);
             return;
         }

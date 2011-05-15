@@ -214,8 +214,8 @@ void usrp1_impl::mboard_init(void)
     // Normal mode with no loopback or Rx counting
     _iface->poke32(FR_MODE, 0x00000000);
     _iface->poke32(FR_DEBUG_EN, 0x00000000);
-    _iface->poke32(FR_RX_SAMPLE_RATE_DIV, 0x00000001);
-    _iface->poke32(FR_TX_SAMPLE_RATE_DIV, 0x00000003);
+    _iface->poke32(FR_RX_SAMPLE_RATE_DIV, 0x00000001); //divide by 2
+    _iface->poke32(FR_TX_SAMPLE_RATE_DIV, 0x00000001); //divide by 2
     _iface->poke32(FR_DC_OFFSET_CL_EN, 0x0000000f);
 
     // Reset offset correction registers
