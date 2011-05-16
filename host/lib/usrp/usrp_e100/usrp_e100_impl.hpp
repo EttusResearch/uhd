@@ -33,7 +33,7 @@
 
 uhd::transport::zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
 
-static const boost::uint16_t USRP_E_FPGA_COMPAT_NUM = 0x03;
+static const boost::uint16_t USRP_E_FPGA_COMPAT_NUM = 0x04;
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void usrp_e100_load_fpga(const std::string &bin_file);
