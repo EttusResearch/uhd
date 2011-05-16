@@ -35,7 +35,8 @@ module dsp_core_rx
    reg [31:0]  phase;
 
    wire [35:0] prod_i, prod_q;
-   wire [23:0] i_cordic, q_cordic;
+   wire [24:0] i_cordic, q_cordic;
+   wire [23:0] i_cordic_clip, q_cordic_clip;
    wire [23:0] i_cic, q_cic;
    wire [17:0] i_cic_scaled, q_cic_scaled;
    wire [17:0] i_hb1, q_hb1;
@@ -85,23 +86,26 @@ module dsp_core_rx
      else
        phase <= phase + phase_inc;
 
-   cordic_z24 #(.bitwidth(24))
+   cordic_z24 #(.bitwidth(25))
      cordic(.clock(clk), .reset(rst), .enable(run),
-	    .xi({adc_i_mux,6'd0}),. yi({adc_q_mux,6'd0}), .zi(phase[31:8]),
+	    .xi({adc_i_mux[17],adc_i_mux,6'd0}),. yi({adc_q_mux[17],adc_q_mux,6'd0}), .zi(phase[31:8]),
 	    .xo(i_cordic),.yo(q_cordic),.zo() );
 
+   clip_reg #(.bits_in(25), .bits_out(24)) clip_i (.clk(clk), .in(i_cordic), .out(i_cordic_clip));
+   clip_reg #(.bits_in(25), .bits_out(24)) clip_q (.clk(clk), .in(q_cordic), .out(q_cordic_clip));
+   
    cic_strober cic_strober(.clock(clk),.reset(rst),.enable(run),.rate(cic_decim_rate),
 			   .strobe_fast(1),.strobe_slow(strobe_cic) );
 
    cic_decim #(.bw(24))
      decim_i (.clock(clk),.reset(rst),.enable(run),
 	      .rate(cic_decim_rate),.strobe_in(1'b1),.strobe_out(strobe_cic),
-	      .signal_in(i_cordic),.signal_out(i_cic));
+	      .signal_in(i_cordic_clip),.signal_out(i_cic));
    
    cic_decim #(.bw(24))
      decim_q (.clock(clk),.reset(rst),.enable(run),
 	      .rate(cic_decim_rate),.strobe_in(1'b1),.strobe_out(strobe_cic),
-	      .signal_in(q_cordic),.signal_out(q_cic));
+	      .signal_in(q_cordic_clip),.signal_out(q_cic));
 
    wire        strobe_cic_d1;
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_icic
