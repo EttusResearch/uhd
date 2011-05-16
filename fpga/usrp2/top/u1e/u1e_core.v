@@ -11,7 +11,7 @@ module u1e_core
    input EM_NWE, input EM_NOE,
    
    inout db_sda, inout db_scl,
-   output sclk, output [7:0] sen, output mosi, input miso,
+   output sclk, output [15:0] sen, output mosi, input miso,
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
    output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
@@ -36,7 +36,7 @@ module u1e_core
    localparam SR_GLOBAL_RESET = 50; // 1 reg
    localparam SR_REG_TEST32 = 52; // 1 reg
 
-   wire [7:0]	COMPAT_NUM = 8'd3;
+   wire [7:0]	COMPAT_NUM = 8'd4;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
@@ -120,18 +120,15 @@ module u1e_core
    wire 	 rx_eof = rx_data[33];
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
-   wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug;
+   wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug, vr_debug;
    
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX
-   wire [31:0] 	 sample_rx, sample_tx;
-   wire 	 strobe_rx, strobe_tx;
-   wire 	 rx1_dst_rdy, rx1_src_rdy;
-   wire [99:0] 	 rx1_data;
-   wire 	 run_rx;
+   wire [31:0] 	 sample_rx;
+   wire 	 strobe_rx, run_rx;
    wire [35:0] 	 vita_rx_data;
    wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
-      
+   
    dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
@@ -139,20 +136,13 @@ module u1e_core
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
       .debug(debug_rx_dsp) );
 
-   vita_rx_control #(.BASE(SR_RX_CTRL), .WIDTH(32)) vita_rx_control
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
+   vita_rx_chain #(.BASE(SR_RX_CTRL), .UNIT(0), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain
+     (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp),
       .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .sample_fifo_o(rx1_data), .sample_fifo_dst_rdy_i(rx1_dst_rdy), .sample_fifo_src_rdy_o(rx1_src_rdy),
-      .debug_rx(vrc_debug));
-
-   vita_rx_framer #(.BASE(SR_RX_CTRL), .MAXCHAN(1)) vita_rx_framer
-     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .sample_fifo_i(rx1_data), .sample_fifo_dst_rdy_o(rx1_dst_rdy), .sample_fifo_src_rdy_i(rx1_src_rdy),
-      .data_o(vita_rx_data), .dst_rdy_i(vita_rx_dst_rdy), .src_rdy_o(vita_rx_src_rdy),
-      .debug_rx(vrf_debug) );
+      .rx_data_o(vita_rx_data), .rx_dst_rdy_i(vita_rx_dst_rdy), .rx_src_rdy_o(vita_rx_src_rdy),
+      .debug(vr_debug) );
    
    fifo36_mux #(.prio(0)) mux_err_stream
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
@@ -368,7 +358,7 @@ module u1e_core
 
    atr_controller16 atr_controller16
      (.clk_i(wb_clk), .rst_i(wb_rst),
-      .adr_i(s6_adr), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
+      .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
       .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
@@ -383,7 +373,7 @@ module u1e_core
 
    wb_readback_mux_16LE readback_mux_32
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s7_stb),
-      .wb_adr_i(s7_adr), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
+      .wb_adr_i({5'b0,s7_adr}), .wb_dat_o(s7_dat_miso), .wb_ack_o(s7_ack),
 
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
@@ -400,7 +390,8 @@ module u1e_core
 
    time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
      (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int));
+      .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
+      .exp_time_in(0));
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
@@ -415,7 +406,7 @@ module u1e_core
 */
    assign debug = debug_gpmc;
 
-   assign debug_gpio_0 = { {run_tx, strobe_tx, run_rx, strobe_rx, tx_i[11:0]}, 
+   assign debug_gpio_0 = { {run_tx, 1'b0, run_rx, strobe_rx, tx_i[11:0]}, 
 			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
 
    assign debug_gpio_1 = debug_vt;

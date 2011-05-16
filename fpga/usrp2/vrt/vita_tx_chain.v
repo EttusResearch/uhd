@@ -27,16 +27,17 @@ module vita_tx_chain
    wire 		trigger, sent;
    wire [31:0] 		debug_vtc, debug_vtd, debug_tx_dsp;
 
-   wire 		error, packet_consumed;
+   wire 		error, packet_consumed, ack;
    wire [31:0] 		error_code;
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
+   wire 		strobe_tx;
    
    assign underrun = error;
    assign message = error_code;
    
    setting_reg #(.my_addr(BASE_CTRL+1)) sr
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
+     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(clear_vita));
 
    setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid

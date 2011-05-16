@@ -321,8 +321,8 @@ module u2plus_core
    // I-port connects directly to processor
 
    bootram bootram(.clk(wb_clk), .reset(wb_rst),
-		   .if_adr(13'b0), .if_data(),
-		   .dwb_adr_i(sf_adr[12:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
+		   .if_adr(14'b0), .if_data(),
+		   .dwb_adr_i(sf_adr[13:0]), .dwb_dat_i(sf_dat_o), .dwb_dat_o(sf_dat_i),
 		   .dwb_we_i(sf_we), .dwb_ack_o(sf_ack), .dwb_stb_i(sf_stb), .dwb_sel_i(sf_sel));
 
 ////blinkenlights v0.1
