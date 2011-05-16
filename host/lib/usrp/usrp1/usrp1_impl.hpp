@@ -205,6 +205,45 @@ private:
     size_t get_num_ddcs(void);
     bool has_rx_halfband(void);
     bool has_tx_halfband(void);
+
+    //handle the enables
+    bool _rx_enabled, _tx_enabled;
+    void enable_rx(bool enb){
+        _rx_enabled = enb;
+        _ctrl_transport->usrp_rx_enable(enb);
+    }
+    void enable_tx(bool enb){
+        _tx_enabled = enb;
+        _ctrl_transport->usrp_tx_enable(enb);
+    }
+
+    //conditionally disable and enable rx
+    bool disable_rx(void){
+        if (_rx_enabled){
+            enable_rx(false);
+            return true;
+        }
+        return false;
+    }
+    void restore_rx(bool last){
+        if (last != _rx_enabled){
+            enable_rx(last);
+        }
+    }
+
+    //conditionally disable and enable tx
+    bool disable_tx(void){
+        if (_tx_enabled){
+            enable_tx(false);
+            return true;
+        }
+        return false;
+    }
+    void restore_tx(bool last){
+        if (last != _tx_enabled){
+            enable_tx(last);
+        }
+    }
 };
 
 #endif /* INCLUDED_USRP1_IMPL_HPP */

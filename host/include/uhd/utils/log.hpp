@@ -38,7 +38,7 @@
  * (in other words, as often or less often than the current log level)
  * are recorded into the log file. All other messages are sent to null.
  *
- * The default log level is "regular", but can be overridden:
+ * The default log level is "never", but can be overridden:
  *  - at compile time by setting the pre-processor define UHD_LOG_LEVEL.
  *  - at runtime by setting the environment variable UHD_LOG_LEVEL.
  *

@@ -214,8 +214,8 @@ void usrp1_impl::mboard_init(void)
     // Normal mode with no loopback or Rx counting
     _iface->poke32(FR_MODE, 0x00000000);
     _iface->poke32(FR_DEBUG_EN, 0x00000000);
-    _iface->poke32(FR_RX_SAMPLE_RATE_DIV, 0x00000001);
-    _iface->poke32(FR_TX_SAMPLE_RATE_DIV, 0x00000003);
+    _iface->poke32(FR_RX_SAMPLE_RATE_DIV, 0x00000001); //divide by 2
+    _iface->poke32(FR_TX_SAMPLE_RATE_DIV, 0x00000001); //divide by 2
     _iface->poke32(FR_DC_OFFSET_CL_EN, 0x0000000f);
 
     // Reset offset correction registers
@@ -339,7 +339,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
-    case MBOARD_PROP_RX_SUBDEV_SPEC:
+    case MBOARD_PROP_RX_SUBDEV_SPEC:{
         _rx_subdev_spec = val.as<subdev_spec_t>();
         if (_rx_subdev_spec.size() > this->get_num_ddcs()){
             throw uhd::value_error(str(boost::format(
@@ -349,10 +349,12 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         }
         verify_rx_subdev_spec(_rx_subdev_spec, _mboard_proxy->get_link());
         //set the mux and set the number of rx channels
+        bool s = this->disable_rx();
         _iface->poke32(FR_RX_MUX, calc_rx_mux(_rx_subdev_spec, _mboard_proxy->get_link()));
-        return;
+        this->restore_rx(s);
+    }return;
 
-    case MBOARD_PROP_TX_SUBDEV_SPEC:
+    case MBOARD_PROP_TX_SUBDEV_SPEC:{
         _tx_subdev_spec = val.as<subdev_spec_t>();
         if (_tx_subdev_spec.size() > this->get_num_ducs()){
             throw uhd::value_error(str(boost::format(
@@ -362,8 +364,10 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         }
         verify_tx_subdev_spec(_tx_subdev_spec, _mboard_proxy->get_link());
         //set the mux and set the number of tx channels
+        bool s = this->disable_tx();
         _iface->poke32(FR_TX_MUX, calc_tx_mux(_tx_subdev_spec, _mboard_proxy->get_link()));
-        return;
+        this->restore_tx(s);
+    }return;
 
     case MBOARD_PROP_EEPROM_MAP:
         // Step1: commit the map, writing only those values set.

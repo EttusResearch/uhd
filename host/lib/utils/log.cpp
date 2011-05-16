@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -41,6 +42,7 @@ namespace boost{ namespace interprocess{
 #include <stdio.h> //P_tmpdir
 #include <cstdlib> //getenv
 #include <fstream>
+#include <sstream>
 #include <cctype>
 
 namespace fs = boost::filesystem;
@@ -84,22 +86,21 @@ static fs::path get_temp_path(void){
 }
 
 /***********************************************************************
- * The library's streamer resource (static initialization)
+ * Global resources for the logger
  **********************************************************************/
-class null_streambuf_class : public std::streambuf{
-    int overflow(int c) { return c; }
-};
-UHD_SINGLETON_FCN(null_streambuf_class, null_streambuf);
-
-class uhd_logger_stream_resource_class{
+class log_resource_type{
 public:
-    uhd_logger_stream_resource_class(void) : _null_stream(&null_streambuf()){
-        const std::string log_path = (get_temp_path() / "uhd.log").string();
-        _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
-        _file_lock = ip::file_lock(log_path.c_str());
+    boost::mutex mutex;
+    std::ostringstream ss;
+    uhd::_log::verbosity_t verbosity, level;
+
+    log_resource_type(void){
+
+        //file lock pointer must be null
+        _file_lock = NULL;
 
         //set the default log level
-        _log_level = uhd::_log::regularly;
+        level = uhd::_log::never;
 
         //allow override from macro definition
         #ifdef UHD_LOG_LEVEL
@@ -109,41 +110,34 @@ public:
         //allow override from environment variable
         const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
         if (log_level_env != NULL) _set_log_level(log_level_env);
-
     }
 
-    ~uhd_logger_stream_resource_class(void){
+    ~log_resource_type(void){
         _file_stream.close();
+        if (_file_lock != NULL) delete _file_lock;
     }
 
-    std::ostream &get(void){
-        if (_verbosity >= _log_level) return _file_stream;
-        return _null_stream;
-    }
-
-    void aquire(bool lock){
-        if (lock){
-            _mutex.lock();
-            _file_lock.lock();
+    void log_to_file(void){
+        if (verbosity < level) return;
+        if (_file_lock == NULL){
+            const std::string log_path = (get_temp_path() / "uhd.log").string();
+            _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
+            _file_lock = new ip::file_lock(log_path.c_str());
         }
-        else{
-            _file_lock.unlock();
-            _mutex.unlock();
-        }
-    }
-
-    void set_verbosity(uhd::_log::verbosity_t verbosity){
-        _verbosity = verbosity;
+        _file_lock->lock();
+        _file_stream << ss.str() << std::flush;
+        _file_lock->unlock();
     }
 
 private:
     //! set the log level from a string that is either a digit or an enum name
     void _set_log_level(const std::string &log_level_str){
-        const uhd::_log::verbosity_t log_level = uhd::_log::verbosity_t(log_level_str[0]-'0');
-        if (std::isdigit(log_level_str[0]) and log_level >= uhd::_log::always and log_level <= uhd::_log::never){
-            _log_level = log_level;
+        const uhd::_log::verbosity_t log_level_num = uhd::_log::verbosity_t(log_level_str[0]-'0');
+        if (std::isdigit(log_level_str[0]) and log_level_num >= uhd::_log::always and log_level_num <= uhd::_log::never){
+            this->level = log_level_num;
+            return;
         }
-        #define if_lls_equal(name) else if(log_level_str == #name) _log_level = uhd::_log::name
+        #define if_lls_equal(name) else if(log_level_str == #name) this->level = uhd::_log::name
         if_lls_equal(always);
         if_lls_equal(often);
         if_lls_equal(regularly);
@@ -152,20 +146,12 @@ private:
         if_lls_equal(never);
     }
 
-    //available stream objects
+    //file stream and lock:
     std::ofstream _file_stream;
-    std::ostream _null_stream;
-
-    //synchronization mechanisms
-    boost::mutex _mutex; //process-level
-    ip::file_lock _file_lock; //system-level
-
-    //log-level settings
-    uhd::_log::verbosity_t _verbosity;
-    uhd::_log::verbosity_t _log_level;
+    ip::file_lock *_file_lock;
 };
 
-UHD_SINGLETON_FCN(uhd_logger_stream_resource_class, uhd_logger_stream_resource);
+UHD_SINGLETON_FCN(log_resource_type, log_rs);
 
 /***********************************************************************
  * The logger object implementation
@@ -187,14 +173,14 @@ uhd::_log::log::log(
     const unsigned int line,
     const std::string &function
 ){
-    uhd_logger_stream_resource().aquire(true);
-    uhd_logger_stream_resource().set_verbosity(verbosity);
+    log_rs().mutex.lock();
+    log_rs().verbosity = verbosity;
     const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
     const std::string header1 = str(boost::format("-- %s - level %d") % time % int(verbosity));
     const std::string header2 = str(boost::format("-- %s") % function).substr(0, 80);
     const std::string header3 = str(boost::format("-- %s:%u") % get_rel_file_path(file) % line);
     const std::string border = std::string(std::max(std::max(header1.size(), header2.size()), header3.size()), '-');
-    uhd_logger_stream_resource().get()
+    log_rs().ss
         << std::endl
         << border << std::endl
         << header1 << std::endl
@@ -205,10 +191,35 @@ uhd::_log::log::log(
 }
 
 uhd::_log::log::~log(void){
-    uhd_logger_stream_resource().get() << std::endl;
-    uhd_logger_stream_resource().aquire(false);
+    log_rs().ss << std::endl;
+    try{
+        log_rs().log_to_file();
+    }
+    catch(const std::exception &e){
+        /*!
+         * Critical behavior below.
+         * The following steps must happen in order to avoid a lock-up condition.
+         * This is because the message facility will call into the logging facility.
+         * Therefore we must disable the logger (level = never) and unlock the mutex.
+         *
+         * 1) Set logging level to never.
+         * 2) Unlock the mutex.
+         * 3) Send the error message.
+         * 4) Return.
+         */
+        log_rs().level = never;
+        log_rs().ss.str(""); //clear for next call
+        log_rs().mutex.unlock();
+        UHD_MSG(error)
+            << "Logging failed: " << e.what() << std::endl
+            << "Logging has been disabled for this process" << std::endl
+        ;
+        return;
+    }
+    log_rs().ss.str(""); //clear for next call
+    log_rs().mutex.unlock();
 }
 
 std::ostream & uhd::_log::log::operator()(void){
-    return uhd_logger_stream_resource().get();
+    return log_rs().ss;
 }

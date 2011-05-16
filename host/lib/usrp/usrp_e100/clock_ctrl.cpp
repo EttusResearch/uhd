@@ -37,7 +37,6 @@ using namespace uhd;
  **********************************************************************/
 static const bool ENABLE_THE_TEST_OUT = true;
 static const double REFERENCE_INPUT_RATE = 10e6;
-static const double DEFAULT_OUTPUT_RATE = 64e6;
 
 /***********************************************************************
  * Helpers
@@ -168,7 +167,7 @@ static clock_settings_type get_clock_settings(double rate){
  **********************************************************************/
 class usrp_e100_clock_ctrl_impl : public usrp_e100_clock_ctrl{
 public:
-    usrp_e100_clock_ctrl_impl(usrp_e100_iface::sptr iface){
+    usrp_e100_clock_ctrl_impl(usrp_e100_iface::sptr iface, double master_clock_rate){
         _iface = iface;
         _chan_rate = 0.0;
         _out_rate = 0.0;
@@ -181,27 +180,13 @@ public:
         _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
         _ad9522_regs.lock_detect_counter = ad9522_regs_t::LOCK_DETECT_COUNTER_16CYC;
+        _ad9522_regs.divider0_ignore_sync = 1; // master FPGA clock ignores sync (always on, cannot be disabled by sync pulse)
 
         this->use_internal_ref();
 
-        //initialize the FPGA clock to something
-        bool fpga_clock_initialized = false;
-        try{
-            if (not _iface->mb_eeprom["mcr"].empty()){
-                UHD_MSG(status) << "Read FPGA clock rate from EEPROM setting." << std::endl;
-                const double master_clock_rate = boost::lexical_cast<double>(_iface->mb_eeprom["mcr"]);
-                UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
-                this->set_fpga_clock_rate(master_clock_rate);
-                fpga_clock_initialized = true;
-            }
-        }
-        catch(const std::exception &e){
-            UHD_MSG(error) << "Error setting FPGA clock rate from EEPROM: " << e.what() << std::endl;
-        }
-        if (not fpga_clock_initialized){ //was not set... use the default rate
-            UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (DEFAULT_OUTPUT_RATE/1e6) << std::endl;
-            this->set_fpga_clock_rate(DEFAULT_OUTPUT_RATE);
-        }
+        //initialize the FPGA clock rate
+        UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
+        this->set_fpga_clock_rate(master_clock_rate);
 
         this->enable_test_clock(ENABLE_THE_TEST_OUT);
         this->enable_rx_dboard_clock(false);
@@ -358,7 +343,7 @@ public:
         );
         this->send_reg(0x199);
         this->send_reg(0x19a);
-        this->latch_regs();
+        this->soft_sync();
     }
 
     double get_rx_clock_rate(void){
@@ -393,7 +378,7 @@ public:
         );
         this->send_reg(0x196);
         this->send_reg(0x197);
-        this->latch_regs();
+        this->soft_sync();
     }
 
     double get_tx_clock_rate(void){
@@ -409,6 +394,7 @@ public:
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF2;
         _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_MANUAL;
         this->send_reg(0x01C);
+        this->latch_regs();
     }
     
     void use_external_ref(void) {
@@ -417,6 +403,7 @@ public:
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF1;
         _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_MANUAL;
         this->send_reg(0x01C);
+        this->latch_regs();
     }
     
     void use_auto_ref(void) {
@@ -424,6 +411,8 @@ public:
         _ad9522_regs.enable_ref1 = 1;
         _ad9522_regs.select_ref = ad9522_regs_t::SELECT_REF_REF1;
         _ad9522_regs.enb_auto_ref_switchover = ad9522_regs_t::ENB_AUTO_REF_SWITCHOVER_AUTO;
+        this->send_reg(0x01C);
+        this->latch_regs();
     }
 
 private:
@@ -459,15 +448,36 @@ private:
         //wait for calibration done:
         static const boost::uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             boost::uint32_t reg = _iface->read_spi(
                 UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
                 _ad9522_regs.get_read_reg(addr), 24
             );
             _ad9522_regs.set_reg(addr, reg);
-            if (_ad9522_regs.vco_calibration_finished) return;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            if (_ad9522_regs.vco_calibration_finished) goto wait_for_ld;
         }
         UHD_MSG(error) << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
+        wait_for_ld:
+        //wait for digital lock detect:
+        for (size_t ms10 = 0; ms10 < 100; ms10++){
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            boost::uint32_t reg = _iface->read_spi(
+                UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
+                _ad9522_regs.get_read_reg(addr), 24
+            );
+            _ad9522_regs.set_reg(addr, reg);
+            if (_ad9522_regs.digital_lock_detect) return;
+        }
+        UHD_MSG(error) << "USRP-E100 clock control: lock detection timeout" << std::endl;
+    }
+
+    void soft_sync(void){
+        _ad9522_regs.soft_sync = 1;
+        this->send_reg(0x230);
+        this->latch_regs();
+        _ad9522_regs.soft_sync = 0;
+        this->send_reg(0x230);
+        this->latch_regs();
     }
 
     void send_all_regs(void){
@@ -492,6 +502,6 @@ private:
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-usrp_e100_clock_ctrl::sptr usrp_e100_clock_ctrl::make(usrp_e100_iface::sptr iface){
-    return sptr(new usrp_e100_clock_ctrl_impl(iface));
+usrp_e100_clock_ctrl::sptr usrp_e100_clock_ctrl::make(usrp_e100_iface::sptr iface, double master_clock_rate){
+    return sptr(new usrp_e100_clock_ctrl_impl(iface, master_clock_rate));
 }

@@ -64,9 +64,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             "  usrp-e-utility --reclk --fpga=/usr/share/uhd/images/usrp_e1xx_pt_fpga.bin"
         );
         clock_genconfig_main();
-        if (std::system("rm /tmp/usrp*hash") != 0){ //clear hash so driver must reload
-            std::cerr << "No hash to remove! Don't worry, its not a problem." << std::endl;
-        }
     }
 
     std::cout << "Done!" << std::endl;

@@ -61,39 +61,28 @@ class offset_managed_send_buffer : public managed_send_buffer{
 public:
     typedef boost::function<void(offset_send_buffer&, offset_send_buffer&, size_t)> commit_cb_type;
     offset_managed_send_buffer(const commit_cb_type &commit_cb):
-        _expired(true), _commit_cb(commit_cb)
+        _commit_cb(commit_cb)
     {
         /* NOP */
     }
 
-    bool expired(void){return _expired;}
-
     void commit(size_t size){
-        if (_expired) return;
-        this->_commit_cb(_curr_buff, _next_buff, size);
-        _expired = true;
+        if (size != 0) this->_commit_cb(_curr_buff, _next_buff, size);
     }
 
     sptr get_new(
         offset_send_buffer &curr_buff,
         offset_send_buffer &next_buff
     ){
-        _expired = false;
         _curr_buff = curr_buff;
         _next_buff = next_buff;
-        return sptr(this, &offset_managed_send_buffer::fake_deleter);
+        return make_managed_buffer(this);
     }
 
 private:
-    static void fake_deleter(void *){
-        //dont do anything and assume the bastard committed it
-        //static_cast<offset_managed_send_buffer *>(obj)->commit(0);
-    }
-
     void  *get_buff(void) const{return _curr_buff.buff->cast<char *>() + _curr_buff.offset;}
     size_t get_size(void) const{return _curr_buff.buff->size()         - _curr_buff.offset;}
 
-    bool _expired;
     offset_send_buffer _curr_buff, _next_buff;
     commit_cb_type _commit_cb;
 };
@@ -210,7 +199,7 @@ void usrp1_impl::io_impl::flush_send_buff(void){
 bool usrp1_impl::io_impl::get_send_buffs(
     vrt_packet_handler::managed_send_buffs_t &buffs
 ){
-    UHD_ASSERT_THROW(omsb.expired() and buffs.size() == 1);
+    UHD_ASSERT_THROW(buffs.size() == 1);
 
     //try to get a new managed buffer with timeout
     offset_send_buffer next_buff(data_transport->get_send_buff(send_timeout));
@@ -240,12 +229,13 @@ void usrp1_impl::io_init(void){
         boost::bind(&usrp1_impl::rx_stream_on_off, this, _1)
     );
 
+    this->enable_tx(true); //always enabled
     rx_stream_on_off(false);
     _io_impl->flush_send_buff();
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){
-    return _iface->write_firmware_cmd(VRQ_FPGA_SET_RX_ENABLE, enb, 0, 0, 0);
+    this->enable_rx(enb);
     //drain any junk in the receive transport after stop streaming command
     while(not enb and _data_transport->get_recv_buff().get() != NULL){
         /* NOP */

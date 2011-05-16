@@ -258,6 +258,31 @@ Receive Gains:
 
 Bandwidth: 6MHz
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TVRX2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The TVRX2 board has 2 real-mode subdevices.
+It is operated at a low IF.
+
+Receive Subdevices:
+* **Subdevice RX1:** real signal on antenna J100
+* **Subdevice RX2:** real signal on antenna J140
+
+Note: The TVRX2 has always-on AGC, the software controllable gain is the
+final gain stage which controls the AGC set-point for output to ADC.
+
+Receive Gains:
+
+* **IF**, Range: 0.0-30.0dB
+
+Bandwidth: 1.7MHz, 6MHz, 7MHz, 8MHz, 10MHz
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
+* **rssi**: float for measured RSSI in dBm
+* **temperature**: float for measured temperature in degC
+
 ------------------------------------------------------------------------
 Daughterboard Modifications
 ------------------------------------------------------------------------

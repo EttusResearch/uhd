@@ -35,9 +35,10 @@ public:
     /*!
      * Make a new clock control object.
      * \param iface the usrp_e100 iface object
+     * \param master clock rate the FPGA rate
      * \return the clock control object
      */
-    static sptr make(usrp_e100_iface::sptr iface);
+    static sptr make(usrp_e100_iface::sptr iface, double master_clock_rate);
 
     /*!
      * Set the rate of the fpga clock line.

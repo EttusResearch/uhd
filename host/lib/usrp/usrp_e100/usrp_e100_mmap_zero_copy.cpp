@@ -51,14 +51,10 @@ public:
     sptr get_new(void){
         if (fp_verbose) UHD_LOGV(always) << "  make_recv_buff: " << get_size() << std::endl;
         _info->flags = RB_USER_PROCESS; //claim the frame
-        return sptr(this, &usrp_e100_mmap_zero_copy_mrb::fake_deleter);
+        return make_managed_buffer(this);
     }
 
 private:
-    static void fake_deleter(void *obj){
-        static_cast<usrp_e100_mmap_zero_copy_mrb *>(obj)->release();
-    }
-
     const void *get_buff(void) const{return _mem;}
     size_t get_size(void) const{return _info->len;}
 
@@ -90,14 +86,10 @@ public:
     sptr get_new(void){
         if (fp_verbose) UHD_LOGV(always) << "  make_send_buff: " << get_size() << std::endl;
         _info->flags = RB_USER_PROCESS; //claim the frame
-        return sptr(this, &usrp_e100_mmap_zero_copy_msb::fake_deleter);
+        return make_managed_buffer(this);
     }
 
 private:
-    static void fake_deleter(void *obj){
-        static_cast<usrp_e100_mmap_zero_copy_msb *>(obj)->commit(0);
-    }
-
     void *get_buff(void) const{return _mem;}
     size_t get_size(void) const{return _len;}
 
