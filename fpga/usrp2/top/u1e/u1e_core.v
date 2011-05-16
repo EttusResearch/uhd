@@ -36,7 +36,7 @@ module u1e_core
    localparam SR_GLOBAL_RESET = 50; // 1 reg
    localparam SR_REG_TEST32 = 52; // 1 reg
 
-   wire [7:0]	COMPAT_NUM = 8'd3;
+   wire [7:0]	COMPAT_NUM = 8'd4;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
