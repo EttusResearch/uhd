@@ -136,7 +136,6 @@ private:
     uhd::otw_type_t _tx_otw_type;
 
     //configuration shadows
-    uhd::clock_config_t _clock_config;
     uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //clock control
