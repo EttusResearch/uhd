@@ -95,7 +95,8 @@ module hb_dec
    // Data
    wire [IWIDTH-1:0] data_odd_a, data_odd_b, data_odd_c, data_odd_d;
    wire [IWIDTH-1:0] sum1, sum2;	
-   wire [OWIDTH-1:0] final_sum;
+   wire [OWIDTH:0]   final_sum;
+   wire [OWIDTH-1:0] final_sum_clip;
    reg [CWIDTH-1:0]  coeff1, coeff2;
    wire [35:0] 	     prod1, prod2;
 
@@ -170,11 +171,13 @@ module hb_dec
    wire [OWIDTH-1:0] 	bypass_data;
    wire 		stb_final, stb_bypass;
    
-   round_sd #(.WIDTH_IN(ACCWIDTH-4),.WIDTH_OUT(OWIDTH))
+   round_sd #(.WIDTH_IN(ACCWIDTH-3),.WIDTH_OUT(OWIDTH+1))
    final_round (.clk(clk),.reset(rst),
-		.in(final_sum_unrounded[ACCWIDTH-5:0]),.strobe_in(stb_out_pre[8]),
+		.in(final_sum_unrounded[ACCWIDTH-4:0]),.strobe_in(stb_out_pre[8]),
 		.out(final_sum), .strobe_out(stb_final));
 
+   clip #(.bits_in(OWIDTH+1), .bits_out(OWIDTH)) clip (.in(final_sum), .out(final_sum_clip));
+   
    round_sd #(.WIDTH_IN(IWIDTH),.WIDTH_OUT(OWIDTH))
    bypass_round (.clk(clk),.reset(rst),
 		 .in(data_in),.strobe_in(stb_in),
@@ -184,7 +187,7 @@ module hb_dec
    always @(posedge clk)
      begin
 	stb_out  <= bypass ? stb_bypass : stb_final;
-	data_out <= bypass ? bypass_data : final_sum;
+	data_out <= bypass ? bypass_data : final_sum_clip;
      end
    
 endmodule // hb_dec

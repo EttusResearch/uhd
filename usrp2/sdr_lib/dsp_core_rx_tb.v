@@ -36,7 +36,7 @@ module dsp_core_rx_tb();
      (.clk(clk),.rst(rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_i(adc_in), .adc_ovf_i(0),
-      .adc_q(0), .adc_ovf_q(0),
+      .adc_q(adc_in), .adc_ovf_q(0),
       .sample({adc_out_i,adc_out_q}),
       .run(run), .strobe(), .debug());
 
@@ -53,16 +53,26 @@ module dsp_core_rx_tb();
 	set_data <= {16'd0,8'd3,8'd1}; // set decim
 	set_stb <= 1;
 	@(posedge clk);
+	set_addr <= 0;
+	//set_data <= {32'h000F_7FF9};
+	set_data <= {32'h01CA_C083}; // 700 kHz
+	set_stb <= 1;
+	@(posedge clk);
 	set_stb <= 0;
 	@(posedge clk);
 	run <= 1;
      end
+
+   always @(posedge clk)
+     //adc_in <= 18'h1FFFF;
+     adc_in <= 18'h20000;
    
+   /*
    always @(posedge clk)
      if(rst)
        adc_in <= 0;
      else
        adc_in <= adc_in + 4;
    //adc_in <= (($random % 473) + 23)/4;
-   
+*/   
 endmodule // dsp_core_rx_tb
