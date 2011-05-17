@@ -231,7 +231,10 @@ ADD_SUBDIRECTORY(usrp_e_utils)
 ########################################################################
 IF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
     FILE(GLOB _image_files "${UHD_IMAGES_DIR}/*.*")
-    MESSAGE(STATUS "Using images: ${_image_files}")
+    MESSAGE(STATUS "Using images:")
+    FOREACH(_img ${_image_files})
+        MESSAGE(STATUS "  ${_img}")
+    ENDFOREACH(_img)
     INSTALL(FILES ${_image_files} DESTINATION ${PKG_DATA_DIR}/images COMPONENT images)
 ENDIF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
 

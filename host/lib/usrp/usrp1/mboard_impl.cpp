@@ -295,7 +295,7 @@ void usrp1_impl::mboard_get(const wax::obj &key_, wax::obj &val)
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:
-        val = _clock_config;
+        val = clock_config_t::internal();
         return;
 
     case MBOARD_PROP_RX_SUBDEV_SPEC:
@@ -388,6 +388,16 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         ;
         _clock_ctrl->set_master_clock_freq(val.as<double>());
         return;
+
+    case MBOARD_PROP_CLOCK_CONFIG:{
+        clock_config_t clock_config = val.as<clock_config_t>();
+        if (clock_config.ref_source != clock_config_t::REF_INT){
+            throw uhd::value_error("USRP1 clock config: reference source must be set to internal");
+        }
+        if (clock_config.pps_source != clock_config_t::PPS_INT){
+            throw uhd::value_error("USRP1 clock config: PPS source must be set to internal");
+        }
+    }return;
 
     default: UHD_THROW_PROP_SET_ERROR();
     }
