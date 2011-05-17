@@ -61,7 +61,7 @@ public:
         switch(_iface->get_rev()){
         case usrp2_iface::USRP2_REV3:
         case usrp2_iface::USRP2_REV4:
-            _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_ON);
+            _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_ON);
             break;
 
         case usrp2_iface::USRP_N200:
@@ -88,7 +88,7 @@ public:
         switch(_iface->get_rev()){
         case usrp2_iface::USRP2_REV3:
         case usrp2_iface::USRP2_REV4:
-            _iface->poke32(_iface->regs.misc_ctrl_adc, U2_FLAG_MISC_CTRL_ADC_OFF);
+            _iface->poke32(U2_REG_MISC_CTRL_ADC, U2_FLAG_MISC_CTRL_ADC_OFF);
             break;
 
         case usrp2_iface::USRP_N200:

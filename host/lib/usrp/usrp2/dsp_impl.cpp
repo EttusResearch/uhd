@@ -68,18 +68,18 @@ void usrp2_mboard_impl::dsp_init(void){
         ddc_set(DSP_PROP_HOST_RATE, double(get_master_clock_freq()/16), i);
 
         //setup the rx control registers
-        _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //reset
-        _iface->poke32(_iface->regs.rx_ctrl[i].nsamps_per_pkt, _device.get_max_recv_samps_per_packet());
-        _iface->poke32(_iface->regs.rx_ctrl[i].nchannels, 1);
-        _iface->poke32(_iface->regs.rx_ctrl[i].vrt_header, 0
+        _iface->poke32(U2_REG_RX_CTRL_CLEAR(i), 1); //reset
+        _iface->poke32(U2_REG_RX_CTRL_NSAMPS_PP(i), _device.get_max_recv_samps_per_packet());
+        _iface->poke32(U2_REG_RX_CTRL_NCHANNELS(i), 1);
+        _iface->poke32(U2_REG_RX_CTRL_VRT_HDR(i), 0
             | (0x1 << 28) //if data with stream id
             | (0x1 << 26) //has trailer
             | (0x3 << 22) //integer time other
             | (0x1 << 20) //fractional time sample count
         );
-        _iface->poke32(_iface->regs.rx_ctrl[i].vrt_stream_id, usrp2_impl::RECV_SID);
-        _iface->poke32(_iface->regs.rx_ctrl[i].vrt_trailer, 0);
-        _iface->poke32(_iface->regs.time64_tps, size_t(get_master_clock_freq()));
+        _iface->poke32(U2_REG_RX_CTRL_VRT_SID(i), usrp2_impl::RECV_SID);
+        _iface->poke32(U2_REG_RX_CTRL_VRT_TLR(i), 0);
+        _iface->poke32(U2_REG_TIME64_TPS, size_t(get_master_clock_freq()));
     }
 
     //bind and initialize the tx dsps
@@ -94,10 +94,10 @@ void usrp2_mboard_impl::dsp_init(void){
         duc_set(DSP_PROP_HOST_RATE, double(get_master_clock_freq()/16), i);
 
         //init the tx control registers
-        _iface->poke32(_iface->regs.tx_ctrl_clear_state, 1); //reset
-        _iface->poke32(_iface->regs.tx_ctrl_num_chan, 0);    //1 channel
-        _iface->poke32(_iface->regs.tx_ctrl_report_sid, usrp2_impl::ASYNC_SID);
-        _iface->poke32(_iface->regs.tx_ctrl_policy, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+        _iface->poke32(U2_REG_TX_CTRL_CLEAR_STATE, 1); //reset
+        _iface->poke32(U2_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
+        _iface->poke32(U2_REG_TX_CTRL_REPORT_SID, usrp2_impl::ASYNC_SID);
+        _iface->poke32(U2_REG_TX_CTRL_POLICY, U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
     }
 }
 
@@ -113,9 +113,9 @@ static rate_type pick_closest_rate(double exact_rate, const std::vector<rate_typ
 
 void usrp2_mboard_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd, size_t which_dsp){
     _dsp_impl->continuous_streaming[which_dsp] = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-    _iface->poke32(_iface->regs.rx_ctrl[which_dsp].stream_cmd, dsp_type1::calc_stream_cmd_word(stream_cmd));
-    _iface->poke32(_iface->regs.rx_ctrl[which_dsp].time_secs,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(_iface->regs.rx_ctrl[which_dsp].time_ticks, stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
+    _iface->poke32(U2_REG_RX_CTRL_STREAM_CMD(which_dsp), dsp_type1::calc_stream_cmd_word(stream_cmd));
+    _iface->poke32(U2_REG_RX_CTRL_TIME_SECS(which_dsp),  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
+    _iface->poke32(U2_REG_RX_CTRL_TIME_TICKS(which_dsp), stream_cmd.time_spec.get_tick_count(get_master_clock_freq()));
 }
 
 void usrp2_mboard_impl::handle_overflow(size_t which_dsp){
@@ -166,7 +166,7 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val, size_
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(_iface->regs.dsp_rx[which_dsp].freq,
+            _iface->poke32(U2_REG_DSP_RX_FREQ(which_dsp),
                 dsp_type1::calc_cordic_word_and_update(new_freq, get_master_clock_freq())
             );
             _dsp_impl->ddc_freq[which_dsp] = new_freq; //shadow
@@ -178,11 +178,11 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val, size_
             _dsp_impl->ddc_decim[which_dsp] = pick_closest_rate(extact_rate, _dsp_impl->decim_and_interp_rates);
 
             //set the decimation
-            _iface->poke32(_iface->regs.dsp_rx[which_dsp].decim_rate, dsp_type1::calc_cic_filter_word(_dsp_impl->ddc_decim[which_dsp]));
+            _iface->poke32(U2_REG_DSP_RX_DECIM(which_dsp), dsp_type1::calc_cic_filter_word(_dsp_impl->ddc_decim[which_dsp]));
 
             //set the scaling
             static const boost::int16_t default_rx_scale_iq = 1024;
-            _iface->poke32(_iface->regs.dsp_rx[which_dsp].scale_iq,
+            _iface->poke32(U2_REG_DSP_RX_SCALE_IQ(which_dsp),
                 dsp_type1::calc_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
             );
         }
@@ -242,7 +242,7 @@ void usrp2_mboard_impl::duc_set(const wax::obj &key_, const wax::obj &val, size_
             if (zone == 0) _codec_ctrl->set_tx_mod_mode(0); //no shift
             else _codec_ctrl->set_tx_mod_mode(sign*4/zone); //DAC interp = 4
 
-            _iface->poke32(_iface->regs.dsp_tx_freq,
+            _iface->poke32(U2_REG_DSP_TX_FREQ,
                 dsp_type1::calc_cordic_word_and_update(new_freq, codec_rate)
             );
             _dsp_impl->duc_freq[which_dsp] = new_freq + dac_shift; //shadow
@@ -254,10 +254,10 @@ void usrp2_mboard_impl::duc_set(const wax::obj &key_, const wax::obj &val, size_
             _dsp_impl->duc_interp[which_dsp] = pick_closest_rate(extact_rate, _dsp_impl->decim_and_interp_rates);
 
             //set the interpolation
-            _iface->poke32(_iface->regs.dsp_tx_interp_rate, dsp_type1::calc_cic_filter_word(_dsp_impl->duc_interp[which_dsp]));
+            _iface->poke32(U2_REG_DSP_TX_INTERP_RATE, dsp_type1::calc_cic_filter_word(_dsp_impl->duc_interp[which_dsp]));
 
             //set the scaling
-            _iface->poke32(_iface->regs.dsp_tx_scale_iq, dsp_type1::calc_iq_scale_word(_dsp_impl->duc_interp[which_dsp]));
+            _iface->poke32(U2_REG_DSP_TX_SCALE_IQ, dsp_type1::calc_iq_scale_word(_dsp_impl->duc_interp[which_dsp]));
         }
         return;
 

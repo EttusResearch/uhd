@@ -18,90 +18,41 @@
 #ifndef INCLUDED_USRP2_REGS_HPP
 #define INCLUDED_USRP2_REGS_HPP
 
-typedef struct {
-    int misc_ctrl_clock;
-    int misc_ctrl_serdes;
-    int misc_ctrl_adc;
-    int misc_ctrl_leds;
-    int misc_ctrl_phy;
-    int misc_ctrl_dbg_mux;
-    int misc_ctrl_ram_page;
-    int misc_ctrl_flush_icache;
-    int misc_ctrl_led_src;
-    int time64_secs; // value to set absolute secs to on next PPS
-    int time64_ticks; // value to set absolute ticks to on next PPS
-    int time64_flags; // flags -- see chart below
-    int time64_imm; // set immediate (0=latch on next pps, 1=latch immediate, default=0)
-    int time64_tps; // ticks per second rollover count
-    int time64_mimo_sync;
-    int status;
-    int time64_secs_rb_imm;
-    int time64_ticks_rb_imm;
-    int time64_secs_rb_pps;
-    int time64_ticks_rb_pps;
-    int compat_num_rb;
-    int irq_rb;
-    int dsp_tx_freq;
-    int dsp_tx_scale_iq;
-    int dsp_tx_interp_rate;
-    int dsp_tx_mux;
-    struct{
-        int freq;
-        int scale_iq;
-        int decim_rate;
-        int dcoffset_i;
-        int dcoffset_q;
-        int mux;
-    } dsp_rx[2];
-    int gpio_base;
-    int gpio_io;
-    int gpio_ddr;
-    int gpio_tx_sel;
-    int gpio_rx_sel;
-    int atr_base;
-    int atr_idle_txside;
-    int atr_idle_rxside;
-    int atr_intx_txside;
-    int atr_intx_rxside;
-    int atr_inrx_txside;
-    int atr_inrx_rxside;
-    int atr_full_txside;
-    int atr_full_rxside;
-    struct{
-        int stream_cmd;
-        int time_secs;
-        int time_ticks;
-        int clear_overrun;
-        int vrt_header;
-        int vrt_stream_id;
-        int vrt_trailer;
-        int nsamps_per_pkt;
-        int nchannels;
-    } rx_ctrl[2];
-    int tx_ctrl_num_chan;
-    int tx_ctrl_clear_state;
-    int tx_ctrl_report_sid;
-    int tx_ctrl_policy;
-    int tx_ctrl_cycles_per_up;
-    int tx_ctrl_packets_per_up;
-} usrp2_regs_t;
+////////////////////////////////////////////////////////////////////////
+// Define slave bases
+////////////////////////////////////////////////////////////////////////
+#define ROUTER_RAM_BASE     0x4000
+#define SPI_BASE            0x5000
+#define I2C_BASE            0x5400
+#define GPIO_BASE           0x5800
+#define READBACK_BASE       0x5C00
+#define ETH_BASE            0x6000
+#define SETTING_REGS_BASE   0x7000
+#define PIC_BASE            0x8000
+#define UART_BASE           0x8800
+#define ATR_BASE            0x8C00
 
-extern const usrp2_regs_t usrp2_regs; //the register definitions, set in usrp2_regs.cpp and usrp2p_regs.cpp
+////////////////////////////////////////////////////////////////////////
+// Setting register offsets
+////////////////////////////////////////////////////////////////////////
+#define SR_MISC       0   // 7 regs
+#define SR_SIMTIMER   8   // 2
+#define SR_TIME64    10   // 6
+#define SR_BUF_POOL  16   // 4
 
-usrp2_regs_t usrp2_get_regs(void);
+#define SR_RX_FRONT  24   // 5
+#define SR_RX_CTRL0  32   // 9
+#define SR_RX_DSP0   48   // 7
+#define SR_RX_CTRL1  80   // 9
+#define SR_RX_DSP1   96   // 7
 
-////////////////////////////////////////////////////
-// Settings Bus, Slave #7, Not Byte Addressable!
-//
-// Output-only from processor point-of-view.
-// 1KB of address space (== 256 32-bit write-only regs)
+#define SR_TX_FRONT 128   // ?
+#define SR_TX_CTRL  144   // 6
+#define SR_TX_DSP   160   // 5
 
+#define SR_UDP_SM   192   // 64
 
-//#define MISC_OUTPUT_BASE        0xD400
-//#define TX_PROTOCOL_ENGINE_BASE 0xD480
-//#define RX_PROTOCOL_ENGINE_BASE 0xD4C0
-//#define BUFFER_POOL_CTRL_BASE   0xD500
-//#define LAST_SETTING_REG        0xD7FC  // last valid setting register
+#define U2_REG_SR_ADDR(sr) (SETTING_REGS_BASE + (4 * (sr)))
 
 /////////////////////////////////////////////////
 // SPI Slave Constants
@@ -120,6 +71,16 @@ usrp2_regs_t usrp2_get_regs(void);
 /////////////////////////////////////////////////
 // Misc Control
 ////////////////////////////////////////////////
+#define U2_REG_MISC_CTRL_CLOCK U2_REG_SR_ADDR(0)
+#define U2_REG_MISC_CTRL_SERDES U2_REG_SR_ADDR(1)
+#define U2_REG_MISC_CTRL_ADC U2_REG_SR_ADDR(2)
+#define U2_REG_MISC_CTRL_LEDS U2_REG_SR_ADDR(3)
+#define U2_REG_MISC_CTRL_PHY U2_REG_SR_ADDR(4)
+#define U2_REG_MISC_CTRL_DBG_MUX U2_REG_SR_ADDR(5)
+#define U2_REG_MISC_CTRL_RAM_PAGE U2_REG_SR_ADDR(6)
+#define U2_REG_MISC_CTRL_FLUSH_ICACHE U2_REG_SR_ADDR(7)
+#define U2_REG_MISC_CTRL_LED_SRC U2_REG_SR_ADDR(8)
+
 #define U2_FLAG_MISC_CTRL_SERDES_ENABLE 8
 #define U2_FLAG_MISC_CTRL_SERDES_PRBSEN 4
 #define U2_FLAG_MISC_CTRL_SERDES_LOOPEN 2
@@ -131,22 +92,12 @@ usrp2_regs_t usrp2_get_regs(void);
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
 ////////////////////////////////////////////////
-  /*!
-   * \brief Time 64 flags
-   *
-   * <pre>
-   *
-   *    3                   2                   1                       
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-----------------------------------------------------------+-+-+
-   * |                                                           |S|P|
-   * +-----------------------------------------------------------+-+-+
-   *
-   * P - PPS edge selection (0=negedge, 1=posedge, default=0)
-   * S - Source (0=sma, 1=mimo, 0=default)
-   *
-   * </pre>
-   */
+#define U2_REG_TIME64_SECS U2_REG_SR_ADDR(SR_TIME64 + 0)
+#define U2_REG_TIME64_TICKS U2_REG_SR_ADDR(SR_TIME64 + 1)
+#define U2_REG_TIME64_FLAGS U2_REG_SR_ADDR(SR_TIME64 + 2)
+#define U2_REG_TIME64_IMM U2_REG_SR_ADDR(SR_TIME64 + 3)
+#define U2_REG_TIME64_TPS U2_REG_SR_ADDR(SR_TIME64 + 4)
+#define U2_REG_TIME64_MIMO_SYNC U2_REG_SR_ADDR(SR_TIME64 + 5)
 
 //pps flags (see above)
 #define U2_FLAG_TIME64_PPS_NEGEDGE (0 << 0)
@@ -158,74 +109,43 @@ usrp2_regs_t usrp2_get_regs(void);
 #define U2_FLAG_TIME64_LATCH_NEXT_PPS 0
 
 /////////////////////////////////////////////////
+// Readback regs
+////////////////////////////////////////////////
+#define U2_REG_STATUS READBACK_BASE + 4*8
+#define U2_REG_TIME64_SECS_RB_IMM READBACK_BASE + 4*10
+#define U2_REG_TIME64_TICKS_RB_IMM READBACK_BASE + 4*11
+#define U2_REG_COMPAT_NUM_RB READBACK_BASE + 4*12
+#define U2_REG_IRQ_RB READBACK_BASE + 4*13
+#define U2_REG_TIME64_SECS_RB_PPS READBACK_BASE + 4*14
+#define U2_REG_TIME64_TICKS_RB_PPS READBACK_BASE + 4*15
+
+/////////////////////////////////////////////////
 // DSP TX Regs
 ////////////////////////////////////////////////
-
-  /*!
-   * \brief output mux configuration.
-   *
-   * <pre>
-   *     3                   2                   1                       
-   *   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   *  +-------------------------------+-------+-------+-------+-------+
-   *  |                                               | DAC1  |  DAC0 |
-   *  +-------------------------------+-------+-------+-------+-------+
-   * 
-   *  There are N DUCs (1 now) with complex inputs and outputs.
-   *  There are two DACs.
-   * 
-   *  Each 4-bit DACx field specifies the source for the DAC
-   *  Each subfield is coded like this: 
-   * 
-   *     3 2 1 0
-   *    +-------+
-   *    |   N   |
-   *    +-------+
-   * 
-   *  N specifies which DUC output is connected to this DAC.
-   * 
-   *   N   which interp output
-   *  ---  -------------------
-   *   0   DUC 0 I
-   *   1   DUC 0 Q
-   *   2   DUC 1 I
-   *   3   DUC 1 Q
-   *   F   All Zeros
-   *   
-   * The default value is 0x10
-   * </pre>
-   */
-
+#define U2_REG_DSP_TX_FREQ U2_REG_SR_ADDR(SR_TX_DSP + 0)
+#define U2_REG_DSP_TX_SCALE_IQ U2_REG_SR_ADDR(SR_TX_DSP + 1)
+#define U2_REG_DSP_TX_INTERP_RATE U2_REG_SR_ADDR(SR_TX_DSP + 2)
+#define U2_REG_DSP_TX_MUX U2_REG_SR_ADDR(SR_TX_DSP + 4)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
+#define U2_REG_DSP_RX_HELPER(which, offset) ((which == 0)? \
+    (U2_REG_SR_ADDR(SR_RX_DSP0 + offset)) : \
+    (U2_REG_SR_ADDR(SR_RX_DSP1 + offset)))
 
-  /*!
-   * \brief input mux configuration.
-   *
-   * This determines which ADC (or constant zero) is connected to 
-   * each DDC input.  There are N DDCs (1 now).  Each has two inputs.
-   *
-   * <pre>
-   * Mux value:
-   *
-   *    3                   2                   1                       
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   * |                                                       |Q0 |I0 |
-   * +-------+-------+-------+-------+-------+-------+-------+-------+
-   *
-   * Each 2-bit I field is either 00 (A/D A), 01 (A/D B) or 1X (const zero)
-   * Each 2-bit Q field is either 00 (A/D A), 01 (A/D B) or 1X (const zero)
-   *
-   * The default value is 0x4
-   * </pre>
-   */
+#define U2_REG_DSP_RX_FREQ(which)       U2_REG_DSP_RX_HELPER(which, 0)
+#define U2_REG_DSP_RX_SCALE_IQ(which)   U2_REG_DSP_RX_HELPER(which, 1)
+#define U2_REG_DSP_RX_DECIM(which)      U2_REG_DSP_RX_HELPER(which, 2)
+#define U2_REG_DSP_RX_MUX(which)        U2_REG_DSP_RX_HELPER(which, 5)
 
 ////////////////////////////////////////////////
-// GPIO, Slave 4
+// GPIO
 ////////////////////////////////////////////////
+#define U2_REG_GPIO_IO GPIO_BASE + 0
+#define U2_REG_GPIO_DDR GPIO_BASE + 4
+#define U2_REG_GPIO_TX_SEL GPIO_BASE + 8
+#define U2_REG_GPIO_RX_SEL GPIO_BASE + 12
 
 // each 2-bit sel field is layed out this way
 #define U2_FLAG_GPIO_SEL_GPIO      0 // if pin is an output, set by GPIO register
@@ -234,35 +154,43 @@ usrp2_regs_t usrp2_get_regs(void);
 #define U2_FLAG_GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric
 
 ///////////////////////////////////////////////////
-// ATR Controller, Slave 11
+// ATR Controller
 ////////////////////////////////////////////////
-
+#define U2_REG_ATR_IDLE_TXSIDE ATR_BASE + 0
+#define U2_REG_ATR_IDLE_RXSIDE ATR_BASE + 2
+#define U2_REG_ATR_INTX_TXSIDE ATR_BASE + 4
+#define U2_REG_ATR_INTX_RXSIDE ATR_BASE + 6
+#define U2_REG_ATR_INRX_TXSIDE ATR_BASE + 8
+#define U2_REG_ATR_INRX_RXSIDE ATR_BASE + 10
+#define U2_REG_ATR_FULL_TXSIDE ATR_BASE + 12
+#define U2_REG_ATR_FULL_RXSIDE ATR_BASE + 14
 
 ///////////////////////////////////////////////////
 // RX CTRL regs
 ///////////////////////////////////////////////////
-// The following 3 are logically a single command register.
-// They are clocked into the underlying fifo when time_ticks is written.
-//#define U2_REG_RX_CTRL_STREAM_CMD        _SR_ADDR(SR_RX_CTRL + 0) // {now, chain, num_samples(30)
-//#define U2_REG_RX_CTRL_TIME_SECS         _SR_ADDR(SR_RX_CTRL + 1)
-//#define U2_REG_RX_CTRL_TIME_TICKS        _SR_ADDR(SR_RX_CTRL + 2)
+#define U2_REG_RX_CTRL_HELPER(which, offset) ((which == 0)? \
+    (U2_REG_SR_ADDR(SR_RX_CTRL0 + offset)) : \
+    (U2_REG_SR_ADDR(SR_RX_CTRL1 + offset)))
 
-//#define U2_REG_RX_CTRL_CLEAR_STATE       _SR_ADDR(SR_RX_CTRL + 3)
-//#define U2_REG_RX_CTRL_VRT_HEADER        _SR_ADDR(SR_RX_CTRL + 4) // word 0 of packet.  FPGA fills in packet counter
-//#define U2_REG_RX_CTRL_VRT_STREAM_ID     _SR_ADDR(SR_RX_CTRL + 5) // word 1 of packet.
-//#define U2_REG_RX_CTRL_VRT_TRAILER       _SR_ADDR(SR_RX_CTRL + 6)
-//#define U2_REG_RX_CTRL_NSAMPS_PER_PKT    _SR_ADDR(SR_RX_CTRL + 7)
-//#define U2_REG_RX_CTRL_NCHANNELS         _SR_ADDR(SR_RX_CTRL + 8) // 1 in basic case, up to 4 for vector sources
+#define U2_REG_RX_CTRL_STREAM_CMD(which)     U2_REG_RX_CTRL_HELPER(which, 0)
+#define U2_REG_RX_CTRL_TIME_SECS(which)      U2_REG_RX_CTRL_HELPER(which, 1)
+#define U2_REG_RX_CTRL_TIME_TICKS(which)     U2_REG_RX_CTRL_HELPER(which, 2)
+#define U2_REG_RX_CTRL_CLEAR(which)          U2_REG_RX_CTRL_HELPER(which, 3)
+#define U2_REG_RX_CTRL_VRT_HDR(which)        U2_REG_RX_CTRL_HELPER(which, 4)
+#define U2_REG_RX_CTRL_VRT_SID(which)        U2_REG_RX_CTRL_HELPER(which, 5)
+#define U2_REG_RX_CTRL_VRT_TLR(which)        U2_REG_RX_CTRL_HELPER(which, 6)
+#define U2_REG_RX_CTRL_NSAMPS_PP(which)      U2_REG_RX_CTRL_HELPER(which, 7)
+#define U2_REG_RX_CTRL_NCHANNELS(which)      U2_REG_RX_CTRL_HELPER(which, 8)
 
 ///////////////////////////////////////////////////
 // TX CTRL regs
 ///////////////////////////////////////////////////
-//#define U2_REG_TX_CTRL_NUM_CHAN          _SR_ADDR(SR_TX_CTRL + 0)
-//#define U2_REG_TX_CTRL_CLEAR_STATE       _SR_ADDR(SR_TX_CTRL + 1)
-//#define U2_REG_TX_CTRL_REPORT_SID        _SR_ADDR(SR_TX_CTRL + 2)
-//#define U2_REG_TX_CTRL_POLICY            _SR_ADDR(SR_TX_CTRL + 3)
-//#define U2_REG_TX_CTRL_CYCLES_PER_UP     _SR_ADDR(SR_TX_CTRL + 4)
-//#define U2_REG_TX_CTRL_PACKETS_PER_UP    _SR_ADDR(SR_TX_CTRL + 5)
+#define U2_REG_TX_CTRL_NUM_CHAN U2_REG_SR_ADDR(SR_TX_CTRL + 0)
+#define U2_REG_TX_CTRL_CLEAR_STATE U2_REG_SR_ADDR(SR_TX_CTRL + 1)
+#define U2_REG_TX_CTRL_REPORT_SID U2_REG_SR_ADDR(SR_TX_CTRL + 2)
+#define U2_REG_TX_CTRL_POLICY U2_REG_SR_ADDR(SR_TX_CTRL + 3)
+#define U2_REG_TX_CTRL_CYCLES_PER_UP U2_REG_SR_ADDR(SR_TX_CTRL + 4)
+#define U2_REG_TX_CTRL_PACKETS_PER_UP U2_REG_SR_ADDR(SR_TX_CTRL + 5)
 
 #define U2_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
 #define U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)

@@ -41,6 +41,5 @@ IF(ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.cpp
     )
 ENDIF(ENABLE_USRP2)

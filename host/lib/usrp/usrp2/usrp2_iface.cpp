@@ -97,7 +97,6 @@ public:
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
-        regs = usrp2_get_regs(); //reg map identical across all boards
     }
 
     ~usrp2_iface_impl(void){
@@ -123,7 +122,7 @@ public:
     bool is_device_locked(void){
         boost::uint32_t lock_secs = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
         boost::uint32_t lock_gpid = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_GPID);
-        boost::uint32_t curr_secs = this->peek32(this->regs.time64_secs_rb_imm);
+        boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
 
         //if the difference is larger, assume not locked anymore
         if (curr_secs - lock_secs >= 3) return false;
@@ -139,7 +138,7 @@ public:
             this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
             while(true){
                 //re-lock in loop
-                boost::uint32_t curr_secs = this->peek32(this->regs.time64_secs_rb_imm);
+                boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
                 this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, curr_secs);
                 //sleep for a bit
                 boost::this_thread::sleep(boost::posix_time::milliseconds(1500));

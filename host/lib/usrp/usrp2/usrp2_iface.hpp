@@ -72,11 +72,6 @@ public:
     //! Is this device locked?
     virtual bool is_device_locked(void) = 0;
 
-    /*!
-     * Register map selected from USRP2/USRP2+.
-     */
-    usrp2_regs_t regs;
-
     //motherboard eeprom map structure
     uhd::usrp::mboard_eeprom_t mb_eeprom;
 };

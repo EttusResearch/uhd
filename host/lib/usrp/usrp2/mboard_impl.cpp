@@ -71,7 +71,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
 {
 
     //check the fpga compatibility number
-    const boost::uint32_t fpga_compat_num = _iface->peek32(_iface->regs.compat_num_rb);
+    const boost::uint32_t fpga_compat_num = _iface->peek32(U2_REG_COMPAT_NUM_RB);
     if (fpga_compat_num != USRP2_FPGA_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
             "\nPlease update the firmware and FPGA images for your device.\n"
@@ -119,7 +119,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     const double ups_per_sec = device_addr.cast<double>("ups_per_sec", 0.0);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
-        _iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
+        _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
     }
 
     //setting the packets per update (enabled by default)
@@ -127,7 +127,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     const double ups_per_fifo = device_addr.cast<double>("ups_per_fifo", 8.0);
     if (ups_per_fifo > 0.0){
         const size_t packets_per_up = size_t(usrp2_impl::sram_bytes/ups_per_fifo/send_frame_size);
-        _iface->poke32(_iface->regs.tx_ctrl_packets_per_up, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
+        _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | packets_per_up);
     }
 
     //initialize the clock configuration
@@ -143,7 +143,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         );
     }
     else {
-        _mimo_clocking_mode_is_master = (_iface->peek32(_iface->regs.status) & (1 << 8)) != 0;
+        _mimo_clocking_mode_is_master = (_iface->peek32(U2_REG_STATUS) & (1 << 8)) != 0;
     }
     UHD_MSG(status) << boost::format("mboard%d is MIMO %s") % _index %
         (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
@@ -171,7 +171,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         this->issue_ddc_stream_cmd(stream_cmd, i);
         device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for lingering
         device.dsp_xports.at(index)->get_recv_buff(0.01).get(); //recv with timeout for expected
-        _iface->poke32(_iface->regs.rx_ctrl[i].clear_overrun, 1); //resets sequence
+        _iface->poke32(U2_REG_RX_CTRL_CLEAR(i), 1); //resets sequence
     }
     //------------------------------------------------------------------
 }
@@ -180,8 +180,8 @@ usrp2_mboard_impl::~usrp2_mboard_impl(void){
     //Safely destruct all RAII objects in an mboard.
     //This prevents the mboard deconstructor from throwing,
     //which allows the device to be safely deconstructed.
-    UHD_SAFE_CALL(_iface->poke32(_iface->regs.tx_ctrl_cycles_per_up, 0);)
-    UHD_SAFE_CALL(_iface->poke32(_iface->regs.tx_ctrl_packets_per_up, 0);)
+    UHD_SAFE_CALL(_iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, 0);)
+    UHD_SAFE_CALL(_iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, 0);)
     UHD_SAFE_CALL(_dboard_manager.reset();)
     UHD_SAFE_CALL(_dboard_iface.reset();)
     UHD_SAFE_CALL(_codec_ctrl.reset();)
@@ -204,13 +204,13 @@ void usrp2_mboard_impl::update_clock_config(void){
     //translate pps source enums
     switch(_clock_config.pps_source){
     case clock_config_t::PPS_MIMO:
-        _iface->poke32(_iface->regs.time64_mimo_sync,
+        _iface->poke32(U2_REG_TIME64_MIMO_SYNC,
             (1 << 8) | (mimo_clock_sync_delay_cycles & 0xff)
         );
         break;
 
     case clock_config_t::PPS_SMA:
-        _iface->poke32(_iface->regs.time64_mimo_sync, 0);
+        _iface->poke32(U2_REG_TIME64_MIMO_SYNC, 0);
         pps_flags |= U2_FLAG_TIME64_PPS_SMA;
         break;
 
@@ -225,16 +225,16 @@ void usrp2_mboard_impl::update_clock_config(void){
     }
 
     //set the pps flags
-    _iface->poke32(_iface->regs.time64_flags, pps_flags);
+    _iface->poke32(U2_REG_TIME64_FLAGS, pps_flags);
 
     //clock source ref 10mhz
     switch(_iface->get_rev()){
     case usrp2_iface::USRP_N200:
     case usrp2_iface::USRP_N210:
         switch(_clock_config.ref_source){
-        case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x12); break;
-        case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
+        case clock_config_t::REF_INT : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12); break;
+        case clock_config_t::REF_SMA : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C); break;
+        case clock_config_t::REF_MIMO: _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15); break;
         default: throw uhd::value_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
@@ -243,9 +243,9 @@ void usrp2_mboard_impl::update_clock_config(void){
     case usrp2_iface::USRP2_REV3:
     case usrp2_iface::USRP2_REV4:
         switch(_clock_config.ref_source){
-        case clock_config_t::REF_INT : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x10); break;
-        case clock_config_t::REF_SMA : _iface->poke32(_iface->regs.misc_ctrl_clock, 0x1C); break;
-        case clock_config_t::REF_MIMO: _iface->poke32(_iface->regs.misc_ctrl_clock, 0x15); break;
+        case clock_config_t::REF_INT : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10); break;
+        case clock_config_t::REF_SMA : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C); break;
+        case clock_config_t::REF_MIMO: _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15); break;
         default: throw uhd::value_error("unhandled clock configuration reference source");
         }
         _clock_ctrl->enable_external_ref(_clock_config.ref_source != clock_config_t::REF_INT);
@@ -280,14 +280,14 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
     if (not _mimo_clocking_mode_is_master) return;
 
     //set the ticks
-    _iface->poke32(_iface->regs.time64_ticks, time_spec.get_tick_count(get_master_clock_freq()));
+    _iface->poke32(U2_REG_TIME64_TICKS, time_spec.get_tick_count(get_master_clock_freq()));
 
     //set the flags register
     boost::uint32_t imm_flags = (now)? U2_FLAG_TIME64_LATCH_NOW : U2_FLAG_TIME64_LATCH_NEXT_PPS;
-    _iface->poke32(_iface->regs.time64_imm, imm_flags);
+    _iface->poke32(U2_REG_TIME64_IMM, imm_flags);
 
     //set the seconds (latches in all 3 registers)
-    _iface->poke32(_iface->regs.time64_secs, boost::uint32_t(time_spec.get_full_secs()));
+    _iface->poke32(U2_REG_TIME64_SECS, boost::uint32_t(time_spec.get_full_secs()));
 }
 
 /***********************************************************************
@@ -346,17 +346,17 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TIME_NOW: while(true){
-        uint32_t secs = _iface->peek32(_iface->regs.time64_secs_rb_imm);
-        uint32_t ticks = _iface->peek32(_iface->regs.time64_ticks_rb_imm);
-        if (secs != _iface->peek32(_iface->regs.time64_secs_rb_imm)) continue;
+        uint32_t secs = _iface->peek32(U2_REG_TIME64_SECS_RB_IMM);
+        uint32_t ticks = _iface->peek32(U2_REG_TIME64_TICKS_RB_IMM);
+        if (secs != _iface->peek32(U2_REG_TIME64_SECS_RB_IMM)) continue;
         val = time_spec_t(secs, ticks, get_master_clock_freq());
         return;
     }
 
     case MBOARD_PROP_TIME_PPS: while(true){
-        uint32_t secs = _iface->peek32(_iface->regs.time64_secs_rb_pps);
-        uint32_t ticks = _iface->peek32(_iface->regs.time64_ticks_rb_pps);
-        if (secs != _iface->peek32(_iface->regs.time64_secs_rb_pps)) continue;
+        uint32_t secs = _iface->peek32(U2_REG_TIME64_SECS_RB_PPS);
+        uint32_t ticks = _iface->peek32(U2_REG_TIME64_TICKS_RB_PPS);
+        if (secs != _iface->peek32(U2_REG_TIME64_SECS_RB_PPS)) continue;
         val = time_spec_t(secs, ticks, get_master_clock_freq());
         return;
     }
@@ -406,11 +406,11 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
 }
 
 bool usrp2_mboard_impl::get_mimo_locked(void) {
-  return bool((_iface->peek32(_iface->regs.irq_rb) & (1<<10)) > 0);
+  return bool((_iface->peek32(U2_REG_IRQ_RB) & (1<<10)) > 0);
 }
 
 bool usrp2_mboard_impl::get_ref_locked(void) {
-  return bool((_iface->peek32(_iface->regs.irq_rb) & (1<<11)) > 0);
+  return bool((_iface->peek32(U2_REG_IRQ_RB) & (1<<11)) > 0);
 }
 
 /***********************************************************************
@@ -440,7 +440,7 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         UHD_ASSERT_THROW(_rx_subdev_spec.size() <= NUM_RX_DSPS);
         //set the mux
         for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
-            if (_rx_subdev_spec.size() >= 1) _iface->poke32(_iface->regs.dsp_rx[i].mux, dsp_type1::calc_rx_mux_word(
+            _iface->poke32(U2_REG_DSP_RX_MUX(i), dsp_type1::calc_rx_mux_word(
                 _dboard_manager->get_rx_subdev(_rx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
             ));
         }
@@ -454,7 +454,7 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
         UHD_ASSERT_THROW(_tx_subdev_spec.size() <= NUM_TX_DSPS);
         //set the mux
         for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
-            _iface->poke32(_iface->regs.dsp_tx_mux, dsp_type1::calc_tx_mux_word(
+            _iface->poke32(U2_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
                 _dboard_manager->get_tx_subdev(_tx_subdev_spec[i].sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
             ));
         }
