@@ -36,46 +36,46 @@ IF(LINUX AND EXISTS "/etc/redhat-release")
 ENDIF()
 
 ########################################################################
+# Set generator type for recognized systems
+########################################################################
+IF(CPACK_GENERATOR)
+    #already set
+ELSEIF(APPLE)
+    SET(CPACK_GENERATOR PackageMaker)
+ELSEIF(WIN32)
+    SET(CPACK_GENERATOR NSIS)
+ELSEIF(DEBIAN)
+    SET(CPACK_GENERATOR DEB)
+ELSEIF(REDHAT)
+    SET(CPACK_GENERATOR RPM)
+ELSE()
+    SET(CPACK_GENERATOR TGZ)
+ENDIF()
+
+########################################################################
 # Setup package file name
 ########################################################################
-IF(UHD_RELEASE_MODE)
+FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
+IF((DEBIAN OR REDHAT) AND LSB_RELEASE_EXECUTABLE)
 
-    #set generator type for recognized systems
-    IF(APPLE)
-        SET(CPACK_GENERATOR PackageMaker)
-    ELSEIF(WIN32)
-        SET(CPACK_GENERATOR NSIS)
-    ELSEIF(DEBIAN)
-        SET(CPACK_GENERATOR DEB)
-    ELSEIF(REDHAT)
-        SET(CPACK_GENERATOR RPM)
-    ELSE()
-        SET(CPACK_GENERATOR TGZ)
-    ENDIF()
+    #extract system information by executing the commands
+    EXECUTE_PROCESS(
+        COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
+        OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    EXECUTE_PROCESS(
+        COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
+        OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 
-    FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
-    IF(LSB_RELEASE_EXECUTABLE)
+    #set a more sensible package name for this system
+    SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}-${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}")
 
-        #extract system information by executing the commands
-        EXECUTE_PROCESS(
-            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
-            OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        EXECUTE_PROCESS(
-            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
-            OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+ENDIF()
 
-        #set a more sensible package name for this system
-        SET(CPACK_PACKAGE_FILE_NAME "UHD-${UHD_VERSION}-${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}")
-
-    ENDIF(LSB_RELEASE_EXECUTABLE)
-
-    IF(${CPACK_GENERATOR} STREQUAL NSIS)
-        SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${CMAKE_PROJECT_NAME}")
-    ENDIF()
-
-ENDIF(UHD_RELEASE_MODE)
+IF(${CPACK_GENERATOR} STREQUAL NSIS)
+    SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${CMAKE_PROJECT_NAME}")
+ENDIF()
 
 ########################################################################
 # Setup CPack General
