@@ -363,6 +363,8 @@ public:
         case 0x0400: return USRP2_REV4;
         case 0x0A00: return USRP_N200;
         case 0x0A01: return USRP_N210;
+        case 0x0A10: return USRP_N200_R4;
+        case 0x0A11: return USRP_N210_R4;
         }
         return USRP_NXXX; //unknown type
     }
@@ -373,6 +375,8 @@ public:
         case USRP2_REV4: return "USRP2-REV4";
         case USRP_N200: return "USRP-N200";
         case USRP_N210: return "USRP-N210";
+        case USRP_N200_R4: return "USRP-N200-REV4";
+        case USRP_N210_R4: return "USRP-N210-REV4";
         case USRP_NXXX: return "USRP-N???";
         }
         UHD_THROW_INVALID_CODE_PATH();

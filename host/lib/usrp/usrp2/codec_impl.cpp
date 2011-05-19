@@ -67,6 +67,8 @@ void usrp2_mboard_impl::rx_codec_get(const wax::obj &key_, wax::obj &val){
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
             val = _iface->get_cname() + " adc - ads62p44";
             break;
 

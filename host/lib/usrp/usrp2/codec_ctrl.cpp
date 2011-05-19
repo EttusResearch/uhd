@@ -75,6 +75,22 @@ public:
             this->set_rx_analog_gain(1);
             break;
 
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
+            _ads62p44_regs.reset = 1;
+            this->send_ads62p44_reg(0x00); //issue a reset to the ADC
+            //everything else should be pretty much default, i think
+            //_ads62p44_regs.decimation = DECIMATION_DECIMATE_1;
+            _ads62p44_regs.override = 1;
+            this->send_ads62p44_reg(0x14);
+            _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
+            _ads62p44_regs.output_interface = ads62p44_regs_t::OUTPUT_INTERFACE_LVDS;
+            _ads62p44_regs.lvds_current = ads62p44_regs_t::LVDS_CURRENT_2_5MA;
+            this->send_ads62p44_reg(0x11);
+            this->send_ads62p44_reg(0x14);
+            this->set_rx_analog_gain(1);
+            break;
+
         case usrp2_iface::USRP_NXXX: break;
         }
     }
@@ -93,6 +109,8 @@ public:
 
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
             //send a global power-down to the ADC here... it will get lifted on reset
             _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_GLOBAL_PD;
             this->send_ads62p44_reg(0x14);
@@ -126,6 +144,8 @@ public:
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
             _ads62p44_regs.fine_gain = int(gain/0.5);
             this->send_ads62p44_reg(0x17);
             break;
@@ -138,6 +158,8 @@ public:
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
             _ads62p44_regs.gain_correction = int(gain / 0.05);
             this->send_ads62p44_reg(0x1A);
             break;
@@ -150,6 +172,8 @@ public:
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
             _ads62p44_regs.coarse_gain = ads62p44_regs_t::COARSE_GAIN_3_5DB;//gain ? ads62p44_regs_t::COARSE_GAIN_3_5DB : ads62p44_regs_t::COARSE_GAIN_0DB;
             this->send_ads62p44_reg(0x14);
             break;

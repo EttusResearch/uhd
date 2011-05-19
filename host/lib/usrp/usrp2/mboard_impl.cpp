@@ -231,6 +231,8 @@ void usrp2_mboard_impl::update_clock_config(void){
     switch(_iface->get_rev()){
     case usrp2_iface::USRP_N200:
     case usrp2_iface::USRP_N210:
+    case usrp2_iface::USRP_N200_R4:
+    case usrp2_iface::USRP_N210_R4:
         switch(_clock_config.ref_source){
         case clock_config_t::REF_INT : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12); break;
         case clock_config_t::REF_SMA : _iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C); break;
@@ -262,6 +264,8 @@ void usrp2_mboard_impl::update_clock_config(void){
         switch(_iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
             _clock_ctrl->set_mimo_clock_delay(mimo_clock_delay_usrp_n2xx);
             break;
 
