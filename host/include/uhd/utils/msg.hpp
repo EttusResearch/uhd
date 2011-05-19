@@ -49,10 +49,10 @@ namespace uhd{ namespace msg{
      * This replaces the default std::cout/cerr handler.
      * \param handler a new handler callback function
      */
-    UHD_API_FUTURE void register_handler(const handler_t &handler);
+    UHD_API void register_handler(const handler_t &handler);
 
     //! Internal message object (called by UHD_MSG macro)
-    struct UHD_API_FUTURE _msg{
+    struct UHD_API _msg{
         _msg(const type_t type);
         ~_msg(void);
         std::ostream &operator()(void);

@@ -137,5 +137,4 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/props.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/warning.cpp
 )

@@ -31,7 +31,6 @@ INSTALL(FILES
     safe_main.hpp
     static.hpp
     thread_priority.hpp
-    warning.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
     COMPONENT headers
 )

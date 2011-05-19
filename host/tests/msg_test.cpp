@@ -20,7 +20,6 @@
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_messages){
-    #ifdef UHD_FUTURE
     std::cerr << "---begin print test ---" << std::endl;
     UHD_MSG(status) <<
         "This is a test print for a status message.\n"
@@ -35,5 +34,4 @@ BOOST_AUTO_TEST_CASE(test_messages){
         "And this is the second line of the test print.\n"
     ;
     std::cerr << "---end print test ---" << std::endl;
-    #endif
 }
