@@ -180,7 +180,6 @@ public:
         _ad9522_regs.ld_pin_control = 0x00; //dld
         _ad9522_regs.refmon_pin_control = 0x12; //show ref2
         _ad9522_regs.lock_detect_counter = ad9522_regs_t::LOCK_DETECT_COUNTER_16CYC;
-        _ad9522_regs.divider0_ignore_sync = 1; // master FPGA clock ignores sync (always on, cannot be disabled by sync pulse)
 
         this->use_internal_ref();
 
@@ -438,6 +437,8 @@ private:
     }
 
     void calibrate_now(void){
+        set_ignore_sync_fpga_plus_codec(false); //want vco cal to sync
+
         //vco calibration routine:
         _ad9522_regs.vco_calibration_now = 0;
         this->send_reg(0x18);
@@ -466,9 +467,20 @@ private:
                 _ad9522_regs.get_read_reg(addr), 24
             );
             _ad9522_regs.set_reg(addr, reg);
-            if (_ad9522_regs.digital_lock_detect) return;
+            if (_ad9522_regs.digital_lock_detect) goto finalize;
         }
         UHD_MSG(error) << "USRP-E100 clock control: lock detection timeout" << std::endl;
+        finalize:
+
+        set_ignore_sync_fpga_plus_codec(true); //never loose sync between these two
+    }
+
+    void set_ignore_sync_fpga_plus_codec(bool enb){
+        _ad9522_regs.divider0_ignore_sync = (enb)?1:0; // master FPGA clock ignores sync (always on, cannot be disabled by sync pulse)
+        _ad9522_regs.divider1_ignore_sync = (enb)?1:0; // codec clock ignores sync (always on, cannot be disabled by sync pulse)
+        this->send_reg(0x191);
+        this->send_reg(0x194);
+        this->latch_regs();
     }
 
     void soft_sync(void){
