@@ -584,7 +584,7 @@ module u2_core
 
    // /////////////////////////////////////////////////////////////////////////
    // ADC Frontend
-   wire [17:0] 	 adc_i, adc_q;
+   wire [23:0] 	 adc_i, adc_q;
    
    rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(dsp_clk),.rst(dsp_rst),
