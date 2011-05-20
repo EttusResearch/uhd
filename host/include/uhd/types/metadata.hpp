@@ -81,6 +81,8 @@ namespace uhd{
             ERROR_CODE_BROKEN_CHAIN = 0x4,
             //! An internal receive buffer has filled.
             ERROR_CODE_OVERFLOW     = 0x8,
+            //! Multi-channel alignment failed.
+            ERROR_CODE_ALIGNMENT    = 0xc,
             //! The packet could not be parsed.
             ERROR_CODE_BAD_PACKET   = 0xf
         } error_code;

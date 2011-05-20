@@ -140,6 +140,7 @@ void vrt::if_hdr_pack_$(suffix)(
 
     //fill in complete header word
     packet_buff[0] = $(XE_MACRO)(boost::uint32_t(0
+        | (if_packet_info.packet_type << 29)
         | vrt_hdr_flags
         | ((if_packet_info.packet_count & 0xf) << 16)
         | (if_packet_info.num_packet_words32 & 0xffff)
