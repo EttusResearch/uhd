@@ -21,8 +21,8 @@ module dsp_core_rx
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   input [17:0] adc_i, input adc_ovf_i,
-   input [17:0] adc_q, input adc_ovf_q,
+   input [23:0] adc_i, input adc_ovf_i,
+   input [23:0] adc_q, input adc_ovf_q,
    
    output [31:0] sample,
    input run,
@@ -46,7 +46,7 @@ module dsp_core_rx
    wire        enable_hb1, enable_hb2;
    wire [7:0]  cic_decim_rate;
 
-   reg [17:0]  adc_i_mux, adc_q_mux;
+   reg [23:0]  adc_i_mux, adc_q_mux;
    wire        realmode;
    wire        swap_iq;
    
@@ -70,12 +70,12 @@ module dsp_core_rx
      if(swap_iq)
        begin
 	  adc_i_mux <= adc_q;
-	  adc_q_mux <= realmode ? 18'd0 : adc_i;
+	  adc_q_mux <= realmode ? 24'd0 : adc_i;
        end
      else
        begin
 	  adc_i_mux <= adc_i;
-	  adc_q_mux <= realmode ? 18'd0 : adc_q;
+	  adc_q_mux <= realmode ? 24'd0 : adc_q;
        end
    
    always @(posedge clk)
@@ -88,7 +88,7 @@ module dsp_core_rx
 
    cordic_z24 #(.bitwidth(25))
      cordic(.clock(clk), .reset(rst), .enable(run),
-	    .xi({adc_i_mux[17],adc_i_mux,6'd0}),. yi({adc_q_mux[17],adc_q_mux,6'd0}), .zi(phase[31:8]),
+	    .xi({adc_i_mux[23],adc_i_mux}),. yi({adc_q_mux[23],adc_q_mux}), .zi(phase[31:8]),
 	    .xo(i_cordic),.yo(q_cordic),.zo() );
 
    clip_reg #(.bits_in(25), .bits_out(24)) clip_i (.clk(clk), .in(i_cordic), .out(i_cordic_clip));

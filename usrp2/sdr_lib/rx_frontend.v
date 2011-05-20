@@ -7,7 +7,7 @@ module rx_frontend
     input [15:0] adc_a, input adc_ovf_a,
     input [15:0] adc_b, input adc_ovf_b,
 
-    output [17:0] i_out, output [17:0] q_out,
+    output [23:0] i_out, output [23:0] q_out,
     input run,
     output [31:0] debug
     );
@@ -60,10 +60,14 @@ module rx_frontend
       .in1({adc_q_ofs,6'd0}), .in2({{4{corr_q[35]}},corr_q[35:16]}), .strobe_in(1'b1),
       .sum(q_final), .strobe_out());
 
+   assign i_out = i_final;
+   assign q_out = q_final;
+   
+   /*
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_i
      (.clk(clk), .reset(rst), .in(i_final), .strobe_in(1'b1), .out(i_out), .strobe_out());
    
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(18)) round_q
      (.clk(clk), .reset(rst), .in(q_final), .strobe_in(1'b1), .out(q_out), .strobe_out());
-   
+   */
 endmodule // rx_frontend
