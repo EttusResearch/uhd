@@ -100,9 +100,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             uhd::device::SEND_MODE_ONE_PACKET, timeout
         );
 
-        //use a small timeout for subsequent packets
-        timeout = 0.1;
-
         //do not use time spec for subsequent packets
         md.has_time_spec = false;
 

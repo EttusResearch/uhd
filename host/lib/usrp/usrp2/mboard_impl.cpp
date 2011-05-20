@@ -116,7 +116,7 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     dsp_init();
 
     //setting the cycles per update (disabled by default)
-    const double ups_per_sec = device_addr.cast<double>("ups_per_sec", 0.0);
+    const double ups_per_sec = device_addr.cast<double>("ups_per_sec", 20);
     if (ups_per_sec > 0.0){
         const size_t cycles_per_up = size_t(_clock_ctrl->get_master_clock_rate()/ups_per_sec);
         _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, U2_FLAG_TX_CTRL_UP_ENB | cycles_per_up);
