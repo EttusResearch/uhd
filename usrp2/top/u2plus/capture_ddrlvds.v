@@ -10,8 +10,6 @@ module capture_ddrlvds
     output reg [(2*WIDTH)-1:0] out);
 
    wire [WIDTH-1:0] 	   ddr_dat;
-   wire 		   ssclk_regional;
-   wire 		   ssclk_io;
    wire 		   ssclk;
    wire [(2*WIDTH)-1:0]    out_pre1;
    reg [(2*WIDTH)-1:0] 	   out_pre2;
