@@ -203,7 +203,7 @@ template <typename T> UHD_INLINE T get_context_code(
             }
 
             //copy-convert the samples from the recv buffer
-            converter(state.copy_buffs[i], state.io_buffs, nsamps_to_copy_per_io_buff);
+            converter(state.copy_buffs[i], state.io_buffs, nsamps_to_copy_per_io_buff, 1/32767.);
 
             //update the rx copy buffer to reflect the bytes copied
             state.copy_buffs[i] += bytes_to_copy;
@@ -354,7 +354,7 @@ template <typename T> UHD_INLINE T get_context_code(
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            converter(state.io_buffs, otw_mem, num_samps);
+            converter(state.io_buffs, otw_mem, num_samps, 32767.);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (vrt_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);

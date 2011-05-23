@@ -34,7 +34,7 @@ DECLARE_CONVERTER(convert_$(cpu_type)_1_to_item32_1_$(swap), PRIORITY_GENERAL){
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     for (size_t i = 0; i < nsamps; i++){
-        output[i] = $(swap_fcn)($(cpu_type)_to_item32(input[i]));
+        output[i] = $(swap_fcn)($(cpu_type)_to_item32(input[i], float(scale_factor)));
     }
 }
 
@@ -43,7 +43,7 @@ DECLARE_CONVERTER(convert_item32_1_to_$(cpu_type)_1_$(swap), PRIORITY_GENERAL){
     $(cpu_type)_t *output = reinterpret_cast<$(cpu_type)_t *>(outputs[0]);
 
     for (size_t i = 0; i < nsamps; i++){
-        output[i] = item32_to_$(cpu_type)($(swap_fcn)(input[i]));
+        output[i] = item32_to_$(cpu_type)($(swap_fcn)(input[i]), float(scale_factor));
     }
 }
 """
@@ -56,7 +56,7 @@ DECLARE_CONVERTER(convert_$(cpu_type)_$(width)_to_item32_1_$(swap), PRIORITY_GEN
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
-        output[j++] = $(swap_fcn)($(cpu_type)_to_item32(input$(w)[i]));
+        output[j++] = $(swap_fcn)($(cpu_type)_to_item32(input$(w)[i], float(scale_factor)));
         #end for
     }
 }
@@ -69,7 +69,7 @@ DECLARE_CONVERTER(convert_item32_1_to_$(cpu_type)_$(width)_$(swap), PRIORITY_GEN
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
-        output$(w)[i] = item32_to_$(cpu_type)($(swap_fcn)(input[j++]));
+        output$(w)[i] = item32_to_$(cpu_type)($(swap_fcn)(input[j++]), float(scale_factor));
         #end for
     }
 }

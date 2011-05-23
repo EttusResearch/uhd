@@ -29,7 +29,7 @@ namespace uhd{ namespace convert{
 
     typedef uhd::ref_vector<void *> output_type;
     typedef uhd::ref_vector<const void *> input_type;
-    typedef boost::function<void(const input_type&, const output_type&, size_t)> function_type;
+    typedef boost::function<void(const input_type&, const output_type&, size_t, double)> function_type;
 
     /*!
      * Describe the priority of a converter function.

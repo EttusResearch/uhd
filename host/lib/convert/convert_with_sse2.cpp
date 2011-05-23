@@ -25,7 +25,7 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_nswap, PRIORITY_CUSTOM){
     const fc32_t *input = reinterpret_cast<const fc32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
-    __m128 scalar = _mm_set_ps1(shorts_per_float);
+    __m128 scalar = _mm_set_ps1(float(scale_factor));
 
     //convert blocks of samples with intrinsics
     size_t i = 0; for (; i < (nsamps & ~0x3); i+=4){
@@ -48,7 +48,7 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_nswap, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = fc32_to_item32(input[i]);
+        output[i] = fc32_to_item32(input[i], float(scale_factor));
     }
 }
 
@@ -56,7 +56,7 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_bswap, PRIORITY_CUSTOM){
     const fc32_t *input = reinterpret_cast<const fc32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
-    __m128 scalar = _mm_set_ps1(shorts_per_float);
+    __m128 scalar = _mm_set_ps1(float(scale_factor));
 
     //convert blocks of samples with intrinsics
     size_t i = 0; for (; i < (nsamps & ~0x3); i+=4){
@@ -78,7 +78,7 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_bswap, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = uhd::byteswap(fc32_to_item32(input[i]));
+        output[i] = uhd::byteswap(fc32_to_item32(input[i], float(scale_factor)));
     }
 }
 
@@ -86,7 +86,7 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_nswap, PRIORITY_CUSTOM){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     fc32_t *output = reinterpret_cast<fc32_t *>(outputs[0]);
 
-    __m128 scalar = _mm_set_ps1(floats_per_short/(1 << 16));
+    __m128 scalar = _mm_set_ps1(float(scale_factor)/(1 << 16));
     __m128i zeroi = _mm_setzero_si128();
 
     //convert blocks of samples with intrinsics
@@ -111,7 +111,7 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_nswap, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = item32_to_fc32(input[i]);
+        output[i] = item32_to_fc32(input[i], float(scale_factor));
     }
 }
 
@@ -119,7 +119,7 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_bswap, PRIORITY_CUSTOM){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     fc32_t *output = reinterpret_cast<fc32_t *>(outputs[0]);
 
-    __m128 scalar = _mm_set_ps1(floats_per_short/(1 << 16));
+    __m128 scalar = _mm_set_ps1(float(scale_factor)/(1 << 16));
     __m128i zeroi = _mm_setzero_si128();
 
     //convert blocks of samples with intrinsics
@@ -143,6 +143,6 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_bswap, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = item32_to_fc32(uhd::byteswap(input[i]));
+        output[i] = item32_to_fc32(uhd::byteswap(input[i]), float(scale_factor));
     }
 }
