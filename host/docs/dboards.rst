@@ -265,6 +265,7 @@ The TVRX2 board has 2 real-mode subdevices.
 It is operated at a low IF.
 
 Receive Subdevices:
+
 * **Subdevice RX1:** real signal on antenna J100
 * **Subdevice RX2:** real signal on antenna J140
 
