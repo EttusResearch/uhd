@@ -348,12 +348,15 @@ module u2plus
    // DAC A is also inverted in schematic to facilitate clean layout
    always @(negedge dsp_clk) DACA <= ~dac_b_int;
    always @(negedge dsp_clk) DACB <= dac_a_int;
+
+   wire 	pps;
+   assign pps = PPS_IN ^ PPS2_IN;
    
    u2plus_core u2p_c(.dsp_clk           (dsp_clk),
 		     .wb_clk            (wb_clk),
 		     .clock_ready       (clock_ready),
 		     .clk_to_mac	(CLK_TO_MAC_int2),
-		     .pps_in		(PPS_IN),
+		     .pps_in		(pps),
 		     .leds		(leds_int),
 		     .debug		(debug[31:0]),
 		     .debug_clk		(debug_clk[1:0]),
