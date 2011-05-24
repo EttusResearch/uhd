@@ -14,7 +14,7 @@ module capture_ddrlvds
    wire [(2*WIDTH)-1:0]    out_pre1;
    reg [(2*WIDTH)-1:0] 	   out_pre2;
    
-   IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("FALSE")) 
+   IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clkbuf (.O(ssclk), .I(ssclk_p), .IB(ssclk_n));
    
    genvar 	       i;
@@ -29,7 +29,7 @@ module capture_ddrlvds
 	end
    endgenerate
 
-   always @(negedge clk)
+   always @(posedge clk)
      out_pre2 <= out_pre1;
 
    always @(posedge clk)
