@@ -3,9 +3,11 @@
 .dest 4 dst
 .floatparam 4 scalar
 .temp 8 scaled
-.temp 4 converted
+.temp 8 converted
+.temp 4 short
 
 x2 mulf scaled, src, scalar
-x2 convfw converted, scaled
-swapl converted, converted
-x2 swapw dst, converted
+x2 convfl converted, scaled
+x2 convlw short, converted
+swapl short, short
+x2 swapw dst, short
