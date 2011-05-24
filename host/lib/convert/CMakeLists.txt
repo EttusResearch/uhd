@@ -55,6 +55,37 @@ IF(HAVE_ARM_NEON_H)
 ENDIF(HAVE_ARM_NEON_H)
 
 ########################################################################
+# Look for Orc support
+########################################################################
+FIND_PACKAGE(PkgConfig)
+IF(PKG_CONFIG_FOUND)
+PKG_CHECK_MODULES(ORC "orc-0.4")
+ENDIF(PKG_CONFIG_FOUND)
+
+FIND_PROGRAM(ORCC_EXECUTABLE orcc)
+
+IF(ORC_FOUND AND ORCC_EXECUTABLE)
+    INCLUDE_DIRECTORIES(${ORC_INCLUDE_DIRS})
+    LINK_DIRECTORIES(${ORC_LIBRARY_DIRS})
+
+    SET(orcc_src ${CMAKE_CURRENT_SOURCE_DIR}/convert_orc.orc)
+
+    GET_FILENAME_COMPONENT(orc_file_name_we ${orcc_src} NAME_WE)
+    SET(orcc_gen ${CMAKE_CURRENT_BINARY_DIR}/${orc_file_name_we}.c)
+    MESSAGE(STATUS "orcc_gen is ${orcc_gen}, orcc_src is ${orcc_src}")
+    ADD_CUSTOM_COMMAND(
+        COMMAND ${ORCC_EXECUTABLE} --implementation -o ${orcc_gen} ${orcc_src}
+        DEPENDS ${orcc_src} OUTPUT ${orcc_gen}
+    )
+    LIBUHD_APPEND_SOURCES(${orcc_gen})
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_orc.cpp
+    )
+ELSE()
+    MESSAGE(STATUS "Orc not found, disabling orc support...")
+ENDIF(ORC_FOUND AND ORCC_EXECUTABLE)
+
+########################################################################
 # Convert types generation
 ########################################################################
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
