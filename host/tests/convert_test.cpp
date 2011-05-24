@@ -31,7 +31,7 @@ typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
 
-#define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f) and std::abs(b) > (f))) \
+#define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f))) \
     BOOST_CHECK_CLOSE_FRACTION(a, b, f)
 
 /***********************************************************************
@@ -55,12 +55,12 @@ template <typename Range> static void loopback(
     //convert to intermediate type
     convert::get_converter_cpu_to_otw(
         io_type, otw_type, input0.size(), output0.size()
-    )(input0, output0, nsamps, 1/32767.);
+    )(input0, output0, nsamps, 32767.);
 
     //convert back to host type
     convert::get_converter_otw_to_cpu(
         io_type, otw_type, input1.size(), output1.size()
-    )(input1, output1, nsamps, 32767.);
+    )(input1, output1, nsamps, 1/32767.);
 }
 
 /***********************************************************************
@@ -207,12 +207,12 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
     //convert float to intermediate
     convert::get_converter_cpu_to_otw(
         io_type_in, otw_type, input0.size(), output0.size()
-    )(input0, output0, nsamps, 1/32767.);
+    )(input0, output0, nsamps, 32767.);
 
     //convert intermediate to short
     convert::get_converter_otw_to_cpu(
         io_type_out, otw_type, input1.size(), output1.size()
-    )(input1, output1, nsamps, 32767.);
+    )(input1, output1, nsamps, 1/32767.);
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){
