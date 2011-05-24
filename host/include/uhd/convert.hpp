@@ -40,7 +40,7 @@ namespace uhd{ namespace convert{
      */
     enum priority_type{
         PRIORITY_GENERAL = 0,
-        PRIORITY_LIBORC = 4,
+        PRIORITY_LIBORC = 1,
         PRIORITY_CUSTOM = 2,
         PRIORITY_EMPTY = -1,
     };

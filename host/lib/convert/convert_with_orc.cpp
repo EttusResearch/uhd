@@ -24,6 +24,10 @@ using namespace uhd::convert;
 extern "C" {
 extern void _convert_fc32_1_to_item32_1_nswap_orc(void *, const void *, float, int);
 extern void _convert_fc32_1_to_item32_1_bswap_orc(void *, const void *, float, int);
+extern void _convert_item32_1_to_fc32_1_nswap_orc(void *, const void *, float, int);
+extern void _convert_item32_1_to_fc32_1_bswap_orc(void *, const void *, float, int);
+extern void _convert_sc16_1_to_item32_1_nswap_orc(void *, const void *, float, int);
+extern void _convert_item32_1_to_sc16_1_nswap_orc(void *, const void *, float, int);
 }
 
 DECLARE_CONVERTER(convert_fc32_1_to_item32_1_nswap, PRIORITY_LIBORC){
@@ -32,4 +36,20 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_nswap, PRIORITY_LIBORC){
 
 DECLARE_CONVERTER(convert_fc32_1_to_item32_1_bswap, PRIORITY_LIBORC){
     _convert_fc32_1_to_item32_1_bswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+}
+
+DECLARE_CONVERTER(convert_item32_1_to_fc32_1_nswap, PRIORITY_LIBORC){
+    _convert_item32_1_to_fc32_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+}
+
+DECLARE_CONVERTER(convert_item32_1_to_fc32_1_bswap, PRIORITY_LIBORC){
+    _convert_item32_1_to_fc32_1_bswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+}
+
+DECLARE_CONVERTER(convert_sc16_1_to_item32_1_nswap, PRIORITY_LIBORC){
+    _convert_sc16_1_to_item32_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+}
+
+DECLARE_CONVERTER(convert_item32_1_to_sc16_1_nswap, PRIORITY_LIBORC){
+    _convert_item32_1_to_sc16_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
 }
