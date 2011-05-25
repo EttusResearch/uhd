@@ -31,7 +31,7 @@ module dsp_core_rx_tb();
      (.clk(clk),.rst(rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_i(adc_in), .adc_ovf_i(0),
-      .adc_q(adc_in), .adc_ovf_q(0),
+      .adc_q(0), .adc_ovf_q(0),
       .sample({adc_out_i,adc_out_q}),
       .run(run), .strobe(), .debug());
 
@@ -49,7 +49,7 @@ module dsp_core_rx_tb();
 	set_stb <= 1;
 	@(posedge clk);
 	set_addr <= 0;
-	//set_data <= {32'h000F_7FF9};
+	//set_data <= {32'h0000_0000};
 	set_data <= {32'h01CA_C083}; // 700 kHz
 	set_stb <= 1;
 	@(posedge clk);
@@ -59,8 +59,8 @@ module dsp_core_rx_tb();
      end
 
    always @(posedge clk)
-     //adc_in <= 18'h1FFFF;
-     adc_in <= 18'h20000;
+     //adc_in <= 24'd1000000;
+     adc_in <= 24'h80_0000;
    
    /*
    always @(posedge clk)
