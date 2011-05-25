@@ -12,19 +12,14 @@ module dsp_core_rx_tb();
    initial $dumpfile("dsp_core_rx_tb.vcd");
    initial $dumpvars(0,dsp_core_rx_tb);
    
-   reg [17:0] adc_in;
-   wire [15:0] adc_out_i, adc_out_q;
+   reg signed [23:0] adc_in;
+   wire signed [15:0] adc_out_i, adc_out_q;
 
    always @(posedge clk)
      begin
-	if(adc_in[17])
-	  $write("-%d,",-adc_in);
-	else
-	  $write("%d,",adc_in);
-	if(adc_out_i[15])
-	  $write("-%d\n",-adc_out_i);
-	else
-	  $write("%d\n",adc_out_i);
+	$display(adc_in);
+	$display(adc_out_i);
+	$display(adc_out_q);
      end	
 
    reg run;
