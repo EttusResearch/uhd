@@ -21,6 +21,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <iostream>
@@ -119,26 +120,32 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cerr << "Please specify the center frequency with --freq" << std::endl;
         return ~0;
     }
-    std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
-    usrp->set_tx_freq(freq);
-    std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
-    //set the rf gain
-    if (vm.count("gain")){
-        std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
-        usrp->set_tx_gain(gain);
-        std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain() << std::endl << std::endl;
+    for(size_t chan = 0; chan < usrp->get_tx_num_channels(); chan++) {
+        std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
+        usrp->set_tx_freq(freq, chan);
+        std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq(chan)/1e6) << std::endl << std::endl;
+
+        //set the rf gain
+        if (vm.count("gain")){
+            std::cout << boost::format("Setting TX Gain: %f dB...") % gain << std::endl;
+            usrp->set_tx_gain(gain, chan);
+            std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain(chan) << std::endl << std::endl;
+        }
+
+        //set the IF filter bandwidth
+        if (vm.count("bw")){
+            std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw << std::endl;
+            usrp->set_tx_bandwidth(bw, chan);
+            std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % usrp->get_tx_bandwidth(chan) << std::endl << std::endl;
+        }
+
+        //set the antenna
+        if (vm.count("ant")) usrp->set_tx_antenna(ant, chan);
     }
 
-    //set the IF filter bandwidth
-    if (vm.count("bw")){
-        std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw << std::endl;
-        usrp->set_tx_bandwidth(bw);
-        std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % usrp->get_tx_bandwidth() << std::endl << std::endl;
-    }
-
-    //set the antenna
-    if (vm.count("ant")) usrp->set_tx_antenna(ant);
+    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
+    usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
@@ -162,29 +169,35 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     else throw std::runtime_error("unknown waveform type: " + wave_type);
 
     //allocate the buffer and precalculate values
-    std::vector<std::complex<float> > buff(spb);
     const float cps = float(wave_freq/usrp->get_tx_rate());
     const float i_off = (wave_freq > 0)? float(0.25) : 0;
     const float q_off = (wave_freq < 0)? float(0.25) : 0;
     float theta = 0;
 
+    std::vector<std::complex<float> *> buffs;
+    for(size_t i=0; i < usrp->get_num_mboards(); i++)
+        buffs.push_back(new std::complex<float>[spb]);
+
     //setup the metadata flags
     uhd::tx_metadata_t md;
-    md.start_of_burst = false; //never SOB when continuous
+    md.start_of_burst = true; //for starting the stream
     md.end_of_burst   = false;
+    md.has_time_spec = true;
+    md.time_spec = uhd::time_spec_t(0.1);
 
     std::signal(SIGINT, &sig_int_handler);
     std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
 
     //send data until the signal handler gets called
     while(not stop_signal_called){
-
         //fill the buffer with the waveform
-        for (size_t n = 0; n < buff.size(); n++){
-            buff[n] = std::complex<float>(
-                ampl*wave_gen(i_off + theta),
-                ampl*wave_gen(q_off + theta)
-            );
+        for (size_t n = 0; n < spb; n++){
+            BOOST_FOREACH(std::complex<float> *buff, buffs) {
+                buff[n] = std::complex<float>(
+                    ampl*wave_gen(i_off + theta),
+                    ampl*wave_gen(q_off + theta)
+                );
+            }
             theta += cps;
         }
 
@@ -192,11 +205,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         theta = std::fmod(theta, 1);
 
         //send the entire contents of the buffer
-        usrp->get_device()->send(
-            &buff.front(), buff.size(), md,
+        size_t num_sent = usrp->get_device()->send(
+            buffs, spb, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::SEND_MODE_FULL_BUFF
         );
+        md.start_of_burst = false;
+
+        md.time_spec += uhd::time_spec_t(0, num_sent, rate);
     }
 
     //send a mini EOB packet
@@ -210,5 +226,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
+    BOOST_FOREACH(std::complex<float> *buff, buffs){
+        delete buff;
+    }
+    
     return 0;
 }
