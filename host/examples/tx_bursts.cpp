@@ -41,6 +41,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     float ampl;
     double freq;
     double rep_rate;
+    double gain;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -53,6 +54,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
         ("freq", po::value<double>(&freq)->default_value(0), "center frequency")
+        ("gain", po::value<double>(&gain)->default_value(0), "gain")
         ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;
@@ -81,6 +83,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
     for(size_t i=0; i < usrp->get_tx_num_channels(); i++) usrp->set_tx_freq(freq, i);
     std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
+
+    std::cout << boost::format("Setting TX Gain: %f...") % (gain) << std::endl;
+    for(size_t i=0; i < usrp->get_tx_num_channels(); i++) usrp->set_tx_gain(gain, i);
+    std::cout << boost::format("Actual TX Gain: %f...") % (usrp->get_tx_gain()) << std::endl << std::endl;
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
