@@ -180,7 +180,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup the metadata flags
     uhd::tx_metadata_t md;
-    md.start_of_burst = true; //for starting the stream
+    md.start_of_burst = false; //no for continuous streaming
     md.end_of_burst   = false;
     md.has_time_spec = true;
     md.time_spec = uhd::time_spec_t(0.1);
@@ -210,13 +210,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::SEND_MODE_FULL_BUFF
         );
-        md.start_of_burst = false;
 
         md.time_spec += uhd::time_spec_t(0, num_sent, rate);
     }
 
     //send a mini EOB packet
-    md.start_of_burst = false;
     md.end_of_burst   = true;
     usrp->get_device()->send("", 0, md,
         uhd::io_type_t::COMPLEX_FLOAT32,
