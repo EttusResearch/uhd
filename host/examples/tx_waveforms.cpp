@@ -205,13 +205,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         theta = std::fmod(theta, 1);
 
         //send the entire contents of the buffer
-        size_t num_sent = usrp->get_device()->send(
+        usrp->get_device()->send(
             buffs, spb, md,
             uhd::io_type_t::COMPLEX_FLOAT32,
             uhd::device::SEND_MODE_FULL_BUFF
         );
 
-        md.time_spec += uhd::time_spec_t(0, num_sent, rate);
+        md.has_time_spec = false;
     }
 
     //send a mini EOB packet
