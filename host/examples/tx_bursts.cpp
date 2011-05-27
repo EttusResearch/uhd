@@ -104,7 +104,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::signal(SIGINT, &sig_int_handler);
-    std::cout << "Press Ctrl + C to quit..." << std::endl;
+    if(repeat) std::cout << "Press Ctrl + C to quit..." << std::endl;
 
     double time_to_send = seconds_in_future;
 
