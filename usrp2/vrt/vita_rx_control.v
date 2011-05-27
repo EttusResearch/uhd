@@ -191,9 +191,9 @@ module vita_rx_control
    assign read_ctrl = ( (ibs_state == IBS_IDLE) | ((ibs_state == IBS_RUNNING) & strobe & ~full & (lines_left==1) & chain) )
      & not_empty_ctrl;
    
-   assign debug_rx = { { 8'd0 },
+   assign debug_rx = { { ibs_state[2:0], command_queue_len },
 		       { 8'd0 },
-		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, overrun, ~not_empty_ctrl },
-		       { ibs_state[2:0], chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
+		       { go_now, too_late, run, strobe, read_ctrl, write_ctrl, 1'b0, ~not_empty_ctrl },
+		       { 2'b0, overrun, chain_pre, sample_fifo_in_rdy, attempt_sample_write, sample_fifo_src_rdy_o,sample_fifo_dst_rdy_i} };
    
 endmodule // vita_rx_control

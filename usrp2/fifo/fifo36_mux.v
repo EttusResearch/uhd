@@ -74,5 +74,4 @@ module fifo36_mux
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(data_int), .src_rdy_i(src_rdy_int), .dst_rdy_o(dst_rdy_int),
       .dataout(data_o), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));
-
-endmodule // fifo36_mux
+endmodule // fifo36_demux
