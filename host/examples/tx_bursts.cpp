@@ -49,7 +49,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "delay before first burst")
-        ("rep_rate", po::value<double>(&rep_rate)->default_value(0.5), "repetition rate of bursts")
+        ("repeat", "repeat burst")
+        ("rep-delay", po::value<double>(&rep_rate)->default_value(0.5), "delay between bursts")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to transmit")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
@@ -68,6 +69,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     bool verbose = vm.count("dilv") == 0;
+    bool repeat = vm.count("repeat") != 0;
 
     //create a usrp device
     std::cout << std::endl;
@@ -106,7 +108,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     double time_to_send = seconds_in_future;
 
-    while(not stop_signal_called) {
+    do {
         //setup metadata for the first packet
         uhd::tx_metadata_t md;
         md.start_of_burst = true;
@@ -151,7 +153,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
         }
         std::cout << (got_async_burst_ack? "success" : "fail") << std::endl;
-    }
+    } while (not stop_signal_called and repeat);
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
