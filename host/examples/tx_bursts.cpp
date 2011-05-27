@@ -115,7 +115,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         md.time_spec = uhd::time_spec_t(time_to_send);
 
         //the first call to send() will block this many seconds before sending:
-        double timeout = seconds_in_future + 0.1; //timeout (delay before transmit + padding)
+        double timeout = std::max(rep_rate, seconds_in_future) + 0.1; //timeout (delay before transmit + padding)
 
         size_t num_acc_samps = 0; //number of accumulated samples
         while(num_acc_samps < total_num_samps){
