@@ -27,6 +27,7 @@ Application Notes
 * `USRP-E1XX Series Application Notes <./usrp_e1xx.html>`_
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_
+* `Synchronization Application Notes <./sync.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 API Documentation
