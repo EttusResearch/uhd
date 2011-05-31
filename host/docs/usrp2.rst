@@ -393,3 +393,20 @@ they can be queried through the API.
 * mimo_locked - clock reference locked over the MIMO cable
 * ref_locked - clock reference locked (internal/external)
 * gps_time - GPS seconds (available when GPSDO installed)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Multiple RX channels
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+There are two complete DDC chains in the FPGA.
+In the single channel case, only one chain is ever used.
+To receive from both channels,
+the user must set the RX subdevice specification.
+This hardware has only one daughterboard slot,
+which has been aptly named slot "0".
+
+In the following example, a TVRX2 is installed.
+Channel 0 is sourced from subdevice RX1,
+channel 1 is sourced from subdevice RX2:
+::
+
+    usrp->set_rx_subdev_spec("0:RX1 0:RX2");
