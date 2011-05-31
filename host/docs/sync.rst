@@ -21,11 +21,11 @@ USRPs take two reference signals in order to synchronize clocks and time.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Provide reference signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Most USRPs have front panel SMA connectors to source these signals externally.
-Alternatively, some USRP models support an optional internal GPSDO.
-Typically, these signals are provided from a GPSDO.
+Most USRPs have front panel SMA connectors to source these reference signals.
+Typically, these signals are provided by an external GPSDO.
+Some USRP models can provide these signals from an optional internal GPSDO.
 For user's generating their own signals,
-the pulse-per-second should be clocked off of the 10MHz reference.
+the pulse-per-second should be clocked from the 10MHz reference.
 See the application notes for your device for specific signal requirements.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -98,21 +98,41 @@ The user can query the gps_time sensor to wait for the NMEA string.
     usrp->set_time_next_pps(uhd::time_spec_t(gps_time+1));
 
 ------------------------------------------------------------------------
-Synchronizing multiple channels
+Synchronizing channel phase
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Synchronizing the cordics
+Align CORDICs in the DSP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The frequency translation between baseband and IF can introduce a phase ambiguity between channels.
 This is due to the property that the cordic in the DSP chain can have a random phase offset.
-Fortunately, the cordic is reset on each start-of-burst.
+Fortunately, the CORDIC is reset on each start-of-burst.
 Therefore, the method to phase-align the cordics is to coordinate streaming at a particular time.
 
-For receive, a burst is started when the user issues a stream command. This stream command should have a time spec set.
-For transmit, a burst is started when the user calls send. The metadata should have a time spec and start of burst set.
+* For receive, a burst is started when the user issues a stream command. This stream command should have a time spec set.
+* For transmit, a burst is started when the user calls send. The metadata should have a time spec and start of burst set.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Synchronizing the RF LOs
+Align LOs in the front-end
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+After tuning the RF front-ends,
+each local oscillator will have a random phase offset.
+Some daughterboards have mechanisms to phase-align the oscillators,
+however, these mechanisms are not currently implemented.
+In any case, LO phase-alignment will not forgo the need for calibration.
 
+**RX Calibration**
+
+1) Tune the setup.
+2) Receive known signals.
+3) Capture calibration data.
+4) Do not re-tune.
+5) Receive live data.
+
+**TX Calibration**
+
+1) Tune the setup.
+2) Transmit known signals.
+3) Capture calibration data.
+4) Do not re-tune.
+5) Transmit live data.
