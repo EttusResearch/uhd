@@ -380,6 +380,10 @@ Then run the following commands:
     cd <install-path>/share/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=none
 
+**Antenna Types:**
+
+The GPSDO is capable of supplying a 3V for active GPS antennas or supporting passive antennas
+
 ------------------------------------------------------------------------
 Miscellaneous
 ------------------------------------------------------------------------
