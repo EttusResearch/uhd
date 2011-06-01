@@ -26,6 +26,7 @@ SET(manual_sources
     dboards.rst
     general.rst
     images.rst
+    sync.rst
     transport.rst
     usrp1.rst
     usrp2.rst

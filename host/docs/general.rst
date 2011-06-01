@@ -5,7 +5,63 @@ UHD - General Application Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Misc notes
+Tuning notes
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Two-stage tuning process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A USRP device has two stages of tuning:
+
+* RF front-end: translates bewteen RF and IF
+* DSP: translates between IF and baseband
+
+In a typical use-case, the user specifies an overall center frequency for the signal chain.
+The RF front-end will be tuned as close as possible to the center frequency,
+and the DSP will account for the error in tuning between target frequency and actual frequency.
+The user may also explicitly control both stages of tuning through the tune_request_t object.
+
+Pseudo-code for tuning the receive chain:
+::
+
+    //tuning to a desired center frequency
+    usrp->set_rx_freq(my_frequency_in_hz);
+
+    --OR--
+
+    //advanced tuning with tune_request_t
+    uhd::tune_request_t tune_req;
+    tune_req.target_freq = my_frequency_in_hz;
+    //fill in tune request fields...
+    usrp->set_rx_freq(tune_req);
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RF front-end settling time
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+After tuning, the RF front-end will need time to settle into a usable state.
+Typically, this means that the local oscillators must be given time to lock before streaming begins.
+Lock time is not consistent; it varies depending upon the device and requested settings.
+After tuning and before streaming, the user should
+wait for the "lo_locked" sensor to become true,
+or sleep for a conservative amount of time (perhaps a second).
+
+Pseudo-code for dealing with settling time after tuning on receive:
+::
+
+    usrp->set_rx_freq(...);
+    sleep(1);
+    usrp->issue_stream_command(...);
+
+    --OR--
+
+    usrp->set_rx_freq(...);
+    while (not usrp->get_rx_sensor("lo_locked").to_bool()){
+        //sleep for a short time in milliseconds
+    }
+    usrp->issue_stream_command(...);
+
+------------------------------------------------------------------------
+Threading notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -45,6 +101,10 @@ Add the following line to */etc/security/limits.conf*:
 
 Replace <my_group> with a group to which your user belongs.
 Settings will not take effect until the user has logged in and out.
+
+------------------------------------------------------------------------
+Misc notes
+------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Support for dynamically loadable modules
