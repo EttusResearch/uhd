@@ -90,9 +90,7 @@ static fs::path get_temp_path(void){
  **********************************************************************/
 class log_resource_type{
 public:
-    boost::mutex mutex;
-    std::ostringstream ss;
-    uhd::_log::verbosity_t verbosity, level;
+    uhd::_log::verbosity_t level;
 
     log_resource_type(void){
 
@@ -113,19 +111,20 @@ public:
     }
 
     ~log_resource_type(void){
+        boost::mutex::scoped_lock lock(_mutex);
         _file_stream.close();
         if (_file_lock != NULL) delete _file_lock;
     }
 
-    void log_to_file(void){
-        if (verbosity < level) return;
+    void log_to_file(const std::string &log_msg){
+        boost::mutex::scoped_lock lock(_mutex);
         if (_file_lock == NULL){
             const std::string log_path = (get_temp_path() / "uhd.log").string();
             _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
             _file_lock = new ip::file_lock(log_path.c_str());
         }
         _file_lock->lock();
-        _file_stream << ss.str() << std::flush;
+        _file_stream << log_msg << std::flush;
         _file_lock->unlock();
     }
 
@@ -149,6 +148,7 @@ private:
     //file stream and lock:
     std::ofstream _file_stream;
     ip::file_lock *_file_lock;
+    boost::mutex _mutex;
 };
 
 UHD_SINGLETON_FCN(log_resource_type, log_rs);
@@ -167,20 +167,25 @@ static std::string get_rel_file_path(const fs::path &file){
     return rel_path.string();
 }
 
+struct uhd::_log::log::impl{
+    std::ostringstream ss;
+    verbosity_t verbosity;
+};
+
 uhd::_log::log::log(
     const verbosity_t verbosity,
     const std::string &file,
     const unsigned int line,
     const std::string &function
 ){
-    log_rs().mutex.lock();
-    log_rs().verbosity = verbosity;
+    _impl = UHD_PIMPL_MAKE(impl, ());
+    _impl->verbosity = verbosity;
     const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
     const std::string header1 = str(boost::format("-- %s - level %d") % time % int(verbosity));
     const std::string header2 = str(boost::format("-- %s") % function).substr(0, 80);
     const std::string header3 = str(boost::format("-- %s:%u") % get_rel_file_path(file) % line);
     const std::string border = std::string(std::max(std::max(header1.size(), header2.size()), header3.size()), '-');
-    log_rs().ss
+    _impl->ss
         << std::endl
         << border << std::endl
         << header1 << std::endl
@@ -191,35 +196,26 @@ uhd::_log::log::log(
 }
 
 uhd::_log::log::~log(void){
-    log_rs().ss << std::endl;
+    if (_impl->verbosity < log_rs().level) return;
+    _impl->ss << std::endl;
     try{
-        log_rs().log_to_file();
+        log_rs().log_to_file(_impl->ss.str());
     }
     catch(const std::exception &e){
         /*!
          * Critical behavior below.
          * The following steps must happen in order to avoid a lock-up condition.
          * This is because the message facility will call into the logging facility.
-         * Therefore we must disable the logger (level = never) and unlock the mutex.
-         *
-         * 1) Set logging level to never.
-         * 2) Unlock the mutex.
-         * 3) Send the error message.
-         * 4) Return.
+         * Therefore we must disable the logger (level = never) before messaging.
          */
         log_rs().level = never;
-        log_rs().ss.str(""); //clear for next call
-        log_rs().mutex.unlock();
         UHD_MSG(error)
             << "Logging failed: " << e.what() << std::endl
             << "Logging has been disabled for this process" << std::endl
         ;
-        return;
     }
-    log_rs().ss.str(""); //clear for next call
-    log_rs().mutex.unlock();
 }
 
 std::ostream & uhd::_log::log::operator()(void){
-    return log_rs().ss;
+    return _impl->ss;
 }

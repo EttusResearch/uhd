@@ -65,8 +65,6 @@ static void msg_to_cerr(const std::string &title, const std::string &msg){
  **********************************************************************/
 struct msg_resource_type{
     boost::mutex mutex;
-    std::ostringstream ss;
-    uhd::msg::type_t type;
     uhd::msg::handler_t handler;
 };
 
@@ -76,9 +74,8 @@ UHD_SINGLETON_FCN(msg_resource_type, msg_rs);
  * Setup the message handlers
  **********************************************************************/
 void uhd::msg::register_handler(const handler_t &handler){
-    msg_rs().mutex.lock();
+    boost::mutex::scoped_lock lock(msg_rs().mutex);
     msg_rs().handler = handler;
-    msg_rs().mutex.unlock();
 }
 
 static void default_msg_handler(uhd::msg::type_t type, const std::string &msg){
@@ -111,17 +108,21 @@ UHD_STATIC_BLOCK(msg_register_default_handler){
 /***********************************************************************
  * The message object implementation
  **********************************************************************/
+struct uhd::msg::_msg::impl{
+    std::ostringstream ss;
+    type_t type;
+};
+
 uhd::msg::_msg::_msg(const type_t type){
-    msg_rs().mutex.lock();
-    msg_rs().type = type;
+    _impl = UHD_PIMPL_MAKE(impl, ());
+    _impl->type = type;
 }
 
 uhd::msg::_msg::~_msg(void){
-    msg_rs().handler(msg_rs().type, msg_rs().ss.str());
-    msg_rs().ss.str(""); //clear for next call
-    msg_rs().mutex.unlock();
+    boost::mutex::scoped_lock lock(msg_rs().mutex);
+    msg_rs().handler(_impl->type, _impl->ss.str());
 }
 
 std::ostream & uhd::msg::_msg::operator()(void){
-    return msg_rs().ss;
+    return _impl->ss;
 }

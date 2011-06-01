@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_UTILS_LOG_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/pimpl.hpp>
 #include <boost/current_function.hpp>
 #include <ostream>
 #include <string>
@@ -77,7 +78,8 @@ namespace uhd{ namespace _log{
     };
 
     //! Internal logging object (called by UHD_LOG macros)
-    struct UHD_API log{
+    class UHD_API log{
+    public:
         log(
             const verbosity_t verbosity,
             const std::string &file,
@@ -86,6 +88,8 @@ namespace uhd{ namespace _log{
         );
         ~log(void);
         std::ostream &operator()(void);
+    private:
+        UHD_PIMPL_DECL(impl) _impl;
     };
 
 }} //namespace uhd::_log
