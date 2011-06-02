@@ -19,6 +19,7 @@
 #include "fw_common.h"
 #include "usrp2_iface.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -143,10 +144,17 @@ public:
                 //sleep for a bit
                 boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
             }
-        } catch(const boost::thread_interrupted &){}
-
-        //unlock on exit
-        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0);
+        }
+        catch(const boost::thread_interrupted &){
+            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0); //unlock on exit
+        }
+        catch(const std::exception &e){
+            UHD_MSG(error)
+                << "An unexpected exception was caught in the locker loop." << std::endl
+                << "The device will automatically unlock from this process." << std::endl
+                << e.what() << std::endl
+            ;
+        }
     }
 
 /***********************************************************************
