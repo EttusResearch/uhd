@@ -121,25 +121,23 @@ synchronized via the 10MHz and PPS inputs, the streaming will start at exactly
 the same time on both devices. The CORDICs are reset at each start-of-burst
 command, so users should ensure that every start-of-burst also has a time spec set.
 
-For receive, a burst is started when the user issues a stream command. This stream command should have a time spec set.
-
+For receive, a burst is started when the user issues a stream command. This stream command should have a time spec set:
 ::
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = spb;
+    stream_cmd.num_samps = samps_to_recv;
     stream_cmd.stream_now = false;
-    stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
+    stream_cmd.time_spec = time_to_recv;
     usrp->issue_stream_cmd(stream_cmd);
 
-For transmit, a burst is started when the user calls send(). The metadata should have a time spec and start of burst set.
-
+For transmit, a burst is started when the user calls send(). The metadata should have a time spec and start of burst set:
 ::
 
     uhd::tx_metadata_t md;
     md.start_of_burst = true;
     md.end_of_burst = false;
     md.has_time_spec = true;
-    md.time_spec = uhd::time_spec_t(time_to_send);
+    md.time_spec = time_to_send;
 
     //send a single packet
     size_t num_tx_samps = usrp->get_device()->send(
