@@ -21,7 +21,6 @@
 #define ANT_RX          ANTSW_IO                //the tx line is receiving
 #define ANT_TXRX        0                       //the rx line is on txrx
 #define ANT_RX2         ANTSW_IO                //the rx line in on rx2
-#define ANT_XX          0                       //dont care how the antenna is set
 
 #include "db_wbx_common.hpp"
 #include <uhd/utils/static.hpp>
@@ -96,8 +95,8 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     ANT_TX, ANTSW_IO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_TX, ANTSW_IO);
 
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        ANT_XX, ANTSW_IO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     ANT_XX, ANTSW_IO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        ANT_TXRX, ANTSW_IO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     ANT_RX2, ANTSW_IO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_RX2, ANTSW_IO);
 
     //set some default values
