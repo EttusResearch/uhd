@@ -90,9 +90,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(num_acc_samps < total_num_samps){
         size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
 
-        //ensure the the last packet has EOB set
-        md.end_of_burst = samps_to_send < buff.size();
-
         //send a single packet
         size_t num_tx_samps = usrp->get_device()->send(
             &buff.front(), samps_to_send, md,
@@ -108,6 +105,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         num_acc_samps += num_tx_samps;
     }
+
+    //send a mini EOB packet
+    md.end_of_burst   = true;
+    usrp->get_device()->send("", 0, md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
+        uhd::device::SEND_MODE_FULL_BUFF
+    );
 
     std::cout << std::endl << "Waiting for async burst ACK... " << std::flush;
     uhd::async_metadata_t async_md;
