@@ -24,18 +24,16 @@ cordic.v \
 cordic_z24.v \
 cordic_stage.v \
 dsp_core_rx.v \
-dsp_core_rx_old.v \
 dsp_core_tx.v \
 hb_dec.v \
 hb_interp.v \
 round.v \
 round_reg.v \
 round_sd.v \
-rx_control.v \
 rx_dcoffset.v \
 rx_frontend.v \
 sign_extend.v \
 small_hb_dec.v \
 small_hb_int.v \
-tx_control.v \
+tx_frontend.v \
 ))

@@ -684,6 +684,8 @@ module u2_core
 	.debug(debug_extfifo),
 	.debug2(debug_extfifo2) );
 
+   wire [23:0] 	 tx_i, tx_q;
+   
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
 		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
@@ -694,10 +696,16 @@ module u2_core
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
-      .dac_a(dac_a),.dac_b(dac_b),
+      .tx_i(tx_i),.tx_q(tx_q),
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
-   
+
+   tx_frontend #(.BASE(SR_TX_FRONT)) tx_frontend
+     (.clk(dsp_clk), .rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .tx_i(tx_i), .tx_q(tx_q), .run(1'b1),
+      .dac_a(dac_a), .dac_b(dac_b));
+         
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
