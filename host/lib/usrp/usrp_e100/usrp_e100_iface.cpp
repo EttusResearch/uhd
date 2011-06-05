@@ -21,11 +21,13 @@
 #include <sys/ioctl.h> //ioctl
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
+#include <boost/thread/thread.hpp> //sleep
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
-#include <stdexcept>
+#include <iostream>
+#include <fstream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -245,6 +247,10 @@ public:
         size_t num_bits,
         bool readback
     ){
+        if (which_slave == UE_SPI_SS_AD9522) return bitbang_spi(
+            bits, num_bits, readback
+        );
+
         //load data struct
         usrp_e_spi data;
         data.readback = (readback)? UE_SPI_TXRX : UE_SPI_TXONLY;
@@ -263,11 +269,101 @@ public:
         //unload the data
         return data.data;
     }
-    
+
+    boost::uint32_t bitbang_spi(
+        boost::uint32_t bits,
+        size_t num_bits,
+        bool readback
+    ){
+        boost::uint32_t rb_bits = 0;
+
+        _spi_bitbanger.spi_sen_gpio_write(0);
+
+        for (size_t i = 0; i < num_bits; i++){
+            _spi_bitbanger.spi_sclk_gpio_write(0);
+            _spi_bitbanger.spi_mosi_gpio_write((bits >> (num_bits-i-1)) & 0x1);
+            boost::this_thread::sleep(boost::posix_time::microseconds(10));
+            if (readback) rb_bits = (rb_bits << 1) | _spi_bitbanger.spi_miso_gpio_read();
+            _spi_bitbanger.spi_sclk_gpio_write(1);
+            boost::this_thread::sleep(boost::posix_time::microseconds(10));
+        }
+
+        _spi_bitbanger.spi_sen_gpio_write(1);
+        boost::this_thread::sleep(boost::posix_time::microseconds(100));
+
+        return rb_bits;
+    }
+
+    class bitbang_spi_guts{
+    public:
+        bitbang_spi_guts(void){
+            //setup gpio pin directions
+            this->set_gpio_direction(spi_sclk_gpio, "out");
+            this->set_gpio_direction(spi_sen_gpio, "out");
+            this->set_gpio_direction(spi_mosi_gpio, "out");
+            this->set_gpio_direction(spi_miso_gpio, "in");
+
+            //open the gpio pin values
+            _spi_sclk_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_sclk_gpio).c_str());
+            _spi_sen_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_sen_gpio).c_str());
+            _spi_mosi_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_mosi_gpio).c_str());
+            _spi_miso_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_miso_gpio).c_str());
+        }
+
+        ~bitbang_spi_guts(void){
+            this->set_gpio_direction(spi_sclk_gpio, "in");
+            this->set_gpio_direction(spi_sen_gpio, "in");
+            this->set_gpio_direction(spi_mosi_gpio, "in");
+        }
+
+        void spi_sclk_gpio_write(int val){
+            _spi_sclk_gpio_value << val << std::endl << std::flush;
+        }
+
+        void spi_sen_gpio_write(int val){
+            _spi_sen_gpio_value << val << std::endl << std::flush;
+        }
+
+        void spi_mosi_gpio_write(int val){
+            _spi_mosi_gpio_value << val << std::endl << std::flush;
+        }
+
+        int spi_miso_gpio_read(void){
+            std::string val;
+            std::getline(_spi_miso_gpio_value, val);
+            _spi_miso_gpio_value.seekg(0);
+            return int(val.at(0) - '0') & 0x1;
+        }
+
+    private:
+        enum{
+            spi_sclk_gpio = 65,
+            spi_sen_gpio = 186,
+            spi_mosi_gpio = 145,
+            spi_miso_gpio = 147,
+        };
+
+        void set_gpio_direction(int gpio_num, const std::string &dir){
+            std::ofstream export_file("/sys/class/gpio/export");
+            export_file << gpio_num << std::endl << std::flush;
+            export_file.close();
+
+            std::ofstream dir_file(str(boost::format("/sys/class/gpio/gpio%d/direction") % gpio_num).c_str());
+            dir_file << dir << std::endl << std::flush;
+            dir_file.close();
+        }
+
+        std::ofstream _spi_sclk_gpio_value, _spi_sen_gpio_value, _spi_mosi_gpio_value;
+        std::ifstream _spi_miso_gpio_value;
+    };
+
+    /*******************************************************************
+     * UART
+     ******************************************************************/
     void write_uart(boost::uint8_t, const std::string &) {
         throw uhd::not_implemented_error("Unhandled command write_uart()");
     }
-    
+
     std::string read_uart(boost::uint8_t) {
         throw uhd::not_implemented_error("Unhandled command read_uart()");
     }
@@ -276,6 +372,7 @@ private:
     int _node_fd;
     i2c_dev_iface _i2c_dev_iface;
     boost::mutex _ctrl_mutex;
+    bitbang_spi_guts _spi_bitbanger;
 };
 
 /***********************************************************************
