@@ -49,13 +49,15 @@ x2 mulf dst, tmp2, scalar
 .function _convert_sc16_1_to_item32_1_nswap_orc
 .source 4 src
 .dest 4 dst
+.temp 4 tmp
 .floatparam 4 scalar
-swapl dst, src
-x2 swapw dst, dst
+swapl tmp, src
+x2 swapw dst, tmp
 
 .function _convert_item32_1_to_sc16_1_nswap_orc
 .source 4 src
 .dest 4 dst
 .floatparam 4 scalar
-x2 swapw dst, src
-swapl dst, dst
+.temp 4 tmp
+x2 swapw tmp, src
+swapl dst, tmp
