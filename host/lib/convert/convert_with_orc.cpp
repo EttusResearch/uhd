@@ -17,7 +17,6 @@
 
 #include "convert_common.hpp"
 #include <uhd/utils/byteswap.hpp>
-#include <emmintrin.h>
 
 using namespace uhd::convert;
 
