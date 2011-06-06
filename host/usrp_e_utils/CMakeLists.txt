@@ -28,7 +28,6 @@ IF(ENABLE_USRP_E_UTILS)
     INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/ic_reg_maps)
 
     SET(usrp_e_utils_sources
-        usrp-e-utility.cpp
         usrp-e-loopback.c
         usrp-e-timed.c
         usrp-e-wb-test.cpp
