@@ -46,16 +46,26 @@ public:
 
     /*!
      * Make a new usrp-e interface with the control transport.
-     * \param node the device node name
      * \return a new usrp-e interface object
      */
-    static sptr make(const std::string &node);
+    static sptr make(void);
 
     /*!
      * Get the underlying file descriptor.
      * \return the file descriptor
      */
     virtual int get_file_descriptor(void) = 0;
+
+    /*!
+     * Open a device node into this iface.
+     * \param node the device node name
+     */
+    virtual void open(const std::string &node) = 0;
+
+    /*!
+     * Close the open device node in this iface.
+     */
+    virtual void close(void) = 0;
 
     /*!
      * Perform an ioctl call on the device node file descriptor.

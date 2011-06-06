@@ -54,7 +54,7 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
         new_addr["type"] = "usrp-e";
         new_addr["node"] = fs::system_complete(fs::path(hint["node"])).string();
         try{
-            usrp_e100_iface::sptr iface = usrp_e100_iface::make(new_addr["node"]);
+            usrp_e100_iface::sptr iface = usrp_e100_iface::make();
             new_addr["name"] = iface->mb_eeprom["name"];
             new_addr["serial"] = iface->mb_eeprom["serial"];
         }
@@ -88,59 +88,43 @@ static size_t hash_fpga_file(const std::string &file_path){
 static device::sptr usrp_e100_make(const device_addr_t &device_addr){
 
     //setup the main interface into fpga
-    std::string node = device_addr["node"];
-    UHD_MSG(status) << boost::format("Opening USRP-E on %s") % node << std::endl;
-    usrp_e100_iface::sptr iface = usrp_e100_iface::make(node);
+    const std::string node = device_addr["node"];
+    usrp_e100_iface::sptr iface = usrp_e100_iface::make();
+    iface->open(node);
 
-    //extract the fpga path for usrp-e
-    std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", "usrp_e100_fpga_m2.bin"));
+    //setup clock control here to ensure that the FPGA has a good clock before we continue
+    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", USRP_E_DEFAULT_CLOCK_RATE);
+    usrp_e100_clock_ctrl::sptr clock_ctrl = usrp_e100_clock_ctrl::make(iface, master_clock_rate);
 
-    //compute a hash of the fpga file
+    //extract the fpga path for usrp-e and compute hash
+    const std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", USRP_E_FPGA_FILE_NAME));
     const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(usrp_e100_fpga_image));
 
     //When the hash does not match:
-    // - unload the iface to free the node
-    // - load the fpga configuration file
-    // - re-open the iface on the node
+    // - close the device node
+    // - load the fpga bin file
+    // - re-open the device node
     if (iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash){
-        iface.reset();
+        iface->close();
         usrp_e100_load_fpga(usrp_e100_fpga_image);
-        UHD_MSG(status) << boost::format("re-Opening USRP-E on %s") % node << std::endl;
-        iface = usrp_e100_iface::make(node);
+        iface->open(node);
     }
 
-    //Perform wishbone readback tests:
-    //If the tests fail, try to re-initialize the clock.
-    //If the tests fail again, we just continue...
-    for (size_t phase = 0; phase <= 1; phase++){
-        bool test_fail = false;
-        UHD_MSG(status) << "Performing wishbone readback test... " << std::flush;
-        for (size_t i = 0; i < 100; i++){
-            iface->poke32(UE_REG_SR_MISC_TEST32, file_hash);
-            test_fail = iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash;
-            if (test_fail) break; //exit loop on any failure
-        }
-        UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
-
-        if (not test_fail) break; //no more tests, its good
-
-        switch (phase){
-        case 0:
-            UHD_MSG(warning) << boost::format(
-                "The FPGA may be clocked improperly.\n"
-                "Attempting to re-initialize the clock...\n"
-            );
-            usrp_e100_clock_ctrl::make(iface, 64e6);
-            break;
-
-        case 1:
-            UHD_MSG(error) << boost::format(
-                "The FPGA is either clocked improperly\n"
-                "or the FPGA build is not compatible.\n"
-            );
-            break;
-        }
+    //Perform wishbone readback tests, these tests also write the hash
+    bool test_fail = false;
+    UHD_MSG(status) << "Performing wishbone readback test... " << std::flush;
+    for (size_t i = 0; i < 100; i++){
+        iface->poke32(UE_REG_SR_MISC_TEST32, file_hash);
+        test_fail = iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash;
+        if (test_fail) break; //exit loop on any failure
     }
+    UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
+
+    if (test_fail) UHD_MSG(error) << boost::format(
+        "The FPGA is either clocked improperly\n"
+        "or the FPGA build is not compatible.\n"
+        "Subsequent errors may follow...\n"
+    );
 
     //check that the compatibility is correct
     const boost::uint16_t fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
@@ -153,7 +137,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
         ) % USRP_E_FPGA_COMPAT_NUM % fpga_compat_num));
     }
 
-    return device::sptr(new usrp_e100_impl(iface, device_addr));
+    return device::sptr(new usrp_e100_impl(device_addr, iface, clock_ctrl));
 }
 
 UHD_STATIC_BLOCK(register_usrp_e100_device){
@@ -164,19 +148,17 @@ UHD_STATIC_BLOCK(register_usrp_e100_device){
  * Structors
  **********************************************************************/
 usrp_e100_impl::usrp_e100_impl(
+    const uhd::device_addr_t &device_addr,
     usrp_e100_iface::sptr iface,
-    const device_addr_t &device_addr
+    usrp_e100_clock_ctrl::sptr clock_ctrl
 ):
     _iface(iface),
+    _clock_ctrl(clock_ctrl),
+    _codec_ctrl(usrp_e100_codec_ctrl::make(_iface)),
     _data_xport(usrp_e100_make_mmap_zero_copy(_iface)),
     _recv_frame_size(std::min(_data_xport->get_recv_frame_size(), size_t(device_addr.cast<double>("recv_frame_size", 1e9)))),
     _send_frame_size(std::min(_data_xport->get_send_frame_size(), size_t(device_addr.cast<double>("send_frame_size", 1e9))))
 {
-
-    //setup interfaces into hardware
-    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", 64e6);
-    _clock_ctrl = usrp_e100_clock_ctrl::make(_iface, master_clock_rate);
-    _codec_ctrl = usrp_e100_codec_ctrl::make(_iface);
 
     //initialize the mboard
     mboard_init();

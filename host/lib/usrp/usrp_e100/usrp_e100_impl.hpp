@@ -33,7 +33,9 @@
 
 uhd::transport::zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
 
+static const std::string USRP_E_FPGA_FILE_NAME = "usrp_e100_fpga5.bin";
 static const boost::uint16_t USRP_E_FPGA_COMPAT_NUM = 0x05;
+static const double USRP_E_DEFAULT_CLOCK_RATE = 64e6;
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void usrp_e100_load_fpga(const std::string &bin_file);
@@ -82,7 +84,11 @@ private:
 class usrp_e100_impl : public uhd::device{
 public:
     //structors
-    usrp_e100_impl(usrp_e100_iface::sptr, const uhd::device_addr_t &);
+    usrp_e100_impl(
+        const uhd::device_addr_t &,
+        usrp_e100_iface::sptr,
+        usrp_e100_clock_ctrl::sptr
+    );
     ~usrp_e100_impl(void);
 
     //the io interface
@@ -96,6 +102,12 @@ private:
     //interface to ioctls and file descriptor
     usrp_e100_iface::sptr _iface;
 
+    //ad9522 clock control
+    usrp_e100_clock_ctrl::sptr _clock_ctrl;
+
+    //ad9862 codec control
+    usrp_e100_codec_ctrl::sptr _codec_ctrl;
+
     //handle io stuff
     uhd::transport::zero_copy_if::sptr _data_xport;
     UHD_PIMPL_DECL(io_impl) _io_impl;
@@ -107,12 +119,6 @@ private:
 
     //configuration shadows
     uhd::clock_config_t _clock_config;
-
-    //ad9522 clock control
-    usrp_e100_clock_ctrl::sptr _clock_ctrl;
-
-    //ad9862 codec control
-    usrp_e100_codec_ctrl::sptr _codec_ctrl;
 
     //device functions and settings
     void get(const wax::obj &, wax::obj &);

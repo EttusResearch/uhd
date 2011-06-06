@@ -18,6 +18,7 @@
 #include "usrp_e100_iface.hpp"
 #include "usrp_e100_regs.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <sys/ioctl.h> //ioctl
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
@@ -100,12 +101,9 @@ public:
         return _node_fd;
     }
 
-    /*******************************************************************
-     * Structors
-     ******************************************************************/
-    usrp_e100_iface_impl(const std::string &node):
-        _i2c_dev_iface(i2c_dev_iface("/dev/i2c-3"))
-    {
+    void open(const std::string &node){
+        UHD_MSG(status) << "Opening device node " << node << "..." << std::endl;
+
         //open the device node and check file descriptor
         if ((_node_fd = ::open(node.c_str(), O_RDWR)) < 0){
             throw uhd::io_error("Failed to open " + node);
@@ -114,18 +112,30 @@ public:
         //check the module compatibility number
         int module_compat_num = ::ioctl(_node_fd, USRP_E_GET_COMPAT_NUMBER, NULL);
         if (module_compat_num != USRP_E_COMPAT_NUMBER){
-        throw uhd::runtime_error(str(boost::format(
-            "Expected module compatibility number 0x%x, but got 0x%x:\n"
-            "The module build is not compatible with the host code build."
-        ) % USRP_E_COMPAT_NUMBER % module_compat_num));
+            throw uhd::runtime_error(str(boost::format(
+                "Expected module compatibility number 0x%x, but got 0x%x:\n"
+                "The module build is not compatible with the host code build."
+            ) % USRP_E_COMPAT_NUMBER % module_compat_num));
+        }
     }
 
+    void close(void){
+        ::close(_node_fd);
+        _node_fd = -1;
+    }
+
+    /*******************************************************************
+     * Structors
+     ******************************************************************/
+    usrp_e100_iface_impl(void):
+        _node_fd(-1),
+        _i2c_dev_iface(i2c_dev_iface("/dev/i2c-3"))
+    {
         mb_eeprom = mboard_eeprom_t(get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
     }
 
     ~usrp_e100_iface_impl(void){
-        //close the device node file descriptor
-        ::close(_node_fd);
+        if (_node_fd >= 0) this->close();
     }
 
     /*******************************************************************
@@ -378,6 +388,6 @@ private:
 /***********************************************************************
  * Public Make Function
  **********************************************************************/
-usrp_e100_iface::sptr usrp_e100_iface::make(const std::string &node){
-    return sptr(new usrp_e100_iface_impl(node));
+usrp_e100_iface::sptr usrp_e100_iface::make(void){
+    return sptr(new usrp_e100_iface_impl());
 }
