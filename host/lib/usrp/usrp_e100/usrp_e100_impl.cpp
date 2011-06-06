@@ -93,7 +93,7 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     usrp_e100_iface::sptr iface = usrp_e100_iface::make(node);
 
     //extract the fpga path for usrp-e
-    std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", "usrp_e100_fpga.bin"));
+    std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", "usrp_e100_fpga_m2.bin"));
 
     //compute a hash of the fpga file
     const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(usrp_e100_fpga_image));
@@ -105,21 +105,41 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     if (iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash){
         iface.reset();
         usrp_e100_load_fpga(usrp_e100_fpga_image);
-        sleep(1); ///\todo do this better one day.
         UHD_MSG(status) << boost::format("re-Opening USRP-E on %s") % node << std::endl;
         iface = usrp_e100_iface::make(node);
     }
 
-    //store the hash into the FPGA register
-    iface->poke32(UE_REG_SR_MISC_TEST32, file_hash);
+    //Perform wishbone readback tests:
+    //If the tests fail, try to re-initialize the clock.
+    //If the tests fail again, we just continue...
+    for (size_t phase = 0; phase <= 1; phase++){
+        bool test_fail = false;
+        UHD_MSG(status) << "Performing wishbone readback test... " << std::flush;
+        for (size_t i = 0; i < 100; i++){
+            iface->poke32(UE_REG_SR_MISC_TEST32, file_hash);
+            test_fail = iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash;
+            if (test_fail) break; //exit loop on any failure
+        }
+        UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 
-    //check that the hash can be readback correctly
-    if (iface->peek32(UE_REG_RB_MISC_TEST32) != file_hash){
-        UHD_MSG(error) << boost::format(
-            "The FPGA hash readback failed!\n"
-            "The FPGA is either clocked improperly\n"
-            "or the FPGA build is not compatible.\n"
-        );
+        if (not test_fail) break; //no more tests, its good
+
+        switch (phase){
+        case 0:
+            UHD_MSG(warning) << boost::format(
+                "The FPGA may be clocked improperly.\n"
+                "Attempting to re-initialize the clock...\n"
+            );
+            usrp_e100_clock_ctrl::make(iface, 64e6);
+            break;
+
+        case 1:
+            UHD_MSG(error) << boost::format(
+                "The FPGA is either clocked improperly\n"
+                "or the FPGA build is not compatible.\n"
+            );
+            break;
+        }
     }
 
     //check that the compatibility is correct
