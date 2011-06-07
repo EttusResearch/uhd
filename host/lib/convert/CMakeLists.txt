@@ -26,6 +26,7 @@ MESSAGE(STATUS "")
 ########################################################################
 IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(EMMINTRIN_FLAGS -msse2)
+    SET(NEON_FLAGS "-mfloat-abi=softfp -mfpu=neon")
 ELSEIF(MSVC)
     SET(EMMINTRIN_FLAGS /arch:SSE2)
 ENDIF()
@@ -47,13 +48,21 @@ ENDIF(HAVE_EMMINTRIN_H)
 ########################################################################
 # Check for NEON SIMD headers
 ########################################################################
+SET(CMAKE_REQUIRED_FLAGS ${NEON_FLAGS})
 CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
-IF(HAVE_ARM_NEON_H)
+UNSET(CMAKE_REQUIRED_FLAGS)
+if(HAVE_ARM_NEON_H)
+    MESSAGE(STATUS "Enabling NEON support")
+    SET_SOURCE_FILES_PROPERTIES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
+        PROPERTIES COMPILE_FLAGS "${NEON_FLAGS}"
+    )
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
     )
-ENDIF(HAVE_ARM_NEON_H)
-
+else(HAVE_ARM_NEON_H)
+    MESSAGE(STATUS "Disabling NEON support")
+endif(HAVE_ARM_NEON_H)
 ########################################################################
 # Look for Orc support
 ########################################################################
@@ -73,7 +82,7 @@ IF(ORC_FOUND AND ORCC_EXECUTABLE)
 
     GET_FILENAME_COMPONENT(orc_file_name_we ${orcc_src} NAME_WE)
     SET(orcc_gen ${CMAKE_CURRENT_BINARY_DIR}/${orc_file_name_we}.c)
-    MESSAGE(STATUS "orcc_gen is ${orcc_gen}, orcc_src is ${orcc_src}")
+    MESSAGE(STATUS "Orc found, enabling Orc support")
     ADD_CUSTOM_COMMAND(
         COMMAND ${ORCC_EXECUTABLE} --implementation -o ${orcc_gen} ${orcc_src}
         DEPENDS ${orcc_src} OUTPUT ${orcc_gen}
