@@ -49,10 +49,6 @@ module dsp_core_tx
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_hb1, enable_hb2, interp_rate}),.changed());
 
-   setting_reg #(.my_addr(BASE+4), .width(8)) sr_4
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({dacmux_b,dacmux_a}),.changed());
-
    // Strobes are all now delayed by 1 cycle for timing reasons
    wire        strobe_cic_pre, strobe_hb1_pre, strobe_hb2_pre;
    reg 	       strobe_cic = 1;
