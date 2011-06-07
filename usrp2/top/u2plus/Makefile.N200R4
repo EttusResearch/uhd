@@ -6,7 +6,7 @@
 # Project Setup
 ##################################################
 TOP_MODULE = u2plus
-BUILD_DIR = $(abspath build$(ISE))
+BUILD_DIR = $(abspath build$(ISE)-N200R4)
 
 ##################################################
 # Include other makefiles
@@ -31,7 +31,7 @@ include ../../extramfifo/Makefile.srcs
 ##################################################
 export PROJECT_PROPERTIES := \
 family "Spartan-3A DSP" \
-device xc3sd3400a \
+device xc3sd1800a \
 package fg676 \
 speed -5 \
 top_level_module_type "HDL" \
@@ -45,6 +45,7 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 # Sources
 ##################################################
 TOP_SRCS = \
+rev4_defs.v \
 capture_ddrlvds.v \
 u2plus_core.v \
 u2plus.v \
