@@ -31,12 +31,12 @@ module u1e_core
    output sclk, output [15:0] sen, output mosi, input miso,
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
-   output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
+   output tx_have_space, output rx_have_data,
    inout [15:0] io_tx, inout [15:0] io_rx, 
    output [13:0] tx_i, output [13:0] tx_q, 
    input [11:0] rx_i, input [11:0] rx_q, 
    
-   input [11:0] misc_gpio, input pps_in
+   input pps_in
    );
 
    localparam TXFIFOSIZE = 13;
@@ -70,9 +70,7 @@ module u1e_core
 
    wire [31:0] 	debug_vt;
    wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
-   assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp;
-   assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
-   
+
    setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(global_reset));
