@@ -53,7 +53,7 @@ module u1e_core
    localparam SR_GLOBAL_RESET = 50; // 1 reg
    localparam SR_REG_TEST32 = 52; // 1 reg
 
-   wire [7:0]	COMPAT_NUM = 8'd4;
+   wire [7:0]	COMPAT_NUM = 8'd5;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
@@ -382,8 +382,9 @@ module u1e_core
 
    wire [31:0] reg_test32;
 
+   //this setting reg is persistent across resets, to check for fpga loaded
    setting_reg #(.my_addr(SR_REG_TEST32)) sr_reg_test32
-     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+     (.clk(wb_clk),.rst(/*wb_rst*/1'b0),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(reg_test32),.changed());
 
    wb_readback_mux_16LE readback_mux_32
