@@ -20,6 +20,7 @@
 #include "clock_ctrl.hpp"
 #include "ad9862_regs.hpp"
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
@@ -140,8 +141,7 @@ usrp1_codec_ctrl_impl::usrp1_codec_ctrl_impl(usrp1_iface::sptr iface,
     this->send_reg(34);
 }
 
-usrp1_codec_ctrl_impl::~usrp1_codec_ctrl_impl(void)
-{
+usrp1_codec_ctrl_impl::~usrp1_codec_ctrl_impl(void){UHD_SAFE_CALL(
     //set aux dacs to zero
     this->write_aux_dac(AUX_DAC_A, 0);
     this->write_aux_dac(AUX_DAC_B, 0);
@@ -154,7 +154,7 @@ usrp1_codec_ctrl_impl::~usrp1_codec_ctrl_impl(void)
     _ad9862_regs.tx_digital_pd = 1;
     _ad9862_regs.tx_analog_pd = ad9862_regs_t::TX_ANALOG_PD_BOTH;
     this->send_reg(8);
-}
+)}
 
 /***********************************************************************
  * Codec Control Gain Control Methods

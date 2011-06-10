@@ -208,20 +208,10 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
 }
 
-usrp1_impl::~usrp1_impl(void){
-    UHD_SAFE_CALL(this->enable_rx(false);)
-    UHD_SAFE_CALL(this->enable_tx(false);)
-    //Safely destruct all RAII objects in a device.
-    //This prevents the mboard deconstructor from throwing,
-    //which allows the device to be safely deconstructed.
-    BOOST_FOREACH(dboard_slot_t slot, _dboard_slots){
-        UHD_SAFE_CALL(_dboard_managers[slot].reset();)
-        UHD_SAFE_CALL(_dboard_ifaces[slot].reset();)
-        UHD_SAFE_CALL(_codec_ctrls[slot].reset();)
-    }
-    UHD_SAFE_CALL(_clock_ctrl.reset();)
-    UHD_SAFE_CALL(_io_impl.reset();)
-}
+usrp1_impl::~usrp1_impl(void){UHD_SAFE_CALL(
+    this->enable_rx(false);
+    this->enable_tx(false);
+)}
 
 bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){
     //dummy fill-in for the recv_async_msg

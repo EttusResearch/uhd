@@ -19,6 +19,7 @@
 #include "ad9510_regs.hpp"
 #include "usrp2_regs.hpp" //spi slave constants
 #include "usrp2_clk_regs.hpp"
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
@@ -77,7 +78,7 @@ public:
         this->enable_test_clock(enb_test_clk);
     }
 
-    ~usrp2_clock_ctrl_impl(void){
+    ~usrp2_clock_ctrl_impl(void){UHD_SAFE_CALL(
         //power down clock outputs
         this->enable_external_ref(false);
         this->enable_rx_dboard_clock(false);
@@ -86,7 +87,7 @@ public:
         this->enable_adc_clock(false);
         this->enable_mimo_clock_out(false);
         this->enable_test_clock(false);
-    }
+    )}
 
     void enable_mimo_clock_out(bool enb){
         //calculate the low and high dividers

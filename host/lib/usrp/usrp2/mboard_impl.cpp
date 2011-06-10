@@ -176,18 +176,10 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //------------------------------------------------------------------
 }
 
-usrp2_mboard_impl::~usrp2_mboard_impl(void){
-    //Safely destruct all RAII objects in an mboard.
-    //This prevents the mboard deconstructor from throwing,
-    //which allows the device to be safely deconstructed.
-    UHD_SAFE_CALL(_iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, 0);)
-    UHD_SAFE_CALL(_iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, 0);)
-    UHD_SAFE_CALL(_dboard_manager.reset();)
-    UHD_SAFE_CALL(_dboard_iface.reset();)
-    UHD_SAFE_CALL(_codec_ctrl.reset();)
-    UHD_SAFE_CALL(_clock_ctrl.reset();)
-    UHD_SAFE_CALL(_gps_ctrl.reset();)
-}
+usrp2_mboard_impl::~usrp2_mboard_impl(void){UHD_SAFE_CALL(
+    _iface->poke32(U2_REG_TX_CTRL_CYCLES_PER_UP, 0);
+    _iface->poke32(U2_REG_TX_CTRL_PACKETS_PER_UP, 0);
+)}
 
 /***********************************************************************
  * Helper Methods

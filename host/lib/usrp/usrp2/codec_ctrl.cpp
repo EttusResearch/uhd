@@ -20,6 +20,7 @@
 #include "ads62p44_regs.hpp"
 #include "usrp2_regs.hpp"
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
@@ -95,7 +96,7 @@ public:
         }
     }
 
-    ~usrp2_codec_ctrl_impl(void){
+    ~usrp2_codec_ctrl_impl(void){UHD_SAFE_CALL(
         //power-down dac
         _ad9777_regs.power_down_mode = 1;
         this->send_ad9777_reg(0);
@@ -118,7 +119,7 @@ public:
 
         case usrp2_iface::USRP_NXXX: break;
         }
-    }
+    )}
 
     void set_tx_mod_mode(int mod_mode){
         //set the sign of the frequency shift

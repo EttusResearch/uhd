@@ -351,9 +351,9 @@ void dboard_manager_impl::init(
     }
 }
 
-dboard_manager_impl::~dboard_manager_impl(void){
-    UHD_SAFE_CALL(set_nice_dboard_if();)
-}
+dboard_manager_impl::~dboard_manager_impl(void){UHD_SAFE_CALL(
+    set_nice_dboard_if();
+)}
 
 prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
     return _rx_dboards.keys();
