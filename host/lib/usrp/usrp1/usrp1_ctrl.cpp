@@ -240,6 +240,7 @@ public:
         while (not file.eof()) {
             file.read((char *)buf, sizeof(buf));
             size_t n = file.gcount();
+            if(n == 0) continue;
             int ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER, buf, n);
             if (ret < 0 or size_t(ret) != n) {
                 throw uhd::io_error("usrp_load_fpga: fpga load error");
