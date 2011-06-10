@@ -45,7 +45,6 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 # Sources
 ##################################################
 TOP_SRCS = \
-rev4_defs.v \
 capture_ddrlvds.v \
 u2plus_core.v \
 u2plus.v \
@@ -67,7 +66,8 @@ SYNTHESIZE_PROPERTIES = \
 "Register Balancing" Yes \
 "Use Clock Enable" Auto \
 "Use Synchronous Reset" Auto \
-"Use Synchronous Set" Auto
+"Use Synchronous Set" Auto \
+"Verilog Macros" "LVDS=1"
 
 TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"
