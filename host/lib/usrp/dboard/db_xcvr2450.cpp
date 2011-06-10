@@ -50,6 +50,7 @@
 #include "max2829_regs.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/ranges.hpp>
@@ -234,7 +235,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
 }
 
 xcvr2450::~xcvr2450(void){
-    spi_reset();
+    UHD_SAFE_CALL(spi_reset();)
 }
 
 void xcvr2450::spi_reset(void){

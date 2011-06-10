@@ -53,6 +53,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/types/ranges.hpp>
@@ -1039,7 +1040,7 @@ tvrx2::~tvrx2(void){
     UHD_LOGV(often) << boost::format(
         "TVRX2 (%s): Called Destructor"
     ) % (get_subdev_name()) << std::endl;
-    if (_enabled) set_disabled();
+    UHD_SAFE_CALL(if (_enabled) set_disabled();)
 }
 
 void tvrx2::set_disabled(void){

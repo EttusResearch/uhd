@@ -20,6 +20,7 @@
 #include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
@@ -351,7 +352,7 @@ void dboard_manager_impl::init(
 }
 
 dboard_manager_impl::~dboard_manager_impl(void){
-    set_nice_dboard_if();
+    UHD_SAFE_CALL(set_nice_dboard_if();)
 }
 
 prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
