@@ -22,22 +22,43 @@ USRPs take two reference signals in order to synchronize clocks and time:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Provide reference signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Most USRPs have front panel SMA connectors to source these reference signals.
+USRPs have two primary means of providing synchronization:
+
+**Method 1:**
+Connect the front panel SMA connectors to the reference sources.
 Typically, these signals are provided by an external GPSDO.
-Some USRP models can provide these signals from an optional internal GPSDO.
-For users generating their own signals,
+However, some USRP models can provide these signals from an optional internal GPSDO.
+
+**Method 2:**
+Use the MIMO Expansion cable to share reference sources (USRP2 and N-Series).
+The MIMO cable can be used synchronize one device to another device.
+Users of the MIMO cable may use method 1 to synchronize multiple pairs of devices.
+
+**Note:**
+For users generating their own signals for the external SMA connectors,
 the pulse-per-second should be clocked from the 10MHz reference.
 See the application notes for your device for specific signal requirements.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set the clock configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In order to synchronize to an external clock, configure the USRP device
-using the "external" clock configuration:
+In order to synchronize to an external clock,
+configure the USRP device using the "external" clock configuration:
 
 ::
 
     usrp->set_clock_config(uhd::clock_config_t::external());
+
+Sometimes the delay on the PPS signal will cause it to arrive inside the timing
+margin the FPGA sampling clock, causing PPS edges to be separated by less or
+more than 100million cycles of the FPGA clock. If this is the case,
+you can change the edge reference of the PPS clock with the clock_config_t:
+
+::
+
+    uhd::clock_config_t clock_config = uhd::clock_config_t::external();
+    clock_config.pps_polarity = uhd::clock_config_t::PPS_NEG;
+    usrp->set_clock_config(clock_config);
 
 ------------------------------------------------------------------------
 Synchronizing the device time
@@ -47,14 +68,6 @@ You can use the set_time_next_pps(...) function to either initialize the sample 
 or to an absolute time such as GPS time or UTC time.
 For the purposes of synchronizing devices,
 it doesn't matter what time you initialize to when using set_time_next_pps(...).
-
-Some GPSDOs synchronize their PPS with the rising edge of the 10MHz clock,
-and some synchronize with the falling edge of the clock.
-You should find out which edge your GPSDO uses,
-and then pass that in as an argument to set_time_next_pps(...).
-
-Here are two examples of how to set the PPS time to synchronize USRPs
-to a clock source.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Method 1 - poll the USRP time registers
