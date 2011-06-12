@@ -24,4 +24,6 @@ fifo_xlnx_512x36_2clk_18to36.v \
 fifo_xlnx_512x36_2clk_18to36.xco \
 fifo_xlnx_512x36_2clk_prog_full.v \
 fifo_xlnx_512x36_2clk_prog_full.xco \
+fifo_xlnx_1Kx18_2clk.v \
+fifo_xlnx_1Kx18_2clk.xco \
 ))
