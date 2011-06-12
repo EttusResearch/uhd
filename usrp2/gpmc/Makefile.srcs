@@ -17,4 +17,5 @@ gpmc_to_fifo_async.v \
 gpmc_to_fifo_sync.v \
 gpmc_wb.v \
 ram_to_fifo.v \
+new_write.v \
 ))

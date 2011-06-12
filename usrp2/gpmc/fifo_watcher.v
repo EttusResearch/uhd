@@ -30,10 +30,11 @@ module fifo_watcher
    reg [15:0] counter;
    wire [4:0] pkt_count;
    assign debug = pkt_count;
+   wire       space;
    
    fifo_short #(.WIDTH(16)) frame_lengths
      (.clk(clk), .reset(reset), .clear(clear),
-      .datain(counter), .src_rdy_i(write), .dst_rdy_o(),
+      .datain(counter), .src_rdy_i(write), .dst_rdy_o(space),
       .dataout(length), .src_rdy_o(have_packet_int), .dst_rdy_i(read),
       .occupied(pkt_count), .space());
 
@@ -53,7 +54,9 @@ module fifo_watcher
        bus_error <= 1;
      else if(read & ~have_packet_int)
        bus_error <= 1;
-
+     else if(write & ~space)
+       bus_error <= 1;
+   
    reg 	      in_packet;
    always @(posedge clk)
      if(reset | clear)
