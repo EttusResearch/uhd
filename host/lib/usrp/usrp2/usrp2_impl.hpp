@@ -220,7 +220,6 @@ private:
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
-    void handle_overflow(size_t);
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */
