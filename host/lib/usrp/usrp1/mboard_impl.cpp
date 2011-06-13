@@ -389,6 +389,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
             << "See the application notes for USRP1 for further instructions.\n"
         ;
         _clock_ctrl->set_master_clock_freq(val.as<double>());
+        this->update_xport_channel_mapping();
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:{
