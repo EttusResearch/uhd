@@ -43,7 +43,7 @@ static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | asyn
 /***********************************************************************
  * Helpers
  **********************************************************************/
-#if 0
+#if 1
 #  define debug_print_buff(...)
 #else
 static void debug_print_buff(const std::string &what, managed_recv_buffer::sptr buff){
