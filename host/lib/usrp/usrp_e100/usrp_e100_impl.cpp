@@ -171,12 +171,13 @@ usrp_e100_impl::usrp_e100_impl(
     //init the codec properties
     codec_init();
 
-    //init the io send/recv
-    io_init();
-
     //set default subdev specs
     this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
     this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
+
+    //init the io send/recv
+    io_init();
+
 }
 
 usrp_e100_impl::~usrp_e100_impl(void){
