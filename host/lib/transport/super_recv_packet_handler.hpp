@@ -135,7 +135,8 @@ public:
     void resize(const size_t size){
         if (this->size() == size) return;
         _props.resize(size);
-        _buffers_infos.resize(4, buffers_info_type(size));
+        //re-initialize all buffers infos by re-creating the vector
+        _buffers_infos = std::vector<buffers_info_type>(4, buffers_info_type(size));
     }
 
     //! Get the channel width of this handler
