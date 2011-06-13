@@ -114,6 +114,7 @@ void usrp1_impl::rx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
             _iface->poke32(FR_DECIM_RATE, _rx_dsp_decim/2 - 1);
             this->restore_rx(s);
         }
+        this->update_xport_channel_mapping(); //rate changed -> update
         return;
 
     case DSP_PROP_STREAM_CMD:
@@ -211,8 +212,10 @@ void usrp1_impl::tx_dsp_set(const wax::obj &key_, const wax::obj &val, size_t wh
             bool s = this->disable_tx();
             _iface->poke32(FR_INTERP_RATE, _tx_dsp_interp/2 - 1);
             this->restore_tx(s);
-            return;
         }
+        this->update_xport_channel_mapping(); //rate changed -> update
+        return;
+
     default: UHD_THROW_PROP_SET_ERROR();
     }
 

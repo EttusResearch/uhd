@@ -114,6 +114,9 @@ private:
         const uhd::usrp::dboard_id_t &rx_dboard_id
     );
 
+    //!call when the channel mapping is changed
+    void update_xport_channel_mapping(void);
+
     //soft time control emulation
     uhd::usrp::soft_time_ctrl::sptr _soft_time_ctrl;
 

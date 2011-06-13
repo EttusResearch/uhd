@@ -352,6 +352,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         bool s = this->disable_rx();
         _iface->poke32(FR_RX_MUX, calc_rx_mux(_rx_subdev_spec, _mboard_proxy->get_link()));
         this->restore_rx(s);
+        this->update_xport_channel_mapping();
     }return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:{
@@ -367,6 +368,7 @@ void usrp1_impl::mboard_set(const wax::obj &key, const wax::obj &val)
         bool s = this->disable_tx();
         _iface->poke32(FR_TX_MUX, calc_tx_mux(_tx_subdev_spec, _mboard_proxy->get_link()));
         this->restore_tx(s);
+        this->update_xport_channel_mapping();
     }return;
 
     case MBOARD_PROP_EEPROM_MAP:

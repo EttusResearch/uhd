@@ -199,12 +199,12 @@ usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     //initialize the dsps
     tx_dsp_init();
 
-    //initialize the send/recv
-    io_init();
-
     //init the subdev specs
     this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
     this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
+
+    //initialize the send/recv
+    io_init();
 }
 
 usrp1_impl::~usrp1_impl(void){UHD_SAFE_CALL(
