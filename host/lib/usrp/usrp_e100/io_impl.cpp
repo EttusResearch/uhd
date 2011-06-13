@@ -39,7 +39,25 @@ using namespace uhd::transport;
  * Constants
  **********************************************************************/
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
-#define fp_recv_debug false
+
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
+#if 0
+#  define debug_print_buff(...)
+#else
+static void debug_print_buff(const std::string &what, managed_recv_buffer::sptr buff){
+    std::ostringstream ss;
+    ss << boost::format(
+        "This is a %s packet, %u bytes.\n"
+    ) % what % buff->size();
+    for (size_t i = 0; i < 9; i++){
+        ss << boost::format("    buff[%u] = 0x%08x\n") % i % buff->cast<const boost::uint32_t *>()[i];
+    }
+    ss << std::endl << std::endl;
+    UHD_MSG(status) << ss.str();
+}
+#endif
 
 /***********************************************************************
  * io impl details (internal to this file)
@@ -60,7 +78,6 @@ struct usrp_e100_impl::io_impl{
     }
 
     ~io_impl(void){
-        recv_pirate_crew_raiding = false;
         recv_pirate_crew.interrupt_all();
         recv_pirate_crew.join_all();
         for (size_t i = 0; i < recv_pirate_booty.size(); i++){
@@ -90,7 +107,6 @@ struct usrp_e100_impl::io_impl{
     std::vector<bounded_buffer<managed_recv_buffer::sptr> *> recv_pirate_booty;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group recv_pirate_crew;
-    bool recv_pirate_crew_raiding;
 };
 
 /***********************************************************************
@@ -101,64 +117,51 @@ struct usrp_e100_impl::io_impl{
 void usrp_e100_impl::io_impl::recv_pirate_loop(
     boost::barrier &spawn_barrier, usrp_e100_clock_ctrl::sptr clock_ctrl
 ){
-    recv_pirate_crew_raiding = true;
     spawn_barrier.wait();
     set_thread_priority_safe();
 
-    while(recv_pirate_crew_raiding){
+    while (not boost::this_thread::interruption_requested()){
         managed_recv_buffer::sptr buff = this->data_xport->get_recv_buff();
-        if (not buff.get()) continue; //ignore timeout/error buffers
+        if (buff.get() == NULL) continue; //ignore timeout buffers
 
-        if (fp_recv_debug){
-            std::ostringstream ss;
-            ss << "len " << buff->size() << std::endl;
-            for (size_t i = 0; i < 9; i++){
-                ss << boost::format("    0x%08x") % buff->cast<const boost::uint32_t *>()[i] << std::endl;
-            }
-            ss << std::endl << std::endl;
-            UHD_LOGV(always) << ss.str();
+        //handle an rx data packet or inline message
+        const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
+        const size_t rx_index = vrt_hdr[1] - E100_DSP_SID_BASE;
+        if (rx_index < E100_NUM_RX_DSPS){
+            debug_print_buff("data", buff);
+            recv_pirate_booty[rx_index]->push_with_wait(buff);
+            continue;
         }
 
-        try{
-            //handle an rx data packet or inline message
-            const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
-            const size_t rx_index = uhd::ntohx(vrt_hdr[1]);
-            if (rx_index < E100_NUM_RX_DSPS){
-                if (fp_recv_debug) UHD_LOGV(always) << "this is rx_data_inline_sid\n";
-                recv_pirate_booty[rx_index]->push_with_wait(buff);
-                continue;
-            }
-
-            //unpack the vrt header and process below...
-            vrt::if_packet_info_t if_packet_info;
-            if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-            vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
-
-            //handle a tx async report message
-            if (if_packet_info.sid == E100_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
-                if (fp_recv_debug) UHD_LOGV(always) << "this is tx_async_report_sid\n";
-
-                //fill in the async metadata
-                async_metadata_t metadata;
-                metadata.channel = 0;
-                metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
-                metadata.time_spec = time_spec_t(
-                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), clock_ctrl->get_fpga_clock_rate()
-                );
-                metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
-
-                //print the famous U, and push the metadata into the message queue
-                if (metadata.event_code & underflow_flags) UHD_MSG(fastpath) << "U";
-                async_msg_fifo.push_with_pop_on_full(metadata);
-                continue;
-            }
-
-            //TODO replace this below with a UHD_MSG(error)
-            if (fp_recv_debug) UHD_LOGV(always) << "this is unknown packet\n";
-
-        }catch(const std::exception &e){
-            UHD_MSG(error) << "Error (usrp-e recv pirate loop): " << e.what() << std::endl;
+        //otherwise, unpack the vrt header and process below...
+        vrt::if_packet_info_t if_packet_info;
+        if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+        try{vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);}
+        catch(const std::exception &e){
+            UHD_MSG(error) << "Error unpacking vrt header:\n" << e.what() << std::endl;
+            continue;
         }
+
+        //handle a tx async report message
+        if (if_packet_info.sid == E100_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+            debug_print_buff("async", buff);
+
+            //fill in the async metadata
+            async_metadata_t metadata;
+            metadata.channel = 0;
+            metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
+            metadata.time_spec = time_spec_t(
+                time_t(if_packet_info.tsi), long(if_packet_info.tsf), clock_ctrl->get_fpga_clock_rate()
+            );
+            metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
+
+            //print the famous U, and push the metadata into the message queue
+            if (metadata.event_code & underflow_flags) UHD_MSG(fastpath) << "U";
+            async_msg_fifo.push_with_pop_on_full(metadata);
+            continue;
+        }
+
+        debug_print_buff("unknown", buff);
     }
 }
 
