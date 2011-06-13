@@ -120,12 +120,29 @@
 #define U2_REG_TIME64_TICKS_RB_PPS READBACK_BASE + 4*15
 
 /////////////////////////////////////////////////
+// RX FE
+////////////////////////////////////////////////
+#define U2_REG_RX_FE_SWAP_IQ             U2_REG_SR_ADDR(SR_RX_FRONT + 0) //lower bit
+#define U2_REG_RX_FE_MAG_CORRECTION      U2_REG_SR_ADDR(SR_RX_FRONT + 1) //18 bits
+#define U2_REG_RX_FE_PHASE_CORRECTION    U2_REG_SR_ADDR(SR_RX_FRONT + 2) //18 bits
+#define U2_REG_RX_FE_OFFSET_I            U2_REG_SR_ADDR(SR_RX_FRONT + 3) //18 bits
+#define U2_REG_RX_FE_OFFSET_Q            U2_REG_SR_ADDR(SR_RX_FRONT + 4) //18 bits
+
+/////////////////////////////////////////////////
+// TX FE
+////////////////////////////////////////////////
+#define U2_REG_TX_FE_DC_OFFSET_I         U2_REG_SR_ADDR(SR_TX_FRONT + 0) //24 bits
+#define U2_REG_TX_FE_DC_OFFSET_Q         U2_REG_SR_ADDR(SR_TX_FRONT + 1) //24 bits
+#define U2_REG_TX_FE_MAC_CORRECTION      U2_REG_SR_ADDR(SR_TX_FRONT + 2) //18 bits
+#define U2_REG_TX_FE_PHASE_CORRECTION    U2_REG_SR_ADDR(SR_TX_FRONT + 3) //18 bits
+#define U2_REG_TX_FE_MUX                 U2_REG_SR_ADDR(SR_TX_FRONT + 4) //8 bits (std output = 0x10, reversed = 0x01)
+
+/////////////////////////////////////////////////
 // DSP TX Regs
 ////////////////////////////////////////////////
 #define U2_REG_DSP_TX_FREQ U2_REG_SR_ADDR(SR_TX_DSP + 0)
 #define U2_REG_DSP_TX_SCALE_IQ U2_REG_SR_ADDR(SR_TX_DSP + 1)
 #define U2_REG_DSP_TX_INTERP_RATE U2_REG_SR_ADDR(SR_TX_DSP + 2)
-#define U2_REG_DSP_TX_MUX U2_REG_SR_ADDR(SR_TX_DSP + 4)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
@@ -135,9 +152,11 @@
     (U2_REG_SR_ADDR(SR_RX_DSP1 + offset)))
 
 #define U2_REG_DSP_RX_FREQ(which)       U2_REG_DSP_RX_HELPER(which, 0)
-#define U2_REG_DSP_RX_SCALE_IQ(which)   U2_REG_DSP_RX_HELPER(which, 1)
 #define U2_REG_DSP_RX_DECIM(which)      U2_REG_DSP_RX_HELPER(which, 2)
 #define U2_REG_DSP_RX_MUX(which)        U2_REG_DSP_RX_HELPER(which, 5)
+
+#define U2_FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
+#define U2_FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 ////////////////////////////////////////////////
 // GPIO

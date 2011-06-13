@@ -173,12 +173,6 @@ void usrp2_mboard_impl::ddc_set(const wax::obj &key_, const wax::obj &val, size_
 
             //set the decimation
             _iface->poke32(U2_REG_DSP_RX_DECIM(which_dsp), dsp_type1::calc_cic_filter_word(_dsp_impl->ddc_decim[which_dsp]));
-
-            //set the scaling
-            static const boost::int16_t default_rx_scale_iq = 1024;
-            _iface->poke32(U2_REG_DSP_RX_SCALE_IQ(which_dsp),
-                dsp_type1::calc_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
-            );
         }
         _device.update_xport_channel_mapping(); //rate changed -> update
         return;
