@@ -104,6 +104,7 @@ private:
     void io_init(void);
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
     void handle_overrun(size_t);
+    void update_xport_channel_mapping(void);
 
     //configuration shadows
     uhd::clock_config_t _clock_config;

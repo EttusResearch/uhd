@@ -15,14 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "../../transport/super_recv_packet_handler.hpp"
+#include "../../transport/super_send_packet_handler.hpp"
 #include "usrp_e100_impl.hpp"
 #include "usrp_e100_regs.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
+#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
-#include "../../transport/vrt_packet_handler.hpp"
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
@@ -51,8 +53,6 @@ static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | asyn
 struct usrp_e100_impl::io_impl{
     io_impl(zero_copy_if::sptr &xport):
         data_xport(xport),
-        get_recv_buffs_fcn(boost::bind(&usrp_e100_impl::io_impl::get_recv_buffs, this, _1)),
-        get_send_buffs_fcn(boost::bind(&usrp_e100_impl::io_impl::get_send_buffs, this, _1)),
         recv_pirate_booty(data_xport->get_num_recv_frames()),
         async_msg_fifo(100/*messages deep*/)
     {
@@ -65,16 +65,11 @@ struct usrp_e100_impl::io_impl{
         recv_pirate_crew.join_all();
     }
 
-    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs){
-        UHD_ASSERT_THROW(buffs.size() == 1);
+    managed_recv_buffer::sptr get_recv_buff(double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
-        return recv_pirate_booty.pop_with_timed_wait(buffs.front(), recv_timeout);
-    }
-
-    bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &buffs){
-        UHD_ASSERT_THROW(buffs.size() == 1);
-        buffs[0] = data_xport->get_send_buff(send_timeout);
-        return buffs[0].get() != NULL;
+        managed_recv_buffer::sptr buff;
+        recv_pirate_booty.pop_with_timed_wait(buff, timeout);
+        return buff; //ASSUME buff == NULL when pop times-out
     }
 
     //The data transport is listed first so that it is deconstructed last,
@@ -82,16 +77,9 @@ struct usrp_e100_impl::io_impl{
     //This comment is invalid because its now a reference and not stored here.
     zero_copy_if::sptr &data_xport;
 
-    //bound callbacks for get buffs (bound once here, not in fast-path)
-    vrt_packet_handler::get_recv_buffs_t get_recv_buffs_fcn;
-    vrt_packet_handler::get_send_buffs_t get_send_buffs_fcn;
-
-    //timeouts set on calls to recv/send (passed into get buffs methods)
-    double recv_timeout, send_timeout;
-
     //state management for the vrt packet handler code
-    vrt_packet_handler::recv_state packet_handler_recv_state;
-    vrt_packet_handler::send_state packet_handler_send_state;
+    sph::recv_packet_handler recv_handler;
+    sph::send_packet_handler send_handler;
     bool continuous_streaming;
 
     //a pirate's life is the life for me!
@@ -133,15 +121,17 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
             vrt::if_packet_info_t if_packet_info;
             if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
             const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
-            vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
 
             //handle an rx data packet or inline message
-            if (if_packet_info.sid == rx_data_inline_sid){
+            if (uhd::ntohx(vrt_hdr[1]) == rx_data_inline_sid){ //ASSUME has_sid
                 if (fp_recv_debug) UHD_LOGV(always) << "this is rx_data_inline_sid\n";
                 //same number of frames as the data transport -> always immediate
                 recv_pirate_booty.push_with_wait(buff);
                 continue;
             }
+
+            //unpack the vrt header and process below...
+            vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
 
             //handle a tx async report message
             if (if_packet_info.sid == tx_async_report_sid and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
@@ -154,7 +144,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
                 metadata.time_spec = time_spec_t(
                     time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), clock_ctrl->get_fpga_clock_rate()
                 );
-                metadata.event_code = vrt_packet_handler::get_context_code<async_metadata_t::event_code_t>(vrt_hdr, if_packet_info);
+                metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
 
                 //print the famous U, and push the metadata into the message queue
                 if (metadata.event_code & underflow_flags) UHD_MSG(fastpath) << "U";
@@ -162,6 +152,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
                 continue;
             }
 
+            //TODO replace this below with a UHD_MSG(error)
             if (fp_recv_debug) UHD_LOGV(always) << "this is unknown packet\n";
 
         }catch(const std::exception &e){
@@ -213,6 +204,42 @@ void usrp_e100_impl::io_init(void){
         boost::ref(spawn_barrier), _clock_ctrl
     ));
     spawn_barrier.wait();
+    //update mapping here since it didnt b4 when io init not called first
+    update_xport_channel_mapping();
+}
+
+void usrp_e100_impl::update_xport_channel_mapping(void){
+    if (_io_impl.get() == NULL) return; //not inited yet
+
+    //set all of the relevant properties on the handler
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    _io_impl->recv_handler.resize(_rx_subdev_spec.size());
+    _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_le);
+    _io_impl->recv_handler.set_tick_rate(_clock_ctrl->get_fpga_clock_rate());
+    _io_impl->recv_handler.set_samp_rate(_rx_ddc_proxy->get_link()[DSP_PROP_HOST_RATE].as<double>());
+    for (size_t chan = 0; chan < _io_impl->recv_handler.size(); chan++){
+        _io_impl->recv_handler.set_xport_chan_get_buff(chan, boost::bind(
+            &usrp_e100_impl::io_impl::get_recv_buff, _io_impl.get(), _1
+        ));
+        _io_impl->recv_handler.set_overflow_handler(chan, boost::bind(
+            &usrp_e100_impl::handle_overrun, this, chan
+        ));
+    }
+    _io_impl->recv_handler.set_converter(_recv_otw_type);
+
+    //set all of the relevant properties on the handler
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    _io_impl->send_handler.resize(_tx_subdev_spec.size());
+    _io_impl->send_handler.set_vrt_packer(&vrt::if_hdr_pack_le);
+    _io_impl->send_handler.set_tick_rate(_clock_ctrl->get_fpga_clock_rate());
+    _io_impl->send_handler.set_samp_rate(_tx_duc_proxy->get_link()[DSP_PROP_HOST_RATE].as<double>());
+    for (size_t chan = 0; chan < _io_impl->send_handler.size(); chan++){
+        _io_impl->send_handler.set_xport_chan_get_buff(chan, boost::bind(
+            &uhd::transport::zero_copy_if::get_send_buff, _io_impl->data_xport, _1
+        ));
+    }
+    _io_impl->send_handler.set_converter(_send_otw_type);
+    _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
 void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
@@ -222,8 +249,7 @@ void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
     _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
 }
 
-void usrp_e100_impl::handle_overrun(size_t){
-    UHD_MSG(fastpath) << "O"; //the famous OOOOOOOOOOO
+void usrp_e100_impl::handle_overrun(size_t /*chan*/){
     if (_io_impl->continuous_streaming){
         this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
@@ -242,20 +268,14 @@ size_t usrp_e100_impl::get_max_send_samps_per_packet(void) const{
 }
 
 size_t usrp_e100_impl::send(
-    const send_buffs_type &buffs, size_t num_samps,
+    const send_buffs_type &buffs, size_t nsamps_per_buff,
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
-    _io_impl->send_timeout = timeout;
-    return vrt_packet_handler::send(
-        _io_impl->packet_handler_send_state,       //last state of the send handler
-        buffs, num_samps,                          //buffer to fill
-        metadata, send_mode,                       //samples metadata
-        io_type, _send_otw_type,                   //input and output types to convert
-        _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
-        uhd::transport::vrt::if_hdr_pack_le,
-        _io_impl->get_send_buffs_fcn,
-        get_max_send_samps_per_packet()
+    return _io_impl->send_handler.send(
+        buffs, nsamps_per_buff,
+        metadata, io_type,
+        send_mode, timeout
     );
 }
 
@@ -273,20 +293,14 @@ size_t usrp_e100_impl::get_max_recv_samps_per_packet(void) const{
 }
 
 size_t usrp_e100_impl::recv(
-    const recv_buffs_type &buffs, size_t num_samps,
+    const recv_buffs_type &buffs, size_t nsamps_per_buff,
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
-    _io_impl->recv_timeout = timeout;
-    return vrt_packet_handler::recv(
-        _io_impl->packet_handler_recv_state,       //last state of the recv handler
-        buffs, num_samps,                          //buffer to fill
-        metadata, recv_mode,                       //samples metadata
-        io_type, _recv_otw_type,                   //input and output types to convert
-        _clock_ctrl->get_fpga_clock_rate(),        //master clock tick rate
-        uhd::transport::vrt::if_hdr_unpack_le,
-        _io_impl->get_recv_buffs_fcn,
-        boost::bind(&usrp_e100_impl::handle_overrun, this, _1)
+    return _io_impl->recv_handler.recv(
+        buffs, nsamps_per_buff,
+        metadata, io_type,
+        recv_mode, timeout
     );
 }
 
