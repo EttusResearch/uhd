@@ -113,7 +113,7 @@ public:
                 _converters[io_type] = uhd::convert::get_converter_cpu_to_otw(
                     io_type_t::tid_t(io_type), otw_type, 1, width
                 );
-            }catch(const uhd::value_error &e){} //we expect this, not all io_types valid...
+            }catch(const uhd::value_error &){} //we expect this, not all io_types valid...
         }
         _bytes_per_item = otw_type.get_sample_size();
     }

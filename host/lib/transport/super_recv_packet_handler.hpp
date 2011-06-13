@@ -192,7 +192,7 @@ public:
                 _converters[io_type] = uhd::convert::get_converter_otw_to_cpu(
                     io_type_t::tid_t(io_type), otw_type, 1, width
                 );
-            }catch(const uhd::value_error &e){} //we expect this, not all io_types valid...
+            }catch(const uhd::value_error &){} //we expect this, not all io_types valid...
         }
         _bytes_per_item = otw_type.get_sample_size();
     }
@@ -520,8 +520,8 @@ private:
                 alignment_check(index, curr_info);
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.has_time_spec = prev_info.metadata.has_time_spec;
-                curr_info.metadata.time_spec = prev_info.metadata.time_spec + time_spec_t(
-                    0.0, prev_info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t)/_bytes_per_item, _samp_rate);
+                curr_info.metadata.time_spec = prev_info.metadata.time_spec + time_spec_t(0,
+                    prev_info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t)/_bytes_per_item, _samp_rate);
                 curr_info.metadata.more_fragments = false;
                 curr_info.metadata.fragment_offset = 0;
                 curr_info.metadata.start_of_burst = false;
