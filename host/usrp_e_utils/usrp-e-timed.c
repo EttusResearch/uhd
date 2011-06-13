@@ -273,7 +273,7 @@ static void *write_thread(void *threadid)
 
 			d_time = delta_time(finish_time, start_time);
 
-			elapsed_seconds = (float)d_time.tv_sec - ((float)d_time.tv_usec * 1e-6f);
+			elapsed_seconds = (float)d_time.tv_sec + ((float)d_time.tv_usec * 1e-6f);
 
 			printf("Bytes transfered = %ld, elapsed seconds = %f\n", bytes_transfered, elapsed_seconds);
 			printf("TX data transfer rate = %f K Samples/second\n",
