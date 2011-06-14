@@ -123,7 +123,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
             const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
 
             //handle an rx data packet or inline message
-            if (uhd::ntohx(vrt_hdr[1]) == rx_data_inline_sid){ //ASSUME has_sid
+            if (uhd::wtohx(vrt_hdr[1]) == rx_data_inline_sid){ //ASSUME has_sid
                 if (fp_recv_debug) UHD_LOGV(always) << "this is rx_data_inline_sid\n";
                 //same number of frames as the data transport -> always immediate
                 recv_pirate_booty.push_with_wait(buff);
