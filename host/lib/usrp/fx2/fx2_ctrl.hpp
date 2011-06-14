@@ -22,9 +22,11 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
-class usrp_ctrl : boost::noncopyable{
+namespace uhd{ namespace usrp{
+
+class fx2_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<usrp_ctrl> sptr;
+    typedef boost::shared_ptr<fx2_ctrl> sptr;
 
     /*!
      * Make a usrp control object from a control transport
@@ -114,5 +116,7 @@ public:
     //! enable/disable the tx path
     virtual void usrp_tx_enable(bool on) = 0;
 };
+
+}} //namespace uhd::usrp
 
 #endif /* INCLUDED_USRP_CTRL_HPP */

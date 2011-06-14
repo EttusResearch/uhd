@@ -21,7 +21,7 @@
 #include <uhd/usrp/mboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "usrp1_ctrl.hpp"
+#include "fx2_ctrl.hpp"
 
 /*!
  * The usrp1 interface class:
@@ -40,7 +40,7 @@ public:
      * \param ctrl_transport the usrp controller object
      * \return a new usrp1 interface object
      */
-    static sptr make(usrp_ctrl::sptr ctrl_transport);
+    static sptr make(uhd::usrp::fx2_ctrl::sptr ctrl_transport);
 
     /*!
      * Perform a general USB firmware OUT operation

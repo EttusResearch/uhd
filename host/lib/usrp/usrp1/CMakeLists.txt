@@ -25,8 +25,6 @@
 LIBUHD_REGISTER_COMPONENT("USRP1" ENABLE_USRP1 ON "ENABLE_LIBUHD;ENABLE_USB" OFF)
 
 IF(ENABLE_USRP1)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
-
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
@@ -43,7 +41,5 @@ IF(ENABLE_USRP1)
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_ctrl.hpp
     )
 ENDIF(ENABLE_USRP1)

@@ -16,7 +16,6 @@
 //
 
 #include "usrp1_impl.hpp"
-#include "usrp1_ctrl.hpp"
 #include "fpga_regs_standard.h"
 #include "usrp_spi_defs.h"
 #include <uhd/utils/log.hpp>
@@ -90,7 +89,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         try{control = usb_control::make(handle);}
         catch(const uhd::exception &){continue;} //ignore claimed
 
-        usrp_ctrl::make(control)->usrp_load_firmware(usrp1_fw_image);
+        fx2_ctrl::make(control)->usrp_load_firmware(usrp1_fw_image);
     }
 
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
@@ -102,7 +101,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         try{control = usb_control::make(handle);}
         catch(const uhd::exception &){continue;} //ignore claimed
 
-        usrp1_iface::sptr iface = usrp1_iface::make(usrp_ctrl::make(control));
+        usrp1_iface::sptr iface = usrp1_iface::make(fx2_ctrl::make(control));
         device_addr_t new_addr;
         new_addr["type"] = "usrp1";
         new_addr["name"] = iface->mb_eeprom["name"];
@@ -147,7 +146,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr){
 
     //create control objects and a data transport
     usb_control::sptr ctrl_transport = usb_control::make(handle);
-    usrp_ctrl::sptr usrp_ctrl = usrp_ctrl::make(ctrl_transport);
+    fx2_ctrl::sptr usrp_ctrl = fx2_ctrl::make(ctrl_transport);
     usrp_ctrl->usrp_load_fpga(usrp1_fpga_image);
     usrp_ctrl->usrp_init();
     usb_zero_copy::sptr data_transport = usb_zero_copy::make(
@@ -169,7 +168,7 @@ UHD_STATIC_BLOCK(register_usrp1_device){
  * Structors
  **********************************************************************/
 usrp1_impl::usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
-                       usrp_ctrl::sptr ctrl_transport)
+                       uhd::usrp::fx2_ctrl::sptr ctrl_transport)
  : _data_transport(data_transport), _ctrl_transport(ctrl_transport)
 {
     _iface = usrp1_iface::make(ctrl_transport);

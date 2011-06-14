@@ -33,7 +33,7 @@ public:
     /*******************************************************************
      * Structors
      ******************************************************************/
-    usrp1_iface_impl(usrp_ctrl::sptr ctrl_transport)
+    usrp1_iface_impl(uhd::usrp::fx2_ctrl::sptr ctrl_transport)
     {
         _ctrl_transport = ctrl_transport;
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_B000);
@@ -287,13 +287,13 @@ public:
     }
 
 private:
-    usrp_ctrl::sptr _ctrl_transport;
+    uhd::usrp::fx2_ctrl::sptr _ctrl_transport;
 };
 
 /***********************************************************************
  * Public Make Function
  **********************************************************************/
-usrp1_iface::sptr usrp1_iface::make(usrp_ctrl::sptr ctrl_transport)
+usrp1_iface::sptr usrp1_iface::make(uhd::usrp::fx2_ctrl::sptr ctrl_transport)
 {
     return sptr(new usrp1_iface_impl(ctrl_transport));
 }

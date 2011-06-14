@@ -16,7 +16,6 @@
 //
 
 #include "usrp1_iface.hpp"
-#include "usrp1_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include "soft_time_ctrl.hpp"
@@ -75,7 +74,7 @@ public:
 
     //structors
     usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
-               usrp_ctrl::sptr ctrl_transport);
+               uhd::usrp::fx2_ctrl::sptr ctrl_transport);
 
     ~usrp1_impl(void);
 
@@ -197,7 +196,7 @@ private:
 
     //transports
     uhd::transport::usb_zero_copy::sptr _data_transport;
-    usrp_ctrl::sptr _ctrl_transport;
+    uhd::usrp::fx2_ctrl::sptr _ctrl_transport;
 
     //capabilities
     size_t get_num_ducs(void);

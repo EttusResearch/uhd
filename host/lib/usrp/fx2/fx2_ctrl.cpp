@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp1_ctrl.hpp"
+#include "fx2_ctrl.hpp"
 #include "usrp_commands.h"
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
@@ -29,6 +29,7 @@
 #include <cstring>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 #define FX2_FIRMWARE_LOAD 0xa0
 
@@ -128,9 +129,9 @@ bool parse_record(std::string *record, unsigned int &len,
 /*!
  * USRP control implementation for device discovery and configuration
  */
-class usrp_ctrl_impl : public usrp_ctrl {
+class fx2_ctrl_impl : public fx2_ctrl {
 public:
-    usrp_ctrl_impl(uhd::transport::usb_control::sptr ctrl_transport)
+    fx2_ctrl_impl(uhd::transport::usb_control::sptr ctrl_transport)
     {
         _ctrl_transport = ctrl_transport;
     }
@@ -415,9 +416,9 @@ private:
 };
 
 /***********************************************************************
- * Public make function for usrp_ctrl interface
+ * Public make function for fx2_ctrl interface
  **********************************************************************/
-usrp_ctrl::sptr usrp_ctrl::make(uhd::transport::usb_control::sptr ctrl_transport){
-    return sptr(new usrp_ctrl_impl(ctrl_transport));
+fx2_ctrl::sptr fx2_ctrl::make(uhd::transport::usb_control::sptr ctrl_transport){
+    return sptr(new fx2_ctrl_impl(ctrl_transport));
 }
 
