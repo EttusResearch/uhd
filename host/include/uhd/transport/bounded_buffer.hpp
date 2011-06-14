@@ -48,7 +48,7 @@ namespace uhd{ namespace transport{
          * \param elem the element reference pop to
          * \return false when the buffer is full
          */
-        bool push_with_haste(const elem_type &elem){
+        UHD_INLINE bool push_with_haste(const elem_type &elem){
             return _detail.push_with_haste(elem);
         }
 
@@ -59,7 +59,7 @@ namespace uhd{ namespace transport{
          * \param elem the new element to push
          * \return true if the element fit without popping for space
          */
-        bool push_with_pop_on_full(const elem_type &elem){
+        UHD_INLINE bool push_with_pop_on_full(const elem_type &elem){
             return _detail.push_with_pop_on_full(elem);
         }
 
@@ -68,7 +68,7 @@ namespace uhd{ namespace transport{
          * Wait until the bounded_buffer becomes non-full.
          * \param elem the new element to push
          */
-        void push_with_wait(const elem_type &elem){
+        UHD_INLINE void push_with_wait(const elem_type &elem){
             return _detail.push_with_wait(elem);
         }
 
@@ -79,7 +79,7 @@ namespace uhd{ namespace transport{
          * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
-        bool push_with_timed_wait(const elem_type &elem, double timeout){
+        UHD_INLINE bool push_with_timed_wait(const elem_type &elem, double timeout){
             return _detail.push_with_timed_wait(elem, timeout);
         }
 
@@ -89,7 +89,7 @@ namespace uhd{ namespace transport{
          * \param elem the element reference pop to
          * \return false when the buffer is empty
          */
-        bool pop_with_haste(elem_type &elem){
+        UHD_INLINE bool pop_with_haste(elem_type &elem){
             return _detail.pop_with_haste(elem);
         }
 
@@ -98,7 +98,7 @@ namespace uhd{ namespace transport{
          * Wait until the bounded_buffer becomes non-empty.
          * \param elem the element reference pop to
          */
-        void pop_with_wait(elem_type &elem){
+        UHD_INLINE void pop_with_wait(elem_type &elem){
             return _detail.pop_with_wait(elem);
         }
 
@@ -109,7 +109,7 @@ namespace uhd{ namespace transport{
          * \param timeout the timeout in seconds
          * \return false when the operation times out
          */
-        bool pop_with_timed_wait(elem_type &elem, double timeout){
+        UHD_INLINE bool pop_with_timed_wait(elem_type &elem, double timeout){
             return _detail.pop_with_timed_wait(elem, timeout);
         }
 
