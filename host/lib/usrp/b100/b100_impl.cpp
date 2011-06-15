@@ -54,20 +54,9 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     //return an empty list of addresses when type is set to non-b100
     if (hint.has_key("type") and hint["type"] != "b100") return b100_addrs;
 
-    //extract the firmware path for the b100
-    std::string b100_fw_image;
-    try{
-        b100_fw_image = find_image_path(
-            hint.has_key("fw")? hint["fw"] : "usrp_b100_fw.ihx"
-        );
-    }
-    catch(...){
-        UHD_MSG(warning) << boost::format(
-            "Could not locate B100 firmware.\n"
-            "Please install the images package.\n"
-        );
-        return b100_addrs;
-    }
+    //Return an empty list of addresses when an address is specified,
+    //since an address is intended for a different, non-USB, device.
+    if (hint.has_key("addr")) return b100_addrs;
 
     boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : B100_VENDOR_ID;
     boost::uint16_t pid = hint.has_key("uninit") ? FX2_PRODUCT_ID : B100_PRODUCT_ID;
@@ -80,11 +69,25 @@ static device_addrs_t b100_find(const device_addr_t &hint)
 
     //find the usrps and load firmware
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
-        try {
-            fx2_ctrl::make(usb_control::make(handle))->usrp_load_firmware(b100_fw_image);
-        } catch (...) {
-            UHD_MSG(status) << "Interface claimed, ignoring device" << std::endl;
+        //extract the firmware path for the b100
+        std::string b100_fw_image;
+        try{
+            b100_fw_image = find_image_path(hint.get("fw", "usrp_b100_fw.ihx"));
         }
+        catch(...){
+            UHD_MSG(warning) << boost::format(
+                "Could not locate B100 firmware.\n"
+                "Please install the images package.\n"
+            );
+            return b100_addrs;
+        }
+        UHD_LOG << "the  firmware image: " << b100_fw_image << std::endl;
+
+        usb_control::sptr control;
+        try{control = usb_control::make(handle);}
+        catch(const uhd::exception &){continue;} //ignore claimed
+
+        fx2_ctrl::make(control)->usrp_load_firmware(b100_fw_image);
     }
 
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
