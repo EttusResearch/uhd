@@ -57,7 +57,7 @@ public:
      * \param filename name of EEPROM image
      */
     virtual void usrp_load_eeprom(std::string filestring) = 0;
-
+    
     /*!
      * Submit an IN transfer 
      * \param request device specific request 

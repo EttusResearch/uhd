@@ -98,4 +98,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usb_zero_copy_wrapper.cpp
 )

@@ -30,6 +30,7 @@ SET(manual_sources
     transport.rst
     usrp1.rst
     usrp2.rst
+    usrp_b1xx.rst
     usrp_e1xx.rst
 )
 
