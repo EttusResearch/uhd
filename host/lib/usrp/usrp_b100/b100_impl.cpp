@@ -58,7 +58,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     std::string b100_fw_image;
     try{
         b100_fw_image = find_image_path(
-            hint.has_key("fw")? hint["fw"] : "usrp_b100_fw_c2.ihx"
+            hint.has_key("fw")? hint["fw"] : "usrp_b100_fw.ihx"
         );
     }
     catch(...){
@@ -129,7 +129,7 @@ static device::sptr b100_make(const device_addr_t &device_addr){
 
     //extract the FPGA path for the B100
     std::string b100_fpga_image = find_image_path(
-        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_b100_fpga_c3.bin"
+        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_b100_fpga.bin"
     );
 
     //try to match the given device address with something on the USB bus

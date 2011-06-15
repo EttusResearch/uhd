@@ -52,13 +52,14 @@ ifeq ($(shell xtclsh -h > /dev/null 2>&1 && echo $$?),0)
 endif
 
 ########################################################################
-# USRP1 firmware
+# USRP1 and B100 firmware
 ########################################################################
 ifdef HAS_SDCC
 
 _usrp1_fw_dir = $(TOP_FW_DIR)/fx2
 _usrp1_fw_ihx = $(BUILT_IMAGES_DIR)/usrp1_fw.ihx
-IMAGES_LIST += $(_usrp1_fw_ihx)
+_usrp_b100_fw_ihx = $(BUILT_IMAGES_DIR)/usrp_b100_fw.ihx
+IMAGES_LIST += $(_usrp1_fw_ihx) $(_usrp_b100_fw_ihx)
 
 $(_usrp1_fw_ihx): $(GLOBAL_DEPS)
 	cd $(_usrp1_fw_dir) && rm -rf build
@@ -66,6 +67,9 @@ $(_usrp1_fw_ihx): $(GLOBAL_DEPS)
 	cd $(_usrp1_fw_dir)/build && cmake ../
 	cd $(_usrp1_fw_dir)/build && make
 	cp $(_usrp1_fw_dir)/build/usrp1/usrp1_fw.ihx $@
+
+$(_usrp_b100_fw_ihx): $(_usrp1_fw_ihx)
+	cp $(_usrp1_fw_dir)/build/b100/b100_fw.ihx $(_usrp_b100_fw_ihx)
 
 endif
 
@@ -82,6 +86,22 @@ $(_usrp1_fpga_rbf): $(GLOBAL_DEPS)
 
 $(_usrp1_fpga_4rx_rbf): $(GLOBAL_DEPS)
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
+
+########################################################################
+# USRP-B100 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_b100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/B100
+_usrp_b100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_b100_fpga.bin
+IMAGES_LIST += $(_usrp_b100_fpga_bin)
+
+$(_usrp_b100_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_b100_fpga_dir) && make clean
+	cd $(_usrp_b100_fpga_dir) && make bin
+	cp $(_usrp_b100_fpga_dir)/build/u1plus.bin $@
+
+endif
 
 ########################################################################
 # USRP2 and N Series firmware
