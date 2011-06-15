@@ -21,6 +21,7 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <iostream>
 #include <complex>
 
@@ -30,6 +31,7 @@ unsigned long long num_overflows = 0;
 unsigned long long num_underflows = 0;
 unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
+unsigned long long num_dropped_samps = 0;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -46,6 +48,9 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
     uhd::rx_metadata_t md;
     const size_t max_samps_per_packet = usrp->get_device()->get_max_recv_samps_per_packet();
     std::vector<std::complex<float> > buff(max_samps_per_packet);
+    bool had_an_overflow = false;
+    uhd::time_spec_t last_time;
+    const double rate = usrp->get_rx_rate();
 
     usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     while (not boost::this_thread::interruption_requested()){
@@ -58,9 +63,15 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
         //handle the error codes
         switch(md.error_code){
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
+            if (had_an_overflow){
+                had_an_overflow = false;
+                num_dropped_samps += boost::math::iround((md.time_spec - last_time).get_real_secs()*rate);
+            }
             break;
 
         case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
+            had_an_overflow = true;
+            last_time = md.time_spec;
             num_overflows++;
             break;
 
@@ -210,10 +221,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl << boost::format(
         "Benchmark rate summary:\n"
         "  Num received samples: %u\n"
+        "  Num dropped samples: %u\n"
         "  Num overflows detected: %u\n"
         "  Num transmitted samples: %u\n"
         "  Num underflows detected: %u\n"
-    ) % num_rx_samps % num_overflows % num_tx_samps % num_overflows << std::endl;
+    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_overflows << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
