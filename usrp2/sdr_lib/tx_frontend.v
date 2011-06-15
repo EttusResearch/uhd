@@ -1,10 +1,11 @@
 
 module tx_frontend
-  #(parameter BASE=0)
+  #(parameter BASE=0,
+    parameter WIDTH_OUT=16)
    (input clk, input rst,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [23:0] tx_i, input [23:0] tx_q, input run,
-    output reg [15:0] dac_a, output reg [15:0] dac_b
+    output reg [WIDTH_OUT-1:0] dac_a, output reg [WIDTH_OUT-1:0] dac_b
     );
 
    // IQ balance --> DC offset --> rounding --> mux
@@ -61,10 +62,10 @@ module tx_frontend
      (.clk(clk), .rst(rst), .in1(q_dco), .in2(q_bal), .strobe_in(1'b1), .sum(q_ofs), .strobe_out());
 
    // Rounding
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_i
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(WIDTH_OUT)) round_i
      (.clk(clk), .reset(rst), .in(i_ofs),.strobe_in(1'b1), .out(i_final), .strobe_out());
 
-   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_q
+   round_sd #(.WIDTH_IN(24),.WIDTH_OUT(WIDTH_OUT)) round_q
      (.clk(clk), .reset(rst), .in(q_ofs),.strobe_in(1'b1), .out(q_final), .strobe_out());
 
    // Mux

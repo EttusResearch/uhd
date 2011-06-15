@@ -223,7 +223,7 @@ module u1e_core
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
-   wire [15:0] 	 tx_i_int, tx_q_int;
+   wire [23:0] 	 tx_i_int, tx_q_int;
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
@@ -236,13 +236,16 @@ module u1e_core
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
-      .dac_a(tx_i_int),.dac_b(tx_q_int),
+      .tx_i(tx_i_int),.tx_q(tx_q_int),
       .underrun(tx_underrun_dsp), .run(run_tx),
       .debug(debug_vt));
-   
-   assign tx_i = tx_i_int[15:2];
-   assign tx_q = tx_q_int[15:2];
-   
+
+   tx_frontend #(.BASE(SR_TX_FRONT), .WIDTH_OUT(14)) tx_frontend
+     (.clk(dsp_clk), .rst(dsp_rst),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .tx_i(tx_i_int), .tx_q(tx_q_int), .run(1'b1),
+      .dac_a(tx_i), .dac_b(tx_q));
+
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
