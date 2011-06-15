@@ -39,7 +39,7 @@ using namespace uhd::transport;
  **********************************************************************/
 static const bool iface_debug = true;
 static const boost::uint16_t USRP_B_FW_COMPAT_NUM = 0x02;
-static const boost::uint16_t USRP_B_FPGA_COMPAT_NUM = 0x03;
+static const boost::uint16_t USRP_B_FPGA_COMPAT_NUM = 0x04;
 
 /***********************************************************************
  * I2C + FX2 implementation wrapper
