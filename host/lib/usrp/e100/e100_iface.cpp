@@ -34,6 +34,57 @@ using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
+ * Sysfs GPIO wrapper class
+ **********************************************************************/
+class gpio{
+public:
+    gpio(const int num, const std::string &dir) : _num(num){
+        this->set_xport("export");
+        this->set_dir(dir);
+        _value_file.open(str(boost::format("/sys/class/gpio/gpio%d/value") % num).c_str(), std::ios_base::in | std::ios_base::out);
+    }
+    ~gpio(void){
+        _value_file.close();
+        this->set_dir("in");
+        this->set_xport("unexport");
+    }
+    void operator()(const int val){
+        _value_file << val << std::endl << std::flush;
+    }
+    int operator()(void){
+        std::string val;
+        std::getline(_value_file, val);
+        _value_file.seekg(0);
+        return int(val.at(0) - '0') & 0x1;
+    }
+private:
+    void set_xport(const std::string &xport){
+        std::ofstream export_file(("/sys/class/gpio/" + xport).c_str());
+        export_file << _num << std::endl << std::flush;
+        export_file.close();
+    }
+    void set_dir(const std::string &dir){
+        std::ofstream dir_file(str(boost::format("/sys/class/gpio/gpio%d/direction") % _num).c_str());
+        dir_file << dir << std::endl << std::flush;
+        dir_file.close();
+    }
+    const int _num;
+    std::fstream _value_file;
+};
+
+//We only init the gpios when we have to use them (in the aux spi call).
+//This way, the device discovery cannot unexport them from another process.
+struct iface_gpios_type{
+    typedef boost::shared_ptr<iface_gpios_type> sptr;
+    iface_gpios_type(void):
+        spi_sclk_gpio(65, "out"),
+        spi_sen_gpio(186, "out"),
+        spi_mosi_gpio(145, "out"),
+        spi_miso_gpio(147, "in"){}
+    gpio spi_sclk_gpio, spi_sen_gpio, spi_mosi_gpio, spi_miso_gpio;
+};
+
+/***********************************************************************
  * I2C device node implementation wrapper
  **********************************************************************/
 class i2c_dev_iface : public i2c_iface{
@@ -281,91 +332,28 @@ public:
     }
 
     boost::uint32_t bitbang_spi(
-        boost::uint32_t bits,
-        size_t num_bits,
-        bool readback
+        boost::uint32_t bits, size_t num_bits, bool readback
     ){
-        boost::uint32_t rb_bits = 0;
+        if (_gpios.get() == NULL) { //init on demand...
+            _gpios = iface_gpios_type::sptr(new iface_gpios_type());
+        }
 
-        _spi_bitbanger.spi_sen_gpio_write(0);
+        boost::uint32_t rb_bits = 0;
+        _gpios->spi_sen_gpio(0);
 
         for (size_t i = 0; i < num_bits; i++){
-            _spi_bitbanger.spi_sclk_gpio_write(0);
-            _spi_bitbanger.spi_mosi_gpio_write((bits >> (num_bits-i-1)) & 0x1);
+            _gpios->spi_sclk_gpio(0);
+            _gpios->spi_mosi_gpio((bits >> (num_bits-i-1)) & 0x1);
             boost::this_thread::sleep(boost::posix_time::microseconds(10));
-            if (readback) rb_bits = (rb_bits << 1) | _spi_bitbanger.spi_miso_gpio_read();
-            _spi_bitbanger.spi_sclk_gpio_write(1);
+            if (readback) rb_bits = (rb_bits << 1) | _gpios->spi_miso_gpio();
+            _gpios->spi_sclk_gpio(1);
             boost::this_thread::sleep(boost::posix_time::microseconds(10));
         }
 
-        _spi_bitbanger.spi_sen_gpio_write(1);
+        _gpios->spi_sen_gpio(1);
         boost::this_thread::sleep(boost::posix_time::microseconds(100));
-
         return rb_bits;
     }
-
-    class bitbang_spi_guts{
-    public:
-        bitbang_spi_guts(void){
-            //setup gpio pin directions
-            this->set_gpio_direction(spi_sclk_gpio, "out");
-            this->set_gpio_direction(spi_sen_gpio, "out");
-            this->set_gpio_direction(spi_mosi_gpio, "out");
-            this->set_gpio_direction(spi_miso_gpio, "in");
-
-            //open the gpio pin values
-            _spi_sclk_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_sclk_gpio).c_str());
-            _spi_sen_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_sen_gpio).c_str());
-            _spi_mosi_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_mosi_gpio).c_str());
-            _spi_miso_gpio_value.open(str(boost::format("/sys/class/gpio/gpio%d/value") % spi_miso_gpio).c_str());
-        }
-
-        ~bitbang_spi_guts(void){
-            this->set_gpio_direction(spi_sclk_gpio, "in");
-            this->set_gpio_direction(spi_sen_gpio, "in");
-            this->set_gpio_direction(spi_mosi_gpio, "in");
-        }
-
-        void spi_sclk_gpio_write(int val){
-            _spi_sclk_gpio_value << val << std::endl << std::flush;
-        }
-
-        void spi_sen_gpio_write(int val){
-            _spi_sen_gpio_value << val << std::endl << std::flush;
-        }
-
-        void spi_mosi_gpio_write(int val){
-            _spi_mosi_gpio_value << val << std::endl << std::flush;
-        }
-
-        int spi_miso_gpio_read(void){
-            std::string val;
-            std::getline(_spi_miso_gpio_value, val);
-            _spi_miso_gpio_value.seekg(0);
-            return int(val.at(0) - '0') & 0x1;
-        }
-
-    private:
-        enum{
-            spi_sclk_gpio = 65,
-            spi_sen_gpio = 186,
-            spi_mosi_gpio = 145,
-            spi_miso_gpio = 147,
-        };
-
-        void set_gpio_direction(int gpio_num, const std::string &dir){
-            std::ofstream export_file("/sys/class/gpio/export");
-            export_file << gpio_num << std::endl << std::flush;
-            export_file.close();
-
-            std::ofstream dir_file(str(boost::format("/sys/class/gpio/gpio%d/direction") % gpio_num).c_str());
-            dir_file << dir << std::endl << std::flush;
-            dir_file.close();
-        }
-
-        std::ofstream _spi_sclk_gpio_value, _spi_sen_gpio_value, _spi_mosi_gpio_value;
-        std::ifstream _spi_miso_gpio_value;
-    };
 
     /*******************************************************************
      * UART
@@ -382,7 +370,7 @@ private:
     int _node_fd;
     i2c_dev_iface _i2c_dev_iface;
     boost::mutex _ctrl_mutex;
-    bitbang_spi_guts _spi_bitbanger;
+    iface_gpios_type::sptr _gpios;
 };
 
 /***********************************************************************

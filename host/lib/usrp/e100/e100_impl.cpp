@@ -90,11 +90,6 @@ static device::sptr e100_make(const device_addr_t &device_addr){
     //setup the main interface into fpga
     const std::string node = device_addr["node"];
     e100_iface::sptr iface = e100_iface::make();
-    iface->open(node);
-
-    //setup clock control here to ensure that the FPGA has a good clock before we continue
-    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", E100_DEFAULT_CLOCK_RATE);
-    e100_clock_ctrl::sptr clock_ctrl = e100_clock_ctrl::make(iface, master_clock_rate);
 
     //extract the fpga path for usrp-e and compute hash
     const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", E100_FPGA_FILE_NAME));
@@ -104,11 +99,16 @@ static device::sptr e100_make(const device_addr_t &device_addr){
     // - close the device node
     // - load the fpga bin file
     // - re-open the device node
+    iface->open(node); //open here so we can do FPGA hash check
     if (iface->peek32(E100_REG_RB_MISC_TEST32) != file_hash){
         iface->close();
         e100_load_fpga(e100_fpga_image);
         iface->open(node);
     }
+
+    //setup clock control here to ensure that the FPGA has a good clock before we continue
+    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", E100_DEFAULT_CLOCK_RATE);
+    e100_clock_ctrl::sptr clock_ctrl = e100_clock_ctrl::make(iface, master_clock_rate);
 
     //Perform wishbone readback tests, these tests also write the hash
     bool test_fail = false;
