@@ -1,6 +1,0 @@
-NET "overo_gpio145"  LOC = "C7"  ;
-NET "cgen_mosi"  LOC = "E22"  ;
-NET "cgen_sclk"  LOC = "J19"  ;
-NET "cgen_sen_b"  LOC = "H20"  ;
-NET "fpga_cfg_din"  LOC = "W17"  ;
-NET "fpga_cfg_cclk"  LOC = "V17"  ;

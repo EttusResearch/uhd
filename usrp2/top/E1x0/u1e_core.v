@@ -31,12 +31,12 @@ module u1e_core
    output sclk, output [15:0] sen, output mosi, input miso,
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
-   output tx_have_space, output tx_underrun, output rx_have_data, output rx_overrun,
+   output tx_have_space, output rx_have_data,
    inout [15:0] io_tx, inout [15:0] io_rx, 
    output [13:0] tx_i, output [13:0] tx_q, 
    input [11:0] rx_i, input [11:0] rx_q, 
    
-   input [11:0] misc_gpio, input pps_in
+   input pps_in
    );
 
    localparam TXFIFOSIZE = 13;
@@ -59,8 +59,7 @@ module u1e_core
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
 
-   
-   wire [7:0]	COMPAT_NUM = 8'd4;
+   wire [7:0]	COMPAT_NUM = 8'd5;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
@@ -441,8 +440,9 @@ module u1e_core
 
    wire [31:0] reg_test32;
 
+   //this setting reg is persistent across resets, to check for fpga loaded
    setting_reg #(.my_addr(SR_REG_TEST32)) sr_reg_test32
-     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
+     (.clk(wb_clk),.rst(/*wb_rst*/1'b0),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(reg_test32),.changed());
 
    wb_readback_mux_16LE readback_mux_32
