@@ -407,6 +407,7 @@ typedef struct {
   volatile uint32_t rxlevel; // Number of available elements in the FIFO for reads
   volatile uint32_t txchar;  // Write characters to be sent here
   volatile uint32_t rxchar;  // Read received characters here
+  volatile uint32_t padding[3]; //what is this i don't even
 } uart_regs_t;
 
 #define uart_regs ((uart_regs_t *) UART_BASE)
