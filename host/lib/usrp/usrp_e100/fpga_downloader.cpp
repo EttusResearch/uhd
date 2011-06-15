@@ -254,9 +254,9 @@ void usrp_e100_load_fpga(const std::string &bin_file){
 
 	UHD_MSG(status) << "Loading FPGA image: " << bin_file << "... " << std::flush;
 
-	if(std::system("/sbin/rmmod usrp_e") != 0){
-		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not unload usrp_e module" << std::endl;
-	}
+//	if(std::system("/sbin/rmmod usrp_e") != 0){
+//		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not unload usrp_e module" << std::endl;
+//	}
 
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
@@ -264,9 +264,9 @@ void usrp_e100_load_fpga(const std::string &bin_file){
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 
-	if(std::system("/sbin/modprobe usrp_e") != 0){
-		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not load usrp_e module" << std::endl;
-	}
+//	if(std::system("/sbin/modprobe usrp_e") != 0){
+//		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not load usrp_e module" << std::endl;
+//	}
 
 }
 
