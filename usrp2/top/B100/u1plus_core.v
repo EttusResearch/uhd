@@ -41,19 +41,22 @@ module u1plus_core
    localparam RXFIFOSIZE = 11;
 
    // 64 total regs in address space
-   localparam SR_RX_CTRL0 = 0;     // 9 regs (+0 to +8)
-   localparam SR_RX_DSP0 = 16;     // 7 regs (+0 to +6)
-   localparam SR_TX_CTRL = 24;    // 6 regs (+0 to +5)
-   localparam SR_TX_DSP = 32;     // 5 regs (+0 to +4)
-   localparam SR_TIME64 = 40;     // 6 regs (+0 to +5)
-   localparam SR_CLEAR_RX_FIFO = 48; // 1 reg
-   localparam SR_CLEAR_TX_FIFO = 49; // 1 reg
-   localparam SR_GLOBAL_RESET = 50; // 1 reg
-   localparam SR_REG_TEST32 = 52; // 1 reg
-   localparam SR_RX_FRONT = 0;
-   localparam SR_RX_CTRL1 = 0;
-   localparam SR_RX_DSP1 = 0;
-   localparam SR_TX_FRONT = 0;
+   localparam SR_RX_CTRL0 = 0;       // 9 regs (+0 to +8)
+   localparam SR_RX_DSP0 = 10;       // 4 regs (+0 to +3)
+   localparam SR_RX_CTRL1 = 16;      // 9 regs (+0 to +8)
+   localparam SR_RX_DSP1 = 26;       // 4 regs (+0 to +3)
+   localparam SR_TX_CTRL = 32;       // 4 regs (+0 to +3)
+   localparam SR_TX_DSP = 38;        // 3 regs (+0 to +2)
+
+   localparam SR_TIME64 = 42;        // 6 regs (+0 to +5)
+   localparam SR_RX_FRONT = 48;      // 5 regs (+0 to +4)
+   localparam SR_TX_FRONT = 54;      // 5 regs (+0 to +4)
+
+   localparam SR_REG_TEST32 = 60;    // 1 reg
+   localparam SR_CLEAR_RX_FIFO = 61; // 1 reg
+   localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
+   localparam SR_GLOBAL_RESET = 63;  // 1 reg
+
    
    wire [7:0]	COMPAT_NUM = 8'd4;
    
