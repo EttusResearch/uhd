@@ -122,9 +122,11 @@ void benchmark_tx_rate_async_helper(uhd::usrp::multi_usrp::sptr usrp){
     //setup variables and allocate buffer
     uhd::async_metadata_t async_md;
 
-    while (not boost::this_thread::interruption_requested()){
+    while (true){
 
-        if (not usrp->get_device()->recv_async_msg(async_md)) continue;
+        if (not usrp->get_device()->recv_async_msg(async_md)){
+            if (boost::this_thread::interruption_requested()) return;
+        }
 
         //handle the error codes
         switch(async_md.event_code){
@@ -210,7 +212,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //sleep for the required duration
     const long secs = long(duration);
-    const long usecs = (duration - secs)*1e6;
+    const long usecs = long((duration - secs)*1e6);
     boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
 
     //interrupt and join the threads
@@ -220,12 +222,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print summary
     std::cout << std::endl << boost::format(
         "Benchmark rate summary:\n"
-        "  Num received samples: %u\n"
-        "  Num dropped samples: %u\n"
-        "  Num overflows detected: %u\n"
+        "  Num received samples:    %u\n"
+        "  Num dropped samples:     %u\n"
+        "  Num overflows detected:  %u\n"
         "  Num transmitted samples: %u\n"
         "  Num underflows detected: %u\n"
-    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_overflows << std::endl;
+    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_underflows << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
