@@ -270,7 +270,7 @@ public:
  **********************************************************************/
     void write_uart(boost::uint8_t dev, const std::string &buf){
       //first tokenize the string into 20-byte substrings
-      boost::offset_separator f(20, 1, true, true);
+      boost::offset_separator f(20, 20, true, true);
       boost::tokenizer<boost::offset_separator> tok(buf, f);
       std::vector<std::string> queue(tok.begin(), tok.end());
 
