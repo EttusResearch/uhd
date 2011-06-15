@@ -21,7 +21,7 @@
 #include <uhd/usrp/mboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "fx2_ctrl.hpp"
+#include "../fx2/fx2_ctrl.hpp"
 
 /*!
  * The usrp1 interface class:
