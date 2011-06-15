@@ -17,8 +17,6 @@
 #
 
 # TODO: make it autodetect UHD devices
-# TODO: you should probably watch sequence numbers
-# TODO: validate images in 1) size and 2) header content so you can't write a Justin Bieber MP3 to Flash
 
 import optparse
 import math
@@ -54,6 +52,14 @@ FLASH_DATA_PACKET_SIZE = 256
 FLASH_ARGS_FMT = '!LLLLL256s'
 FLASH_INFO_FMT = '!LLLLL256x'
 FLASH_IP_FMT =   '!LLLL260x'
+FLASH_HW_REV_FMT = '!LLLL260x'
+
+n2xx_revs = {
+             0x0a00: "n200_r3",
+             0x0a01: "n200_r4",
+             0x0a01: "n210_r3",
+             0x0a11: "n210_r4"
+            }
 
 class update_id_t:
   USRP2_FW_UPDATE_ID_WAT = ord(' ')
@@ -72,6 +78,8 @@ class update_id_t:
   USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG = ord('R')
   USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL = ord('s')
   USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG = ord('S')
+  USRP2_FW_UPDATE_ID_I_CAN_HAS_HW_REV_LOL = ord('v')
+  USRP2_FW_UPDATE_ID_HERES_TEH_HW_REV_OMG = ord('V')
   USRP2_FW_UPDATE_ID_KTHXBAI = ord('~')
 
 _seq = -1
@@ -92,11 +100,17 @@ def unpack_flash_info_fmt(s):
 def unpack_flash_ip_fmt(s):
     return struct.unpack(FLASH_IP_FMT, s) #(proto_ver, pktid, seq, ip_addr)
 
+def unpack_flash_hw_rev_fmt(s):
+    return struct.unpack(FLASH_HW_REV_FMT, s) #proto_ver, pktid, seq, hw_rev
+
 def pack_flash_args_fmt(proto_ver, pktid, seq, flash_addr, length, data=bytes()):
     return struct.pack(FLASH_ARGS_FMT, proto_ver, pktid, seq, flash_addr, length, data)
 
 def pack_flash_info_fmt(proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes):
     return struct.pack(FLASH_INFO_FMT, proto_ver, pktid, seq, sector_size_bytes, memory_size_bytes)
+
+def pack_flash_hw_rev_fmt(proto_ver, pktid, seq, hw_rev):
+    return struct.pack(FLASH_HW_REV_FMT, proto_ver, pktid, seq, hw_rev)
 
 def is_valid_fpga_image(fpga_image):
     for i in range(0,63):
@@ -117,6 +131,7 @@ class burner_socket(object):
         self._sock.connect((addr, UDP_FW_UPDATE_PORT))
         self.set_callbacks(lambda *a: None, lambda *a: None)
         self.init_update() #check that the device is there
+        self.get_hw_rev()
 
     def set_callbacks(self, progress_cb, status_cb):
         self._progress_cb = progress_cb
@@ -137,7 +152,12 @@ class burner_socket(object):
         else:
             raise Exception("Invalid reply received from device.")
 
-        #  print "Incoming:\n\tVer: %i\n\tID: %c\n\tSeq: %i\n\tIP: %i\n" % (proto_ver, chr(pktid), rxseq, ip_addr)
+    def get_hw_rev(self):
+        out_pkt = pack_flash_hw_rev_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_I_CAN_HAS_HW_REV_LOL, seq(), 0)
+        in_pkt = self.send_and_recv(out_pkt)
+        (proto_ver, pktid, rxseq, hw_rev) = unpack_flash_hw_rev_fmt(in_pkt)
+        if(pktid != update_id_t.USRP2_FW_UPDATE_ID_HERES_TEH_HW_REV_OMG): hw_rev = 0
+        return socket.ntohs(hw_rev)
 
     memory_size_bytes = 0
     sector_size_bytes = 0
@@ -157,10 +177,16 @@ class burner_socket(object):
 
     def burn_fw(self, fw, fpga, reset, safe):
         (flash_size, sector_size) = self.get_flash_info()
+        hw_rev = self.get_hw_rev()
 
-        print("Flash size: %i\nSector size: %i\n\n" % (flash_size, sector_size))
+        if(hw_rev != 0): print "Hardware type: %s" % n2xx_revs[hw_rev]
+        print "Flash size: %i\nSector size: %i\n" % (flash_size, sector_size)
 
         if fpga:
+            #validate fpga image name against hardware rev
+            if(n2xx_revs[hw_rev] not in fpga and hw_rev != 0):
+                raise Exception("Error: incorrect FPGA image version. Please use the correct image for device %s" % n2xx_revs[hw_rev])
+                
             if safe: image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
             else:    image_location = PROD_FPGA_IMAGE_LOCATION_ADDR
 

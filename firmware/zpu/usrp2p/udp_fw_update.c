@@ -27,6 +27,13 @@
 #include "ethernet.h"
 #include "udp_fw_update.h"
 #include "xilinx_s3_icap.h"
+#include "i2c.h"
+
+uint16_t get_hw_rev(void) {
+    uint16_t tmp;
+    eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_REV, &tmp, sizeof(tmp));
+    return tmp;
+}
 
 //Firmware update packet handler
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
@@ -59,12 +66,24 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
   case USRP2_FW_UPDATE_ID_OHAI_LOL: //why hello there you handsome devil
     update_data_out.id = USRP2_FW_UPDATE_ID_OHAI_OMG;
     memcpy(&update_data_out.data.ip_addr, (void *)get_ip_addr(), sizeof(struct ip_addr));
+    //this is to stop streaming for the folks who think updating while streaming is a good idea
+    sr_rx_ctrl0->cmd = 1 << 31; //no samples now
+    sr_rx_ctrl0->time_secs = 0;
+    sr_rx_ctrl0->time_ticks = 0; //latch the command
+    sr_rx_ctrl1->cmd = 1 << 31; //no samples now
+    sr_rx_ctrl1->time_secs = 0;
+    sr_rx_ctrl1->time_ticks = 0; //latch the command
     break;
 
   case USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL: //query sector size, memory size so the host can mind the boundaries
     update_data_out.data.flash_info_args.sector_size_bytes = spi_flash_sector_size();
     update_data_out.data.flash_info_args.memory_size_bytes = spi_flash_memory_size();
     update_data_out.id = USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG;
+    break;
+
+  case USRP2_FW_UPDATE_ID_I_CAN_HAS_HW_REV_LOL: //get the hardware revision of the platform for validation checking
+    update_data_out.data.hw_rev = (uint32_t) get_hw_rev();
+    update_data_out.id = USRP2_FW_UPDATE_ID_HERES_TEH_HW_REV_OMG;
     break;
 
   case USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL: //out with the old

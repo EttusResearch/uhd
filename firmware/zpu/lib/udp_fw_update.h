@@ -45,6 +45,9 @@ typedef enum {
   USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL = 's',
   USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG = 'S',
 
+  USRP2_FW_UPDATE_ID_I_CAN_HAS_HW_REV_LOL = 'v',
+  USRP2_FW_UPDATE_ID_HERES_TEH_HW_REV_OMG = 'V',
+
   USRP2_FW_UPDATE_ID_KTHXBAI = '~'
 
 } usrp2_fw_update_id_t;
@@ -54,7 +57,8 @@ typedef struct {
   uint32_t id;
   uint32_t seq;
   union {
-      uint32_t ip_addr;
+    uint32_t ip_addr;
+    uint32_t hw_rev;
     struct {
       uint32_t flash_addr;
       uint32_t length;
