@@ -61,6 +61,42 @@ Pseudo-code for dealing with settling time after tuning on receive:
     usrp->issue_stream_command(...);
 
 ------------------------------------------------------------------------
+Overflow/Underflow notes
+------------------------------------------------------------------------
+**Note:** The following overflow/underflow notes do not apply to USRP1,
+which does not support the advanced features available in newer products.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Overflow notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When receiving, the device produces samples at a constant rate.
+Overflows occurs when the host does not consume data fast enough.
+When UHD detects the overflow, it prints an "O" to stdout,
+and pushes an inline message packet into the receive stream.
+
+**Network-based devices**:
+The host does not back-pressure the receive stream.
+When the kernel's socket buffer becomes full, it will drop subsequent packets.
+UHD detects the overflow as a discontinuity in the packet's sequence numbers,
+and muxes an inline message packet into the receive stream.
+
+**Other devices**:
+The host back-pressures the receive stream.
+Therefore, overflows always occur in the device itself.
+When the device's internal buffers become full, streaming is shutoff,
+and an inline message packet is sent to the host.
+If the device was in continuous streaming mode,
+the UHD will automatically restart streaming.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Underflow notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When transmitting, the device consumes samples at a constant rate.
+Underflow occurs when the host does not produce data fast enough.
+When the UHD detects underflow, it prints an "U" to stdout,
+and pushes a message packet into the async message stream.
+
+------------------------------------------------------------------------
 Threading notes
 ------------------------------------------------------------------------
 
@@ -114,3 +150,21 @@ For a module to be loaded at runtime, it must be:
 * found in the UHD_MODULE_PATH environment variable,
 * installed into the <install-path>/share/uhd/modules directory,
 * or installed into /usr/share/uhd/modules directory (unix only).
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Disabling or redirecting prints to stdout
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The user can disable the UHD library from printing directly to stdout by registering a custom message handler.
+The handler will intercept all messages, which can be dropped or redirected.
+Only one handler can be registered at a time.
+Make "register_handler" your first call into UHD:
+
+::
+
+    #include <uhd/utils/msg.hpp>
+
+    void my_handler(uhd::msg::type_t type, const std::string &msg){
+        //handle the message...
+    }
+
+    uhd::msg::register_handler(&my_handler);

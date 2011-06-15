@@ -52,13 +52,14 @@ ifeq ($(shell xtclsh -h > /dev/null 2>&1 && echo $$?),0)
 endif
 
 ########################################################################
-# USRP1 firmware
+# USRP1 and B100 firmware
 ########################################################################
 ifdef HAS_SDCC
 
 _usrp1_fw_dir = $(TOP_FW_DIR)/fx2
 _usrp1_fw_ihx = $(BUILT_IMAGES_DIR)/usrp1_fw.ihx
-IMAGES_LIST += $(_usrp1_fw_ihx)
+_usrp_b100_fw_ihx = $(BUILT_IMAGES_DIR)/usrp_b100_fw.ihx
+IMAGES_LIST += $(_usrp1_fw_ihx) $(_usrp_b100_fw_ihx)
 
 $(_usrp1_fw_ihx): $(GLOBAL_DEPS)
 	cd $(_usrp1_fw_dir) && rm -rf build
@@ -66,6 +67,9 @@ $(_usrp1_fw_ihx): $(GLOBAL_DEPS)
 	cd $(_usrp1_fw_dir)/build && cmake ../
 	cd $(_usrp1_fw_dir)/build && make
 	cp $(_usrp1_fw_dir)/build/usrp1/usrp1_fw.ihx $@
+
+$(_usrp_b100_fw_ihx): $(_usrp1_fw_ihx)
+	cp $(_usrp1_fw_dir)/build/b100/b100_fw.ihx $(_usrp_b100_fw_ihx)
 
 endif
 
@@ -82,6 +86,22 @@ $(_usrp1_fpga_rbf): $(GLOBAL_DEPS)
 
 $(_usrp1_fpga_4rx_rbf): $(GLOBAL_DEPS)
 	cp $(_usrp1_fpga_dir)/std_4rx_0tx.rbf $@
+
+########################################################################
+# USRP-B100 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_b100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/B100
+_usrp_b100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_b100_fpga.bin
+IMAGES_LIST += $(_usrp_b100_fpga_bin)
+
+$(_usrp_b100_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_b100_fpga_dir) && make clean
+	cd $(_usrp_b100_fpga_dir) && make bin
+	cp $(_usrp_b100_fpga_dir)/build/u1plus.bin $@
+
+endif
 
 ########################################################################
 # USRP2 and N Series firmware
@@ -114,7 +134,7 @@ endif
 ########################################################################
 ifdef HAS_XTCLSH
 
-_usrp2_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2_rev3
+_usrp2_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/USRP2
 _usrp2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp2_fpga.bin
 IMAGES_LIST += $(_usrp2_fpga_bin)
 
@@ -126,34 +146,78 @@ $(_usrp2_fpga_bin): $(GLOBAL_DEPS)
 endif
 
 ########################################################################
-# USRP-N200 fpga
+# USRP-N200 R2/R3 fpga
 ########################################################################
 ifdef HAS_XTCLSH
 
-_usrp_n200_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
-_usrp_n200_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_fpga.bin
-IMAGES_LIST += $(_usrp_n200_fpga_bin)
+_usrp_n200_r3_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
+_usrp_n200_r3_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_r3_fpga.bin
+IMAGES_LIST += $(_usrp_n200_r3_fpga_bin)
 
-$(_usrp_n200_fpga_bin): $(GLOBAL_DEPS)
-	cd $(_usrp_n200_fpga_dir) && make -f Makefile.N200 clean
-	cd $(_usrp_n200_fpga_dir) && make -f Makefile.N200 bin
-	cp $(_usrp_n200_fpga_dir)/build-N200/u2plus.bin $@
+$(_usrp_n200_r3_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_n200_r3_fpga_dir) && make -f Makefile.N200R3 clean
+	cd $(_usrp_n200_r3_fpga_dir) && make -f Makefile.N200R3 bin
+	cp $(_usrp_n200_r3_fpga_dir)/build-N200R3/u2plus.bin $@
+
+#its called r2 on the silkscreen, so make an r2
+_usrp_n200_r2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_r2_fpga.bin
+IMAGES_LIST += $(_usrp_n200_r2_fpga_bin)
+$(_usrp_n200_r2_fpga_bin): $(_usrp_n200_r3_fpga_bin)
+	cp $< $@
 
 endif
 
 ########################################################################
-# USRP-N210 fpga
+# USRP-N210 R2/R3 fpga
 ########################################################################
 ifdef HAS_XTCLSH
 
-_usrp_n210_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u2plus
-_usrp_n210_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_fpga.bin
-IMAGES_LIST += $(_usrp_n210_fpga_bin)
+_usrp_n210_r3_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
+_usrp_n210_r3_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_r3_fpga.bin
+IMAGES_LIST += $(_usrp_n210_r3_fpga_bin)
 
-$(_usrp_n210_fpga_bin): $(GLOBAL_DEPS)
-	cd $(_usrp_n210_fpga_dir) && make clean
-	cd $(_usrp_n210_fpga_dir) && make bin
-	cp $(_usrp_n210_fpga_dir)/build/u2plus.bin $@
+$(_usrp_n210_r3_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_n210_r3_fpga_dir) && make -f Makefile.N210R3 clean
+	cd $(_usrp_n210_r3_fpga_dir) && make -f Makefile.N210R3 bin
+	cp $(_usrp_n210_r3_fpga_dir)/build-N210R3/u2plus.bin $@
+
+#its called r2 on the silkscreen, so make an r2
+_usrp_n210_r2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_r2_fpga.bin
+IMAGES_LIST += $(_usrp_n210_r2_fpga_bin)
+$(_usrp_n210_r2_fpga_bin): $(_usrp_n210_r3_fpga_bin)
+	cp $< $@
+
+endif
+
+########################################################################
+# USRP-N200 R4 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_n200_r4_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
+_usrp_n200_r4_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_r4_fpga.bin
+IMAGES_LIST += $(_usrp_n200_r4_fpga_bin)
+
+$(_usrp_n200_r4_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_n200_r4_fpga_dir) && make -f Makefile.N200R4 clean
+	cd $(_usrp_n200_r4_fpga_dir) && make -f Makefile.N200R4 bin
+	cp $(_usrp_n200_r4_fpga_dir)/build-N200R4/u2plus.bin $@
+
+endif
+
+########################################################################
+# USRP-N210 R4 fpga
+########################################################################
+ifdef HAS_XTCLSH
+
+_usrp_n210_r4_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
+_usrp_n210_r4_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_r4_fpga.bin
+IMAGES_LIST += $(_usrp_n210_r4_fpga_bin)
+
+$(_usrp_n210_r4_fpga_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_n210_r4_fpga_dir) && make -f Makefile.N210R4 clean
+	cd $(_usrp_n210_r4_fpga_dir) && make -f Makefile.N210R4 bin
+	cp $(_usrp_n210_r4_fpga_dir)/build-N210R4/u2plus.bin $@
 
 endif
 
@@ -162,7 +226,7 @@ endif
 ########################################################################
 ifdef HAS_XTCLSH
 
-_usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e
+_usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/E1x0
 _usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga.bin
 IMAGES_LIST += $(_usrp_e100_fpga_bin)
 
@@ -170,22 +234,6 @@ $(_usrp_e100_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_e100_fpga_dir) && make clean
 	cd $(_usrp_e100_fpga_dir) && make bin
 	cp $(_usrp_e100_fpga_dir)/build/u1e.bin $@
-
-endif
-
-########################################################################
-# USRP-E100 pass-through fpga
-########################################################################
-ifdef HAS_XTCLSH
-
-_usrp_e100_pt_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/u1e_passthru
-_usrp_e100_pt_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_pt_fpga.bin
-IMAGES_LIST += $(_usrp_e100_pt_fpga_bin)
-
-$(_usrp_e100_pt_fpga_bin): $(GLOBAL_DEPS)
-	cd $(_usrp_e100_pt_fpga_dir) && make clean
-	cd $(_usrp_e100_pt_fpga_dir) && make bin
-	cp $(_usrp_e100_pt_fpga_dir)/build/passthru.bin $@
 
 endif
 

@@ -50,4 +50,5 @@ bootram.v \
 nsgpio16LE.v \
 settings_bus_16LE.v \
 atr_controller16.v \
+fifo_to_wb.v \
 ))

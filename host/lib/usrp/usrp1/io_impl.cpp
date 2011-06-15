@@ -15,12 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../../transport/vrt_packet_handler.hpp"
+#define SRPH_DONT_CHECK_SEQUENCE
+#include "../../transport/super_recv_packet_handler.hpp"
+#include "../../transport/super_send_packet_handler.hpp"
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/thread_priority.hpp>
+#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -88,13 +91,39 @@ private:
 };
 
 /***********************************************************************
+ * BS VRT packer/unpacker functions (since samples don't have headers)
+ **********************************************************************/
+static void usrp1_bs_vrt_packer(
+    boost::uint32_t *,
+    vrt::if_packet_info_t &if_packet_info
+){
+    if_packet_info.num_header_words32 = 0;
+    if_packet_info.num_packet_words32 = if_packet_info.num_payload_words32;
+}
+
+static void usrp1_bs_vrt_unpacker(
+    const boost::uint32_t *,
+    vrt::if_packet_info_t &if_packet_info
+){
+    if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
+    if_packet_info.num_payload_words32 = if_packet_info.num_packet_words32;
+    if_packet_info.num_header_words32 = 0;
+    if_packet_info.packet_count = 0;
+    if_packet_info.sob = false;
+    if_packet_info.eob = false;
+    if_packet_info.has_sid = false;
+    if_packet_info.has_cid = false;
+    if_packet_info.has_tsi = false;
+    if_packet_info.has_tsf = false;
+    if_packet_info.has_tlr = false;
+}
+
+/***********************************************************************
  * IO Implementation Details
  **********************************************************************/
 struct usrp1_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport):
         data_transport(data_transport),
-        get_recv_buffs_fcn(boost::bind(&usrp1_impl::io_impl::get_recv_buffs, this, _1)),
-        get_send_buffs_fcn(boost::bind(&usrp1_impl::io_impl::get_send_buffs, this, _1)),
         underflow_poll_samp_count(0),
         overflow_poll_samp_count(0),
         curr_buff(offset_send_buffer(data_transport->get_send_buff())),
@@ -109,16 +138,9 @@ struct usrp1_impl::io_impl{
 
     zero_copy_if::sptr data_transport;
 
-    //timeouts set on calls to recv/send (passed into get buffs methods)
-    double recv_timeout, send_timeout;
-
-    //bound callbacks for get buffs (bound once here, not in fast-path)
-    vrt_packet_handler::get_recv_buffs_t get_recv_buffs_fcn;
-    vrt_packet_handler::get_send_buffs_t get_send_buffs_fcn;
-
     //state management for the vrt packet handler code
-    vrt_packet_handler::recv_state packet_handler_recv_state;
-    vrt_packet_handler::send_state packet_handler_send_state;
+    sph::recv_packet_handler recv_handler;
+    sph::send_packet_handler send_handler;
 
     //state management for overflow and underflow
     size_t underflow_poll_samp_count;
@@ -132,11 +154,13 @@ struct usrp1_impl::io_impl{
     offset_managed_send_buffer omsb;
     void commit_send_buff(offset_send_buffer&, offset_send_buffer&, size_t);
     void flush_send_buff(void);
-    bool get_send_buffs(vrt_packet_handler::managed_send_buffs_t &);
-    bool get_recv_buffs(vrt_packet_handler::managed_recv_buffs_t &buffs){
-        UHD_ASSERT_THROW(buffs.size() == 1);
-        buffs[0] = data_transport->get_recv_buff(recv_timeout);
-        return buffs[0].get() != NULL;
+    managed_send_buffer::sptr get_send_buff(double timeout){
+        //try to get a new managed buffer with timeout
+        offset_send_buffer next_buff(data_transport->get_send_buff(timeout));
+        if (not next_buff.buff.get()) return managed_send_buffer::sptr(); /* propagate timeout here */
+
+        //make a new managed buffer with the offset buffs
+        return omsb.get_new(curr_buff, next_buff);
     }
 };
 
@@ -185,30 +209,11 @@ void usrp1_impl::io_impl::flush_send_buff(void){
     if (bytes_to_pad == 0) bytes_to_pad = alignment_padding;
 
     //get the buffer, clear, and commit (really current buffer)
-    vrt_packet_handler::managed_send_buffs_t buffs(1);
-    if (this->get_send_buffs(buffs)){
-        std::memset(buffs[0]->cast<void *>(), 0, bytes_to_pad);
-        buffs[0]->commit(bytes_to_pad);
+    managed_send_buffer::sptr buff = this->get_send_buff(.1);
+    if (buff.get() != NULL){
+        std::memset(buff->cast<void *>(), 0, bytes_to_pad);
+        buff->commit(bytes_to_pad);
     }
-}
-
-/*!
- * Get a managed send buffer with the alignment padding:
- * Always grab the next send buffer so we can timeout here.
- */
-bool usrp1_impl::io_impl::get_send_buffs(
-    vrt_packet_handler::managed_send_buffs_t &buffs
-){
-    UHD_ASSERT_THROW(buffs.size() == 1);
-
-    //try to get a new managed buffer with timeout
-    offset_send_buffer next_buff(data_transport->get_send_buff(send_timeout));
-    if (not next_buff.buff.get()) return false; /* propagate timeout here */
-
-    //make a new managed buffer with the offset buffs
-    buffs[0] = omsb.get_new(curr_buff, next_buff);
-
-    return true;
 }
 
 /***********************************************************************
@@ -232,6 +237,34 @@ void usrp1_impl::io_init(void){
     this->enable_tx(true); //always enabled
     rx_stream_on_off(false);
     _io_impl->flush_send_buff();
+
+    //update mapping here since it didnt b4 when io init not called first
+    update_xport_channel_mapping();
+}
+
+void usrp1_impl::update_xport_channel_mapping(void){
+    if (_io_impl.get() == NULL) return; //not inited yet
+
+    //set all of the relevant properties on the handler
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    _io_impl->recv_handler.set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
+    _io_impl->recv_handler.set_tick_rate(_clock_ctrl->get_master_clock_freq());
+    _io_impl->recv_handler.set_samp_rate(_rx_dsp_proxies[_rx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
+    _io_impl->recv_handler.set_xport_chan_get_buff(0, boost::bind(
+        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, _1
+    ));
+    _io_impl->recv_handler.set_converter(_rx_otw_type, _rx_subdev_spec.size());
+
+    //set all of the relevant properties on the handler
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    _io_impl->send_handler.set_vrt_packer(&usrp1_bs_vrt_packer);
+    _io_impl->send_handler.set_tick_rate(_clock_ctrl->get_master_clock_freq());
+    _io_impl->send_handler.set_samp_rate(_tx_dsp_proxies[_tx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
+    _io_impl->send_handler.set_xport_chan_get_buff(0, boost::bind(
+        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
+    ));
+    _io_impl->send_handler.set_converter(_tx_otw_type, _tx_subdev_spec.size());
+    _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){
@@ -245,14 +278,6 @@ void usrp1_impl::rx_stream_on_off(bool enb){
 /***********************************************************************
  * Data send + helper functions
  **********************************************************************/
-static void usrp1_bs_vrt_packer(
-    boost::uint32_t *,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.num_header_words32 = 0;
-    if_packet_info.num_packet_words32 = if_packet_info.num_payload_words32;
-}
-
 size_t usrp1_impl::get_max_send_samps_per_packet(void) const {
     return (_data_transport->get_send_frame_size() - alignment_padding)
         / _tx_otw_type.get_sample_size()
@@ -261,29 +286,21 @@ size_t usrp1_impl::get_max_send_samps_per_packet(void) const {
 }
 
 size_t usrp1_impl::send(
-    const send_buffs_type &buffs, size_t num_samps,
+    const send_buffs_type &buffs, size_t nsamps_per_buff,
     const tx_metadata_t &metadata, const io_type_t &io_type,
     send_mode_t send_mode, double timeout
 ){
-    if (_soft_time_ctrl->send_pre(metadata, timeout)) return num_samps;
+    if (_soft_time_ctrl->send_pre(metadata, timeout)) return 0;
 
-    _io_impl->send_timeout = timeout;
-    size_t num_samps_sent = vrt_packet_handler::send(
-        _io_impl->packet_handler_send_state,       //last state of the send handler
-        buffs, num_samps,                          //buffer to fill
-        metadata, send_mode,                       //samples metadata
-        io_type, _tx_otw_type,                     //input and output types to convert
-        _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
-        &usrp1_bs_vrt_packer,
-        _io_impl->get_send_buffs_fcn,
-        get_max_send_samps_per_packet(),
-        0,                                         //vrt header offset
-        _tx_subdev_spec.size()                     //num channels
+    size_t num_samps_sent = _io_impl->send_handler.send(
+        buffs, nsamps_per_buff,
+        metadata, io_type,
+        send_mode, timeout
     );
 
     //handle eob flag (commit the buffer, disable the DACs)
     //check num samps sent to avoid flush on incomplete/timeout
-    if (metadata.end_of_burst and num_samps_sent == num_samps){
+    if (metadata.end_of_burst and num_samps_sent == nsamps_per_buff){
         _io_impl->flush_send_buff();
     }
 
@@ -306,23 +323,6 @@ size_t usrp1_impl::send(
 /***********************************************************************
  * Data recv + helper functions
  **********************************************************************/
-static void usrp1_bs_vrt_unpacker(
-    const boost::uint32_t *,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
-    if_packet_info.num_payload_words32 = if_packet_info.num_packet_words32;
-    if_packet_info.num_header_words32 = 0;
-    if_packet_info.packet_count = 0;
-    if_packet_info.sob = false;
-    if_packet_info.eob = false;
-    if_packet_info.has_sid = false;
-    if_packet_info.has_cid = false;
-    if_packet_info.has_tsi = false;
-    if_packet_info.has_tsf = false;
-    if_packet_info.has_tlr = false;
-}
-
 size_t usrp1_impl::get_max_recv_samps_per_packet(void) const {
     return _data_transport->get_recv_frame_size()
         / _rx_otw_type.get_sample_size()
@@ -331,22 +331,14 @@ size_t usrp1_impl::get_max_recv_samps_per_packet(void) const {
 }
 
 size_t usrp1_impl::recv(
-    const recv_buffs_type &buffs, size_t num_samps,
+    const recv_buffs_type &buffs, size_t nsamps_per_buff,
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
-    _io_impl->recv_timeout = timeout;
-    size_t num_samps_recvd = vrt_packet_handler::recv(
-        _io_impl->packet_handler_recv_state,       //last state of the recv handler
-        buffs, num_samps,                          //buffer to fill
-        metadata, recv_mode,                       //samples metadata
-        io_type, _rx_otw_type,                     //input and output types to convert
-        _clock_ctrl->get_master_clock_freq(),      //master clock tick rate
-        &usrp1_bs_vrt_unpacker,
-        _io_impl->get_recv_buffs_fcn,
-        &vrt_packet_handler::handle_overflow_nop,
-        0,                                         //vrt header offset
-        _rx_subdev_spec.size()                     //num channels
+    size_t num_samps_recvd = _io_impl->recv_handler.recv(
+        buffs, nsamps_per_buff,
+        metadata, io_type,
+        recv_mode, timeout
     );
 
     _soft_time_ctrl->recv_post(metadata, num_samps_recvd);

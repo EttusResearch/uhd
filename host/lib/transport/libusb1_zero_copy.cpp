@@ -20,7 +20,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
-#include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
@@ -44,15 +44,24 @@ static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
  * to ensure that they are compiled with the same calling convention as libusb.
  */
 
-//! helper function: handles all async callbacks
-static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut){
+//! helper function: handles all rx async callbacks
+static void LIBUSB_CALL libusb_async_rx_cb(libusb_transfer *lut){
+    if(lut->actual_length == 0) {
+        UHD_ASSERT_THROW(libusb_submit_transfer(lut) == 0); //get out until you find some real data
+        return;
+    }
+    (*static_cast<boost::function<void()> *>(lut->user_data))();
+}
+
+//! helper function: handles all tx async callbacks
+static void LIBUSB_CALL libusb_async_tx_cb(libusb_transfer *lut) {
     (*static_cast<boost::function<void()> *>(lut->user_data))();
 }
 
 //! callback to free transfer upon cancellation
 static void LIBUSB_CALL cancel_transfer_cb(libusb_transfer *lut){
-    if (lut->status == LIBUSB_TRANSFER_CANCELLED) libusb_free_transfer(lut);
-    else UHD_LOGV(rarely) << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
+    if (lut->status == LIBUSB_TRANSFER_CANCELLED || lut->status == LIBUSB_TRANSFER_TIMED_OUT) libusb_free_transfer(lut);
+    else UHD_MSG(error) << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
 }
 
 /***********************************************************************
@@ -97,7 +106,7 @@ public:
     void commit(size_t len){
         if (_expired) return;
         _lut->length = len;
-        if(len == 0) libusb_async_cb(_lut);
+        if(len == 0) libusb_async_tx_cb(_lut);
         else UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
         _expired = true;
     }
@@ -157,9 +166,9 @@ public:
                 (recv_endpoint & 0x7f) | 0x80,                          // endpoint
                 static_cast<unsigned char *>(_recv_buffer_pool->at(i)), // buffer
                 this->get_recv_frame_size(),                            // length
-                libusb_transfer_cb_fn(&libusb_async_cb),                // callback
+                libusb_transfer_cb_fn(&libusb_async_rx_cb),             // callback
                 static_cast<void *>(&_callbacks.back()),                // user_data
-                0                                                       // timeout
+                0                                                       // timeout (ms)
             );
 
             _all_luts.push_back(lut);
@@ -183,13 +192,13 @@ public:
                 (send_endpoint & 0x7f) | 0x00,                          // endpoint
                 static_cast<unsigned char *>(_send_buffer_pool->at(i)), // buffer
                 this->get_send_frame_size(),                            // length
-                libusb_transfer_cb_fn(&libusb_async_cb),                // callback
+                libusb_transfer_cb_fn(&libusb_async_tx_cb),             // callback
                 static_cast<void *>(&_callbacks.back()),                // user_data
                 0                                                       // timeout
             );
 
             _all_luts.push_back(lut);
-            libusb_async_cb(lut);
+            libusb_async_tx_cb(lut);
         }
 
         //spawn the event handler threads
@@ -206,7 +215,9 @@ public:
         BOOST_FOREACH(libusb_transfer *lut, _all_luts){
             lut->callback = libusb_transfer_cb_fn(&cancel_transfer_cb);
             libusb_cancel_transfer(lut);
-            while(lut->status != LIBUSB_TRANSFER_CANCELLED && lut->status != LIBUSB_TRANSFER_COMPLETED) {
+            while(lut->status != LIBUSB_TRANSFER_CANCELLED
+               && lut->status != LIBUSB_TRANSFER_COMPLETED
+               && lut->status != LIBUSB_TRANSFER_TIMED_OUT) {
                 boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             }
         }

@@ -39,7 +39,7 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
     device_addrs_t usrp_e100_addrs;
 
     //return an empty list of addresses when type is set to non-usrp-e
-    if (hint.has_key("type") and hint["type"] != "usrp-e") return usrp_e100_addrs;
+    if (hint.has_key("type") and hint["type"] != "e100") return usrp_e100_addrs;
 
     //device node not provided, assume its 0
     if (not hint.has_key("node")){
@@ -171,12 +171,13 @@ usrp_e100_impl::usrp_e100_impl(
     //init the codec properties
     codec_init();
 
-    //init the io send/recv
-    io_init();
-
     //set default subdev specs
     this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
     this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
+
+    //init the io send/recv
+    io_init();
+
 }
 
 usrp_e100_impl::~usrp_e100_impl(void){

@@ -466,6 +466,7 @@ void usrp2_mboard_impl::set(const wax::obj &key, const wax::obj &val){
 
     case MBOARD_PROP_CLOCK_RATE:
         UHD_ASSERT_THROW(val.as<double>() == this->get_master_clock_freq());
+        _device.update_xport_channel_mapping();
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

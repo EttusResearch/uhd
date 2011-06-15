@@ -104,6 +104,7 @@ void usrp_e100_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
                 dsp_type1::calc_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
             );
         }
+        this->update_xport_channel_mapping(); //rate changed -> update
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -181,6 +182,7 @@ void usrp_e100_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
             //set the scaling
             _iface->poke32(UE_REG_DSP_TX_SCALE_IQ, dsp_type1::calc_iq_scale_word(_duc_interp));
         }
+        this->update_xport_channel_mapping(); //rate changed -> update
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

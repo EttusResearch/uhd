@@ -27,8 +27,10 @@ from optparse import OptionParser
 
 # USB Vendor and Product ID's
 
-VID = 0xfffe                            # Free Software Folks
-
+USRP1VID = 0xfffe                            # Free Software Folks
+USRP1PID = 0x0002
+USRP1PVID= 0x2500                            # Ettus Research
+USRP1PPID= 0x0001
     
 def msb (x):
     return (x >> 8) & 0xff
@@ -50,9 +52,11 @@ def build_eeprom_image (filename, rev):
     start_addr = 0 #prove me wrong
 
     if(rev == 1):
-      PID = 0x0002 #USRP1
+      VID = USRP1VID
+      PID = USRP1PPID
     else:
-      PID = 0x0003 #USRP1P
+      VID = USRP1PVID
+      PID = USRP1PPID
 
     rom_header = [
         0xC2,                           # boot from EEPROM

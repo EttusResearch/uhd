@@ -24,6 +24,7 @@ Application Notes
 * `USRP1 Application Notes <./usrp1.html>`_
 * `USRP2 Application Notes <./usrp2.html>`_
 * `USRP-N2XX Series Application Notes <./usrp2.html>`_
+* `USRP-B1XX Series Application Notes <./usrp_b1xx.html>`_
 * `USRP-E1XX Series Application Notes <./usrp_e1xx.html>`_
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_

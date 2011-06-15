@@ -664,6 +664,10 @@ sfr at 0xF8 EIP; // EIP Bit Values differ from Reg320
 //   must be zero    bmBIT1
 #define bmWORDWIDE   bmBIT0
 
+/* EP 24 FIFO Flag bits (EP24FIFOFLGS) */
+#define EP2FIFOEMPTY bmBIT1
+#define EP4FIFOEMPTY bmBIT5
+
 /*
  * Chip Revision Control Bits (REVCTL) - used to ebable/disable revision specific features
  */ 

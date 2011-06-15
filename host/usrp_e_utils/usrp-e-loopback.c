@@ -51,12 +51,27 @@ static int calc_checksum(struct pkt *p)
 	return sum;
 }
 
+static struct timeval delta_time(struct timeval f, struct timeval s)
+{
+	struct timeval d;
+
+	if (f.tv_usec > s.tv_usec) {
+		d.tv_usec = f.tv_usec - s.tv_usec;
+		d.tv_sec = f.tv_sec - s.tv_sec;
+	} else {
+		d.tv_usec = f.tv_usec - s.tv_usec + 1e6;
+		d.tv_sec = f.tv_sec - s.tv_sec - 1;
+	}
+
+	return d;
+}
+
 static void *read_thread(void *threadid)
 {
 	int cnt, prev_seq_num, pkt_count, seq_num_failure;
 	struct pkt *p;
-	unsigned long bytes_transfered, elapsed_seconds;
-	struct timeval start_time, finish_time;
+	unsigned long bytes_transfered;
+	struct timeval start_time;
 	int rb_read;
 
 	printf("Greetings from the reading thread!\n");
@@ -125,11 +140,15 @@ static void *read_thread(void *threadid)
 		bytes_transfered += cnt;
 
 		if (bytes_transfered > (100 * 1000000)) {
+			struct timeval finish_time, d_time;
+			float elapsed_seconds;
+
 			gettimeofday(&finish_time, NULL);
-			elapsed_seconds = finish_time.tv_sec - start_time.tv_sec;
+			d_time = delta_time(finish_time, start_time);
+			elapsed_seconds = (float)d_time.tv_sec + ((float)d_time.tv_usec * 1e-6f);
 
 			printf("RX data transfer rate = %f K Samples/second\n",
-				(float) bytes_transfered / (float) elapsed_seconds / 4000);
+				(float) bytes_transfered / elapsed_seconds / 4000.0f);
 
 
 			start_time = finish_time;

@@ -62,6 +62,8 @@ static pred_table_type get_pred_unpack_table(void){
         if(vrt_hdr_word & $hex(0x3 << 22)) table[i] |= $hex($tsi_p);
         if(vrt_hdr_word & $hex(0x3 << 20)) table[i] |= $hex($tsf_p);
         if(vrt_hdr_word & $hex(0x1 << 26)) table[i] |= $hex($tlr_p);
+        if(vrt_hdr_word & $hex(0x1 << 24)) table[i] |= $hex($eob_p);
+        if(vrt_hdr_word & $hex(0x1 << 25)) table[i] |= $hex($sob_p);
     }
     return table;
 }
@@ -84,9 +86,11 @@ void vrt::if_hdr_pack_$(suffix)(
     if (if_packet_info.has_tsi) pred |= $hex($tsi_p);
     if (if_packet_info.has_tsf) pred |= $hex($tsf_p);
     if (if_packet_info.has_tlr) pred |= $hex($tlr_p);
+    if (if_packet_info.eob)     pred |= $hex($eob_p);
+    if (if_packet_info.sob)     pred |= $hex($sob_p);
 
     switch(pred){
-    #for $pred in range(2**5)
+    #for $pred in range(2**7)
     case $pred:
         #set $num_header_words = 1
         #set $flags = 0
@@ -126,6 +130,13 @@ void vrt::if_hdr_pack_$(suffix)(
         #else
             #set $num_trailer_words = 0;
         #end if
+        ########## Burst Flags ##########
+        #if $pred & $eob_p
+            #set $flags |= (0x1 << 24);
+        #end if
+        #if $pred & $sob_p
+            #set $flags |= (0x1 << 25);
+        #end if
         ########## Variables ##########
             if_packet_info.num_header_words32 = $num_header_words;
             if_packet_info.num_packet_words32 = $($num_header_words + $num_trailer_words) + if_packet_info.num_payload_words32;
@@ -133,10 +144,6 @@ void vrt::if_hdr_pack_$(suffix)(
         break;
     #end for
     }
-
-    //set the burst flags
-    if (if_packet_info.sob) vrt_hdr_flags |= $hex(0x1 << 25);
-    if (if_packet_info.eob) vrt_hdr_flags |= $hex(0x1 << 24);
 
     //fill in complete header word
     packet_buff[0] = $(XE_MACRO)(boost::uint32_t(0
@@ -162,13 +169,11 @@ void vrt::if_hdr_unpack_$(suffix)(
     //extract fields from the header
     if_packet_info.packet_type = if_packet_info_t::packet_type_t(vrt_hdr_word >> 29);
     if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
-    //if_packet_info.sob = bool(vrt_hdr_word & $hex(0x1 << 25)); //not implemented
-    //if_packet_info.eob = bool(vrt_hdr_word & $hex(0x1 << 24)); //not implemented
 
     const pred_type pred = pred_unpack_table[pred_table_index(vrt_hdr_word)];
 
     switch(pred){
-    #for $pred in range(2**5)
+    #for $pred in range(2**7)
     case $pred:
         #set $has_time_spec = False
         #set $num_header_words = 1
@@ -215,6 +220,17 @@ void vrt::if_hdr_unpack_$(suffix)(
             if_packet_info.has_tlr = false;
             #set $num_trailer_words = 0;
         #end if
+        ########## Burst Flags ##########
+        #if $pred & $eob_p
+            if_packet_info.eob = true;
+        #else
+            if_packet_info.eob = false;
+        #end if
+        #if $pred & $sob_p
+            if_packet_info.sob = true;
+        #else
+            if_packet_info.sob = false;
+        #end if
         ########## Variables ##########
             //another failure case
             if (packet_words32 < $($num_header_words + $num_trailer_words))
@@ -243,9 +259,11 @@ if __name__ == '__main__':
     open(sys.argv[1], 'w').write(parse_tmpl(
         TMPL_TEXT,
         file=__file__,
-        sid_p = 0b00001,
-        cid_p = 0b00010,
-        tsi_p = 0b00100,
-        tsf_p = 0b01000,
-        tlr_p = 0b10000,
+        sid_p = 0b0000001,
+        cid_p = 0b0000010,
+        tsi_p = 0b0000100,
+        tsf_p = 0b0001000,
+        tlr_p = 0b0010000,
+        sob_p = 0b0100000,
+        eob_p = 0b1000000,
     ))

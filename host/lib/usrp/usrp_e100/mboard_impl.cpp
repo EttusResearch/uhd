@@ -214,6 +214,7 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
             << "See the application notes for USRP-E1XX for further instructions.\n"
         ;
         _clock_ctrl->set_fpga_clock_rate(val.as<double>());
+        this->update_xport_channel_mapping();
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

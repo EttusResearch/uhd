@@ -54,6 +54,8 @@
 							// wIndexL:	format
 							// len: how much to read
 
+#define VRQ_FW_COMPAT 0x83 //low 16 bits
+
 // OUT commands
 
 #define	VRQ_SET_LED			0x01		// wValueL off/on {0,1}; wIndexL: which {0,1}
@@ -86,6 +88,10 @@
 
 #define	VRQ_FPGA_SET_TX_RESET		0x0a		// wValueL: {0, 1}
 #define	VRQ_FPGA_SET_RX_RESET		0x0b		// wValueL: {0, 1}
+
+#define VRQ_RESET_GPIF			0x0c
+#define VRQ_ENABLE_GPIF			0x0d
+#define VRQ_CLEAR_FPGA_FIFO     0x0e
 
 
 // -------------------------------------------------------------------
