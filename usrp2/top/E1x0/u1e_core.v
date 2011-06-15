@@ -137,8 +137,6 @@ module u1e_core
 	 .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug(debug_gpmc));
 
-   wire 	 rx_sof = rx_data[32];
-   wire 	 rx_eof = rx_data[33];
    wire 	 rx_src_rdy_int, rx_dst_rdy_int, tx_src_rdy_int, tx_dst_rdy_int;
    
    wire [31:0] 	 debug_rx_dsp, vrc_debug, vrf_debug, vr_debug;
@@ -487,7 +485,7 @@ module u1e_core
 /*   
    assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
 			   {tx_enable, tx_src_rdy, tx_dst_rdy, tx_dst_rdy & ~tx_src_rdy},
-			   {rx_sof, rx_eof, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
+			   {2'b0, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
 			   {2'b0, bus_error, debug_gpmc[4:0] },
 			   {misc_gpio[7:0]} };
   */ 

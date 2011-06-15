@@ -138,25 +138,72 @@ module u1plus_core
 	 .debug0(debug0), .debug1(debug1));
 
    // /////////////////////////////////////////////////////////////////////////
-   // DSP RX
-   wire [31:0] 	 sample_rx;
-   wire 	 strobe_rx, run_rx;
-   wire [31:0] 	 debug_rx_dsp, vr_debug;
+   // RX ADC Frontend, does IQ Balance, DC Offset, muxing
+
+   wire [23:0] 	 adc_i, adc_q;  // 24 bits is total overkill here, but it matches u2/u2p
+   wire 	 run_rx, run_rx0, run_rx1;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP)) dsp_core_rx
+   rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .adc_a({rx_i,2'b0}),.adc_ovf_a(0),.adc_b({rx_q,2'b0}),.adc_ovf_b(0),
-      .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .debug(debug_rx_dsp) );
+      .adc_a({rx_i,4'b00}),.adc_ovf_a(0),
+      .adc_b({rx_q,4'b00}),.adc_ovf_b(0),
+      .i_out(adc_i), .q_out(adc_q), .run(run_rx0 | run_rx1), .debug());
    
-   vita_rx_chain #(.BASE(SR_RX_CTRL), .UNIT(0), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain
+   // /////////////////////////////////////////////////////////////////////////
+   // DSP RX 0
+
+   wire [31:0] 	 sample_rx0;
+   wire 	 strobe_rx0;
+   wire [35:0] 	 vita_rx_data0;
+   wire 	 vita_rx_src_rdy0, vita_rx_dst_rdy0;
+   
+   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
+     (.clk(wb_clk),.rst(wb_rst),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .adc_i(adc_i),.adc_ovf_i(0),.adc_q(adc_q),.adc_ovf_q(0),
+      .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
+      .debug() );
+
+   vita_rx_chain #(.BASE(SR_RX_CTRL0), .UNIT(0), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain0
      (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .vita_time(vita_time), .overrun(rx_overrun_dsp),
-      .sample(sample_rx), .run(run_rx), .strobe(strobe_rx),
-      .rx_data_o(rx_data), .rx_dst_rdy_i(rx_dst_rdy), .rx_src_rdy_o(rx_src_rdy),
-      .debug(vr_debug) );
+      .vita_time(vita_time), .overrun(rx_overrun_dsp0),
+      .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
+      .rx_data_o(vita_rx_data0), .rx_dst_rdy_i(vita_rx_dst_rdy0), .rx_src_rdy_o(vita_rx_src_rdy0),
+      .debug() );
+   
+   // /////////////////////////////////////////////////////////////////////////
+   // DSP RX 1
+
+   wire [31:0] 	 sample_rx1;
+   wire 	 strobe_rx1;
+   wire [35:0] 	 vita_rx_data1;
+   wire 	 vita_rx_src_rdy1, vita_rx_dst_rdy1;
+   
+   dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
+     (.clk(wb_clk),.rst(wb_rst),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .adc_i(adc_i),.adc_ovf_i(0),.adc_q(adc_q),.adc_ovf_q(0),
+      .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
+      .debug() );
+
+   vita_rx_chain #(.BASE(SR_RX_CTRL1), .UNIT(1), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain1
+     (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .vita_time(vita_time), .overrun(rx_overrun_dsp1),
+      .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
+      .rx_data_o(vita_rx_data1), .rx_dst_rdy_i(vita_rx_dst_rdy1), .rx_src_rdy_o(vita_rx_src_rdy1),
+      .debug() );
+
+   // /////////////////////////////////////////////////////////////////////////
+   // RX Stream muxing
+
+   fifo36_mux #(.prio(0)) mux_data_streams
+     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+      .data0_i(vita_rx_data0), .src0_rdy_i(vita_rx_src_rdy0), .dst0_rdy_o(vita_rx_dst_rdy0),
+      .data1_i(vita_rx_data1), .src1_rdy_i(vita_rx_src_rdy1), .dst1_rdy_o(vita_rx_dst_rdy1),
+      .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
    
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
