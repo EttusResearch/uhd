@@ -23,7 +23,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
-#include "fx2_ctrl.hpp"
+#include "../fx2/fx2_ctrl.hpp"
 #include "b100_ctrl.hpp"
 
 /*!
