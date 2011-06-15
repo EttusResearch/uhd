@@ -41,8 +41,8 @@ module u1plus_core
    localparam RXFIFOSIZE = 11;
 
    // 64 total regs in address space
-   localparam SR_RX_CTRL = 0;     // 9 regs (+0 to +8)
-   localparam SR_RX_DSP = 16;     // 7 regs (+0 to +6)
+   localparam SR_RX_CTRL0 = 0;     // 9 regs (+0 to +8)
+   localparam SR_RX_DSP0 = 16;     // 7 regs (+0 to +6)
    localparam SR_TX_CTRL = 24;    // 6 regs (+0 to +5)
    localparam SR_TX_DSP = 32;     // 5 regs (+0 to +4)
    localparam SR_TIME64 = 40;     // 6 regs (+0 to +5)
@@ -50,8 +50,12 @@ module u1plus_core
    localparam SR_CLEAR_TX_FIFO = 49; // 1 reg
    localparam SR_GLOBAL_RESET = 50; // 1 reg
    localparam SR_REG_TEST32 = 52; // 1 reg
-
-   wire [7:0]	COMPAT_NUM = 8'd3;
+   localparam SR_RX_FRONT = 0;
+   localparam SR_RX_CTRL1 = 0;
+   localparam SR_RX_DSP1 = 0;
+   localparam SR_TX_FRONT = 0;
+   
+   wire [7:0]	COMPAT_NUM = 8'd4;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
@@ -157,7 +161,7 @@ module u1plus_core
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
-   wire [15:0] 	 tx_i_int, tx_q_int;
+   wire [23:0] 	 tx_i_int, tx_q_int;
    wire 	 run_tx;
    
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
@@ -170,13 +174,16 @@ module u1plus_core
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
-      .dac_a(tx_i_int),.dac_b(tx_q_int),
+      .tx_i(tx_i_int),.tx_q(tx_q_int),
       .underrun(tx_underrun_dsp), .run(run_tx),
       .debug(debug_vt));
-   
-   assign tx_i = tx_i_int[15:2];
-   assign tx_q = tx_q_int[15:2];
-   
+
+   tx_frontend #(.BASE(SR_TX_FRONT), .WIDTH_OUT(14)) tx_frontend
+     (.clk(dsp_clk), .rst(dsp_rst),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .tx_i(tx_i_int), .tx_q(tx_q_int), .run(1'b1),
+      .dac_a(tx_i), .dac_b(tx_q));
+
    // /////////////////////////////////////////////////////////////////////////////////////
    // Wishbone Intercon, single master
    wire [dw-1:0] s0_dat_mosi, s1_dat_mosi, s0_dat_miso, s1_dat_miso, s2_dat_mosi, s3_dat_mosi, s2_dat_miso, s3_dat_miso,
