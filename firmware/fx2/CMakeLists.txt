@@ -39,9 +39,11 @@ set(CMAKE_C_FLAGS "--no-xinit-opt")
 ########################################################################
 set(REG_GENERATOR ${CMAKE_SOURCE_DIR}/utils/generate_regs.py)
 set(EDIT_GPIF_USRP1 ${CMAKE_SOURCE_DIR}/utils/edit-gpif.py)
+set(EDIT_GPIF_B100 ${CMAKE_SOURCE_DIR}/utils/edit-gpif-b100.py)
 set(BUILD_EEPROM ${CMAKE_SOURCE_DIR}/utils/build_eeprom.py)
 
 ########################################################################
 # Add the subdirectories
 ########################################################################
 ADD_SUBDIRECTORY(usrp1)
+ADD_SUBDIRECTORY(b100)
