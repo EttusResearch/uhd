@@ -201,7 +201,7 @@ IMAGES_LIST += $(_usrp_n200_r4_fpga_bin)
 $(_usrp_n200_r4_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n200_r4_fpga_dir) && make -f Makefile.N200R4 clean
 	cd $(_usrp_n200_r4_fpga_dir) && make -f Makefile.N200R4 bin
-	cp $(_usrp_n200_r4_fpga_dir)/build-N200r4/u2plus.bin $@
+	cp $(_usrp_n200_r4_fpga_dir)/build-N200R4/u2plus.bin $@
 
 endif
 
@@ -217,7 +217,7 @@ IMAGES_LIST += $(_usrp_n210_r4_fpga_bin)
 $(_usrp_n210_r4_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n210_r4_fpga_dir) && make -f Makefile.N210R4 clean
 	cd $(_usrp_n210_r4_fpga_dir) && make -f Makefile.N210R4 bin
-	cp $(_usrp_n210_r4_fpga_dir)/build-N210r4/u2plus.bin $@
+	cp $(_usrp_n210_r4_fpga_dir)/build-N210R4/u2plus.bin $@
 
 endif
 
