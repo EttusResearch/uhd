@@ -51,7 +51,6 @@ public:
     ctrl_data_t read(boost::uint32_t addr, size_t len);
     
     ~b100_ctrl_impl(void) {
-        bbl_out_marauding = false;
         viking_marauders.interrupt_all();
         viking_marauders.join_all();
     }
@@ -67,7 +66,6 @@ private:
     bounded_buffer<ctrl_data_t> sync_ctrl_fifo;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group viking_marauders;
-    bool bbl_out_marauding;
     
     uhd::transport::usb_zero_copy::sptr _ctrl_transport;
     boost::uint8_t _seq;
@@ -168,11 +166,10 @@ ctrl_data_t b100_ctrl_impl::read(boost::uint32_t addr, size_t len) {
  * wait for a control operation to finish before starting another one.
  **********************************************************************/
 void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
-    bbl_out_marauding = true;
     spawn_barrier.wait();
     set_thread_priority_safe();
     
-    while(bbl_out_marauding){
+    while (not boost::this_thread::interruption_requested()){
         managed_recv_buffer::sptr rbuf = _ctrl_transport->get_recv_buff();
         if(!rbuf.get()) continue; //that's ok, there are plenty of villages to pillage!
         const boost::uint16_t *pkt_buf = rbuf->cast<const boost::uint16_t *>();
