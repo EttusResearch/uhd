@@ -26,13 +26,13 @@ module new_read
    wire 	src_rdy_int, dst_rdy_int;
    
    fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
-     (.clk(clk), .reset(rst), .clear(clear),
+     (.clk(clk), .reset(reset), .clear(clear),
       .datain(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o), .space(),
       .dataout(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int), .occupied());
 
    fifo_watcher fifo_watcher
      (.clk(clk), .reset(reset), .clear(clear),
-      .src_rdy1(src_rdy_i), .dst_rdy1(dst_rdy_i), .sof1(data_i[16]), .eof1(data_i[17]),
+      .src_rdy1(src_rdy_i), .dst_rdy1(dst_rdy_o), .sof1(data_i[16]), .eof1(data_i[17]),
       .src_rdy2(src_rdy_int), .dst_rdy2(dst_rdy_int), .sof2(data_int[16]), .eof2(data_int[17]),
       .have_packet(have_packet), .length(frame_len), .bus_error(bus_error),
       .debug());
