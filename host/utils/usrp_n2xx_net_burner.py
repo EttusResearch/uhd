@@ -55,10 +55,10 @@ FLASH_IP_FMT =   '!LLLL260x'
 FLASH_HW_REV_FMT = '!LLLL260x'
 
 n2xx_revs = {
-             0x0a00: "n200_r3",
-             0x0a01: "n200_r4",
-             0x0a01: "n210_r3",
-             0x0a11: "n210_r4"
+             0x0a00: ["n200_r3", "n200_r2"],
+             0x0a10: ["n200_r4"],
+             0x0a01: ["n210_r3", "n210_r2"],
+             0x0a11: ["n210_r4"]
             }
 
 class update_id_t:
@@ -179,13 +179,13 @@ class burner_socket(object):
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
-        if(hw_rev != 0): print "Hardware type: %s" % n2xx_revs[hw_rev]
+        if(hw_rev != 0): print "Hardware type: %s" % n2xx_revs[hw_rev][0]
         print "Flash size: %i\nSector size: %i\n" % (flash_size, sector_size)
 
         if fpga:
             #validate fpga image name against hardware rev
-            if(n2xx_revs[hw_rev] not in fpga and hw_rev != 0):
-                raise Exception("Error: incorrect FPGA image version. Please use the correct image for device %s" % n2xx_revs[hw_rev])
+            if(hw_rev != 0 and not any(name in fpga for name in n2xx_revs[hw_rev])):
+                raise Exception("Error: incorrect FPGA image version. Please use the correct image for device %s" % n2xx_revs[hw_rev][0])
                 
             if safe: image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
             else:    image_location = PROD_FPGA_IMAGE_LOCATION_ADDR
