@@ -184,7 +184,7 @@ def win_get_interfaces():
         for a in adapterList:
             adNode = a.ipAddressList
             while True:
-                ipAddr = adNode.ipAddress
+                ipAddr = (adNode.ipAddress & adNode.ipMask) | ~adNode.ipMask
                 if ipAddr:
                     yield ipAddr
                 adNode = adNode.next
@@ -197,8 +197,7 @@ def enumerate_devices():
     for bcast_addr in ifaces:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.settimeout(UDP_TIMEOUT)
-        print "Sending bcast pkt to %s" % bcast_addr
+        sock.settimeout(0.1)
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, 0, 0, 0)
         sock.sendto(out_pkt, (bcast_addr, UDP_FW_UPDATE_PORT))
         still_goin = True
