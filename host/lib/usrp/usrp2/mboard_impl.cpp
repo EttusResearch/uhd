@@ -289,10 +289,10 @@ void usrp2_mboard_impl::set_time_spec(const time_spec_t &time_spec, bool now){
 /***********************************************************************
  * MBoard Get Properties
  **********************************************************************/
-static const std::string dboard_name = "0";
-
 void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
+    static const std::string dboard_name = "A";
+
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
@@ -304,7 +304,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        UHD_ASSERT_THROW(key.name == dboard_name);
+        UHD_ASSERT_THROW(key.name == dboard_name or key.name == "0"); //allow for old name to work
         val = _rx_dboard_proxy->get_link();
         return;
 
@@ -313,7 +313,7 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        UHD_ASSERT_THROW(key.name == dboard_name);
+        UHD_ASSERT_THROW(key.name == dboard_name or key.name == "0"); //allow for old name to work
         val = _tx_dboard_proxy->get_link();
         return;
 

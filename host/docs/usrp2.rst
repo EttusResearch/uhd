@@ -406,11 +406,11 @@ In the single channel case, only one chain is ever used.
 To receive from both channels,
 the user must set the RX subdevice specification.
 This hardware has only one daughterboard slot,
-which has been aptly named slot "0".
+which has been aptly named slot "A".
 
 In the following example, a TVRX2 is installed.
 Channel 0 is sourced from subdevice RX1,
 channel 1 is sourced from subdevice RX2:
 ::
 
-    usrp->set_rx_subdev_spec("0:RX1 0:RX2");
+    usrp->set_rx_subdev_spec("A:RX1 A:RX2");

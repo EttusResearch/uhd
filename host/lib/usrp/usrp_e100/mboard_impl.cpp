@@ -68,11 +68,12 @@ void usrp_e100_impl::update_clock_config(void){
  **********************************************************************/
 void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
+    static const std::string dboard_name = "A";
 
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
     case MBOARD_PROP_NAME:
-        val = std::string("usrp-e mboard");
+        val = std::string(_iface->get_cname() + " mboard");
         return;
 
     case MBOARD_PROP_OTHERS:
@@ -80,21 +81,21 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DBOARD:
-        UHD_ASSERT_THROW(key.name == "");
+        UHD_ASSERT_THROW(key.name == dboard_name);
         val = _rx_dboard_proxy->get_link();
         return;
 
     case MBOARD_PROP_RX_DBOARD_NAMES:
-        val = prop_names_t(1, ""); //vector of size 1 with empty string
+        val = prop_names_t(1, dboard_name);
         return;
 
     case MBOARD_PROP_TX_DBOARD:
-        UHD_ASSERT_THROW(key.name == "");
+        UHD_ASSERT_THROW(key.name == dboard_name);
         val = _tx_dboard_proxy->get_link();
         return;
 
     case MBOARD_PROP_TX_DBOARD_NAMES:
-        val = prop_names_t(1, ""); //vector of size 1 with empty string
+        val = prop_names_t(1, dboard_name);
         return;
 
     case MBOARD_PROP_RX_DSP:
