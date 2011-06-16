@@ -146,7 +146,6 @@ struct usrp2_impl::io_impl{
     }
 
     ~io_impl(void){
-        recv_pirate_crew_raiding = false;
         recv_pirate_crew.interrupt_all();
         recv_pirate_crew.join_all();
     }
@@ -185,7 +184,6 @@ struct usrp2_impl::io_impl{
     //methods and variables for the pirate crew
     void recv_pirate_loop(boost::barrier &, usrp2_mboard_impl::sptr, zero_copy_if::sptr, size_t);
     boost::thread_group recv_pirate_crew;
-    bool recv_pirate_crew_raiding;
     bounded_buffer<async_metadata_t> async_msg_fifo;
 };
 
@@ -201,14 +199,13 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     zero_copy_if::sptr err_xport,
     size_t index
 ){
-    recv_pirate_crew_raiding = true;
     spawn_barrier.wait();
     set_thread_priority_safe();
 
     //store a reference to the flow control monitor (offset by max dsps)
     flow_control_monitor &fc_mon = *(this->fc_mons[index*usrp2_mboard_impl::MAX_NUM_DSPS]);
 
-    while(recv_pirate_crew_raiding){
+    while (not boost::this_thread::interruption_requested()){
         managed_recv_buffer::sptr buff = err_xport->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
 
