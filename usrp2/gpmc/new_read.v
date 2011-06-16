@@ -30,14 +30,12 @@ module new_read
       .datain(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o), .space(rx_fifo_space),
       .dataout(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int), .occupied());
 
-   /*
    fifo_watcher fifo_watcher
      (.clk(clk), .reset(reset), .clear(clear),
-      .src_rdy1(src_rdy_i & ~throttle), .dst_rdy1(dst_rdy_i), .sof1(data_i[16]), .eof1(data_i[17]),
+      .src_rdy1(src_rdy_i), .dst_rdy1(dst_rdy_i), .sof1(data_i[16]), .eof1(data_i[17]),
       .src_rdy2(src_rdy_int), .dst_rdy2(dst_rdy_int), .sof2(data_int[16]), .eof2(data_int[17]),
       .have_packet(have_packet), .length(frame_len), .bus_error(bus_error),
       .debug());
-    */
    
    // Synchronize the async control signals
    reg [1:0] 	cs_del, oe_del;

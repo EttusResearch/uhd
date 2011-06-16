@@ -112,24 +112,12 @@ module gpmc_async
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
       .f19_dataout({dummy,rx18_data}), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
 
-   fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .datain(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy), .space(rx_fifo_space),
-      .dataout(rx18b_data), .src_rdy_o(rx18b_src_rdy), .dst_rdy_i(rx18b_dst_rdy), .occupied());
-
    new_read new_read
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
+      .data_i(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy),
       .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
-      .frame_len(rx_frame_len) );
+      .have_packet(have_packet), .frame_len(rx_frame_len), .bus_error(bus_error_rx) );
    
-   fifo_watcher fifo_watcher
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .src_rdy1(rx18_src_rdy), .dst_rdy1(rx18_dst_rdy), .sof1(rx18_data[16]), .eof1(rx18_data[17]),
-      .src_rdy2(rx18b_src_rdy), .dst_rdy2(rx18b_dst_rdy), .sof2(rx18b_data[16]), .eof2(rx18b_data[17]),
-      .have_packet(rx_have_data), .length(rx_frame_len), .bus_error(bus_error_rx),
-      .debug(pkt_count));
-
    // ////////////////////////////////////////////
    // Control path on CS6
    
