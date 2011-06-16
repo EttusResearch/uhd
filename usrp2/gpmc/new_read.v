@@ -20,14 +20,14 @@ module new_read
   (input clk, input reset, input clear,
    input [17:0] data_i, input src_rdy_i, output dst_rdy_o,
    output reg [15:0] EM_D, input EM_NCS, input EM_NOE,
-   output have_packet, input [15:0] frame_len, output bus_error);
+   output have_packet, output [15:0] frame_len, output bus_error);
 
    wire [17:0] 	data_int;
    wire 	src_rdy_int, dst_rdy_int;
    
    fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .datain(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o), .space(rx_fifo_space),
+     (.clk(clk), .reset(rst), .clear(clear),
+      .datain(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o), .space(),
       .dataout(data_int), .src_rdy_o(src_rdy_int), .dst_rdy_i(dst_rdy_int), .occupied());
 
    fifo_watcher fifo_watcher
