@@ -116,7 +116,7 @@ module gpmc_async
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
       .data_i(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy),
       .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
-      .have_packet(have_packet), .frame_len(rx_frame_len), .bus_error(bus_error_rx) );
+      .have_packet(rx_have_data), .frame_len(rx_frame_len), .bus_error(bus_error_rx) );
    
    // ////////////////////////////////////////////
    // Control path on CS6
