@@ -50,7 +50,7 @@ def command(*args):
         stderr=subprocess.STDOUT,
     )
     ret = p.wait()
-    verbose = p.stdout.read().decode('ascii')
+    verbose = p.stdout.read().decode()
     if ret != 0: raise Exception(verbose)
     return verbose
 
@@ -92,12 +92,12 @@ def get_raw_device_hints():
                 if in_info: info += '\n'+line.strip()
         def is_info_valid(info):
             try:
-                assert 'link to' in info
+                if 'link to' not in info: return False
                 #handles two spellings of remov(e)able:
-                assert 'remov' in info.lower()
-                if 'size is' in info: assert int(extract_info_value(info, 'size is')) <= MAX_SD_CARD_SIZE
-                return True
+                if 'remov' not in info.lower(): return False
+                if 'size is' in info and int(extract_info_value(info, 'size is')) > MAX_SD_CARD_SIZE: return False
             except: return False
+            return True
         def extract_info_name(info):
             for key in ('Mounted on', 'link to'):
                 if key in info: return extract_info_value(info, key)
@@ -110,13 +110,11 @@ def get_raw_device_hints():
     ####################################################################
     if platform.system() == 'Linux':
         devs = list()
-        try: output = open('/proc/partitions', 'r').read().decode('ascii')
-        except: return devs
-        for line in output.splitlines():
+        for line in command('cat', '/proc/partitions').splitlines():
             try:
                 major, minor, blocks, name = line.split()
-                assert not name[-1].isdigit() or int(minor) == 0
-                assert int(blocks)*1024 <= MAX_SD_CARD_SIZE
+                if not name[-1].isdigit() and int(minor) == 0: continue
+                if int(blocks)*1024 > MAX_SD_CARD_SIZE: continue
             except: continue
             devs.append(os.path.join('/dev', name))
 
@@ -128,17 +126,17 @@ def get_raw_device_hints():
     if platform.system() == 'Darwin':
         devs = [d.split()[0] for d in [l for l in command('diskutil', 'list').splitlines() if l.startswith('/dev')]]
         def output_to_info(output):
-            return dict([list(map(str.strip, pair.lower().split(':'))) for pair in [l for l in output.splitlines() if ':' in l]])
+            return dict([list(map(lambda x: x.strip(), pair.lower().split(':'))) for pair in [l for l in output.splitlines() if ':' in l]])
         def is_dev_valid(dev):
             info = output_to_info(command('diskutil', 'info', dev))
             try:
-                if 'internal' in info: assert info['internal'] == 'no'
-                if 'ejectable' in info: assert info['ejectable'] == 'yes'
+                if 'internal' in info and info['internal'] == 'yes': return False
+                if 'ejectable' in info and info['ejectable'] == 'no': return False
                 if 'total size' in info:
                     size_match = re.match('^.*\((\d+)\s*bytes\).*$', info['total size'])
-                    if size_match: assert int(size_match.groups()[0]) <= MAX_SD_CARD_SIZE
-                return True
+                    if size_match and int(size_match.groups()[0]) > MAX_SD_CARD_SIZE: return False
             except: return False
+            return True
 
         return sorted(set(filter(is_dev_valid, devs)))
 
