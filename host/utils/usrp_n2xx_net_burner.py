@@ -184,17 +184,21 @@ def win_get_interfaces():
         for a in adapterList:
             adNode = a.ipAddressList
             while True:
-                ipAddr = (adNode.ipAddress & adNode.ipMask) | ~adNode.ipMask
-                if ipAddr:
-                    yield ipAddr
+                #convert ipAddr and ipMask into hex addrs that can be turned into a bcast addr
+                ipAddr = adNode.ipAddress
+                ipMask = adNode.ipMask
+                if ipAddr and ipMask:
+                    hexAddr = struct.unpack("<L", socket.inet_aton(ipAddr))[0]
+                    hexMask = struct.unpack("<L", socket.inet_aton(ipMask))[0]
+                    if(hexAddr and hexMask): #don't broadcast on 255.255.255.255, that's just lame
+                        yield socket.inet_ntoa(struct.pack("<L", (hexAddr & hexMask) | (~hexMask) & 0xFFFFFFFF))
                 adNode = adNode.next
                 if not adNode:
                     break
 
 def enumerate_devices():
-    ifaces = get_interfaces()
     devices = []
-    for bcast_addr in ifaces:
+    for bcast_addr in get_interfaces():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.settimeout(0.1)
