@@ -11,7 +11,7 @@ module tx_frontend
    // IQ balance --> DC offset --> rounding --> mux
 
    wire [23:0] i_dco, q_dco, i_ofs, q_ofs;
-   wire [15:0] i_final, q_final;
+   wire [WIDTH_OUT-1:0] i_final, q_final;
    wire [7:0]  mux_ctrl;
    wire [35:0] corr_i, corr_q;
    wire [23:0] i_bal, q_bal;

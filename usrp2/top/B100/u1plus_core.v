@@ -57,8 +57,7 @@ module u1plus_core
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
 
-   
-   wire [7:0]	COMPAT_NUM = 8'd4;
+   wire [7:0]	COMPAT_NUM = 8'd5;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
@@ -79,11 +78,11 @@ module u1plus_core
    wire [31:0] 	debug_vt;
    wire 	gpif_rst;
    
-   wire 	rx_overrun_dsp, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
    reg [7:0] 	frames_per_packet;
    
-   assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp;
-   assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
+   wire 	rx_overrun_dsp0, rx_overrun_dsp1, rx_overrun_gpif, tx_underrun_dsp, tx_underrun_gpif;
+   wire 	rx_overrun = rx_overrun_gpif | rx_overrun_dsp0 | rx_overrun_dsp1;
+   wire 	tx_underrun = tx_underrun_gpif | tx_underrun_dsp;
    
    setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
@@ -104,7 +103,7 @@ module u1plus_core
    wire [sw-1:0] m0_sel;
    wire 	 m0_cyc, m0_stb, m0_we, m0_ack, m0_err, m0_rty;
 
-   wire [31:0] 	 debug_gpmc;
+   wire [31:0] 	 debug_gpif;
 
    wire [35:0] 	 tx_data, rx_data, tx_err_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy, 
@@ -135,7 +134,7 @@ module u1plus_core
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
 	 .tx_err_data_i(tx_err_data), .tx_err_src_rdy_i(tx_err_src_rdy), .tx_err_dst_rdy_o(tx_err_dst_rdy),
 	 
-	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
+	 .tx_underrun(tx_underrun_gpif), .rx_overrun(rx_overrun_gpif),
 
 	 .frames_per_packet(frames_per_packet), .test_len(test_len), .test_rate(test_rate), .test_ctrl(test_ctrl),
 	 .debug0(debug0), .debug1(debug1));
@@ -229,7 +228,7 @@ module u1plus_core
       .debug(debug_vt));
 
    tx_frontend #(.BASE(SR_TX_FRONT), .WIDTH_OUT(14)) tx_frontend
-     (.clk(dsp_clk), .rst(dsp_rst),
+     (.clk(wb_clk), .rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .tx_i(tx_i_int), .tx_q(tx_q_int), .run(1'b1),
       .dac_a(tx_i), .dac_b(tx_q));

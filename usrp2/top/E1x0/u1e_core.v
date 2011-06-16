@@ -76,8 +76,8 @@ module u1e_core
 
    wire [31:0] 	debug_vt;
    wire 	rx_overrun_dsp0, rx_overrun_dsp1, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
-   assign rx_overrun = rx_overrun_gpmc | rx_overrun_dsp0 | rx_overrun_dsp1;
-   assign tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
+   wire 	rx_overrun = rx_overrun_gpmc | rx_overrun_dsp0 | rx_overrun_dsp1;
+   wire 	tx_underrun = tx_underrun_gpmc | tx_underrun_dsp;
    
    setting_reg #(.my_addr(SR_GLOBAL_RESET), .width(1)) sr_reset
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
@@ -241,7 +241,7 @@ module u1e_core
       .debug(debug_vt));
 
    tx_frontend #(.BASE(SR_TX_FRONT), .WIDTH_OUT(14)) tx_frontend
-     (.clk(dsp_clk), .rst(dsp_rst),
+     (.clk(wb_clk), .rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .tx_i(tx_i_int), .tx_q(tx_q_int), .run(1'b1),
       .dac_a(tx_i), .dac_b(tx_q));
