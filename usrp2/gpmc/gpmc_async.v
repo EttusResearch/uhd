@@ -117,12 +117,11 @@ module gpmc_async
       .datain(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy), .space(rx_fifo_space),
       .dataout(rx18b_data), .src_rdy_o(rx18b_src_rdy), .dst_rdy_i(rx18b_dst_rdy), .occupied());
 
-   fifo_to_gpmc_async fifo_to_gpmc_async
+   new_read new_read
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
       .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
       .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
       .frame_len(rx_frame_len) );
-
    
    fifo_watcher fifo_watcher
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
