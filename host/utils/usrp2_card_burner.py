@@ -126,7 +126,7 @@ def get_raw_device_hints():
     if platform.system() == 'Darwin':
         devs = [d.split()[0] for d in [l for l in command('diskutil', 'list').splitlines() if l.startswith('/dev')]]
         def output_to_info(output):
-            return dict([list(map(str.strip, pair.lower().split(':'))) for pair in [l for l in output.splitlines() if ':' in l]])
+            return dict([list(map(lambda x: x.strip(), pair.lower().split(':'))) for pair in [l for l in output.splitlines() if ':' in l]])
         def is_dev_valid(dev):
             info = output_to_info(command('diskutil', 'info', dev))
             try:
