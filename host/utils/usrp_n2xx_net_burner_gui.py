@@ -84,6 +84,45 @@ class ProgressBar(tkinter.Canvas):
         if frac: self.create_rectangle(0, 0, fill_pixels, self._height, fill="#357EC7")
         else:    self.create_rectangle(0, 0, self._width, self._height, fill="#E8E8E8")
 
+class DeviceEntryWidget(tkinter.Frame):
+    """
+    Simple entry widget for getting the network device name.
+    Combines a label, entry, and helpful text box with hints.
+    """
+
+    def __init__(self, root, text=''):
+        tkinter.Frame.__init__(self, root)
+
+        tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
+
+        self._hints = tkinter.Listbox(self)
+        self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
+        self._reload_cb()
+        self._hints.pack(expand=tkinter.YES, fill=tkinter.X)
+
+        frame = tkinter.Frame(self)
+        frame.pack()
+
+        tkinter.Label(frame, text="Network Address:").pack(side=tkinter.LEFT)
+        self._entry = tkinter.Entry(frame, width=50)
+        self._entry.insert(tkinter.END, text)
+        self._entry.pack(side=tkinter.LEFT)
+
+    def _reload_cb(self):
+        self._hints.delete(0, tkinter.END)
+        for hint in usrp_n2xx_net_burner.enumerate_devices():
+            self._hints.insert(tkinter.END, hint)
+
+    def _listbox_cb(self, event):
+        try:
+            sel = self._hints.get(self._hints.curselection()[0])
+            self._entry.delete(0, tkinter.END)
+            self._entry.insert(0, sel)
+        except Exception as e: print(e)
+
+    def get_devname(self):
+        return self._entry.get()
+
 class SectionLabel(tkinter.Label):
     """
     Make a text label with bold font.
@@ -115,10 +154,9 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
         self._fpga_img_entry.pack()
 
         #pack the destination entry widget
-        SectionLabel(self, text="Select Address").pack(pady=5)
-        self._addr_entry = tkinter.Entry(self, width=30)
-        self._addr_entry.insert(tkinter.END, addr)
-        self._addr_entry.pack()
+        SectionLabel(self, text="Select Device").pack(pady=5)
+        self._net_dev_entry = DeviceEntryWidget(self, text=addr)
+        self._net_dev_entry.pack()
 
         #the do it button
         SectionLabel(self, text="").pack(pady=5)
@@ -136,12 +174,10 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
         self._pbar.pack(side=tkinter.RIGHT, expand=True)
 
     def _burn(self):
-        self._disable_input()
-
         #grab strings from the gui
         fw = self._fw_img_entry.get_filename()
         fpga = self._fpga_img_entry.get_filename()
-        addr = self._addr_entry.get()
+        addr = self._net_dev_entry.get_devname()
 
         #check input
         if not addr:
@@ -157,6 +193,7 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
             tkinter.messagebox.showerror('Error:', 'FPGA image not found!')
             return
 
+        self._disable_input()
         try:
             #make a new burner object and attempt the burner operation
             burner = usrp_n2xx_net_burner.burner_socket(addr=addr)

@@ -185,8 +185,8 @@ def win_get_interfaces():
             adNode = a.ipAddressList
             while True:
                 #convert ipAddr and ipMask into hex addrs that can be turned into a bcast addr
-                ipAddr = adNode.ipAddress
-                ipMask = adNode.ipMask
+                ipAddr = adNode.ipAddress.decode()
+                ipMask = adNode.ipMask.decode()
                 if ipAddr and ipMask:
                     hexAddr = struct.unpack("<L", socket.inet_aton(ipAddr))[0]
                     hexMask = struct.unpack("<L", socket.inet_aton(ipMask))[0]
@@ -197,7 +197,6 @@ def win_get_interfaces():
                     break
 
 def enumerate_devices():
-    devices = []
     for bcast_addr in get_interfaces():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -210,11 +209,9 @@ def enumerate_devices():
                 pkt = sock.recv(UDP_MAX_XFER_BYTES)
                 (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(pkt)
                 if(pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG):
-                    devices.append(socket.inet_ntoa(struct.pack("<L", socket.ntohl(ip_addr))))
+                    yield socket.inet_ntoa(struct.pack("<L", socket.ntohl(ip_addr)))
             except socket.timeout:
                 still_goin = False
-
-    return devices
 
 ########################################################################
 # Burner class, holds a socket and send/recv routines
@@ -259,7 +256,7 @@ class burner_socket(object):
     def get_flash_info(self):
         if (self.memory_size_bytes != 0) and (self.sector_size_bytes != 0):
             return (self.memory_size_bytes, self.sector_size_bytes)
-            
+
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL, seq(), 0, 0)
         in_pkt = self.send_and_recv(out_pkt)
 
@@ -274,14 +271,14 @@ class burner_socket(object):
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
-        if(hw_rev != 0): print "Hardware type: %s" % n2xx_revs[hw_rev][0]
-        print "Flash size: %i\nSector size: %i\n" % (flash_size, sector_size)
+        if(hw_rev != 0): print("Hardware type: %s" % n2xx_revs[hw_rev][0])
+        print("Flash size: %i\nSector size: %i\n" % (flash_size, sector_size))
 
         if fpga:
             #validate fpga image name against hardware rev
             if(hw_rev != 0 and not any(name in fpga for name in n2xx_revs[hw_rev])):
                 raise Exception("Error: incorrect FPGA image version. Please use the correct image for device %s" % n2xx_revs[hw_rev][0])
-                
+
             if safe: image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
             else:    image_location = PROD_FPGA_IMAGE_LOCATION_ADDR
 
@@ -293,7 +290,7 @@ class burner_socket(object):
 
             if not is_valid_fpga_image(fpga_image):
                 raise Exception("Error: Invalid FPGA image file.")
-                
+
             if (len(fpga_image) + image_location) > flash_size:
                 raise Exception("Error: Cannot write past end of device")
 
@@ -317,7 +314,7 @@ class burner_socket(object):
 
             if not is_valid_fw_image(fw_image):
                 raise Exception("Error: Invalid firmware image file.")
-                
+
             if (len(fw_image) + image_location) > flash_size:
                 raise Exception("Error: Cannot write past end of device")
 
@@ -339,7 +336,7 @@ class burner_socket(object):
         (mem_size, sector_size) = self.get_flash_info()
         if (addr + len(writedata)) > mem_size:
             raise Exception("Error: Cannot write past end of device")
-            
+
         while writedata:
             out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL, seq(), addr, FLASH_DATA_PACKET_SIZE, writedata[:FLASH_DATA_PACKET_SIZE])
             in_pkt = self.send_and_recv(out_pkt)
@@ -426,7 +423,7 @@ class burner_socket(object):
         (flash_size, sector_size) = self.get_flash_info()
         if (addr + length) > flash_size:
             raise Exception("Cannot erase past end of device")
-            
+
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL, seq(), addr, length)
         in_pkt = self.send_and_recv(out_pkt)
 
@@ -463,6 +460,7 @@ def get_options():
     parser.add_option("--reset", action="store_true",          help="reset the device after writing", default=False)
     parser.add_option("--read", action="store_true",           help="read to file instead of write from file", default=False)
     parser.add_option("--overwrite-safe", action="store_true", help="never ever use this option", default=False)
+    parser.add_option("--list", action="store_true",           help="list possible network devices", default=False)
     (options, args) = parser.parse_args()
 
     return options
@@ -472,6 +470,12 @@ def get_options():
 ########################################################################
 if __name__=='__main__':
     options = get_options()
+
+    if options.list:
+        print('Possible network devices:')
+        print('  ' + '\n  '.join(enumerate_devices()))
+        exit()
+
     if not options.addr: raise Exception('no address specified')
 
     if not options.fpga and not options.fw and not options.reset: raise Exception('Must specify either a firmware image or FPGA image, and/or reset.')
