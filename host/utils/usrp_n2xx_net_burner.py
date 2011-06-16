@@ -191,6 +191,28 @@ def win_get_interfaces():
                 if not adNode:
                     break
 
+def enumerate_devices():
+    ifaces = get_interfaces()
+    devices = []
+    for bcast_addr in ifaces:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.settimeout(UDP_TIMEOUT)
+        print "Sending bcast pkt to %s" % bcast_addr
+        out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, 0, 0, 0)
+        sock.sendto(out_pkt, (bcast_addr, UDP_FW_UPDATE_PORT))
+        still_goin = True
+        while(still_goin):
+            try:
+                pkt = sock.recv(UDP_MAX_XFER_BYTES)
+                (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(pkt)
+                if(pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG):
+                    devices.append(socket.inet_ntoa(struct.pack("<L", socket.ntohl(ip_addr))))
+            except socket.timeout:
+                still_goin = False
+
+    return devices
+
 ########################################################################
 # Burner class, holds a socket and send/recv routines
 ########################################################################
@@ -200,7 +222,6 @@ class burner_socket(object):
         self._sock.settimeout(UDP_TIMEOUT)
         self._sock.connect((addr, UDP_FW_UPDATE_PORT))
         self.set_callbacks(lambda *a: None, lambda *a: None)
-        get_interfaces()
         self.init_update() #check that the device is there
         self.get_hw_rev()
 
