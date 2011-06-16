@@ -33,9 +33,13 @@
 
 uhd::transport::zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
 
-static const std::string USRP_E_FPGA_FILE_NAME = "usrp_e100_fpga5.bin";
-static const boost::uint16_t USRP_E_FPGA_COMPAT_NUM = 0x05;
-static const double USRP_E_DEFAULT_CLOCK_RATE = 64e6;
+static const std::string     E100_FPGA_FILE_NAME = "usrp_e100_fpga5.bin";
+static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x05;
+static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
+static const size_t          E100_NUM_RX_DSPS = 2;
+static const size_t          E100_NUM_TX_DSPS = 1;
+static const boost::uint32_t E100_DSP_SID_BASE = 2; //leave room for other dsp (increments by 1)
+static const boost::uint32_t E100_ASYNC_SID = 1;
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void usrp_e100_load_fpga(const std::string &bin_file);
@@ -114,7 +118,6 @@ private:
     size_t _recv_frame_size, _send_frame_size;
     uhd::otw_type_t _send_otw_type, _recv_otw_type;
     void io_init(void);
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
     void handle_overrun(size_t);
     void update_xport_channel_mapping(void);
 
@@ -149,19 +152,20 @@ private:
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
 
-    //rx ddc functions and settings
-    void rx_ddc_init(void);
-    void rx_ddc_get(const wax::obj &, wax::obj &);
-    void rx_ddc_set(const wax::obj &, const wax::obj &);
-    double _ddc_freq; size_t _ddc_decim;
-    wax_obj_proxy::sptr _rx_ddc_proxy;
+    //methods and shadows for the dsps
+    UHD_PIMPL_DECL(dsp_impl) _dsp_impl;
+    void dsp_init(void);
+    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &, size_t);
 
-    //tx duc functions and settings
-    void tx_duc_init(void);
-    void tx_duc_get(const wax::obj &, wax::obj &);
-    void tx_duc_set(const wax::obj &, const wax::obj &);
-    double _duc_freq; size_t _duc_interp;
-    wax_obj_proxy::sptr _tx_duc_proxy;
+    //properties interface for ddc
+    void ddc_get(const wax::obj &, wax::obj &, size_t);
+    void ddc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsp_proxies;
+
+    //properties interface for duc
+    void duc_get(const wax::obj &, wax::obj &, size_t);
+    void duc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
 
     //codec functions and settings
     void codec_init(void);

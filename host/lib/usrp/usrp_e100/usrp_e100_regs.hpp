@@ -121,92 +121,113 @@
 //  Each register must be written 64 bits at a time
 //  First the address xxx_xx00 and then xxx_xx10
 
-#define UE_REG_SETTINGS_BASE_ADDR(n) (UE_REG_SLAVE(8) + (4*(n)))
+// 64 total regs in address space
+#define UE_SR_RX_CTRL0 0       // 9 regs (+0 to +8)
+#define UE_SR_RX_DSP0 10       // 4 regs (+0 to +3)
+#define UE_SR_RX_CTRL1 16      // 9 regs (+0 to +8)
+#define UE_SR_RX_DSP1 26       // 4 regs (+0 to +3)
+#define UE_SR_TX_CTRL 32       // 4 regs (+0 to +3)
+#define UE_SR_TX_DSP 38        // 3 regs (+0 to +2)
 
-#define UE_REG_SR_MISC_TEST32        UE_REG_SETTINGS_BASE_ADDR(52)
+#define UE_SR_TIME64 42        // 6 regs (+0 to +5)
+#define UE_SR_RX_FRONT 48      // 5 regs (+0 to +4)
+#define UE_SR_TX_FRONT 54      // 5 regs (+0 to +4)
+
+#define UE_SR_REG_TEST32 60    // 1 reg
+#define UE_SR_CLEAR_RX_FIFO 61 // 1 reg
+#define UE_SR_CLEAR_TX_FIFO 62 // 1 reg
+#define UE_SR_GLOBAL_RESET 63  // 1 reg
+
+#define UE_REG_SR_ADDR(n) (UE_REG_SLAVE(8) + (4*(n)))
+
+#define UE_REG_SR_MISC_TEST32        UE_REG_SR_ADDR(UE_SR_REG_TEST32)
 
 /////////////////////////////////////////////////
 // Magic reset regs
 ////////////////////////////////////////////////
-#define UE_REG_CLEAR_ADDR(n)      (UE_REG_SETTINGS_BASE_ADDR(48) + (4*(n)))
-#define UE_REG_CLEAR_RX           UE_REG_CLEAR_ADDR(0)
-#define UE_REG_CLEAR_TX           UE_REG_CLEAR_ADDR(1)
+#define UE_REG_CLEAR_RX           UE_REG_SR_ADDR(UE_SR_CLEAR_RX_FIFO)
+#define UE_REG_CLEAR_TX           UE_REG_SR_ADDR(UE_SR_CLEAR_RX_FIFO)
+#define UE_REG_GLOBAL_RESET       UE_REG_SR_ADDR(UE_SR_GLOBAL_RESET)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
-#define UE_REG_DSP_RX_ADDR(n)      (UE_REG_SETTINGS_BASE_ADDR(16) + (4*(n)))
-#define UE_REG_DSP_RX_FREQ         UE_REG_DSP_RX_ADDR(0)
-#define UE_REG_DSP_RX_SCALE_IQ     UE_REG_DSP_RX_ADDR(1) // {scale_i,scale_q}
-#define UE_REG_DSP_RX_DECIM_RATE   UE_REG_DSP_RX_ADDR(2) // hb and decim rate
-#define UE_REG_DSP_RX_DCOFFSET_I   UE_REG_DSP_RX_ADDR(3) // Bit 31 high sets fixed offset mode, using lower 14 bits, // otherwise it is automatic
-#define UE_REG_DSP_RX_DCOFFSET_Q   UE_REG_DSP_RX_ADDR(4) // Bit 31 high sets fixed offset mode, using lower 14 bits
-#define UE_REG_DSP_RX_MUX          UE_REG_DSP_RX_ADDR(5)
+#define UE_REG_DSP_RX_HELPER(which, offset) ((which == 0)? \
+    (UE_REG_SR_ADDR(UE_SR_RX_DSP0 + offset)) : \
+    (UE_REG_SR_ADDR(UE_SR_RX_DSP1 + offset)))
+
+#define UE_REG_DSP_RX_FREQ(which)       UE_REG_DSP_RX_HELPER(which, 0)
+#define UE_REG_DSP_RX_DECIM(which)      UE_REG_DSP_RX_HELPER(which, 2)
+#define UE_REG_DSP_RX_MUX(which)        UE_REG_DSP_RX_HELPER(which, 3)
+
+#define UE_FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
+#define UE_FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 ///////////////////////////////////////////////////
-// VITA RX CTRL regs
+// RX CTRL regs
 ///////////////////////////////////////////////////
-#define UE_REG_CTRL_RX_ADDR(n)           (UE_REG_SETTINGS_BASE_ADDR(0) + (4*(n)))
-// The following 3 are logically a single command register.
-// They are clocked into the underlying fifo when time_ticks is written.
-#define UE_REG_CTRL_RX_STREAM_CMD        UE_REG_CTRL_RX_ADDR(0) // {now, chain, num_samples(30)
-#define UE_REG_CTRL_RX_TIME_SECS         UE_REG_CTRL_RX_ADDR(1)
-#define UE_REG_CTRL_RX_TIME_TICKS        UE_REG_CTRL_RX_ADDR(2)
-#define UE_REG_CTRL_RX_CLEAR             UE_REG_CTRL_RX_ADDR(3) // write anything to clear
-#define UE_REG_CTRL_RX_VRT_HEADER        UE_REG_CTRL_RX_ADDR(4) // word 0 of packet.  FPGA fills in packet counter
-#define UE_REG_CTRL_RX_VRT_STREAM_ID     UE_REG_CTRL_RX_ADDR(5) // word 1 of packet.
-#define UE_REG_CTRL_RX_VRT_TRAILER       UE_REG_CTRL_RX_ADDR(6)
-#define UE_REG_CTRL_RX_NSAMPS_PER_PKT    UE_REG_CTRL_RX_ADDR(7)
-#define UE_REG_CTRL_RX_NCHANNELS         UE_REG_CTRL_RX_ADDR(8) // 1 in basic case, up to 4 for vector sources
+#define UE_REG_RX_CTRL_HELPER(which, offset) ((which == 0)? \
+    (UE_REG_SR_ADDR(UE_SR_RX_CTRL0 + offset)) : \
+    (UE_REG_SR_ADDR(UE_SR_RX_CTRL1 + offset)))
+
+#define UE_REG_RX_CTRL_STREAM_CMD(which)     UE_REG_RX_CTRL_HELPER(which, 0)
+#define UE_REG_RX_CTRL_TIME_SECS(which)      UE_REG_RX_CTRL_HELPER(which, 1)
+#define UE_REG_RX_CTRL_TIME_TICKS(which)     UE_REG_RX_CTRL_HELPER(which, 2)
+#define UE_REG_RX_CTRL_CLEAR(which)          UE_REG_RX_CTRL_HELPER(which, 3)
+#define UE_REG_RX_CTRL_VRT_HDR(which)        UE_REG_RX_CTRL_HELPER(which, 4)
+#define UE_REG_RX_CTRL_VRT_SID(which)        UE_REG_RX_CTRL_HELPER(which, 5)
+#define UE_REG_RX_CTRL_VRT_TLR(which)        UE_REG_RX_CTRL_HELPER(which, 6)
+#define UE_REG_RX_CTRL_NSAMPS_PP(which)      UE_REG_RX_CTRL_HELPER(which, 7)
+#define UE_REG_RX_CTRL_NCHANNELS(which)      UE_REG_RX_CTRL_HELPER(which, 8)
+
+/////////////////////////////////////////////////
+// RX FE
+////////////////////////////////////////////////
+#define UE_REG_RX_FE_SWAP_IQ             UE_REG_SR_ADDR(UE_SR_RX_FRONT + 0) //lower bit
+#define UE_REG_RX_FE_MAG_CORRECTION      UE_REG_SR_ADDR(UE_SR_RX_FRONT + 1) //18 bits
+#define UE_REG_RX_FE_PHASE_CORRECTION    UE_REG_SR_ADDR(UE_SR_RX_FRONT + 2) //18 bits
+#define UE_REG_RX_FE_OFFSET_I            UE_REG_SR_ADDR(UE_SR_RX_FRONT + 3) //18 bits
+#define UE_REG_RX_FE_OFFSET_Q            UE_REG_SR_ADDR(UE_SR_RX_FRONT + 4) //18 bits
 
 /////////////////////////////////////////////////
 // DSP TX Regs
 ////////////////////////////////////////////////
-#define UE_REG_DSP_TX_ADDR(n)      (UE_REG_SETTINGS_BASE_ADDR(32) + (4*(n)))
-#define UE_REG_DSP_TX_FREQ         UE_REG_DSP_TX_ADDR(0)
-#define UE_REG_DSP_TX_SCALE_IQ     UE_REG_DSP_TX_ADDR(1) // {scale_i,scale_q}
-#define UE_REG_DSP_TX_INTERP_RATE  UE_REG_DSP_TX_ADDR(2)
-#define UE_REG_DSP_TX_UNUSED       UE_REG_DSP_TX_ADDR(3)
-#define UE_REG_DSP_TX_MUX          UE_REG_DSP_TX_ADDR(4)
+#define UE_REG_DSP_TX_FREQ          UE_REG_SR_ADDR(UE_SR_TX_DSP + 0)
+#define UE_REG_DSP_TX_SCALE_IQ      UE_REG_SR_ADDR(UE_SR_TX_DSP + 1)
+#define UE_REG_DSP_TX_INTERP_RATE   UE_REG_SR_ADDR(UE_SR_TX_DSP + 2)
+
+///////////////////////////////////////////////////
+// TX CTRL regs
+///////////////////////////////////////////////////
+#define UE_REG_TX_CTRL_NUM_CHAN       UE_REG_SR_ADDR(UE_SR_TX_CTRL + 0)
+#define UE_REG_TX_CTRL_CLEAR_STATE    UE_REG_SR_ADDR(UE_SR_TX_CTRL + 1)
+#define UE_REG_TX_CTRL_REPORT_SID     UE_REG_SR_ADDR(UE_SR_TX_CTRL + 2)
+#define UE_REG_TX_CTRL_POLICY         UE_REG_SR_ADDR(UE_SR_TX_CTRL + 3)
+#define UE_REG_TX_CTRL_CYCLES_PER_UP  UE_REG_SR_ADDR(UE_SR_TX_CTRL + 4)
+#define UE_REG_TX_CTRL_PACKETS_PER_UP UE_REG_SR_ADDR(UE_SR_TX_CTRL + 5)
+
+#define UE_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
+#define UE_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
+#define UE_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
 
 /////////////////////////////////////////////////
-// VITA TX CTRL regs
+// TX FE
 ////////////////////////////////////////////////
-#define UE_REG_CTRL_TX_ADDR(n)           (UE_REG_SETTINGS_BASE_ADDR(24) + (4*(n)))
-#define UE_REG_CTRL_TX_NCHANNELS         UE_REG_CTRL_TX_ADDR(0)
-#define UE_REG_CTRL_TX_CLEAR             UE_REG_CTRL_TX_ADDR(1)
-#define UE_REG_CTRL_TX_REPORT_SID        UE_REG_CTRL_TX_ADDR(2)
-#define UE_REG_CTRL_TX_POLICY            UE_REG_CTRL_TX_ADDR(3)
-
-#define UE_FLAG_CTRL_TX_POLICY_WAIT          (0x1 << 0)
-#define UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET   (0x1 << 1)
-#define UE_FLAG_CTRL_TX_POLICY_NEXT_BURST    (0x1 << 2)
+#define UE_REG_TX_FE_DC_OFFSET_I         UE_REG_SR_ADDR(UE_SR_TX_FRONT + 0) //24 bits
+#define UE_REG_TX_FE_DC_OFFSET_Q         UE_REG_SR_ADDR(UE_SR_TX_FRONT + 1) //24 bits
+#define UE_REG_TX_FE_MAC_CORRECTION      UE_REG_SR_ADDR(UE_SR_TX_FRONT + 2) //18 bits
+#define UE_REG_TX_FE_PHASE_CORRECTION    UE_REG_SR_ADDR(UE_SR_TX_FRONT + 3) //18 bits
+#define UE_REG_TX_FE_MUX                 UE_REG_SR_ADDR(UE_SR_TX_FRONT + 4) //8 bits (std output = 0x10, reversed = 0x01)
 
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
 ////////////////////////////////////////////////
-  /*!
-   * \brief Time 64 flags
-   *
-   * <pre>
-   *
-   *    3                   2                   1
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-----------------------------------------------------------+-+-+
-   * |                                                           |S|P|
-   * +-----------------------------------------------------------+-+-+
-   *
-   * P - PPS edge selection (0=negedge, 1=posedge, default=0)
-   * S - Source (0=sma, 1=mimo, 0=default)
-   *
-   * </pre>
-   */
-#define UE_REG_TIME64_ADDR(n)     (UE_REG_SETTINGS_BASE_ADDR(40) + (4*(n)))
-#define UE_REG_TIME64_SECS        UE_REG_TIME64_ADDR(0)  // value to set absolute secs to on next PPS
-#define UE_REG_TIME64_TICKS       UE_REG_TIME64_ADDR(1)  // value to set absolute ticks to on next PPS
-#define UE_REG_TIME64_FLAGS       UE_REG_TIME64_ADDR(2)  // flags - see chart above
-#define UE_REG_TIME64_IMM         UE_REG_TIME64_ADDR(3)  // set immediate (0=latch on next pps, 1=latch immediate, default=0)
-#define UE_REG_TIME64_TPS         UE_REG_TIME64_ADDR(4)  // clock ticks per second (counter rollover)
+#define UE_REG_TIME64_SECS      UE_REG_SR_ADDR(UE_SR_TIME64 + 0)
+#define UE_REG_TIME64_TICKS     UE_REG_SR_ADDR(UE_SR_TIME64 + 1)
+#define UE_REG_TIME64_FLAGS     UE_REG_SR_ADDR(UE_SR_TIME64 + 2)
+#define UE_REG_TIME64_IMM       UE_REG_SR_ADDR(UE_SR_TIME64 + 3)
+#define UE_REG_TIME64_TPS       UE_REG_SR_ADDR(UE_SR_TIME64 + 4)
+#define UE_REG_TIME64_MIMO_SYNC UE_REG_SR_ADDR(UE_SR_TIME64 + 5)
 
 //pps flags (see above)
 #define UE_FLAG_TIME64_PPS_NEGEDGE (0 << 0)

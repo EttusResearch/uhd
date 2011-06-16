@@ -38,8 +38,6 @@ using namespace uhd::transport;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const size_t rx_data_inline_sid = 1;
-static const size_t tx_async_report_sid = 2;
 static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET;
 #define fp_recv_debug false
 
@@ -53,22 +51,27 @@ static const int underflow_flags = async_metadata_t::EVENT_CODE_UNDERFLOW | asyn
 struct usrp_e100_impl::io_impl{
     io_impl(zero_copy_if::sptr &xport):
         data_xport(xport),
-        recv_pirate_booty(data_xport->get_num_recv_frames()),
         async_msg_fifo(100/*messages deep*/)
     {
-        /* NOP */
+        for (size_t i = 0; i < E100_NUM_RX_DSPS; i++){
+            typedef bounded_buffer<managed_recv_buffer::sptr> booty_type;
+            recv_pirate_booty.push_back(new booty_type(data_xport->get_num_recv_frames()));
+        }
     }
 
     ~io_impl(void){
         recv_pirate_crew_raiding = false;
         recv_pirate_crew.interrupt_all();
         recv_pirate_crew.join_all();
+        for (size_t i = 0; i < recv_pirate_booty.size(); i++){
+            delete recv_pirate_booty[i];
+        }
     }
 
-    managed_recv_buffer::sptr get_recv_buff(double timeout){
+    managed_recv_buffer::sptr get_recv_buff(const size_t index, double timeout){
         boost::this_thread::disable_interruption di; //disable because the wait can throw
         managed_recv_buffer::sptr buff;
-        recv_pirate_booty.pop_with_timed_wait(buff, timeout);
+        recv_pirate_booty[index]->pop_with_timed_wait(buff, timeout);
         return buff; //ASSUME buff == NULL when pop times-out
     }
 
@@ -84,7 +87,7 @@ struct usrp_e100_impl::io_impl{
 
     //a pirate's life is the life for me!
     void recv_pirate_loop(boost::barrier &, usrp_e100_clock_ctrl::sptr);
-    bounded_buffer<managed_recv_buffer::sptr> recv_pirate_booty;
+    std::vector<bounded_buffer<managed_recv_buffer::sptr> *> recv_pirate_booty;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group recv_pirate_crew;
     bool recv_pirate_crew_raiding;
@@ -117,24 +120,22 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
         }
 
         try{
-            //extract the vrt header packet info
-            vrt::if_packet_info_t if_packet_info;
-            if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-            const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
-
             //handle an rx data packet or inline message
-            if (uhd::ntohx(vrt_hdr[1]) == rx_data_inline_sid){ //ASSUME has_sid
+            const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
+            const size_t rx_index = uhd::ntohx(vrt_hdr[1]);
+            if (rx_index < E100_NUM_RX_DSPS){
                 if (fp_recv_debug) UHD_LOGV(always) << "this is rx_data_inline_sid\n";
-                //same number of frames as the data transport -> always immediate
-                recv_pirate_booty.push_with_wait(buff);
+                recv_pirate_booty[rx_index]->push_with_wait(buff);
                 continue;
             }
 
             //unpack the vrt header and process below...
+            vrt::if_packet_info_t if_packet_info;
+            if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
             vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
 
             //handle a tx async report message
-            if (if_packet_info.sid == tx_async_report_sid and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+            if (if_packet_info.sid == E100_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
                 if (fp_recv_debug) UHD_LOGV(always) << "this is tx_async_report_sid\n";
 
                 //fill in the async metadata
@@ -165,37 +166,13 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
  * Helper Functions
  **********************************************************************/
 void usrp_e100_impl::io_init(void){
-    //setup otw types
-    _send_otw_type.width = 16;
-    _send_otw_type.shift = 0;
-    _send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-
-    _recv_otw_type.width = 16;
-    _recv_otw_type.shift = 0;
-    _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     //setup before the registers (transport called to calculate max spp)
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_xport));
 
     //clear state machines
-    _iface->poke32(UE_REG_CTRL_RX_CLEAR, 0);
-    _iface->poke32(UE_REG_CTRL_TX_CLEAR, 0);
-
-    //setup rx data path
-    _iface->poke32(UE_REG_CTRL_RX_NSAMPS_PER_PKT, get_max_recv_samps_per_packet());
-    _iface->poke32(UE_REG_CTRL_RX_NCHANNELS, 1);
-    _iface->poke32(UE_REG_CTRL_RX_VRT_HEADER, 0
-        | (0x1 << 28) //if data with stream id
-        | (0x1 << 26) //has trailer
-        | (0x3 << 22) //integer time other
-        | (0x1 << 20) //fractional time sample count
-    );
-    _iface->poke32(UE_REG_CTRL_RX_VRT_STREAM_ID, rx_data_inline_sid);
-    _iface->poke32(UE_REG_CTRL_RX_VRT_TRAILER, 0);
-
-    //setup the tx policy
-    _iface->poke32(UE_REG_CTRL_TX_REPORT_SID, tx_async_report_sid);
-    _iface->poke32(UE_REG_CTRL_TX_POLICY, UE_FLAG_CTRL_TX_POLICY_NEXT_PACKET);
+    _iface->poke32(UE_REG_CLEAR_RX, 0);
+    _iface->poke32(UE_REG_CLEAR_TX, 0);
 
     //spawn a pirate, yarrr!
     boost::barrier spawn_barrier(2);
@@ -216,10 +193,11 @@ void usrp_e100_impl::update_xport_channel_mapping(void){
     _io_impl->recv_handler.resize(_rx_subdev_spec.size());
     _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_le);
     _io_impl->recv_handler.set_tick_rate(_clock_ctrl->get_fpga_clock_rate());
-    _io_impl->recv_handler.set_samp_rate(_rx_ddc_proxy->get_link()[DSP_PROP_HOST_RATE].as<double>());
+    //FIXME assumes homogeneous rates across all dsp
+    _io_impl->recv_handler.set_samp_rate(_rx_dsp_proxies[_rx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
     for (size_t chan = 0; chan < _io_impl->recv_handler.size(); chan++){
         _io_impl->recv_handler.set_xport_chan_get_buff(chan, boost::bind(
-            &usrp_e100_impl::io_impl::get_recv_buff, _io_impl.get(), _1
+            &usrp_e100_impl::io_impl::get_recv_buff, _io_impl.get(), chan, _1
         ));
         _io_impl->recv_handler.set_overflow_handler(chan, boost::bind(
             &usrp_e100_impl::handle_overrun, this, chan
@@ -232,7 +210,8 @@ void usrp_e100_impl::update_xport_channel_mapping(void){
     _io_impl->send_handler.resize(_tx_subdev_spec.size());
     _io_impl->send_handler.set_vrt_packer(&vrt::if_hdr_pack_le);
     _io_impl->send_handler.set_tick_rate(_clock_ctrl->get_fpga_clock_rate());
-    _io_impl->send_handler.set_samp_rate(_tx_duc_proxy->get_link()[DSP_PROP_HOST_RATE].as<double>());
+    //FIXME assumes homogeneous rates across all dsp
+    _io_impl->send_handler.set_samp_rate(_tx_dsp_proxies[_tx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
     for (size_t chan = 0; chan < _io_impl->send_handler.size(); chan++){
         _io_impl->send_handler.set_xport_chan_get_buff(chan, boost::bind(
             &uhd::transport::zero_copy_if::get_send_buff, _io_impl->data_xport, _1
@@ -242,16 +221,16 @@ void usrp_e100_impl::update_xport_channel_mapping(void){
     _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
-void usrp_e100_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd){
+void usrp_e100_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd, const size_t index){
     _io_impl->continuous_streaming = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    _iface->poke32(UE_REG_CTRL_RX_STREAM_CMD, dsp_type1::calc_stream_cmd_word(stream_cmd));
-    _iface->poke32(UE_REG_CTRL_RX_TIME_SECS,  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(UE_REG_CTRL_RX_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
+    _iface->poke32(UE_REG_RX_CTRL_STREAM_CMD(index), dsp_type1::calc_stream_cmd_word(stream_cmd));
+    _iface->poke32(UE_REG_RX_CTRL_TIME_SECS(index),  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
+    _iface->poke32(UE_REG_RX_CTRL_TIME_TICKS(index), stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
 }
 
-void usrp_e100_impl::handle_overrun(size_t /*chan*/){
+void usrp_e100_impl::handle_overrun(const size_t index){
     if (_io_impl->continuous_streaming){
-        this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+        this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS, index);
     }
 }
 

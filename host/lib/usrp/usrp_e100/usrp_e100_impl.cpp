@@ -51,7 +51,7 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
     //use the given device node name
     if (fs::exists(hint["node"])){
         device_addr_t new_addr;
-        new_addr["type"] = "usrp-e";
+        new_addr["type"] = "e100";
         new_addr["node"] = fs::system_complete(fs::path(hint["node"])).string();
         try{
             usrp_e100_iface::sptr iface = usrp_e100_iface::make();
@@ -93,11 +93,11 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
     iface->open(node);
 
     //setup clock control here to ensure that the FPGA has a good clock before we continue
-    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", USRP_E_DEFAULT_CLOCK_RATE);
+    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", E100_DEFAULT_CLOCK_RATE);
     usrp_e100_clock_ctrl::sptr clock_ctrl = usrp_e100_clock_ctrl::make(iface, master_clock_rate);
 
     //extract the fpga path for usrp-e and compute hash
-    const std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", USRP_E_FPGA_FILE_NAME));
+    const std::string usrp_e100_fpga_image = find_image_path(device_addr.get("fpga", E100_FPGA_FILE_NAME));
     const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(usrp_e100_fpga_image));
 
     //When the hash does not match:
@@ -128,13 +128,13 @@ static device::sptr usrp_e100_make(const device_addr_t &device_addr){
 
     //check that the compatibility is correct
     const boost::uint16_t fpga_compat_num = iface->peek16(UE_REG_MISC_COMPAT);
-    if (fpga_compat_num != USRP_E_FPGA_COMPAT_NUM){
+    if (fpga_compat_num != E100_FPGA_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
             "\nPlease update the FPGA image for your device.\n"
             "See the application notes for USRP E-Series for instructions.\n"
             "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
             "The FPGA build is not compatible with the host code build."
-        ) % USRP_E_FPGA_COMPAT_NUM % fpga_compat_num));
+        ) % E100_FPGA_COMPAT_NUM % fpga_compat_num));
     }
 
     return device::sptr(new usrp_e100_impl(device_addr, iface, clock_ctrl));
@@ -160,6 +160,15 @@ usrp_e100_impl::usrp_e100_impl(
     _send_frame_size(std::min(_data_xport->get_send_frame_size(), size_t(device_addr.cast<double>("send_frame_size", 1e9))))
 {
 
+    //setup otw types
+    _send_otw_type.width = 16;
+    _send_otw_type.shift = 0;
+    _send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
+    _recv_otw_type.width = 16;
+    _recv_otw_type.shift = 0;
+    _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
     //initialize the mboard
     mboard_init();
 
@@ -167,8 +176,7 @@ usrp_e100_impl::usrp_e100_impl(
     dboard_init();
 
     //initialize the dsps
-    rx_ddc_init();
-    tx_duc_init();
+    dsp_init();
 
     //init the codec properties
     codec_init();

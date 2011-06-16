@@ -50,6 +50,11 @@ public:
      */
     static sptr make(void);
 
+    //! TODO implement this for multiple hardwares revs in the future
+    std::string get_cname(void){
+        return "USRP-E100";
+    }
+
     /*!
      * Get the underlying file descriptor.
      * \return the file descriptor

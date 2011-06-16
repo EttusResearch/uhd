@@ -98,21 +98,19 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_RX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _rx_ddc_proxy->get_link();
+        val = _rx_dsp_proxies[key.name]->get_link();
         return;
 
     case MBOARD_PROP_RX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _rx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_TX_DSP:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _tx_duc_proxy->get_link();
+        val = _tx_dsp_proxies[key.name]->get_link();
         return;
 
     case MBOARD_PROP_TX_DSP_NAMES:
-        val = prop_names_t(1, "");
+        val = _tx_dsp_proxies.keys();
         return;
 
     case MBOARD_PROP_CLOCK_CONFIG:
@@ -172,24 +170,59 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         }
         return;
 
-    case MBOARD_PROP_RX_SUBDEV_SPEC:
+    case MBOARD_PROP_RX_SUBDEV_SPEC:{
         _rx_subdev_spec = val.as<subdev_spec_t>();
         verify_rx_subdev_spec(_rx_subdev_spec, _mboard_proxy->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_rx_subdev_spec.size() == 1);
-        //set the mux
-        _iface->poke32(UE_REG_DSP_RX_MUX, dsp_type1::calc_rx_mux_word(
-            _dboard_manager->get_rx_subdev(_rx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
-        ));
-        return;
+        UHD_ASSERT_THROW(_rx_subdev_spec.size() <= E100_NUM_RX_DSPS);
+
+        //determine frontend swap IQ from the first channel
+        bool fe_swap_iq = false;
+        switch(_dboard_manager->get_rx_subdev(_rx_subdev_spec.at(0).sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()){
+        case SUBDEV_CONN_COMPLEX_QI:
+        case SUBDEV_CONN_REAL_Q:
+            fe_swap_iq = true;
+            break;
+        default: fe_swap_iq = false;
+        }
+        _iface->poke32(UE_REG_RX_FE_SWAP_IQ, fe_swap_iq? 1 : 0);
+
+        //set the dsp mux for each channel
+        for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
+            bool iq_swap = false, real_mode = false;
+            switch(_dboard_manager->get_rx_subdev(_rx_subdev_spec.at(i).sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()){
+            case SUBDEV_CONN_COMPLEX_IQ:
+                iq_swap = fe_swap_iq;
+                real_mode = false;
+                break;
+            case SUBDEV_CONN_COMPLEX_QI:
+                iq_swap = not fe_swap_iq;
+                real_mode = false;
+                break;
+            case SUBDEV_CONN_REAL_I:
+                iq_swap = fe_swap_iq;
+                real_mode = true;
+                break;
+            case SUBDEV_CONN_REAL_Q:
+                iq_swap = not fe_swap_iq;
+                real_mode = true;
+                break;
+            }
+            _iface->poke32(UE_REG_DSP_RX_MUX(i),
+                (iq_swap?   UE_FLAG_DSP_RX_MUX_SWAP_IQ   : 0) |
+                (real_mode? UE_FLAG_DSP_RX_MUX_REAL_MODE : 0)
+            );
+        }
+        this->update_xport_channel_mapping();
+    }return;
 
     case MBOARD_PROP_TX_SUBDEV_SPEC:
         _tx_subdev_spec = val.as<subdev_spec_t>();
         verify_tx_subdev_spec(_tx_subdev_spec, _mboard_proxy->get_link());
         //sanity check
-        UHD_ASSERT_THROW(_tx_subdev_spec.size() == 1);
+        UHD_ASSERT_THROW(_tx_subdev_spec.size() <= E100_NUM_TX_DSPS);
         //set the mux
-        _iface->poke32(UE_REG_DSP_TX_MUX, dsp_type1::calc_tx_mux_word(
+        _iface->poke32(UE_REG_TX_FE_MUX, dsp_type1::calc_tx_mux_word(
             _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
         return;

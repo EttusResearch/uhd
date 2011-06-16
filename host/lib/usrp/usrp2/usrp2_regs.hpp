@@ -153,7 +153,7 @@
 
 #define U2_REG_DSP_RX_FREQ(which)       U2_REG_DSP_RX_HELPER(which, 0)
 #define U2_REG_DSP_RX_DECIM(which)      U2_REG_DSP_RX_HELPER(which, 2)
-#define U2_REG_DSP_RX_MUX(which)        U2_REG_DSP_RX_HELPER(which, 5)
+#define U2_REG_DSP_RX_MUX(which)        U2_REG_DSP_RX_HELPER(which, 3)
 
 #define U2_FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
 #define U2_FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
