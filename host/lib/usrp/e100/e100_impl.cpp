@@ -192,7 +192,7 @@ e100_impl::e100_impl(
 }
 
 e100_impl::~e100_impl(void){
-    /* NOP */
+    _io_impl.reset(); //reset here, seems to fix hang?
 }
 
 /***********************************************************************
