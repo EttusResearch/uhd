@@ -30,7 +30,6 @@ module u1plus_core
    output sclk, output [15:0] sen, output mosi, input miso,
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,   
-   output tx_underrun, output rx_overrun,
    inout [15:0] io_tx, inout [15:0] io_rx, 
    output [13:0] tx_i, output [13:0] tx_q, 
    input [11:0] rx_i, input [11:0] rx_q, 
