@@ -104,16 +104,16 @@ struct e100_impl::io_impl{
     void recv_pirate_loop(
         boost::barrier &spawn_barrier,
         const boost::function<void(void)> &handle,
-        e100_iface::sptr //keep a sptr to iface which shares gpio145
+        e100_iface::sptr //keep a sptr to iface which shares gpio147
     ){
         spawn_barrier.wait();
-        UHD_LOG << "pirate loop spawned" << std::endl;
 
         //open the GPIO and set it up for an IRQ
-        std::ofstream edge_file("/sys/class/gpio/gpio145/edge");
+        std::ofstream edge_file("/sys/class/gpio/gpio147/edge");
         edge_file << "rising" << std::endl << std::flush;
         edge_file.close();
-        int fd = ::open("/sys/class/gpio/gpio145/value", O_RDONLY);
+        int fd = ::open("/sys/class/gpio/gpio147/value", O_RDONLY);
+        if (fd < 0) UHD_MSG(error) << "Unable to open GPIO for IRQ\n";
 
         while (not boost::this_thread::interruption_requested()){
             pollfd pfd;
@@ -123,9 +123,8 @@ struct e100_impl::io_impl{
             if (ret > 0) handle();
         }
 
+        //cleanup before thread exit
         ::close(fd);
-
-        UHD_LOG << "pirate loop done" << std::endl;
     }
     bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group recv_pirate_crew;
