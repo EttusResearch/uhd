@@ -27,6 +27,19 @@
     BOOST_CHECK_CLOSE((a).get_real_secs(), (b).get_real_secs(), 0.001)
 
 /***********************************************************************
+ * A dummy overflow handler for testing
+ **********************************************************************/
+struct overflow_handler_type{
+    overflow_handler_type(void){
+        num_overflow = 0;
+    }
+    void handle(void){
+        num_overflow++;
+    }
+    size_t num_overflow;
+};
+
+/***********************************************************************
  * A dummy managed receive buffer for testing
  **********************************************************************/
 class dummy_mrb : public uhd::transport::managed_recv_buffer{
@@ -300,6 +313,10 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
     handler.set_xport_chan_get_buff(0, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xport, _1));
     handler.set_converter(otw_type);
 
+    //create an overflow handler
+    overflow_handler_type overflow_handler;
+    handler.set_overflow_handler(0, boost::bind(&overflow_handler_type::handle, &overflow_handler));
+
     //check the received packets
     size_t num_accum_samps = 0;
     std::vector<std::complex<float> > buff(20);
@@ -326,6 +343,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
             std::cout << "metadata.error_code " << metadata.error_code << std::endl;
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
             BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+            BOOST_CHECK_EQUAL(overflow_handler.num_overflow, size_t(1));
         }
     }
 
