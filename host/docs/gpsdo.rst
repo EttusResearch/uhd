@@ -53,7 +53,7 @@ GPS data is obtained through the mboard_sensors interface. To retrieve
 the current GPS time, use the "gps_time" sensor:
 
 ::
-usrp->get_mboard_sensor("gps_time");
+    usrp->get_mboard_sensor("gps_time");
 
 The returned value will be the current epoch time, in seconds since
 January 1, 1970. This value is readily converted into human-readable

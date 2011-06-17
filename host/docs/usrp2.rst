@@ -395,7 +395,8 @@ they can be queried through the API.
 
 * mimo_locked - clock reference locked over the MIMO cable
 * ref_locked - clock reference locked (internal/external)
-* gps_time - GPS seconds (available when GPSDO installed)
+* gps_time - GPS epoch seconds (available when GPSDO installed)
+* gps_locked - GPS lock status
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Multiple RX channels

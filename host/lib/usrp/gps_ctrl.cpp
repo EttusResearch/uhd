@@ -21,6 +21,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
@@ -30,12 +31,12 @@ using namespace uhd;
 using namespace boost::gregorian;
 using namespace boost::posix_time;
 using namespace boost::algorithm;
+using namespace boost::this_thread;
 
 /*!
  * A GPS control for Jackson Labs devices (and other NMEA compatible GPS's)
  */
 
-//TODO: multiple baud rate support (requires mboard_impl changes for poking UART registers)
 class gps_ctrl_impl : public gps_ctrl{
 public:
   gps_ctrl_impl(gps_send_fn_t send, gps_recv_fn_t recv){
@@ -53,14 +54,14 @@ public:
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
     int timeout = GPS_TIMEOUT_TRIES;
     while(timeout--) {
-      reply = safe_gps_read();
-      if(boost::trim_right_copy(reply) == "Command Error") {
+      reply = _recv();
+      if(reply.find("Command Error") != std::string::npos) {
         gps_type = GPS_TYPE_JACKSON_LABS;
         break;
       } 
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
       else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
-      boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+      sleep(milliseconds(200));
     }
 
     if((i_heard_some_nmea) && (gps_type != GPS_TYPE_JACKSON_LABS)) gps_type = GPS_TYPE_GENERIC_NMEA;
@@ -69,46 +70,16 @@ public:
       UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
     }
 
-    bool found_gprmc = false;
-
     switch(gps_type) {
     case GPS_TYPE_JACKSON_LABS:
       UHD_MSG(status) << "Found a Jackson Labs GPS" << std::endl;
-      //issue some setup stuff so it spits out the appropriate data
-      //none of these should issue replies so we don't bother looking for them
-      //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _send("SYST:COMM:SER:ECHO OFF\n");
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _send("SYST:COMM:SER:PRO OFF\n");
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _send("GPS:GPGGA 1\n");
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _send("GPS:GGAST 0\n");
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _send("GPS:GPRMC 1\n");
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-      _send("GPS:GPGSA 1\n");
-       boost::this_thread::sleep(boost::posix_time::milliseconds(FIREFLY_STUPID_DELAY_MS));
-//      break;
+      init_firefly();
 
     case GPS_TYPE_GENERIC_NMEA:
       if(gps_type == GPS_TYPE_GENERIC_NMEA) UHD_MSG(status) << "Found a generic NMEA GPS device" << std::endl;
-      found_gprmc = false;
-      //here we loop around looking for a GPRMC packet. if we don't get one, we don't have a usable GPS.
-      timeout = GPS_TIMEOUT_TRIES;
-      while(timeout--) {
-        reply = safe_gps_read();
-        if(reply.substr(0, 6) == "$GPRMC") {
-          found_gprmc = true;
-          break;
-        }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(GPS_TIMEOUT_DELAY_MS));
-      }
-      if(!found_gprmc) {
-        if(gps_type == GPS_TYPE_JACKSON_LABS) UHD_MSG(error) << "Firefly GPS not locked or warming up." << std::endl;
-        else UHD_MSG(error) << "GPS does not output GPRMC packets. Cannot retrieve time." << std::endl;
-        gps_type = GPS_TYPE_NONE;
+      if(get_time() == ptime()) {
+          UHD_MSG(status) << "No valid GPRMC packet found. Ignoring discovered GPS.";
+          gps_type = GPS_TYPE_NONE;
       }
       break;
 
@@ -120,96 +91,17 @@ public:
   }
 
   ~gps_ctrl_impl(void){
-
-  }
-
-  std::string safe_gps_read() {
-    return _recv();
-  }
-
-  ptime get_time(void) {
-    std::string reply;
-    boost::tokenizer<boost::escaped_list_separator<char> > tok(reply);
-    std::vector<std::string> toked;
-
-    reply = get_nmea("GPRMC");
-    //make sure we got something
-    if(reply.size() <= 1) {
-        return ptime();
-    }
-
-    tok.assign(reply);
-    toked.assign(tok.begin(), tok.end());
-
-    if(not toked.size() == 12) {
-        UHD_MSG(error) << "get_time(): invalid GPRMC time sentence received.";
-        return ptime();
-    }
-      
-    return ptime( date( 
-                     greg_year(boost::lexical_cast<int>(toked[9].substr(4, 2)) + 2000), //just trust me on this one
-                     greg_month(boost::lexical_cast<int>(toked[9].substr(2, 2))), 
-                     greg_day(boost::lexical_cast<int>(toked[9].substr(0, 2))) 
-                   ),
-               hours(  boost::lexical_cast<int>(toked[1].substr(0, 2)))
-             + minutes(boost::lexical_cast<int>(toked[1].substr(2, 2)))
-             + seconds(boost::lexical_cast<int>(toked[1].substr(4, 2)))
-             );
-  }
-
-  //retrieve a raw NMEA sentence for user parsing
-  std::string get_nmea(std::string type) {
-    type.insert(0, "$");
-    std::string reply;
-    if(not gps_detected()) {
-        UHD_MSG(error) << "get_nmea(): unsupported GPS or no GPS detected";
-        return std::string();
-    }
-    int timeout = GPS_TIMEOUT_TRIES;
-    while(timeout--) {
-        reply = safe_gps_read();
-        if(reply.substr(0, 6) == type)
-          return reply;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(GPS_TIMEOUT_DELAY_MS));
-    }
-    UHD_MSG(error) << "get_nmea(): no " << type << " message found";
-    return std::string();
-  }
-  
-  time_t get_epoch_time(void) {
-      return (get_time() - boost::posix_time::from_time_t(0)).total_seconds();
-  }
-
-  bool gps_detected(void) {
-    return (gps_type != GPS_TYPE_NONE);
-  }
-
-  bool locked(void) {
-      std::string reply = get_nmea("GPGGA");
-      if(reply.size() <= 1) return false;
-
-      boost::tokenizer<boost::escaped_list_separator<char> > tok(reply);
-      std::vector<std::string> toked;
-
-      tok.assign(reply);
-      toked.assign(tok.begin(), tok.end());
-
-      if(toked.size() != 15) {
-        UHD_MSG(error) << "gps_locked: invalid GPGGA response";
-        return false;
-      }
-
-      return (toked[6] != "0");
+    /* NOP */
   }
 
   //return a list of supported sensors
   std::vector<std::string> get_sensors(void) {
-    std::vector<std::string> ret;
-    ret.push_back("gps_gpgga");
-    ret.push_back("gps_gprmc");
-    ret.push_back("gps_gpgsa");
-    ret.push_back("gps_time");
-    ret.push_back("gps_locked");
+    std::vector<std::string> ret = boost::assign::list_of
+        ("gps_gpgga")
+        ("gps_gprmc")
+        ("gps_gpgsa")
+        ("gps_time")
+        ("gps_locked");
     return ret;
   }
 
@@ -232,8 +124,98 @@ public:
         UHD_THROW_PROP_GET_ERROR();
     }
   }
-      
+
 private:
+  void init_firefly(void) {
+    //issue some setup stuff so it spits out the appropriate data
+    //none of these should issue replies so we don't bother looking for them
+    //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+    _send("SYST:COMM:SER:ECHO OFF\n");
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+    _send("SYST:COMM:SER:PRO OFF\n");
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+    _send("GPS:GPGGA 1\n");
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+    _send("GPS:GGAST 0\n");
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+    _send("GPS:GPRMC 1\n");
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+    _send("GPS:GPGSA 1\n");
+     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+  }
+ 
+  //retrieve a raw NMEA sentence
+  std::string get_nmea(std::string msgtype) {
+    msgtype.insert(0, "$");
+    std::string reply;
+    if(not gps_detected()) {
+        UHD_MSG(error) << "get_nmea(): unsupported GPS or no GPS detected";
+        return std::string();
+    }
+    int timeout = GPS_TIMEOUT_TRIES;
+    while(timeout--) {
+        reply = _recv();
+        if(reply.substr(0, 6) == msgtype)
+          return reply;
+        boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
+    }
+    UHD_MSG(error) << "get_nmea(): no " << msgtype << " message found";
+    return std::string();
+  }
+
+  //helper function to retrieve a field from an NMEA sentence
+  std::string get_token(std::string sentence, size_t offset) {
+    boost::tokenizer<boost::escaped_list_separator<char> > tok(sentence);
+    std::vector<std::string> toked;
+
+    tok.assign(sentence);
+    toked.assign(tok.begin(), tok.end());
+
+    if(toked.size() <= offset) {
+      UHD_MSG(error) << "get_token: too few tokens in reply " << sentence;
+      return std::string();
+    }
+    return toked[offset];
+  }
+
+  ptime get_time(void) {
+    std::string reply = get_nmea("GPRMC");
+
+    std::string datestr = get_token(reply, 9);
+    std::string timestr = get_token(reply, 1);
+
+    if(datestr.size() == 0 or timestr.size() == 0) {
+        return ptime();
+    }
+
+    //just trust me on this one
+    return ptime( date( 
+                     greg_year(boost::lexical_cast<int>(datestr.substr(4, 2)) + 2000),
+                     greg_month(boost::lexical_cast<int>(datestr.substr(2, 2))), 
+                     greg_day(boost::lexical_cast<int>(datestr.substr(0, 2))) 
+                   ),
+                  hours(  boost::lexical_cast<int>(timestr.substr(0, 2)))
+                + minutes(boost::lexical_cast<int>(timestr.substr(2, 2)))
+                + seconds(boost::lexical_cast<int>(timestr.substr(4, 2)))
+             );
+  }
+  
+  time_t get_epoch_time(void) {
+      return (get_time() - from_time_t(0)).total_seconds();
+  }
+
+  bool gps_detected(void) {
+    return (gps_type != GPS_TYPE_NONE);
+  }
+
+  bool locked(void) {
+      std::string reply = get_nmea("GPGGA");
+      if(reply.size() <= 1) return false;
+
+      return (get_token(reply, 6) != "0");
+  }
+
   gps_send_fn_t _send;
   gps_recv_fn_t _recv;
 
@@ -246,7 +228,6 @@ private:
   static const int GPS_TIMEOUT_TRIES = 10;
   static const int GPS_TIMEOUT_DELAY_MS = 200;
   static const int FIREFLY_STUPID_DELAY_MS = 200;
-
 };
 
 /***********************************************************************
