@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_E100_IFACE_HPP
-#define INCLUDED_USRP_E100_IFACE_HPP
+#ifndef INCLUDED_E100_IFACE_HPP
+#define INCLUDED_E100_IFACE_HPP
 
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -40,9 +40,9 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp_e100_iface : boost::noncopyable, public uhd::usrp::mboard_iface{
+class e100_iface : boost::noncopyable, public uhd::usrp::mboard_iface{
 public:
-    typedef boost::shared_ptr<usrp_e100_iface> sptr;
+    typedef boost::shared_ptr<e100_iface> sptr;
 
     /*!
      * Make a new usrp-e interface with the control transport.
@@ -87,4 +87,4 @@ public:
     uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
 
-#endif /* INCLUDED_USRP_E100_IFACE_HPP */
+#endif /* INCLUDED_E100_IFACE_HPP */

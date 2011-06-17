@@ -24,7 +24,7 @@
 #include <fcntl.h> //open, close
 
 #include <linux/usrp_e.h>
-#include "usrp_e100_regs.hpp"
+#include "e100_regs.hpp"
 
 static const size_t num_test_iters = 10000000;
 
@@ -91,18 +91,18 @@ int main(int, char *[]){
         int random_secs = ::random();
 
         //set a bunch of registers
-        poke16(UE_REG_MISC_TEST, random_test16);
-        poke32(UE_REG_SR_MISC_TEST32, random_test32);
-        poke32(UE_REG_TIME64_TICKS, 0);
-        poke32(UE_REG_TIME64_IMM, 1); //immediate
-        poke32(UE_REG_TIME64_SECS, random_secs);
+        poke16(E100_REG_MISC_TEST, random_test16);
+        poke32(E100_REG_SR_MISC_TEST32, random_test32);
+        poke32(E100_REG_TIME64_TICKS, 0);
+        poke32(E100_REG_TIME64_IMM, 1); //immediate
+        poke32(E100_REG_TIME64_SECS, random_secs);
 
         //read a bunch of registers
         if (
-            (peek16(UE_REG_MISC_TEST) == random_test16) and
-            (peek32(UE_REG_RB_MISC_TEST32) == random_test32) and
-            (peek32(UE_REG_RB_TIME_NOW_SECS) == random_secs) and
-//            (peek32(UE_REG_RB_TIME_NOW_TICKS) < 1000000) and
+            (peek16(E100_REG_MISC_TEST) == random_test16) and
+            (peek32(E100_REG_RB_MISC_TEST32) == random_test32) and
+            (peek32(E100_REG_RB_TIME_NOW_SECS) == random_secs) and
+//            (peek32(E100_REG_RB_TIME_NOW_TICKS) < 1000000) and
         true) num_pass++;
         else  num_fail++;
     }

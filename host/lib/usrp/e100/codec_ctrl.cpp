@@ -24,22 +24,22 @@
 #include <boost/cstdint.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include "usrp_e100_regs.hpp" //spi slave constants
+#include "e100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;
 
-const gain_range_t usrp_e100_codec_ctrl::tx_pga_gain_range(-20, 0, double(0.1));
-const gain_range_t usrp_e100_codec_ctrl::rx_pga_gain_range(0, 20, 1);
+const gain_range_t e100_codec_ctrl::tx_pga_gain_range(-20, 0, double(0.1));
+const gain_range_t e100_codec_ctrl::rx_pga_gain_range(0, 20, 1);
 
 /***********************************************************************
  * Codec Control Implementation
  **********************************************************************/
-class usrp_e100_codec_ctrl_impl : public usrp_e100_codec_ctrl{
+class e100_codec_ctrl_impl : public e100_codec_ctrl{
 public:
     //structors
-    usrp_e100_codec_ctrl_impl(usrp_e100_iface::sptr iface);
-    ~usrp_e100_codec_ctrl_impl(void);
+    e100_codec_ctrl_impl(e100_iface::sptr iface);
+    ~e100_codec_ctrl_impl(void);
 
     //aux adc and dac control
     double read_aux_adc(aux_adc_t which);
@@ -52,7 +52,7 @@ public:
     double get_rx_pga_gain(char);
 
 private:
-    usrp_e100_iface::sptr _iface;
+    e100_iface::sptr _iface;
     ad9862_regs_t _ad9862_regs;
     void send_reg(boost::uint8_t addr);
     void recv_reg(boost::uint8_t addr);
@@ -61,7 +61,7 @@ private:
 /***********************************************************************
  * Codec Control Structors
  **********************************************************************/
-usrp_e100_codec_ctrl_impl::usrp_e100_codec_ctrl_impl(usrp_e100_iface::sptr iface){
+e100_codec_ctrl_impl::e100_codec_ctrl_impl(e100_iface::sptr iface){
     _iface = iface;
 
     //soft reset
@@ -116,7 +116,7 @@ usrp_e100_codec_ctrl_impl::usrp_e100_codec_ctrl_impl(usrp_e100_iface::sptr iface
     this->send_reg(34);
 }
 
-usrp_e100_codec_ctrl_impl::~usrp_e100_codec_ctrl_impl(void){
+e100_codec_ctrl_impl::~e100_codec_ctrl_impl(void){
     //set aux dacs to zero
     this->write_aux_dac(AUX_DAC_A, 0);
     this->write_aux_dac(AUX_DAC_B, 0);
@@ -136,19 +136,19 @@ usrp_e100_codec_ctrl_impl::~usrp_e100_codec_ctrl_impl(void){
  **********************************************************************/
 static const int mtpgw = 255; //maximum tx pga gain word
 
-void usrp_e100_codec_ctrl_impl::set_tx_pga_gain(double gain){
+void e100_codec_ctrl_impl::set_tx_pga_gain(double gain){
     int gain_word = int(mtpgw*(gain - tx_pga_gain_range.start())/(tx_pga_gain_range.stop() - tx_pga_gain_range.start()));
     _ad9862_regs.tx_pga_gain = uhd::clip(gain_word, 0, mtpgw);
     this->send_reg(16);
 }
 
-double usrp_e100_codec_ctrl_impl::get_tx_pga_gain(void){
+double e100_codec_ctrl_impl::get_tx_pga_gain(void){
     return (_ad9862_regs.tx_pga_gain*(tx_pga_gain_range.stop() - tx_pga_gain_range.start())/mtpgw) + tx_pga_gain_range.start();
 }
 
 static const int mrpgw = 0x14; //maximum rx pga gain word
 
-void usrp_e100_codec_ctrl_impl::set_rx_pga_gain(double gain, char which){
+void e100_codec_ctrl_impl::set_rx_pga_gain(double gain, char which){
     int gain_word = int(mrpgw*(gain - rx_pga_gain_range.start())/(rx_pga_gain_range.stop() - rx_pga_gain_range.start()));
     gain_word = uhd::clip(gain_word, 0, mrpgw);
     switch(which){
@@ -164,7 +164,7 @@ void usrp_e100_codec_ctrl_impl::set_rx_pga_gain(double gain, char which){
     }
 }
 
-double usrp_e100_codec_ctrl_impl::get_rx_pga_gain(char which){
+double e100_codec_ctrl_impl::get_rx_pga_gain(char which){
     int gain_word;
     switch(which){
     case 'A': gain_word = _ad9862_regs.rx_pga_a; break;
@@ -181,7 +181,7 @@ static double aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low){
     return double((boost::uint16_t(high) << 2) | low)*3.3/0x3ff;
 }
 
-double usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
+double e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
     switch(which){
     case AUX_ADC_A1:
         _ad9862_regs.select_a = ad9862_regs_t::SELECT_A_AUX_ADC1;
@@ -217,7 +217,7 @@ double usrp_e100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
 /***********************************************************************
  * Codec Control AUX DAC Methods
  **********************************************************************/
-void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
+void e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
     //special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D){
         boost::uint16_t dac_word = uhd::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);
@@ -250,7 +250,7 @@ void usrp_e100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
 /***********************************************************************
  * Codec Control SPI Methods
  **********************************************************************/
-void usrp_e100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
+void e100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
     boost::uint32_t reg = _ad9862_regs.get_write_reg(addr);
     UHD_LOGV(often) << "codec control write reg: " << std::hex << reg << std::endl;
     _iface->write_spi(
@@ -260,7 +260,7 @@ void usrp_e100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
     );
 }
 
-void usrp_e100_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
+void e100_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
     boost::uint32_t reg = _ad9862_regs.get_read_reg(addr);
     UHD_LOGV(often) << "codec control read reg: " << std::hex << reg << std::endl;
     boost::uint32_t ret = _iface->read_spi(
@@ -275,6 +275,6 @@ void usrp_e100_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
 /***********************************************************************
  * Codec Control Make
  **********************************************************************/
-usrp_e100_codec_ctrl::sptr usrp_e100_codec_ctrl::make(usrp_e100_iface::sptr iface){
-    return sptr(new usrp_e100_codec_ctrl_impl(iface));
+e100_codec_ctrl::sptr e100_codec_ctrl::make(e100_iface::sptr iface){
+    return sptr(new e100_codec_ctrl_impl(iface));
 }

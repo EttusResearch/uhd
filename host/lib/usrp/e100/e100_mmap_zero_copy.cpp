@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e100_iface.hpp"
+#include "e100_iface.hpp"
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
@@ -35,9 +35,9 @@ static const size_t poll_breakout = 10; //how many poll timeouts constitute a fu
  * Reusable managed receiver buffer:
  *  - The buffer knows how to claim and release a frame.
  **********************************************************************/
-class usrp_e100_mmap_zero_copy_mrb : public managed_recv_buffer{
+class e100_mmap_zero_copy_mrb : public managed_recv_buffer{
 public:
-    usrp_e100_mmap_zero_copy_mrb(void *mem, ring_buffer_info *info):
+    e100_mmap_zero_copy_mrb(void *mem, ring_buffer_info *info):
         _mem(mem), _info(info) { /* NOP */ }
 
     void release(void){
@@ -66,9 +66,9 @@ private:
  * Reusable managed send buffer:
  *  - The buffer knows how to claim and release a frame.
  **********************************************************************/
-class usrp_e100_mmap_zero_copy_msb : public managed_send_buffer{
+class e100_mmap_zero_copy_msb : public managed_send_buffer{
 public:
-    usrp_e100_mmap_zero_copy_msb(void *mem, ring_buffer_info *info, size_t len, int fd):
+    e100_mmap_zero_copy_msb(void *mem, ring_buffer_info *info, size_t len, int fd):
         _mem(mem), _info(info), _len(len), _fd(fd) { /* NOP */ }
 
     void commit(size_t len){
@@ -102,9 +102,9 @@ private:
 /***********************************************************************
  * The zero copy interface implementation
  **********************************************************************/
-class usrp_e100_mmap_zero_copy_impl : public zero_copy_if{
+class e100_mmap_zero_copy_impl : public zero_copy_if{
 public:
-    usrp_e100_mmap_zero_copy_impl(usrp_e100_iface::sptr iface):
+    e100_mmap_zero_copy_impl(e100_iface::sptr iface):
         _fd(iface->get_file_descriptor()), _recv_index(0), _send_index(0)
     {
         //get system sizes
@@ -162,28 +162,28 @@ public:
 
         //initialize the managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
-            _mrb_pool.push_back(usrp_e100_mmap_zero_copy_mrb(
+            _mrb_pool.push_back(e100_mmap_zero_copy_mrb(
                 recv_buff + get_recv_frame_size()*i, (*recv_info) + i
             ));
         }
 
         //initialize the managed send buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
-            _msb_pool.push_back(usrp_e100_mmap_zero_copy_msb(
+            _msb_pool.push_back(e100_mmap_zero_copy_msb(
                 send_buff + get_send_frame_size()*i, (*send_info) + i,
                 get_send_frame_size(), _fd
             ));
         }
     }
 
-    ~usrp_e100_mmap_zero_copy_impl(void){
+    ~e100_mmap_zero_copy_impl(void){
         UHD_LOG << "cleanup: munmap" << std::endl;
         ::munmap(_mapped_mem, _map_size);
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         if (fp_verbose) UHD_LOGV(always) << "get_recv_buff: " << _recv_index << std::endl;
-        usrp_e100_mmap_zero_copy_mrb &mrb = _mrb_pool[_recv_index];
+        e100_mmap_zero_copy_mrb &mrb = _mrb_pool[_recv_index];
 
         //poll/wait for a ready frame
         if (not mrb.ready()){
@@ -215,7 +215,7 @@ public:
 
     managed_send_buffer::sptr get_send_buff(double timeout){
         if (fp_verbose) UHD_LOGV(always) << "get_send_buff: " << _send_index << std::endl;
-        usrp_e100_mmap_zero_copy_msb &msb = _msb_pool[_send_index];
+        e100_mmap_zero_copy_msb &msb = _msb_pool[_send_index];
 
         //poll/wait for a ready frame
         if (not msb.ready()){
@@ -254,8 +254,8 @@ private:
     size_t _frame_size, _map_size;
 
     //re-usable managed buffers
-    std::vector<usrp_e100_mmap_zero_copy_mrb> _mrb_pool;
-    std::vector<usrp_e100_mmap_zero_copy_msb> _msb_pool;
+    std::vector<e100_mmap_zero_copy_mrb> _mrb_pool;
+    std::vector<e100_mmap_zero_copy_msb> _msb_pool;
 
     //indexes into sub-sections of mapped memory
     size_t _recv_index, _send_index;
@@ -264,6 +264,6 @@ private:
 /***********************************************************************
  * The zero copy interface make function
  **********************************************************************/
-zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface){
-    return zero_copy_if::sptr(new usrp_e100_mmap_zero_copy_impl(iface));
+zero_copy_if::sptr e100_make_mmap_zero_copy(e100_iface::sptr iface){
+    return zero_copy_if::sptr(new e100_mmap_zero_copy_impl(iface));
 }

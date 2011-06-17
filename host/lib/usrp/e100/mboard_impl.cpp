@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e100_impl.hpp"
-#include "usrp_e100_regs.hpp"
+#include "e100_impl.hpp"
+#include "e100_regs.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/usrp/dsp_utils.hpp>
@@ -30,10 +30,10 @@ using namespace uhd::usrp;
 /***********************************************************************
  * Mboard Initialization
  **********************************************************************/
-void usrp_e100_impl::mboard_init(void){
+void e100_impl::mboard_init(void){
     _mboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp_e100_impl::mboard_get, this, _1, _2),
-        boost::bind(&usrp_e100_impl::mboard_set, this, _1, _2)
+        boost::bind(&e100_impl::mboard_get, this, _1, _2),
+        boost::bind(&e100_impl::mboard_set, this, _1, _2)
     );
 
     //init the clock config
@@ -41,18 +41,18 @@ void usrp_e100_impl::mboard_init(void){
     update_clock_config();
 }
 
-void usrp_e100_impl::update_clock_config(void){
+void e100_impl::update_clock_config(void){
     boost::uint32_t pps_flags = 0;
 
     //translate pps polarity enums
     switch(_clock_config.pps_polarity){
-    case clock_config_t::PPS_POS: pps_flags |= UE_FLAG_TIME64_PPS_POSEDGE; break;
-    case clock_config_t::PPS_NEG: pps_flags |= UE_FLAG_TIME64_PPS_NEGEDGE; break;
+    case clock_config_t::PPS_POS: pps_flags |= E100_FLAG_TIME64_PPS_POSEDGE; break;
+    case clock_config_t::PPS_NEG: pps_flags |= E100_FLAG_TIME64_PPS_NEGEDGE; break;
     default: throw uhd::value_error("unhandled clock configuration pps polarity");
     }
 
     //set the pps flags
-    _iface->poke32(UE_REG_TIME64_FLAGS, pps_flags);
+    _iface->poke32(E100_REG_TIME64_FLAGS, pps_flags);
 
     //clock source ref 10mhz
     switch(_clock_config.ref_source){
@@ -66,7 +66,7 @@ void usrp_e100_impl::update_clock_config(void){
 /***********************************************************************
  * Mboard Get
  **********************************************************************/
-void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
+void e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
     static const std::string dboard_name = "A";
 
@@ -131,17 +131,17 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case MBOARD_PROP_TIME_NOW: while(true){
-        uint32_t secs = _iface->peek32(UE_REG_RB_TIME_NOW_SECS);
-        uint32_t ticks = _iface->peek32(UE_REG_RB_TIME_NOW_TICKS);
-        if (secs != _iface->peek32(UE_REG_RB_TIME_NOW_SECS)) continue;
+        uint32_t secs = _iface->peek32(E100_REG_RB_TIME_NOW_SECS);
+        uint32_t ticks = _iface->peek32(E100_REG_RB_TIME_NOW_TICKS);
+        if (secs != _iface->peek32(E100_REG_RB_TIME_NOW_SECS)) continue;
         val = time_spec_t(secs, ticks, _clock_ctrl->get_fpga_clock_rate());
         return;
     }
 
     case MBOARD_PROP_TIME_PPS: while(true){
-        uint32_t secs = _iface->peek32(UE_REG_RB_TIME_PPS_SECS);
-        uint32_t ticks = _iface->peek32(UE_REG_RB_TIME_PPS_TICKS);
-        if (secs != _iface->peek32(UE_REG_RB_TIME_PPS_SECS)) continue;
+        uint32_t secs = _iface->peek32(E100_REG_RB_TIME_PPS_SECS);
+        uint32_t ticks = _iface->peek32(E100_REG_RB_TIME_PPS_TICKS);
+        if (secs != _iface->peek32(E100_REG_RB_TIME_PPS_SECS)) continue;
         val = time_spec_t(secs, ticks, _clock_ctrl->get_fpga_clock_rate());
         return;
     }
@@ -157,17 +157,17 @@ void usrp_e100_impl::mboard_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * Mboard Set
  **********************************************************************/
-void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
+void e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<mboard_prop_t>()){
 
     case MBOARD_PROP_TIME_NOW:
     case MBOARD_PROP_TIME_PPS:{
             time_spec_t time_spec = val.as<time_spec_t>();
-            _iface->poke32(UE_REG_TIME64_TICKS, time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
+            _iface->poke32(E100_REG_TIME64_TICKS, time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
             boost::uint32_t imm_flags = (key.as<mboard_prop_t>() == MBOARD_PROP_TIME_NOW)? 1 : 0;
-            _iface->poke32(UE_REG_TIME64_IMM, imm_flags);
-            _iface->poke32(UE_REG_TIME64_SECS, time_spec.get_full_secs());
+            _iface->poke32(E100_REG_TIME64_IMM, imm_flags);
+            _iface->poke32(E100_REG_TIME64_SECS, time_spec.get_full_secs());
         }
         return;
 
@@ -186,7 +186,7 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
             break;
         default: fe_swap_iq = false;
         }
-        _iface->poke32(UE_REG_RX_FE_SWAP_IQ, fe_swap_iq? 1 : 0);
+        _iface->poke32(E100_REG_RX_FE_SWAP_IQ, fe_swap_iq? 1 : 0);
 
         //set the dsp mux for each channel
         for (size_t i = 0; i < _rx_subdev_spec.size(); i++){
@@ -209,9 +209,9 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
                 real_mode = true;
                 break;
             }
-            _iface->poke32(UE_REG_DSP_RX_MUX(i),
-                (iq_swap?   UE_FLAG_DSP_RX_MUX_SWAP_IQ   : 0) |
-                (real_mode? UE_FLAG_DSP_RX_MUX_REAL_MODE : 0)
+            _iface->poke32(E100_REG_DSP_RX_MUX(i),
+                (iq_swap?   E100_FLAG_DSP_RX_MUX_SWAP_IQ   : 0) |
+                (real_mode? E100_FLAG_DSP_RX_MUX_REAL_MODE : 0)
             );
         }
         this->update_xport_channel_mapping();
@@ -223,7 +223,7 @@ void usrp_e100_impl::mboard_set(const wax::obj &key, const wax::obj &val){
         //sanity check
         UHD_ASSERT_THROW(_tx_subdev_spec.size() <= E100_NUM_TX_DSPS);
         //set the mux
-        _iface->poke32(UE_REG_TX_FE_MUX, dsp_type1::calc_tx_mux_word(
+        _iface->poke32(E100_REG_TX_FE_MUX, dsp_type1::calc_tx_mux_word(
             _dboard_manager->get_tx_subdev(_tx_subdev_spec.front().sd_name)[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()
         ));
         return;

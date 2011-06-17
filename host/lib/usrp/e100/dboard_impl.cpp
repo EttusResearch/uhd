@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e100_impl.hpp"
-#include "usrp_e100_regs.hpp"
+#include "e100_impl.hpp"
+#include "e100_regs.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/usrp/dboard_props.hpp>
 #include <uhd/usrp/subdev_props.hpp>
@@ -30,7 +30,7 @@ using namespace uhd::usrp;
 /***********************************************************************
  * Dboard Initialization
  **********************************************************************/
-void usrp_e100_impl::dboard_init(void){
+void e100_impl::dboard_init(void){
     //read the dboard eeprom to extract the dboard ids
     _rx_db_eeprom.load(*_iface, I2C_ADDR_RX_DB);
     _tx_db_eeprom.load(*_iface, I2C_ADDR_TX_DB);
@@ -48,19 +48,19 @@ void usrp_e100_impl::dboard_init(void){
 
     //setup the dboard proxies
     _rx_dboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp_e100_impl::rx_dboard_get, this, _1, _2),
-        boost::bind(&usrp_e100_impl::rx_dboard_set, this, _1, _2)
+        boost::bind(&e100_impl::rx_dboard_get, this, _1, _2),
+        boost::bind(&e100_impl::rx_dboard_set, this, _1, _2)
     );
     _tx_dboard_proxy = wax_obj_proxy::make(
-        boost::bind(&usrp_e100_impl::tx_dboard_get, this, _1, _2),
-        boost::bind(&usrp_e100_impl::tx_dboard_set, this, _1, _2)
+        boost::bind(&e100_impl::tx_dboard_get, this, _1, _2),
+        boost::bind(&e100_impl::tx_dboard_set, this, _1, _2)
     );
 }
 
 /***********************************************************************
  * RX Dboard Get
  **********************************************************************/
-void usrp_e100_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
+void e100_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -105,7 +105,7 @@ void usrp_e100_impl::rx_dboard_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * RX Dboard Set
  **********************************************************************/
-void usrp_e100_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
+void e100_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_DBOARD_EEPROM:
         _rx_db_eeprom = val.as<dboard_eeprom_t>();
@@ -119,7 +119,7 @@ void usrp_e100_impl::rx_dboard_set(const wax::obj &key, const wax::obj &val){
 /***********************************************************************
  * TX Dboard Get
  **********************************************************************/
-void usrp_e100_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
+void e100_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
     named_prop_t key = named_prop_t::extract(key_);
 
     //handle the get request conditioned on the key
@@ -168,7 +168,7 @@ void usrp_e100_impl::tx_dboard_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * TX Dboard Set
  **********************************************************************/
-void usrp_e100_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
+void e100_impl::tx_dboard_set(const wax::obj &key, const wax::obj &val){
     switch(key.as<dboard_prop_t>()){
     case DBOARD_PROP_DBOARD_EEPROM:
         _tx_db_eeprom = val.as<dboard_eeprom_t>();

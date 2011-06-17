@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e100_iface.hpp"
-#include "usrp_e100_regs.hpp"
+#include "e100_iface.hpp"
+#include "e100_regs.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
@@ -33,9 +33,9 @@ class usrp_e100_dboard_iface : public dboard_iface{
 public:
 
     usrp_e100_dboard_iface(
-        usrp_e100_iface::sptr iface,
-        usrp_e100_clock_ctrl::sptr clock,
-        usrp_e100_codec_ctrl::sptr codec
+        e100_iface::sptr iface,
+        e100_clock_ctrl::sptr clock,
+        e100_codec_ctrl::sptr codec
     ){
         _iface = iface;
         _clock = clock;
@@ -45,8 +45,8 @@ public:
         this->set_clock_rate(UNIT_RX, _clock->get_fpga_clock_rate());
         this->set_clock_rate(UNIT_TX, _clock->get_fpga_clock_rate());
 
-        _iface->poke16(UE_REG_GPIO_RX_DBG, 0);
-        _iface->poke16(UE_REG_GPIO_TX_DBG, 0);
+        _iface->poke16(E100_REG_GPIO_RX_DBG, 0);
+        _iface->poke16(E100_REG_GPIO_TX_DBG, 0);
     }
 
     ~usrp_e100_dboard_iface(void){
@@ -94,18 +94,18 @@ public:
     double get_codec_rate(unit_t);
 
 private:
-    usrp_e100_iface::sptr _iface;
-    usrp_e100_clock_ctrl::sptr _clock;
-    usrp_e100_codec_ctrl::sptr _codec;
+    e100_iface::sptr _iface;
+    e100_clock_ctrl::sptr _clock;
+    e100_codec_ctrl::sptr _codec;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
 dboard_iface::sptr make_usrp_e100_dboard_iface(
-    usrp_e100_iface::sptr iface,
-    usrp_e100_clock_ctrl::sptr clock,
-    usrp_e100_codec_ctrl::sptr codec
+    e100_iface::sptr iface,
+    e100_clock_ctrl::sptr clock,
+    e100_codec_ctrl::sptr codec
 ){
     return dboard_iface::sptr(new usrp_e100_dboard_iface(iface, clock, codec));
 }
@@ -153,29 +153,29 @@ double usrp_e100_dboard_iface::get_codec_rate(unit_t){
 void usrp_e100_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value){
     UHD_ASSERT_THROW(GPIO_SEL_ATR == 1); //make this assumption
     switch(unit){
-    case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_SEL, value); return;
-    case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_SEL, value); return;
+    case UNIT_RX: _iface->poke16(E100_REG_GPIO_RX_SEL, value); return;
+    case UNIT_TX: _iface->poke16(E100_REG_GPIO_TX_SEL, value); return;
     }
 }
 
 void usrp_e100_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value){
     switch(unit){
-    case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_DDR, value); return;
-    case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_DDR, value); return;
+    case UNIT_RX: _iface->poke16(E100_REG_GPIO_RX_DDR, value); return;
+    case UNIT_TX: _iface->poke16(E100_REG_GPIO_TX_DDR, value); return;
     }
 }
 
 void usrp_e100_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value){
     switch(unit){
-    case UNIT_RX: _iface->poke16(UE_REG_GPIO_RX_IO, value); return;
-    case UNIT_TX: _iface->poke16(UE_REG_GPIO_TX_IO, value); return;
+    case UNIT_RX: _iface->poke16(E100_REG_GPIO_RX_IO, value); return;
+    case UNIT_TX: _iface->poke16(E100_REG_GPIO_TX_IO, value); return;
     }
 }
 
 boost::uint16_t usrp_e100_dboard_iface::read_gpio(unit_t unit){
     switch(unit){
-    case UNIT_RX: return _iface->peek16(UE_REG_GPIO_RX_IO);
-    case UNIT_TX: return _iface->peek16(UE_REG_GPIO_TX_IO);
+    case UNIT_RX: return _iface->peek16(E100_REG_GPIO_RX_IO);
+    case UNIT_TX: return _iface->peek16(E100_REG_GPIO_TX_IO);
     default: UHD_THROW_INVALID_CODE_PATH();
     }
 }
@@ -186,16 +186,16 @@ void usrp_e100_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uin
         unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
     > unit_to_atr_to_addr = map_list_of
         (UNIT_RX, map_list_of
-            (ATR_REG_IDLE,        UE_REG_ATR_IDLE_RXSIDE)
-            (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_RXSIDE)
-            (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_RXSIDE)
-            (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_RXSIDE)
+            (ATR_REG_IDLE,        E100_REG_ATR_IDLE_RXSIDE)
+            (ATR_REG_TX_ONLY,     E100_REG_ATR_INTX_RXSIDE)
+            (ATR_REG_RX_ONLY,     E100_REG_ATR_INRX_RXSIDE)
+            (ATR_REG_FULL_DUPLEX, E100_REG_ATR_FULL_RXSIDE)
         )
         (UNIT_TX, map_list_of
-            (ATR_REG_IDLE,        UE_REG_ATR_IDLE_TXSIDE)
-            (ATR_REG_TX_ONLY,     UE_REG_ATR_INTX_TXSIDE)
-            (ATR_REG_RX_ONLY,     UE_REG_ATR_INRX_TXSIDE)
-            (ATR_REG_FULL_DUPLEX, UE_REG_ATR_FULL_TXSIDE)
+            (ATR_REG_IDLE,        E100_REG_ATR_IDLE_TXSIDE)
+            (ATR_REG_TX_ONLY,     E100_REG_ATR_INTX_TXSIDE)
+            (ATR_REG_RX_ONLY,     E100_REG_ATR_INRX_TXSIDE)
+            (ATR_REG_FULL_DUPLEX, E100_REG_ATR_FULL_TXSIDE)
         )
     ;
     _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
@@ -213,13 +213,13 @@ void usrp_e100_dboard_iface::set_gpio_debug(unit_t unit, int which){
     //set the debug on and which debug selection
     switch(unit){
     case UNIT_RX:
-        _iface->poke16(UE_REG_GPIO_RX_DBG, 0xffff);
-        _iface->poke16(UE_REG_GPIO_RX_SEL, dbg_sels);
+        _iface->poke16(E100_REG_GPIO_RX_DBG, 0xffff);
+        _iface->poke16(E100_REG_GPIO_RX_SEL, dbg_sels);
         return;
 
     case UNIT_TX:
-        _iface->poke16(UE_REG_GPIO_TX_DBG, 0xffff);
-        _iface->poke16(UE_REG_GPIO_TX_SEL, dbg_sels);
+        _iface->poke16(E100_REG_GPIO_TX_DBG, 0xffff);
+        _iface->poke16(E100_REG_GPIO_TX_SEL, dbg_sels);
         return;
     }
 }
@@ -274,26 +274,26 @@ byte_vector_t usrp_e100_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_b
  **********************************************************************/
 void usrp_e100_dboard_iface::write_aux_dac(dboard_iface::unit_t, aux_dac_t which, double value){
     //same aux dacs for each unit
-    static const uhd::dict<aux_dac_t, usrp_e100_codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
-        (AUX_DAC_A, usrp_e100_codec_ctrl::AUX_DAC_A)
-        (AUX_DAC_B, usrp_e100_codec_ctrl::AUX_DAC_B)
-        (AUX_DAC_C, usrp_e100_codec_ctrl::AUX_DAC_C)
-        (AUX_DAC_D, usrp_e100_codec_ctrl::AUX_DAC_D)
+    static const uhd::dict<aux_dac_t, e100_codec_ctrl::aux_dac_t> which_to_aux_dac = map_list_of
+        (AUX_DAC_A, e100_codec_ctrl::AUX_DAC_A)
+        (AUX_DAC_B, e100_codec_ctrl::AUX_DAC_B)
+        (AUX_DAC_C, e100_codec_ctrl::AUX_DAC_C)
+        (AUX_DAC_D, e100_codec_ctrl::AUX_DAC_D)
     ;
     _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
 double usrp_e100_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, aux_adc_t which){
     static const uhd::dict<
-        unit_t, uhd::dict<aux_adc_t, usrp_e100_codec_ctrl::aux_adc_t>
+        unit_t, uhd::dict<aux_adc_t, e100_codec_ctrl::aux_adc_t>
     > unit_to_which_to_aux_adc = map_list_of
         (UNIT_RX, map_list_of
-            (AUX_ADC_A, usrp_e100_codec_ctrl::AUX_ADC_A1)
-            (AUX_ADC_B, usrp_e100_codec_ctrl::AUX_ADC_B1)
+            (AUX_ADC_A, e100_codec_ctrl::AUX_ADC_A1)
+            (AUX_ADC_B, e100_codec_ctrl::AUX_ADC_B1)
         )
         (UNIT_TX, map_list_of
-            (AUX_ADC_A, usrp_e100_codec_ctrl::AUX_ADC_A2)
-            (AUX_ADC_B, usrp_e100_codec_ctrl::AUX_ADC_B2)
+            (AUX_ADC_A, e100_codec_ctrl::AUX_ADC_A2)
+            (AUX_ADC_B, e100_codec_ctrl::AUX_ADC_B2)
         )
     ;
     return _codec->read_aux_adc(unit_to_which_to_aux_adc[unit][which]);

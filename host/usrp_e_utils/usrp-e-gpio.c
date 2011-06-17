@@ -7,7 +7,7 @@
 #include <sys/ioctl.h>
 
 #include "linux/usrp_e.h"
-#include "usrp_e100_regs.hpp"
+#include "e100_regs.hpp"
 
 // Usage: usrp_e_gpio <string>
 
@@ -46,38 +46,38 @@ int main(int argc, char *argv[])
 	fp = open("/dev/usrp_e0", O_RDWR);
 	printf("fp = %d\n", fp);
 
-	write_reg(UE_REG_GPIO_TX_DDR, 0x0);
-	write_reg(UE_REG_GPIO_RX_DDR, 0xFFFF);
+	write_reg(E100_REG_GPIO_TX_DDR, 0x0);
+	write_reg(E100_REG_GPIO_RX_DDR, 0xFFFF);
 
 	for (i=0; i < 16; i++) {
-		write_reg(UE_REG_GPIO_RX_IO, 1 << i);
+		write_reg(E100_REG_GPIO_RX_IO, 1 << i);
 		sleep(1);
 		if (test) {
-			data_in = read_reg(UE_REG_GPIO_TX_IO);
+			data_in = read_reg(E100_REG_GPIO_TX_IO);
 			if (data_in != (1 << i))
 				printf("Read failed, wrote: %X read: %X\n", \
 					1 << i, data_in);
 		}
 	}
 
-	write_reg(UE_REG_GPIO_RX_DDR, 0x0);
-	write_reg(UE_REG_GPIO_TX_DDR, 0xFFFF);
+	write_reg(E100_REG_GPIO_RX_DDR, 0x0);
+	write_reg(E100_REG_GPIO_TX_DDR, 0xFFFF);
 
 	sleep(1);
 
 	for (i=0; i < 16; i++) {
-		write_reg(UE_REG_GPIO_TX_IO, 1 << i);
+		write_reg(E100_REG_GPIO_TX_IO, 1 << i);
 		sleep(1);
 		if (test) {
-			data_in = read_reg(UE_REG_GPIO_RX_IO);
+			data_in = read_reg(E100_REG_GPIO_RX_IO);
 			if (data_in != (1 << i))
 				printf("Read failed, wrote: %X read: %X\n", \
 					1 << i, data_in);
 		}
 	}
 
-	write_reg(UE_REG_GPIO_RX_DDR, 0x0);
-	write_reg(UE_REG_GPIO_TX_DDR, 0x0);
+	write_reg(E100_REG_GPIO_RX_DDR, 0x0);
+	write_reg(E100_REG_GPIO_TX_DDR, 0x0);
 
 	return 0;
 }

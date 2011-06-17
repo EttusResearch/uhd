@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e100_iface.hpp"
+#include "e100_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include <uhd/device.hpp>
@@ -28,10 +28,10 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/zero_copy.hpp>
 
-#ifndef INCLUDED_USRP_E100_IMPL_HPP
-#define INCLUDED_USRP_E100_IMPL_HPP
+#ifndef INCLUDED_E100_IMPL_HPP
+#define INCLUDED_E100_IMPL_HPP
 
-uhd::transport::zero_copy_if::sptr usrp_e100_make_mmap_zero_copy(usrp_e100_iface::sptr iface);
+uhd::transport::zero_copy_if::sptr e100_make_mmap_zero_copy(e100_iface::sptr iface);
 
 static const std::string     E100_FPGA_FILE_NAME = "usrp_e100_fpga5.bin";
 static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x05;
@@ -42,7 +42,7 @@ static const boost::uint32_t E100_DSP_SID_BASE = 2; //leave room for other dsp (
 static const boost::uint32_t E100_ASYNC_SID = 1;
 
 //! load an fpga image from a bin file into the usrp-e fpga
-extern void usrp_e100_load_fpga(const std::string &bin_file);
+extern void e100_load_fpga(const std::string &bin_file);
 
 /*!
  * Make a usrp-e dboard interface.
@@ -52,9 +52,9 @@ extern void usrp_e100_load_fpga(const std::string &bin_file);
  * \return a sptr to a new dboard interface
  */
 uhd::usrp::dboard_iface::sptr make_usrp_e100_dboard_iface(
-    usrp_e100_iface::sptr iface,
-    usrp_e100_clock_ctrl::sptr clock,
-    usrp_e100_codec_ctrl::sptr codec
+    e100_iface::sptr iface,
+    e100_clock_ctrl::sptr clock,
+    e100_codec_ctrl::sptr codec
 );
 
 /*!
@@ -85,15 +85,15 @@ private:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class usrp_e100_impl : public uhd::device{
+class e100_impl : public uhd::device{
 public:
     //structors
-    usrp_e100_impl(
+    e100_impl(
         const uhd::device_addr_t &,
-        usrp_e100_iface::sptr,
-        usrp_e100_clock_ctrl::sptr
+        e100_iface::sptr,
+        e100_clock_ctrl::sptr
     );
-    ~usrp_e100_impl(void);
+    ~e100_impl(void);
 
     //the io interface
     size_t send(const send_buffs_type &, size_t, const uhd::tx_metadata_t &, const uhd::io_type_t &, send_mode_t, double);
@@ -104,13 +104,13 @@ public:
 
 private:
     //interface to ioctls and file descriptor
-    usrp_e100_iface::sptr _iface;
+    e100_iface::sptr _iface;
 
     //ad9522 clock control
-    usrp_e100_clock_ctrl::sptr _clock_ctrl;
+    e100_clock_ctrl::sptr _clock_ctrl;
 
     //ad9862 codec control
-    usrp_e100_codec_ctrl::sptr _codec_ctrl;
+    e100_codec_ctrl::sptr _codec_ctrl;
 
     //handle io stuff
     uhd::transport::zero_copy_if::sptr _data_xport;
@@ -180,4 +180,4 @@ private:
     void update_clock_config(void);
 };
 
-#endif /* INCLUDED_USRP_E100_IMPL_HPP */
+#endif /* INCLUDED_E100_IMPL_HPP */

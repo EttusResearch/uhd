@@ -7,7 +7,7 @@
 #include <sys/ioctl.h>
 
 #include <linux/usrp_e.h>
-#include "usrp_e100_regs.hpp"
+#include "e100_regs.hpp"
 
 // Usage: usrp_e_gpio <string>
 
@@ -54,24 +54,24 @@ int main(int argc, char *argv[])
 
 	if (strcmp(argv[1], "0") == 0) {
 		printf("Selected 0 based on %s\n", argv[1]);
-		write_reg(UE_REG_GPIO_TX_DDR, 0xFFFF);
-		write_reg(UE_REG_GPIO_RX_DDR, 0xFFFF);
-		write_reg(UE_REG_GPIO_TX_SEL, 0x0);
-		write_reg(UE_REG_GPIO_RX_SEL, 0x0);
-		write_reg(UE_REG_GPIO_TX_DBG, 0xFFFF);
-		write_reg(UE_REG_GPIO_RX_DBG, 0xFFFF);
+		write_reg(E100_REG_GPIO_TX_DDR, 0xFFFF);
+		write_reg(E100_REG_GPIO_RX_DDR, 0xFFFF);
+		write_reg(E100_REG_GPIO_TX_SEL, 0x0);
+		write_reg(E100_REG_GPIO_RX_SEL, 0x0);
+		write_reg(E100_REG_GPIO_TX_DBG, 0xFFFF);
+		write_reg(E100_REG_GPIO_RX_DBG, 0xFFFF);
 	} else if (strcmp(argv[1], "1") == 0) {
 		printf("Selected 1 based on %s\n", argv[1]);
-		write_reg(UE_REG_GPIO_TX_DDR, 0xFFFF);
-		write_reg(UE_REG_GPIO_RX_DDR, 0xFFFF);
-		write_reg(UE_REG_GPIO_TX_SEL, 0xFFFF);
-		write_reg(UE_REG_GPIO_RX_SEL, 0xFFFF);
-		write_reg(UE_REG_GPIO_TX_DBG, 0xFFFF);
-		write_reg(UE_REG_GPIO_RX_DBG, 0xFFFF);
+		write_reg(E100_REG_GPIO_TX_DDR, 0xFFFF);
+		write_reg(E100_REG_GPIO_RX_DDR, 0xFFFF);
+		write_reg(E100_REG_GPIO_TX_SEL, 0xFFFF);
+		write_reg(E100_REG_GPIO_RX_SEL, 0xFFFF);
+		write_reg(E100_REG_GPIO_TX_DBG, 0xFFFF);
+		write_reg(E100_REG_GPIO_RX_DBG, 0xFFFF);
 	} else {
 		printf("Selected off based on %s\n", argv[1]);
-		write_reg(UE_REG_GPIO_TX_DDR, 0x0);
-		write_reg(UE_REG_GPIO_RX_DDR, 0x0);
+		write_reg(E100_REG_GPIO_TX_DDR, 0x0);
+		write_reg(E100_REG_GPIO_RX_DDR, 0x0);
 	}
 
 	return 0;

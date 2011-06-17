@@ -205,18 +205,15 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
                     time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), 64e6 //FIXME get from clock_ctrl
                 );
                 metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
-                //print the famous U, and push the metadata into the message queue
-                if (metadata.event_code & 
-                    ( async_metadata_t::EVENT_CODE_UNDERFLOW 
-                    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET) )
-                    UHD_MSG(fastpath) << "U";
-                    
-                if (metadata.event_code & 
-                    ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-                    | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST) )
-                    UHD_MSG(fastpath) << "S";
-                    
                 async_msg_fifo.push_with_pop_on_full(metadata);
+                if (metadata.event_code &
+                    ( async_metadata_t::EVENT_CODE_UNDERFLOW 
+                    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
+                ) UHD_MSG(fastpath) << "U";
+                else if (metadata.event_code &
+                    ( async_metadata_t::EVENT_CODE_SEQ_ERROR
+                    | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
+                ) UHD_MSG(fastpath) << "S";
                 continue;
             }
             UHD_MSG(error) << "Control: unknown async response" << std::endl;

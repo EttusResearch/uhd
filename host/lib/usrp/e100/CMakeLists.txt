@@ -22,9 +22,9 @@
 ########################################################################
 # Conditionally configure the USRP-E100 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_USRP_E100 OFF "ENABLE_LIBUHD;LINUX" OFF)
+LIBUHD_REGISTER_COMPONENT("USRP-E100" ENABLE_E100 OFF "ENABLE_LIBUHD;LINUX" OFF)
 
-IF(ENABLE_USRP_E100)
+IF(ENABLE_E100)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
     LIBUHD_APPEND_SOURCES(
@@ -39,11 +39,11 @@ IF(ENABLE_USRP_E100)
         ${CMAKE_CURRENT_SOURCE_DIR}/fpga_downloader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_impl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_iface.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_mmap_zero_copy.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_e100_regs.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e100_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e100_impl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e100_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e100_iface.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e100_mmap_zero_copy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e100_regs.hpp
     )
-ENDIF(ENABLE_USRP_E100)
+ENDIF(ENABLE_E100)

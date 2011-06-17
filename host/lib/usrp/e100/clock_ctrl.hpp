@@ -18,7 +18,7 @@
 #ifndef INCLUDED_USRP_E100_CLOCK_CTRL_HPP
 #define INCLUDED_USRP_E100_CLOCK_CTRL_HPP
 
-#include "usrp_e100_iface.hpp"
+#include "e100_iface.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -28,9 +28,9 @@
  * - Setup system clocks.
  * - Disable/enable clock lines.
  */
-class usrp_e100_clock_ctrl : boost::noncopyable{
+class e100_clock_ctrl : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<usrp_e100_clock_ctrl> sptr;
+    typedef boost::shared_ptr<e100_clock_ctrl> sptr;
 
     /*!
      * Make a new clock control object.
@@ -38,7 +38,7 @@ public:
      * \param master clock rate the FPGA rate
      * \return the clock control object
      */
-    static sptr make(usrp_e100_iface::sptr iface, double master_clock_rate);
+    static sptr make(e100_iface::sptr iface, double master_clock_rate);
 
     /*!
      * Set the rate of the fpga clock line.

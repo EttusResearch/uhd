@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp_e100_iface.hpp"
-#include "usrp_e100_regs.hpp"
+#include "e100_iface.hpp"
+#include "e100_regs.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <sys/ioctl.h> //ioctl
@@ -94,7 +94,7 @@ private: int _node_fd;
 /***********************************************************************
  * USRP-E100 interface implementation
  **********************************************************************/
-class usrp_e100_iface_impl : public usrp_e100_iface{
+class e100_iface_impl : public e100_iface{
 public:
 
     int get_file_descriptor(void){
@@ -127,14 +127,14 @@ public:
     /*******************************************************************
      * Structors
      ******************************************************************/
-    usrp_e100_iface_impl(void):
+    e100_iface_impl(void):
         _node_fd(-1),
         _i2c_dev_iface(i2c_dev_iface("/dev/i2c-3"))
     {
         mb_eeprom = mboard_eeprom_t(get_i2c_dev_iface(), mboard_eeprom_t::MAP_E100);
     }
 
-    ~usrp_e100_iface_impl(void){
+    ~e100_iface_impl(void){
         if (_node_fd >= 0) this->close();
     }
 
@@ -388,6 +388,6 @@ private:
 /***********************************************************************
  * Public Make Function
  **********************************************************************/
-usrp_e100_iface::sptr usrp_e100_iface::make(void){
-    return sptr(new usrp_e100_iface_impl());
+e100_iface::sptr e100_iface::make(void){
+    return sptr(new e100_iface_impl());
 }

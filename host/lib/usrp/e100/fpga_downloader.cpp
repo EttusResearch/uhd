@@ -245,7 +245,7 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 
 }//namespace usrp_e_fpga_downloader_utility
 
-void usrp_e100_load_fpga(const std::string &bin_file){
+void e100_load_fpga(const std::string &bin_file){
 	using namespace usrp_e_fpga_downloader_utility;
 
 	gpio gpio_prog_b(PROG_B, OUT);
