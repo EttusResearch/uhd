@@ -47,10 +47,16 @@
 
 /////////////////////////////////////////////////////
 // Slave 2 -- SPI Core
-//   This should be accessed through the IOCTL
-//   Users should not touch directly
-
+//these are 32-bit registers mapped onto the 16-bit Wishbone bus.
+//Using peek32/poke32 should allow transparent use of these registers.
 #define E100_REG_SPI_BASE E100_REG_SLAVE(2)
+#define E100_REG_SPI_TXRX0 E100_REG_SPI_BASE + 0
+#define E100_REG_SPI_TXRX1 E100_REG_SPI_BASE + 4
+#define E100_REG_SPI_TXRX2 E100_REG_SPI_BASE + 8
+#define E100_REG_SPI_TXRX3 E100_REG_SPI_BASE + 12
+#define E100_REG_SPI_CTRL  E100_REG_SPI_BASE + 16
+#define E100_REG_SPI_DIV   E100_REG_SPI_BASE + 20
+#define E100_REG_SPI_SS    E100_REG_SPI_BASE + 24
 
 //spi slave constants
 #define UE_SPI_SS_AD9522    (1 << 3)
@@ -58,13 +64,56 @@
 #define UE_SPI_SS_TX_DB     (1 << 1)
 #define UE_SPI_SS_RX_DB     (1 << 0)
 
+//spi ctrl register bit definitions
+#define SPI_CTRL_ASS      (1<<13)
+#define SPI_CTRL_IE       (1<<12)
+#define SPI_CTRL_LSB      (1<<11)
+#define SPI_CTRL_TXNEG    (1<<10) //mosi edge, push on falling edge when 1
+#define SPI_CTRL_RXNEG    (1<< 9) //miso edge, latch on falling edge when 1
+#define SPI_CTRL_GO_BSY   (1<< 8)
+#define SPI_CTRL_CHAR_LEN_MASK 0x7F
+
 ////////////////////////////////////////////////
 // Slave 3 -- I2C Core
-//   This should be accessed through the IOCTL
-//   Users should not touch directly
 
 #define E100_REG_I2C_BASE E100_REG_SLAVE(3)
+#define E100_REG_I2C_PRESCALER_LO E100_REG_I2C_BASE + 0
+#define E100_REG_I2C_PRESCALER_HI E100_REG_I2C_BASE + 2
+#define E100_REG_I2C_CTRL         E100_REG_I2C_BASE + 4
+#define E100_REG_I2C_DATA         E100_REG_I2C_BASE + 6
+#define E100_REG_I2C_CMD_STATUS   E100_REG_I2C_BASE + 8
 
+//and while we're here...
+
+//
+// STA, STO, RD, WR, and IACK bits are cleared automatically
+//
+
+#define	I2C_CTRL_EN	(1 << 7)	// core enable
+#define	I2C_CTRL_IE	(1 << 6)	// interrupt enable
+
+#define	I2C_CMD_START	(1 << 7)	// generate (repeated) start condition
+#define I2C_CMD_STOP	(1 << 6)	// generate stop condition
+#define	I2C_CMD_RD	(1 << 5)	// read from slave
+#define I2C_CMD_WR	(1 << 4)	// write to slave
+#define	I2C_CMD_NACK	(1 << 3)	// when a rcvr, send ACK (ACK=0) or NACK (ACK=1)
+#define I2C_CMD_RSVD_2	(1 << 2)	// reserved
+#define	I2C_CMD_RSVD_1	(1 << 1)	// reserved
+#define I2C_CMD_IACK	(1 << 0)	// set to clear pending interrupt
+
+#define I2C_ST_RXACK	(1 << 7)	// Received acknowledgement from slave (1 = NAK, 0 = ACK)
+#define	I2C_ST_BUSY	(1 << 6)	// 1 after START signal detected; 0 after STOP signal detected
+#define	I2C_ST_AL	(1 << 5)	// Arbitration lost.  1 when core lost arbitration
+#define	I2C_ST_RSVD_4	(1 << 4)	// reserved
+#define	I2C_ST_RSVD_3	(1 << 3)	// reserved
+#define	I2C_ST_RSVD_2	(1 << 2)	// reserved
+#define I2C_ST_TIP	(1 << 1)	// Transfer-in-progress
+#define	I2C_ST_IP	(1 << 0)	// Interrupt pending
+
+////////////////////////////////////////////////
+// Slave 5 -- Error messages buffer
+
+#define E100_REG_ERR_BUFF E100_REG_SLAVE(5)
 
 ////////////////////////////////////////////////
 // Slave 4 -- GPIO
@@ -113,6 +162,7 @@
 #define E100_REG_RB_TIME_PPS_SECS   E100_REG_RB_MUX_32_BASE + 8
 #define E100_REG_RB_TIME_PPS_TICKS  E100_REG_RB_MUX_32_BASE + 12
 #define E100_REG_RB_MISC_TEST32     E100_REG_RB_MUX_32_BASE + 16
+#define E100_REG_RB_ERR_STATUS      E100_REG_RB_MUX_32_BASE + 20
 
 ////////////////////////////////////////////////////
 // Slave 8 -- Settings Bus
@@ -126,6 +176,7 @@
 #define UE_SR_RX_DSP0 10       // 4 regs (+0 to +3)
 #define UE_SR_RX_CTRL1 16      // 9 regs (+0 to +8)
 #define UE_SR_RX_DSP1 26       // 4 regs (+0 to +3)
+#define UE_SR_ERR_CTRL 30      // 1 reg
 #define UE_SR_TX_CTRL 32       // 4 regs (+0 to +3)
 #define UE_SR_TX_DSP 38        // 3 regs (+0 to +2)
 
@@ -141,6 +192,7 @@
 #define E100_REG_SR_ADDR(n) (E100_REG_SLAVE(8) + (4*(n)))
 
 #define E100_REG_SR_MISC_TEST32        E100_REG_SR_ADDR(UE_SR_REG_TEST32)
+#define E100_REG_SR_ERR_CTRL           E100_REG_SR_ADDR(UE_SR_ERR_CTRL)
 
 /////////////////////////////////////////////////
 // Magic reset regs

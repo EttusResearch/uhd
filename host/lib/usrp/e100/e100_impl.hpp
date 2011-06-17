@@ -113,11 +113,12 @@ private:
     e100_codec_ctrl::sptr _codec_ctrl;
 
     //handle io stuff
-    uhd::transport::zero_copy_if::sptr _data_xport;
+    uhd::transport::zero_copy_if::sptr _data_transport;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     size_t _recv_frame_size, _send_frame_size;
     uhd::otw_type_t _send_otw_type, _recv_otw_type;
     void io_init(void);
+    void handle_irq(void);
     void handle_overrun(size_t);
     void update_xport_channel_mapping(void);
 

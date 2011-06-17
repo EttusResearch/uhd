@@ -23,11 +23,10 @@
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/thread/thread.hpp> //sleep
-#include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/format.hpp>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
-#include <iostream>
 #include <fstream>
 
 using namespace uhd;
@@ -168,6 +167,12 @@ public:
                 "The module build is not compatible with the host code build."
             ) % USRP_E_COMPAT_NUMBER % module_compat_num));
         }
+
+        //perform a global reset after opening
+        this->poke32(E100_REG_GLOBAL_RESET, 0);
+
+        //and now is a good time to init the i2c
+        this->i2c_init();
     }
 
     void close(void){
@@ -193,7 +198,7 @@ public:
      * IOCTL: provides the communication base for all other calls
      ******************************************************************/
     void ioctl(int request, void *mem){
-        boost::mutex::scoped_lock lock(_ctrl_mutex);
+        boost::mutex::scoped_lock lock(_ioctl_mutex);
 
         if (::ioctl(_node_fd, request, mem) < 0){
             throw uhd::os_error(str(
@@ -261,46 +266,84 @@ public:
     /*******************************************************************
      * I2C
      ******************************************************************/
-    static const size_t max_i2c_data_bytes = 10;
+    static const boost::uint32_t i2c_datarate = 400000;
+    static const boost::uint32_t wishbone_clk = 64000000; //FIXME should go somewhere else
+
+    void i2c_init(void) {
+        //init I2C FPGA interface.
+        poke16(E100_REG_I2C_CTRL, 0x0000);
+        //set prescalers to operate at 400kHz: WB_CLK is 64MHz...
+        boost::uint16_t prescaler = wishbone_clk / (i2c_datarate*5) - 1;
+        poke16(E100_REG_I2C_PRESCALER_LO, prescaler & 0xFF);
+        poke16(E100_REG_I2C_PRESCALER_HI, (prescaler >> 8) & 0xFF);
+        poke16(E100_REG_I2C_CTRL, I2C_CTRL_EN); //enable I2C core
+    }
+
+    void i2c_wait(void){
+        for (size_t i = 0; i < 100; i++){
+            if ((this->peek16(E100_REG_I2C_CMD_STATUS) & I2C_ST_TIP) == 0) return;
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        }
+        UHD_MSG(error) << "i2c_wait: timeout" << std::endl;
+    }
+
+    bool wait_chk_ack(void){
+        i2c_wait();
+        return (this->peek16(E100_REG_I2C_CMD_STATUS) & I2C_ST_RXACK) == 0;
+    }
 
     void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
-        //allocate some memory for this transaction
-        UHD_ASSERT_THROW(bytes.size() <= max_i2c_data_bytes);
-        boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
+        poke16(E100_REG_I2C_DATA, (addr << 1) | 0); //addr and read bit (0)
+        poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_WR | I2C_CMD_START | (bytes.size() == 0 ? I2C_CMD_STOP : 0));
 
-        //load the data struct
-        usrp_e_i2c *data = reinterpret_cast<usrp_e_i2c*>(mem);
-        data->addr = addr;
-        data->len = bytes.size();
-        std::copy(bytes.begin(), bytes.end(), data->data);
+        //wait for previous transfer to complete
+        if(!wait_chk_ack()) {
+            poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_STOP);
+            return;
+        }
 
-        //call the spi ioctl
-        this->ioctl(USRP_E_I2C_WRITE, data);
+        for(size_t i = 0; i < bytes.size(); i++) {
+            poke16(E100_REG_I2C_DATA, bytes[i]);
+            poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_WR | ((i == (bytes.size() - 1)) ? I2C_CMD_STOP : 0));
+            if(!wait_chk_ack()) {
+                poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_STOP);
+                return;
+            }
+        }
     }
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
-        //allocate some memory for this transaction
-        UHD_ASSERT_THROW(num_bytes <= max_i2c_data_bytes);
-        boost::uint8_t mem[sizeof(usrp_e_i2c) + max_i2c_data_bytes];
+        byte_vector_t bytes;
+        if(num_bytes == 0) return bytes;
 
-        //load the data struct
-        usrp_e_i2c *data = reinterpret_cast<usrp_e_i2c*>(mem);
-        data->addr = addr;
-        data->len = num_bytes;
+        while (peek16(E100_REG_I2C_CMD_STATUS) & I2C_ST_BUSY);
 
-        //call the spi ioctl
-        this->ioctl(USRP_E_I2C_READ, data);
-
-        //unload the data
-        byte_vector_t bytes(data->len);
-        UHD_ASSERT_THROW(bytes.size() == num_bytes);
-        std::copy(data->data, data->data+bytes.size(), bytes.begin());
+        poke16(E100_REG_I2C_DATA, (addr << 1) | 1); //addr and read bit (1)
+        poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_WR | I2C_CMD_START);
+        //wait for previous transfer to complete
+        if(!wait_chk_ack()) {
+            poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_STOP);
+        }
+        for(; num_bytes > 0; num_bytes--) {
+            poke16(E100_REG_I2C_CMD_STATUS, I2C_CMD_RD | ((num_bytes == 1) ? (I2C_CMD_STOP | I2C_CMD_NACK) : 0));
+            i2c_wait();
+            boost::uint8_t readback = peek16(E100_REG_I2C_DATA) & 0xFF;
+            bytes.push_back(readback);
+        }
         return bytes;
     }
 
     /*******************************************************************
      * SPI
      ******************************************************************/
+    void spi_wait(void) {
+        for (size_t i = 0; i < 100; i++){
+            if ((this->peek16(E100_REG_SPI_CTRL) & SPI_CTRL_GO_BSY) == 0) return;
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        }
+        UHD_MSG(error) << "spi_wait: timeout" << std::endl;
+    }
+
     boost::uint32_t transact_spi(
         int which_slave,
         const spi_config_t &config,
@@ -312,23 +355,23 @@ public:
             bits, num_bits, readback
         );
 
-        //load data struct
-        usrp_e_spi data;
-        data.readback = (readback)? UE_SPI_TXRX : UE_SPI_TXONLY;
-        data.slave = which_slave;
-        data.length = num_bits;
-        data.data = bits;
+        UHD_ASSERT_THROW(num_bits <= 32 and (num_bits % 8) == 0);
 
-        //load the flags
-        data.flags = 0;
-        data.flags |= (config.miso_edge == spi_config_t::EDGE_RISE)? UE_SPI_LATCH_RISE : UE_SPI_LATCH_FALL;
-        data.flags |= (config.mosi_edge == spi_config_t::EDGE_RISE)? UE_SPI_PUSH_FALL  : UE_SPI_PUSH_RISE;
+        int edge_flags = ((config.miso_edge==spi_config_t::EDGE_FALL) ? SPI_CTRL_RXNEG : 0) |
+                         ((config.mosi_edge==spi_config_t::EDGE_FALL) ? 0 : SPI_CTRL_TXNEG)
+                         ;
+        boost::uint16_t ctrl = SPI_CTRL_ASS | (SPI_CTRL_CHAR_LEN_MASK & num_bits) | edge_flags;
 
-        //call the spi ioctl
-        this->ioctl(USRP_E_SPI, &data);
+        spi_wait();
+        poke16(E100_REG_SPI_DIV, 0x0001); // = fpga_clk / 4
+        poke32(E100_REG_SPI_SS, which_slave & 0xFFFF);
+        poke32(E100_REG_SPI_TXRX0, bits);
+        poke16(E100_REG_SPI_CTRL, ctrl);
+        poke16(E100_REG_SPI_CTRL, ctrl | SPI_CTRL_GO_BSY);
 
-        //unload the data
-        return data.data;
+        if (not readback) return 0;
+        spi_wait();
+        return peek32(E100_REG_SPI_TXRX0);
     }
 
     boost::uint32_t bitbang_spi(
@@ -369,7 +412,7 @@ public:
 private:
     int _node_fd;
     i2c_dev_iface _i2c_dev_iface;
-    boost::mutex _ctrl_mutex;
+    boost::mutex _ioctl_mutex;
     iface_gpios_type::sptr _gpios;
 };
 

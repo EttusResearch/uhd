@@ -23,6 +23,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
@@ -155,9 +156,9 @@ e100_impl::e100_impl(
     _iface(iface),
     _clock_ctrl(clock_ctrl),
     _codec_ctrl(e100_codec_ctrl::make(_iface)),
-    _data_xport(e100_make_mmap_zero_copy(_iface)),
-    _recv_frame_size(std::min(_data_xport->get_recv_frame_size(), size_t(device_addr.cast<double>("recv_frame_size", 1e9)))),
-    _send_frame_size(std::min(_data_xport->get_send_frame_size(), size_t(device_addr.cast<double>("send_frame_size", 1e9))))
+    _data_transport(e100_make_mmap_zero_copy(_iface)),
+    _recv_frame_size(std::min(_data_transport->get_recv_frame_size(), size_t(device_addr.cast<double>("recv_frame_size", 1e9)))),
+    _send_frame_size(std::min(_data_transport->get_send_frame_size(), size_t(device_addr.cast<double>("send_frame_size", 1e9))))
 {
 
     //setup otw types

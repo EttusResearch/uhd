@@ -27,11 +27,15 @@
 
 namespace po = boost::program_options;
 
+/***********************************************************************
+ * Test result variables
+ **********************************************************************/
 unsigned long long num_overflows = 0;
 unsigned long long num_underflows = 0;
 unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
 unsigned long long num_dropped_samps = 0;
+unsigned long long num_seq_errors = 0;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -77,11 +81,11 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
 
         default:
             std::cerr << "Error code: " << md.error_code << std::endl;
-            std::cerr << "Unexpected error on recv, exit test..." << std::endl;
-            goto loop_done;
+            std::cerr << "Unexpected error on recv, continuing..." << std::endl;
+            break;
         }
 
-    } loop_done:
+    }
     usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
@@ -122,11 +126,9 @@ void benchmark_tx_rate_async_helper(uhd::usrp::multi_usrp::sptr usrp){
     //setup variables and allocate buffer
     uhd::async_metadata_t async_md;
 
-    while (true){
+    while (not boost::this_thread::interruption_requested()){
 
-        if (not usrp->get_device()->recv_async_msg(async_md)){
-            if (boost::this_thread::interruption_requested()) return;
-        }
+        if (not usrp->get_device()->recv_async_msg(async_md)) continue;
 
         //handle the error codes
         switch(async_md.event_code){
@@ -138,10 +140,15 @@ void benchmark_tx_rate_async_helper(uhd::usrp::multi_usrp::sptr usrp){
             num_underflows++;
             break;
 
+        case uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR:
+        case uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST:
+            num_seq_errors++;
+            break;
+
         default:
             std::cerr << "Event code: " << async_md.event_code << std::endl;
-            std::cerr << "Unexpected event on async recv, exit test..." << std::endl;
-            return;
+            std::cerr << "Unexpected event on async recv, continuing..." << std::endl;
+            break;
         }
     }
 }
@@ -183,16 +190,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a usrp device
     std::cout << std::endl;
     uhd::device_addrs_t device_addrs = uhd::device::find(args);
-    if (device_addrs.empty()){
-        std::cerr << "Could not find any devices for: " << args << std::endl;
-        return ~0;
-    }
-    if (device_addrs.at(0).get("type", "") == "usrp1"){
+    if (not device_addrs.empty() and device_addrs.at(0).get("type", "") == "usrp1"){
         std::cerr << "*** Warning! ***" << std::endl;
         std::cerr << "Benchmark results will be inaccurate on USRP1 due to insufficient features.\n" << std::endl;
     }
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(device_addrs.at(0));
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     boost::thread_group thread_group;
@@ -226,8 +229,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "  Num dropped samples:     %u\n"
         "  Num overflows detected:  %u\n"
         "  Num transmitted samples: %u\n"
+        "  Num sequence errors:     %u\n"
         "  Num underflows detected: %u\n"
-    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_underflows << std::endl;
+    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_seq_errors % num_underflows << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
