@@ -117,4 +117,20 @@ template<typename T> UHD_INLINE T uhd::htonx(T num){
     #endif
 }
 
+template<typename T> UHD_INLINE T uhd::wtohx(T num){
+    #ifdef BOOST_BIG_ENDIAN
+        return uhd::byteswap(num);
+    #else
+        return num;
+    #endif
+}
+
+template<typename T> UHD_INLINE T uhd::htowx(T num){
+    #ifdef BOOST_BIG_ENDIAN
+        return uhd::byteswap(num);
+    #else
+        return num;
+    #endif
+}
+
 #endif /* INCLUDED_UHD_UTILS_BYTESWAP_IPP */

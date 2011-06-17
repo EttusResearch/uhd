@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,12 @@ namespace uhd{
 
     //! host to network: short, long, or long-long
     template<typename T> T htonx(T);
+
+    //! worknet to host: short, long, or long-long
+    template<typename T> T wtohx(T);
+
+    //! host to worknet: short, long, or long-long
+    template<typename T> T htowx(T);
 
 } //namespace uhd
 
