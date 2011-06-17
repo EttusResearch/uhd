@@ -37,7 +37,7 @@
 static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.bin";
 static const std::string     B100_FPGA_FILE_NAME = "usrp_b100_fpga.bin";
 static const boost::uint16_t B100_FW_COMPAT_NUM = 0x02;
-static const boost::uint16_t B100_FPGA_COMPAT_NUM = 0x04;
+static const boost::uint16_t B100_FPGA_COMPAT_NUM = 0x05;
 static const size_t          B100_NUM_RX_DSPS = 2;
 static const size_t          B100_NUM_TX_DSPS = 1;
 static const boost::uint32_t B100_DSP_SID_BASE = 2; //leave room for other dsp (increments by 1)

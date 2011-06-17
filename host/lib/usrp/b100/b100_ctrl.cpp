@@ -198,7 +198,7 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
             const boost::uint32_t *vrt_hdr = rbuf->cast<const boost::uint32_t *>();
             vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
             
-            if(    if_packet_info.sid == 0 
+            if(    if_packet_info.sid == B100_ASYNC_SID
                and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
                 //fill in the async metadata
                 async_metadata_t metadata;
@@ -222,7 +222,7 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
                 async_msg_fifo.push_with_pop_on_full(metadata);
                 continue;
             }
-            throw uhd::runtime_error("Control: unknown async response");
+            UHD_MSG(error) << "Control: unknown async response" << std::endl;
         }
     }
 }
