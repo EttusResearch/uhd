@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <boost/bind.hpp>
+#include <boost/utility.hpp>
 #include <boost/function.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
@@ -27,7 +28,7 @@
 
 namespace uhd{ namespace transport{ namespace{ /*anon*/
 
-    template <typename elem_type> class bounded_buffer_detail{
+    template <typename elem_type> class bounded_buffer_detail : boost::noncopyable{
     public:
 
         bounded_buffer_detail(size_t capacity):
@@ -87,7 +88,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         UHD_INLINE bool pop_with_haste(elem_type &elem){
             boost::mutex::scoped_lock lock(_mutex);
             if (_buffer.empty()) return false;
-            elem = this->pop_back();
+            this->pop_back(elem);
             lock.unlock();
             _full_cond.notify_one();
             return true;
@@ -97,7 +98,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             if (this->pop_with_haste(elem)) return;
             boost::mutex::scoped_lock lock(_mutex);
             _empty_cond.wait(lock, _not_empty_fcn);
-            elem = this->pop_back();
+            this->pop_back(elem);
             lock.unlock();
             _full_cond.notify_one();
         }
@@ -108,7 +109,7 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
             if (not _empty_cond.timed_wait(
                 lock, to_time_dur(timeout), _not_empty_fcn
             )) return false;
-            elem = this->pop_back();
+            this->pop_back(elem);
             lock.unlock();
             _full_cond.notify_one();
             return true;
@@ -130,11 +131,10 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
          * 2) assign the back element to empty
          * 3) pop the back to move the counter
          */
-        UHD_INLINE elem_type pop_back(void){
-            elem_type elem = _buffer.back();
+        UHD_INLINE void pop_back(elem_type &elem){
+            elem = _buffer.back();
             _buffer.back() = elem_type();
             _buffer.pop_back();
-            return elem;
         }
 
         static UHD_INLINE boost::posix_time::time_duration to_time_dur(double timeout){
