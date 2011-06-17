@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,36 +22,80 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/bind.hpp>
 
-#define rint boost::math::iround
-
 using namespace uhd;
 using namespace uhd::usrp;
 
-static const double MASTER_CLOCK_RATE = 64e6; //TODO get from clock control
+/***********************************************************************
+ * DSP impl and methods
+ **********************************************************************/
+struct b100_impl::dsp_impl{
+    uhd::dict<size_t, size_t> ddc_decim;
+    uhd::dict<size_t, double> ddc_freq;
+    uhd::dict<size_t, size_t> duc_interp;
+    uhd::dict<size_t, double> duc_freq;
+};
 
 /***********************************************************************
  * RX DDC Initialization
  **********************************************************************/
-void b100_impl::rx_ddc_init(void){
-    _rx_ddc_proxy = wax_obj_proxy::make(
-        boost::bind(&b100_impl::rx_ddc_get, this, _1, _2),
-        boost::bind(&b100_impl::rx_ddc_set, this, _1, _2)
-    );
+void b100_impl::dsp_init(void){
+    //create new dsp impl
+    _dsp_impl = UHD_PIMPL_MAKE(dsp_impl, ());
 
-    //initial config and update
-    rx_ddc_set(DSP_PROP_FREQ_SHIFT, double(0));
-    rx_ddc_set(DSP_PROP_HOST_RATE, double(16e6));
+    //bind and initialize the rx dsps
+    for (size_t i = 0; i < B100_NUM_RX_DSPS; i++){
+        _rx_dsp_proxies[str(boost::format("DSP%d")%i)] = wax_obj_proxy::make(
+            boost::bind(&b100_impl::ddc_get, this, _1, _2, i),
+            boost::bind(&b100_impl::ddc_set, this, _1, _2, i)
+        );
+
+        //initial config and update
+        ddc_set(DSP_PROP_FREQ_SHIFT, double(0), i);
+        ddc_set(DSP_PROP_HOST_RATE, double(_clock_ctrl->get_fpga_clock_rate()/16), i);
+
+        //setup the rx control registers
+        _iface->poke32(B100_REG_RX_CTRL_CLEAR(i), 1); //reset
+        _iface->poke32(B100_REG_RX_CTRL_NSAMPS_PP(i), this->get_max_recv_samps_per_packet());
+        _iface->poke32(B100_REG_RX_CTRL_NCHANNELS(i), 1);
+        _iface->poke32(B100_REG_RX_CTRL_VRT_HDR(i), 0
+            | (0x1 << 28) //if data with stream id
+            | (0x1 << 26) //has trailer
+            | (0x3 << 22) //integer time other
+            | (0x1 << 20) //fractional time sample count
+        );
+        _iface->poke32(B100_REG_RX_CTRL_VRT_SID(i), B100_DSP_SID_BASE + i);
+        _iface->poke32(B100_REG_RX_CTRL_VRT_TLR(i), 0);
+        _iface->poke32(B100_REG_TIME64_TPS, size_t(_clock_ctrl->get_fpga_clock_rate()));
+    }
+
+    //bind and initialize the tx dsps
+    for (size_t i = 0; i < B100_NUM_TX_DSPS; i++){
+        _tx_dsp_proxies[str(boost::format("DSP%d")%i)] = wax_obj_proxy::make(
+            boost::bind(&b100_impl::duc_get, this, _1, _2, i),
+            boost::bind(&b100_impl::duc_set, this, _1, _2, i)
+        );
+
+        //initial config and update
+        duc_set(DSP_PROP_FREQ_SHIFT, double(0), i);
+        duc_set(DSP_PROP_HOST_RATE, double(_clock_ctrl->get_fpga_clock_rate()/16), i);
+
+        //init the tx control registers
+        _iface->poke32(B100_REG_TX_CTRL_CLEAR_STATE, 1); //reset
+        _iface->poke32(B100_REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
+        _iface->poke32(B100_REG_TX_CTRL_REPORT_SID, B100_ASYNC_SID);
+        _iface->poke32(B100_REG_TX_CTRL_POLICY, B100_FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+    }
 }
 
 /***********************************************************************
  * RX DDC Get
  **********************************************************************/
-void b100_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
+void b100_impl::ddc_get(const wax::obj &key_, wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("USRP-B100 RX DSP");
+        val = str(boost::format("%s ddc%d") % _iface->get_cname() % which_dsp);
         return;
 
     case DSP_PROP_OTHERS:
@@ -59,7 +103,7 @@ void b100_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_FREQ_SHIFT:
-        val = _ddc_freq;
+        val = _dsp_impl->ddc_freq[which_dsp];
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -67,7 +111,7 @@ void b100_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_HOST_RATE:
-        val = _clock_ctrl->get_fpga_clock_rate()/_ddc_decim;
+        val = _clock_ctrl->get_fpga_clock_rate()/_dsp_impl->ddc_decim[which_dsp];
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -77,34 +121,31 @@ void b100_impl::rx_ddc_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * RX DDC Set
  **********************************************************************/
-void b100_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
+void b100_impl::ddc_set(const wax::obj &key_, const wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
+
     case DSP_PROP_STREAM_CMD:
-        issue_stream_cmd(val.as<stream_cmd_t>());
+        issue_ddc_stream_cmd(val.as<stream_cmd_t>(), which_dsp);
         return;
 
     case DSP_PROP_FREQ_SHIFT:{
             double new_freq = val.as<double>();
-            _iface->poke32(B100_REG_DSP_RX_FREQ,
+            _iface->poke32(B100_REG_DSP_RX_FREQ(which_dsp),
                 dsp_type1::calc_cordic_word_and_update(new_freq, _clock_ctrl->get_fpga_clock_rate())
             );
-            _ddc_freq = new_freq; //shadow
+            _dsp_impl->ddc_freq[which_dsp] = new_freq; //shadow
         }
         return;
 
     case DSP_PROP_HOST_RATE:{
-            //set the decimation
-            _ddc_decim = rint(_clock_ctrl->get_fpga_clock_rate()/val.as<double>());
-            _iface->poke32(B100_REG_DSP_RX_DECIM_RATE, dsp_type1::calc_cic_filter_word(_ddc_decim));
+            _dsp_impl->ddc_decim[which_dsp] = boost::math::iround(_clock_ctrl->get_fpga_clock_rate()/val.as<double>());
 
-            //set the scaling
-            static const boost::int16_t default_rx_scale_iq = 1024;
-            _iface->poke32(B100_REG_DSP_RX_SCALE_IQ,
-                dsp_type1::calc_iq_scale_word(default_rx_scale_iq, default_rx_scale_iq)
-            );
+            //set the decimation
+            _iface->poke32(B100_REG_DSP_RX_DECIM(which_dsp), dsp_type1::calc_cic_filter_word(_dsp_impl->ddc_decim[which_dsp]));
         }
+        this->update_xport_channel_mapping(); //rate changed -> update
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();
@@ -112,28 +153,14 @@ void b100_impl::rx_ddc_set(const wax::obj &key_, const wax::obj &val){
 }
 
 /***********************************************************************
- * TX DUC Initialization
- **********************************************************************/
-void b100_impl::tx_duc_init(void){
-    _tx_duc_proxy = wax_obj_proxy::make(
-        boost::bind(&b100_impl::tx_duc_get, this, _1, _2),
-        boost::bind(&b100_impl::tx_duc_set, this, _1, _2)
-    );
-
-    //initial config and update
-    tx_duc_set(DSP_PROP_FREQ_SHIFT, double(0));
-    tx_duc_set(DSP_PROP_HOST_RATE, double(16e6));
-}
-
-/***********************************************************************
  * TX DUC Get
  **********************************************************************/
-void b100_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
+void b100_impl::duc_get(const wax::obj &key_, wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
     case DSP_PROP_NAME:
-        val = std::string("USRP-B100 TX DSP");
+        val = str(boost::format("%s duc%d") % _iface->get_cname() % which_dsp);
         return;
 
     case DSP_PROP_OTHERS:
@@ -141,7 +168,7 @@ void b100_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_FREQ_SHIFT:
-        val = _duc_freq;
+        val = _dsp_impl->duc_freq[which_dsp];
         return;
 
     case DSP_PROP_CODEC_RATE:
@@ -149,7 +176,7 @@ void b100_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case DSP_PROP_HOST_RATE:
-        val = _clock_ctrl->get_fpga_clock_rate()/_duc_interp;
+        val = _clock_ctrl->get_fpga_clock_rate()/_dsp_impl->duc_interp[which_dsp];
         return;
 
     default: UHD_THROW_PROP_GET_ERROR();
@@ -159,7 +186,7 @@ void b100_impl::tx_duc_get(const wax::obj &key_, wax::obj &val){
 /***********************************************************************
  * TX DUC Set
  **********************************************************************/
-void b100_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
+void b100_impl::duc_set(const wax::obj &key_, const wax::obj &val, size_t which_dsp){
     named_prop_t key = named_prop_t::extract(key_);
 
     switch(key.as<dsp_prop_t>()){
@@ -169,19 +196,20 @@ void b100_impl::tx_duc_set(const wax::obj &key_, const wax::obj &val){
             _iface->poke32(B100_REG_DSP_TX_FREQ,
                 dsp_type1::calc_cordic_word_and_update(new_freq, _clock_ctrl->get_fpga_clock_rate())
             );
-            _duc_freq = new_freq; //shadow
+            _dsp_impl->duc_freq[which_dsp] = new_freq; //shadow
         }
         return;
 
     case DSP_PROP_HOST_RATE:{
-            _duc_interp = rint(_clock_ctrl->get_fpga_clock_rate()/val.as<double>());
+            _dsp_impl->duc_interp[which_dsp] = boost::math::iround(_clock_ctrl->get_fpga_clock_rate()/val.as<double>());
 
             //set the interpolation
-            _iface->poke32(B100_REG_DSP_TX_INTERP_RATE, dsp_type1::calc_cic_filter_word(_duc_interp));
+            _iface->poke32(B100_REG_DSP_TX_INTERP_RATE, dsp_type1::calc_cic_filter_word(_dsp_impl->duc_interp[which_dsp]));
 
             //set the scaling
-            _iface->poke32(B100_REG_DSP_TX_SCALE_IQ, dsp_type1::calc_iq_scale_word(_duc_interp));
+            _iface->poke32(B100_REG_DSP_TX_SCALE_IQ, dsp_type1::calc_iq_scale_word(_dsp_impl->duc_interp[which_dsp]));
         }
+        this->update_xport_channel_mapping(); //rate changed -> update
         return;
 
     default: UHD_THROW_PROP_SET_ERROR();

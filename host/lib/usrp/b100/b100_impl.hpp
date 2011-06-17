@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,15 @@
 
 #ifndef INCLUDED_B100_IMPL_HPP
 #define INCLUDED_B100_IMPL_HPP
+
+static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.bin";
+static const std::string     B100_FPGA_FILE_NAME = "usrp_b100_fpga.bin";
+static const boost::uint16_t B100_FW_COMPAT_NUM = 0x02;
+static const boost::uint16_t B100_FPGA_COMPAT_NUM = 0x04;
+static const size_t          B100_NUM_RX_DSPS = 2;
+static const size_t          B100_NUM_TX_DSPS = 1;
+static const boost::uint32_t B100_DSP_SID_BASE = 2; //leave room for other dsp (increments by 1)
+static const boost::uint32_t B100_ASYNC_SID = 1;
 
 /*!
  * Make a b100 dboard interface.
@@ -113,9 +122,8 @@ private:
     //handle io stuff
     uhd::transport::zero_copy_if::sptr _data_transport;
     UHD_PIMPL_DECL(io_impl) _io_impl;
-    void update_transport_channel_mapping(void);
+    void update_xport_channel_mapping(void);
     void io_init(void);
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
     void handle_overrun(size_t);
 
     //otw types
@@ -181,19 +189,20 @@ private:
     void tx_dboard_set(const wax::obj &, const wax::obj &);
     wax_obj_proxy::sptr _tx_dboard_proxy;
 
-    //rx ddc functions and settings
-    void rx_ddc_init(void);
-    void rx_ddc_get(const wax::obj &, wax::obj &);
-    void rx_ddc_set(const wax::obj &, const wax::obj &);
-    double _ddc_freq; size_t _ddc_decim;
-    wax_obj_proxy::sptr _rx_ddc_proxy;
+    //methods and shadows for the dsps
+    UHD_PIMPL_DECL(dsp_impl) _dsp_impl;
+    void dsp_init(void);
+    void issue_ddc_stream_cmd(const uhd::stream_cmd_t &, size_t);
 
-    //tx duc functions and settings
-    void tx_duc_init(void);
-    void tx_duc_get(const wax::obj &, wax::obj &);
-    void tx_duc_set(const wax::obj &, const wax::obj &);
-    double _duc_freq; size_t _duc_interp;
-    wax_obj_proxy::sptr _tx_duc_proxy;
+    //properties interface for ddc
+    void ddc_get(const wax::obj &, wax::obj &, size_t);
+    void ddc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsp_proxies;
+
+    //properties interface for duc
+    void duc_get(const wax::obj &, wax::obj &, size_t);
+    void duc_set(const wax::obj &, const wax::obj &, size_t);
+    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
 
     //transports
     b100_ctrl::sptr _fpga_ctrl;

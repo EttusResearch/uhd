@@ -126,7 +126,7 @@ void usrp_e100_impl::io_impl::recv_pirate_loop(
 
         //handle an rx data packet or inline message
         const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
-        const size_t rx_index = vrt_hdr[1] - E100_DSP_SID_BASE;
+        const size_t rx_index = uhd::wtohx(vrt_hdr[1]) - E100_DSP_SID_BASE;
         if (rx_index < E100_NUM_RX_DSPS){
             debug_print_buff("data", buff);
             recv_pirate_booty[rx_index]->push_with_wait(buff);

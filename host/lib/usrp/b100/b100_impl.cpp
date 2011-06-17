@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
         //extract the firmware path for the b100
         std::string b100_fw_image;
         try{
-            b100_fw_image = find_image_path(hint.get("fw", "usrp_b100_fw.ihx"));
+            b100_fw_image = find_image_path(hint.get("fw", B100_FW_FILE_NAME));
         }
         catch(...){
             UHD_MSG(warning) << boost::format(
@@ -132,7 +132,7 @@ static device::sptr b100_make(const device_addr_t &device_addr){
 
     //extract the FPGA path for the B100
     std::string b100_fpga_image = find_image_path(
-        device_addr.has_key("fpga")? device_addr["fpga"] : "usrp_b100_fpga.bin"
+        device_addr.has_key("fpga")? device_addr["fpga"] : B100_FPGA_FILE_NAME
     );
 
     //try to match the given device address with something on the USB bus
@@ -203,6 +203,14 @@ b100_impl::b100_impl(uhd::transport::usb_zero_copy::sptr data_transport,
                          const double master_clock_rate)
  : _data_transport(data_transport), _fx2_ctrl(fx2_ctrl)
 {
+    _recv_otw_type.width = 16;
+    _recv_otw_type.shift = 0;
+    _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
+    _send_otw_type.width = 16;
+    _send_otw_type.shift = 0;
+    _send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+
     //this is the handler object for FPGA control packets
     _fpga_ctrl = b100_ctrl::make(ctrl_transport);
 
@@ -224,10 +232,7 @@ b100_impl::b100_impl(uhd::transport::usb_zero_copy::sptr data_transport,
     dboard_init();
 
     //initialize the dsps
-    rx_ddc_init();
-
-    //initialize the dsps
-    tx_duc_init();
+    dsp_init();
 
     //init the subdev specs
     this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());

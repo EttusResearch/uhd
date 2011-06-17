@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2011 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "b100_iface.hpp"
+#include "b100_impl.hpp"
 #include "usrp_commands.h"
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -38,8 +38,6 @@ using namespace uhd::transport;
  * Constants
  **********************************************************************/
 static const bool iface_debug = true;
-static const boost::uint16_t USRP_B_FW_COMPAT_NUM = 0x02;
-static const boost::uint16_t USRP_B_FPGA_COMPAT_NUM = 0x04;
 
 /***********************************************************************
  * I2C + FX2 implementation wrapper
@@ -117,21 +115,21 @@ public:
         const boost::uint16_t fw_compat_num = _fx2_ctrl->usrp_control_read(
             VRQ_FW_COMPAT, 0, 0, data, sizeof(data)
         );
-        if (fw_compat_num != USRP_B_FW_COMPAT_NUM){
+        if (fw_compat_num != B100_FW_COMPAT_NUM){
             throw uhd::runtime_error(str(boost::format(
                 "Expected firmware compatibility number 0x%x, but got 0x%x:\n"
                 "The firmware build is not compatible with the host code build."
-            ) % USRP_B_FW_COMPAT_NUM % fw_compat_num));
+            ) % B100_FW_COMPAT_NUM % fw_compat_num));
         }
     }
 
     void check_fpga_compat(void){
         const boost::uint16_t fpga_compat_num = this->peek16(B100_REG_MISC_COMPAT);
-        if (fpga_compat_num != USRP_B_FPGA_COMPAT_NUM){
+        if (fpga_compat_num != B100_FPGA_COMPAT_NUM){
             throw uhd::runtime_error(str(boost::format(
                 "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
                 "The FPGA build is not compatible with the host code build."
-            ) % USRP_B_FPGA_COMPAT_NUM % fpga_compat_num));
+            ) % B100_FPGA_COMPAT_NUM % fpga_compat_num));
         }
     }
 

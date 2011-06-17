@@ -17,7 +17,6 @@
 // Slave pointers
 
 #define B100_REG_SLAVE(n) ((n)<<7)
-#define B100_REG_SR_ADDR(n) ((B100_REG_SETTINGS_BASE) + (4*(n)))
 
 /////////////////////////////////////////////////////
 // Slave 0 -- Misc Regs
@@ -164,86 +163,113 @@
 // Output-only, no readback, 64 registers total
 //  Each register must be written 32 bits at a time
 //  First the address xxx_xx00 and then xxx_xx10
+// 64 total regs in address space
+#define B100_SR_RX_CTRL0 0       // 9 regs (+0 to +8)
+#define B100_SR_RX_DSP0 10       // 4 regs (+0 to +3)
+#define B100_SR_RX_CTRL1 16      // 9 regs (+0 to +8)
+#define B100_SR_RX_DSP1 26       // 4 regs (+0 to +3)
+#define B100_SR_TX_CTRL 32       // 4 regs (+0 to +3)
+#define B100_SR_TX_DSP 38        // 3 regs (+0 to +2)
 
-#define B100_REG_SETTINGS_BASE_ADDR(n) (B100_REG_SLAVE(8) + (4*(n)))
+#define B100_SR_TIME64 42        // 6 regs (+0 to +5)
+#define B100_SR_RX_FRONT 48      // 5 regs (+0 to +4)
+#define B100_SR_TX_FRONT 54      // 5 regs (+0 to +4)
 
-#define B100_REG_SR_MISC_TEST32        B100_REG_SETTINGS_BASE_ADDR(52)
+#define B100_SR_REG_TEST32 60    // 1 reg
+#define B100_SR_CLEAR_RX_FIFO 61 // 1 reg
+#define B100_SR_CLEAR_TX_FIFO 62 // 1 reg
+#define B100_SR_GLOBAL_RESET 63  // 1 reg
+
+#define B100_REG_SR_ADDR(n) (B100_REG_SLAVE(8) + (4*(n)))
+
+#define B100_REG_SR_MISC_TEST32        B100_REG_SR_ADDR(B100_SR_REG_TEST32)
+
+/////////////////////////////////////////////////
+// Magic reset regs
+////////////////////////////////////////////////
+#define B100_REG_CLEAR_RX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
+#define B100_REG_CLEAR_TX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
+#define B100_REG_GLOBAL_RESET       B100_REG_SR_ADDR(B100_SR_GLOBAL_RESET)
 
 /////////////////////////////////////////////////
 // DSP RX Regs
 ////////////////////////////////////////////////
-#define B100_REG_DSP_RX_ADDR(n)      (B100_REG_SETTINGS_BASE_ADDR(16) + (4*(n)))
-#define B100_REG_DSP_RX_FREQ         B100_REG_DSP_RX_ADDR(0)
-#define B100_REG_DSP_RX_SCALE_IQ     B100_REG_DSP_RX_ADDR(1)  // {scale_i,scale_q}
-#define B100_REG_DSP_RX_DECIM_RATE   B100_REG_DSP_RX_ADDR(2)  // hb and decim rate
-#define B100_REG_DSP_RX_DCOFFSET_I   B100_REG_DSP_RX_ADDR(3) // Bit 31 high sets fixed offset mode, using lower 14 bits, // otherwise it is automatic
-#define B100_REG_DSP_RX_DCOFFSET_Q   B100_REG_DSP_RX_ADDR(4) // Bit 31 high sets fixed offset mode, using lower 14 bits
-#define B100_REG_DSP_RX_MUX          B100_REG_DSP_RX_ADDR(5)
+#define B100_REG_DSP_RX_HELPER(which, offset) ((which == 0)? \
+    (B100_REG_SR_ADDR(B100_SR_RX_DSP0 + offset)) : \
+    (B100_REG_SR_ADDR(B100_SR_RX_DSP1 + offset)))
+
+#define B100_REG_DSP_RX_FREQ(which)       B100_REG_DSP_RX_HELPER(which, 0)
+#define B100_REG_DSP_RX_DECIM(which)      B100_REG_DSP_RX_HELPER(which, 2)
+#define B100_REG_DSP_RX_MUX(which)        B100_REG_DSP_RX_HELPER(which, 3)
+
+#define B100_FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
+#define B100_FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 ///////////////////////////////////////////////////
-// VITA RX CTRL regs
+// RX CTRL regs
 ///////////////////////////////////////////////////
-// The following 3 are logically a single command register.
-// They are clocked into the underlying fifo when time_ticks is written.
-#define B100_REG_CTRL_RX_ADDR(n)           (B100_REG_SETTINGS_BASE_ADDR(0) + (4*(n)))
-#define B100_REG_CTRL_RX_STREAM_CMD        B100_REG_CTRL_RX_ADDR(0) // {now, chain, num_samples(30)
-#define B100_REG_CTRL_RX_TIME_SECS         B100_REG_CTRL_RX_ADDR(1)
-#define B100_REG_CTRL_RX_TIME_TICKS        B100_REG_CTRL_RX_ADDR(2)
-#define B100_REG_CTRL_RX_CLEAR_OVERRUN     B100_REG_CTRL_RX_ADDR(3) // write anything to clear overrun
-#define B100_REG_CTRL_RX_VRT_HEADER        B100_REG_CTRL_RX_ADDR(4) // word 0 of packet.  FPGA fills in packet counter
-#define B100_REG_CTRL_RX_VRT_STREAM_ID     B100_REG_CTRL_RX_ADDR(5) // word 1 of packet.
-#define B100_REG_CTRL_RX_VRT_TRAILER       B100_REG_CTRL_RX_ADDR(6)
-#define B100_REG_CTRL_RX_NSAMPS_PER_PKT    B100_REG_CTRL_RX_ADDR(7)
-#define B100_REG_CTRL_RX_NCHANNELS         B100_REG_CTRL_RX_ADDR(8) // 1 in basic case, up to 4 for vector sources
+#define B100_REG_RX_CTRL_HELPER(which, offset) ((which == 0)? \
+    (B100_REG_SR_ADDR(B100_SR_RX_CTRL0 + offset)) : \
+    (B100_REG_SR_ADDR(B100_SR_RX_CTRL1 + offset)))
+
+#define B100_REG_RX_CTRL_STREAM_CMD(which)     B100_REG_RX_CTRL_HELPER(which, 0)
+#define B100_REG_RX_CTRL_TIME_SECS(which)      B100_REG_RX_CTRL_HELPER(which, 1)
+#define B100_REG_RX_CTRL_TIME_TICKS(which)     B100_REG_RX_CTRL_HELPER(which, 2)
+#define B100_REG_RX_CTRL_CLEAR(which)          B100_REG_RX_CTRL_HELPER(which, 3)
+#define B100_REG_RX_CTRL_VRT_HDR(which)        B100_REG_RX_CTRL_HELPER(which, 4)
+#define B100_REG_RX_CTRL_VRT_SID(which)        B100_REG_RX_CTRL_HELPER(which, 5)
+#define B100_REG_RX_CTRL_VRT_TLR(which)        B100_REG_RX_CTRL_HELPER(which, 6)
+#define B100_REG_RX_CTRL_NSAMPS_PP(which)      B100_REG_RX_CTRL_HELPER(which, 7)
+#define B100_REG_RX_CTRL_NCHANNELS(which)      B100_REG_RX_CTRL_HELPER(which, 8)
+
+/////////////////////////////////////////////////
+// RX FE
+////////////////////////////////////////////////
+#define B100_REG_RX_FE_SWAP_IQ             B100_REG_SR_ADDR(B100_SR_RX_FRONT + 0) //lower bit
+#define B100_REG_RX_FE_MAG_CORRECTION      B100_REG_SR_ADDR(B100_SR_RX_FRONT + 1) //18 bits
+#define B100_REG_RX_FE_PHASE_CORRECTION    B100_REG_SR_ADDR(B100_SR_RX_FRONT + 2) //18 bits
+#define B100_REG_RX_FE_OFFSET_I            B100_REG_SR_ADDR(B100_SR_RX_FRONT + 3) //18 bits
+#define B100_REG_RX_FE_OFFSET_Q            B100_REG_SR_ADDR(B100_SR_RX_FRONT + 4) //18 bits
 
 /////////////////////////////////////////////////
 // DSP TX Regs
 ////////////////////////////////////////////////
-#define B100_REG_DSP_TX_ADDR(n)      (B100_REG_SETTINGS_BASE_ADDR(32) + (4*(n)))
-#define B100_REG_DSP_TX_FREQ         B100_REG_DSP_TX_ADDR(0)
-#define B100_REG_DSP_TX_SCALE_IQ     B100_REG_DSP_TX_ADDR(1) // {scale_i,scale_q}
-#define B100_REG_DSP_TX_INTERP_RATE  B100_REG_DSP_TX_ADDR(2)
-#define B100_REG_DSP_TX_UNUSED       B100_REG_DSP_TX_ADDR(3)
-#define B100_REG_DSP_TX_MUX          B100_REG_DSP_TX_ADDR(4)
+#define B100_REG_DSP_TX_FREQ          B100_REG_SR_ADDR(B100_SR_TX_DSP + 0)
+#define B100_REG_DSP_TX_SCALE_IQ      B100_REG_SR_ADDR(B100_SR_TX_DSP + 1)
+#define B100_REG_DSP_TX_INTERP_RATE   B100_REG_SR_ADDR(B100_SR_TX_DSP + 2)
+
+///////////////////////////////////////////////////
+// TX CTRL regs
+///////////////////////////////////////////////////
+#define B100_REG_TX_CTRL_NUM_CHAN       B100_REG_SR_ADDR(B100_SR_TX_CTRL + 0)
+#define B100_REG_TX_CTRL_CLEAR_STATE    B100_REG_SR_ADDR(B100_SR_TX_CTRL + 1)
+#define B100_REG_TX_CTRL_REPORT_SID     B100_REG_SR_ADDR(B100_SR_TX_CTRL + 2)
+#define B100_REG_TX_CTRL_POLICY         B100_REG_SR_ADDR(B100_SR_TX_CTRL + 3)
+#define B100_REG_TX_CTRL_CYCLES_PER_UP  B100_REG_SR_ADDR(B100_SR_TX_CTRL + 4)
+#define B100_REG_TX_CTRL_PACKETS_PER_UP B100_REG_SR_ADDR(B100_SR_TX_CTRL + 5)
+
+#define B100_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
+#define B100_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
+#define B100_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
 
 /////////////////////////////////////////////////
-// VITA TX CTRL regs
+// TX FE
 ////////////////////////////////////////////////
-#define B100_REG_CTRL_TX_ADDR(n)           (B100_REG_SETTINGS_BASE_ADDR(24) + (4*(n)))
-#define B100_REG_CTRL_TX_NCHANNELS         B100_REG_CTRL_TX_ADDR(0)
-#define B100_REG_CTRL_TX_CLEAR_UNDERRUN    B100_REG_CTRL_TX_ADDR(1)
-#define B100_REG_CTRL_TX_REPORT_SID        B100_REG_CTRL_TX_ADDR(2)
-#define B100_REG_CTRL_TX_POLICY            B100_REG_CTRL_TX_ADDR(3)
-
-#define B100_FLAG_CTRL_TX_POLICY_WAIT          (0x1 << 0)
-#define B100_FLAG_CTRL_TX_POLICY_NEXT_PACKET   (0x1 << 1)
-#define B100_FLAG_CTRL_TX_POLICY_NEXT_BURST    (0x1 << 2)
+#define B100_REG_TX_FE_DC_OFFSET_I         B100_REG_SR_ADDR(B100_SR_TX_FRONT + 0) //24 bits
+#define B100_REG_TX_FE_DC_OFFSET_Q         B100_REG_SR_ADDR(B100_SR_TX_FRONT + 1) //24 bits
+#define B100_REG_TX_FE_MAC_CORRECTION      B100_REG_SR_ADDR(B100_SR_TX_FRONT + 2) //18 bits
+#define B100_REG_TX_FE_PHASE_CORRECTION    B100_REG_SR_ADDR(B100_SR_TX_FRONT + 3) //18 bits
+#define B100_REG_TX_FE_MUX                 B100_REG_SR_ADDR(B100_SR_TX_FRONT + 4) //8 bits (std output = 0x10, reversed = 0x01)
 
 /////////////////////////////////////////////////
 // VITA49 64 bit time (write only)
 ////////////////////////////////////////////////
-  /*!
-   * \brief Time 64 flags
-   *
-   * <pre>
-   *
-   *    3                   2                   1
-   *  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
-   * +-----------------------------------------------------------+-+-+
-   * |                                                           |S|P|
-   * +-----------------------------------------------------------+-+-+
-   *
-   * P - PPS edge selection (0=negedge, 1=posedge, default=0)
-   * S - Source (0=sma, 1=mimo, 0=default)
-   *
-   * </pre>
-   */
-#define B100_REG_TIME64_ADDR(n)     (B100_REG_SETTINGS_BASE_ADDR(40) + (4*(n)))
-#define B100_REG_TIME64_SECS  B100_REG_TIME64_ADDR(0)  // value to set absolute secs to on next PPS
-#define B100_REG_TIME64_TICKS B100_REG_TIME64_ADDR(1)  // value to set absolute ticks to on next PPS
-#define B100_REG_TIME64_FLAGS B100_REG_TIME64_ADDR(2)  // flags - see chart above
-#define B100_REG_TIME64_IMM   B100_REG_TIME64_ADDR(3)  // set immediate (0=latch on next pps, 1=latch immediate, default=0)
-#define B100_REG_TIME64_TPS   B100_REG_TIME64_ADDR(4)  // clock ticks per second (counter rollover)
+#define B100_REG_TIME64_SECS      B100_REG_SR_ADDR(B100_SR_TIME64 + 0)
+#define B100_REG_TIME64_TICKS     B100_REG_SR_ADDR(B100_SR_TIME64 + 1)
+#define B100_REG_TIME64_FLAGS     B100_REG_SR_ADDR(B100_SR_TIME64 + 2)
+#define B100_REG_TIME64_IMM       B100_REG_SR_ADDR(B100_SR_TIME64 + 3)
+#define B100_REG_TIME64_TPS       B100_REG_SR_ADDR(B100_SR_TIME64 + 4)
+#define B100_REG_TIME64_MIMO_SYNC B100_REG_SR_ADDR(B100_SR_TIME64 + 5)
 
 //pps flags (see above)
 #define B100_FLAG_TIME64_PPS_NEGEDGE (0 << 0)
@@ -253,12 +279,6 @@
 
 #define B100_FLAG_TIME64_LATCH_NOW 1
 #define B100_FLAG_TIME64_LATCH_NEXT_PPS 0
-
-#define B100_REG_CLEAR_RX_FIFO     B100_REG_SETTINGS_BASE_ADDR(48)
-#define B100_REG_CLEAR_TX_FIFO     B100_REG_SETTINGS_BASE_ADDR(49)
-
-#define B100_REG_GLOBAL_RESET      B100_REG_SETTINGS_BASE_ADDR(50)
-#define B100_REG_TEST32            B100_REG_SETTINGS_BASE_ADDR(52)
 
 #endif
 
