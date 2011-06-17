@@ -24,6 +24,7 @@ SET(manual_sources
     build.rst
     coding.rst
     dboards.rst
+    gpsdo.rst
     general.rst
     images.rst
     sync.rst
