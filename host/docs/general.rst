@@ -107,10 +107,10 @@ For the most part, UHD is thread-safe.
 Please observe the following limitations:
 
 **Fast-path thread requirements:**
-It is safe to call send() and recv() simultaneously. However,
-it is not safe to call recv() simultaneously from different thread contexts.
-The same rule applies for recv(), send(), and recv_async_msg().
-One thread context per fast-path device method at a time.
+There are three fast-path methods for a device: send(), recv(), and recv_async_msg().
+All three methods are thread-safe and can be called from different thread contexts.
+For performance, the user should call each method from a separate thread context.
+These methods can also be used in a non-blocking fashion by using a timeout of zero.
 
 **Slow-path thread requirements:**
 It is safe to change multiple settings simultaneously. However,

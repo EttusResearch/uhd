@@ -222,7 +222,6 @@ public:
             }
         }
         //shutdown the threads
-        _threads_running = false;
         _thread_group.interrupt_all();
         _thread_group.join_all();
     }
@@ -277,15 +276,13 @@ private:
 
     //! event handler threads
     boost::thread_group _thread_group;
-    bool _threads_running;
 
     void run_event_loop(boost::barrier &spawn_barrier){
-        _threads_running = true;
         spawn_barrier.wait();
         set_thread_priority_safe();
         libusb_context *context = libusb::session::get_global_session()->get_context();
         try{
-            while(_threads_running){
+            while (not boost::this_thread::interruption_requested()){
                 timeval tv;
                 tv.tv_sec = 0;
                 tv.tv_usec = 100000; //100ms

@@ -87,7 +87,9 @@ public:
             _ads62p44_regs.power_down = ads62p44_regs_t::POWER_DOWN_NORMAL;
             _ads62p44_regs.output_interface = ads62p44_regs_t::OUTPUT_INTERFACE_LVDS;
             _ads62p44_regs.lvds_current = ads62p44_regs_t::LVDS_CURRENT_2_5MA;
+            _ads62p44_regs.lvds_data_term = ads62p44_regs_t::LVDS_DATA_TERM_100;
             this->send_ads62p44_reg(0x11);
+            this->send_ads62p44_reg(0x12);
             this->send_ads62p44_reg(0x14);
             this->set_rx_analog_gain(1);
             break;
