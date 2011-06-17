@@ -63,7 +63,8 @@ module u1plus_core
 
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
-   reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test, xfer_rate;
+   reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test;
+   wire [15:0] 	xfer_rate = 0;
    wire [7:0] 	test_rate;
    wire [3:0] 	test_ctrl;
    
@@ -108,7 +109,6 @@ module u1plus_core
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy, 
 		 tx_err_src_rdy, tx_err_dst_rdy;
 
-   wire 	 bus_error;
    wire 	 clear_tx, clear_rx;
    
    setting_reg #(.my_addr(SR_CLEAR_RX_FIFO), .width(1)) sr_clear_rx
@@ -332,8 +332,8 @@ module u1plus_core
 	     reg_test <= s0_dat_mosi;
 	   REG_RX_FRAMELEN :
 	     frames_per_packet <= s0_dat_mosi[7:0];
-	   REG_XFER_RATE :
-	     xfer_rate <= s0_dat_mosi;
+	   //REG_XFER_RATE :
+	     //xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
 
    assign test_ctrl = xfer_rate[11:8];
@@ -355,14 +355,16 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 1, UART
    //    depth of 3 is 128 entries, clkdiv of 278 gives 230.4k with a 64 MHz system clock
-   
+
+/*   
    simple_uart #(.TXDEPTH(3),.RXDEPTH(3), .CLKDIV_DEFAULT(278)) uart 
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .we_i(s1_we),.stb_i(s1_stb),.cyc_i(s1_cyc),.ack_o(s1_ack),
       .adr_i(s1_adr[3:1]),.dat_i({16'd0,s1_dat_mosi}),.dat_o(s1_dat_miso),
       .rx_int_o(),.tx_int_o(),
       .tx_o(debug_txd),.rx_i(debug_rxd),.baud_o());
-
+*/
+   
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 2, SPI
 
@@ -456,9 +458,8 @@ module u1plus_core
    // Debug circuitry
 
    assign debug_clk = { gpif_clk, clk_fpga };
-   assign debug = debug0;
+   assign debug = 0;
    assign debug_gpio_0 = 0;
    assign debug_gpio_1 = 0;
-   //assign {io_tx,io_rx} = {debug1};
    
 endmodule // u1plus_core
