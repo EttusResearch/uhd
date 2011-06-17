@@ -102,22 +102,11 @@ and the user can also parse this string to determine GPS time:
     usrp->set_time_next_pps(uhd::time_spec_t(gps_time+1));
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Method 3 - query the gps_time sensor
+Method 3 - internal GPSDO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This is a variant of method 2 for USRPs with internal GPSDOs.
-The user can query the gps_time sensor to wait for the NMEA string.
-
-::
-
-    //wait for NMEA string from internal GPSDO
-    usrp->get_mboard_sensor("gps_time");
-    usrp->set_time_next_pps(uhd::time_spec_t(0.0));
-
-    -- OR --
-
-    //wait for the NMEA string and set GPS time
-    const time_t gps_time = usrp->get_mboard_sensor("gps_time").to_int();
-    usrp->set_time_next_pps(uhd::time_spec_t(gps_time+1));
+USRPs with internal GPSDOs properly configured will automatically
+configure themselves to set the VITA time to current UTC time. See the
+GPSDO application note for more details.
 
 ------------------------------------------------------------------------
 Synchronizing channel phase

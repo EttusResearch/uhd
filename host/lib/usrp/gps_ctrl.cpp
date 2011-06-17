@@ -184,6 +184,24 @@ public:
     return (gps_type != GPS_TYPE_NONE);
   }
 
+  bool locked(void) {
+      std::string reply = get_nmea("GPGGA");
+      if(reply.size() <= 1) return false;
+
+      boost::tokenizer<boost::escaped_list_separator<char> > tok(reply);
+      std::vector<std::string> toked;
+
+      tok.assign(reply);
+      toked.assign(tok.begin(), tok.end());
+
+      if(toked.size() != 15) {
+        UHD_MSG(error) << "gps_locked: invalid GPGGA response";
+        return false;
+      }
+
+      return (toked[6] != "0"); //sorry, 2d fixes don't count =D
+  }
+
   //return a list of supported sensors
   std::vector<std::string> get_sensors(void) {
     std::vector<std::string> ret;
@@ -191,6 +209,7 @@ public:
     ret.push_back("gps_gprmc");
     ret.push_back("gps_gpgsa");
     ret.push_back("gps_time");
+    ret.push_back("gps_locked");
     return ret;
   }
 
@@ -205,6 +224,9 @@ public:
     }
     else if(key == "gps_time") {
         return sensor_value_t("GPS epoch time", int(get_epoch_time()), "seconds");
+    }
+    else if(key == "gps_locked") {
+        return sensor_value_t("GPS lock status", locked(), "locked", "unlocked");
     }
     else {
         UHD_THROW_PROP_GET_ERROR();

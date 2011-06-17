@@ -349,9 +349,8 @@ Test the PPS input with the following app:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Internal GPSDO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-USRP-N2XX models can have an optional internal GPSDO.
-To use the GPSDO with UHD, you must burn an EEPROM setting
-so that UHD knows that the internal GPSDO was installed.
+Please see the GPSDO application note for information on configuring and
+using the internal GPSDO.
 
 **Installation instructions:**
 

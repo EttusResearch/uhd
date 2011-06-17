@@ -149,7 +149,13 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
 
     //init the clock config
-    _clock_config = clock_config_t::internal();
+    if(_iface->mb_eeprom["gpsdo"] == "internal" or
+       _iface->mb_eeprom["gpsdo"] == "external") {
+        _clock_config = clock_config_t::external();
+    }
+    else {
+        _clock_config = clock_config_t::internal();
+    }
     update_clock_config();
 
     //init the codec before the dboard
@@ -176,9 +182,15 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //------------------------------------------------------------------
 
     //initialize VITA time to GPS time
-    if(_gps_ctrl.get() and _gps_ctrl->gps_detected()) {
-        UHD_MSG(status) << "Setting device time to GPS time...\n";
-        set_time_spec(time_spec_t(double(_gps_ctrl->get_sensor("gps_time").to_int()+1)), false);
+    if( _gps_ctrl.get()
+    and _gps_ctrl->gps_detected()) {
+        if(_gps_ctrl->get_sensor("gps_locked").to_bool()) {
+            UHD_MSG(status) << "Setting device time to GPS time...\n";
+            set_time_spec(time_spec_t(double(_gps_ctrl->get_sensor("gps_time").to_int()+1)), false);
+        }
+        else {
+            UHD_MSG(status) << "GPS not locked to satellites. Not initializing VITA time.";
+        }
     }
 }
 
