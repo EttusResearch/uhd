@@ -199,7 +199,7 @@ public:
         return false;
       }
 
-      return (toked[6] != "0"); //sorry, 2d fixes don't count =D
+      return (toked[6] != "0");
   }
 
   //return a list of supported sensors

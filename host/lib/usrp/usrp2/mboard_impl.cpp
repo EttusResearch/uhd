@@ -184,13 +184,8 @@ usrp2_mboard_impl::usrp2_mboard_impl(
     //initialize VITA time to GPS time
     if( _gps_ctrl.get()
     and _gps_ctrl->gps_detected()) {
-        if(_gps_ctrl->get_sensor("gps_locked").to_bool()) {
-            UHD_MSG(status) << "Setting device time to GPS time...\n";
-            set_time_spec(time_spec_t(double(_gps_ctrl->get_sensor("gps_time").to_int()+1)), false);
-        }
-        else {
-            UHD_MSG(status) << "GPS not locked to satellites. Not initializing VITA time.";
-        }
+        UHD_MSG(status) << "Setting device time to GPS time...\n";
+        set_time_spec(time_spec_t(double(_gps_ctrl->get_sensor("gps_time").to_int()+1)), false);
     }
 }
 
