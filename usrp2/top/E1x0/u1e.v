@@ -94,7 +94,8 @@ module u1e
    assign cgen_sclk = overo_gpio65;
    assign cgen_sen_b = overo_gpio128;
    assign cgen_mosi = overo_gpio145;
-   assign overo_gpio147 = cgen_miso;
+   wire proc_int; //re-purpose gpio for interrupt when we are not using aux spi
+   assign overo_gpio147 = (cgen_sen_b == 1'b0)? cgen_miso : proc_int;
 
    wire _cgen_sen_b;
    //assign cgen_sen_b = _cgen_sen_b; //replaced by aux spi
@@ -155,7 +156,7 @@ module u1e
 		     .io_tx(io_tx), .io_rx(io_rx),
 		     .tx_i(tx_i), .tx_q(tx_q), 
 		     .rx_i(DA), .rx_q(DB),
-		     .pps_in(PPS_IN) );
+		     .pps_in(PPS_IN), .proc_int(proc_int) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Local Debug

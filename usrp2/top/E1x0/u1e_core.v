@@ -36,7 +36,7 @@ module u1e_core
    output [13:0] tx_i, output [13:0] tx_q, 
    input [11:0] rx_i, input [11:0] rx_q, 
    
-   input pps_in
+   input pps_in, output proc_int
    );
 
    localparam TXFIFOSIZE = 13;
@@ -47,6 +47,7 @@ module u1e_core
    localparam SR_RX_DSP0 = 10;       // 4 regs (+0 to +3)
    localparam SR_RX_CTRL1 = 16;      // 9 regs (+0 to +8)
    localparam SR_RX_DSP1 = 26;       // 4 regs (+0 to +3)
+   localparam SR_ERR_CTRL = 30;      // 1 reg
    localparam SR_TX_CTRL = 32;       // 4 regs (+0 to +3)
    localparam SR_TX_DSP = 38;        // 3 regs (+0 to +2)
 
@@ -205,21 +206,12 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////
    // RX Stream muxing
 
-   wire [35:0] 	 vita_rx_data;
-   wire 	 vita_rx_src_rdy, vita_rx_dst_rdy;
-
    fifo36_mux #(.prio(0)) mux_data_streams
      (.clk(wb_clk), .reset(wb_rst), .clear(0),
       .data0_i(vita_rx_data0), .src0_rdy_i(vita_rx_src_rdy0), .dst0_rdy_o(vita_rx_dst_rdy0),
       .data1_i(vita_rx_data1), .src1_rdy_i(vita_rx_src_rdy1), .dst1_rdy_o(vita_rx_dst_rdy1),
-      .data_o(vita_rx_data), .src_rdy_o(vita_rx_src_rdy), .dst_rdy_i(vita_rx_dst_rdy));
-   
-   fifo36_mux #(.prio(0)) mux_txerr_stream
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
-      .data0_i(vita_rx_data), .src0_rdy_i(vita_rx_src_rdy), .dst0_rdy_o(vita_rx_dst_rdy),
-      .data1_i(tx_err_data), .src1_rdy_i(tx_err_src_rdy), .dst1_rdy_o(tx_err_dst_rdy),
       .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-   
+
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
@@ -311,7 +303,7 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s5_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
+   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -392,7 +384,7 @@ module u1e_core
    wire 	scl_pad_i, scl_pad_o, scl_pad_oen_o, sda_pad_i, sda_pad_o, sda_pad_oen_o;
    i2c_master_top #(.ARST_LVL(1)) i2c 
      (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.arst_i(1'b0), 
-      .wb_adr_i(s3_adr[4:2]),.wb_dat_i(s3_dat_mosi[7:0]),.wb_dat_o(s3_dat_miso[7:0]),
+      .wb_adr_i(s3_adr[3:1]),.wb_dat_i(s3_dat_mosi[7:0]),.wb_dat_o(s3_dat_miso[7:0]),
       .wb_we_i(s3_we),.wb_stb_i(s3_stb),.wb_cyc_i(s3_cyc),
       .wb_ack_o(s3_ack),.wb_inta_o(),
       .scl_pad_i(scl_pad_i),.scl_pad_o(scl_pad_o),.scl_padoen_o(scl_pad_oen_o),
@@ -417,6 +409,45 @@ module u1e_core
 		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
 
+   ////////////////////////////////////////////////////////////////////////////
+   // FIFO to WB slave for async messages - Slave #5
+
+   //signals between fifo and buffer module
+   wire [35:0] _tx_err_data;
+   wire _tx_err_src_rdy, _tx_err_dst_rdy;
+
+   fifo_cascade #(.WIDTH(36), .SIZE(9/*512 lines plenty for short pkts*/)) err_fifo(
+        .clk(wb_clk), .reset(wb_rst), .clear(wb_rst),
+        .datain(tx_err_data),   .src_rdy_i(tx_err_src_rdy),   .dst_rdy_o(tx_err_dst_rdy),
+        .dataout(_tx_err_data), .src_rdy_o(_tx_err_src_rdy),  .dst_rdy_i(_tx_err_dst_rdy)
+   );
+
+   wire [31:0] err_status, err_data32;
+   //the buffer is 32 bits, but the data is 16, so mux based on the addr bit
+   assign s5_dat_miso = (s5_adr[1] == 1'b0)? err_data32[15:0] : err_data32[31:16];
+
+   buffer_int2 #(.BASE(SR_ERR_CTRL), .BUF_SIZE(5)) fifo_to_wb(
+        .clk(wb_clk), .rst(wb_rst),
+        .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+        .status(err_status),
+        // Wishbone interface to RAM
+        .wb_clk_i(wb_clk), .wb_rst_i(wb_rst),
+        .wb_we_i(s5_we),   .wb_stb_i(s5_stb),
+        .wb_adr_i(s5_adr), .wb_dat_i({16'b0, s5_dat_mosi}),
+        .wb_dat_o(err_data32), .wb_ack_o(s5_ack),
+        // Write FIFO Interface
+        .wr_data_i(_tx_err_data), .wr_ready_i(_tx_err_src_rdy), .wr_ready_o(_tx_err_dst_rdy),
+        // Read FIFO Interface
+        .rd_data_o(), .rd_ready_o(), .rd_ready_i(1'b0)
+    );
+
+   ////////////////////////////////////////////////////////////////////////////
+   // Interrupts
+
+   //the gpio interrupts on rising edge, so we just feed it a clock
+   //to keep it constantly interrupting until the event is cleared
+   assign proc_int = ((|err_status[1:0]) == 1'b1)? wb_clk : 1'b0;
+
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #8 + 9
 
@@ -425,7 +456,7 @@ module u1e_core
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
-   
+
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller -- Slave #6
 
@@ -451,7 +482,7 @@ module u1e_core
 
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
-      .word04(reg_test32),              .word05(32'b0),
+      .word04(reg_test32),              .word05(err_status),
       .word06(32'b0),                   .word07(32'b0),
       .word08(32'b0),                   .word09(32'b0),
       .word10(32'b0),                   .word11(32'b0),
