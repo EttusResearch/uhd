@@ -249,7 +249,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     //extract the user's requested MTU size or default
     mtu_result_t user_mtu;
     user_mtu.recv_mtu = size_t(device_addr.cast<double>("recv_frame_size", udp_simple::mtu));
-    user_mtu.send_mtu = size_t(device_addr.cast<double>("recv_frame_size", udp_simple::mtu));
+    user_mtu.send_mtu = size_t(device_addr.cast<double>("send_frame_size", udp_simple::mtu));
 
     try{
         //calculate the minimum send and recv mtu of all devices
