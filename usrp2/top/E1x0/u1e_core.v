@@ -444,9 +444,7 @@ module u1e_core
    ////////////////////////////////////////////////////////////////////////////
    // Interrupts
 
-   //the gpio interrupts on rising edge, so we just feed it a clock
-   //to keep it constantly interrupting until the event is cleared
-   assign proc_int = ((|err_status[1:0]) == 1'b1)? wb_clk : 1'b0;
+   assign proc_int = (|err_status[1:0]);
 
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #8 + 9
