@@ -282,6 +282,7 @@ public:
 
         boost::uint16_t ctrl = SPI_CTRL_ASS | (SPI_CTRL_CHAR_LEN_MASK & num_bits) | edge_flags;
 
+        spi_wait();
         poke16(B100_REG_SPI_DIV, 0x0001); // = fpga_clk / 4
         poke32(B100_REG_SPI_SS, which_slave & 0xFFFF);
         poke32(B100_REG_SPI_TXRX0, bits);
