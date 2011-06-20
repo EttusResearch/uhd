@@ -126,11 +126,9 @@ void benchmark_tx_rate_async_helper(uhd::usrp::multi_usrp::sptr usrp){
     //setup variables and allocate buffer
     uhd::async_metadata_t async_md;
 
-    while (true){
+    while (not boost::this_thread::interruption_requested()){
 
-        if (not usrp->get_device()->recv_async_msg(async_md)){
-            if (boost::this_thread::interruption_requested()) return;
-        }
+        if (not usrp->get_device()->recv_async_msg(async_md)) continue;
 
         //handle the error codes
         switch(async_md.event_code){
