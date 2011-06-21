@@ -14,6 +14,7 @@ The methods of loading images into the device varies among devices:
 * **USRP2:** The user must manually write the images onto the USRP2 SD card.
 * **USRP-N Series:** The user must manually transfer the images over ethernet.
 * **USRP-E Series:** The host code will automatically load the FPGA at runtime.
+* **USRP-B Series:** The host code will automatically load the FPGA at runtime.
 
 ------------------------------------------------------------------------
 Pre-built images

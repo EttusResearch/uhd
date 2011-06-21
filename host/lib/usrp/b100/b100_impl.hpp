@@ -34,7 +34,7 @@
 #ifndef INCLUDED_B100_IMPL_HPP
 #define INCLUDED_B100_IMPL_HPP
 
-static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.bin";
+static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.ihx";
 static const std::string     B100_FPGA_FILE_NAME = "usrp_b100_fpga.bin";
 static const boost::uint16_t B100_FW_COMPAT_NUM = 0x02;
 static const boost::uint16_t B100_FPGA_COMPAT_NUM = 0x05;

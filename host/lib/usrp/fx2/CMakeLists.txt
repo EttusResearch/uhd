@@ -16,6 +16,8 @@
 #
 
 ########################################################################
+# This file included, use CMake directory variables
+########################################################################
 IF(ENABLE_USB)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
 
