@@ -33,7 +33,7 @@
 
 uhd::transport::zero_copy_if::sptr e100_make_mmap_zero_copy(e100_iface::sptr iface);
 
-static const std::string     E100_FPGA_FILE_NAME = "usrp_e100_fpga5.bin";
+static const std::string     E100_FPGA_FILE_NAME = "usrp_e100_fpga_v2.bin";
 static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x05;
 static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
 static const size_t          E100_NUM_RX_DSPS = 2;

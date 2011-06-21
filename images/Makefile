@@ -227,7 +227,7 @@ endif
 ifdef HAS_XTCLSH
 
 _usrp_e100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/E1x0
-_usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga.bin
+_usrp_e100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_e100_fpga_v2.bin
 IMAGES_LIST += $(_usrp_e100_fpga_bin)
 
 $(_usrp_e100_fpga_bin): $(GLOBAL_DEPS)
