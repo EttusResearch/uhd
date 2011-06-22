@@ -22,6 +22,8 @@
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <vector>
+#include <uhd/types/sensors.hpp>
 
 using namespace boost::posix_time;
 
@@ -38,16 +40,14 @@ public:
   static sptr make(gps_send_fn_t, gps_recv_fn_t);
 
   /*!
-   * Get the current GPS time and date
-   * \return current GPS time and date as boost::posix_time::ptime object
+   * Retrieve the list of sensors this GPS object provides
    */
-  virtual ptime get_time(void) = 0;
-  
+  virtual std::vector<std::string> get_sensors(void) = 0;
+
   /*!
-   * Get the epoch time (as time_t, which is int)
-   * \return current GPS time and date as time_t
+   * Retrieve the named sensor
    */
-   virtual time_t get_epoch_time(void) = 0;
+  virtual uhd::sensor_value_t get_sensor(std::string key) = 0;
 
   /*!
    * Tell you if there's a supported GPS connected or not
