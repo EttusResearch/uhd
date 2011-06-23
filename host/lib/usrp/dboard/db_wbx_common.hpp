@@ -62,6 +62,12 @@ protected:
      */
     virtual bool get_locked(dboard_iface::unit_t unit);
 
+    /*!
+     * Detect if this a v3 WBX
+     * \return true for locked
+     */
+    virtual bool is_v3(void);
+
 private:
     uhd::dict<std::string, double> _tx_gains, _rx_gains;
     bool _rx_enabled, _tx_enabled;
