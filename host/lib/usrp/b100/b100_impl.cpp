@@ -97,6 +97,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
         device_addr_t new_addr;
         new_addr["type"] = "b100";
+        new_addr["serial"] = handle->get_serial();
 
         //Attempt to read the name from the EEPROM and perform filtering.
         //This operation can throw due to compatibility mismatch.
@@ -104,13 +105,11 @@ static device_addrs_t b100_find(const device_addr_t &hint)
             usb_control::sptr control = usb_control::make(handle);
             b100_iface::sptr iface = b100_iface::make(fx2_ctrl::make(control));
             new_addr["name"] = iface->mb_eeprom["name"];
-            new_addr["serial"] = handle->get_serial();
         }
         catch(const uhd::exception &){
             //set these values as empty string so the device may still be found
             //and the filter's below can still operate on the discovered device
             new_addr["name"] = "";
-            new_addr["serial"] = "";
         }
 
         //this is a found b100 when the hint serial and name match or blank
