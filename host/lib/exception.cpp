@@ -27,7 +27,9 @@ exception::exception(const std::string &what):
 #define make_exception_impl(name, class, base) \
     class::class(const std::string &what): \
         base(str(boost::format("%s: %s") % name % what)){} \
-    unsigned class::code(void) const{return boost::hash<std::string>()(#class) & 0xfff;}
+    unsigned class::code(void) const{return boost::hash<std::string>()(#class) & 0xfff;} \
+    class *class::dynamic_clone(void) const{return new class(*this);} \
+    void class::dynamic_throw(void) const{throw *this;}
 
 make_exception_impl("AssertionError",        assertion_error,         exception)
 make_exception_impl("LookupError",           lookup_error,            exception)
