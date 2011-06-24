@@ -77,12 +77,15 @@ BOOST_AUTO_TEST_CASE(test_exception_dynamic){
         exception_clone->dynamic_throw();
     }
     catch(const uhd::assertion_error &e){
+        std::cout << e.what() << std::endl;
         BOOST_CHECK(false);
     }
     catch(const uhd::runtime_error &e){
+        std::cout << e.what() << std::endl;
         BOOST_CHECK(true);
     }
     catch(const uhd::exception &e){
+        std::cout << e.what() << std::endl;
         BOOST_CHECK(false);
     }
 
