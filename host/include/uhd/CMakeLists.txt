@@ -27,6 +27,7 @@ INSTALL(FILES
     device.hpp
     exception.hpp
     property.hpp
+    property_tree.hpp
     version.hpp
     wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd

@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_UTILS_EXCEPTION_HPP
-#define INCLUDED_UHD_UTILS_EXCEPTION_HPP
+#ifndef INCLUDED_UHD_EXCEPTION_HPP
+#define INCLUDED_UHD_EXCEPTION_HPP
 
 #include <uhd/config.hpp>
 #include <boost/current_function.hpp>
@@ -163,4 +163,4 @@ namespace uhd{
 
 } //namespace uhd
 
-#endif /* INCLUDED_UHD_UTILS_EXCEPTION_HPP */
+#endif /* INCLUDED_UHD_EXCEPTION_HPP */

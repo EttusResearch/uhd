@@ -25,7 +25,11 @@
 
 namespace uhd{
 
-template <typename T> class property{
+/*!
+ * A templated property interface for holding a value
+ * and registering callbacks when that value changes.
+ */
+template <typename T> class UHD_API property{
 public:
     typedef boost::function<void(const T &)> subscriber_type;
     typedef boost::function<T(const T &)> master_type;

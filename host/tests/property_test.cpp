@@ -17,7 +17,9 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/property.hpp>
+#include <uhd/property_tree.hpp>
 #include <boost/bind.hpp>
+#include <iostream>
 
 struct coercer_type{
     int doit(int x){
@@ -72,4 +74,27 @@ BOOST_AUTO_TEST_CASE(test_prop_with_coercion){
     prop.set(34);
     BOOST_CHECK_EQUAL(prop.get(), 32);
     BOOST_CHECK_EQUAL(setter._x, 32);
+}
+
+BOOST_AUTO_TEST_CASE(test_prop_tree){
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+
+    tree->create("/test/prop0", uhd::property<int>());
+    tree->create("/test/prop1", uhd::property<int>());
+
+    BOOST_CHECK(tree->exists("/test"));
+    BOOST_CHECK(tree->exists("/test/prop0"));
+    BOOST_CHECK(tree->exists("/test/prop1"));
+
+    tree->access<int>("/test/prop0").set(42);
+    tree->access<int>("/test/prop1").set(34);
+
+    tree->remove("/test/prop0");
+    BOOST_CHECK(not tree->exists("/test/prop0"));
+    BOOST_CHECK(tree->exists("/test/prop1"));
+
+    tree->remove("/test");
+    BOOST_CHECK(not tree->exists("/test/prop0"));
+    BOOST_CHECK(not tree->exists("/test/prop1"));
+
 }
