@@ -33,7 +33,7 @@ namespace uhd{ namespace usrp{
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class mboard_iface : public uhd::i2c_iface, public uhd::spi_iface {
+class mboard_iface : public uhd::i2c_iface, public uhd::spi_iface, public uhd::uart_iface {
 public:
     typedef boost::shared_ptr<mboard_iface> sptr;
     /*!
@@ -63,20 +63,6 @@ public:
      * \return the 16bit data
      */
     virtual boost::uint16_t peek16(boost::uint32_t addr) = 0;
-
-    /*!
-     * Write to a serial port.
-     * \param dev which UART to write to
-     * \param buf the data to write
-     */
-    virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
-
-    /*!
-     * Read from a serial port.
-     * \param dev which UART to read from
-     * \return the data read from the serial port
-     */
-    virtual std::string read_uart(boost::uint8_t dev) = 0;
 
 };
 

@@ -175,6 +175,28 @@ namespace uhd{
         );
     };
 
+    /*!
+     * UART interface to write and read bytes.
+     */
+    class UHD_API uart_iface{
+    public:
+        typedef boost::shared_ptr<uart_iface> sptr;
+
+        /*!
+         * Write to a serial port.
+         * \param dev which UART to write to
+         * \param buf the data to write
+         */
+        virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
+
+        /*!
+         * Read from a serial port.
+         * \param dev which UART to read from
+         * \return the data read from the serial port
+         */
+        virtual std::string read_uart(boost::uint8_t dev) = 0;
+    };
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_SERIAL_HPP */
