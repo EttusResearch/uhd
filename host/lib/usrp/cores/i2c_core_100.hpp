@@ -28,7 +28,7 @@ class i2c_core_100 : boost::noncopyable, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<i2c_core_100> sptr;
 
-    //! makes a new spi core from iface and slave base
+    //! makes a new i2c core from iface and slave base
     sptr make(wb_iface::sptr iface, const size_t base);
 };
 
