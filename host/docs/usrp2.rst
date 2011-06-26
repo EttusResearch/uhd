@@ -349,9 +349,8 @@ Test the PPS input with the following app:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Internal GPSDO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-USRP-N2XX models can have an optional internal GPSDO.
-To use the GPSDO with UHD, you must burn an EEPROM setting
-so that UHD knows that the internal GPSDO was installed.
+Please see the GPSDO application note for information on configuring and
+using the internal GPSDO.
 
 **Installation instructions:**
 
@@ -396,7 +395,8 @@ they can be queried through the API.
 
 * mimo_locked - clock reference locked over the MIMO cable
 * ref_locked - clock reference locked (internal/external)
-* gps_time - GPS seconds (available when GPSDO installed)
+* gps_time - GPS epoch seconds (available when GPSDO installed)
+* gps_locked - GPS lock status
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Multiple RX channels

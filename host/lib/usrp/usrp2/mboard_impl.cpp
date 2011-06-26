@@ -149,7 +149,13 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         (_mimo_clocking_mode_is_master?"master":"slave") << std::endl;
 
     //init the clock config
-    _clock_config = clock_config_t::internal();
+    if(_iface->mb_eeprom["gpsdo"] == "internal" or
+       _iface->mb_eeprom["gpsdo"] == "external") {
+        _clock_config = clock_config_t::external();
+    }
+    else {
+        _clock_config = clock_config_t::internal();
+    }
     update_clock_config();
 
     //init the codec before the dboard
@@ -174,6 +180,13 @@ usrp2_mboard_impl::usrp2_mboard_impl(
         _iface->poke32(U2_REG_RX_CTRL_CLEAR(i), 1); //resets sequence
     }
     //------------------------------------------------------------------
+
+    //initialize VITA time to GPS time
+    if( _gps_ctrl.get()
+    and _gps_ctrl->gps_detected()) {
+        UHD_MSG(status) << "Setting device time to GPS time...\n";
+        set_time_spec(time_spec_t(double(_gps_ctrl->get_sensor("gps_time").to_int()+1)), false);
+    }
 }
 
 usrp2_mboard_impl::~usrp2_mboard_impl(void){UHD_SAFE_CALL(
@@ -375,7 +388,10 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
 
     case SUBDEV_PROP_SENSOR_NAMES:{
             prop_names_t names = boost::assign::list_of("mimo_locked")("ref_locked");
-            if (_gps_ctrl.get()) names.push_back("gps_time");
+            if (_gps_ctrl.get()) {
+                std::vector<std::string> gs = _gps_ctrl->get_sensors();
+                names.insert(names.end(), gs.begin(), gs.end());
+            }
             val = names;
         }
         return;
@@ -389,8 +405,8 @@ void usrp2_mboard_impl::get(const wax::obj &key_, wax::obj &val){
             val = sensor_value_t("Ref", this->get_ref_locked(), "locked", "unlocked");
             return;
         }
-        else if(key.name == "gps_time" and _gps_ctrl.get()) {
-            val = sensor_value_t("GPS time", int(_gps_ctrl->get_epoch_time()), "seconds");
+        else if(uhd::has(_gps_ctrl->get_sensors(), key.name) and _gps_ctrl.get()) {
+            val = _gps_ctrl->get_sensor(key.name);
         }
         else {
             UHD_THROW_PROP_GET_ERROR();

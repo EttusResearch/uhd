@@ -44,7 +44,8 @@ BOOST_AUTO_TEST_CASE(test_assert_has){
     std::cout << "The output of the assert_has error:" << std::endl;
     try{
         uhd::assert_has(vec, 1, "prime");
-    }catch(const std::exception &e){
+    }
+    catch(const std::exception &e){
         std::cout << e.what() << std::endl;
     }
 }
@@ -53,7 +54,40 @@ BOOST_AUTO_TEST_CASE(test_assert_throw){
     std::cout << "The output of the assert throw error:" << std::endl;
     try{
         UHD_ASSERT_THROW(2 + 2 == 5);
-    }catch(const std::exception &e){
+    }
+    catch(const std::exception &e){
         std::cout << e.what() << std::endl;
     }
+}
+
+BOOST_AUTO_TEST_CASE(test_exception_dynamic){
+    uhd::exception *exception_clone;
+
+    //throw an exception and dynamically clone it
+    try{
+        throw uhd::runtime_error("noooooo");
+    }
+    catch(const uhd::exception &e){
+        std::cout << e.what() << std::endl;
+        exception_clone = e.dynamic_clone();
+    }
+
+    //now we dynamically re-throw the exception
+    try{
+        exception_clone->dynamic_throw();
+    }
+    catch(const uhd::assertion_error &e){
+        std::cout << e.what() << std::endl;
+        BOOST_CHECK(false);
+    }
+    catch(const uhd::runtime_error &e){
+        std::cout << e.what() << std::endl;
+        BOOST_CHECK(true);
+    }
+    catch(const uhd::exception &e){
+        std::cout << e.what() << std::endl;
+        BOOST_CHECK(false);
+    }
+
+    delete exception_clone; //manual cleanup
 }

@@ -76,6 +76,8 @@ static dboard_base::sptr make_wbx_simple(dboard_base::ctor_args_t args){
 UHD_STATIC_BLOCK(reg_wbx_simple_dboards){
     dboard_manager::register_dboard(0x0053, 0x0052, &make_wbx_simple, "WBX");
     dboard_manager::register_dboard(0x0053, 0x004f, &make_wbx_simple, "WBX + Simple GDB");
+    dboard_manager::register_dboard(0x0057, 0x0056, &make_wbx_simple, "WBX v3");
+    dboard_manager::register_dboard(0x0057, 0x004f, &make_wbx_simple, "WBX v3 + Simple GDB");
 }
 
 /***********************************************************************

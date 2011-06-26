@@ -179,7 +179,7 @@ public:
     template <class T, usrp2_reg_action_t action>
     T get_reg(boost::uint32_t addr, T data = 0){
         //setup the out data
-        usrp2_ctrl_data_t out_data;
+        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
         out_data.data.reg_args.addr = htonl(addr);
         out_data.data.reg_args.data = htonl(boost::uint32_t(data));
@@ -207,7 +207,7 @@ public:
         ;
 
         //setup the out data
-        usrp2_ctrl_data_t out_data;
+        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_TRANSACT_ME_SOME_SPI_BRO);
         out_data.data.spi_args.dev = htonl(which_slave);
         out_data.data.spi_args.miso_edge = spi_edge_to_otw[config.miso_edge];
@@ -228,7 +228,7 @@ public:
  **********************************************************************/
     void write_i2c(boost::uint8_t addr, const byte_vector_t &buf){
         //setup the out data
-        usrp2_ctrl_data_t out_data;
+        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
         out_data.data.i2c_args.addr = addr;
         out_data.data.i2c_args.bytes = buf.size();
@@ -246,7 +246,7 @@ public:
 
     byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
         //setup the out data
-        usrp2_ctrl_data_t out_data;
+        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
         out_data.data.i2c_args.addr = addr;
         out_data.data.i2c_args.bytes = num_bytes;
@@ -276,7 +276,7 @@ public:
 
       BOOST_FOREACH(std::string item, queue) {
         //setup the out data
-        usrp2_ctrl_data_t out_data;
+        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO);
         out_data.data.uart_args.dev = dev;
         out_data.data.uart_args.bytes = item.size();
@@ -298,7 +298,7 @@ public:
       std::string result;
       while(readlen == 20) { //while we keep receiving full packets
         //setup the out data
-        usrp2_ctrl_data_t out_data;
+        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO);
         out_data.data.uart_args.dev = dev;
         out_data.data.uart_args.bytes = 20;

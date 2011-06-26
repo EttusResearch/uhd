@@ -32,72 +32,105 @@
  *
  * The code() provides an error code which allows the application
  * the option of printing a cryptic error message from the 1990s.
+ *
+ * The dynamic_clone() and dynamic_throw() methods allow us to:
+ * catch an exception by dynamic type (i.e. derived class), save it,
+ * and later rethrow it, knowing only the static type (i.e. base class),
+ * and then finally to catch it again using the derived type.
+ *
+ * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n2106.html
  */
 namespace uhd{
 
     struct UHD_API exception : std::runtime_error{
         exception(const std::string &what);
         virtual unsigned code(void) const = 0;
+        virtual exception *dynamic_clone(void) const = 0;
+        virtual void dynamic_throw(void) const = 0;
     };
 
     struct UHD_API assertion_error : exception{
         assertion_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual assertion_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API lookup_error : exception{
         lookup_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual lookup_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API index_error : lookup_error{
         index_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual index_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API key_error : lookup_error{
         key_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual key_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API type_error : exception{
         type_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual type_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API value_error : exception{
         value_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual value_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API runtime_error : exception{
         runtime_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual runtime_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API not_implemented_error : runtime_error{
         not_implemented_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual not_implemented_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API environment_error : exception{
         environment_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual environment_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API io_error : environment_error{
         io_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual io_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API os_error : environment_error{
         os_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual os_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     struct UHD_API system_error : exception{
         system_error(const std::string &what);
         virtual unsigned code(void) const;
+        virtual system_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
     };
 
     /*!
