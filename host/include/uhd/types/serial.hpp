@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_SERIAL_HPP
 
 #include <uhd/config.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include <vector>
 
@@ -43,6 +44,8 @@ namespace uhd{
      */
     class UHD_API i2c_iface{
     public:
+        typedef boost::shared_ptr<i2c_iface> sptr;
+
         /*!
          * Write bytes over the i2c.
          * \param addr the address
@@ -123,6 +126,8 @@ namespace uhd{
      */
     class UHD_API spi_iface{
     public:
+        typedef boost::shared_ptr<spi_iface> sptr;
+
         /*!
         * Perform a spi transaction.
         * \param which_slave the slave device number
