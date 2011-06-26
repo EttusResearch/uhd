@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(test_prop_tree){
     uhd::property_tree::sptr tree = uhd::property_tree::make();
 
     tree->create("/test/prop0", uhd::property<int>());
-    tree->create("/test/prop1", uhd::property<int>());
+    tree->create<int>("/test/prop1");
 
     BOOST_CHECK(tree->exists("/test"));
     BOOST_CHECK(tree->exists("/test/prop0"));
