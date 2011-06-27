@@ -32,6 +32,7 @@ namespace uhd{
 template <typename T> class UHD_API property{
 public:
     typedef boost::function<void(const T &)> subscriber_type;
+    typedef boost::function<T(void)> publisher_type;
     typedef boost::function<T(const T &)> master_type;
 
     /*!
@@ -42,6 +43,17 @@ public:
      */
     void subscribe_master(const master_type &master){
         _master = master;
+    }
+
+    /*!
+     * Register a publisher into the property.
+     * A publisher is a special callback the provides the value.
+     * Publishers are useful for creating read-only properties.
+     * Only one publisher may be registered per property.
+     * Registering a publisher replaces the previous publisher.
+     */
+    void publish(const publisher_type &publisher){
+        _publisher = publisher;
     }
 
     /*!
@@ -71,11 +83,12 @@ public:
 
     //! Get the current value of this property
     T get(void) const{
-        return _value;
+        return _publisher.empty()? _value : _publisher();
     }
 
 private:
     std::list<subscriber_type> _subscribers;
+    publisher_type _publisher;
     master_type _master;
     T _value;
 };
