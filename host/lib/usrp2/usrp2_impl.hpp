@@ -25,6 +25,7 @@
 #include "tx_frontend_core_200.hpp"
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
+#include "time64_core_200.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/device.hpp>
@@ -41,6 +42,11 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
+
+static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
+static const double mimo_clock_delay_usrp_n2xx = 3.55e-9;
+static const size_t mimo_clock_sync_delay_cycles = 137;
+static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
 
 /*!
  * Make a usrp2 dboard interface.
@@ -61,6 +67,7 @@ uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
 class usrp2_impl{
 public:
     usrp2_impl(const uhd::device_addr_t &_device_addr);
+    ~usrp2_impl(void);
     uhd::property_tree::sptr _tree;
 private:
     struct mboard_stuff_type{
@@ -69,9 +76,11 @@ private:
         usrp2_codec_ctrl::sptr codec;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
-        rx_dsp_core_200::sptr rx_dsp;
+        std::vector<rx_dsp_core_200::sptr> rx_dsps;
         tx_dsp_core_200::sptr tx_dsp;
-        //TODO time core
+        time64_core_200::sptr time64;
+        std::vector<uhd::transport::zero_copy_if::sptr> dsp_xports;
+        std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
     };
     std::vector<mboard_stuff_type> _mboard_stuff;
 

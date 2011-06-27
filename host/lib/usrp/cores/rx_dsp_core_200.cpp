@@ -48,12 +48,11 @@ public:
     rx_dsp_core_200_impl(
         wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
-        const boost::uint32_t sid, const size_t nsamps
+        const boost::uint32_t sid
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base)
     {
         _iface->poke32(REG_RX_CTRL_CLEAR, 1); //reset
-        _iface->poke32(REG_RX_CTRL_NSAMPS_PP, nsamps);
         _iface->poke32(REG_RX_CTRL_NCHANNELS, 1);
         _iface->poke32(REG_RX_CTRL_VRT_HDR, 0
             | (0x1 << 28) //if data with stream id
@@ -63,6 +62,10 @@ public:
         );
         _iface->poke32(REG_RX_CTRL_VRT_SID, sid);
         _iface->poke32(REG_RX_CTRL_VRT_TLR, 0);
+    }
+
+    void set_nsamps_per_packet(const size_t nsamps){
+        _iface->poke32(REG_RX_CTRL_NSAMPS_PP, nsamps);
     }
 
     void issue_stream_command(const stream_cmd_t &stream_cmd){
@@ -159,6 +162,6 @@ private:
     bool _continuous_streaming;
 };
 
-rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid, const size_t nsamps){
-    return sptr(new rx_dsp_core_200_impl(iface, dsp_base, ctrl_base, sid, nsamps));
+rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid){
+    return sptr(new rx_dsp_core_200_impl(iface, dsp_base, ctrl_base, sid));
 }

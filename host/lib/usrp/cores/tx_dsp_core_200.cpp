@@ -112,6 +112,11 @@ public:
         return actual_freq;
     }
 
+    void set_updates(const size_t cycles_per_up, const size_t packets_per_up){
+        _iface->poke32(REG_TX_CTRL_CYCLES_PER_UP,  (cycles_per_up  == 0)? 0 : (FLAG_TX_CTRL_UP_ENB | cycles_per_up));
+        _iface->poke32(REG_TX_CTRL_PACKETS_PER_UP, (packets_per_up == 0)? 0 : (FLAG_TX_CTRL_UP_ENB | packets_per_up));
+    }
+
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;

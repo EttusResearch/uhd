@@ -39,6 +39,8 @@ public:
 
     virtual double set_freq(const double freq) = 0;
 
+    virtual void set_updates(const size_t cycles_per_up, const size_t packets_per_up) = 0;
+
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_TX_DSP_CORE_200_HPP */
