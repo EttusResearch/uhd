@@ -36,7 +36,7 @@ public:
     };
 
     //! makes a new time64 core from iface and slave base
-    sptr make(
+    static sptr make(
         wb_iface::sptr iface, const size_t base,
         const readback_bases_type &readback_bases,
         const size_t mimo_delay_cycles = 0 // 0 means no-mimo

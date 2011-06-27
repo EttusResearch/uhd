@@ -29,7 +29,7 @@ class tx_frontend_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_frontend_core_200> sptr;
 
-    sptr make(wb_iface::sptr iface, const size_t base);
+    static sptr make(wb_iface::sptr iface, const size_t base);
 
     virtual void set_mux(const std::string &mode) = 0;
 

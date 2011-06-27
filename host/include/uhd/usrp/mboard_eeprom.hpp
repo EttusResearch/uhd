@@ -56,7 +56,7 @@ namespace uhd{ namespace usrp{
          * \param iface the interface to i2c
          * \param map the map type enum
          */
-        void commit(i2c_iface &iface, map_type map);
+        void commit(i2c_iface &iface, map_type map) const;
 
     };
 

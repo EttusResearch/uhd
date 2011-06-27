@@ -35,6 +35,16 @@ public:
     typedef boost::function<T(void)> publisher_type;
     typedef boost::function<T(const T &)> master_type;
 
+    //! Default constructor
+    property(void){
+        /* NOP */
+    }
+
+    //! Value initializer constructor
+    property(const T &value){
+        _value = value;
+    }
+
     /*!
      * Register a master subscriber into the property.
      * A master is a special subscriber that coerces the value.

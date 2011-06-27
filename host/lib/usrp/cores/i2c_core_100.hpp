@@ -29,7 +29,7 @@ public:
     typedef boost::shared_ptr<i2c_core_100> sptr;
 
     //! makes a new i2c core from iface and slave base
-    sptr make(wb_iface::sptr iface, const size_t base);
+    static sptr make(wb_iface::sptr iface, const size_t base);
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_I2C_CORE_100_HPP */

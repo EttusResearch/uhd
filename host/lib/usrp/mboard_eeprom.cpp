@@ -335,7 +335,7 @@ mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, map_type map){
     }
 }
 
-void mboard_eeprom_t::commit(i2c_iface &iface, map_type map){
+void mboard_eeprom_t::commit(i2c_iface &iface, map_type map) const{
     switch(map){
     case MAP_N100: store_n100(*this, iface); break;
     case MAP_B000: store_b000(*this, iface); break;

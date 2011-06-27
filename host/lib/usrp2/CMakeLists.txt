@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,24 +19,15 @@
 # This file included, use CMake directory variables
 ########################################################################
 LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_id.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_manager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dsp_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/misc_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tune_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fw_common.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_clk_regs.hpp
 )
-
-INCLUDE_SUBDIRECTORY(cores)
-INCLUDE_SUBDIRECTORY(dboard)
-INCLUDE_SUBDIRECTORY(fx2)
-INCLUDE_SUBDIRECTORY(usrp1)
-#INCLUDE_SUBDIRECTORY(usrp2)
-INCLUDE_SUBDIRECTORY(b100)
-INCLUDE_SUBDIRECTORY(e100)

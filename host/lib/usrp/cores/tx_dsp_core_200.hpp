@@ -27,7 +27,7 @@ class tx_dsp_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_dsp_core_200> sptr;
 
-    sptr make(
+    static sptr make(
         wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
         const boost::uint32_t sid
