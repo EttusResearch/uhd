@@ -23,6 +23,7 @@
 #include <boost/shared_ptr.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include "wb_iface.hpp"
+#include <string>
 
 class rx_dsp_core_200 : boost::noncopyable{
 public:

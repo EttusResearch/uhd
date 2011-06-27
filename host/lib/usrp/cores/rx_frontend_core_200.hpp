@@ -14,3 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+
+#ifndef INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_200_HPP
+#define INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_200_HPP
+
+#include <uhd/config.hpp>
+#include <boost/utility.hpp>
+#include <boost/shared_ptr.hpp>
+#include "wb_iface.hpp"
+#include <complex>
+#include <string>
+
+class rx_frontend_core_200 : boost::noncopyable{
+public:
+    typedef boost::shared_ptr<rx_frontend_core_200> sptr;
+
+    sptr make(wb_iface::sptr iface, const size_t base);
+
+    virtual void set_mux(const bool swap) = 0;
+
+    virtual void set_offset(const std::complex<double> &off) = 0;
+
+    virtual void set_correction(const std::complex<double> &cor) = 0;
+
+};
+
+#endif /* INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_200_HPP */
