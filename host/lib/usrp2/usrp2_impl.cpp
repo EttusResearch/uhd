@@ -293,6 +293,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     // create controller objects and initialize the properties tree
     ////////////////////////////////////////////////////////////////////
     _tree = property_tree::make();
+    _tree->create<std::string>("/name").set("USRP2 / N-Series Device");
 
     for (size_t mbi = 0; mbi < device_args.size(); mbi++){
         const device_addr_t device_args_i = device_args[mbi];
@@ -349,6 +350,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
         property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
+        _tree->create<int>(rx_codec_path / "gains"); //phony property so this dir exists
+        _tree->create<int>(tx_codec_path / "gains"); //phony property so this dir exists
         _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface);
         switch(_mbc[mb].iface->get_rev()){
         case usrp2_iface::USRP_N200:
@@ -503,10 +506,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //create the properties and register subscribers
         _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
+            .set(rx_db_eeprom)
             .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "rx", _1));
         _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/tx_eeprom")
+            .set(tx_db_eeprom)
             .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "tx", _1));
         _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/gdb_eeprom")
+            .set(gdb_eeprom)
             .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
 
         //create a new dboard interface and manager

@@ -42,10 +42,10 @@ public:
 
     void set_mux(const std::string &mode){
         static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
-            ("iq", (0x1 << 4) | (0x0 << 0)) //DAC0Q=DUC0Q, DAC0I=DUC0I
-            ("qi", (0x0 << 4) | (0x1 << 0)) //DAC0Q=DUC0I, DAC0I=DUC0Q
-            ("i",  (0xf << 4) | (0x0 << 0)) //DAC0Q=ZERO,  DAC0I=DUC0I
-            ("q",  (0x0 << 4) | (0xf << 0)) //DAC0Q=DUC0I, DAC0I=ZERO
+            ("IQ", (0x1 << 4) | (0x0 << 0)) //DAC0Q=DUC0Q, DAC0I=DUC0I
+            ("QI", (0x0 << 4) | (0x1 << 0)) //DAC0Q=DUC0I, DAC0I=DUC0Q
+            ("I",  (0xf << 4) | (0x0 << 0)) //DAC0Q=ZERO,  DAC0I=DUC0I
+            ("Q",  (0x0 << 4) | (0xf << 0)) //DAC0Q=DUC0I, DAC0I=ZERO
         ;
         _iface->poke32(REG_TX_FE_MUX, mode_to_mux[mode]);
     }

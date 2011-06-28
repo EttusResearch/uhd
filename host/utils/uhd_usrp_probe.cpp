@@ -18,13 +18,8 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/property_tree.hpp>
 #include <boost/algorithm/string.hpp> //for split
-#include <uhd/usrp/device_props.hpp>
-#include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/dboard_props.hpp>
-#include <uhd/usrp/codec_props.hpp>
-#include <uhd/usrp/dsp_props.hpp>
-#include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
@@ -56,17 +51,15 @@ static std::string make_border(const std::string &text){
     return ss.str();
 }
 
-static std::string get_dsp_pp_string(const std::string &type, wax::obj dsp){
+static std::string get_dsp_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
     std::stringstream ss;
-    ss << boost::format("%s DSP: %s") % type % dsp[usrp::DSP_PROP_NAME].as<std::string>() << std::endl;
+    ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
-    ss << boost::format("Codec Rate: %f Msps") % (dsp[usrp::DSP_PROP_CODEC_RATE].as<double>()/1e6) << std::endl;
-    //ss << boost::format("Host Rate: %f Msps") % (dsp[usrp::DSP_PROP_HOST_RATE].as<double>()/1e6) << std::endl;
-    //ss << boost::format("Freq Shift: %f Mhz") % (dsp[usrp::DSP_PROP_FREQ_SHIFT].as<double>()/1e6) << std::endl;
+    ss << boost::format("DSP Rate: %f Msps") % (tree->access<double>(path.branch_path().branch_path() / "tick_rate").get()/1e6) << std::endl;
     return ss.str();
 }
 
-static std::string prop_names_to_pp_string(const prop_names_t &prop_names){
+static std::string prop_names_to_pp_string(const std::vector<std::string> &prop_names){
     std::stringstream ss; size_t count = 0;
     BOOST_FOREACH(const std::string &prop_name, prop_names){
         ss << ((count++)? ", " : "") << prop_name;
@@ -74,97 +67,98 @@ static std::string prop_names_to_pp_string(const prop_names_t &prop_names){
     return ss.str();
 }
 
-static std::string get_subdev_pp_string(const std::string &type, wax::obj subdev){
+static std::string get_subdev_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
     std::stringstream ss;
-    ss << boost::format("%s Subdev: %s") % type % subdev[usrp::SUBDEV_PROP_NAME].as<std::string>() << std::endl;
+    ss << boost::format("%s Subdev: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
 
-    prop_names_t ant_names(subdev[usrp::SUBDEV_PROP_ANTENNA_NAMES].as<prop_names_t>());
-    ss << boost::format("Antennas: %s") % prop_names_to_pp_string(ant_names) << std::endl;
+    ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
+    ss << boost::format("Antennas: %s") % prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "antenna/options").get()) << std::endl;
 
-    freq_range_t freq_range(subdev[usrp::SUBDEV_PROP_FREQ_RANGE].as<freq_range_t>());
+    meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
     ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;
 
-    prop_names_t gain_names(subdev[usrp::SUBDEV_PROP_GAIN_NAMES].as<prop_names_t>());
+    std::vector<std::string> gain_names = tree->list(path / "gains");
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
-    BOOST_FOREACH(const std::string &gain_name, gain_names){
-        gain_range_t gain_range(subdev[named_prop_t(usrp::SUBDEV_PROP_GAIN_RANGE, gain_name)].as<gain_range_t>());
-        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
+    BOOST_FOREACH(const std::string &name, gain_names){
+        meta_range_t gain_range = tree->access<meta_range_t>(path / "gains" / name / "range").get();
+        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
 
-    ss << boost::format("Connection Type: %c") % char(subdev[usrp::SUBDEV_PROP_CONNECTION].as<usrp::subdev_conn_t>()) << std::endl;
-    ss << boost::format("Uses LO offset: %s") % (subdev[usrp::SUBDEV_PROP_USE_LO_OFFSET].as<bool>()? "Yes" : "No") << std::endl;
+    ss << boost::format("Connection Type: %s") % (tree->access<std::string>(path / "connection").get()) << std::endl;
+    ss << boost::format("Uses LO offset: %s") % ((tree->access<bool>(path / "use_lo_offset").get())? "Yes" : "No") << std::endl;
 
     return ss.str();
 }
 
-static std::string get_codec_pp_string(const std::string &type, wax::obj codec){
+static std::string get_codec_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
     std::stringstream ss;
-    ss << boost::format("%s Codec: %s") % type % codec[usrp::CODEC_PROP_NAME].as<std::string>() << std::endl;
+    ss << boost::format("%s Codec: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
-    prop_names_t gain_names(codec[usrp::CODEC_PROP_GAIN_NAMES].as<prop_names_t>());
+
+    ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
+    std::vector<std::string> gain_names = tree->list(path / "gains");
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
-    BOOST_FOREACH(const std::string &gain_name, gain_names){
-        gain_range_t gain_range(codec[named_prop_t(usrp::CODEC_PROP_GAIN_RANGE, gain_name)].as<gain_range_t>());
-        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % gain_name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
+    BOOST_FOREACH(const std::string &name, gain_names){
+        meta_range_t gain_range = tree->access<meta_range_t>(path / "gains" / name / "range").get();
+        ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
     return ss.str();
 }
 
-static std::string get_dboard_pp_string(const std::string &type, wax::obj dboard){
+static std::string get_dboard_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
     std::stringstream ss;
-    ss << boost::format("%s Dboard: %s") % type % dboard[usrp::DBOARD_PROP_NAME].as<std::string>() << std::endl;
+    ss << boost::format("%s Dboard: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
-    usrp::dboard_eeprom_t db_eeprom = dboard[usrp::DBOARD_PROP_DBOARD_EEPROM].as<usrp::dboard_eeprom_t>();
+    const std::string prefix = (type == "RX")? "rx" : "tx";
+    usrp::dboard_eeprom_t db_eeprom = tree->access<usrp::dboard_eeprom_t>(path / (prefix + "_eeprom")).get();
     if (db_eeprom.id != usrp::dboard_id_t::none()) ss << boost::format("ID: %s") % db_eeprom.id.to_pp_string() << std::endl;
     if (not db_eeprom.serial.empty()) ss << boost::format("Serial: %s") % db_eeprom.serial << std::endl;
     if (type == "TX"){
-        usrp::dboard_eeprom_t gdb_eeprom = dboard[usrp::DBOARD_PROP_GBOARD_EEPROM].as<usrp::dboard_eeprom_t>();
-        if (gdb_eeprom.id != usrp::dboard_id_t::none()) ss << boost::format("GDB ID: %s") % gdb_eeprom.id.to_pp_string() << std::endl;
-        if (not gdb_eeprom.serial.empty()) ss << boost::format("GDB Serial: %s") % gdb_eeprom.serial << std::endl;
+        usrp::dboard_eeprom_t gdb_eeprom = tree->access<usrp::dboard_eeprom_t>(path / "gdb_eeprom").get();
+        if (gdb_eeprom.id != usrp::dboard_id_t::none()) ss << boost::format("ID: %s") % gdb_eeprom.id.to_pp_string() << std::endl;
+        if (not gdb_eeprom.serial.empty()) ss << boost::format("Serial: %s") % gdb_eeprom.serial << std::endl;
     }
-    BOOST_FOREACH(const std::string &subdev_name, dboard[usrp::DBOARD_PROP_SUBDEV_NAMES].as<prop_names_t>()){
-        ss << make_border(get_subdev_pp_string(type, dboard[named_prop_t(usrp::DBOARD_PROP_SUBDEV, subdev_name)]));
+    BOOST_FOREACH(const std::string &name, tree->list(path / (prefix + "_frontends"))){
+        ss << make_border(get_subdev_pp_string(type, tree, path / (prefix + "_frontends") / name));
     }
-    ss << make_border(get_codec_pp_string(type, dboard[usrp::DBOARD_PROP_CODEC]));
+    ss << make_border(get_codec_pp_string(type, tree, path.branch_path().branch_path() / (prefix + "_codecs") / path.leaf()));
     return ss.str();
 }
 
-static std::string get_mboard_pp_string(wax::obj mboard){
+static std::string get_mboard_pp_string(property_tree::sptr tree, const property_tree::path_type &path){
     std::stringstream ss;
-    ss << boost::format("Mboard: %s") % mboard[usrp::MBOARD_PROP_NAME].as<std::string>() << std::endl;
+    ss << boost::format("Mboard: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
     //ss << std::endl;
-    usrp::mboard_eeprom_t mb_eeprom = mboard[usrp::MBOARD_PROP_EEPROM_MAP].as<usrp::mboard_eeprom_t>();
+    usrp::mboard_eeprom_t mb_eeprom = tree->access<usrp::mboard_eeprom_t>(path / "eeprom").get();
     BOOST_FOREACH(const std::string &key, mb_eeprom.keys()){
         if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
     }
-    BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_RX_DSP_NAMES].as<prop_names_t>()){
-        ss << make_border(get_dsp_pp_string("RX", mboard[named_prop_t(usrp::MBOARD_PROP_RX_DSP, dsp_name)]));
+    BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
+        ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
     }
-    BOOST_FOREACH(const std::string &db_name, mboard[usrp::MBOARD_PROP_RX_DBOARD_NAMES].as<prop_names_t>()){
-        ss << make_border(get_dboard_pp_string("RX", mboard[named_prop_t(usrp::MBOARD_PROP_RX_DBOARD, db_name)]));
+    BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+        ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
     }
-    BOOST_FOREACH(const std::string &dsp_name, mboard[usrp::MBOARD_PROP_TX_DSP_NAMES].as<prop_names_t>()){
-        ss << make_border(get_dsp_pp_string("TX", mboard[named_prop_t(usrp::MBOARD_PROP_TX_DSP, dsp_name)]));
+    BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
+        ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
     }
-    BOOST_FOREACH(const std::string &db_name, mboard[usrp::MBOARD_PROP_TX_DBOARD_NAMES].as<prop_names_t>()){
-        ss << make_border(get_dboard_pp_string("TX", mboard[named_prop_t(usrp::MBOARD_PROP_TX_DBOARD, db_name)]));
+    BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+        ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
     }
     return ss.str();
 }
 
 
-static std::string get_device_pp_string(device::sptr dev){
+static std::string get_device_pp_string(property_tree::sptr tree){
     std::stringstream ss;
-    ss << boost::format("Device: %s") % (*dev)[usrp::DEVICE_PROP_NAME].as<std::string>() << std::endl;
+    ss << boost::format("Device: %s") % (tree->access<std::string>("/name").get()) << std::endl;
     //ss << std::endl;
-    BOOST_FOREACH(const std::string &mboard_name, (*dev)[usrp::DEVICE_PROP_MBOARD_NAMES].as<prop_names_t>()){
-        ss << make_border(get_mboard_pp_string((*dev)[named_prop_t(usrp::DEVICE_PROP_MBOARD, mboard_name)]));
+    BOOST_FOREACH(const std::string &name, tree->list("/mboards")){
+        ss << make_border(get_mboard_pp_string(tree, "/mboards/" + name));
     }
     return ss.str();
 }
-
-#include <uhd/property_tree.hpp>
 
 void print_tree(const uhd::property_tree::path_type &path, uhd::property_tree::sptr tree){
     std::cout << path << std::endl;
@@ -178,6 +172,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>()->default_value(""), "device address args")
+        ("tree", "specify to print a complete property tree")
     ;
 
     po::variables_map vm;
@@ -191,9 +186,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     device::sptr dev = device::make(vm["args"].as<std::string>());
+    property_tree::sptr tree = (*dev)[0].as<property_tree::sptr>();
 
-    //std::cout << make_border(get_device_pp_string(dev)) << std::endl;
-    print_tree("/", (*dev)[0].as<uhd::property_tree::sptr>());
+    if (vm.count("tree") != 0) print_tree("/", tree);
+    else std::cout << make_border(get_device_pp_string(tree)) << std::endl;
 
     return 0;
 }

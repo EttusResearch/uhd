@@ -444,10 +444,10 @@ static std::vector<std::string> get_ants(wax::obj subdev){
 
 static std::string get_conn(wax::obj subdev){
     switch(subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()){
-    case SUBDEV_CONN_COMPLEX_IQ: return "iq";
-    case SUBDEV_CONN_COMPLEX_QI: return "qi";
-    case SUBDEV_CONN_REAL_I: return "i";
-    case SUBDEV_CONN_REAL_Q: return "q";
+    case SUBDEV_CONN_COMPLEX_IQ: return "IQ";
+    case SUBDEV_CONN_COMPLEX_QI: return "QI";
+    case SUBDEV_CONN_REAL_I: return "I";
+    case SUBDEV_CONN_REAL_Q: return "Q";
     }
     UHD_THROW_INVALID_CODE_PATH();
 }
@@ -480,6 +480,7 @@ void dboard_manager::populate_prop_tree_from_subdev(
     }
 
     const prop_names_t gain_names = subdev[SUBDEV_PROP_GAIN_NAMES].as<prop_names_t>();
+    tree->create<int>(root / "gains"); //phony property so this dir exists
     BOOST_FOREACH(const std::string &name, gain_names){
         tree->create<double>(root / "gains" / name / "value")
             .subscribe_master(boost::bind(&get_set_gain, subdev, name, _1));
