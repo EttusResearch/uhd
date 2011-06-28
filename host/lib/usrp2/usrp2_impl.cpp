@@ -326,25 +326,24 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mboard_stuff[mb].iface = usrp2_iface::make(udp_simple::make_connected(
             addr, BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
         ));
-        _tree->create(mb_path / "name", property<std::string>(_mboard_stuff[mb].iface->get_cname()));
+        _tree->create<std::string>(mb_path / "name").set(_mboard_stuff[mb].iface->get_cname());
 
         ////////////////////////////////////////////////////////////////
         // setup the mboard eeprom
         ////////////////////////////////////////////////////////////////
-        property<usrp::mboard_eeprom_t> mb_eeprom_prop;
-        mb_eeprom_prop.set(_mboard_stuff[mb].iface->mb_eeprom);
-        mb_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_mb_eeprom, this, mb, _1));
-        _tree->create(mb_path / "eeprom", mb_eeprom_prop);
+        _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
+            .set(_mboard_stuff[mb].iface->mb_eeprom)
+            .subscribe(boost::bind(&usrp2_impl::set_mb_eeprom, this, mb, _1));
 
         ////////////////////////////////////////////////////////////////
         // create clock control objects
         ////////////////////////////////////////////////////////////////
         _mboard_stuff[mb].clock = usrp2_clock_ctrl::make(_mboard_stuff[mb].iface);
         const double tick_rate = _mboard_stuff[mb].clock->get_master_clock_rate();
-        property<double> tick_rate_prop;
-        tick_rate_prop.publish(boost::bind(&usrp2_clock_ctrl::get_master_clock_rate, _mboard_stuff[mb].clock));
-        tick_rate_prop.subscribe(boost::bind(&usrp2_impl::update_tick_rate, this, _1));
-        _tree->create(mb_path / "tick_rate", tick_rate_prop);
+        //TODO, use prop, undefine tick_rate
+        _tree->create<double>(mb_path / "tick_rate")
+            .publish(boost::bind(&usrp2_clock_ctrl::get_master_clock_rate, _mboard_stuff[mb].clock))
+            .subscribe(boost::bind(&usrp2_impl::update_tick_rate, this, _1));
 
         ////////////////////////////////////////////////////////////////
         // create codec control objects
@@ -357,26 +356,25 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         case usrp2_iface::USRP_N210:
         case usrp2_iface::USRP_N200_R4:
         case usrp2_iface::USRP_N210_R4:{
-            _tree->create(rx_codec_path / "name", property<std::string>("ads62p44"));
-            _tree->create(rx_codec_path / "gains/digital/range", property<meta_range_t>(meta_range_t(0, 6.0, 0.5)));
-            property<double> dig_gain_prop, fine_gain_prop;
-            dig_gain_prop.subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_gain, _mboard_stuff[mb].codec, _1));
-            _tree->create(rx_codec_path / "gains/digital/value", dig_gain_prop);
-            _tree->create(rx_codec_path / "gains/fine/range", property<meta_range_t>(meta_range_t(0, 0.5, 0.05)));
-            fine_gain_prop.subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_fine_gain, _mboard_stuff[mb].codec, _1));
-            _tree->create(rx_codec_path / "gains/fine/value", fine_gain_prop);
+            _tree->create<std::string>(rx_codec_path / "name").set("ads62p44");
+            _tree->create<meta_range_t>(rx_codec_path / "gains/digital/range").set(meta_range_t(0, 6.0, 0.5));
+            _tree->create<double>(rx_codec_path / "gains/digital/value")
+                .subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_gain, _mboard_stuff[mb].codec, _1));
+            _tree->create<meta_range_t>(rx_codec_path / "gains/fine/range").set(meta_range_t(0, 0.5, 0.05));
+            _tree->create<double>(rx_codec_path / "gains/fine/value")
+                .subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_fine_gain, _mboard_stuff[mb].codec, _1));
         }break;
 
         case usrp2_iface::USRP2_REV3:
         case usrp2_iface::USRP2_REV4:
-            _tree->create(rx_codec_path / "name", property<std::string>("ltc2284"));
+            _tree->create<std::string>(rx_codec_path / "name").set("ltc2284");
             break;
 
         case usrp2_iface::USRP_NXXX:
-            _tree->create(rx_codec_path / "name", property<std::string>("??????"));
+            _tree->create<std::string>(rx_codec_path / "name").set("??????");
             break;
         }
-        _tree->create(tx_codec_path / "name", property<std::string>("ad9777"));
+        _tree->create<std::string>(tx_codec_path / "name").set("ad9777");
 
         ////////////////////////////////////////////////////////////////
         // create gpsdo control objects
@@ -387,23 +385,18 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
                 _mboard_stuff[mb].iface->get_gps_read_fn()
             );
             BOOST_FOREACH(const std::string &name, _mboard_stuff[mb].gps->get_sensors()){
-                property<sensor_value_t> sensor_prop;
-                sensor_prop.publish(boost::bind(&gps_ctrl::get_sensor, _mboard_stuff[mb].gps, name));
-                _tree->create(mb_path / "sensors" / name, sensor_prop);
+                _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                    .publish(boost::bind(&gps_ctrl::get_sensor, _mboard_stuff[mb].gps, name));
             }
         }
 
         ////////////////////////////////////////////////////////////////
         // and do the misc mboard sensors
         ////////////////////////////////////////////////////////////////
-        property<sensor_value_t> mimo_lock_sensor_prop;
-        mimo_lock_sensor_prop.publish(boost::bind(&usrp2_impl::get_mimo_locked, this, mb));
-        _tree->create(mb_path / "sensors/mimo_locked", mimo_lock_sensor_prop);
-        property<sensor_value_t> ref_lock_sensor_prop;
-        ref_lock_sensor_prop.publish(boost::bind(&usrp2_impl::get_ref_locked, this, mb));
-        _tree->create(mb_path / "sensors/ref_locked", ref_lock_sensor_prop);
-
-
+        _tree->create<sensor_value_t>(mb_path / "sensors/mimo_locked")
+            .publish(boost::bind(&usrp2_impl::get_mimo_locked, this, mb));
+        _tree->create<sensor_value_t>(mb_path / "sensors/ref_locked")
+            .publish(boost::bind(&usrp2_impl::get_ref_locked, this, mb));
 
 
 
@@ -445,11 +438,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mboard_stuff[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
             _mboard_stuff[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
             property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
-            property<double> host_rate_prop, freq_prop;
-            host_rate_prop.subscribe_master(boost::bind(&rx_dsp_core_200::set_host_rate, _mboard_stuff[mb].rx_dsps[dspno], _1));
-            _tree->create(rx_dsp_path / "rate/value", host_rate_prop);
-            freq_prop.subscribe_master(boost::bind(&rx_dsp_core_200::set_freq, _mboard_stuff[mb].rx_dsps[dspno], _1));
-            _tree->create(rx_dsp_path / "freq/value", freq_prop);
+            _tree->create<double>(rx_dsp_path / "rate/value")
+                .subscribe_master(boost::bind(&rx_dsp_core_200::set_host_rate, _mboard_stuff[mb].rx_dsps[dspno], _1));
+            _tree->create<double>(rx_dsp_path / "freq/value")
+                .subscribe_master(boost::bind(&rx_dsp_core_200::set_freq, _mboard_stuff[mb].rx_dsps[dspno], _1));
             //TODO set nsamps per packet
             //TODO stream command issue
         }
@@ -461,11 +453,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );
         _mboard_stuff[mb].tx_dsp->set_tick_rate(tick_rate); //does not change on usrp2
-        property<double> tx_dsp_host_rate_prop, tx_dsp_freq_prop;
-        tx_dsp_host_rate_prop.subscribe_master(boost::bind(&tx_dsp_core_200::set_host_rate, _mboard_stuff[mb].tx_dsp, _1));
-        _tree->create(mb_path / "tx_dsps/0/rate/value", tx_dsp_host_rate_prop);
-        tx_dsp_freq_prop.subscribe_master(boost::bind(&tx_dsp_core_200::set_freq, _mboard_stuff[mb].tx_dsp, _1));
-        _tree->create(mb_path / "tx_dsps/0/freq/value", tx_dsp_freq_prop);
+        _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
+                .subscribe_master(boost::bind(&tx_dsp_core_200::set_host_rate, _mboard_stuff[mb].tx_dsp, _1));
+        _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
+            .subscribe_master(boost::bind(&tx_dsp_core_200::set_freq, _mboard_stuff[mb].tx_dsp, _1));
         //TODO combine w/ codec shift
         //setup dsp flow control
         const double ups_per_sec = device_args[mb].cast<double>("ups_per_sec", 20);
@@ -488,13 +479,12 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );
         _mboard_stuff[mb].time64->set_tick_rate(tick_rate); //does not change on usrp2
-        property<time_spec_t> time_now_prop, time_pps_prop;
-        time_now_prop.publish(boost::bind(&time64_core_200::get_time_now, _mboard_stuff[mb].time64));
-        time_now_prop.subscribe(boost::bind(&time64_core_200::set_time_now, _mboard_stuff[mb].time64, _1));
-        _tree->create(mb_path / "time/now", time_now_prop);
-        time_pps_prop.publish(boost::bind(&time64_core_200::get_time_last_pps, _mboard_stuff[mb].time64));
-        time_pps_prop.subscribe(boost::bind(&time64_core_200::set_time_next_pps, _mboard_stuff[mb].time64, _1));
-        _tree->create(mb_path / "time/pps", time_pps_prop);
+        _tree->create<time_spec_t>(mb_path / "time/now")
+            .publish(boost::bind(&time64_core_200::get_time_now, _mboard_stuff[mb].time64))
+            .subscribe(boost::bind(&time64_core_200::set_time_now, _mboard_stuff[mb].time64, _1));
+        _tree->create<time_spec_t>(mb_path / "time/pps")
+            .publish(boost::bind(&time64_core_200::get_time_last_pps, _mboard_stuff[mb].time64))
+            .subscribe(boost::bind(&time64_core_200::set_time_next_pps, _mboard_stuff[mb].time64, _1));
 
         ////////////////////////////////////////////////////////////////
         // create dboard control objects
@@ -507,17 +497,16 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         gdb_eeprom.load(*_mboard_stuff[mb].iface, USRP2_I2C_ADDR_TX_DB ^ 5);
 
         //create the properties and register subscribers
-        property<dboard_eeprom_t> rx_db_eeprom_prop(rx_db_eeprom), tx_db_eeprom_prop(tx_db_eeprom), gdb_eeprom_prop(gdb_eeprom);
-        rx_db_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "rx", _1));
-        _tree->create(mb_path / "dboards/A/rx_eeprom", rx_db_eeprom_prop);
-        tx_db_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "tx", _1));
-        _tree->create(mb_path / "dboards/A/tx_eeprom", tx_db_eeprom_prop);
-        gdb_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
-        _tree->create(mb_path / "dboards/A/gdb_eeprom", gdb_eeprom_prop);
+        _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
+            .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "rx", _1));
+        _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/tx_eeprom")
+            .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "tx", _1));
+        _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/gdb_eeprom")
+            .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
 
         //create a new dboard interface and manager
         _mboard_stuff[mb].dboard_iface = make_usrp2_dboard_iface(_mboard_stuff[mb].iface, _mboard_stuff[mb].clock);
-        _tree->create(mb_path / "dboards/A/iface", property<dboard_iface::sptr>(_mboard_stuff[mb].dboard_iface));
+        _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mboard_stuff[mb].dboard_iface);
         _mboard_stuff[mb].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id,
             ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
