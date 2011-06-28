@@ -46,7 +46,7 @@ using namespace uhd::transport;
  **********************************************************************/
 struct e100_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport, const size_t recv_width):
-        data_transport(data_transport), async_msg_fifo(100/*messages deep*/)
+        data_transport(data_transport), async_msg_fifo(100/*messages deep*/), false_alarm(0)
     {
         for (size_t i = 0; i < recv_width; i++){
             typedef bounded_buffer<managed_recv_buffer::sptr> buffs_queue_type;
@@ -65,6 +65,7 @@ struct e100_impl::io_impl{
     double tick_rate; //set by update tick rate method
     e100_ctrl::sptr iface; //so handle irq can peek and poke
     void handle_irq(void);
+    size_t false_alarm;
 
     std::vector<bounded_buffer<managed_recv_buffer::sptr> *> _buffs_queue;
 
@@ -132,7 +133,13 @@ struct e100_impl::io_impl{
 void e100_impl::io_impl::handle_irq(void){
     //check the status of the async msg buffer
     const boost::uint32_t status = iface->peek32(E100_REG_RB_ERR_STATUS);
-    if ((status & 0x3) == 0) return; //not done or error
+    if ((status & 0x3) == 0){ //not done or error
+        //This could be a false-alarm because spi readback is mixed in.
+        //So we just sleep for a bit rather than interrupt continuously.
+        if (false_alarm++ > 3) boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        return;
+    }
+    false_alarm = 0; //its a real message, reset the count...
     //std::cout << boost::format("status: 0x%x") % status << std::endl;
 
     //load the data struct and call the ioctl
