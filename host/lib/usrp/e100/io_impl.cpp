@@ -22,8 +22,6 @@
 #include "e100_regs.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/usrp/dsp_utils.hpp>
-#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
@@ -47,11 +45,10 @@ using namespace uhd::transport;
  * - vrt packet handler states
  **********************************************************************/
 struct e100_impl::io_impl{
-    io_impl(zero_copy_if::sptr &xport):
-        data_transport(xport),
-        async_msg_fifo(100/*messages deep*/)
+    io_impl(zero_copy_if::sptr data_transport, const size_t recv_width):
+        data_transport(data_transport), async_msg_fifo(100/*messages deep*/)
     {
-        for (size_t i = 0; i < E100_NUM_RX_DSPS; i++){
+        for (size_t i = 0; i < recv_width; i++){
             typedef bounded_buffer<managed_recv_buffer::sptr> buffs_queue_type;
             _buffs_queue.push_back(new buffs_queue_type(data_transport->get_num_recv_frames()));
         }
@@ -64,6 +61,10 @@ struct e100_impl::io_impl{
             delete _buffs_queue[i];
         }
     }
+
+    double tick_rate; //set by update tick rate method
+    e100_ctrl::sptr iface; //so handle irq can peek and poke
+    void handle_irq(void);
 
     std::vector<bounded_buffer<managed_recv_buffer::sptr> *> _buffs_queue;
 
@@ -82,11 +83,11 @@ struct e100_impl::io_impl{
 
             //check the stream id to know which channel
             const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
-            const size_t rx_index = uhd::wtohx(vrt_hdr[1]) - E100_DSP_SID_BASE;
+            const size_t rx_index = uhd::wtohx(vrt_hdr[1]) - E100_RX_SID_BASE;
             if (rx_index == index) return buff; //got expected message
 
             //otherwise queue and try again
-            if (rx_index < E100_NUM_RX_DSPS) _buffs_queue[rx_index]->push_with_pop_on_full(buff);
+            if (rx_index < _buffs_queue.size()) _buffs_queue[rx_index]->push_with_pop_on_full(buff);
             else UHD_MSG(error) << "Got a data packet with known SID " << uhd::wtohx(vrt_hdr[1]) << std::endl;
         }
     }
@@ -98,13 +99,11 @@ struct e100_impl::io_impl{
     //state management for the vrt packet handler code
     sph::recv_packet_handler recv_handler;
     sph::send_packet_handler send_handler;
-    bool continuous_streaming;
 
     //a pirate's life is the life for me!
     void recv_pirate_loop(
         boost::barrier &spawn_barrier,
-        const boost::function<void(void)> &handle,
-        e100_iface::sptr //keep a sptr to iface which shares gpio147
+        spi_iface::sptr //keep a sptr to iface which shares gpio147
     ){
         spawn_barrier.wait();
 
@@ -120,7 +119,7 @@ struct e100_impl::io_impl{
             pfd.fd = fd;
             pfd.events = POLLPRI | POLLERR;
             ssize_t ret = ::poll(&pfd, 1, 100/*ms*/);
-            if (ret > 0) handle();
+            if (ret > 0) this->handle_irq();
         }
 
         //cleanup before thread exit
@@ -130,38 +129,9 @@ struct e100_impl::io_impl{
     boost::thread_group recv_pirate_crew;
 };
 
-/***********************************************************************
- * Helper Functions
- **********************************************************************/
-void e100_impl::io_init(void){
-
-    //setup before the registers (transport called to calculate max spp)
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
-
-    //clear state machines
-    _iface->poke32(E100_REG_CLEAR_RX, 0);
-    _iface->poke32(E100_REG_CLEAR_TX, 0);
-
-    //prepare the async msg buffer for incoming messages
-    _iface->poke32(E100_REG_SR_ERR_CTRL, 1 << 0); //clear
-    while ((_iface->peek32(E100_REG_RB_ERR_STATUS) & (1 << 2)) == 0){} //wait for idle
-    _iface->poke32(E100_REG_SR_ERR_CTRL, 1 << 1); //start
-
-    //spawn a pirate, yarrr!
-    boost::barrier spawn_barrier(2);
-    boost::function<void(void)> handle_irq_cb = boost::bind(&e100_impl::handle_irq, this);
-    _io_impl->recv_pirate_crew.create_thread(boost::bind(
-        &e100_impl::io_impl::recv_pirate_loop, _io_impl.get(),
-        boost::ref(spawn_barrier), handle_irq_cb, _iface
-    ));
-    spawn_barrier.wait();
-    //update mapping here since it didnt b4 when io init not called first
-    update_xport_channel_mapping();
-}
-
-void e100_impl::handle_irq(void){
+void e100_impl::io_impl::handle_irq(void){
     //check the status of the async msg buffer
-    const boost::uint32_t status = _iface->peek32(E100_REG_RB_ERR_STATUS);
+    const boost::uint32_t status = iface->peek32(E100_REG_RB_ERR_STATUS);
     if ((status & 0x3) == 0) return; //not done or error
     //std::cout << boost::format("status: 0x%x") % status << std::endl;
 
@@ -169,9 +139,9 @@ void e100_impl::handle_irq(void){
     usrp_e_ctl32 data;
     data.offset = E100_REG_ERR_BUFF;
     data.count = status >> 16;
-    //FIXME ioctl reads words32 incorrectly _iface->ioctl(USRP_E_READ_CTL32, &data);
+    //FIXME ioctl reads words32 incorrectly _fpga_ctrl->ioctl(USRP_E_READ_CTL32, &data);
     for (size_t i = 0; i < data.count; i++){
-        data.buf[i] = _iface->peek32(E100_REG_ERR_BUFF + i*sizeof(boost::uint32_t));
+        data.buf[i] = iface->peek32(E100_REG_ERR_BUFF + i*sizeof(boost::uint32_t));
         //std::cout << boost::format("    buff[%u] = 0x%08x\n") % i % data.buf[i];
     }
 
@@ -185,19 +155,19 @@ void e100_impl::handle_irq(void){
     }
 
     //handle a tx async report message
-    if (if_packet_info.sid == E100_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+    if (if_packet_info.sid == E100_TX_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
 
         //fill in the async metadata
         async_metadata_t metadata;
         metadata.channel = 0;
         metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
         metadata.time_spec = time_spec_t(
-            time_t(if_packet_info.tsi), long(if_packet_info.tsf), _clock_ctrl->get_fpga_clock_rate()
+            time_t(if_packet_info.tsi), long(if_packet_info.tsf), tick_rate
         );
         metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(data.buf, if_packet_info));
 
         //push the message onto the queue
-        _io_impl->async_msg_fifo.push_with_pop_on_full(metadata);
+        async_msg_fifo.push_with_pop_on_full(metadata);
 
         //print some fastpath messages
         if (metadata.event_code &
@@ -212,57 +182,120 @@ void e100_impl::handle_irq(void){
 
     //prepare for the next round
     prepare:
-    _iface->poke32(E100_REG_SR_ERR_CTRL, 1 << 0); //clear
-    while ((_iface->peek32(E100_REG_RB_ERR_STATUS) & (1 << 2)) == 0){} //wait for idle
-    _iface->poke32(E100_REG_SR_ERR_CTRL, 1 << 1); //start
+    iface->poke32(E100_REG_SR_ERR_CTRL, 1 << 0); //clear
+    while ((iface->peek32(E100_REG_RB_ERR_STATUS) & (1 << 2)) == 0){} //wait for idle
+    iface->poke32(E100_REG_SR_ERR_CTRL, 1 << 1); //start
 }
 
-void e100_impl::update_xport_channel_mapping(void){
-    if (_io_impl.get() == NULL) return; //not inited yet
+/***********************************************************************
+ * Helper Functions
+ **********************************************************************/
+void e100_impl::io_init(void){
 
-    //set all of the relevant properties on the handler
-    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
-    _io_impl->recv_handler.resize(_rx_subdev_spec.size());
+    //setup rx otw type
+    _rx_otw_type.width = 16;
+    _rx_otw_type.shift = 0;
+    _rx_otw_type.byteorder = uhd::otw_type_t::BO_LITTLE_ENDIAN;
+
+    //setup tx otw type
+    _tx_otw_type.width = 16;
+    _tx_otw_type.shift = 0;
+    _tx_otw_type.byteorder = uhd::otw_type_t::BO_LITTLE_ENDIAN;
+
+    //create new io impl
+    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport, _rx_dsps.size()));
+    _io_impl->iface = _fpga_ctrl;
+
+    //clear state machines
+    _fpga_ctrl->poke32(E100_REG_CLEAR_RX, 0);
+    _fpga_ctrl->poke32(E100_REG_CLEAR_TX, 0);
+
+    //prepare the async msg buffer for incoming messages
+    _fpga_ctrl->poke32(E100_REG_SR_ERR_CTRL, 1 << 0); //clear
+    while ((_fpga_ctrl->peek32(E100_REG_RB_ERR_STATUS) & (1 << 2)) == 0){} //wait for idle
+    _fpga_ctrl->poke32(E100_REG_SR_ERR_CTRL, 1 << 1); //start
+
+    //spawn a pirate, yarrr!
+    boost::barrier spawn_barrier(2);
+    _io_impl->recv_pirate_crew.create_thread(boost::bind(
+        &e100_impl::io_impl::recv_pirate_loop, _io_impl.get(),
+        boost::ref(spawn_barrier), _aux_spi_iface
+    ));
+    spawn_barrier.wait();
+
+    //init some handler stuff
     _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_le);
-    _io_impl->recv_handler.set_tick_rate(_clock_ctrl->get_fpga_clock_rate());
-    //FIXME assumes homogeneous rates across all dsp
-    _io_impl->recv_handler.set_samp_rate(_rx_dsp_proxies[_rx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
-    for (size_t chan = 0; chan < _io_impl->recv_handler.size(); chan++){
-        _io_impl->recv_handler.set_xport_chan_get_buff(chan, boost::bind(
-            &e100_impl::io_impl::get_recv_buff, _io_impl.get(), chan, _1
-        ));
-        _io_impl->recv_handler.set_overflow_handler(chan, boost::bind(
-            &e100_impl::handle_overrun, this, chan
-        ));
-    }
-    _io_impl->recv_handler.set_converter(_recv_otw_type);
-
-    //set all of the relevant properties on the handler
-    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
-    _io_impl->send_handler.resize(_tx_subdev_spec.size());
+    _io_impl->recv_handler.set_converter(_rx_otw_type);
     _io_impl->send_handler.set_vrt_packer(&vrt::if_hdr_pack_le);
-    _io_impl->send_handler.set_tick_rate(_clock_ctrl->get_fpga_clock_rate());
-    //FIXME assumes homogeneous rates across all dsp
-    _io_impl->send_handler.set_samp_rate(_tx_dsp_proxies[_tx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
-    for (size_t chan = 0; chan < _io_impl->send_handler.size(); chan++){
-        _io_impl->send_handler.set_xport_chan_get_buff(chan, boost::bind(
-            &uhd::transport::zero_copy_if::get_send_buff, _io_impl->data_transport, _1
-        ));
-    }
-    _io_impl->send_handler.set_converter(_send_otw_type);
+    _io_impl->send_handler.set_converter(_tx_otw_type);
     _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
-void e100_impl::issue_ddc_stream_cmd(const stream_cmd_t &stream_cmd, const size_t index){
-    _io_impl->continuous_streaming = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    _iface->poke32(E100_REG_RX_CTRL_STREAM_CMD(index), dsp_type1::calc_stream_cmd_word(stream_cmd));
-    _iface->poke32(E100_REG_RX_CTRL_TIME_SECS(index),  boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-    _iface->poke32(E100_REG_RX_CTRL_TIME_TICKS(index), stream_cmd.time_spec.get_tick_count(_clock_ctrl->get_fpga_clock_rate()));
+void e100_impl::update_tick_rate(const double rate){
+    _io_impl->tick_rate = rate;
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    _io_impl->recv_handler.set_tick_rate(rate);
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    _io_impl->send_handler.set_tick_rate(rate);
 }
 
-void e100_impl::handle_overrun(const size_t index){
-    if (_io_impl->continuous_streaming){
-        this->issue_ddc_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS, index);
+void e100_impl::update_rx_samp_rate(const double rate){
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    _io_impl->recv_handler.set_samp_rate(rate);
+}
+
+void e100_impl::update_tx_samp_rate(const double rate){
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    _io_impl->send_handler.set_samp_rate(rate);
+}
+
+void e100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    property_tree::path_type root = "/mboards/0/dboards";
+
+    //sanity checking
+    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
+    if (spec.size() > _rx_dsps.size()) throw uhd::value_error("rx subdev spec too long");
+
+    //setup mux for this spec
+    for (size_t i = 0; i < spec.size(); i++){
+        //ASSUME that we dont swap the rx fe mux...
+        const std::string conn = _tree->access<std::string>(root / spec[i].db_name / "rx_frontends" / spec[i].sd_name / "connection").get();
+        _rx_dsps[i]->set_mux(conn);
+    }
+
+    //resize for the new occupancy
+    _io_impl->recv_handler.resize(spec.size());
+
+    //bind new callbacks for the handler
+    for (size_t i = 0; i < _io_impl->recv_handler.size(); i++){
+        _rx_dsps[i]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
+        _io_impl->recv_handler.set_xport_chan_get_buff(i, boost::bind(
+            &e100_impl::io_impl::get_recv_buff, _io_impl.get(), i, _1
+        ));
+        _io_impl->recv_handler.set_overflow_handler(i, boost::bind(&rx_dsp_core_200::handle_overflow, _rx_dsps[i]));
+    }
+}
+
+void e100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    property_tree::path_type root = "/mboards/0/dboards";
+
+    //sanity checking
+    if (spec.size() != 1) throw uhd::value_error("tx subdev spec has to be size 1");
+
+    //set the mux for this spec
+    const std::string conn = _tree->access<std::string>(root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection").get();
+    _tx_fe->set_mux(conn);
+
+    //resize for the new occupancy
+    _io_impl->send_handler.resize(spec.size());
+
+    //bind new callbacks for the handler
+    for (size_t i = 0; i < _io_impl->send_handler.size(); i++){
+        _io_impl->send_handler.set_xport_chan_get_buff(i, boost::bind(
+            &zero_copy_if::get_send_buff, _data_transport, _1
+        ));
     }
 }
 
@@ -274,8 +307,8 @@ size_t e100_impl::get_max_send_samps_per_packet(void) const{
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    size_t bpp = _send_frame_size - hdr_size;
-    return bpp/_send_otw_type.get_sample_size();
+    size_t bpp = _data_transport->get_send_frame_size() - hdr_size;
+    return bpp/_tx_otw_type.get_sample_size();
 }
 
 size_t e100_impl::send(
@@ -299,8 +332,8 @@ size_t e100_impl::get_max_recv_samps_per_packet(void) const{
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    size_t bpp = _recv_frame_size - hdr_size;
-    return bpp/_recv_otw_type.get_sample_size();
+    size_t bpp = _data_transport->get_recv_frame_size() - hdr_size;
+    return bpp/_rx_otw_type.get_sample_size();
 }
 
 size_t e100_impl::recv(

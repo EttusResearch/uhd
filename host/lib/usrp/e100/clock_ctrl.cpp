@@ -167,7 +167,7 @@ static clock_settings_type get_clock_settings(double rate){
  **********************************************************************/
 class e100_clock_ctrl_impl : public e100_clock_ctrl{
 public:
-    e100_clock_ctrl_impl(e100_iface::sptr iface, double master_clock_rate){
+    e100_clock_ctrl_impl(spi_iface::sptr iface, double master_clock_rate){
         _iface = iface;
         _chan_rate = 0.0;
         _out_rate = 0.0;
@@ -294,10 +294,8 @@ public:
         if (_out_rate == rate) return;
         if (rate == 61.44e6) set_clock_settings_with_external_vcxo(rate);
         else                 set_clock_settings_with_internal_vco(rate);
-        //clock rate changed! update dboard clocks and FPGA ticks per second
         set_rx_dboard_clock_rate(rate);
         set_tx_dboard_clock_rate(rate);
-        _iface->poke32(E100_REG_TIME64_TPS, boost::uint32_t(get_fpga_clock_rate()));
     }
 
     double get_fpga_clock_rate(void){
@@ -421,7 +419,7 @@ public:
     }
 
 private:
-    e100_iface::sptr _iface;
+    spi_iface::sptr _iface;
     ad9522_regs_t _ad9522_regs;
     double _out_rate; //rate at the fpga and codec
     double _chan_rate; //rate before final dividers
@@ -507,6 +505,6 @@ private:
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-e100_clock_ctrl::sptr e100_clock_ctrl::make(e100_iface::sptr iface, double master_clock_rate){
+e100_clock_ctrl::sptr e100_clock_ctrl::make(spi_iface::sptr iface, double master_clock_rate){
     return sptr(new e100_clock_ctrl_impl(iface, master_clock_rate));
 }

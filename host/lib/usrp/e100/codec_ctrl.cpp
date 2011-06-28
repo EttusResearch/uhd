@@ -38,7 +38,7 @@ const gain_range_t e100_codec_ctrl::rx_pga_gain_range(0, 20, 1);
 class e100_codec_ctrl_impl : public e100_codec_ctrl{
 public:
     //structors
-    e100_codec_ctrl_impl(e100_iface::sptr iface);
+    e100_codec_ctrl_impl(spi_iface::sptr iface);
     ~e100_codec_ctrl_impl(void);
 
     //aux adc and dac control
@@ -52,7 +52,7 @@ public:
     double get_rx_pga_gain(char);
 
 private:
-    e100_iface::sptr _iface;
+    spi_iface::sptr _iface;
     ad9862_regs_t _ad9862_regs;
     void send_reg(boost::uint8_t addr);
     void recv_reg(boost::uint8_t addr);
@@ -61,7 +61,7 @@ private:
 /***********************************************************************
  * Codec Control Structors
  **********************************************************************/
-e100_codec_ctrl_impl::e100_codec_ctrl_impl(e100_iface::sptr iface){
+e100_codec_ctrl_impl::e100_codec_ctrl_impl(spi_iface::sptr iface){
     _iface = iface;
 
     //soft reset
@@ -275,6 +275,6 @@ void e100_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
 /***********************************************************************
  * Codec Control Make
  **********************************************************************/
-e100_codec_ctrl::sptr e100_codec_ctrl::make(e100_iface::sptr iface){
+e100_codec_ctrl::sptr e100_codec_ctrl::make(spi_iface::sptr iface){
     return sptr(new e100_codec_ctrl_impl(iface));
 }

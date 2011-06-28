@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "e100_iface.hpp"
+#include "e100_ctrl.hpp"
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
@@ -104,7 +104,7 @@ private:
  **********************************************************************/
 class e100_mmap_zero_copy_impl : public zero_copy_if{
 public:
-    e100_mmap_zero_copy_impl(e100_iface::sptr iface):
+    e100_mmap_zero_copy_impl(e100_ctrl::sptr iface):
         _fd(iface->get_file_descriptor()), _recv_index(0), _send_index(0)
     {
         //get system sizes
@@ -264,6 +264,6 @@ private:
 /***********************************************************************
  * The zero copy interface make function
  **********************************************************************/
-zero_copy_if::sptr e100_make_mmap_zero_copy(e100_iface::sptr iface){
+zero_copy_if::sptr e100_make_mmap_zero_copy(e100_ctrl::sptr iface){
     return zero_copy_if::sptr(new e100_mmap_zero_copy_impl(iface));
 }

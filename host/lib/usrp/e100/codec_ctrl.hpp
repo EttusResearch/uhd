@@ -18,7 +18,7 @@
 #ifndef INCLUDED_USRP_E100_CODEC_CTRL_HPP
 #define INCLUDED_USRP_E100_CODEC_CTRL_HPP
 
-#include "e100_iface.hpp"
+#include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -37,10 +37,10 @@ public:
 
     /*!
      * Make a new codec control object.
-     * \param iface the usrp_e100 iface object
+     * \param iface the spi iface object
      * \return the codec control object
      */
-    static sptr make(e100_iface::sptr iface);
+    static sptr make(uhd::spi_iface::sptr iface);
 
     //! aux adc identifier constants
     enum aux_adc_t{
