@@ -230,8 +230,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         // create codec control objects
         ////////////////////////////////////////////////////////////////
-        property_tree::path_type rx_codec_path = mb_path / "rx_codecs/0";
-        property_tree::path_type tx_codec_path = mb_path / "tx_codecs/0";
+        property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
+        property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
         _mboard_stuff[mb].codec = usrp2_codec_ctrl::make(_mboard_stuff[mb].iface);
         switch(_mboard_stuff[mb].iface->get_rev()){
         case usrp2_iface::USRP_N200:
@@ -239,15 +239,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         case usrp2_iface::USRP_N200_R4:
         case usrp2_iface::USRP_N210_R4:{
             _tree->create(rx_codec_path / "name", property<std::string>("ads62p44"));
-            _tree->create(rx_codec_path / "gains/0/name", property<std::string>("digital"));
-            _tree->create(rx_codec_path / "gains/0/range", property<meta_range_t>(meta_range_t(0, 6.0, 0.5)));
+            _tree->create(rx_codec_path / "gains/digital/range", property<meta_range_t>(meta_range_t(0, 6.0, 0.5)));
             property<double> dig_gain_prop, fine_gain_prop;
             dig_gain_prop.subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_gain, _mboard_stuff[mb].codec, _1));
-            _tree->create(rx_codec_path / "gains/0/value", dig_gain_prop);
-            _tree->create(rx_codec_path / "gains/1/name", property<std::string>("digital-fine"));
-            _tree->create(rx_codec_path / "gains/1/range", property<meta_range_t>(meta_range_t(0, 0.5, 0.05)));
+            _tree->create(rx_codec_path / "gains/digital/value", dig_gain_prop);
+            _tree->create(rx_codec_path / "gains/fine/range", property<meta_range_t>(meta_range_t(0, 0.5, 0.05)));
             fine_gain_prop.subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_fine_gain, _mboard_stuff[mb].codec, _1));
-            _tree->create(rx_codec_path / "gains/0/value", fine_gain_prop);
+            _tree->create(rx_codec_path / "gains/fine/value", fine_gain_prop);
         }break;
 
         case usrp2_iface::USRP2_REV3:
@@ -264,12 +262,41 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         // create gpsdo control objects
         ////////////////////////////////////////////////////////////////
-        //TODO
-        //TODO register sensors
+        if (_mboard_stuff[mb].iface->mb_eeprom["gpsdo"] == "internal"){
+            _mboard_stuff[mb].gps = gps_ctrl::make(
+                _mboard_stuff[mb].iface->get_gps_write_fn(),
+                _mboard_stuff[mb].iface->get_gps_read_fn()
+            );
+            BOOST_FOREACH(const std::string &name, _mboard_stuff[mb].gps->get_sensors()){
+                property<sensor_value_t> sensor_prop;
+                sensor_prop.publish(boost::bind(&gps_ctrl::get_sensor, _mboard_stuff[mb].gps, name));
+                _tree->create(mb_path / "sensors" / name, sensor_prop);
+            }
+        }
 
-        //TODO other sensors
+        ////////////////////////////////////////////////////////////////
+        // and do the misc mboard sensors
+        ////////////////////////////////////////////////////////////////
+        property<sensor_value_t> mimo_lock_sensor_prop;
+        mimo_lock_sensor_prop.publish(boost::bind(&usrp2_impl::get_mimo_locked, this, mb));
+        _tree->create(mb_path / "sensors/mimo_locked", mimo_lock_sensor_prop);
+        property<sensor_value_t> ref_lock_sensor_prop;
+        ref_lock_sensor_prop.publish(boost::bind(&usrp2_impl::get_ref_locked, this, mb));
+        _tree->create(mb_path / "sensors/ref_locked", ref_lock_sensor_prop);
+
+
+
+
+
+        //TODO //initialize VITA time to GPS time
 
         //TODO clock source, time source
+
+
+
+
+
+
 
         ////////////////////////////////////////////////////////////////
         // create frontend control objects
@@ -353,15 +380,15 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         //create the properties and register subscribers
         property<dboard_eeprom_t> rx_db_eeprom_prop(rx_db_eeprom), tx_db_eeprom_prop(tx_db_eeprom), gdb_eeprom_prop(gdb_eeprom);
         rx_db_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "rx", _1));
-        _tree->create(mb_path / "dboards/0/rx_eeprom", rx_db_eeprom_prop);
+        _tree->create(mb_path / "dboards/A/rx_eeprom", rx_db_eeprom_prop);
         tx_db_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "tx", _1));
-        _tree->create(mb_path / "dboards/0/tx_eeprom", tx_db_eeprom_prop);
+        _tree->create(mb_path / "dboards/A/tx_eeprom", tx_db_eeprom_prop);
         gdb_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
-        _tree->create(mb_path / "dboards/0/gdb_eeprom", gdb_eeprom_prop);
+        _tree->create(mb_path / "dboards/A/gdb_eeprom", gdb_eeprom_prop);
 
         //create a new dboard interface and manager
         _mboard_stuff[mb].dboard_iface = make_usrp2_dboard_iface(_mboard_stuff[mb].iface, _mboard_stuff[mb].clock);
-        _tree->create(mb_path / "dboards/0/iface", property<dboard_iface::sptr>(_mboard_stuff[mb].dboard_iface));
+        _tree->create(mb_path / "dboards/A/iface", property<dboard_iface::sptr>(_mboard_stuff[mb].dboard_iface));
         _mboard_stuff[mb].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id,
             ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
@@ -369,19 +396,17 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         );
         BOOST_FOREACH(const std::string &name, _mboard_stuff[mb].dboard_manager->get_rx_subdev_names()){
             dboard_manager::populate_prop_tree_from_subdev(
-                _tree, mb_path / "rx_rf_frontends" / name,
+                _tree, mb_path / "dboards/A/rx_frontends" / name,
                 _mboard_stuff[mb].dboard_manager->get_rx_subdev(name)
             );
         }
         BOOST_FOREACH(const std::string &name, _mboard_stuff[mb].dboard_manager->get_tx_subdev_names()){
             dboard_manager::populate_prop_tree_from_subdev(
-                _tree, mb_path / "tx_rf_frontends" / name,
+                _tree, mb_path / "dboards/A/tx_frontends" / name,
                 _mboard_stuff[mb].dboard_manager->get_tx_subdev(name)
             );
         }
-
     }
-
 }
 
 usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(
@@ -398,4 +423,14 @@ void usrp2_impl::set_db_eeprom(const size_t which_mb, const std::string &type, c
     if (type == "rx") db_eeprom.store(*_mboard_stuff[which_mb].iface, USRP2_I2C_ADDR_RX_DB);
     if (type == "tx") db_eeprom.store(*_mboard_stuff[which_mb].iface, USRP2_I2C_ADDR_TX_DB);
     if (type == "gdb") db_eeprom.store(*_mboard_stuff[which_mb].iface, USRP2_I2C_ADDR_TX_DB ^ 5);
+}
+
+sensor_value_t usrp2_impl::get_mimo_locked(const size_t which_mb){
+    const bool lock = (_mboard_stuff[which_mb].iface->peek32(U2_REG_IRQ_RB) & (1<<10)) != 0;
+    return sensor_value_t("MIMO", lock, "locked", "unlocked");
+}
+
+sensor_value_t usrp2_impl::get_ref_locked(const size_t which_mb){
+    const bool lock = (_mboard_stuff[which_mb].iface->peek32(U2_REG_IRQ_RB) & (1<<11)) != 0;
+    return sensor_value_t("Ref", lock, "locked", "unlocked");
 }

@@ -66,7 +66,7 @@ uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
  */
 class usrp2_impl{
 public:
-    usrp2_impl(const uhd::device_addr_t &_device_addr);
+    usrp2_impl(const uhd::device_addr_t &);
     ~usrp2_impl(void);
     uhd::property_tree::sptr _tree;
 private:
@@ -74,6 +74,7 @@ private:
         usrp2_iface::sptr iface;
         usrp2_clock_ctrl::sptr clock;
         usrp2_codec_ctrl::sptr codec;
+        gps_ctrl::sptr gps;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         std::vector<rx_dsp_core_200::sptr> rx_dsps;
@@ -88,6 +89,9 @@ private:
 
     void set_mb_eeprom(const size_t which_mb, const uhd::usrp::mboard_eeprom_t &mb_eeprom);
     void set_db_eeprom(const size_t which_mb, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom);
+
+    uhd::sensor_value_t get_mimo_locked(const size_t which_mb);
+    uhd::sensor_value_t get_ref_locked(const size_t which_mb);
 
 };
 
