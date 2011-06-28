@@ -162,6 +162,10 @@ void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = prop_names_t(1, ""); //vector of 1 empty string
+        return;
+
     case SUBDEV_PROP_CONNECTION:
         val = sd_name_to_conn[get_subdev_name()];
         return;
@@ -265,6 +269,10 @@ void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA_NAMES:
+        val = prop_names_t(1, ""); //vector of 1 empty string
+        return;
+
+    case SUBDEV_PROP_SENSOR_NAMES:
         val = prop_names_t(1, ""); //vector of 1 empty string
         return;
 

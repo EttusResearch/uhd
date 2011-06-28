@@ -20,15 +20,9 @@
 ########################################################################
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fw_common.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_clk_regs.hpp
 )

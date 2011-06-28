@@ -47,6 +47,8 @@ static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
 static const double mimo_clock_delay_usrp_n2xx = 3.55e-9;
 static const size_t mimo_clock_sync_delay_cycles = 137;
 static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
+static const boost::uint32_t USRP2_TX_ASYNC_SID = 2;
+static const boost::uint32_t USRP2_RX_SID_BASE = 3;
 
 /*!
  * Make a usrp2 dboard interface.
@@ -64,12 +66,28 @@ uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
  * The implementation details are encapsulated here.
  * Handles device properties and streaming...
  */
-class usrp2_impl{
+class usrp2_impl : public uhd::device{
 public:
     usrp2_impl(const uhd::device_addr_t &);
     ~usrp2_impl(void);
-    uhd::property_tree::sptr _tree;
+
+    //the io interface
+    size_t send(
+        const send_buffs_type &, size_t,
+        const uhd::tx_metadata_t &, const uhd::io_type_t &,
+        uhd::device::send_mode_t, double
+    );
+    size_t recv(
+        const recv_buffs_type &, size_t,
+        uhd::rx_metadata_t &, const uhd::io_type_t &,
+        uhd::device::recv_mode_t, double
+    );
+    size_t get_max_send_samps_per_packet(void) const;
+    size_t get_max_recv_samps_per_packet(void) const;
+    bool recv_async_msg(uhd::async_metadata_t &, double);
+
 private:
+    uhd::property_tree::sptr _tree;
     struct mboard_stuff_type{
         usrp2_iface::sptr iface;
         usrp2_clock_ctrl::sptr clock;
@@ -93,6 +111,20 @@ private:
     uhd::sensor_value_t get_mimo_locked(const size_t which_mb);
     uhd::sensor_value_t get_ref_locked(const size_t which_mb);
 
+    //device properties interface
+    void get(const wax::obj &, wax::obj &val){
+        val = _tree; //entry point into property tree
+    }
+
+    //io impl methods and members
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
+    UHD_PIMPL_DECL(io_impl) _io_impl;
+    void io_init(void);
+    void update_tick_rate(const double rate);
+    void update_rx_samp_rate(const double rate);
+    void update_tx_samp_rate(const double rate);
+    void update_rx_subdev_spec(const size_t, const uhd::usrp::subdev_spec_t &);
+    void update_tx_subdev_spec(const size_t, const uhd::usrp::subdev_spec_t &);
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */

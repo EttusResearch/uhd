@@ -49,7 +49,7 @@ public:
         return true;
     }
 
-    iterator_type iterate(const path_type &path){
+    std::vector<std::string> list(const path_type &path){
         boost::mutex::scoped_lock lock(_mutex);
 
         node_type *node = &_root;
@@ -58,11 +58,7 @@ public:
             node = &(*node)[leaf];
         }
 
-        iterator_type iter;
-        BOOST_FOREACH(const std::string &name, node->keys()){
-            iter.push_back(name);
-        }
-        return iter;
+        return node->keys();
     }
 
     void _create(const path_type &path, const boost::any &prop){

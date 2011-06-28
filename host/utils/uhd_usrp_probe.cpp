@@ -164,6 +164,15 @@ static std::string get_device_pp_string(device::sptr dev){
     return ss.str();
 }
 
+#include <uhd/property_tree.hpp>
+
+void print_tree(const uhd::property_tree::path_type &path, uhd::property_tree::sptr tree){
+    std::cout << path << std::endl;
+    BOOST_FOREACH(const std::string &name, tree->list(path)){
+        print_tree(path / name, tree);
+    }
+}
+
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -183,7 +192,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     device::sptr dev = device::make(vm["args"].as<std::string>());
 
-    std::cout << make_border(get_device_pp_string(dev)) << std::endl;
+    //std::cout << make_border(get_device_pp_string(dev)) << std::endl;
+    print_tree("/", (*dev)[0].as<uhd::property_tree::sptr>());
 
     return 0;
 }

@@ -40,6 +40,123 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 /***********************************************************************
+ * Discovery over the udp transport
+ **********************************************************************/
+static device_addrs_t usrp2_find(const device_addr_t &hint_){
+    //handle the multi-device discovery
+    device_addrs_t hints = separate_device_addr(hint_);
+    if (hints.size() > 1){
+        device_addrs_t found_devices;
+        BOOST_FOREACH(const device_addr_t &hint_i, hints){
+            device_addrs_t found_devices_i = usrp2_find(hint_i);
+            if (found_devices_i.size() != 1) throw uhd::value_error(str(boost::format(
+                "Could not resolve device hint \"%s\" to a single device."
+            ) % hint_i.to_string()));
+            found_devices.push_back(found_devices_i[0]);
+        }
+        return device_addrs_t(1, combine_device_addrs(found_devices));
+    }
+
+    //initialize the hint for a single device case
+    UHD_ASSERT_THROW(hints.size() <= 1);
+    hints.resize(1); //in case it was empty
+    device_addr_t hint = hints[0];
+    device_addrs_t usrp2_addrs;
+
+    //return an empty list of addresses when type is set to non-usrp2
+    if (hint.has_key("type") and hint["type"] != "usrp2") return usrp2_addrs;
+
+    //if no address was specified, send a broadcast on each interface
+    if (not hint.has_key("addr")){
+        BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
+            //avoid the loopback device
+            if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
+
+            //create a new hint with this broadcast address
+            device_addr_t new_hint = hint;
+            new_hint["addr"] = if_addrs.bcast;
+
+            //call discover with the new hint and append results
+            device_addrs_t new_usrp2_addrs = usrp2_find(new_hint);
+            usrp2_addrs.insert(usrp2_addrs.begin(),
+                new_usrp2_addrs.begin(), new_usrp2_addrs.end()
+            );
+        }
+        return usrp2_addrs;
+    }
+
+    //create a udp transport to communicate
+    std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
+    udp_simple::sptr udp_transport = udp_simple::make_broadcast(
+        hint["addr"], ctrl_port
+    );
+
+    //send a hello control packet
+    usrp2_ctrl_data_t ctrl_data_out = usrp2_ctrl_data_t();
+    ctrl_data_out.proto_ver = uhd::htonx<boost::uint32_t>(USRP2_FW_COMPAT_NUM);
+    ctrl_data_out.id = uhd::htonx<boost::uint32_t>(USRP2_CTRL_ID_WAZZUP_BRO);
+    udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+
+    //loop and recieve until the timeout
+    boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
+    const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
+    while(true){
+        size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
+        if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
+
+            //make a boost asio ipv4 with the raw addr in host byte order
+            boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+            device_addr_t new_addr;
+            new_addr["type"] = "usrp2";
+            new_addr["addr"] = ip_addr.to_string();
+
+            //Attempt to read the name from the EEPROM and perform filtering.
+            //This operation can throw due to compatibility mismatch.
+            try{
+                usrp2_iface::sptr iface = usrp2_iface::make(udp_simple::make_connected(
+                    new_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
+                ));
+                if (iface->is_device_locked()) continue; //ignore locked devices
+                mboard_eeprom_t mb_eeprom = iface->mb_eeprom;
+                new_addr["name"] = mb_eeprom["name"];
+                new_addr["serial"] = mb_eeprom["serial"];
+            }
+            catch(const std::exception &){
+                //set these values as empty string so the device may still be found
+                //and the filter's below can still operate on the discovered device
+                new_addr["name"] = "";
+                new_addr["serial"] = "";
+            }
+
+            //filter the discovered device below by matching optional keys
+            if (
+                (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+                (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+            ){
+                usrp2_addrs.push_back(new_addr);
+            }
+
+            //dont break here, it will exit the while loop
+            //just continue on to the next loop iteration
+        }
+        if (len == 0) break; //timeout
+    }
+
+    return usrp2_addrs;
+}
+
+/***********************************************************************
+ * Make
+ **********************************************************************/
+static device::sptr usrp2_make(const device_addr_t &device_addr){
+    return device::sptr(new usrp2_impl(device_addr));
+}
+
+UHD_STATIC_BLOCK(register_usrp2_device){
+    device::register_device(&usrp2_find, &usrp2_make);
+}
+
+/***********************************************************************
  * MTU Discovery
  **********************************************************************/
 struct mtu_result_t{
@@ -291,6 +408,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         //TODO //initialize VITA time to GPS time
 
         //TODO clock source, time source
+        //and if gps is present, set to external automatically
 
 
 
@@ -313,10 +431,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create dsp control objects
         ////////////////////////////////////////////////////////////////
         _mboard_stuff[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), 3
+            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0
         ));
         _mboard_stuff[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), 4
+            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1
         ));
         for (size_t dspno = 0; dspno < _mboard_stuff[mb].rx_dsps.size(); dspno++){
             _mboard_stuff[mb].rx_dsps[dspno]->set_tick_rate(tick_rate); //does not change on usrp2
@@ -327,9 +445,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             freq_prop.subscribe_master(boost::bind(&rx_dsp_core_200::set_freq, _mboard_stuff[mb].rx_dsps[dspno], _1));
             _tree->create(rx_dsp_path / "freq/value", freq_prop);
             //TODO set nsamps per packet
+            //TODO stream command issue
         }
         _mboard_stuff[mb].tx_dsp = tx_dsp_core_200::make(
-            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), 2
+            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );
         _mboard_stuff[mb].tx_dsp->set_tick_rate(tick_rate); //does not change on usrp2
         property<double> tx_dsp_host_rate_prop, tx_dsp_freq_prop;
@@ -407,6 +526,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             );
         }
     }
+
+    //TODO io init
+    //TODO subdev spec init
+    //TODO tick rate init
+
 }
 
 usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(

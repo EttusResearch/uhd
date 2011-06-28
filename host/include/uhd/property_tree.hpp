@@ -24,7 +24,7 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem/path.hpp>
-#include <list>
+#include <vector>
 
 namespace uhd{
 
@@ -35,7 +35,6 @@ class UHD_API property_tree : boost::noncopyable{
 public:
     typedef boost::shared_ptr<property_tree> sptr;
     typedef boost::filesystem::path path_type;
-    typedef std::list<std::string> iterator_type;
 
     //! Create a new + empty property tree
     static sptr make(void);
@@ -46,8 +45,8 @@ public:
     //! True if the path exists in the tree
     virtual bool exists(const path_type &path) = 0;
 
-    //! Get an iterator to all things in the given path
-    virtual iterator_type iterate(const path_type &path) = 0;
+    //! Get an iterable to all things in the given path
+    virtual std::vector<std::string> list(const path_type &path) = 0;
 
     //! Create a new property entry in the tree
     template <typename T> void create(const path_type &path, const property<T> &prop = property<T>()){
