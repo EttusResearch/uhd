@@ -37,9 +37,6 @@ namespace uhd{
      */
     struct UHD_API sensor_value_t{
 
-        //! Default constructor
-        sensor_value_t(void);
-
         /*!
          * Create a sensor value from a boolean.
          * \param name the name of the sensor

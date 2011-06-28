@@ -26,7 +26,7 @@ INSTALL(FILES
     convert.hpp
     device.hpp
     exception.hpp
-    property.hpp
+    property_tree.ipp
     property_tree.hpp
     version.hpp
     wax.hpp

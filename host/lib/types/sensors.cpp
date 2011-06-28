@@ -22,13 +22,6 @@
 
 using namespace uhd;
 
-sensor_value_t::sensor_value_t(void):
-    name(""), value(""),
-    unit(""), type(STRING)
-{
-    /* NOP */
-}
-
 sensor_value_t::sensor_value_t(
     const std::string &name,
     bool value,

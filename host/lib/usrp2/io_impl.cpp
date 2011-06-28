@@ -246,7 +246,15 @@ void usrp2_impl::io_impl::recv_pirate_loop(
  **********************************************************************/
 void usrp2_impl::io_init(void){
 
-    //TODO //This is a hack/fix for the lingering packet problem.
+    //setup rx otw type
+    _rx_otw_type.width = 16;
+    _rx_otw_type.shift = 0;
+    _rx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+
+    //setup tx otw type
+    _tx_otw_type.width = 16;
+    _tx_otw_type.shift = 0;
+    _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
 
     //create new io impl
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_mboard_stuff.size()));

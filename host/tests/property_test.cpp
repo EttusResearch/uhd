@@ -16,7 +16,6 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <uhd/property.hpp>
 #include <uhd/property_tree.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
@@ -36,50 +35,50 @@ struct setter_type{
 };
 
 BOOST_AUTO_TEST_CASE(test_prop_simple){
-    uhd::property<int> prop;
-    prop.set(42);
-    BOOST_CHECK_EQUAL(prop.get(), 42);
-    prop.set(34);
-    BOOST_CHECK_EQUAL(prop.get(), 34);
+    uhd::property<int>::sptr prop = uhd::property<int>::make();
+    prop->set(42);
+    BOOST_CHECK_EQUAL(prop->get(), 42);
+    prop->set(34);
+    BOOST_CHECK_EQUAL(prop->get(), 34);
 }
 
 BOOST_AUTO_TEST_CASE(test_prop_with_subscriber){
-    uhd::property<int> prop;
+    uhd::property<int>::sptr prop = uhd::property<int>::make();
 
     setter_type setter;
-    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop->subscribe(boost::bind(&setter_type::doit, &setter, _1));
 
-    prop.set(42);
-    BOOST_CHECK_EQUAL(prop.get(), 42);
+    prop->set(42);
+    BOOST_CHECK_EQUAL(prop->get(), 42);
     BOOST_CHECK_EQUAL(setter._x, 42);
 
-    prop.set(34);
-    BOOST_CHECK_EQUAL(prop.get(), 34);
+    prop->set(34);
+    BOOST_CHECK_EQUAL(prop->get(), 34);
     BOOST_CHECK_EQUAL(setter._x, 34);
 }
 
 BOOST_AUTO_TEST_CASE(test_prop_with_coercion){
-    uhd::property<int> prop;
+    uhd::property<int>::sptr prop = uhd::property<int>::make();
 
     setter_type setter;
-    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop->subscribe(boost::bind(&setter_type::doit, &setter, _1));
 
     coercer_type coercer;
-    prop.subscribe_master(boost::bind(&coercer_type::doit, &coercer, _1));
+    prop->subscribe_master(boost::bind(&coercer_type::doit, &coercer, _1));
 
-    prop.set(42);
-    BOOST_CHECK_EQUAL(prop.get(), 40);
+    prop->set(42);
+    BOOST_CHECK_EQUAL(prop->get(), 40);
     BOOST_CHECK_EQUAL(setter._x, 40);
 
-    prop.set(34);
-    BOOST_CHECK_EQUAL(prop.get(), 32);
+    prop->set(34);
+    BOOST_CHECK_EQUAL(prop->get(), 32);
     BOOST_CHECK_EQUAL(setter._x, 32);
 }
 
 BOOST_AUTO_TEST_CASE(test_prop_tree){
     uhd::property_tree::sptr tree = uhd::property_tree::make();
 
-    tree->create("/test/prop0", uhd::property<int>());
+    tree->create<int>("/test/prop0");
     tree->create<int>("/test/prop1");
 
     BOOST_CHECK(tree->exists("/test"));
@@ -88,6 +87,9 @@ BOOST_AUTO_TEST_CASE(test_prop_tree){
 
     tree->access<int>("/test/prop0").set(42);
     tree->access<int>("/test/prop1").set(34);
+
+    BOOST_CHECK_EQUAL(tree->access<int>("/test/prop0").get(), 42);
+    BOOST_CHECK_EQUAL(tree->access<int>("/test/prop1").get(), 34);
 
     tree->remove("/test/prop0");
     BOOST_CHECK(not tree->exists("/test/prop0"));

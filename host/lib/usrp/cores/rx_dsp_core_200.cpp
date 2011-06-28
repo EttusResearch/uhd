@@ -48,10 +48,18 @@ public:
     rx_dsp_core_200_impl(
         wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
-        const boost::uint32_t sid
+        const boost::uint32_t sid, const bool lingering_packet
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base)
     {
+        //This is a hack/fix for the lingering packet problem.
+        //The caller should also flush the recv transports
+        if (lingering_packet){
+            stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+            stream_cmd.num_samps = 1;
+            issue_stream_command(stream_cmd);
+        }
+
         _iface->poke32(REG_RX_CTRL_CLEAR, 1); //reset
         _iface->poke32(REG_RX_CTRL_NCHANNELS, 1);
         _iface->poke32(REG_RX_CTRL_VRT_HDR, 0
@@ -162,6 +170,6 @@ private:
     bool _continuous_streaming;
 };
 
-rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid){
-    return sptr(new rx_dsp_core_200_impl(iface, dsp_base, ctrl_base, sid));
+rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid, const bool lingering_packet){
+    return sptr(new rx_dsp_core_200_impl(iface, dsp_base, ctrl_base, sid, lingering_packet));
 }

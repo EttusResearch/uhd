@@ -341,7 +341,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         _mboard_stuff[mb].clock = usrp2_clock_ctrl::make(_mboard_stuff[mb].iface);
         const double tick_rate = _mboard_stuff[mb].clock->get_master_clock_rate();
-        property<double> tick_rate_prop(tick_rate);
+        property<double> tick_rate_prop;
+        tick_rate_prop.publish(boost::bind(&usrp2_clock_ctrl::get_master_clock_rate, _mboard_stuff[mb].clock));
+        tick_rate_prop.subscribe(boost::bind(&usrp2_impl::update_tick_rate, this, _1));
         _tree->create(mb_path / "tick_rate", tick_rate_prop);
 
         ////////////////////////////////////////////////////////////////
@@ -428,16 +430,20 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         //TODO lots of properties to expose here for frontends
 
         ////////////////////////////////////////////////////////////////
-        // create dsp control objects
+        // create rx dsp control objects
         ////////////////////////////////////////////////////////////////
         _mboard_stuff[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0
+            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0, true
         ));
         _mboard_stuff[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1
+            _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
         ));
         for (size_t dspno = 0; dspno < _mboard_stuff[mb].rx_dsps.size(); dspno++){
             _mboard_stuff[mb].rx_dsps[dspno]->set_tick_rate(tick_rate); //does not change on usrp2
+            //This is a hack/fix for the lingering packet problem.
+            //The dsp core starts streaming briefly... now we flush
+            _mboard_stuff[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
+            _mboard_stuff[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
             property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
             property<double> host_rate_prop, freq_prop;
             host_rate_prop.subscribe_master(boost::bind(&rx_dsp_core_200::set_host_rate, _mboard_stuff[mb].rx_dsps[dspno], _1));
@@ -447,6 +453,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             //TODO set nsamps per packet
             //TODO stream command issue
         }
+
+        ////////////////////////////////////////////////////////////////
+        // create tx dsp control objects
+        ////////////////////////////////////////////////////////////////
         _mboard_stuff[mb].tx_dsp = tx_dsp_core_200::make(
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );

@@ -32,7 +32,7 @@ public:
     static sptr make(
         wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
-        const boost::uint32_t sid
+        const boost::uint32_t sid, const bool lingering_packet = false
     );
 
     virtual void set_nsamps_per_packet(const size_t nsamps) = 0;
