@@ -32,7 +32,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
-#include <numeric>
 #include <iostream>
 
 using namespace uhd;
@@ -135,8 +134,7 @@ private:
  **********************************************************************/
 struct usrp2_impl::io_impl{
 
-    io_impl(const size_t mboards):
-        rx_chan_occ(mboards), tx_chan_occ(mboards),
+    io_impl(void):
         async_msg_fifo(100/*messages deep*/)
     {
         /* NOP */
@@ -161,9 +159,6 @@ struct usrp2_impl::io_impl{
 
         return buff;
     }
-
-    //subdev spec mapping information
-    std::vector<size_t> rx_chan_occ, tx_chan_occ;
 
     //tx dsp: xports and flow control monitors
     std::vector<zero_copy_if::sptr> tx_xports;
@@ -257,25 +252,26 @@ void usrp2_impl::io_init(void){
     _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
 
     //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_mboard_stuff.size()));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, ());
 
     //init first so we dont have an access race
-    for (size_t i = 0; i < _mboard_stuff.size(); i++){
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         //init the tx xport and flow control monitor
-        _io_impl->tx_xports.push_back(_mboard_stuff[i].dsp_xports.at(0));
+        _io_impl->tx_xports.push_back(_mbc[mb].dsp_xports.at(0));
         _io_impl->fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
-            USRP2_SRAM_BYTES/_mboard_stuff[i].dsp_xports.at(0)->get_send_frame_size()
+            USRP2_SRAM_BYTES/_mbc[mb].dsp_xports.at(0)->get_send_frame_size()
         )));
     }
 
     //create a new pirate thread for each zc if (yarr!!)
-    boost::barrier spawn_barrier(_mboard_stuff.size()+1);
-    for (size_t i = 0; i < _mboard_stuff.size(); i++){
+    boost::barrier spawn_barrier(_mbc.size()+1);
+    size_t index = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         //spawn a new pirate to plunder the recv booty
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop,
             _io_impl.get(), boost::ref(spawn_barrier),
-            _mboard_stuff[i].err_xports.at(0), i
+            _mbc[mb].err_xports.at(0), index++
         ));
     }
     spawn_barrier.wait();
@@ -306,34 +302,48 @@ void usrp2_impl::update_tx_samp_rate(const double rate){
     _io_impl->send_handler.set_samp_rate(rate);
 }
 
-void usrp2_impl::update_rx_subdev_spec(const size_t which_mb, const subdev_spec_t &spec_){
+void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
 
-    //sanity checking TODO
+    //sanity checking
     subdev_spec_t spec(spec_);
+    if (spec.size() == 0){
+        //determine the first subdev spec that exists
+        const std::string db_name = _tree->list(root).at(0);
+        const std::string sd_name = _tree->list(root / db_name / "rx_frontends").at(0);
+        spec.push_back(subdev_spec_pair_t(db_name, sd_name));
+    }
+    if (spec.size() > _mbc[which_mb].rx_dsps.size()) throw uhd::value_error("rx subdev spec too long");
 
-    //TODO setup mux for this spec
+    //setup mux for this spec
+    for (size_t i = 0; i < spec.size(); i++){
+        //ASSUME that we dont swap the rx fe mux...
+        const std::string conn = _tree->access<std::string>(root / spec[i].db_name / "rx_frontends" / spec[i].sd_name / "connection").get();
+        _mbc[which_mb].rx_dsps[i]->set_mux(conn);
+    }
 
     //compute the new occupancy and resize
-    _io_impl->rx_chan_occ[which_mb] = spec.size();
-    const size_t nchan = std::accumulate(_io_impl->rx_chan_occ.begin(), _io_impl->rx_chan_occ.end(), 0);
+    _mbc[which_mb].rx_chan_occ = spec.size();
+    size_t nchan = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()) nchan += _mbc[mb].rx_chan_occ;
     _io_impl->recv_handler.resize(nchan);
 
     //bind new callbacks for the handler
     size_t chan = 0;
-    for (size_t mb = 0; mb < _mboard_stuff.size(); mb++){
-        for (size_t dsp = 0; dsp < _io_impl->rx_chan_occ[mb]; dsp++){
-            _mboard_stuff[mb].rx_dsps[dsp]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+        for (size_t dsp = 0; dsp < _mbc[mb].rx_chan_occ; dsp++){
+            _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
             _io_impl->recv_handler.set_xport_chan_get_buff(chan++, boost::bind(
-                &zero_copy_if::get_recv_buff, _mboard_stuff[mb].dsp_xports[dsp], _1
+                &zero_copy_if::get_recv_buff, _mbc[mb].dsp_xports[dsp], _1
             ));
         }
     }
 }
 
-void usrp2_impl::update_tx_subdev_spec(const size_t which_mb, const subdev_spec_t &spec_){
+void usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
     boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
-    property_tree::path_type root = str(boost::format("/mboards/%u/dboards") % which_mb);
+    property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
 
     //sanity checking
     subdev_spec_t spec(spec_);
@@ -347,19 +357,20 @@ void usrp2_impl::update_tx_subdev_spec(const size_t which_mb, const subdev_spec_
 
     //set the mux for this spec
     const std::string conn = _tree->access<std::string>(root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection").get();
-    _mboard_stuff[which_mb].tx_fe->set_mux(conn);
+    _mbc[which_mb].tx_fe->set_mux(conn);
 
     //compute the new occupancy and resize
-    _io_impl->tx_chan_occ[which_mb] = spec.size();
-    const size_t nchan = std::accumulate(_io_impl->tx_chan_occ.begin(), _io_impl->tx_chan_occ.end(), 0);
+    _mbc[which_mb].tx_chan_occ = spec.size();
+    size_t nchan = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()) nchan += _mbc[mb].tx_chan_occ;
     _io_impl->send_handler.resize(nchan);
 
     //bind new callbacks for the handler
-    size_t chan = 0;
-    for (size_t mb = 0; mb < _mboard_stuff.size(); mb++){
-        for (size_t dsp = 0; dsp < _io_impl->tx_chan_occ[mb]; dsp++){
+    size_t chan = 0, i = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+        for (size_t dsp = 0; dsp < _mbc[mb].tx_chan_occ; dsp++){
             _io_impl->send_handler.set_xport_chan_get_buff(chan++, boost::bind(
-                &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), mb, _1
+                &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), i++, _1
             ));
         }
     }
@@ -384,7 +395,7 @@ size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
         + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = _mboard_stuff[0].dsp_xports[0]->get_send_frame_size() - hdr_size;
+    const size_t bpp = _mbc[_mbc.keys().front()].dsp_xports[0]->get_send_frame_size() - hdr_size;
     return bpp/_tx_otw_type.get_sample_size();
 }
 
@@ -409,7 +420,7 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = _mboard_stuff[0].dsp_xports[0]->get_recv_frame_size() - hdr_size;
+    const size_t bpp = _mbc[_mbc.keys().front()].dsp_xports[0]->get_recv_frame_size() - hdr_size;
     return bpp/_rx_otw_type.get_sample_size();
 }
 

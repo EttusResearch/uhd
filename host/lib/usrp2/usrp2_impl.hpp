@@ -88,7 +88,7 @@ public:
 
 private:
     uhd::property_tree::sptr _tree;
-    struct mboard_stuff_type{
+    struct mb_container_type{
         usrp2_iface::sptr iface;
         usrp2_clock_ctrl::sptr clock;
         usrp2_codec_ctrl::sptr codec;
@@ -102,14 +102,15 @@ private:
         std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
         uhd::usrp::dboard_manager::sptr dboard_manager;
         uhd::usrp::dboard_iface::sptr dboard_iface;
+        size_t rx_chan_occ, tx_chan_occ;
     };
-    std::vector<mboard_stuff_type> _mboard_stuff;
+    uhd::dict<std::string, mb_container_type> _mbc;
 
-    void set_mb_eeprom(const size_t which_mb, const uhd::usrp::mboard_eeprom_t &mb_eeprom);
-    void set_db_eeprom(const size_t which_mb, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom);
+    void set_mb_eeprom(const std::string &, const uhd::usrp::mboard_eeprom_t &);
+    void set_db_eeprom(const std::string &, const std::string &, const uhd::usrp::dboard_eeprom_t &);
 
-    uhd::sensor_value_t get_mimo_locked(const size_t which_mb);
-    uhd::sensor_value_t get_ref_locked(const size_t which_mb);
+    uhd::sensor_value_t get_mimo_locked(const std::string &);
+    uhd::sensor_value_t get_ref_locked(const std::string &);
 
     //device properties interface
     void get(const wax::obj &, wax::obj &val){
@@ -123,8 +124,10 @@ private:
     void update_tick_rate(const double rate);
     void update_rx_samp_rate(const double rate);
     void update_tx_samp_rate(const double rate);
-    void update_rx_subdev_spec(const size_t, const uhd::usrp::subdev_spec_t &);
-    void update_tx_subdev_spec(const size_t, const uhd::usrp::subdev_spec_t &);
+    void update_rx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
+    void update_tx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
+    double set_tx_dsp_freq(const std::string &, const double);
+    void update_ref_source(const std::string &, const std::string &);
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */
