@@ -339,8 +339,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create clock control objects
         ////////////////////////////////////////////////////////////////
         _mboard_stuff[mb].clock = usrp2_clock_ctrl::make(_mboard_stuff[mb].iface);
-        const double tick_rate = _mboard_stuff[mb].clock->get_master_clock_rate();
-        //TODO, use prop, undefine tick_rate
         _tree->create<double>(mb_path / "tick_rate")
             .publish(boost::bind(&usrp2_clock_ctrl::get_master_clock_rate, _mboard_stuff[mb].clock))
             .subscribe(boost::bind(&usrp2_impl::update_tick_rate, this, _1));
@@ -421,6 +419,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_FRONT)
         );
         //TODO lots of properties to expose here for frontends
+        _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
+            .subscribe(boost::bind(&usrp2_impl::update_rx_subdev_spec, this, mb, _1));
+        _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
+            .subscribe(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
 
         ////////////////////////////////////////////////////////////////
         // create rx dsp control objects
@@ -432,18 +434,20 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
         ));
         for (size_t dspno = 0; dspno < _mboard_stuff[mb].rx_dsps.size(); dspno++){
-            _mboard_stuff[mb].rx_dsps[dspno]->set_tick_rate(tick_rate); //does not change on usrp2
+            _tree->access<double>(mb_path / "tick_rate")
+                .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _mboard_stuff[mb].rx_dsps[dspno], _1));
             //This is a hack/fix for the lingering packet problem.
             //The dsp core starts streaming briefly... now we flush
             _mboard_stuff[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
             _mboard_stuff[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
             property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
             _tree->create<double>(rx_dsp_path / "rate/value")
-                .subscribe_master(boost::bind(&rx_dsp_core_200::set_host_rate, _mboard_stuff[mb].rx_dsps[dspno], _1));
+                .subscribe_master(boost::bind(&rx_dsp_core_200::set_host_rate, _mboard_stuff[mb].rx_dsps[dspno], _1))
+                .subscribe(boost::bind(&usrp2_impl::update_rx_samp_rate, this, _1));
             _tree->create<double>(rx_dsp_path / "freq/value")
                 .subscribe_master(boost::bind(&rx_dsp_core_200::set_freq, _mboard_stuff[mb].rx_dsps[dspno], _1));
-            //TODO set nsamps per packet
-            //TODO stream command issue
+            _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
+                .subscribe(boost::bind(&rx_dsp_core_200::issue_stream_command, _mboard_stuff[mb].rx_dsps[dspno], _1));
         }
 
         ////////////////////////////////////////////////////////////////
@@ -452,9 +456,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mboard_stuff[mb].tx_dsp = tx_dsp_core_200::make(
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );
-        _mboard_stuff[mb].tx_dsp->set_tick_rate(tick_rate); //does not change on usrp2
+        _tree->access<double>(mb_path / "tick_rate")
+            .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _mboard_stuff[mb].tx_dsp, _1));
         _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
-                .subscribe_master(boost::bind(&tx_dsp_core_200::set_host_rate, _mboard_stuff[mb].tx_dsp, _1));
+            .subscribe_master(boost::bind(&tx_dsp_core_200::set_host_rate, _mboard_stuff[mb].tx_dsp, _1))
+            .subscribe(boost::bind(&usrp2_impl::update_tx_samp_rate, this, _1));
         _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
             .subscribe_master(boost::bind(&tx_dsp_core_200::set_freq, _mboard_stuff[mb].tx_dsp, _1));
         //TODO combine w/ codec shift
@@ -463,7 +469,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         const size_t send_frame_size = _mboard_stuff[mb].dsp_xports.front()->get_send_frame_size();
         const double ups_per_fifo = device_args[mb].cast<double>("ups_per_fifo", 8.0);
         _mboard_stuff[mb].tx_dsp->set_updates(
-            (ups_per_sec > 0.0)? size_t(tick_rate/ups_per_sec) : 0,
+            (ups_per_sec > 0.0)? size_t(100e6/*approx tick rate*//ups_per_sec) : 0,
             (ups_per_fifo > 0.0)? size_t(USRP2_SRAM_BYTES/ups_per_fifo/send_frame_size) : 0
         );
 
@@ -478,7 +484,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mboard_stuff[mb].time64 = time64_core_200::make(
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );
-        _mboard_stuff[mb].time64->set_tick_rate(tick_rate); //does not change on usrp2
+        _tree->access<double>(mb_path / "tick_rate")
+            .subscribe(boost::bind(&time64_core_200::set_tick_rate, _mboard_stuff[mb].time64, _1));
         _tree->create<time_spec_t>(mb_path / "time/now")
             .publish(boost::bind(&time64_core_200::get_time_now, _mboard_stuff[mb].time64))
             .subscribe(boost::bind(&time64_core_200::set_time_now, _mboard_stuff[mb].time64, _1));
@@ -526,9 +533,15 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         }
     }
 
-    //TODO io init
-    //TODO subdev spec init
-    //TODO tick rate init
+    //initialize io handling
+    this->io_init();
+
+    //do some post-init tasks
+    for (size_t mb = 0; mb < _mboard_stuff.size(); mb++){
+        _tree->access<double>(str(boost::format("/mboards/%u/tick_rate") % mb)).update();
+        _tree->access<subdev_spec_t>(str(boost::format("/mboards/%u/rx_subdev_spec") % mb)).set(subdev_spec_t());
+        _tree->access<subdev_spec_t>(str(boost::format("/mboards/%u/tx_subdev_spec") % mb)).set(subdev_spec_t());
+    }
 
 }
 

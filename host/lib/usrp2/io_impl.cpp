@@ -306,8 +306,11 @@ void usrp2_impl::update_tx_samp_rate(const double rate){
     _io_impl->send_handler.set_samp_rate(rate);
 }
 
-void usrp2_impl::update_rx_subdev_spec(const size_t which_mb, const subdev_spec_t &spec){
+void usrp2_impl::update_rx_subdev_spec(const size_t which_mb, const subdev_spec_t &spec_){
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+
+    //sanity checking TODO
+    subdev_spec_t spec(spec_);
 
     //TODO setup mux for this spec
 
@@ -320,6 +323,7 @@ void usrp2_impl::update_rx_subdev_spec(const size_t which_mb, const subdev_spec_
     size_t chan = 0;
     for (size_t mb = 0; mb < _mboard_stuff.size(); mb++){
         for (size_t dsp = 0; dsp < _io_impl->rx_chan_occ[mb]; dsp++){
+            _mboard_stuff[mb].rx_dsps[dsp]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
             _io_impl->recv_handler.set_xport_chan_get_buff(chan++, boost::bind(
                 &zero_copy_if::get_recv_buff, _mboard_stuff[mb].dsp_xports[dsp], _1
             ));
@@ -337,7 +341,7 @@ void usrp2_impl::update_tx_subdev_spec(const size_t which_mb, const subdev_spec_
         //determine the first subdev spec that exists
         const std::string db_name = _tree->list(root).at(0);
         const std::string sd_name = _tree->list(root / db_name / "tx_frontends").at(0);
-        spec.push_back(db_name + ":" + sd_name);
+        spec.push_back(subdev_spec_pair_t(db_name, sd_name));
     }
     if (spec.size() != 1) throw uhd::value_error("tx subdev spec has to be size 1");
 
