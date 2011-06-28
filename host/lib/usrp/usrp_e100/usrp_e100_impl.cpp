@@ -55,8 +55,8 @@ static device_addrs_t usrp_e100_find(const device_addr_t &hint){
         new_addr["node"] = fs::system_complete(fs::path(hint["node"])).string();
         try{
             usrp_e100_iface::sptr iface = usrp_e100_iface::make(new_addr["node"]);
-            new_addr["name"] = iface->mb_eeprom["name"];
-            new_addr["serial"] = iface->mb_eeprom["serial"];
+            new_addr["name"] = "";//FIXME for double open on next branch iface->mb_eeprom["name"];
+            new_addr["serial"] = "";//FIXME for double open on next branch iface->mb_eeprom["serial"];
         }
         catch(const std::exception &e){
             new_addr["name"] = "";
