@@ -133,7 +133,7 @@ void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
     }
 }
 
-void dboard_eeprom_t::store(i2c_iface &iface, boost::uint8_t addr){
+void dboard_eeprom_t::store(i2c_iface &iface, boost::uint8_t addr) const{
     byte_vector_t bytes(DB_EEPROM_CLEN, 0); //defaults to all zeros
     bytes[DB_EEPROM_MAGIC] = DB_EEPROM_MAGIC_VALUE;
 

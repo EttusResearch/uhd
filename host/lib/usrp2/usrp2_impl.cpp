@@ -23,7 +23,6 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhd/usrp/device_props.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -281,6 +280,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mboard_stuff[mb].tx_fe = tx_frontend_core_200::make(
             _mboard_stuff[mb].iface, U2_REG_SR_ADDR(SR_TX_FRONT)
         );
+        //TODO lots of properties to expose here for frontends
 
         ////////////////////////////////////////////////////////////////
         // create dsp control objects
@@ -310,6 +310,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _tree->create(mb_path / "tx_dsps/0/rate/value", tx_dsp_host_rate_prop);
         tx_dsp_freq_prop.subscribe_master(boost::bind(&tx_dsp_core_200::set_freq, _mboard_stuff[mb].tx_dsp, _1));
         _tree->create(mb_path / "tx_dsps/0/freq/value", tx_dsp_freq_prop);
+        //TODO combine w/ codec shift
         //setup dsp flow control
         const double ups_per_sec = device_args[mb].cast<double>("ups_per_sec", 20);
         const size_t send_frame_size = _mboard_stuff[mb].dsp_xports.front()->get_send_frame_size();
@@ -339,6 +340,46 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         time_pps_prop.subscribe(boost::bind(&time64_core_200::set_time_next_pps, _mboard_stuff[mb].time64, _1));
         _tree->create(mb_path / "time/pps", time_pps_prop);
 
+        ////////////////////////////////////////////////////////////////
+        // create dboard control objects
+        ////////////////////////////////////////////////////////////////
+
+        //read the dboard eeprom to extract the dboard ids
+        dboard_eeprom_t rx_db_eeprom, tx_db_eeprom, gdb_eeprom;
+        rx_db_eeprom.load(*_mboard_stuff[mb].iface, USRP2_I2C_ADDR_RX_DB);
+        tx_db_eeprom.load(*_mboard_stuff[mb].iface, USRP2_I2C_ADDR_TX_DB);
+        gdb_eeprom.load(*_mboard_stuff[mb].iface, USRP2_I2C_ADDR_TX_DB ^ 5);
+
+        //create the properties and register subscribers
+        property<dboard_eeprom_t> rx_db_eeprom_prop(rx_db_eeprom), tx_db_eeprom_prop(tx_db_eeprom), gdb_eeprom_prop(gdb_eeprom);
+        rx_db_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "rx", _1));
+        _tree->create(mb_path / "dboards/0/rx_eeprom", rx_db_eeprom_prop);
+        tx_db_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "tx", _1));
+        _tree->create(mb_path / "dboards/0/tx_eeprom", tx_db_eeprom_prop);
+        gdb_eeprom_prop.subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
+        _tree->create(mb_path / "dboards/0/gdb_eeprom", gdb_eeprom_prop);
+
+        //create a new dboard interface and manager
+        _mboard_stuff[mb].dboard_iface = make_usrp2_dboard_iface(_mboard_stuff[mb].iface, _mboard_stuff[mb].clock);
+        _tree->create(mb_path / "dboards/0/iface", property<dboard_iface::sptr>(_mboard_stuff[mb].dboard_iface));
+        _mboard_stuff[mb].dboard_manager = dboard_manager::make(
+            rx_db_eeprom.id,
+            ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
+            _mboard_stuff[mb].dboard_iface
+        );
+        BOOST_FOREACH(const std::string &name, _mboard_stuff[mb].dboard_manager->get_rx_subdev_names()){
+            dboard_manager::populate_prop_tree_from_subdev(
+                _tree, mb_path / "rx_rf_frontends" / name,
+                _mboard_stuff[mb].dboard_manager->get_rx_subdev(name)
+            );
+        }
+        BOOST_FOREACH(const std::string &name, _mboard_stuff[mb].dboard_manager->get_tx_subdev_names()){
+            dboard_manager::populate_prop_tree_from_subdev(
+                _tree, mb_path / "tx_rf_frontends" / name,
+                _mboard_stuff[mb].dboard_manager->get_tx_subdev(name)
+            );
+        }
+
     }
 
 }
@@ -351,4 +392,10 @@ usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(
 
 void usrp2_impl::set_mb_eeprom(const size_t which_mb, const uhd::usrp::mboard_eeprom_t &mb_eeprom){
     mb_eeprom.commit(*(_mboard_stuff[which_mb].iface), mboard_eeprom_t::MAP_N100);
+}
+
+void usrp2_impl::set_db_eeprom(const size_t which_mb, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){
+    if (type == "rx") db_eeprom.store(*_mboard_stuff[which_mb].iface, USRP2_I2C_ADDR_RX_DB);
+    if (type == "tx") db_eeprom.store(*_mboard_stuff[which_mb].iface, USRP2_I2C_ADDR_TX_DB);
+    if (type == "gdb") db_eeprom.store(*_mboard_stuff[which_mb].iface, USRP2_I2C_ADDR_TX_DB ^ 5);
 }

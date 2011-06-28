@@ -23,6 +23,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fw_common.h
     ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.hpp

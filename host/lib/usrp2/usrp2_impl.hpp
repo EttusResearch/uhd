@@ -81,10 +81,13 @@ private:
         time64_core_200::sptr time64;
         std::vector<uhd::transport::zero_copy_if::sptr> dsp_xports;
         std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
+        uhd::usrp::dboard_manager::sptr dboard_manager;
+        uhd::usrp::dboard_iface::sptr dboard_iface;
     };
     std::vector<mboard_stuff_type> _mboard_stuff;
 
     void set_mb_eeprom(const size_t which_mb, const uhd::usrp::mboard_eeprom_t &mb_eeprom);
+    void set_db_eeprom(const size_t which_mb, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom);
 
 };
 

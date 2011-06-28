@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_USRP_DBOARD_MANAGER_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/utils/props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_id.hpp>
@@ -35,6 +36,13 @@ namespace uhd{ namespace usrp{
 class UHD_API dboard_manager : boost::noncopyable{
 public:
     typedef boost::shared_ptr<dboard_manager> sptr;
+
+    //! It does what it says...
+    static void populate_prop_tree_from_subdev(
+        property_tree::sptr tree,
+        const property_tree::path_type &root,
+        wax::obj subdev
+    );
 
     //dboard constructor (each dboard should have a ::make with this signature)
     typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t);
