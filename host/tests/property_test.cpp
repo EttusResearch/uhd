@@ -46,6 +46,11 @@ struct getter_type{
 BOOST_AUTO_TEST_CASE(test_prop_simple){
     uhd::property_tree::sptr tree = uhd::property_tree::make();
     uhd::property<int> &prop = tree->create<int>("/");
+
+    BOOST_CHECK(prop.empty());
+    prop.set(0);
+    BOOST_CHECK(not prop.empty());
+
     prop.set(42);
     BOOST_CHECK_EQUAL(prop.get(), 42);
     prop.set(34);
@@ -72,8 +77,10 @@ BOOST_AUTO_TEST_CASE(test_prop_with_publisher){
     uhd::property_tree::sptr tree = uhd::property_tree::make();
     uhd::property<int> &prop = tree->create<int>("/");
 
+    BOOST_CHECK(prop.empty());
     getter_type getter;
     prop.publish(boost::bind(&getter_type::doit, &getter));
+    BOOST_CHECK(not prop.empty());
 
     getter._x = 42;
     prop.set(0); //should not change

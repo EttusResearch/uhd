@@ -27,7 +27,7 @@
  **********************************************************************/
 namespace uhd{ namespace /*anon*/{
 
-template <typename T> class UHD_API property_impl : public property<T>{
+template <typename T> class property_impl : public property<T>{
 public:
 
     property<T> &coerce(const typename property<T>::coercer_type &coercer){
@@ -59,10 +59,12 @@ public:
     }
 
     T get(void) const{
-        if (_publisher.empty() and _value.get() == NULL) throw uhd::runtime_error(
-            "Called get() on property with an uninitialized value"
-        );
+        if (empty()) throw uhd::runtime_error("Cannot get() on an empty property");
         return _publisher.empty()? *_value : _publisher();
+    }
+
+    bool empty(void) const{
+        return _publisher.empty() and _value.get() == NULL;
     }
 
 private:

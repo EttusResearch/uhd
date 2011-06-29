@@ -18,6 +18,7 @@
 #include "time64_core_200.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <boost/math/special_functions/round.hpp>
 
 #define REG_TIME64_SECS        _base + 0
 #define REG_TIME64_TICKS       _base + 4
@@ -58,11 +59,11 @@ public:
 
     void set_tick_rate(const double rate){
         _tick_rate = rate;
-        _iface->poke32(REG_TIME64_TPS, rate);
+        _iface->poke32(REG_TIME64_TPS, boost::math::iround(rate));
     }
 
     uhd::time_spec_t get_time_now(void){
-        for (size_t i = 0; i < 3; i++){ //special algorithm because we cant rest 64 bits synchronously
+        for (size_t i = 0; i < 3; i++){ //special algorithm because we cant read 64 bits synchronously
             const boost::uint32_t secs = _iface->peek32(_readback_bases.rb_secs_imm);
             const boost::uint32_t ticks = _iface->peek32(_readback_bases.rb_ticks_imm);
             if (secs != _iface->peek32(_readback_bases.rb_secs_imm)) continue;
@@ -72,7 +73,7 @@ public:
     }
 
     uhd::time_spec_t get_time_last_pps(void){
-        for (size_t i = 0; i < 3; i++){ //special algorithm because we cant rest 64 bits synchronously
+        for (size_t i = 0; i < 3; i++){ //special algorithm because we cant read 64 bits synchronously
             const boost::uint32_t secs = _iface->peek32(_readback_bases.rb_secs_pps);
             const boost::uint32_t ticks = _iface->peek32(_readback_bases.rb_ticks_pps);
             if (secs != _iface->peek32(_readback_bases.rb_secs_pps)) continue;

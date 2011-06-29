@@ -31,7 +31,7 @@ namespace uhd{
  * A templated property interface for holding a value
  * and registering callbacks when that value changes.
  */
-template <typename T> class UHD_API property : boost::noncopyable{
+template <typename T> class property : boost::noncopyable{
 public:
     typedef boost::function<void(const T &)> subscriber_type;
     typedef boost::function<T(void)> publisher_type;
@@ -89,6 +89,13 @@ public:
      * \return the current value in the property
      */
     virtual T get(void) const = 0;
+
+    /*!
+     * A property is empty if it has never been set.
+     * A property with a publisher is never empty.
+     * \return true if the property is empty
+     */
+    virtual bool empty(void) const = 0;
 };
 
 /*!
