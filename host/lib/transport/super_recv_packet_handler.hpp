@@ -30,6 +30,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/format.hpp>
@@ -49,61 +50,6 @@ UHD_INLINE boost::uint32_t get_context_code(
 
 typedef boost::function<void(void)> handle_overflow_type;
 static inline void handle_overflow_nop(void){}
-
-/***********************************************************************
- * Alignment indexes class:
- *  - Access an integer set with very quick operations.
- **********************************************************************/
-class alignment_indexes{
-public:
-    typedef boost::uint16_t index_type; //16 buffers
-
-    alignment_indexes(void):
-        _indexes(0),
-        _sizes(256, 0),
-        _fronts(256, ~0)
-    {
-        //fill the O(1) look up tables for a single byte
-        for (size_t i = 0; i < 256; i++){
-            for (size_t j = 0; j < 8; j++){
-                if (i & (1 << j)){
-                    _sizes[i]++;
-                    _fronts[i] = j;
-                }
-            }
-        }
-    }
-
-    UHD_INLINE void reset(size_t len){_indexes = (1 << len) - 1;}
-
-    UHD_INLINE size_t front(void){
-        //check one byte per iteration
-        for (size_t i = 0; i < sizeof(_indexes)*8; i+=8){
-            size_t front = _fronts[(_indexes >> i) & 0xff];
-            if (front != size_t(~0)) return front + i;
-        }
-        if (empty()) throw uhd::runtime_error("cannot call front() when empty");
-        UHD_THROW_INVALID_CODE_PATH();
-    }
-
-    UHD_INLINE void remove(size_t index){_indexes &= ~(1 << index);}
-
-    UHD_INLINE bool empty(void){return _indexes == 0;}
-
-    UHD_INLINE size_t size(void){
-        size_t size = 0;
-        //check one byte per iteration
-        for (size_t i = 0; i < sizeof(_indexes)*8; i+=8){
-            size += _sizes[(_indexes >> i) & 0xff];
-        }
-        return size;
-    }
-
-private:
-    index_type _indexes;
-    std::vector<size_t> _sizes;
-    std::vector<size_t> _fronts;
-};
 
 /***********************************************************************
  * Super receive packet handler
@@ -126,7 +72,6 @@ public:
         _queue_error_for_next_call(false),
         _buffers_infos_index(0)
     {
-        UHD_ASSERT_THROW(size <= sizeof(alignment_indexes::index_type)*8);
         this->resize(size);
         set_alignment_failure_threshold(1000);
     }
@@ -307,13 +252,12 @@ private:
     struct buffers_info_type : std::vector<per_buffer_info_type> {
         buffers_info_type(const size_t size):
             std::vector<per_buffer_info_type>(size),
+            indexes_todo(size, true),
             alignment_time_valid(false),
             data_bytes_to_copy(0),
             fragment_offset_in_samps(0)
-        {
-            indexes_to_do.reset(size);
-        }
-        alignment_indexes indexes_to_do; //used in alignment logic
+        {/* NOP */}
+        boost::dynamic_bitset<> indexes_todo; //used in alignment logic
         time_spec_t alignment_time; //used in alignment logic
         bool alignment_time_valid; //used in alignment logic
         size_t data_bytes_to_copy; //keeps track of state
@@ -414,15 +358,15 @@ private:
         if (not info.alignment_time_valid or info[index].time > info.alignment_time){
             info.alignment_time_valid = true;
             info.alignment_time = info[index].time;
-            info.indexes_to_do.reset(this->size());
-            info.indexes_to_do.remove(index);
+            info.indexes_todo.set();
+            info.indexes_todo.reset(index);
             info.data_bytes_to_copy = info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t);
         }
 
         //if the sequence id matches:
         //  remove this index from the list and continue
         else if (info[index].time == info.alignment_time){
-            info.indexes_to_do.remove(index);
+            info.indexes_todo.reset(index);
         }
 
         //if the sequence id is older:
@@ -448,10 +392,10 @@ private:
         // - Handle the packet type yielded by the receive.
         // - Check the timestamps for alignment conditions.
         size_t iterations = 0;
-        while (not curr_info.indexes_to_do.empty()){
+        while (curr_info.indexes_todo.any()){
 
             //get the index to process for this iteration
-            const size_t index = curr_info.indexes_to_do.front();
+            const size_t index = curr_info.indexes_todo.find_first();
             packet_type packet;
 
             //receive a single packet from the transport
@@ -589,7 +533,7 @@ private:
             //reset current buffer info members for reuse
             get_curr_buffer_info().fragment_offset_in_samps = 0;
             get_curr_buffer_info().alignment_time_valid = false;
-            get_curr_buffer_info().indexes_to_do.reset(this->size());
+            get_curr_buffer_info().indexes_todo.set();
 
             //perform receive with alignment logic
             get_aligned_buffs(timeout);
