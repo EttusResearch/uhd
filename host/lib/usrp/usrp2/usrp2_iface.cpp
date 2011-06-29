@@ -160,24 +160,24 @@ public:
 /***********************************************************************
  * Peek and Poke
  **********************************************************************/
-    void poke32(boost::uint32_t addr, boost::uint32_t data){
+    void poke32(wb_addr_type addr, boost::uint32_t data){
         this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_POKE32>(addr, data);
     }
 
-    boost::uint32_t peek32(boost::uint32_t addr){
+    boost::uint32_t peek32(wb_addr_type addr){
         return this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_PEEK32>(addr);
     }
 
-    void poke16(boost::uint32_t addr, boost::uint16_t data){
+    void poke16(wb_addr_type addr, boost::uint16_t data){
         this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_POKE16>(addr, data);
     }
 
-    boost::uint16_t peek16(boost::uint32_t addr){
+    boost::uint16_t peek16(wb_addr_type addr){
         return this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
     }
 
     template <class T, usrp2_reg_action_t action>
-    T get_reg(boost::uint32_t addr, T data = 0){
+    T get_reg(wb_addr_type addr, T data = 0){
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);

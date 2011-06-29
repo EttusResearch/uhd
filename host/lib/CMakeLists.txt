@@ -72,7 +72,6 @@ INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)
 INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
-INCLUDE_SUBDIRECTORY(usrp2)
 INCLUDE_SUBDIRECTORY(utils)
 
 ########################################################################

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2011 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,28 +18,11 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-
-########################################################################
-# Conditionally configure the USRP2 support
-########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF)
-
-IF(ENABLE_USRP2)
-    LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_regs.hpp
-    )
-ENDIF(ENABLE_USRP2)
+LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
+)

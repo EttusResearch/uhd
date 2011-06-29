@@ -22,8 +22,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -134,15 +132,10 @@ private:
  **********************************************************************/
 struct usrp2_impl::io_impl{
 
-    io_impl(std::vector<zero_copy_if::sptr> &dsp_xports):
-        dsp_xports(dsp_xports), //the assumption is that all data transports should be identical
+    io_impl(void):
         async_msg_fifo(100/*messages deep*/)
     {
-        for (size_t i = 0; i < dsp_xports.size(); i++){
-            fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
-                usrp2_impl::sram_bytes/dsp_xports.front()->get_send_frame_size()
-            )));
-        }
+        /* NOP */
     }
 
     ~io_impl(void){
@@ -151,14 +144,13 @@ struct usrp2_impl::io_impl{
     }
 
     managed_send_buffer::sptr get_send_buff(size_t chan, double timeout){
-        const size_t index = send_map[chan];
-        flow_control_monitor &fc_mon = *fc_mons[index];
+        flow_control_monitor &fc_mon = *fc_mons[chan];
 
         //wait on flow control w/ timeout
         if (not fc_mon.check_fc_condition(timeout)) return managed_send_buffer::sptr();
 
         //get a buffer from the transport w/ timeout
-        managed_send_buffer::sptr buff = dsp_xports[index]->get_send_buff(timeout);
+        managed_send_buffer::sptr buff = tx_xports[chan]->get_send_buff(timeout);
 
         //write the flow control word into the buffer
         if (buff.get()) buff->cast<boost::uint32_t *>()[0] = uhd::htonx(fc_mon.get_curr_seq_out());
@@ -166,15 +158,8 @@ struct usrp2_impl::io_impl{
         return buff;
     }
 
-    std::vector<zero_copy_if::sptr> &dsp_xports;
-
-    //mappings from channel index to dsp xport
-    std::vector<size_t> send_map, recv_map;
-
-    //previous state for each buffer
-    std::vector<vrt::if_packet_info_t> prev_infos;
-
-    //flow control monitors
+    //tx dsp: xports and flow control monitors
+    std::vector<zero_copy_if::sptr> tx_xports;
     std::vector<flow_control_monitor::sptr> fc_mons;
 
     //state management for the vrt packet handler code
@@ -182,9 +167,10 @@ struct usrp2_impl::io_impl{
     sph::send_packet_handler send_handler;
 
     //methods and variables for the pirate crew
-    void recv_pirate_loop(boost::barrier &, usrp2_mboard_impl::sptr, zero_copy_if::sptr, size_t);
+    void recv_pirate_loop(boost::barrier &, zero_copy_if::sptr, size_t);
     boost::thread_group recv_pirate_crew;
     bounded_buffer<async_metadata_t> async_msg_fifo;
+    double tick_rate;
 };
 
 /***********************************************************************
@@ -195,7 +181,6 @@ struct usrp2_impl::io_impl{
  **********************************************************************/
 void usrp2_impl::io_impl::recv_pirate_loop(
     boost::barrier &spawn_barrier,
-    usrp2_mboard_impl::sptr mboard,
     zero_copy_if::sptr err_xport,
     size_t index
 ){
@@ -203,7 +188,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
     set_thread_priority_safe();
 
     //store a reference to the flow control monitor (offset by max dsps)
-    flow_control_monitor &fc_mon = *(this->fc_mons[index*usrp2_mboard_impl::MAX_NUM_DSPS]);
+    flow_control_monitor &fc_mon = *(this->fc_mons[index]);
 
     while (not boost::this_thread::interruption_requested()){
         managed_recv_buffer::sptr buff = err_xport->get_recv_buff();
@@ -217,14 +202,14 @@ void usrp2_impl::io_impl::recv_pirate_loop(
             vrt::if_hdr_unpack_be(vrt_hdr, if_packet_info);
 
             //handle a tx async report message
-            if (if_packet_info.sid == usrp2_impl::ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+            if (if_packet_info.sid == USRP2_TX_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
 
                 //fill in the async metadata
                 async_metadata_t metadata;
                 metadata.channel = index;
                 metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
                 metadata.time_spec = time_spec_t(
-                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), mboard->get_master_clock_freq()
+                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
                 );
                 metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
 
@@ -254,80 +239,126 @@ void usrp2_impl::io_impl::recv_pirate_loop(
  **********************************************************************/
 void usrp2_impl::io_init(void){
 
+    //setup rx otw type
+    _rx_otw_type.width = 16;
+    _rx_otw_type.shift = 0;
+    _rx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+
+    //setup tx otw type
+    _tx_otw_type.width = 16;
+    _tx_otw_type.shift = 0;
+    _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+
     //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (dsp_xports));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, ());
+
+    //init first so we dont have an access race
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+        //init the tx xport and flow control monitor
+        _io_impl->tx_xports.push_back(_mbc[mb].dsp_xports.at(0));
+        _io_impl->fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
+            USRP2_SRAM_BYTES/_mbc[mb].dsp_xports.at(0)->get_send_frame_size()
+        )));
+    }
 
     //create a new pirate thread for each zc if (yarr!!)
-    boost::barrier spawn_barrier(_mboards.size()+1);
-    for (size_t i = 0; i < _mboards.size(); i++){
+    boost::barrier spawn_barrier(_mbc.size()+1);
+    size_t index = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         //spawn a new pirate to plunder the recv booty
         _io_impl->recv_pirate_crew.create_thread(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop,
             _io_impl.get(), boost::ref(spawn_barrier),
-            _mboards.at(i), err_xports.at(i), i
+            _mbc[mb].err_xports.at(0), index++
         ));
     }
     spawn_barrier.wait();
 
-    //update mapping here since it didnt b4 when io init not called first
-    update_xport_channel_mapping();
-}
-
-void usrp2_impl::update_xport_channel_mapping(void){
-    if (_io_impl.get() == NULL) return; //not inited yet
-
-    _io_impl->recv_map.clear();
-    _io_impl->send_map.clear();
-
-    for (size_t i = 0; i < _mboards.size(); i++){
-
-        subdev_spec_t rx_subdev_spec = _mboards[i]->get_link()[MBOARD_PROP_RX_SUBDEV_SPEC].as<subdev_spec_t>();
-        for (size_t j = 0; j < rx_subdev_spec.size(); j++){
-            _io_impl->recv_map.push_back(i*usrp2_mboard_impl::MAX_NUM_DSPS+j);
-            UHD_LOG << "recv_map.back() " << _io_impl->recv_map.back() << std::endl;
-        }
-
-        subdev_spec_t tx_subdev_spec = _mboards[i]->get_link()[MBOARD_PROP_TX_SUBDEV_SPEC].as<subdev_spec_t>();
-        for (size_t j = 0; j < tx_subdev_spec.size(); j++){
-            _io_impl->send_map.push_back(i*usrp2_mboard_impl::MAX_NUM_DSPS+j);
-            UHD_LOG << "send_map.back() " << _io_impl->send_map.back() << std::endl;
-        }
-
-    }
-
-    //set all of the relevant properties on the handler
-    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
-    _io_impl->recv_handler.resize(_io_impl->recv_map.size());
+    //init some handler stuff
     _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_be);
-    _io_impl->recv_handler.set_tick_rate(_mboards.front()->get_master_clock_freq());
-    //TODO temporarily use the first dsp rate until we support non-homo rates
-    const std::string rx_dsp_name = _mboards.at(0)->get_link()[MBOARD_PROP_RX_DSP_NAMES].as<prop_names_t>().at(0);
-    const double rx_host_rate = _mboards.at(0)->get_link()[named_prop_t(MBOARD_PROP_RX_DSP, rx_dsp_name)][DSP_PROP_HOST_RATE].as<double>();
-    _io_impl->recv_handler.set_samp_rate(rx_host_rate);
-    for (size_t chan = 0; chan < _io_impl->recv_handler.size(); chan++){
-        _io_impl->recv_handler.set_xport_chan_get_buff(chan, boost::bind(
-            &uhd::transport::zero_copy_if::get_recv_buff,
-            _io_impl->dsp_xports[_io_impl->recv_map[chan]], _1
-        ));
-    }
     _io_impl->recv_handler.set_converter(_rx_otw_type);
-
-    //set all of the relevant properties on the handler
-    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
-    _io_impl->send_handler.resize(_io_impl->send_map.size());
     _io_impl->send_handler.set_vrt_packer(&vrt::if_hdr_pack_be, vrt_send_header_offset_words32);
-    _io_impl->send_handler.set_tick_rate(_mboards.front()->get_master_clock_freq());
-    //TODO temporarily use the first dsp rate until we support non-homo rates
-    const std::string tx_dsp_name = _mboards.at(0)->get_link()[MBOARD_PROP_TX_DSP_NAMES].as<prop_names_t>().at(0);
-    const double tx_host_rate = _mboards.at(0)->get_link()[named_prop_t(MBOARD_PROP_TX_DSP, tx_dsp_name)][DSP_PROP_HOST_RATE].as<double>();
-    _io_impl->send_handler.set_samp_rate(tx_host_rate);
-    for (size_t chan = 0; chan < _io_impl->send_handler.size(); chan++){
-        _io_impl->send_handler.set_xport_chan_get_buff(chan, boost::bind(
-            &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), chan, _1
-        ));
-    }
     _io_impl->send_handler.set_converter(_tx_otw_type);
     _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
+}
+
+void usrp2_impl::update_tick_rate(const double rate){
+    _io_impl->tick_rate = rate;
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    _io_impl->recv_handler.set_tick_rate(rate);
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    _io_impl->send_handler.set_tick_rate(rate);
+}
+
+void usrp2_impl::update_rx_samp_rate(const double rate){
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    _io_impl->recv_handler.set_samp_rate(rate);
+}
+
+void usrp2_impl::update_tx_samp_rate(const double rate){
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    _io_impl->send_handler.set_samp_rate(rate);
+}
+
+void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec){
+    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
+    property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
+
+    //sanity checking
+    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
+    if (spec.size() > _mbc[which_mb].rx_dsps.size()) throw uhd::value_error("rx subdev spec too long");
+
+    //setup mux for this spec
+    for (size_t i = 0; i < spec.size(); i++){
+        //ASSUME that we dont swap the rx fe mux...
+        const std::string conn = _tree->access<std::string>(root / spec[i].db_name / "rx_frontends" / spec[i].sd_name / "connection").get();
+        _mbc[which_mb].rx_dsps[i]->set_mux(conn);
+    }
+
+    //compute the new occupancy and resize
+    _mbc[which_mb].rx_chan_occ = spec.size();
+    size_t nchan = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()) nchan += _mbc[mb].rx_chan_occ;
+    _io_impl->recv_handler.resize(nchan);
+
+    //bind new callbacks for the handler
+    size_t chan = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+        for (size_t dsp = 0; dsp < _mbc[mb].rx_chan_occ; dsp++){
+            _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
+            _io_impl->recv_handler.set_xport_chan_get_buff(chan++, boost::bind(
+                &zero_copy_if::get_recv_buff, _mbc[mb].dsp_xports[dsp], _1
+            ));
+        }
+    }
+}
+
+void usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec){
+    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
+    property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
+
+    //sanity checking
+    if (spec.size() != 1) throw uhd::value_error("tx subdev spec has to be size 1");
+
+    //set the mux for this spec
+    const std::string conn = _tree->access<std::string>(root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection").get();
+    _mbc[which_mb].tx_fe->set_mux(conn);
+
+    //compute the new occupancy and resize
+    _mbc[which_mb].tx_chan_occ = spec.size();
+    size_t nchan = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()) nchan += _mbc[mb].tx_chan_occ;
+    _io_impl->send_handler.resize(nchan);
+
+    //bind new callbacks for the handler
+    size_t chan = 0, i = 0;
+    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+        for (size_t dsp = 0; dsp < _mbc[mb].tx_chan_occ; dsp++){
+            _io_impl->send_handler.set_xport_chan_get_buff(chan++, boost::bind(
+                &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), i++, _1
+            ));
+        }
+    }
 }
 
 /***********************************************************************
@@ -349,7 +380,7 @@ size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
         + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = dsp_xports.front()->get_send_frame_size() - hdr_size;
+    const size_t bpp = _mbc[_mbc.keys().front()].dsp_xports[0]->get_send_frame_size() - hdr_size;
     return bpp/_tx_otw_type.get_sample_size();
 }
 
@@ -374,7 +405,7 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = dsp_xports.front()->get_recv_frame_size() - hdr_size;
+    const size_t bpp = _mbc[_mbc.keys().front()].dsp_xports[0]->get_recv_frame_size() - hdr_size;
     return bpp/_rx_otw_type.get_sample_size();
 }
 
