@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(test_prop_with_coercion){
     prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
 
     coercer_type coercer;
-    prop.subscribe_master(boost::bind(&coercer_type::doit, &coercer, _1));
+    prop.coerce(boost::bind(&coercer_type::doit, &coercer, _1));
 
     prop.set(42);
     BOOST_CHECK_EQUAL(prop.get(), 40);

@@ -483,19 +483,19 @@ void dboard_manager::populate_prop_tree_from_subdev(
     tree->create<int>(root / "gains"); //phony property so this dir exists
     BOOST_FOREACH(const std::string &name, gain_names){
         tree->create<double>(root / "gains" / name / "value")
-            .subscribe_master(boost::bind(&get_set_gain, subdev, name, _1));
+            .coerce(boost::bind(&get_set_gain, subdev, name, _1));
         tree->create<meta_range_t>(root / "gains" / name / "range")
             .publish(boost::bind(&get_gain_range, subdev, name));
     }
 
     tree->create<double>(root / "freq/value")
-        .subscribe_master(boost::bind(&get_set_freq, subdev, _1));
+        .coerce(boost::bind(&get_set_freq, subdev, _1));
 
     tree->create<meta_range_t>(root / "freq/range")
         .publish(boost::bind(&get_freq_range, subdev));
 
     tree->create<std::string>(root / "antenna/value")
-        .subscribe_master(boost::bind(&get_set_ant, subdev, _1));
+        .coerce(boost::bind(&get_set_ant, subdev, _1));
 
     tree->create<std::vector<std::string> >(root / "antenna/options")
         .publish(boost::bind(&get_ants, subdev));
@@ -504,11 +504,11 @@ void dboard_manager::populate_prop_tree_from_subdev(
         .publish(boost::bind(&get_conn, subdev));
 
     tree->create<bool>(root / "enabled")
-        .subscribe_master(boost::bind(&get_set_enb, subdev, _1));
+        .coerce(boost::bind(&get_set_enb, subdev, _1));
 
     tree->create<bool>(root / "use_lo_offset")
         .publish(boost::bind(&get_use_lo_off, subdev));
 
     tree->create<double>(root / "bandwidth/value")
-        .subscribe_master(boost::bind(&get_set_bw, subdev, _1));
+        .coerce(boost::bind(&get_set_bw, subdev, _1));
 }

@@ -29,8 +29,8 @@ namespace uhd{ namespace /*anon*/{
 template <typename T> class UHD_API property_impl : public property<T>{
 public:
 
-    property<T> &subscribe_master(const typename property<T>::master_type &master){
-        _master = master;
+    property<T> &coerce(const typename property<T>::coercer_type &coercer){
+        _coercer = coercer;
         return *this;
     }
 
@@ -50,7 +50,7 @@ public:
     }
 
     property<T> &set(const T &value){
-        _value = boost::shared_ptr<T>(new T(_master.empty()? value : _master(value)));
+        _value = boost::shared_ptr<T>(new T(_coercer.empty()? value : _coercer(value)));
         BOOST_FOREACH(typename property<T>::subscriber_type &subscriber, _subscribers){
             subscriber(*_value); //let errors propagate
         }
@@ -64,7 +64,7 @@ public:
 private:
     std::vector<typename property<T>::subscriber_type> _subscribers;
     typename property<T>::publisher_type _publisher;
-    typename property<T>::master_type _master;
+    typename property<T>::coercer_type _coercer;
     boost::shared_ptr<T> _value;
 };
 

@@ -35,15 +35,17 @@ template <typename T> class UHD_API property : boost::noncopyable{
 public:
     typedef boost::function<void(const T &)> subscriber_type;
     typedef boost::function<T(void)> publisher_type;
-    typedef boost::function<T(const T &)> master_type;
+    typedef boost::function<T(const T &)> coercer_type;
 
     /*!
-     * Register a master subscriber into the property.
-     * A master is a special subscriber that coerces the value.
-     * Only one master may be registered per property.
-     * Registering a master replaces the previous master.
+     * Register a coercer into the property.
+     * A coercer is a special subscribes that coerces the value.
+     * Only one coercer may be registered per property.
+     * Registering a coercer replaces the previous coercer.
+     * \param coercer the coercer callback function
+     * \return a reference to this property for chaining
      */
-    virtual property<T> &subscribe_master(const master_type &master) = 0;
+    virtual property<T> &coerce(const coercer_type &coercer) = 0;
 
     /*!
      * Register a publisher into the property.
@@ -51,6 +53,8 @@ public:
      * Publishers are useful for creating read-only properties.
      * Only one publisher may be registered per property.
      * Registering a publisher replaces the previous publisher.
+     * \param publisher the publisher callback function
+     * \return a reference to this property for chaining
      */
     virtual property<T> &publish(const publisher_type &publisher) = 0;
 
@@ -58,19 +62,32 @@ public:
      * Register a subscriber into the property.
      * All subscribers are called when the value changes.
      * Once a subscriber is registered, it cannot be unregistered.
+     * \param subscriber the subscriber callback function
+     * \return a reference to this property for chaining
      */
     virtual property<T> &subscribe(const subscriber_type &subscriber) = 0;
 
-    //! Update calls all subscribers w/ the current value
+    /*!
+     * Update calls all subscribers w/ the current value.
+     * \return a reference to this property for chaining
+     */
     virtual property<T> &update(void) = 0;
 
     /*!
      * Set the new value and call all subscribers.
-     * The master is called first to coerce the value.
+     * The coercer (when provided) is called initially,
+     * and the coerced value is used to set the subscribers.
+     * \param value the new value to set on this property
+     * \return a reference to this property for chaining
      */
     virtual property<T> &set(const T &value) = 0;
 
-    //! Get the current value of this property
+    /*!
+     * Get the current value of this property.
+     * The publisher (when provided) yields the value,
+     * otherwise an internal shadow is used for the value.
+     * \return the current value in the property
+     */
     virtual T get(void) const = 0;
 };
 
@@ -100,7 +117,7 @@ public:
     //! Get access to a property in the tree
     template <typename T> property<T> &access(const path_type &path);
 
-protected:
+private:
     //! Internal create property with wild-card type
     virtual void _create(const path_type &path, const boost::shared_ptr<void> &prop) = 0;
 
