@@ -20,10 +20,9 @@
 #include <uhd/device.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/usrp/device_props.hpp>
-#include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/dboard_props.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
@@ -36,15 +35,6 @@ namespace po = boost::program_options;
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     //command line variables
     std::string args, slot, unit;
-    static const uhd::dict<std::string, mboard_prop_t> unit_to_db_prop = boost::assign::map_list_of
-        ("RX", MBOARD_PROP_RX_DBOARD) ("TX", MBOARD_PROP_TX_DBOARD) ("GDB", MBOARD_PROP_TX_DBOARD)
-    ;
-    static const uhd::dict<std::string, mboard_prop_t> unit_to_db_names_prop = boost::assign::map_list_of
-        ("RX", MBOARD_PROP_RX_DBOARD_NAMES) ("TX", MBOARD_PROP_TX_DBOARD_NAMES) ("GDB", MBOARD_PROP_TX_DBOARD_NAMES)
-    ;
-    static const uhd::dict<std::string, dboard_prop_t> unit_to_db_eeprom_prop = boost::assign::map_list_of
-        ("RX", DBOARD_PROP_DBOARD_EEPROM) ("TX", DBOARD_PROP_DBOARD_EEPROM) ("GDB", DBOARD_PROP_GBOARD_EEPROM)
-    ;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -70,34 +60,30 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
-    //check inputs
-    if (not unit_to_db_prop.has_key(unit)){
-        std::cout << "Error: specify RX or TX for unit" << std::endl;
-        return ~0;
-    }
-
     //make the device and extract the dboard w/ property
     device::sptr dev = device::make(args);
-    uhd::prop_names_t dboard_names = (*dev)[DEVICE_PROP_MBOARD][unit_to_db_names_prop[unit]].as<uhd::prop_names_t>();
+    uhd::property_tree::sptr tree = (*dev)[0].as<uhd::property_tree::sptr>();
+    const uhd::property_tree::path_type db_root = "/mboards/0/dboards";
+    std::vector<std::string> dboard_names = tree->list(db_root);
     if (dboard_names.size() == 1 and slot.empty()) slot = dboard_names.front();
     uhd::assert_has(dboard_names, slot, "dboard slot name");
-    wax::obj dboard = (*dev)[DEVICE_PROP_MBOARD][named_prop_t(unit_to_db_prop[unit], slot)];
-    std::string prefix = unit + ":" + slot;
 
-    std::cout << boost::format("Reading EEPROM on %s dboard...") % prefix << std::endl;
-    dboard_eeprom_t db_eeprom = dboard[unit_to_db_eeprom_prop[unit]].as<dboard_eeprom_t>();
+    std::cout << boost::format("Reading %s EEPROM on %s dboard...") % unit % slot << std::endl;
+    boost::to_lower(unit);
+    const uhd::property_tree::path_type db_path = db_root / slot / (unit + "_eeprom");
+    dboard_eeprom_t db_eeprom = tree->access<dboard_eeprom_t>(db_path).get();
 
     //------------- handle the dboard ID -----------------------------//
     if (vm.count("id")){
         db_eeprom.id = dboard_id_t::from_string(vm["id"].as<std::string>());
-        dboard[unit_to_db_eeprom_prop[unit]] = db_eeprom;
+        tree->access<dboard_eeprom_t>(db_path).set(db_eeprom);
     }
     std::cout << boost::format("  Current ID: %s") % db_eeprom.id.to_pp_string() << std::endl;
 
     //------------- handle the dboard serial--------------------------//
     if (vm.count("ser")){
         db_eeprom.serial = vm["ser"].as<std::string>();
-        dboard[unit_to_db_eeprom_prop[unit]] = db_eeprom;
+        tree->access<dboard_eeprom_t>(db_path).set(db_eeprom);
     }
     std::cout << boost::format("  Current serial: \"%s\"") % db_eeprom.serial << std::endl;
 

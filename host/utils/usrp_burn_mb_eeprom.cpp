@@ -17,8 +17,7 @@
 
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
-#include <uhd/usrp/device_props.hpp>
-#include <uhd/usrp/mboard_props.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -53,14 +52,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::cout << "Creating USRP device from address: " + args << std::endl;
     uhd::device::sptr dev = uhd::device::make(args);
-    //FIXME the default mboard for now (may be others)
-    wax::obj mboard = (*dev)[uhd::usrp::DEVICE_PROP_MBOARD];
+    uhd::property_tree::sptr tree = (*dev)[0].as<uhd::property_tree::sptr>();
     std::cout << std::endl;
 
     if (true /*always readback*/){
         std::cout << "Fetching current settings from EEPROM..." << std::endl;
-        uhd::usrp::mboard_eeprom_t mb_eeprom = \
-            mboard[uhd::usrp::MBOARD_PROP_EEPROM_MAP].as<uhd::usrp::mboard_eeprom_t>();
+        uhd::usrp::mboard_eeprom_t mb_eeprom = tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").get();
         if (not mb_eeprom.has_key(key)){
             std::cerr << boost::format("Cannot find value for EEPROM[%s]") % key << std::endl;
             return ~0;
@@ -71,7 +68,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("val")){
         uhd::usrp::mboard_eeprom_t mb_eeprom; mb_eeprom[key] = val;
         std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...") % key % val << std::endl;
-        mboard[uhd::usrp::MBOARD_PROP_EEPROM_MAP] = mb_eeprom;
+        tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").set(mb_eeprom);
         std::cout << "Power-cycle the USRP device for the changes to take effect." << std::endl;
         std::cout << std::endl;
     }

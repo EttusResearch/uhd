@@ -17,7 +17,7 @@
 
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
-#include <uhd/usrp/device_props.hpp>
+#include <uhd/property_tree.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -65,8 +65,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Writing EEPROM data..." << std::endl;
         //uhd::device_addrs_t devs = uhd::device::find(found_addrs[i]);
         uhd::device::sptr dev = uhd::device::make(found_addrs[i]);
-        wax::obj mb = (*dev)[uhd::usrp::DEVICE_PROP_MBOARD];
-        mb[std::string("load_eeprom")] = vm["image"].as<std::string>();
+        uhd::property_tree::sptr tree = (*dev)[0].as<uhd::property_tree::sptr>();
+        tree->access<std::string>("/mboards/0/load_eeprom").set(vm["image"].as<std::string>());
     }
 
 
