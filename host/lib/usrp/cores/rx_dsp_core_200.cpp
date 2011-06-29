@@ -22,12 +22,12 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <algorithm>
-#include <algorithm>
 #include <cmath>
 
 #define REG_DSP_RX_FREQ       _dsp_base + 0
-#define REG_DSP_RX_DECIM      _dsp_base + 4
-#define REG_DSP_RX_MUX        _dsp_base + 8
+//skip one right here
+#define REG_DSP_RX_DECIM      _dsp_base + 8
+#define REG_DSP_RX_MUX        _dsp_base + 12
 
 #define FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
@@ -123,7 +123,8 @@ public:
     }
 
     double set_host_rate(const double rate){
-        int decim = boost::math::iround(_tick_rate/rate);
+        const size_t decim_rate = boost::math::iround(_tick_rate/rate);
+        size_t decim = decim_rate;
 
         //determine which half-band filters are activated
         int hb0 = 0, hb1 = 0;
@@ -138,7 +139,7 @@ public:
 
         _iface->poke32(REG_DSP_RX_DECIM, (hb1 << 9) | (hb0 << 8) | (decim & 0xff));
 
-        return _tick_rate/decim;
+        return _tick_rate/decim_rate;
     }
 
     double set_freq(const double freq_){
@@ -158,6 +159,10 @@ public:
         _iface->poke32(REG_DSP_RX_FREQ, boost::uint32_t(freq_word));
 
         return actual_freq;
+    }
+
+    uhd::meta_range_t get_freq_range(void){
+        return uhd::meta_range_t(-_tick_rate/2, +_tick_rate/2, _tick_rate/std::pow(2.0, 32));
     }
 
     void handle_overflow(void){

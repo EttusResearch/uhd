@@ -23,11 +23,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/gain_group.hpp>
-#include <uhd/usrp/subdev_props.hpp>
-#include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/device_props.hpp>
-#include <uhd/usrp/dboard_props.hpp>
-#include <uhd/usrp/dsp_props.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -71,6 +66,9 @@ static void do_tune_freq_warning_message(
     }
 }
 
+/***********************************************************************
+ * Gain helper functions
+ **********************************************************************/
 static double get_gain_value(property_tree::sptr tree, const property_tree::path_type &path){
     return tree->access<double>(path / "value").get();
 }
@@ -89,6 +87,100 @@ static gain_fcns_t make_gain_fcns_from_path(property_tree::sptr tree, const prop
     gain_fcns.get_value = boost::bind(&get_gain_value, tree, path);
     gain_fcns.set_value = boost::bind(&set_gain_value, tree, path, _1);
     return gain_fcns;
+}
+
+/***********************************************************************
+ * Tune Helper Functions
+ **********************************************************************/
+static const double RX_SIGN = +1.0;
+static const double TX_SIGN = -1.0;
+
+static tune_result_t tune_xx_subdev_and_dsp(
+    const double xx_sign,
+    property_tree::sptr tree,
+    const property_tree::path_type &dsp_path,
+    const property_tree::path_type &rf_fe_path,
+    const tune_request_t &tune_request
+){
+    //------------------------------------------------------------------
+    //-- calculate the LO offset, only used with automatic policy
+    //------------------------------------------------------------------
+    double lo_offset = 0.0;
+    if (tree->access<bool>(rf_fe_path / "use_lo_offset").get()){
+        //If the local oscillator will be in the passband, use an offset.
+        //But constrain the LO offset by the width of the filter bandwidth.
+        const double rate = tree->access<double>(dsp_path / "rate" / "value").get();
+        const double bw = tree->access<double>(rf_fe_path / "bandwidth" / "value").get();
+        if (bw > rate) lo_offset = std::min((bw - rate)/2, rate/2);
+    }
+
+    //------------------------------------------------------------------
+    //-- set the RF frequency depending upon the policy
+    //------------------------------------------------------------------
+    double target_rf_freq = 0.0;
+    switch (tune_request.rf_freq_policy){
+    case tune_request_t::POLICY_AUTO:
+        target_rf_freq = tune_request.target_freq + lo_offset;
+        tree->access<double>(rf_fe_path / "freq" / "value").set(target_rf_freq);
+        break;
+
+    case tune_request_t::POLICY_MANUAL:
+        target_rf_freq = tune_request.rf_freq;
+        tree->access<double>(rf_fe_path / "freq" / "value").set(target_rf_freq);
+        break;
+
+    case tune_request_t::POLICY_NONE: break; //does not set
+    }
+    const double actual_rf_freq = tree->access<double>(rf_fe_path / "freq" / "value").get();
+
+    //------------------------------------------------------------------
+    //-- calculate the dsp freq, only used with automatic policy
+    //------------------------------------------------------------------
+    double target_dsp_freq = actual_rf_freq - tune_request.target_freq;
+
+    //invert the sign on the dsp freq for transmit
+    target_dsp_freq *= xx_sign;
+
+    //------------------------------------------------------------------
+    //-- set the dsp frequency depending upon the dsp frequency policy
+    //------------------------------------------------------------------
+    switch (tune_request.dsp_freq_policy){
+    case tune_request_t::POLICY_AUTO:
+        tree->access<double>(dsp_path / "freq" / "value").set(target_dsp_freq);
+        break;
+
+    case tune_request_t::POLICY_MANUAL:
+        target_dsp_freq = tune_request.dsp_freq;
+        tree->access<double>(dsp_path / "freq" / "value").set(target_dsp_freq);
+        break;
+
+    case tune_request_t::POLICY_NONE: break; //does not set
+    }
+    const double actual_dsp_freq = tree->access<double>(dsp_path / "freq" / "value").get();
+
+    //------------------------------------------------------------------
+    //-- load and return the tune result
+    //------------------------------------------------------------------
+    tune_result_t tune_result;
+    tune_result.target_rf_freq = target_rf_freq;
+    tune_result.actual_rf_freq = actual_rf_freq;
+    tune_result.target_dsp_freq = target_dsp_freq;
+    tune_result.actual_dsp_freq = actual_dsp_freq;
+    return tune_result;
+}
+
+static double derive_freq_from_xx_subdev_and_dsp(
+    const double xx_sign,
+    property_tree::sptr tree,
+    const property_tree::path_type &dsp_path,
+    const property_tree::path_type &rf_fe_path
+){
+    //extract actual dsp and IF frequencies
+    const double actual_rf_freq = tree->access<double>(rf_fe_path / "freq" / "value").get();
+    const double actual_dsp_freq = tree->access<double>(dsp_path / "freq" / "value").get();
+
+    //invert the sign on the dsp freq for transmit
+    return actual_rf_freq - actual_dsp_freq * xx_sign;
 }
 
 /***********************************************************************
@@ -296,21 +388,19 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
-        //TODO must invent for tree
-        //tune_result_t r = tune_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan), tune_request);
-        //do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
-        //return r;
+        tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN, _tree, rx_dsp_root(chan), rx_rf_fe_root(chan), tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
+        return r;
     }
 
     double get_rx_freq(size_t chan){
-        //TODO must invent for tree
-        //return derive_freq_from_rx_subdev_and_dsp(_rx_subdev(chan), _rx_dsp(chan));
+        return derive_freq_from_xx_subdev_and_dsp(RX_SIGN, _tree, rx_dsp_root(chan), rx_rf_fe_root(chan));
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
         meta_range_t range = _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
-        const double tick_rate = get_master_clock_rate(0); //ASSUME
-        return meta_range_t(range.start() - tick_rate/2.0, range.stop() + tick_rate/2.0);
+        meta_range_t dsp_range = _tree->access<meta_range_t>(rx_dsp_root(chan) / "freq" / "range").get();
+        return meta_range_t(range.start() + dsp_range.start(), range.stop() + dsp_range.stop(), dsp_range.step());
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
@@ -406,21 +496,19 @@ public:
     }
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
-        //TODO must invent for tree
-        //tune_result_t r = tune_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan), tune_request);
-        //do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
-        //return r;
+        tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN, _tree, tx_dsp_root(chan), tx_rf_fe_root(chan), tune_request);
+        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "RX");
+        return r;
     }
 
     double get_tx_freq(size_t chan){
-        //TODO must invent for tree
-        //return derive_freq_from_tx_subdev_and_dsp(_tx_subdev(chan), _tx_dsp(chan));
+        return derive_freq_from_xx_subdev_and_dsp(TX_SIGN, _tree, tx_dsp_root(chan), tx_rf_fe_root(chan));
     }
 
     freq_range_t get_tx_freq_range(size_t chan){
         meta_range_t range = _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();
-        const double tick_rate = get_master_clock_rate(0); //ASSUME
-        return meta_range_t(range.start() - tick_rate/2.0, range.stop() + tick_rate/2.0);
+        meta_range_t dsp_range = _tree->access<meta_range_t>(tx_dsp_root(chan) / "freq" / "range").get();
+        return meta_range_t(range.start() + dsp_range.start(), range.stop() + dsp_range.stop(), dsp_range.step());
     }
 
     void set_tx_gain(double gain, const std::string &name, size_t chan){

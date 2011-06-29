@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/ranges.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -44,6 +45,8 @@ public:
     virtual void set_tick_rate(const double rate) = 0;
 
     virtual double set_host_rate(const double rate) = 0;
+
+    virtual uhd::meta_range_t get_freq_range(void) = 0;
 
     virtual double set_freq(const double freq) = 0;
 

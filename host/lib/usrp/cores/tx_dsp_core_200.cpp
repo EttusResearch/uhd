@@ -69,7 +69,8 @@ public:
     }
 
     double set_host_rate(const double rate){
-        int interp = boost::math::iround(_tick_rate/rate);
+        const size_t interp_rate = boost::math::iround(_tick_rate/rate);
+        size_t interp = interp_rate;
 
         //determine which half-band filters are activated
         int hb0 = 0, hb1 = 0;
@@ -90,7 +91,7 @@ public:
         const boost::int16_t scale = boost::math::iround((4096*std::pow(2, ceil_log2(rate_cubed)))/(1.65*rate_cubed));
         _iface->poke32(REG_DSP_TX_SCALE_IQ, (boost::uint32_t(scale) << 16) | (boost::uint32_t(scale) << 0));
 
-        return _tick_rate/interp;
+        return _tick_rate/interp_rate;
     }
 
     double set_freq(const double freq_){
@@ -110,6 +111,10 @@ public:
         _iface->poke32(REG_DSP_TX_FREQ, boost::uint32_t(freq_word));
 
         return actual_freq;
+    }
+
+    uhd::meta_range_t get_freq_range(void){
+        return uhd::meta_range_t(-_tick_rate/2, +_tick_rate/2, _tick_rate/std::pow(2.0, 32));
     }
 
     void set_updates(const size_t cycles_per_up, const size_t packets_per_up){

@@ -55,7 +55,8 @@ static std::string get_dsp_pp_string(const std::string &type, property_tree::spt
     std::stringstream ss;
     ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
-    ss << boost::format("DSP Rate: %f Msps") % (tree->access<double>(path.branch_path().branch_path() / "tick_rate").get()/1e6) << std::endl;
+    meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
+    ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;;
     return ss.str();
 }
 

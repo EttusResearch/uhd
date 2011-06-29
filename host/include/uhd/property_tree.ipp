@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_PROPERTY_TREE_IPP
 
 #include <boost/foreach.hpp>
-#include <boost/any.hpp>
 #include <vector>
 
 /***********************************************************************
@@ -51,23 +50,22 @@ public:
     }
 
     property<T> &set(const T &value){
-        T new_value(_master.empty()? value : _master(value));
-        _value = new_value; //shadow it
+        _value = boost::shared_ptr<T>(new T(_master.empty()? value : _master(value)));
         BOOST_FOREACH(typename property<T>::subscriber_type &subscriber, _subscribers){
-            subscriber(new_value); //let errors propagate
+            subscriber(*_value); //let errors propagate
         }
         return *this;
     }
 
     T get(void) const{
-        return _publisher.empty()? boost::any_cast<T>(_value) : _publisher();
+        return _publisher.empty()? *_value : _publisher();
     }
 
 private:
     std::vector<typename property<T>::subscriber_type> _subscribers;
     typename property<T>::publisher_type _publisher;
     typename property<T>::master_type _master;
-    boost::any _value; //any type so we can assign structs w/ const members
+    boost::shared_ptr<T> _value;
 };
 
 }} //namespace uhd::/*anon*/

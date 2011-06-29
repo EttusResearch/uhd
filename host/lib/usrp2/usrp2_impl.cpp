@@ -437,6 +437,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
                 .subscribe(boost::bind(&usrp2_impl::update_rx_samp_rate, this, _1));
             _tree->create<double>(rx_dsp_path / "freq/value")
                 .subscribe_master(boost::bind(&rx_dsp_core_200::set_freq, _mbc[mb].rx_dsps[dspno], _1));
+            _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
+                .publish(boost::bind(&rx_dsp_core_200::get_freq_range, _mbc[mb].rx_dsps[dspno]));
             _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
                 .subscribe(boost::bind(&rx_dsp_core_200::issue_stream_command, _mbc[mb].rx_dsps[dspno], _1));
         }
@@ -454,6 +456,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::update_tx_samp_rate, this, _1));
         _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
             .subscribe_master(boost::bind(&usrp2_impl::set_tx_dsp_freq, this, mb, _1));
+        _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
+            .publish(boost::bind(&usrp2_impl::get_tx_dsp_freq_range, this, mb));
 
         //setup dsp flow control
         const double ups_per_sec = device_args_i.cast<double>("ups_per_sec", 20);
@@ -603,6 +607,12 @@ double usrp2_impl::set_tx_dsp_freq(const std::string &mb, const double freq_){
     else _mbc[mb].codec->set_tx_mod_mode(sign*4/zone); //DAC interp = 4
 
     return _mbc[mb].tx_dsp->set_freq(new_freq) + dac_shift; //actual freq
+}
+
+meta_range_t usrp2_impl::get_tx_dsp_freq_range(const std::string &mb){
+    const double tick_rate = _tree->access<double>("/mboards/"+mb+"/tick_rate").get();
+    const meta_range_t dsp_range = _mbc[mb].tx_dsp->get_freq_range();
+    return meta_range_t(dsp_range.start() - tick_rate*2, dsp_range.stop() + tick_rate*2, dsp_range.step());
 }
 
 void usrp2_impl::update_ref_source(const std::string &mb, const std::string &source){
