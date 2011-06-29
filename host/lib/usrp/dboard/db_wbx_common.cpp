@@ -61,7 +61,6 @@
 #include "adf4350_regs.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert_has.hpp>

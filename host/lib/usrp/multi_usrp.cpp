@@ -17,7 +17,6 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
-#include <uhd/usrp/tune_helper.hpp>
 #include <uhd/usrp/mboard_iface.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>

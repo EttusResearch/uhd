@@ -17,7 +17,6 @@
 
 #include "dboard_ctor_args.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/usrp/subdev_props.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>

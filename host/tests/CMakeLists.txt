@@ -33,7 +33,6 @@ SET(test_sources
     sph_send_test.cpp
     subdev_spec_test.cpp
     time_spec_test.cpp
-    tune_helper_test.cpp
     vrt_test.cpp
     wax_test.cpp
 )

@@ -26,7 +26,6 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/usrp/subdev_props.hpp>
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;

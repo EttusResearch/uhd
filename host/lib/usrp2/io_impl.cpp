@@ -22,8 +22,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/mboard_props.hpp>
-#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>

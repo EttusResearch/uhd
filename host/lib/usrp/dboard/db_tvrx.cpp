@@ -35,7 +35,6 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/usrp/subdev_props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>

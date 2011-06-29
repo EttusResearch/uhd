@@ -17,13 +17,6 @@
 
 
 INSTALL(FILES
-    #### props headers ###
-    codec_props.hpp
-    dboard_props.hpp
-    device_props.hpp
-    dsp_props.hpp
-    mboard_props.hpp
-    subdev_props.hpp
 
     #### dboard headers ###
     dboard_base.hpp
@@ -33,12 +26,9 @@ INSTALL(FILES
     dboard_manager.hpp
 
     ### utilities ###
-    dsp_utils.hpp
     gps_ctrl.hpp
     mboard_eeprom.hpp
-    misc_utils.hpp
     subdev_spec.hpp
-    tune_helper.hpp
 
     ### interfaces ###
     single_usrp.hpp

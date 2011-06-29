@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/subdev_props.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/assert_has.hpp>
