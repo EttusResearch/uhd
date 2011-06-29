@@ -544,8 +544,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         property_tree::path_type root = "/mboards/" + mb;
         _tree->access<double>(root / "tick_rate").update();
-        _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t());
-        _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t());
+        _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_rx_subdev_names()[0]));
+        _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_tx_subdev_names()[0]));
         _tree->access<std::string>(root / "ref_source/value").set("internal");
         _tree->access<std::string>(root / "time_source/value").set("none");
 

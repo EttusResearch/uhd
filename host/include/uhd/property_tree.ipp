@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_PROPERTY_TREE_IPP
 #define INCLUDED_UHD_PROPERTY_TREE_IPP
 
+#include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
 #include <vector>
 
@@ -51,9 +52,10 @@ public:
     }
 
     property<T> &set(const T &value){
-        _value = _master.empty()? value : _master(value);
+        T new_value(_master.empty()? value : _master(value));
+        _value = new_value; //shadow it
         BOOST_FOREACH(typename property<T>::subscriber_type &subscriber, _subscribers){
-            subscriber(this->get()); //let errors propagate
+            subscriber(new_value); //let errors propagate
         }
         return *this;
     }
@@ -88,7 +90,12 @@ namespace uhd{
     }
 
     template <typename T> property<T> &property_tree::access(const path_type &path){
-        return *boost::any_cast<typename property<T>::sptr>(this->_access(path));
+        try{
+            return *boost::any_cast<typename property<T>::sptr>(this->_access(path));
+        }
+        catch(const boost::bad_any_cast &){
+            throw uhd::type_error("Cannot cast the property at: " + path.string());
+        }
     }
 
 } //namespace uhd

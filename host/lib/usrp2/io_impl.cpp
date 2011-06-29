@@ -302,18 +302,12 @@ void usrp2_impl::update_tx_samp_rate(const double rate){
     _io_impl->send_handler.set_samp_rate(rate);
 }
 
-void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
+void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec){
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
     property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
 
     //sanity checking
-    subdev_spec_t spec(spec_);
-    if (spec.size() == 0){
-        //determine the first subdev spec that exists
-        const std::string db_name = _tree->list(root).at(0);
-        const std::string sd_name = _tree->list(root / db_name / "rx_frontends").at(0);
-        spec.push_back(subdev_spec_pair_t(db_name, sd_name));
-    }
+    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
     if (spec.size() > _mbc[which_mb].rx_dsps.size()) throw uhd::value_error("rx subdev spec too long");
 
     //setup mux for this spec
@@ -341,18 +335,11 @@ void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev
     }
 }
 
-void usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
+void usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec){
     boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
     property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
 
     //sanity checking
-    subdev_spec_t spec(spec_);
-    if (spec.size() == 0){
-        //determine the first subdev spec that exists
-        const std::string db_name = _tree->list(root).at(0);
-        const std::string sd_name = _tree->list(root / db_name / "tx_frontends").at(0);
-        spec.push_back(subdev_spec_pair_t(db_name, sd_name));
-    }
     if (spec.size() != 1) throw uhd::value_error("tx subdev spec has to be size 1");
 
     //set the mux for this spec

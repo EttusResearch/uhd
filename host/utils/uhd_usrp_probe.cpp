@@ -74,6 +74,7 @@ static std::string get_subdev_pp_string(const std::string &type, property_tree::
 
     ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
     ss << boost::format("Antennas: %s") % prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "antenna/options").get()) << std::endl;
+    ss << boost::format("Sensors: %s") % prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
 
     meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
     ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;
@@ -134,6 +135,10 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const property
     BOOST_FOREACH(const std::string &key, mb_eeprom.keys()){
         if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
     }
+    ss << std::endl;
+    ss << "Time sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "time_source" / "options").get()) << std::endl;
+    ss << "Ref sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "ref_source" / "options").get()) << std::endl;
+    ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
     BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
         ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
     }
