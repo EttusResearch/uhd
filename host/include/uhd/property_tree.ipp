@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_PROPERTY_TREE_IPP
 #define INCLUDED_UHD_PROPERTY_TREE_IPP
 
+#include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
 #include <vector>
 
@@ -58,6 +59,9 @@ public:
     }
 
     T get(void) const{
+        if (_publisher.empty() and _value.get() == NULL) throw uhd::runtime_error(
+            "Called get() on property with an uninitialized value"
+        );
         return _publisher.empty()? *_value : _publisher();
     }
 

@@ -544,7 +544,7 @@ public:
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
         tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN, _tree, tx_dsp_root(chan), tx_rf_fe_root(chan), tune_request);
-        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "RX");
+        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 

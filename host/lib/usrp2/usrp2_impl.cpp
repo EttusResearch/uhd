@@ -361,10 +361,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _tree->create<std::string>(rx_codec_path / "name").set("ads62p44");
             _tree->create<meta_range_t>(rx_codec_path / "gains/digital/range").set(meta_range_t(0, 6.0, 0.5));
             _tree->create<double>(rx_codec_path / "gains/digital/value")
-                .subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_gain, _mbc[mb].codec, _1));
+                .subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_gain, _mbc[mb].codec, _1)).set(0);
             _tree->create<meta_range_t>(rx_codec_path / "gains/fine/range").set(meta_range_t(0, 0.5, 0.05));
             _tree->create<double>(rx_codec_path / "gains/fine/value")
-                .subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_fine_gain, _mbc[mb].codec, _1));
+                .subscribe(boost::bind(&usrp2_codec_ctrl::set_rx_digital_fine_gain, _mbc[mb].codec, _1)).set(0);
         }break;
 
         case usrp2_iface::USRP2_REV3:
@@ -548,6 +548,15 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         property_tree::path_type root = "/mboards/" + mb;
         _tree->access<double>(root / "tick_rate").update();
+
+        //and now that the tick rate is set, init the host rates to something
+        BOOST_FOREACH(const std::string &name, _tree->list(root / "rx_dsps")){
+            _tree->access<double>(root / "rx_dsps" / name / "rate" / "value").set(1e6);
+        }
+        BOOST_FOREACH(const std::string &name, _tree->list(root / "tx_dsps")){
+            _tree->access<double>(root / "tx_dsps" / name / "rate" / "value").set(1e6);
+        }
+
         _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_rx_subdev_names()[0]));
         _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_tx_subdev_names()[0]));
         _tree->access<std::string>(root / "ref_source/value").set("internal");

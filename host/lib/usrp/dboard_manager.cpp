@@ -415,8 +415,11 @@ static sensor_value_t get_sensor(wax::obj subdev, const std::string &name){
     return subdev[named_prop_t(SUBDEV_PROP_SENSOR, name)].as<sensor_value_t>();
 }
 
-static double get_set_gain(wax::obj subdev, const std::string &name, const double gain){
+static void set_gain(wax::obj subdev, const std::string &name, const double gain){
     subdev[named_prop_t(SUBDEV_PROP_GAIN, name)] = gain;
+}
+
+static double get_gain(wax::obj subdev, const std::string &name){
     return subdev[named_prop_t(SUBDEV_PROP_GAIN, name)].as<double>();
 }
 
@@ -424,8 +427,11 @@ static meta_range_t get_gain_range(wax::obj subdev, const std::string &name){
     return subdev[named_prop_t(SUBDEV_PROP_GAIN_RANGE, name)].as<meta_range_t>();
 }
 
-static double get_set_freq(wax::obj subdev, const double freq){
+static void set_freq(wax::obj subdev, const double freq){
     subdev[SUBDEV_PROP_FREQ] = freq;
+}
+
+static double get_freq(wax::obj subdev){
     return subdev[SUBDEV_PROP_FREQ].as<double>();
 }
 
@@ -433,8 +439,11 @@ static meta_range_t get_freq_range(wax::obj subdev){
     return subdev[SUBDEV_PROP_FREQ_RANGE].as<meta_range_t>();
 }
 
-static std::string get_set_ant(wax::obj subdev, const std::string &ant){
+static void set_ant(wax::obj subdev, const std::string &ant){
     subdev[SUBDEV_PROP_ANTENNA] = ant;
+}
+
+static std::string get_ant(wax::obj subdev){
     return subdev[SUBDEV_PROP_ANTENNA].as<std::string>();
 }
 
@@ -461,8 +470,11 @@ static bool get_set_enb(wax::obj subdev, const bool enb){
     return subdev[SUBDEV_PROP_ENABLED].as<bool>();
 }
 
-static double get_set_bw(wax::obj subdev, const double freq){
+static void set_bw(wax::obj subdev, const double freq){
     subdev[SUBDEV_PROP_BANDWIDTH] = freq;
+}
+
+static double get_bw(wax::obj subdev){
     return subdev[SUBDEV_PROP_BANDWIDTH].as<double>();
 }
 
@@ -483,19 +495,22 @@ void dboard_manager::populate_prop_tree_from_subdev(
     tree->create<int>(root / "gains"); //phony property so this dir exists
     BOOST_FOREACH(const std::string &name, gain_names){
         tree->create<double>(root / "gains" / name / "value")
-            .coerce(boost::bind(&get_set_gain, subdev, name, _1));
+            .publish(boost::bind(&get_gain, subdev, name))
+            .subscribe(boost::bind(&set_gain, subdev, name, _1));
         tree->create<meta_range_t>(root / "gains" / name / "range")
             .publish(boost::bind(&get_gain_range, subdev, name));
     }
 
     tree->create<double>(root / "freq/value")
-        .coerce(boost::bind(&get_set_freq, subdev, _1));
+        .publish(boost::bind(&get_freq, subdev))
+        .subscribe(boost::bind(&set_freq, subdev, _1));
 
     tree->create<meta_range_t>(root / "freq/range")
         .publish(boost::bind(&get_freq_range, subdev));
 
     tree->create<std::string>(root / "antenna/value")
-        .coerce(boost::bind(&get_set_ant, subdev, _1));
+        .publish(boost::bind(&get_ant, subdev))
+        .subscribe(boost::bind(&set_ant, subdev, _1));
 
     tree->create<std::vector<std::string> >(root / "antenna/options")
         .publish(boost::bind(&get_ants, subdev));
@@ -510,5 +525,6 @@ void dboard_manager::populate_prop_tree_from_subdev(
         .publish(boost::bind(&get_use_lo_off, subdev));
 
     tree->create<double>(root / "bandwidth/value")
-        .coerce(boost::bind(&get_set_bw, subdev, _1));
+        .publish(boost::bind(&get_bw, subdev))
+        .subscribe(boost::bind(&set_bw, subdev, _1));
 }
