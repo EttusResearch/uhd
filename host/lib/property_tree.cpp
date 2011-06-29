@@ -61,7 +61,7 @@ public:
         return node->keys();
     }
 
-    void _create(const path_type &path, const boost::any &prop){
+    void _create(const path_type &path, const boost::shared_ptr<void> &prop){
         boost::mutex::scoped_lock lock(_mutex);
 
         node_type *node = &_root;
@@ -72,7 +72,7 @@ public:
         node->prop = prop;
     }
 
-    boost::any &_access(const path_type &path){
+    boost::shared_ptr<void> &_access(const path_type &path){
         boost::mutex::scoped_lock lock(_mutex);
 
         node_type *node = &_root;
@@ -80,6 +80,7 @@ public:
             if (not node->has_key(leaf)) throw_path_not_found(path);
             node = &(*node)[leaf];
         }
+        if (node->prop.get() == NULL) throw uhd::type_error("Uninitialized property at: " + path.string());
         return node->prop;
     }
 
@@ -89,7 +90,7 @@ private:
     }
 
     struct node_type : uhd::dict<std::string, node_type>{
-        boost::any prop;
+        boost::shared_ptr<void> prop;
     } _root;
 
     boost::mutex _mutex;

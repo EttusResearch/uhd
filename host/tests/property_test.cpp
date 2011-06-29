@@ -18,6 +18,7 @@
 #include <boost/test/unit_test.hpp>
 #include <uhd/property_tree.hpp>
 #include <boost/bind.hpp>
+#include <exception>
 #include <iostream>
 
 struct coercer_type{
@@ -34,44 +35,92 @@ struct setter_type{
     int _x;
 };
 
+struct getter_type{
+    int doit(void){
+        return _x;
+    }
+
+    int _x;
+};
+
 BOOST_AUTO_TEST_CASE(test_prop_simple){
-    uhd::property<int>::sptr prop = uhd::property<int>::make();
-    prop->set(42);
-    BOOST_CHECK_EQUAL(prop->get(), 42);
-    prop->set(34);
-    BOOST_CHECK_EQUAL(prop->get(), 34);
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    uhd::property<int> &prop = tree->create<int>("/");
+    prop.set(42);
+    BOOST_CHECK_EQUAL(prop.get(), 42);
+    prop.set(34);
+    BOOST_CHECK_EQUAL(prop.get(), 34);
 }
 
 BOOST_AUTO_TEST_CASE(test_prop_with_subscriber){
-    uhd::property<int>::sptr prop = uhd::property<int>::make();
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    uhd::property<int> &prop = tree->create<int>("/");
 
     setter_type setter;
-    prop->subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
 
-    prop->set(42);
-    BOOST_CHECK_EQUAL(prop->get(), 42);
+    prop.set(42);
+    BOOST_CHECK_EQUAL(prop.get(), 42);
     BOOST_CHECK_EQUAL(setter._x, 42);
 
-    prop->set(34);
-    BOOST_CHECK_EQUAL(prop->get(), 34);
+    prop.set(34);
+    BOOST_CHECK_EQUAL(prop.get(), 34);
     BOOST_CHECK_EQUAL(setter._x, 34);
 }
 
-BOOST_AUTO_TEST_CASE(test_prop_with_coercion){
-    uhd::property<int>::sptr prop = uhd::property<int>::make();
+BOOST_AUTO_TEST_CASE(test_prop_with_publisher){
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    uhd::property<int> &prop = tree->create<int>("/");
+
+    getter_type getter;
+    prop.publish(boost::bind(&getter_type::doit, &getter));
+
+    getter._x = 42;
+    prop.set(0); //should not change
+    BOOST_CHECK_EQUAL(prop.get(), 42);
+
+    getter._x = 34;
+    prop.set(0); //should not change
+    BOOST_CHECK_EQUAL(prop.get(), 34);
+}
+
+BOOST_AUTO_TEST_CASE(test_prop_with_publisher_and_subscriber){
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    uhd::property<int> &prop = tree->create<int>("/");
+
+    getter_type getter;
+    prop.publish(boost::bind(&getter_type::doit, &getter));
 
     setter_type setter;
-    prop->subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
+
+    getter._x = 42;
+    prop.set(0);
+    BOOST_CHECK_EQUAL(prop.get(), 42);
+    BOOST_CHECK_EQUAL(setter._x, 0);
+
+    getter._x = 34;
+    prop.set(1);
+    BOOST_CHECK_EQUAL(prop.get(), 34);
+    BOOST_CHECK_EQUAL(setter._x, 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_prop_with_coercion){
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    uhd::property<int> &prop = tree->create<int>("/");
+
+    setter_type setter;
+    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
 
     coercer_type coercer;
-    prop->subscribe_master(boost::bind(&coercer_type::doit, &coercer, _1));
+    prop.subscribe_master(boost::bind(&coercer_type::doit, &coercer, _1));
 
-    prop->set(42);
-    BOOST_CHECK_EQUAL(prop->get(), 40);
+    prop.set(42);
+    BOOST_CHECK_EQUAL(prop.get(), 40);
     BOOST_CHECK_EQUAL(setter._x, 40);
 
-    prop->set(34);
-    BOOST_CHECK_EQUAL(prop->get(), 32);
+    prop.set(34);
+    BOOST_CHECK_EQUAL(prop.get(), 32);
     BOOST_CHECK_EQUAL(setter._x, 32);
 }
 
@@ -82,6 +131,7 @@ BOOST_AUTO_TEST_CASE(test_prop_tree){
     tree->create<int>("/test/prop1");
 
     BOOST_CHECK(tree->exists("/test"));
+    BOOST_CHECK_THROW(tree->access<int>("/test"), std::exception);
     BOOST_CHECK(tree->exists("/test/prop0"));
     BOOST_CHECK(tree->exists("/test/prop1"));
 

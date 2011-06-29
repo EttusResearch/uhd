@@ -18,15 +18,14 @@
 #ifndef INCLUDED_UHD_PROPERTY_TREE_IPP
 #define INCLUDED_UHD_PROPERTY_TREE_IPP
 
-#include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
+#include <boost/any.hpp>
 #include <vector>
 
 /***********************************************************************
  * Implement templated property impl
  **********************************************************************/
-namespace uhd{
-namespace /*anon*/{
+namespace uhd{ namespace /*anon*/{
 
 template <typename T> class UHD_API property_impl : public property<T>{
 public:
@@ -71,13 +70,7 @@ private:
     boost::any _value; //any type so we can assign structs w/ const members
 };
 
-} //namespace /*anon*/
-
-template <typename T> typename property<T>::sptr property<T>::make(void){
-    return sptr(new property_impl<T>());
-}
-
-} //namespace uhd
+}} //namespace uhd::/*anon*/
 
 /***********************************************************************
  * Implement templated methods for the property tree
@@ -85,17 +78,12 @@ template <typename T> typename property<T>::sptr property<T>::make(void){
 namespace uhd{
 
     template <typename T> property<T> &property_tree::create(const path_type &path){
-        this->_create(path, property<T>::make());
+        this->_create(path, typename boost::shared_ptr<property<T> >(new property_impl<T>()));
         return this->access<T>(path);
     }
 
     template <typename T> property<T> &property_tree::access(const path_type &path){
-        try{
-            return *boost::any_cast<typename property<T>::sptr>(this->_access(path));
-        }
-        catch(const boost::bad_any_cast &){
-            throw uhd::type_error("Cannot cast the property at: " + path.string());
-        }
+        return *boost::static_pointer_cast<property<T> >(this->_access(path));
     }
 
 } //namespace uhd

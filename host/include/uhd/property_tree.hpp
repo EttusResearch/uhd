@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_PROPERTY_TREE_HPP
 
 #include <uhd/config.hpp>
-#include <boost/any.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -34,13 +33,9 @@ namespace uhd{
  */
 template <typename T> class UHD_API property : boost::noncopyable{
 public:
-    typedef boost::shared_ptr<property> sptr;
     typedef boost::function<void(const T &)> subscriber_type;
     typedef boost::function<T(void)> publisher_type;
     typedef boost::function<T(const T &)> master_type;
-
-    //! Make a new property object
-    static sptr make(void);
 
     /*!
      * Register a master subscriber into the property.
@@ -107,10 +102,10 @@ public:
 
 protected:
     //! Internal create property with wild-card type
-    virtual void _create(const path_type &path, const boost::any &prop) = 0;
+    virtual void _create(const path_type &path, const boost::shared_ptr<void> &prop) = 0;
 
     //! Internal access property with wild-card type
-    virtual boost::any &_access(const path_type &path) = 0;
+    virtual boost::shared_ptr<void> &_access(const path_type &path) = 0;
 
 };
 
