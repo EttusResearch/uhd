@@ -215,7 +215,54 @@ public:
     }
 
     std::string get_pp_string(void){
-        return "TODO";
+        std::string buff = str(boost::format(
+            "%s USRP:\n"
+            "  Device: %s\n"
+        )
+            % ((get_num_mboards() > 1)? "Multi" : "Single")
+            % (_tree->access<std::string>("/name").get())
+        );
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            buff += str(boost::format(
+                "  Mboard %d: %s\n"
+            ) % m
+                % (_tree->access<std::string>(mb_root(m) / "name").get())
+            );
+        }
+
+        //----------- rx side of life ----------------------------------
+        for (size_t m = 0, chan = 0; m < get_num_mboards(); m++){
+            for (; chan < (m + 1)*get_rx_subdev_spec(m).size(); chan++){
+                buff += str(boost::format(
+                    "  RX Channel: %u\n"
+                    "    RX DSP: %s\n"
+                    "    RX Dboard: %s\n"
+                    "    RX Subdev: %s\n"
+                ) % chan
+                    % rx_dsp_root(chan).leaf()
+                    % rx_rf_fe_root(chan).branch_path().branch_path().leaf()
+                    % (_tree->access<std::string>(rx_rf_fe_root(chan) / "name").get())
+                );
+            }
+        }
+
+        //----------- tx side of life ----------------------------------
+        for (size_t m = 0, chan = 0; m < get_num_mboards(); m++){
+            for (; chan < (m + 1)*get_tx_subdev_spec(m).size(); chan++){
+                buff += str(boost::format(
+                    "  TX Channel: %u\n"
+                    "    TX DSP: %s\n"
+                    "    TX Dboard: %s\n"
+                    "    TX Subdev: %s\n"
+                ) % chan
+                    % tx_dsp_root(chan).leaf()
+                    % tx_rf_fe_root(chan).branch_path().branch_path().leaf()
+                    % (_tree->access<std::string>(tx_rf_fe_root(chan) / "name").get())
+                );
+            }
+        }
+
+        return buff;
     }
 
     std::string get_mboard_name(size_t mboard){
