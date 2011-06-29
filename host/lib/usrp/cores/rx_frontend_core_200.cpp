@@ -19,10 +19,10 @@
 #include <boost/math/special_functions/round.hpp>
 
 #define REG_RX_FE_SWAP_IQ             _base + 0 //lower bit
-#define REG_RX_FE_MAG_CORRECTION      _base + 1 //18 bits
-#define REG_RX_FE_PHASE_CORRECTION    _base + 2 //18 bits
-#define REG_RX_FE_OFFSET_I            _base + 3 //18 bits
-#define REG_RX_FE_OFFSET_Q            _base + 4 //18 bits
+#define REG_RX_FE_MAG_CORRECTION      _base + 4 //18 bits
+#define REG_RX_FE_PHASE_CORRECTION    _base + 8 //18 bits
+#define REG_RX_FE_OFFSET_I            _base + 12 //18 bits
+#define REG_RX_FE_OFFSET_Q            _base + 16 //18 bits
 
 static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));

@@ -25,15 +25,15 @@
 #include <cmath>
 
 #define REG_DSP_TX_FREQ          _dsp_base + 0
-#define REG_DSP_TX_SCALE_IQ      _dsp_base + 1
-#define REG_DSP_TX_INTERP        _dsp_base + 2
+#define REG_DSP_TX_SCALE_IQ      _dsp_base + 4
+#define REG_DSP_TX_INTERP        _dsp_base + 8
 
 #define REG_TX_CTRL_NUM_CHAN        _ctrl_base + 0
-#define REG_TX_CTRL_CLEAR_STATE     _ctrl_base + 1
-#define REG_TX_CTRL_REPORT_SID      _ctrl_base + 2
-#define REG_TX_CTRL_POLICY          _ctrl_base + 3
-#define REG_TX_CTRL_CYCLES_PER_UP   _ctrl_base + 4
-#define REG_TX_CTRL_PACKETS_PER_UP  _ctrl_base + 5
+#define REG_TX_CTRL_CLEAR_STATE     _ctrl_base + 4
+#define REG_TX_CTRL_REPORT_SID      _ctrl_base + 8
+#define REG_TX_CTRL_POLICY          _ctrl_base + 12
+#define REG_TX_CTRL_CYCLES_PER_UP   _ctrl_base + 16
+#define REG_TX_CTRL_PACKETS_PER_UP  _ctrl_base + 20
 
 #define FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
 #define FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)

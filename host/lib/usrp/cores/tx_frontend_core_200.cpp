@@ -22,10 +22,10 @@
 #include <boost/math/special_functions/round.hpp>
 
 #define REG_TX_FE_DC_OFFSET_I         _base + 0 //24 bits
-#define REG_TX_FE_DC_OFFSET_Q         _base + 1 //24 bits
-#define REG_TX_FE_MAG_CORRECTION      _base + 2 //18 bits
-#define REG_TX_FE_PHASE_CORRECTION    _base + 3 //18 bits
-#define REG_TX_FE_MUX                 _base + 4 //8 bits (std output = 0x10, reversed = 0x01)
+#define REG_TX_FE_DC_OFFSET_Q         _base + 4 //24 bits
+#define REG_TX_FE_MAG_CORRECTION      _base + 8 //18 bits
+#define REG_TX_FE_PHASE_CORRECTION    _base + 12 //18 bits
+#define REG_TX_FE_MUX                 _base + 16 //8 bits (std output = 0x10, reversed = 0x01)
 
 static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));

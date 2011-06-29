@@ -20,11 +20,11 @@
 #include <uhd/utils/assert_has.hpp>
 
 #define REG_TIME64_SECS        _base + 0
-#define REG_TIME64_TICKS       _base + 2
-#define REG_TIME64_FLAGS       _base + 3
-#define REG_TIME64_IMM         _base + 4
-#define REG_TIME64_TPS         _base + 5
-#define REG_TIME64_MIMO_SYNC   _base + 6 //lower byte is delay cycles
+#define REG_TIME64_TICKS       _base + 4
+#define REG_TIME64_FLAGS       _base + 8
+#define REG_TIME64_IMM         _base + 12
+#define REG_TIME64_TPS         _base + 16
+#define REG_TIME64_MIMO_SYNC   _base + 20 //lower byte is delay cycles
 
 //pps flags (see above)
 #define FLAG_TIME64_PPS_NEGEDGE (0 << 0)
@@ -52,7 +52,7 @@ public:
     {
         _sources.push_back("none");
         _sources.push_back("sma");
-        _sources.push_back("sma neg edge");
+        _sources.push_back("_sma_");
         if (_mimo_delay_cycles != 0) _sources.push_back("mimo");
     }
 
@@ -100,7 +100,7 @@ public:
         if (source == "sma"){
             _iface->poke32(REG_TIME64_FLAGS, FLAG_TIME64_PPS_SMA | FLAG_TIME64_PPS_POSEDGE);
         }
-        else if (source == "sma neg edge"){
+        else if (source == "_sma_"){
             _iface->poke32(REG_TIME64_FLAGS, FLAG_TIME64_PPS_SMA | FLAG_TIME64_PPS_NEGEDGE);
         }
 
