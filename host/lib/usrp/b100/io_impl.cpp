@@ -94,12 +94,12 @@ void b100_impl::io_init(void){
     //setup rx otw type
     _rx_otw_type.width = 16;
     _rx_otw_type.shift = 0;
-    _rx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    _rx_otw_type.byteorder = uhd::otw_type_t::BO_LITTLE_ENDIAN;
 
     //setup tx otw type
     _tx_otw_type.width = 16;
     _tx_otw_type.shift = 0;
-    _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    _tx_otw_type.byteorder = uhd::otw_type_t::BO_LITTLE_ENDIAN;
 
     //TODO best place to put this?
     this->reset_gpif(6);
