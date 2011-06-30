@@ -174,6 +174,12 @@ public:
         _chan_rate = 0.0;
         _out_rate = 0.0;
 
+        //perform soft-reset
+        _ad9522_regs.soft_reset = 1;
+        this->send_reg(0x000);
+        this->latch_regs();
+        _ad9522_regs.soft_reset = 0;
+
         //init the clock gen registers
         _ad9522_regs.sdo_active = ad9522_regs_t::SDO_ACTIVE_SDO_SDIO;
         _ad9522_regs.enb_stat_eeprom_at_stat_pin = 0; //use status pin

@@ -178,11 +178,18 @@ ctrl_data_t b100_ctrl_impl::read(boost::uint32_t addr, size_t len) {
     pkt.pkt_meta.addr = addr;
     boost::uint16_t pkt_buff[CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)];
 
+    //flush anything that might be in the queue
+    while (get_ctrl_data(pkt.data, 0.0)){
+        UHD_MSG(error) << "B100: control read found unexpected packet." << std::endl;
+    }
+
     pack_ctrl_pkt(pkt_buff, pkt);
     send_pkt(pkt_buff);
 
-    //loop around waiting for the response to appear
-    while(!get_ctrl_data(pkt.data, 0.05));
+    //block with timeout waiting for the response to appear
+    if (not get_ctrl_data(pkt.data, 0.1)) throw uhd::runtime_error(
+        "B100: timeout waiting for control response packet."
+    );
 
     return pkt.data;
 }

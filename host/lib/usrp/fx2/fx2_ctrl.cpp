@@ -262,6 +262,7 @@ public:
 
     void usrp_load_eeprom(std::string filestring)
     {
+        if (load_img_msg) UHD_MSG(status) << "Loading EEPROM image: " << filestring << "..." << std::flush;
         const char *filename = filestring.c_str();
         const boost::uint16_t i2c_addr = 0x50;
 
@@ -299,6 +300,7 @@ public:
             boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         }
         file.close();
+        if (load_img_msg) UHD_MSG(status) << " done" << std::endl;
     }
 
 

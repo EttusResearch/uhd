@@ -166,9 +166,6 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _clock_ctrl = b100_clock_ctrl::make(_fx2_ctrl, device_addr.cast<double>("master_clock_rate", B100_DEFAULT_TICK_RATE));
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
 
-    //prepare GPIF before anything else is used
-    this->prepare_gpif();
-
     device_addr_t data_xport_args;
     data_xport_args["recv_frame_size"] = device_addr.get("recv_frame_size", "16384");
     data_xport_args["num_recv_frames"] = device_addr.get("num_recv_frames", "16");
@@ -205,6 +202,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     this->check_fpga_compat(); //check after making control
     _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
     _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
+    //init GPIF stuff TODO: best place to put this
+    this->enable_gpif(true);
+    this->reset_gpif(6);
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
@@ -213,6 +213,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->create<std::string>("/name").set("B-Series Device");
     const property_tree::path_type mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set("B100 (B-Hundo)");
+    _tree->create<std::string>(mb_path / "load_eeprom")
+        .subscribe(boost::bind(&fx2_ctrl::usrp_load_eeprom, _fx2_ctrl, _1));
 
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
@@ -451,21 +453,14 @@ void b100_impl::update_ref_source(const std::string &source){
 }
 
 ////////////////// some GPIF preparation related stuff /////////////////
-static void reset_gpif(fx2_ctrl::sptr _fx2_ctrl, boost::uint16_t ep) {
+void b100_impl::reset_gpif(const boost::uint16_t ep) {
     _fx2_ctrl->usrp_control_write(VRQ_RESET_GPIF, ep, ep, 0, 0);
 }
 
-static void enable_gpif(fx2_ctrl::sptr _fx2_ctrl, bool en) {
+void b100_impl::enable_gpif(const bool en) {
     _fx2_ctrl->usrp_control_write(VRQ_ENABLE_GPIF, en ? 1 : 0, 0, 0, 0);
 }
 
-static void clear_fpga_fifo(fx2_ctrl::sptr _fx2_ctrl) {
+void b100_impl::clear_fpga_fifo(void) {
     _fx2_ctrl->usrp_control_write(VRQ_CLEAR_FPGA_FIFO, 0, 0, 0, 0);
-}
-
-void b100_impl::prepare_gpif(void){
-    //TODO check the order of this:
-    enable_gpif(_fx2_ctrl, true);
-    reset_gpif(_fx2_ctrl, 6);
-    //clear_fpga_fifo(_fx2_ctrl);
 }

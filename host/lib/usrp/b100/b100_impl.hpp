@@ -124,7 +124,9 @@ private:
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_ref_source(const std::string &);
-    void prepare_gpif(void);
+    void reset_gpif(const boost::uint16_t);
+    void enable_gpif(const bool);
+    void clear_fpga_fifo(void);
     void handle_async_message(uhd::transport::managed_recv_buffer::sptr);
 };
 
