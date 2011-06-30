@@ -125,6 +125,7 @@ private:
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_ref_source(const std::string &);
     void prepare_gpif(void);
+    void handle_async_message(uhd::transport::managed_recv_buffer::sptr);
 };
 
 #endif /* INCLUDED_b100_IMPL_HPP */

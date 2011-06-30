@@ -27,17 +27,20 @@
 #include <boost/utility.hpp>
 #include "ctrl_packet.hpp"
 #include <boost/thread.hpp>
+#include <boost/function.hpp>
 
 class b100_ctrl : boost::noncopyable, public wb_iface{
 public:
     typedef boost::shared_ptr<b100_ctrl> sptr;
+    typedef boost::function<void(uhd::transport::managed_recv_buffer::sptr)> async_cb_type;
 
     /*!
      * Make a USRP control object from a data transport
      * \param ctrl_transport a USB data transport
+     * \param async_cb the callback for async messages
      * \return a new b100 control object
      */
-    static sptr make(uhd::transport::zero_copy_if::sptr ctrl_transport);
+    static sptr make(uhd::transport::zero_copy_if::sptr ctrl_transport, const async_cb_type &async_cb);
 
     /*!
      * Write a byte vector to an FPGA register
@@ -62,8 +65,6 @@ public:
      * \return true if it got something
      */
     virtual bool get_ctrl_data(ctrl_data_t &pkt_data, double timeout) = 0;
-
-    virtual bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout) = 0;
 
 };
 

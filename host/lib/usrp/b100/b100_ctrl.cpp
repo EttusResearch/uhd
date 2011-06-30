@@ -15,9 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../../transport/super_recv_packet_handler.hpp"
 #include "b100_ctrl.hpp"
-#include "b100_impl.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
@@ -36,9 +34,9 @@ bool b100_ctrl_debug = false;
 
 class b100_ctrl_impl : public b100_ctrl {
 public:
-    b100_ctrl_impl(uhd::transport::zero_copy_if::sptr ctrl_transport) :
+    b100_ctrl_impl(uhd::transport::zero_copy_if::sptr ctrl_transport, const async_cb_type &async_cb):
         sync_ctrl_fifo(2),
-        async_msg_fifo(100),
+        _async_cb(async_cb),
         _ctrl_transport(ctrl_transport),
         _seq(0)
     {
@@ -56,7 +54,6 @@ public:
     }
 
     bool get_ctrl_data(ctrl_data_t &pkt_data, double timeout);
-    bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout);
 
     void poke32(wb_addr_type addr, boost::uint32_t data){
         boost::mutex::scoped_lock lock(_ctrl_mutex);
@@ -95,7 +92,7 @@ private:
     //änd hërë wë gö ä-Vïkïng för äsynchronous control packets
     void viking_marauder_loop(boost::barrier &);
     bounded_buffer<ctrl_data_t> sync_ctrl_fifo;
-    bounded_buffer<async_metadata_t> async_msg_fifo;
+    async_cb_type _async_cb;
     boost::thread_group viking_marauders;
 
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
@@ -220,36 +217,8 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
 
             //push it onto the queue
             sync_ctrl_fifo.push_with_wait(pkt.data);
-        } else { //it's an async status pkt
-            //extract the vrt header packet info
-            vrt::if_packet_info_t if_packet_info;
-            if_packet_info.num_packet_words32 = rbuf->size()/sizeof(boost::uint32_t);
-            const boost::uint32_t *vrt_hdr = rbuf->cast<const boost::uint32_t *>();
-            vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
-
-            if(    if_packet_info.sid == B100_TX_ASYNC_SID
-               and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
-                //fill in the async metadata
-                async_metadata_t metadata;
-                metadata.channel = 0;
-                metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
-                metadata.time_spec = time_spec_t(
-                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), 64e6 //FIXME get from clock_ctrl
-                );
-                metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
-                async_msg_fifo.push_with_pop_on_full(metadata);
-                if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_UNDERFLOW
-                    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-                ) UHD_MSG(fastpath) << "U";
-                else if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-                    | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-                ) UHD_MSG(fastpath) << "S";
-                continue;
-            }
-            UHD_MSG(error) << "Control: unknown async response" << std::endl;
         }
+        else _async_cb(rbuf); //let the async callback handle it
     }
 }
 
@@ -258,14 +227,9 @@ bool b100_ctrl_impl::get_ctrl_data(ctrl_data_t &pkt_data, double timeout){
     return sync_ctrl_fifo.pop_with_timed_wait(pkt_data, timeout);
 }
 
-bool b100_ctrl_impl::recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout) {
-    boost::this_thread::disable_interruption di; //disable because the wait can throw
-    return async_msg_fifo.pop_with_timed_wait(async_metadata, timeout);
-}
-
 /***********************************************************************
  * Public make function for b100_ctrl interface
  **********************************************************************/
-b100_ctrl::sptr b100_ctrl::make(uhd::transport::zero_copy_if::sptr ctrl_transport){
-    return sptr(new b100_ctrl_impl(ctrl_transport));
+b100_ctrl::sptr b100_ctrl::make(uhd::transport::zero_copy_if::sptr ctrl_transport, const async_cb_type &async_cb){
+    return sptr(new b100_ctrl_impl(ctrl_transport, async_cb));
 }

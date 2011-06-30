@@ -201,7 +201,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Create controller objects
     ////////////////////////////////////////////////////////////////////
-    _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
+    _fpga_ctrl = b100_ctrl::make(_ctrl_transport, boost::bind(&b100_impl::handle_async_message, this, _1));
     this->check_fpga_compat(); //check after making control
     _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
     _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
@@ -467,5 +467,5 @@ void b100_impl::prepare_gpif(void){
     //TODO check the order of this:
     enable_gpif(_fx2_ctrl, true);
     reset_gpif(_fx2_ctrl, 6);
-    clear_fpga_fifo(_fx2_ctrl);
+    //clear_fpga_fifo(_fx2_ctrl);
 }

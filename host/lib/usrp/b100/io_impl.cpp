@@ -40,7 +40,7 @@ namespace asio = boost::asio;
  **********************************************************************/
 struct b100_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport, const size_t recv_width):
-        data_transport(data_transport)
+        data_transport(data_transport), async_msg_fifo(100/*messages deep*/)
     {
         for (size_t i = 0; i < recv_width; i++){
             typedef bounded_buffer<managed_recv_buffer::sptr> buffs_queue_type;
@@ -55,7 +55,7 @@ struct b100_impl::io_impl{
     }
 
     zero_copy_if::sptr data_transport;
-
+    bounded_buffer<async_metadata_t> async_msg_fifo;
     std::vector<bounded_buffer<managed_recv_buffer::sptr> *> _buffs_queue;
 
     //gets buffer, determines if its the requested index,
@@ -115,6 +115,38 @@ void b100_impl::io_init(void){
     _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
+void b100_impl::handle_async_message(managed_recv_buffer::sptr rbuf){
+    vrt::if_packet_info_t if_packet_info;
+    if_packet_info.num_packet_words32 = rbuf->size()/sizeof(boost::uint32_t);
+    const boost::uint32_t *vrt_hdr = rbuf->cast<const boost::uint32_t *>();
+    try{
+        vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
+    }
+    catch(const std::exception &e){
+        UHD_MSG(error) << "Error (handle_async_message): " << e.what() << std::endl;
+    }
+
+    if (if_packet_info.sid == B100_TX_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+        //fill in the async metadata
+        async_metadata_t metadata;
+        metadata.channel = 0;
+        metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
+        metadata.time_spec = time_spec_t(
+            time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), _clock_ctrl->get_fpga_clock_rate()
+        );
+        metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
+        _io_impl->async_msg_fifo.push_with_pop_on_full(metadata);
+        if (metadata.event_code &
+            ( async_metadata_t::EVENT_CODE_UNDERFLOW
+            | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
+        ) UHD_MSG(fastpath) << "U";
+        else if (metadata.event_code &
+            ( async_metadata_t::EVENT_CODE_SEQ_ERROR
+            | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
+        ) UHD_MSG(fastpath) << "S";
+    }
+    else UHD_MSG(error) << "Unknown async packet" << std::endl;
+}
 
 void b100_impl::update_tick_rate(const double rate){
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
@@ -177,8 +209,8 @@ void b100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
     //bind new callbacks for the handler
     for (size_t i = 0; i < _io_impl->send_handler.size(); i++){
-        _io_impl->recv_handler.set_xport_chan_get_buff(i, boost::bind(
-            &zero_copy_if::get_recv_buff, _data_transport, _1
+        _io_impl->send_handler.set_xport_chan_get_buff(i, boost::bind(
+            &zero_copy_if::get_send_buff, _data_transport, _1
         ));
     }
 }
@@ -186,8 +218,11 @@ void b100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 /***********************************************************************
  * Async Data
  **********************************************************************/
-bool b100_impl::recv_async_msg(uhd::async_metadata_t &md, double timeout){
-    return _fpga_ctrl->recv_async_msg(md, timeout);
+bool b100_impl::recv_async_msg(
+    async_metadata_t &async_metadata, double timeout
+){
+    boost::this_thread::disable_interruption di; //disable because the wait can throw
+    return _io_impl->async_msg_fifo.pop_with_timed_wait(async_metadata, timeout);
 }
 
 /***********************************************************************
