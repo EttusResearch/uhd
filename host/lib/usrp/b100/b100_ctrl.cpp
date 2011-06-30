@@ -34,9 +34,8 @@ bool b100_ctrl_debug = false;
 
 class b100_ctrl_impl : public b100_ctrl {
 public:
-    b100_ctrl_impl(uhd::transport::zero_copy_if::sptr ctrl_transport, const async_cb_type &async_cb):
+    b100_ctrl_impl(uhd::transport::zero_copy_if::sptr ctrl_transport):
         sync_ctrl_fifo(2),
-        _async_cb(async_cb),
         _ctrl_transport(ctrl_transport),
         _seq(0)
     {
@@ -86,6 +85,11 @@ public:
         return boost::uint16_t(words[0]);
     }
 
+    void set_async_cb(const async_cb_type &async_cb){
+        boost::mutex::scoped_lock lock(_async_mutex);
+        _async_cb = async_cb;
+    }
+
 private:
     int send_pkt(boost::uint16_t *cmd);
 
@@ -97,7 +101,7 @@ private:
 
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     boost::uint8_t _seq;
-    boost::mutex _ctrl_mutex;
+    boost::mutex _ctrl_mutex, _async_mutex;
 };
 
 /***********************************************************************
@@ -206,8 +210,8 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
     set_thread_priority_safe();
 
     while (not boost::this_thread::interruption_requested()){
-        managed_recv_buffer::sptr rbuf = _ctrl_transport->get_recv_buff();
-        if(!rbuf.get()) continue; //that's ok, there are plenty of villages to pillage!
+        managed_recv_buffer::sptr rbuf = _ctrl_transport->get_recv_buff(1.0);
+        if(rbuf.get() == NULL) continue; //that's ok, there are plenty of villages to pillage!
         const boost::uint16_t *pkt_buf = rbuf->cast<const boost::uint16_t *>();
 
         if(pkt_buf[0] >> 8 == CTRL_PACKET_HEADER_MAGIC) {
@@ -216,16 +220,27 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
             unpack_ctrl_pkt(pkt_buf, pkt);
 
             if(pkt.pkt_meta.seq != boost::uint8_t(_seq - 1)) {
-                throw uhd::runtime_error("Sequence error on control channel");
+                UHD_MSG(error)
+                    << "Sequence error on control channel." << std::endl
+                    << "Exiting control loop." << std::endl
+                ;
+                return;
             }
             if(pkt.pkt_meta.len > (CTRL_PACKET_LENGTH - CTRL_PACKET_HEADER_LENGTH)) {
-                throw uhd::runtime_error("Control channel packet length too long");
+                UHD_MSG(error)
+                    << "Control channel packet length too long" << std::endl
+                    << "Exiting control loop." << std::endl
+                ;
+                return;
             }
 
             //push it onto the queue
-            sync_ctrl_fifo.push_with_wait(pkt.data);
+            sync_ctrl_fifo.push_with_pop_on_full(pkt.data);
         }
-        else _async_cb(rbuf); //let the async callback handle it
+        else{ //otherwise let the async callback handle it
+            boost::mutex::scoped_lock lock(_async_mutex);
+            if (not _async_cb.empty()) _async_cb(rbuf);
+        }
     }
 }
 
@@ -237,6 +252,6 @@ bool b100_ctrl_impl::get_ctrl_data(ctrl_data_t &pkt_data, double timeout){
 /***********************************************************************
  * Public make function for b100_ctrl interface
  **********************************************************************/
-b100_ctrl::sptr b100_ctrl::make(uhd::transport::zero_copy_if::sptr ctrl_transport, const async_cb_type &async_cb){
-    return sptr(new b100_ctrl_impl(ctrl_transport, async_cb));
+b100_ctrl::sptr b100_ctrl::make(uhd::transport::zero_copy_if::sptr ctrl_transport){
+    return sptr(new b100_ctrl_impl(ctrl_transport));
 }

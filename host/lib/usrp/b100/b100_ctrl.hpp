@@ -37,10 +37,12 @@ public:
     /*!
      * Make a USRP control object from a data transport
      * \param ctrl_transport a USB data transport
-     * \param async_cb the callback for async messages
      * \return a new b100 control object
      */
-    static sptr make(uhd::transport::zero_copy_if::sptr ctrl_transport, const async_cb_type &async_cb);
+    static sptr make(uhd::transport::zero_copy_if::sptr ctrl_transport);
+
+    //! set an async callback for messages
+    virtual void set_async_cb(const async_cb_type &async_cb) = 0;
 
     /*!
      * Write a byte vector to an FPGA register

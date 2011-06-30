@@ -101,11 +101,17 @@ void b100_impl::io_init(void){
     _tx_otw_type.shift = 0;
     _tx_otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
 
+    //TODO best place to put this?
+    this->reset_gpif(6);
+
     //set the expected packet size in USB frames
     _fpga_ctrl->poke32(B100_REG_MISC_RX_LEN, 4);
 
     //create new io impl
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport, _rx_dsps.size()));
+
+    //now its safe to register the async callback
+    _fpga_ctrl->set_async_cb(boost::bind(&b100_impl::handle_async_message, this, _1));
 
     //init some handler stuff
     _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_le);

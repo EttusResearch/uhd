@@ -198,13 +198,11 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Create controller objects
     ////////////////////////////////////////////////////////////////////
-    _fpga_ctrl = b100_ctrl::make(_ctrl_transport, boost::bind(&b100_impl::handle_async_message, this, _1));
+    _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
+    this->enable_gpif(true); //TODO best place to put this?
     this->check_fpga_compat(); //check after making control
     _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
     _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
-    //init GPIF stuff TODO: best place to put this
-    this->enable_gpif(true);
-    this->reset_gpif(6);
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
@@ -219,7 +217,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*_fx2_ctrl, mboard_eeprom_t::MAP_B000);
+    const mboard_eeprom_t mb_eeprom(*_fx2_ctrl, mboard_eeprom_t::MAP_B000);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
         .subscribe(boost::bind(&b100_impl::set_mb_eeprom, this, _1));
@@ -401,7 +399,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 }
 
 b100_impl::~b100_impl(void){
-    /* NOP */
+    //set an empty async callback now that we deconstruct
+    _fpga_ctrl->set_async_cb(b100_ctrl::async_cb_type());
 }
 
 void b100_impl::check_fw_compat(void){
