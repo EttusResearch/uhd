@@ -31,7 +31,7 @@ public:
     typedef boost::shared_ptr<time64_core_200> sptr;
 
     struct readback_bases_type{
-        size_t rb_secs_imm, rb_ticks_imm;
+        size_t rb_secs_now, rb_ticks_now;
         size_t rb_secs_pps, rb_ticks_pps;
     };
 

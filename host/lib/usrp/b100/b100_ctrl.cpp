@@ -36,7 +36,7 @@ bool b100_ctrl_debug = false;
 
 class b100_ctrl_impl : public b100_ctrl {
 public:
-    b100_ctrl_impl(uhd::transport::usb_zero_copy::sptr ctrl_transport) : 
+    b100_ctrl_impl(uhd::transport::zero_copy_if::sptr ctrl_transport) :
         sync_ctrl_fifo(2),
         async_msg_fifo(100),
         _ctrl_transport(ctrl_transport),
@@ -46,29 +46,61 @@ public:
         viking_marauders.create_thread(boost::bind(&b100_ctrl_impl::viking_marauder_loop, this, boost::ref(spawn_barrier)));
         spawn_barrier.wait();
     }
-    
+
     int write(boost::uint32_t addr, const ctrl_data_t &data);
     ctrl_data_t read(boost::uint32_t addr, size_t len);
-    
+
     ~b100_ctrl_impl(void) {
         viking_marauders.interrupt_all();
         viking_marauders.join_all();
     }
-    
+
     bool get_ctrl_data(ctrl_data_t &pkt_data, double timeout);
     bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout);
-    
+
+    void poke32(wb_addr_type addr, boost::uint32_t data){
+        boost::mutex::scoped_lock lock(_ctrl_mutex);
+
+        ctrl_data_t words(2);
+        words[0] = data & 0x0000FFFF;
+        words[1] = data >> 16;
+        this->write(addr, words);
+    }
+
+    boost::uint32_t peek32(wb_addr_type addr){
+        boost::mutex::scoped_lock lock(_ctrl_mutex);
+
+        ctrl_data_t words = this->read(addr, 2);
+        return boost::uint32_t((boost::uint32_t(words[1]) << 16) | words[0]);
+    }
+
+    void poke16(wb_addr_type addr, boost::uint16_t data){
+        boost::mutex::scoped_lock lock(_ctrl_mutex);
+
+        ctrl_data_t words(1);
+        words[0] = data;
+        this->write(addr, words);
+    }
+
+    boost::uint16_t peek16(wb_addr_type addr){
+        boost::mutex::scoped_lock lock(_ctrl_mutex);
+
+        ctrl_data_t words = this->read(addr, 1);
+        return boost::uint16_t(words[0]);
+    }
+
 private:
     int send_pkt(boost::uint16_t *cmd);
-    
+
     //änd hërë wë gö ä-Vïkïng för äsynchronous control packets
     void viking_marauder_loop(boost::barrier &);
     bounded_buffer<ctrl_data_t> sync_ctrl_fifo;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     boost::thread_group viking_marauders;
-    
-    uhd::transport::usb_zero_copy::sptr _ctrl_transport;
+
+    uhd::transport::zero_copy_if::sptr _ctrl_transport;
     boost::uint8_t _seq;
+    boost::mutex _ctrl_mutex;
 };
 
 /***********************************************************************
@@ -86,7 +118,7 @@ void pack_ctrl_pkt(boost::uint16_t *pkt_buff,
     pkt_buff[1] = pkt.pkt_meta.len;
     pkt_buff[2] = (pkt.pkt_meta.addr & 0x00000FFF);
     pkt_buff[3] = 0x0000; //address high bits always 0 on this device
-    
+
     for(size_t i = 0; i < pkt.data.size(); i++) {
         pkt_buff[4+i] = pkt.data[i];
     }
@@ -99,7 +131,7 @@ void unpack_ctrl_pkt(const boost::uint16_t *pkt_buff,
     pkt.pkt_meta.len = pkt_buff[1];
     pkt.pkt_meta.callbacks = 0; //callbacks aren't implemented yet
     pkt.pkt_meta.addr = pkt_buff[2] | boost::uint32_t(pkt_buff[3] << 16);
-    
+
     //let's check this so we don't go pushing 64K of crap onto the pkt
     if(pkt.pkt_meta.len > CTRL_PACKET_DATA_LENGTH) {
         throw uhd::runtime_error("Received control packet too long");
@@ -113,7 +145,7 @@ int b100_ctrl_impl::send_pkt(boost::uint16_t *cmd) {
     if(!sbuf.get()) {
         throw uhd::runtime_error("Control channel send error");
     }
-        
+
     //FIXME there's a better way to do this
     for(size_t i = 0; i < (CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)); i++) {
         sbuf->cast<boost::uint16_t *>()[i] = cmd[i];
@@ -132,7 +164,7 @@ int b100_ctrl_impl::write(boost::uint32_t addr, const ctrl_data_t &data) {
     pkt.pkt_meta.len = pkt.data.size();
     pkt.pkt_meta.addr = addr;
     boost::uint16_t pkt_buff[CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)];
-        
+
     pack_ctrl_pkt(pkt_buff, pkt);
     size_t result = send_pkt(pkt_buff);
     return result;
@@ -151,7 +183,7 @@ ctrl_data_t b100_ctrl_impl::read(boost::uint32_t addr, size_t len) {
 
     pack_ctrl_pkt(pkt_buff, pkt);
     send_pkt(pkt_buff);
-    
+
     //loop around waiting for the response to appear
     while(!get_ctrl_data(pkt.data, 0.05));
 
@@ -168,24 +200,24 @@ ctrl_data_t b100_ctrl_impl::read(boost::uint32_t addr, size_t len) {
 void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
     spawn_barrier.wait();
     set_thread_priority_safe();
-    
+
     while (not boost::this_thread::interruption_requested()){
         managed_recv_buffer::sptr rbuf = _ctrl_transport->get_recv_buff();
         if(!rbuf.get()) continue; //that's ok, there are plenty of villages to pillage!
         const boost::uint16_t *pkt_buf = rbuf->cast<const boost::uint16_t *>();
-        
+
         if(pkt_buf[0] >> 8 == CTRL_PACKET_HEADER_MAGIC) {
             //so it's got a control packet header, let's parse it.
             ctrl_pkt_t pkt;
             unpack_ctrl_pkt(pkt_buf, pkt);
-        
+
             if(pkt.pkt_meta.seq != boost::uint8_t(_seq - 1)) {
                 throw uhd::runtime_error("Sequence error on control channel");
             }
             if(pkt.pkt_meta.len > (CTRL_PACKET_LENGTH - CTRL_PACKET_HEADER_LENGTH)) {
                 throw uhd::runtime_error("Control channel packet length too long");
             }
-        
+
             //push it onto the queue
             sync_ctrl_fifo.push_with_wait(pkt.data);
         } else { //it's an async status pkt
@@ -194,8 +226,8 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
             if_packet_info.num_packet_words32 = rbuf->size()/sizeof(boost::uint32_t);
             const boost::uint32_t *vrt_hdr = rbuf->cast<const boost::uint32_t *>();
             vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
-            
-            if(    if_packet_info.sid == B100_ASYNC_SID
+
+            if(    if_packet_info.sid == B100_TX_ASYNC_SID
                and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
                 //fill in the async metadata
                 async_metadata_t metadata;
@@ -207,7 +239,7 @@ void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
                 metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
                 async_msg_fifo.push_with_pop_on_full(metadata);
                 if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_UNDERFLOW 
+                    ( async_metadata_t::EVENT_CODE_UNDERFLOW
                     | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
                 ) UHD_MSG(fastpath) << "U";
                 else if (metadata.event_code &
@@ -234,6 +266,6 @@ bool b100_ctrl_impl::recv_async_msg(uhd::async_metadata_t &async_metadata, doubl
 /***********************************************************************
  * Public make function for b100_ctrl interface
  **********************************************************************/
-b100_ctrl::sptr b100_ctrl::make(uhd::transport::usb_zero_copy::sptr ctrl_transport){
+b100_ctrl::sptr b100_ctrl::make(uhd::transport::zero_copy_if::sptr ctrl_transport){
     return sptr(new b100_ctrl_impl(ctrl_transport));
 }

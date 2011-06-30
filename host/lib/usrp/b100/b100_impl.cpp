@@ -18,11 +18,10 @@
 #include "b100_impl.hpp"
 #include "b100_ctrl.hpp"
 #include "fpga_regs_standard.h"
-#include "usrp_spi_defs.h"
+#include "usrp_i2c_addr.h"
+#include "usrp_commands.h"
 #include <uhd/transport/usb_control.hpp>
 #include "ctrl_packet.hpp"
-#include <uhd/usrp/device_props.hpp>
-#include <uhd/usrp/mboard_props.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
@@ -100,11 +99,11 @@ static device_addrs_t b100_find(const device_addr_t &hint)
         new_addr["serial"] = handle->get_serial();
 
         //Attempt to read the name from the EEPROM and perform filtering.
-        //This operation can throw due to compatibility mismatch.
         try{
             usb_control::sptr control = usb_control::make(handle);
-            b100_iface::sptr iface = b100_iface::make(fx2_ctrl::make(control));
-            new_addr["name"] = iface->mb_eeprom["name"];
+            fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
+            const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, mboard_eeprom_t::MAP_B000);
+            new_addr["name"] = mb_eeprom["name"];
         }
         catch(const uhd::exception &){
             //set these values as empty string so the device may still be found
@@ -128,6 +127,17 @@ static device_addrs_t b100_find(const device_addr_t &hint)
  * Make
  **********************************************************************/
 static device::sptr b100_make(const device_addr_t &device_addr){
+    return device::sptr(new b100_impl(device_addr));
+}
+
+UHD_STATIC_BLOCK(register_b100_device){
+    device::register_device(&b100_find, &b100_make);
+}
+
+/***********************************************************************
+ * Structors
+ **********************************************************************/
+b100_impl::b100_impl(const device_addr_t &device_addr){
 
     //extract the FPGA path for the B100
     std::string b100_fpga_image = find_image_path(
@@ -150,8 +160,14 @@ static device::sptr b100_make(const device_addr_t &device_addr){
 
     //create control objects and a data transport
     usb_control::sptr fx2_transport = usb_control::make(handle);
-    fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(fx2_transport);
-    fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+    _fx2_ctrl = fx2_ctrl::make(fx2_transport);
+    this->check_fw_compat(); //check after making fx2
+    //-- setup clock after making fx2 and before loading fpga --//
+    _clock_ctrl = b100_clock_ctrl::make(_fx2_ctrl, device_addr.cast<double>("master_clock_rate", B100_DEFAULT_TICK_RATE));
+    _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+
+    //prepare GPIF before anything else is used
+    this->prepare_gpif();
 
     device_addr_t data_xport_args;
     data_xport_args["recv_frame_size"] = device_addr.get("recv_frame_size", "16384");
@@ -159,7 +175,7 @@ static device::sptr b100_make(const device_addr_t &device_addr){
     data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", "16384");
     data_xport_args["num_send_frames"] = device_addr.get("num_send_frames", "16");
 
-    usb_zero_copy::sptr data_transport = usb_zero_copy::make_wrapper(
+    _data_transport = usb_zero_copy::make_wrapper(
         usb_zero_copy::make(
             handle,        // identifier
             6,             // IN endpoint
@@ -175,110 +191,281 @@ static device::sptr b100_make(const device_addr_t &device_addr){
     ctrl_xport_args["send_frame_size"] = boost::lexical_cast<std::string>(CTRL_PACKET_LENGTH);
     ctrl_xport_args["num_send_frames"] = "4";
 
-    usb_zero_copy::sptr ctrl_transport = usb_zero_copy::make(
+    _ctrl_transport = usb_zero_copy::make(
         handle,
         8,
         4,
         ctrl_xport_args
     );
 
-    const double master_clock_rate = device_addr.cast<double>("master_clock_rate", 64e6);
+    ////////////////////////////////////////////////////////////////////
+    // Create controller objects
+    ////////////////////////////////////////////////////////////////////
+    _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
+    this->check_fpga_compat(); //check after making control
+    _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
+    _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
 
+    ////////////////////////////////////////////////////////////////////
+    // Initialize the properties tree
+    ////////////////////////////////////////////////////////////////////
+    _tree = property_tree::make();
+    _tree->create<std::string>("/name").set("B-Series Device");
+    const property_tree::path_type mb_path = "/mboards/0";
+    _tree->create<std::string>(mb_path / "name").set("B100 (B-Hundo)");
 
-    //create the b100 implementation guts
-    return device::sptr(new b100_impl(data_transport, ctrl_transport, fx2_ctrl, master_clock_rate));
-}
+    ////////////////////////////////////////////////////////////////////
+    // setup the mboard eeprom
+    ////////////////////////////////////////////////////////////////////
+    const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*_fx2_ctrl, mboard_eeprom_t::MAP_B000);
+    _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
+        .set(mb_eeprom)
+        .subscribe(boost::bind(&b100_impl::set_mb_eeprom, this, _1));
 
-UHD_STATIC_BLOCK(register_b100_device){
-    device::register_device(&b100_find, &b100_make);
-}
+    ////////////////////////////////////////////////////////////////////
+    // create clock control objects
+    ////////////////////////////////////////////////////////////////////
+    //^^^ clock created up top, just reg props here... ^^^
+    _tree->create<double>(mb_path / "tick_rate")
+        .publish(boost::bind(&b100_clock_ctrl::get_fpga_clock_rate, _clock_ctrl))
+        .subscribe(boost::bind(&b100_impl::update_tick_rate, this, _1));
 
-/***********************************************************************
- * Structors
- **********************************************************************/
-b100_impl::b100_impl(uhd::transport::usb_zero_copy::sptr data_transport,
-                         uhd::transport::usb_zero_copy::sptr ctrl_transport,
-                         uhd::usrp::fx2_ctrl::sptr fx2_ctrl,
-                         const double master_clock_rate)
- : _data_transport(data_transport), _fx2_ctrl(fx2_ctrl)
-{
-    _recv_otw_type.width = 16;
-    _recv_otw_type.shift = 0;
-    _recv_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+    ////////////////////////////////////////////////////////////////////
+    // create codec control objects
+    ////////////////////////////////////////////////////////////////////
+    _codec_ctrl = b100_codec_ctrl::make(_fpga_spi_ctrl);
+    const property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
+    const property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
+    _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
+    _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(b100_codec_ctrl::rx_pga_gain_range);
+    _tree->create<double>(rx_codec_path / "gains/pga/value")
+        .coerce(boost::bind(&b100_impl::update_rx_codec_gain, this, _1));
+    _tree->create<std::string>(tx_codec_path / "name").set("ad9522");
+    _tree->create<meta_range_t>(tx_codec_path / "gains/pga/range").set(b100_codec_ctrl::tx_pga_gain_range);
+    _tree->create<double>(tx_codec_path / "gains/pga/value")
+        .subscribe(boost::bind(&b100_codec_ctrl::set_tx_pga_gain, _codec_ctrl, _1))
+        .publish(boost::bind(&b100_codec_ctrl::get_tx_pga_gain, _codec_ctrl));
 
-    _send_otw_type.width = 16;
-    _send_otw_type.shift = 0;
-    _send_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
+    ////////////////////////////////////////////////////////////////////
+    // and do the misc mboard sensors
+    ////////////////////////////////////////////////////////////////////
+    //none for now...
+    _tree->create<int>(mb_path / "sensors"); //phony property so this dir exists
 
-    //this is the handler object for FPGA control packets
-    _fpga_ctrl = b100_ctrl::make(ctrl_transport);
+    ////////////////////////////////////////////////////////////////////
+    // create frontend control objects
+    ////////////////////////////////////////////////////////////////////
+    _rx_fe = rx_frontend_core_200::make(_fpga_ctrl, B100_REG_SR_ADDR(B100_SR_RX_FRONT));
+    _tx_fe = tx_frontend_core_200::make(_fpga_ctrl, B100_REG_SR_ADDR(B100_SR_TX_FRONT));
+    //TODO lots of properties to expose here for frontends
+    _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
+        .subscribe(boost::bind(&b100_impl::update_rx_subdev_spec, this, _1));
+    _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
+        .subscribe(boost::bind(&b100_impl::update_tx_subdev_spec, this, _1));
 
-    _iface = b100_iface::make(_fx2_ctrl, _fpga_ctrl);
+    ////////////////////////////////////////////////////////////////////
+    // create rx dsp control objects
+    ////////////////////////////////////////////////////////////////////
+    _rx_dsps.push_back(rx_dsp_core_200::make(
+        _fpga_ctrl, B100_REG_SR_ADDR(B100_SR_RX_DSP0), B100_REG_SR_ADDR(B100_SR_RX_CTRL0), B100_RX_SID_BASE + 0
+    ));
+    _rx_dsps.push_back(rx_dsp_core_200::make(
+        _fpga_ctrl, B100_REG_SR_ADDR(B100_SR_RX_DSP1), B100_REG_SR_ADDR(B100_SR_RX_CTRL1), B100_RX_SID_BASE + 1
+    ));
+    for (size_t dspno = 0; dspno < _rx_dsps.size(); dspno++){
+        _tree->access<double>(mb_path / "tick_rate")
+            .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
+        property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        _tree->create<double>(rx_dsp_path / "rate/value")
+            .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
+            .subscribe(boost::bind(&b100_impl::update_rx_samp_rate, this, _1));
+        _tree->create<double>(rx_dsp_path / "freq/value")
+            .coerce(boost::bind(&rx_dsp_core_200::set_freq, _rx_dsps[dspno], _1));
+        _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
+            .publish(boost::bind(&rx_dsp_core_200::get_freq_range, _rx_dsps[dspno]));
+        _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
+            .subscribe(boost::bind(&rx_dsp_core_200::issue_stream_command, _rx_dsps[dspno], _1));
+    }
 
-    //create clock interface
-    _clock_ctrl = b100_clock_ctrl::make(_iface, master_clock_rate);
+    ////////////////////////////////////////////////////////////////////
+    // create tx dsp control objects
+    ////////////////////////////////////////////////////////////////////
+    _tx_dsp = tx_dsp_core_200::make(
+        _fpga_ctrl, B100_REG_SR_ADDR(B100_SR_TX_DSP), B100_REG_SR_ADDR(B100_SR_TX_CTRL), B100_TX_ASYNC_SID
+    );
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
+    _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
+        .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _tx_dsp, _1))
+        .subscribe(boost::bind(&b100_impl::update_tx_samp_rate, this, _1));
+    _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
+        .coerce(boost::bind(&tx_dsp_core_200::set_freq, _tx_dsp, _1));
+    _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
+        .publish(boost::bind(&tx_dsp_core_200::get_freq_range, _tx_dsp));
 
-    //create codec interface
-    _codec_ctrl = b100_codec_ctrl::make(_iface);
+    ////////////////////////////////////////////////////////////////////
+    // create time control objects
+    ////////////////////////////////////////////////////////////////////
+    time64_core_200::readback_bases_type time64_rb_bases;
+    time64_rb_bases.rb_secs_now = B100_REG_RB_TIME_NOW_SECS;
+    time64_rb_bases.rb_ticks_now = B100_REG_RB_TIME_NOW_TICKS;
+    time64_rb_bases.rb_secs_pps = B100_REG_RB_TIME_PPS_SECS;
+    time64_rb_bases.rb_ticks_pps = B100_REG_RB_TIME_PPS_TICKS;
+    _time64 = time64_core_200::make(
+        _fpga_ctrl, B100_REG_SR_ADDR(B100_SR_TIME64), time64_rb_bases
+    );
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&time64_core_200::set_tick_rate, _time64, _1));
+    _tree->create<time_spec_t>(mb_path / "time/now")
+        .publish(boost::bind(&time64_core_200::get_time_now, _time64))
+        .subscribe(boost::bind(&time64_core_200::set_time_now, _time64, _1));
+    _tree->create<time_spec_t>(mb_path / "time/pps")
+        .publish(boost::bind(&time64_core_200::get_time_last_pps, _time64))
+        .subscribe(boost::bind(&time64_core_200::set_time_next_pps, _time64, _1));
+    //setup time source props
+    _tree->create<std::string>(mb_path / "time_source/value")
+        .subscribe(boost::bind(&time64_core_200::set_time_source, _time64, _1));
+    _tree->create<std::vector<std::string> >(mb_path / "time_source/options")
+        .publish(boost::bind(&time64_core_200::get_time_sources, _time64));
+    //setup reference source props
+    _tree->create<std::string>(mb_path / "ref_source/value")
+        .subscribe(boost::bind(&b100_impl::update_ref_source, this, _1));
+    static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("sma")("auto");
+    _tree->create<std::vector<std::string> >(mb_path / "ref_source/options").set(ref_sources);
 
-    //initialize the codecs
-    codec_init();
+    ////////////////////////////////////////////////////////////////////
+    // create dboard control objects
+    ////////////////////////////////////////////////////////////////////
 
-    //initialize the mboard
-    mboard_init();
+    //read the dboard eeprom to extract the dboard ids
+    dboard_eeprom_t rx_db_eeprom, tx_db_eeprom, gdb_eeprom;
+    rx_db_eeprom.load(*_fpga_i2c_ctrl, I2C_ADDR_RX_A);
+    tx_db_eeprom.load(*_fpga_i2c_ctrl, I2C_ADDR_TX_A);
+    gdb_eeprom.load(*_fpga_i2c_ctrl, I2C_ADDR_TX_A ^ 5);
 
-    //initialize the dboards
-    dboard_init();
+    //create the properties and register subscribers
+    _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
+        .set(rx_db_eeprom)
+        .subscribe(boost::bind(&b100_impl::set_db_eeprom, this, "rx", _1));
+    _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/tx_eeprom")
+        .set(tx_db_eeprom)
+        .subscribe(boost::bind(&b100_impl::set_db_eeprom, this, "tx", _1));
+    _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/gdb_eeprom")
+        .set(gdb_eeprom)
+        .subscribe(boost::bind(&b100_impl::set_db_eeprom, this, "gdb", _1));
 
-    //initialize the dsps
-    dsp_init();
+    //create a new dboard interface and manager
+    _dboard_iface = make_b100_dboard_iface(_fpga_ctrl, _fpga_i2c_ctrl, _fpga_spi_ctrl, _clock_ctrl, _codec_ctrl);
+    _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_dboard_iface);
+    _dboard_manager = dboard_manager::make(
+        rx_db_eeprom.id,
+        ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
+        _dboard_iface
+    );
+    BOOST_FOREACH(const std::string &name, _dboard_manager->get_rx_subdev_names()){
+        dboard_manager::populate_prop_tree_from_subdev(
+            _tree, mb_path / "dboards/A/rx_frontends" / name,
+            _dboard_manager->get_rx_subdev(name)
+        );
+    }
+    BOOST_FOREACH(const std::string &name, _dboard_manager->get_tx_subdev_names()){
+        dboard_manager::populate_prop_tree_from_subdev(
+            _tree, mb_path / "dboards/A/tx_frontends" / name,
+            _dboard_manager->get_tx_subdev(name)
+        );
+    }
 
-    //init the subdev specs
-    this->mboard_set(MBOARD_PROP_RX_SUBDEV_SPEC, subdev_spec_t());
-    this->mboard_set(MBOARD_PROP_TX_SUBDEV_SPEC, subdev_spec_t());
+    //initialize io handling
+    this->io_init();
 
-    //initialize the send/recv buffs
-    io_init();
+    ////////////////////////////////////////////////////////////////////
+    // do some post-init tasks
+    ////////////////////////////////////////////////////////////////////
+    _tree->access<double>(mb_path / "tick_rate").update() //update and then subscribe the clock callback
+        .subscribe(boost::bind(&b100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
+
+    //and now that the tick rate is set, init the host rates to something
+    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+        _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").set(1e6);
+    }
+    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
+        _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").set(1e6);
+    }
+
+    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_rx_subdev_names()[0]));
+    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_tx_subdev_names()[0]));
+    _tree->access<std::string>(mb_path / "ref_source/value").set("internal");
+    _tree->access<std::string>(mb_path / "time_source/value").set("none");
 }
 
 b100_impl::~b100_impl(void){
     /* NOP */
 }
 
-bool b100_impl::recv_async_msg(uhd::async_metadata_t &md, double timeout){
-    return _fpga_ctrl->recv_async_msg(md, timeout);
-}
-
-/***********************************************************************
- * Device Get
- **********************************************************************/
-void b100_impl::get(const wax::obj &key_, wax::obj &val)
-{
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<device_prop_t>()){
-    case DEVICE_PROP_NAME:
-        val = std::string("USRP-B100 device");
-        return;
-
-    case DEVICE_PROP_MBOARD:
-        UHD_ASSERT_THROW(key.name == "");
-        val = _mboard_proxy->get_link();
-        return;
-
-    case DEVICE_PROP_MBOARD_NAMES:
-        val = prop_names_t(1, ""); //vector of size 1 with empty string
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
+void b100_impl::check_fw_compat(void){
+    unsigned char data[4]; //useless data buffer
+    const boost::uint16_t fw_compat_num = _fx2_ctrl->usrp_control_read(
+        VRQ_FW_COMPAT, 0, 0, data, sizeof(data)
+    );
+    if (fw_compat_num != B100_FW_COMPAT_NUM){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected firmware compatibility number 0x%x, but got 0x%x:\n"
+            "The firmware build is not compatible with the host code build."
+        ) % B100_FW_COMPAT_NUM % fw_compat_num));
     }
 }
 
-/***********************************************************************
- * Device Set
- **********************************************************************/
-void b100_impl::set(const wax::obj &, const wax::obj &)
-{
-    UHD_THROW_PROP_SET_ERROR();
+void b100_impl::check_fpga_compat(void){
+    const boost::uint16_t fpga_compat_num = _fpga_ctrl->peek16(B100_REG_MISC_COMPAT);
+    if (fpga_compat_num != B100_FPGA_COMPAT_NUM){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
+            "The FPGA build is not compatible with the host code build."
+        ) % B100_FPGA_COMPAT_NUM % fpga_compat_num));
+    }
+}
+
+double b100_impl::update_rx_codec_gain(const double gain){
+    //set gain on both I and Q, readback on one
+    //TODO in the future, gains should have individual control
+    _codec_ctrl->set_rx_pga_gain(gain, 'A');
+    _codec_ctrl->set_rx_pga_gain(gain, 'B');
+    return _codec_ctrl->get_rx_pga_gain('A');
+}
+
+void b100_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom){
+    mb_eeprom.commit(*_fx2_ctrl, mboard_eeprom_t::MAP_B000);
+}
+
+void b100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){
+    if (type == "rx") db_eeprom.store(*_fpga_i2c_ctrl, I2C_ADDR_RX_A);
+    if (type == "tx") db_eeprom.store(*_fpga_i2c_ctrl, I2C_ADDR_TX_A);
+    if (type == "gdb") db_eeprom.store(*_fpga_i2c_ctrl, I2C_ADDR_TX_A ^ 5);
+}
+
+void b100_impl::update_ref_source(const std::string &source){
+    if      (source == "auto")     _clock_ctrl->use_auto_ref();
+    else if (source == "internal") _clock_ctrl->use_internal_ref();
+    else if (source == "sma")      _clock_ctrl->use_external_ref();
+    else throw uhd::runtime_error("unhandled clock configuration reference source: " + source);
+}
+
+////////////////// some GPIF preparation related stuff /////////////////
+static void reset_gpif(fx2_ctrl::sptr _fx2_ctrl, boost::uint16_t ep) {
+    _fx2_ctrl->usrp_control_write(VRQ_RESET_GPIF, ep, ep, 0, 0);
+}
+
+static void enable_gpif(fx2_ctrl::sptr _fx2_ctrl, bool en) {
+    _fx2_ctrl->usrp_control_write(VRQ_ENABLE_GPIF, en ? 1 : 0, 0, 0, 0);
+}
+
+static void clear_fpga_fifo(fx2_ctrl::sptr _fx2_ctrl) {
+    _fx2_ctrl->usrp_control_write(VRQ_CLEAR_FPGA_FIFO, 0, 0, 0, 0);
+}
+
+void b100_impl::prepare_gpif(void){
+    //TODO check the order of this:
+    enable_gpif(_fx2_ctrl, true);
+    reset_gpif(_fx2_ctrl, 6);
+    clear_fpga_fifo(_fx2_ctrl);
 }

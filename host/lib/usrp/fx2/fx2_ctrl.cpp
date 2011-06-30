@@ -409,6 +409,42 @@ public:
         return usrp_control_read(VRQ_I2C_READ, i2c_addr, 0, buf, len);
     }
 
+    static const bool iface_debug = false;
+    static const size_t max_i2c_data_bytes = 64;
+
+    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes)
+    {
+        UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
+
+        unsigned char buff[max_i2c_data_bytes];
+        std::copy(bytes.begin(), bytes.end(), buff);
+
+        int ret = this->usrp_i2c_write(addr & 0xff,
+                                             buff,
+                                             bytes.size());
+
+        if (iface_debug && (ret < 0))
+            uhd::runtime_error("USRP: failed i2c write");
+    }
+
+    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes)
+    {
+      UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
+
+      unsigned char buff[max_i2c_data_bytes];
+      int ret = this->usrp_i2c_read(addr & 0xff,
+                                            buff,
+                                            num_bytes);
+
+      if (iface_debug && ((ret < 0) || (unsigned)ret < (num_bytes)))
+          uhd::runtime_error("USRP: failed i2c read");
+
+      byte_vector_t out_bytes;
+      for (size_t i = 0; i < num_bytes; i++)
+          out_bytes.push_back(buff[i]);
+
+      return out_bytes;
+    }
 
 
 private:

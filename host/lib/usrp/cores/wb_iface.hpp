@@ -20,10 +20,9 @@
 
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 
-class wb_iface : boost::noncopyable{
+class wb_iface{
 public:
     typedef boost::shared_ptr<wb_iface> sptr;
     typedef boost::uint32_t wb_addr_type;

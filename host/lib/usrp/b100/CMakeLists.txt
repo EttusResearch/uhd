@@ -26,22 +26,11 @@ LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF)
 
 IF(ENABLE_B100)
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/ctrl_packet.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b100_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/b100_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/b100_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/b100_iface.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b100_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/b100_impl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
     )
 ENDIF(ENABLE_B100)

@@ -45,11 +45,6 @@ public:
                      b100_ctrl::sptr fpga_ctrl = b100_ctrl::sptr()
     );
 
-    //! TODO implement this for multiple hardwares revs in the future
-    std::string get_cname(void){
-        return "USRP-B100";
-    }
-
     /*!
      * Reset the GPIF interface on the FX2
      * \param which endpoint to reset

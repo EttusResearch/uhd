@@ -169,7 +169,7 @@ static clock_settings_type get_clock_settings(double rate){
  **********************************************************************/
 class b100_clock_ctrl_impl : public b100_clock_ctrl{
 public:
-    b100_clock_ctrl_impl(b100_iface::sptr iface, double master_clock_rate){
+    b100_clock_ctrl_impl(i2c_iface::sptr iface, double master_clock_rate){
         _iface = iface;
         _chan_rate = 0.0;
         _out_rate = 0.0;
@@ -294,7 +294,6 @@ public:
         //clock rate changed! update dboard clocks and FPGA ticks per second
         set_rx_dboard_clock_rate(rate);
         set_tx_dboard_clock_rate(rate);
-        _iface->poke32(B100_REG_TIME64_TPS, boost::uint32_t(get_fpga_clock_rate()));
     }
 
     double get_fpga_clock_rate(void){
@@ -428,7 +427,7 @@ public:
     }
 
 private:
-    b100_iface::sptr _iface;
+    i2c_iface::sptr _iface;
     ad9522_regs_t _ad9522_regs;
     double _out_rate; //rate at the fpga and codec
     double _chan_rate; //rate before final dividers
@@ -447,16 +446,16 @@ private:
         buf.push_back(boost::uint8_t(reg >> 8));
         buf.push_back(boost::uint8_t(reg & 0xff));
 
-        _iface->get_fx2_i2c_iface().write_i2c(0x5C, buf);
+        _iface->write_i2c(0x5C, buf);
     }
 
     boost::uint8_t read_reg(boost::uint16_t addr){
         byte_vector_t buf;
         buf.push_back(boost::uint8_t(addr >> 8));
         buf.push_back(boost::uint8_t(addr & 0xff));
-        _iface->get_fx2_i2c_iface().write_i2c(0x5C, buf);
+        _iface->write_i2c(0x5C, buf);
 
-        buf = _iface->get_fx2_i2c_iface().read_i2c(0x5C, 1);
+        buf = _iface->read_i2c(0x5C, 1);
 
         return boost::uint32_t(buf[0] & 0xFF);
     }
@@ -520,6 +519,6 @@ private:
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-b100_clock_ctrl::sptr b100_clock_ctrl::make(b100_iface::sptr iface, double master_clock_rate){
+b100_clock_ctrl::sptr b100_clock_ctrl::make(i2c_iface::sptr iface, double master_clock_rate){
     return sptr(new b100_clock_ctrl_impl(iface, master_clock_rate));
 }

@@ -18,7 +18,7 @@
 #ifndef INCLUDED_B100_CLOCK_CTRL_HPP
 #define INCLUDED_B100_CLOCK_CTRL_HPP
 
-#include "b100_iface.hpp"
+#include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
@@ -34,11 +34,11 @@ public:
 
     /*!
      * Make a new clock control object.
-     * \param iface the b100 iface object
+     * \param iface the controller iface object
      * \param master_clock_rate the master FPGA/sample clock rate
      * \return the clock control object
      */
-    static sptr make(b100_iface::sptr iface, double master_clock_rate);
+    static sptr make(uhd::i2c_iface::sptr iface, double master_clock_rate);
 
     /*!
      * Set the rate of the fpga clock line.

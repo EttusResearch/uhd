@@ -299,7 +299,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         const device_addr_t device_args_i = device_args[mbi];
         const std::string mb = boost::lexical_cast<std::string>(mbi);
         const std::string addr = device_args_i["addr"];
-        property_tree::path_type mb_path = "/mboards/" + mb;
+        const property_tree::path_type mb_path = "/mboards/" + mb;
 
         ////////////////////////////////////////////////////////////////
         // construct transports for dsp and async errors
@@ -348,8 +348,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         // create codec control objects
         ////////////////////////////////////////////////////////////////
-        property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
-        property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
+        const property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
+        const property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
         _tree->create<int>(rx_codec_path / "gains"); //phony property so this dir exists
         _tree->create<int>(tx_codec_path / "gains"); //phony property so this dir exists
         _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface);
@@ -472,8 +472,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create time control objects
         ////////////////////////////////////////////////////////////////
         time64_core_200::readback_bases_type time64_rb_bases;
-        time64_rb_bases.rb_secs_imm = U2_REG_TIME64_SECS_RB_IMM;
-        time64_rb_bases.rb_ticks_imm = U2_REG_TIME64_TICKS_RB_IMM;
+        time64_rb_bases.rb_secs_now = U2_REG_TIME64_SECS_RB_IMM;
+        time64_rb_bases.rb_ticks_now = U2_REG_TIME64_TICKS_RB_IMM;
         time64_rb_bases.rb_secs_pps = U2_REG_TIME64_SECS_RB_PPS;
         time64_rb_bases.rb_ticks_pps = U2_REG_TIME64_TICKS_RB_PPS;
         _mbc[mb].time64 = time64_core_200::make(

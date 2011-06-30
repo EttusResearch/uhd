@@ -64,9 +64,9 @@ public:
 
     uhd::time_spec_t get_time_now(void){
         for (size_t i = 0; i < 3; i++){ //special algorithm because we cant read 64 bits synchronously
-            const boost::uint32_t secs = _iface->peek32(_readback_bases.rb_secs_imm);
-            const boost::uint32_t ticks = _iface->peek32(_readback_bases.rb_ticks_imm);
-            if (secs != _iface->peek32(_readback_bases.rb_secs_imm)) continue;
+            const boost::uint32_t secs = _iface->peek32(_readback_bases.rb_secs_now);
+            const boost::uint32_t ticks = _iface->peek32(_readback_bases.rb_ticks_now);
+            if (secs != _iface->peek32(_readback_bases.rb_secs_now)) continue;
             return time_spec_t(secs, ticks, _tick_rate);
         }
         throw uhd::runtime_error("time64_core_200: get time now timeout");

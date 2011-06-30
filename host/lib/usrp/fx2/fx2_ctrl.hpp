@@ -18,13 +18,14 @@
 #ifndef INCLUDED_USRP_CTRL_HPP
 #define INCLUDED_USRP_CTRL_HPP
 
-#include <uhd/transport/usb_control.hpp> 
+#include <uhd/transport/usb_control.hpp>
+#include <uhd/types/serial.hpp> //i2c iface
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
 namespace uhd{ namespace usrp{
 
-class fx2_ctrl : boost::noncopyable{
+class fx2_ctrl : boost::noncopyable, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<fx2_ctrl> sptr;
 

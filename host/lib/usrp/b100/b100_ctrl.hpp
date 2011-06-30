@@ -18,6 +18,7 @@
 #ifndef INCLUDED_B100_CTRL_HPP
 #define INCLUDED_B100_CTRL_HPP
 
+#include "wb_iface.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/types/metadata.hpp>
@@ -27,7 +28,7 @@
 #include "ctrl_packet.hpp"
 #include <boost/thread.hpp>
 
-class b100_ctrl : boost::noncopyable{
+class b100_ctrl : boost::noncopyable, public wb_iface{
 public:
     typedef boost::shared_ptr<b100_ctrl> sptr;
 
@@ -36,7 +37,7 @@ public:
      * \param ctrl_transport a USB data transport
      * \return a new b100 control object
      */
-    static sptr make(uhd::transport::usb_zero_copy::sptr ctrl_transport);
+    static sptr make(uhd::transport::zero_copy_if::sptr ctrl_transport);
 
     /*!
      * Write a byte vector to an FPGA register
@@ -61,9 +62,9 @@ public:
      * \return true if it got something
      */
     virtual bool get_ctrl_data(ctrl_data_t &pkt_data, double timeout) = 0;
-    
+
     virtual bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout) = 0;
-    
+
 };
 
 #endif /* INCLUDED_B100_CTRL_HPP */

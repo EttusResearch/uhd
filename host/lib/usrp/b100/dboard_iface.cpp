@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "b100_iface.hpp"
+#include "wb_iface.hpp"
+#include <uhd/types/serial.hpp>
 #include "b100_regs.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
@@ -33,11 +34,15 @@ class b100_dboard_iface : public dboard_iface{
 public:
 
     b100_dboard_iface(
-        b100_iface::sptr iface,
+        wb_iface::sptr wb_iface,
+        i2c_iface::sptr i2c_iface,
+        spi_iface::sptr spi_iface,
         b100_clock_ctrl::sptr clock,
         b100_codec_ctrl::sptr codec
     ){
-        _iface = iface;
+        _wb_iface = wb_iface;
+        _i2c_iface = i2c_iface;
+        _spi_iface = spi_iface;
         _clock = clock;
         _codec = codec;
 
@@ -45,8 +50,8 @@ public:
         this->set_clock_rate(UNIT_RX, _clock->get_fpga_clock_rate());
         this->set_clock_rate(UNIT_TX, _clock->get_fpga_clock_rate());
 
-        _iface->poke16(B100_REG_GPIO_RX_DBG, 0);
-        _iface->poke16(B100_REG_GPIO_TX_DBG, 0);
+        _wb_iface->poke16(B100_REG_GPIO_RX_DBG, 0);
+        _wb_iface->poke16(B100_REG_GPIO_TX_DBG, 0);
     }
 
     ~b100_dboard_iface(void){
@@ -94,7 +99,9 @@ public:
     double get_codec_rate(unit_t);
 
 private:
-    b100_iface::sptr _iface;
+    wb_iface::sptr _wb_iface;
+    i2c_iface::sptr _i2c_iface;
+    spi_iface::sptr _spi_iface;
     b100_clock_ctrl::sptr _clock;
     b100_codec_ctrl::sptr _codec;
     uhd::dict<unit_t, double> _clock_rates;
@@ -104,11 +111,13 @@ private:
  * Make Function
  **********************************************************************/
 dboard_iface::sptr make_b100_dboard_iface(
-    b100_iface::sptr iface,
+    wb_iface::sptr wb_iface,
+    i2c_iface::sptr i2c_iface,
+    spi_iface::sptr spi_iface,
     b100_clock_ctrl::sptr clock,
     b100_codec_ctrl::sptr codec
 ){
-    return dboard_iface::sptr(new b100_dboard_iface(iface, clock, codec));
+    return dboard_iface::sptr(new b100_dboard_iface(wb_iface, i2c_iface, spi_iface, clock, codec));
 }
 
 /***********************************************************************
@@ -151,29 +160,29 @@ double b100_dboard_iface::get_codec_rate(unit_t){
 void b100_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value){
     UHD_ASSERT_THROW(GPIO_SEL_ATR == 1); //make this assumption
     switch(unit){
-    case UNIT_RX: _iface->poke16(B100_REG_GPIO_RX_SEL, value); return;
-    case UNIT_TX: _iface->poke16(B100_REG_GPIO_TX_SEL, value); return;
+    case UNIT_RX: _wb_iface->poke16(B100_REG_GPIO_RX_SEL, value); return;
+    case UNIT_TX: _wb_iface->poke16(B100_REG_GPIO_TX_SEL, value); return;
     }
 }
 
 void b100_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value){
     switch(unit){
-    case UNIT_RX: _iface->poke16(B100_REG_GPIO_RX_DDR, value); return;
-    case UNIT_TX: _iface->poke16(B100_REG_GPIO_TX_DDR, value); return;
+    case UNIT_RX: _wb_iface->poke16(B100_REG_GPIO_RX_DDR, value); return;
+    case UNIT_TX: _wb_iface->poke16(B100_REG_GPIO_TX_DDR, value); return;
     }
 }
 
 void b100_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value){
     switch(unit){
-    case UNIT_RX: _iface->poke16(B100_REG_GPIO_RX_IO, value); return;
-    case UNIT_TX: _iface->poke16(B100_REG_GPIO_TX_IO, value); return;
+    case UNIT_RX: _wb_iface->poke16(B100_REG_GPIO_RX_IO, value); return;
+    case UNIT_TX: _wb_iface->poke16(B100_REG_GPIO_TX_IO, value); return;
     }
 }
 
 boost::uint16_t b100_dboard_iface::read_gpio(unit_t unit){
     switch(unit){
-    case UNIT_RX: return _iface->peek16(B100_REG_GPIO_RX_IO);
-    case UNIT_TX: return _iface->peek16(B100_REG_GPIO_TX_IO);
+    case UNIT_RX: return _wb_iface->peek16(B100_REG_GPIO_RX_IO);
+    case UNIT_TX: return _wb_iface->peek16(B100_REG_GPIO_TX_IO);
     default: UHD_THROW_INVALID_CODE_PATH();
     }
 }
@@ -196,7 +205,7 @@ void b100_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t
             (ATR_REG_FULL_DUPLEX, B100_REG_ATR_FULL_TXSIDE)
         )
     ;
-    _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
+    _wb_iface->poke16(unit_to_atr_to_addr[unit][atr], value);
 }
 
 void b100_dboard_iface::set_gpio_debug(unit_t unit, int which){
@@ -211,13 +220,13 @@ void b100_dboard_iface::set_gpio_debug(unit_t unit, int which){
     //set the debug on and which debug selection
     switch(unit){
     case UNIT_RX:
-        _iface->poke16(B100_REG_GPIO_RX_DBG, 0xffff);
-        _iface->poke16(B100_REG_GPIO_RX_SEL, dbg_sels);
+        _wb_iface->poke16(B100_REG_GPIO_RX_DBG, 0xffff);
+        _wb_iface->poke16(B100_REG_GPIO_RX_SEL, dbg_sels);
         return;
 
     case UNIT_TX:
-        _iface->poke16(B100_REG_GPIO_TX_DBG, 0xffff);
-        _iface->poke16(B100_REG_GPIO_TX_SEL, dbg_sels);
+        _wb_iface->poke16(B100_REG_GPIO_TX_DBG, 0xffff);
+        _wb_iface->poke16(B100_REG_GPIO_TX_SEL, dbg_sels);
         return;
     }
 }
@@ -244,7 +253,7 @@ void b100_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
+    _spi_iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
 }
 
 boost::uint32_t b100_dboard_iface::read_write_spi(
@@ -253,18 +262,18 @@ boost::uint32_t b100_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
+    return _spi_iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
 }
 
 /***********************************************************************
  * I2C
  **********************************************************************/
 void b100_dboard_iface::write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
-    return _iface->write_i2c(addr, bytes);
+    return _i2c_iface->write_i2c(addr, bytes);
 }
 
 byte_vector_t b100_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_bytes){
-    return _iface->read_i2c(addr, num_bytes);
+    return _i2c_iface->read_i2c(addr, num_bytes);
 }
 
 /***********************************************************************
