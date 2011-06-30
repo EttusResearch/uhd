@@ -19,14 +19,11 @@
 #define INCLUDED_B100_CTRL_HPP
 
 #include "wb_iface.hpp"
-#include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
-#include <uhd/types/metadata.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include "ctrl_packet.hpp"
-#include <boost/thread.hpp>
 #include <boost/function.hpp>
 
 class b100_ctrl : boost::noncopyable, public wb_iface{

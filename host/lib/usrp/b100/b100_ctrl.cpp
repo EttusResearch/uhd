@@ -16,6 +16,7 @@
 //
 
 #include "b100_ctrl.hpp"
+#include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>

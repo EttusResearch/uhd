@@ -18,11 +18,19 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
-)
+
+########################################################################
+# Conditionally configure the USRP2 support
+########################################################################
+LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF)
+
+IF(ENABLE_USRP2)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
+    )
+ENDIF(ENABLE_USRP2)
