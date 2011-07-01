@@ -52,11 +52,6 @@ static UHD_INLINE double from_time_dur(const pt::time_duration &time_dur){
 /***********************************************************************
  * constants
  **********************************************************************/
-static const int underflow_flags = 0
-    | async_metadata_t::EVENT_CODE_UNDERFLOW
-    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
-;
-
 static const size_t vrt_send_header_offset_words32 = 1;
 
 /***********************************************************************
@@ -219,11 +214,17 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                     fc_mon.update_fc_condition(uhd::ntohx(fc_word32));
                     continue;
                 }
-
-                //print the famous U, and push the metadata into the message queue
-                if (metadata.event_code & underflow_flags) UHD_MSG(fastpath) << "U";
                 //else UHD_MSG(often) << "metadata.event_code " << metadata.event_code << std::endl;
                 async_msg_fifo.push_with_pop_on_full(metadata);
+
+                if (metadata.event_code &
+                    ( async_metadata_t::EVENT_CODE_UNDERFLOW
+                    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
+                ) UHD_MSG(fastpath) << "U";
+                else if (metadata.event_code &
+                    ( async_metadata_t::EVENT_CODE_SEQ_ERROR
+                    | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
+                ) UHD_MSG(fastpath) << "S";
             }
             else{
                 //TODO unknown received packet, may want to print error...

@@ -20,6 +20,7 @@
 ########################################################################
 IF(ENABLE_USB)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/fx2_ctrl.cpp

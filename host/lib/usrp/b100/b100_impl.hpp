@@ -18,7 +18,7 @@
 #ifndef INCLUDED_B100_IMPL_HPP
 #define INCLUDED_B100_IMPL_HPP
 
-#include "../fx2/fx2_ctrl.hpp"
+#include "fx2_ctrl.hpp"
 #include "b100_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"

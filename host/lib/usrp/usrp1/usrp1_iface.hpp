@@ -18,11 +18,11 @@
 #ifndef INCLUDED_USRP1_IFACE_HPP
 #define INCLUDED_USRP1_IFACE_HPP
 
+#include "fx2_ctrl.hpp"
 #include "wb_iface.hpp"
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "../fx2/fx2_ctrl.hpp"
 
 /*!
  * The usrp1 interface class:
