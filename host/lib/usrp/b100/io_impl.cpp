@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp_commands.h"
@@ -176,8 +177,7 @@ void b100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     property_tree::path_type root = "/mboards/0/dboards";
 
     //sanity checking
-    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
-    if (spec.size() > _rx_dsps.size()) throw uhd::value_error("rx subdev spec too long");
+    validate_subdev_spec(_tree, spec, "rx");
 
     //setup mux for this spec
     for (size_t i = 0; i < spec.size(); i++){
@@ -204,7 +204,7 @@ void b100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     property_tree::path_type root = "/mboards/0/dboards";
 
     //sanity checking
-    if (spec.size() != 1) throw uhd::value_error("tx subdev spec has to be size 1");
+    validate_subdev_spec(_tree, spec, "tx");
 
     //set the mux for this spec
     const std::string conn = _tree->access<std::string>(root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection").get();

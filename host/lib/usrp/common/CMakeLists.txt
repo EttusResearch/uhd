@@ -24,6 +24,6 @@ IF(ENABLE_USB)
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/fx2_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/fx2_ctrl.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/validate_subdev_spec.cpp
     )
 ENDIF(ENABLE_USB)

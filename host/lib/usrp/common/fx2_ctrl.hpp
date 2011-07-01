@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_USRP_CTRL_HPP
-#define INCLUDED_USRP_CTRL_HPP
+#ifndef INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP
+#define INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP
 
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/types/serial.hpp> //i2c iface
@@ -120,4 +120,4 @@ public:
 
 }} //namespace uhd::usrp
 
-#endif /* INCLUDED_USRP_CTRL_HPP */
+#endif /* INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP */

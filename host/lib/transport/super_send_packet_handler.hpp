@@ -242,7 +242,7 @@ private:
     /*******************************************************************
      * Send a single packet:
      ******************************************************************/
-    size_t send_one_packet(
+    UHD_INLINE size_t send_one_packet(
         const uhd::device::send_buffs_type &buffs,
         const size_t nsamps_per_buff,
         vrt::if_packet_info_t &if_packet_info,

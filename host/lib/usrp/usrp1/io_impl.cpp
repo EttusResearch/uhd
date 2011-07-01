@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "validate_subdev_spec.hpp"
 #define SRPH_DONT_CHECK_SEQUENCE
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
@@ -260,8 +261,7 @@ void usrp1_impl::rx_stream_on_off(bool enb){
  **********************************************************************/
 void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     //sanity checking
-    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
-    if (spec.size() > get_num_ddcs()) throw uhd::value_error("rx subdev spec too long");
+    validate_subdev_spec(_tree, spec, "rx");
 
     _rx_subdev_spec = spec; //shadow
     _io_impl->recv_handler.resize(spec.size());
@@ -282,8 +282,7 @@ void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
 void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     //sanity checking
-    if (spec.size() == 0) throw uhd::value_error("tx subdev spec cant be empty");
-    if (spec.size() > get_num_ducs()) throw uhd::value_error("tx subdev spec too long");
+    validate_subdev_spec(_tree, spec, "tx");
 
     _tx_subdev_spec = spec; //shadow
     _io_impl->send_handler.resize(spec.size());

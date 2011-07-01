@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include <linux/usrp_e.h> //ioctl structures and constants
@@ -46,7 +47,9 @@ using namespace uhd::transport;
  **********************************************************************/
 struct e100_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport, const size_t recv_width):
-        data_transport(data_transport), async_msg_fifo(100/*messages deep*/), false_alarm(0)
+        false_alarm(0),
+        data_transport(data_transport),
+        async_msg_fifo(100/*messages deep*/)
     {
         for (size_t i = 0; i < recv_width; i++){
             typedef bounded_buffer<managed_recv_buffer::sptr> buffs_queue_type;
@@ -261,8 +264,7 @@ void e100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     property_tree::path_type root = "/mboards/0/dboards";
 
     //sanity checking
-    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
-    if (spec.size() > _rx_dsps.size()) throw uhd::value_error("rx subdev spec too long");
+    validate_subdev_spec(_tree, spec, "rx");
 
     //setup mux for this spec
     for (size_t i = 0; i < spec.size(); i++){
@@ -289,7 +291,7 @@ void e100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     property_tree::path_type root = "/mboards/0/dboards";
 
     //sanity checking
-    if (spec.size() != 1) throw uhd::value_error("tx subdev spec has to be size 1");
+    validate_subdev_spec(_tree, spec, "tx");
 
     //set the mux for this spec
     const std::string conn = _tree->access<std::string>(root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection").get();
