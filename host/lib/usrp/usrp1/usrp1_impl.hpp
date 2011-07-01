@@ -16,16 +16,17 @@
 //
 
 #include "usrp1_iface.hpp"
-#include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include "soft_time_ctrl.hpp"
 #include <uhd/device.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -33,29 +34,6 @@
 
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
-
-/*!
- * Simple wax obj proxy class:
- * Provides a wax obj interface for a set and a get function.
- * This allows us to create nested properties structures
- * while maintaining flattened code within the implementation.
- */
-class wax_obj_proxy : public wax::obj {
-public:
-    typedef boost::function<void(const wax::obj &, wax::obj &)>       get_t;
-    typedef boost::function<void(const wax::obj &, const wax::obj &)> set_t;
-    typedef boost::shared_ptr<wax_obj_proxy> sptr;
-
-    static sptr make(const get_t &get, const set_t &set){
-        return sptr(new wax_obj_proxy(get, set));
-    }
-
-private:
-    get_t _get; set_t _set;
-    wax_obj_proxy(const get_t &get, const set_t &set): _get(get), _set(set) {};
-    void get(const wax::obj &key, wax::obj &val) {return _get(key, val);}
-    void set(const wax::obj &key, const wax::obj &val) {return _set(key, val);}
-};
 
 /*!
  * USRP1 implementation guts:
@@ -73,9 +51,7 @@ public:
     static const std::vector<dboard_slot_t> _dboard_slots;
 
     //structors
-    usrp1_impl(uhd::transport::usb_zero_copy::sptr data_transport,
-               uhd::usrp::fx2_ctrl::sptr ctrl_transport);
-
+    usrp1_impl(const uhd::device_addr_t &);
     ~usrp1_impl(void);
 
     //the io interface
@@ -97,31 +73,44 @@ public:
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
-    /*!
-     * Make a usrp1 dboard interface.
-     * \param iface the usrp1 interface object
-     * \param clock the clock control interface
-     * \param codec the codec control interface
-     * \param dboard_slot the slot identifier
-     * \param rx_dboard_id the db id for the rx board (used for evil dbsrx purposes)
-     * \return a sptr to a new dboard interface
-     */
-    static uhd::usrp::dboard_iface::sptr make_dboard_iface(
-        usrp1_iface::sptr iface,
-        usrp1_clock_ctrl::sptr clock,
-        usrp1_codec_ctrl::sptr codec,
-        dboard_slot_t dboard_slot,
-        const uhd::usrp::dboard_id_t &rx_dboard_id
-    );
+    uhd::property_tree::sptr _tree;
 
-    //!call when the channel mapping is changed
-    void update_xport_channel_mapping(void);
+    //device properties interface
+    void get(const wax::obj &, wax::obj &val){
+        val = _tree; //entry point into property tree
+    }
 
-    //soft time control emulation
-    uhd::usrp::soft_time_ctrl::sptr _soft_time_ctrl;
-
-    //interface to ioctls and file descriptor
+    //controllers
+    uhd::usrp::fx2_ctrl::sptr _fx2_ctrl;
     usrp1_iface::sptr _iface;
+    uhd::usrp::soft_time_ctrl::sptr _soft_time_ctrl;
+    uhd::transport::usb_zero_copy::sptr _data_transport;
+    struct db_container_type{
+        usrp1_codec_ctrl::sptr codec;
+        uhd::usrp::dboard_iface::sptr dboard_iface;
+        uhd::usrp::dboard_manager::sptr dboard_manager;
+    };
+    uhd::dict<std::string, db_container_type> _dbc;
+
+    double _master_clock_rate; //clock rate shadow
+
+    void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
+    void set_db_eeprom(const std::string &, const std::string &, const uhd::usrp::dboard_eeprom_t &);
+    double update_rx_codec_gain(const std::string &, const double); //sets A and B at once
+    void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
+    void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
+    double update_rx_samp_rate(const double);
+    double update_tx_samp_rate(const double);
+    double update_rx_dsp_freq(const size_t, const double);
+    double update_tx_dsp_freq(const size_t, const double);
+
+    static uhd::usrp::dboard_iface::sptr make_dboard_iface(
+        usrp1_iface::sptr,
+        usrp1_codec_ctrl::sptr,
+        dboard_slot_t,
+        const double,
+        const uhd::usrp::dboard_id_t &
+    );
 
     //handle io stuff
     UHD_PIMPL_DECL(io_impl) _io_impl;
@@ -129,77 +118,9 @@ private:
     void rx_stream_on_off(bool);
     void handle_overrun(size_t);
 
-    //underrun and overrun poll intervals
-    size_t _rx_samps_per_poll_interval;
-    size_t _tx_samps_per_poll_interval; 
-
     //otw types
-    uhd::otw_type_t _rx_otw_type;
-    uhd::otw_type_t _tx_otw_type;
-
-    //configuration shadows
+    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
-
-    //clock control
-    usrp1_clock_ctrl::sptr _clock_ctrl;
-
-    //ad9862 codec control interface
-    uhd::dict<dboard_slot_t, usrp1_codec_ctrl::sptr> _codec_ctrls;
-
-    //codec properties interfaces
-    void codec_init(void);
-    void rx_codec_get(const wax::obj &, wax::obj &, dboard_slot_t);
-    void rx_codec_set(const wax::obj &, const wax::obj &, dboard_slot_t);
-    void tx_codec_get(const wax::obj &, wax::obj &, dboard_slot_t);
-    void tx_codec_set(const wax::obj &, const wax::obj &, dboard_slot_t);
-    uhd::dict<dboard_slot_t, wax_obj_proxy::sptr> _rx_codec_proxies, _tx_codec_proxies;
-
-    //device functions and settings
-    void get(const wax::obj &, wax::obj &);
-    void set(const wax::obj &, const wax::obj &);
-
-    //mboard functions and settings
-    void mboard_init(void);
-    void mboard_get(const wax::obj &, wax::obj &);
-    void mboard_set(const wax::obj &, const wax::obj &);
-    wax_obj_proxy::sptr _mboard_proxy;
-
-    //xx dboard functions and settings
-    void dboard_init(void);
-    uhd::dict<dboard_slot_t, uhd::usrp::dboard_manager::sptr> _dboard_managers;
-    uhd::dict<dboard_slot_t, uhd::usrp::dboard_iface::sptr> _dboard_ifaces;
-
-    //rx dboard functions and settings
-    uhd::dict<dboard_slot_t, uhd::usrp::dboard_eeprom_t> _rx_db_eeproms;
-    void rx_dboard_get(const wax::obj &, wax::obj &, dboard_slot_t);
-    void rx_dboard_set(const wax::obj &, const wax::obj &, dboard_slot_t);
-    uhd::dict<dboard_slot_t, wax_obj_proxy::sptr> _rx_dboard_proxies;
-
-    //tx dboard functions and settings
-    uhd::dict<dboard_slot_t, uhd::usrp::dboard_eeprom_t> _tx_db_eeproms, _gdb_eeproms;
-    void tx_dboard_get(const wax::obj &, wax::obj &, dboard_slot_t);
-    void tx_dboard_set(const wax::obj &, const wax::obj &, dboard_slot_t);
-    uhd::dict<dboard_slot_t, wax_obj_proxy::sptr> _tx_dboard_proxies;
-
-    //rx dsp functions and settings
-    void rx_dsp_init(void);
-    void rx_dsp_get(const wax::obj &, wax::obj &, size_t);
-    void rx_dsp_set(const wax::obj &, const wax::obj &, size_t);
-    uhd::dict<size_t, double> _rx_dsp_freqs;
-    size_t _rx_dsp_decim;
-    uhd::dict<std::string, wax_obj_proxy::sptr> _rx_dsp_proxies;
-
-    //tx dsp functions and settings
-    void tx_dsp_init(void);
-    void tx_dsp_get(const wax::obj &, wax::obj &, size_t);
-    void tx_dsp_set(const wax::obj &, const wax::obj &, size_t);
-    uhd::dict<size_t, double> _tx_dsp_freqs;
-    size_t _tx_dsp_interp;
-    uhd::dict<std::string, wax_obj_proxy::sptr> _tx_dsp_proxies;
-
-    //transports
-    uhd::transport::usb_zero_copy::sptr _data_transport;
-    uhd::usrp::fx2_ctrl::sptr _ctrl_transport;
 
     //capabilities
     size_t get_num_ducs(void);
@@ -211,11 +132,11 @@ private:
     bool _rx_enabled, _tx_enabled;
     void enable_rx(bool enb){
         _rx_enabled = enb;
-        _ctrl_transport->usrp_rx_enable(enb);
+        _fx2_ctrl->usrp_rx_enable(enb);
     }
     void enable_tx(bool enb){
         _tx_enabled = enb;
-        _ctrl_transport->usrp_tx_enable(enb);
+        _fx2_ctrl->usrp_tx_enable(enb);
     }
 
     //conditionally disable and enable rx

@@ -26,20 +26,11 @@ LIBUHD_REGISTER_COMPONENT("USRP1" ENABLE_USRP1 ON "ENABLE_LIBUHD;ENABLE_USB" OFF
 
 IF(ENABLE_USRP1)
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/codec_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dsp_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/soft_time_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.hpp
     )
 ENDIF(ENABLE_USRP1)

@@ -20,7 +20,6 @@
 #include "fpga_regs_common.h"
 #include "usrp_spi_defs.h"
 #include "fpga_regs_standard.h"
-#include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
@@ -38,16 +37,16 @@ class usrp1_dboard_iface : public dboard_iface {
 public:
 
     usrp1_dboard_iface(usrp1_iface::sptr iface,
-                       usrp1_clock_ctrl::sptr clock,
                        usrp1_codec_ctrl::sptr codec,
                        usrp1_impl::dboard_slot_t dboard_slot,
+                       const double master_clock_rate,
                        const dboard_id_t &rx_dboard_id
     ):
         _dboard_slot(dboard_slot),
+        _master_clock_rate(master_clock_rate),
         _rx_dboard_id(rx_dboard_id)
     {
         _iface = iface;
-        _clock = clock;
         _codec = codec;
 
         //init the clock rate shadows
@@ -103,24 +102,24 @@ public:
 
 private:
     usrp1_iface::sptr _iface;
-    usrp1_clock_ctrl::sptr _clock;
     usrp1_codec_ctrl::sptr _codec;
     uhd::dict<unit_t, double> _clock_rates;
     const usrp1_impl::dboard_slot_t _dboard_slot;
-    const dboard_id_t &_rx_dboard_id;
+    const double _master_clock_rate;
+    const dboard_id_t _rx_dboard_id;
 };
 
 /***********************************************************************
  * Make Function
  **********************************************************************/
 dboard_iface::sptr usrp1_impl::make_dboard_iface(usrp1_iface::sptr iface,
-                                           usrp1_clock_ctrl::sptr clock,
                                            usrp1_codec_ctrl::sptr codec,
-                                           dboard_slot_t dboard_slot,
+                                           usrp1_impl::dboard_slot_t dboard_slot,
+                                           const double master_clock_rate,
                                            const dboard_id_t &rx_dboard_id
 ){
     return dboard_iface::sptr(new usrp1_dboard_iface(
-        iface, clock, codec, dboard_slot, rx_dboard_id
+        iface, codec, dboard_slot, master_clock_rate, rx_dboard_id
     ));
 }
 
@@ -141,7 +140,7 @@ void usrp1_dboard_iface::set_clock_rate(unit_t unit, double rate)
     _clock_rates[unit] = rate;
 
     if (unit == UNIT_RX && _rx_dboard_id == dbsrx_classic_id){
-        size_t divider = size_t(_clock->get_master_clock_freq()/rate);
+        size_t divider = size_t(_master_clock_rate/rate);
         switch(_dboard_slot){
         case usrp1_impl::DBOARD_SLOT_A:
             _iface->poke32(FR_RX_A_REFCLK, (divider & 0x7f) | 0x80);
@@ -159,10 +158,10 @@ std::vector<double> usrp1_dboard_iface::get_clock_rates(unit_t unit)
     std::vector<double> rates;
     if (unit == UNIT_RX && _rx_dboard_id == dbsrx_classic_id){
         for (size_t div = 1; div <= 127; div++)
-            rates.push_back(_clock->get_master_clock_freq() / div);
+            rates.push_back(_master_clock_rate / div);
     }
     else{
-        rates.push_back(_clock->get_master_clock_freq());
+        rates.push_back(_master_clock_rate);
     }
     return rates;
 }
@@ -178,7 +177,7 @@ void usrp1_dboard_iface::set_clock_enabled(unit_t, bool)
 }
 
 double usrp1_dboard_iface::get_codec_rate(unit_t){
-    return _clock->get_master_clock_freq();
+    return _master_clock_rate;
 }
 
 /***********************************************************************

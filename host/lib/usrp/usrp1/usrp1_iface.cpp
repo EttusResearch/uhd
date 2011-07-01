@@ -36,7 +36,6 @@ public:
     usrp1_iface_impl(uhd::usrp::fx2_ctrl::sptr ctrl_transport)
     {
         _ctrl_transport = ctrl_transport;
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_B000);
     }
 
     ~usrp1_iface_impl(void)
@@ -102,78 +101,16 @@ public:
         throw uhd::not_implemented_error("Unhandled command peek16()");
         return 0;
     }
-    
-    void write_uart(boost::uint8_t, const std::string &) {
-        throw uhd::not_implemented_error("Unhandled command write_uart()");
-    }
-    
-    std::string read_uart(boost::uint8_t) {
-        throw uhd::not_implemented_error("Unhandled command read_uart()");
-    }
 
     /*******************************************************************
      * I2C
      ******************************************************************/
-    static const size_t max_i2c_data_bytes = 64;
-
-    //TODO: make this handle EEPROM page sizes. right now you can't write over a 16-byte boundary.
-    //to accomplish this you'll have to have addr offset as a separate parameter.
-
-    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes)
-    {
-        UHD_LOGV(always) << "write_i2c:" << std::endl
-            << "  addr 0x" << std::hex << int(addr) << std::endl
-            << "  len " << bytes.size() << std::endl
-        ;
-        UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
-
-        unsigned char buff[max_i2c_data_bytes];
-        std::copy(bytes.begin(), bytes.end(), buff);
-
-        int ret = _ctrl_transport->usrp_i2c_write(addr & 0xff,
-                                             buff,
-                                             bytes.size());
-
-        // TODO throw and catch i2c failures during eeprom read
-        if (ret < 0)
-            UHD_LOGV(often) << "USRP: failed i2c write: " << ret << std::endl;
+    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+        return _ctrl_transport->write_i2c(addr, bytes);
     }
 
-    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes)
-    {
-        UHD_LOGV(always) << "read_i2c:" << std::endl
-            << "  addr 0x" << std::hex << int(addr) << std::endl
-            << "  len " << num_bytes << std::endl
-        ;
-        UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
-
-        unsigned char buff[max_i2c_data_bytes];
-        int ret = _ctrl_transport->usrp_i2c_read(addr & 0xff,
-                                            buff,
-                                            num_bytes);
-
-        // TODO throw and catch i2c failures during eeprom read
-        if (ret < 0 or (unsigned)ret < num_bytes) {
-            UHD_LOGV(often) << "USRP: failed i2c read: " << ret << std::endl;
-            return byte_vector_t(num_bytes, 0xff); 
-        }
-
-        byte_vector_t out_bytes;
-        for (size_t i = 0; i < num_bytes; i++)
-            out_bytes.push_back(buff[i]);
-
-        return out_bytes; 
-    }
-
-    //! overload read_eeprom to handle multi-byte reads
-    byte_vector_t read_eeprom(
-        boost::uint8_t addr,
-        boost::uint8_t offset,
-        size_t num_bytes
-    ){
-        //do a zero byte write to start read cycle
-        this->write_i2c(addr, byte_vector_t(1, offset));
-        return this->read_i2c(addr, num_bytes); //read all bytes
+    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+        return _ctrl_transport->read_i2c(addr, num_bytes);
     }
 
     /*******************************************************************
@@ -253,37 +190,6 @@ public:
 
             return 0;
         }
-    }
-
-    /*******************************************************************
-     * Firmware 
-     *
-     * This call is deprecated.
-     ******************************************************************/
-    void write_firmware_cmd(boost::uint8_t request,
-                            boost::uint16_t value,
-                            boost::uint16_t index,
-                            unsigned char *buff,
-                            boost::uint16_t length)
-    {
-        int ret;
-
-        if (request & 0x80) {
-            ret = _ctrl_transport->usrp_control_read(request,
-                                                     value,
-                                                     index,
-                                                     buff,
-                                                     length);
-        }
-        else {
-            ret = _ctrl_transport->usrp_control_write(request,
-                                                      value,
-                                                      index,
-                                                      buff,
-                                                      length);
-        }
-
-        if (ret < 0) throw uhd::io_error("USRP1: failed firmware command");
     }
 
 private:

@@ -18,8 +18,7 @@
 #ifndef INCLUDED_USRP1_CODEC_CTRL_HPP
 #define INCLUDED_USRP1_CODEC_CTRL_HPP
 
-#include "usrp1_iface.hpp"
-#include "clock_ctrl.hpp"
+#include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -38,13 +37,10 @@ public:
 
     /*!
      * Make a new clock control object.
-     * \param iface the usrp1 iface object
+     * \param iface the spi iface object
      * \param spi_slave which spi device
-     * \return the clock control object
      */
-    static sptr make(usrp1_iface::sptr iface,
-        usrp1_clock_ctrl::sptr clock, int spi_slave
-    );
+    static sptr make(uhd::spi_iface::sptr iface, int spi_slave);
 
     //! aux adc identifier constants
     enum aux_adc_t{
@@ -91,7 +87,7 @@ public:
     virtual double get_rx_pga_gain(char which) = 0;
 
     //! Set the TX modulator frequency
-    virtual void set_duc_freq(double freq) = 0;
+    virtual void set_duc_freq(double freq, double rate) = 0;
 
     //! Enable or disable the digital part of the DAC
     virtual void enable_tx_digital(bool enb) = 0;

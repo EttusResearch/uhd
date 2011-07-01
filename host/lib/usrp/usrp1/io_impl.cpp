@@ -18,23 +18,21 @@
 #define SRPH_DONT_CHECK_SEQUENCE
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
+#include "usrp1_calc_mux.hpp"
+#include "fpga_regs_standard.h"
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <uhd/utils/thread_priority.hpp>
-#include <uhd/usrp/dsp_props.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/thread.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-namespace asio = boost::asio;
 
 static const size_t alignment_padding = 512;
 
@@ -145,6 +143,8 @@ struct usrp1_impl::io_impl{
     //state management for overflow and underflow
     size_t underflow_poll_samp_count;
     size_t overflow_poll_samp_count;
+    size_t rx_samps_per_poll_interval;
+    size_t tx_samps_per_poll_interval;
 
     //wrapper around the actual send buffer interface
     //all of this to ensure only aligned lengths are committed
@@ -230,41 +230,21 @@ void usrp1_impl::io_init(void){
 
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
 
-    _soft_time_ctrl = soft_time_ctrl::make(
-        boost::bind(&usrp1_impl::rx_stream_on_off, this, _1)
-    );
+    //init some handler stuff
+    _io_impl->recv_handler.set_tick_rate(_master_clock_rate);
+    _io_impl->recv_handler.set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
+    _io_impl->recv_handler.set_xport_chan_get_buff(0, boost::bind(
+        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, _1
+    ));
+    _io_impl->send_handler.set_tick_rate(_master_clock_rate);
+    _io_impl->send_handler.set_vrt_packer(&usrp1_bs_vrt_packer);
+    _io_impl->send_handler.set_xport_chan_get_buff(0, boost::bind(
+        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
+    ));
 
     this->enable_tx(true); //always enabled
     rx_stream_on_off(false);
     _io_impl->flush_send_buff();
-
-    //update mapping here since it didnt b4 when io init not called first
-    update_xport_channel_mapping();
-}
-
-void usrp1_impl::update_xport_channel_mapping(void){
-    if (_io_impl.get() == NULL) return; //not inited yet
-
-    //set all of the relevant properties on the handler
-    boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
-    _io_impl->recv_handler.set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
-    _io_impl->recv_handler.set_tick_rate(_clock_ctrl->get_master_clock_freq());
-    _io_impl->recv_handler.set_samp_rate(_rx_dsp_proxies[_rx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
-    _io_impl->recv_handler.set_xport_chan_get_buff(0, boost::bind(
-        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, _1
-    ));
-    _io_impl->recv_handler.set_converter(_rx_otw_type, _rx_subdev_spec.size());
-
-    //set all of the relevant properties on the handler
-    boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
-    _io_impl->send_handler.set_vrt_packer(&usrp1_bs_vrt_packer);
-    _io_impl->send_handler.set_tick_rate(_clock_ctrl->get_master_clock_freq());
-    _io_impl->send_handler.set_samp_rate(_tx_dsp_proxies[_tx_dsp_proxies.keys().at(0)]->get_link()[DSP_PROP_HOST_RATE].as<double>());
-    _io_impl->send_handler.set_xport_chan_get_buff(0, boost::bind(
-        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
-    ));
-    _io_impl->send_handler.set_converter(_tx_otw_type, _tx_subdev_spec.size());
-    _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){
@@ -273,6 +253,125 @@ void usrp1_impl::rx_stream_on_off(bool enb){
     while(not enb and _data_transport->get_recv_buff().get() != NULL){
         /* NOP */
     }
+}
+
+/***********************************************************************
+ * Properties callback methods below
+ **********************************************************************/
+void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    //sanity checking
+    if (spec.size() == 0) throw uhd::value_error("rx subdev spec cant be empty");
+    if (spec.size() > get_num_ddcs()) throw uhd::value_error("rx subdev spec too long");
+
+    _rx_subdev_spec = spec; //shadow
+    _io_impl->recv_handler.resize(spec.size());
+    _io_impl->recv_handler.set_converter(_rx_otw_type, spec.size());
+
+    //set the mux and set the number of rx channels
+    std::vector<mapping_pair_t> mapping;
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
+        const std::string conn = _tree->access<std::string>(str(boost::format(
+            "/mboards/0/dboards/%s/rx_frontends/%s/connection"
+        ) % pair.db_name % pair.sd_name)).get();
+        mapping.push_back(std::make_pair(pair.db_name, conn));
+    }
+    bool s = this->disable_rx();
+    _iface->poke32(FR_RX_MUX, calc_rx_mux(mapping));
+    this->restore_rx(s);
+}
+
+void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    //sanity checking
+    if (spec.size() == 0) throw uhd::value_error("tx subdev spec cant be empty");
+    if (spec.size() > get_num_ducs()) throw uhd::value_error("tx subdev spec too long");
+
+    _tx_subdev_spec = spec; //shadow
+    _io_impl->send_handler.resize(spec.size());
+    _io_impl->send_handler.set_converter(_tx_otw_type, spec.size());
+
+    //set the mux and set the number of tx channels
+    std::vector<mapping_pair_t> mapping;
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
+        const std::string conn = _tree->access<std::string>(str(boost::format(
+            "/mboards/0/dboards/%s/tx_frontends/%s/connection"
+        ) % pair.db_name % pair.sd_name)).get();
+        mapping.push_back(std::make_pair(pair.db_name, conn));
+    }
+    bool s = this->disable_tx();
+    _iface->poke32(FR_TX_MUX, calc_tx_mux(mapping));
+    this->restore_tx(s);
+
+    //if the spec changes size, so does the max samples per packet...
+    _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
+}
+
+double usrp1_impl::update_rx_samp_rate(const double samp_rate){
+    size_t rate = boost::math::iround(_master_clock_rate / samp_rate);
+
+    //clip the rate to something in range:
+    rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
+
+    //TODO Poll every 100ms. Make it selectable?
+    _io_impl->rx_samps_per_poll_interval = size_t(0.1 * _master_clock_rate / rate);
+
+    bool s = this->disable_rx();
+    _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
+    this->restore_rx(s);
+
+    _io_impl->recv_handler.set_samp_rate(_master_clock_rate / rate);
+    return _master_clock_rate / rate;
+}
+
+double usrp1_impl::update_tx_samp_rate(const double samp_rate){
+    size_t rate = boost::math::iround(_master_clock_rate / samp_rate);
+
+    //clip the rate to something in range:
+    rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
+
+    //TODO Poll every 100ms. Make it selectable? 
+    _io_impl->tx_samps_per_poll_interval = size_t(0.1 * _master_clock_rate / rate);
+
+    bool s = this->disable_tx();
+    _iface->poke32(FR_INTERP_RATE, rate/2 - 1);
+    this->restore_tx(s);
+
+    _io_impl->send_handler.set_samp_rate(_master_clock_rate / rate);
+    return _master_clock_rate / rate;
+}
+
+double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_){
+
+    //correct for outside of rate (wrap around)
+    double freq = std::fmod(freq_, _master_clock_rate);
+    if (std::abs(freq) > _master_clock_rate/2.0)
+        freq -= boost::math::sign(freq)*_master_clock_rate;
+
+    //calculate the freq register word (signed)
+    UHD_ASSERT_THROW(std::abs(freq) <= _master_clock_rate/2.0);
+    static const double scale_factor = std::pow(2.0, 32);
+    const boost::int32_t freq_word = boost::int32_t(boost::math::round((freq / _master_clock_rate) * scale_factor));
+
+    static const boost::uint32_t dsp_index_to_reg_val[4] = {
+        FR_RX_FREQ_0, FR_RX_FREQ_1, FR_RX_FREQ_2, FR_RX_FREQ_3
+    };
+    _iface->poke32(dsp_index_to_reg_val[dspno], ~freq_word + 1);
+
+    return (double(freq_word) / scale_factor) * _master_clock_rate;
+}
+
+double usrp1_impl::update_tx_dsp_freq(const size_t dspno, const double freq){
+    //map the freq shift key to a subdev spec to a particular codec chip
+    _dbc[_tx_subdev_spec.at(dspno).db_name].codec->set_duc_freq(freq, _master_clock_rate);
+    return freq; //assume infinite precision
+}
+
+/***********************************************************************
+ * Async Data
+ **********************************************************************/
+bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){
+    //dummy fill-in for the recv_async_msg
+    boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
+    return false;
 }
 
 /***********************************************************************
@@ -306,10 +405,10 @@ size_t usrp1_impl::send(
 
     //handle the polling for underflow conditions
     _io_impl->underflow_poll_samp_count += num_samps_sent;
-    if (_io_impl->underflow_poll_samp_count >= _tx_samps_per_poll_interval){
+    if (_io_impl->underflow_poll_samp_count >= _io_impl->tx_samps_per_poll_interval){
         _io_impl->underflow_poll_samp_count = 0; //reset count
         boost::uint8_t underflow = 0;
-        ssize_t ret = _ctrl_transport->usrp_control_read(
+        int ret = _fx2_ctrl->usrp_control_read(
             VRQ_GET_STATUS, 0, GS_TX_UNDERRUN,
             &underflow, sizeof(underflow)
         );
@@ -345,10 +444,10 @@ size_t usrp1_impl::recv(
 
     //handle the polling for overflow conditions
     _io_impl->overflow_poll_samp_count += num_samps_recvd;
-    if (_io_impl->overflow_poll_samp_count >= _rx_samps_per_poll_interval){
+    if (_io_impl->overflow_poll_samp_count >= _io_impl->rx_samps_per_poll_interval){
         _io_impl->overflow_poll_samp_count = 0; //reset count
         boost::uint8_t overflow = 0;
-        ssize_t ret = _ctrl_transport->usrp_control_read(
+        int ret = _fx2_ctrl->usrp_control_read(
             VRQ_GET_STATUS, 0, GS_RX_OVERRUN,
             &overflow, sizeof(overflow)
         );
