@@ -15,24 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_COMMON_VALIDATE_SUBDEV_SPEC_HPP
-#define INCLUDED_LIBUHD_USRP_COMMON_VALIDATE_SUBDEV_SPEC_HPP
+#ifndef INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_HPP
+#define INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/property_tree.hpp>
-#include <string>
+#include <uhd/transport/zero_copy.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/cstdint.hpp>
 
 namespace uhd{ namespace usrp{
 
-    //! Validate a subdev spec against a property tree
-    void validate_subdev_spec(
-        property_tree::sptr tree,
-        const subdev_spec_t &spec,
-        const std::string &type, //rx or tx
-        const std::string &mb = "0"
-    );
+    class recv_packet_demuxer{
+    public:
+        typedef boost::shared_ptr<recv_packet_demuxer> sptr;
+
+        //! Make a new demuxer from a transport and parameters
+        static sptr make(transport::zero_copy_if::sptr transport, const size_t size, const boost::uint32_t sid_base);
+
+        //! Get a buffer at the given index from the transport
+        virtual transport::managed_recv_buffer::sptr get_recv_buff(const size_t index, const double timeout) = 0;
+    };
 
 }} //namespace uhd::usrp
 
-#endif /* INCLUDED_LIBUHD_USRP_COMMON_VALIDATE_SUBDEV_SPEC_HPP */
+#endif /* INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_HPP */

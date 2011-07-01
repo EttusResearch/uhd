@@ -44,7 +44,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("sync", po::value<std::string>(&sync)->default_value("now"), "synchronization method: now, pps")
-        ("subdev", po::value<std::string>(&subdev)->default_value(""), "subdev spec (homogeneous across motherboards)")
+        ("subdev", po::value<std::string>(&subdev), "subdev spec (homogeneous across motherboards)")
         ("dilv", "specify to disable inner-loop verbose")
     ;
     po::variables_map vm;

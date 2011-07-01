@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "recv_packet_demuxer.hpp"
 #include "validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
@@ -25,7 +26,6 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <uhd/utils/msg.hpp>
@@ -34,55 +34,18 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-namespace asio = boost::asio;
 
 /***********************************************************************
  * IO Implementation Details
  **********************************************************************/
 struct b100_impl::io_impl{
-    io_impl(zero_copy_if::sptr data_transport, const size_t recv_width):
-        data_transport(data_transport), async_msg_fifo(100/*messages deep*/)
-    {
-        for (size_t i = 0; i < recv_width; i++){
-            typedef bounded_buffer<managed_recv_buffer::sptr> buffs_queue_type;
-            _buffs_queue.push_back(new buffs_queue_type(data_transport->get_num_recv_frames()));
-        }
-    }
-
-    ~io_impl(void){
-        for (size_t i = 0; i < _buffs_queue.size(); i++){
-            delete _buffs_queue[i];
-        }
-    }
+    io_impl(void):
+        async_msg_fifo(100/*messages deep*/)
+    { /* NOP */ }
 
     zero_copy_if::sptr data_transport;
     bounded_buffer<async_metadata_t> async_msg_fifo;
-    std::vector<bounded_buffer<managed_recv_buffer::sptr> *> _buffs_queue;
-
-    //gets buffer, determines if its the requested index,
-    //and either queues the buffer or returns the buffer
-    managed_recv_buffer::sptr get_recv_buff(const size_t index, const double timeout){
-        while (true){
-            managed_recv_buffer::sptr buff;
-
-            //attempt to pop a buffer from the queue
-            if (_buffs_queue[index]->pop_with_haste(buff)) return buff;
-
-            //otherwise, call into the transport
-            buff = data_transport->get_recv_buff(timeout);
-            if (buff.get() == NULL) return buff; //timeout
-
-            //check the stream id to know which channel
-            const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
-            const size_t rx_index = uhd::wtohx(vrt_hdr[1]) - B100_RX_SID_BASE;
-            if (rx_index == index) return buff; //got expected message
-
-            //otherwise queue and try again
-            if (rx_index < _buffs_queue.size()) _buffs_queue[rx_index]->push_with_pop_on_full(buff);
-            else UHD_MSG(error) << "Got a data packet with known SID " << uhd::wtohx(vrt_hdr[1]) << std::endl;
-        }
-    }
-
+    recv_packet_demuxer::sptr demuxer;
     sph::recv_packet_handler recv_handler;
     sph::send_packet_handler send_handler;
 };
@@ -109,7 +72,8 @@ void b100_impl::io_init(void){
     _fpga_ctrl->poke32(B100_REG_MISC_RX_LEN, 4);
 
     //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport, _rx_dsps.size()));
+    _io_impl = UHD_PIMPL_MAKE(io_impl, ());
+    _io_impl->demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), B100_RX_SID_BASE);
 
     //now its safe to register the async callback
     _fpga_ctrl->set_async_cb(boost::bind(&b100_impl::handle_async_message, this, _1));
@@ -193,7 +157,7 @@ void b100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     for (size_t i = 0; i < _io_impl->recv_handler.size(); i++){
         _rx_dsps[i]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
         _io_impl->recv_handler.set_xport_chan_get_buff(i, boost::bind(
-            &b100_impl::io_impl::get_recv_buff, _io_impl.get(), i, _1
+            &recv_packet_demuxer::get_recv_buff, _io_impl->demuxer, i, _1
         ));
         _io_impl->recv_handler.set_overflow_handler(i, boost::bind(&rx_dsp_core_200::handle_overflow, _rx_dsps[i]));
     }
