@@ -16,8 +16,6 @@
 //
 
 #include "codec_ctrl.hpp"
-#include "usrp_commands.h"
-#include "clock_ctrl.hpp"
 #include "ad9862_regs.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
