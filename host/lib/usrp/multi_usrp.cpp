@@ -347,15 +347,15 @@ public:
     void set_clock_config(const clock_config_t &clock_config, size_t mboard){
         if (mboard != ALL_MBOARDS){
             //set the reference source...
-            std::string ref_source;
+            std::string clock_source;
             switch(clock_config.ref_source){
-            case clock_config_t::REF_INT: ref_source = "internal"; break;
-            case clock_config_t::PPS_SMA: ref_source = "external"; break;
-            case clock_config_t::PPS_MIMO: ref_source = "mimo"; break;
-            default: ref_source = "unknown";
+            case clock_config_t::REF_INT: clock_source = "internal"; break;
+            case clock_config_t::PPS_SMA: clock_source = "external"; break;
+            case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
+            default: clock_source = "unknown";
             }
-            if (ref_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) ref_source = "_external_";
-            _tree->access<std::string>(mb_root(mboard) / "ref_source" / "value").set(ref_source);
+            if (clock_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) clock_source = "_external_";
+            _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").set(clock_source);
 
             //set the time source
             std::string time_source;

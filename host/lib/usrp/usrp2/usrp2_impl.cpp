@@ -493,10 +493,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _tree->create<std::vector<std::string> >(mb_path / "time_source/options")
             .publish(boost::bind(&time64_core_200::get_time_sources, _mbc[mb].time64));
         //setup reference source props
-        _tree->create<std::string>(mb_path / "ref_source/value")
-            .subscribe(boost::bind(&usrp2_impl::update_ref_source, this, mb, _1));
-        static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("external")("mimo");
-        _tree->create<std::vector<std::string> >(mb_path / "ref_source/options").set(ref_sources);
+        _tree->create<std::string>(mb_path / "clock_source/value")
+            .subscribe(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1));
+        static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
+        _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
 
         ////////////////////////////////////////////////////////////////
         // create dboard control objects
@@ -559,13 +559,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_rx_subdev_names()[0]));
         _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_tx_subdev_names()[0]));
-        _tree->access<std::string>(root / "ref_source/value").set("internal");
+        _tree->access<std::string>(root / "clock_source/value").set("internal");
         _tree->access<std::string>(root / "time_source/value").set("none");
 
         //GPS installed: use external ref, time, and init time spec
         if (_mbc[mb].gps.get() != NULL){
             _tree->access<std::string>(root / "time_source/value").set("external");
-            _tree->access<std::string>(root / "ref_source/value").set("external");
+            _tree->access<std::string>(root / "clock_source/value").set("external");
             _mbc[mb].time64->set_time_next_pps(time_spec_t(time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1)));
         }
     }
@@ -624,7 +624,7 @@ meta_range_t usrp2_impl::get_tx_dsp_freq_range(const std::string &mb){
     return meta_range_t(dsp_range.start() - tick_rate*2, dsp_range.stop() + tick_rate*2, dsp_range.step());
 }
 
-void usrp2_impl::update_ref_source(const std::string &mb, const std::string &source){
+void usrp2_impl::update_clock_source(const std::string &mb, const std::string &source){
     //clock source ref 10mhz
     switch(_mbc[mb].iface->get_rev()){
     case usrp2_iface::USRP_N200:

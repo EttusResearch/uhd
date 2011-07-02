@@ -305,9 +305,9 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         .publish(boost::bind(&soft_time_ctrl::get_time, _soft_time_ctrl))
         .subscribe(boost::bind(&soft_time_ctrl::set_time, _soft_time_ctrl, _1));
 
-    _tree->create<std::vector<std::string> >(mb_path / "ref_source/options").set(std::vector<std::string>(1, "internal"));
+    _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(std::vector<std::string>(1, "internal"));
     _tree->create<std::vector<std::string> >(mb_path / "time_source/options").set(std::vector<std::string>(1, "none"));
-    _tree->create<std::string>(mb_path / "ref_source/value").set("internal");
+    _tree->create<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->create<std::string>(mb_path / "time_source/value").set("none");
 
     ////////////////////////////////////////////////////////////////////

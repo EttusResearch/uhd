@@ -121,7 +121,7 @@ private:
     void update_tx_samp_rate(const double rate);
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
-    void update_ref_source(const std::string &);
+    void update_clock_source(const std::string &);
 
 };
 

@@ -138,7 +138,7 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const property
     }
     ss << std::endl;
     ss << "Time sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "time_source" / "options").get()) << std::endl;
-    ss << "Ref sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "ref_source" / "options").get()) << std::endl;
+    ss << "Clock sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "clock_source" / "options").get()) << std::endl;
     ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
     BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
         ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));

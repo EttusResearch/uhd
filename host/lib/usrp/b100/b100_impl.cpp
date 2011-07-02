@@ -328,10 +328,10 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->create<std::vector<std::string> >(mb_path / "time_source/options")
         .publish(boost::bind(&time64_core_200::get_time_sources, _time64));
     //setup reference source props
-    _tree->create<std::string>(mb_path / "ref_source/value")
-        .subscribe(boost::bind(&b100_impl::update_ref_source, this, _1));
-    static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("external")("auto");
-    _tree->create<std::vector<std::string> >(mb_path / "ref_source/options").set(ref_sources);
+    _tree->create<std::string>(mb_path / "clock_source/value")
+        .subscribe(boost::bind(&b100_impl::update_clock_source, this, _1));
+    static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("auto");
+    _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
     // create dboard control objects
@@ -394,7 +394,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_rx_subdev_names()[0]));
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_tx_subdev_names()[0]));
-    _tree->access<std::string>(mb_path / "ref_source/value").set("internal");
+    _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
 }
 
@@ -444,7 +444,7 @@ void b100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_e
     if (type == "gdb") db_eeprom.store(*_fpga_i2c_ctrl, I2C_ADDR_TX_A ^ 5);
 }
 
-void b100_impl::update_ref_source(const std::string &source){
+void b100_impl::update_clock_source(const std::string &source){
     if      (source == "auto")     _clock_ctrl->use_auto_ref();
     else if (source == "internal") _clock_ctrl->use_internal_ref();
     else if (source == "external") _clock_ctrl->use_external_ref();
