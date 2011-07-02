@@ -246,60 +246,42 @@ Using the MIMO Cable
 ------------------------------------------------------------------------
 The MIMO cable allows two USRP devices to share reference clocks,
 time synchronization, and the ethernet interface.
+One of the devices will sink its clock and time references to the MIMO cable.
+This device will be referred to as the slave, and the other device, the master.
+
+* The slave device acquires the clock and time references from the master device.
+* The master and slave may be used individually or in a multi-device configuration.
+* External clocking is optional, and should only be supplied to the master device.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Shared ethernet mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In shared ethernet mode,
 only one device in the configuration can be attached to the ethernet.
-This device will be referred to as the master, and the other device, the slave.
 
-* The master provides reference clock and time synchronization to the slave.
-* All data passing between the host and the slave is routed over the MIMO cable.
+* Clock reference, time reference, and data are communicated over the MIMO cable.
 * Both master and slave must have different IPv4 addresses in the same subnet.
-* The master and slave may be used individually or in a multi-device configuration.
-* External clocking is optional, and should only be supplied to the master device.
-* The role of slave and master may be switched with the "mimo_mode" device address (see dual ethernet mode).
-
-Example device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 (master) and 192.168.10.3 (slave)
-::
-
-    -- Multi-device example --
-
-    addr0=192.168.10.2, addr1=192.168.10.3
-
-    -- Two single devices example --
-
-    addr=192.168.10.2
-
-    addr=192.168.10.3
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Dual ethernet mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In dual ethernet mode,
 both devices in the configuration must be attached to the ethernet.
-One of the devices in the configuration will be configured to provide synchronization.
-This device will be referred to as the master, and the other device, the slave.
 
-* The master provides reference clock and time synchronization to the slave.
-* The devices require the special device address argument "mimo_mode" set.
+* Only clock reference and time reference are communicated over the MIMO cable.
 * Both master and slave must have different IPv4 addresses in different subnets.
-* The master and slave may be used individually or in a multi-device configuration.
-* External clocking is optional, and should only be supplied to the master device.
 
-Example device address string representation for 2 USRP2s with IPv4 addresses 192.168.10.2 (master) and 192.168.20.2 (slave)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Configuring the slave
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In order for the slave to synchronize to the master over MIMO cable,
+the following clock configuration must be set on the slave device:
 ::
 
-    -- Multi-device example --
-
-    addr0=192.168.10.2, mimo_mode0=master, addr1=192.168.20.2, mimo_mode1=slave
-
-    -- Two single devices example --
-
-    addr=192.168.10.2, mimo_mode=master
-
-    addr=192.168.20.2, mimo_mode=slave
+    uhd::clock_config_t clock_config;
+    clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
+    clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
+    usrp->set_clock_config(clock_config, slave_index);
 
 ------------------------------------------------------------------------
 Hardware setup notes

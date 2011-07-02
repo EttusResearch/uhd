@@ -34,24 +34,16 @@ Example device address string representations to specify non-standard firmware a
 Specifying the subdevice to use
 ------------------------------------------------------------------------
 The USRP1 has multiple daughterboard slots, known as slot A and slot B.
-The subdevice specification can be used to select
-the daughterboard and subdevice for each channel.
-For daughterboards with one one subdevice,
-the subdevice name may be left blank for automatic selection.
+The subdevice specification can be used to map an RF frontend to a DSP.
+An RF frontend is identified by the daughterboard slot name and subdevice name.
 
 Ex: The subdev spec markup string to select a WBX on slot B.
-Notice the use of the blank subdevice name for automatic selection.
 
 ::
-
-    B:
-
-    -- OR --
 
     B:0
 
 Ex: The subdev spec markup string to select a BasicRX on slot B.
-Notice that the subdevice name is always specified in the 3 possible cases.
 
 ::
 
