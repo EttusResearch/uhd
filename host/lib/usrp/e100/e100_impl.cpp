@@ -289,7 +289,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     //setup reference source props
     _tree->create<std::string>(mb_path / "ref_source/value")
         .subscribe(boost::bind(&e100_impl::update_ref_source, this, _1));
-    static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("sma")("auto");
+    static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("external")("auto");
     _tree->create<std::vector<std::string> >(mb_path / "ref_source/options").set(ref_sources);
 
     ////////////////////////////////////////////////////////////////////
@@ -383,6 +383,6 @@ void e100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_e
 void e100_impl::update_ref_source(const std::string &source){
     if      (source == "auto")     _clock_ctrl->use_auto_ref();
     else if (source == "internal") _clock_ctrl->use_internal_ref();
-    else if (source == "sma")      _clock_ctrl->use_external_ref();
+    else if (source == "external") _clock_ctrl->use_external_ref();
     else throw uhd::runtime_error("unhandled clock configuration reference source: " + source);
 }

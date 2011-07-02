@@ -52,8 +52,8 @@ public:
         _mimo_delay_cycles(mimo_delay_cycles)
     {
         _sources.push_back("none");
-        _sources.push_back("sma");
-        _sources.push_back("_sma_");
+        _sources.push_back("external");
+        _sources.push_back("_external_");
         if (_mimo_delay_cycles != 0) _sources.push_back("mimo");
     }
 
@@ -98,10 +98,10 @@ public:
         assert_has(_sources, source, "time source");
 
         //setup pps flags
-        if (source == "sma"){
+        if (source == "external"){
             _iface->poke32(REG_TIME64_FLAGS, FLAG_TIME64_PPS_SMA | FLAG_TIME64_PPS_POSEDGE);
         }
-        else if (source == "_sma_"){
+        else if (source == "_external_"){
             _iface->poke32(REG_TIME64_FLAGS, FLAG_TIME64_PPS_SMA | FLAG_TIME64_PPS_NEGEDGE);
         }
 

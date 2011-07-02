@@ -350,18 +350,18 @@ public:
             std::string ref_source;
             switch(clock_config.ref_source){
             case clock_config_t::REF_INT: ref_source = "internal"; break;
-            case clock_config_t::PPS_SMA: ref_source = "sma"; break;
+            case clock_config_t::PPS_SMA: ref_source = "external"; break;
             case clock_config_t::PPS_MIMO: ref_source = "mimo"; break;
             default: ref_source = "unknown";
             }
-            if (ref_source == "sma" and clock_config.pps_polarity == clock_config_t::PPS_NEG) ref_source = "_sma_";
+            if (ref_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) ref_source = "_external_";
             _tree->access<std::string>(mb_root(mboard) / "ref_source" / "value").set(ref_source);
 
             //set the time source
             std::string time_source;
             switch(clock_config.pps_source){
             case clock_config_t::PPS_INT: time_source = "internal"; break;
-            case clock_config_t::PPS_SMA: time_source = "sma"; break;
+            case clock_config_t::PPS_SMA: time_source = "external"; break;
             case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
             default: time_source = "unknown";
             }

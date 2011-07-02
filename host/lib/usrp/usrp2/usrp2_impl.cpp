@@ -495,7 +495,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         //setup reference source props
         _tree->create<std::string>(mb_path / "ref_source/value")
             .subscribe(boost::bind(&usrp2_impl::update_ref_source, this, mb, _1));
-        static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("sma")("mimo");
+        static const std::vector<std::string> ref_sources = boost::assign::list_of("internal")("external")("mimo");
         _tree->create<std::vector<std::string> >(mb_path / "ref_source/options").set(ref_sources);
 
         ////////////////////////////////////////////////////////////////
@@ -564,8 +564,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //GPS installed: use external ref, time, and init time spec
         if (_mbc[mb].gps.get() != NULL){
-            _tree->access<std::string>(root / "time_source/value").set("sma");
-            _tree->access<std::string>(root / "ref_source/value").set("sma");
+            _tree->access<std::string>(root / "time_source/value").set("external");
+            _tree->access<std::string>(root / "ref_source/value").set("external");
             _mbc[mb].time64->set_time_next_pps(time_spec_t(time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1)));
         }
     }
@@ -631,18 +631,18 @@ void usrp2_impl::update_ref_source(const std::string &mb, const std::string &sou
     case usrp2_iface::USRP_N210:
     case usrp2_iface::USRP_N200_R4:
     case usrp2_iface::USRP_N210_R4:
-        if (source == "internal")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
-        else if (source == "sma")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
-        else if (source == "mimo") _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+        if (source == "internal")       _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
+        else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
         break;
 
     case usrp2_iface::USRP2_REV3:
     case usrp2_iface::USRP2_REV4:
-        if (source == "internal")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10);
-        else if (source == "sma")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
-        else if (source == "mimo") _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+        if (source == "internal")       _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10);
+        else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(source != "internal");
         break;
