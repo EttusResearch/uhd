@@ -306,7 +306,24 @@ void usrp2_impl::update_tx_samp_rate(const double rate){
     _io_impl->send_handler.set_samp_rate(rate);
 }
 
-void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec){
+static subdev_spec_t replace_zero_in_spec(const std::string &type, const subdev_spec_t &spec){
+    subdev_spec_t new_spec;
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
+        if (pair.db_name == "0"){
+            UHD_MSG(warning)
+                << boost::format("In the %s subdevice specification: %s") % type % spec.to_string() << std::endl
+                << "Accepting dboard slot name \"0\" for backward compatibility." << std::endl
+                << "The official name of the dboard slot on USRP2/N-Series is \"A\"." << std::endl
+            ;
+            new_spec.push_back(subdev_spec_pair_t("A", pair.sd_name));
+        }
+        else new_spec.push_back(pair);
+    }
+    return new_spec;
+}
+
+subdev_spec_t usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
+    const subdev_spec_t spec = replace_zero_in_spec("RX", spec_);
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
     property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
 
@@ -336,9 +353,11 @@ void usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev
             ));
         }
     }
+    return spec;
 }
 
-void usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec){
+subdev_spec_t usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
+    const subdev_spec_t spec = replace_zero_in_spec("TX", spec_);
     boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
     property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
 
@@ -364,6 +383,7 @@ void usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev
             ));
         }
     }
+    return spec;
 }
 
 /***********************************************************************

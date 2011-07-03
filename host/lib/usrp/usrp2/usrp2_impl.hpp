@@ -124,8 +124,9 @@ private:
     void update_tick_rate(const double rate);
     void update_rx_samp_rate(const double rate);
     void update_tx_samp_rate(const double rate);
-    void update_rx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
-    void update_tx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
+    //update spec methods are coercers until we only accept db_name == A
+    uhd::usrp::subdev_spec_t update_rx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
+    uhd::usrp::subdev_spec_t update_tx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
     double set_tx_dsp_freq(const std::string &, const double);
     uhd::meta_range_t get_tx_dsp_freq_range(const std::string &);
     void update_clock_source(const std::string &, const std::string &);

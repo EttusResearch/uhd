@@ -431,9 +431,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         );
         //TODO lots of properties to expose here for frontends
         _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-            .subscribe(boost::bind(&usrp2_impl::update_rx_subdev_spec, this, mb, _1));
+            .coerce(boost::bind(&usrp2_impl::update_rx_subdev_spec, this, mb, _1));
         _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-            .subscribe(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
+            .coerce(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
 
         ////////////////////////////////////////////////////////////////
         // create rx dsp control objects
