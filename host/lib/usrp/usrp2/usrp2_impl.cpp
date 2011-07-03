@@ -330,6 +330,26 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ));
         _tree->create<std::string>(mb_path / "name").set(_mbc[mb].iface->get_cname());
 
+        //check the fpga compatibility number
+        const boost::uint32_t fpga_compat_num = _mbc[mb].iface->peek32(U2_REG_COMPAT_NUM_RB);
+        boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+        if (fpga_major == 0){ //old version scheme
+            fpga_major = fpga_minor;
+            fpga_minor = 0;
+        }
+        if (fpga_major != USRP2_FPGA_COMPAT_NUM){
+            throw uhd::runtime_error(str(boost::format(
+                "\nPlease update the firmware and FPGA images for your device.\n"
+                "See the application notes for USRP2/N-Series for instructions.\n"
+                "Expected FPGA compatibility number %d, but got %d:\n"
+                "The FPGA build is not compatible with the host code build."
+            ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_major));
+        }
+        _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
+
+        //lock the device/motherboard to this process
+        _mbc[mb].iface->lock_device(true);
+
         ////////////////////////////////////////////////////////////////
         // setup the mboard eeprom
         ////////////////////////////////////////////////////////////////
