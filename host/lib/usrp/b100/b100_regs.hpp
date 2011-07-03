@@ -10,8 +10,8 @@
 //  This means that address bit 0 is usually 0.
 //  There are 11 bits of address for the control.
 
-#ifndef __B100_REGS_H
-#define __B100_REGS_H
+#ifndef INCLUDED_B100_REGS_HPP
+#define INCLUDED_B100_REGS_HPP
 
 /////////////////////////////////////////////////////
 // Slave pointers
@@ -50,64 +50,16 @@
 //these are 32-bit registers mapped onto the 16-bit Wishbone bus. 
 //Using peek32/poke32 should allow transparent use of these registers.
 #define B100_REG_SPI_BASE B100_REG_SLAVE(2)
-#define B100_REG_SPI_TXRX0 B100_REG_SPI_BASE + 0
-#define B100_REG_SPI_TXRX1 B100_REG_SPI_BASE + 4
-#define B100_REG_SPI_TXRX2 B100_REG_SPI_BASE + 8
-#define B100_REG_SPI_TXRX3 B100_REG_SPI_BASE + 12
-#define B100_REG_SPI_CTRL  B100_REG_SPI_BASE + 16
-#define B100_REG_SPI_DIV   B100_REG_SPI_BASE + 20
-#define B100_REG_SPI_SS    B100_REG_SPI_BASE + 24
 
 //spi slave constants
 #define B100_SPI_SS_AD9862    (1 << 2)
 #define B100_SPI_SS_TX_DB     (1 << 1)
 #define B100_SPI_SS_RX_DB     (1 << 0)
 
-//spi ctrl register bit definitions
-#define SPI_CTRL_ASS      (1<<13)
-#define SPI_CTRL_IE       (1<<12)
-#define SPI_CTRL_LSB      (1<<11)
-#define SPI_CTRL_TXNEG    (1<<10) //mosi edge, push on falling edge when 1
-#define SPI_CTRL_RXNEG    (1<< 9) //miso edge, latch on falling edge when 1
-#define SPI_CTRL_GO_BSY   (1<< 8)
-#define SPI_CTRL_CHAR_LEN_MASK 0x7F
-
 ////////////////////////////////////////////////
 // Slave 3 -- I2C Core
 
 #define B100_REG_I2C_BASE B100_REG_SLAVE(3)
-#define B100_REG_I2C_PRESCALER_LO B100_REG_I2C_BASE + 0
-#define B100_REG_I2C_PRESCALER_HI B100_REG_I2C_BASE + 2
-#define B100_REG_I2C_CTRL         B100_REG_I2C_BASE + 4
-#define B100_REG_I2C_DATA         B100_REG_I2C_BASE + 6
-#define B100_REG_I2C_CMD_STATUS   B100_REG_I2C_BASE + 8
-
-//and while we're here...
-
-//
-// STA, STO, RD, WR, and IACK bits are cleared automatically
-//
-
-#define	I2C_CTRL_EN	(1 << 7)	// core enable
-#define	I2C_CTRL_IE	(1 << 6)	// interrupt enable
-
-#define	I2C_CMD_START	(1 << 7)	// generate (repeated) start condition
-#define I2C_CMD_STOP	(1 << 6)	// generate stop condition
-#define	I2C_CMD_RD	(1 << 5)	// read from slave
-#define I2C_CMD_WR	(1 << 4)	// write to slave
-#define	I2C_CMD_NACK	(1 << 3)	// when a rcvr, send ACK (ACK=0) or NACK (ACK=1)
-#define I2C_CMD_RSVD_2	(1 << 2)	// reserved
-#define	I2C_CMD_RSVD_1	(1 << 1)	// reserved
-#define I2C_CMD_IACK	(1 << 0)	// set to clear pending interrupt
-
-#define I2C_ST_RXACK	(1 << 7)	// Received acknowledgement from slave (1 = NAK, 0 = ACK)
-#define	I2C_ST_BUSY	(1 << 6)	// 1 after START signal detected; 0 after STOP signal detected
-#define	I2C_ST_AL	(1 << 5)	// Arbitration lost.  1 when core lost arbitration
-#define	I2C_ST_RSVD_4	(1 << 4)	// reserved
-#define	I2C_ST_RSVD_3	(1 << 3)	// reserved
-#define	I2C_ST_RSVD_2	(1 << 2)	// reserved
-#define I2C_ST_TIP	(1 << 1)	// Transfer-in-progress
-#define	I2C_ST_IP	(1 << 0)	// Interrupt pending
 
 ////////////////////////////////////////////////
 // Slave 4 -- GPIO
@@ -190,95 +142,6 @@
 #define B100_REG_CLEAR_RX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
 #define B100_REG_CLEAR_TX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
 #define B100_REG_GLOBAL_RESET       B100_REG_SR_ADDR(B100_SR_GLOBAL_RESET)
-
-/////////////////////////////////////////////////
-// DSP RX Regs
-////////////////////////////////////////////////
-#define B100_REG_DSP_RX_HELPER(which, offset) ((which == 0)? \
-    (B100_REG_SR_ADDR(B100_SR_RX_DSP0 + offset)) : \
-    (B100_REG_SR_ADDR(B100_SR_RX_DSP1 + offset)))
-
-#define B100_REG_DSP_RX_FREQ(which)       B100_REG_DSP_RX_HELPER(which, 0)
-#define B100_REG_DSP_RX_DECIM(which)      B100_REG_DSP_RX_HELPER(which, 2)
-#define B100_REG_DSP_RX_MUX(which)        B100_REG_DSP_RX_HELPER(which, 3)
-
-#define B100_FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
-#define B100_FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
-
-///////////////////////////////////////////////////
-// RX CTRL regs
-///////////////////////////////////////////////////
-#define B100_REG_RX_CTRL_HELPER(which, offset) ((which == 0)? \
-    (B100_REG_SR_ADDR(B100_SR_RX_CTRL0 + offset)) : \
-    (B100_REG_SR_ADDR(B100_SR_RX_CTRL1 + offset)))
-
-#define B100_REG_RX_CTRL_STREAM_CMD(which)     B100_REG_RX_CTRL_HELPER(which, 0)
-#define B100_REG_RX_CTRL_TIME_SECS(which)      B100_REG_RX_CTRL_HELPER(which, 1)
-#define B100_REG_RX_CTRL_TIME_TICKS(which)     B100_REG_RX_CTRL_HELPER(which, 2)
-#define B100_REG_RX_CTRL_CLEAR(which)          B100_REG_RX_CTRL_HELPER(which, 3)
-#define B100_REG_RX_CTRL_VRT_HDR(which)        B100_REG_RX_CTRL_HELPER(which, 4)
-#define B100_REG_RX_CTRL_VRT_SID(which)        B100_REG_RX_CTRL_HELPER(which, 5)
-#define B100_REG_RX_CTRL_VRT_TLR(which)        B100_REG_RX_CTRL_HELPER(which, 6)
-#define B100_REG_RX_CTRL_NSAMPS_PP(which)      B100_REG_RX_CTRL_HELPER(which, 7)
-#define B100_REG_RX_CTRL_NCHANNELS(which)      B100_REG_RX_CTRL_HELPER(which, 8)
-
-/////////////////////////////////////////////////
-// RX FE
-////////////////////////////////////////////////
-#define B100_REG_RX_FE_SWAP_IQ             B100_REG_SR_ADDR(B100_SR_RX_FRONT + 0) //lower bit
-#define B100_REG_RX_FE_MAG_CORRECTION      B100_REG_SR_ADDR(B100_SR_RX_FRONT + 1) //18 bits
-#define B100_REG_RX_FE_PHASE_CORRECTION    B100_REG_SR_ADDR(B100_SR_RX_FRONT + 2) //18 bits
-#define B100_REG_RX_FE_OFFSET_I            B100_REG_SR_ADDR(B100_SR_RX_FRONT + 3) //18 bits
-#define B100_REG_RX_FE_OFFSET_Q            B100_REG_SR_ADDR(B100_SR_RX_FRONT + 4) //18 bits
-
-/////////////////////////////////////////////////
-// DSP TX Regs
-////////////////////////////////////////////////
-#define B100_REG_DSP_TX_FREQ          B100_REG_SR_ADDR(B100_SR_TX_DSP + 0)
-#define B100_REG_DSP_TX_SCALE_IQ      B100_REG_SR_ADDR(B100_SR_TX_DSP + 1)
-#define B100_REG_DSP_TX_INTERP_RATE   B100_REG_SR_ADDR(B100_SR_TX_DSP + 2)
-
-///////////////////////////////////////////////////
-// TX CTRL regs
-///////////////////////////////////////////////////
-#define B100_REG_TX_CTRL_NUM_CHAN       B100_REG_SR_ADDR(B100_SR_TX_CTRL + 0)
-#define B100_REG_TX_CTRL_CLEAR_STATE    B100_REG_SR_ADDR(B100_SR_TX_CTRL + 1)
-#define B100_REG_TX_CTRL_REPORT_SID     B100_REG_SR_ADDR(B100_SR_TX_CTRL + 2)
-#define B100_REG_TX_CTRL_POLICY         B100_REG_SR_ADDR(B100_SR_TX_CTRL + 3)
-#define B100_REG_TX_CTRL_CYCLES_PER_UP  B100_REG_SR_ADDR(B100_SR_TX_CTRL + 4)
-#define B100_REG_TX_CTRL_PACKETS_PER_UP B100_REG_SR_ADDR(B100_SR_TX_CTRL + 5)
-
-#define B100_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
-#define B100_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
-#define B100_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
-
-/////////////////////////////////////////////////
-// TX FE
-////////////////////////////////////////////////
-#define B100_REG_TX_FE_DC_OFFSET_I         B100_REG_SR_ADDR(B100_SR_TX_FRONT + 0) //24 bits
-#define B100_REG_TX_FE_DC_OFFSET_Q         B100_REG_SR_ADDR(B100_SR_TX_FRONT + 1) //24 bits
-#define B100_REG_TX_FE_MAC_CORRECTION      B100_REG_SR_ADDR(B100_SR_TX_FRONT + 2) //18 bits
-#define B100_REG_TX_FE_PHASE_CORRECTION    B100_REG_SR_ADDR(B100_SR_TX_FRONT + 3) //18 bits
-#define B100_REG_TX_FE_MUX                 B100_REG_SR_ADDR(B100_SR_TX_FRONT + 4) //8 bits (std output = 0x10, reversed = 0x01)
-
-/////////////////////////////////////////////////
-// VITA49 64 bit time (write only)
-////////////////////////////////////////////////
-#define B100_REG_TIME64_SECS      B100_REG_SR_ADDR(B100_SR_TIME64 + 0)
-#define B100_REG_TIME64_TICKS     B100_REG_SR_ADDR(B100_SR_TIME64 + 1)
-#define B100_REG_TIME64_FLAGS     B100_REG_SR_ADDR(B100_SR_TIME64 + 2)
-#define B100_REG_TIME64_IMM       B100_REG_SR_ADDR(B100_SR_TIME64 + 3)
-#define B100_REG_TIME64_TPS       B100_REG_SR_ADDR(B100_SR_TIME64 + 4)
-#define B100_REG_TIME64_MIMO_SYNC B100_REG_SR_ADDR(B100_SR_TIME64 + 5)
-
-//pps flags (see above)
-#define B100_FLAG_TIME64_PPS_NEGEDGE (0 << 0)
-#define B100_FLAG_TIME64_PPS_POSEDGE (1 << 0)
-#define B100_FLAG_TIME64_PPS_SMA     (0 << 1)
-#define B100_FLAG_TIME64_PPS_MIMO    (1 << 1)
-
-#define B100_FLAG_TIME64_LATCH_NOW 1
-#define B100_FLAG_TIME64_LATCH_NEXT_PPS 0
 
 #endif
 

@@ -90,25 +90,6 @@
 #define U2_FLAG_MISC_CTRL_ADC_OFF 0x00
 
 /////////////////////////////////////////////////
-// VITA49 64 bit time (write only)
-////////////////////////////////////////////////
-#define U2_REG_TIME64_SECS U2_REG_SR_ADDR(SR_TIME64 + 0)
-#define U2_REG_TIME64_TICKS U2_REG_SR_ADDR(SR_TIME64 + 1)
-#define U2_REG_TIME64_FLAGS U2_REG_SR_ADDR(SR_TIME64 + 2)
-#define U2_REG_TIME64_IMM U2_REG_SR_ADDR(SR_TIME64 + 3)
-#define U2_REG_TIME64_TPS U2_REG_SR_ADDR(SR_TIME64 + 4)
-#define U2_REG_TIME64_MIMO_SYNC U2_REG_SR_ADDR(SR_TIME64 + 5)
-
-//pps flags (see above)
-#define U2_FLAG_TIME64_PPS_NEGEDGE (0 << 0)
-#define U2_FLAG_TIME64_PPS_POSEDGE (1 << 0)
-#define U2_FLAG_TIME64_PPS_SMA     (0 << 1)
-#define U2_FLAG_TIME64_PPS_MIMO    (1 << 1)
-
-#define U2_FLAG_TIME64_LATCH_NOW 1
-#define U2_FLAG_TIME64_LATCH_NEXT_PPS 0
-
-/////////////////////////////////////////////////
 // Readback regs
 ////////////////////////////////////////////////
 #define U2_REG_STATUS READBACK_BASE + 4*8
@@ -118,45 +99,6 @@
 #define U2_REG_IRQ_RB READBACK_BASE + 4*13
 #define U2_REG_TIME64_SECS_RB_PPS READBACK_BASE + 4*14
 #define U2_REG_TIME64_TICKS_RB_PPS READBACK_BASE + 4*15
-
-/////////////////////////////////////////////////
-// RX FE
-////////////////////////////////////////////////
-#define U2_REG_RX_FE_SWAP_IQ             U2_REG_SR_ADDR(SR_RX_FRONT + 0) //lower bit
-#define U2_REG_RX_FE_MAG_CORRECTION      U2_REG_SR_ADDR(SR_RX_FRONT + 1) //18 bits
-#define U2_REG_RX_FE_PHASE_CORRECTION    U2_REG_SR_ADDR(SR_RX_FRONT + 2) //18 bits
-#define U2_REG_RX_FE_OFFSET_I            U2_REG_SR_ADDR(SR_RX_FRONT + 3) //18 bits
-#define U2_REG_RX_FE_OFFSET_Q            U2_REG_SR_ADDR(SR_RX_FRONT + 4) //18 bits
-
-/////////////////////////////////////////////////
-// TX FE
-////////////////////////////////////////////////
-#define U2_REG_TX_FE_DC_OFFSET_I         U2_REG_SR_ADDR(SR_TX_FRONT + 0) //24 bits
-#define U2_REG_TX_FE_DC_OFFSET_Q         U2_REG_SR_ADDR(SR_TX_FRONT + 1) //24 bits
-#define U2_REG_TX_FE_MAC_CORRECTION      U2_REG_SR_ADDR(SR_TX_FRONT + 2) //18 bits
-#define U2_REG_TX_FE_PHASE_CORRECTION    U2_REG_SR_ADDR(SR_TX_FRONT + 3) //18 bits
-#define U2_REG_TX_FE_MUX                 U2_REG_SR_ADDR(SR_TX_FRONT + 4) //8 bits (std output = 0x10, reversed = 0x01)
-
-/////////////////////////////////////////////////
-// DSP TX Regs
-////////////////////////////////////////////////
-#define U2_REG_DSP_TX_FREQ U2_REG_SR_ADDR(SR_TX_DSP + 0)
-#define U2_REG_DSP_TX_SCALE_IQ U2_REG_SR_ADDR(SR_TX_DSP + 1)
-#define U2_REG_DSP_TX_INTERP_RATE U2_REG_SR_ADDR(SR_TX_DSP + 2)
-
-/////////////////////////////////////////////////
-// DSP RX Regs
-////////////////////////////////////////////////
-#define U2_REG_DSP_RX_HELPER(which, offset) ((which == 0)? \
-    (U2_REG_SR_ADDR(SR_RX_DSP0 + offset)) : \
-    (U2_REG_SR_ADDR(SR_RX_DSP1 + offset)))
-
-#define U2_REG_DSP_RX_FREQ(which)       U2_REG_DSP_RX_HELPER(which, 0)
-#define U2_REG_DSP_RX_DECIM(which)      U2_REG_DSP_RX_HELPER(which, 2)
-#define U2_REG_DSP_RX_MUX(which)        U2_REG_DSP_RX_HELPER(which, 3)
-
-#define U2_FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
-#define U2_FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 ////////////////////////////////////////////////
 // GPIO
@@ -183,39 +125,5 @@
 #define U2_REG_ATR_INRX_RXSIDE ATR_BASE + 10
 #define U2_REG_ATR_FULL_TXSIDE ATR_BASE + 12
 #define U2_REG_ATR_FULL_RXSIDE ATR_BASE + 14
-
-///////////////////////////////////////////////////
-// RX CTRL regs
-///////////////////////////////////////////////////
-#define U2_REG_RX_CTRL_HELPER(which, offset) ((which == 0)? \
-    (U2_REG_SR_ADDR(SR_RX_CTRL0 + offset)) : \
-    (U2_REG_SR_ADDR(SR_RX_CTRL1 + offset)))
-
-#define U2_REG_RX_CTRL_STREAM_CMD(which)     U2_REG_RX_CTRL_HELPER(which, 0)
-#define U2_REG_RX_CTRL_TIME_SECS(which)      U2_REG_RX_CTRL_HELPER(which, 1)
-#define U2_REG_RX_CTRL_TIME_TICKS(which)     U2_REG_RX_CTRL_HELPER(which, 2)
-#define U2_REG_RX_CTRL_CLEAR(which)          U2_REG_RX_CTRL_HELPER(which, 3)
-#define U2_REG_RX_CTRL_VRT_HDR(which)        U2_REG_RX_CTRL_HELPER(which, 4)
-#define U2_REG_RX_CTRL_VRT_SID(which)        U2_REG_RX_CTRL_HELPER(which, 5)
-#define U2_REG_RX_CTRL_VRT_TLR(which)        U2_REG_RX_CTRL_HELPER(which, 6)
-#define U2_REG_RX_CTRL_NSAMPS_PP(which)      U2_REG_RX_CTRL_HELPER(which, 7)
-#define U2_REG_RX_CTRL_NCHANNELS(which)      U2_REG_RX_CTRL_HELPER(which, 8)
-
-///////////////////////////////////////////////////
-// TX CTRL regs
-///////////////////////////////////////////////////
-#define U2_REG_TX_CTRL_NUM_CHAN U2_REG_SR_ADDR(SR_TX_CTRL + 0)
-#define U2_REG_TX_CTRL_CLEAR_STATE U2_REG_SR_ADDR(SR_TX_CTRL + 1)
-#define U2_REG_TX_CTRL_REPORT_SID U2_REG_SR_ADDR(SR_TX_CTRL + 2)
-#define U2_REG_TX_CTRL_POLICY U2_REG_SR_ADDR(SR_TX_CTRL + 3)
-#define U2_REG_TX_CTRL_CYCLES_PER_UP U2_REG_SR_ADDR(SR_TX_CTRL + 4)
-#define U2_REG_TX_CTRL_PACKETS_PER_UP U2_REG_SR_ADDR(SR_TX_CTRL + 5)
-
-#define U2_FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
-#define U2_FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
-#define U2_FLAG_TX_CTRL_POLICY_NEXT_BURST    (0x1 << 2)
-
-//enable flag for registers: cycles and packets per update packet
-#define U2_FLAG_TX_CTRL_UP_ENB              (1ul << 31)
 
 #endif /* INCLUDED_USRP2_REGS_HPP */
