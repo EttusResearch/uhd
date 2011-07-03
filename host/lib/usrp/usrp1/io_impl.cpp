@@ -28,6 +28,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
@@ -123,8 +124,6 @@ static void usrp1_bs_vrt_unpacker(
 struct usrp1_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport):
         data_transport(data_transport),
-        underflow_poll_samp_count(0),
-        overflow_poll_samp_count(0),
         curr_buff(offset_send_buffer(data_transport->get_send_buff())),
         omsb(boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, _1, _2, _3))
     {
@@ -132,6 +131,8 @@ struct usrp1_impl::io_impl{
     }
 
     ~io_impl(void){
+        vandal_tribe.interrupt_all();
+        vandal_tribe.join_all();
         UHD_SAFE_CALL(flush_send_buff();)
     }
 
@@ -140,12 +141,6 @@ struct usrp1_impl::io_impl{
     //state management for the vrt packet handler code
     sph::recv_packet_handler recv_handler;
     sph::send_packet_handler send_handler;
-
-    //state management for overflow and underflow
-    size_t underflow_poll_samp_count;
-    size_t overflow_poll_samp_count;
-    size_t rx_samps_per_poll_interval;
-    size_t tx_samps_per_poll_interval;
 
     //wrapper around the actual send buffer interface
     //all of this to ensure only aligned lengths are committed
@@ -163,6 +158,9 @@ struct usrp1_impl::io_impl{
         //make a new managed buffer with the offset buffs
         return omsb.get_new(curr_buff, next_buff);
     }
+
+    boost::thread_group vandal_tribe;
+    boost::system_time last_send_time;
 };
 
 /*!
@@ -231,6 +229,14 @@ void usrp1_impl::io_init(void){
 
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
 
+    //create a new vandal thread to poll xerflow conditions
+    boost::barrier spawn_barrier(2);
+    _io_impl->vandal_tribe.create_thread(boost::bind(
+        &usrp1_impl::vandal_conquest_loop,
+        this, boost::ref(spawn_barrier)
+    ));
+    spawn_barrier.wait();
+
     //init some handler stuff
     _io_impl->recv_handler.set_tick_rate(_master_clock_rate);
     _io_impl->recv_handler.set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
@@ -243,16 +249,82 @@ void usrp1_impl::io_init(void){
         &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
     ));
 
-    this->enable_tx(true); //always enabled
+    //init as disabled, then call the real function (uses restore)
+    this->enable_rx(false);
+    this->enable_tx(false);
     rx_stream_on_off(false);
+    tx_stream_on_off(false);
     _io_impl->flush_send_buff();
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){
-    this->enable_rx(enb);
+    this->restore_rx(enb);
     //drain any junk in the receive transport after stop streaming command
     while(not enb and _data_transport->get_recv_buff().get() != NULL){
         /* NOP */
+    }
+}
+
+void usrp1_impl::tx_stream_on_off(bool enb){
+    _io_impl->last_send_time = boost::get_system_time();
+    if (_tx_enabled and not enb) _io_impl->flush_send_buff();
+    this->restore_tx(enb);
+}
+
+/*!
+ * Casually poll the overflow and underflow registers.
+ * On an underflow, push an async message into the queue and print.
+ * On an overflow, interleave an inline message into recv and print.
+ * This procedure creates "soft" inline and async user messages.
+ */
+void usrp1_impl::vandal_conquest_loop(boost::barrier &spawn_barrier){
+    spawn_barrier.wait();
+
+    //initialize the async metadata
+    async_metadata_t async_metadata;
+    async_metadata.channel = 0;
+    async_metadata.has_time_spec = true;
+    async_metadata.event_code = async_metadata_t::EVENT_CODE_UNDERFLOW;
+
+    //initialize the inline metadata
+    rx_metadata_t inline_metadata;
+    inline_metadata.has_time_spec = true;
+    inline_metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
+
+    //start the polling loop...
+    try{ while (not boost::this_thread::interruption_requested()){
+        boost::uint8_t underflow = 0, overflow = 0;
+
+        //shutoff transmit if it has been too long since send() was called
+        if (_tx_enabled and (boost::get_system_time() - _io_impl->last_send_time) > boost::posix_time::milliseconds(100)){
+            this->tx_stream_on_off(false);
+        }
+
+        //always poll regardless of enabled so we can clear the conditions
+        _fx2_ctrl->usrp_control_read(
+            VRQ_GET_STATUS, 0, GS_TX_UNDERRUN, &underflow, sizeof(underflow)
+        );
+        _fx2_ctrl->usrp_control_read(
+            VRQ_GET_STATUS, 0, GS_RX_OVERRUN, &overflow, sizeof(overflow)
+        );
+
+        //handle message generation for xerflow conditions
+        if (_tx_enabled and underflow){
+            async_metadata.time_spec = _soft_time_ctrl->get_time();
+            _soft_time_ctrl->get_async_queue().push_with_pop_on_full(async_metadata);
+            UHD_MSG(fastpath) << "U";
+        }
+        if (_rx_enabled and overflow){
+            inline_metadata.time_spec = _soft_time_ctrl->get_time();
+            _soft_time_ctrl->get_inline_queue().push_with_pop_on_full(inline_metadata);
+            UHD_MSG(fastpath) << "O";
+        }
+
+        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+    }}
+    catch(const boost::thread_interrupted &){} //normal exit condition
+    catch(const std::exception &e){
+        UHD_MSG(error) << "The vandal caught an unexpected exception " << e.what() << std::endl;
     }
 }
 
@@ -260,6 +332,8 @@ void usrp1_impl::rx_stream_on_off(bool enb){
  * Properties callback methods below
  **********************************************************************/
 void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    boost::mutex::scoped_lock lock = _io_impl->recv_handler.get_scoped_lock();
+
     //sanity checking
     validate_subdev_spec(_tree, spec, "rx");
 
@@ -281,6 +355,8 @@ void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 }
 
 void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+    boost::mutex::scoped_lock lock = _io_impl->send_handler.get_scoped_lock();
+
     //sanity checking
     validate_subdev_spec(_tree, spec, "tx");
 
@@ -305,13 +381,12 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 }
 
 double usrp1_impl::update_rx_samp_rate(const double samp_rate){
+    boost::mutex::scoped_lock lock = _io_impl->recv_handler.get_scoped_lock();
+
     size_t rate = boost::math::iround(_master_clock_rate / samp_rate);
 
     //clip the rate to something in range:
     rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
-
-    //TODO Poll every 100ms. Make it selectable?
-    _io_impl->rx_samps_per_poll_interval = size_t(0.1 * _master_clock_rate / rate);
 
     bool s = this->disable_rx();
     _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
@@ -322,13 +397,12 @@ double usrp1_impl::update_rx_samp_rate(const double samp_rate){
 }
 
 double usrp1_impl::update_tx_samp_rate(const double samp_rate){
+    boost::mutex::scoped_lock lock = _io_impl->send_handler.get_scoped_lock();
+
     size_t rate = boost::math::iround(_master_clock_rate / samp_rate);
 
     //clip the rate to something in range:
     rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
-
-    //TODO Poll every 100ms. Make it selectable? 
-    _io_impl->tx_samps_per_poll_interval = size_t(0.1 * _master_clock_rate / rate);
 
     bool s = this->disable_tx();
     _iface->poke32(FR_INTERP_RATE, rate/2 - 1);
@@ -367,10 +441,11 @@ double usrp1_impl::update_tx_dsp_freq(const size_t dspno, const double freq){
 /***********************************************************************
  * Async Data
  **********************************************************************/
-bool usrp1_impl::recv_async_msg(uhd::async_metadata_t &, double timeout){
-    //dummy fill-in for the recv_async_msg
-    boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
-    return false;
+bool usrp1_impl::recv_async_msg(
+    async_metadata_t &async_metadata, double timeout
+){
+    boost::this_thread::disable_interruption di; //disable because the wait can throw
+    return _soft_time_ctrl->get_async_queue().pop_with_timed_wait(async_metadata, timeout);
 }
 
 /***********************************************************************
@@ -390,29 +465,23 @@ size_t usrp1_impl::send(
 ){
     if (_soft_time_ctrl->send_pre(metadata, timeout)) return 0;
 
+    this->tx_stream_on_off(true); //always enable (it will do the right thing)
     size_t num_samps_sent = _io_impl->send_handler.send(
         buffs, nsamps_per_buff,
         metadata, io_type,
         send_mode, timeout
     );
 
-    //handle eob flag (commit the buffer, disable the DACs)
+    //handle eob flag (commit the buffer, /*disable the DACs*/)
     //check num samps sent to avoid flush on incomplete/timeout
     if (metadata.end_of_burst and num_samps_sent == nsamps_per_buff){
-        _io_impl->flush_send_buff();
-    }
-
-    //handle the polling for underflow conditions
-    _io_impl->underflow_poll_samp_count += num_samps_sent;
-    if (_io_impl->underflow_poll_samp_count >= _io_impl->tx_samps_per_poll_interval){
-        _io_impl->underflow_poll_samp_count = 0; //reset count
-        boost::uint8_t underflow = 0;
-        int ret = _fx2_ctrl->usrp_control_read(
-            VRQ_GET_STATUS, 0, GS_TX_UNDERRUN,
-            &underflow, sizeof(underflow)
-        );
-        if (ret < 0)        UHD_MSG(error) << "USRP: underflow check failed" << std::endl;
-        else if (underflow) UHD_MSG(fastpath) << "U";
+        async_metadata_t metadata;
+        metadata.channel = 0;
+        metadata.has_time_spec = true;
+        metadata.time_spec = _soft_time_ctrl->get_time();
+        metadata.event_code = async_metadata_t::EVENT_CODE_BURST_ACK;
+        _soft_time_ctrl->get_async_queue().push_with_pop_on_full(metadata);
+        this->tx_stream_on_off(false);
     }
 
     return num_samps_sent;
@@ -433,6 +502,9 @@ size_t usrp1_impl::recv(
     rx_metadata_t &metadata, const io_type_t &io_type,
     recv_mode_t recv_mode, double timeout
 ){
+    //interleave a "soft" inline message into the receive stream:
+    if (_soft_time_ctrl->get_inline_queue().pop_with_haste(metadata)) return 0;
+
     size_t num_samps_recvd = _io_impl->recv_handler.recv(
         buffs, nsamps_per_buff,
         metadata, io_type,
@@ -440,19 +512,6 @@ size_t usrp1_impl::recv(
     );
 
     _soft_time_ctrl->recv_post(metadata, num_samps_recvd);
-
-    //handle the polling for overflow conditions
-    _io_impl->overflow_poll_samp_count += num_samps_recvd;
-    if (_io_impl->overflow_poll_samp_count >= _io_impl->rx_samps_per_poll_interval){
-        _io_impl->overflow_poll_samp_count = 0; //reset count
-        boost::uint8_t overflow = 0;
-        int ret = _fx2_ctrl->usrp_control_read(
-            VRQ_GET_STATUS, 0, GS_RX_OVERRUN,
-            &overflow, sizeof(overflow)
-        );
-        if (ret < 0)       UHD_MSG(error) << "USRP: overflow check failed" << std::endl;
-        else if (overflow) UHD_MSG(fastpath) << "O";
-    }
 
     return num_samps_recvd;
 }

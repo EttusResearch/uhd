@@ -74,6 +74,10 @@ List of emulated features
 * Receiving at a specific time
 * Receiving a specific number of samples
 * End of burst flags for transmit/receive
+* Notification on late stream command
+* Notification on late transmit packet
+* Notification on underflow or overflow
+* Notification on broken chain error
 
 **Note:**
 These emulated features rely on the host system's clock for timed operations,
@@ -82,10 +86,6 @@ and therefore may not have sufficient precision for the application.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 List of missing features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Notification on late stream command
-* Notification on late transmit packet
-* Notification on broken chain error
-* Notification on underflow or overflow
 * Start of burst flags for transmit/receive
 
 ------------------------------------------------------------------------

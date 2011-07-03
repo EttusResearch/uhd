@@ -17,6 +17,7 @@
 
 #include "libusb1_base.hpp"
 #include <uhd/transport/usb_control.hpp>
+#include <boost/thread/mutex.hpp>
 
 using namespace uhd::transport;
 
@@ -40,6 +41,7 @@ public:
                   unsigned char *buff,
                   boost::uint16_t length
     ){
+        boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),
                                        request_type,
                                        request,
@@ -52,6 +54,7 @@ public:
 
 private:
     libusb::device_handle::sptr _handle;
+    boost::mutex _mutex;
 };
 
 /***********************************************************************

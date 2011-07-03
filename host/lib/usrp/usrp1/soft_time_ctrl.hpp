@@ -21,6 +21,7 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/transport/bounded_buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -45,8 +46,6 @@ public:
      * \return a new soft time control object
      */
     static sptr make(const cb_fcn_type &stream_on_off);
-        //TODO pass in the error queue for async msgs
-        //TODO pass in the queue for inline msgs
 
     //! Set the current time
     virtual void set_time(const time_spec_t &time) = 0;
@@ -62,6 +61,12 @@ public:
 
     //! Issue a stream command to receive
     virtual void issue_stream_cmd(const stream_cmd_t &cmd) = 0;
+
+    //! Get access to a buffer of async metadata
+    virtual transport::bounded_buffer<async_metadata_t> &get_async_queue(void) = 0;
+
+    //! Get access to a buffer of inline metadata
+    virtual transport::bounded_buffer<rx_metadata_t> &get_inline_queue(void) = 0;
 };
 
 }} //namespace

@@ -294,8 +294,8 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
             .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, _1));
         _tree->create<double>(tx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, _1));
-        _tree->create<meta_range_t>(tx_dsp_path / "freq/range")
-            .set(meta_range_t(-_master_clock_rate/2, +_master_clock_rate/2));
+        _tree->create<meta_range_t>(tx_dsp_path / "freq/range") //magic scalar comes from codec control:
+            .set(meta_range_t(-_master_clock_rate*0.6875, +_master_clock_rate*0.6875));
     }
 
     ////////////////////////////////////////////////////////////////////

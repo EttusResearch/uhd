@@ -51,6 +51,11 @@ struct e100_impl::io_impl{
         false_alarm(0), async_msg_fifo(100/*messages deep*/)
     { /* NOP */ }
 
+    ~io_impl(void){
+        recv_pirate_crew.interrupt_all();
+        recv_pirate_crew.join_all();
+    }
+
     double tick_rate; //set by update tick rate method
     e100_ctrl::sptr iface; //so handle irq can peek and poke
     void handle_irq(void);
