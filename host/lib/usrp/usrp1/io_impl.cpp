@@ -383,10 +383,9 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 double usrp1_impl::update_rx_samp_rate(const double samp_rate){
     boost::mutex::scoped_lock lock = _io_impl->recv_handler.get_scoped_lock();
 
-    size_t rate = boost::math::iround(_master_clock_rate / samp_rate);
-
-    //clip the rate to something in range:
-    rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
+    const size_t rate = uhd::clip<size_t>(
+        boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
+    );
 
     bool s = this->disable_rx();
     _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
@@ -399,10 +398,9 @@ double usrp1_impl::update_rx_samp_rate(const double samp_rate){
 double usrp1_impl::update_tx_samp_rate(const double samp_rate){
     boost::mutex::scoped_lock lock = _io_impl->send_handler.get_scoped_lock();
 
-    size_t rate = boost::math::iround(_master_clock_rate / samp_rate);
-
-    //clip the rate to something in range:
-    rate = std::min<size_t>(std::max<size_t>(rate, 4), 256);
+    const size_t rate = uhd::clip<size_t>(
+        boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
+    );
 
     bool s = this->disable_tx();
     _iface->poke32(FR_INTERP_RATE, rate/2 - 1);

@@ -44,6 +44,8 @@ public:
 
     virtual void set_tick_rate(const double rate) = 0;
 
+    virtual void set_link_rate(const double rate) = 0;
+
     virtual double set_host_rate(const double rate) = 0;
 
     virtual uhd::meta_range_t get_freq_range(void) = 0;

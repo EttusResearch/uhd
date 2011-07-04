@@ -445,6 +445,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mbc[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
         ));
         for (size_t dspno = 0; dspno < _mbc[mb].rx_dsps.size(); dspno++){
+            _mbc[mb].rx_dsps[dspno]->set_link_rate(USRP2_LINK_RATE_BPS);
             _tree->access<double>(mb_path / "tick_rate")
                 .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _mbc[mb].rx_dsps[dspno], _1));
             //This is a hack/fix for the lingering packet problem.
@@ -469,6 +470,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].tx_dsp = tx_dsp_core_200::make(
             _mbc[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );
+        _mbc[mb].tx_dsp->set_link_rate(USRP2_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _mbc[mb].tx_dsp, _1));
         _tree->create<double>(mb_path / "tx_dsps/0/rate/value")

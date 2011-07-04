@@ -42,6 +42,7 @@
 
 uhd::transport::zero_copy_if::sptr e100_make_mmap_zero_copy(e100_ctrl::sptr iface);
 
+static const double          E100_LINK_RATE_BPS = 256e6/8;
 static const std::string     E100_I2C_DEV_NODE = "/dev/i2c-3";
 static const std::string     E100_FPGA_FILE_NAME = "usrp_e100_fpga_v2.bin";
 static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x05;

@@ -43,6 +43,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 
+static const double USRP2_LINK_RATE_BPS = 1000e6/8;
 static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
 static const double mimo_clock_delay_usrp_n2xx = 3.55e-9;
 static const size_t mimo_clock_sync_delay_cycles = 137;

@@ -18,6 +18,7 @@
 #include "rx_dsp_core_200.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
@@ -122,8 +123,14 @@ public:
         _tick_rate = rate;
     }
 
+    void set_link_rate(const double rate){
+        _link_rate = rate/sizeof(boost::uint32_t); //in samps/s
+    }
+
     double set_host_rate(const double rate){
-        const size_t decim_rate = boost::math::iround(_tick_rate/rate);
+        const size_t decim_rate = uhd::clip<size_t>(
+            boost::math::iround(_tick_rate/rate), size_t(std::ceil(_tick_rate/_link_rate)), 512
+        );
         size_t decim = decim_rate;
 
         //determine which half-band filters are activated
@@ -172,7 +179,7 @@ public:
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;
-    double _tick_rate;
+    double _tick_rate, _link_rate;
     bool _continuous_streaming;
 };
 

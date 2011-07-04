@@ -232,6 +232,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         _fpga_ctrl, E100_REG_SR_ADDR(UE_SR_RX_DSP1), E100_REG_SR_ADDR(UE_SR_RX_CTRL1), E100_RX_SID_BASE + 1
     ));
     for (size_t dspno = 0; dspno < _rx_dsps.size(); dspno++){
+        _rx_dsps[dspno]->set_link_rate(E100_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
         property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
@@ -252,6 +253,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tx_dsp = tx_dsp_core_200::make(
         _fpga_ctrl, E100_REG_SR_ADDR(UE_SR_TX_DSP), E100_REG_SR_ADDR(UE_SR_TX_CTRL), E100_TX_ASYNC_SID
     );
+    _tx_dsp->set_link_rate(E100_LINK_RATE_BPS);
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
     _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
