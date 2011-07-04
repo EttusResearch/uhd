@@ -313,33 +313,29 @@ private:
         info.time = time_spec_t(time_t(info.ifpi.tsi), size_t(info.ifpi.tsf), _tick_rate); //assumes has_tsi and has_tsf are true
         info.copy_buff = reinterpret_cast<const char *>(info.vrt_hdr + info.ifpi.num_header_words32);
 
-        //store the packet count for the next iteration
-        #ifndef SRPH_DONT_CHECK_SEQUENCE
-        const size_t expected_packet_count = _props[index].packet_count;
-        _props[index].packet_count = (info.ifpi.packet_count + 1)%16;
-        #endif
-
         //--------------------------------------------------------------
         //-- Determine return conditions:
         //-- The order of these checks is HOLY.
         //--------------------------------------------------------------
 
-        //1) check for out of order timestamps
-        if (info.ifpi.has_tsi and info.ifpi.has_tsf and prev_buffer_info[index].time > info.time){
-            return PACKET_TIMESTAMP_ERROR;
-        }
-
-        //2) check for inline IF message packets
+        //1) check for inline IF message packets
         if (info.ifpi.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
             return PACKET_INLINE_MESSAGE;
         }
 
-        //3) check for sequence errors
+        //2) check for sequence errors
         #ifndef SRPH_DONT_CHECK_SEQUENCE
+        const size_t expected_packet_count = _props[index].packet_count;
+        _props[index].packet_count = (info.ifpi.packet_count + 1)%16;
         if (expected_packet_count != info.ifpi.packet_count){
             return PACKET_SEQUENCE_ERROR;
         }
         #endif
+
+        //3) check for out of order timestamps
+        if (info.ifpi.has_tsi and info.ifpi.has_tsf and prev_buffer_info[index].time > info.time){
+            return PACKET_TIMESTAMP_ERROR;
+        }
 
         //4) otherwise the packet is normal!
         return PACKET_IF_DATA;
@@ -446,8 +442,10 @@ private:
                 curr_info.metadata.start_of_burst = false;
                 curr_info.metadata.end_of_burst = false;
                 curr_info.metadata.error_code = rx_metadata_t::error_code_t(get_context_code(next_info[index].vrt_hdr, next_info[index].ifpi));
-                if (curr_info.metadata.error_code == rx_metadata_t::ERROR_CODE_OVERFLOW) _props[index].handle_overflow();
-                UHD_MSG(fastpath) << "O";
+                if (curr_info.metadata.error_code == rx_metadata_t::ERROR_CODE_OVERFLOW){
+                    _props[index].handle_overflow();
+                    UHD_MSG(fastpath) << "O";
+                }
                 return;
 
             case PACKET_TIMEOUT_ERROR:

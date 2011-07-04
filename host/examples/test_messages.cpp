@@ -18,6 +18,7 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/program_options.hpp>
@@ -29,6 +30,107 @@
 #include <iostream>
 
 namespace po = boost::program_options;
+
+/*!
+ * Test the late command message:
+ *    Issue a stream command with a time that is in the past.
+ *    We expect to get an inline late command message.
+ */
+bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp){
+    std::cout << "Test late command message... " << std::flush;
+
+    usrp->set_time_now(uhd::time_spec_t(200.0)); //set time
+
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = usrp->get_device()->get_max_recv_samps_per_packet();
+    stream_cmd.stream_now = false;
+    stream_cmd.time_spec = uhd::time_spec_t(100.0); //time in the past
+    usrp->issue_stream_cmd(stream_cmd);
+
+    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    uhd::rx_metadata_t md;
+
+    const size_t nsamps = usrp->get_device()->recv(
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
+        uhd::device::RECV_MODE_FULL_BUFF
+    );
+
+    switch(md.error_code){
+    case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
+        std::cout << boost::format(
+            "success:\n"
+            "    Got error code late command message.\n"
+        ) << std::endl;
+        return true;
+
+    case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
+        std::cout << boost::format(
+            "failed:\n"
+            "    Inline message recv timed out.\n"
+        ) << std::endl;
+        return false;
+
+    default:
+        std::cout << boost::format(
+            "failed:\n"
+            "    Got unexpected error code 0x%x, nsamps %u.\n"
+        ) % md.error_code % nsamps << std::endl;
+        return false;
+    }
+}
+
+/*!
+ * Test the broken chain message:
+ *    Issue a stream command with num samps and more.
+ *    We expect to get an inline broken chain message.
+ */
+bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp){
+    std::cout << "Test broken chain message... " << std::flush;
+
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);
+    stream_cmd.stream_now = true;
+    stream_cmd.num_samps = usrp->get_device()->get_max_recv_samps_per_packet();
+    usrp->issue_stream_cmd(stream_cmd);
+
+    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    uhd::rx_metadata_t md;
+
+    usrp->get_device()->recv( //once for the requested samples
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
+        uhd::device::RECV_MODE_FULL_BUFF
+    );
+
+    usrp->get_device()->recv( //again for the inline message
+        &buff.front(), buff.size(), md,
+        uhd::io_type_t::COMPLEX_FLOAT32,
+        uhd::device::RECV_MODE_FULL_BUFF
+    );
+
+    switch(md.error_code){
+    case uhd::rx_metadata_t::ERROR_CODE_BROKEN_CHAIN:
+        std::cout << boost::format(
+            "success:\n"
+            "    Got error code broken chain message.\n"
+        ) << std::endl;
+        return true;
+
+    case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
+        std::cout << boost::format(
+            "failed:\n"
+            "    Inline message recv timed out.\n"
+        ) << std::endl;
+        return false;
+
+    default:
+        std::cout << boost::format(
+            "failed:\n"
+            "    Got unexpected error code 0x%x.\n"
+        ) % md.error_code << std::endl;
+        return false;
+    }
+}
 
 /*!
  * Test the burst ack message:
@@ -169,9 +271,22 @@ bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp){
     }
 }
 
-void flush_async_md(uhd::usrp::multi_usrp::sptr usrp){
+void flush_async(uhd::usrp::multi_usrp::sptr usrp){
     uhd::async_metadata_t async_md;
-    while (usrp->get_device()->recv_async_msg(async_md, 1.0)){}
+    while (usrp->get_device()->recv_async_msg(async_md)){}
+}
+
+void flush_recv(uhd::usrp::multi_usrp::sptr usrp){
+    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    uhd::rx_metadata_t md;
+
+    do{
+        usrp->get_device()->recv(
+            &buff.front(), buff.size(), md,
+            uhd::io_type_t::COMPLEX_FLOAT32,
+            uhd::device::RECV_MODE_FULL_BUFF
+        );
+    } while (md.error_code != uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -179,7 +294,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
-    double rate;
     size_t ntests;
 
     //setup the program options
@@ -187,8 +301,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args",   po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("rate",   po::value<double>(&rate)->default_value(1.5e6),   "rate of outgoing samples")
-        ("ntests", po::value<size_t>(&ntests)->default_value(10),    "number of tests to run")
+        ("ntests", po::value<size_t>(&ntests)->default_value(50),    "number of tests to run")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -196,7 +309,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("UHD Test Async Messages %s") % desc << std::endl;
+        std::cout << boost::format("UHD Test Messages %s") % desc << std::endl;
         return ~0;
     }
 
@@ -206,19 +319,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    //set the tx sample rate
-    std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    usrp->set_tx_rate(rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
-
     //------------------------------------------------------------------
-    // begin asyc messages test
+    // begin messages test
     //------------------------------------------------------------------
     static const uhd::dict<std::string, boost::function<bool(uhd::usrp::multi_usrp::sptr)> >
         tests = boost::assign::map_list_of
         ("Test Burst ACK ", &test_burst_ack_message)
         ("Test Underflow ", &test_underflow_message)
         ("Test Time Error", &test_time_error_message)
+        ("Test Late Command", &test_late_command_message)
+        ("Test Broken Chain", &test_broken_chain_message)
     ;
 
     //init result counts
@@ -229,10 +339,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //run the tests, pick at random
+    std::srand(uhd::time_spec_t::get_system_time().get_full_secs());
     for (size_t n = 0; n < ntests; n++){
         std::string key = tests.keys()[std::rand() % tests.size()];
         bool pass = tests[key](usrp);
-        flush_async_md(usrp);
+        flush_async(usrp);
+        flush_recv(usrp);
 
         //store result
         if (pass) successes[key]++;
@@ -243,7 +355,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl << "Summary:" << std::endl << std::endl;
     BOOST_FOREACH(const std::string &key, tests.keys()){
         std::cout << boost::format(
-            "%s   ->   %3d successes, %3d failures"
+            "%s   ->   %3u successes, %3u failures"
         ) % key % successes[key] % failures[key] << std::endl;
     }
 

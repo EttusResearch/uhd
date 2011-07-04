@@ -93,6 +93,12 @@ public:
     void recv_post(rx_metadata_t &md, size_t &nsamps){
         boost::mutex::scoped_lock lock(_update_mutex);
 
+        //Since it timed out on the receive, check for inline messages...
+        //Must do a post check because recv() will not wake up for a message.
+        if (md.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT){
+            if (_inline_msg_queue.pop_with_haste(md)) return;
+        }
+
         //load the metadata with the expected time
         md.has_time_spec = true;
         md.time_spec = time_now();
@@ -114,7 +120,7 @@ public:
         case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
             nsamps = _nsamps_remaining; //set nsamps, then stop
             md.end_of_burst = true;
-            stream_on_off(false);
+            this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
             return;
         default: break;
         }
@@ -173,7 +179,8 @@ public:
                 metadata.time_spec = this->time_now();
                 metadata.error_code = rx_metadata_t::ERROR_CODE_LATE_COMMAND;
                 _inline_msg_queue.push_with_pop_on_full(metadata);
-                _stream_mode = stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+                this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+                return;
             }
             else{
                 sleep_until_time(lock, time_at);

@@ -290,6 +290,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
 
     //generate a bunch of packets
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
+        ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
         ifpi.num_payload_words32 = 10 + i%10;
         dummy_recv_xport.push_back_packet(ifpi);
         ifpi.packet_count++;
@@ -300,8 +301,6 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
             ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_EXTENSION;
             ifpi.num_payload_words32 = 1;
             dummy_recv_xport.push_back_packet(ifpi, uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
-            ifpi.packet_count++;
-            ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
         }
     }
 
