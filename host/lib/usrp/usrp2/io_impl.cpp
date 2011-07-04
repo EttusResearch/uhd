@@ -331,11 +331,13 @@ subdev_spec_t usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, con
     validate_subdev_spec(_tree, spec, "rx", which_mb);
 
     //setup mux for this spec
+    bool fe_swapped = false;
     for (size_t i = 0; i < spec.size(); i++){
-        //ASSUME that we dont swap the rx fe mux...
         const std::string conn = _tree->access<std::string>(root / spec[i].db_name / "rx_frontends" / spec[i].sd_name / "connection").get();
-        _mbc[which_mb].rx_dsps[i]->set_mux(conn);
+        if (i == 0 and (conn == "QI" or conn == "Q")) fe_swapped = true;
+        _mbc[which_mb].rx_dsps[i]->set_mux(conn, fe_swapped);
     }
+    _mbc[which_mb].rx_fe->set_mux(fe_swapped);
 
     //compute the new occupancy and resize
     _mbc[which_mb].rx_chan_occ = spec.size();

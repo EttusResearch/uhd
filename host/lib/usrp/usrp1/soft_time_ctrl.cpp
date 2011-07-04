@@ -90,13 +90,13 @@ public:
     /*******************************************************************
      * Receive control
      ******************************************************************/
-    void recv_post(rx_metadata_t &md, size_t &nsamps){
+    size_t recv_post(rx_metadata_t &md, const size_t nsamps){
         boost::mutex::scoped_lock lock(_update_mutex);
 
         //Since it timed out on the receive, check for inline messages...
         //Must do a post check because recv() will not wake up for a message.
         if (md.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT){
-            if (_inline_msg_queue.pop_with_haste(md)) return;
+            if (_inline_msg_queue.pop_with_haste(md)) return 0;
         }
 
         //load the metadata with the expected time
@@ -104,7 +104,7 @@ public:
         md.time_spec = time_now();
 
         //none of the stuff below matters in continuous streaming mode
-        if (_stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) return;
+        if (_stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) return nsamps;
 
         //When to stop streaming:
         //The samples have been received and the stream mode is non-continuous.
@@ -118,15 +118,15 @@ public:
             _inline_msg_queue.push_with_pop_on_full(metadata);
         } //continue to next case...
         case stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
-            nsamps = _nsamps_remaining; //set nsamps, then stop
             md.end_of_burst = true;
             this->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-            return;
+            return _nsamps_remaining;
         default: break;
         }
 
         //update the consumed samples
         _nsamps_remaining -= nsamps;
+        return nsamps;
     }
 
     void issue_stream_cmd(const stream_cmd_t &cmd){

@@ -54,7 +54,7 @@ public:
     virtual time_spec_t get_time(void) = 0;
 
     //! Call after the internal recv function
-    virtual void recv_post(rx_metadata_t &md, size_t &nsamps) = 0;
+    virtual size_t recv_post(rx_metadata_t &md, const size_t nsamps) = 0;
 
     //! Call before the internal send function
     virtual bool send_pre(const tx_metadata_t &md, double &timeout) = 0;

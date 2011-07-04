@@ -511,7 +511,5 @@ size_t usrp1_impl::recv(
         recv_mode, timeout
     );
 
-    _soft_time_ctrl->recv_post(metadata, num_samps_recvd);
-
-    return num_samps_recvd;
+    return _soft_time_ctrl->recv_post(metadata, num_samps_recvd);
 }

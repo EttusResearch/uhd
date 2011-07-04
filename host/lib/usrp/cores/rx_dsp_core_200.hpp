@@ -40,7 +40,7 @@ public:
 
     virtual void issue_stream_command(const uhd::stream_cmd_t &stream_cmd) = 0;
 
-    virtual void set_mux(const std::string &mode) = 0;
+    virtual void set_mux(const std::string &mode, const bool fe_swapped = false) = 0;
 
     virtual void set_tick_rate(const double rate) = 0;
 

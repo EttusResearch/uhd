@@ -144,11 +144,13 @@ void b100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     validate_subdev_spec(_tree, spec, "rx");
 
     //setup mux for this spec
+    bool fe_swapped = false;
     for (size_t i = 0; i < spec.size(); i++){
-        //ASSUME that we dont swap the rx fe mux...
         const std::string conn = _tree->access<std::string>(root / spec[i].db_name / "rx_frontends" / spec[i].sd_name / "connection").get();
-        _rx_dsps[i]->set_mux(conn);
+        if (i == 0 and (conn == "QI" or conn == "Q")) fe_swapped = true;
+        _rx_dsps[i]->set_mux(conn, fe_swapped);
     }
+    _rx_fe->set_mux(fe_swapped);
 
     //resize for the new occupancy
     _io_impl->recv_handler.resize(spec.size());

@@ -108,14 +108,14 @@ public:
         _iface->poke32(REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_tick_rate)); //latches the command
     }
 
-    void set_mux(const std::string &mode){
+    void set_mux(const std::string &mode, const bool fe_swapped){
         static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
             ("IQ", 0)
             ("QI", FLAG_DSP_RX_MUX_SWAP_IQ)
             ("I", FLAG_DSP_RX_MUX_REAL_MODE)
             ("Q", FLAG_DSP_RX_MUX_SWAP_IQ | FLAG_DSP_RX_MUX_REAL_MODE)
         ;
-        _iface->poke32(REG_DSP_RX_MUX, mode_to_mux[mode]);
+        _iface->poke32(REG_DSP_RX_MUX, mode_to_mux[mode] ^ (fe_swapped? FLAG_DSP_RX_MUX_SWAP_IQ : 0));
     }
 
     void set_tick_rate(const double rate){
