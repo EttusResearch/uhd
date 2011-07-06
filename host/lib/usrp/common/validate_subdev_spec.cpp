@@ -62,4 +62,12 @@ void uhd::usrp::validate_subdev_spec(
     BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
         uhd::assert_has(all_specs, pair, str(boost::format("%s subdevice specification on mboard %s") % type % mb));
     }
+
+    //enable selected frontends, disable others
+    BOOST_FOREACH(const subdev_spec_pair_t &pair, all_specs){
+        const bool enb = uhd::has(spec, pair);
+        tree->access<bool>(str(boost::format(
+            "/mboards/%s/dboards/%s/%s_frontends/%s/enabled"
+        ) % mb % pair.db_name % type % pair.sd_name)).set(enb);
+    }
 }
