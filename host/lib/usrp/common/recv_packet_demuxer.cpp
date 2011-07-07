@@ -66,7 +66,7 @@ public:
 
             //otherwise queue and try again
             if (rx_index < _queues.size()) _queues[rx_index].wrapper.push(buff);
-            else UHD_MSG(error) << "Got a data packet with known SID " << extract_sid(buff) << std::endl;
+            else UHD_MSG(error) << "Got a data packet with unknown SID " << extract_sid(buff) << std::endl;
         }
     }
 
