@@ -39,10 +39,11 @@ struct usrp_e_ctl32 {
 #define USRP_E_COMPAT_NUMBER 2
 
 /* Flag defines */
-#define RB_USER (BIT(0))
-#define RB_KERNEL (BIT(1))
-#define RB_OVERRUN (BIT(2))
-#define RB_DMA_ACTIVE (BIT(3))
+#define RB_USER (1<<0)
+#define RB_KERNEL (1<<1)
+#define RB_OVERRUN (1<<2)
+#define RB_DMA_ACTIVE (1<<3)
+#define RB_USER_PROCESS (1<<4)
 
 struct ring_buffer_info {
 	int flags;
