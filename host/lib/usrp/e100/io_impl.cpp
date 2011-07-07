@@ -113,11 +113,11 @@ void e100_impl::io_impl::handle_irq(void){
     usrp_e_ctl32 data;
     data.offset = E100_REG_ERR_BUFF;
     data.count = status >> 16;
-    //FIXME ioctl reads words32 incorrectly _fpga_ctrl->ioctl(USRP_E_READ_CTL32, &data);
-    for (size_t i = 0; i < data.count; i++){
-        data.buf[i] = iface->peek32(E100_REG_ERR_BUFF + i*sizeof(boost::uint32_t));
+    _fpga_ctrl->ioctl(USRP_E_READ_CTL32, &data);
+    //for (size_t i = 0; i < data.count; i++){
+        //data.buf[i] = iface->peek32(E100_REG_ERR_BUFF + i*sizeof(boost::uint32_t));
         //std::cout << boost::format("    buff[%u] = 0x%08x\n") % i % data.buf[i];
-    }
+    //}
 
     //unpack the vrt header and process below...
     vrt::if_packet_info_t if_packet_info;
