@@ -478,52 +478,50 @@ static double get_bw(wax::obj subdev){
 }
 
 void dboard_manager::populate_prop_tree_from_subdev(
-    property_tree::sptr tree,
-    const property_tree::path_type &root,
-    wax::obj subdev
+    property_tree::sptr subtree, wax::obj subdev
 ){
-    tree->create<std::string>(root / "name").set(subdev[SUBDEV_PROP_NAME].as<std::string>());
+    subtree->create<std::string>("name").set(subdev[SUBDEV_PROP_NAME].as<std::string>());
 
     const prop_names_t sensor_names = subdev[SUBDEV_PROP_SENSOR_NAMES].as<prop_names_t>();
     BOOST_FOREACH(const std::string &name, sensor_names){
-        tree->create<sensor_value_t>(root / "sensors" / name)
+        subtree->create<sensor_value_t>("sensors/" + name)
             .publish(boost::bind(&get_sensor, subdev, name));
     }
 
     const prop_names_t gain_names = subdev[SUBDEV_PROP_GAIN_NAMES].as<prop_names_t>();
-    tree->create<int>(root / "gains"); //phony property so this dir exists
+    subtree->create<int>("gains"); //phony property so this dir exists
     BOOST_FOREACH(const std::string &name, gain_names){
-        tree->create<double>(root / "gains" / name / "value")
+        subtree->create<double>("gains/" + name + "/value")
             .publish(boost::bind(&get_gain, subdev, name))
             .subscribe(boost::bind(&set_gain, subdev, name, _1));
-        tree->create<meta_range_t>(root / "gains" / name / "range")
+        subtree->create<meta_range_t>("gains/" + name + "/range")
             .publish(boost::bind(&get_gain_range, subdev, name));
     }
 
-    tree->create<double>(root / "freq/value")
+    subtree->create<double>("freq/value")
         .publish(boost::bind(&get_freq, subdev))
         .subscribe(boost::bind(&set_freq, subdev, _1));
 
-    tree->create<meta_range_t>(root / "freq/range")
+    subtree->create<meta_range_t>("freq/range")
         .publish(boost::bind(&get_freq_range, subdev));
 
-    tree->create<std::string>(root / "antenna/value")
+    subtree->create<std::string>("antenna/value")
         .publish(boost::bind(&get_ant, subdev))
         .subscribe(boost::bind(&set_ant, subdev, _1));
 
-    tree->create<std::vector<std::string> >(root / "antenna/options")
+    subtree->create<std::vector<std::string> >("antenna/options")
         .publish(boost::bind(&get_ants, subdev));
 
-    tree->create<std::string>(root / "connection")
+    subtree->create<std::string>("connection")
         .publish(boost::bind(&get_conn, subdev));
 
-    tree->create<bool>(root / "enabled")
+    subtree->create<bool>("enabled")
         .coerce(boost::bind(&get_set_enb, subdev, _1));
 
-    tree->create<bool>(root / "use_lo_offset")
+    subtree->create<bool>("use_lo_offset")
         .publish(boost::bind(&get_use_lo_off, subdev));
 
-    tree->create<double>(root / "bandwidth/value")
+    subtree->create<double>("bandwidth/value")
         .publish(boost::bind(&get_bw, subdev))
         .subscribe(boost::bind(&set_bw, subdev, _1));
 }

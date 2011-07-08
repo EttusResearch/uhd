@@ -346,13 +346,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         );
         BOOST_FOREACH(const std::string &name, _dbc[db].dboard_manager->get_rx_subdev_names()){
             dboard_manager::populate_prop_tree_from_subdev(
-                _tree, mb_path / "dboards" / db/ "rx_frontends" / name,
+                _tree->subtree(mb_path / "dboards" / db/ "rx_frontends" / name),
                 _dbc[db].dboard_manager->get_rx_subdev(name)
             );
         }
         BOOST_FOREACH(const std::string &name, _dbc[db].dboard_manager->get_tx_subdev_names()){
             dboard_manager::populate_prop_tree_from_subdev(
-                _tree, mb_path / "dboards" / db/ "tx_frontends" / name,
+                _tree->subtree(mb_path / "dboards" / db/ "tx_frontends" / name),
                 _dbc[db].dboard_manager->get_tx_subdev(name)
             );
         }

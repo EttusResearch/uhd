@@ -19,81 +19,112 @@
 #include <uhd/types/dict.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/make_shared.hpp>
 #include <iostream>
 
 class property_tree_impl : public uhd::property_tree{
 public:
 
-    void remove(const path_type &path){
-        boost::mutex::scoped_lock lock(_mutex);
+    property_tree_impl(const path_type &root = path_type()):
+        _root(root)
+    {
+        _guts = boost::make_shared<tree_guts_type>();
+    }
+
+    sptr subtree(const path_type &path_) const{
+        const path_type path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
+
+        property_tree_impl *subtree = new property_tree_impl(path);
+        subtree->_guts = this->_guts; //copy the guts sptr
+        return sptr(subtree);
+    }
+
+    void remove(const path_type &path_){
+        const path_type path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
 
         node_type *parent = NULL;
-        node_type *node = &_root;
-        BOOST_FOREACH(const std::string &leaf, path){
-            if (not node->has_key(leaf)) throw_path_not_found(path);
+        node_type *node = &_guts->root;
+        BOOST_FOREACH(const std::string &branch, path){
+            if (not node->has_key(branch)) throw_path_not_found(path);
             parent = node;
-            node = &(*node)[leaf];
+            node = &(*node)[branch];
         }
         if (parent == NULL) throw uhd::runtime_error("Cannot uproot");
         parent->pop(path.leaf());
     }
 
-    bool exists(const path_type &path){
-        boost::mutex::scoped_lock lock(_mutex);
+    bool exists(const path_type &path_) const{
+        const path_type path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
 
-        node_type *node = &_root;
-        BOOST_FOREACH(const std::string &leaf, path){
-            if (not node->has_key(leaf)) return false;
-            node = &(*node)[leaf];
+        node_type *node = &_guts->root;
+        BOOST_FOREACH(const std::string &branch, path){
+            if (not node->has_key(branch)) return false;
+            node = &(*node)[branch];
         }
         return true;
     }
 
-    std::vector<std::string> list(const path_type &path){
-        boost::mutex::scoped_lock lock(_mutex);
+    std::vector<std::string> list(const path_type &path_) const{
+        const path_type path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
 
-        node_type *node = &_root;
-        BOOST_FOREACH(const std::string &leaf, path){
-            if (not node->has_key(leaf)) throw_path_not_found(path);
-            node = &(*node)[leaf];
+        node_type *node = &_guts->root;
+        BOOST_FOREACH(const std::string &branch, path){
+            if (not node->has_key(branch)) throw_path_not_found(path);
+            node = &(*node)[branch];
         }
 
         return node->keys();
     }
 
-    void _create(const path_type &path, const boost::shared_ptr<void> &prop){
-        boost::mutex::scoped_lock lock(_mutex);
+    void _create(const path_type &path_, const boost::shared_ptr<void> &prop){
+        const path_type path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
 
-        node_type *node = &_root;
-        BOOST_FOREACH(const std::string &leaf, path){
-            if (not node->has_key(leaf)) (*node)[leaf] = node_type();
-            node = &(*node)[leaf];
+        node_type *node = &_guts->root;
+        BOOST_FOREACH(const std::string &branch, path){
+            if (not node->has_key(branch)) (*node)[branch] = node_type();
+            node = &(*node)[branch];
         }
+        if (node->prop.get() != NULL) throw uhd::runtime_error("Cannot create! Property already exists at: " + path.string());
         node->prop = prop;
     }
 
-    boost::shared_ptr<void> &_access(const path_type &path){
-        boost::mutex::scoped_lock lock(_mutex);
+    boost::shared_ptr<void> &_access(const path_type &path_) const{
+        const path_type path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
 
-        node_type *node = &_root;
-        BOOST_FOREACH(const std::string &leaf, path){
-            if (not node->has_key(leaf)) throw_path_not_found(path);
-            node = &(*node)[leaf];
+        node_type *node = &_guts->root;
+        BOOST_FOREACH(const std::string &branch, path){
+            if (not node->has_key(branch)) throw_path_not_found(path);
+            node = &(*node)[branch];
         }
-        if (node->prop.get() == NULL) throw uhd::type_error("Uninitialized property at: " + path.string());
+        if (node->prop.get() == NULL) throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path.string());
         return node->prop;
     }
 
 private:
-    void throw_path_not_found(const path_type &path){
+    void throw_path_not_found(const path_type &path) const{
         throw uhd::lookup_error("Path not found in tree: " + path.string());
     }
 
+    //basic structural node element
     struct node_type : uhd::dict<std::string, node_type>{
         boost::shared_ptr<void> prop;
-    } _root;
+    };
 
-    boost::mutex _mutex;
+    //tree guts which may be referenced in a subtree
+    struct tree_guts_type{
+        node_type root;
+        boost::mutex mutex;
+    };
+
+    //members, the tree and root prefix
+    boost::shared_ptr<tree_guts_type> _guts;
+    const path_type _root;
 };
 
 uhd::property_tree::sptr uhd::property_tree::make(void){

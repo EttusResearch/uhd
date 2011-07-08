@@ -109,14 +109,17 @@ public:
     //! Create a new + empty property tree
     static sptr make(void);
 
+    //! Get a subtree with a new root starting at path
+    virtual sptr subtree(const path_type &path) const = 0;
+
     //! Remove a property or directory (recursive)
     virtual void remove(const path_type &path) = 0;
 
     //! True if the path exists in the tree
-    virtual bool exists(const path_type &path) = 0;
+    virtual bool exists(const path_type &path) const = 0;
 
     //! Get an iterable to all things in the given path
-    virtual std::vector<std::string> list(const path_type &path) = 0;
+    virtual std::vector<std::string> list(const path_type &path) const = 0;
 
     //! Create a new property entry in the tree
     template <typename T> property<T> &create(const path_type &path);
@@ -129,7 +132,7 @@ private:
     virtual void _create(const path_type &path, const boost::shared_ptr<void> &prop) = 0;
 
     //! Internal access property with wild-card type
-    virtual boost::shared_ptr<void> &_access(const path_type &path) = 0;
+    virtual boost::shared_ptr<void> &_access(const path_type &path) const = 0;
 
 };
 

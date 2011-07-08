@@ -68,23 +68,23 @@ static void do_tune_freq_warning_message(
 /***********************************************************************
  * Gain helper functions
  **********************************************************************/
-static double get_gain_value(property_tree::sptr tree, const property_tree::path_type &path){
-    return tree->access<double>(path / "value").get();
+static double get_gain_value(property_tree::sptr subtree){
+    return subtree->access<double>("value").get();
 }
 
-static void set_gain_value(property_tree::sptr tree, const property_tree::path_type &path, const double gain){
-    tree->access<double>(path / "value").set(gain);
+static void set_gain_value(property_tree::sptr subtree, const double gain){
+    subtree->access<double>("value").set(gain);
 }
 
-static meta_range_t get_gain_range(property_tree::sptr tree, const property_tree::path_type &path){
-    return tree->access<meta_range_t>(path / "range").get();
+static meta_range_t get_gain_range(property_tree::sptr subtree){
+    return subtree->access<meta_range_t>("range").get();
 }
 
-static gain_fcns_t make_gain_fcns_from_path(property_tree::sptr tree, const property_tree::path_type &path){
+static gain_fcns_t make_gain_fcns_from_subtree(property_tree::sptr subtree){
     gain_fcns_t gain_fcns;
-    gain_fcns.get_range = boost::bind(&get_gain_range, tree, path);
-    gain_fcns.get_value = boost::bind(&get_gain_value, tree, path);
-    gain_fcns.set_value = boost::bind(&set_gain_value, tree, path, _1);
+    gain_fcns.get_range = boost::bind(&get_gain_range, subtree);
+    gain_fcns.get_value = boost::bind(&get_gain_value, subtree);
+    gain_fcns.set_value = boost::bind(&set_gain_value, subtree, _1);
     return gain_fcns;
 }
 
@@ -96,20 +96,19 @@ static const double TX_SIGN = -1.0;
 
 static tune_result_t tune_xx_subdev_and_dsp(
     const double xx_sign,
-    property_tree::sptr tree,
-    const property_tree::path_type &dsp_path,
-    const property_tree::path_type &rf_fe_path,
+    property_tree::sptr dsp_subtree,
+    property_tree::sptr rf_fe_subtree,
     const tune_request_t &tune_request
 ){
     //------------------------------------------------------------------
     //-- calculate the LO offset, only used with automatic policy
     //------------------------------------------------------------------
     double lo_offset = 0.0;
-    if (tree->access<bool>(rf_fe_path / "use_lo_offset").get()){
+    if (rf_fe_subtree->access<bool>("use_lo_offset").get()){
         //If the local oscillator will be in the passband, use an offset.
         //But constrain the LO offset by the width of the filter bandwidth.
-        const double rate = tree->access<double>(dsp_path / "rate" / "value").get();
-        const double bw = tree->access<double>(rf_fe_path / "bandwidth" / "value").get();
+        const double rate = dsp_subtree->access<double>("rate/value").get();
+        const double bw = rf_fe_subtree->access<double>("bandwidth/value").get();
         if (bw > rate) lo_offset = std::min((bw - rate)/2, rate/2);
     }
 
@@ -120,17 +119,17 @@ static tune_result_t tune_xx_subdev_and_dsp(
     switch (tune_request.rf_freq_policy){
     case tune_request_t::POLICY_AUTO:
         target_rf_freq = tune_request.target_freq + lo_offset;
-        tree->access<double>(rf_fe_path / "freq" / "value").set(target_rf_freq);
+        rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
         break;
 
     case tune_request_t::POLICY_MANUAL:
         target_rf_freq = tune_request.rf_freq;
-        tree->access<double>(rf_fe_path / "freq" / "value").set(target_rf_freq);
+        rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
         break;
 
     case tune_request_t::POLICY_NONE: break; //does not set
     }
-    const double actual_rf_freq = tree->access<double>(rf_fe_path / "freq" / "value").get();
+    const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
     //-- calculate the dsp freq, only used with automatic policy
@@ -145,17 +144,17 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     switch (tune_request.dsp_freq_policy){
     case tune_request_t::POLICY_AUTO:
-        tree->access<double>(dsp_path / "freq" / "value").set(target_dsp_freq);
+        dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
         break;
 
     case tune_request_t::POLICY_MANUAL:
         target_dsp_freq = tune_request.dsp_freq;
-        tree->access<double>(dsp_path / "freq" / "value").set(target_dsp_freq);
+        dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
         break;
 
     case tune_request_t::POLICY_NONE: break; //does not set
     }
-    const double actual_dsp_freq = tree->access<double>(dsp_path / "freq" / "value").get();
+    const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
     //-- load and return the tune result
@@ -170,13 +169,12 @@ static tune_result_t tune_xx_subdev_and_dsp(
 
 static double derive_freq_from_xx_subdev_and_dsp(
     const double xx_sign,
-    property_tree::sptr tree,
-    const property_tree::path_type &dsp_path,
-    const property_tree::path_type &rf_fe_path
+    property_tree::sptr dsp_subtree,
+    property_tree::sptr rf_fe_subtree
 ){
     //extract actual dsp and IF frequencies
-    const double actual_rf_freq = tree->access<double>(rf_fe_path / "freq" / "value").get();
-    const double actual_dsp_freq = tree->access<double>(dsp_path / "freq" / "value").get();
+    const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
+    const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
 
     //invert the sign on the dsp freq for transmit
     return actual_rf_freq - actual_dsp_freq * xx_sign;
@@ -434,13 +432,13 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN, _tree, rx_dsp_root(chan), rx_rf_fe_root(chan), tune_request);
+        tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN, _tree->subtree(rx_dsp_root(chan)), _tree->subtree(rx_rf_fe_root(chan)), tune_request);
         do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
         return r;
     }
 
     double get_rx_freq(size_t chan){
-        return derive_freq_from_xx_subdev_and_dsp(RX_SIGN, _tree, rx_dsp_root(chan), rx_rf_fe_root(chan));
+        return derive_freq_from_xx_subdev_and_dsp(RX_SIGN, _tree->subtree(rx_dsp_root(chan)), _tree->subtree(rx_rf_fe_root(chan)));
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
@@ -542,13 +540,13 @@ public:
     }
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN, _tree, tx_dsp_root(chan), tx_rf_fe_root(chan), tune_request);
+        tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN, _tree->subtree(tx_dsp_root(chan)), _tree->subtree(tx_rf_fe_root(chan)), tune_request);
         do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
         return r;
     }
 
     double get_tx_freq(size_t chan){
-        return derive_freq_from_xx_subdev_and_dsp(TX_SIGN, _tree, tx_dsp_root(chan), tx_rf_fe_root(chan));
+        return derive_freq_from_xx_subdev_and_dsp(TX_SIGN, _tree->subtree(tx_dsp_root(chan)), _tree->subtree(tx_rf_fe_root(chan)));
     }
 
     freq_range_t get_tx_freq_range(size_t chan){
@@ -670,10 +668,10 @@ private:
         const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
         gain_group::sptr gg = gain_group::make();
         BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mcp.mboard) / "rx_codecs" / spec.db_name / "gains")){
-            gg->register_fcns("ADC-"+name, make_gain_fcns_from_path(_tree, mb_root(mcp.mboard) / "rx_codecs" / spec.db_name / "gains" / name), 0 /* low prio */);
+            gg->register_fcns("ADC-"+name, make_gain_fcns_from_subtree(_tree->subtree(mb_root(mcp.mboard) / "rx_codecs" / spec.db_name / "gains" / name)), 0 /* low prio */);
         }
         BOOST_FOREACH(const std::string &name, _tree->list(rx_rf_fe_root(chan) / "gains")){
-            gg->register_fcns(name, make_gain_fcns_from_path(_tree, rx_rf_fe_root(chan) / "gains" / name), 1 /* high prio */);
+            gg->register_fcns(name, make_gain_fcns_from_subtree(_tree->subtree(rx_rf_fe_root(chan) / "gains" / name)), 1 /* high prio */);
         }
         return gg;
     }
@@ -683,10 +681,10 @@ private:
         const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
         gain_group::sptr gg = gain_group::make();
         BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains")){
-            gg->register_fcns("ADC-"+name, make_gain_fcns_from_path(_tree, mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains" / name), 1 /* high prio */);
+            gg->register_fcns("ADC-"+name, make_gain_fcns_from_subtree(_tree->subtree(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains" / name)), 1 /* high prio */);
         }
         BOOST_FOREACH(const std::string &name, _tree->list(tx_rf_fe_root(chan) / "gains")){
-            gg->register_fcns(name, make_gain_fcns_from_path(_tree, tx_rf_fe_root(chan) / "gains" / name), 0 /* low prio */);
+            gg->register_fcns(name, make_gain_fcns_from_subtree(_tree->subtree(tx_rf_fe_root(chan) / "gains" / name)), 0 /* low prio */);
         }
         return gg;
     }

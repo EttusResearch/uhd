@@ -366,13 +366,13 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     );
     BOOST_FOREACH(const std::string &name, _dboard_manager->get_rx_subdev_names()){
         dboard_manager::populate_prop_tree_from_subdev(
-            _tree, mb_path / "dboards/A/rx_frontends" / name,
+            _tree->subtree(mb_path / "dboards/A/rx_frontends" / name),
             _dboard_manager->get_rx_subdev(name)
         );
     }
     BOOST_FOREACH(const std::string &name, _dboard_manager->get_tx_subdev_names()){
         dboard_manager::populate_prop_tree_from_subdev(
-            _tree, mb_path / "dboards/A/tx_frontends" / name,
+            _tree->subtree(mb_path / "dboards/A/tx_frontends" / name),
             _dboard_manager->get_tx_subdev(name)
         );
     }

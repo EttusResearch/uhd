@@ -39,9 +39,7 @@ public:
 
     //! It does what it says...
     static void populate_prop_tree_from_subdev(
-        property_tree::sptr tree,
-        const property_tree::path_type &root,
-        wax::obj subdev
+        property_tree::sptr subtree, wax::obj subdev
     );
 
     //dboard constructor (each dboard should have a ::make with this signature)
