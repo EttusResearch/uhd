@@ -32,8 +32,6 @@ IF(ENABLE_USRP_E_UTILS)
         usrp-e-wb-test.cpp
         usrp-e-debug-pins.c
         usrp-e-gpio.c
-        usrp-e-i2c.c
-        usrp-e-spi.c
     )
 
     #for each source: build an executable and install
