@@ -58,6 +58,7 @@ public:
         _next_packet_seq(0)
     {
         this->resize(size);
+        this->set_scale_factor(32767.);
     }
 
     //! Resize the number of transport channels
@@ -130,6 +131,11 @@ public:
     //! Get a scoped lock object for this instance
     boost::mutex::scoped_lock get_scoped_lock(void){
         return boost::mutex::scoped_lock(_mutex);
+    }
+
+    //! Set the scale factor used in float conversion
+    void set_scale_factor(const double scale_factor){
+        _scale_factor = scale_factor;
     }
 
     /*******************************************************************
@@ -238,6 +244,7 @@ private:
     size_t _max_samples_per_packet;
     std::vector<const void *> _zero_buffs;
     size_t _next_packet_seq;
+    double _scale_factor;
 
     /*******************************************************************
      * Send a single packet:
@@ -270,7 +277,7 @@ private:
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            _converters[io_type.tid](_io_buffs, otw_mem, nsamps_per_buff, 32767.);
+            _converters[io_type.tid](_io_buffs, otw_mem, nsamps_per_buff, _scale_factor);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);

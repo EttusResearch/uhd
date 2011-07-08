@@ -48,6 +48,8 @@ public:
 
     virtual double set_host_rate(const double rate) = 0;
 
+    virtual double get_scaling_adjustment(void) = 0;
+
     virtual uhd::meta_range_t get_freq_range(void) = 0;
 
     virtual double set_freq(const double freq) = 0;

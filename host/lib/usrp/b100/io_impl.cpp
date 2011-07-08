@@ -129,6 +129,8 @@ void b100_impl::update_tick_rate(const double rate){
 void b100_impl::update_rx_samp_rate(const double rate){
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
     _io_impl->recv_handler.set_samp_rate(rate);
+    const double adj = _rx_dsps.front()->get_scaling_adjustment();
+    _io_impl->recv_handler.set_scale_factor(adj/32767.);
 }
 
 void b100_impl::update_tx_samp_rate(const double rate){

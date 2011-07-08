@@ -43,6 +43,10 @@
 #define REG_RX_CTRL_NSAMPS_PP      _ctrl_base + 28
 #define REG_RX_CTRL_NCHANNELS      _ctrl_base + 32
 
+template <class T> T ceil_log2(T num){
+    return std::ceil(std::log(num)/std::log(T(2)));
+}
+
 using namespace uhd;
 
 class rx_dsp_core_200_impl : public rx_dsp_core_200{
@@ -146,7 +150,16 @@ public:
 
         _iface->poke32(REG_DSP_RX_DECIM, (hb1 << 9) | (hb0 << 8) | (decim & 0xff));
 
+        // Calculate CIC decimation (i.e., without halfband decimators)
+        // Calculate closest multiplier constant to reverse gain absent scale multipliers
+        const double rate_pow = std::pow(double(decim & 0xff), 4);
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+
         return _tick_rate/decim_rate;
+    }
+
+    double get_scaling_adjustment(void){
+        return _scaling_adjustment;
     }
 
     double set_freq(const double freq_){
@@ -181,6 +194,7 @@ private:
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
     bool _continuous_streaming;
+    double _scaling_adjustment;
 };
 
 rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid, const bool lingering_packet){

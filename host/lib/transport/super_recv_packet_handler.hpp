@@ -74,6 +74,7 @@ public:
     {
         this->resize(size);
         set_alignment_failure_threshold(1000);
+        this->set_scale_factor(1/32767.);
     }
 
     //! Resize the number of transport channels
@@ -151,6 +152,11 @@ public:
     //! Get a scoped lock object for this instance
     boost::mutex::scoped_lock get_scoped_lock(void){
         return boost::mutex::scoped_lock(_mutex);
+    }
+
+    //! Set the scale factor used in float conversion
+    void set_scale_factor(const double scale_factor){
+        _scale_factor = scale_factor;
     }
 
     /*******************************************************************
@@ -238,6 +244,7 @@ private:
     std::vector<void *> _io_buffs; //used in conversion
     size_t _bytes_per_item; //used in conversion
     std::vector<uhd::convert::function_type> _converters; //used in conversion
+    double _scale_factor;
 
     //! information stored for a received buffer
     struct per_buffer_info_type{
@@ -558,7 +565,7 @@ private:
             }
 
             //copy-convert the samples from the recv buffer
-            _converters[io_type.tid](buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, 1/32767.);
+            _converters[io_type.tid](buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, _scale_factor);
 
             //update the rx copy buffer to reflect the bytes copied
             buff_info.copy_buff += bytes_to_copy;
