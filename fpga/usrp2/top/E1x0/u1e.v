@@ -36,11 +36,12 @@ module u1e
    output cgen_sclk, output cgen_sen_b, output cgen_mosi, input cgen_miso,     // Clock gen SPI
 
    input cgen_st_status, input cgen_st_ld, input cgen_st_refmon, output cgen_sync_b, output cgen_ref_sel,
+   input overo_gpio65, input overo_gpio128, input overo_gpio145, output overo_gpio147, //aux SPI
    
-   output overo_gpio144, output overo_gpio145, output overo_gpio146, output overo_gpio147,  // Fifo controls
+   output overo_gpio144, output overo_gpio146,  // Fifo controls
    input overo_gpio0, input overo_gpio14, input overo_gpio21, input overo_gpio22,  // Misc GPIO
-   input overo_gpio23, input overo_gpio64, input overo_gpio65, input overo_gpio127, // Misc GPIO
-   input overo_gpio128, input overo_gpio163, input overo_gpio170, input overo_gpio176, // Misc GPIO
+   input overo_gpio23, input overo_gpio64, input overo_gpio127, // Misc GPIO
+   input overo_gpio176, input overo_gpio163, input overo_gpio170, // Misc GPIO
    
    inout [15:0] io_tx, inout [15:0] io_rx,
 
@@ -75,19 +76,29 @@ module u1e
    clk_doubler (.CLKFB(clk_fb), .CLKIN(clk_fpga_in), .RST(dcm_rst), 
                 .DSSEN(0), .PSCLK(0), .PSEN(0), .PSINCDEC(0), .PSDONE(), 
 		.CLKDV(), .CLKFX(), .CLKFX180(), 
-                .CLK2X(), .CLK2X180(), 
+                .CLK2X(clk_2x), .CLK2X180(), 
                 .CLK0(clk_fb), .CLK90(clk_fpga), .CLK180(), .CLK270(), 
                 .LOCKED(dcm_locked), .STATUS());
-   
+
    // /////////////////////////////////////////////////////////////////////////
    // SPI
    wire  mosi, sclk, miso;
    assign { db_sclk_tx, db_mosi_tx } = ~db_sen_tx ? {sclk,mosi} : 2'b0;
    assign { db_sclk_rx, db_mosi_rx } = ~db_sen_rx ? {sclk,mosi} : 2'b0;
    assign { sclk_codec, mosi_codec } = ~sen_codec ? {sclk,mosi} : 2'b0;
-   assign { cgen_sclk, cgen_mosi } = ~cgen_sen_b ? {sclk,mosi} : 2'b0;
+   //assign { cgen_sclk, cgen_mosi } = ~cgen_sen_b ? {sclk,mosi} : 2'b0; //replaced by aux spi
    assign miso = (~db_sen_tx & db_miso_tx) | (~db_sen_rx & db_miso_rx) |
-		 (~sen_codec & miso_codec) | (~cgen_sen_b & cgen_miso);
+                 (~sen_codec & miso_codec) | (~cgen_sen_b & cgen_miso);
+
+   //assign the aux spi to the cgen (bypasses wishbone)
+   assign cgen_sclk = overo_gpio65;
+   assign cgen_sen_b = overo_gpio128;
+   assign cgen_mosi = overo_gpio145;
+   wire proc_int; //re-purpose gpio for interrupt when we are not using aux spi
+   assign overo_gpio147 = (cgen_sen_b == 1'b0)? cgen_miso : proc_int;
+
+   wire _cgen_sen_b;
+   //assign cgen_sen_b = _cgen_sen_b; //replaced by aux spi
 
    // /////////////////////////////////////////////////////////////////////////
    // TX DAC -- handle the interleaved data bus to DAC, with clock doubling DLL
@@ -130,25 +141,22 @@ module u1e
    
    // /////////////////////////////////////////////////////////////////////////
    // Main U1E Core
-   u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(~debug_pb),
+   u1e_core u1e_core(.clk_fpga(clk_fpga), .bus_clk(clk_2x), .rst_fpga(~debug_pb),
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
 		     .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 		     .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS5(EM_NCS5), 
 		     .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
 		     .db_sda(db_sda), .db_scl(db_scl),
-		     .sclk(sclk), .sen({cgen_sen_b,sen_codec,db_sen_tx,db_sen_rx}), .mosi(mosi), .miso(miso),
+		     .sclk(sclk), .sen({_cgen_sen_b,sen_codec,db_sen_tx,db_sen_rx}), .mosi(mosi), .miso(miso),
 		     .cgen_st_status(cgen_st_status), .cgen_st_ld(cgen_st_ld),.cgen_st_refmon(cgen_st_refmon), 
 		     .cgen_sync_b(cgen_sync_b), .cgen_ref_sel(cgen_ref_sel),
-		     .tx_have_space(overo_gpio144), .tx_underrun(overo_gpio145),
-		     .rx_have_data(overo_gpio146), .rx_overrun(overo_gpio147),
+		     .tx_have_space(overo_gpio144),
+		     .rx_have_data(overo_gpio146),
 		     .io_tx(io_tx), .io_rx(io_rx),
 		     .tx_i(tx_i), .tx_q(tx_q), 
 		     .rx_i(DA), .rx_q(DB),
-		     .misc_gpio( {{overo_gpio128,overo_gpio163,overo_gpio170,overo_gpio176},
-				  {overo_gpio0,overo_gpio14,overo_gpio21,overo_gpio22},
-				  {overo_gpio23,overo_gpio64,overo_gpio65,overo_gpio127}}),
-		     .pps_in(PPS_IN) );
+		     .pps_in(PPS_IN), .proc_int(proc_int) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Local Debug

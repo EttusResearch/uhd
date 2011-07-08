@@ -26,8 +26,10 @@ module round
   #(parameter bits_in=0,
     parameter bits_out=0)
     (input [bits_in-1:0] in,
-     output [bits_out-1:0] out);
+     output [bits_out-1:0] out,
+     output [bits_in-bits_out:0] err);
 
    assign out = in[bits_in-1:bits_in-bits_out] + (in[bits_in-1] & |in[bits_in-bits_out-1:0]);
+   assign err = in - {out,{(bits_in-bits_out){1'b0}}};
    
 endmodule // round

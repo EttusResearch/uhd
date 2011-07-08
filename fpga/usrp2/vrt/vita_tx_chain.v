@@ -29,7 +29,7 @@ module vita_tx_chain
     input [63:0] vita_time,
     input [35:0] tx_data_i, input tx_src_rdy_i, output tx_dst_rdy_o,
     output [35:0] err_data_o, output err_src_rdy_o, input err_dst_rdy_i,
-    output [15:0] dac_a, output [15:0] dac_b,
+    output [23:0] tx_i, output [23:0] tx_q,
     output underrun, output run,
     output [31:0] debug);
 
@@ -84,7 +84,7 @@ module vita_tx_chain
      (.clk(clk),.rst(reset),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .sample(sample_tx), .run(run), .strobe(strobe_tx),
-      .dac_a(dac_a),.dac_b(dac_b),
+      .tx_i(tx_i),.tx_q(tx_q),
       .debug(debug_tx_dsp) );
 
    wire [35:0] 		flow_data, err_data_int;
