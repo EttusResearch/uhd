@@ -157,3 +157,19 @@ BOOST_AUTO_TEST_CASE(test_prop_tree){
     BOOST_CHECK(not tree->exists("/test/prop1"));
 
 }
+
+BOOST_AUTO_TEST_CASE(test_prop_subtree){
+    uhd::property_tree::sptr tree = uhd::property_tree::make();
+    tree->create<int>("/subdir1/subdir2");
+
+    uhd::property_tree::sptr subtree1 = tree->subtree("/");
+    const std::vector<std::string> tree_dirs1 = tree->list("/");
+    const std::vector<std::string> subtree1_dirs = subtree1->list("");
+    BOOST_CHECK_EQUAL_COLLECTIONS(tree_dirs1.begin(), tree_dirs1.end(), subtree1_dirs.begin(), subtree1_dirs.end());
+
+    uhd::property_tree::sptr subtree2 = subtree1->subtree("subdir1");
+    const std::vector<std::string> tree_dirs2 = tree->list("/subdir1");
+    const std::vector<std::string> subtree2_dirs = subtree2->list("");
+    BOOST_CHECK_EQUAL_COLLECTIONS(tree_dirs2.begin(), tree_dirs2.end(), subtree2_dirs.begin(), subtree2_dirs.end());
+
+}
