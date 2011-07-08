@@ -26,8 +26,8 @@ FIND_PACKAGE(Git QUIET)
 #  - increment patch on for bug fixes and docs
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
-SET(UHD_VERSION_MINOR 001)
-SET(UHD_VERSION_PATCH 002)
+SET(UHD_VERSION_MINOR 002)
+SET(UHD_VERSION_PATCH 000)
 
 ########################################################################
 # Version information discovery through git log
