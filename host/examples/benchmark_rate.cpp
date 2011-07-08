@@ -178,7 +178,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::notify(vm);
 
     //print the help message
-    if (vm.count("help")){
+    if (vm.count("help") or (vm.count("rx_rate") + vm.count("tx_rate")) == 0){
         std::cout << boost::format("UHD Benchmark Rate %s") % desc << std::endl;
         std::cout <<
         "    Specify --rx_rate for a receive-only test.\n"
