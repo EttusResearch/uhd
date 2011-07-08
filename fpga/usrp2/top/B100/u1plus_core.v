@@ -318,7 +318,7 @@ module u1plus_core
 	  reg_leds <= 0;
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
-	  xfer_rate <= 0;
+	  //xfer_rate <= 0;
 	  frames_per_packet <= 0;
        end
      else
