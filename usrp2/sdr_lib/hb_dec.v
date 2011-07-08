@@ -22,17 +22,27 @@
 // myfilt = round(2^18 * halfgen4(.7/4,8))
 
 module hb_dec
-  #(parameter IWIDTH=18, OWIDTH=18, CWIDTH=18, ACCWIDTH=24)
+  #(parameter WIDTH=24)
     (input clk,
      input rst,
      input bypass,
      input run,
      input [8:0] cpi,  // Clocks per input -- equal to the decimation ratio ahead of this block
      input stb_in,
-     input [IWIDTH-1:0] data_in,
+     input [WIDTH-1:0] data_in,
      output reg stb_out,
-     output reg [OWIDTH-1:0] data_out);
+     output reg [WIDTH-1:0] data_out);
 
+   localparam INTWIDTH = 17;
+   localparam ACCWIDTH = WIDTH + 3;
+   
+   // Round off inputs to 17 bits because of 18 bit multipliers
+   wire [INTWIDTH-1:0] 	     data_rnd;
+   wire 		     stb_rnd;
+   
+   round_sd #(.WIDTH_IN(WIDTH),.WIDTH_OUT(INTWIDTH)) round_in
+     (.clk(clk),.reset(rst),.in(data_in),.strobe_in(stb_in),.out(data_rnd),.strobe_out(stb_rnd));
+   
    // Control
    reg [3:0] 		addr_odd_a, addr_odd_b, addr_odd_c, addr_odd_d;
    wire 		write_odd, write_even, do_mult;
@@ -45,16 +55,16 @@ module hb_dec
    always @(posedge clk)
      if(rst | ~run)
        odd <= 0;
-     else if(stb_in)
+     else if(stb_rnd)
        odd <= ~odd;
 
-   assign 		write_odd = stb_in & odd;
-   assign 		write_even = stb_in & ~odd;
+   assign 		write_odd = stb_rnd & odd;
+   assign 		write_even = stb_rnd & ~odd;
 
    always @(posedge clk)
      if(rst | ~run)
        phase <= 0;
-     else if(stb_in & odd)
+     else if(stb_rnd & odd)
        phase <= 1;
      else if(phase == 4)
        phase <= 0;
@@ -69,7 +79,7 @@ module hb_dec
      if(rst)
        stb_out_pre <= 0;
      else
-       stb_out_pre <= {stb_out_pre[14:0],(stb_in & odd)};
+       stb_out_pre <= {stb_out_pre[14:0],(stb_rnd & odd)};
 
    always @*
      case(phase)
@@ -93,11 +103,12 @@ module hb_dec
    assign clear = stb_out_pre[3];
    
    // Data
-   wire [IWIDTH-1:0] data_odd_a, data_odd_b, data_odd_c, data_odd_d;
-   wire [IWIDTH-1:0] sum1, sum2;	
-   wire [OWIDTH-1:0] final_sum;
-   reg [CWIDTH-1:0]  coeff1, coeff2;
-   wire [35:0] 	     prod1, prod2;
+   wire [INTWIDTH-1:0] data_odd_a, data_odd_b, data_odd_c, data_odd_d;
+   reg [INTWIDTH:0]    sum1, sum2;    // these are 18-bit inputs to mult
+   reg [WIDTH:0]       final_sum;
+   wire [WIDTH-1:0]    final_sum_clip;
+   reg [17:0] 	       coeff1, coeff2;
+   wire [35:0] 	       prod1, prod2;
 
    always @*            // Outer coeffs
      case(phase_d1)
@@ -117,19 +128,19 @@ module hb_dec
        default : coeff2 = -6107;
      endcase // case(phase)
    
-   srl #(.WIDTH(IWIDTH)) srl_odd_a
-     (.clk(clk),.write(write_odd),.in(data_in),.addr(addr_odd_a),.out(data_odd_a));
-   srl #(.WIDTH(IWIDTH)) srl_odd_b
-     (.clk(clk),.write(write_odd),.in(data_in),.addr(addr_odd_b),.out(data_odd_b));
-   srl #(.WIDTH(IWIDTH)) srl_odd_c
-     (.clk(clk),.write(write_odd),.in(data_in),.addr(addr_odd_c),.out(data_odd_c));
-   srl #(.WIDTH(IWIDTH)) srl_odd_d
-     (.clk(clk),.write(write_odd),.in(data_in),.addr(addr_odd_d),.out(data_odd_d));
+   srl #(.WIDTH(INTWIDTH)) srl_odd_a
+     (.clk(clk),.write(write_odd),.in(data_rnd),.addr(addr_odd_a),.out(data_odd_a));
+   srl #(.WIDTH(INTWIDTH)) srl_odd_b
+     (.clk(clk),.write(write_odd),.in(data_rnd),.addr(addr_odd_b),.out(data_odd_b));
+   srl #(.WIDTH(INTWIDTH)) srl_odd_c
+     (.clk(clk),.write(write_odd),.in(data_rnd),.addr(addr_odd_c),.out(data_odd_c));
+   srl #(.WIDTH(INTWIDTH)) srl_odd_d
+     (.clk(clk),.write(write_odd),.in(data_rnd),.addr(addr_odd_d),.out(data_odd_d));
 
-   add2_reg /*_and_round_reg*/ #(.WIDTH(IWIDTH)) add1 (.clk(clk),.in1(data_odd_a),.in2(data_odd_b),.sum(sum1));
-   add2_reg /*_and_round_reg*/ #(.WIDTH(IWIDTH)) add2 (.clk(clk),.in1(data_odd_c),.in2(data_odd_d),.sum(sum2));
-
-   wire [IWIDTH-1:0] data_even;
+   always @(posedge clk) sum1 <= {data_odd_a[INTWIDTH-1],data_odd_a} + {data_odd_b[INTWIDTH-1],data_odd_b};
+   always @(posedge clk) sum2 <= {data_odd_c[INTWIDTH-1],data_odd_c} + {data_odd_d[INTWIDTH-1],data_odd_d};
+   
+   wire [INTWIDTH-1:0] data_even;
    reg [3:0] 	     addr_even;
 
    always @(posedge clk)
@@ -140,49 +151,39 @@ module hb_dec
        default : addr_even <= 7;
      endcase // case(cpi)
    
-   srl #(.WIDTH(IWIDTH)) srl_even
-     (.clk(clk),.write(write_even),.in(data_in),.addr(addr_even),.out(data_even));
-
-   localparam 		MWIDTH = ACCWIDTH-2;   
-   wire [MWIDTH-1:0] 	sum_of_prod;
+   srl #(.WIDTH(INTWIDTH)) srl_even
+     (.clk(clk),.write(write_even),.in(data_rnd),.addr(addr_even),.out(data_even));
 
    MULT18X18S mult1(.C(clk), .CE(do_mult), .R(rst), .P(prod1), .A(coeff1), .B(sum1) );
    MULT18X18S mult2(.C(clk), .CE(do_mult), .R(rst), .P(prod2), .A(coeff2), .B(sum2) );
-   add2_and_round_reg #(.WIDTH(MWIDTH)) 
-     add3 (.clk(clk),.in1(prod1[35:36-MWIDTH]),.in2(prod2[35:36-MWIDTH]),.sum(sum_of_prod));
 
+   reg [35:0] 	     sum_of_prod;
+   always @(posedge clk) sum_of_prod <= prod1 + prod2;   // Can't overflow
+   
    wire [ACCWIDTH-1:0] 	acc_out;
-   
-   acc #(.IWIDTH(MWIDTH),.OWIDTH(ACCWIDTH)) 
-     acc (.clk(clk),.clear(clear),.acc(do_acc),.in(sum_of_prod),.out(acc_out));
+   acc #(.IWIDTH(ACCWIDTH-2),.OWIDTH(ACCWIDTH))
+     acc (.clk(clk),.clear(clear),.acc(do_acc),.in(sum_of_prod[35:38-ACCWIDTH]),.out(acc_out));
 
-   localparam 		SHIFT_FACTOR = ACCWIDTH-IWIDTH-5;
    wire [ACCWIDTH-1:0] 	data_even_signext;
-   wire [ACCWIDTH:0] 	final_sum_unrounded;
 
-   sign_extend #(.bits_in(IWIDTH),.bits_out(ACCWIDTH-SHIFT_FACTOR))
-     signext_data_even (.in(data_even),.out(data_even_signext[ACCWIDTH-1:SHIFT_FACTOR]));
-   assign 		data_even_signext[SHIFT_FACTOR-1:0] = 0;
+   localparam SHIFT_FACTOR = 6;
    
-   add2_reg /* add2_and_round_reg */ #(.WIDTH(ACCWIDTH+1)) 
-     final_adder (.clk(clk), .in1({acc_out,1'b0}), .in2({data_even_signext,1'b0}), .sum(final_sum_unrounded));
+   sign_extend #(.bits_in(INTWIDTH),.bits_out(ACCWIDTH-SHIFT_FACTOR)) signext_data_even 
+     (.in(data_even),.out(data_even_signext[ACCWIDTH-1:SHIFT_FACTOR]));
+   assign 		data_even_signext[SHIFT_FACTOR-1:0] = 0;
 
-   round_reg #(.bits_in(ACCWIDTH-4),.bits_out(OWIDTH))
-     final_round (.clk(clk),.in(final_sum_unrounded[ACCWIDTH-5:0]),.out(final_sum));
-
-   // Output
+   always @(posedge clk) final_sum <= acc_out + data_even_signext;
+   
+   clip #(.bits_in(WIDTH+1), .bits_out(WIDTH)) clip (.in(final_sum), .out(final_sum_clip));
+   
+   // Output MUX to allow for bypass
+   wire 		selected_stb = bypass ? stb_in : stb_out_pre[8];
+   
    always @(posedge clk)
-     if(bypass)
-       data_out <= data_in;
-     else if(stb_out_pre[9])
-       data_out <= final_sum;
-
-   always @(posedge clk)
-     if(rst)
-       stb_out <= 0;
-     else if(bypass)
-       stb_out <= stb_in;
-     else
-       stb_out <= stb_out_pre[9];
- 
+     begin
+	stb_out  <= selected_stb;
+	if(selected_stb)
+	  data_out <= bypass ? data_in : final_sum_clip;
+     end
+   
 endmodule // hb_dec

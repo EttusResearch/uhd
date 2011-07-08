@@ -29,14 +29,26 @@ module rx_dcoffset_tb();
    initial $dumpfile("rx_dcoffset_tb.vcd");
    initial $dumpvars(0,rx_dcoffset_tb);
 
-   reg [13:0] adc_in = 7;
+   reg [13:0] adc_in;
    wire [13:0] adc_out;
 
    always @(posedge clk)
-     $display("%d\t%d",adc_in,adc_out);
+     begin
+	if(adc_in[13])
+	  $write("-%d,",-adc_in);
+	else
+	  $write("%d,",adc_in);
+	if(adc_out[13])
+	  $write("-%d\n",-adc_out);
+	else
+	  $write("%d\n",adc_out);
+     end	
    
-   rx_dcoffset #(.WIDTH(14),.ADDR(0))
+   rx_dcoffset #(.WIDTH(14),.ADDR(0), .alpha_shift(8))
      rx_dcoffset(.clk(clk),.rst(rst),.set_stb(0),.set_addr(0),.set_data(0),
-		 .adc_in(adc_in),.adc_out(adc_out));
+		 .in(adc_in),.out(adc_out));
+
+   always @(posedge clk)
+     adc_in <= (($random % 473) + 23)/4;
    
 endmodule // longfifo_tb

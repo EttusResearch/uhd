@@ -29,21 +29,30 @@ module small_hb_dec
      input stb_in,
      input [WIDTH-1:0] data_in,
      output reg stb_out,
-     output [WIDTH-1:0] data_out);
+     output reg [WIDTH-1:0] data_out);
 
-   reg 			stb_in_d1;
-   reg [WIDTH-1:0] 	data_in_d1;
-   always @(posedge clk) stb_in_d1 <= stb_in;
-   always @(posedge clk) data_in_d1 <= data_in;
+   // Round off inputs to 17 bits because of 18 bit multipliers
+   localparam INTWIDTH = 17;
+   wire [INTWIDTH-1:0] 	data_rnd;
+   wire 		stb_rnd;
+   
+   round_sd #(.WIDTH_IN(WIDTH),.WIDTH_OUT(INTWIDTH)) round_in
+     (.clk(clk),.reset(rst),.in(data_in),.strobe_in(stb_in),.out(data_rnd),.strobe_out(stb_rnd));
+   	
+   
+   reg 			stb_rnd_d1;
+   reg [INTWIDTH-1:0] 	data_rnd_d1;
+   always @(posedge clk) stb_rnd_d1 <= stb_rnd;
+   always @(posedge clk) data_rnd_d1 <= data_rnd;
    
    wire 		go;
    reg 			phase, go_d1, go_d2, go_d3, go_d4;
    always @(posedge clk)
      if(rst | ~run)
        phase <= 0;
-     else if(stb_in_d1)
+     else if(stb_rnd_d1)
        phase <= ~phase;
-   assign 		go = stb_in_d1 & phase;
+   assign 		go = stb_rnd_d1 & phase;
    always @(posedge clk) 
      if(rst | ~run)
        begin
@@ -63,11 +72,11 @@ module small_hb_dec
    wire [17:0] 		coeff_a = -10690;
    wire [17:0] 		coeff_b = 75809;
    
-   reg [WIDTH-1:0] 	d1, d2, d3, d4 , d5, d6;
+   reg [INTWIDTH-1:0] 	d1, d2, d3, d4 , d5, d6;
    always @(posedge clk)
-     if(stb_in_d1 | rst)
+     if(stb_rnd_d1 | rst)
        begin
-	  d1 <= data_in_d1;
+	  d1 <= data_rnd_d1;
 	  d2 <= d1;
 	  d3 <= d2;
 	  d4 <= d3;
@@ -76,16 +85,14 @@ module small_hb_dec
        end
 
    reg [17:0] sum_a, sum_b, middle, middle_d1;
-   wire [17:0] sum_a_unreg, sum_b_unreg;
-   add2 #(.WIDTH(18)) add2_a (.in1(data_in_d1),.in2(d6),.sum(sum_a_unreg));
-   add2 #(.WIDTH(18)) add2_b (.in1(d2),.in2(d4),.sum(sum_b_unreg));
-   
+
    always @(posedge clk)
      if(go)
        begin
-	  sum_a <= sum_a_unreg;
-	  sum_b <= sum_b_unreg;
-	  middle <= d3;
+	  sum_a <= {data_rnd_d1[INTWIDTH-1],data_rnd_d1} + {d6[INTWIDTH-1],d6};
+	  sum_b <= {d2[INTWIDTH-1],d2} + {d4[INTWIDTH-1],d4};
+	  //middle <= {d3[INTWIDTH-1],d3};
+	  middle <= {d3,1'b0};
        end
 
    always @(posedge clk)
@@ -106,23 +113,22 @@ module small_hb_dec
      else if(go_d3)
        accum <= accum + {prod};
    
-   wire [17:0] 	 accum_rnd;
-   round #(.bits_in(36),.bits_out(18)) round_acc (.in(accum),.out(accum_rnd));
+   wire [WIDTH:0] 	 accum_rnd;
+   wire [WIDTH-1:0] 	 accum_rnd_clip;
+   
+   wire 	 stb_round;
+   
+   round_sd #(.WIDTH_IN(36),.WIDTH_OUT(WIDTH+1)) round_acc 
+     (.clk(clk), .reset(rst), .in(accum), .strobe_in(go_d4), .out(accum_rnd), .strobe_out(stb_round));
 
-   reg [17:0] 	 final_sum;
+   clip #(.bits_in(WIDTH+1),.bits_out(WIDTH)) clip (.in(accum_rnd), .out(accum_rnd_clip));
+   
+   // Output
    always @(posedge clk)
-     if(bypass)
-       final_sum <= data_in_d1;
-     else if(go_d4)
-       final_sum <= accum_rnd;
+     begin
+	stb_out  <= bypass ? stb_in : stb_round;
+	data_out <= bypass ? data_in : accum_rnd_clip;
+     end
 
-   assign 	 data_out = final_sum;
 
-   always @(posedge clk)
-     if(rst)
-       stb_out <= 0;
-     else if(bypass)
-       stb_out <= stb_in_d1;
-     else
-       stb_out <= go_d4;
 endmodule // small_hb_dec
