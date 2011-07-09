@@ -28,10 +28,10 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_nswap, PRIORITY_CUSTOM){
     const __m128 scalar = _mm_set_ps1(float(scale_factor));
 
     #define convert_fc32_1_to_item32_1_nswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                  \
+    for (; i+4 < nsamps; i+=4){                                         \
         /* load from input */                                           \
-        __m128 tmplo = _mm_load ## _al_ ## _ps(reinterpret_cast<const float *>(input+i+0)); \
-        __m128 tmphi = _mm_load ## _al_ ## _ps(reinterpret_cast<const float *>(input+i+2)); \
+        __m128 tmplo = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+0)); \
+        __m128 tmphi = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+2)); \
                                                                         \
         /* convert and scale */ \
         __m128i tmpilo = _mm_cvtps_epi32(_mm_mul_ps(tmplo, scalar));    \
@@ -53,9 +53,9 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_nswap, PRIORITY_CUSTOM){
     case 0x8:
         output[i] = fc32_to_item32(input[i], float(scale_factor)); i++;
     case 0x0:
-        convert_fc32_1_to_item32_1_nswap_guts()
+        convert_fc32_1_to_item32_1_nswap_guts(_)
         break;
-    default: convert_fc32_1_to_item32_1_nswap_guts(u)
+    default: convert_fc32_1_to_item32_1_nswap_guts(u_)
     }
 
     //convert remainder
@@ -71,10 +71,10 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_bswap, PRIORITY_CUSTOM){
     const __m128 scalar = _mm_set_ps1(float(scale_factor));
 
     #define convert_fc32_1_to_item32_1_bswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                  \
+    for (; i+4 < nsamps; i+=4){                                         \
         /* load from input */                                           \
-        __m128 tmplo = _mm_load ## _al_ ## _ps(reinterpret_cast<const float *>(input+i+0)); \
-        __m128 tmphi = _mm_load ## _al_ ## _ps(reinterpret_cast<const float *>(input+i+2)); \
+        __m128 tmplo = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+0)); \
+        __m128 tmphi = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+2)); \
                                                                         \
         /* convert and scale */ \
         __m128i tmpilo = _mm_cvtps_epi32(_mm_mul_ps(tmplo, scalar));    \
@@ -95,9 +95,9 @@ DECLARE_CONVERTER(convert_fc32_1_to_item32_1_bswap, PRIORITY_CUSTOM){
     case 0x8:
         output[i] = uhd::byteswap(fc32_to_item32(input[i], float(scale_factor))); i++;
     case 0x0:
-        convert_fc32_1_to_item32_1_bswap_guts()
+        convert_fc32_1_to_item32_1_bswap_guts(_)
         break;
-    default: convert_fc32_1_to_item32_1_bswap_guts(u)
+    default: convert_fc32_1_to_item32_1_bswap_guts(u_)
     }
 
     //convert remainder
@@ -114,7 +114,7 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_nswap, PRIORITY_CUSTOM){
     const __m128i zeroi = _mm_setzero_si128();
 
     #define convert_item32_1_to_fc32_1_nswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                  \
+    for (; i+4 < nsamps; i+=4){                                         \
         /* load from input */                                           \
         __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i)); \
                                                                         \
@@ -129,8 +129,8 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_nswap, PRIORITY_CUSTOM){
         __m128 tmphi = _mm_mul_ps(_mm_cvtepi32_ps(tmpihi), scalar);     \
                                                                         \
         /* store to output */                                           \
-        _mm_store ## _al_ ## _ps(reinterpret_cast<float *>(output+i+0), tmplo); \
-        _mm_store ## _al_ ## _ps(reinterpret_cast<float *>(output+i+2), tmphi); \
+        _mm_store ## _al_ ## ps(reinterpret_cast<float *>(output+i+0), tmplo); \
+        _mm_store ## _al_ ## ps(reinterpret_cast<float *>(output+i+2), tmphi); \
     }                                                                   \
 
     size_t i = 0;
@@ -140,9 +140,9 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_nswap, PRIORITY_CUSTOM){
     case 0x8:
         output[i] = item32_to_fc32(input[i], float(scale_factor)); i++;
     case 0x0:
-        convert_item32_1_to_fc32_1_nswap_guts()
+        convert_item32_1_to_fc32_1_nswap_guts(_)
         break;
-    default: convert_item32_1_to_fc32_1_nswap_guts(u)
+    default: convert_item32_1_to_fc32_1_nswap_guts(u_)
     }
 
     //convert remainder
@@ -159,7 +159,7 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_bswap, PRIORITY_CUSTOM){
     const __m128i zeroi = _mm_setzero_si128();
 
     #define convert_item32_1_to_fc32_1_bswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                  \
+    for (; i+4 < nsamps; i+=4){                                         \
         /* load from input */                                           \
         __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i)); \
                                                                         \
@@ -173,8 +173,8 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_bswap, PRIORITY_CUSTOM){
         __m128 tmphi = _mm_mul_ps(_mm_cvtepi32_ps(tmpihi), scalar);     \
                                                                         \
         /* store to output */                                           \
-        _mm_store ## _al_ ## _ps(reinterpret_cast<float *>(output+i+0), tmplo); \
-        _mm_store ## _al_ ## _ps(reinterpret_cast<float *>(output+i+2), tmphi); \
+        _mm_store ## _al_ ## ps(reinterpret_cast<float *>(output+i+0), tmplo); \
+        _mm_store ## _al_ ## ps(reinterpret_cast<float *>(output+i+2), tmphi); \
     }                                                                   \
 
     size_t i = 0;
@@ -184,9 +184,9 @@ DECLARE_CONVERTER(convert_item32_1_to_fc32_1_bswap, PRIORITY_CUSTOM){
     case 0x8:
         output[i] = item32_to_fc32(uhd::byteswap(input[i]), float(scale_factor)); i++;
     case 0x0:
-        convert_item32_1_to_fc32_1_bswap_guts()
+        convert_item32_1_to_fc32_1_bswap_guts(_)
         break;
-    default: convert_item32_1_to_fc32_1_bswap_guts(u)
+    default: convert_item32_1_to_fc32_1_bswap_guts(u_)
     }
 
     //convert remainder

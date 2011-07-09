@@ -240,9 +240,9 @@ public:
 
         while (not file.eof()) {
             file.read((char *)buf, sizeof(buf));
-            size_t n = file.gcount();
+            const std::streamsize n = file.gcount();
             if(n == 0) continue;
-            int ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER, buf, n);
+            int ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER, buf, boost::uint16_t(n));
             if (ret < 0 or size_t(ret) != n) {
                 throw uhd::io_error("usrp_load_fpga: fpga load error");
             }
@@ -266,8 +266,6 @@ public:
         const char *filename = filestring.c_str();
         const boost::uint16_t i2c_addr = 0x50;
 
-        //FIXME: verify types
-        int len;
         unsigned int addr;
         unsigned char data[256];
         unsigned char sendbuf[17];
@@ -280,7 +278,7 @@ public:
         }
 
         file.read((char *)data, 256);
-        len = file.gcount();
+        std::streamsize len = file.gcount();
 
         if(len == 256) {
             throw uhd::io_error("usrp_load_eeprom: image size too large");
@@ -290,8 +288,8 @@ public:
         addr = 0;
         while(len > 0) {
             sendbuf[0] = addr;
-            memcpy(sendbuf+1, &data[addr], len > pagesize ? pagesize : len);
-            int ret = usrp_i2c_write(i2c_addr, sendbuf, (len > pagesize ? pagesize : len)+1);
+            memcpy(sendbuf+1, &data[addr], len > pagesize ? pagesize : size_t(len));
+            int ret = usrp_i2c_write(i2c_addr, sendbuf, (len > pagesize ? pagesize : size_t(len))+1);
             if (ret < 0) {
                 throw uhd::io_error("usrp_load_eeprom: usrp_i2c_write failed");
             }

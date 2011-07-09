@@ -206,7 +206,7 @@ libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::spt
         handles[dev->get()] = new_handle;
         return new_handle;
     }
-    catch(const uhd::exception &e){
+    catch(const uhd::exception &){
         std::cerr << "USB open failed: see the application notes for your device." << std::endl;
         throw;
     }
