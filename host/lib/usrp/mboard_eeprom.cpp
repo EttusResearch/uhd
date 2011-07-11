@@ -75,6 +75,7 @@ static const uhd::dict<std::string, boost::uint8_t> USRP_N100_OFFSETS = boost::a
     ("mac-addr", 0x02)
     ("ip-addr", 0x0C)
     //leave space here for other addresses (perhaps)
+    ("prod-lsb-msb", 0x14)
     ("gpsdo", 0x17)
     ("serial", 0x18)
     ("name", 0x18 + SERIAL_LEN)
@@ -91,6 +92,11 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     byte_vector_t rev_lsb_msb = iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["rev-lsb-msb"], 2);
     boost::uint16_t rev = (boost::uint16_t(rev_lsb_msb.at(0)) << 0) | (boost::uint16_t(rev_lsb_msb.at(1)) << 8);
     mb_eeprom["rev"] = boost::lexical_cast<std::string>(rev);
+
+    //extract the product code
+    byte_vector_t prod_lsb_msb = iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["prod-lsb-msb"], 2);
+    boost::uint16_t prod = (boost::uint16_t(prod_lsb_msb.at(0)) << 0) | (boost::uint16_t(prod_lsb_msb.at(1)) << 8);
+    mb_eeprom["product"] = (prod == 0 or prod == 0xffff)? "" : boost::lexical_cast<std::string>(prod);
 
     //extract the addresses
     mb_eeprom["mac-addr"] = mac_addr_t::from_bytes(iface.read_eeprom(
@@ -138,6 +144,16 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
             (boost::uint8_t(rev >> 8))
         ;
         iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["rev-lsb-msb"], rev_lsb_msb);
+    }
+
+    //parse the product code
+    if (mb_eeprom.has_key("product")){
+        boost::uint16_t prod = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+        byte_vector_t prod_lsb_msb = boost::assign::list_of
+            (boost::uint8_t(prod >> 0))
+            (boost::uint8_t(prod >> 8))
+        ;
+        iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["prod-lsb-msb"], prod_lsb_msb);
     }
 
     //store the addresses
