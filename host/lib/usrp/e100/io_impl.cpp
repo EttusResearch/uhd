@@ -24,12 +24,13 @@
 #include "e100_regs.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/barrier.hpp>
 #include <poll.h> //poll
 #include <fcntl.h> //open, close
 #include <sstream>
@@ -51,11 +52,6 @@ struct e100_impl::io_impl{
         false_alarm(0), async_msg_fifo(100/*messages deep*/)
     { /* NOP */ }
 
-    ~io_impl(void){
-        recv_pirate_crew.interrupt_all();
-        recv_pirate_crew.join_all();
-    }
-
     double tick_rate; //set by update tick rate method
     e100_ctrl::sptr iface; //so handle irq can peek and poke
     void handle_irq(void);
@@ -70,11 +66,8 @@ struct e100_impl::io_impl{
 
     //a pirate's life is the life for me!
     void recv_pirate_loop(
-        boost::barrier &spawn_barrier,
         spi_iface::sptr //keep a sptr to iface which shares gpio147
     ){
-        spawn_barrier.wait();
-
         //open the GPIO and set it up for an IRQ
         std::ofstream edge_file("/sys/class/gpio/gpio147/edge");
         edge_file << "rising" << std::endl << std::flush;
@@ -94,7 +87,7 @@ struct e100_impl::io_impl{
         ::close(fd);
     }
     bounded_buffer<async_metadata_t> async_msg_fifo;
-    boost::thread_group recv_pirate_crew;
+    task::sptr pirate_task;
 };
 
 void e100_impl::io_impl::handle_irq(void){
@@ -191,12 +184,9 @@ void e100_impl::io_init(void){
     _fpga_ctrl->poke32(E100_REG_SR_ERR_CTRL, 1 << 1); //start
 
     //spawn a pirate, yarrr!
-    boost::barrier spawn_barrier(2);
-    _io_impl->recv_pirate_crew.create_thread(boost::bind(
-        &e100_impl::io_impl::recv_pirate_loop, _io_impl.get(),
-        boost::ref(spawn_barrier), _aux_spi_iface
+    _io_impl->pirate_task = task::make(boost::bind(
+        &e100_impl::io_impl::recv_pirate_loop, _io_impl.get(), _aux_spi_iface
     ));
-    spawn_barrier.wait();
 
     //init some handler stuff
     _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_le);

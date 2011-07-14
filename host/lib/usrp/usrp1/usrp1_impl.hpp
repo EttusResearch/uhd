@@ -30,7 +30,6 @@
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include <boost/thread/barrier.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 
 #ifndef INCLUDED_USRP1_IMPL_HPP
@@ -130,7 +129,7 @@ private:
     bool has_rx_halfband(void);
     bool has_tx_halfband(void);
 
-    void vandal_conquest_loop(boost::barrier &);
+    void vandal_conquest_loop(void);
 
     //handle the enables
     bool _rx_enabled, _tx_enabled;

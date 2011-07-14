@@ -22,15 +22,15 @@
 #include "usrp2_regs.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/barrier.hpp>
 #include <iostream>
 
 using namespace uhd;
@@ -134,11 +134,6 @@ struct usrp2_impl::io_impl{
         /* NOP */
     }
 
-    ~io_impl(void){
-        recv_pirate_crew.interrupt_all();
-        recv_pirate_crew.join_all();
-    }
-
     managed_send_buffer::sptr get_send_buff(size_t chan, double timeout){
         flow_control_monitor &fc_mon = *fc_mons[chan];
 
@@ -163,8 +158,8 @@ struct usrp2_impl::io_impl{
     sph::send_packet_handler send_handler;
 
     //methods and variables for the pirate crew
-    void recv_pirate_loop(boost::barrier &, zero_copy_if::sptr, size_t);
-    boost::thread_group recv_pirate_crew;
+    void recv_pirate_loop(zero_copy_if::sptr, size_t);
+    std::list<task::sptr> pirate_tasks;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     double tick_rate;
 };
@@ -176,11 +171,8 @@ struct usrp2_impl::io_impl{
  * - put async message packets into queue
  **********************************************************************/
 void usrp2_impl::io_impl::recv_pirate_loop(
-    boost::barrier &spawn_barrier,
-    zero_copy_if::sptr err_xport,
-    size_t index
+    zero_copy_if::sptr err_xport, size_t index
 ){
-    spawn_barrier.wait();
     set_thread_priority_safe();
 
     //store a reference to the flow control monitor (offset by max dsps)
@@ -231,7 +223,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //TODO unknown received packet, may want to print error...
             }
         }catch(const std::exception &e){
-            UHD_MSG(error) << "Error (usrp2 recv pirate loop): " << e.what() << std::endl;
+            UHD_MSG(error) << "Error in recv pirate loop: " << e.what() << std::endl;
         }
     }
 }
@@ -264,17 +256,14 @@ void usrp2_impl::io_init(void){
     }
 
     //create a new pirate thread for each zc if (yarr!!)
-    boost::barrier spawn_barrier(_mbc.size()+1);
     size_t index = 0;
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         //spawn a new pirate to plunder the recv booty
-        _io_impl->recv_pirate_crew.create_thread(boost::bind(
-            &usrp2_impl::io_impl::recv_pirate_loop,
-            _io_impl.get(), boost::ref(spawn_barrier),
+        _io_impl->pirate_tasks.push_back(task::make(boost::bind(
+            &usrp2_impl::io_impl::recv_pirate_loop, _io_impl.get(),
             _mbc[mb].err_xports.at(0), index++
-        ));
+        )));
     }
-    spawn_barrier.wait();
 
     //init some handler stuff
     _io_impl->recv_handler.set_vrt_unpacker(&vrt::if_hdr_unpack_be);

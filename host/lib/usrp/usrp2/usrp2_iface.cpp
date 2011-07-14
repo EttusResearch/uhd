@@ -20,15 +20,15 @@
 #include "usrp2_iface.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/barrier.hpp>
 #include <boost/functional/hash.hpp>
 #include <algorithm>
 #include <iostream>
@@ -110,13 +110,12 @@ public:
 
     void lock_device(bool lock){
         if (lock){
-            boost::barrier spawn_barrier(2);
-            _lock_thread_group.create_thread(boost::bind(&usrp2_iface_impl::lock_loop, this, boost::ref(spawn_barrier)));
-            spawn_barrier.wait();
+            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
+            _lock_task = task::make(boost::bind(&usrp2_iface_impl::lock_task, this));
         }
         else{
-            _lock_thread_group.interrupt_all();
-            _lock_thread_group.join_all();
+            _lock_task.reset(); //shutdown the task
+            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0); //unlock
         }
     }
 
@@ -132,29 +131,12 @@ public:
         return lock_gpid != boost::uint32_t(get_gpid());
     }
 
-    void lock_loop(boost::barrier &spawn_barrier){
-        spawn_barrier.wait();
-
-        try{
-            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
-            while(true){
-                //re-lock in loop
-                boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
-                this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, curr_secs);
-                //sleep for a bit
-                boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
-            }
-        }
-        catch(const boost::thread_interrupted &){
-            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0); //unlock on exit
-        }
-        catch(const std::exception &e){
-            UHD_MSG(error)
-                << "An unexpected exception was caught in the locker loop." << std::endl
-                << "The device will automatically unlock from this process." << std::endl
-                << e.what() << std::endl
-            ;
-        }
+    void lock_task(void){
+        //re-lock in task
+        boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
+        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, curr_secs);
+        //sleep for a bit
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
     }
 
 /***********************************************************************
@@ -400,7 +382,7 @@ private:
     boost::uint32_t _protocol_compat;
 
     //lock thread stuff
-    boost::thread_group _lock_thread_group;
+    task::sptr _lock_task;
 };
 
 /***********************************************************************

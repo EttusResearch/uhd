@@ -24,6 +24,7 @@
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/math/special_functions/sign.hpp>
@@ -131,8 +132,6 @@ struct usrp1_impl::io_impl{
     }
 
     ~io_impl(void){
-        vandal_tribe.interrupt_all();
-        vandal_tribe.join_all();
         UHD_SAFE_CALL(flush_send_buff();)
     }
 
@@ -159,7 +158,7 @@ struct usrp1_impl::io_impl{
         return omsb.get_new(curr_buff, next_buff);
     }
 
-    boost::thread_group vandal_tribe;
+    task::sptr vandal_task;
     boost::system_time last_send_time;
 };
 
@@ -230,12 +229,9 @@ void usrp1_impl::io_init(void){
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
 
     //create a new vandal thread to poll xerflow conditions
-    boost::barrier spawn_barrier(2);
-    _io_impl->vandal_tribe.create_thread(boost::bind(
-        &usrp1_impl::vandal_conquest_loop,
-        this, boost::ref(spawn_barrier)
+    _io_impl->vandal_task = task::make(boost::bind(
+        &usrp1_impl::vandal_conquest_loop, this
     ));
-    spawn_barrier.wait();
 
     //init some handler stuff
     _io_impl->recv_handler.set_tick_rate(_master_clock_rate);
@@ -277,8 +273,7 @@ void usrp1_impl::tx_stream_on_off(bool enb){
  * On an overflow, interleave an inline message into recv and print.
  * This procedure creates "soft" inline and async user messages.
  */
-void usrp1_impl::vandal_conquest_loop(boost::barrier &spawn_barrier){
-    spawn_barrier.wait();
+void usrp1_impl::vandal_conquest_loop(void){
 
     //initialize the async metadata
     async_metadata_t async_metadata;

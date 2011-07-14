@@ -16,9 +16,8 @@
 //
 
 #include "soft_time_ctrl.hpp"
+#include <uhd/utils/tasks.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/barrier.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
@@ -45,19 +44,10 @@ public:
         _stream_on_off(stream_on_off)
     {
         //synchronously spawn a new thread
-        boost::barrier spawn_barrier(2);
-        _thread_group.create_thread(boost::bind(
-            &soft_time_ctrl_impl::recv_cmd_dispatcher, this, boost::ref(spawn_barrier))
-        );
-        spawn_barrier.wait();
+        _recv_cmd_task = task::make(boost::bind(&soft_time_ctrl_impl::recv_cmd_task, this));
 
         //initialize the time to something
         this->set_time(time_spec_t(0.0));
-    }
-
-    ~soft_time_ctrl_impl(void){
-        _thread_group.interrupt_all();
-        _thread_group.join_all();
     }
 
     /*******************************************************************
@@ -204,15 +194,10 @@ public:
         _stream_mode = cmd.stream_mode;
     }
 
-    void recv_cmd_dispatcher(boost::barrier &spawn_barrier){
-        spawn_barrier.wait();
-        try{
-            boost::shared_ptr<stream_cmd_t> cmd;
-            while (true){
-                _cmd_queue.pop_with_wait(cmd);
-                recv_cmd_handle_cmd(*cmd);
-            }
-        } catch(const boost::thread_interrupted &){}
+    void recv_cmd_task(void){ //task is looped
+        boost::shared_ptr<stream_cmd_t> cmd;
+        _cmd_queue.pop_with_wait(cmd);
+        recv_cmd_handle_cmd(*cmd);
     }
 
     bounded_buffer<async_metadata_t> &get_async_queue(void){
@@ -232,7 +217,7 @@ private:
     bounded_buffer<async_metadata_t> _async_msg_queue;
     bounded_buffer<rx_metadata_t> _inline_msg_queue;
     const cb_fcn_type _stream_on_off;
-    boost::thread_group _thread_group;
+    task::sptr _recv_cmd_task;
 };
 
 /***********************************************************************

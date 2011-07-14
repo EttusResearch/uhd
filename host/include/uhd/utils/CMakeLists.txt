@@ -30,6 +30,7 @@ INSTALL(FILES
     safe_call.hpp
     safe_main.hpp
     static.hpp
+    tasks.hpp
     thread_priority.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
     COMPONENT headers

@@ -22,10 +22,12 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/serial.hpp>
 #include "ctrl_packet.hpp"
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/bind.hpp>
 #include <uhd/exception.hpp>
 
 using namespace uhd::transport;
@@ -40,18 +42,11 @@ public:
         _ctrl_transport(ctrl_transport),
         _seq(0)
     {
-        boost::barrier spawn_barrier(2);
-        viking_marauders.create_thread(boost::bind(&b100_ctrl_impl::viking_marauder_loop, this, boost::ref(spawn_barrier)));
-        spawn_barrier.wait();
+        viking_marauder = task::make(boost::bind(&b100_ctrl_impl::viking_marauder_loop, this));
     }
 
     int write(boost::uint32_t addr, const ctrl_data_t &data);
     ctrl_data_t read(boost::uint32_t addr, size_t len);
-
-    ~b100_ctrl_impl(void) {
-        viking_marauders.interrupt_all();
-        viking_marauders.join_all();
-    }
 
     bool get_ctrl_data(ctrl_data_t &pkt_data, double timeout);
 
@@ -95,10 +90,10 @@ private:
     int send_pkt(boost::uint16_t *cmd);
 
     //änd hërë wë gö ä-Vïkïng för äsynchronous control packets
-    void viking_marauder_loop(boost::barrier &);
+    void viking_marauder_loop(void);
     bounded_buffer<ctrl_data_t> sync_ctrl_fifo;
     async_cb_type _async_cb;
-    boost::thread_group viking_marauders;
+    task::sptr viking_marauder;
 
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     boost::uint8_t _seq;
@@ -206,8 +201,7 @@ ctrl_data_t b100_ctrl_impl::read(boost::uint32_t addr, size_t len) {
  * never have more than 1 message in it, since it's expected that we'll
  * wait for a control operation to finish before starting another one.
  **********************************************************************/
-void b100_ctrl_impl::viking_marauder_loop(boost::barrier &spawn_barrier) {
-    spawn_barrier.wait();
+void b100_ctrl_impl::viking_marauder_loop(void){
     set_thread_priority_safe();
 
     while (not boost::this_thread::interruption_requested()){

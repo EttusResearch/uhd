@@ -21,11 +21,11 @@
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/exception.hpp>
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/barrier.hpp>
 #include <list>
 
 using namespace uhd;
@@ -202,12 +202,10 @@ public:
         }
 
         //spawn the event handler threads
-        size_t concurrency = hints.cast<size_t>("concurrency_hint", 1);
-        boost::barrier spawn_barrier(concurrency+1);
-        for (size_t i = 0; i < concurrency; i++) _thread_group.create_thread(
-            boost::bind(&libusb_zero_copy_impl::run_event_loop, this, boost::ref(spawn_barrier))
-        );
-        spawn_barrier.wait();
+        const size_t concurrency = hints.cast<size_t>("concurrency_hint", 1);
+        for (size_t i = 0; i < concurrency; i++) _event_loop_tasks.push_back(task::make(
+            boost::bind(&libusb_zero_copy_impl::run_event_loop, this)
+        ));
     }
 
     ~libusb_zero_copy_impl(void){
@@ -221,9 +219,6 @@ public:
                 boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             }
         }
-        //shutdown the threads
-        _thread_group.interrupt_all();
-        _thread_group.join_all();
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
@@ -275,20 +270,17 @@ private:
     std::list<libusb_transfer *> _all_luts;
 
     //! event handler threads
-    boost::thread_group _thread_group;
+    std::list<task::sptr> _event_loop_tasks;
 
-    void run_event_loop(boost::barrier &spawn_barrier){
-        spawn_barrier.wait();
+    void run_event_loop(void){
         set_thread_priority_safe();
         libusb_context *context = libusb::session::get_global_session()->get_context();
-        try{
-            while (not boost::this_thread::interruption_requested()){
-                timeval tv;
-                tv.tv_sec = 0;
-                tv.tv_usec = 100000; //100ms
-                libusb_handle_events_timeout(context, &tv);
-            }
-        } catch(const boost::thread_interrupted &){}
+        while (not boost::this_thread::interruption_requested()){
+            timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000; //100ms
+            libusb_handle_events_timeout(context, &tv);
+        }
     }
 
 };
