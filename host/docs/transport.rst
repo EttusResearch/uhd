@@ -38,6 +38,14 @@ increase or decrease the maximum number of samples per packet.
 The frame sizes default to an MTU of 1472 bytes per IP/UDP packet,
 and may be increased if permitted by your network hardware.
 
+**Note3:** For lower latency at low sample rates, use smaller buffers
+
+**Note4:** For overall lower latency, look for Interrupt Coalescing settings
+for your OS and ethernet chipset.  It seems the Intel ethernet chipsets offer
+fine-grained control in Linux.  Also, consult:
+
+* http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/interrupt_coal.htm
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Flow control parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -76,6 +84,16 @@ To change the maximum values, run the following commands:
     sudo sysctl -w net.core.wmem_max=<new value>
 
 Set the values permanently by editing */etc/sysctl.conf*
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Windows specific notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On Windows, it is important to change the default UDP behavior such that
+1500 byte packets still travel through the fast path of the sockets stack.
+
+FastSendDatagramThreshold registry key to change documented here:
+
+* http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e
 
 ------------------------------------------------------------------------
 USB transport (libusb)
