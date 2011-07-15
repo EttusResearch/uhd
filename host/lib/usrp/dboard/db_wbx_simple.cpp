@@ -16,7 +16,7 @@
 //
 
 // Antenna constants
-#define ANTSW_IO        ((1 << 5)|(1 << 15))    // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
+#define ANTSW_IO        ((1 << 15))             // on UNIT_TX, 0 = TX, 1 = RX, on UNIT_RX 0 = main ant, 1 = RX2
 #define ANT_TX          0                       //the tx line is transmitting
 #define ANT_RX          ANTSW_IO                //the tx line is receiving
 #define ANT_TXRX        0                       //the rx line is on txrx
@@ -150,7 +150,10 @@ void wbx_simple::rx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = std::string("WBX RX + Simple GDB");
+        if (is_v3())
+            val = std::string("WBX v3 RX + Simple GDB");
+        else
+            val = std::string("WBX RX + Simple GDB");
         return;
 
     case SUBDEV_PROP_FREQ:
@@ -204,7 +207,10 @@ void wbx_simple::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        val = std::string("WBX TX + Simple GDB");
+        if (is_v3())
+            val = std::string("WBX v3 TX + Simple GDB");
+        else
+            val = std::string("WBX TX + Simple GDB");
         return;
 
     case SUBDEV_PROP_FREQ:
