@@ -30,6 +30,9 @@
 #define UHD_MSG(type) \
     uhd::msg::_msg(uhd::msg::type)()
 
+//! Helpful debug tool to print site info
+#define UHD_HERE() \
+    UHD_MSG(status) << __FILE__ << ":" << __LINE__ << std::endl
 
 namespace uhd{ namespace msg{
 
