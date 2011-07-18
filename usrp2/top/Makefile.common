@@ -1,5 +1,5 @@
 #
-# Copyright 2008, 2009, 2010 Ettus Research LLC
+# Copyright 2008-2011 Ettus Research LLC
 #
 
 ##################################################
@@ -14,10 +14,12 @@ endif
 BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
 SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
+TIMING_CHECKER = python $(BASE_DIR)/python/check_timing.py
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
 BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
 MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
+TWR_FILE = $(BUILD_DIR)/$(TOP_MODULE).twr
 
 ##################################################
 # Global Targets
@@ -35,6 +37,7 @@ synth: $(ISE_FILE)
 
 bin: check $(BIN_FILE)
 	$(ISE_HELPER) "Generate Programming File"
+	$(TIMING_CHECKER) $(TWR_FILE)
 
 mcs: $(MCS_FILE)
 
