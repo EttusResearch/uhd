@@ -325,6 +325,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             addr, BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
         ));
         _tree->create<std::string>(mb_path / "name").set(_mbc[mb].iface->get_cname());
+        _tree->create<std::string>(mb_path / "fw_version").set(_mbc[mb].iface->get_fw_version_string());
 
         //check the fpga compatibility number
         const boost::uint32_t fpga_compat_num = _mbc[mb].iface->peek32(U2_REG_COMPAT_NUM_RB);

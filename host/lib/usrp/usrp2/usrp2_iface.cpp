@@ -46,10 +46,6 @@ static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
 static const boost::uint32_t MIN_PROTO_COMPAT_REG = USRP2_FW_COMPAT_NUM;
 static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
 
-// Map for virtual firmware regs (not very big so we can keep it here for now)
-#define U2_FW_REG_LOCK_TIME 0
-#define U2_FW_REG_LOCK_GPID 1
-
 //Define get_gpid() to get a globally unique identifier for this process.
 //The gpid is implemented as a hash of the pid and a unique machine identifier.
 #ifdef UHD_PLATFORM_WIN32
@@ -370,6 +366,11 @@ public:
         case USRP_NXXX: return "USRP-N???";
         }
         UHD_THROW_INVALID_CODE_PATH();
+    }
+
+    const std::string get_fw_version_string(void){
+        boost::uint32_t minor = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
+        return str(boost::format("%u.%u") % _protocol_compat % minor);
     }
 
 private:

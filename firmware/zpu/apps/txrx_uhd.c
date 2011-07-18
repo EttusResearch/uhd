@@ -46,27 +46,47 @@
 //virtual registers in the firmware to store persistent values
 static uint32_t fw_regs[8];
 
-extern uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
-
 static void handle_udp_data_packet(
     struct socket_address src, struct socket_address dst,
     unsigned char *payload, int payload_len
 ){
-    size_t which;
-    switch(dst.port){
+    //handle ICMP destination unreachable
+    if (payload == NULL) switch(src.port){
+    case USRP2_UDP_RX_DSP0_PORT:
+        //the end continuous streaming command
+        sr_rx_ctrl0->cmd = 1 << 31; //no samples now
+        sr_rx_ctrl0->time_secs = 0;
+        sr_rx_ctrl0->time_ticks = 0; //latch the command
+        break;
+
+    case USRP2_UDP_RX_DSP1_PORT:
+        //the end continuous streaming command
+        sr_rx_ctrl1->cmd = 1 << 31; //no samples now
+        sr_rx_ctrl1->time_secs = 0;
+        sr_rx_ctrl1->time_ticks = 0; //latch the command
+        break;
+
+    case USRP2_UDP_TX_DSP0_PORT:
+        //end async update packets per second
+        sr_tx_ctrl->cyc_per_up = 0;
+        break;
+
+    default: return;
+    }
+
+    //handle an incoming UDP packet
+    size_t which = 0;
+    if (payload != 0) switch(dst.port){
     case USRP2_UDP_RX_DSP0_PORT:
         which = 0;
-        dsp0_dst_port = src.port;
         break;
 
     case USRP2_UDP_RX_DSP1_PORT:
         which = 2;
-        dsp1_dst_port = src.port;
         break;
 
     case USRP2_UDP_TX_DSP0_PORT:
         which = 1;
-        err0_dst_port = src.port;
         break;
 
     default: return;
@@ -291,7 +311,10 @@ main(void)
 #endif
   printf("FPGA compatibility number: %d\n", USRP2_FPGA_COMPAT_NUM);
   printf("Firmware compatibility number: %d\n", USRP2_FW_COMPAT_NUM);
-  
+
+  //init readback for firmware minor version number
+  fw_regs[U2_FW_REG_VER_MINOR] = USRP2_FW_VER_MINOR;
+
 #ifdef BOOTLOADER
   //load the production FPGA image or firmware if appropriate
   do_the_bootload_thing();

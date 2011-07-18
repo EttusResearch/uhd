@@ -73,6 +73,9 @@ public:
     //! Is this device locked?
     virtual bool is_device_locked(void) = 0;
 
+    //! A version string for firmware
+    virtual const std::string get_fw_version_string(void) = 0;
+
     //motherboard eeprom map structure
     uhd::usrp::mboard_eeprom_t mb_eeprom;
 };

@@ -44,9 +44,6 @@ static const size_t out_buff_size = 2048;
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 #define MAX_UDP_LISTENERS 6
 
-//used in the top level application...
-uint16_t dsp0_dst_port, err0_dst_port, dsp1_dst_port;
-
 /***********************************************************************
  * 16-bit one's complement sum
  **********************************************************************/
@@ -312,25 +309,13 @@ handle_icmp_packet(struct ip_addr src, struct ip_addr dst,
       struct udp_hdr *udp = (struct udp_hdr *)(((char *)ip) + IP_HLEN);
       if (IPH_PROTO(ip) != IP_PROTO_UDP) break;
 
-      if (udp->dest == dsp0_dst_port){
-          //the end continuous streaming command
-          sr_rx_ctrl0->cmd = 1 << 31; //no samples now
-          sr_rx_ctrl0->time_secs = 0;
-          sr_rx_ctrl0->time_ticks = 0; //latch the command
-      }
-      else if (udp->dest == dsp1_dst_port){
-          //the end continuous streaming command
-          sr_rx_ctrl1->cmd = 1 << 31; //no samples now
-          sr_rx_ctrl1->time_secs = 0;
-          sr_rx_ctrl1->time_ticks = 0; //latch the command
-      }
-      else if (udp->dest == err0_dst_port){
-          //end async update packets per second
-          sr_tx_ctrl->cyc_per_up = 0;
+      struct listener_entry *lx = find_listener_by_port(udp->src);
+      if (lx){
+        struct socket_address src = make_socket_address(ip->src, udp->src);
+        struct socket_address dst = make_socket_address(ip->dest, udp->dest);
+        lx->rcvr(src, dst, NULL, 0);
       }
 
-      //struct udp_hdr *udp = (struct udp_hdr *)((char *)icmp + 28);
-      //printf("icmp port unr %d\n", udp->dest);
       putchar('i');
     }
     else {
