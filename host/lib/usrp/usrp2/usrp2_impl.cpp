@@ -86,11 +86,17 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
         return usrp2_addrs;
     }
 
-    //create a udp transport to communicate
-    std::string ctrl_port = boost::lexical_cast<std::string>(USRP2_UDP_CTRL_PORT);
-    udp_simple::sptr udp_transport = udp_simple::make_broadcast(
-        hint["addr"], ctrl_port
-    );
+    //Create a UDP transport to communicate:
+    //Some devices will cause a throw when opened for a broadcast address.
+    //We print and recover so the caller can loop through all bcast addrs.
+    udp_simple::sptr udp_transport;
+    try{
+        udp_transport = udp_simple::make_broadcast(hint["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT));
+    }
+    catch(const std::exception &e){
+        UHD_MSG(error) << boost::format("Cannot open UDP transport on %s\n%s") % hint["addr"] % e.what() << std::endl;
+        return usrp2_addrs; //dont throw, but return empty address so caller can insert
+    }
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out = usrp2_ctrl_data_t();
@@ -275,6 +281,12 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
             //set to half-a-second of buffering at max rate
             device_addr["recv_buff_size"] = "50e6";
+        #endif
+    }
+    if (not device_addr.has_key("send_buff_size")){
+        #if defined(UHD_PLATFORM_WIN32)
+            //a large send buff is ok to have on windows
+            device_addr["send_buff_size"] = "50e6";
         #endif
     }
 
