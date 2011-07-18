@@ -99,8 +99,8 @@ private:
         std::vector<rx_dsp_core_200::sptr> rx_dsps;
         tx_dsp_core_200::sptr tx_dsp;
         time64_core_200::sptr time64;
-        std::vector<uhd::transport::zero_copy_if::sptr> dsp_xports;
-        std::vector<uhd::transport::zero_copy_if::sptr> err_xports;
+        std::vector<uhd::transport::zero_copy_if::sptr> rx_dsp_xports;
+        uhd::transport::zero_copy_if::sptr tx_dsp_xport;
         uhd::usrp::dboard_manager::sptr dboard_manager;
         uhd::usrp::dboard_iface::sptr dboard_iface;
         size_t rx_chan_occ, tx_chan_occ;

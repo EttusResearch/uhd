@@ -229,7 +229,23 @@ static mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &u
 /***********************************************************************
  * Helpers
  **********************************************************************/
-static void init_xport(zero_copy_if::sptr xport){
+static zero_copy_if::sptr make_xport(
+    const std::string &addr,
+    const std::string &port,
+    const device_addr_t &hints,
+    const std::string &filter
+){
+
+    //only copy hints that contain the filter word
+    device_addr_t filtered_hints;
+    BOOST_FOREACH(const std::string &key, hints.keys()){
+        if (key.find(filter) == std::string::npos) continue;
+        filtered_hints[key] = hints[key];
+    }
+
+    //make the transport object with the filtered hints
+    zero_copy_if::sptr xport = udp_zero_copy::make(addr, port, filtered_hints);
+
     //Send a small data packet so the usrp2 knows the udp source port.
     //This setup must happen before further initialization occurs
     //or the async update packets will cause ICMP destination unreachable.
@@ -237,10 +253,11 @@ static void init_xport(zero_copy_if::sptr xport){
         uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
         uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
     };
-
     transport::managed_send_buffer::sptr send_buff = xport->get_send_buff();
     std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
     send_buff->commit(sizeof(data));
+
+    return xport;
 }
 
 /***********************************************************************
@@ -302,27 +319,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         const property_tree::path_type mb_path = "/mboards/" + mb;
 
         ////////////////////////////////////////////////////////////////
-        // construct transports for dsp and async errors
-        ////////////////////////////////////////////////////////////////
-        UHD_LOG << "Making transport for DSP0..." << std::endl;
-        _mbc[mb].dsp_xports.push_back(udp_zero_copy::make(
-            addr, BOOST_STRINGIZE(USRP2_UDP_DSP0_PORT), device_args_i
-        ));
-        init_xport(_mbc[mb].dsp_xports.back());
-
-        UHD_LOG << "Making transport for DSP1..." << std::endl;
-        _mbc[mb].dsp_xports.push_back(udp_zero_copy::make(
-            addr, BOOST_STRINGIZE(USRP2_UDP_DSP1_PORT), device_args_i
-        ));
-        init_xport(_mbc[mb].dsp_xports.back());
-
-        UHD_LOG << "Making transport for ERR0..." << std::endl;
-        _mbc[mb].err_xports.push_back(udp_zero_copy::make(
-            addr, BOOST_STRINGIZE(USRP2_UDP_ERR0_PORT), device_addr_t()
-        ));
-        init_xport(_mbc[mb].err_xports.back());
-
-        ////////////////////////////////////////////////////////////////
         // create the iface that controls i2c, spi, uart, and wb
         ////////////////////////////////////////////////////////////////
         _mbc[mb].iface = usrp2_iface::make(udp_simple::make_connected(
@@ -349,6 +345,24 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //lock the device/motherboard to this process
         _mbc[mb].iface->lock_device(true);
+
+        ////////////////////////////////////////////////////////////////
+        // construct transports for RX and TX DSPs
+        ////////////////////////////////////////////////////////////////
+        UHD_LOG << "Making transport for RX DSP0..." << std::endl;
+        _mbc[mb].rx_dsp_xports.push_back(make_xport(
+            addr, BOOST_STRINGIZE(USRP2_UDP_RX_DSP0_PORT), device_args_i, "recv"
+        ));
+        UHD_LOG << "Making transport for RX DSP1..." << std::endl;
+        _mbc[mb].rx_dsp_xports.push_back(make_xport(
+            addr, BOOST_STRINGIZE(USRP2_UDP_RX_DSP1_PORT), device_args_i, "recv"
+        ));
+        UHD_LOG << "Making transport for TX DSP0..." << std::endl;
+        _mbc[mb].tx_dsp_xport = make_xport(
+            addr, BOOST_STRINGIZE(USRP2_UDP_TX_DSP0_PORT), device_args_i, "send"
+        );
+        //set the filter on the router to take dsp data from this port
+        _mbc[mb].iface->poke32(U2_REG_ROUTER_CTRL_PORTS, USRP2_UDP_TX_DSP0_PORT);
 
         ////////////////////////////////////////////////////////////////
         // setup the mboard eeprom
@@ -450,8 +464,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
                 .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _mbc[mb].rx_dsps[dspno], _1));
             //This is a hack/fix for the lingering packet problem.
             //The dsp core starts streaming briefly... now we flush
-            _mbc[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
-            _mbc[mb].dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
+            _mbc[mb].rx_dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
+            _mbc[mb].rx_dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
             property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
             _tree->create<double>(rx_dsp_path / "rate/value")
                 .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _mbc[mb].rx_dsps[dspno], _1))
@@ -483,7 +497,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //setup dsp flow control
         const double ups_per_sec = device_args_i.cast<double>("ups_per_sec", 20);
-        const size_t send_frame_size = _mbc[mb].dsp_xports.front()->get_send_frame_size();
+        const size_t send_frame_size = _mbc[mb].tx_dsp_xport->get_send_frame_size();
         const double ups_per_fifo = device_args_i.cast<double>("ups_per_fifo", 8.0);
         _mbc[mb].tx_dsp->set_updates(
             (ups_per_sec > 0.0)? size_t(100e6/*approx tick rate*//ups_per_sec) : 0,

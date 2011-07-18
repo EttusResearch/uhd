@@ -249,9 +249,9 @@ void usrp2_impl::io_init(void){
     //init first so we dont have an access race
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         //init the tx xport and flow control monitor
-        _io_impl->tx_xports.push_back(_mbc[mb].dsp_xports.at(0));
+        _io_impl->tx_xports.push_back(_mbc[mb].tx_dsp_xport);
         _io_impl->fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
-            USRP2_SRAM_BYTES/_mbc[mb].dsp_xports.at(0)->get_send_frame_size()
+            USRP2_SRAM_BYTES/_mbc[mb].tx_dsp_xport->get_send_frame_size()
         )));
     }
 
@@ -261,7 +261,7 @@ void usrp2_impl::io_init(void){
         //spawn a new pirate to plunder the recv booty
         _io_impl->pirate_tasks.push_back(task::make(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop, _io_impl.get(),
-            _mbc[mb].err_xports.at(0), index++
+            _mbc[mb].tx_dsp_xport, index++
         )));
     }
 
@@ -273,7 +273,7 @@ void usrp2_impl::io_init(void){
     _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 
     //set the packet threshold to be an entire socket buffer's worth
-    const size_t packets_per_sock_buff = 50e6/_mbc[_mbc.keys().front()].dsp_xports[0]->get_recv_frame_size();
+    const size_t packets_per_sock_buff = 50e6/_mbc[_mbc.keys().front()].rx_dsp_xports[0]->get_recv_frame_size();
     _io_impl->recv_handler.set_alignment_failure_threshold(packets_per_sock_buff);
 }
 
@@ -342,7 +342,7 @@ subdev_spec_t usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, con
         for (size_t dsp = 0; dsp < _mbc[mb].rx_chan_occ; dsp++){
             _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(get_max_recv_samps_per_packet()); //seems to be a good place to set this
             _io_impl->recv_handler.set_xport_chan_get_buff(chan++, boost::bind(
-                &zero_copy_if::get_recv_buff, _mbc[mb].dsp_xports[dsp], _1
+                &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
             ));
         }
     }
@@ -398,7 +398,7 @@ size_t usrp2_impl::get_max_send_samps_per_packet(void) const{
         + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = _mbc[_mbc.keys().front()].dsp_xports[0]->get_send_frame_size() - hdr_size;
+    const size_t bpp = _mbc[_mbc.keys().front()].tx_dsp_xport->get_send_frame_size() - hdr_size;
     return bpp/_tx_otw_type.get_sample_size();
 }
 
@@ -423,7 +423,7 @@ size_t usrp2_impl::get_max_recv_samps_per_packet(void) const{
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = _mbc[_mbc.keys().front()].dsp_xports[0]->get_recv_frame_size() - hdr_size;
+    const size_t bpp = _mbc[_mbc.keys().front()].rx_dsp_xports[0]->get_recv_frame_size() - hdr_size;
     return bpp/_rx_otw_type.get_sample_size();
 }
 

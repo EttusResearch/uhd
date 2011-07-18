@@ -54,6 +54,8 @@
 
 #define U2_REG_SR_ADDR(sr) (SETTING_REGS_BASE + (4 * (sr)))
 
+#define U2_REG_ROUTER_CTRL_PORTS U2_REG_SR_ADDR(SR_BUF_POOL) + 8
+
 /////////////////////////////////////////////////
 // SPI Slave Constants
 ////////////////////////////////////////////////
