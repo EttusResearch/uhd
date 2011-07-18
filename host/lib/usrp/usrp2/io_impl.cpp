@@ -273,7 +273,7 @@ void usrp2_impl::io_init(void){
     _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 
     //set the packet threshold to be an entire socket buffer's worth
-    const size_t packets_per_sock_buff = 50e6/_mbc[_mbc.keys().front()].rx_dsp_xports[0]->get_recv_frame_size();
+    const size_t packets_per_sock_buff = size_t(50e6/_mbc[_mbc.keys().front()].rx_dsp_xports[0]->get_recv_frame_size());
     _io_impl->recv_handler.set_alignment_failure_threshold(packets_per_sock_buff);
 }
 
