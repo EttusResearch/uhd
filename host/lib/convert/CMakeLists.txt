@@ -36,13 +36,15 @@ CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
 UNSET(CMAKE_REQUIRED_FLAGS)
 
 IF(HAVE_EMMINTRIN_H)
+    SET(convert_with_sse2_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_with_sse2.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_with_sse2.cpp
+    )
     SET_SOURCE_FILES_PROPERTIES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_sse2.cpp
+        ${convert_with_sse2_sources}
         PROPERTIES COMPILE_FLAGS "${EMMINTRIN_FLAGS}"
     )
-    LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_sse2.cpp
-    )
+    LIBUHD_APPEND_SOURCES(${convert_with_sse2_sources})
 ENDIF(HAVE_EMMINTRIN_H)
 
 ########################################################################
