@@ -33,6 +33,30 @@ namespace asio = boost::asio;
 static const size_t DEFAULT_NUM_FRAMES = 32;
 
 /***********************************************************************
+ * Check registry for correct fast-path setting
+ **********************************************************************/
+#include <atlbase.h> //CRegKey
+static void check_registry_for_fast_send_threshold(const size_t mtu){
+    static bool warned = false;
+    if (warned) return; //only allow one printed warning per process
+
+    CRegKey reg_key;
+    DWORD threshold = 1024; //system default when threshold is not specified
+    if (
+        reg_key.Open(HKEY_LOCAL_MACHINE, "System\\CurrentControlSet\\Services\\AFD\\Parameters", KEY_READ) != ERROR_SUCCESS or
+        reg_key.QueryDWORDValue("FastSendDatagramThreshold", threshold) != ERROR_SUCCESS or threshold < mtu
+    ){
+        UHD_MSG(warning) << boost::format(
+            "The MTU (%d) is larger than the FastSendDatagramThreshold (%d)!\n"
+            "This will negatively affect the transmit performance.\n"
+            "See the transport application notes for more detail.\n"
+        ) % mtu % threshold << std::endl;
+        warned = true;
+    }
+    reg_key.Close();
+}
+
+/***********************************************************************
  * Static initialization to take care of WSA init and cleanup
  **********************************************************************/
 struct uhd_wsa_control{
@@ -159,6 +183,7 @@ public:
         _pending_recv_buffs(_num_recv_frames),
         _next_send_buff_index(0)
     {
+        check_registry_for_fast_send_threshold(this->get_send_frame_size());
         UHD_MSG(status) << boost::format("Creating WSA UDP transport for %s:%s") % addr % port << std::endl;
         static uhd_wsa_control uhd_wsa; //makes wsa start happen via lazy initialization
 
