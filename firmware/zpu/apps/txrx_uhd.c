@@ -357,6 +357,7 @@ main(void)
     }
 
     pic_interrupt_handler();
+    /*
     int pending = pic_regs->pending;		// poll for under or overrun
 
     if (pending & PIC_UNDERRUN_INT){
@@ -368,5 +369,6 @@ main(void)
       pic_regs->pending = PIC_OVERRUN_INT;	// clear interrupt
       putchar('O');
     }
+    */
   }
 }
