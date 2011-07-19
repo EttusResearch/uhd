@@ -22,7 +22,7 @@ module gpmc_async
     parameter RXFIFOSIZE = 11,
     parameter BUSDEBUG = 1)
    (// GPMC signals
-    input arst, input bus_clk,
+    input arst,
     input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
     input EM_WAIT0, input EM_NCS4, input EM_NCS6, input EM_NWE, input EM_NOE,
     
@@ -67,21 +67,27 @@ module gpmc_async
    // ////////////////////////////////////////////
    // TX Data Path
 
-   wire [17:0] 	  tx18_data;
-   wire 	  tx18_src_rdy, tx18_dst_rdy;
+   wire [17:0] 	  tx18_data, tx18b_data;
+   wire 	  tx18_src_rdy, tx18_dst_rdy, tx18b_src_rdy, tx18b_dst_rdy;
    wire [15:0] 	  tx_fifo_space;
    wire [35:0] 	  tx36_data, tx_data;
    wire 	  tx36_src_rdy, tx36_dst_rdy, tx_src_rdy, tx_dst_rdy;
    
-   new_write new_write
+   gpmc_to_fifo_async gpmc_to_fifo_async
      (.EM_D(EM_D), .EM_NBE(EM_NBE), .EM_NCS(EM_NCS4), .EM_NWE(EM_NWE),
-      .bus_clk(bus_clk), .fifo_clk(fifo_clk), .fifo_rst(fifo_rst), .clear(clear_tx),
+      .fifo_clk(fifo_clk), .fifo_rst(fifo_rst), .clear(clear_tx),
       .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
-      .frame_len(tx_frame_len), .fifo_ready(tx_have_space), .bus_error(bus_error_tx) );
+      .frame_len(tx_frame_len), .fifo_space(tx_fifo_space), .fifo_ready(tx_have_space),
+      .bus_error(bus_error_tx) );
    
+   fifo_cascade #(.WIDTH(18), .SIZE(10)) tx_fifo
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
+      .datain(tx18_data), .src_rdy_i(tx18_src_rdy), .dst_rdy_o(tx18_dst_rdy), .space(tx_fifo_space),
+      .dataout(tx18b_data), .src_rdy_o(tx18b_src_rdy), .dst_rdy_i(tx18b_dst_rdy), .occupied());
+
    fifo19_to_fifo36 #(.LE(1)) f19_to_f36   // Little endian because ARM is LE
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
-      .f19_datain({1'b0,tx18_data}), .f19_src_rdy_i(tx18_src_rdy), .f19_dst_rdy_o(tx18_dst_rdy),
+      .f19_datain({1'b0,tx18b_data}), .f19_src_rdy_i(tx18b_src_rdy), .f19_dst_rdy_o(tx18b_dst_rdy),
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
    
    fifo_cascade #(.WIDTH(36), .SIZE(TXFIFOSIZE)) tx_fifo36
@@ -104,20 +110,31 @@ module gpmc_async
       .datain(rx_data), .src_rdy_i(rx_src_rdy), .dst_rdy_o(rx_dst_rdy),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
 
-   wire [31:0] 	pkt_count;
-   wire 	throttle = pkt_count == 16;
-   
    fifo36_to_fifo19 #(.LE(1)) f36_to_f19   // Little endian because ARM is LE
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
       .f36_datain(rx36_data), .f36_src_rdy_i(rx36_src_rdy), .f36_dst_rdy_o(rx36_dst_rdy),
       .f19_dataout({dummy,rx18_data}), .f19_src_rdy_o(rx18_src_rdy), .f19_dst_rdy_i(rx18_dst_rdy) );
 
-   new_read new_read
+   fifo_cascade #(.WIDTH(18), .SIZE(12)) rx_fifo
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
-      .data_i(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy),
+      .datain(rx18_data), .src_rdy_i(rx18_src_rdy), .dst_rdy_o(rx18_dst_rdy), .space(rx_fifo_space),
+      .dataout(rx18b_data), .src_rdy_o(rx18b_src_rdy), .dst_rdy_i(rx18b_dst_rdy), .occupied());
+
+   fifo_to_gpmc_async fifo_to_gpmc_async
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .data_i(rx18b_data), .src_rdy_i(rx18b_src_rdy), .dst_rdy_o(rx18b_dst_rdy),
       .EM_D(EM_D_fifo), .EM_NCS(EM_NCS4), .EM_NOE(EM_NOE),
-      .have_packet(rx_have_data), .frame_len(rx_frame_len), .bus_error(bus_error_rx) );
+      .frame_len(rx_frame_len) );
+
+   wire [31:0] 	pkt_count;
    
+   fifo_watcher fifo_watcher
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
+      .src_rdy1(rx18_src_rdy), .dst_rdy1(rx18_dst_rdy), .sof1(rx18_data[16]), .eof1(rx18_data[17]),
+      .src_rdy2(rx18b_src_rdy), .dst_rdy2(rx18b_dst_rdy), .sof2(rx18b_data[16]), .eof2(rx18b_data[17]),
+      .have_packet(rx_have_data), .length(rx_frame_len), .bus_error(bus_error_rx),
+      .debug(pkt_count));
+
    // ////////////////////////////////////////////
    // Control path on CS6
    
@@ -213,13 +230,16 @@ module gpmc_async
    // FIXME -- make sure packet completes before we shutoff
    // FIXME -- handle overrun and underrun
 
-   wire [0:17] 	dummy18;
+wire [0:17] dummy18;
 
-   assign debug = {rx_overrun, tx_underrun, bus_error_tx, bus_error_rx, tx_have_space, rx_have_data, EM_NCS4, EM_NCS6,
-		   6'd0, EM_NOE, EM_NWE,
-		   pkt_src_enable, pkt_sink_enable, timedrx_src_rdy_int, timedrx_dst_rdy_int,
-		   timedrx_src_rdy, timedrx_dst_rdy,
-		   testrx_src_rdy, testrx_dst_rdy,
-		   rx_src_rdy, rx_dst_rdy, rx36_src_rdy, rx36_dst_rdy, rx18_src_rdy, rx18_dst_rdy, rx18b_src_rdy, rx18b_dst_rdy};
+assign debug = {8'd0,
+		test_rate,
+		pkt_src_enable, pkt_sink_enable, timedrx_src_rdy_int, timedrx_dst_rdy_int,
+		timedrx_src_rdy, timedrx_dst_rdy,
+		testrx_src_rdy, testrx_dst_rdy,
+		rx_src_rdy, rx_dst_rdy,
+		rx36_src_rdy, rx36_dst_rdy,
+		rx18_src_rdy, rx18_dst_rdy,
+		rx18b_src_rdy, rx18b_dst_rdy};
 
 endmodule // gpmc_async

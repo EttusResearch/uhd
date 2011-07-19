@@ -18,7 +18,7 @@
 
 
 module u1e_core
-  (input clk_fpga, input bus_clk, input rst_fpga,
+  (input clk_fpga, input rst_fpga,
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
    output debug_txd, input debug_rxd,
    
@@ -117,7 +117,7 @@ module u1e_core
       .in(set_data),.out(),.changed(clear_tx));
 
    gpmc_async #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
-   gpmc (.arst(wb_rst), .bus_clk(bus_clk),
+   gpmc (.arst(wb_rst),
 	 .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 	 .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
 	 .EM_NOE(EM_NOE),

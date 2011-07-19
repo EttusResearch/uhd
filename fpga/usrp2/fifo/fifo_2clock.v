@@ -65,11 +65,6 @@ module fifo_2clock
 	  (.rst(arst),
 	   .wr_clk(wclk),.din({1'b0,datain}),.full(full),.wr_en(write),.wr_data_count(level_wclk),
 	   .rd_clk(rclk),.dout({dummy,dataout}),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
-      else if ((WIDTH==18) & (SIZE==10))
-	fifo_xlnx_1Kx18_2clk fifo_xlnx_1Kx18_2clk
-	  (.rst(arst),
-	   .wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-	   .rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
    endgenerate
    
    assign occupied  = {{(16-SIZE-1){1'b0}},level_rclk};

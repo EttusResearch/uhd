@@ -103,22 +103,24 @@ module small_hb_dec
    wire [17:0] coeff = go_d1 ? coeff_b : coeff_a;
    wire [35:0] 	 prod;   
    MULT18X18S mult(.C(clk), .CE(go_d1 | go_d2), .R(rst), .P(prod), .A(coeff), .B(sum) );
+
+   localparam ACCWIDTH = 30;
+   reg [ACCWIDTH-1:0] 	 accum;
    
-   reg [35:0] 	 accum;
    always @(posedge clk)
      if(rst)
        accum <= 0;
      else if(go_d2)
-       accum <= {middle_d1[17],middle_d1[17],middle_d1,16'd0} + {prod};
+       accum <= {middle_d1[17],middle_d1[17],middle_d1,{(16+ACCWIDTH-36){1'b0}}} + {prod[35:36-ACCWIDTH]};
      else if(go_d3)
-       accum <= accum + {prod};
+       accum <= accum + {prod[35:36-ACCWIDTH]};
    
    wire [WIDTH:0] 	 accum_rnd;
    wire [WIDTH-1:0] 	 accum_rnd_clip;
    
    wire 	 stb_round;
    
-   round_sd #(.WIDTH_IN(36),.WIDTH_OUT(WIDTH+1)) round_acc 
+   round_sd #(.WIDTH_IN(ACCWIDTH),.WIDTH_OUT(WIDTH+1)) round_acc 
      (.clk(clk), .reset(rst), .in(accum), .strobe_in(go_d4), .out(accum_rnd), .strobe_out(stb_round));
 
    clip #(.bits_in(WIDTH+1),.bits_out(WIDTH)) clip (.in(accum_rnd), .out(accum_rnd_clip));

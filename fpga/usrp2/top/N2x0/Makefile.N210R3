@@ -71,6 +71,7 @@ TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"
 
 MAP_PROPERTIES = \
+"Generate Detailed MAP Report" TRUE \
 "Allow Logic Optimization Across Hierarchy" TRUE \
 "Map to Input Functions" 4 \
 "Optimization Strategy (Cover Mode)" Speed \

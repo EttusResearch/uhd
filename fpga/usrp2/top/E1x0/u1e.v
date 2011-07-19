@@ -76,7 +76,7 @@ module u1e
    clk_doubler (.CLKFB(clk_fb), .CLKIN(clk_fpga_in), .RST(dcm_rst), 
                 .DSSEN(0), .PSCLK(0), .PSEN(0), .PSINCDEC(0), .PSDONE(), 
 		.CLKDV(), .CLKFX(), .CLKFX180(), 
-                .CLK2X(clk_2x), .CLK2X180(), 
+                .CLK2X(), .CLK2X180(), 
                 .CLK0(clk_fb), .CLK90(clk_fpga), .CLK180(), .CLK270(), 
                 .LOCKED(dcm_locked), .STATUS());
 
@@ -141,7 +141,7 @@ module u1e
    
    // /////////////////////////////////////////////////////////////////////////
    // Main U1E Core
-   u1e_core u1e_core(.clk_fpga(clk_fpga), .bus_clk(clk_2x), .rst_fpga(~debug_pb),
+   u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(~debug_pb),
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
 		     .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),

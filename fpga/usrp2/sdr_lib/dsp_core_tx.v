@@ -36,7 +36,8 @@ module dsp_core_tx
    wire [7:0]  interp_rate;
    wire [3:0]  dacmux_a, dacmux_b;
    wire        enable_hb1, enable_hb2;
-
+   wire        rate_change;
+   
    setting_reg #(.my_addr(BASE+0)) sr_0
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(phase_inc),.changed());
@@ -47,7 +48,7 @@ module dsp_core_tx
    
    setting_reg #(.my_addr(BASE+2), .width(10)) sr_2
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({enable_hb1, enable_hb2, interp_rate}),.changed());
+      .in(set_data),.out({enable_hb1, enable_hb2, interp_rate}),.changed(rate_change));
 
    // Strobes are all now delayed by 1 cycle for timing reasons
    wire        strobe_cic_pre, strobe_hb1_pre, strobe_hb2_pre;
@@ -56,13 +57,13 @@ module dsp_core_tx
    reg 	       strobe_hb2 = 1;
    
    cic_strober #(.WIDTH(8))
-     cic_strober(.clock(clk),.reset(rst),.enable(run),.rate(interp_rate),
+     cic_strober(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(interp_rate),
 		 .strobe_fast(1),.strobe_slow(strobe_cic_pre) );
    cic_strober #(.WIDTH(2))
-     hb2_strober(.clock(clk),.reset(rst),.enable(run),.rate(enable_hb2 ? 2 : 1),
+     hb2_strober(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(enable_hb2 ? 2 : 1),
 		 .strobe_fast(strobe_cic_pre),.strobe_slow(strobe_hb2_pre) );
    cic_strober #(.WIDTH(2))
-     hb1_strober(.clock(clk),.reset(rst),.enable(run),.rate(enable_hb1 ? 2 : 1),
+     hb1_strober(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(enable_hb1 ? 2 : 1),
 		 .strobe_fast(strobe_hb2_pre),.strobe_slow(strobe_hb1_pre) );
    
    always @(posedge clk) strobe_hb1 <= strobe_hb1_pre;
@@ -104,12 +105,12 @@ module dsp_core_tx
       .output_rate(interp_rate),.stb_out(strobe_cic),.data_out(hb2_q));
    
    cic_interp  #(.bw(18),.N(4),.log2_of_max_rate(7))
-     cic_interp_i(.clock(clk),.reset(rst),.enable(run),.rate(interp_rate),
+     cic_interp_i(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(interp_rate),
 		  .strobe_in(strobe_cic),.strobe_out(1),
 		  .signal_in(hb2_i),.signal_out(i_interp));
    
    cic_interp  #(.bw(18),.N(4),.log2_of_max_rate(7))
-     cic_interp_q(.clock(clk),.reset(rst),.enable(run),.rate(interp_rate),
+     cic_interp_q(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(interp_rate),
 		  .strobe_in(strobe_cic),.strobe_out(1),
 		  .signal_in(hb2_q),.signal_out(q_interp));
 
