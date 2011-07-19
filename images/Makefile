@@ -33,6 +33,7 @@ IMAGES_LIST =
 ##little rule to make the images directory
 $(BUILT_IMAGES_DIR):
 	mkdir $@
+	mkdir $@/bit
 
 GLOBAL_DEPS = $(BUILT_IMAGES_DIR)
 
@@ -152,12 +153,16 @@ ifdef HAS_XTCLSH
 
 _usrp_n200_r3_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
 _usrp_n200_r3_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_r3_fpga.bin
-IMAGES_LIST += $(_usrp_n200_r3_fpga_bin)
+_usrp_n200_r3_fpga_bit = $(BUILT_IMAGES_DIR)/bit/usrp_n200_r3_fpga.bit
+IMAGES_LIST += $(_usrp_n200_r3_fpga_bin) $(_usrp_n200_r3_fpga_bit)
 
 $(_usrp_n200_r3_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n200_r3_fpga_dir) && make -f Makefile.N200R3 clean
 	cd $(_usrp_n200_r3_fpga_dir) && make -f Makefile.N200R3 bin
 	cp $(_usrp_n200_r3_fpga_dir)/build-N200R3/u2plus.bin $@
+
+$(_usrp_n200_r3_fpga_bit): $(_usrp_n200_r3_fpga_bin)
+	cp $(_usrp_n200_r3_fpga_dir)/build-N200R3/u2plus.bit $@
 
 #its called r2 on the silkscreen, so make an r2
 _usrp_n200_r2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_r2_fpga.bin
@@ -174,12 +179,16 @@ ifdef HAS_XTCLSH
 
 _usrp_n210_r3_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
 _usrp_n210_r3_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_r3_fpga.bin
-IMAGES_LIST += $(_usrp_n210_r3_fpga_bin)
+_usrp_n210_r3_fpga_bit = $(BUILT_IMAGES_DIR)/bit/usrp_n210_r3_fpga.bit
+IMAGES_LIST += $(_usrp_n210_r3_fpga_bin) $(_usrp_n210_r3_fpga_bit)
 
 $(_usrp_n210_r3_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n210_r3_fpga_dir) && make -f Makefile.N210R3 clean
 	cd $(_usrp_n210_r3_fpga_dir) && make -f Makefile.N210R3 bin
 	cp $(_usrp_n210_r3_fpga_dir)/build-N210R3/u2plus.bin $@
+
+$(_usrp_n210_r3_fpga_bit): $(_usrp_n210_r3_fpga_bin)
+	cp $(_usrp_n210_r3_fpga_dir)/build-N210R3/u2plus.bit $@
 
 #its called r2 on the silkscreen, so make an r2
 _usrp_n210_r2_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_r2_fpga.bin
@@ -196,12 +205,16 @@ ifdef HAS_XTCLSH
 
 _usrp_n200_r4_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
 _usrp_n200_r4_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n200_r4_fpga.bin
-IMAGES_LIST += $(_usrp_n200_r4_fpga_bin)
+_usrp_n200_r4_fpga_bit = $(BUILT_IMAGES_DIR)/bit/usrp_n200_r4_fpga.bit
+IMAGES_LIST += $(_usrp_n200_r4_fpga_bin) $(_usrp_n200_r4_fpga_bit)
 
 $(_usrp_n200_r4_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n200_r4_fpga_dir) && make -f Makefile.N200R4 clean
 	cd $(_usrp_n200_r4_fpga_dir) && make -f Makefile.N200R4 bin
 	cp $(_usrp_n200_r4_fpga_dir)/build-N200R4/u2plus.bin $@
+
+$(_usrp_n200_r4_fpga_bit): $(_usrp_n200_r4_fpga_bin)
+	cp $(_usrp_n200_r4_fpga_dir)/build-N200R4/u2plus.bit $@
 
 endif
 
@@ -212,12 +225,16 @@ ifdef HAS_XTCLSH
 
 _usrp_n210_r4_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/N2x0
 _usrp_n210_r4_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_n210_r4_fpga.bin
-IMAGES_LIST += $(_usrp_n210_r4_fpga_bin)
+_usrp_n210_r4_fpga_bit = $(BUILT_IMAGES_DIR)/bit/usrp_n210_r4_fpga.bit
+IMAGES_LIST += $(_usrp_n210_r4_fpga_bin) $(_usrp_n210_r4_fpga_bit)
 
 $(_usrp_n210_r4_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_n210_r4_fpga_dir) && make -f Makefile.N210R4 clean
 	cd $(_usrp_n210_r4_fpga_dir) && make -f Makefile.N210R4 bin
 	cp $(_usrp_n210_r4_fpga_dir)/build-N210R4/u2plus.bin $@
+
+$(_usrp_n210_r4_fpga_bit): $(_usrp_n210_r4_fpga_bin)
+	cp $(_usrp_n210_r4_fpga_dir)/build-N210R4/u2plus.bit $@
 
 endif
 
