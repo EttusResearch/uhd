@@ -258,7 +258,7 @@ endif
 # Build rules
 ########################################################################
 images: $(IMAGES_LIST)
-	chmod -x $(BUILT_IMAGES_DIR)/*
+	find $(BUILT_IMAGES_DIR) -type f | xargs chmod -x
 
 clean:
 	$(RM) -rf $(BUILT_IMAGES_DIR)
