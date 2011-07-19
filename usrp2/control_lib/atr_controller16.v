@@ -47,8 +47,11 @@ module atr_controller16
 	    atr_ram[adr_i[5:2]][7:0] <= dat_i[7:0];
        end // if (we_i & stb_i & cyc_i)
 
-   always @(posedge clk_i)
-     dat_o <= adr_i[1] ? atr_ram[adr_i[5:2]][31:16] : atr_ram[adr_i[5:2]][15:0];
+   // Removing readback allows ram to be synthesized as LUTs instead of regs
+   //always @(posedge clk_i)
+   //  dat_o <= adr_i[1] ? atr_ram[adr_i[5:2]][31:16] : atr_ram[adr_i[5:2]][15:0];
+   always @*
+     dat_o <= 16'd0;
    
    always @(posedge clk_i)
      ack_o <= stb_i & cyc_i & ~ack_o;
