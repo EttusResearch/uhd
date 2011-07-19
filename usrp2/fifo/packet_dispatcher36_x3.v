@@ -93,13 +93,12 @@ module packet_dispatcher36_x3
     wire pd_dreg_counter_done = (pd_dreg_count_next == PD_MAX_NUM_DREGS)? 1'b1 : 1'b0;
     reg [35:0] pd_dregs [PD_MAX_NUM_DREGS-1:0];
 
-    //extract various packet components:
-    wire [47:0] pd_dregs_eth_dst_mac   = {pd_dregs[0][15:0], pd_dregs[1][31:0]};
-    wire [15:0] pd_dregs_eth_type      = pd_dregs[3][15:0];
-    wire [7:0]  pd_dregs_ipv4_proto    = pd_dregs[6][23:16];
-    wire [31:0] pd_dregs_ipv4_dst_addr = pd_dregs[8][31:0];
-    wire [15:0] pd_dregs_udp_dst_port  = pd_dregs[9][15:0];
-    wire [15:0] pd_dregs_vrt_size      = com_inp_data[15:0];
+    reg is_eth_dst_mac_bcast;
+    reg is_eth_type_ipv4;
+    reg is_eth_ipv4_proto_udp;
+    reg is_eth_ipv4_dst_addr_here;
+    reg is_eth_udp_dst_port_here;
+    wire is_vrt_size_zero = (com_inp_data[15:0] == 16'h0); //needed on the same cycle, so it cant be registered
 
     //Inspector output flags special case:
     //Inject SOF into flags at first DSP line.
@@ -150,6 +149,31 @@ module packet_dispatcher36_x3
         (pd_state == PD_STATE_WRITE_LIVE)    ? pd_out_ready : (
     1'b0)));
 
+    //inspect the incoming data and mark register booleans
+    always @(posedge clk)
+    if (com_inp_ready & com_inp_valid) begin
+        case(pd_dreg_count)
+        0: begin
+            is_eth_dst_mac_bcast <= (com_inp_data[15:0] == 16'hffff);
+        end
+        1: begin
+            is_eth_dst_mac_bcast <= is_eth_dst_mac_bcast && (com_inp_data[31:0] == 32'hffffffff);
+        end
+        3: begin
+            is_eth_type_ipv4 <= (com_inp_data[15:0] == 16'h800);
+        end
+        6: begin
+            is_eth_ipv4_proto_udp <= (com_inp_data[23:16] == 8'h11);
+        end
+        8: begin
+            is_eth_ipv4_dst_addr_here <= (com_inp_data[31:0] == my_ip_addr);
+        end
+        9: begin
+            is_eth_udp_dst_port_here <= (com_inp_data[15:0] == dsp_udp_port);
+        end
+        endcase //pd_dreg_count
+    end
+
     always @(posedge clk)
     if(rst | clr) begin
         pd_state <= PD_STATE_READ_COM_PRE;
@@ -175,19 +199,19 @@ module packet_dispatcher36_x3
                     //---------- begin inspection decision -----------//
                     //EOF or bcast or not IPv4 or not UDP:
                     if (
-                        com_inp_data[33] || (pd_dregs_eth_dst_mac == 48'hffffffffffff) ||
-                        (pd_dregs_eth_type != 16'h800) || (pd_dregs_ipv4_proto != 8'h11)
+                        com_inp_data[33] || is_eth_dst_mac_bcast ||
+                        ~is_eth_type_ipv4 || ~is_eth_ipv4_proto_udp
                     ) begin
                         pd_dest <= PD_DEST_BOF;
                     end
 
                     //not my IP address:
-                    else if (pd_dregs_ipv4_dst_addr != my_ip_addr) begin
+                    else if (~is_eth_ipv4_dst_addr_here) begin
                         pd_dest <= PD_DEST_EXT;
                     end
 
                     //UDP data port and VRT:
-                    else if ((pd_dregs_udp_dst_port == dsp_udp_port) && (pd_dregs_vrt_size != 16'h0)) begin
+                    else if (is_eth_udp_dst_port_here && ~is_vrt_size_zero) begin
                         pd_dest <= PD_DEST_DSP;
                         pd_dreg_count <= PD_DREGS_DSP_OFFSET;
                     end
