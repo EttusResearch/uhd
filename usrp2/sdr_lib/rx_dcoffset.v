@@ -18,43 +18,40 @@
 
 
 module rx_dcoffset 
-  #(parameter WIDTH=14,
-    parameter ADDR=8'd0)
-    (input clk, input rst, 
-     input set_stb, input [7:0] set_addr, input [31:0] set_data,
-     input signed [WIDTH-1:0] adc_in, output signed [WIDTH-1:0] adc_out);
+  #(parameter WIDTH=16,
+    parameter ADDR=8'd0,
+    parameter alpha_shift=16)
+   (input clk, input rst, 
+    input set_stb, input [7:0] set_addr, input [31:0] set_data,
+    input [WIDTH-1:0] in, output [WIDTH-1:0] out);
+   
+   wire 	      set_now = set_stb & (ADDR == set_addr);
+   
+   reg 		      fixed;  // uses fixed offset
+   wire [WIDTH-1:0]   fixed_dco;
 
-   // Because of some extra delays to make timing easier, the transfer function is:
-   //     (z-1)/(z^2-z-alpha)  where alpha is 1/2^n
-   
-   wire 	       set_now = set_stb & (ADDR == set_addr);
-   
-   reg 		       fixed;  // uses fixed offset
-   wire 	       signed [WIDTH-1:0] fixed_dco;
-   reg 		       signed [31:0] integrator;
+   localparam int_width = WIDTH + alpha_shift;
+   reg [int_width-1:0] integrator;
+   wire [WIDTH-1:0]    quantized;
 
    always @(posedge clk)
      if(rst)
        begin
 	  fixed <= 0;
-	  integrator <= 32'd0;
+	  integrator <= {int_width{1'b0}};
        end
      else if(set_now)
        begin
-	  integrator <= {set_data[WIDTH-1:0],{(32-WIDTH){1'b0}}};
+	  //integrator <= {set_data[30:0],{(31-int_width){1'b0}}};
 	  fixed <= set_data[31];
        end
      else if(~fixed)
-       integrator <= integrator + adc_out;
-   
-   wire [WIDTH:0] scaled_integrator;
-   
-   round #(.bits_in(33),.bits_out(15)) round (.in({integrator[31],integrator}),.out(scaled_integrator));
-   
-   wire [WIDTH:0]      adc_out_int = {adc_in[WIDTH-1],adc_in} - scaled_integrator;
+       integrator <= integrator +  {{(alpha_shift){out[WIDTH-1]}},out};
 
-   clip_reg #(.bits_in(WIDTH+1),.bits_out(WIDTH)) clip_adc
-     (.clk(clk),.in(adc_out_int),.out(adc_out));
+   round_sd #(.WIDTH_IN(int_width),.WIDTH_OUT(WIDTH)) round_sd
+     (.clk(clk), .reset(rst), .in(integrator), .strobe_in(1'b1), .out(quantized), .strobe_out());
    
+   add2_and_clip_reg #(.WIDTH(WIDTH)) add2_and_clip_reg
+     (.clk(clk), .rst(rst), .in1(in), .in2(-quantized), .strobe_in(1'b1), .sum(out), .strobe_out());
 
 endmodule // rx_dcoffset

@@ -428,7 +428,7 @@ module u2plus_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = 32'd6;
+   localparam compat_num = {16'd7, 16'd0}; //major, minor
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -584,6 +584,17 @@ module u2plus_core
       .sclk_pad_o(spiflash_clk),.mosi_pad_o(spiflash_mosi),.miso_pad_i(spiflash_miso) );
 
    // /////////////////////////////////////////////////////////////////////////
+   // ADC Frontend
+   wire [23:0] 	 adc_i, adc_q;
+   
+   rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .adc_a({adc_a,2'b00}),.adc_ovf_a(adc_ovf_a),
+      .adc_b({adc_b,2'b00}),.adc_ovf_b(adc_ovf_b),
+      .i_out(adc_i), .q_out(adc_q), .run(run_rx0_d1 | run_rx1_d1), .debug());
+   
+   // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
    wire [31:0] 	 sample_rx0;
    wire 	 clear_rx0, strobe_rx0;
@@ -594,7 +605,7 @@ module u2plus_core
    dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
+      .adc_i(adc_i),.adc_ovf_i(adc_ovf_a),.adc_q(adc_q),.adc_ovf_q(adc_ovf_b),
       .sample(sample_rx0), .run(run_rx0_d1), .strobe(strobe_rx0),
       .debug() );
 
@@ -622,7 +633,7 @@ module u2plus_core
    dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_a(adc_a),.adc_ovf_a(adc_ovf_a),.adc_b(adc_b),.adc_ovf_b(adc_ovf_b),
+      .adc_i(adc_i),.adc_ovf_i(adc_ovf_a),.adc_q(adc_q),.adc_ovf_q(adc_ovf_b),
       .sample(sample_rx1), .run(run_rx1_d1), .strobe(strobe_rx1),
       .debug() );
 
@@ -676,6 +687,8 @@ module u2plus_core
 	.debug(debug_extfifo),
 	.debug2(debug_extfifo2) );
 
+   wire [23:0] 	 tx_i, tx_q;
+   
    vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
 		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
@@ -686,10 +699,16 @@ module u2plus_core
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
-      .dac_a(dac_a),.dac_b(dac_b),
+      .tx_i(tx_i),.tx_q(tx_q),
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
-   
+
+   tx_frontend #(.BASE(SR_TX_FRONT)) tx_frontend
+     (.clk(dsp_clk), .rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .tx_i(tx_i), .tx_q(tx_q), .run(1'b1),
+      .dac_a(dac_a), .dac_b(dac_b));
+         
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
