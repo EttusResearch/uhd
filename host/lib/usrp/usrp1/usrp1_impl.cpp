@@ -385,10 +385,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
  
 }
 
-usrp1_impl::~usrp1_impl(void){UHD_SAFE_CALL(
-    this->enable_rx(false);
-    this->enable_tx(false);
-)}
+usrp1_impl::~usrp1_impl(void){
+    _io_impl.reset(); //stops vandal before other stuff gets deconstructed
+    UHD_SAFE_CALL(
+        this->enable_rx(false);
+        this->enable_tx(false);
+    )
+}
 
 /*!
  * Capabilities Register
