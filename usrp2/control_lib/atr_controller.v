@@ -47,7 +47,7 @@ module atr_controller
    // Removing readback allows ram to be synthesized as LUTs instead of regs
    //always @(posedge clk_i)
    //  dat_o <= atr_ram[adr_i[5:2]];
-   always @*
+   always
      dat_o <= 32'd0;
    
    always @(posedge clk_i)
