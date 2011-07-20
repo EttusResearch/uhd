@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/property_tree.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/io_type.hpp>
@@ -30,6 +29,8 @@
 #include <boost/function.hpp>
 
 namespace uhd{
+
+class property_tree; //forward declaration
 
 /*!
  * The usrp device interface represents the usrp hardware.
@@ -199,7 +200,7 @@ public:
     ) = 0;
 
     //! Get access to the underlying property structure
-    virtual property_tree::sptr get_tree(void) const = 0;
+    virtual boost::shared_ptr<property_tree> get_tree(void) const = 0;
 
 };
 
