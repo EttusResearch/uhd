@@ -192,7 +192,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     device::sptr dev = device::make(vm["args"].as<std::string>());
-    property_tree::sptr tree = (*dev)[0].as<property_tree::sptr>();
+    property_tree::sptr tree = dev->get_tree();
 
     if (vm.count("tree") != 0) print_tree("/", tree);
     else std::cout << make_border(get_device_pp_string(tree)) << std::endl;

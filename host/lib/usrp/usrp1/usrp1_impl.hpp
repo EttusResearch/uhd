@@ -79,6 +79,9 @@ private:
     void get(const wax::obj &, wax::obj &val){
         val = _tree; //entry point into property tree
     }
+    uhd::property_tree::sptr get_tree(void) const{
+        return _tree;
+    }
 
     //controllers
     uhd::usrp::fx2_ctrl::sptr _fx2_ctrl;

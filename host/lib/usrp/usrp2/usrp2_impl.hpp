@@ -117,6 +117,9 @@ private:
     void get(const wax::obj &, wax::obj &val){
         val = _tree; //entry point into property tree
     }
+    uhd::property_tree::sptr get_tree(void) const{
+        return _tree;
+    }
 
     //io impl methods and members
     uhd::otw_type_t _rx_otw_type, _tx_otw_type;

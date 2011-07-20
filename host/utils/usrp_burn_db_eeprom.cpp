@@ -62,7 +62,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //make the device and extract the dboard w/ property
     device::sptr dev = device::make(args);
-    uhd::property_tree::sptr tree = (*dev)[0].as<uhd::property_tree::sptr>();
+    uhd::property_tree::sptr tree = dev->get_tree();
     const uhd::property_tree::path_type db_root = "/mboards/0/dboards";
     std::vector<std::string> dboard_names = tree->list(db_root);
     if (dboard_names.size() == 1 and slot.empty()) slot = dboard_names.front();

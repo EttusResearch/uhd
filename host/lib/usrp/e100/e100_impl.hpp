@@ -113,6 +113,9 @@ private:
     void get(const wax::obj &, wax::obj &val){
         val = _tree; //entry point into property tree
     }
+    uhd::property_tree::sptr get_tree(void) const{
+        return _tree;
+    }
 
     double update_rx_codec_gain(const double); //sets A and B at once
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);

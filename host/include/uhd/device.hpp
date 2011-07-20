@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/io_type.hpp>
@@ -196,6 +197,9 @@ public:
     virtual bool recv_async_msg(
         async_metadata_t &async_metadata, double timeout = 0.1
     ) = 0;
+
+    //! Get access to the underlying property structure
+    virtual property_tree::sptr get_tree(void) const = 0;
 
 };
 
