@@ -20,7 +20,7 @@
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD-images NONE)
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../host/Modules)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../host/cmake/Modules)
 INCLUDE(UHDVersion) #sets version variables (used below)
 
 ########################################################################
