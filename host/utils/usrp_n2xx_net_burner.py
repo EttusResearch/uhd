@@ -127,12 +127,23 @@ def is_valid_fw_image(fw_image):
 ########################################################################
 # interface discovery and device enumeration
 ########################################################################
+def command(*args):
+    p = subprocess.Popen(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    ret = p.wait()
+    verbose = p.stdout.read().decode()
+    if ret != 0: raise Exception(verbose)
+    return verbose
+
 def get_interfaces():
     if(platform.system() is "Windows"): return win_get_interfaces()
     else: return unix_get_interfaces()
 
 def unix_get_interfaces():
-    ifconfig = subprocess.check_output("/sbin/ifconfig")
+    ifconfig = command("/sbin/ifconfig")
     ip_addr_re = "cast\D*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
     bcasts = re.findall(ip_addr_re, ifconfig)
     return bcasts
