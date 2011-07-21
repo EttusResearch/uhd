@@ -202,7 +202,7 @@ module u2_core
    wire 	ser_rx_full, ser_tx_full, dsp_rx_full, dsp_tx_full, eth_rx_full, eth_tx_full, eth_rx_full2;
    wire 	ser_rx_empty, ser_tx_empty, dsp_rx_empty, dsp_tx_empty, eth_rx_empty, eth_tx_empty, eth_rx_empty2;
 	
-   wire 	serdes_link_up;
+   wire 	serdes_link_up, good_sync;
    wire 	epoch;
    wire [31:0] 	irq;
    wire [63:0] 	vita_time, vita_time_pps;
@@ -502,7 +502,7 @@ module u2_core
    //    In Rev3 there are only 6 leds, and the highest one is on the ETH connector
    
    wire [7:0] 	 led_src, led_sw;
-   wire [7:0] 	 led_hw = {run_tx, (run_rx0_d1 | run_rx1_d1), clk_status, serdes_link_up, 1'b0};
+   wire [7:0] 	 led_hw = {run_tx, (run_rx0_d1 | run_rx1_d1), clk_status, serdes_link_up & good_sync, 1'b0};
    
    setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
 				      .in(set_data),.out(led_sw),.changed());
@@ -524,7 +524,7 @@ module u2_core
    
    assign irq= {{8'b0},
 		{8'b0},
-		{3'b0, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
+		{2'b0, good_sync, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
 		{pps_wb,overrun_wb,underrun_wb,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
@@ -729,8 +729,7 @@ module u2_core
    time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
-      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out),
-      .debug(debug_sync));
+      .exp_time_in(exp_time_in), .exp_time_out(exp_time_out), .good_sync(good_sync), .debug(debug_sync));
 
    // /////////////////////////////////////////////////////////////////////////////////////////
    // Debug Pins

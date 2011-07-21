@@ -27,6 +27,7 @@ module time_64bit
     output reg [63:0] vita_time_pps,
     output pps_int,
     input exp_time_in, output exp_time_out,
+    output reg good_sync,
     output [31:0] debug
     );
    
@@ -164,5 +165,11 @@ module time_64bit
 
    assign debug = { { 24'b0} ,
 		    { 2'b0, exp_time_in, exp_time_out, mimo_sync, mimo_sync_now, sync_rcvd, send_sync} };
+
+   always @(posedge clk)
+     if(rst)
+       good_sync <= 0;
+     else if(sync_rcvd)
+       good_sync <= 1;
    
 endmodule // time_64bit
