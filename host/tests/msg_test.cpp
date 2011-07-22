@@ -33,5 +33,8 @@ BOOST_AUTO_TEST_CASE(test_messages){
         "This is a test print for an error message.\n"
         "And this is the second line of the test print.\n"
     ;
+    UHD_HERE();
+    const int x = 42;
+    UHD_VAR(x);
     std::cerr << "---end print test ---" << std::endl;
 }

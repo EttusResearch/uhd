@@ -34,6 +34,10 @@
 #define UHD_HERE() \
     UHD_MSG(status) << __FILE__ << ":" << __LINE__ << std::endl
 
+//! Helpful debug tool to print a variable
+#define UHD_VAR(var) \
+    UHD_MSG(status) << #var << " = " << var << std::endl;
+
 namespace uhd{ namespace msg{
 
     //! Possible message types
