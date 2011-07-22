@@ -81,12 +81,12 @@ private:
  **********************************************************************/
 namespace uhd{
 
-    template <typename T> property<T> &property_tree::create(const path_type &path){
+    template <typename T> property<T> &property_tree::create(const fs_path &path){
         this->_create(path, typename boost::shared_ptr<property<T> >(new property_impl<T>()));
         return this->access<T>(path);
     }
 
-    template <typename T> property<T> &property_tree::access(const path_type &path){
+    template <typename T> property<T> &property_tree::access(const fs_path &path){
         return *boost::static_pointer_cast<property<T> >(this->_access(path));
     }
 

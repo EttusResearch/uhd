@@ -208,7 +208,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _tree = property_tree::make();
     _tree->create<std::string>("/name").set("USRP1 Device");
-    const property_tree::path_type mb_path = "/mboards/0";
+    const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set("USRP1 (Classic)");
     _tree->create<std::string>(mb_path / "load_eeprom")
         .subscribe(boost::bind(&fx2_ctrl::usrp_load_eeprom, _fx2_ctrl, _1));
@@ -239,8 +239,8 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     BOOST_FOREACH(const std::string &db, _dbc.keys()){
         _dbc[db].codec = usrp1_codec_ctrl::make(_iface, (db == "A")? SPI_ENABLE_CODEC_A : SPI_ENABLE_CODEC_B);
-        const property_tree::path_type rx_codec_path = mb_path / "rx_codecs" / db;
-        const property_tree::path_type tx_codec_path = mb_path / "tx_codecs" / db;
+        const fs_path rx_codec_path = mb_path / "rx_codecs" / db;
+        const fs_path tx_codec_path = mb_path / "tx_codecs" / db;
         _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
         _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(usrp1_codec_ctrl::rx_pga_gain_range);
         _tree->create<double>(rx_codec_path / "gains/pga/value")
@@ -270,7 +270,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++){
-        property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<double>(rx_dsp_path / "rate/value")
             .coerce(boost::bind(&usrp1_impl::update_rx_samp_rate, this, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
@@ -289,7 +289,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++){
-        property_tree::path_type tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
+        fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
         _tree->create<double>(tx_dsp_path / "rate/value")
             .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, _1));
         _tree->create<double>(tx_dsp_path / "freq/value")

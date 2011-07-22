@@ -51,7 +51,7 @@ static std::string make_border(const std::string &text){
     return ss.str();
 }
 
-static std::string get_dsp_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
+static std::string get_dsp_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
@@ -68,7 +68,7 @@ static std::string prop_names_to_pp_string(const std::vector<std::string> &prop_
     return ss.str();
 }
 
-static std::string get_subdev_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
+static std::string get_subdev_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s Subdev: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
@@ -93,7 +93,7 @@ static std::string get_subdev_pp_string(const std::string &type, property_tree::
     return ss.str();
 }
 
-static std::string get_codec_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
+static std::string get_codec_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s Codec: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
@@ -108,7 +108,7 @@ static std::string get_codec_pp_string(const std::string &type, property_tree::s
     return ss.str();
 }
 
-static std::string get_dboard_pp_string(const std::string &type, property_tree::sptr tree, const property_tree::path_type &path){
+static std::string get_dboard_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s Dboard: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
@@ -128,7 +128,7 @@ static std::string get_dboard_pp_string(const std::string &type, property_tree::
     return ss.str();
 }
 
-static std::string get_mboard_pp_string(property_tree::sptr tree, const property_tree::path_type &path){
+static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("Mboard: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
     //ss << std::endl;
@@ -166,7 +166,7 @@ static std::string get_device_pp_string(property_tree::sptr tree){
     return ss.str();
 }
 
-void print_tree(const uhd::property_tree::path_type &path, uhd::property_tree::sptr tree){
+void print_tree(const uhd::fs_path &path, uhd::property_tree::sptr tree){
     std::cout << path << std::endl;
     BOOST_FOREACH(const std::string &name, tree->list(path)){
         print_tree(path / name, tree);

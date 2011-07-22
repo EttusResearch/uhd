@@ -22,7 +22,6 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
-#include <boost/filesystem/path.hpp>
 #include <vector>
 
 namespace uhd{
@@ -99,40 +98,56 @@ public:
 };
 
 /*!
+ * FS Path: A glorified string with path manipulations.
+ * Inspired by boost filesystem path, but without the dependency.
+ *
+ * Notice: we do not declare UHD_API on the whole structure
+ * because MSVC will do weird things with std::string and linking.
+ */
+struct fs_path : std::string{
+    UHD_API fs_path(void);
+    UHD_API fs_path(const char *);
+    UHD_API fs_path(const std::string &);
+    UHD_API std::string leaf(void) const;
+    UHD_API fs_path branch_path(void) const;
+};
+
+UHD_API fs_path operator/(const fs_path &, const fs_path &);
+
+/*!
  * The property tree provides a file system structure for accessing properties.
  */
 class UHD_API property_tree : boost::noncopyable{
 public:
     typedef boost::shared_ptr<property_tree> sptr;
-    typedef boost::filesystem::path path_type;
 
     //! Create a new + empty property tree
     static sptr make(void);
 
     //! Get a subtree with a new root starting at path
-    virtual sptr subtree(const path_type &path) const = 0;
+    virtual sptr subtree(const fs_path &path) const = 0;
 
     //! Remove a property or directory (recursive)
-    virtual void remove(const path_type &path) = 0;
+    virtual void remove(const fs_path &path) = 0;
 
     //! True if the path exists in the tree
-    virtual bool exists(const path_type &path) const = 0;
+    virtual bool exists(const fs_path &path) const = 0;
 
     //! Get an iterable to all things in the given path
-    virtual std::vector<std::string> list(const path_type &path) const = 0;
+    virtual std::vector<std::string> list(const fs_path &path) const = 0;
 
     //! Create a new property entry in the tree
-    template <typename T> property<T> &create(const path_type &path);
+    template <typename T> property<T> &create(const fs_path &path);
 
     //! Get access to a property in the tree
-    template <typename T> property<T> &access(const path_type &path);
+    template <typename T> property<T> &access(const fs_path &path);
 
 private:
     //! Internal create property with wild-card type
-    virtual void _create(const path_type &path, const boost::shared_ptr<void> &prop) = 0;
+    virtual void _create(const fs_path &path, const boost::shared_ptr<void> &prop) = 0;
 
     //! Internal access property with wild-card type
-    virtual boost::shared_ptr<void> &_access(const path_type &path) const = 0;
+    virtual boost::shared_ptr<void> &_access(const fs_path &path) const = 0;
 
 };
 

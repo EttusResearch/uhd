@@ -634,30 +634,30 @@ private:
         return mcp;
     }
 
-    property_tree::path_type mb_root(const size_t mboard){
+    fs_path mb_root(const size_t mboard){
         const std::string name = _tree->list("/mboards").at(mboard);
         return "/mboards/" + name;
     }
 
-    property_tree::path_type rx_dsp_root(const size_t chan){
+    fs_path rx_dsp_root(const size_t chan){
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
         const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
         return mb_root(mcp.mboard) / "rx_dsps" / name;
     }
 
-    property_tree::path_type tx_dsp_root(const size_t chan){
+    fs_path tx_dsp_root(const size_t chan){
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
         return mb_root(mcp.mboard) / "tx_dsps" / name;
     }
 
-    property_tree::path_type rx_rf_fe_root(const size_t chan){
+    fs_path rx_rf_fe_root(const size_t chan){
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
         const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
         return mb_root(mcp.mboard) / "dboards" / spec.db_name / "rx_frontends" / spec.sd_name;
     }
 
-    property_tree::path_type tx_rf_fe_root(const size_t chan){
+    fs_path tx_rf_fe_root(const size_t chan){
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
         return mb_root(mcp.mboard) / "dboards" / spec.db_name / "tx_frontends" / spec.sd_name;

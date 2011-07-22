@@ -218,7 +218,7 @@ void e100_impl::update_tx_samp_rate(const double rate){
 
 void e100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
-    property_tree::path_type root = "/mboards/0/dboards";
+    fs_path root = "/mboards/0/dboards";
 
     //sanity checking
     validate_subdev_spec(_tree, spec, "rx");
@@ -247,7 +247,7 @@ void e100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
 void e100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
-    property_tree::path_type root = "/mboards/0/dboards";
+    fs_path root = "/mboards/0/dboards";
 
     //sanity checking
     validate_subdev_spec(_tree, spec, "tx");

@@ -209,7 +209,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _tree = property_tree::make();
     _tree->create<std::string>("/name").set("B-Series Device");
-    const property_tree::path_type mb_path = "/mboards/0";
+    const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set("B100 (B-Hundo)");
     _tree->create<std::string>(mb_path / "load_eeprom")
         .subscribe(boost::bind(&fx2_ctrl::usrp_load_eeprom, _fx2_ctrl, _1));
@@ -234,8 +234,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
     _codec_ctrl = b100_codec_ctrl::make(_fpga_spi_ctrl);
-    const property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
-    const property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
+    const fs_path rx_codec_path = mb_path / "rx_codecs/A";
+    const fs_path tx_codec_path = mb_path / "tx_codecs/A";
     _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
     _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(b100_codec_ctrl::rx_pga_gain_range);
     _tree->create<double>(rx_codec_path / "gains/pga/value")
@@ -276,7 +276,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         _rx_dsps[dspno]->set_link_rate(B100_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
-        property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<double>(rx_dsp_path / "rate/value")
             .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
             .subscribe(boost::bind(&b100_impl::update_rx_samp_rate, this, _1));

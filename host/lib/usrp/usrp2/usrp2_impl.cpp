@@ -328,7 +328,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         const device_addr_t device_args_i = device_args[mbi];
         const std::string mb = boost::lexical_cast<std::string>(mbi);
         const std::string addr = device_args_i["addr"];
-        const property_tree::path_type mb_path = "/mboards/" + mb;
+        const fs_path mb_path = "/mboards/" + mb;
 
         ////////////////////////////////////////////////////////////////
         // create the iface that controls i2c, spi, uart, and wb
@@ -395,8 +395,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         // create codec control objects
         ////////////////////////////////////////////////////////////////
-        const property_tree::path_type rx_codec_path = mb_path / "rx_codecs/A";
-        const property_tree::path_type tx_codec_path = mb_path / "tx_codecs/A";
+        const fs_path rx_codec_path = mb_path / "rx_codecs/A";
+        const fs_path tx_codec_path = mb_path / "tx_codecs/A";
         _tree->create<int>(rx_codec_path / "gains"); //phony property so this dir exists
         _tree->create<int>(tx_codec_path / "gains"); //phony property so this dir exists
         _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface);
@@ -479,7 +479,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             //The dsp core starts streaming briefly... now we flush
             _mbc[mb].rx_dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
             _mbc[mb].rx_dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
-            property_tree::path_type rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+            fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
             _tree->create<double>(rx_dsp_path / "rate/value")
                 .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _mbc[mb].rx_dsps[dspno], _1))
                 .subscribe(boost::bind(&usrp2_impl::update_rx_samp_rate, this, _1));
@@ -595,7 +595,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
     //do some post-init tasks
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
-        property_tree::path_type root = "/mboards/" + mb;
+        fs_path root = "/mboards/" + mb;
         _tree->access<double>(root / "tick_rate").update();
 
         //and now that the tick rate is set, init the host rates to something

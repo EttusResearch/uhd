@@ -63,14 +63,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //make the device and extract the dboard w/ property
     device::sptr dev = device::make(args);
     uhd::property_tree::sptr tree = dev->get_tree();
-    const uhd::property_tree::path_type db_root = "/mboards/0/dboards";
+    const uhd::fs_path db_root = "/mboards/0/dboards";
     std::vector<std::string> dboard_names = tree->list(db_root);
     if (dboard_names.size() == 1 and slot.empty()) slot = dboard_names.front();
     uhd::assert_has(dboard_names, slot, "dboard slot name");
 
     std::cout << boost::format("Reading %s EEPROM on %s dboard...") % unit % slot << std::endl;
     boost::to_lower(unit);
-    const uhd::property_tree::path_type db_path = db_root / slot / (unit + "_eeprom");
+    const uhd::fs_path db_path = db_root / slot / (unit + "_eeprom");
     dboard_eeprom_t db_eeprom = tree->access<dboard_eeprom_t>(db_path).get();
 
     //------------- handle the dboard ID -----------------------------//

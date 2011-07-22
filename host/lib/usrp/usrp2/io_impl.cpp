@@ -316,7 +316,7 @@ static subdev_spec_t replace_zero_in_spec(const std::string &type, const subdev_
 subdev_spec_t usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
     const subdev_spec_t spec = replace_zero_in_spec("RX", spec_);
     boost::mutex::scoped_lock recv_lock = _io_impl->recv_handler.get_scoped_lock();
-    property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
+    fs_path root = "/mboards/" + which_mb + "/dboards";
 
     //sanity checking
     validate_subdev_spec(_tree, spec, "rx", which_mb);
@@ -352,7 +352,7 @@ subdev_spec_t usrp2_impl::update_rx_subdev_spec(const std::string &which_mb, con
 subdev_spec_t usrp2_impl::update_tx_subdev_spec(const std::string &which_mb, const subdev_spec_t &spec_){
     const subdev_spec_t spec = replace_zero_in_spec("TX", spec_);
     boost::mutex::scoped_lock send_lock = _io_impl->send_handler.get_scoped_lock();
-    property_tree::path_type root = "/mboards/" + which_mb + "/dboards";
+    fs_path root = "/mboards/" + which_mb + "/dboards";
 
     //sanity checking
     validate_subdev_spec(_tree, spec, "tx", which_mb);
