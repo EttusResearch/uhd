@@ -69,13 +69,13 @@ namespace uhd{ namespace usrp{
  * multi_usrp::sptr dev = multi_usrp::make(dev_addr);
  *
  * //set the board on 10.2 to use the A RX subdevice (RX channel 0)
- * dev->set_rx_subdev_spec(":A", 0);
+ * dev->set_rx_subdev_spec("A:A", 0);
  *
  * //set the board on 10.3 to use the B RX subdevice (RX channel 1)
- * dev->set_rx_subdev_spec(":B", 1);
+ * dev->set_rx_subdev_spec("A:B", 1);
  *
  * //set both boards to use the AB TX subdevice (TX channels 0 and 1)
- * dev->set_tx_subdev_spec(":AB", multi_usrp::ALL_MBOARDS);
+ * dev->set_tx_subdev_spec("A:AB", multi_usrp::ALL_MBOARDS);
  *
  * //now that all the channels are mapped, continue with configuration...
  *
