@@ -15,12 +15,12 @@ properties of each board as well.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic RX and and LFRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Basic RX and LFRX boards have 4 subdevices:
+The Basic RX and LFRX boards have 4 frontends:
 
-* **Subdevice A:** real signal on antenna RXA
-* **Subdevice B:** real signal on antenna RXB
-* **Subdevice AB:** quadrature subdevice using both antennas (IQ)
-* **Subdevice BA:** quadrature subdevice using both antennas (QI)
+* **Frontend A:** real signal on antenna RXA
+* **Frontend B:** real signal on antenna RXB
+* **Frontend AB:** quadrature frontend using both antennas (IQ)
+* **Frontend BA:** quadrature frontend using both antennas (QI)
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can down-convert signals
@@ -28,23 +28,23 @@ greater than the Nyquist rate of the ADC.
 
 BasicRX Bandwidth (Hz): 
 
-* For Real-Mode (A or B subdevice): 250M
-* For Complex (AB or BA subdevice): 500M
+* For Real-Mode (A or B frontend): 250M
+* For Complex (AB or BA frontend): 500M
 
 LFRX Bandwidth (Hz):
 
-* For Real-Mode (A or B subdevice): 33M
-* For Complex (AB or BA subdevice): 66M
+* For Real-Mode (A or B frontend): 33M
+* For Complex (AB or BA frontend): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and and LFTX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Basic TX and LFTX boards have 4 subdevices:
+The Basic TX and LFTX boards have 4 frontends:
 
-* **Subdevice A:** real signal on antenna TXA
-* **Subdevice B:** real signal on antenna TXB
-* **Subdevice AB:** quadrature subdevice using both antennas (IQ)
-* **Subdevice BA:** quadrature subdevice using both antennas (QI)
+* **Frontend A:** real signal on antenna TXA
+* **Frontend B:** real signal on antenna TXB
+* **Frontend AB:** quadrature frontend using both antennas (IQ)
+* **Frontend BA:** quadrature frontend using both antennas (QI)
 
 The boards have no tunable elements or programmable gains.
 Though the magic of aliasing, you can up-convert signals
@@ -52,21 +52,23 @@ greater than the Nyquist rate of the DAC.
 
 BasicTX Bandwidth (Hz): 250M
 
-* For Real-Mode (A or B subdevice): 250M
-* For Complex (AB or BA subdevice): 500M
+* For Real-Mode (A or B frontend): 250M
+* For Complex (AB or BA frontend): 500M
 
 LFTX Bandwidth (Hz): 33M
 
-* For Real-Mode (A or B subdevice): 33M
-* For Complex (AB or BA subdevice): 66M
+* For Real-Mode (A or B frontend): 33M
+* For Complex (AB or BA frontend): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The DBSRX board has 1 quadrature subdevice.  
+The DBSRX board has 1 quadrature frontend.  
 It defaults to direct conversion, but can use a low IF through lo_offset in uhd::tune_request_t
 
 Receive Antennas: **J3**
+
+* **Frontend 0:** Complex baseband signal from antenna J3
 
 The board has no user selectable antenna setting
 
@@ -84,10 +86,12 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The DBSRX2 board has 1 quadrature subdevice.
+The DBSRX2 board has 1 quadrature frontend.
 It defaults to direct conversion, but can use a low IF through lo_offset in uhd::tune_request_t
 
 Receive Antennas: **J3**
+
+* **Frontend 0:** Complex baseband signal from antenna J3
 
 The board has no user selectable antenna setting
 
@@ -105,7 +109,7 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The RFX Series boards have 2 quadrature subdevices, one transmit, one receive.
+The RFX Series boards have 2 quadrature frontends, one transmit, one receive.
 Transmit defaults to low IF and Receive defaults to direct conversion.
 The IF can be adjusted through lo_offset in uhd::tune_request_t
 
@@ -115,6 +119,8 @@ allowing full-duplex operation on different transmit and receive frequencies.
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
+
+* **Frontend 0:** Complex baseband signal for selected antenna
 
 The user may set the receive antenna to be TX/RX or RX2.
 However, when using an RFX board in full-duplex mode,
@@ -135,7 +141,7 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The XCVR2450 has 2 quadrature subdevices, one transmit, one receive.
+The XCVR2450 has 2 quadrature frontends, one transmit, one receive.
 Transmit and Receive default to direct conversion but
 can be used in low IF mode through lo_offset in uhd::tune_request_t
 
@@ -145,6 +151,8 @@ high band (4.9-6.0GHz) and a low band (2.4-2.5GHz).
 Transmit Antennas: **J1** or **J2**
 
 Receive Antennas: **J1** or **J2**
+
+* **Frontend 0:** Complex baseband signal for selected antenna
 
 The XCVR2450 uses a common LO for both receive and transmit.
 Even though the API allows the RX and TX LOs to be individually set,
@@ -176,7 +184,7 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The WBX Series boards have 2 quadrature subdevices, one transmit, one receive.
+The WBX Series boards have 2 quadrature frontends, one transmit, one receive.
 Transmit and Receive default to direct conversion but
 can be used in low IF mode through lo_offset in uhd::tune_request_t
 
@@ -186,6 +194,8 @@ allowing full-duplex operation on different transmit and receive frequencies.
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
+
+* **Frontend 0:** Complex baseband signal for selected antenna
 
 The user may set the receive antenna to be TX/RX or RX2.
 However, when using an WBX board in full-duplex mode,
@@ -207,7 +217,7 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 SBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The SBX Series boards have 2 quadrature subdevices, one transmit, one receive.
+The SBX Series boards have 2 quadrature frontends, one transmit, one receive.
 Transmit and Receive default to direct conversion but
 can be used in low IF mode through lo_offset in uhd::tune_request_t
 
@@ -217,6 +227,8 @@ allowing full-duplex operation on different transmit and receive frequencies.
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
+
+* **Frontend 0:** Complex baseband signal for selected antenna
 
 The user may set the receive antenna to be TX/RX or RX2.
 However, when using an SBX board in full-duplex mode,
@@ -246,10 +258,12 @@ LEDs:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The TVRX board has 1 real-mode subdevice.
+The TVRX board has 1 real-mode frontend.
 It is operated at a low IF.
 
 Receive Antennas: RX
+
+* **Frontend 0:** real-mode baseband signal from antenna RX
 
 Receive Gains:
 
@@ -261,13 +275,13 @@ Bandwidth: 6MHz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The TVRX2 board has 2 real-mode subdevices.
+The TVRX2 board has 2 real-mode frontends.
 It is operated at a low IF.
 
-Receive Subdevices:
+Receive Frontends:
 
-* **Subdevice RX1:** real signal on antenna J100
-* **Subdevice RX2:** real signal on antenna J140
+* **Frontend RX1:** real-mode baseband from antenna J100
+* **Frontend RX2:** real-mode baseband from antenna J140
 
 Note: The TVRX2 has always-on AGC, the software controllable gain is the
 final gain stage which controls the AGC set-point for output to ADC.

@@ -31,33 +31,6 @@ Example device address string representations to specify non-standard firmware a
     fpga=usrp1_fpga_4rx.rbf, fw=usrp1_fw_custom.ihx
 
 ------------------------------------------------------------------------
-Specifying the subdevice to use
-------------------------------------------------------------------------
-The USRP1 has multiple daughterboard slots, known as slot A and slot B.
-The subdevice specification can be used to map an RF frontend to a DSP.
-An RF frontend is identified by the daughterboard slot name and subdevice name.
-
-Ex: The subdev spec markup string to select a WBX on slot B.
-
-::
-
-    B:0
-
-Ex: The subdev spec markup string to select a BasicRX on slot B.
-
-::
-
-    B:AB
-
-    -- OR --
-
-    B:A
-
-    -- OR --
-
-    B:B
-
-------------------------------------------------------------------------
 Missing and emulated features
 ------------------------------------------------------------------------
 The USRP1 FPGA does not have the necessary space to support the advanced

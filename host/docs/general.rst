@@ -61,6 +61,52 @@ Pseudo-code for dealing with settling time after tuning on receive:
     usrp->issue_stream_command(...);
 
 ------------------------------------------------------------------------
+Specifying the subdevice to use
+------------------------------------------------------------------------
+A subdevice specification string for USRP family devices is composed of:
+
+::
+
+    <motherboard slot name>:<daughterboard frontend name>
+
+Ex: The subdev spec markup string to select a WBX on slot B.
+
+::
+
+    B:0
+
+Ex: The subdev spec markup string to select a BasicRX on slot B.
+
+::
+
+    B:AB
+
+    -- OR --
+
+    B:A
+
+    -- OR --
+
+    B:B
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+USRP Family Motherboard Slot Names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All USRP family motherboards have a first slot named **A:**.  The USRP1 has
+two daughterboard subdevice slots, known as **A:** and **B:**.  
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Daughterboard Frontend Names
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Daughterboard frontend names can be used to specify which signal path is used
+from a daughterboard.  Most daughterboards have only one frontend **:0**.  A few
+daughterboards (Basic, LF and TVRX2) have multiple frontend names available.
+The frontend names are documented in the 
+`Daughterboard Application Notes <./dboards.html>`_
+
+------------------------------------------------------------------------
 Overflow/Underflow notes
 ------------------------------------------------------------------------
 **Note:** The following overflow/underflow notes do not apply to USRP1,
