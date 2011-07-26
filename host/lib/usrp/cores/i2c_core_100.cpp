@@ -99,7 +99,9 @@ public:
         byte_vector_t bytes;
         if (num_bytes == 0) return bytes;
 
-        while (_iface->peek16(REG_I2C_CMD_STATUS) & I2C_ST_BUSY);
+        while (_iface->peek16(REG_I2C_CMD_STATUS) & I2C_ST_BUSY){
+            /* NOP */
+        }
 
         _iface->poke16(REG_I2C_DATA, (addr << 1) | 1); //addr and read bit (1)
         _iface->poke16(REG_I2C_CMD_STATUS, I2C_CMD_WR | I2C_CMD_START);
