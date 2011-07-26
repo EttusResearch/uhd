@@ -132,7 +132,7 @@ public:
         boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
         this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, curr_secs);
         //sleep for a bit
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
     }
 
 /***********************************************************************
