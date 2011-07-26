@@ -34,6 +34,7 @@ public:
     }
 
     ~task_impl(void){
+        _running = false;
         _thread_group.interrupt_all();
         _thread_group.join_all();
     }
@@ -41,10 +42,11 @@ public:
 private:
 
     void task_loop(const task_fcn_type &task_fcn, boost::barrier &spawn_barrier){
+        _running = true;
         spawn_barrier.wait();
 
         try{
-            while (not boost::this_thread::interruption_requested()){
+            while (_running){
                 task_fcn();
             }
         }
@@ -55,7 +57,9 @@ private:
             do_error_msg(e.what());
         }
         catch(...){
-            do_error_msg("unknown exception");
+            //FIXME
+            //Unfortunately, this is also an ok way to end a task,
+            //because on some systems boost throws uncatchables.
         }
     }
 
@@ -68,6 +72,7 @@ private:
     }
 
     boost::thread_group _thread_group;
+    bool _running;
 };
 
 task::sptr task::make(const task_fcn_type &task_fcn){
