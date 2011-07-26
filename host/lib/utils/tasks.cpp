@@ -27,10 +27,11 @@ using namespace uhd;
 class task_impl : public task{
 public:
 
-    task_impl(const task_fcn_type &task_fcn){
-        boost::barrier spawn_barrier(2);
-        _thread_group.create_thread(boost::bind(&task_impl::task_loop, this, task_fcn, boost::ref(spawn_barrier)));
-        spawn_barrier.wait();
+    task_impl(const task_fcn_type &task_fcn):
+        _spawn_barrier(2)
+    {
+        _thread_group.create_thread(boost::bind(&task_impl::task_loop, this, task_fcn));
+        _spawn_barrier.wait();
     }
 
     ~task_impl(void){
@@ -41,9 +42,9 @@ public:
 
 private:
 
-    void task_loop(const task_fcn_type &task_fcn, boost::barrier &spawn_barrier){
+    void task_loop(const task_fcn_type &task_fcn){
         _running = true;
-        spawn_barrier.wait();
+        _spawn_barrier.wait();
 
         try{
             while (_running){
@@ -72,6 +73,7 @@ private:
     }
 
     boost::thread_group _thread_group;
+    boost::barrier _spawn_barrier;
     bool _running;
 };
 
