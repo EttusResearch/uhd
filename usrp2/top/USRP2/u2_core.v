@@ -193,7 +193,7 @@ module u2_core
    wire 	uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
-   wire [31:0] 	atr_lines;
+   //wire [31:0] 	atr_lines;
 
    wire [31:0] 	debug_rx, debug_mac, debug_mac0, debug_mac1, debug_tx_dsp, debug_txc,
 		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp, debug_extfifo, debug_extfifo2;
@@ -423,12 +423,20 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////
    // GPIOs -- Slave #4
+
+   nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
+		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[4:0]),.we_i(s4_we),
+		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
+		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
+		 .tx(run_rx0_d1 | rx_rx1_d1), .rx(run_tx), .gpio({io_tx,io_rx}) );
+
+   /*
    nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
 		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		 .gpio({io_tx,io_rx}) );
-
+    */
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
    
@@ -539,12 +547,12 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////
    //  Simple Timer interrupts
-   
+   /*
    simple_timer #(.BASE(SR_SIMTIMER)) simple_timer
      (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .onetime_int(onetime_int), .periodic_int(periodic_int));
-   
+   */
    // /////////////////////////////////////////////////////////////////////////
    // UART, Slave #10
 
@@ -558,11 +566,13 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller, Slave #11
 
+   /*
    atr_controller atr_controller
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
       .we_i(sb_we),.stb_i(sb_stb),.cyc_i(sb_cyc),.ack_o(sb_ack),
       .run_rx(run_rx0_d1 | run_rx1_d1),.run_tx(run_tx),.ctrl_lines(atr_lines) );
+   */
    
    // //////////////////////////////////////////////////////////////////////////
    // Time Sync, Slave #12 
@@ -572,16 +582,16 @@ module u2_core
    
    // /////////////////////////////////////////////////////////////////////////
    // SD Card Reader / Writer, Slave #13
-
+   /*
    sd_spi_wb sd_spi_wb
      (.clk(wb_clk),.rst(wb_rst),
       .sd_clk(sd_clk),.sd_csn(sd_csn),.sd_mosi(sd_mosi),.sd_miso(sd_miso),
       .wb_cyc_i(sd_cyc),.wb_stb_i(sd_stb),.wb_we_i(sd_we),
       .wb_adr_i(sd_adr[3:2]),.wb_dat_i(sd_dat_o[7:0]),.wb_dat_o(sd_dat_i[7:0]),
       .wb_ack_o(sd_ack) );
-
+    
    assign sd_dat_i[31:8] = 0;
-
+    */
    // /////////////////////////////////////////////////////////////////////////
    // ADC Frontend
    wire [23:0] 	 adc_i, adc_q;

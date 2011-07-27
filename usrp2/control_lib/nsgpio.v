@@ -37,71 +37,57 @@
 
 module nsgpio
   (input clk_i, input rst_i, 
-   input cyc_i, input stb_i, input [3:0] adr_i, input we_i, input [31:0] dat_i, 
+   input cyc_i, input stb_i, input [4:0] adr_i, input we_i, input [31:0] dat_i, 
    output reg [31:0] dat_o, output reg ack_o,
-   input [31:0] atr, input [31:0] debug_0, input [31:0] debug_1, 
-   inout [31:0] gpio
+   input tx, input rx, inout [31:0] gpio
    );
 
-   reg [63:0] 	ctrl;
-   reg [31:0] 	line;
-   reg [31:0] 	lgpio;               // LatchedGPIO pins
-   reg [31:0] 	ddr;
+   integer n;
+   reg [31:0] ddr;
+   reg [31:0] idle_out, rx_out, tx_out, fdx_out;
+   reg [31:0] rgpio, igpio;
    
    wire 	wb_acc = cyc_i & stb_i;            // WISHBONE access
    wire 	wb_wr  = wb_acc & we_i;            // WISHBONE write access
 
    always @(posedge clk_i or posedge rst_i)
      if (rst_i)
-       begin
-          ctrl <= 64'h0;
-          line <= 0;
-       end
+       ddr <= 0;
      else if (wb_wr)
-       case( adr_i[3:2] )
-	 2'b00 : 
-           line <= dat_i;
-	 2'b01 :
-	   ddr[31:0] <= dat_i;
-	 2'b10 :
-	   ctrl[63:32] <= dat_i;
-	 2'b11 :
-	   ctrl[31:0] <= dat_i;
-       endcase // case( adr_i[3:2] )
-   
+       case( adr_i[4:2] )
+	 3'b000 : 
+           idle_out <= dat_i;
+	 3'b001 :
+	   rx_out <= dat_i;
+	 3'b010 :
+	   tx_out <= dat_i;
+	 3'b011 :
+	   fdx_out <= dat_i;
+	 3'b100 :
+	   ddr <= dat_i;
+       endcase // case ( adr_i[4:2] )
+      
    always @(posedge clk_i)
-     case (adr_i[3:2])
-       2'b00 :
-	 dat_o <= lgpio;
-       2'b01 :
-	 dat_o <= ddr;
-       2'b10 :
-	 dat_o <= ctrl[63:32];
-       2'b11 :
-	 dat_o <= ctrl[31:0];
-     endcase // case(adr_i[3:2])
+     dat_o <= gpio;
    
    always @(posedge clk_i or posedge rst_i)
      if (rst_i)
        ack_o <= 1'b0;
      else
        ack_o <= wb_acc & !ack_o;
-   
-   // latch GPIO input pins
+
    always @(posedge clk_i)
-     lgpio <= gpio;
+     case({tx,rx})
+       2'b00 : rgpio <= idle_out;
+       2'b01 : rgpio <= rx_out;
+       2'b10 : rgpio <= tx_out;
+       2'b11 : rgpio <= fdx_out;
+     endcase // case ({tx,rx})
    
-   // assign GPIO outputs
-   integer   n;
-   reg [31:0] igpio; // temporary internal signal
-   
-   always @(ctrl or line or debug_1 or debug_0 or atr or ddr)
+   always @*
      for(n=0;n<32;n=n+1)
-       igpio[n] <= ddr[n] ? (ctrl[2*n+1] ? (ctrl[2*n] ? debug_1[n] : debug_0[n]) : 
-			     (ctrl[2*n] ?  atr[n] : line[n]) )
-	 : 1'bz;
-   
+       igpio[n] <= ddr[n] ? rgpio[n] : 1'bz;
+
    assign     gpio = igpio;
    
 endmodule
-
