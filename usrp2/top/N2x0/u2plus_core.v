@@ -187,7 +187,6 @@ module u2plus_core
    wire [3:0] 	uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
-   wire [31:0] 	atr_lines;
 
    wire [31:0] 	debug_rx, debug_mac, debug_mac0, debug_mac1, debug_tx_dsp, debug_txc,
 		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp, debug_extfifo, debug_extfifo2;
@@ -418,11 +417,11 @@ module u2plus_core
    
    // /////////////////////////////////////////////////////////////////////////
    // GPIOs -- Slave #4
+
    nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
-		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
+		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[4:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio({io_tx,io_rx}) );
+		 .tx(run_rx0_d1 | rx_rx1_d1), .rx(run_tx), .gpio({io_tx,io_rx}) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
@@ -536,12 +535,12 @@ module u2plus_core
    
    // /////////////////////////////////////////////////////////////////////////
    //  Simple Timer interrupts
-   
+   /*
    simple_timer #(.BASE(SR_SIMTIMER)) simple_timer
      (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .onetime_int(onetime_int), .periodic_int(periodic_int));
-   
+   */
    // /////////////////////////////////////////////////////////////////////////
    // UART, Slave #10
 
@@ -555,11 +554,13 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller, Slave #11
 
+   /*
    atr_controller atr_controller
      (.clk_i(wb_clk),.rst_i(wb_rst),
       .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
       .we_i(sb_we),.stb_i(sb_stb),.cyc_i(sb_cyc),.ack_o(sb_ack),
       .run_rx(run_rx0_d1 | run_rx1_d1),.run_tx(run_tx),.ctrl_lines(atr_lines) );
+   */
    
    // //////////////////////////////////////////////////////////////////////////
    // Time Sync, Slave #12 

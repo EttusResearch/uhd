@@ -193,7 +193,6 @@ module u2_core
    wire 	uart_tx_int, uart_rx_int;
 
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
-   //wire [31:0] 	atr_lines;
 
    wire [31:0] 	debug_rx, debug_mac, debug_mac0, debug_mac1, debug_tx_dsp, debug_txc,
 		debug_serdes0, debug_serdes1, debug_serdes2, debug_rx_dsp, debug_udp, debug_extfifo, debug_extfifo2;
@@ -429,13 +428,6 @@ module u2_core
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
 		 .tx(run_rx0_d1 | rx_rx1_d1), .rx(run_tx), .gpio({io_tx,io_rx}) );
 
-   /*
-   nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
-		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
-		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		 .gpio({io_tx,io_rx}) );
-    */
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
    
