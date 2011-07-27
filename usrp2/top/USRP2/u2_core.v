@@ -427,7 +427,6 @@ module u2_core
    nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[4:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		 .tx(run_rx0_d1 | rx_rx1_d1), .rx(run_tx), .gpio({io_tx,io_rx}) );
 
    /*
