@@ -83,29 +83,30 @@ public:
     }
 
     void issue_stream_command(const stream_cmd_t &stream_cmd){
-        UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x3fffffff);
+        UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x1fffffff);
         _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
 
         //setup the mode to instruction flags
-        typedef boost::tuple<bool, bool, bool> inst_t;
+        typedef boost::tuple<bool, bool, bool, bool> inst_t;
         static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
-                                                                //reload, chain, samps
-            (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false))
-            (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false))
-            (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true))
-            (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true))
+                                                                //reload, chain, samps, stop
+            (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false))
+            (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false, true))
+            (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true,  false))
+            (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true,  false))
         ;
 
         //setup the instruction flag values
-        bool inst_reload, inst_chain, inst_samps;
-        boost::tie(inst_reload, inst_chain, inst_samps) = mode_to_inst[stream_cmd.stream_mode];
+        bool inst_reload, inst_chain, inst_samps, inst_stop;
+        boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
 
         //calculate the word from flags and length
         boost::uint32_t cmd_word = 0;
         cmd_word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
         cmd_word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
         cmd_word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
-        cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_chain)? 1 : 0);
+        cmd_word |= boost::uint32_t((inst_stop)?             1 : 0) << 28;
+        cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
 
         //issue the stream command
         _iface->poke32(REG_RX_CTRL_STREAM_CMD, cmd_word);
