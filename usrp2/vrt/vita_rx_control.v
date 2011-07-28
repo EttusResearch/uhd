@@ -121,9 +121,18 @@ module vita_rx_control
    time_compare 
      time_compare (.time_now(vita_time), .trigger_time(rcvtime), .now(now), .early(early), .late(late));
    
-   wire too_late 	    = late & ~send_imm;
    wire go_now 		    = now | send_imm;
    wire full 		    = ~sample_fifo_in_rdy;
+   
+   reg 	too_late;
+
+   always @(posedge clk)
+     if(reset | clear)
+       too_late <= 0;
+     else
+       too_late <= late & ~send_imm;
+
+   reg 	late_valid;
    
    always @(posedge clk)
      if(reset | clear)
@@ -135,6 +144,7 @@ module vita_rx_control
 	  send_imm 	   <= 0;
 	  chain 	   <= 0;
 	  reload	   <= 0;
+	  late_valid       <= 0;
        end
      else
        case(ibs_state)
@@ -144,6 +154,7 @@ module vita_rx_control
 		lines_left <= numlines_pre;
 		lines_total <= numlines_pre;
 		rcvtime <= rcvtime_pre;
+		late_valid <= 0;
 		if(stop_pre)
 		  ibs_state <= IBS_ZEROLEN;
 		else
@@ -153,10 +164,14 @@ module vita_rx_control
 		reload <= reload_pre;
 	     end
 	 IBS_WAITING :
-	   if(go_now)
-	     ibs_state <= IBS_RUNNING;
-	   else if(too_late)
-	     ibs_state <= IBS_LATECMD;
+	   begin
+	      late_valid <= 1;
+	      if(late_valid)
+		if(go_now)
+		  ibs_state <= IBS_RUNNING;
+		else if(too_late)
+		  ibs_state <= IBS_LATECMD;
+	   end
 	 IBS_RUNNING :
 	   if(strobe)
 	     if(full)
