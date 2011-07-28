@@ -435,7 +435,7 @@ module u2plus_core
 
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
-      .word08(status),.word09({sim_mode,27'b0,clock_divider[3:0]}),.word10(vita_time[63:32]),
+      .word08(status),.word09(32'b0),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
