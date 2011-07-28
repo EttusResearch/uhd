@@ -46,13 +46,13 @@ module vita_rx_control
 
    wire [63:0] 	  rcvtime_pre;
    reg [63:0] 	  rcvtime;
-   wire [28:0] 	  numlines_pre;
-   wire 	  send_imm_pre, chain_pre, reload_pre;
+   wire [27:0] 	  numlines_pre;
+   wire 	  send_imm_pre, chain_pre, reload_pre, stop_pre;
    reg 		  send_imm, chain, reload;
    wire 	  read_ctrl, not_empty_ctrl, write_ctrl;
    reg 		  sc_pre2;
    wire [33:0] 	  fifo_line;
-   reg [28:0] 	  lines_left, lines_total;
+   reg [27:0] 	  lines_left, lines_total;
    reg [2:0] 	  ibs_state;
    wire 	  now, early, late;
    wire 	  sample_fifo_in_rdy;
@@ -83,7 +83,7 @@ module vita_rx_control
    fifo_short #(.WIDTH(96)) commandfifo
      (.clk(clk),.reset(reset),.clear(clear),
       .datain({new_command,new_time}), .src_rdy_i(write_ctrl), .dst_rdy_o(),
-      .dataout({send_imm_pre,chain_pre,reload_pre,numlines_pre,rcvtime_pre}),
+      .dataout({send_imm_pre,chain_pre,reload_pre,stop_pre,numlines_pre,rcvtime_pre}),
       .src_rdy_o(not_empty_ctrl), .dst_rdy_i(read_ctrl),
       .occupied(command_queue_len), .space() );
    
@@ -97,7 +97,7 @@ module vita_rx_control
    localparam IBS_LATECMD = 6;
    localparam IBS_ZEROLEN = 7;
    
-   wire signal_cmd_done     = (lines_left == 1) & (~chain | (not_empty_ctrl & (numlines_pre==0)));
+   wire signal_cmd_done     = (lines_left == 1) & (~chain | (not_empty_ctrl & stop_pre));
    wire signal_overrun 	    = (ibs_state == IBS_OVERRUN);
    wire signal_brokenchain  = (ibs_state == IBS_BROKENCHAIN);
    wire signal_latecmd 	    = (ibs_state == IBS_LATECMD);
@@ -144,7 +144,7 @@ module vita_rx_control
 		lines_left <= numlines_pre;
 		lines_total <= numlines_pre;
 		rcvtime <= rcvtime_pre;
-		if(numlines_pre == 0)
+		if(stop_pre)
 		  ibs_state <= IBS_ZEROLEN;
 		else
 		  ibs_state <= IBS_WAITING;
@@ -182,7 +182,7 @@ module vita_rx_control
 			 send_imm    <= send_imm_pre;
 			 chain 	     <= chain_pre;
 			 reload      <= reload_pre;
-			 if(numlines_pre == 0)  // If we are told to stop here
+			 if(stop_pre)  // If we are told to stop here
 			   ibs_state <= IBS_IDLE;
 			 else
 			   ibs_state <= IBS_RUNNING;
