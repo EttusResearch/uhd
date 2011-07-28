@@ -161,9 +161,7 @@ module time_64bit
 
    assign mimo_secs = vita_time_rcvd[63:32];
    assign mimo_ticks = vita_time_rcvd[31:0] + {16'd0,sync_delay};
-   //assign mimo_sync_now = mimo_sync & sync_rcvd & (mimo_ticks <= TICKS_PER_SEC);
-	// for timing purposes, assume sync_delay less than 10k
-   assign mimo_sync_now = mimo_sync & sync_rcvd & (vita_time_rcvd <= (TICKS_PER_SEC-10000));
+   assign mimo_sync_now = mimo_sync & sync_rcvd & (mimo_ticks <= TICKS_PER_SEC);
 
    assign debug = { { 24'b0} ,
 		    { 2'b0, exp_time_in, exp_time_out, mimo_sync, mimo_sync_now, sync_rcvd, send_sync} };
