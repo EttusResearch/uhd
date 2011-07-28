@@ -358,11 +358,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //--------------------------------------------------------------
         if (fpga_minor == 0){ //!!! special temporary check !!!//
-            UHD_MSG(warning)
-                << "Detected FPGA pre-release minor version 0.\n"
-                << "This build has known transmit issues.\n"
-                << "Please grab the latest images from the wiki.\n"
-            ;
+            throw uhd::runtime_error(
+                "Detected FPGA pre-release minor version 7.0.\n"
+                "This host code build requires at least 7.1.\n"
+                "Please update both firmware and FPGA images\n"
+            );
         }
         //--------------------------------------------------------------
 
