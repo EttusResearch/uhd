@@ -23,7 +23,7 @@ module time_64bit
    (input clk, input rst,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,  
     input pps,
-    output [63:0] vita_time,
+    output reg [63:0] vita_time,
     output reg [63:0] vita_time_pps,
     output pps_int,
     input exp_time_in, output exp_time_out,
@@ -40,7 +40,10 @@ module time_64bit
    
    reg [31:0] 	   seconds, ticks;
    wire 	   end_of_second;
-   assign 	   vita_time = {seconds,ticks};
+
+   always @(posedge clk)
+     vita_time <= {seconds,ticks};
+   
    wire [63:0] 	   vita_time_rcvd;
    
    wire [31:0] 	   next_ticks_preset, next_seconds_preset;
