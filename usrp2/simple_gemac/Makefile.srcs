@@ -7,7 +7,6 @@
 ##################################################
 SIMPLE_GEMAC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../simple_gemac/, \
 simple_gemac_wrapper.v \
-simple_gemac_wrapper19.v \
 simple_gemac.v \
 simple_gemac_wb.v \
 simple_gemac_tx.v \
