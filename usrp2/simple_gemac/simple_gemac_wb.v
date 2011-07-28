@@ -161,19 +161,19 @@ module simple_gemac_wb
    
    always @(posedge wb_clk)
      case(wb_adr[7:2])
-       0 : wb_dat_o <= misc_settings;
-       1 : wb_dat_o <= ucast_addr[47:32];
-       2 : wb_dat_o <= ucast_addr[31:0];
-       3 : wb_dat_o <= mcast_addr[47:32];
-       4 : wb_dat_o <= mcast_addr[31:0];
-       5 : wb_dat_o <= {NoPre,Divider};
-       6 : wb_dat_o <= MIIADDRESS;
-       7 : wb_dat_o <= CtrlData;
+       //0 : wb_dat_o <= misc_settings;
+       //1 : wb_dat_o <= ucast_addr[47:32];
+       //2 : wb_dat_o <= ucast_addr[31:0];
+       //3 : wb_dat_o <= mcast_addr[47:32];
+       //4 : wb_dat_o <= mcast_addr[31:0];
+       //5 : wb_dat_o <= {NoPre,Divider};
+       //6 : wb_dat_o <= MIIADDRESS;
+       //7 : wb_dat_o <= CtrlData;
        8 : wb_dat_o <= MIICOMMAND;
        9 : wb_dat_o <= MIISTATUS;
        10: wb_dat_o <= MIIRX_DATA;
-       11: wb_dat_o <= pause_time;
-       12: wb_dat_o <= pause_thresh;
+       //11: wb_dat_o <= pause_time;
+       //12: wb_dat_o <= pause_thresh;
      endcase // case (wb_adr[7:2])
    
 endmodule // simple_gemac_wb
