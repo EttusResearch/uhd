@@ -102,30 +102,4 @@
 #define U2_REG_TIME64_SECS_RB_PPS READBACK_BASE + 4*14
 #define U2_REG_TIME64_TICKS_RB_PPS READBACK_BASE + 4*15
 
-////////////////////////////////////////////////
-// GPIO
-////////////////////////////////////////////////
-#define U2_REG_GPIO_IO GPIO_BASE + 0
-#define U2_REG_GPIO_DDR GPIO_BASE + 4
-#define U2_REG_GPIO_TX_SEL GPIO_BASE + 8
-#define U2_REG_GPIO_RX_SEL GPIO_BASE + 12
-
-// each 2-bit sel field is layed out this way
-#define U2_FLAG_GPIO_SEL_GPIO      0 // if pin is an output, set by GPIO register
-#define U2_FLAG_GPIO_SEL_ATR       1 // if pin is an output, set by ATR logic
-#define U2_FLAG_GPIO_SEL_DEBUG_0   2 // if pin is an output, debug lines from FPGA fabric
-#define U2_FLAG_GPIO_SEL_DEBUG_1   3 // if pin is an output, debug lines from FPGA fabric
-
-///////////////////////////////////////////////////
-// ATR Controller
-////////////////////////////////////////////////
-#define U2_REG_ATR_IDLE_TXSIDE ATR_BASE + 0
-#define U2_REG_ATR_IDLE_RXSIDE ATR_BASE + 2
-#define U2_REG_ATR_INTX_TXSIDE ATR_BASE + 4
-#define U2_REG_ATR_INTX_RXSIDE ATR_BASE + 6
-#define U2_REG_ATR_INRX_TXSIDE ATR_BASE + 8
-#define U2_REG_ATR_INRX_RXSIDE ATR_BASE + 10
-#define U2_REG_ATR_FULL_TXSIDE ATR_BASE + 12
-#define U2_REG_ATR_FULL_RXSIDE ATR_BASE + 14
-
 #endif /* INCLUDED_USRP2_REGS_HPP */

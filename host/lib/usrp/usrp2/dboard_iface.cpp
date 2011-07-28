@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "gpio_core_200.hpp"
 #include "usrp2_iface.hpp"
 #include "clock_ctrl.hpp"
 #include "usrp2_regs.hpp" //wishbone address constants
@@ -80,8 +81,7 @@ public:
 private:
     usrp2_iface::sptr _iface;
     usrp2_clock_ctrl::sptr _clock_ctrl;
-    boost::uint32_t _ddr_shadow;
-    boost::uint32_t _gpio_shadow;
+    gpio_core_200::sptr _gpio;
 
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
     uhd::dict<unit_t, double> _clock_rates;
@@ -107,8 +107,7 @@ usrp2_dboard_iface::usrp2_dboard_iface(
 ){
     _iface = iface;
     _clock_ctrl = clock_ctrl;
-    _ddr_shadow = 0;
-    _gpio_shadow = 0;
+    _gpio = gpio_core_200::make(_iface, GPIO_BASE);
 
     //reset the aux dacs
     _dac_regs[UNIT_RX] = ad5623_regs_t();
@@ -165,82 +164,28 @@ double usrp2_dboard_iface::get_codec_rate(unit_t){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-static const uhd::dict<dboard_iface::unit_t, int> unit_to_shift = map_list_of
-    (dboard_iface::UNIT_RX, 0)
-    (dboard_iface::UNIT_TX, 16)
-;
-
 void usrp2_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value){
-    //calculate the new selection mux setting
-    boost::uint32_t new_sels = 0x0;
-    for(size_t i = 0; i < 16; i++){
-        bool is_bit_set = (value & (0x1 << i)) != 0;
-        new_sels |= ((is_bit_set)? U2_FLAG_GPIO_SEL_ATR : U2_FLAG_GPIO_SEL_GPIO) << (i*2);
-    }
-
-    //write the selection mux value to register
-    switch(unit){
-    case UNIT_RX: _iface->poke32(U2_REG_GPIO_RX_SEL, new_sels); return;
-    case UNIT_TX: _iface->poke32(U2_REG_GPIO_TX_SEL, new_sels); return;
-    }
+    return _gpio->set_pin_ctrl(unit, value);
 }
 
 void usrp2_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value){
-    _ddr_shadow = \
-        (_ddr_shadow & ~(0xffff << unit_to_shift[unit])) |
-        (boost::uint32_t(value) << unit_to_shift[unit]);
-    _iface->poke32(U2_REG_GPIO_DDR, _ddr_shadow);
+    return _gpio->set_gpio_ddr(unit, value);
 }
 
 void usrp2_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value){
-    _gpio_shadow = \
-        (_gpio_shadow & ~(0xffff << unit_to_shift[unit])) |
-        (boost::uint32_t(value) << unit_to_shift[unit]);
-    _iface->poke32(U2_REG_GPIO_IO, _gpio_shadow);
+    return _gpio->set_gpio_out(unit, value);
 }
 
 boost::uint16_t usrp2_dboard_iface::read_gpio(unit_t unit){
-    return boost::uint16_t(_iface->peek32(U2_REG_GPIO_IO) >> unit_to_shift[unit]);
+    return _gpio->read_gpio(unit);
 }
 
 void usrp2_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
-    //define mapping of unit to atr regs to register address
-    static const uhd::dict<
-        unit_t, uhd::dict<atr_reg_t, boost::uint32_t>
-    > unit_to_atr_to_addr = map_list_of
-        (UNIT_RX, map_list_of
-            (ATR_REG_IDLE,        U2_REG_ATR_IDLE_RXSIDE)
-            (ATR_REG_TX_ONLY,     U2_REG_ATR_INTX_RXSIDE)
-            (ATR_REG_RX_ONLY,     U2_REG_ATR_INRX_RXSIDE)
-            (ATR_REG_FULL_DUPLEX, U2_REG_ATR_FULL_RXSIDE)
-        )
-        (UNIT_TX, map_list_of
-            (ATR_REG_IDLE,        U2_REG_ATR_IDLE_TXSIDE)
-            (ATR_REG_TX_ONLY,     U2_REG_ATR_INTX_TXSIDE)
-            (ATR_REG_RX_ONLY,     U2_REG_ATR_INRX_TXSIDE)
-            (ATR_REG_FULL_DUPLEX, U2_REG_ATR_FULL_TXSIDE)
-        )
-    ;
-    _iface->poke16(unit_to_atr_to_addr[unit][atr], value);
+    return _gpio->set_atr_reg(unit, atr, value);
 }
 
-void usrp2_dboard_iface::set_gpio_debug(unit_t unit, int which){
-    this->set_gpio_ddr(unit, 0xffff); //all outputs
-
-    //calculate the new selection mux setting
-    boost::uint32_t new_sels = 0x0;
-    int sel = (which == 0)?
-        U2_FLAG_GPIO_SEL_DEBUG_0:
-        U2_FLAG_GPIO_SEL_DEBUG_1;
-    for(size_t i = 0; i < 16; i++){
-        new_sels |= sel << (i*2);
-    }
-
-    //write the selection mux value to register
-    switch(unit){
-    case UNIT_RX: _iface->poke32(U2_REG_GPIO_RX_SEL, new_sels); return;
-    case UNIT_TX: _iface->poke32(U2_REG_GPIO_TX_SEL, new_sels); return;
-    }
+void usrp2_dboard_iface::set_gpio_debug(unit_t, int){
+    throw uhd::not_implemented_error("no set_gpio_debug implemented");
 }
 
 /***********************************************************************

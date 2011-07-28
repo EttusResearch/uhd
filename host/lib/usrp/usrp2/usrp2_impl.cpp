@@ -356,6 +356,16 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         }
         _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 
+        //--------------------------------------------------------------
+        if (fpga_minor == 0){ //!!! special temporary check !!!//
+            UHD_MSG(warning)
+                << "Detected FPGA pre-release minor version 0.\n"
+                << "This build has known transmit issues.\n"
+                << "Please grab the latest images from the wiki.\n"
+            ;
+        }
+        //--------------------------------------------------------------
+
         //lock the device/motherboard to this process
         _mbc[mb].iface->lock_device(true);
 
