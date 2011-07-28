@@ -18,7 +18,8 @@
 
 module simple_gemac_wrapper
   #(parameter RXFIFOSIZE=9,
-    parameter TXFIFOSIZE=9)
+    parameter TXFIFOSIZE=9,
+    parameter RX_FLOW_CTRL=0)
    (input clk125, input reset,
     // GMII
     output GMII_GTX_CLK, output GMII_TX_EN, output GMII_TX_ER, output [7:0] GMII_TXD,
@@ -60,7 +61,7 @@ module simple_gemac_wrapper
       .GMII_TX_ER(GMII_TX_ER), .GMII_TXD(GMII_TXD),
       .GMII_RX_CLK(GMII_RX_CLK), .GMII_RX_DV(GMII_RX_DV),  
       .GMII_RX_ER(GMII_RX_ER), .GMII_RXD(GMII_RXD),
-      .pause_req(pause_req), .pause_time_req(pause_time_req), 
+      .pause_req(RX_FLOW_CTRL ? pause_req : 1'b0), .pause_time_req(RX_FLOW_CTRL ? pause_time_req : 16'd0), 
       .pause_respect_en(pause_respect_en),
       .ucast_addr(ucast_addr), .mcast_addr(mcast_addr),
       .pass_ucast(pass_ucast), .pass_mcast(pass_mcast), .pass_bcast(pass_bcast), 
@@ -149,10 +150,13 @@ module simple_gemac_wrapper
       .tx_data(tx_data), .tx_valid(tx_valid), .tx_error(tx_error), .tx_ack(tx_ack));
 
    // Flow Control
-   flow_ctrl_rx flow_ctrl_rx
-     (.pause_request_en(pause_request_en), .pause_time(pause_time), .pause_thresh(pause_thresh),
-      .rx_clk(rx_clk), .rx_reset(rx_reset), .rx_fifo_space(rx_fifo_space),
-      .tx_clk(tx_clk), .tx_reset(tx_reset), .pause_req(pause_req), .pause_time_req(pause_time_req));
+   generate
+      if(RX_FLOW_CTRL==1)
+	flow_ctrl_rx flow_ctrl_rx
+	  (.pause_request_en(pause_request_en), .pause_time(pause_time), .pause_thresh(pause_thresh),
+	   .rx_clk(rx_clk), .rx_reset(rx_reset), .rx_fifo_space(rx_fifo_space),
+	   .tx_clk(tx_clk), .tx_reset(tx_reset), .pause_req(pause_req), .pause_time_req(pause_time_req));
+   endgenerate
    
    wire [31:0] 	  debug_tx, debug_rx;
 

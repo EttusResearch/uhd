@@ -1,7 +1,8 @@
 
 module tx_frontend
   #(parameter BASE=0,
-    parameter WIDTH_OUT=16)
+    parameter WIDTH_OUT=16,
+    parameter IQCOMP_EN=0)
    (input clk, input rst,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [23:0] tx_i, input [23:0] tx_q, input run,
@@ -37,30 +38,44 @@ module tx_frontend
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(mux_ctrl),.changed());
 
-   // IQ Balance
-   MULT18X18S mult_mag_corr
-     (.P(corr_i), .A(tx_i[23:6]), .B(mag_corr), .C(clk), .CE(1), .R(rst) ); 
-   
-   MULT18X18S mult_phase_corr
-     (.P(corr_q), .A(tx_i[23:6]), .B(phase_corr), .C(clk), .CE(1), .R(rst) );
-   
-   add2_and_clip_reg #(.WIDTH(24)) add_clip_i
-     (.clk(clk), .rst(rst), 
-      .in1(tx_i), .in2({{4{corr_i[35]}},corr_i[35:16]}), .strobe_in(1'b1), 
-      .sum(i_bal), .strobe_out());
-   
-   add2_and_clip_reg #(.WIDTH(24)) add_clip_q
-     (.clk(clk), .rst(rst), 
-      .in1(tx_q), .in2({{4{corr_q[35]}},corr_q[35:16]}), .strobe_in(1'b1),
-      .sum(q_bal), .strobe_out());
+   generate
+      if(IQCOMP_EN==1)
+	begin
+	   // IQ Balance
+	   MULT18X18S mult_mag_corr
+	     (.P(corr_i), .A(tx_i[23:6]), .B(mag_corr), .C(clk), .CE(1), .R(rst) ); 
+	   
+	   MULT18X18S mult_phase_corr
+	     (.P(corr_q), .A(tx_i[23:6]), .B(phase_corr), .C(clk), .CE(1), .R(rst) );
+	   
+	   add2_and_clip_reg #(.WIDTH(24)) add_clip_i
+	     (.clk(clk), .rst(rst), 
+	      .in1(tx_i), .in2({{4{corr_i[35]}},corr_i[35:16]}), .strobe_in(1'b1), 
+	      .sum(i_bal), .strobe_out());
+	   
+	   add2_and_clip_reg #(.WIDTH(24)) add_clip_q
+	     (.clk(clk), .rst(rst), 
+	      .in1(tx_q), .in2({{4{corr_q[35]}},corr_q[35:16]}), .strobe_in(1'b1),
+	      .sum(q_bal), .strobe_out());
 
-   // DC Offset
-   add2_and_clip_reg #(.WIDTH(24)) add_dco_i
-     (.clk(clk), .rst(rst), .in1(i_dco), .in2(i_bal), .strobe_in(1'b1), .sum(i_ofs), .strobe_out());
+	   // DC Offset
+	   add2_and_clip_reg #(.WIDTH(24)) add_dco_i
+	     (.clk(clk), .rst(rst), .in1(i_dco), .in2(i_bal), .strobe_in(1'b1), .sum(i_ofs), .strobe_out());
+	   
+	   add2_and_clip_reg #(.WIDTH(24)) add_dco_q
+	     (.clk(clk), .rst(rst), .in1(q_dco), .in2(q_bal), .strobe_in(1'b1), .sum(q_ofs), .strobe_out());
+	end // if (IQCOMP_EN==1)
+      else
+	begin
+	   // DC Offset
+	   add2_and_clip_reg #(.WIDTH(24)) add_dco_i
+	     (.clk(clk), .rst(rst), .in1(i_dco), .in2(tx_i), .strobe_in(1'b1), .sum(i_ofs), .strobe_out());
+	   
+	   add2_and_clip_reg #(.WIDTH(24)) add_dco_q
+	     (.clk(clk), .rst(rst), .in1(q_dco), .in2(tx_q), .strobe_in(1'b1), .sum(q_ofs), .strobe_out());
+	end // else: !if(IQCOMP_EN==1)
+   endgenerate
    
-   add2_and_clip_reg #(.WIDTH(24)) add_dco_q
-     (.clk(clk), .rst(rst), .in1(q_dco), .in2(q_bal), .strobe_in(1'b1), .sum(q_ofs), .strobe_out());
-
    // Rounding
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(WIDTH_OUT)) round_i
      (.clk(clk), .reset(rst), .in(i_ofs),.strobe_in(1'b1), .out(i_final), .strobe_out());
