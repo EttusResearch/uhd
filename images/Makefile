@@ -260,6 +260,12 @@ endif
 images: $(IMAGES_LIST)
 	find $(BUILT_IMAGES_DIR) -type f | xargs chmod -x
 
+package:
+	mkdir -p build
+	cd build && cmake -DUHD_RELEASE_MODE=OFF ..
+	cd build && cmake -DCPACK_GENERATOR=TGZ .. && make package
+	cd build && cmake -DCPACK_GENERATOR=ZIP .. && make package
+
 clean:
 	$(RM) -rf $(BUILT_IMAGES_DIR)
 	$(RM) -rf $(CMAKE_BUILD_DIR)

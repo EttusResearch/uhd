@@ -22,6 +22,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD-images NONE)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../host/cmake/Modules)
 INCLUDE(UHDVersion) #sets version variables (used below)
+EXECUTE_PROCESS(COMMAND "date" OUTPUT_VARIABLE DATETIME_NOW OUTPUT_STRIP_TRAILING_WHITESPACE) #sets the date
 
 ########################################################################
 # Setup CPack
@@ -41,5 +42,5 @@ MESSAGE(STATUS "Version: ${CPACK_PACKAGE_VERSION}")
 # Install Images
 ########################################################################
 #tag the images with a version number (something identifiable)
-FILE(WRITE ${CMAKE_SOURCE_DIR}/images/${CPACK_PACKAGE_VERSION}.tag ${UHD_BUILD_INFO})
+FILE(WRITE ${CMAKE_SOURCE_DIR}/images/${CPACK_PACKAGE_VERSION}.tag "${CPACK_PACKAGE_VERSION}-${UHD_BUILD_INFO}\n${DATETIME_NOW}\n")
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/images DESTINATION share/uhd)
