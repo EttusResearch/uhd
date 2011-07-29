@@ -259,12 +259,13 @@ endif
 ########################################################################
 images: $(IMAGES_LIST)
 	find $(BUILT_IMAGES_DIR) -type f | xargs chmod -x
+	find $(TOP_FPGA_DIR) -name "*.twr" | xargs grep constraint | grep met
 
 package:
-	mkdir -p build
-	cd build && cmake -DUHD_RELEASE_MODE=OFF ..
-	cd build && cmake -DCPACK_GENERATOR=TGZ .. && make package
-	cd build && cmake -DCPACK_GENERATOR=ZIP .. && make package
+	mkdir -p $(CMAKE_BUILD_DIR)
+	cd $(CMAKE_BUILD_DIR) && cmake -DUHD_RELEASE_MODE=OFF ..
+	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=TGZ .. && make package
+	cd $(CMAKE_BUILD_DIR) && cmake -DCPACK_GENERATOR=ZIP .. && make package
 
 clean:
 	$(RM) -rf $(BUILT_IMAGES_DIR)
