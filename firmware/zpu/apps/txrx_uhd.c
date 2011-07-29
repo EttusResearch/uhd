@@ -54,14 +54,14 @@ static void handle_udp_data_packet(
     if (payload == NULL) switch(src.port){
     case USRP2_UDP_RX_DSP0_PORT:
         //the end continuous streaming command
-        sr_rx_ctrl0->cmd = 1 << 31; //no samples now
+        sr_rx_ctrl0->cmd = 1 << 31 | 1 << 28; //no samples now
         sr_rx_ctrl0->time_secs = 0;
         sr_rx_ctrl0->time_ticks = 0; //latch the command
         break;
 
     case USRP2_UDP_RX_DSP1_PORT:
         //the end continuous streaming command
-        sr_rx_ctrl1->cmd = 1 << 31; //no samples now
+        sr_rx_ctrl1->cmd = 1 << 31 | 1 << 28; //no samples now
         sr_rx_ctrl1->time_secs = 0;
         sr_rx_ctrl1->time_ticks = 0; //latch the command
         break;
