@@ -79,7 +79,7 @@ bool operator==(const dboard_key_t &lhs, const dboard_key_t &rhs){
  * storage and registering for dboards
  **********************************************************************/
 //dboard registry tuple: dboard constructor, canonical name, subdev names
-typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, prop_names_t> args_t;
+typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, std::vector<std::string> > args_t;
 
 //map a dboard id to a dboard constructor
 typedef uhd::dict<dboard_key_t, args_t> id_to_args_map_t;
@@ -89,7 +89,7 @@ static void register_dboard_key(
     const dboard_key_t &dboard_key,
     dboard_manager::dboard_ctor_t dboard_ctor,
     const std::string &name,
-    const prop_names_t &subdev_names
+    const std::vector<std::string> &subdev_names
 ){
     UHD_LOGV(always) << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_key)){
@@ -110,7 +110,7 @@ void dboard_manager::register_dboard(
     const dboard_id_t &dboard_id,
     dboard_ctor_t dboard_ctor,
     const std::string &name,
-    const prop_names_t &subdev_names
+    const std::vector<std::string> &subdev_names
 ){
     register_dboard_key(dboard_key_t(dboard_id), dboard_ctor, name, subdev_names);
 }
@@ -120,7 +120,7 @@ void dboard_manager::register_dboard(
     const dboard_id_t &tx_dboard_id,
     dboard_ctor_t dboard_ctor,
     const std::string &name,
-    const prop_names_t &subdev_names
+    const std::vector<std::string> &subdev_names
 ){
     register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id), dboard_ctor, name, subdev_names);
 }
@@ -144,46 +144,6 @@ std::string dboard_id_t::to_pp_string(void) const{
 }
 
 /***********************************************************************
- * internal helper classes
- **********************************************************************/
-/*!
- * A special wax proxy object that forwards calls to a subdev.
- * A sptr to an instance will be used in the properties structure. 
- */
-class subdev_proxy : boost::noncopyable, public wax::obj{
-public:
-    typedef boost::shared_ptr<subdev_proxy> sptr;
-    enum type_t{RX_TYPE, TX_TYPE};
-
-    //structors
-    subdev_proxy(dboard_base::sptr subdev, type_t type):
-        _subdev(subdev), _type(type)
-    {
-        /* NOP */
-    }
-
-private:
-    dboard_base::sptr   _subdev;
-    type_t              _type;
-
-    //forward the get calls to the rx or tx
-    void get(const wax::obj &key, wax::obj &val){
-        switch(_type){
-        case RX_TYPE: return _subdev->rx_get(key, val);
-        case TX_TYPE: return _subdev->tx_get(key, val);
-        }
-    }
-
-    //forward the set calls to the rx or tx
-    void set(const wax::obj &key, const wax::obj &val){
-        switch(_type){
-        case RX_TYPE: return _subdev->rx_set(key, val);
-        case TX_TYPE: return _subdev->tx_set(key, val);
-        }
-    }
-};
-
-/***********************************************************************
  * dboard manager implementation class
  **********************************************************************/
 class dboard_manager_impl : public dboard_manager{
@@ -192,23 +152,18 @@ public:
     dboard_manager_impl(
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
-        dboard_iface::sptr iface
+        dboard_iface::sptr iface,
+        property_tree::sptr subtree
     );
     ~dboard_manager_impl(void);
 
-    //dboard_iface
-    prop_names_t get_rx_subdev_names(void);
-    prop_names_t get_tx_subdev_names(void);
-    wax::obj get_rx_subdev(const std::string &subdev_name);
-    wax::obj get_tx_subdev(const std::string &subdev_name);
-
 private:
-    void init(dboard_id_t, dboard_id_t);
+    void init(dboard_id_t, dboard_id_t, property_tree::sptr);
     //list of rx and tx dboards in this dboard_manager
     //each dboard here is actually a subdevice proxy
     //the subdevice proxy is internal to the cpp file
-    uhd::dict<std::string, subdev_proxy::sptr> _rx_dboards;
-    uhd::dict<std::string, subdev_proxy::sptr> _tx_dboards;
+    uhd::dict<std::string, dboard_base::sptr> _rx_dboards;
+    uhd::dict<std::string, dboard_base::sptr> _tx_dboards;
     dboard_iface::sptr _iface;
     void set_nice_dboard_if(void);
 };
@@ -219,10 +174,16 @@ private:
 dboard_manager::sptr dboard_manager::make(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
-    dboard_iface::sptr iface
+    dboard_id_t gdboard_id,
+    dboard_iface::sptr iface,
+    property_tree::sptr subtree
 ){
     return dboard_manager::sptr(
-        new dboard_manager_impl(rx_dboard_id, tx_dboard_id, iface)
+        new dboard_manager_impl(
+            rx_dboard_id,
+            (gdboard_id == dboard_id_t::none())? tx_dboard_id : gdboard_id,
+            iface, subtree
+        )
     );
 }
 
@@ -232,21 +193,22 @@ dboard_manager::sptr dboard_manager::make(
 dboard_manager_impl::dboard_manager_impl(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
-    dboard_iface::sptr iface
+    dboard_iface::sptr iface,
+    property_tree::sptr subtree
 ):
     _iface(iface)
 {
     try{
-        this->init(rx_dboard_id, tx_dboard_id);
+        this->init(rx_dboard_id, tx_dboard_id, subtree);
     }
     catch(const std::exception &e){
         UHD_MSG(error) << "The daughterboard manager encountered a recoverable error in init" << std::endl << e.what();
-        this->init(dboard_id_t::none(), dboard_id_t::none());
+        this->init(dboard_id_t::none(), dboard_id_t::none(), subtree);
     }
 }
 
 void dboard_manager_impl::init(
-    dboard_id_t rx_dboard_id, dboard_id_t tx_dboard_id
+    dboard_id_t rx_dboard_id, dboard_id_t tx_dboard_id, property_tree::sptr subtree
 ){
     //find the dboard key matches for the dboard ids
     dboard_key_t rx_dboard_key, tx_dboard_key, xcvr_dboard_key;
@@ -283,7 +245,7 @@ void dboard_manager_impl::init(
     if (xcvr_dboard_key.is_xcvr()){
 
         //extract data for the xcvr dboard key
-        dboard_ctor_t dboard_ctor; std::string name; prop_names_t subdevs;
+        dboard_ctor_t dboard_ctor; std::string name; std::vector<std::string> subdevs;
         boost::tie(dboard_ctor, name, subdevs) = get_id_to_args_map()[xcvr_dboard_key];
 
         //create the xcvr object for each subdevice
@@ -291,15 +253,11 @@ void dboard_manager_impl::init(
             db_ctor_args.sd_name = subdev;
             db_ctor_args.rx_id = rx_dboard_id;
             db_ctor_args.tx_id = tx_dboard_id;
+            db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + subdev);
+            db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + subdev);
             dboard_base::sptr xcvr_dboard = dboard_ctor(&db_ctor_args);
-            //create a rx proxy for this xcvr board
-            _rx_dboards[subdev] = subdev_proxy::sptr(
-                new subdev_proxy(xcvr_dboard, subdev_proxy::RX_TYPE)
-            );
-            //create a tx proxy for this xcvr board
-            _tx_dboards[subdev] = subdev_proxy::sptr(
-                new subdev_proxy(xcvr_dboard, subdev_proxy::TX_TYPE)
-            );
+            _rx_dboards[subdev] = xcvr_dboard;
+            _tx_dboards[subdev] = xcvr_dboard;
         }
     }
 
@@ -312,7 +270,7 @@ void dboard_manager_impl::init(
         }
 
         //extract data for the rx dboard key
-        dboard_ctor_t rx_dboard_ctor; std::string rx_name; prop_names_t rx_subdevs;
+        dboard_ctor_t rx_dboard_ctor; std::string rx_name; std::vector<std::string> rx_subdevs;
         boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_id_to_args_map()[rx_dboard_key];
 
         //make the rx subdevs
@@ -320,11 +278,9 @@ void dboard_manager_impl::init(
             db_ctor_args.sd_name = subdev;
             db_ctor_args.rx_id = rx_dboard_id;
             db_ctor_args.tx_id = dboard_id_t::none();
-            dboard_base::sptr rx_dboard = rx_dboard_ctor(&db_ctor_args);
-            //create a rx proxy for this rx board
-            _rx_dboards[subdev] = subdev_proxy::sptr(
-                new subdev_proxy(rx_dboard, subdev_proxy::RX_TYPE)
-            );
+            db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + subdev);
+            db_ctor_args.tx_subtree = property_tree::sptr(); //null
+            _rx_dboards[subdev] = rx_dboard_ctor(&db_ctor_args);
         }
 
         //force the tx key to the unknown board for bad combinations
@@ -333,7 +289,7 @@ void dboard_manager_impl::init(
         }
 
         //extract data for the tx dboard key
-        dboard_ctor_t tx_dboard_ctor; std::string tx_name; prop_names_t tx_subdevs;
+        dboard_ctor_t tx_dboard_ctor; std::string tx_name; std::vector<std::string> tx_subdevs;
         boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_id_to_args_map()[tx_dboard_key];
 
         //make the tx subdevs
@@ -341,11 +297,9 @@ void dboard_manager_impl::init(
             db_ctor_args.sd_name = subdev;
             db_ctor_args.rx_id = dboard_id_t::none();
             db_ctor_args.tx_id = tx_dboard_id;
-            dboard_base::sptr tx_dboard = tx_dboard_ctor(&db_ctor_args);
-            //create a tx proxy for this tx board
-            _tx_dboards[subdev] = subdev_proxy::sptr(
-                new subdev_proxy(tx_dboard, subdev_proxy::TX_TYPE)
-            );
+            db_ctor_args.rx_subtree = property_tree::sptr(); //null
+            db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + subdev);
+            _tx_dboards[subdev] = tx_dboard_ctor(&db_ctor_args);
         }
     }
 }
@@ -353,30 +307,6 @@ void dboard_manager_impl::init(
 dboard_manager_impl::~dboard_manager_impl(void){UHD_SAFE_CALL(
     set_nice_dboard_if();
 )}
-
-prop_names_t dboard_manager_impl::get_rx_subdev_names(void){
-    return _rx_dboards.keys();
-}
-
-prop_names_t dboard_manager_impl::get_tx_subdev_names(void){
-    return _tx_dboards.keys();
-}
-
-wax::obj dboard_manager_impl::get_rx_subdev(const std::string &subdev_name){
-    if (not _rx_dboards.has_key(subdev_name)) throw uhd::key_error(
-        str(boost::format("Unknown rx subdev name %s") % subdev_name)
-    );
-    //get a link to the rx subdev proxy
-    return _rx_dboards[subdev_name]->get_link();
-}
-
-wax::obj dboard_manager_impl::get_tx_subdev(const std::string &subdev_name){
-    if (not _tx_dboards.has_key(subdev_name)) throw uhd::key_error(
-        str(boost::format("Unknown tx subdev name %s") % subdev_name)
-    );
-    //get a link to the tx subdev proxy
-    return _tx_dboards[subdev_name]->get_link();
-}
 
 void dboard_manager_impl::set_nice_dboard_if(void){
     //make a list of possible unit types
@@ -392,137 +322,4 @@ void dboard_manager_impl::set_nice_dboard_if(void){
         _iface->set_pin_ctrl(unit, 0x0000); //all gpio
         _iface->set_clock_enabled(unit, false); //clock off
     }
-
-    //disable all rx subdevices
-    BOOST_FOREACH(const std::string &sd_name, this->get_rx_subdev_names()){
-        this->get_rx_subdev(sd_name)[SUBDEV_PROP_ENABLED] = false;
-    }
-
-    //disable all tx subdevices
-    BOOST_FOREACH(const std::string &sd_name, this->get_tx_subdev_names()){
-        this->get_tx_subdev(sd_name)[SUBDEV_PROP_ENABLED] = false;
-    }
-}
-
-/***********************************************************************
- * Populate a properties tree from a subdev waxy object
- **********************************************************************/
-#include <uhd/types/ranges.hpp>
-#include <uhd/types/sensors.hpp>
-
-static sensor_value_t get_sensor(wax::obj subdev, const std::string &name){
-    return subdev[named_prop_t(SUBDEV_PROP_SENSOR, name)].as<sensor_value_t>();
-}
-
-static void set_gain(wax::obj subdev, const std::string &name, const double gain){
-    subdev[named_prop_t(SUBDEV_PROP_GAIN, name)] = gain;
-}
-
-static double get_gain(wax::obj subdev, const std::string &name){
-    return subdev[named_prop_t(SUBDEV_PROP_GAIN, name)].as<double>();
-}
-
-static meta_range_t get_gain_range(wax::obj subdev, const std::string &name){
-    return subdev[named_prop_t(SUBDEV_PROP_GAIN_RANGE, name)].as<meta_range_t>();
-}
-
-static void set_freq(wax::obj subdev, const double freq){
-    subdev[SUBDEV_PROP_FREQ] = freq;
-}
-
-static double get_freq(wax::obj subdev){
-    return subdev[SUBDEV_PROP_FREQ].as<double>();
-}
-
-static meta_range_t get_freq_range(wax::obj subdev){
-    return subdev[SUBDEV_PROP_FREQ_RANGE].as<meta_range_t>();
-}
-
-static void set_ant(wax::obj subdev, const std::string &ant){
-    subdev[SUBDEV_PROP_ANTENNA] = ant;
-}
-
-static std::string get_ant(wax::obj subdev){
-    return subdev[SUBDEV_PROP_ANTENNA].as<std::string>();
-}
-
-static std::vector<std::string> get_ants(wax::obj subdev){
-    return subdev[SUBDEV_PROP_ANTENNA_NAMES].as<std::vector<std::string> >();
-}
-
-static std::string get_conn(wax::obj subdev){
-    switch(subdev[SUBDEV_PROP_CONNECTION].as<subdev_conn_t>()){
-    case SUBDEV_CONN_COMPLEX_IQ: return "IQ";
-    case SUBDEV_CONN_COMPLEX_QI: return "QI";
-    case SUBDEV_CONN_REAL_I: return "I";
-    case SUBDEV_CONN_REAL_Q: return "Q";
-    }
-    UHD_THROW_INVALID_CODE_PATH();
-}
-
-static bool get_use_lo_off(wax::obj subdev){
-    return subdev[SUBDEV_PROP_USE_LO_OFFSET].as<bool>();
-}
-
-static bool get_set_enb(wax::obj subdev, const bool enb){
-    subdev[SUBDEV_PROP_ENABLED] = enb;
-    return subdev[SUBDEV_PROP_ENABLED].as<bool>();
-}
-
-static void set_bw(wax::obj subdev, const double freq){
-    subdev[SUBDEV_PROP_BANDWIDTH] = freq;
-}
-
-static double get_bw(wax::obj subdev){
-    return subdev[SUBDEV_PROP_BANDWIDTH].as<double>();
-}
-
-void dboard_manager::populate_prop_tree_from_subdev(
-    property_tree::sptr subtree, wax::obj subdev
-){
-    subtree->create<std::string>("name").set(subdev[SUBDEV_PROP_NAME].as<std::string>());
-
-    const prop_names_t sensor_names = subdev[SUBDEV_PROP_SENSOR_NAMES].as<prop_names_t>();
-    subtree->create<int>("sensors"); //phony property so this dir exists
-    BOOST_FOREACH(const std::string &name, sensor_names){
-        subtree->create<sensor_value_t>("sensors/" + name)
-            .publish(boost::bind(&get_sensor, subdev, name));
-    }
-
-    const prop_names_t gain_names = subdev[SUBDEV_PROP_GAIN_NAMES].as<prop_names_t>();
-    subtree->create<int>("gains"); //phony property so this dir exists
-    BOOST_FOREACH(const std::string &name, gain_names){
-        subtree->create<double>("gains/" + name + "/value")
-            .publish(boost::bind(&get_gain, subdev, name))
-            .subscribe(boost::bind(&set_gain, subdev, name, _1));
-        subtree->create<meta_range_t>("gains/" + name + "/range")
-            .publish(boost::bind(&get_gain_range, subdev, name));
-    }
-
-    subtree->create<double>("freq/value")
-        .publish(boost::bind(&get_freq, subdev))
-        .subscribe(boost::bind(&set_freq, subdev, _1));
-
-    subtree->create<meta_range_t>("freq/range")
-        .publish(boost::bind(&get_freq_range, subdev));
-
-    subtree->create<std::string>("antenna/value")
-        .publish(boost::bind(&get_ant, subdev))
-        .subscribe(boost::bind(&set_ant, subdev, _1));
-
-    subtree->create<std::vector<std::string> >("antenna/options")
-        .publish(boost::bind(&get_ants, subdev));
-
-    subtree->create<std::string>("connection")
-        .publish(boost::bind(&get_conn, subdev));
-
-    subtree->create<bool>("enabled")
-        .coerce(boost::bind(&get_set_enb, subdev, _1));
-
-    subtree->create<bool>("use_lo_offset")
-        .publish(boost::bind(&get_use_lo_off, subdev));
-
-    subtree->create<double>("bandwidth/value")
-        .publish(boost::bind(&get_bw, subdev))
-        .subscribe(boost::bind(&set_bw, subdev, _1));
 }

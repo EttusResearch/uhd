@@ -597,22 +597,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].iface, _mbc[mb].clock);
         _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mbc[mb].dboard_iface);
         _mbc[mb].dboard_manager = dboard_manager::make(
-            rx_db_eeprom.id,
-            ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
-            _mbc[mb].dboard_iface
+            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+            _mbc[mb].dboard_iface, _tree->subtree(mb_path / "dboards/A")
         );
-        BOOST_FOREACH(const std::string &name, _mbc[mb].dboard_manager->get_rx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards/A/rx_frontends" / name),
-                _mbc[mb].dboard_manager->get_rx_subdev(name)
-            );
-        }
-        BOOST_FOREACH(const std::string &name, _mbc[mb].dboard_manager->get_tx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards/A/tx_frontends" / name),
-                _mbc[mb].dboard_manager->get_tx_subdev(name)
-            );
-        }
     }
 
     //initialize io handling
@@ -623,8 +610,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         fs_path root = "/mboards/" + mb;
 
-        _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_rx_subdev_names()[0]));
-        _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_tx_subdev_names()[0]));
+        _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(root / "dboards/A/rx_frontends").at(0)));
+        _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(root / "dboards/A/tx_frontends").at(0)));
         _tree->access<std::string>(root / "clock_source/value").set("internal");
         _tree->access<std::string>(root / "time_source/value").set("none");
 

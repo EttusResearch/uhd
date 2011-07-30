@@ -404,22 +404,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _dboard_iface = make_b100_dboard_iface(_fpga_ctrl, _fpga_i2c_ctrl, _fpga_spi_ctrl, _clock_ctrl, _codec_ctrl);
     _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_dboard_iface);
     _dboard_manager = dboard_manager::make(
-        rx_db_eeprom.id,
-        ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
-        _dboard_iface
+        rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+        _dboard_iface, _tree->subtree(mb_path / "dboards/A")
     );
-    BOOST_FOREACH(const std::string &name, _dboard_manager->get_rx_subdev_names()){
-        dboard_manager::populate_prop_tree_from_subdev(
-            _tree->subtree(mb_path / "dboards/A/rx_frontends" / name),
-            _dboard_manager->get_rx_subdev(name)
-        );
-    }
-    BOOST_FOREACH(const std::string &name, _dboard_manager->get_tx_subdev_names()){
-        dboard_manager::populate_prop_tree_from_subdev(
-            _tree->subtree(mb_path / "dboards/A/tx_frontends" / name),
-            _dboard_manager->get_tx_subdev(name)
-        );
-    }
 
     //initialize io handling
     this->io_init();
@@ -432,8 +419,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->access<double>(mb_path / "tick_rate") //now subscribe the clock rate setter
         .subscribe(boost::bind(&b100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
-    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_rx_subdev_names()[0]));
-    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_tx_subdev_names()[0]));
+    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/rx_frontends").at(0)));
+    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/tx_frontends").at(0)));
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
 }

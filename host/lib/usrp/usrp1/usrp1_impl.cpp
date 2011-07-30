@@ -363,29 +363,16 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         );
         _tree->create<dboard_iface::sptr>(mb_path / "dboards" / db/ "iface").set(_dbc[db].dboard_iface);
         _dbc[db].dboard_manager = dboard_manager::make(
-            rx_db_eeprom.id,
-            ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
-            _dbc[db].dboard_iface
+            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+            _dbc[db].dboard_iface, _tree->subtree(mb_path / "dboards" / db)
         );
-        BOOST_FOREACH(const std::string &name, _dbc[db].dboard_manager->get_rx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards" / db/ "rx_frontends" / name),
-                _dbc[db].dboard_manager->get_rx_subdev(name)
-            );
-        }
-        BOOST_FOREACH(const std::string &name, _dbc[db].dboard_manager->get_tx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards" / db/ "tx_frontends" / name),
-                _dbc[db].dboard_manager->get_tx_subdev(name)
-            );
-        }
 
         //init the subdev specs if we have a dboard (wont leave this loop empty)
         if (rx_db_eeprom.id != dboard_id_t::none() or _rx_subdev_spec.empty()){
-            _rx_subdev_spec = subdev_spec_t(db + ":" + _dbc[db].dboard_manager->get_rx_subdev_names()[0]);
+            _rx_subdev_spec = subdev_spec_t(db + ":" + _tree->list(mb_path / "dboards" / db / "rx_frontends").at(0));
         }
         if (tx_db_eeprom.id != dboard_id_t::none() or _tx_subdev_spec.empty()){
-            _tx_subdev_spec = subdev_spec_t(db + ":" + _dbc[db].dboard_manager->get_tx_subdev_names()[0]);
+            _tx_subdev_spec = subdev_spec_t(db + ":" + _tree->list(mb_path / "dboards" / db / "tx_frontends").at(0));
         }
     }
 
