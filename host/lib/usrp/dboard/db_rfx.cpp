@@ -45,6 +45,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
 
@@ -55,11 +56,9 @@ using namespace boost::assign;
 /***********************************************************************
  * The RFX Series constants
  **********************************************************************/
-static const prop_names_t rfx_tx_antennas = list_of("TX/RX");
+static const std::vector<std::string> rfx_tx_antennas = list_of("TX/RX");
 
-static const prop_names_t rfx_rx_antennas = list_of("TX/RX")("RX2");
-
-static const uhd::dict<std::string, gain_range_t> rfx_tx_gain_ranges; //empty
+static const std::vector<std::string> rfx_rx_antennas = list_of("TX/RX")("RX2");
 
 static const uhd::dict<std::string, gain_range_t> rfx_rx_gain_ranges = map_list_of
     ("PGA0", gain_range_t(0, 70, 0.022))
@@ -81,27 +80,17 @@ public:
     );
     ~rfx_xcvr(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     const freq_range_t _freq_range;
     const uhd::dict<std::string, gain_range_t> _rx_gain_ranges;
     const uhd::dict<dboard_iface::unit_t, bool> _div2;
-    double       _rx_lo_freq, _tx_lo_freq;
     std::string  _rx_ant;
     uhd::dict<std::string, double> _rx_gains;
     boost::uint16_t _power_up;
 
-    void set_rx_lo_freq(double freq);
-    void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
-    void set_rx_gain(double gain, const std::string &name);
-    void set_tx_gain(double gain, const std::string &name);
+    double set_rx_gain(double gain, const std::string &name);
 
     /*!
      * Set the LO frequency for the particular dboard unit.
@@ -114,17 +103,18 @@ private:
     /*!
      * Get the lock detect status of the LO.
      * \param unit which unit rx or tx
-     * \return true for locked
+     * \return sensor for locked
      */
-    bool get_locked(dboard_iface::unit_t unit){
-        return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+    sensor_value_t get_locked(dboard_iface::unit_t unit){
+        const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+        return sensor_value_t("LO", locked, "locked", "unlocked");
     }
 
     /*!
      * Read the RSSI from the aux adc
-     * \return the rssi in dB
+     * \return the rssi sensor in dBm
      */
-    double get_rssi(void){
+    sensor_value_t get_rssi(void){
         //RSSI from VAGC vs RF Power, Fig 34, pg 13
         double max_power = -3.0;
 
@@ -133,7 +123,8 @@ private:
         static const double rssi_dyn_range = 60;
         //calculate the rssi from the voltage
         double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
-        return max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+        const double rssi = max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+        return sensor_value_t("RSSI", rssi, "dBm");
     }
 };
 
@@ -192,6 +183,55 @@ rfx_xcvr::rfx_xcvr(
     ),
     _power_up((get_rx_id() == 0x0024 && get_tx_id() == 0x0028) ? POWER_IO : 0)
 {
+    ////////////////////////////////////////////////////////////////////
+    // Register RX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name").set("RFX RX");
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
+        .publish(boost::bind(&rfx_xcvr::get_rssi, this));
+    BOOST_FOREACH(const std::string &name, _rx_gain_ranges.keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&rfx_xcvr::set_rx_gain, this, _1, name))
+            .set(_rx_gain_ranges[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(_rx_gain_ranges[name]);
+    }
+    this->get_rx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&rfx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
+        .set((_freq_range.start() + _freq_range.stop())/2.0);
+    this->get_rx_subtree()->create<meta_range_t>("freq/range").set(_freq_range);
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&rfx_xcvr::set_rx_ant, this, _1))
+        .set("RX2");
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(rfx_rx_antennas);
+    this->get_rx_subtree()->create<std::string>("connection").set("QI");
+    this->get_rx_subtree()->create<bool>("enabled").set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset").set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+
+    ////////////////////////////////////////////////////////////////////
+    // Register TX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<std::string>("name").set("RFX TX");
+    this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
+    this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
+    this->get_tx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&rfx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
+        .set((_freq_range.start() + _freq_range.stop())/2.0);
+    this->get_tx_subtree()->create<meta_range_t>("freq/range").set(_freq_range);
+    this->get_tx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&rfx_xcvr::set_tx_ant, this, _1)).set(rfx_tx_antennas.at(0));
+    this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(rfx_tx_antennas);
+    this->get_tx_subtree()->create<std::string>("connection").set("IQ");
+    this->get_tx_subtree()->create<bool>("enabled").set(true); //always enabled
+    this->get_tx_subtree()->create<bool>("use_lo_offset").set(true);
+    this->get_tx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
@@ -213,15 +253,6 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
-
-    //set some default values
-    set_rx_lo_freq((_freq_range.start() + _freq_range.stop())/2.0);
-    set_tx_lo_freq((_freq_range.start() + _freq_range.stop())/2.0);
-    set_rx_ant("RX2");
-
-    BOOST_FOREACH(const std::string &name, _rx_gain_ranges.keys()){
-        set_rx_gain(_rx_gain_ranges[name].start(), name);
-    }
 }
 
 rfx_xcvr::~rfx_xcvr(void){
@@ -267,20 +298,16 @@ static double rx_pga0_gain_to_dac_volts(double &gain, double range){
     return dac_volts;
 }
 
-void rfx_xcvr::set_tx_gain(double, const std::string &name){
-    assert_has(rfx_tx_gain_ranges.keys(), name, "rfx tx gain name");
-    UHD_THROW_INVALID_CODE_PATH(); //no gains to set
-}
-
-void rfx_xcvr::set_rx_gain(double gain, const std::string &name){
+double rfx_xcvr::set_rx_gain(double gain, const std::string &name){
     assert_has(_rx_gain_ranges.keys(), name, "rfx rx gain name");
     if(name == "PGA0"){
         double dac_volts = rx_pga0_gain_to_dac_volts(gain, 
                               (_rx_gain_ranges["PGA0"].stop() - _rx_gain_ranges["PGA0"].start()));
-        _rx_gains[name] = gain;
 
         //write the new voltage to the aux dac
         this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_A, dac_volts);
+
+        return gain;
     }
     else UHD_THROW_INVALID_CODE_PATH();
 }
@@ -288,14 +315,6 @@ void rfx_xcvr::set_rx_gain(double gain, const std::string &name){
 /***********************************************************************
  * Tuning
  **********************************************************************/
-void rfx_xcvr::set_rx_lo_freq(double freq){
-    _rx_lo_freq = set_lo_freq(dboard_iface::UNIT_RX, freq);
-}
-
-void rfx_xcvr::set_tx_lo_freq(double freq){
-    _tx_lo_freq = set_lo_freq(dboard_iface::UNIT_TX, freq);
-}
-
 double rfx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
@@ -407,215 +426,4 @@ double rfx_xcvr::set_lo_freq(
         "RFX tune: actual frequency %f Mhz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
-}
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void rfx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_rx_gains.keys(), key.name, "rfx rx gain name");
-        val = _rx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(_rx_gain_ranges.keys(), key.name, "rfx rx gain name");
-        val = _rx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(_rx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _rx_lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = _freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = _rx_ant;
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = rfx_rx_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_QI;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        if (key.name == "lo_locked")
-            val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
-        else if ((key.name == "rssi") and (get_rx_id() != 0x0024))
-            val = sensor_value_t("RSSI", this->get_rssi(), "dBm");
-        else
-            UHD_THROW_INVALID_CODE_PATH();
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:{
-            prop_names_t names = list_of("lo_locked");
-            if (get_rx_id() != 0x0024) names.push_back("rssi");
-            val = names;
-        }
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void rfx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_rx_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_rx_ant(val.as<std::string>());
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "RFX: No tunable bandwidth, fixed filtered to 40MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
-/***********************************************************************
- * TX Get and Set
- **********************************************************************/
-void rfx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_tx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(rfx_tx_gain_ranges.keys(), key.name, "rfx tx gain name");
-        //no controllable tx gains, will not get here
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(rfx_tx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _tx_lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = _freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("TX/RX");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = rfx_tx_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = true;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_TX), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void rfx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_tx_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_tx_ant(val.as<std::string>());
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "RFX: No tunable bandwidth, fixed filtered to 40MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
 }
