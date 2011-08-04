@@ -26,7 +26,7 @@ MESSAGE(STATUS "")
 ########################################################################
 FIND_PACKAGE(PkgConfig)
 IF(PKG_CONFIG_FOUND)
-PKG_CHECK_MODULES(ORC "orc-0.4")
+PKG_CHECK_MODULES(ORC "orc-0.4 > 0.4.11")
 ENDIF(PKG_CONFIG_FOUND)
 
 FIND_PROGRAM(ORCC_EXECUTABLE orcc)
