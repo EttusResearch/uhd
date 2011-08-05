@@ -51,6 +51,9 @@ public:
     _recv(); //get whatever junk is in the rx buffer right now, and throw it away
     _send("HAAAY GUYYYYS\n"); //to elicit a response from the Firefly
 
+	//wait for _send(...) to return
+    sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
     int timeout = GPS_TIMEOUT_TRIES;
     while(timeout--) {
@@ -153,6 +156,10 @@ private:
         UHD_MSG(error) << "get_nmea(): unsupported GPS or no GPS detected";
         return std::string();
     }
+	//flush data to avoid reading outdated value (because NMEA string generated every second)
+	while (_recv() != ""){
+	  sleep(milliseconds(10));
+	}
     int timeout = GPS_TIMEOUT_TRIES;
     while(timeout--) {
         reply = _recv();
