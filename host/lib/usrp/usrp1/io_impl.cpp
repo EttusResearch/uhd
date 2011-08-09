@@ -333,7 +333,7 @@ void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     validate_subdev_spec(_tree, spec, "rx");
 
     _rx_subdev_spec = spec; //shadow
-    _io_impl->recv_handler.resize(spec.size());
+    //_io_impl->recv_handler.resize(spec.size()); //always 1
     _io_impl->recv_handler.set_converter(_rx_otw_type, spec.size());
 
     //set the mux and set the number of rx channels
@@ -356,7 +356,7 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     validate_subdev_spec(_tree, spec, "tx");
 
     _tx_subdev_spec = spec; //shadow
-    _io_impl->send_handler.resize(spec.size());
+    //_io_impl->send_handler.resize(spec.size()); //always 1
     _io_impl->send_handler.set_converter(_tx_otw_type, spec.size());
 
     //set the mux and set the number of tx channels
