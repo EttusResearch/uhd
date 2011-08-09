@@ -269,6 +269,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
+    _tree->create<int>(mb_path / "rx_dsps"); //dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++){
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<double>(rx_dsp_path / "rate/value")
@@ -288,6 +289,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
+    _tree->create<int>(mb_path / "tx_dsps"); //dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++){
         fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
         _tree->create<double>(tx_dsp_path / "rate/value")
@@ -380,8 +382,10 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").set(1e6);
     }
 
-    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
-    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(_tx_subdev_spec);
+    if (_tree->list(mb_path / "rx_dsps").size() > 0)
+        _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
+    if (_tree->list(mb_path / "tx_dsps").size() > 0)
+        _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(_tx_subdev_spec);
  
 }
 
