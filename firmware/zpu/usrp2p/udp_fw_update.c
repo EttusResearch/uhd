@@ -35,6 +35,8 @@ uint16_t get_hw_rev(void) {
     return tmp;
 }
 
+spi_flash_async_state_t spi_flash_async_state;
+
 //Firmware update packet handler
 void handle_udp_fw_update_packet(struct socket_address src, struct socket_address dst,
                                  unsigned char *payload, int payload_len) {
@@ -59,8 +61,6 @@ void handle_udp_fw_update_packet(struct socket_address src, struct socket_addres
       );
       update_data_in_id = USRP2_FW_UPDATE_ID_WAT;
   }
-
-  spi_flash_async_state_t spi_flash_async_state;
 
   switch(update_data_in_id) {
   case USRP2_FW_UPDATE_ID_OHAI_LOL: //why hello there you handsome devil

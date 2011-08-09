@@ -50,7 +50,7 @@ spi_flash_wait(void)
 void
 spi_flash_erase_sector_start(uint32_t flash_addr)
 {
-  //uprintf(UART_DEBUG, "spi_flash_erase_sector_start: addr = 0x%x\n", flash_addr);
+  //printf("spi_flash_erase_sector_start: addr = 0x%x\n", flash_addr);
   if(flash_addr > spi_flash_memory_size())
     return;
 
@@ -166,6 +166,9 @@ void
 spi_flash_async_erase_start(spi_flash_async_state_t *s,
 			    uint32_t flash_addr, size_t nbytes)
 {
+
+  //printf("got command to erase %d bytes at 0x%x\n", nbytes, flash_addr);
+  
   if ((nbytes == 0) || ((flash_addr + nbytes) > spi_flash_memory_size())){
     s->first = s->last = s->current = 0;
     return;
