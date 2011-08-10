@@ -78,7 +78,7 @@ When the last PPS time increments, the user can determine that a PPS has occurre
 ::
 
     const uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
-    while (last_pps_time != usrp->get_time_last_pps()){
+    while (last_pps_time == usrp->get_time_last_pps()){
         //sleep 100 milliseconds (give or take)
     }
     usrp->set_time_next_pps(uhd::time_spec_t(0.0));
