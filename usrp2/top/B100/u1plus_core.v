@@ -142,7 +142,7 @@ module u1plus_core
    // RX ADC Frontend, does IQ Balance, DC Offset, muxing
 
    wire [23:0] 	 adc_i, adc_q;  // 24 bits is total overkill here, but it matches u2/u2p
-   wire 	 run_rx, run_rx0, run_rx1;
+   wire 	 run_rx0, run_rx1;
    
    rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(wb_clk),.rst(wb_rst),
@@ -421,7 +421,7 @@ module u1plus_core
      (.clk_i(wb_clk), .rst_i(wb_rst),
       .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
+      .run_rx(run_rx0 | run_rx1), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
