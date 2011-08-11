@@ -26,6 +26,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace boost::gregorian;
@@ -77,13 +78,10 @@ public:
     case GPS_TYPE_JACKSON_LABS:
       UHD_MSG(status) << "Found a Jackson Labs GPS" << std::endl;
       init_firefly();
+      break;
 
     case GPS_TYPE_GENERIC_NMEA:
       if(gps_type == GPS_TYPE_GENERIC_NMEA) UHD_MSG(status) << "Found a generic NMEA GPS device" << std::endl;
-      if(get_time() == ptime()) {
-          UHD_MSG(status) << "No valid GPRMC packet found. Ignoring discovered GPS.";
-          gps_type = GPS_TYPE_NONE;
-      }
       break;
 
     case GPS_TYPE_NONE:
@@ -156,10 +154,9 @@ private:
         UHD_MSG(error) << "get_nmea(): unsupported GPS or no GPS detected";
         return std::string();
     }
-	//flush data to avoid reading outdated value (because NMEA string generated every second)
-	while (_recv() != ""){
-	  sleep(milliseconds(10));
-	}
+
+    while(_recv().size() != 0) sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
+
     int timeout = GPS_TIMEOUT_TRIES;
     while(timeout--) {
         reply = _recv();
@@ -167,7 +164,7 @@ private:
           return reply;
         boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
-    UHD_MSG(error) << "get_nmea(): no " << msgtype << " message found";
+    throw uhd::value_error(str(boost::format("get_nmea(): no %s message found") % msgtype));
     return std::string();
   }
 
@@ -175,37 +172,49 @@ private:
   std::string get_token(std::string sentence, size_t offset) {
     boost::tokenizer<boost::escaped_list_separator<char> > tok(sentence);
     std::vector<std::string> toked;
-
-    tok.assign(sentence);
+    tok.assign(sentence); //this can throw
     toked.assign(tok.begin(), tok.end());
 
     if(toked.size() <= offset) {
-      UHD_MSG(error) << "get_token: too few tokens in reply " << sentence;
-      return std::string();
+        throw uhd::value_error(str(boost::format("Invalid response \"%s\"") % sentence));
     }
     return toked[offset];
   }
 
   ptime get_time(void) {
-    std::string reply = get_nmea("GPRMC");
+    int error_cnt = 0;
+    ptime gps_time;
+    while(error_cnt < 3) {
+        try {
+            std::string reply = get_nmea("GPRMC");
 
-    std::string datestr = get_token(reply, 9);
-    std::string timestr = get_token(reply, 1);
+            std::string datestr = get_token(reply, 9);
+            std::string timestr = get_token(reply, 1);
 
-    if(datestr.size() == 0 or timestr.size() == 0) {
-        return ptime();
+            if(datestr.size() == 0 or timestr.size() == 0) {
+                throw uhd::value_error(str(boost::format("Invalid response \"%s\"") % reply));
+            }
+            
+            //just trust me on this one
+            gps_time = ptime( date( 
+                             greg_year(boost::lexical_cast<int>(datestr.substr(4, 2)) + 2000),
+                             greg_month(boost::lexical_cast<int>(datestr.substr(2, 2))), 
+                             greg_day(boost::lexical_cast<int>(datestr.substr(0, 2))) 
+                           ),
+                          hours(  boost::lexical_cast<int>(timestr.substr(0, 2)))
+                        + minutes(boost::lexical_cast<int>(timestr.substr(2, 2)))
+                        + seconds(boost::lexical_cast<int>(timestr.substr(4, 2)))
+                     );
+            return gps_time;
+            
+        } catch(std::exception &e) {
+            UHD_MSG(warning) << "get_time: " << e.what();
+            error_cnt++;
+        }
     }
-
-    //just trust me on this one
-    return ptime( date( 
-                     greg_year(boost::lexical_cast<int>(datestr.substr(4, 2)) + 2000),
-                     greg_month(boost::lexical_cast<int>(datestr.substr(2, 2))), 
-                     greg_day(boost::lexical_cast<int>(datestr.substr(0, 2))) 
-                   ),
-                  hours(  boost::lexical_cast<int>(timestr.substr(0, 2)))
-                + minutes(boost::lexical_cast<int>(timestr.substr(2, 2)))
-                + seconds(boost::lexical_cast<int>(timestr.substr(4, 2)))
-             );
+    throw uhd::value_error("Timeout after no valid message found");
+    
+    return gps_time; //keep gcc from complaining
   }
   
   time_t get_epoch_time(void) {
@@ -217,10 +226,20 @@ private:
   }
 
   bool locked(void) {
-      std::string reply = get_nmea("GPGGA");
-      if(reply.size() <= 1) return false;
+    int error_cnt = 0;
+    while(error_cnt < 3) {
+        try {
+            std::string reply = get_nmea("GPGGA");
+            if(reply.size() <= 1) return false;
 
-      return (get_token(reply, 6) != "0");
+            return (get_token(reply, 6) != "0");
+        } catch(std::exception &e) {
+            UHD_MSG(warning) << "locked: " << e.what();
+            error_cnt++;
+        }
+    }
+    throw uhd::value_error("Timeout after no valid message found");
+    return false;
   }
 
   gps_send_fn_t _send;
