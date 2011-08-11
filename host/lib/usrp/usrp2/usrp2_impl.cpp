@@ -284,10 +284,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         #endif
     }
     if (not device_addr.has_key("send_buff_size")){
-        #if defined(UHD_PLATFORM_WIN32)
-            //a large send buff is ok to have on windows
-            device_addr["send_buff_size"] = "50e6";
-        #endif
+        //The buffer should be the size of the SRAM on the device,
+        //because we will never commit more than the SRAM can hold.
+        device_addr["send_buff_size"] = boost::lexical_cast<std::string>(USRP2_SRAM_BYTES);
     }
 
     device_addrs_t device_args = separate_device_addr(device_addr);
