@@ -82,7 +82,7 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Setup UDP
 ########################################################################
-IF(WIN32)
+IF(MSVC)
     LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/udp_wsa_zero_copy.cpp)
 ELSE()
     LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy.cpp)
