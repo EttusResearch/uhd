@@ -82,7 +82,7 @@ module bootram
       .DOPA(),              // Port A 4-bit Parity Output
       .ADDRA(if_adr[10:2]), // Port A 9-bit Address Input
       .CLKA(clk),           // Port A 1-bit Clock
-      .DIA(32'd0),          // Port A 32-bit Data Input
+      .DIA(32'hffffffff),   // Port A 32-bit Data Input
       .DIPA(4'd0),          // Port A 4-bit parity Input
       .ENA(1'b1),           // Port A 1-bit RAM Enable Input
       .SSRA(1'b0),          // Port A 1-bit Synchronous Set/Reset Input
