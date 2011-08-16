@@ -188,13 +188,15 @@ module u2plus
       .out({adc_a_inv,adc_b}));
    assign adc_a = ~adc_a_inv;
 `else
-   reg [13:0] 	adc_a, adc_b;
+   reg [13:0] 	adc_a, adc_b, adc_a_pre, adc_b_pre;
    always @(posedge dsp_clk)
      begin
-	adc_a <= ~{ADCA_12_p,ADCA_12_n, ADCA_10_p,ADCA_10_n, ADCA_8_p,ADCA_8_n, ADCA_6_p,ADCA_6_n,
+	adc_a_pre <= {ADCA_12_p,ADCA_12_n, ADCA_10_p,ADCA_10_n, ADCA_8_p,ADCA_8_n, ADCA_6_p,ADCA_6_n,
 		   ADCA_4_p,ADCA_4_n, ADCA_2_p,ADCA_2_n, ADCA_0_p,ADCA_0_n };
-	adc_b <= {ADCB_12_p,ADCB_12_n, ADCB_10_p,ADCB_10_n, ADCB_8_p,ADCB_8_n, ADCB_6_p,ADCB_6_n,
+	adc_b_pre <= {ADCB_12_p,ADCB_12_n, ADCB_10_p,ADCB_10_n, ADCB_8_p,ADCB_8_n, ADCB_6_p,ADCB_6_n,
 		   ADCB_4_p,ADCB_4_n, ADCB_2_p,ADCB_2_n, ADCB_0_p,ADCB_0_n };
+	adc_a <= ~adc_a_pre; //Note: A must be inverted, but not B
+	adc_b <= adc_b_pre;
      end
 `endif // !`ifdef LVDS
    

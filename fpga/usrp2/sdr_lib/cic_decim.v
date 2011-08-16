@@ -45,10 +45,10 @@ module cic_decim
      ext_input (.in(signal_in),.out(signal_in_ext));
    
    always @(posedge clock)
-     if(reset)
+     if(~enable)
        for(i=0;i<N;i=i+1)
 	 integrator[i] <= 0;
-     else if (enable && strobe_in)
+     else if (strobe_in)
        begin
 	  integrator[0] <= integrator[0] + signal_in_ext;
 	  for(i=1;i<N;i=i+1)
@@ -56,7 +56,7 @@ module cic_decim
        end	
    
    always @(posedge clock)
-     if(reset)
+     if(~enable)
        begin
 	  sampler <= 0;
 	  for(i=0;i<N;i=i+1)
@@ -65,7 +65,7 @@ module cic_decim
 	       differentiator[i] <= 0;
 	    end
        end
-     else if (enable && strobe_out)
+     else if (strobe_out)
        begin
 	  sampler <= integrator[N-1];
 	  differentiator[0] <= sampler;

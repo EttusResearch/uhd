@@ -148,7 +148,7 @@ module u1e_core
    // RX ADC Frontend, does IQ Balance, DC Offset, muxing
 
    wire [23:0] 	 adc_i, adc_q;  // 24 bits is total overkill here, but it matches u2/u2p
-   wire 	 run_rx, run_rx0, run_rx1;
+   wire 	 run_rx0, run_rx1;
    
    rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(wb_clk),.rst(wb_rst),
@@ -345,7 +345,7 @@ module u1e_core
    assign test_ctrl = xfer_rate[11:8];
    assign test_rate = xfer_rate[7:0];
    
-   assign { debug_led[3:0] } = ~{run_rx,run_tx,reg_leds[1:0]};
+   assign { debug_led[3:0] } = ~{run_rx0 | run_rx1,run_tx,reg_leds[1:0]};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
@@ -462,7 +462,7 @@ module u1e_core
      (.clk_i(wb_clk), .rst_i(wb_rst),
       .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
       .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(run_rx), .run_tx(run_tx), .ctrl_lines(atr_lines));
+      .run_rx(run_rx0 | run_rx1), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
@@ -509,7 +509,7 @@ module u1e_core
 */
    assign debug = debug_gpmc;
 
-   assign debug_gpio_0 = { {run_tx, 1'b0, run_rx, strobe_rx0, tx_i[11:0]}, 
+   assign debug_gpio_0 = { {run_tx, 2'b0, strobe_rx0, tx_i[11:0]}, 
 			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
 
    assign debug_gpio_1 = debug_vt;
