@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/safe_main.hpp>
+#include <uhd/version.hpp>
 #include <uhd/device.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/property_tree.hpp>
@@ -177,8 +178,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
+        ("version", "print the version string and exit")
         ("args", po::value<std::string>()->default_value(""), "device address args")
         ("tree", "specify to print a complete property tree")
+        ("string", po::value<std::string>(), "query a string value from the properties tree")
     ;
 
     po::variables_map vm;
@@ -191,8 +194,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
+    if (vm.count("version")){
+        std::cout << uhd::get_version_string() << std::endl;
+        return 0;
+    }
+
     device::sptr dev = device::make(vm["args"].as<std::string>());
     property_tree::sptr tree = dev->get_tree();
+
+    if (vm.count("string")){
+        std::cout << tree->access<std::string>(vm["string"].as<std::string>()).get() << std::endl;
+        return 0;
+    }
 
     if (vm.count("tree") != 0) print_tree("/", tree);
     else std::cout << make_border(get_device_pp_string(tree)) << std::endl;
