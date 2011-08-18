@@ -142,7 +142,7 @@ void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
+        val = std::vector<std::string>(); //empty
         return;
 
     case SUBDEV_PROP_CONNECTION:
@@ -242,7 +242,7 @@ void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
         return;
 
     case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
+        val = std::vector<std::string>(); //empty
         return;
 
     case SUBDEV_PROP_CONNECTION:

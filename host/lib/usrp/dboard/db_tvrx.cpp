@@ -463,6 +463,10 @@ void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
         val = 6.0e6;
         return;
 
+    case SUBDEV_PROP_SENSOR_NAMES:
+        val = std::vector<std::string>(); //empty
+        return;
+
     default: UHD_THROW_PROP_GET_ERROR();
     }
 }

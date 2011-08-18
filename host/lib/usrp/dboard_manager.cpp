@@ -483,6 +483,7 @@ void dboard_manager::populate_prop_tree_from_subdev(
     subtree->create<std::string>("name").set(subdev[SUBDEV_PROP_NAME].as<std::string>());
 
     const prop_names_t sensor_names = subdev[SUBDEV_PROP_SENSOR_NAMES].as<prop_names_t>();
+    subtree->create<int>("sensors"); //phony property so this dir exists
     BOOST_FOREACH(const std::string &name, sensor_names){
         subtree->create<sensor_value_t>("sensors/" + name)
             .publish(boost::bind(&get_sensor, subdev, name));
