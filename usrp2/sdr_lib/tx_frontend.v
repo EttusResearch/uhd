@@ -2,7 +2,7 @@
 module tx_frontend
   #(parameter BASE=0,
     parameter WIDTH_OUT=16,
-    parameter IQCOMP_EN=0)
+    parameter IQCOMP_EN=1)
    (input clk, input rst,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [23:0] tx_i, input [23:0] tx_q, input run,

@@ -83,7 +83,7 @@ module bootram
       .ADDRA(if_adr[10:2]), // Port A 9-bit Address Input
       .CLKA(clk),           // Port A 1-bit Clock
       .DIA(32'hffffffff),   // Port A 32-bit Data Input
-      .DIPA(4'd0),          // Port A 4-bit parity Input
+      .DIPA(4'hf),          // Port A 4-bit parity Input
       .ENA(1'b1),           // Port A 1-bit RAM Enable Input
       .SSRA(1'b0),          // Port A 1-bit Synchronous Set/Reset Input
       .WEA(1'b0),           // Port A 4-bit Write Enable Input
@@ -93,7 +93,7 @@ module bootram
       .ADDRB(dwb_adr_i[10:2]), // Port B 9-bit Address Input
       .CLKB(clk),              // Port B 1-bit Clock
       .DIB(dwb_dat_i),         // Port B 32-bit Data Input
-      .DIPB(4'd0),             // Port-B 4-bit parity Input
+      .DIPB(4'hf),             // Port-B 4-bit parity Input
       .ENB(ENB0),              // Port B 1-bit RAM Enable Input
       .SSRB(1'b0),             // Port B 1-bit Synchronous Set/Reset Input
       .WEB(WEB)                // Port B 4-bit Write Enable Input
