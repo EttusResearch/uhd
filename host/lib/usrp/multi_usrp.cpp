@@ -65,6 +65,18 @@ static void do_tune_freq_warning_message(
     }
 }
 
+static meta_range_t make_overall_tune_range(
+    const meta_range_t &fe_range,
+    const meta_range_t &dsp_range,
+    const double bw
+){
+    return meta_range_t(
+        fe_range.start() + std::max(dsp_range.start(), -bw),
+        fe_range.stop() + std::min(dsp_range.stop(), bw),
+        dsp_range.step()
+    );
+}
+
 /***********************************************************************
  * Gain helper functions
  **********************************************************************/
@@ -442,9 +454,11 @@ public:
     }
 
     freq_range_t get_rx_freq_range(size_t chan){
-        meta_range_t range = _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
-        meta_range_t dsp_range = _tree->access<meta_range_t>(rx_dsp_root(chan) / "freq" / "range").get();
-        return meta_range_t(range.start() + dsp_range.start(), range.stop() + dsp_range.stop(), dsp_range.step());
+        return make_overall_tune_range(
+            _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get(),
+            _tree->access<meta_range_t>(rx_dsp_root(chan) / "freq" / "range").get(),
+            this->get_rx_bandwidth(chan)
+        );
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
@@ -550,9 +564,11 @@ public:
     }
 
     freq_range_t get_tx_freq_range(size_t chan){
-        meta_range_t range = _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();
-        meta_range_t dsp_range = _tree->access<meta_range_t>(tx_dsp_root(chan) / "freq" / "range").get();
-        return meta_range_t(range.start() + dsp_range.start(), range.stop() + dsp_range.stop(), dsp_range.step());
+        return make_overall_tune_range(
+            _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get(),
+            _tree->access<meta_range_t>(tx_dsp_root(chan) / "freq" / "range").get(),
+            this->get_tx_bandwidth(chan)
+        );
     }
 
     void set_tx_gain(double gain, const std::string &name, size_t chan){
