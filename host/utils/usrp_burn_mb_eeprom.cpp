@@ -52,7 +52,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::cout << "Creating USRP device from address: " + args << std::endl;
     uhd::device::sptr dev = uhd::device::make(args);
-    uhd::property_tree::sptr tree = (*dev)[0].as<uhd::property_tree::sptr>();
+    uhd::property_tree::sptr tree = dev->get_tree();
     std::cout << std::endl;
 
     if (true /*always readback*/){
