@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <poll.h>
@@ -17,11 +18,23 @@ static int packet_data_length;
 static int error;
 
 struct pkt {
-	int len;
-	int checksum;
-	int seq_num;
-	short data[1024-6];
+	uint32_t words32;
+	uint32_t len;
+	uint32_t checksum;
+	uint32_t seq_num;
+	uint16_t data[1024-8];
 };
+
+void print_pkt(const struct pkt *p){
+	printf("p->words32 %d\n", p->words32);
+	printf("p->len %d\n", p->len);
+	printf("p->checksum %d\n", p->checksum);
+	printf("p->seq_num %d\n", p->seq_num);
+	size_t i;
+	for (i = 0; i < 5; i++){
+		printf("  buff[%u] = 0x%.4x\n", i, p->data[i]);
+	}
+}
 
 struct ring_buffer_info (*rxi)[];
 struct ring_buffer_info (*txi)[];
@@ -137,7 +150,7 @@ static void *read_thread(void *threadid)
 		if (rb_read == rb_size.num_rx_frames)
 			rb_read = 0;
 
-		bytes_transfered += cnt;
+		bytes_transfered += p->len*2;//cnt;
 
 		if (bytes_transfered > (100 * 1000000)) {
 			struct timeval finish_time, d_time;
@@ -189,6 +202,8 @@ static void *write_thread(void *threadid)
 		else
 			p->len = (random() & 0x1ff) + (1004 - 512);
 
+		p->words32 = 4 /*hdr*/ + p->len/2;
+
 		p->checksum = calc_checksum(p);
 
 		if (!((*txi)[rb_write].flags & RB_KERNEL)) {
@@ -199,9 +214,9 @@ static void *write_thread(void *threadid)
 			poll(&pfd, 1, -1);
 		}
 
-		memcpy(&(*tx_buf)[rb_write], tx_data, p->len * 2 + 12);
+		memcpy(&(*tx_buf)[rb_write], tx_data, p->words32*sizeof(uint32_t));
 
-		(*txi)[rb_write].len = p->len * 2 + 12;
+		(*txi)[rb_write].len = p->words32*sizeof(uint32_t);
 		(*txi)[rb_write].flags = RB_USER;
 
 		rb_write++;
@@ -212,6 +227,7 @@ static void *write_thread(void *threadid)
 //		if (cnt < 0)
 //			printf("Error returned from write: %d\n", cnt);
 //		sleep(1);
+
 	}
 	return NULL;
 }
@@ -287,10 +303,14 @@ int main(int argc, char *argv[])
 	sleep(1);
 #endif
 
+#if 1
 	if (pthread_create(&tx, NULL, write_thread, (void *) t)) {
 		printf("Failed to create tx thread\n");
 		exit(-1);
 	}
+
+	sleep(1);
+#endif
 
 //	while (!error)
 		sleep(1000000000);
