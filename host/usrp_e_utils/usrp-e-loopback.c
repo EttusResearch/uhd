@@ -200,7 +200,7 @@ static void *write_thread(void *threadid)
 		if (packet_data_length > 0)
 			p->len = packet_data_length;
 		else
-			p->len = (random() & 0x1ff) + (1004 - 512);
+			p->len = (random() & 0x1fe) + (1000 - 512);
 
 		p->words32 = 4 /*hdr*/ + p->len/2;
 
