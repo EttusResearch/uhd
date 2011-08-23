@@ -104,6 +104,7 @@ private:
         uhd::usrp::dboard_manager::sptr dboard_manager;
         uhd::usrp::dboard_iface::sptr dboard_iface;
         size_t rx_chan_occ, tx_chan_occ;
+        mb_container_type(void): rx_chan_occ(0), tx_chan_occ(0){}
     };
     uhd::dict<std::string, mb_container_type> _mbc;
 
