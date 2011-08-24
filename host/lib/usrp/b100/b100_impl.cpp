@@ -186,8 +186,6 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
     this->enable_gpif(true); //TODO best place to put this?
     this->check_fpga_compat(); //check after making control
-    _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
-    _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
 
     ////////////////////////////////////////////////////////////////////
     // Reset buffers in data path
@@ -197,6 +195,12 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
     this->reset_gpif(6);
     this->reset_gpif(2);
+
+    ////////////////////////////////////////////////////////////////////
+    // Initialize peripherals after reset
+    ////////////////////////////////////////////////////////////////////
+    _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
+    _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
 
     ////////////////////////////////////////////////////////////////////
     // Create data transport
