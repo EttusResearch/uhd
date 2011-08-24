@@ -71,7 +71,7 @@ module fifo_long
 	  .enb((read_state==PRE_READ)|read),
 	  .web(0),
 	  .addrb(rd_addr),
-	  .dib(0),
+	  .dib({WIDTH{1'b1}}),
 	  .dob(dataout));
 
    always @(posedge clk)
