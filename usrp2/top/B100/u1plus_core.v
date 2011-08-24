@@ -89,7 +89,7 @@ module u1plus_core
       .in(set_data),.out(),.changed(global_reset));
 
    reset_sync reset_sync_wb(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
-   reset_sync reset_sync_gp(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(gpif_rst));
+   reset_sync reset_sync_gp(.clk(gpif_clk), .reset_in(rst_fpga | global_reset), .reset_out(gpif_rst));
    wire [15:0] 	test_len;
    
    // /////////////////////////////////////////////////////////////////////////////////////
