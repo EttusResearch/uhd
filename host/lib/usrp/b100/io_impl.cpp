@@ -65,8 +65,9 @@ void b100_impl::io_init(void){
     _tx_otw_type.shift = 0;
     _tx_otw_type.byteorder = uhd::otw_type_t::BO_LITTLE_ENDIAN;
 
-    //TODO best place to put this?
-    this->reset_gpif(6);
+    //clear state machines
+    _fpga_ctrl->poke32(B100_REG_CLEAR_RX, 0);
+    _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
 
     //set the expected packet size in USB frames
     _fpga_ctrl->poke32(B100_REG_MISC_RX_LEN, 4);

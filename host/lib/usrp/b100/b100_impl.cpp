@@ -158,28 +158,13 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     }
     UHD_ASSERT_THROW(handle.get() != NULL); //better be found
 
-    //create control objects and a data transport
+    //create control objects
     usb_control::sptr fx2_transport = usb_control::make(handle);
     _fx2_ctrl = fx2_ctrl::make(fx2_transport);
     this->check_fw_compat(); //check after making fx2
     //-- setup clock after making fx2 and before loading fpga --//
     _clock_ctrl = b100_clock_ctrl::make(_fx2_ctrl, device_addr.cast<double>("master_clock_rate", B100_DEFAULT_TICK_RATE));
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
-
-    device_addr_t data_xport_args;
-    data_xport_args["recv_frame_size"] = device_addr.get("recv_frame_size", "16384");
-    data_xport_args["num_recv_frames"] = device_addr.get("num_recv_frames", "16");
-    data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", "16384");
-    data_xport_args["num_send_frames"] = device_addr.get("num_send_frames", "16");
-
-    _data_transport = usb_zero_copy::make_wrapper(
-        usb_zero_copy::make(
-            handle,        // identifier
-            6,             // IN endpoint
-            2,             // OUT endpoint
-            data_xport_args    // param hints
-        )
-    );
 
     //create the control transport
     device_addr_t ctrl_xport_args;
@@ -203,6 +188,36 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     this->check_fpga_compat(); //check after making control
     _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, B100_REG_SLAVE(3));
     _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, B100_REG_SLAVE(2));
+
+    ////////////////////////////////////////////////////////////////////
+    // Reset buffers in data path
+    ////////////////////////////////////////////////////////////////////
+    _fpga_ctrl->poke32(B100_REG_GLOBAL_RESET, 0);
+    _fpga_ctrl->poke32(B100_REG_CLEAR_RX, 0);
+    _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
+    this->reset_gpif(6);
+    this->reset_gpif(2);
+
+    ////////////////////////////////////////////////////////////////////
+    // Create data transport
+    // This happens after FPGA ctrl instantiated so any junk that might
+    // be in the FPGAs buffers doesn't get pulled into the transport
+    // before being cleared.
+    ////////////////////////////////////////////////////////////////////
+    device_addr_t data_xport_args;
+    data_xport_args["recv_frame_size"] = device_addr.get("recv_frame_size", "16384");
+    data_xport_args["num_recv_frames"] = device_addr.get("num_recv_frames", "16");
+    data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", "16384");
+    data_xport_args["num_send_frames"] = device_addr.get("num_send_frames", "16");
+
+    _data_transport = usb_zero_copy::make_wrapper(
+        usb_zero_copy::make(
+            handle,        // identifier
+            6,             // IN endpoint
+            2,             // OUT endpoint
+            data_xport_args    // param hints
+        )
+    );
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
