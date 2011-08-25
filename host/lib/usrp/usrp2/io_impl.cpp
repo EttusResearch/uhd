@@ -134,6 +134,11 @@ struct usrp2_impl::io_impl{
         /* NOP */
     }
 
+    ~io_impl(void){
+        //Manually deconstuct the tasks, since this was not happening automatically.
+        pirate_tasks.clear();
+    }
+
     managed_send_buffer::sptr get_send_buff(size_t chan, double timeout){
         flow_control_monitor &fc_mon = *fc_mons[chan];
 
