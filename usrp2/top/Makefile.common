@@ -36,7 +36,6 @@ synth: $(ISE_FILE)
 	$(ISE_HELPER) "Synthesize - XST"
 
 bin: check $(BIN_FILE)
-	$(ISE_HELPER) "Generate Programming File"
 	$(TIMING_CHECKER) $(TWR_FILE)
 
 mcs: $(MCS_FILE)
