@@ -23,7 +23,7 @@
 
 static int fp;
 
-static int peek16(int reg){
+static inline int peek16(int reg){
     int ret;
     struct usrp_e_ctl16 d;
 
@@ -33,7 +33,7 @@ static int peek16(int reg){
     return d.buf[0];
 }
 
-static void poke16(int reg, int val){
+static inline void poke16(int reg, int val){
     int ret;
     struct usrp_e_ctl16 d;
 
@@ -43,7 +43,7 @@ static void poke16(int reg, int val){
     ret = ioctl(fp, USRP_E_WRITE_CTL16, &d);
 }
 
-static int peek32(int reg){
+static inline int peek32(int reg){
     int ret;
     struct usrp_e_ctl32 d;
 
@@ -53,7 +53,7 @@ static int peek32(int reg){
     return d.buf[0];
 }
 
-static void poke32(int reg, int val){
+static inline void poke32(int reg, int val){
     int ret;
     struct usrp_e_ctl32 d;
 

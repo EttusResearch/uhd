@@ -27,7 +27,7 @@ IF(ENABLE_USRP_E_UTILS)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/e100/include)
 
     SET(usrp_e_utils_sources
-        usrp-e-loopback.c
+        usrp-e-loopback.cpp
         usrp-e-wb-test.cpp
         usrp-e-debug-pins.c
         usrp-e-gpio.c
