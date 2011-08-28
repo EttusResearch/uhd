@@ -259,6 +259,15 @@ int main(int argc, char *argv[]){
     //set the mode to loopback
     poke16(E100_REG_MISC_XFER_RATE, (1<<8) | (1<<9));
 
+    //clear FIFO state in FPGA and kernel
+    poke32(E100_REG_CLEAR_RX, 0);
+    poke32(E100_REG_CLEAR_TX, 0);
+    ::close(fp);
+    if ((fp = ::open("/dev/usrp_e0", O_RDWR)) < 0){
+        std::cerr << "Open failed" << std::endl;
+        return -1;
+    }
+
     //setup the ring buffer
     setup_ring();
 
