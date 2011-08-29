@@ -15,25 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+module cross_clock_reader
+    #(
+        parameter WIDTH = 1,
+        parameter DEFAULT = 0
+    )
+    (
+        input clk, input rst,
+        input [WIDTH-1:0] in,
+        output reg [WIDTH-1:0] out
+    );
 
+    reg [WIDTH-1:0] shadow;
 
-module edge_sync
-  #(parameter POSEDGE = 1)
-   (input clk,
-    input rst,
-    input sig,
-    output trig);
-   
-   reg [1:0] delay;
-   
-   always @(posedge clk)
-     if(rst)
-       delay <= 2'b00;
-     else
-       delay <= {delay[0],sig};
-   
-   assign trig = POSEDGE ? (delay==2'b01) : (delay==2'b10);
-   
-endmodule // edge_sync
+    always @(posedge clk) begin
+        if (rst) begin
+            out <= DEFAULT;
+            shadow <= DEFAULT;
+        end
+        else if (shadow == in) begin
+            out <= shadow;
+        end
+        shadow <= in;
+    end
 
-
+endmodule //cross_clock_reader
