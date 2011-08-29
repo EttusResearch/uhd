@@ -20,7 +20,7 @@
 module rx_dcoffset 
   #(parameter WIDTH=16,
     parameter ADDR=8'd0,
-    parameter alpha_shift=16)
+    parameter alpha_shift=20)
    (input clk, input rst, 
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [WIDTH-1:0] in, output [WIDTH-1:0] out);
