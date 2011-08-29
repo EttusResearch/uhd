@@ -22,7 +22,7 @@
 
 module atr_controller16
   (input clk_i, input rst_i,
-   input [5:0] adr_i, input [1:0] sel_i, input [15:0] dat_i, output reg [15:0] dat_o,
+   input [5:0] adr_i, input [1:0] sel_i, input [15:0] dat_i, output [15:0] dat_o,
    input we_i, input stb_i, input cyc_i, output reg ack_o,
    input run_rx, input run_tx,
    output [31:0] ctrl_lines);
@@ -50,8 +50,7 @@ module atr_controller16
    // Removing readback allows ram to be synthesized as LUTs instead of regs
    //always @(posedge clk_i)
    //  dat_o <= adr_i[1] ? atr_ram[adr_i[5:2]][31:16] : atr_ram[adr_i[5:2]][15:0];
-   always
-     dat_o <= 16'd0;
+   assign dat_o = 16'd0;
    
    always @(posedge clk_i)
      ack_o <= stb_i & cyc_i & ~ack_o;
