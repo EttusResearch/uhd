@@ -83,25 +83,26 @@ time_spec_t time_spec_t::get_system_time(void){
 /***********************************************************************
  * Time spec constructors
  **********************************************************************/
-time_spec_t::time_spec_t(double secs):
-    _full_secs(0),
-    _frac_secs(secs)
-{
-    /* NOP */
+#define time_spec_init(full, frac) { \
+    _full_secs = full + time_t(frac); \
+    _frac_secs = frac - time_t(frac); \
+    if (_frac_secs < 0) {\
+        _full_secs -= 1; \
+        _frac_secs += 1; \
+    } \
 }
 
-time_spec_t::time_spec_t(time_t full_secs, double frac_secs):
-    _full_secs(full_secs),
-    _frac_secs(frac_secs)
-{
-    /* NOP */
+time_spec_t::time_spec_t(double secs){
+    time_spec_init(0, secs);
 }
 
-time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate):
-    _full_secs(full_secs),
-    _frac_secs(tick_count/tick_rate)
-{
-    /* NOP */
+time_spec_t::time_spec_t(time_t full_secs, double frac_secs){
+    time_spec_init(full_secs, frac_secs);
+}
+
+time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
+    const double frac_secs = tick_count/tick_rate;
+    time_spec_init(full_secs, frac_secs);
 }
 
 /***********************************************************************
@@ -116,11 +117,11 @@ double time_spec_t::get_real_secs(void) const{
 }
 
 time_t time_spec_t::get_full_secs(void) const{
-    return this->_full_secs + time_t(this->_frac_secs);
+    return this->_full_secs;
 }
 
 double time_spec_t::get_frac_secs(void) const{
-    return this->_frac_secs - time_t(this->_frac_secs);
+    return this->_frac_secs;
 }
 
 /***********************************************************************
