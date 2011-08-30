@@ -111,8 +111,21 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     const std::string node = device_addr["node"];
     _fpga_ctrl = e100_ctrl::make(node);
 
+    //read the eeprom so we can determine the hardware
+    _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
+    const mboard_eeprom_t mb_eeprom(*_dev_i2c_iface, mboard_eeprom_t::MAP_E100);
+
+    //determine the model string for this device
+    const std::string model = device_addr.get("model", mb_eeprom.get("model", ""));
+    if (model.empty()) throw uhd::runtime_error("unable to determine model");
+
     //extract the fpga path and compute hash
-    const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", E100_FPGA_FILE_NAME));
+    static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost::assign::map_list_of
+        ("E100", "usrp_e100_fpga_v2.bin")
+        ("E110", "usrp_e110_fpga.bin")
+    ;
+    const std::string default_fpga_file_name = model_to_fpga_file_name(model);
+    const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
     const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(e100_fpga_image));
 
     //When the hash does not match:
@@ -162,7 +175,6 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, E100_REG_SLAVE(3));
     _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, E100_REG_SLAVE(2));
-    _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
     _data_transport = e100_make_mmap_zero_copy(_fpga_ctrl);
 
     ////////////////////////////////////////////////////////////////////
@@ -176,7 +188,6 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    const mboard_eeprom_t mb_eeprom(*_dev_i2c_iface, mboard_eeprom_t::MAP_E100);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
         .subscribe(boost::bind(&e100_impl::set_mb_eeprom, this, _1));
