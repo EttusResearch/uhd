@@ -29,6 +29,7 @@ Application Notes
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_
 * `Synchronization Application Notes <./sync.html>`_
+* `Internal GPSDO Application Notes <./gpsdo.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 API Documentation
