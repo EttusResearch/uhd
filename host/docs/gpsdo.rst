@@ -11,11 +11,17 @@ to the Jackson Labs Firefly-1A device unless noted otherwise.
 ------------------------------------------------------------------------
 Specifications
 ------------------------------------------------------------------------
-Receiver type: 50 channel with WAAS, EGNOS, MSAS
-10MHz ADEV: 1e-11 over >24h
-1PPS RMS jitter: <50ns 1-sigma
-Holdover: <11us over 3h
-Phase noise: 1Hz: -80dBc/Hz, 10Hz: -110dBc/Hz, 100Hz: -135dBc/Hz, 1kHz: -145dBc/Hz, 10kHz: <-145dBc/Hz
+* Receiver type: 50 channel with WAAS, EGNOS, MSAS
+* 10MHz ADEV: 1e-11 over >24h
+* 1PPS RMS jitter: <50ns 1-sigma
+* Holdover: <11us over 3h
+* Phase noise:
+
+  * **1Hz:** -80dBc/Hz
+  * **10Hz:** -110dBc/Hz
+  * **100Hz:** -135dBc/Hz
+  * **1kHz:** -145dBc/Hz
+  * **10kHz:** <-145dBc/Hz
 
 ------------------------------------------------------------------------
 Installation
@@ -35,6 +41,7 @@ To configure the USRP to communicate with the GPSDO, use the
 usrp_burn_mb_eeprom utility:
 
 ::
+
    $ cd <install-path>/share/uhd/utils
    $ ./usrp_burn_mb_eeprom --key=gpsdo --val=internal
 
@@ -53,6 +60,7 @@ GPS data is obtained through the mboard_sensors interface. To retrieve
 the current GPS time, use the "gps_time" sensor:
 
 ::
+
     usrp->get_mboard_sensor("gps_time");
 
 The returned value will be the current epoch time, in seconds since

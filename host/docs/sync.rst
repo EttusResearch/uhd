@@ -105,8 +105,17 @@ and the user can also parse this string to determine GPS time:
 Method 3 - internal GPSDO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 USRPs with internal GPSDOs properly configured will automatically
-configure themselves to set the VITA time to current UTC time. See the
-GPSDO application note for more details.
+configure themselves to set the VITA time to current UTC time.
+See the `GPSDO Application Notes <./gpsdo.html>`_ for more details.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Method 4 - MIMO cable
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A USRP can synchronize its time to another USRP via the MIMO cable.
+Unlike the other methods, this does not use a real "pulse per second".
+Rather, the USRP sends an encoded time message over the MIMO cable.
+The slave device will automatically synchronize to the time on the master device.
+See the `MIMO Cable Application Notes <./usrp2.html#using-the-mimo-cable>`_ for more detail.
 
 ------------------------------------------------------------------------
 Synchronizing channel phase
