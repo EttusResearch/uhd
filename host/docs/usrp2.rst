@@ -44,7 +44,6 @@ Use the card burner tool (windows)
 
     <path_to_python.exe> <install-path>/share/uhd/utils/usrp2_card_burner_gui.py
 
-
 ------------------------------------------------------------------------
 Load the images onto the on-board flash (USRP-N Series only)
 ------------------------------------------------------------------------
@@ -53,12 +52,17 @@ to update or change the firmware and FPGA images.
 When updating images, always burn both the FPGA and firmware images before power cycling.
 This ensures that when the device reboots, it has a compatible set of images to boot into.
 
+**Note:**
+Different hardware revisions require different FPGA images.
+Determine the revision number from the sticker on the rear of the chassis.
+Use this number to select the correct FPGA image for your device.
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the net burner tool (unix)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    sudo <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
+    <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
 
     -- OR --
 
