@@ -194,7 +194,6 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _fpga_ctrl->poke32(B100_REG_CLEAR_RX, 0);
     _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
     this->reset_gpif(6);
-    this->reset_gpif(2);
 
     ////////////////////////////////////////////////////////////////////
     // Initialize peripherals after reset
