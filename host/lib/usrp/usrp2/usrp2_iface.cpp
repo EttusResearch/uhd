@@ -21,6 +21,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -96,9 +97,9 @@ public:
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
     }
 
-    ~usrp2_iface_impl(void){
+    ~usrp2_iface_impl(void){UHD_SAFE_CALL(
         this->lock_device(false);
-    }
+    )}
 
 /***********************************************************************
  * Device locking
