@@ -85,4 +85,15 @@ BOOST_AUTO_TEST_CASE(test_time_spec_neg_values){
     std::cout << "ts1 " << ts1.get_real_secs() << std::endl;
     std::cout << "ts2 " << ts2.get_real_secs() << std::endl;
     BOOST_CHECK(ts1 > ts2);
+
+    uhd::time_spec_t tsa(430.001083);
+    uhd::time_spec_t tsb(429.999818);
+    uhd::time_spec_t tsc(0.3);
+    uhd::time_spec_t tsd = tsa - tsb;
+    std::cout << "tsa " << tsa.get_real_secs() << std::endl;
+    std::cout << "tsb " << tsb.get_real_secs() << std::endl;
+    std::cout << "tsc " << tsc.get_real_secs() << std::endl;
+    std::cout << "tsd " << tsd.get_real_secs() << std::endl;
+    BOOST_CHECK(tsa > tsb);
+    BOOST_CHECK(tsc > tsd);
 }

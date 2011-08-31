@@ -128,14 +128,18 @@ double time_spec_t::get_frac_secs(void) const{
  * Time spec math overloads
  **********************************************************************/
 time_spec_t &time_spec_t::operator+=(const time_spec_t &rhs){
-    this->_full_secs += rhs.get_full_secs();
-    this->_frac_secs += rhs.get_frac_secs();
+    time_spec_init(
+        this->_full_secs + rhs.get_full_secs(),
+        this->_frac_secs + rhs.get_frac_secs()
+    );
     return *this;
 }
 
 time_spec_t &time_spec_t::operator-=(const time_spec_t &rhs){
-    this->_full_secs -= rhs.get_full_secs();
-    this->_frac_secs -= rhs.get_frac_secs();
+    time_spec_init(
+        this->_full_secs - rhs.get_full_secs(),
+        this->_frac_secs - rhs.get_frac_secs()
+    );
     return *this;
 }
 
