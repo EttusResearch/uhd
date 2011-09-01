@@ -159,7 +159,7 @@ static clock_settings_type get_clock_settings(double rate){
         }
     }
 
-    throw uhd::runtime_error(str(boost::format(
+    throw uhd::value_error(str(boost::format(
         "USRP-B100 clock control: could not calculate settings for clock rate %fMHz"
     ) % (rate/1e6)));
 }

@@ -104,7 +104,6 @@ private:
     spi_iface::sptr _spi_iface;
     b100_clock_ctrl::sptr _clock;
     b100_codec_ctrl::sptr _codec;
-    uhd::dict<unit_t, double> _clock_rates;
 };
 
 /***********************************************************************
@@ -124,7 +123,6 @@ dboard_iface::sptr make_b100_dboard_iface(
  * Clock Rates
  **********************************************************************/
 void b100_dboard_iface::set_clock_rate(unit_t unit, double rate){
-    _clock_rates[unit] = rate;
     switch(unit){
     case UNIT_RX: return _clock->set_rx_dboard_clock_rate(rate);
     case UNIT_TX: return _clock->set_tx_dboard_clock_rate(rate);
@@ -140,7 +138,11 @@ std::vector<double> b100_dboard_iface::get_clock_rates(unit_t unit){
 }
 
 double b100_dboard_iface::get_clock_rate(unit_t unit){
-    return _clock_rates[unit];
+    switch(unit){
+    case UNIT_RX: return _clock->get_rx_clock_rate();
+    case UNIT_TX: return _clock->get_tx_clock_rate();
+    }
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void b100_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
@@ -244,7 +246,7 @@ static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
     case dboard_iface::UNIT_TX: return B100_SPI_SS_TX_DB;
     case dboard_iface::UNIT_RX: return B100_SPI_SS_RX_DB;
     }
-    throw std::invalid_argument("unknown unit type");
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void b100_dboard_iface::write_spi(
@@ -253,7 +255,7 @@ void b100_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    _spi_iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, false /*no rb*/);
+    _spi_iface->write_spi(unit_to_otw_spi_dev(unit), config, data, num_bits);
 }
 
 boost::uint32_t b100_dboard_iface::read_write_spi(
@@ -262,7 +264,7 @@ boost::uint32_t b100_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _spi_iface->transact_spi(unit_to_otw_spi_dev(unit), config, data, num_bits, true /*rb*/);
+    return _spi_iface->read_spi(unit_to_otw_spi_dev(unit), config, data, num_bits);
 }
 
 /***********************************************************************
