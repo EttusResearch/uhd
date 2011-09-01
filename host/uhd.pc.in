@@ -5,7 +5,11 @@ includedir=${prefix}/@INCLUDE_DIR@
 
 Name: @CPACK_PACKAGE_NAME@
 Description: @CPACK_PACKAGE_DESCRIPTION_SUMMARY@
-Requires:
+URL: http://code.ettus.com/redmine/ettus/projects/uhd/wiki
 Version: @CPACK_PACKAGE_VERSION@
+Requires:
+Requires.private: @UHD_PC_REQUIRES@
+Conflicts:
+Cflags: -I${includedir} @UHD_PC_CFLAGS@
 Libs: -L${libdir} -luhd
-Cflags: -I${includedir}
+Libs.private: @UHD_PC_LIBS@

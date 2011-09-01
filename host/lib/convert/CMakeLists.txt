@@ -31,8 +31,9 @@ ENDIF(PKG_CONFIG_FOUND)
 
 FIND_PROGRAM(ORCC_EXECUTABLE orcc)
 
-IF(ORC_FOUND AND ORCC_EXECUTABLE)
-    SET(ORC_SUPPORT_ENABLED TRUE)
+LIBUHD_REGISTER_COMPONENT("ORC" ENABLE_ORC ON "ENABLE_LIBUHD;ORC_FOUND;ORCC_EXECUTABLE" OFF)
+
+IF(ENABLE_ORC)
     INCLUDE_DIRECTORIES(${ORC_INCLUDE_DIRS})
     LINK_DIRECTORIES(${ORC_LIBRARY_DIRS})
     ENABLE_LANGUAGE(C)
@@ -41,7 +42,7 @@ IF(ORC_FOUND AND ORCC_EXECUTABLE)
 
     GET_FILENAME_COMPONENT(orc_file_name_we ${orcc_src} NAME_WE)
     SET(orcc_gen ${CMAKE_CURRENT_BINARY_DIR}/${orc_file_name_we}.c)
-    MESSAGE(STATUS "Orc found, enabling Orc support")
+    MESSAGE(STATUS "Orc found, enabling Orc support.")
     ADD_CUSTOM_COMMAND(
         COMMAND ${ORCC_EXECUTABLE} --implementation -o ${orcc_gen} ${orcc_src}
         DEPENDS ${orcc_src} OUTPUT ${orcc_gen}
@@ -51,10 +52,9 @@ IF(ORC_FOUND AND ORCC_EXECUTABLE)
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_orc.cpp
     )
     LIBUHD_APPEND_LIBS(${ORC_LIBRARIES})
-ELSE()
-    SET(ORC_SUPPORT_ENABLED FALSE)
-    MESSAGE(STATUS "Orc not found, disabling orc support...")
-ENDIF(ORC_FOUND AND ORCC_EXECUTABLE)
+ELSE(ENABLE_ORC)
+    MESSAGE(STATUS "Orc not found, disabling orc support.")
+ENDIF(ENABLE_ORC)
 
 ########################################################################
 # Check for SSE2 SIMD headers
@@ -91,7 +91,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     UNSET(CMAKE_REQUIRED_FLAGS)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-IF(HAVE_ARM_NEON_H AND ORC_SUPPORT_ENABLED)
+IF(HAVE_ARM_NEON_H AND ENABLE_ORC)
     #prefer orc support, its faster than the current intrinsic implementations
     MESSAGE(STATUS "Enabled conversion support with ORC.")
 ELSEIF(HAVE_ARM_NEON_H)

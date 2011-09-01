@@ -177,20 +177,6 @@ ADD_CUSTOM_TARGET(uninstall
 )
 
 ########################################################################
-# Create Pkg Config File
-########################################################################
-CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
-@ONLY)
-
-INSTALL(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
-    DESTINATION ${LIBRARY_DIR}/pkgconfig
-    COMPONENT libraries
-)
-
-########################################################################
 # Install Package Docs
 ########################################################################
 INSTALL(FILES
@@ -233,6 +219,52 @@ IF(ENABLE_UTILS)
 ENDIF(ENABLE_UTILS)
 
 ADD_SUBDIRECTORY(usrp_e_utils)
+
+########################################################################
+# Create Pkg Config File
+########################################################################
+#set other pkg-config configuration variables
+IF(ENABLE_USB)
+    LIST(APPEND UHD_PC_REQUIRES "libusb-1.0")
+ENDIF()
+
+IF(ENABLE_ORC)
+    LIST(APPEND UHD_PC_REQUIRES "orc-0.4")
+ENDIF()
+
+FOREACH(inc ${Boost_INCLUDE_DIRS})
+    LIST(APPEND UHD_PC_CFLAGS "-I${inc}")
+ENDFOREACH(inc)
+
+FOREACH(lib ${Boost_LIBRARY_DIRS})
+    LIST(APPEND UHD_PC_LIBS "-L${lib}")
+ENDFOREACH(lib)
+
+FOREACH(lib ${Boost_LIBRARIES})
+    LIST(APPEND UHD_PC_LIBS "-l${lib}")
+ENDFOREACH(lib)
+
+#use space-separation format for the pc file
+STRING(REPLACE ";" " " UHD_PC_REQUIRES "${UHD_PC_REQUIRES}")
+STRING(REPLACE ";" " " UHD_PC_CFLAGS "${UHD_PC_CFLAGS}")
+STRING(REPLACE ";" " " UHD_PC_LIBS "${UHD_PC_LIBS}")
+
+#unset these vars to avoid hard-coded paths to cross environment
+IF(CMAKE_CROSSCOMPILING)
+    UNSET(UHD_PC_CFLAGS)
+    UNSET(UHD_PC_LIBS)
+ENDIF(CMAKE_CROSSCOMPILING)
+
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+@ONLY)
+
+INSTALL(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+    DESTINATION ${LIBRARY_DIR}/pkgconfig
+    COMPONENT libraries
+)
 
 ########################################################################
 # Handle pre-built images
