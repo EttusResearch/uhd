@@ -2,10 +2,6 @@
 NET "CLK_FPGA_P"  LOC = "R7"  ;
 NET "CLK_FPGA_N"  LOC = "T7"  ;
 
-## UART
-NET "FPGA_TXD"  LOC = "H16"  ;
-NET "FPGA_RXD"  LOC = "H12"  ;
-
 ## I2C
 NET "SDA_FPGA"  LOC = "T13"  ;
 NET "SCL_FPGA"  LOC = "R13"  ;
@@ -23,7 +19,6 @@ NET "cgen_sync_b"  LOC = "H15"  ;
 #NET "fpga_cfg_init_b"  LOC = "T12"  ;
 
 ## MISC
-#NET "mystery_bus<2>"  LOC = "T11"  ;
 #NET "mystery_bus<1>"  LOC = "C4"  ;
 #NET "mystery_bus<0>"  LOC = "E7"  ;
 NET "reset_n"  LOC = "D5"  ;
@@ -58,9 +53,11 @@ NET "GPIF_RDY<2>"  LOC = "T10"  ;
 NET "GPIF_RDY<1>"  LOC = "T4"  ;
 NET "GPIF_RDY<0>"  LOC = "R5"  ;
 
-NET "FX2_PA7_FLAGD"  LOC = "P12"  ;
-NET "FX2_PA6_PKTEND"  LOC = "R11"  ;
-NET "FX2_PA2_SLOE"  LOC = "P10"  ;
+NET "GPIF_CS"  LOC = "P12"  ;
+NET "GPIF_SLOE"  LOC = "R11"  ;
+NET "GPIF_PKTEND"  LOC = "P10"  ;
+NET "GPIF_ADR<0>"  LOC = "T11"  ;
+NET "GPIF_ADR<1>"  LOC = "H16"  ;
 
 NET "IFCLK"  LOC = "T8"  ;
 
