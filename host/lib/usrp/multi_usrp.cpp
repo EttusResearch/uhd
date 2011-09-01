@@ -70,11 +70,15 @@ static meta_range_t make_overall_tune_range(
     const meta_range_t &dsp_range,
     const double bw
 ){
-    return meta_range_t(
-        fe_range.start() + std::max(dsp_range.start(), -bw),
-        fe_range.stop() + std::min(dsp_range.stop(), bw),
-        dsp_range.step()
-    );
+    meta_range_t range;
+    BOOST_FOREACH(const range_t &sub_range, fe_range){
+        range.push_back(range_t(
+            sub_range.start() + std::max(dsp_range.start(), -bw),
+            sub_range.stop() + std::min(dsp_range.stop(), bw),
+            dsp_range.step()
+        ));
+    }
+    return range;
 }
 
 /***********************************************************************
