@@ -53,32 +53,10 @@ module u1e
 
    // /////////////////////////////////////////////////////////////////////////
    // Clocking
-   wire  clk_fpga, clk_fpga_in;
-   
-   IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
-   clk_fpga_pin (.O(clk_fpga_in),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
+   wire  clk_fpga;
 
-   wire  clk_2x, dcm_rst, dcm_locked, clk_fb;
-   DCM #(.CLK_FEEDBACK ( "1X" ),
-	 .CLKDV_DIVIDE ( 2 ),
-	 .CLKFX_DIVIDE ( 2 ),
-	 .CLKFX_MULTIPLY ( 2 ),
-	 .CLKIN_DIVIDE_BY_2 ( "FALSE" ),
-	 .CLKIN_PERIOD ( 15.625 ),
-	 .CLKOUT_PHASE_SHIFT ( "NONE" ),
-	 .DESKEW_ADJUST ( "SYSTEM_SYNCHRONOUS" ),
-	 .DFS_FREQUENCY_MODE ( "LOW" ),
-	 .DLL_FREQUENCY_MODE ( "LOW" ),
-	 .DUTY_CYCLE_CORRECTION ( "TRUE" ),
-	 .FACTORY_JF ( 16'h8080 ),
-	 .PHASE_SHIFT ( 0 ),
-	 .STARTUP_WAIT ( "FALSE" ))
-   clk_doubler (.CLKFB(clk_fb), .CLKIN(clk_fpga_in), .RST(dcm_rst), 
-                .DSSEN(0), .PSCLK(0), .PSEN(0), .PSINCDEC(0), .PSDONE(), 
-		.CLKDV(), .CLKFX(), .CLKFX180(), 
-                .CLK2X(), .CLK2X180(), 
-                .CLK0(clk_fb), .CLK90(clk_fpga), .CLK180(), .CLK270(), 
-                .LOCKED(dcm_locked), .STATUS());
+   IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
+   clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
 
    // /////////////////////////////////////////////////////////////////////////
    // SPI

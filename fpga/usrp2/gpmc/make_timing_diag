@@ -1,6 +1,0 @@
-#!/bin/sh
-drawtiming -o single_data_write.gif single_data_write.txt
-drawtiming -o single_data_read.gif single_data_read.txt
-drawtiming -o burst_data_write.gif burst_data_write.txt
-#drawtiming -o burst_data_read.gif burst_data_read.txt
-

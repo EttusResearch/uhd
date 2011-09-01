@@ -36,7 +36,7 @@ module u1e_core
    output [13:0] tx_i, output [13:0] tx_q, 
    input [11:0] rx_i, input [11:0] rx_q, 
    
-   input pps_in, output proc_int
+   input pps_in, output reg proc_int
    );
 
    localparam TXFIFOSIZE = 13;
@@ -60,7 +60,7 @@ module u1e_core
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
 
-   wire [7:0]	COMPAT_NUM = 8'd5;
+   wire [7:0]	COMPAT_NUM = 8'd6;
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
@@ -102,10 +102,7 @@ module u1e_core
    wire [35:0] 	 tx_data, rx_data, tx_err_data;
    wire 	 tx_src_rdy, tx_dst_rdy, rx_src_rdy, rx_dst_rdy, 
 		 tx_err_src_rdy, tx_err_dst_rdy;
-   reg [15:0] 	 tx_frame_len;
-   wire [15:0] 	 rx_frame_len;
 
-   wire 	 bus_error;
    wire 	 clear_tx, clear_rx;
    
    setting_reg #(.my_addr(SR_CLEAR_RX_FIFO), .width(1)) sr_clear_rx
@@ -116,14 +113,13 @@ module u1e_core
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(clear_tx));
 
-   gpmc_async #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
+   gpmc #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
    gpmc (.arst(wb_rst),
 	 .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
 	 .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), 
 	 .EM_NOE(EM_NOE),
 	 
 	 .rx_have_data(rx_have_data), .tx_have_space(tx_have_space),
-	 .bus_error(bus_error), .bus_reset(0),
 	 
 	 .wb_clk(wb_clk), .wb_rst(wb_rst),
 	 .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
@@ -133,8 +129,7 @@ module u1e_core
 	 .fifo_clk(wb_clk), .fifo_rst(wb_rst), .clear_tx(clear_tx), .clear_rx(clear_rx),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
 	 .rx_data_i(rx_data), .rx_src_rdy_i(rx_src_rdy), .rx_dst_rdy_o(rx_dst_rdy),
-	 
-	 .tx_frame_len(tx_frame_len), .rx_frame_len(rx_frame_len),
+
 	 .tx_underrun(tx_underrun_gpmc), .rx_overrun(rx_overrun_gpmc),
 
 	 .test_rate(test_rate), .test_ctrl(test_ctrl),
@@ -313,8 +308,6 @@ module u1e_core
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
-   localparam REG_RX_FRAMELEN = 7'd10; // in
-   localparam REG_TX_FRAMELEN = 7'd12; // out
    localparam REG_XFER_RATE = 7'd14;   // out
    localparam REG_COMPAT = 7'd16;      // in
    
@@ -324,7 +317,6 @@ module u1e_core
 	  reg_leds <= 0;
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
-	  tx_frame_len <= 0;
 	  xfer_rate <= 0;
        end
      else
@@ -336,8 +328,6 @@ module u1e_core
 	     reg_cgen_ctrl <= s0_dat_mosi;
 	   REG_TEST :
 	     reg_test <= s0_dat_mosi;
-	   REG_TX_FRAMELEN :
-	     tx_frame_len <= s0_dat_mosi;
 	   REG_XFER_RATE :
 	     xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
@@ -352,7 +342,6 @@ module u1e_core
 			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
-			(s0_adr[6:0] == REG_RX_FRAMELEN) ? rx_frame_len :
 			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
@@ -433,7 +422,7 @@ module u1e_core
         // Wishbone interface to RAM
         .wb_clk_i(wb_clk), .wb_rst_i(wb_rst),
         .wb_we_i(s5_we),   .wb_stb_i(s5_stb),
-        .wb_adr_i(s5_adr), .wb_dat_i({16'b0, s5_dat_mosi}),
+        .wb_adr_i({5'b0,s5_adr}), .wb_dat_i({16'b0, s5_dat_mosi}),
         .wb_dat_o(err_data32), .wb_ack_o(s5_ack),
         // Write FIFO Interface
         .wr_data_i(_tx_err_data), .wr_ready_i(_tx_err_src_rdy), .wr_ready_o(_tx_err_dst_rdy),
@@ -444,7 +433,8 @@ module u1e_core
    ////////////////////////////////////////////////////////////////////////////
    // Interrupts
 
-   assign proc_int = (|err_status[1:0]);
+   always @(posedge wb_clk)
+     proc_int <= (|err_status[1:0]);
 
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #8 + 9
