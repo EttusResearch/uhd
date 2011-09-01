@@ -114,6 +114,7 @@ private:
     max2829_regs_t _max2829_regs;
 
     void set_lo_freq(double target_freq);
+    void set_lo_freq_core(double target_freq);
     void set_tx_ant(const std::string &ant);
     void set_rx_ant(const std::string &ant);
     void set_tx_gain(double gain, const std::string &name);
@@ -274,6 +275,16 @@ void xcvr2450::update_atr(void){
  * Tuning
  **********************************************************************/
 void xcvr2450::set_lo_freq(double target_freq){
+    //tune the LO and sleep a bit for lock
+    //if not locked, try some carrier offsets
+    for (double offset = 0.0; offset <= 3e6; offset+=1e6){
+        this->set_lo_freq_core(target_freq + offset);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        if (this->get_locked()) return;
+    }
+}
+
+void xcvr2450::set_lo_freq_core(double target_freq){
 
     //clip the input to the range
     target_freq = xcvr_freq_range.clip(target_freq);
