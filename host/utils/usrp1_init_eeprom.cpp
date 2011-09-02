@@ -26,10 +26,13 @@
 namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
+    std::string type;
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("image", po::value<std::string>(), "BIN image file")
+        ("type", po::value<std::string>(&type)->default_value("usrp1"), "USRP type (usrp1 or b100)")
+        ("already-init", "specify to look for an already-initialized USRP")
     ;
 
     po::variables_map vm;
@@ -49,8 +52,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //load the options into the address
     uhd::device_addr_t device_addr;
-    device_addr["type"] = "usrp1";
-    device_addr["uninit"] = "yeah"; //tell find to look for an uninitialized FX2
+    device_addr["type"] = type;
+    device_addr["uninit"] = vm.count("already-init") ? "" : "yeah"; //tell find to look for an uninitialized FX2
 
     //find and create a control transport to do the writing.
 
