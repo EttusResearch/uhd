@@ -45,12 +45,6 @@ static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut){
     *(static_cast<bool *>(lut->user_data)) = true;
 }
 
-//! callback to free transfer upon cancellation
-static void LIBUSB_CALL cancel_transfer_cb(libusb_transfer *lut){
-    if (lut->status == LIBUSB_TRANSFER_CANCELLED || lut->status == LIBUSB_TRANSFER_TIMED_OUT) libusb_free_transfer(lut);
-    else UHD_MSG(error) << "libusb cancel_transfer unexpected status " << lut->status << std::endl;
-}
-
 /*!
  * Wait for a managed buffer to become complete.
  *
@@ -230,16 +224,22 @@ public:
     }
 
     ~libusb_zero_copy_impl(void){
-        //cancel and free all transfers
+        libusb_context *ctx = libusb::session::get_global_session()->get_context();
+
+        //cancel all transfers
         BOOST_FOREACH(libusb_transfer *lut, _all_luts){
-            lut->callback = libusb_transfer_cb_fn(&cancel_transfer_cb);
             libusb_cancel_transfer(lut);
-            while(lut->status != LIBUSB_TRANSFER_CANCELLED
-               && lut->status != LIBUSB_TRANSFER_COMPLETED
-               && lut->status != LIBUSB_TRANSFER_TIMED_OUT) {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-            }
         }
+
+        //process all transfers until timeout occurs
+        bool completed = false;
+        wait_for_completion(ctx, 0.01, completed);
+
+        //free all transfers
+        BOOST_FOREACH(libusb_transfer *lut, _all_luts){
+            libusb_free_transfer(lut);
+        }
+
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
