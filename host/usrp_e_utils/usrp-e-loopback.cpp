@@ -18,6 +18,7 @@
 #include "common.hpp"
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 #include <boost/thread/thread.hpp>
