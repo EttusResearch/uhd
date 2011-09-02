@@ -6,18 +6,18 @@ NET "EM_CLK" TNM_NET = "EM_CLK";
 TIMESPEC "TS_em_clk" = PERIOD "EM_CLK" 12048 ps HIGH 50 %;
 
 #constrain GPMC IO
-NET "EM_D<*>" MAXDELAY = 5 ns;
-NET "EM_A<*>" MAXDELAY = 5 ns;
-NET "EM_NBE<*>" MAXDELAY = 5 ns;
-NET "EM_NCS4" MAXDELAY = 5 ns;
-NET "EM_NCS6" MAXDELAY = 5 ns;
-NET "EM_NWE" MAXDELAY = 5 ns;
-NET "EM_NOE" MAXDELAY = 5 ns;
+NET "EM_D<*>" MAXDELAY = 5.5 ns;
+NET "EM_A<*>" MAXDELAY = 5.5 ns;
+NET "EM_NBE<*>" MAXDELAY = 5.5 ns;
+NET "EM_NCS4" MAXDELAY = 5.5 ns;
+NET "EM_NCS6" MAXDELAY = 5.5 ns;
+NET "EM_NWE" MAXDELAY = 5.5 ns;
+NET "EM_NOE" MAXDELAY = 5.5 ns;
 
 #constrain interrupt lines
-NET "overo_gpio144" MAXDELAY = 5 ns; #have space
-NET "overo_gpio146" MAXDELAY = 5 ns; #have data
-NET "overo_gpio147" MAXDELAY = 5 ns; #have msg/aux spi miso
+NET "overo_gpio144" MAXDELAY = 5.5 ns; #have space
+NET "overo_gpio146" MAXDELAY = 5.5 ns; #have data
+NET "overo_gpio147" MAXDELAY = 5.5 ns; #have msg/aux spi miso
 
 #NET "adc_a<*>" TNM_NET = ADC_DATA_GRP;
 #NET "adc_b<*>" TNM_NET = ADC_DATA_GRP;

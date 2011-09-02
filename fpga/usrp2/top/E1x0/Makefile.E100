@@ -6,7 +6,7 @@
 # Project Setup
 ##################################################
 TOP_MODULE = u1e
-BUILD_DIR = $(abspath build$(ISE))
+BUILD_DIR = $(abspath build$(ISE)-E100)
 
 ##################################################
 # Include other makefiles
