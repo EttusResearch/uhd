@@ -390,11 +390,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
 }
 
 usrp1_impl::~usrp1_impl(void){
-    _io_impl.reset(); //stops vandal before other stuff gets deconstructed
     UHD_SAFE_CALL(
         this->enable_rx(false);
         this->enable_tx(false);
     )
+    _tree.reset(); //resets counts on sptrs held in tree
+    _soft_time_ctrl.reset(); //stops cmd task before proceeding
+    _io_impl.reset(); //stops vandal before other stuff gets deconstructed
 }
 
 /*!
