@@ -124,7 +124,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         ("E100", "usrp_e100_fpga_v2.bin")
         ("E110", "usrp_e110_fpga.bin")
     ;
-    const std::string default_fpga_file_name = model_to_fpga_file_name(model);
+    const std::string default_fpga_file_name = model_to_fpga_file_name[model];
     const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
     const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(e100_fpga_image));
 
@@ -183,7 +183,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree = property_tree::make();
     _tree->create<std::string>("/name").set("E-Series Device");
     const fs_path mb_path = "/mboards/0";
-    _tree->create<std::string>(mb_path / "name").set("E100 (euewanee)");
+    _tree->create<std::string>(mb_path / "name").set(str(boost::format("%s (euewanee)") % model));
 
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
