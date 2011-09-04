@@ -240,10 +240,6 @@ FOREACH(lib ${Boost_LIBRARY_DIRS})
     LIST(APPEND UHD_PC_LIBS "-L${lib}")
 ENDFOREACH(lib)
 
-FOREACH(lib ${Boost_LIBRARIES})
-    LIST(APPEND UHD_PC_LIBS "-l${lib}")
-ENDFOREACH(lib)
-
 #use space-separation format for the pc file
 STRING(REPLACE ";" " " UHD_PC_REQUIRES "${UHD_PC_REQUIRES}")
 STRING(REPLACE ";" " " UHD_PC_CFLAGS "${UHD_PC_CFLAGS}")
