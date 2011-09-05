@@ -19,10 +19,8 @@ The transport parameters are defined below for the various transports in the UHD
 ------------------------------------------------------------------------
 UDP transport (sockets)
 ------------------------------------------------------------------------
-The UDP transport is implemented with user-space sockets:
-
-* **UNIX:** standard Berkeley sockets API using send()/recv()
-* **Windows:** Windows Sockets API (WSA) using overlapped IO
+The UDP transport is implemented with user-space sockets.
+This means standard Berkeley sockets API using send()/recv().
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transport parameters
@@ -118,9 +116,6 @@ USB transport (libusb)
 ------------------------------------------------------------------------
 The USB transport is implemented with libusb.
 Libusb provides an asynchronous API for USB bulk transfers.
-The transport implementation allocates a number of buffers
-and submits asynchronous requests through libusb.
-Event handler threads run in the background to process these requests.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transport parameters
@@ -131,4 +126,28 @@ The following parameters can be used to alter the transport's default behavior:
 * **num_recv_frames:** The number of simultaneous receive transfers
 * **send_frame_size:** The size of a single send transfers in bytes
 * **num_send_frames:** The number of simultaneous send transfers
-* **concurrency_hint:** The number of threads to run the event handler
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setup Udev for USB (Linux)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On Linux, Udev handles USB plug and unplug events.
+The following commands install a Udev rule
+so that non-root users may access the device:
+
+::
+
+    cd <install-path>
+    sudo cp uhd-usrp.rules /etc/udev/rules.d/
+    sudo udevadm control --reload-rules
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install USB driver (Windows)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A driver package must be installed to use a USB-based product with UHD:
+
+* Download the driver from the UHD wiki page.
+* Unzip the file into a known location. We will refer to this as the <directory>.
+* Open the device manager and plug-in the USRP. You will see an unrecognized USB device in the device manager.
+* Right click on the unrecognized USB device and select update/install driver software (may vary for your OS).
+* In the driver installation wizard, select "browse for driver", browse to the <directory>, and select the .inf file.
+* Continue through the installation wizard until the driver is installed.

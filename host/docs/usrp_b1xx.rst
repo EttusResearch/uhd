@@ -56,21 +56,3 @@ Example:
 ::
 
     uhd_usrp_probe --args="master_clock_rate=52e6"
-
-------------------------------------------------------------------------
-OS specific notes
-------------------------------------------------------------------------
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Linux - setup udev
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Linux, udev handles USB plug and unplug events.
-The following commands create a udev rule for the B100
-so that non-root users may access the device:
-
-::
-
-    echo 'ACTION=="add", BUS=="usb", SYSFS{idVendor}=="2500", SYSFS{idProduct}=="0001", MODE:="0666"' > tmpfile
-    sudo chown root.root tmpfile
-    sudo mv tmpfile /etc/udev/rules.d/10-usrp_b100.rules
-    sudo udevadm control --reload-rules

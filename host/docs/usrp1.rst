@@ -62,31 +62,6 @@ List of missing features
 * Start of burst flags for transmit/receive
 
 ------------------------------------------------------------------------
-OS specific notes
-------------------------------------------------------------------------
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Linux - setup udev
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Linux, udev handles USB plug and unplug events.
-The following commands create a udev rule for the USRP1
-so that non-root users may access the device:
-
-::
-
-    echo 'ACTION=="add", BUS=="usb", SYSFS{idVendor}=="fffe", SYSFS{idProduct}=="0002", MODE:="0666"' > tmpfile
-    sudo chown root.root tmpfile
-    sudo mv tmpfile /etc/udev/rules.d/10-usrp.rules
-    sudo udevadm control --reload-rules
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Windows - install driver
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Windows, a driver must be installed the first time the USRP1 is attached to the host computer.
-A download link for this driver can be found on the UHD wiki page.
-Download and unpack the driver, and direct the Windows driver install wizard to the .inf file.
-
-------------------------------------------------------------------------
 Hardware setup notes
 ------------------------------------------------------------------------
 

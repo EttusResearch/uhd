@@ -202,3 +202,10 @@ Setup the PATH environment variable
 **Note:**
 The interface for editing environment variable paths in Windows is very poor.
 I recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.
+
+------------------------------------------------------------------------
+Post-Install Tasks
+------------------------------------------------------------------------
+For USB-based devices,
+see the `USB Transport Application Notes <./transport.html#usb-transport-libusb>`_
+for platform-specific post-installation tasks.

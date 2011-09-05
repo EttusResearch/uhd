@@ -45,6 +45,14 @@ IF(ENABLE_USRP1)
     )
 ENDIF(ENABLE_USRP1)
 
+IF(LINUX AND ENABLE_USB)
+    INSTALL(FILES
+        uhd-usrp.rules
+        DESTINATION ${PKG_DATA_DIR}/utils
+        COMPONENT utilities
+    )
+ENDIF(LINUX AND ENABLE_USB)
+
 #for each source: build an executable and install
 FOREACH(util_source ${util_share_sources})
     GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
