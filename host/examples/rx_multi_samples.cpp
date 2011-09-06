@@ -43,7 +43,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
-        ("sync", po::value<std::string>(&sync)->default_value("now"), "synchronization method: now, pps")
+        ("sync", po::value<std::string>(&sync)->default_value("now"), "synchronization method: now, pps, mimo")
         ("subdev", po::value<std::string>(&subdev), "subdev spec (homogeneous across motherboards)")
         ("dilv", "specify to disable inner-loop verbose")
     ;
@@ -87,12 +87,28 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     if (sync == "now"){
+        //This is not a true time lock, the devices will be off by a few RTT.
+        //Rather, this is just to allow for demonstration of the code below.
         usrp->set_time_now(uhd::time_spec_t(0.0));
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50)); //wait for mimo cable time sync
     }
     else if (sync == "pps"){
         usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
         boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+    }
+    else if (sync == "mimo"){
+        UHD_ASSERT_THROW(usrp->get_num_mboards() == 2);
+
+        //make mboard 1 a slave over the MIMO Cable
+        uhd::clock_config_t clock_config;
+        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
+        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
+        usrp->set_clock_config(clock_config, 1);
+
+        //set time on the master (mboard 0)
+        usrp->set_time_now(uhd::time_spec_t(0.0), 0);
+
+        //sleep a bit while the slave locks its time to the master
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
     }
 
     //setup streaming
