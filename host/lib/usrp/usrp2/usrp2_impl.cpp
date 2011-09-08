@@ -442,9 +442,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
                 _mbc[mb].iface->get_gps_write_fn(),
                 _mbc[mb].iface->get_gps_read_fn()
             );
-            BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors()){
-                _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .publish(boost::bind(&gps_ctrl::get_sensor, _mbc[mb].gps, name));
+            if(_mbc[mb].gps->gps_detected()) {
+                BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors()){
+                    _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                        .publish(boost::bind(&gps_ctrl::get_sensor, _mbc[mb].gps, name));
+                }
             }
         }
 
@@ -621,7 +623,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _tree->access<std::string>(root / "time_source/value").set("none");
 
         //GPS installed: use external ref, time, and init time spec
-        if (_mbc[mb].gps.get() != NULL){
+        if (_mbc[mb].gps.get() and _mbc[mb].gps->gps_detected()){
             _tree->access<std::string>(root / "time_source/value").set("external");
             _tree->access<std::string>(root / "clock_source/value").set("external");
             _mbc[mb].time64->set_time_next_pps(time_spec_t(time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1)));
