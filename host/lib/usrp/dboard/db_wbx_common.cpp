@@ -205,7 +205,7 @@ static int tx_pga0_gain_to_iobits(double &gain){
     ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK << std::endl;
 
     //the actual gain setting
-    gain = wbx_v3_tx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
+    gain = wbx_v3_tx_gain_ranges["PGA0"].stop() - double(attn_code);
 
     return iobits;
 }
