@@ -83,7 +83,7 @@ public:
     }
 
     void issue_stream_command(const stream_cmd_t &stream_cmd){
-        UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x1fffffff);
+        UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
         _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
 
         //setup the mode to instruction flags
