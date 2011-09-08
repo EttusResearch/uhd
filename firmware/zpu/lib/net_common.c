@@ -42,7 +42,7 @@
 static const bool debug = false;
 static const size_t out_buff_size = 2048;
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
-#define MAX_UDP_LISTENERS 6
+#define MAX_UDP_LISTENERS 10
 
 /***********************************************************************
  * 16-bit one's complement sum

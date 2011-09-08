@@ -44,6 +44,7 @@ extern "C" {
 #define USRP2_UDP_RX_DSP0_PORT 49156
 #define USRP2_UDP_TX_DSP0_PORT 49157
 #define USRP2_UDP_RX_DSP1_PORT 49158
+#define USRP2_UDP_UART_BASE_PORT 49170
 
 // Map for virtual firmware regs (not very big so we can keep it here for now)
 #define U2_FW_REG_LOCK_TIME 0

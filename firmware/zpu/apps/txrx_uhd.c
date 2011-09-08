@@ -32,6 +32,7 @@
 #include "usrp2/fw_common.h"
 #include "udp_fw_update.h"
 #include "pkt_ctrl.h"
+#include "udp_uart.h"
 
 //standard headers
 #include <stddef.h>
@@ -69,6 +70,12 @@ static void handle_udp_data_packet(
     case USRP2_UDP_TX_DSP0_PORT:
         //end async update packets per second
         sr_tx_ctrl->cyc_per_up = 0;
+        break;
+
+    case USRP2_UDP_UART_BASE_PORT+0:
+    case USRP2_UDP_UART_BASE_PORT+1:
+    case USRP2_UDP_UART_BASE_PORT+2:
+        turn_off_uart(src.port-USRP2_UDP_UART_BASE_PORT);
         break;
 
     default: return;
@@ -223,6 +230,7 @@ static void handle_udp_ctrl_packet(
     /*******************************************************************
      * UART Control
      ******************************************************************/
+/*
     case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
       //executes a readline()-style read, up to num_bytes long, up to and including newline
       int num_bytes = ctrl_data_in->data.uart_args.bytes;
@@ -244,7 +252,7 @@ static void handle_udp_ctrl_packet(
       ctrl_data_out.data.uart_args.bytes = num_bytes;
       break;
     }
-
+*/
     /*******************************************************************
      * Echo test
      ******************************************************************/
@@ -336,8 +344,12 @@ main(void)
   register_udp_listener(USRP2_UDP_RX_DSP0_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_RX_DSP1_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_TX_DSP0_PORT, handle_udp_data_packet);
+  
 #ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
+  int i;
+  for(i=0; i<NUM_UARTS; i++)
+    register_udp_listener(USRP2_UDP_UART_BASE_PORT+i, handle_uart_data_packet);
 #endif
 
   //3) set the routing mode to slave to set defaults
@@ -355,6 +367,11 @@ main(void)
         handle_inp_packet((uint32_t *)buff, num_lines);
         pkt_ctrl_release_incoming_buffer();
     }
+
+#ifdef USRP2P
+    //look for incoming data on the four UARTs and handle it
+    poll_uarts();
+#endif
 
     pic_interrupt_handler();
     /*
