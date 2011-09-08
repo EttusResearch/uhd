@@ -115,9 +115,6 @@ private:
     uhd::sensor_value_t get_ref_locked(const std::string &);
 
     //device properties interface
-    void get(const wax::obj &, wax::obj &val){
-        val = _tree; //entry point into property tree
-    }
     uhd::property_tree::sptr get_tree(void) const{
         return _tree;
     }
