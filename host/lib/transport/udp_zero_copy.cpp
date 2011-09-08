@@ -33,6 +33,32 @@ namespace asio = boost::asio;
 static const size_t DEFAULT_NUM_FRAMES = 32;
 
 /***********************************************************************
+ * Check registry for correct fast-path setting (windows only)
+ **********************************************************************/
+#ifdef UHD_PLATFORM_WIN32
+#include <atlbase.h> //CRegKey
+static void check_registry_for_fast_send_threshold(const size_t mtu){
+    static bool warned = false;
+    if (warned) return; //only allow one printed warning per process
+
+    CRegKey reg_key;
+    DWORD threshold = 1024; //system default when threshold is not specified
+    if (
+        reg_key.Open(HKEY_LOCAL_MACHINE, "System\\CurrentControlSet\\Services\\AFD\\Parameters", KEY_READ) != ERROR_SUCCESS or
+        reg_key.QueryDWORDValue("FastSendDatagramThreshold", threshold) != ERROR_SUCCESS or threshold < mtu
+    ){
+        UHD_MSG(warning) << boost::format(
+            "The MTU (%d) is larger than the FastSendDatagramThreshold (%d)!\n"
+            "This will negatively affect the transmit performance.\n"
+            "See the transport application notes for more detail.\n"
+        ) % mtu % threshold << std::endl;
+        warned = true;
+    }
+    reg_key.Close();
+}
+#endif /*UHD_PLATFORM_WIN32*/
+
+/***********************************************************************
  * Reusable managed receiver buffer:
  *  - Initialize with memory and a release callback.
  *  - Call get new with a length in bytes to re-use.
@@ -122,6 +148,10 @@ public:
         _pending_send_buffs(_num_send_frames)
     {
         UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
+
+        #ifdef UHD_PLATFORM_WIN32
+        check_registry_for_fast_send_threshold(this->get_send_frame_size());
+        #endif /*UHD_PLATFORM_WIN32*/
 
         //resolve the address
         asio::ip::udp::resolver resolver(_io_service);
