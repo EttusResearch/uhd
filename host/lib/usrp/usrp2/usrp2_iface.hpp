@@ -28,16 +28,12 @@
 #include "wb_iface.hpp"
 #include <string>
 
-//TODO: kill this crap when you have the top level GPS include file
-typedef boost::function<void(std::string)> gps_send_fn_t;
-typedef boost::function<std::string(void)> gps_recv_fn_t;
-
 /*!
  * The usrp2 interface class:
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp2_iface : public wb_iface, public uhd::spi_iface, public uhd::i2c_iface, public uhd::uart_iface{
+class usrp2_iface : public wb_iface, public uhd::spi_iface, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<usrp2_iface> sptr;
     /*!
@@ -46,9 +42,6 @@ public:
      * \return a new usrp2 interface object
      */
     static sptr make(uhd::transport::udp_simple::sptr ctrl_transport);
-
-    virtual gps_recv_fn_t get_gps_read_fn(void) = 0;
-    virtual gps_send_fn_t get_gps_write_fn(void) = 0;
 
     //! The list of possible revision types
     enum rev_type {

@@ -93,7 +93,7 @@ private:
         usrp2_iface::sptr iface;
         usrp2_clock_ctrl::sptr clock;
         usrp2_codec_ctrl::sptr codec;
-        gps_ctrl::sptr gps;
+        uhd::gps_ctrl::sptr gps;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         std::vector<rx_dsp_core_200::sptr> rx_dsps;

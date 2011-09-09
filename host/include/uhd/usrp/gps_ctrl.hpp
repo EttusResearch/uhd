@@ -18,17 +18,14 @@
 #ifndef INCLUDED_GPS_CTRL_HPP
 #define INCLUDED_GPS_CTRL_HPP
 
+#include <uhd/types/serial.hpp>
+#include <uhd/types/sensors.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <vector>
-#include <uhd/types/sensors.hpp>
 
-using namespace boost::posix_time;
-
-typedef boost::function<void(std::string)> gps_send_fn_t;
-typedef boost::function<std::string(void)> gps_recv_fn_t;
+namespace uhd{
 
 class gps_ctrl : boost::noncopyable{
 public:
@@ -37,7 +34,7 @@ public:
   /*!
    * Make a GPS config for Jackson Labs or generic NMEA GPS devices
    */
-  static sptr make(gps_send_fn_t, gps_recv_fn_t);
+  static sptr make(uart_iface::sptr uart);
 
   /*!
    * Retrieve the list of sensors this GPS object provides
@@ -58,5 +55,7 @@ public:
   //TODO: other fun things you can do with a GPS.
 
 };
+
+} //namespace uhd
 
 #endif /* INCLUDED_GPS_CTRL_HPP */

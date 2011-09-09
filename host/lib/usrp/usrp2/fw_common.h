@@ -31,8 +31,8 @@ extern "C" {
 
 //fpga and firmware compatibility numbers
 #define USRP2_FPGA_COMPAT_NUM 7
-#define USRP2_FW_COMPAT_NUM 10
-#define USRP2_FW_VER_MINOR 4
+#define USRP2_FW_COMPAT_NUM 11
+#define USRP2_FW_VER_MINOR 0
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0
@@ -45,6 +45,7 @@ extern "C" {
 #define USRP2_UDP_TX_DSP0_PORT 49157
 #define USRP2_UDP_RX_DSP1_PORT 49158
 #define USRP2_UDP_UART_BASE_PORT 49170
+#define USRP2_UDP_UART_GPS_PORT 49172
 
 // Map for virtual firmware regs (not very big so we can keep it here for now)
 #define U2_FW_REG_LOCK_TIME 0
@@ -89,9 +90,6 @@ typedef enum{
 
     USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO = 'u',
     USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE = 'U',
-
-    USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO = 'v',
-    USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE = 'V',
 
     USRP2_CTRL_ID_HOLLER_AT_ME_BRO = 'l',
     USRP2_CTRL_ID_HOLLER_BACK_DUDE = 'L',
@@ -143,11 +141,6 @@ typedef struct{
             uint32_t data;
             uint8_t action;
         } reg_args;
-        struct {
-            uint8_t dev;
-            uint8_t bytes;
-            uint8_t data[20];
-        } uart_args;
         struct {
             uint32_t len;
         } echo_args;

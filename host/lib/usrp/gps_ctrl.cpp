@@ -40,19 +40,18 @@ using namespace boost::this_thread;
 
 class gps_ctrl_impl : public gps_ctrl{
 public:
-  gps_ctrl_impl(gps_send_fn_t send, gps_recv_fn_t recv){
-    _send = send;
-    _recv = recv;
+  gps_ctrl_impl(uart_iface::sptr uart){
+    _uart = uart;
 
     std::string reply;
     bool i_heard_some_nmea = false, i_heard_something_weird = false;
     gps_type = GPS_TYPE_NONE;
     
     //first we look for a Jackson Labs Firefly (since that's what we provide...)
-    _recv(); //get whatever junk is in the rx buffer right now, and throw it away
+    _flush(); //get whatever junk is in the rx buffer right now, and throw it away
     _send("HAAAY GUYYYYS\n"); //to elicit a response from the Firefly
 
-	//wait for _send(...) to return
+    //wait for _send(...) to return
     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
@@ -155,7 +154,7 @@ private:
         return std::string();
     }
 
-    while(_recv().size() != 0) sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
+    _flush(); //flush all input before waiting for a message
 
     int timeout = GPS_TIMEOUT_TRIES;
     while(timeout--) {
@@ -242,8 +241,21 @@ private:
     return false;
   }
 
-  gps_send_fn_t _send;
-  gps_recv_fn_t _recv;
+  uart_iface::sptr _uart;
+
+  void _flush(void){
+    while (not _uart->read_uart(0.0).empty()){
+        //NOP
+    }
+  }
+
+  std::string _recv(void){
+      return _uart->read_uart(GPS_TIMEOUT_DELAY_MS/1000.);
+  }
+
+  void _send(const std::string &buf){
+      return _uart->write_uart(buf);
+  }
 
   enum {
     GPS_TYPE_JACKSON_LABS,
@@ -259,6 +271,6 @@ private:
 /***********************************************************************
  * Public make function for the GPS control
  **********************************************************************/
-gps_ctrl::sptr gps_ctrl::make(gps_send_fn_t send, gps_recv_fn_t recv){
-    return sptr(new gps_ctrl_impl(send, recv));
+gps_ctrl::sptr gps_ctrl::make(uart_iface::sptr uart){
+    return sptr(new gps_ctrl_impl(uart));
 }

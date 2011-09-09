@@ -81,3 +81,49 @@ udp_simple::sptr udp_simple::make_broadcast(
 ){
     return sptr(new udp_simple_impl(addr, port, true, false /* bcast, no connect */));
 }
+
+/***********************************************************************
+ * Simple UART over UDP
+ **********************************************************************/
+#include <boost/thread/thread.hpp>
+class udp_simple_uart_impl : public uhd::uart_iface{
+public:
+    udp_simple_uart_impl(udp_simple::sptr udp){
+        _udp = udp;
+        _len = 0;
+        _off = 0;
+        this->write_uart(""); //send an empty packet to init
+    }
+
+    void write_uart(const std::string &buf){
+        _udp->send(asio::buffer(buf));
+    }
+
+    std::string read_uart(double timeout){
+        std::string line;
+        const boost::system_time exit_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout*1000));
+        do{
+            //drain anything in current buffer
+            while (_off < _len){
+                const char ch = _buf[_off]; _off++;
+                line += std::string(1, ch);
+                if (ch == '\n' or ch == '\r') return line;
+            }
+
+            //recv a new packet into the buffer
+            _len = _udp->recv(asio::buffer(_buf), std::max((exit_time - boost::get_system_time()).total_milliseconds()/1000., 0.0));
+            _off = 0;
+
+        } while (_len != 0);
+        return line;
+    }
+
+private:
+    udp_simple::sptr _udp;
+    size_t _len, _off;
+    boost::uint8_t _buf[udp_simple::mtu];
+};
+
+uhd::uart_iface::sptr udp_simple::make_uart(sptr udp){
+    return uart_iface::sptr(new udp_simple_uart_impl(udp));
+}

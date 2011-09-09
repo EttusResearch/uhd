@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/serial.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -60,6 +61,13 @@ public:
      * \param port a string representing the destination port
      */
     static sptr make_broadcast(const std::string &addr, const std::string &port);
+
+    /*!
+     * Make a UART interface from a UDP transport.
+     * \param udp the UDP transport object
+     * \return a new UART interface
+     */
+    static uart_iface::sptr make_uart(sptr udp);
 
     /*!
      * Send a single buffer.

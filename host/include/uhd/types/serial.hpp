@@ -184,17 +184,17 @@ namespace uhd{
 
         /*!
          * Write to a serial port.
-         * \param dev which UART to write to
          * \param buf the data to write
          */
-        virtual void write_uart(boost::uint8_t dev, const std::string &buf) = 0;
+        virtual void write_uart(const std::string &buf) = 0;
 
         /*!
          * Read from a serial port.
-         * \param dev which UART to read from
+         * Reads until complete line or timeout.
+         * \param timeout the timeout in seconds
          * \return the data read from the serial port
          */
-        virtual std::string read_uart(boost::uint8_t dev) = 0;
+        virtual std::string read_uart(double timeout) = 0;
     };
 
 } //namespace uhd

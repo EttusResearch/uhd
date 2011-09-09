@@ -201,7 +201,7 @@ send_pkt(
 
     //create a list of all buffers to copy
     const void *buffs[] = {&ctrl_word, &ehdr, buf0, buf1, buf2};
-    size_t lens[] = {sizeof(ctrl_word), sizeof(ehdr), len0, len1, len2};
+    size_t lens[] = {sizeof(ctrl_word), sizeof(ehdr), len0, len1, (len2 + 3) & ~3};
 
     //copy each buffer into the out buffer
     for (size_t i = 0; i < sizeof(buffs)/sizeof(buffs[0]); i++){

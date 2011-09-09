@@ -438,10 +438,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create gpsdo control objects
         ////////////////////////////////////////////////////////////////
         if (_mbc[mb].iface->mb_eeprom["gpsdo"] == "internal"){
-            _mbc[mb].gps = gps_ctrl::make(
-                _mbc[mb].iface->get_gps_write_fn(),
-                _mbc[mb].iface->get_gps_read_fn()
-            );
+            _mbc[mb].gps = gps_ctrl::make(udp_simple::make_uart(udp_simple::make_connected(
+                addr, BOOST_STRINGIZE(USRP2_UDP_UART_GPS_PORT)
+            )));
             if(_mbc[mb].gps->gps_detected()) {
                 BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors()){
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
@@ -624,8 +623,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //GPS installed: use external ref, time, and init time spec
         if (_mbc[mb].gps.get() and _mbc[mb].gps->gps_detected()){
+            UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
             _tree->access<std::string>(root / "time_source/value").set("external");
             _tree->access<std::string>(root / "clock_source/value").set("external");
+            UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
             _mbc[mb].time64->set_time_next_pps(time_spec_t(time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1)));
         }
     }

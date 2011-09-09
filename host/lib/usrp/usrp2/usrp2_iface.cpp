@@ -245,66 +245,6 @@ public:
     }
 
 /***********************************************************************
- * UART
- **********************************************************************/
-    void write_uart(boost::uint8_t dev, const std::string &buf){
-      //first tokenize the string into 20-byte substrings
-      boost::offset_separator f(20, 20, true, true);
-      boost::tokenizer<boost::offset_separator> tok(buf, f);
-      std::vector<std::string> queue(tok.begin(), tok.end());
-
-      BOOST_FOREACH(std::string item, queue) {
-        //setup the out data
-        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
-        out_data.id = htonl(USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO);
-        out_data.data.uart_args.dev = dev;
-        out_data.data.uart_args.bytes = item.size();
-
-        //limitation of uart transaction size
-        UHD_ASSERT_THROW(item.size() <= sizeof(out_data.data.uart_args.data));
-
-        //copy in the data
-        std::copy(item.begin(), item.end(), out_data.data.uart_args.data);
-
-        //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_UART);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE);
-      }
-    }
-
-    std::string read_uart(boost::uint8_t dev){
-      int readlen = 20;
-      std::string result;
-      while(readlen == 20) { //while we keep receiving full packets
-        //setup the out data
-        usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
-        out_data.id = htonl(USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO);
-        out_data.data.uart_args.dev = dev;
-        out_data.data.uart_args.bytes = 20;
-
-        //limitation of uart transaction size
-        //UHD_ASSERT_THROW(num_bytes <= sizeof(out_data.data.uart_args.data));
-
-        //send and recv
-        usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_UART);
-        UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE);
-        readlen = in_data.data.uart_args.bytes;
-
-        //copy out the data
-        result += std::string((const char *)in_data.data.uart_args.data, (size_t)readlen);
-      }
-      return result;
-    }
-    
-    gps_send_fn_t get_gps_write_fn(void) {
-        return boost::bind(&usrp2_iface_impl::write_uart, this, 2, _1); //2 is the GPS UART port on USRP2
-    }
-    
-    gps_recv_fn_t get_gps_read_fn(void) {
-        return boost::bind(&usrp2_iface_impl::read_uart, this, 2); //2 is the GPS UART port on USRP2
-    }
-
-/***********************************************************************
  * Send/Recv over control
  **********************************************************************/
     usrp2_ctrl_data_t ctrl_send_and_recv(

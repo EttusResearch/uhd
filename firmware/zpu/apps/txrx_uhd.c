@@ -72,12 +72,6 @@ static void handle_udp_data_packet(
         sr_tx_ctrl->cyc_per_up = 0;
         break;
 
-    case USRP2_UDP_UART_BASE_PORT+0:
-    case USRP2_UDP_UART_BASE_PORT+1:
-    case USRP2_UDP_UART_BASE_PORT+2:
-        turn_off_uart(src.port-USRP2_UDP_UART_BASE_PORT);
-        break;
-
     default: return;
     }
 
@@ -116,7 +110,7 @@ static void handle_udp_ctrl_packet(
 
     //ensure that the protocol versions match
     if (payload_len >= sizeof(uint32_t) && ctrl_data_in->proto_ver != USRP2_FW_COMPAT_NUM){
-        printf("!Error in control packet handler: Expected compatibility number %d, but got %d\n",
+        if (ctrl_data_in->proto_ver) printf("!Error in control packet handler: Expected compatibility number %d, but got %d\n",
             USRP2_FW_COMPAT_NUM, ctrl_data_in->proto_ver
         );
         ctrl_data_in_id = USRP2_CTRL_ID_WAZZUP_BRO;
@@ -228,32 +222,6 @@ static void handle_udp_ctrl_packet(
         break;
 
     /*******************************************************************
-     * UART Control
-     ******************************************************************/
-/*
-    case USRP2_CTRL_ID_SO_LIKE_CAN_YOU_READ_THIS_UART_BRO:{
-      //executes a readline()-style read, up to num_bytes long, up to and including newline
-      int num_bytes = ctrl_data_in->data.uart_args.bytes;
-      if(num_bytes > 20) num_bytes = 20;
-      num_bytes = fngets_noblock(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_out.data.uart_args.data, num_bytes);
-      ctrl_data_out.id = USRP2_CTRL_ID_I_HELLA_READ_THAT_UART_DUDE;
-      ctrl_data_out.data.uart_args.bytes = num_bytes;
-      break;
-    }
-
-    case USRP2_CTRL_ID_HEY_WRITE_THIS_UART_FOR_ME_BRO:{
-      int num_bytes = ctrl_data_in->data.uart_args.bytes;
-      if(num_bytes > 20) num_bytes = 20;
-      //before we write to the UART, we flush the receive buffer
-      //this assumes that we're interested in the reply
-      hal_uart_rx_flush(ctrl_data_in->data.uart_args.dev);
-      fnputstr(ctrl_data_in->data.uart_args.dev, (char *) ctrl_data_in->data.uart_args.data, num_bytes);
-      ctrl_data_out.id = USRP2_CTRL_ID_MAN_I_TOTALLY_WROTE_THAT_UART_DUDE;
-      ctrl_data_out.data.uart_args.bytes = num_bytes;
-      break;
-    }
-*/
-    /*******************************************************************
      * Echo test
      ******************************************************************/
     case USRP2_CTRL_ID_HOLLER_AT_ME_BRO:
@@ -347,10 +315,9 @@ main(void)
   
 #ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);
-  int i;
-  for(i=0; i<NUM_UARTS; i++)
-    register_udp_listener(USRP2_UDP_UART_BASE_PORT+i, handle_uart_data_packet);
 #endif
+
+  udp_uart_init(USRP2_UDP_UART_BASE_PORT); //setup uart messaging
 
   //3) set the routing mode to slave to set defaults
   pkt_ctrl_set_routing_mode(PKT_CTRL_ROUTING_MODE_SLAVE);
@@ -368,10 +335,7 @@ main(void)
         pkt_ctrl_release_incoming_buffer();
     }
 
-#ifdef USRP2P
-    //look for incoming data on the four UARTs and handle it
-    poll_uarts();
-#endif
+    udp_uart_poll(); //uart message handling
 
     pic_interrupt_handler();
     /*
