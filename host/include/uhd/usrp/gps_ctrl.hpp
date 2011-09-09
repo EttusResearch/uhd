@@ -27,7 +27,7 @@
 
 namespace uhd{
 
-class gps_ctrl : boost::noncopyable{
+class UHD_API gps_ctrl : boost::noncopyable{
 public:
   typedef boost::shared_ptr<gps_ctrl> sptr;
 
