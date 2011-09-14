@@ -368,7 +368,6 @@ public:
             case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
             default: clock_source = "unknown";
             }
-            if (clock_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) clock_source = "_external_";
             _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").set(clock_source);
 
             //set the time source
@@ -379,6 +378,7 @@ public:
             case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
             default: time_source = "unknown";
             }
+            if (clock_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) time_source = "_external_";
             _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").set(time_source);
             return;
         }
