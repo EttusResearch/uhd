@@ -203,7 +203,7 @@ class multi_usrp_impl : public multi_usrp{
 public:
     multi_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr);
-        _tree = (*_dev)[0].as<property_tree::sptr>();
+        _tree = _dev->get_tree();
     }
 
     device::sptr get_device(void){
