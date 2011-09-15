@@ -96,7 +96,8 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
         }
     }
     //------------------------------------------------------------------
-    device_addrs_t dev_addrs;
+    device_addrs_t dev_addrs(1); //must be at least one (obviously)
+    std::vector<std::string> global_keys; //keys that apply to all (no numerical suffix)
     BOOST_FOREACH(const std::string &key, dev_addr.keys()){
         boost::cmatch matches;
         if (not boost::regex_match(key.c_str(), matches, boost::regex("^(\\D+)(\\d*)$"))){
@@ -104,9 +105,20 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
         }
         std::string key_part(matches[1].first, matches[1].second);
         std::string num_part(matches[2].first, matches[2].second);
-        size_t num = (num_part.empty())? 0 : boost::lexical_cast<size_t>(num_part);
+        if (num_part.empty()){ //no number? save it for later
+            global_keys.push_back(key);
+            continue;
+        }
+        const size_t num = boost::lexical_cast<size_t>(num_part);
         dev_addrs.resize(std::max(num+1, dev_addrs.size()));
         dev_addrs[num][key_part] = dev_addr[key];
+    }
+
+    //copy the global settings across all device addresses
+    BOOST_FOREACH(device_addr_t &my_dev_addr, dev_addrs){
+        BOOST_FOREACH(const std::string &global_key, global_keys){
+            my_dev_addr[global_key] = dev_addr[global_key];
+        }
     }
     return dev_addrs;
 }
