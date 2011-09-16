@@ -32,7 +32,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, ant, subdev;
+    std::string args, ant, subdev, ref;
     size_t num_bins;
     double rate, freq, gain, bw, frame_rate;
     float ref_lvl, dyn_rng;
@@ -54,6 +54,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("frame-rate", po::value<double>(&frame_rate)->default_value(5), "frame rate of the display (fps)")
         ("ref-lvl", po::value<float>(&ref_lvl)->default_value(0), "reference level for the display (dB)")
         ("dyn-rng", po::value<float>(&dyn_rng)->default_value(60), "dynamic range for the display (dB)")
+        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -70,7 +71,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
-    //always select the subdevice first, the channel mapping affects the other settings
+    //Lock mboard clocks
+    if (ref == "MIMO") {
+        uhd::clock_config_t clock_config;
+        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
+        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
+        usrp->set_clock_config(clock_config, 0);
+    }
+    else if (ref == "EXTERNAL") {
+        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
+    }
+    else if (ref == "INTERNAL") {
+        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
+    }
+
+     //always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
 
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
@@ -111,6 +126,26 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
     boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+
+    //Check Ref and LO Lock detect
+    std::vector<std::string> sensor_names;
+    sensor_names = usrp->get_rx_sensor_names(0);
+    if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
+        uhd::sensor_value_t lo_locked = usrp->get_rx_sensor("lo_locked",0);
+        std::cout << boost::format("Checking RX: %s ...") % lo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(lo_locked.to_bool());
+    }
+    sensor_names = usrp->get_mboard_sensor_names(0);
+    if ((ref == "MIMO") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
+        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
+        std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(mimo_locked.to_bool());
+    }
+    if ((ref == "EXTERNAL") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
+        std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(ref_locked.to_bool());
+    }
 
     //allocate recv buffer and metatdata
     uhd::rx_metadata_t md;

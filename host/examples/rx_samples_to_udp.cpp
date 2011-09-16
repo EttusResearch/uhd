@@ -19,6 +19,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/transport/udp_simple.hpp>
+#include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -31,9 +32,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args;
+    std::string args, file, ant, subdev, ref;
     size_t total_num_samps;
-    double rate, freq, gain;
+    double rate, freq, gain, bw;
     std::string addr, port;
 
     //setup the program options
@@ -45,8 +46,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
         ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
+        ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
+        ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
+        ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
         ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
+        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -64,6 +69,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
+    //Lock mboard clocks
+    if (ref == "MIMO") {
+        uhd::clock_config_t clock_config;
+        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
+        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
+        usrp->set_clock_config(clock_config, 0);
+    }
+    else if (ref == "EXTERNAL") {
+        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
+    }
+    else if (ref == "INTERNAL") {
+        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
+    }
+
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_rx_rate(rate);
@@ -79,7 +98,37 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_rx_gain(gain);
     std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
 
+    //set the IF filter bandwidth
+    if (vm.count("bw")){
+        std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % bw << std::endl;
+        usrp->set_rx_bandwidth(bw);
+        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % usrp->get_rx_bandwidth() << std::endl << std::endl;
+    }
+
+    //set the antenna
+    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+
     boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+
+    //Check Ref and LO Lock detect
+    std::vector<std::string> sensor_names;
+    sensor_names = usrp->get_rx_sensor_names(0);
+    if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
+        uhd::sensor_value_t lo_locked = usrp->get_rx_sensor("lo_locked",0);
+        std::cout << boost::format("Checking RX: %s ...") % lo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(lo_locked.to_bool());
+    }
+    sensor_names = usrp->get_mboard_sensor_names(0);
+    if ((ref == "MIMO") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
+        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
+        std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(mimo_locked.to_bool());
+    }
+    if ((ref == "EXTERNAL") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
+        std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(ref_locked.to_bool());
+    }
 
     //setup streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);

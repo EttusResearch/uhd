@@ -19,6 +19,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
@@ -89,7 +90,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, wave_type, ant, subdev;
+    std::string args, wave_type, ant, subdev, ref;
     size_t spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
@@ -109,6 +110,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
+        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -124,6 +126,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    //Lock mboard clocks
+    if (ref == "MIMO") {
+        uhd::clock_config_t clock_config;
+        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
+        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
+        usrp->set_clock_config(clock_config, 0);
+    }
+    else if (ref == "EXTERNAL") {
+        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
+    }
+    else if (ref == "INTERNAL") {
+        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
+    }
 
     //always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
@@ -199,6 +215,26 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
+
+    //Check Ref and LO Lock detect
+    std::vector<std::string> sensor_names;
+    sensor_names = usrp->get_tx_sensor_names(0);
+    if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
+        uhd::sensor_value_t lo_locked = usrp->get_tx_sensor("lo_locked",0);
+        std::cout << boost::format("Checking TX: %s ...") % lo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(lo_locked.to_bool());
+    }
+    sensor_names = usrp->get_mboard_sensor_names(0);
+    if ((ref == "MIMO") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
+        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
+        std::cout << boost::format("Checking TX: %s ...") % mimo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(mimo_locked.to_bool());
+    }
+    if ((ref == "EXTERNAL") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
+        std::cout << boost::format("Checking TX: %s ...") % ref_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(ref_locked.to_bool());
+    }
 
     std::signal(SIGINT, &sig_int_handler);
     std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
