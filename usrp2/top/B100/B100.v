@@ -24,7 +24,7 @@ module B100
 
    // GPIF
    inout [15:0] GPIF_D, input [3:0] GPIF_CTL, output [3:0] GPIF_RDY,
-   input [1:0] GPIF_ADR, input GPIF_CS, input GPIF_SLOE, input GPIF_PKTEND,
+   input [1:0] GPIF_ADR, output GPIF_CS, output GPIF_SLOE, output GPIF_PKTEND,
    input IFCLK,
    
    inout SDA_FPGA, inout SCL_FPGA, // I2C
@@ -157,7 +157,7 @@ module B100
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_txd(), .debug_rxd(1'b1),
 		     .gpif_d(GPIF_D), .gpif_ctl(GPIF_CTL), .gpif_rdy(GPIF_RDY),
-		     //.gpif_misc({GPIF_ADR[1:0],GPIF_CS,GPIF_SLOE,GPIF_PKTEND}),
+		     .gpif_misc({GPIF_CS,GPIF_SLOE,GPIF_PKTEND}),
 		     .gpif_clk(IFCLK),
 
 		     .db_sda(SDA_FPGA), .db_scl(SCL_FPGA),
