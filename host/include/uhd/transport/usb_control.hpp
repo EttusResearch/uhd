@@ -32,8 +32,9 @@ public:
      * the host to device using the Default Control Pipe.
      *
      * \param handle a device handle that uniquely identifies a USB device
+     * \param interface the USB interface number for the control transport
      */
-    static sptr make(usb_device_handle::sptr handle);
+    static sptr make(usb_device_handle::sptr handle, const size_t interface);
 
     /*!
      * Submit a USB device request:

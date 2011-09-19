@@ -159,8 +159,10 @@ public:
 
     libusb_zero_copy_impl(
         libusb::device_handle::sptr handle,
-        size_t recv_endpoint,
-        size_t send_endpoint,
+        const size_t recv_interface,
+        const size_t recv_endpoint,
+        const size_t send_interface,
+        const size_t send_endpoint,
         const device_addr_t &hints
     ):
         _handle(handle),
@@ -173,8 +175,8 @@ public:
         _next_recv_buff_index(0),
         _next_send_buff_index(0)
     {
-        _handle->claim_interface(2 /*in interface*/);
-        _handle->claim_interface(1 /*out interface*/);
+        _handle->claim_interface(recv_interface);
+        _handle->claim_interface(send_interface);
 
         //allocate libusb transfer structs and managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
@@ -280,14 +282,16 @@ private:
  **********************************************************************/
 usb_zero_copy::sptr usb_zero_copy::make(
     usb_device_handle::sptr handle,
-    size_t recv_endpoint,
-    size_t send_endpoint,
+    const size_t recv_interface,
+    const size_t recv_endpoint,
+    const size_t send_interface,
+    const size_t send_endpoint,
     const device_addr_t &hints
 ){
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
         boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
     ));
     return sptr(new libusb_zero_copy_impl(
-        dev_handle, recv_endpoint, send_endpoint, hints
+        dev_handle, recv_interface, recv_endpoint, send_interface, send_endpoint, hints
     ));
 }

@@ -46,15 +46,19 @@ public:
      * The underlying implementation may be platform specific.
      *
      * \param handle a device handle that uniquely identifying the device
+     * \param recv_interface an integer specifiying an IN interface number
      * \param recv_endpoint an integer specifiying an IN endpoint number
+     * \param send_interface an integer specifiying an OUT interface number
      * \param send_endpoint an integer specifiying an OUT endpoint number
      * \param hints optional parameters to pass to the underlying transport
      * \return a new zero copy usb object
      */
     static sptr make(
         usb_device_handle::sptr handle,
-        size_t recv_endpoint,
-        size_t send_endpoint,
+        const size_t recv_interface,
+        const size_t recv_endpoint,
+        const size_t send_interface,
+        const size_t send_endpoint,
         const device_addr_t &hints = device_addr_t()
     );
 

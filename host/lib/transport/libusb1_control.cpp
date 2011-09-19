@@ -28,10 +28,10 @@ const int libusb_timeout = 0;
  **********************************************************************/
 class libusb_control_impl : public usb_control {
 public:
-    libusb_control_impl(libusb::device_handle::sptr handle):
+    libusb_control_impl(libusb::device_handle::sptr handle, const size_t interface):
         _handle(handle)
     {
-        _handle->claim_interface(0 /* control interface */);
+        _handle->claim_interface(interface);
     }
 
     ssize_t submit(boost::uint8_t request_type,
@@ -60,8 +60,8 @@ private:
 /***********************************************************************
  * USB control public make functions
  **********************************************************************/
-usb_control::sptr usb_control::make(usb_device_handle::sptr handle){
+usb_control::sptr usb_control::make(usb_device_handle::sptr handle, const size_t interface){
     return sptr(new libusb_control_impl(libusb::device_handle::get_cached_handle(
         boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
-    )));
+    ), interface));
 }

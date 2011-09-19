@@ -87,7 +87,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
         UHD_LOG << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 
         usb_control::sptr control;
-        try{control = usb_control::make(handle);}
+        try{control = usb_control::make(handle, 0);}
         catch(const uhd::exception &){continue;} //ignore claimed
 
         fx2_ctrl::make(control)->usrp_load_firmware(usrp1_fw_image);
@@ -99,7 +99,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
 
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
         usb_control::sptr control;
-        try{control = usb_control::make(handle);}
+        try{control = usb_control::make(handle, 0);}
         catch(const uhd::exception &){continue;} //ignore claimed
 
         fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
@@ -161,13 +161,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // Create controller objects
     ////////////////////////////////////////////////////////////////////
     //usb_control::sptr usb_ctrl = usb_control::make(handle);
-    _fx2_ctrl = fx2_ctrl::make(usb_control::make(handle));
+    _fx2_ctrl = fx2_ctrl::make(usb_control::make(handle, 0));
     _fx2_ctrl->usrp_load_fpga(usrp1_fpga_image);
     _fx2_ctrl->usrp_init();
     _data_transport = usb_zero_copy::make(
         handle,        // identifier
-        6,             // IN endpoint
-        2,             // OUT endpoint
+        2, 6,          // IN interface, endpoint
+        1, 2,          // OUT interface, endpoint
         device_addr    // param hints
     );
     _iface = usrp1_iface::make(_fx2_ctrl);

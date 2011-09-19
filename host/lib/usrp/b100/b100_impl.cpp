@@ -83,7 +83,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
         UHD_LOG << "the  firmware image: " << b100_fw_image << std::endl;
 
         usb_control::sptr control;
-        try{control = usb_control::make(handle);}
+        try{control = usb_control::make(handle, 0);}
         catch(const uhd::exception &){continue;} //ignore claimed
 
         fx2_ctrl::make(control)->usrp_load_firmware(b100_fw_image);
@@ -100,7 +100,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
 
         //Attempt to read the name from the EEPROM and perform filtering.
         try{
-            usb_control::sptr control = usb_control::make(handle);
+            usb_control::sptr control = usb_control::make(handle, 0);
             fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
             const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, mboard_eeprom_t::MAP_B000);
             new_addr["name"] = mb_eeprom["name"];
@@ -159,7 +159,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     UHD_ASSERT_THROW(handle.get() != NULL); //better be found
 
     //create control objects
-    usb_control::sptr fx2_transport = usb_control::make(handle);
+    usb_control::sptr fx2_transport = usb_control::make(handle, 0);
     _fx2_ctrl = fx2_ctrl::make(fx2_transport);
     this->check_fw_compat(); //check after making fx2
     //-- setup clock after making fx2 and before loading fpga --//
@@ -175,8 +175,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     _ctrl_transport = usb_zero_copy::make(
         handle,
-        8,
-        4,
+        4, 8, //interface, endpoint
+        3, 4, //interface, endpoint
         ctrl_xport_args
     );
 
@@ -216,8 +216,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _data_transport = usb_zero_copy::make_wrapper(
         usb_zero_copy::make(
             handle,        // identifier
-            6,             // IN endpoint
-            2,             // OUT endpoint
+            2, 6,          // IN interface, endpoint
+            1, 2,          // OUT interface, endpoint
             data_xport_args    // param hints
         )
     );
