@@ -45,6 +45,11 @@ public:
         viking_marauder = task::make(boost::bind(&b100_ctrl_impl::viking_marauder_loop, this));
     }
 
+    ~b100_ctrl_impl(void){
+        //stop the marauder first so it cant access deconstructed objects
+        viking_marauder.reset();
+    }
+
     int write(boost::uint32_t addr, const ctrl_data_t &data);
     ctrl_data_t read(boost::uint32_t addr, size_t len);
 
