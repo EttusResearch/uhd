@@ -333,10 +333,8 @@ public:
      * RX Dboard Clock Control (output 9, divider 3)
      **********************************************************************/
     void enable_rx_dboard_clock(bool enb){
-        _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_CMOS;
-        _ad9522_regs.out9_cmos_configuration = (enb)?
-            ad9522_regs_t::OUT9_CMOS_CONFIGURATION_B_ON :
-            ad9522_regs_t::OUT9_CMOS_CONFIGURATION_OFF;
+        _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_LVDS;
+        _ad9522_regs.out9_lvds_power_down = !enb;
         this->send_reg(0x0F9);
         this->latch_regs();
     }
@@ -371,10 +369,8 @@ public:
      * TX Dboard Clock Control (output 6, divider 2)
      **********************************************************************/
     void enable_tx_dboard_clock(bool enb){
-        _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_CMOS;
-        _ad9522_regs.out6_cmos_configuration = (enb)?
-            ad9522_regs_t::OUT6_CMOS_CONFIGURATION_B_ON :
-            ad9522_regs_t::OUT6_CMOS_CONFIGURATION_OFF;
+        _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_LVDS;
+        _ad9522_regs.out6_lvds_power_down = !enb;
         this->send_reg(0x0F6);
         this->latch_regs();
     }
