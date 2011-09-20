@@ -18,6 +18,7 @@
 #include "validate_subdev_spec.hpp"
 #define SRPH_DONT_CHECK_SEQUENCE
 #include "../../transport/super_recv_packet_handler.hpp"
+#define SSPH_DONT_PAD_TO_ONE
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp1_calc_mux.hpp"
 #include "fpga_regs_standard.h"
