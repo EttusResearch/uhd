@@ -22,6 +22,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/device.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/otw_type.hpp>
@@ -173,9 +174,11 @@ public:
         ////////////////////////////////////////////////////////////////
 
             //TODO remove this code when sample counts of zero are supported by hardware
+            #ifndef SSPH_DONT_PAD_TO_ONE
             if (nsamps_per_buff == 0) return send_one_packet(
                 _zero_buffs, 1, if_packet_info, io_type, timeout
             ) & 0x0;
+            #endif
 
             return send_one_packet(
                 buffs,
