@@ -176,8 +176,8 @@ void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        UHD_ASSERT_THROW(val.as<std::string>() == std::string(""));
-        return;
+        if (val.as<std::string>().empty()) return;
+        throw uhd::value_error("Unknown Daughterboard: No selectable antenna");
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
@@ -276,8 +276,8 @@ void unknown_tx::tx_set(const wax::obj &key_, const wax::obj &val){
         return;
 
     case SUBDEV_PROP_ANTENNA:
-        UHD_ASSERT_THROW(val.as<std::string>() == std::string(""));
-        return;
+        if (val.as<std::string>().empty()) return;
+        throw uhd::value_error("Unknown Daughterboard: No selectable antenna");
 
     case SUBDEV_PROP_FREQ:
         return; // it wont do you much good, but you can set it
