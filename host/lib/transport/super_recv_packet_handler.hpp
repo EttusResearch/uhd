@@ -578,6 +578,13 @@ private:
         metadata.fragment_offset = info.fragment_offset_in_samps;
         info.fragment_offset_in_samps += nsamps_to_copy; //set for next call
 
+        //done with buffers? this action releases buffers in-order
+        if (not metadata.more_fragments){
+            BOOST_FOREACH(per_buffer_info_type &buff_info, info){
+                buff_info.buff.reset(); //effectively a release
+            }
+        }
+
         return nsamps_to_copy_per_io_buff;
     }
 };
