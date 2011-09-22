@@ -46,9 +46,12 @@ using namespace boost::assign;
  **********************************************************************/
 static const freq_range_t dbsrx_freq_range(0.8e9, 2.4e9);
 
+//Multiplied by 2.0 for conversion to complex bandpass from lowpass
+static const freq_range_t dbsrx_bandwidth_range(2.0*4.0e6, 2.0*33.0e6);
+
 static const freq_range_t dbsrx_pfd_freq_range(0.15e6, 2.01e6);
 
-static const prop_names_t dbsrx_antennas = list_of("J3");
+static const std::vector<std::string> dbsrx_antennas = list_of("J3");
 
 static const uhd::dict<std::string, gain_range_t> dbsrx_gain_ranges = map_list_of
     ("GC1", gain_range_t(0, 56, 0.5))
@@ -63,9 +66,6 @@ public:
     dbsrx(ctor_args_t args);
     ~dbsrx(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     double _lo_freq;
     double _bandwidth;
@@ -76,9 +76,9 @@ private:
         return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x65 : 0x67;
     };
 
-    void set_lo_freq(double target_freq);
-    void set_gain(double gain, const std::string &name);
-    void set_bandwidth(double bandwidth);
+    double set_lo_freq(double target_freq);
+    double set_gain(double gain, const std::string &name);
+    double set_bandwidth(double bandwidth);
 
     void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
         start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0x5));
@@ -136,10 +136,10 @@ private:
     }
 
     /*!
-     * Is the LO locked?
-     * \return true for locked
+     * Get the lock detect status of the LO.
+     * \return sensor for locked
      */
-    bool get_locked(void){
+    sensor_value_t get_locked(void){
         read_reg(0x0, 0x0);
 
         //mask and return lock detect
@@ -149,9 +149,8 @@ private:
             "DBSRX: locked %d"
         ) % locked << std::endl;
 
-        return locked;
+        return sensor_value_t("LO", locked, "locked", "unlocked");
     }
-
 };
 
 /***********************************************************************
@@ -190,30 +189,58 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
                 "Please see the daughterboard app notes" 
                 ) % this->get_rx_id().to_pp_string();
 
+    //send initial register settings
+    this->send_reg(0x0, 0x5);
+
+    //set defaults for LO, gains, and filter bandwidth
+    _bandwidth = 33e6;
+
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name")
+        .set(get_rx_id().to_pp_string());
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&dbsrx::get_locked, this));
+    BOOST_FOREACH(const std::string &name, dbsrx_gain_ranges.keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&dbsrx::set_gain, this, _1, name))
+            .set(dbsrx_gain_ranges[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(dbsrx_gain_ranges[name]);
+    }
+    this->get_rx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&dbsrx::set_lo_freq, this, _1))
+        .set(dbsrx_freq_range.start());
+    this->get_rx_subtree()->create<meta_range_t>("freq/range")
+        .set(dbsrx_freq_range);
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .set(dbsrx_antennas.at(0));
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(dbsrx_antennas);
+    this->get_rx_subtree()->create<std::string>("connection")
+        .set("IQ");
+    this->get_rx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value")
+        .coerce(boost::bind(&dbsrx::set_bandwidth, this, _1))
+        .set(2.0*_bandwidth); //_bandwidth in lowpass, convert to complex bandpass
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(dbsrx_bandwidth_range);
+
     //enable only the clocks we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions and atr controls (identically)
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0); // All unused in atr
     if (this->get_iface()->get_special_props().soft_clock_divider){
-        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x1); // GPIO0 is clock
+        this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x1); // GPIO0 is clock when on USRP1
     }
     else{
         this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x0); // All Inputs
     }
-
-    //send initial register settings
-    this->send_reg(0x0, 0x5);
-
-    //set defaults for LO, gains, and filter bandwidth
-    _bandwidth = 33e6;
-    set_lo_freq(dbsrx_freq_range.start());
-
-    BOOST_FOREACH(const std::string &name, dbsrx_gain_ranges.keys()){
-        set_gain(dbsrx_gain_ranges[name].start(), name);
-    }
-
-    set_bandwidth(33e6); // default bandwidth from datasheet
 }
 
 dbsrx::~dbsrx(void){
@@ -223,7 +250,7 @@ dbsrx::~dbsrx(void){
 /***********************************************************************
  * Tuning
  **********************************************************************/
-void dbsrx::set_lo_freq(double target_freq){
+double dbsrx::set_lo_freq(double target_freq){
     target_freq = dbsrx_freq_range.clip(target_freq);
 
     double actual_freq=0.0, pfd_freq=0.0, ref_clock=0.0;
@@ -398,6 +425,8 @@ void dbsrx::set_lo_freq(double target_freq){
 
     if (update_filter_settings) set_bandwidth(_bandwidth);
     get_locked();
+
+    return _lo_freq;
 }
 
 /***********************************************************************
@@ -456,7 +485,7 @@ static double gain_to_gc1_rfvga_dac(double &gain){
     return dac_volts;
 }
 
-void dbsrx::set_gain(double gain, const std::string &name){
+double dbsrx::set_gain(double gain, const std::string &name){
     assert_has(dbsrx_gain_ranges.keys(), name, "dbsrx gain name");
     if (name == "GC2"){
         _max2118_write_regs.gc2 = gain_to_gc2_vga_reg(gain);
@@ -468,14 +497,19 @@ void dbsrx::set_gain(double gain, const std::string &name){
     }
     else UHD_THROW_INVALID_CODE_PATH();
     _gains[name] = gain;
+
+    return gain;
 }
 
 /***********************************************************************
  * Bandwidth Handling
  **********************************************************************/
-void dbsrx::set_bandwidth(double bandwidth){
+double dbsrx::set_bandwidth(double bandwidth){
+    //convert complex bandpass to lowpass bandwidth
+    bandwidth = bandwidth/2.0;
+
     //clip the input
-    bandwidth = uhd::clip<double>(bandwidth, 4e6, 33e6);
+    bandwidth = dbsrx_bandwidth_range.clip(bandwidth);
 
     double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     
@@ -492,109 +526,7 @@ void dbsrx::set_bandwidth(double bandwidth){
     ) % (_bandwidth/1e6) % int(_max2118_write_regs.m_divider) % int(_max2118_write_regs.f_dac) << std::endl;
 
     this->send_reg(0x3, 0x4);
+
+    //convert lowpass back to complex bandpass bandwidth
+    return 2.0*_bandwidth;
 }
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void dbsrx::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_gains.keys(), key.name, "dbsrx gain name");
-        val = _gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(dbsrx_gain_ranges.keys(), key.name, "dbsrx gain name");
-        val = dbsrx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(dbsrx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = dbsrx_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = dbsrx_antennas.at(0);
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = dbsrx_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*_bandwidth; //_bandwidth is low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void dbsrx::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        assert_has(dbsrx_antennas, val.as<std::string>(), "DBSRX antenna name");
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        this->set_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-

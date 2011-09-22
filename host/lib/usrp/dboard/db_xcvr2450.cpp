@@ -76,7 +76,22 @@ static const freq_range_t xcvr_freq_range = list_of
     (range_t(4.9e9, 6.0e9))
 ;
 
-static const prop_names_t xcvr_antennas = list_of("J1")("J2");
+//Multiplied by 2.0 for conversion to complex bandpass from lowpass
+static const freq_range_t xcvr_tx_bandwidth_range = list_of
+    (range_t(2.0*12e6))
+    (range_t(2.0*18e6))
+    (range_t(2.0*24e6))
+;
+
+//Multiplied by 2.0 for conversion to complex bandpass from lowpass
+static const freq_range_t xcvr_rx_bandwidth_range = list_of
+    (range_t(2.0*0.9*7.5e6, 2.0*1.1*7.5e6))
+    (range_t(2.0*0.9*9.5e6, 2.0*1.1*9.5e6))
+    (range_t(2.0*0.9*14e6,  2.0*1.1*14e6))
+    (range_t(2.0*0.9*18e6,  2.0*1.1*18e6))
+;
+
+static const std::vector<std::string> xcvr_antennas = list_of("J1")("J2");
 
 static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges = map_list_of
     ("VGA", gain_range_t(0, 30, 0.5))
@@ -99,12 +114,6 @@ public:
     xcvr2450(ctor_args_t args);
     ~xcvr2450(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     double _lo_freq;
     double _rx_bandwidth, _tx_bandwidth;
@@ -113,14 +122,14 @@ private:
     int _ad9515div;
     max2829_regs_t _max2829_regs;
 
-    void set_lo_freq(double target_freq);
-    void set_lo_freq_core(double target_freq);
+    double set_lo_freq(double target_freq);
+    double set_lo_freq_core(double target_freq);
     void set_tx_ant(const std::string &ant);
     void set_rx_ant(const std::string &ant);
-    void set_tx_gain(double gain, const std::string &name);
-    void set_rx_gain(double gain, const std::string &name);
-    void set_rx_bandwidth(double bandwidth);
-    void set_tx_bandwidth(double bandwidth);
+    double set_tx_gain(double gain, const std::string &name);
+    double set_rx_gain(double gain, const std::string &name);
+    double set_rx_bandwidth(double bandwidth);
+    double set_tx_bandwidth(double bandwidth);
 
     void update_atr(void);
     void spi_reset(void);
@@ -139,18 +148,19 @@ private:
     static bool is_highband(double freq){return freq > 3e9;}
 
     /*!
-     * Is the LO locked?
-     * \return true for locked
+     * Get the lock detect status of the LO.
+     * \return sensor for locked
      */
-    bool get_locked(void){
-        return (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & LOCKDET_RXIO) != 0;
+    sensor_value_t get_locked(void){
+        const bool locked = (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & LOCKDET_RXIO) != 0;
+        return sensor_value_t("LO", locked, "locked", "unlocked");
     }
 
     /*!
      * Read the RSSI from the aux adc
-     * \return the rssi in dB
+     * \return the rssi sensor in dBm
      */
-    double get_rssi(void){
+    sensor_value_t get_rssi(void){
         //*FIXME* RSSI depends on LNA Gain Setting (datasheet pg 16 top middle chart)
         double max_power = 0.0;
         switch(_max2829_regs.rx_lna_gain){
@@ -165,7 +175,8 @@ private:
         static const double rssi_dyn_range = 60;
         //calculate the rssi from the voltage
         double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
-        return max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+        double rssi = max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
+        return sensor_value_t("RSSI", rssi, "dBm");
     }
 };
 
@@ -185,15 +196,6 @@ UHD_STATIC_BLOCK(reg_xcvr2450_dboard){
  * Structors
  **********************************************************************/
 xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
-    //enable only the clocks we need
-    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
-
-    //set the gpio directions and atr controls (identically)
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
-
     spi_reset(); //prepare the spi
 
     _rx_bandwidth = 9.5e6;
@@ -222,16 +224,88 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
         this->send_reg(reg);
     }
 
-    //set defaults for LO, gains, antennas
-    set_lo_freq(2.45e9);
-    set_rx_ant(xcvr_antennas.at(0));
-    set_tx_ant(xcvr_antennas.at(1));
-    BOOST_FOREACH(const std::string &name, xcvr_tx_gain_ranges.keys()){
-        set_tx_gain(xcvr_tx_gain_ranges[name].start(), name);
-    }
+    ////////////////////////////////////////////////////////////////////
+    // Register RX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name")
+        .set(get_rx_id().to_pp_string());
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&xcvr2450::get_locked, this));
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
+        .publish(boost::bind(&xcvr2450::get_rssi, this));
     BOOST_FOREACH(const std::string &name, xcvr_rx_gain_ranges.keys()){
-        set_rx_gain(xcvr_rx_gain_ranges[name].start(), name);
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&xcvr2450::set_rx_gain, this, _1, name))
+            .set(xcvr_rx_gain_ranges[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(xcvr_rx_gain_ranges[name]);
     }
+    this->get_rx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&xcvr2450::set_lo_freq, this, _1))
+        .set(double(2.45e9));
+    this->get_rx_subtree()->create<meta_range_t>("freq/range")
+        .set(xcvr_freq_range);
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&xcvr2450::set_rx_ant, this, _1))
+        .set(xcvr_antennas.at(0));
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(xcvr_antennas);
+    this->get_rx_subtree()->create<std::string>("connection")
+        .set("IQ");
+    this->get_rx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value")
+        .coerce(boost::bind(&xcvr2450::set_rx_bandwidth, this, _1)) //complex bandpass bandwidth 
+        .set(2.0*_rx_bandwidth); //_rx_bandwidth in lowpass, convert to complex bandpass
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(xcvr_rx_bandwidth_range);
+
+    ////////////////////////////////////////////////////////////////////
+    // Register TX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<std::string>("name")
+        .set(get_tx_id().to_pp_string());
+    this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&xcvr2450::get_locked, this));
+    BOOST_FOREACH(const std::string &name, xcvr_rx_gain_ranges.keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&xcvr2450::set_rx_gain, this, _1, name))
+            .set(xcvr_rx_gain_ranges[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(xcvr_rx_gain_ranges[name]);
+    }
+    this->get_tx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&xcvr2450::set_lo_freq, this, _1))
+        .set(double(2.45e9));
+    this->get_tx_subtree()->create<meta_range_t>("freq/range")
+        .set(xcvr_freq_range);
+    this->get_tx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&xcvr2450::set_tx_ant, this, _1))
+        .set(xcvr_antennas.at(1));
+    this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(xcvr_antennas);
+    this->get_tx_subtree()->create<std::string>("connection")
+        .set("IQ");
+    this->get_tx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_tx_subtree()->create<bool>("use_lo_offset")
+        .set(true);
+    this->get_tx_subtree()->create<double>("bandwidth/value")
+        .coerce(boost::bind(&xcvr2450::set_tx_bandwidth, this, _1)) //complex bandpass bandwidth
+        .set(2.0*_tx_bandwidth); //_tx_bandwidth in lowpass, convert to complex bandpass
+    this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(xcvr_tx_bandwidth_range);
+
+    //enable only the clocks we need
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
+
+    //set the gpio directions and atr controls (identically)
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
+    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TXIO_MASK);
+    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RXIO_MASK);
 }
 
 xcvr2450::~xcvr2450(void){
@@ -249,6 +323,9 @@ void xcvr2450::spi_reset(void){
     boost::this_thread::sleep(boost::posix_time::milliseconds(10));
 }
 
+/***********************************************************************
+ * Update ATR regs which change with Antenna or Freq
+ **********************************************************************/
 void xcvr2450::update_atr(void){
     //calculate tx atr pins
     int band_sel   = (xcvr2450::is_highband(_lo_freq))? HB_PA_TXIO : LB_PA_TXIO;
@@ -274,17 +351,19 @@ void xcvr2450::update_atr(void){
 /***********************************************************************
  * Tuning
  **********************************************************************/
-void xcvr2450::set_lo_freq(double target_freq){
+double xcvr2450::set_lo_freq(double target_freq){
     //tune the LO and sleep a bit for lock
     //if not locked, try some carrier offsets
+    double actual = 0.0;
     for (double offset = 0.0; offset <= 3e6; offset+=1e6){
-        this->set_lo_freq_core(target_freq + offset);
+        actual = this->set_lo_freq_core(target_freq + offset);
         boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-        if (this->get_locked()) return;
+        if (this->get_locked().to_bool()) break;
     }
+    return actual;
 }
 
-void xcvr2450::set_lo_freq_core(double target_freq){
+double xcvr2450::set_lo_freq_core(double target_freq){
 
     //clip the input to the range
     target_freq = xcvr_freq_range.clip(target_freq);
@@ -348,6 +427,8 @@ void xcvr2450::set_lo_freq_core(double target_freq){
     this->send_reg(0x5);
     _max2829_regs.vco_bandswitch = max2829_regs_t::VCO_BANDSWITCH_AUTOMATIC;;
     this->send_reg(0x5);
+
+    return _lo_freq;
 }
 
 /***********************************************************************
@@ -441,7 +522,7 @@ static int gain_to_rx_lna_reg(double &gain){
     return reg;
 }
 
-void xcvr2450::set_tx_gain(double gain, const std::string &name){
+double xcvr2450::set_tx_gain(double gain, const std::string &name){
     assert_has(xcvr_tx_gain_ranges.keys(), name, "xcvr tx gain name");
     if (name == "VGA"){
         _max2829_regs.tx_vga_gain = gain_to_tx_vga_reg(gain);
@@ -453,9 +534,11 @@ void xcvr2450::set_tx_gain(double gain, const std::string &name){
     }
     else UHD_THROW_INVALID_CODE_PATH();
     _tx_gains[name] = gain;
+
+    return gain;
 }
 
-void xcvr2450::set_rx_gain(double gain, const std::string &name){
+double xcvr2450::set_rx_gain(double gain, const std::string &name){
     assert_has(xcvr_rx_gain_ranges.keys(), name, "xcvr rx gain name");
     if (name == "VGA"){
         _max2829_regs.rx_vga_gain = gain_to_rx_vga_reg(gain);
@@ -467,6 +550,8 @@ void xcvr2450::set_rx_gain(double gain, const std::string &name){
     }
     else UHD_THROW_INVALID_CODE_PATH();
     _rx_gains[name] = gain;
+
+    return gain;
 }
 
 
@@ -541,8 +626,11 @@ static max2829_regs_t::rx_lpf_coarse_adj_t bandwidth_to_rx_lpf_coarse_reg(double
     UHD_THROW_INVALID_CODE_PATH();
 }
 
-void xcvr2450::set_rx_bandwidth(double bandwidth){
+double xcvr2450::set_rx_bandwidth(double bandwidth){
     double requested_bandwidth = bandwidth;
+
+    //convert complex bandpass to lowpass bandwidth
+    bandwidth = bandwidth/2.0;
 
     //compute coarse low pass cutoff frequency setting
     _max2829_regs.rx_lpf_coarse_adj = bandwidth_to_rx_lpf_coarse_reg(bandwidth);
@@ -559,9 +647,14 @@ void xcvr2450::set_rx_bandwidth(double bandwidth){
     UHD_LOGV(often) << boost::format(
         "XCVR2450 RX Bandwidth (lp_fc): %f Hz, coarse reg: %d, fine reg: %d"
     ) % _rx_bandwidth % (int(_max2829_regs.rx_lpf_coarse_adj)) % (int(_max2829_regs.rx_lpf_fine_adj)) << std::endl;
+
+    return 2.0*_rx_bandwidth;
 }
 
-void xcvr2450::set_tx_bandwidth(double bandwidth){
+double xcvr2450::set_tx_bandwidth(double bandwidth){
+    //convert complex bandpass to lowpass bandwidth
+    bandwidth = bandwidth/2.0;
+
     //compute coarse low pass cutoff frequency setting
     _max2829_regs.tx_lpf_coarse_adj = bandwidth_to_tx_lpf_coarse_reg(bandwidth);
 
@@ -574,219 +667,7 @@ void xcvr2450::set_tx_bandwidth(double bandwidth){
     UHD_LOGV(often) << boost::format(
         "XCVR2450 TX Bandwidth (lp_fc): %f Hz, coarse reg: %d"
     ) % _tx_bandwidth % (int(_max2829_regs.tx_lpf_coarse_adj)) << std::endl;
-}
 
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void xcvr2450::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_rx_gains.keys(), key.name, "xcvr rx gain name");
-        val = _rx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(xcvr_rx_gain_ranges.keys(), key.name, "xcvr rx gain name");
-        val = xcvr_rx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(xcvr_rx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = xcvr_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = _rx_ant;
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = xcvr_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        if (key.name == "lo_locked")
-            val = sensor_value_t("LO", this->get_locked(), "locked", "unlocked");
-        else if (key.name == "rssi")
-            val = sensor_value_t("RSSI", this->get_rssi(), "dBm");
-        else
-            UHD_THROW_INVALID_CODE_PATH();
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:{
-            prop_names_t names = list_of("lo_locked")("rssi");
-            val = names;
-        }
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*_rx_bandwidth; //_tx_bandwidth is low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void xcvr2450::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_rx_ant(val.as<std::string>());
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        this->set_rx_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
-/***********************************************************************
- * TX Get and Set
- **********************************************************************/
-void xcvr2450::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_tx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_tx_gains.keys(), key.name, "xcvr tx gain name");
-        val = _tx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(xcvr_tx_gain_ranges.keys(), key.name, "xcvr tx gain name");
-        val = xcvr_tx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(xcvr_tx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = xcvr_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = _tx_ant;
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = xcvr_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_QI;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*_tx_bandwidth; //_tx_bandwidth is low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void xcvr2450::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        set_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        this->set_tx_bandwidth(val.as<double>()/2.0); //complex double-sided, we want low-pass
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_tx_ant(val.as<std::string>());
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
+    //convert lowpass back to complex bandpass bandwidth
+    return 2.0*_tx_bandwidth;
 }

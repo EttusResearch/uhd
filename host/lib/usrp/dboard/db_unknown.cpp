@@ -64,17 +64,11 @@ static void warn_if_old_rfx(const dboard_id_t &dboard_id, const std::string &xx)
 class unknown_rx : public rx_dboard_base{
 public:
     unknown_rx(ctor_args_t args);
-
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
 };
 
 class unknown_tx : public tx_dboard_base{
 public:
     unknown_tx(ctor_args_t args);
-
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
 };
 
 /***********************************************************************
@@ -98,99 +92,35 @@ UHD_STATIC_BLOCK(reg_unknown_dboards){
  **********************************************************************/
 unknown_rx::unknown_rx(ctor_args_t args) : rx_dboard_base(args){
     warn_if_old_rfx(this->get_rx_id(), "RX");
-}
 
-void unknown_rx::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = "Unknown - " + get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        val = gain_range_t(0, 0, 0);
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(0.0, 0.0);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = std::vector<std::string>(); //empty
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 0.0;
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(val.as<double>() == double(0));
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        if (val.as<std::string>().empty()) return;
-        throw uhd::value_error("Unknown Daughterboard: No selectable antenna");
-
-    case SUBDEV_PROP_FREQ:
-        return; // it wont do you much good, but you can set it
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "Unknown Daughterboard: No tunable bandwidth, fixed filtered to 0.0MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name").set(
+        std::string(str(boost::format("%s - %s")
+            % get_rx_id().to_pp_string()
+            % get_subdev_name()
+        )));
+    this->get_rx_subtree()->create<int>("gains"); //phony property so this dir exists
+    this->get_rx_subtree()->create<double>("freq/value")
+        .set(double(0.0));
+    this->get_rx_subtree()->create<meta_range_t>("freq/range")
+        .set(freq_range_t(double(0.0), double(0.0)));
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .set("");
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(list_of(""));
+    this->get_rx_subtree()->create<int>("sensors"); //phony property so this dir exists
+    this->get_rx_subtree()->create<std::string>("connection")
+        .set("IQ");
+    this->get_rx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value")
+        .set(double(0.0));
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(0.0, 0.0));
 }
 
 /***********************************************************************
@@ -198,97 +128,33 @@ void unknown_rx::rx_set(const wax::obj &key_, const wax::obj &val){
  **********************************************************************/
 unknown_tx::unknown_tx(ctor_args_t args) : tx_dboard_base(args){
     warn_if_old_rfx(this->get_tx_id(), "TX");
-}
 
-void unknown_tx::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = "Unknown - " + get_tx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        val = gain_range_t(0, 0, 0);
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(0.0, 0.0);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = std::vector<std::string>(); //empty
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 0.0;
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void unknown_tx::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(val.as<double>() == double(0));
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        if (val.as<std::string>().empty()) return;
-        throw uhd::value_error("Unknown Daughterboard: No selectable antenna");
-
-    case SUBDEV_PROP_FREQ:
-        return; // it wont do you much good, but you can set it
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "Unknown Daughterboard: No tunable bandwidth, fixed filtered to 0.0MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<std::string>("name").set(
+        std::string(str(boost::format("%s - %s")
+            % get_tx_id().to_pp_string()
+            % get_subdev_name()
+        )));
+    this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
+    this->get_tx_subtree()->create<double>("freq/value")
+        .set(double(0.0));
+    this->get_tx_subtree()->create<meta_range_t>("freq/range")
+        .set(freq_range_t(double(0.0), double(0.0)));
+    this->get_tx_subtree()->create<std::string>("antenna/value")
+        .set("");
+    this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(list_of(""));
+    this->get_tx_subtree()->create<int>("sensors"); //phony property so this dir exists
+    this->get_tx_subtree()->create<std::string>("connection")
+        .set("IQ");
+    this->get_tx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_tx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_tx_subtree()->create<double>("bandwidth/value")
+        .set(double(0.0));
+    this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(0.0, 0.0));
 }

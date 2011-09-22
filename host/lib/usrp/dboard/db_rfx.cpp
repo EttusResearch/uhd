@@ -211,6 +211,8 @@ rfx_xcvr::rfx_xcvr(
     this->get_rx_subtree()->create<bool>("enabled").set(true); //always enabled
     this->get_rx_subtree()->create<bool>("use_lo_offset").set(false);
     this->get_rx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(2*20.0e6, 2*20.0e6));
 
     ////////////////////////////////////////////////////////////////////
     // Register TX properties
@@ -231,6 +233,8 @@ rfx_xcvr::rfx_xcvr(
     this->get_tx_subtree()->create<bool>("enabled").set(true); //always enabled
     this->get_tx_subtree()->create<bool>("use_lo_offset").set(true);
     this->get_tx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+    this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(2*20.0e6, 2*20.0e6));
 
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);

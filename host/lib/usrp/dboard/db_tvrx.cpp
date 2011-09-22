@@ -57,7 +57,7 @@ using namespace boost::assign;
  **********************************************************************/
 static const freq_range_t tvrx_freq_range(50e6, 860e6);
 
-static const prop_names_t tvrx_antennas = list_of("RX");
+static const std::vector<std::string> tvrx_antennas = list_of("RX");
 
 static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges = map_list_of
     ("VHFLO", freq_range_t(50e6, 158e6))
@@ -136,9 +136,6 @@ public:
     tvrx(ctor_args_t args);
     ~tvrx(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     uhd::dict<std::string, double> _gains;
     double _lo_freq;
@@ -147,8 +144,8 @@ private:
         return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x61 : 0x60; //ok really? we could rename that call
     };
 
-    void set_gain(double gain, const std::string &name);
-    void set_freq(double freq);
+    double set_gain(double gain, const std::string &name);
+    double set_freq(double freq);
 
     void update_regs(void){
         byte_vector_t regs_vector(4);
@@ -185,6 +182,39 @@ UHD_STATIC_BLOCK(reg_tvrx_dboard){
  * Structors
  **********************************************************************/
 tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name")
+        .set(get_rx_id().to_pp_string());
+    BOOST_FOREACH(const std::string &name, get_tvrx_gain_ranges().keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&tvrx::set_gain, this, _1, name))
+            .set(get_tvrx_gain_ranges()[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(get_tvrx_gain_ranges()[name]);
+    }
+    this->get_rx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&tvrx::set_freq, this, _1))
+        .set(tvrx_freq_range.start());
+    this->get_rx_subtree()->create<meta_range_t>("freq/range")
+        .set(tvrx_freq_range);
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .set(tvrx_antennas.at(0));
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(tvrx_antennas);
+    this->get_rx_subtree()->create<std::string>("connection")
+        .set("I");
+    this->get_rx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value")
+        .set(6.0e6);
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(6.0e6, 6.0e6));
+
+    //enable only the clocks we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions and atr controls (identically)
@@ -317,7 +347,7 @@ static double if_gain_to_voltage(double gain){
     return dac_volts;
 }
 
-void tvrx::set_gain(double gain, const std::string &name){
+double tvrx::set_gain(double gain, const std::string &name){
     assert_has(get_tvrx_gain_ranges().keys(), name, "tvrx gain name");
     if (name == "RF"){
         this->get_iface()->write_aux_dac(dboard_iface::UNIT_RX, dboard_iface::AUX_DAC_B, rf_gain_to_voltage(gain, _lo_freq));
@@ -327,6 +357,8 @@ void tvrx::set_gain(double gain, const std::string &name){
     }
     else UHD_THROW_INVALID_CODE_PATH();
     _gains[name] = gain;
+
+    return gain;
 }
 
 /*!
@@ -334,7 +366,7 @@ void tvrx::set_gain(double gain, const std::string &name){
  * \param freq the requested frequency
  */
 
-void tvrx::set_freq(double freq) {
+double tvrx::set_freq(double freq) {
     freq = tvrx_freq_range.clip(freq);
     std::string prev_band = get_band(_lo_freq - tvrx_if_freq);
     std::string new_band = get_band(freq);
@@ -367,131 +399,6 @@ void tvrx::set_freq(double freq) {
     UHD_LOGV(often) << boost::format("set_freq: target LO: %f f_ref: %f divisor: %i actual LO: %f") % target_lo_freq % f_ref % divisor % actual_lo_freq << std::endl;
 
     _lo_freq = actual_lo_freq; //for rx props
+
+    return _lo_freq;
 }
-
-/***********************************************************************
- * Get the alias frequency of frequency freq when sampled at fs.
- * \param freq the frequency of interest
- * \param fs the sample rate
- * \return the alias frequency
- **********************************************************************/
-
-static double get_alias(double freq, double fs) {
-    double alias;
-    freq = fmod(freq, fs);
-    if(freq >= (fs/2)) {
-        alias = freq - fs;
-    } else {
-        alias = freq;
-    }
-    return alias;
-}
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void tvrx::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-    double codec_rate;
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_gains.keys(), key.name, "tvrx gain name");
-        val = _gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(get_tvrx_gain_ranges().keys(), key.name, "tvrx gain name");
-        val = get_tvrx_gain_ranges()[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(get_tvrx_gain_ranges().keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-    /*
-     * so here we have to do some magic. because the TVRX uses a relatively high IF,
-     * we have to watch the sample rate to see if the IF will be aliased
-     * or if it will fall within Nyquist.
-     */
-        codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
-        val = (_lo_freq - tvrx_if_freq) + get_alias(tvrx_if_freq, codec_rate);
-        UHD_LOGV(often)
-            << "Getting TVRX freq..." << std::endl
-            << "\tCodec rate: " << codec_rate << std::endl
-            << "\tLO freq: " << _lo_freq << std::endl
-            << "\tIF freq: " << tvrx_if_freq << std::endl
-            << "\tAlias freq: " << get_alias(tvrx_if_freq, codec_rate) << std::endl
-            << "\tCalculated freq: " << val.as<double>() << std::endl;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = tvrx_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = tvrx_antennas.front(); //there's only one
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = tvrx_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_REAL_I;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 6.0e6;
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = std::vector<std::string>(); //empty
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void tvrx::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_GAIN:
-        this->set_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        this->set_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "TVRX: No tunable bandwidth, fixed filtered to 6MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
