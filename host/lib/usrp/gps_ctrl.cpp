@@ -55,8 +55,8 @@ public:
     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
-    int timeout = GPS_TIMEOUT_TRIES;
-    while(timeout--) {
+    const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
+    while(boost::get_system_time() < comm_timeout) {
       reply = _recv();
       if(reply.find("Command Error") != std::string::npos) {
         gps_type = GPS_TYPE_JACKSON_LABS;
@@ -64,7 +64,7 @@ public:
       } 
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
       else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
-      sleep(milliseconds(200));
+      sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
 
     if((i_heard_some_nmea) && (gps_type != GPS_TYPE_JACKSON_LABS)) gps_type = GPS_TYPE_GENERIC_NMEA;
@@ -156,8 +156,8 @@ private:
 
     _flush(); //flush all input before waiting for a message
 
-    int timeout = GPS_TIMEOUT_TRIES;
-    while(timeout--) {
+    const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
+    while(boost::get_system_time() < comm_timeout) {
         reply = _recv();
         if(reply.substr(0, 6) == msgtype)
           return reply;
@@ -263,7 +263,7 @@ private:
     GPS_TYPE_NONE
   } gps_type;
 
-  static const int GPS_TIMEOUT_TRIES = 10;
+  static const int GPS_COMM_TIMEOUT_MS = 1500;
   static const int GPS_TIMEOUT_DELAY_MS = 200;
   static const int FIREFLY_STUPID_DELAY_MS = 200;
 };
