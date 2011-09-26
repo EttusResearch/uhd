@@ -33,10 +33,10 @@ The following parameters can be used to alter the transport's default behavior:
 * **num_send_frames:** The number of send buffers to allocate
 
 **Note1:**
-num_recv_frames does not affect performance (all platforms).
+num_recv_frames does not affect performance.
 
 **Note2:**
-num_send_frames does not affect performance (UNIX only).
+num_send_frames does not affect performance.
 
 **Note3:**
 recv_frame_size and send_frame_size can be used to
