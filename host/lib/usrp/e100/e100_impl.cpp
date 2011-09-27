@@ -226,8 +226,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
-    //none for now...
-    _tree->create<int>(mb_path / "sensors"); //phony property so this dir exists
+    _tree->create<sensor_value_t>(mb_path / "sensors/ref_locked")
+        .publish(boost::bind(&e100_impl::get_ref_locked, this));
 
     ////////////////////////////////////////////////////////////////////
     // create frontend control objects
@@ -405,4 +405,9 @@ void e100_impl::update_clock_source(const std::string &source){
     else if (source == "internal") _clock_ctrl->use_internal_ref();
     else if (source == "external") _clock_ctrl->use_external_ref();
     else throw uhd::runtime_error("unhandled clock configuration reference source: " + source);
+}
+
+sensor_value_t e100_impl::get_ref_locked(void){
+    const bool lock = _clock_ctrl->get_locked();
+    return sensor_value_t("Ref", lock, "locked", "unlocked");
 }

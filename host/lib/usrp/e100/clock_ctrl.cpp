@@ -432,6 +432,16 @@ public:
         this->latch_regs();
     }
 
+    bool get_locked(void){
+        static const boost::uint8_t addr = 0x01F;
+        boost::uint32_t reg = _iface->read_spi(
+            UE_SPI_SS_AD9522, spi_config_t::EDGE_RISE,
+            _ad9522_regs.get_read_reg(addr), 24
+        );
+        _ad9522_regs.set_reg(addr, reg);
+        return _ad9522_regs.digital_lock_detect != 0;
+    }
+
 private:
     spi_iface::sptr _iface;
     const bool _dboard_clocks_diff;

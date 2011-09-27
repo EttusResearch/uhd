@@ -119,6 +119,9 @@ public:
      */
     virtual void use_auto_ref(void) = 0;
 
+    //! Is the reference locked?
+    virtual bool get_locked(void) = 0;
+
 };
 
 #endif /* INCLUDED_USRP_E100_CLOCK_CTRL_HPP */

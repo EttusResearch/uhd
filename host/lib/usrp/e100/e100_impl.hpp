@@ -31,6 +31,7 @@
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -124,6 +125,7 @@ private:
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_clock_source(const std::string &);
+    uhd::sensor_value_t get_ref_locked(void);
 
 };
 
