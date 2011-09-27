@@ -36,9 +36,10 @@ public:
      * Make a new clock control object.
      * \param iface the spi iface object
      * \param master clock rate the FPGA rate
+     * param dboard_clocks_diff are they differential?
      * \return the clock control object
      */
-    static sptr make(uhd::spi_iface::sptr iface, double master_clock_rate);
+    static sptr make(uhd::spi_iface::sptr iface, double master_clock_rate, const bool dboard_clocks_diff);
 
     /*!
      * Set the rate of the fpga clock line.

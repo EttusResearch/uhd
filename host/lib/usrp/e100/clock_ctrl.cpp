@@ -167,7 +167,9 @@ static clock_settings_type get_clock_settings(double rate){
  **********************************************************************/
 class e100_clock_ctrl_impl : public e100_clock_ctrl{
 public:
-    e100_clock_ctrl_impl(spi_iface::sptr iface, double master_clock_rate){
+    e100_clock_ctrl_impl(spi_iface::sptr iface, double master_clock_rate, const bool dboard_clocks_diff):
+        _dboard_clocks_diff(dboard_clocks_diff)
+    {
         _iface = iface;
         _chan_rate = 0.0;
         _out_rate = 0.0;
@@ -319,10 +321,16 @@ public:
      * RX Dboard Clock Control (output 9, divider 3)
      **********************************************************************/
     void enable_rx_dboard_clock(bool enb){
-        _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_CMOS;
-        _ad9522_regs.out9_cmos_configuration = (enb)?
-            ad9522_regs_t::OUT9_CMOS_CONFIGURATION_B_ON :
-            ad9522_regs_t::OUT9_CMOS_CONFIGURATION_OFF;
+        if (_dboard_clocks_diff){
+            _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_LVDS;
+            _ad9522_regs.out9_lvds_power_down = enb? 0 : 1;
+        }
+        else{
+            _ad9522_regs.out9_format = ad9522_regs_t::OUT9_FORMAT_CMOS;
+            _ad9522_regs.out9_cmos_configuration = (enb)?
+                ad9522_regs_t::OUT9_CMOS_CONFIGURATION_B_ON :
+                ad9522_regs_t::OUT9_CMOS_CONFIGURATION_OFF;
+        }
         this->send_reg(0x0F9);
         this->latch_regs();
     }
@@ -357,10 +365,16 @@ public:
      * TX Dboard Clock Control (output 6, divider 2)
      **********************************************************************/
     void enable_tx_dboard_clock(bool enb){
-        _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_CMOS;
-        _ad9522_regs.out6_cmos_configuration = (enb)?
-            ad9522_regs_t::OUT6_CMOS_CONFIGURATION_B_ON :
-            ad9522_regs_t::OUT6_CMOS_CONFIGURATION_OFF;
+        if (_dboard_clocks_diff){
+            _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_LVDS;
+            _ad9522_regs.out6_lvds_power_down = enb? 0 : 1;
+        }
+        else{
+            _ad9522_regs.out6_format = ad9522_regs_t::OUT6_FORMAT_CMOS;
+            _ad9522_regs.out6_cmos_configuration = (enb)?
+                ad9522_regs_t::OUT6_CMOS_CONFIGURATION_B_ON :
+                ad9522_regs_t::OUT6_CMOS_CONFIGURATION_OFF;
+        }
         this->send_reg(0x0F6);
         this->latch_regs();
     }
@@ -420,6 +434,7 @@ public:
 
 private:
     spi_iface::sptr _iface;
+    const bool _dboard_clocks_diff;
     ad9522_regs_t _ad9522_regs;
     double _out_rate; //rate at the fpga and codec
     double _chan_rate; //rate before final dividers
@@ -505,6 +520,6 @@ private:
 /***********************************************************************
  * Clock Control Make
  **********************************************************************/
-e100_clock_ctrl::sptr e100_clock_ctrl::make(spi_iface::sptr iface, double master_clock_rate){
-    return sptr(new e100_clock_ctrl_impl(iface, master_clock_rate));
+e100_clock_ctrl::sptr e100_clock_ctrl::make(spi_iface::sptr iface, double master_clock_rate, const bool dboard_clocks_diff){
+    return sptr(new e100_clock_ctrl_impl(iface, master_clock_rate, dboard_clocks_diff));
 }

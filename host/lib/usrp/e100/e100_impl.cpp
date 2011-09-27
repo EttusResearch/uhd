@@ -139,9 +139,16 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     }
 
     //setup clock control here to ensure that the FPGA has a good clock before we continue
+    bool dboard_clocks_diff = true;
+    if      (mb_eeprom.get("revision", "0") == "3") dboard_clocks_diff = false;
+    else if (mb_eeprom.get("revision", "0") == "4") dboard_clocks_diff = true;
+    else UHD_MSG(warning)
+        << "Unknown E1XX revision number!\n"
+        << "defaulting to differential dboard clocks to be safe.\n"
+        << std::endl;
     const double master_clock_rate = device_addr.cast<double>("master_clock_rate", E100_DEFAULT_CLOCK_RATE);
     _aux_spi_iface = e100_ctrl::make_aux_spi_iface();
-    _clock_ctrl = e100_clock_ctrl::make(_aux_spi_iface, master_clock_rate);
+    _clock_ctrl = e100_clock_ctrl::make(_aux_spi_iface, master_clock_rate, dboard_clocks_diff);
 
     //Perform wishbone readback tests, these tests also write the hash
     bool test_fail = false;
