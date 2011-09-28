@@ -100,7 +100,7 @@ IMAGES_LIST += $(_usrp_b100_fpga_bin)
 $(_usrp_b100_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_b100_fpga_dir) && make -f Makefile.B100 clean
 	cd $(_usrp_b100_fpga_dir) && make -f Makefile.B100 bin
-	cp $(_usrp_b100_fpga_dir)/build-B100/B100bin $@
+	cp $(_usrp_b100_fpga_dir)/build-B100/B100.bin $@
 
 endif
 
