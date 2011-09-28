@@ -67,8 +67,10 @@ NET "overo_gpio170"  LOC = "E8"  ;  # MISC GPIO for debug
 NET "overo_gpio176"  LOC = "B4"  ;  # MISC GPIO for debug
 
 ## Overo UART
-#NET "overo_txd1"  LOC = "C6"  ;
-#NET "overo_rxd1"  LOC = "D6"  ;
+NET "overo_txd1"  LOC = "C6"  ;
+NET "overo_rxd1"  LOC = "D6"  ;
+NET "fpga_txd1"   LOC = "AB9" ;
+NET "fpga_rxd1"   LOC = "AB8" ;
 
 ## FTDI UART to USB converter
 NET "FPGA_TXD"  LOC = "G19"  ;

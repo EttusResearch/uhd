@@ -22,6 +22,7 @@ module u1e
   (input CLK_FPGA_P, input CLK_FPGA_N,  // Diff
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
    input debug_pb, output FPGA_TXD, input FPGA_RXD,
+   output fpga_txd1, input fpga_rxd1, input overo_txd1, output overo_rxd1,
 
    // GPMC
    input EM_CLK, inout [15:0] EM_D, input [10:1] EM_A, input [1:0] EM_NBE,
@@ -59,6 +60,10 @@ module u1e
    clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
 
    // /////////////////////////////////////////////////////////////////////////
+   // UART level conversion
+   assign fpga_txd1 = overo_txd1;
+   assign overo_rxd1 = fpga_rxd1;
+   
    // SPI
    wire  mosi, sclk, miso;
    assign { db_sclk_tx, db_mosi_tx } = ~db_sen_tx ? {sclk,mosi} : 2'b0;
