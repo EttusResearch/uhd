@@ -191,8 +191,8 @@ public:
         //init the tty settings w/ termios
         termios tio;
         std::memset(&tio,0,sizeof(tio));
-        tio.c_iflag=0;
-        tio.c_oflag=0;
+        tio.c_iflag = IGNCR; //Ignore CR
+        tio.c_oflag = ONLCR; //Map NL to CR-NL on output
         tio.c_cflag=CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
         tio.c_lflag=0;
         tio.c_cc[VMIN]=1;
@@ -205,13 +205,8 @@ public:
     }
 
     void write_uart(const std::string &buf){
-        std::string out_str;
-        BOOST_FOREACH(const char &ch, buf){
-            if (ch == '\n') out_str += "\r\n";
-            else out_str += std::string(1, ch);
-        }
-        const ssize_t ret = ::write(_node_fd, out_str.c_str(), out_str.size());
-        if (size_t(ret) != out_str.size()) UHD_LOG << ret;
+        const ssize_t ret = ::write(_node_fd, buf.c_str(), buf.size());
+        if (size_t(ret) != buf.size()) UHD_LOG << ret;
     }
 
     std::string read_uart(double timeout){
