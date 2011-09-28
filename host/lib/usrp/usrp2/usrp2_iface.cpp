@@ -44,7 +44,7 @@ static const boost::uint32_t MIN_PROTO_COMPAT_SPI = 7;
 static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
 // The register compat number must reflect the protocol compatibility
 // and the compatibility of the register mapping (more likely to change).
-static const boost::uint32_t MIN_PROTO_COMPAT_REG = USRP2_FW_COMPAT_NUM;
+static const boost::uint32_t MIN_PROTO_COMPAT_REG = 10;
 static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
 
 //Define get_gpid() to get a globally unique identifier for this process.
