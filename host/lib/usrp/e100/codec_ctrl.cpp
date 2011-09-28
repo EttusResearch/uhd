@@ -74,14 +74,15 @@ e100_codec_ctrl_impl::e100_codec_ctrl_impl(spi_iface::sptr iface){
     _ad9862_regs.soft_reset = 0;
 
     //setup rx side of codec
-    _ad9862_regs.byp_buffer_a = 1;
-    _ad9862_regs.byp_buffer_b = 1;
-    _ad9862_regs.buffer_a_pd = 1;
-    _ad9862_regs.buffer_b_pd = 1;
+    _ad9862_regs.byp_buffer_a = 0;
+    _ad9862_regs.byp_buffer_b = 0;
+    _ad9862_regs.buffer_a_pd = 0;
+    _ad9862_regs.buffer_b_pd = 0;
     _ad9862_regs.rx_pga_a = 0;//0x1f;  //TODO bring under api control
     _ad9862_regs.rx_pga_b = 0;//0x1f;  //TODO bring under api control
     _ad9862_regs.rx_twos_comp = 1;
     _ad9862_regs.rx_hilbert = ad9862_regs_t::RX_HILBERT_DIS;
+    _ad9862_regs.shared_ref = 1;
 
     //setup tx side of codec
     _ad9862_regs.two_data_paths = ad9862_regs_t::TWO_DATA_PATHS_BOTH;
@@ -101,6 +102,12 @@ e100_codec_ctrl_impl::e100_codec_ctrl_impl(spi_iface::sptr iface){
     _ad9862_regs.input_clk_ctrl = ad9862_regs_t::INPUT_CLK_CTRL_EXTERNAL;
     _ad9862_regs.dll_mult = ad9862_regs_t::DLL_MULT_2;
     _ad9862_regs.dll_mode = ad9862_regs_t::DLL_MODE_FAST;
+    _ad9862_regs.hs_duty_cycle = 1;
+    _ad9862_regs.clk_duty = 1;
+
+    //disable clkout1 and clkout2
+    _ad9862_regs.dis1 = ad9862_regs_t::DIS1_DIS;
+    _ad9862_regs.dis2 = ad9862_regs_t::DIS2_DIS;
 
     //write the register settings to the codec
     for (uint8_t addr = 0; addr <= 25; addr++){
@@ -114,6 +121,7 @@ e100_codec_ctrl_impl::e100_codec_ctrl_impl(spi_iface::sptr iface){
     //aux adc clock
     _ad9862_regs.clk_4 = ad9862_regs_t::CLK_4_1_4;
     this->send_reg(34);
+    this->send_reg(35);
 }
 
 e100_codec_ctrl_impl::~e100_codec_ctrl_impl(void){
