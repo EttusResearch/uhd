@@ -192,16 +192,14 @@ public:
         termios tio;
         std::memset(&tio,0,sizeof(tio));
         tio.c_iflag = IGNCR; //Ignore CR
-        tio.c_oflag = ONLCR; //Map NL to CR-NL on output
-        tio.c_cflag=CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
-        tio.c_lflag=0;
-        tio.c_cc[VMIN]=1;
-        tio.c_cc[VTIME]=5;
+        tio.c_oflag = OPOST | ONLCR; //Map NL to CR-NL on output
+        tio.c_cflag = CS8 | CREAD | CLOCAL; // 8n1
+        tio.c_lflag = 0;
 
-        cfsetospeed(&tio,B115200);            // 115200 baud
-        cfsetispeed(&tio,B115200);            // 115200 baud
+        cfsetospeed(&tio, B115200);            // 115200 baud
+        cfsetispeed(&tio, B115200);            // 115200 baud
 
-        tcsetattr(_node_fd,TCSANOW,&tio);
+        tcsetattr(_node_fd, TCSANOW, &tio);
     }
 
     void write_uart(const std::string &buf){
@@ -226,7 +224,7 @@ public:
             }
 
             //didnt get a character, check the timeout
-            if (boost::get_system_time() > exit_time){
+            else if (boost::get_system_time() > exit_time){
                 break;
             }
 
