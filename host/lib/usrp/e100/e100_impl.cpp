@@ -230,6 +230,22 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         .publish(boost::bind(&e100_impl::get_ref_locked, this));
 
     ////////////////////////////////////////////////////////////////////
+    // Create the GPSDO control
+    ////////////////////////////////////////////////////////////////////
+    try{
+        _gps = gps_ctrl::make(e100_ctrl::make_gps_uart_iface(E100_UART_DEV_NODE));
+    }
+    catch(std::exception &e){
+        UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+    }
+    if (_gps.get() != NULL and _gps->gps_detected()){
+        BOOST_FOREACH(const std::string &name, _gps->get_sensors()){
+            _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////
     // create frontend control objects
     ////////////////////////////////////////////////////////////////////
     _rx_fe = rx_frontend_core_200::make(_fpga_ctrl, E100_REG_SR_ADDR(UE_SR_RX_FRONT));
@@ -375,6 +391,15 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_tx_subdev_names()[0]));
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
+
+    //GPS installed: use external ref, time, and init time spec
+    if (_gps.get() != NULL and _gps->gps_detected()){
+        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
+        _tree->access<std::string>(mb_path / "time_source/value").set("external");
+        _tree->access<std::string>(mb_path / "clock_source/value").set("external");
+        UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
+        _time64->set_time_next_pps(time_spec_t(time_t(_gps->get_sensor("gps_time").to_int()+1)));
+    }
 
 }
 

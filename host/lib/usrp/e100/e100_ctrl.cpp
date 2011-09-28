@@ -18,12 +18,14 @@
 #include "e100_ctrl.hpp"
 #include "e100_regs.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <sys/ioctl.h> //ioctl
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
 #include <boost/thread/thread.hpp> //sleep
 #include <boost/thread/mutex.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <fstream>
 
@@ -172,6 +174,80 @@ private: int _node_fd;
 
 uhd::i2c_iface::sptr e100_ctrl::make_dev_i2c_iface(const std::string &node){
     return uhd::i2c_iface::sptr(new i2c_dev_iface(node));
+}
+
+/***********************************************************************
+ * UART control implementation
+ **********************************************************************/
+#include <termios.h>
+#include <cstring>
+class uart_dev_iface : public uart_iface{
+public:
+    uart_dev_iface(const std::string &node){
+        if ((_node_fd = ::open(node.c_str(), O_RDWR | O_NONBLOCK)) < 0){
+            throw uhd::io_error("Failed to open " + node);
+        }
+
+        //init the tty settings w/ termios
+        termios tio;
+        std::memset(&tio,0,sizeof(tio));
+        tio.c_iflag=0;
+        tio.c_oflag=0;
+        tio.c_cflag=CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+        tio.c_lflag=0;
+        tio.c_cc[VMIN]=1;
+        tio.c_cc[VTIME]=5;
+
+        cfsetospeed(&tio,B115200);            // 115200 baud
+        cfsetispeed(&tio,B115200);            // 115200 baud
+
+        tcsetattr(_node_fd,TCSANOW,&tio);
+    }
+
+    void write_uart(const std::string &buf){
+        std::string out_str;
+        BOOST_FOREACH(const char &ch, buf){
+            if (ch == '\n') out_str += "\r\n";
+            else out_str += std::string(1, ch);
+        }
+        const ssize_t ret = ::write(_node_fd, out_str.c_str(), out_str.size());
+        if (size_t(ret) != out_str.size()) UHD_LOG << ret;
+    }
+
+    std::string read_uart(double timeout){
+        const boost::system_time exit_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout*1000));
+
+        std::string line;
+        while(true){
+            char ch;
+            const ssize_t ret = ::read(_node_fd, &ch, 1);
+
+            //got a character -> process it
+            if (ret == 1){
+                const bool flush  = ch == '\n' or ch == '\r';
+                if (flush and line.empty()) continue; //avoid flushing on empty lines
+                line += std::string(1, ch);
+                if (flush) break;
+            }
+
+            //didnt get a character, check the timeout
+            if (boost::get_system_time() > exit_time){
+                break;
+            }
+
+            //otherwise sleep for a bit
+            else{
+                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            }
+        }
+        return line;
+    }
+
+private: int _node_fd;
+};
+
+uhd::uart_iface::sptr e100_ctrl::make_gps_uart_iface(const std::string &node){
+    return uhd::uart_iface::sptr(new uart_dev_iface(node));
 }
 
 /***********************************************************************

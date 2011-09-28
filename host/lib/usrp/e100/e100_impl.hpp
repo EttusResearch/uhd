@@ -31,6 +31,7 @@
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/clock_config.hpp>
@@ -47,6 +48,7 @@ uhd::transport::zero_copy_if::sptr e100_make_mmap_zero_copy(e100_ctrl::sptr ifac
 static const double          E100_RX_LINK_RATE_BPS = 166e6/3/2*2;
 static const double          E100_TX_LINK_RATE_BPS = 166e6/3/1*2;
 static const std::string     E100_I2C_DEV_NODE = "/dev/i2c-3";
+static const std::string     E100_UART_DEV_NODE = "/dev/ttyO1";
 static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x06;
 static const boost::uint32_t E100_RX_SID_BASE = 2;
 static const boost::uint32_t E100_TX_ASYNC_SID = 1;
@@ -98,6 +100,7 @@ private:
     e100_ctrl::sptr _fpga_ctrl;
     uhd::i2c_iface::sptr _dev_i2c_iface;
     uhd::spi_iface::sptr _aux_spi_iface;
+    uhd::gps_ctrl::sptr _gps;
 
     //transports
     uhd::transport::zero_copy_if::sptr _data_transport;

@@ -36,6 +36,9 @@ public:
     //! Make an i2c iface for the i2c device node
     static uhd::spi_iface::sptr make_aux_spi_iface(void);
 
+    //! Make a uart iface for the uart device node
+    static uhd::uart_iface::sptr make_gps_uart_iface(const std::string &node);
+
     virtual void ioctl(int request, void *mem) = 0;
 
     virtual int get_file_descriptor(void) = 0;
