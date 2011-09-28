@@ -5,8 +5,8 @@
 ##################################################
 # Project Setup
 ##################################################
-BUILD_DIR := build/
-export TOP_MODULE := u1plus
+TOP_MODULE := B100
+BUILD_DIR := build-B100/
 export PROJ_FILE := $(BUILD_DIR)$(TOP_MODULE).ise
 
 include ../Makefile.common
@@ -41,9 +41,9 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 # Sources
 ##################################################
 TOP_SRCS = \
-u1plus.v \
+B100.v \
 u1plus_core.v \
-u1plus.ucf \
+B100.ucf \
 timing.ucf
 
 SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \

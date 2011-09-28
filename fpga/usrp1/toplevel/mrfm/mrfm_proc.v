@@ -1,7 +1,7 @@
 
 `include "mrfm.vh"
-`include "../../../firmware/include/fpga_regs_common.v"
-`include "../../../firmware/include/fpga_regs_standard.v"
+`include "../../common/fpga_regs_common.v"
+`include "../../common/fpga_regs_standard.v"
 
 module mrfm_proc (input clock, input reset, input enable,
 		  input [6:0] serial_addr, input [31:0] serial_data, input serial_strobe,

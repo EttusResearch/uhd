@@ -19,8 +19,8 @@
 //  Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 //
 `include "config.vh"
-`include "../../../firmware/include/fpga_regs_common.v"
-`include "../../../firmware/include/fpga_regs_standard.v"
+`include "../../common/fpga_regs_common.v"
+`include "../../common/fpga_regs_standard.v"
 // Clock, enable, and reset controls for whole system
 // Modified version to enable multi_usrp synchronisation
 

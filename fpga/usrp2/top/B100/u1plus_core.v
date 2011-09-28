@@ -205,7 +205,7 @@ module u1plus_core
       .data0_i(vita_rx_data0), .src0_rdy_i(vita_rx_src_rdy0), .dst0_rdy_o(vita_rx_dst_rdy0),
       .data1_i(vita_rx_data1), .src1_rdy_i(vita_rx_src_rdy1), .dst1_rdy_o(vita_rx_dst_rdy1),
       .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
-   
+
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
@@ -297,7 +297,8 @@ module u1plus_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s5_ack = 0;   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
+   assign s5_ack = 0;   
+   assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -410,10 +411,10 @@ module u1plus_core
 
    // only have 64 regs, 32 bits each with current setup...
    settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
-     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr[10:0]),.wb_dat_i(s8_dat_mosi),
+     (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
-   
+
    // /////////////////////////////////////////////////////////////////////////
    // ATR Controller -- Slave #6
 
@@ -457,7 +458,7 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
 
-   assign debug_clk = { gpif_clk, clk_fpga };
+   assign debug_clk = 2'b00; // { gpif_clk, clk_fpga };
    assign debug = 0;
    assign debug_gpio_0 = 0;
    assign debug_gpio_1 = 0;

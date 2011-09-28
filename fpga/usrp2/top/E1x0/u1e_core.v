@@ -489,26 +489,9 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
 
-   assign debug_clk = { EM_CLK, clk_fpga };
-
-/*
-   assign debug = { { rx_have_data, tx_have_space, EM_NCS6, EM_NCS5, EM_NCS4, EM_NWE, EM_NOE, rx_overrun },
-		    { tx_src_rdy, tx_src_rdy_int, tx_dst_rdy, tx_dst_rdy_int, rx_src_rdy, rx_src_rdy_int, rx_dst_rdy, rx_dst_rdy_int },
-		    { EM_D } };
-
-*/
-   assign debug = debug_gpmc;
-
-   assign debug_gpio_0 = { {run_tx, 2'b0, strobe_rx0, tx_i[11:0]}, 
-			   {2'b00, tx_src_rdy, tx_dst_rdy, tx_q[11:0]} };
-
-   assign debug_gpio_1 = debug_vt;
+   assign debug_clk = 2'b00; //{ EM_CLK, clk_fpga };
+   assign debug = 0;
+   assign debug_gpio_0 = 0;
+   assign debug_gpio_1 = 0;
    
-/*   
-   assign debug_gpio_1 = { {rx_enable, rx_src_rdy, rx_dst_rdy, rx_src_rdy & ~rx_dst_rdy},
-			   {tx_enable, tx_src_rdy, tx_dst_rdy, tx_dst_rdy & ~tx_src_rdy},
-			   {2'b0, rx_src_rdy, rx_dst_rdy, rx_data[33:32],2'b0},
-			   {2'b0, bus_error, debug_gpmc[4:0] },
-			   {misc_gpio[7:0]} };
-  */ 
 endmodule // u1e_core
