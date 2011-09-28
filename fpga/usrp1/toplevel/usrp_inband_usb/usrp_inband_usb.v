@@ -23,8 +23,8 @@
 `define RX_IN_BAND
 
 `include "config.vh"
-`include "../../../firmware/include/fpga_regs_common.v"
-`include "../../../firmware/include/fpga_regs_standard.v"
+`include "../../common/fpga_regs_common.v"
+`include "../../common/fpga_regs_standard.v"
 
 module usrp_inband_usb
 (output MYSTERY_SIGNAL,

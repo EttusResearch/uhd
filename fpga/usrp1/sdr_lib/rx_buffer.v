@@ -22,8 +22,8 @@
 // Interface to Cypress FX2 bus
 // A packet is 512 Bytes, the fifo has 4096 lines of 18 bits each
 
-`include "../../firmware/include/fpga_regs_common.v"
-`include "../../firmware/include/fpga_regs_standard.v"
+`include "../common/fpga_regs_common.v"
+`include "../common/fpga_regs_standard.v"
 
 module rx_buffer
   ( // Read/USB side

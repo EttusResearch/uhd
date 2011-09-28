@@ -29,8 +29,8 @@
 // Uncomment the following to include optional circuitry
 
 `include "config.vh"
-`include "../../../firmware/include/fpga_regs_common.v"
-`include "../../../firmware/include/fpga_regs_standard.v"
+`include "../../common/fpga_regs_common.v"
+`include "../../common/fpga_regs_standard.v"
 
 module usrp_multi
 (output MYSTERY_SIGNAL,

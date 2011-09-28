@@ -19,8 +19,8 @@
 //  Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 //
 
-`include "../../firmware/include/fpga_regs_common.v"
-`include "../../firmware/include/fpga_regs_standard.v"
+`include "../common/fpga_regs_common.v"
+`include "../common/fpga_regs_standard.v"
 
 module io_pins
   ( inout wire [15:0] io_0, inout wire [15:0] io_1, inout wire [15:0] io_2, inout wire [15:0] io_3,

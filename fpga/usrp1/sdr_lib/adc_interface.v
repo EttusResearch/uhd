@@ -1,7 +1,7 @@
 
 
-`include "../../firmware/include/fpga_regs_common.v"
-`include "../../firmware/include/fpga_regs_standard.v"
+`include "../common/fpga_regs_common.v"
+`include "../common/fpga_regs_standard.v"
 
 module adc_interface
   (input clock, input reset, input enable,
