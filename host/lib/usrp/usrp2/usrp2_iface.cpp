@@ -95,6 +95,13 @@ public:
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
+
+        //----------------------- special temporary warning ------------
+        if (mb_eeprom["gpsdo"] == "internal" and _protocol_compat < USRP2_FW_COMPAT_NUM){
+            UHD_MSG(warning) << "You must upgrade your USRP's firmware to use the GPSDO" << std::endl;
+        }
+        //--------------------------------------------------------------
+
     }
 
     ~usrp2_iface_impl(void){UHD_SAFE_CALL(
