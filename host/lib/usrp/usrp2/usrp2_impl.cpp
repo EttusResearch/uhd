@@ -355,16 +355,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         }
         _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 
-        //--------------------------------------------------------------
-        if (fpga_minor == 0){ //!!! special temporary check !!!//
-            throw uhd::runtime_error(
-                "Detected FPGA pre-release minor version 7.0.\n"
-                "This host code build requires at least 7.1.\n"
-                "Please update both firmware and FPGA images\n"
-            );
-        }
-        //--------------------------------------------------------------
-
         //lock the device/motherboard to this process
         _mbc[mb].iface->lock_device(true);
 
