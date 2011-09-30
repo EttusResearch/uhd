@@ -421,7 +421,7 @@ module u2plus_core
    nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
 		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[4:0]),.we_i(s4_we),
 		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .rx(run_rx0_d1 | rx_rx1_d1), .tx(run_tx), .gpio({io_tx,io_rx}) );
+		 .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx), .gpio({io_tx,io_rx}) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
