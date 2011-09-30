@@ -42,8 +42,9 @@ module rx_dcoffset
        end
      else if(set_now)
        begin
-	  //integrator <= {set_data[30:0],{(31-int_width){1'b0}}};
 	  fixed <= set_data[31];
+	  if(set_data[30])
+	    integrator <= {set_data[29:0],{(int_width-30){1'b0}}};
        end
      else if(~fixed)
        integrator <= integrator +  {{(alpha_shift){out[WIDTH-1]}},out};
