@@ -23,7 +23,6 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/io_type.hpp>
 #include <uhd/types/ref_vector.hpp>
-#include <uhd/wax.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -36,7 +35,7 @@ class property_tree; //forward declaration
  * The usrp device interface represents the usrp hardware.
  * The api allows for discovery, configuration, and streaming.
  */
-class UHD_API device : boost::noncopyable, public wax::obj{
+class UHD_API device : boost::noncopyable{
 
 public:
     typedef boost::shared_ptr<device> sptr;

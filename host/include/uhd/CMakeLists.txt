@@ -24,6 +24,7 @@ ADD_SUBDIRECTORY(utils)
 INSTALL(FILES
     config.hpp
     convert.hpp
+    deprecated.hpp
     device.hpp
     exception.hpp
     property_tree.ipp

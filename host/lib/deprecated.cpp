@@ -1,3 +1,7 @@
+//----------------------------------------------------------------------
+//-- deprecated interfaces below, to be removed when the API is changed
+//----------------------------------------------------------------------
+
 //
 // Copyright 2010-2011 Ettus Research LLC
 //
