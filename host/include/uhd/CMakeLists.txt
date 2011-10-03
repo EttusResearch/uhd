@@ -29,6 +29,7 @@ INSTALL(FILES
     exception.hpp
     property_tree.ipp
     property_tree.hpp
+    streamer.hpp
     version.hpp
     wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
