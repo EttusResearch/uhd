@@ -21,7 +21,7 @@
 
 using namespace uhd::convert;
 
-DECLARE_CONVERTER(convert_fc64_1_to_item32_1_nswap, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(fc64, 1, sc16_item32_le, 1, PRIORITY_CUSTOM){
     const fc64_t *input = reinterpret_cast<const fc64_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
@@ -68,7 +68,7 @@ DECLARE_CONVERTER(convert_fc64_1_to_item32_1_nswap, PRIORITY_CUSTOM){
     }
 }
 
-DECLARE_CONVERTER(convert_fc64_1_to_item32_1_bswap, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(fc64, 1, sc16_item32_be, 1, PRIORITY_CUSTOM){
     const fc64_t *input = reinterpret_cast<const fc64_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
@@ -114,7 +114,7 @@ DECLARE_CONVERTER(convert_fc64_1_to_item32_1_bswap, PRIORITY_CUSTOM){
     }
 }
 
-DECLARE_CONVERTER(convert_item32_1_to_fc64_1_nswap, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(sc16_item32_le, 1, fc64, 1, PRIORITY_CUSTOM){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     fc64_t *output = reinterpret_cast<fc64_t *>(outputs[0]);
 
@@ -163,7 +163,7 @@ DECLARE_CONVERTER(convert_item32_1_to_fc64_1_nswap, PRIORITY_CUSTOM){
     }
 }
 
-DECLARE_CONVERTER(convert_item32_1_to_fc64_1_bswap, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(sc16_item32_be, 1, fc64, 1, PRIORITY_CUSTOM){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     fc64_t *output = reinterpret_cast<fc64_t *>(outputs[0]);
 

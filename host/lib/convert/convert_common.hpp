@@ -23,28 +23,45 @@
 #include <boost/cstdint.hpp>
 #include <complex>
 
-#define DECLARE_CONVERTER(fcn, prio) \
+#define _DECLARE_CONVERTER(fcn, in_mark, num_in, out_mark, num_out, prio) \
     static void fcn( \
         const uhd::convert::input_type &inputs, \
         const uhd::convert::output_type &outputs, \
-        size_t nsamps, double scale_factor \
+        const size_t nsamps, \
+        const double scale_factor \
     ); \
-    UHD_STATIC_BLOCK(register_##fcn##_##prio){ \
-        uhd::convert::register_converter(#fcn, fcn, prio); \
+    UHD_STATIC_BLOCK(__register_##fcn##_##prio){ \
+        uhd::convert::id_type id; \
+        id.input_markup = #in_mark; \
+        id.num_inputs = num_in; \
+        id.output_markup = #out_mark; \
+        id.num_outputs = num_out; \
+        uhd::convert::register_converter(id, fcn, prio); \
     } \
     static void fcn( \
         const uhd::convert::input_type &inputs, \
         const uhd::convert::output_type &outputs, \
-        size_t nsamps, double scale_factor \
+        const size_t nsamps, \
+        const double scale_factor \
     )
+
+#define DECLARE_CONVERTER(in_mark, num_in, out_mark, num_out, prio) \
+    _DECLARE_CONVERTER(__convert_##in_mark##_##num_in##_##out_mark##_##num_out, in_mark, num_in, out_mark, num_out, prio)
 
 /***********************************************************************
  * Typedefs
  **********************************************************************/
 typedef std::complex<double>         fc64_t;
 typedef std::complex<float>          fc32_t;
+typedef std::complex<boost::int32_t> sc32_t;
 typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<boost::int8_t>  sc8_t;
+typedef double                       f64_t;
+typedef float                        f32_t;
+typedef boost::int32_t               s32_t;
+typedef boost::int16_t               s16_t;
+typedef boost::int8_t                s8_t;
+
 typedef boost::uint32_t              item32_t;
 
 /***********************************************************************
