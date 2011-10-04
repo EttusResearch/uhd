@@ -74,9 +74,11 @@ public:
     }
 
     double set_host_rate(const double rate){
-        const size_t interp_rate = uhd::clip<size_t>(
+        size_t interp_rate = uhd::clip<size_t>(
             boost::math::iround(_tick_rate/rate), size_t(std::ceil(_tick_rate/_link_rate)), 512
         );
+        if (interp_rate > 128) interp_rate &= ~0x1; //CIC up to 128, have to use 1 HB
+        if (interp_rate > 256) interp_rate &= ~0x3; //CIC up to 128, have to use 2 HB
         size_t interp = interp_rate;
 
         //determine which half-band filters are activated

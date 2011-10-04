@@ -133,9 +133,11 @@ public:
     }
 
     double set_host_rate(const double rate){
-        const size_t decim_rate = uhd::clip<size_t>(
+        size_t decim_rate = uhd::clip<size_t>(
             boost::math::iround(_tick_rate/rate), size_t(std::ceil(_tick_rate/_link_rate)), 512
         );
+        if (decim_rate > 128) decim_rate &= ~0x1; //CIC up to 128, have to use 1 HB
+        if (decim_rate > 256) decim_rate &= ~0x3; //CIC up to 128, have to use 2 HB
         size_t decim = decim_rate;
 
         //determine which half-band filters are activated
