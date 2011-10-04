@@ -41,8 +41,8 @@ typedef std::complex<double> fc64_t;
  **********************************************************************/
 template <typename Range> static void loopback(
     size_t nsamps,
-    const io_type_t &io_type,
-    const otw_type_t &otw_type,
+    convert::id_type &in_id,
+    convert::id_type &out_id,
     const Range &input,
     Range &output
 ){
@@ -53,23 +53,17 @@ template <typename Range> static void loopback(
     std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert to intermediate type
-    convert::get_converter_cpu_to_otw(
-        io_type, otw_type, input0.size(), output0.size()
-    )(input0, output0, nsamps, 32767.);
+    convert::get_converter(in_id)(input0, output0, nsamps, 32767.);
 
     //convert back to host type
-    convert::get_converter_otw_to_cpu(
-        io_type, otw_type, input1.size(), output1.size()
-    )(input1, output1, nsamps, 1/32767.);
+    convert::get_converter(out_id)(input1, output1, nsamps, 1/32767.);
 }
 
 /***********************************************************************
  * Test short conversion
  **********************************************************************/
 static void test_convert_types_sc16(
-    size_t nsamps,
-    const io_type_t &io_type,
-    const otw_type_t &otw_type
+    size_t nsamps, convert::id_type &id
 ){
     //fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
@@ -79,31 +73,37 @@ static void test_convert_types_sc16(
     );
 
     //run the loopback and test
-    loopback(nsamps, io_type, otw_type, input, output);
+    convert::id_type in_id = id;
+    convert::id_type out_id = id;
+    std::swap(out_id.input_markup, out_id.output_markup);
+    std::swap(out_id.num_inputs, out_id.num_outputs);
+    loopback(nsamps, in_id, out_id, input, output);
     BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16){
-    io_type_t io_type(io_type_t::COMPLEX_INT16);
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
-    otw_type.width = 16;
+    convert::id_type id;
+    id.input_markup = "sc16";
+    id.num_inputs = 1;
+    id.output_markup = "sc16_item32_be";
+    id.num_outputs = 1;
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_sc16(nsamps, io_type, otw_type);
+        test_convert_types_sc16(nsamps, id);
     }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
-    io_type_t io_type(io_type_t::COMPLEX_INT16);
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-    otw_type.width = 16;
+    convert::id_type id;
+    id.input_markup = "sc16";
+    id.num_inputs = 1;
+    id.output_markup = "sc16_item32_le";
+    id.num_outputs = 1;
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_sc16(nsamps, io_type, otw_type);
+        test_convert_types_sc16(nsamps, id);
     }
 }
 
@@ -112,9 +112,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
  **********************************************************************/
 template <typename data_type>
 static void test_convert_types_for_floats(
-    size_t nsamps,
-    const io_type_t &io_type,
-    const otw_type_t &otw_type
+    size_t nsamps, convert::id_type &id
 ){
     typedef typename data_type::value_type value_type;
 
@@ -126,7 +124,11 @@ static void test_convert_types_for_floats(
     );
 
     //run the loopback and test
-    loopback(nsamps, io_type, otw_type, input, output);
+    convert::id_type in_id = id;
+    convert::id_type out_id = id;
+    std::swap(out_id.input_markup, out_id.output_markup);
+    std::swap(out_id.num_inputs, out_id.num_outputs);
+    loopback(nsamps, in_id, out_id, input, output);
     for (size_t i = 0; i < nsamps; i++){
         MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(0.01));
         MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(0.01));
@@ -134,50 +136,54 @@ static void test_convert_types_for_floats(
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
-    io_type_t io_type(io_type_t::COMPLEX_FLOAT32);
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
-    otw_type.width = 16;
+    convert::id_type id;
+    id.input_markup = "fc32";
+    id.num_inputs = 1;
+    id.output_markup = "sc16_item32_be";
+    id.num_outputs = 1;
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_for_floats<fc32_t>(nsamps, io_type, otw_type);
+        test_convert_types_for_floats<fc32_t>(nsamps, id);
     }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
-    io_type_t io_type(io_type_t::COMPLEX_FLOAT32);
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-    otw_type.width = 16;
+    convert::id_type id;
+    id.input_markup = "fc32";
+    id.num_inputs = 1;
+    id.output_markup = "sc16_item32_le";
+    id.num_outputs = 1;
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_for_floats<fc32_t>(nsamps, io_type, otw_type);
+        test_convert_types_for_floats<fc32_t>(nsamps, id);
     }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64){
-    io_type_t io_type(io_type_t::COMPLEX_FLOAT64);
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_BIG_ENDIAN;
-    otw_type.width = 16;
+    convert::id_type id;
+    id.input_markup = "fc64";
+    id.num_inputs = 1;
+    id.output_markup = "sc16_item32_be";
+    id.num_outputs = 1;
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_for_floats<fc64_t>(nsamps, io_type, otw_type);
+        test_convert_types_for_floats<fc64_t>(nsamps, id);
     }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64){
-    io_type_t io_type(io_type_t::COMPLEX_FLOAT64);
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-    otw_type.width = 16;
+    convert::id_type id;
+    id.input_markup = "fc64";
+    id.num_inputs = 1;
+    id.output_markup = "sc16_item32_le";
+    id.num_outputs = 1;
 
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
-        test_convert_types_for_floats<fc64_t>(nsamps, io_type, otw_type);
+        test_convert_types_for_floats<fc64_t>(nsamps, id);
     }
 }
 
@@ -185,12 +191,17 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64){
  * Test float to short conversion loopback
  **********************************************************************/
 BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
-    io_type_t io_type_in(io_type_t::COMPLEX_FLOAT32);
-    io_type_t io_type_out(io_type_t::COMPLEX_INT16);
+    convert::id_type in_id;
+    in_id.input_markup = "fc32";
+    in_id.num_inputs = 1;
+    in_id.output_markup = "sc16_item32_le";
+    in_id.num_outputs = 1;
 
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_NATIVE;
-    otw_type.width = 16;
+    convert::id_type out_id;
+    out_id.input_markup = "sc16_item32_le";
+    out_id.num_inputs = 1;
+    out_id.output_markup = "sc16";
+    out_id.num_outputs = 1;
 
     const size_t nsamps = 13;
     std::vector<fc32_t> input(nsamps);
@@ -205,14 +216,10 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
     std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert float to intermediate
-    convert::get_converter_cpu_to_otw(
-        io_type_in, otw_type, input0.size(), output0.size()
-    )(input0, output0, nsamps, 32767.);
+    convert::get_converter(in_id)(input0, output0, nsamps, 32767.);
 
     //convert intermediate to short
-    convert::get_converter_otw_to_cpu(
-        io_type_out, otw_type, input1.size(), output1.size()
-    )(input1, output1, nsamps, 1/32767.);
+    convert::get_converter(out_id)(input1, output1, nsamps, 1/32767.);
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){
@@ -225,12 +232,17 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
  * Test short to float conversion loopback
  **********************************************************************/
 BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
-    io_type_t io_type_in(io_type_t::COMPLEX_INT16);
-    io_type_t io_type_out(io_type_t::COMPLEX_FLOAT32);
+    convert::id_type in_id;
+    in_id.input_markup = "sc16";
+    in_id.num_inputs = 1;
+    in_id.output_markup = "sc16_item32_le";
+    in_id.num_outputs = 1;
 
-    otw_type_t otw_type;
-    otw_type.byteorder = otw_type_t::BO_NATIVE;
-    otw_type.width = 16;
+    convert::id_type out_id;
+    out_id.input_markup = "sc16_item32_le";
+    out_id.num_inputs = 1;
+    out_id.output_markup = "fc32";
+    out_id.num_outputs = 1;
 
     const size_t nsamps = 13;
     std::vector<sc16_t> input(nsamps);
@@ -245,14 +257,10 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
     std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert short to intermediate
-    convert::get_converter_cpu_to_otw(
-        io_type_in, otw_type, input0.size(), output0.size()
-    )(input0, output0, nsamps, 32767.);
+    convert::get_converter(in_id)(input0, output0, nsamps, 32767.);
 
     //convert intermediate to float
-    convert::get_converter_otw_to_cpu(
-        io_type_out, otw_type, input1.size(), output1.size()
-    )(input1, output1, nsamps, 1/32767.);
+    convert::get_converter(out_id)(input1, output1, nsamps, 1/32767.);
 
     //test that the inputs and outputs match
     for (size_t i = 0; i < nsamps; i++){
