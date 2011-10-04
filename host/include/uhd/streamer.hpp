@@ -19,6 +19,8 @@
 #define INCLUDED_UHD_STREAMER_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/metadata.hpp>
+#include <uhd/types/ref_vector.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -87,10 +89,10 @@ public:
 
 };
 
-//! A RX streamer to receive host samples
-class UHD_API rx_streamer : public streamer{
+//! A receive streamer to receive host samples
+class UHD_API recv_streamer : public streamer{
 public:
-    typedef boost::shared_ptr<rx_streamer> sptr;
+    typedef boost::shared_ptr<recv_streamer> sptr;
 
     //! Typedef for a pointer to a single, or a collection of recv buffers
     typedef ref_vector<void *> recv_buffs_type;
@@ -128,10 +130,10 @@ public:
     ) = 0;
 };
 
-//! A TX streamer to transmit host samples
-class UHD_API rx_streamer : public streamer{
+//! A transmit streamer to send host samples
+class UHD_API send_streamer : public streamer{
 public:
-    typedef boost::shared_ptr<tx_streamer> sptr;
+    typedef boost::shared_ptr<send_streamer> sptr;
 
     //! Typedef for a pointer to a single, or a collection of send buffers
     typedef ref_vector<const void *> send_buffs_type;

@@ -19,10 +19,9 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/streamer.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/types/metadata.hpp>
-#include <uhd/types/ref_vector.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -77,116 +76,11 @@ public:
      */
     static sptr make(const device_addr_t &hint, size_t which = 0);
 
-    /*!
-     * Send modes for the device send routine.
-     */
-    enum send_mode_t{
-        //! Tells the send routine to send the entire buffer
-        SEND_MODE_FULL_BUFF = 0,
-        //! Tells the send routine to return after one packet
-        SEND_MODE_ONE_PACKET = 1
-    };
+    //! Make a new receive streamer given the list of channels
+    virtual recv_streamer::sptr get_recv_streamer(const std::vector<size_t> &channels) = 0;
 
-    /*!
-     * Recv modes for the device recv routine.
-     */
-    enum recv_mode_t{
-        //! Tells the recv routine to recv the entire buffer
-        RECV_MODE_FULL_BUFF = 0,
-        //! Tells the recv routine to return after one packet
-        RECV_MODE_ONE_PACKET = 1
-    };
-
-    //! Typedef for a pointer to a single, or a collection of send buffers
-    typedef ref_vector<const void *> send_buffs_type;
-
-    //! Typedef for a pointer to a single, or a collection of recv buffers
-    typedef ref_vector<void *> recv_buffs_type;
-
-    /*!
-     * Send buffers containing IF data described by the metadata.
-     *
-     * Send handles fragmentation as follows:
-     * If the buffer has more samples than the maximum per packet,
-     * the send method will fragment the samples across several packets.
-     * Send will respect the burst flags when fragmenting to ensure
-     * that start of burst can only be set on the first fragment and
-     * that end of burst can only be set on the final fragment.
-     * Fragmentation only applies in the full buffer send mode.
-     *
-     * This is a blocking call and will not return until the number
-     * of samples returned have been read out of each buffer.
-     * Under a timeout condition, the number of samples returned
-     * may be less than the number of samples specified.
-     *
-     * \param buffs a vector of read-only memory containing IF data
-     * \param nsamps_per_buff the number of samples to send, per buffer
-     * \param metadata data describing the buffer's contents
-     * \param io_type the type of data loaded in the buffer
-     * \param send_mode tells send how to unload the buffer
-     * \param timeout the timeout in seconds to wait on a packet
-     * \return the number of samples sent
-     */
-    virtual size_t send(
-        const send_buffs_type &buffs,
-        size_t nsamps_per_buff,
-        const tx_metadata_t &metadata,
-        const io_type_t &io_type,
-        send_mode_t send_mode,
-        double timeout = 0.1
-    ) = 0;
-
-    /*!
-     * Receive buffers containing IF data described by the metadata.
-     *
-     * Receive handles fragmentation as follows:
-     * If the buffer has insufficient space to hold all samples
-     * that were received in a single packet over-the-wire,
-     * then the buffer will be completely filled and the implementation
-     * will hold a pointer into the remaining portion of the packet.
-     * Subsequent calls will load from the remainder of the packet,
-     * and will flag the metadata to show that this is a fragment.
-     * The next call to receive, after the remainder becomes exahausted,
-     * will perform an over-the-wire receive as usual.
-     * See the rx metadata fragment flags and offset fields for details.
-     *
-     * This is a blocking call and will not return until the number
-     * of samples returned have been written into each buffer.
-     * Under a timeout condition, the number of samples returned
-     * may be less than the number of samples specified.
-     *
-     * When using the full buffer recv mode, the metadata only applies
-     * to the first packet received and written into the recv buffers.
-     * Use the one packet recv mode to get per packet metadata.
-     *
-     * \param buffs a vector of writable memory to fill with IF data
-     * \param nsamps_per_buff the size of each buffer in number of samples
-     * \param metadata data to fill describing the buffer
-     * \param io_type the type of data to fill into the buffer
-     * \param recv_mode tells recv how to load the buffer
-     * \param timeout the timeout in seconds to wait for a packet
-     * \return the number of samples received or 0 on error
-     */
-    virtual size_t recv(
-        const recv_buffs_type &buffs,
-        size_t nsamps_per_buff,
-        rx_metadata_t &metadata,
-        const io_type_t &io_type,
-        recv_mode_t recv_mode,
-        double timeout = 0.1
-    ) = 0;
-
-    /*!
-     * Get the maximum number of samples per packet on send.
-     * \return the number of samples
-     */
-    virtual size_t get_max_send_samps_per_packet(void) const = 0;
-
-    /*!
-     * Get the maximum number of samples per packet on recv.
-     * \return the number of samples
-     */
-    virtual size_t get_max_recv_samps_per_packet(void) const = 0;
+    //! Make a new transmit streamer given the list of channels
+    virtual send_streamer::sptr get_send_streamer(const std::vector<size_t> &channels) = 0;
 
     /*!
      * Receive and asynchronous message from the device.
@@ -200,6 +94,8 @@ public:
 
     //! Get access to the underlying property structure
     virtual boost::shared_ptr<property_tree> get_tree(void) const = 0;
+
+    #include <uhd/device_deprecated.ipp>
 
 };
 
