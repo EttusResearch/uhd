@@ -114,6 +114,16 @@ void register_bytes_per_item(
 
 size_t convert::get_bytes_per_item(const std::string &markup){
     if (get_item_size_table().has_key(markup)) return get_item_size_table()[markup];
+
+    //OK. I am sorry about this.
+    //We didnt find a match, so lets find a match for the first term.
+    //This is partially a hack because of the way I append strings.
+    //But as long as life is kind, we can keep this.
+    const size_t pos = markup.find("_");
+    if (pos != std::string::npos){
+        return get_bytes_per_item(markup.substr(0, pos));
+    }
+
     throw uhd::key_error("Cannot find an item size " + markup);
 }
 

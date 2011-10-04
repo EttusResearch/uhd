@@ -21,11 +21,9 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
-#include <uhd/device.hpp>
+#include <uhd/streamer.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/types/io_type.hpp>
-#include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
@@ -100,24 +98,12 @@ public:
         _props.at(xport_chan).get_buff = get_buff;
     }
 
-    /*!
-     * Setup the conversion functions (homogeneous across transports).
-     * Here, we load a table of converters for all possible io types.
-     * This makes the converter look-up an O(1) operation.
-     * \param otw_type the channel data type
-     * \param width the streams per channel (usually 1)
-     */
-    void set_converter(const uhd::otw_type_t &otw_type, const size_t width = 1){
-        _io_buffs.resize(width);
-        _converters.resize(128);
-        for (size_t io_type = 0; io_type < _converters.size(); io_type++){
-            try{
-                _converters[io_type] = uhd::convert::get_converter_cpu_to_otw(
-                    io_type_t::tid_t(io_type), otw_type, 1, width
-                );
-            }catch(const uhd::value_error &){} //we expect this, not all io_types valid...
-        }
-        _bytes_per_item = otw_type.get_sample_size();
+    //! Set the conversion routine for all channels
+    void set_converter(const uhd::convert::id_type &id){
+        _io_buffs.resize(id.num_outputs);
+        _converter = uhd::convert::get_converter(id);
+        _bytes_per_otw_item = uhd::convert::get_bytes_per_item(id.output_markup);
+        _bytes_per_cpu_item = uhd::convert::get_bytes_per_item(id.input_markup);
     }
 
     /*!
@@ -145,11 +131,9 @@ public:
      * Dispatch into combinations of single packet send calls.
      ******************************************************************/
     UHD_INLINE size_t send(
-        const uhd::device::send_buffs_type &buffs,
+        const uhd::tx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t &metadata,
-        const uhd::io_type_t &io_type,
-        uhd::device::send_mode_t send_mode,
         double timeout
     ){
         boost::mutex::scoped_lock lock(_mutex);
@@ -166,69 +150,52 @@ public:
         if_packet_info.sob     = metadata.start_of_burst;
         if_packet_info.eob     = metadata.end_of_burst;
 
-        if (nsamps_per_buff <= _max_samples_per_packet) send_mode = uhd::device::SEND_MODE_ONE_PACKET;
-        switch(send_mode){
-
-        ////////////////////////////////////////////////////////////////
-        case uhd::device::SEND_MODE_ONE_PACKET:{
-        ////////////////////////////////////////////////////////////////
+        if (nsamps_per_buff <= _max_samples_per_packet){
 
             //TODO remove this code when sample counts of zero are supported by hardware
             #ifndef SSPH_DONT_PAD_TO_ONE
             if (nsamps_per_buff == 0) return send_one_packet(
-                _zero_buffs, 1, if_packet_info, io_type, timeout
+                _zero_buffs, 1, if_packet_info, timeout
             ) & 0x0;
             #endif
 
-            return send_one_packet(
-                buffs,
-                std::min(nsamps_per_buff, _max_samples_per_packet),
-                if_packet_info, io_type, timeout
+            return send_one_packet(buffs, nsamps_per_buff, if_packet_info, timeout);
+        }
+        size_t total_num_samps_sent = 0;
+
+        //false until final fragment
+        if_packet_info.eob = false;
+
+        const size_t num_fragments = (nsamps_per_buff-1)/_max_samples_per_packet;
+        const size_t final_length = ((nsamps_per_buff-1)%_max_samples_per_packet)+1;
+
+        //loop through the following fragment indexes
+        for (size_t i = 0; i < num_fragments; i++){
+
+            //send a fragment with the helper function
+            const size_t num_samps_sent = send_one_packet(
+                buffs, _max_samples_per_packet,
+                if_packet_info, timeout,
+                total_num_samps_sent*_bytes_per_cpu_item
             );
+            total_num_samps_sent += num_samps_sent;
+            if (num_samps_sent == 0) return total_num_samps_sent;
+
+            //setup metadata for the next fragment
+            const time_spec_t time_spec = metadata.time_spec + time_spec_t(0, total_num_samps_sent, _samp_rate);
+            if_packet_info.tsi = boost::uint32_t(time_spec.get_full_secs());
+            if_packet_info.tsf = boost::uint64_t(time_spec.get_tick_count(_tick_rate));
+            if_packet_info.sob = false;
+
         }
 
-        ////////////////////////////////////////////////////////////////
-        case uhd::device::SEND_MODE_FULL_BUFF:{
-        ////////////////////////////////////////////////////////////////
-            size_t total_num_samps_sent = 0;
-
-            //false until final fragment
-            if_packet_info.eob = false;
-
-            const size_t num_fragments = (nsamps_per_buff-1)/_max_samples_per_packet;
-            const size_t final_length = ((nsamps_per_buff-1)%_max_samples_per_packet)+1;
-
-            //loop through the following fragment indexes
-            for (size_t i = 0; i < num_fragments; i++){
-
-                //send a fragment with the helper function
-                const size_t num_samps_sent = send_one_packet(
-                    buffs, _max_samples_per_packet,
-                    if_packet_info, io_type, timeout,
-                    total_num_samps_sent*io_type.size
-                );
-                total_num_samps_sent += num_samps_sent;
-                if (num_samps_sent == 0) return total_num_samps_sent;
-
-                //setup metadata for the next fragment
-                const time_spec_t time_spec = metadata.time_spec + time_spec_t(0, total_num_samps_sent, _samp_rate);
-                if_packet_info.tsi = boost::uint32_t(time_spec.get_full_secs());
-                if_packet_info.tsf = boost::uint64_t(time_spec.get_tick_count(_tick_rate));
-                if_packet_info.sob = false;
-
-            }
-
-            //send the final fragment with the helper function
-            if_packet_info.eob = metadata.end_of_burst;
-            return total_num_samps_sent + send_one_packet(
-                buffs, final_length,
-                if_packet_info, io_type, timeout,
-                total_num_samps_sent*io_type.size
-            );
-        }
-
-        default: throw uhd::value_error("unknown send mode");
-        }//switch(send_mode)
+        //send the final fragment with the helper function
+        if_packet_info.eob = metadata.end_of_burst;
+        return total_num_samps_sent + send_one_packet(
+            buffs, final_length,
+            if_packet_info, timeout,
+            total_num_samps_sent*_bytes_per_cpu_item
+        );
     }
 
 private:
@@ -242,8 +209,9 @@ private:
     };
     std::vector<xport_chan_props_type> _props;
     std::vector<const void *> _io_buffs; //used in conversion
-    size_t _bytes_per_item; //used in conversion
-    std::vector<uhd::convert::function_type> _converters; //used in conversion
+    size_t _bytes_per_otw_item; //used in conversion
+    size_t _bytes_per_cpu_item; //used in conversion
+    uhd::convert::function_type _converter; //used in conversion
     size_t _max_samples_per_packet;
     std::vector<const void *> _zero_buffs;
     size_t _next_packet_seq;
@@ -253,15 +221,14 @@ private:
      * Send a single packet:
      ******************************************************************/
     UHD_INLINE size_t send_one_packet(
-        const uhd::device::send_buffs_type &buffs,
+        const uhd::tx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         vrt::if_packet_info_t &if_packet_info,
-        const uhd::io_type_t &io_type,
         double timeout,
         const size_t buffer_offset_bytes = 0
     ){
         //load the rest of the if_packet_info in here
-        if_packet_info.num_payload_words32 = (nsamps_per_buff*_io_buffs.size()*_bytes_per_item)/sizeof(boost::uint32_t);
+        if_packet_info.num_payload_words32 = (nsamps_per_buff*_io_buffs.size()*_bytes_per_otw_item)/sizeof(boost::uint32_t);
         if_packet_info.packet_count = _next_packet_seq;
 
         size_t buff_index = 0;
@@ -280,7 +247,7 @@ private:
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            _converters[io_type.tid](_io_buffs, otw_mem, nsamps_per_buff, _scale_factor);
+            _converter(_io_buffs, otw_mem, nsamps_per_buff, _scale_factor);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);

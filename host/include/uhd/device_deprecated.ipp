@@ -77,21 +77,21 @@ size_t send(
     send_mode_t send_mode,
     double timeout = 0.1
 ){
-    if (_send_streamer.get() == NULL or _send_streamer->get_num_channels() != buffs.size()){
+    if (_tx_streamer.get() == NULL or _tx_streamer->get_num_channels() != buffs.size()){
         std::vector<size_t> chans(buffs.size());
         for (size_t ch = 0; ch < chans.size(); ch++) chans[ch] = ch;
-        _send_streamer.reset(); //cleanup possible old one
-        _send_streamer = get_send_streamer(chans);
+        _tx_streamer.reset(); //cleanup possible old one
+        _tx_streamer = get_tx_streamer(chans);
         _send_tid = io_type_t::CUSTOM_TYPE;
     }
     if (io_type.tid != _send_tid){
         _send_tid = io_type.tid;
-        _send_streamer->set_format((_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16", "sc16");
+        _tx_streamer->set_format((_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16", "sc16");
     }
     const size_t nsamps = (send_mode == SEND_MODE_ONE_PACKET)?
         std::min(nsamps_per_buff, get_max_send_samps_per_packet()) :
         nsamps_per_buff;
-    return _send_streamer->send(buffs, nsamps, metadata, timeout);
+    return _tx_streamer->send(buffs, nsamps, metadata, timeout);
 }
 
 /*!
@@ -133,21 +133,21 @@ size_t recv(
     recv_mode_t recv_mode,
     double timeout = 0.1
 ){
-    if (_recv_streamer.get() == NULL or _recv_streamer->get_num_channels() != buffs.size()){
+    if (_rx_streamer.get() == NULL or _rx_streamer->get_num_channels() != buffs.size()){
         std::vector<size_t> chans(buffs.size());
         for (size_t ch = 0; ch < chans.size(); ch++) chans[ch] = ch;
-        _recv_streamer.reset(); //cleanup possible old one
-        _recv_streamer = get_recv_streamer(chans);
+        _rx_streamer.reset(); //cleanup possible old one
+        _rx_streamer = get_rx_streamer(chans);
         _recv_tid = io_type_t::CUSTOM_TYPE;
     }
     if (io_type.tid != _recv_tid){
         _recv_tid = io_type.tid;
-        _recv_streamer->set_format((_recv_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16", "sc16");
+        _rx_streamer->set_format((_recv_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16", "sc16");
     }
     const size_t nsamps = (recv_mode == RECV_MODE_ONE_PACKET)?
         std::min(nsamps_per_buff, get_max_recv_samps_per_packet()) :
         nsamps_per_buff;
-    return _recv_streamer->recv(buffs, nsamps, metadata, timeout);
+    return _rx_streamer->recv(buffs, nsamps, metadata, timeout);
 }
 
 /*!
@@ -155,11 +155,11 @@ size_t recv(
  * \return the number of samples
  */
 size_t get_max_send_samps_per_packet(void){
-    if (_send_streamer.get() == NULL){
+    if (_tx_streamer.get() == NULL){
         std::vector<size_t> chans(1, 0);
-        _send_streamer = get_send_streamer(chans);
+        _tx_streamer = get_tx_streamer(chans);
     }
-    return _send_streamer->get_items_per_packet();
+    return _tx_streamer->get_items_per_packet();
 }
 
 /*!
@@ -167,15 +167,15 @@ size_t get_max_send_samps_per_packet(void){
  * \return the number of samples
  */
 size_t get_max_recv_samps_per_packet(void){
-    if (_recv_streamer.get() == NULL){
+    if (_rx_streamer.get() == NULL){
         std::vector<size_t> chans(1, 0);
-        _recv_streamer = get_recv_streamer(chans);
+        _rx_streamer = get_rx_streamer(chans);
     }
-    return _recv_streamer->get_items_per_packet();
+    return _rx_streamer->get_items_per_packet();
 }
 
 private:
-    recv_streamer::sptr _recv_streamer;
+    rx_streamer::sptr _rx_streamer;
     io_type_t::tid_t _recv_tid;
-    send_streamer::sptr _send_streamer;
+    tx_streamer::sptr _tx_streamer;
     io_type_t::tid_t _send_tid;
