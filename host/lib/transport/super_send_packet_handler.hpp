@@ -259,6 +259,33 @@ private:
     }
 };
 
+class send_packet_streamer : public send_packet_handler, public tx_streamer{
+public:
+    send_packet_streamer(const size_t max_num_samps){
+        _max_num_samps = max_num_samps;
+    }
+
+    size_t get_num_channels(void) const{
+        return this->size();
+    }
+
+    size_t get_max_num_samps(void) const{
+        return _max_num_samps;
+    }
+
+    size_t send(
+        const tx_streamer::buffs_type &buffs,
+        const size_t nsamps_per_buff,
+        const uhd::tx_metadata_t &metadata,
+        double timeout
+    ){
+        return send_packet_handler::send(buffs, nsamps_per_buff, metadata, timeout);
+    }
+
+private:
+    size_t _max_num_samps;
+};
+
 }}} //namespace
 
 #endif /* INCLUDED_LIBUHD_TRANSPORT_SUPER_SEND_PACKET_HANDLER_HPP */

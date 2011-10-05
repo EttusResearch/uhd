@@ -76,11 +76,11 @@ public:
      */
     static sptr make(const device_addr_t &hint, size_t which = 0);
 
-    //! Make a new receive streamer given the list of channels
-    virtual rx_streamer::sptr get_rx_streamer(const std::vector<size_t> &channels) = 0;
+    //! Make a new receive streamer from the streamer arguments
+    virtual rx_streamer::sptr get_rx_streamer(const streamer_args &args) = 0;
 
-    //! Make a new transmit streamer given the list of channels
-    virtual tx_streamer::sptr get_tx_streamer(const std::vector<size_t> &channels) = 0;
+    //! Make a new transmit streamer from the streamer arguments
+    virtual tx_streamer::sptr get_tx_streamer(const streamer_args &args) = 0;
 
     /*!
      * Receive and asynchronous message from the device.

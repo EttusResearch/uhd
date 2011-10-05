@@ -23,9 +23,68 @@
 #include <uhd/types/ref_vector.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <vector>
 #include <string>
 
 namespace uhd{
+
+/*!
+ * A struct of parameters to construct a streamer.
+ *
+ * Note:
+ * Not all combinations of CPU and OTW format have conversion support.
+ * You may however write and register your own conversion routines.
+ */
+struct UHD_API streamer_args{
+
+    //! Convenience constructor for streamer args
+    streamer_args(
+        const std::string &cpu = "fc32",
+        const std::string &otw = "sc16"
+    ){
+        cpu_format = cpu;
+        otw_format = otw;
+    }
+
+    /*!
+     * The CPU format is a string that describes the format of host memory.
+     * Common CPU formats are:
+     *  - fc32 - complex<float>
+     *  - fc64 - complex<double>
+     *  - sc16 - complex<int16_t>
+     *  - sc8 - complex<int8_t>
+     *  - f32 - float
+     *  - f64 - double
+     *  - s16 - int16_t
+     *  - s8 - int8_t
+     */
+    std::string cpu_format;
+
+    /*!
+     * The OTW format is a string that describes the format over-the-wire.
+     * Common OTW format are:
+     *  - sc16 - Q16 I16
+     *  - sc8 - Q8_1 I8_1 Q8_0 I8_0
+     *  - s16 - R16_1 R16_0
+     *  - s8 - R8_3 R8_2 R8_1 R8_0
+     */
+    std::string otw_format;
+
+    /*!
+     * The args parameter is currently unused. Leave it blank.
+     * The intention is that a user with a custom DSP design
+     * may want to pass args and do something special with it.
+     */
+    std::string args;
+
+    /*!
+     * The channels is a list of channel numbers.
+     * Leave this blank to default to channel 0.
+     * Set channels for a multi-channel application.
+     * Channel mapping depends on the front-end selection.
+     */
+    std::vector<size_t> channels;
+};
 
 /*!
  * A streamer is the host interface to RX or TX samples.
@@ -37,56 +96,8 @@ public:
     //! Get the number of channels associated with this streamer
     virtual size_t get_num_channels(void) const = 0;
 
-    /*!
-     * \brief Set the format for all channels in this streamer.
-     *
-     * The CPU format is a string that describes the format of host memory.
-     * Common CPU formats are:
-     *  - fc32 - complex<float>
-     *  - fc64 - complex<double>
-     *  - sc16 - complex<int16_t>
-     *  - sc8 - complex<int8_t>
-     *  - f32 - float
-     *  - f64 - double
-     *  - s16 - int16_t
-     *  - s8 - int8_t
-     *
-     * The OTW format is a string that describes the format over-the-wire.
-     * Common OTW format are:
-     *  - sc16 - Q16 I16
-     *  - sc8 - Q8_1 I8_1 Q8_0 I8_0
-     *  - s16 - R16_1 R16_0
-     *  - s8 - R8_3 R8_2 R8_1 R8_0
-     *
-     * The args parameter is currently unused. Leave it blank.
-     * The intention is that a user with a custom DSP design
-     * may want to pass args and do something special with it.
-     *
-     * Note:
-     * Not all combinations of CPU and OTW format have conversion support.
-     * You may however write and register your own conversion routines.
-     *
-     * \param cpu_format the data format for samples used on the host
-     * \param otw_format the data format of the samples over the wire
-     * \param args optional arguments to augment the format
-     */
-    virtual void set_format(
-        const std::string &cpu_format,
-        const std::string &otw_format,
-        const std::string &args = ""
-    ) = 0;
-
-    //! Get the number of bytes per CPU item/sample
-    virtual size_t get_bytes_per_cpu_item(void) const = 0;
-
-    //! Get the number of bytes per OTW item/sample
-    virtual size_t get_bytes_per_otw_item(void) const = 0;
-
-    //! Get the max number of items/samples per packet
-    virtual size_t get_items_per_packet(void) const = 0;
-
-    //TODO enumerate cpu and otw format options
-
+    //! Get the max number of samples per buffer per packet
+    virtual size_t get_max_num_samps(void) const = 0;
 };
 
 //! A receive streamer to receive host samples
@@ -124,7 +135,7 @@ public:
      */
     virtual size_t recv(
         const buffs_type &buffs,
-        size_t nsamps_per_buff,
+        const size_t nsamps_per_buff,
         rx_metadata_t &metadata,
         double timeout = 0.1
     ) = 0;
@@ -161,7 +172,7 @@ public:
      */
     virtual size_t send(
         const buffs_type &buffs,
-        size_t nsamps_per_buff,
+        const size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         double timeout = 0.1
     ) = 0;

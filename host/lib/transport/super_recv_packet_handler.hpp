@@ -562,6 +562,33 @@ private:
     }
 };
 
+class recv_packet_streamer : public recv_packet_handler, public rx_streamer{
+public:
+    recv_packet_streamer(const size_t max_num_samps){
+        _max_num_samps = max_num_samps;
+    }
+
+    size_t get_num_channels(void) const{
+        return this->size();
+    }
+
+    size_t get_max_num_samps(void) const{
+        return _max_num_samps;
+    }
+
+    size_t recv(
+        const rx_streamer::buffs_type &buffs,
+        const size_t nsamps_per_buff,
+        uhd::rx_metadata_t &metadata,
+        double timeout
+    ){
+        return recv_packet_handler::recv(buffs, nsamps_per_buff, metadata, timeout);
+    }
+
+private:
+    size_t _max_num_samps;
+};
+
 }}} //namespace
 
 #endif /* INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP */
