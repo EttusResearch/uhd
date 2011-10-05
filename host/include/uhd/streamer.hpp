@@ -87,23 +87,19 @@ struct UHD_API streamer_args{
 };
 
 /*!
- * A streamer is the host interface to RX or TX samples.
+ * The RX streamer is the host interface to receiving samples.
  * It represents the layer between the samples on the host
- * and samples inside the device's DSP processing.
+ * and samples inside the device's receive DSP processing.
  */
-class UHD_API streamer : boost::noncopyable{
+class UHD_API rx_streamer : boost::noncopyable{
 public:
+    typedef boost::shared_ptr<rx_streamer> sptr;
+
     //! Get the number of channels associated with this streamer
     virtual size_t get_num_channels(void) const = 0;
 
     //! Get the max number of samples per buffer per packet
     virtual size_t get_max_num_samps(void) const = 0;
-};
-
-//! A receive streamer to receive host samples
-class UHD_API rx_streamer : public streamer{
-public:
-    typedef boost::shared_ptr<rx_streamer> sptr;
 
     //! Typedef for a pointer to a single, or a collection of recv buffers
     typedef ref_vector<void *> buffs_type;
@@ -141,10 +137,20 @@ public:
     ) = 0;
 };
 
-//! A transmit streamer to send host samples
-class UHD_API tx_streamer : public streamer{
+/*!
+ * The TX streamer is the host interface to transmitting samples.
+ * It represents the layer between the samples on the host
+ * and samples inside the device's transmit DSP processing.
+ */
+class UHD_API tx_streamer : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_streamer> sptr;
+
+    //! Get the number of channels associated with this streamer
+    virtual size_t get_num_channels(void) const = 0;
+
+    //! Get the max number of samples per buffer per packet
+    virtual size_t get_max_num_samps(void) const = 0;
 
     //! Typedef for a pointer to a single, or a collection of send buffers
     typedef ref_vector<const void *> buffs_type;

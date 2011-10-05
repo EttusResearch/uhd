@@ -108,6 +108,16 @@ public:
      */
     virtual device::sptr get_device(void) = 0;
 
+    //! Convenience method to get a RX streamer
+    rx_streamer::sptr get_rx_streamer(const streamer_args &args){
+        return this->get_device()->get_rx_streamer(args);
+    }
+
+    //! Convenience method to get a TX streamer
+    tx_streamer::sptr get_tx_streamer(const streamer_args &args){
+        return this->get_device()->get_tx_streamer(args);
+    }
+
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
