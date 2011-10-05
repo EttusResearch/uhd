@@ -79,13 +79,12 @@ size_t send(
 ){
     if (_tx_streamer.get() == NULL or _tx_streamer->get_num_channels() != buffs.size() or _send_tid != io_type.tid){
         _send_tid = io_type.tid;
-        std::vector<size_t> chans(buffs.size());
-        for (size_t ch = 0; ch < chans.size(); ch++) chans[ch] = ch;
         _tx_streamer.reset(); //cleanup possible old one
         streamer_args args;
         args.cpu_format = (_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
-        args.channels = chans;
+        for (size_t ch = 0; ch < buffs.size(); ch++)
+            args.channels.push_back(ch); //linear mapping
         _tx_streamer = get_tx_streamer(args);
     }
     const size_t nsamps = (send_mode == SEND_MODE_ONE_PACKET)?
@@ -135,13 +134,12 @@ size_t recv(
 ){
     if (_rx_streamer.get() == NULL or _rx_streamer->get_num_channels() != buffs.size() or _recv_tid != io_type.tid){
         _recv_tid = io_type.tid;
-        std::vector<size_t> chans(buffs.size());
-        for (size_t ch = 0; ch < chans.size(); ch++) chans[ch] = ch;
         _rx_streamer.reset(); //cleanup possible old one
         streamer_args args;
         args.cpu_format = (_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
-        args.channels = chans;
+        for (size_t ch = 0; ch < buffs.size(); ch++)
+            args.channels.push_back(ch); //linear mapping
         _rx_streamer = get_rx_streamer(args);
     }
     const size_t nsamps = (recv_mode == RECV_MODE_ONE_PACKET)?
