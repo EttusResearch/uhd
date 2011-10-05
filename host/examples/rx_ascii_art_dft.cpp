@@ -147,6 +147,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
 
+    //create a receive streamer
+    uhd::streamer_args stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+
     //allocate recv buffer and metatdata
     uhd::rx_metadata_t md;
     std::vector<std::complex<float> > buff(num_bins);
@@ -162,10 +166,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     while (true){
         //read a buffer's worth of samples every iteration
-        size_t num_rx_samps = usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_FULL_BUFF
+        size_t num_rx_samps = rx_stream->recv(
+            &buff.front(), buff.size(), md
         );
         if (num_rx_samps != buff.size()) continue;
 

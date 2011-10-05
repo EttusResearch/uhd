@@ -73,8 +73,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
+    //create a transmit streamer
+    uhd::streamer_args stream_args("fc32"); //complex floats
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+
     //allocate buffer with data to send
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_send_samps_per_packet(), std::complex<float>(ampl, ampl));
+    std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps(), std::complex<float>(ampl, ampl));
 
     //setup metadata for the first packet
     uhd::tx_metadata_t md;
@@ -91,10 +95,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
 
         //send a single packet
-        size_t num_tx_samps = usrp->get_device()->send(
-            &buff.front(), samps_to_send, md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_ONE_PACKET, timeout
+        size_t num_tx_samps = tx_stream->send(
+            &buff.front(), samps_to_send, md, timeout
         );
 
         //do not use time spec for subsequent packets
@@ -108,10 +110,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send a mini EOB packet
     md.end_of_burst   = true;
-    usrp->get_device()->send("", 0, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    tx_stream->send("", 0, md);
 
     std::cout << std::endl << "Waiting for async burst ACK... " << std::flush;
     uhd::async_metadata_t async_md;

@@ -130,6 +130,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
 
+    //create a receive streamer
+    uhd::streamer_args stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+
     //setup streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
@@ -139,14 +143,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
     uhd::rx_metadata_t md;
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::transport::udp_simple::sptr udp_xport = uhd::transport::udp_simple::make_connected(addr, port);
 
     while(num_acc_samps < total_num_samps){
-        size_t num_rx_samps = usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET
+        size_t num_rx_samps = rx_stream->recv(
+            &buff.front(), buff.size(), md
         );
 
         //handle the error codes

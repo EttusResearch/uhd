@@ -29,10 +29,14 @@ namespace po = boost::program_options;
 
 template<typename samp_type> void send_from_file(
     uhd::usrp::multi_usrp::sptr usrp,
-    const uhd::io_type_t &io_type,
+    const std::string &cpu_format,
     const std::string &file,
     size_t samps_per_buff
 ){
+    //create a transmit streamer
+    uhd::streamer_args stream_args(cpu_format);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+
     uhd::tx_metadata_t md;
     md.start_of_burst = false;
     md.end_of_burst = false;
@@ -47,10 +51,7 @@ template<typename samp_type> void send_from_file(
 
         md.end_of_burst = infile.eof();
 
-        usrp->get_device()->send(
-            &buff.front(), num_tx_samps, md, io_type,
-            uhd::device::SEND_MODE_FULL_BUFF
-        );
+        tx_stream->send(&buff.front(), num_tx_samps, md);
     }
 
     infile.close();
@@ -172,9 +173,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //send from file
-    if (type == "double") send_from_file<std::complex<double> >(usrp, uhd::io_type_t::COMPLEX_FLOAT64, file, spb);
-    else if (type == "float") send_from_file<std::complex<float> >(usrp, uhd::io_type_t::COMPLEX_FLOAT32, file, spb);
-    else if (type == "short") send_from_file<std::complex<short> >(usrp, uhd::io_type_t::COMPLEX_INT16, file, spb);
+    if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", file, spb);
+    else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", file, spb);
+    else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", file, spb);
     else throw std::runtime_error("Unknown type " + type);
 
     //finished

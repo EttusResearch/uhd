@@ -111,6 +111,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
     }
 
+    //create a receive streamer
+    //linearly map channels (index0 = channel0, index1 = channel1, ...)
+    uhd::streamer_args stream_args("fc32"); //complex floats
+    for (size_t chan = 0; chan < usrp->get_rx_num_channels(); chan++)
+        stream_args.channels.push_back(chan); //linear mapping
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+
     //setup streaming
     std::cout << std::endl;
     std::cout << boost::format(
@@ -126,7 +133,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::rx_metadata_t md;
 
     //allocate buffers to receive with samples (one buffer per channel)
-    size_t samps_per_buff = usrp->get_device()->get_max_recv_samps_per_packet();
+    const size_t samps_per_buff = rx_stream->get_max_num_samps();
     std::vector<std::vector<std::complex<float> > > buffs(
         usrp->get_rx_num_channels(), std::vector<std::complex<float> >(samps_per_buff)
     );
@@ -141,10 +148,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_acc_samps = 0; //number of accumulated samples
     while(num_acc_samps < total_num_samps){
         //receive a single packet
-        size_t num_rx_samps = usrp->get_device()->recv(
-            buff_ptrs, samps_per_buff, md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, timeout
+        size_t num_rx_samps = rx_stream->recv(
+            buff_ptrs, samps_per_buff, md, timeout
         );
 
         //use a small timeout for subsequent packets

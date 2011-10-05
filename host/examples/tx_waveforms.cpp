@@ -202,6 +202,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const double cps = wave_freq/usrp->get_tx_rate();
     double theta = 0;
 
+    //create a transmit streamer
+    //linearly map channels (index0 = channel0, index1 = channel1, ...)
+    uhd::streamer_args stream_args("fc32");
+    for (size_t chan = 0; chan < usrp->get_tx_num_channels(); chan++)
+        stream_args.channels.push_back(chan); //linear mapping
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+
     //allocate a buffer which we re-use for each channel
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(usrp->get_tx_num_channels(), &buff.front());
@@ -250,11 +257,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         theta = std::fmod(theta, 1);
 
         //send the entire contents of the buffer
-        usrp->get_device()->send(
-            buffs, buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_FULL_BUFF
-        );
+        tx_stream->send(buffs, buff.size(), md);
 
         md.start_of_burst = false;
         md.has_time_spec = false;
@@ -262,10 +265,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send a mini EOB packet
     md.end_of_burst = true;
-    usrp->get_device()->send("", 0, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    tx_stream->send("", 0, md);
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
