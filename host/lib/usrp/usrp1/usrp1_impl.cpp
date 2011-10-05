@@ -281,6 +281,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++){
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<double>(rx_dsp_path / "rate/value")
+            .set(1e6)
             .coerce(boost::bind(&usrp1_impl::update_rx_samp_rate, this, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_rx_dsp_freq, this, dspno, _1));
@@ -301,6 +302,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++){
         fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
         _tree->create<double>(tx_dsp_path / "rate/value")
+            .set(1e6)
             .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, _1));
         _tree->create<double>(tx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, _1));
@@ -382,14 +384,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-    //and now that the tick rate is set, init the host rates to something
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
-        _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").set(1e6);
-    }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
-        _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").set(1e6);
-    }
-
+    this->update_rates();
     if (_tree->list(mb_path / "rx_dsps").size() > 0)
         _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
     if (_tree->list(mb_path / "tx_dsps").size() > 0)

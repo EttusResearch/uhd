@@ -28,7 +28,6 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/thread/thread_time.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <iostream>
@@ -115,11 +114,6 @@ public:
         _max_samples_per_packet = num_samps;
     }
 
-    //! Get a scoped lock object for this instance
-    boost::mutex::scoped_lock get_scoped_lock(void){
-        return boost::mutex::scoped_lock(_mutex);
-    }
-
     //! Set the scale factor used in float conversion
     void set_scale_factor(const double scale_factor){
         _scale_factor = scale_factor;
@@ -136,8 +130,6 @@ public:
         const uhd::tx_metadata_t &metadata,
         double timeout
     ){
-        boost::mutex::scoped_lock lock(_mutex);
-
         //translate the metadata to vrt if packet info
         vrt::if_packet_info_t if_packet_info;
         if_packet_info.has_sid = false;
@@ -200,7 +192,6 @@ public:
 
 private:
 
-    boost::mutex _mutex;
     vrt_packer_type _vrt_packer;
     size_t _header_offset_words32;
     double _tick_rate, _samp_rate;

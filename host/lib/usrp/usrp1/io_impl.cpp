@@ -33,6 +33,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -138,10 +139,6 @@ struct usrp1_impl::io_impl{
 
     zero_copy_if::sptr data_transport;
 
-    //state management for the vrt packet handler code
-    sph::recv_packet_handler recv_handler;
-    sph::send_packet_handler send_handler;
-
     //wrapper around the actual send buffer interface
     //all of this to ensure only aligned lengths are committed
     //NOTE: you must commit before getting a new buffer
@@ -219,31 +216,12 @@ void usrp1_impl::io_impl::flush_send_buff(void){
  * Initialize internals within this file
  **********************************************************************/
 void usrp1_impl::io_init(void){
-    _rx_otw_type.width = 16;
-    _rx_otw_type.shift = 0;
-    _rx_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
-
-    _tx_otw_type.width = 16;
-    _tx_otw_type.shift = 0;
-    _tx_otw_type.byteorder = otw_type_t::BO_LITTLE_ENDIAN;
 
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
 
     //create a new vandal thread to poll xerflow conditions
     _io_impl->vandal_task = task::make(boost::bind(
         &usrp1_impl::vandal_conquest_loop, this
-    ));
-
-    //init some handler stuff
-    _io_impl->recv_handler.set_tick_rate(_master_clock_rate);
-    _io_impl->recv_handler.set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
-    _io_impl->recv_handler.set_xport_chan_get_buff(0, boost::bind(
-        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, _1
-    ));
-    _io_impl->send_handler.set_tick_rate(_master_clock_rate);
-    _io_impl->send_handler.set_vrt_packer(&usrp1_bs_vrt_packer);
-    _io_impl->send_handler.set_xport_chan_get_buff(0, boost::bind(
-        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
     ));
 
     //init as disabled, then call the real function (uses restore)
@@ -325,17 +303,107 @@ void usrp1_impl::vandal_conquest_loop(void){
 }
 
 /***********************************************************************
+ * RX streamer wrapper that talks to soft time control
+ **********************************************************************/
+class usrp1_recv_packet_streamer : public sph::recv_packet_handler, public rx_streamer{
+public:
+    usrp1_recv_packet_streamer(const size_t max_num_samps, soft_time_ctrl::sptr stc){
+        _max_num_samps = max_num_samps;
+        _stc = stc;
+    }
+
+    size_t get_num_channels(void) const{
+        return this->size();
+    }
+
+    size_t get_max_num_samps(void) const{
+        return _max_num_samps;
+    }
+
+    size_t recv(
+        const rx_streamer::buffs_type &buffs,
+        const size_t nsamps_per_buff,
+        uhd::rx_metadata_t &metadata,
+        double timeout
+    ){
+        //interleave a "soft" inline message into the receive stream:
+        if (_stc->get_inline_queue().pop_with_haste(metadata)) return 0;
+
+        size_t num_samps_recvd = sph::recv_packet_handler::recv(
+            buffs, nsamps_per_buff, metadata, timeout
+        );
+
+        return _stc->recv_post(metadata, num_samps_recvd);
+    }
+
+private:
+    size_t _max_num_samps;
+    soft_time_ctrl::sptr _stc;
+};
+
+/***********************************************************************
+ * TX streamer wrapper that talks to soft time control
+ **********************************************************************/
+class usrp1_send_packet_streamer : public sph::send_packet_handler, public tx_streamer{
+public:
+    usrp1_send_packet_streamer(const size_t max_num_samps, soft_time_ctrl::sptr stc, boost::function<void(bool)> tx_enb_fcn){
+        _max_num_samps = max_num_samps;
+        this->set_max_samples_per_packet(_max_num_samps);
+        _stc = stc;
+        _tx_enb_fcn = tx_enb_fcn;
+    }
+
+    size_t get_num_channels(void) const{
+        return this->size();
+    }
+
+    size_t get_max_num_samps(void) const{
+        return _max_num_samps;
+    }
+
+    size_t send(
+        const tx_streamer::buffs_type &buffs,
+        const size_t nsamps_per_buff,
+        const uhd::tx_metadata_t &metadata,
+        double timeout
+    ){
+        if (_stc->send_pre(metadata, timeout)) return 0;
+
+        _tx_enb_fcn(true); //always enable (it will do the right thing)
+        size_t num_samps_sent = sph::send_packet_handler::send(
+            buffs, nsamps_per_buff, metadata, timeout
+        );
+
+        //handle eob flag (commit the buffer, //disable the DACs)
+        //check num samps sent to avoid flush on incomplete/timeout
+        if (metadata.end_of_burst and num_samps_sent == nsamps_per_buff){
+            async_metadata_t metadata;
+            metadata.channel = 0;
+            metadata.has_time_spec = true;
+            metadata.time_spec = _stc->get_time();
+            metadata.event_code = async_metadata_t::EVENT_CODE_BURST_ACK;
+            _stc->get_async_queue().push_with_pop_on_full(metadata);
+            _tx_enb_fcn(false);
+        }
+
+        return num_samps_sent;
+    }
+
+private:
+    size_t _max_num_samps;
+    soft_time_ctrl::sptr _stc;
+    boost::function<void(bool)> _tx_enb_fcn;
+};
+
+/***********************************************************************
  * Properties callback methods below
  **********************************************************************/
 void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
-    boost::mutex::scoped_lock lock = _io_impl->recv_handler.get_scoped_lock();
 
     //sanity checking
     validate_subdev_spec(_tree, spec, "rx");
 
     _rx_subdev_spec = spec; //shadow
-    //_io_impl->recv_handler.resize(spec.size()); //always 1
-    _io_impl->recv_handler.set_converter(_rx_otw_type, spec.size());
 
     //set the mux and set the number of rx channels
     std::vector<mapping_pair_t> mapping;
@@ -351,14 +419,11 @@ void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 }
 
 void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
-    boost::mutex::scoped_lock lock = _io_impl->send_handler.get_scoped_lock();
 
     //sanity checking
     validate_subdev_spec(_tree, spec, "tx");
 
     _tx_subdev_spec = spec; //shadow
-    //_io_impl->send_handler.resize(spec.size()); //always 1
-    _io_impl->send_handler.set_converter(_tx_otw_type, spec.size());
 
     //set the mux and set the number of tx channels
     std::vector<mapping_pair_t> mapping;
@@ -371,13 +436,9 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     bool s = this->disable_tx();
     _iface->poke32(FR_TX_MUX, calc_tx_mux(mapping));
     this->restore_tx(s);
-
-    //if the spec changes size, so does the max samples per packet...
-    _io_impl->send_handler.set_max_samples_per_packet(get_max_send_samps_per_packet());
 }
 
 double usrp1_impl::update_rx_samp_rate(const double samp_rate){
-    boost::mutex::scoped_lock lock = _io_impl->recv_handler.get_scoped_lock();
 
     const size_t rate = uhd::clip<size_t>(
         boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
@@ -387,12 +448,17 @@ double usrp1_impl::update_rx_samp_rate(const double samp_rate){
     _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
     this->restore_rx(s);
 
-    _io_impl->recv_handler.set_samp_rate(_master_clock_rate / rate);
+    //update the streamer if created
+    boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
+        boost::dynamic_pointer_cast<usrp1_recv_packet_streamer>(_rx_streamer.lock());
+    if (my_streamer.get() != NULL){
+        my_streamer->set_samp_rate(_master_clock_rate / rate);
+    }
+
     return _master_clock_rate / rate;
 }
 
 double usrp1_impl::update_tx_samp_rate(const double samp_rate){
-    boost::mutex::scoped_lock lock = _io_impl->send_handler.get_scoped_lock();
 
     const size_t rate = uhd::clip<size_t>(
         boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
@@ -402,8 +468,24 @@ double usrp1_impl::update_tx_samp_rate(const double samp_rate){
     _iface->poke32(FR_INTERP_RATE, rate/2 - 1);
     this->restore_tx(s);
 
-    _io_impl->send_handler.set_samp_rate(_master_clock_rate / rate);
+    //update the streamer if created
+    boost::shared_ptr<usrp1_send_packet_streamer> my_streamer =
+        boost::dynamic_pointer_cast<usrp1_send_packet_streamer>(_tx_streamer.lock());
+    if (my_streamer.get() != NULL){
+        my_streamer->set_samp_rate(_master_clock_rate / rate);
+    }
+
     return _master_clock_rate / rate;
+}
+
+void usrp1_impl::update_rates(void){
+    const fs_path mb_path = "/mboards/0";
+    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+        _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").update();
+    }
+    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
+        _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").update();
+    }
 }
 
 double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_){
@@ -443,67 +525,82 @@ bool usrp1_impl::recv_async_msg(
 }
 
 /***********************************************************************
- * Data send + helper functions
+ * Receive streamer
  **********************************************************************/
-size_t usrp1_impl::get_max_send_samps_per_packet(void) const {
-    return (_data_transport->get_send_frame_size() - alignment_padding)
-        / _tx_otw_type.get_sample_size()
-        / _tx_subdev_spec.size()
-    ;
-}
+rx_streamer::sptr usrp1_impl::get_rx_streamer(const uhd::streamer_args &args){
+    //map an empty channel set to chan0
+    const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
-size_t usrp1_impl::send(
-    const send_buffs_type &buffs, size_t nsamps_per_buff,
-    const tx_metadata_t &metadata, const io_type_t &io_type,
-    send_mode_t send_mode, double timeout
-){
-    if (_soft_time_ctrl->send_pre(metadata, timeout)) return 0;
+    //calculate packet size
+    const size_t bpp = _data_transport->get_recv_frame_size()/channels.size();
+    const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
-    this->tx_stream_on_off(true); //always enable (it will do the right thing)
-    size_t num_samps_sent = _io_impl->send_handler.send(
-        buffs, nsamps_per_buff,
-        metadata, io_type,
-        send_mode, timeout
-    );
+    //make the new streamer given the samples per packet
+    boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
+        boost::make_shared<usrp1_recv_packet_streamer>(spp, _soft_time_ctrl);
 
-    //handle eob flag (commit the buffer, /*disable the DACs*/)
-    //check num samps sent to avoid flush on incomplete/timeout
-    if (metadata.end_of_burst and num_samps_sent == nsamps_per_buff){
-        async_metadata_t metadata;
-        metadata.channel = 0;
-        metadata.has_time_spec = true;
-        metadata.time_spec = _soft_time_ctrl->get_time();
-        metadata.event_code = async_metadata_t::EVENT_CODE_BURST_ACK;
-        _soft_time_ctrl->get_async_queue().push_with_pop_on_full(metadata);
-        this->tx_stream_on_off(false);
-    }
+    //init some streamer stuff
+    my_streamer->set_tick_rate(_master_clock_rate);
+    my_streamer->set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
+    my_streamer->set_xport_chan_get_buff(0, boost::bind(
+        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, _1
+    ));
 
-    return num_samps_sent;
+    //set the converter
+    uhd::convert::id_type id;
+    id.input_markup = args.otw_format + "_item32_le";
+    id.num_inputs = channels.size();
+    id.output_markup = args.cpu_format;
+    id.num_outputs = 1;
+    id.args = args.args;
+    my_streamer->set_converter(id);
+
+    //save as weak ptr for update access
+    _rx_streamer = my_streamer;
+
+    //sets all tick and samp rates on this streamer
+    this->update_rates();
+
+    return my_streamer;
 }
 
 /***********************************************************************
- * Data recv + helper functions
+ * Transmit streamer
  **********************************************************************/
-size_t usrp1_impl::get_max_recv_samps_per_packet(void) const {
-    return _data_transport->get_recv_frame_size()
-        / _rx_otw_type.get_sample_size()
-        / _rx_subdev_spec.size()
-    ;
-}
+tx_streamer::sptr usrp1_impl::get_tx_streamer(const uhd::streamer_args &args){
+    //map an empty channel set to chan0
+    const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
-size_t usrp1_impl::recv(
-    const recv_buffs_type &buffs, size_t nsamps_per_buff,
-    rx_metadata_t &metadata, const io_type_t &io_type,
-    recv_mode_t recv_mode, double timeout
-){
-    //interleave a "soft" inline message into the receive stream:
-    if (_soft_time_ctrl->get_inline_queue().pop_with_haste(metadata)) return 0;
+    //calculate packet size
+    const size_t bpp = _data_transport->get_send_frame_size()/channels.size();
+    const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
-    size_t num_samps_recvd = _io_impl->recv_handler.recv(
-        buffs, nsamps_per_buff,
-        metadata, io_type,
-        recv_mode, timeout
-    );
+    //make the new streamer given the samples per packet
+    boost::function<void(bool)> tx_fcn = boost::bind(&usrp1_impl::tx_stream_on_off, this, _1);
+    boost::shared_ptr<usrp1_send_packet_streamer> my_streamer =
+        boost::make_shared<usrp1_send_packet_streamer>(spp, _soft_time_ctrl, tx_fcn);
 
-    return _soft_time_ctrl->recv_post(metadata, num_samps_recvd);
+    //init some streamer stuff
+    my_streamer->set_tick_rate(_master_clock_rate);
+    my_streamer->set_vrt_packer(&usrp1_bs_vrt_packer);
+    my_streamer->set_xport_chan_get_buff(0, boost::bind(
+        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
+    ));
+
+    //set the converter
+    uhd::convert::id_type id;
+    id.input_markup = args.cpu_format;
+    id.num_inputs = 1;
+    id.output_markup = args.otw_format + "_item32_le";
+    id.num_outputs = channels.size();
+    id.args = args.args;
+    my_streamer->set_converter(id);
+
+    //save as weak ptr for update access
+    _tx_streamer = my_streamer;
+
+    //sets all tick and samp rates on this streamer
+    this->update_rates();
+
+    return my_streamer;
 }

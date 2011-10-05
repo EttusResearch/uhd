@@ -272,14 +272,12 @@ void usrp2_impl::update_tick_rate(const double rate){
             boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
                 boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_mbc[mb].rx_streamers[i].lock());
             if (my_streamer.get() == NULL) continue;
-            boost::mutex::scoped_lock lock = my_streamer->get_scoped_lock();
             my_streamer->set_tick_rate(rate);
         }
         for (size_t i = 0; i < _mbc[mb].tx_streamers.size(); i++){
             boost::shared_ptr<sph::send_packet_streamer> my_streamer =
                 boost::dynamic_pointer_cast<sph::send_packet_streamer>(_mbc[mb].tx_streamers[i].lock());
             if (my_streamer.get() == NULL) continue;
-            boost::mutex::scoped_lock lock = my_streamer->get_scoped_lock();
             my_streamer->set_tick_rate(rate);
         }
     }
@@ -290,8 +288,6 @@ void usrp2_impl::update_rx_samp_rate(const std::string &mb, const size_t dsp, co
         boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_mbc[mb].rx_streamers[dsp].lock());
     if (my_streamer.get() == NULL) return;
 
-    boost::mutex::scoped_lock lock = my_streamer->get_scoped_lock();
-
     my_streamer->set_samp_rate(rate);
     const double adj = _mbc[mb].rx_dsps[dsp]->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj/32767.);
@@ -301,8 +297,6 @@ void usrp2_impl::update_tx_samp_rate(const std::string &mb, const size_t dsp, co
     boost::shared_ptr<sph::send_packet_streamer> my_streamer =
         boost::dynamic_pointer_cast<sph::send_packet_streamer>(_mbc[mb].tx_streamers[dsp].lock());
     if (my_streamer.get() == NULL) return;
-
-    boost::mutex::scoped_lock lock = my_streamer->get_scoped_lock();
 
     my_streamer->set_samp_rate(rate);
 }

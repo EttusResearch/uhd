@@ -27,7 +27,6 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
@@ -135,11 +134,6 @@ public:
         _props.at(xport_chan).handle_overflow = handle_overflow;
     }
 
-    //! Get a scoped lock object for this instance
-    boost::mutex::scoped_lock get_scoped_lock(void){
-        return boost::mutex::scoped_lock(_mutex);
-    }
-
     //! Set the scale factor used in float conversion
     void set_scale_factor(const double scale_factor){
         _scale_factor = scale_factor;
@@ -156,8 +150,6 @@ public:
         uhd::rx_metadata_t &metadata,
         double timeout
     ){
-        boost::mutex::scoped_lock lock(_mutex);
-
         //handle metadata queued from a previous receive
         if (_queue_error_for_next_call){
             _queue_error_for_next_call = false;
@@ -197,7 +189,6 @@ public:
 
 private:
 
-    boost::mutex _mutex;
     vrt_unpacker_type _vrt_unpacker;
     size_t _header_offset_words32;
     double _tick_rate, _samp_rate;

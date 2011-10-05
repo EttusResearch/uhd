@@ -55,21 +55,8 @@ public:
     ~usrp1_impl(void);
 
     //the io interface
-    size_t send(const send_buffs_type &,
-                size_t,
-                const uhd::tx_metadata_t &,
-                const uhd::io_type_t &,
-                send_mode_t, double);
-
-    size_t recv(const recv_buffs_type &,
-                size_t, uhd::rx_metadata_t &,
-                const uhd::io_type_t &,
-                recv_mode_t, double);
-
-    size_t get_max_send_samps_per_packet(void) const;
-
-    size_t get_max_recv_samps_per_packet(void) const;
-
+    uhd::rx_streamer::sptr get_rx_streamer(const uhd::streamer_args &args);
+    uhd::tx_streamer::sptr get_tx_streamer(const uhd::streamer_args &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
@@ -94,6 +81,10 @@ private:
 
     double _master_clock_rate; //clock rate shadow
 
+    //weak pointers to streamers for update purposes
+    boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
+    boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
+
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void set_db_eeprom(const std::string &, const std::string &, const uhd::usrp::dboard_eeprom_t &);
     double update_rx_codec_gain(const std::string &, const double); //sets A and B at once
@@ -101,6 +92,7 @@ private:
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     double update_rx_samp_rate(const double);
     double update_tx_samp_rate(const double);
+    void update_rates(void);
     double update_rx_dsp_freq(const size_t, const double);
     double update_tx_dsp_freq(const size_t, const double);
 
@@ -119,8 +111,7 @@ private:
     void tx_stream_on_off(bool);
     void handle_overrun(size_t);
 
-    //otw types
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
+    //channel mapping shadows
     uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //capabilities
