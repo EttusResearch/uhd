@@ -86,8 +86,8 @@ private:
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         std::vector<rx_dsp_core_200::sptr> rx_dsps;
-        std::vector<boost::weak_ptr<uhd::streamer> > rx_streamers;
-        std::vector<boost::weak_ptr<uhd::streamer> > tx_streamers;
+        std::vector<boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
+        std::vector<boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
         tx_dsp_core_200::sptr tx_dsp;
         time64_core_200::sptr time64;
         std::vector<uhd::transport::zero_copy_if::sptr> rx_dsp_xports;

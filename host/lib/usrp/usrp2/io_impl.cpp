@@ -298,8 +298,8 @@ void usrp2_impl::update_rx_samp_rate(const std::string &mb, const size_t dsp, co
 }
 
 void usrp2_impl::update_tx_samp_rate(const std::string &mb, const size_t dsp, const double rate){
-    boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_mbc[mb].tx_streamers[dsp].lock());
+    boost::shared_ptr<sph::send_packet_streamer> my_streamer =
+        boost::dynamic_pointer_cast<sph::send_packet_streamer>(_mbc[mb].tx_streamers[dsp].lock());
     if (my_streamer.get() == NULL) return;
 
     boost::mutex::scoped_lock lock = my_streamer->get_scoped_lock();
@@ -450,7 +450,7 @@ tx_streamer::sptr usrp2_impl::get_tx_streamer(const uhd::streamer_args &args){
 
     //init some streamer stuff
     my_streamer->resize(channels.size());
-    my_streamer->set_vrt_packer(&vrt::if_hdr_pack_be);
+    my_streamer->set_vrt_packer(&vrt::if_hdr_pack_be, vrt_send_header_offset_words32);
 
     //set the converter
     uhd::convert::id_type id;

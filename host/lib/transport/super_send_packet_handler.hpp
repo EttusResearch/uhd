@@ -263,6 +263,7 @@ class send_packet_streamer : public send_packet_handler, public tx_streamer{
 public:
     send_packet_streamer(const size_t max_num_samps){
         _max_num_samps = max_num_samps;
+        this->set_max_samples_per_packet(_max_num_samps);
     }
 
     size_t get_num_channels(void) const{
