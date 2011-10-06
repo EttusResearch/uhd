@@ -123,7 +123,7 @@ public:
 
     //! Set the conversion routine for all channels
     void set_converter(const uhd::convert::id_type &id){
-        _io_buffs.resize(id.num_inputs);
+        _io_buffs.resize(id.num_outputs);
         _converter = uhd::convert::get_converter(id);
         _bytes_per_otw_item = uhd::convert::get_bytes_per_item(id.input_markup);
         _bytes_per_cpu_item = uhd::convert::get_bytes_per_item(id.output_markup);

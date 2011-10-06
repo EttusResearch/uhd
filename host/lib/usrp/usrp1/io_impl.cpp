@@ -549,9 +549,9 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
     //set the converter
     uhd::convert::id_type id;
     id.input_markup = args.otw_format + "_item32_le";
-    id.num_inputs = channels.size();
+    id.num_inputs = 1;
     id.output_markup = args.cpu_format;
-    id.num_outputs = 1;
+    id.num_outputs = channels.size();
     id.args = args.args;
     my_streamer->set_converter(id);
 
@@ -590,9 +590,9 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args){
     //set the converter
     uhd::convert::id_type id;
     id.input_markup = args.cpu_format;
-    id.num_inputs = 1;
+    id.num_inputs = channels.size();
     id.output_markup = args.otw_format + "_item32_le";
-    id.num_outputs = channels.size();
+    id.num_outputs = 1;
     id.args = args.args;
     my_streamer->set_converter(id);
 
