@@ -136,7 +136,7 @@ size_t recv(
         _recv_tid = io_type.tid;
         _rx_streamer.reset(); //cleanup possible old one
         streamer_args args;
-        args.cpu_format = (_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
+        args.cpu_format = (_recv_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
         for (size_t ch = 0; ch < buffs.size(); ch++)
             args.channels.push_back(ch); //linear mapping
