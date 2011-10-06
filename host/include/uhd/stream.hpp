@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UHD_STREAMER_HPP
-#define INCLUDED_UHD_STREAMER_HPP
+#ifndef INCLUDED_UHD_STREAM_HPP
+#define INCLUDED_UHD_STREAM_HPP
 
 #include <uhd/config.hpp>
 #include <uhd/types/metadata.hpp>
@@ -35,10 +35,10 @@ namespace uhd{
  * Not all combinations of CPU and OTW format have conversion support.
  * You may however write and register your own conversion routines.
  */
-struct UHD_API streamer_args{
+struct UHD_API stream_args_t{
 
     //! Convenience constructor for streamer args
-    streamer_args(
+    stream_args_t(
         const std::string &cpu = "fc32",
         const std::string &otw = "sc16"
     ){
@@ -186,4 +186,4 @@ public:
 
 } //namespace uhd
 
-#endif /* INCLUDED_UHD_STREAMER_HPP */
+#endif /* INCLUDED_UHD_STREAM_HPP */

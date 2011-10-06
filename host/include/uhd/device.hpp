@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/streamer.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <boost/utility.hpp>
@@ -77,10 +77,10 @@ public:
     static sptr make(const device_addr_t &hint, size_t which = 0);
 
     //! Make a new receive streamer from the streamer arguments
-    virtual rx_streamer::sptr get_rx_streamer(const streamer_args &args) = 0;
+    virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
 
     //! Make a new transmit streamer from the streamer arguments
-    virtual tx_streamer::sptr get_tx_streamer(const streamer_args &args) = 0;
+    virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
 
     /*!
      * Receive and asynchronous message from the device.

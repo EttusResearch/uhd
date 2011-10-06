@@ -39,8 +39,8 @@ template<typename samp_type> void recv_to_file(
     size_t samps_per_buff
 ){
     //create a receive streamer
-    uhd::streamer_args stream_args(cpu_format);
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+    uhd::stream_args_t stream_args(cpu_format);
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
     std::vector<samp_type> buff(samps_per_buff);

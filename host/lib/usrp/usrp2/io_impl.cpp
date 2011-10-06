@@ -366,7 +366,7 @@ bool usrp2_impl::recv_async_msg(
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
-rx_streamer::sptr usrp2_impl::get_rx_streamer(const uhd::streamer_args &args){
+rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
     //map an empty channel set to chan0
     const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
@@ -426,7 +426,7 @@ rx_streamer::sptr usrp2_impl::get_rx_streamer(const uhd::streamer_args &args){
 /***********************************************************************
  * Transmit streamer
  **********************************************************************/
-tx_streamer::sptr usrp2_impl::get_tx_streamer(const uhd::streamer_args &args){
+tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args){
     //map an empty channel set to chan0
     const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 

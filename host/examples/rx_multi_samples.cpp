@@ -113,10 +113,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //create a receive streamer
     //linearly map channels (index0 = channel0, index1 = channel1, ...)
-    uhd::streamer_args stream_args("fc32"); //complex floats
+    uhd::stream_args_t stream_args("fc32"); //complex floats
     for (size_t chan = 0; chan < usrp->get_rx_num_channels(); chan++)
         stream_args.channels.push_back(chan); //linear mapping
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //setup streaming
     std::cout << std::endl;

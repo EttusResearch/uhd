@@ -34,8 +34,8 @@ template<typename samp_type> void send_from_file(
     size_t samps_per_buff
 ){
     //create a transmit streamer
-    uhd::streamer_args stream_args(cpu_format);
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+    uhd::stream_args_t stream_args(cpu_format);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     uhd::tx_metadata_t md;
     md.start_of_burst = false;

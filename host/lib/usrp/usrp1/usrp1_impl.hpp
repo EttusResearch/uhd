@@ -55,8 +55,8 @@ public:
     ~usrp1_impl(void);
 
     //the io interface
-    uhd::rx_streamer::sptr get_rx_streamer(const uhd::streamer_args &args);
-    uhd::tx_streamer::sptr get_tx_streamer(const uhd::streamer_args &args);
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:

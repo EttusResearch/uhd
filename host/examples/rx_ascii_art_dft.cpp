@@ -148,8 +148,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //create a receive streamer
-    uhd::streamer_args stream_args("fc32"); //complex floats
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //allocate recv buffer and metatdata
     uhd::rx_metadata_t md;

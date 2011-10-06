@@ -302,9 +302,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //create RX and TX streamers
-    uhd::streamer_args stream_args("fc32"); //complex floats
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //------------------------------------------------------------------
     // begin messages test

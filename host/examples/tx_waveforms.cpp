@@ -204,10 +204,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //create a transmit streamer
     //linearly map channels (index0 = channel0, index1 = channel1, ...)
-    uhd::streamer_args stream_args("fc32");
+    uhd::stream_args_t stream_args("fc32");
     for (size_t chan = 0; chan < usrp->get_tx_num_channels(); chan++)
         stream_args.channels.push_back(chan); //linear mapping
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate a buffer which we re-use for each channel
     std::vector<std::complex<float> > buff(spb);

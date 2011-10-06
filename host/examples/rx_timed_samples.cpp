@@ -71,8 +71,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //create a receive streamer
-    uhd::streamer_args stream_args("fc32"); //complex floats
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //setup streaming
     std::cout << std::endl;

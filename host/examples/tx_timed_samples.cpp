@@ -74,8 +74,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //create a transmit streamer
-    uhd::streamer_args stream_args("fc32"); //complex floats
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate buffer with data to send
     std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps(), std::complex<float>(ampl, ampl));

@@ -80,12 +80,12 @@ size_t send(
     if (_tx_streamer.get() == NULL or _tx_streamer->get_num_channels() != buffs.size() or _send_tid != io_type.tid){
         _send_tid = io_type.tid;
         _tx_streamer.reset(); //cleanup possible old one
-        streamer_args args;
+        stream_args_t args;
         args.cpu_format = (_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
         for (size_t ch = 0; ch < buffs.size(); ch++)
             args.channels.push_back(ch); //linear mapping
-        _tx_streamer = get_tx_streamer(args);
+        _tx_streamer = get_tx_stream(args);
     }
     const size_t nsamps = (send_mode == SEND_MODE_ONE_PACKET)?
         std::min(nsamps_per_buff, get_max_send_samps_per_packet()) :
@@ -135,12 +135,12 @@ size_t recv(
     if (_rx_streamer.get() == NULL or _rx_streamer->get_num_channels() != buffs.size() or _recv_tid != io_type.tid){
         _recv_tid = io_type.tid;
         _rx_streamer.reset(); //cleanup possible old one
-        streamer_args args;
+        stream_args_t args;
         args.cpu_format = (_recv_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
         for (size_t ch = 0; ch < buffs.size(); ch++)
             args.channels.push_back(ch); //linear mapping
-        _rx_streamer = get_rx_streamer(args);
+        _rx_streamer = get_rx_stream(args);
     }
     const size_t nsamps = (recv_mode == RECV_MODE_ONE_PACKET)?
         std::min(nsamps_per_buff, get_max_recv_samps_per_packet()) :
@@ -154,10 +154,10 @@ size_t recv(
  */
 size_t get_max_send_samps_per_packet(void){
     if (_tx_streamer.get() == NULL){
-        streamer_args args;
+        stream_args_t args;
         args.cpu_format = "fc32";
         args.otw_format = "sc16";
-        _tx_streamer = get_tx_streamer(args);
+        _tx_streamer = get_tx_stream(args);
         _send_tid = io_type_t::COMPLEX_FLOAT32;
     }
     return _tx_streamer->get_max_num_samps();
@@ -169,10 +169,10 @@ size_t get_max_send_samps_per_packet(void){
  */
 size_t get_max_recv_samps_per_packet(void){
     if (_rx_streamer.get() == NULL){
-        streamer_args args;
+        stream_args_t args;
         args.cpu_format = "fc32";
         args.otw_format = "sc16";
-        _rx_streamer = get_rx_streamer(args);
+        _rx_streamer = get_rx_stream(args);
         _recv_tid = io_type_t::COMPLEX_FLOAT32;
     }
     return _rx_streamer->get_max_num_samps();

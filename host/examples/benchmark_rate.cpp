@@ -44,8 +44,8 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
     uhd::set_thread_priority_safe();
 
     //create a receive streamer
-    uhd::streamer_args stream_args("fc32"); //complex floats
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_streamer(stream_args);
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //print pre-test summary
     std::cout << boost::format(
@@ -98,8 +98,8 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp){
     uhd::set_thread_priority_safe();
 
     //create a transmit streamer
-    uhd::streamer_args stream_args("fc32"); //complex floats
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_streamer(stream_args);
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //print pre-test summary
     std::cout << boost::format(
