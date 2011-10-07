@@ -65,7 +65,7 @@ module vita_rx_chain
       .data_i(rx_data_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int),
       .data_o(rx_data_int2), .src_rdy_o(rx_src_rdy_int2), .dst_rdy_i(rx_dst_rdy_int2));
 
-   dspengine_16to8 #(.BASE(BASE+3), .BUF_SIZE(FIFOSIZE)) dspengine_16to8
+   dspengine_16to8 #(.BASE(BASE+9), .BUF_SIZE(FIFOSIZE)) dspengine_16to8
      (.clk(clk),.reset(rst),.clear(clear),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done), 
