@@ -84,25 +84,6 @@ DECLARE_CONVERTER(sc16_item16_usrp1, 1, $(cpu_type), $(width), PRIORITY_GENERAL)
     }
 }
 
-DECLARE_CONVERTER($(cpu_type), $(width), sc8_item16_usrp1, 1, PRIORITY_GENERAL){
-    #for $w in range($width)
-    const $(cpu_type)_t *input$(w) = reinterpret_cast<const $(cpu_type)_t *>(inputs[$(w)]);
-    #end for
-    boost::uint16_t *output = reinterpret_cast<boost::uint16_t *>(outputs[0]);
-
-    if (scale_factor == 0){} //avoids unused warning
-
-    for (size_t i = 0, j = 0; i < nsamps; i++){
-        #for $w in range($width)
-        {
-        const boost::uint8_t real = boost::int8_t(input$(w)[i].real()$(do_scale));
-        const boost::uint8_t imag = boost::int8_t(input$(w)[i].imag()$(do_scale));
-        output[j++] = $(to_wire)((boost::uint16_t(imag) << 8) | real);
-        }
-        #end for
-    }
-}
-
 DECLARE_CONVERTER(sc8_item16_usrp1, 1, $(cpu_type), $(width), PRIORITY_GENERAL){
     const boost::uint16_t *input = reinterpret_cast<const boost::uint16_t *>(inputs[0]);
     #for $w in range($width)

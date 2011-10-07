@@ -22,6 +22,7 @@
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp1_calc_mux.hpp"
 #include "fpga_regs_standard.h"
+#include "fpga_regs_common.h"
 #include "usrp_commands.h"
 #include "usrp1_impl.hpp"
 #include <uhd/utils/msg.hpp>
@@ -367,7 +368,7 @@ public:
         const uhd::tx_metadata_t &metadata,
         double timeout
     ){
-        if (_stc->send_pre(metadata, timeout)) return 0;
+        _stc->send_pre(metadata, timeout);
 
         _tx_enb_fcn(true); //always enable (it will do the right thing)
         size_t num_samps_sent = sph::send_packet_handler::send(
@@ -440,13 +441,14 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
 double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
+    const size_t div = 2;
     const size_t rate = uhd::clip<size_t>(
-        boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 16e6)), 256
-    );
+        boost::math::iround(_master_clock_rate / samp_rate), 4, 256) & ~(div-1);
 
     if (dspno == 0){ //only care if dsp0 is set since its homogeneous
         bool s = this->disable_rx();
-        _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
+        _iface->poke32(FR_RX_SAMPLE_RATE_DIV, div - 1);
+        _iface->poke32(FR_DECIM_RATE, rate/div - 1);
         this->restore_rx(s);
 
         //update the streamer if created
@@ -462,13 +464,14 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
 double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 
+    const size_t div = 2;
     const size_t rate = uhd::clip<size_t>(
-        boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
-    );
+        boost::math::iround(_master_clock_rate / samp_rate), 8, 256) & ~(div-1);
 
     if (dspno == 0){ //only care if dsp0 is set since its homogeneous
         bool s = this->disable_tx();
-        _iface->poke32(FR_INTERP_RATE, rate/2 - 1);
+        _iface->poke32(FR_TX_SAMPLE_RATE_DIV, div - 1);
+        _iface->poke32(FR_INTERP_RATE, rate/div - 1);
         this->restore_tx(s);
 
         //update the streamer if created
@@ -544,7 +547,6 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
             | (8 << bmFR_RX_FORMAT_SHIFT_SHIFT)
             | (8 << bmFR_RX_FORMAT_WIDTH_SHIFT)
             | bmFR_RX_FORMAT_WANT_Q
-            | bmFR_RX_FORMAT_BYPASS_HB //needed for 16Msps
         );
     }
     else{

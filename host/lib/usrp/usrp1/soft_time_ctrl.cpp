@@ -131,8 +131,8 @@ public:
     /*******************************************************************
      * Transmit control
      ******************************************************************/
-    bool send_pre(const tx_metadata_t &md, double &timeout){
-        if (not md.has_time_spec) return false;
+    void send_pre(const tx_metadata_t &md, double &timeout){
+        if (not md.has_time_spec) return;
 
         boost::mutex::scoped_lock lock(_update_mutex);
 
@@ -146,12 +146,11 @@ public:
             metadata.time_spec = this->time_now();
             metadata.event_code = async_metadata_t::EVENT_CODE_TIME_ERROR;
             _async_msg_queue.push_with_pop_on_full(metadata);
-            return true;
+            return;
         }
 
         timeout -= (time_at - time_now()).get_real_secs();
         sleep_until_time(lock, time_at);
-        return false;
     }
 
     /*******************************************************************
