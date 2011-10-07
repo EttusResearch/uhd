@@ -54,7 +54,7 @@ module double_buffer
    assign rw0_adr = (read_ok & ~read_ptr) ? read_adr : write_adr;
    assign rw1_adr = (read_ok & read_ptr) ? read_adr : write_adr;
    
-   wire [35:0] 	       access_dat_i, access_dat_o_0, access_dat_o_1;
+   wire [35:0] 	       access_dat_o_0, access_dat_o_1;
    wire 	       access_ptr;
    assign access_dat_o = access_ptr? access_dat_o_1 : access_dat_o_0;
    

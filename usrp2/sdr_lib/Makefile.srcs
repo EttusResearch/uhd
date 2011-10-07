@@ -25,8 +25,11 @@ cordic_z24.v \
 cordic_stage.v \
 dsp_core_rx.v \
 dsp_core_tx.v \
+dspengine_16to8.v \
 hb_dec.v \
 hb_interp.v \
+pipectrl.v \
+pipestage.v \
 round.v \
 round_reg.v \
 round_sd.v \
