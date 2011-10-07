@@ -53,7 +53,7 @@ def build_eeprom_image (filename, rev):
 
     if(rev == 1):
       VID = USRP1VID
-      PID = USRP1PPID
+      PID = USRP1PID
     else:
       VID = USRP1PVID
       PID = USRP1PPID
