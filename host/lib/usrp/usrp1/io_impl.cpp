@@ -438,41 +438,45 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     this->restore_tx(s);
 }
 
-double usrp1_impl::update_rx_samp_rate(const double samp_rate){
+double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
     const size_t rate = uhd::clip<size_t>(
-        boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
+        boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 16e6)), 256
     );
 
-    bool s = this->disable_rx();
-    _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
-    this->restore_rx(s);
+    if (dspno == 0){ //only care if dsp0 is set since its homogeneous
+        bool s = this->disable_rx();
+        _iface->poke32(FR_DECIM_RATE, rate/2 - 1);
+        this->restore_rx(s);
 
-    //update the streamer if created
-    boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<usrp1_recv_packet_streamer>(_rx_streamer.lock());
-    if (my_streamer.get() != NULL){
-        my_streamer->set_samp_rate(_master_clock_rate / rate);
+        //update the streamer if created
+        boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
+            boost::dynamic_pointer_cast<usrp1_recv_packet_streamer>(_rx_streamer.lock());
+        if (my_streamer.get() != NULL){
+            my_streamer->set_samp_rate(_master_clock_rate / rate);
+        }
     }
 
     return _master_clock_rate / rate;
 }
 
-double usrp1_impl::update_tx_samp_rate(const double samp_rate){
+double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 
     const size_t rate = uhd::clip<size_t>(
         boost::math::iround(_master_clock_rate / samp_rate), size_t(std::ceil(_master_clock_rate / 8e6)), 256
     );
 
-    bool s = this->disable_tx();
-    _iface->poke32(FR_INTERP_RATE, rate/2 - 1);
-    this->restore_tx(s);
+    if (dspno == 0){ //only care if dsp0 is set since its homogeneous
+        bool s = this->disable_tx();
+        _iface->poke32(FR_INTERP_RATE, rate/2 - 1);
+        this->restore_tx(s);
 
-    //update the streamer if created
-    boost::shared_ptr<usrp1_send_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<usrp1_send_packet_streamer>(_tx_streamer.lock());
-    if (my_streamer.get() != NULL){
-        my_streamer->set_samp_rate(_master_clock_rate / rate);
+        //update the streamer if created
+        boost::shared_ptr<usrp1_send_packet_streamer> my_streamer =
+            boost::dynamic_pointer_cast<usrp1_send_packet_streamer>(_tx_streamer.lock());
+        if (my_streamer.get() != NULL){
+            my_streamer->set_samp_rate(_master_clock_rate / rate);
+        }
     }
 
     return _master_clock_rate / rate;
@@ -528,6 +532,25 @@ bool usrp1_impl::recv_async_msg(
  * Receive streamer
  **********************************************************************/
 rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
+    if (args.otw_format == "sc16"){
+        _iface->poke32(FR_RX_FORMAT, 0
+            | (0 << bmFR_RX_FORMAT_SHIFT_SHIFT)
+            | (16 << bmFR_RX_FORMAT_WIDTH_SHIFT)
+            | bmFR_RX_FORMAT_WANT_Q
+        );
+    }
+    else if (args.otw_format == "sc8"){
+        _iface->poke32(FR_RX_FORMAT, 0
+            | (8 << bmFR_RX_FORMAT_SHIFT_SHIFT)
+            | (8 << bmFR_RX_FORMAT_WIDTH_SHIFT)
+            | bmFR_RX_FORMAT_WANT_Q
+            | bmFR_RX_FORMAT_BYPASS_HB //needed for 16Msps
+        );
+    }
+    else{
+        throw uhd::value_error("USRP1 RX cannot handle requested wire format: " + args.otw_format);
+    }
+
     //map an empty channel set to chan0
     const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
@@ -548,7 +571,7 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
 
     //set the converter
     uhd::convert::id_type id;
-    id.input_markup = args.otw_format + "_item32_le";
+    id.input_markup = args.otw_format + "_item16_usrp1";
     id.num_inputs = 1;
     id.output_markup = args.cpu_format;
     id.num_outputs = channels.size();
@@ -568,6 +591,10 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
  * Transmit streamer
  **********************************************************************/
 tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args){
+    if (args.otw_format != "sc16"){
+        throw uhd::value_error("USRP1 TX cannot handle requested wire format: " + args.otw_format);
+    }
+
     //map an empty channel set to chan0
     const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
@@ -591,7 +618,7 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args){
     uhd::convert::id_type id;
     id.input_markup = args.cpu_format;
     id.num_inputs = channels.size();
-    id.output_markup = args.otw_format + "_item32_le";
+    id.output_markup = args.otw_format + "_item16_usrp1";
     id.num_outputs = 1;
     id.args = args.args;
     my_streamer->set_converter(id);

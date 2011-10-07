@@ -28,13 +28,13 @@ TMPL_HEADER = """
 using namespace uhd::convert;
 """
 
-TMPL_CONV_TO_FROM_ITEM32_1 = """
+TMPL_CONV_GEN2_COMPLEX = """
 DECLARE_CONVERTER($(cpu_type), 1, sc16_item32_$(end), 1, PRIORITY_GENERAL){
     const $(cpu_type)_t *input = reinterpret_cast<const $(cpu_type)_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     for (size_t i = 0; i < nsamps; i++){
-        output[i] = $(to_wire)($(cpu_type)_to_item32(input[i], float(scale_factor)));
+        output[i] = $(to_wire)($(cpu_type)_to_item32(input[i], scale_factor));
     }
 }
 
@@ -43,33 +43,83 @@ DECLARE_CONVERTER(sc16_item32_$(end), 1, $(cpu_type), 1, PRIORITY_GENERAL){
     $(cpu_type)_t *output = reinterpret_cast<$(cpu_type)_t *>(outputs[0]);
 
     for (size_t i = 0; i < nsamps; i++){
-        output[i] = item32_to_$(cpu_type)($(to_host)(input[i]), float(scale_factor));
+        output[i] = item32_to_$(cpu_type)($(to_host)(input[i]), scale_factor);
     }
 }
 """
-TMPL_CONV_TO_FROM_ITEM32_X = """
-DECLARE_CONVERTER($(cpu_type), $(width), sc16_item32_$(end), 1, PRIORITY_GENERAL){
+
+TMPL_CONV_USRP1_COMPLEX = """
+DECLARE_CONVERTER($(cpu_type), $(width), sc16_item16_usrp1, 1, PRIORITY_GENERAL){
     #for $w in range($width)
     const $(cpu_type)_t *input$(w) = reinterpret_cast<const $(cpu_type)_t *>(inputs[$(w)]);
     #end for
-    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+    boost::uint16_t *output = reinterpret_cast<boost::uint16_t *>(outputs[0]);
+
+    if (scale_factor == 0){} //avoids unused warning
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
-        output[j++] = $(to_wire)($(cpu_type)_to_item32(input$(w)[i], float(scale_factor)));
+        output[j++] = $(to_wire)(boost::int16_t(input$(w)[i].real()$(do_scale)));
+        output[j++] = $(to_wire)(boost::int16_t(input$(w)[i].imag()$(do_scale)));
         #end for
     }
 }
 
-DECLARE_CONVERTER(sc16_item32_$(end), 1, $(cpu_type), $(width), PRIORITY_GENERAL){
-    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+DECLARE_CONVERTER(sc16_item16_usrp1, 1, $(cpu_type), $(width), PRIORITY_GENERAL){
+    const boost::uint16_t *input = reinterpret_cast<const boost::uint16_t *>(inputs[0]);
     #for $w in range($width)
     $(cpu_type)_t *output$(w) = reinterpret_cast<$(cpu_type)_t *>(outputs[$(w)]);
     #end for
 
+    if (scale_factor == 0){} //avoids unused warning
+
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
-        output$(w)[i] = item32_to_$(cpu_type)($(to_host)(input[j++]), float(scale_factor));
+        output$(w)[i] = $(cpu_type)_t(
+            boost::int16_t($(to_host)(input[j+0]))$(do_scale),
+            boost::int16_t($(to_host)(input[j+1]))$(do_scale)
+        );
+        j += 2;
+        #end for
+    }
+}
+
+DECLARE_CONVERTER($(cpu_type), $(width), sc8_item16_usrp1, 1, PRIORITY_GENERAL){
+    #for $w in range($width)
+    const $(cpu_type)_t *input$(w) = reinterpret_cast<const $(cpu_type)_t *>(inputs[$(w)]);
+    #end for
+    boost::uint16_t *output = reinterpret_cast<boost::uint16_t *>(outputs[0]);
+
+    if (scale_factor == 0){} //avoids unused warning
+
+    for (size_t i = 0, j = 0; i < nsamps; i++){
+        #for $w in range($width)
+        {
+        const boost::uint8_t real = boost::int8_t(input$(w)[i].real()$(do_scale));
+        const boost::uint8_t imag = boost::int8_t(input$(w)[i].imag()$(do_scale));
+        output[j++] = $(to_wire)((boost::uint16_t(imag) << 8) | real);
+        }
+        #end for
+    }
+}
+
+DECLARE_CONVERTER(sc8_item16_usrp1, 1, $(cpu_type), $(width), PRIORITY_GENERAL){
+    const boost::uint16_t *input = reinterpret_cast<const boost::uint16_t *>(inputs[0]);
+    #for $w in range($width)
+    $(cpu_type)_t *output$(w) = reinterpret_cast<$(cpu_type)_t *>(outputs[$(w)]);
+    #end for
+
+    if (scale_factor == 0){} //avoids unused warning
+
+    for (size_t i = 0, j = 0; i < nsamps; i++){
+        #for $w in range($width)
+        {
+        const boost::uint16_t num = $(to_host)(input[j++]);
+        output$(w)[i] = $(cpu_type)_t(
+            boost::int8_t(num)$(do_scale),
+            boost::int8_t(num >> 8)$(do_scale)
+        );
+        }
         #end for
     }
 }
@@ -83,14 +133,28 @@ if __name__ == '__main__':
     import sys, os
     file = os.path.basename(__file__)
     output = parse_tmpl(TMPL_HEADER, file=file)
-    for width in 1, 2, 3, 4:
-        for end, to_host, to_wire in (
-            ('be', 'uhd::ntohx', 'uhd::htonx'),
-            ('le', 'uhd::wtohx', 'uhd::htowx'),
+
+    #generate complex converters for all gen2 platforms
+    for end, to_host, to_wire in (
+        ('be', 'uhd::ntohx', 'uhd::htonx'),
+        ('le', 'uhd::wtohx', 'uhd::htowx'),
+    ):
+        for cpu_type in 'fc64', 'fc32', 'sc16':
+            output += parse_tmpl(
+                TMPL_CONV_GEN2_COMPLEX,
+                end=end, to_host=to_host, to_wire=to_wire, cpu_type=cpu_type
+            )
+
+    #generate complex converters for usrp1 format
+    for width in 1, 2, 4:
+        for cpu_type, do_scale in (
+            ('fc64', '*scale_factor'),
+            ('fc32', '*float(scale_factor)'),
+            ('sc16', ''),
         ):
-            for cpu_type in 'fc64', 'fc32', 'sc16':
-                output += parse_tmpl(
-                    TMPL_CONV_TO_FROM_ITEM32_1 if width == 1 else TMPL_CONV_TO_FROM_ITEM32_X,
-                    width=width, end=end, to_host=to_host, to_wire=to_wire, cpu_type=cpu_type
-                )
+            output += parse_tmpl(
+                TMPL_CONV_USRP1_COMPLEX,
+                width=width, to_host='uhd::wtohx', to_wire='uhd::htowx',
+                cpu_type=cpu_type, do_scale=do_scale
+            )
     open(sys.argv[1], 'w').write(output)

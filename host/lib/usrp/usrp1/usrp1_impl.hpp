@@ -90,8 +90,8 @@ private:
     double update_rx_codec_gain(const std::string &, const double); //sets A and B at once
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
-    double update_rx_samp_rate(const double);
-    double update_tx_samp_rate(const double);
+    double update_rx_samp_rate(size_t dspno, const double);
+    double update_tx_samp_rate(size_t dspno, const double);
     void update_rates(void);
     double update_rx_dsp_freq(const size_t, const double);
     double update_tx_dsp_freq(const size_t, const double);
