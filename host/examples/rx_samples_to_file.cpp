@@ -41,6 +41,7 @@ template<typename samp_type> void recv_to_file(
     uhd::rx_metadata_t md;
     std::vector<samp_type> buff(samps_per_buff);
     std::ofstream outfile(file.c_str(), std::ofstream::binary);
+    bool overflow_message = true;
 
     while(not stop_signal_called){
         size_t num_rx_samps = usrp->get_device()->recv(
@@ -49,6 +50,19 @@ template<typename samp_type> void recv_to_file(
         );
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
+        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
+            if (overflow_message){
+                overflow_message = false;
+                std::cerr << boost::format(
+                    "Got an overflow indication. Please consider the following:\n"
+                    "  Your write medium must sustain a rate of %fMB/s.\n"
+                    "  Dropped samples will not be written to the file.\n"
+                    "  Please modify this example for your purposes.\n"
+                    "  This message will not appear again.\n"
+                ) % (usrp->get_rx_rate()*sizeof(samp_type)/1e6);
+            }
+            continue;
+        }
         if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
             throw std::runtime_error(str(boost::format(
                 "Unexpected error code 0x%x"
@@ -75,7 +89,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
-        ("type", po::value<std::string>(&type)->default_value("float"), "sample type: double, float, or short")
+        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate), "rate of incoming samples")
