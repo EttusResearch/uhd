@@ -64,7 +64,7 @@ DECLARE_CONVERTER(fc64, 1, sc16_item32_le, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = fc64_to_item32(input[i], scale_factor);
+        output[i] = fc64_to_item32_sc16(input[i], scale_factor);
     }
 }
 
@@ -110,7 +110,7 @@ DECLARE_CONVERTER(fc64, 1, sc16_item32_be, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = uhd::byteswap(fc64_to_item32(input[i], scale_factor));
+        output[i] = uhd::byteswap(fc64_to_item32_sc16(input[i], scale_factor));
     }
 }
 
@@ -159,7 +159,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc64, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = item32_to_fc64(input[i], scale_factor);
+        output[i] = item32_sc16_to_fc64(input[i], scale_factor);
     }
 }
 
@@ -207,6 +207,6 @@ DECLARE_CONVERTER(sc16_item32_be, 1, fc64, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = item32_to_fc64(uhd::byteswap(input[i]), scale_factor);
+        output[i] = item32_sc16_to_fc64(uhd::byteswap(input[i]), scale_factor);
     }
 }

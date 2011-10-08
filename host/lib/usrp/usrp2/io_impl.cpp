@@ -290,7 +290,7 @@ void usrp2_impl::update_rx_samp_rate(const std::string &mb, const size_t dsp, co
 
     my_streamer->set_samp_rate(rate);
     const double adj = _mbc[mb].rx_dsps[dsp]->get_scaling_adjustment();
-    my_streamer->set_scale_factor(adj/32767.);
+    my_streamer->set_scale_factor(adj);
 }
 
 void usrp2_impl::update_tx_samp_rate(const std::string &mb, const size_t dsp, const double rate){
@@ -404,6 +404,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
             if (chan < num_chan_so_far){
                 const size_t dsp = num_chan_so_far - chan - 1;
                 _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
+                _mbc[mb].rx_dsps[dsp]->set_format(args.otw_format, 0x400);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
                 ));
@@ -427,6 +428,10 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
  * Transmit streamer
  **********************************************************************/
 tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args){
+    if (args.otw_format != "sc16"){
+        throw uhd::value_error("USRP TX cannot handle requested wire format: " + args.otw_format);
+    }
+
     //map an empty channel set to chan0
     const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 

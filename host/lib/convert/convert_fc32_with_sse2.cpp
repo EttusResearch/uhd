@@ -51,7 +51,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_CUSTOM){
     //dispatch according to alignment
     switch (size_t(input) & 0xf){
     case 0x8:
-        output[i] = fc32_to_item32(input[i], float(scale_factor)); i++;
+        output[i] = fc32_to_item32_sc16(input[i], float(scale_factor)); i++;
     case 0x0:
         convert_fc32_1_to_item32_1_nswap_guts(_)
         break;
@@ -60,7 +60,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = fc32_to_item32(input[i], float(scale_factor));
+        output[i] = fc32_to_item32_sc16(input[i], float(scale_factor));
     }
 }
 
@@ -93,7 +93,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_CUSTOM){
     //dispatch according to alignment
     switch (size_t(input) & 0xf){
     case 0x8:
-        output[i] = uhd::byteswap(fc32_to_item32(input[i], float(scale_factor))); i++;
+        output[i] = uhd::byteswap(fc32_to_item32_sc16(input[i], float(scale_factor))); i++;
     case 0x0:
         convert_fc32_1_to_item32_1_bswap_guts(_)
         break;
@@ -102,7 +102,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = uhd::byteswap(fc32_to_item32(input[i], float(scale_factor)));
+        output[i] = uhd::byteswap(fc32_to_item32_sc16(input[i], float(scale_factor)));
     }
 }
 
@@ -138,7 +138,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_CUSTOM){
     //dispatch according to alignment
     switch (size_t(output) & 0xf){
     case 0x8:
-        output[i] = item32_to_fc32(input[i], float(scale_factor)); i++;
+        output[i] = item32_sc16_to_fc32(input[i], float(scale_factor)); i++;
     case 0x0:
         convert_item32_1_to_fc32_1_nswap_guts(_)
         break;
@@ -147,7 +147,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = item32_to_fc32(input[i], float(scale_factor));
+        output[i] = item32_sc16_to_fc32(input[i], float(scale_factor));
     }
 }
 
@@ -182,7 +182,7 @@ DECLARE_CONVERTER(sc16_item32_be, 1, fc32, 1, PRIORITY_CUSTOM){
     //dispatch according to alignment
     switch (size_t(output) & 0xf){
     case 0x8:
-        output[i] = item32_to_fc32(uhd::byteswap(input[i]), float(scale_factor)); i++;
+        output[i] = item32_sc16_to_fc32(uhd::byteswap(input[i]), float(scale_factor)); i++;
     case 0x0:
         convert_item32_1_to_fc32_1_bswap_guts(_)
         break;
@@ -191,6 +191,6 @@ DECLARE_CONVERTER(sc16_item32_be, 1, fc32, 1, PRIORITY_CUSTOM){
 
     //convert remainder
     for (; i < nsamps; i++){
-        output[i] = item32_to_fc32(uhd::byteswap(input[i]), float(scale_factor));
+        output[i] = item32_sc16_to_fc32(uhd::byteswap(input[i]), float(scale_factor));
     }
 }

@@ -56,6 +56,7 @@ public:
 
     virtual void handle_overflow(void) = 0;
 
+    virtual void set_format(const std::string &format, const unsigned scale) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP */
