@@ -275,8 +275,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
-    //none for now...
-    _tree->create<int>(mb_path / "sensors"); //phony property so this dir exists
+    _tree->create<sensor_value_t>(mb_path / "sensors/ref_locked")
+        .publish(boost::bind(&b100_impl::get_ref_locked, this));
 
     ////////////////////////////////////////////////////////////////////
     // create frontend control objects
@@ -490,4 +490,9 @@ void b100_impl::enable_gpif(const bool en) {
 
 void b100_impl::clear_fpga_fifo(void) {
     _fx2_ctrl->usrp_control_write(VRQ_CLEAR_FPGA_FIFO, 0, 0, 0, 0);
+}
+
+sensor_value_t b100_impl::get_ref_locked(void){
+    const bool lock = _clock_ctrl->get_locked();
+    return sensor_value_t("Ref", lock, "locked", "unlocked");
 }

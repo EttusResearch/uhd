@@ -428,6 +428,13 @@ public:
         this->latch_regs();
     }
 
+    bool get_locked(void){
+        static const boost::uint8_t addr = 0x01F;
+        boost::uint32_t reg = this->read_reg(addr);
+        _ad9522_regs.set_reg(addr, reg);
+        return _ad9522_regs.digital_lock_detect != 0;
+    }
+
 private:
     i2c_iface::sptr _iface;
     ad9522_regs_t _ad9522_regs;

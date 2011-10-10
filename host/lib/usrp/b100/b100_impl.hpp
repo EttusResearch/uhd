@@ -34,6 +34,7 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/otw_type.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -129,6 +130,7 @@ private:
     void enable_gpif(const bool);
     void clear_fpga_fifo(void);
     void handle_async_message(uhd::transport::managed_recv_buffer::sptr);
+    uhd::sensor_value_t get_ref_locked(void);
 };
 
 #endif /* INCLUDED_b100_IMPL_HPP */
