@@ -39,11 +39,11 @@ SET(util_share_sources
     usrp_burn_mb_eeprom.cpp
 )
 
-IF(ENABLE_USRP1)
+IF(ENABLE_USB)
     LIST(APPEND util_share_sources
-        usrp1_init_eeprom.cpp
+        fx2_init_eeprom.cpp
     )
-ENDIF(ENABLE_USRP1)
+ENDIF(ENABLE_USB)
 
 IF(LINUX AND ENABLE_USB)
     INSTALL(FILES
