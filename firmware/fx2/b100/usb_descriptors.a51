@@ -35,7 +35,7 @@
 	.module usb_descriptors
 	
 	VID_FREE	 = 0x2500	; Free Software Folks
-	PID_USRP	 = 0x0001	; B100
+	PID_USRP	 = 0x0002	; B100
 
 	;; We distinguish configured from unconfigured USRPs using the Device ID.
 	;; If the MSB of the DID is 0, the device is unconfigured.
