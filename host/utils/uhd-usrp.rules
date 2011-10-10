@@ -16,4 +16,4 @@
 #
 
 ACTION=="add", BUS=="usb", SYSFS{idVendor}=="fffe", SYSFS{idProduct}=="0002", MODE:="0666"
-ACTION=="add", BUS=="usb", SYSFS{idVendor}=="2500", SYSFS{idProduct}=="0001", MODE:="0666"
+ACTION=="add", BUS=="usb", SYSFS{idVendor}=="2500", SYSFS{idProduct}=="0002", MODE:="0666"
