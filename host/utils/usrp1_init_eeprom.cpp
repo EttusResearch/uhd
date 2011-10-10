@@ -23,6 +23,9 @@
 #include <iostream>
 #include <cstdlib>
 
+const std::string FX2_VENDOR_ID("0x04b4");
+const std::string FX2_PRODUCT_ID("0x8613");
+
 namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -31,8 +34,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("image", po::value<std::string>(), "BIN image file")
-        ("type", po::value<std::string>(&type)->default_value("usrp1"), "USRP type (usrp1 or b100)")
-        ("already-init", "specify to look for an already-initialized USRP")
+        ("vid", po::value<std::string>(), "VID of device to program")
+        ("pid", po::value<std::string>(), "PID of device to program")
+        ("type", po::value<std::string>(), "device type (usrp1 or b100)")
     ;
 
     po::variables_map vm;
@@ -53,14 +57,25 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //load the options into the address
     uhd::device_addr_t device_addr;
     device_addr["type"] = type;
-    device_addr["uninit"] = vm.count("already-init") ? "" : "yeah"; //tell find to look for an uninitialized FX2
+    if(vm.count("vid") or vm.count("pid") or vm.count("type")) {
+        if(not (vm.count("vid") and vm.count("pid") and vm.count("type"))) {
+            std::cerr << "ERROR: Must specify vid, pid, and type if specifying any of the three args" << std::endl;
+        } else {
+            device_addr["vid"] = vm["vid"].as<std::string>();
+            device_addr["pid"] = vm["pid"].as<std::string>();
+            device_addr["type"] = vm["type"].as<std::string>();
+        }
+    } else {
+        device_addr["vid"] = FX2_VENDOR_ID;
+        device_addr["pid"] = FX2_PRODUCT_ID;
+    }
 
     //find and create a control transport to do the writing.
 
     uhd::device_addrs_t found_addrs = uhd::device::find(device_addr);
 
     if (found_addrs.size() == 0){
-        std::cerr << "No uninitialized USRP devices found" << std::endl;
+        std::cerr << "No USRP devices found" << std::endl;
         return ~0;
     }
 

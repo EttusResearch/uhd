@@ -33,6 +33,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include "b100_regs.hpp"
+#include <cstdio>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -57,8 +58,15 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     //since an address is intended for a different, non-USB, device.
     if (hint.has_key("addr")) return b100_addrs;
 
-    boost::uint16_t vid = hint.has_key("uninit") ? FX2_VENDOR_ID : B100_VENDOR_ID;
-    boost::uint16_t pid = hint.has_key("uninit") ? FX2_PRODUCT_ID : B100_PRODUCT_ID;
+    unsigned int vid, pid;
+
+    if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b100") {
+        sscanf(hint.get("vid").c_str(), "%x", &vid);
+        sscanf(hint.get("pid").c_str(), "%x", &pid);
+    } else {
+        vid = B100_VENDOR_ID;
+        pid = B100_PRODUCT_ID;
+    }
 
     // Important note:
     // The get device list calls are nested inside the for loop.
