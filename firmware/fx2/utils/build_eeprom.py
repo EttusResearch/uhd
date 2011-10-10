@@ -30,7 +30,7 @@ from optparse import OptionParser
 USRP1VID = 0xfffe                            # Free Software Folks
 USRP1PID = 0x0002
 USRP1PVID= 0x2500                            # Ettus Research
-USRP1PPID= 0x0001
+USRP1PPID= 0x0002
     
 def msb (x):
     return (x >> 8) & 0xff
