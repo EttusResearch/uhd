@@ -40,13 +40,6 @@ fpga_load_begin (void)
   udelay (40);					// wait 40 us
   USRP_ALTERA_CONFIG |= bmALTERA_NCONFIG;	// set NCONFIG high
 
-  if (UC_BOARD_HAS_FPGA){
-    // FIXME should really cap this loop with a counter so we
-    //   don't hang forever on a hardware failure.
-    while ((USRP_ALTERA_CONFIG & bmALTERA_NSTATUS) == 0) // wait for NSTATUS to go high
-      ;
-  }
-
   // ready to xfer now
 
   return 1;
@@ -78,9 +71,9 @@ clock_out_config_byte (unsigned char bits)
 
   for (i = 0; i < 8; i++){
 
-    USRP_ALTERA_CONFIG = ((USRP_ALTERA_CONFIG & ~bmALTERA_DATA0) | ((bits & 1) ? bmALTERA_DATA0 : 0));
-    USRP_ALTERA_CONFIG |= bmALTERA_DCLK;		/* set DCLK to 1 */
-    USRP_ALTERA_CONFIG &= ~bmALTERA_DCLK;		/* set DCLK to 0 */
+    bitALTERA_DATA0 = bits & 1;
+    bitALTERA_DCLK = 1;		/* set DCLK to 1 */
+    bitALTERA_DCLK = 0;		/* set DCLK to 0 */
 
     bits = bits >> 1;
   }
@@ -180,10 +173,7 @@ fpga_load_end (void)
   if (!UC_BOARD_HAS_FPGA)			// always true if we don't have FPGA
     return 1;
 
-  if ((status & bmALTERA_NSTATUS) == 0)		// failed to program
-    return 0;
-
-  if ((status & bmALTERA_CONF_DONE) == bmALTERA_CONF_DONE)
+  if (bitALTERA_CONF_DONE)
     return 1;					// everything's cool
 
   // I don't think this should happen.  It indicates that

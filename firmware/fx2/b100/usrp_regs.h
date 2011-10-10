@@ -41,7 +41,6 @@
 #define bmALTERA_NCONFIG	bmBIT1
 #define bmALTERA_DATA0		bmBIT3
 #define bmALTERA_NSTATUS	bmBIT4
-#define bmALTERA_CONF_DONE	bmBIT5
 #define bmRESET_FPGA_FIFOS  bmBIT7
 
 
@@ -49,7 +48,6 @@
 				 | bmALTERA_NCONFIG		\
 				 | bmALTERA_DATA0		\
 				 | bmALTERA_NSTATUS		\
-				 | bmALTERA_CONF_DONE		\
 				)
 
 
@@ -60,9 +58,16 @@
 
 #define	bmPORT_A_INITIAL	0
 
-sbit at 0x80+0 bitALTERA_DCLK;	// 0x80 is the bit address of PORT A
-sbit at 0x80+2 bitSHORT_PACKET_SIGNAL;
-sbit at 0x80+3 bitALTERA_DATA0;
+#define PORT_A_ADDR 0x80
+#define PORT_C_ADDR 0xA0
+
+sbit at PORT_A_ADDR+0 bitALTERA_DCLK;	// 0x80 is the bit address of PORT A
+sbit at PORT_A_ADDR+1 bitALTERA_NCONFIG;
+sbit at PORT_A_ADDR+2 bitSHORT_PACKET_SIGNAL;
+sbit at PORT_A_ADDR+3 bitALTERA_DATA0;
+sbit at PORT_A_ADDR+4 bitALTERA_NSTATUS;
+
+sbit at PORT_C_ADDR+7 bitALTERA_CONF_DONE;
 
 
 /* Port B: GPIF	FD[7:0]			*/
