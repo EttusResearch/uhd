@@ -103,7 +103,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
-        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform")
+        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform [0 to 0.7]")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
         ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
