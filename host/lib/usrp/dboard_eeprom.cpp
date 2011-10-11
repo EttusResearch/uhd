@@ -20,6 +20,7 @@
 #include <uhd/utils/log.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <sstream>
 
@@ -68,8 +69,8 @@ static const byte_vector_t string_to_bytes(const std::string &string, size_t max
 #define DB_EEPROM_MAGIC_VALUE   0xDB
 #define DB_EEPROM_ID_LSB        0x01
 #define DB_EEPROM_ID_MSB        0x02
-#define DB_EEPROM_OE_LSB        0x03
-#define DB_EEPROM_OE_MSB        0x04
+#define DB_EEPROM_REV_LSB       0x03
+#define DB_EEPROM_REV_MSB       0x04
 #define DB_EEPROM_OFFSET_0_LSB  0x05 // offset correction for ADC or DAC 0
 #define DB_EEPROM_OFFSET_0_MSB  0x06
 #define DB_EEPROM_OFFSET_1_LSB  0x07 // offset correction for ADC or DAC 1
@@ -127,6 +128,15 @@ void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
             &bytes.at(DB_EEPROM_SERIAL+DB_EEPROM_SERIAL_LEN))
         );
 
+        //parse the revision
+        const boost::uint16_t rev_num = 0
+            | (boost::uint16_t(bytes[DB_EEPROM_REV_LSB]) << 0)
+            | (boost::uint16_t(bytes[DB_EEPROM_REV_MSB]) << 8)
+        ;
+        if (rev_num != 0 and rev_num != 0xffff){
+            revision = boost::lexical_cast<std::string>(rev_num);
+        }
+
     }catch(const uhd::assertion_error &){
         id = dboard_id_t::none();
         serial = "";
@@ -144,6 +154,13 @@ void dboard_eeprom_t::store(i2c_iface &iface, boost::uint8_t addr) const{
     //load the serial bytes
     byte_vector_t ser_bytes = string_to_bytes(serial, DB_EEPROM_SERIAL_LEN);
     std::copy(ser_bytes.begin(), ser_bytes.end(), &bytes.at(DB_EEPROM_SERIAL));
+
+    //load the revision bytes
+    if (not revision.empty()){
+        const boost::uint16_t rev_num = boost::lexical_cast<boost::uint16_t>(revision);
+        bytes[DB_EEPROM_REV_LSB] = boost::uint8_t(rev_num >> 0);
+        bytes[DB_EEPROM_REV_MSB] = boost::uint8_t(rev_num >> 8);
+    }
 
     //load the checksum
     bytes[DB_EEPROM_CHKSUM] = checksum(bytes);

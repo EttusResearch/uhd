@@ -44,6 +44,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("unit", po::value<std::string>(&unit)->default_value(""),    "which unit [RX, TX, or GDB]")
         ("id",   po::value<std::string>(),                            "dboard id to burn, omit for readback")
         ("ser",  po::value<std::string>(),                            "serial to burn, omit for readback")
+        ("rev",  po::value<std::string>(),                            "revision to burn, omit for readback")
     ;
 
     po::variables_map vm;
@@ -86,6 +87,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         tree->access<dboard_eeprom_t>(db_path).set(db_eeprom);
     }
     std::cout << boost::format("  Current serial: \"%s\"") % db_eeprom.serial << std::endl;
+
+    //------------- handle the dboard revision------------------------//
+    if (vm.count("rev")){
+        db_eeprom.revision = vm["rev"].as<std::string>();
+        tree->access<dboard_eeprom_t>(db_path).set(db_eeprom);
+    }
+    std::cout << boost::format("  Current revision: \"%s\"") % db_eeprom.revision << std::endl;
 
     std::cout << "  Done" << std::endl << std::endl;
     return 0;

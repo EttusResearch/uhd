@@ -33,6 +33,9 @@ struct UHD_API dboard_eeprom_t{
     //! The unique serial number
     std::string serial;
 
+    //! A hardware revision number
+    std::string revision;
+
     /*!
      * Create an empty dboard eeprom struct.
      */
