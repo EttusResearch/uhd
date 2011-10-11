@@ -16,7 +16,6 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#define SRPH_TEST_MODE_ONE_PACKET
 #include "../lib/transport/super_recv_packet_handler.hpp"
 #include <boost/shared_array.hpp>
 #include <boost/bind.hpp>
@@ -155,7 +154,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            &buff.front(), buff.size(), metadata, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -169,7 +168,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            &buff.front(), buff.size(), metadata, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -228,7 +227,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            &buff.front(), buff.size(), metadata, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
@@ -250,7 +249,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            &buff.front(), buff.size(), metadata, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -319,7 +318,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            &buff.front(), buff.size(), metadata, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -329,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
         num_accum_samps += num_samps_ret;
         if (i == NUM_PKTS_TO_TEST/2){
             handler.recv(
-                &buff.front(), buff.size(), metadata, 1.0
+                &buff.front(), buff.size(), metadata, 1.0, true
             );
             std::cout << "metadata.error_code " << metadata.error_code << std::endl;
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
@@ -342,7 +341,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            &buff.front(), buff.size(), metadata, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -410,7 +409,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -424,7 +423,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -496,7 +495,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
@@ -518,7 +517,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -589,7 +588,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -606,7 +605,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -674,7 +673,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(metadata.has_time_spec);
@@ -685,7 +684,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         if (not metadata.more_fragments) continue;
 
         num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -700,7 +699,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }

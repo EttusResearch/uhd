@@ -148,7 +148,8 @@ public:
         const uhd::rx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t &metadata,
-        double timeout
+        const double timeout,
+        const bool one_packet
     ){
         //handle metadata queued from a previous receive
         if (_queue_error_for_next_call){
@@ -163,9 +164,7 @@ public:
             buffs, nsamps_per_buff, metadata, timeout
         );
 
-        #ifdef SRPH_TEST_MODE_ONE_PACKET
-        return accum_num_samps;
-        #endif
+        if (one_packet) return accum_num_samps;
 
         //first recv had an error code set, return immediately
         if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) return accum_num_samps;
@@ -493,7 +492,7 @@ private:
         const uhd::rx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t &metadata,
-        double timeout,
+        const double timeout,
         const size_t buffer_offset_bytes = 0
     ){
         //get the next buffer if the current one has expired
@@ -571,9 +570,10 @@ public:
         const rx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t &metadata,
-        double timeout
+        const double timeout,
+        const bool one_packet
     ){
-        return recv_packet_handler::recv(buffs, nsamps_per_buff, metadata, timeout);
+        return recv_packet_handler::recv(buffs, nsamps_per_buff, metadata, timeout, one_packet);
     }
 
 private:

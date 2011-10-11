@@ -123,17 +123,23 @@ public:
      * Under a timeout condition, the number of samples returned
      * may be less than the number of samples specified.
      *
+     * The one_packet option allows the user to guarantee that
+     * the call will return after a single packet has been processed.
+     * This may be useful to maintain packet boundaries in some cases.
+     *
      * \param buffs a vector of writable memory to fill with samples
      * \param nsamps_per_buff the size of each buffer in number of samples
      * \param metadata data to fill describing the buffer
      * \param timeout the timeout in seconds to wait for a packet
+     * \param one_packet return after the first packet is received
      * \return the number of samples received or 0 on error
      */
     virtual size_t recv(
         const buffs_type &buffs,
         const size_t nsamps_per_buff,
         rx_metadata_t &metadata,
-        double timeout = 0.1
+        const double timeout = 0.1,
+        const bool one_packet = false
     ) = 0;
 };
 
@@ -180,7 +186,7 @@ public:
         const buffs_type &buffs,
         const size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
-        double timeout = 0.1
+        const double timeout = 0.1
     ) = 0;
 };
 

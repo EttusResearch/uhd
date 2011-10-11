@@ -325,13 +325,14 @@ public:
         const rx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t &metadata,
-        double timeout
+        const double timeout,
+        const bool one_packet
     ){
         //interleave a "soft" inline message into the receive stream:
         if (_stc->get_inline_queue().pop_with_haste(metadata)) return 0;
 
         size_t num_samps_recvd = sph::recv_packet_handler::recv(
-            buffs, nsamps_per_buff, metadata, timeout
+            buffs, nsamps_per_buff, metadata, timeout, one_packet
         );
 
         return _stc->recv_post(metadata, num_samps_recvd);
@@ -366,8 +367,9 @@ public:
         const tx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t &metadata,
-        double timeout
+        const double timeout_
     ){
+        double timeout = timeout_; //rw copy
         _stc->send_pre(metadata, timeout);
 
         _tx_enb_fcn(true); //always enable (it will do the right thing)
@@ -545,7 +547,10 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
 
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
-    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+    args.channels.clear(); //NOTE: we have no choice about the channel mapping
+    for (size_t ch = 0; ch < _rx_subdev_spec.size(); ch++){
+        args.channels.push_back(ch);
+    }
 
     if (args.otw_format == "sc16"){
         _iface->poke32(FR_RX_FORMAT, 0
@@ -610,7 +615,10 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
-    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+    args.channels.clear(); //NOTE: we have no choice about the channel mapping
+    for (size_t ch = 0; ch < _tx_subdev_spec.size(); ch++){
+        args.channels.push_back(ch);
+    }
 
     if (args.otw_format != "sc16"){
         throw uhd::value_error("USRP1 TX cannot handle requested wire format: " + args.otw_format);

@@ -128,7 +128,7 @@ public:
         const uhd::tx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t &metadata,
-        double timeout
+        const double timeout
     ){
         //translate the metadata to vrt if packet info
         vrt::if_packet_info_t if_packet_info;
@@ -215,7 +215,7 @@ private:
         const uhd::tx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         vrt::if_packet_info_t &if_packet_info,
-        double timeout,
+        const double timeout,
         const size_t buffer_offset_bytes = 0
     ){
         //load the rest of the if_packet_info in here
@@ -269,7 +269,7 @@ public:
         const tx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         const uhd::tx_metadata_t &metadata,
-        double timeout
+        const double timeout
     ){
         return send_packet_handler::send(buffs, nsamps_per_buff, metadata, timeout);
     }
