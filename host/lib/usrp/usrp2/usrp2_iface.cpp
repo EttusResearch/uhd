@@ -291,7 +291,7 @@ public:
     }
 
     rev_type get_rev(void){
-        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"])){
+        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["hardware"])){
         case 0x0300:
         case 0x0301: return USRP2_REV3;
         case 0x0400: return USRP2_REV4;

@@ -65,17 +65,32 @@ static const byte_vector_t string_to_bytes(const std::string &string, size_t max
     return bytes;
 }
 
+//! convert a string to a byte vector to write to eeprom
+static byte_vector_t string_to_uint16_bytes(const std::string &num_str){
+    const boost::uint16_t num = boost::lexical_cast<boost::uint16_t>(num_str);
+    const byte_vector_t lsb_msb = boost::assign::list_of
+        (boost::uint8_t(num >> 0))(boost::uint8_t(num >> 8));
+    return lsb_msb;
+}
+
+//! convert a byte vector read from eeprom to a string
+static std::string uint16_bytes_to_string(const byte_vector_t &bytes){
+    const boost::uint16_t num = (boost::uint16_t(bytes.at(0)) << 0) | (boost::uint16_t(bytes.at(1)) << 8);
+    return (num == 0 or num == 0xffff)? "" : boost::lexical_cast<std::string>(num);
+}
+
 /***********************************************************************
  * Implementation of N100 load/store
  **********************************************************************/
 static const boost::uint8_t N100_EEPROM_ADDR = 0x50;
 
 static const uhd::dict<std::string, boost::uint8_t> USRP_N100_OFFSETS = boost::assign::map_list_of
-    ("rev-lsb-msb", 0x00)
+    ("hardware", 0x00)
     ("mac-addr", 0x02)
     ("ip-addr", 0x0C)
     //leave space here for other addresses (perhaps)
-    ("prod-lsb-msb", 0x14)
+    ("revision", 0x12)
+    ("product", 0x14)
     ("gpsdo", 0x17)
     ("serial", 0x18)
     ("name", 0x18 + SERIAL_LEN)
@@ -88,15 +103,20 @@ enum n200_gpsdo_type{
 };
 
 static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //extract the hardware number
+    mb_eeprom["hardware"] = uint16_bytes_to_string(
+        iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["hardware"], 2)
+    );
+
     //extract the revision number
-    byte_vector_t rev_lsb_msb = iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["rev-lsb-msb"], 2);
-    boost::uint16_t rev = (boost::uint16_t(rev_lsb_msb.at(0)) << 0) | (boost::uint16_t(rev_lsb_msb.at(1)) << 8);
-    mb_eeprom["rev"] = boost::lexical_cast<std::string>(rev);
+    mb_eeprom["revision"] = uint16_bytes_to_string(
+        iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["revision"], 2)
+    );
 
     //extract the product code
-    byte_vector_t prod_lsb_msb = iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["prod-lsb-msb"], 2);
-    boost::uint16_t prod = (boost::uint16_t(prod_lsb_msb.at(0)) << 0) | (boost::uint16_t(prod_lsb_msb.at(1)) << 8);
-    mb_eeprom["product"] = (prod == 0 or prod == 0xffff)? "" : boost::lexical_cast<std::string>(prod);
+    mb_eeprom["product"] = uint16_bytes_to_string(
+        iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["product"], 2)
+    );
 
     //extract the addresses
     mb_eeprom["mac-addr"] = mac_addr_t::from_bytes(iface.read_eeprom(
@@ -137,24 +157,22 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
 static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //parse the revision number
-    if (mb_eeprom.has_key("rev")){
-        boost::uint16_t rev = boost::lexical_cast<boost::uint16_t>(mb_eeprom["rev"]);
-        byte_vector_t rev_lsb_msb = boost::assign::list_of
-            (boost::uint8_t(rev >> 0))
-            (boost::uint8_t(rev >> 8))
-        ;
-        iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["rev-lsb-msb"], rev_lsb_msb);
-    }
+    if (mb_eeprom.has_key("hardware")) iface.write_eeprom(
+        N100_EEPROM_ADDR, USRP_N100_OFFSETS["hardware"],
+        string_to_uint16_bytes(mb_eeprom["hardware"])
+    );
+
+    //parse the revision number
+    if (mb_eeprom.has_key("revision")) iface.write_eeprom(
+        N100_EEPROM_ADDR, USRP_N100_OFFSETS["revision"],
+        string_to_uint16_bytes(mb_eeprom["revision"])
+    );
 
     //parse the product code
-    if (mb_eeprom.has_key("product")){
-        boost::uint16_t prod = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
-        byte_vector_t prod_lsb_msb = boost::assign::list_of
-            (boost::uint8_t(prod >> 0))
-            (boost::uint8_t(prod >> 8))
-        ;
-        iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["prod-lsb-msb"], prod_lsb_msb);
-    }
+    if (mb_eeprom.has_key("product")) iface.write_eeprom(
+        N100_EEPROM_ADDR, USRP_N100_OFFSETS["product"],
+        string_to_uint16_bytes(mb_eeprom["product"])
+    );
 
     //store the addresses
     if (mb_eeprom.has_key("mac-addr")) iface.write_eeprom(
@@ -195,27 +213,41 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 static const boost::uint8_t B000_EEPROM_ADDR = 0x50;
 static const size_t B000_SERIAL_LEN = 8;
 
-static const uhd::dict<std::string, boost::uint8_t> USRP_B000_OFFSETS = boost::assign::map_list_of
-    ("serial", 0xf8)
-    ("name", 0xf8 - NAME_MAX_LEN)
-    ("mcr", 0xf8 - NAME_MAX_LEN - sizeof(boost::uint32_t))
-;
+//use char array so we dont need to attribute packed
+struct b000_eeprom_map{
+    unsigned char _r[217];
+    unsigned char revision[2];
+    unsigned char product[2];
+    unsigned char mcr[4];
+    unsigned char name[NAME_MAX_LEN];
+    unsigned char serial[B000_SERIAL_LEN];
+};
 
 static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //extract the revision number
+    mb_eeprom["revision"] = uint16_bytes_to_string(
+        iface.read_eeprom(B000_EEPROM_ADDR, offsetof(b000_eeprom_map, revision), 2)
+    );
+
+    //extract the product code
+    mb_eeprom["product"] = uint16_bytes_to_string(
+        iface.read_eeprom(B000_EEPROM_ADDR, offsetof(b000_eeprom_map, product), 2)
+    );
+
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
-        B000_EEPROM_ADDR, USRP_B000_OFFSETS["serial"], B000_SERIAL_LEN
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, serial), B000_SERIAL_LEN
     ));
 
     //extract the name
     mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
-        B000_EEPROM_ADDR, USRP_B000_OFFSETS["name"], NAME_MAX_LEN
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, name), NAME_MAX_LEN
     ));
 
     //extract master clock rate as a 32-bit uint in Hz
     boost::uint32_t master_clock_rate;
     const byte_vector_t rate_bytes = iface.read_eeprom(
-        B000_EEPROM_ADDR, USRP_B000_OFFSETS["mcr"], sizeof(master_clock_rate)
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, mcr), sizeof(master_clock_rate)
     );
     std::copy(
         rate_bytes.begin(), rate_bytes.end(), //input
@@ -229,15 +261,27 @@ static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 }
 
 static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //parse the revision number
+    if (mb_eeprom.has_key("revision")) iface.write_eeprom(
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, revision),
+        string_to_uint16_bytes(mb_eeprom["revision"])
+    );
+
+    //parse the product code
+    if (mb_eeprom.has_key("product")) iface.write_eeprom(
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, product),
+        string_to_uint16_bytes(mb_eeprom["product"])
+    );
+
     //store the serial
     if (mb_eeprom.has_key("serial")) iface.write_eeprom(
-        B000_EEPROM_ADDR, USRP_B000_OFFSETS["serial"],
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, serial),
         string_to_bytes(mb_eeprom["serial"], B000_SERIAL_LEN)
     );
 
     //store the name
     if (mb_eeprom.has_key("name")) iface.write_eeprom(
-        B000_EEPROM_ADDR, USRP_B000_OFFSETS["name"],
+        B000_EEPROM_ADDR, offsetof(b000_eeprom_map, name),
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 
@@ -250,7 +294,7 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
             reinterpret_cast<const boost::uint8_t *>(&master_clock_rate) + sizeof(master_clock_rate)
         );
         iface.write_eeprom(
-            B000_EEPROM_ADDR, USRP_B000_OFFSETS["mcr"], rate_bytes
+            B000_EEPROM_ADDR, offsetof(b000_eeprom_map, mcr), rate_bytes
         );
     }
 }
