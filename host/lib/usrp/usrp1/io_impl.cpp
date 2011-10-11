@@ -441,6 +441,14 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
     this->restore_tx(s);
 }
 
+
+void usrp1_impl::update_tick_rate(const double rate){
+    //updating this variable should:
+    //update dboard iface -> it has a reference
+    //update dsp freq bounds -> publisher
+    _master_clock_rate = rate;
+}
+
 double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
     const size_t div = this->has_rx_halfband()? 2 : 1;
@@ -495,6 +503,7 @@ double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 
 void usrp1_impl::update_rates(void){
     const fs_path mb_path = "/mboards/0";
+    this->update_tick_rate(_master_clock_rate);
     BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
         _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").update();
     }

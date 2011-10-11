@@ -95,12 +95,15 @@ private:
     void update_rates(void);
     double update_rx_dsp_freq(const size_t, const double);
     double update_tx_dsp_freq(const size_t, const double);
+    void update_tick_rate(const double rate);
+    uhd::meta_range_t get_rx_dsp_freq_range(void);
+    uhd::meta_range_t get_tx_dsp_freq_range(void);
 
     static uhd::usrp::dboard_iface::sptr make_dboard_iface(
         usrp1_iface::sptr,
         usrp1_codec_ctrl::sptr,
         dboard_slot_t,
-        const double,
+        const double &,
         const uhd::usrp::dboard_id_t &
     );
 

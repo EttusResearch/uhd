@@ -225,14 +225,25 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
     _master_clock_rate = 64e6;
-    try{
-        if (not mb_eeprom["mcr"].empty())
+    if (device_addr.has_key("mcr")){
+        try{
+            _master_clock_rate = boost::lexical_cast<double>(device_addr["mcr"]);
+        }
+        catch(const std::exception &e){
+            UHD_MSG(error) << "Error parsing FPGA clock rate from device address: " << e.what() << std::endl;
+        }
+    }
+    else if (not mb_eeprom["mcr"].empty()){
+        try{
             _master_clock_rate = boost::lexical_cast<double>(mb_eeprom["mcr"]);
-    }catch(const std::exception &e){
-        UHD_MSG(error) << "Error parsing FPGA clock rate from EEPROM: " << e.what() << std::endl;
+        }
+        catch(const std::exception &e){
+            UHD_MSG(error) << "Error parsing FPGA clock rate from EEPROM: " << e.what() << std::endl;
+        }
     }
     UHD_MSG(status) << boost::format("Using FPGA clock rate of %fMHz...") % (_master_clock_rate/1e6) << std::endl;
-    _tree->create<double>(mb_path / "tick_rate").set(_master_clock_rate);
+    _tree->create<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&usrp1_impl::update_tick_rate, this, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -278,7 +289,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         _tree->create<double>(rx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_rx_dsp_freq, this, dspno, _1));
         _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
-            .set(meta_range_t(-_master_clock_rate/2, +_master_clock_rate/2));
+            .publish(boost::bind(&usrp1_impl::get_rx_dsp_freq_range, this));
         _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd");
         if (dspno == 0){
             //only subscribe the callback for dspno 0 since it will stream all dsps
@@ -298,8 +309,8 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
             .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, dspno, _1));
         _tree->create<double>(tx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, _1));
-        _tree->create<meta_range_t>(tx_dsp_path / "freq/range") //magic scalar comes from codec control:
-            .set(meta_range_t(-_master_clock_rate*0.6875, +_master_clock_rate*0.6875));
+        _tree->create<meta_range_t>(tx_dsp_path / "freq/range")
+            .publish(boost::bind(&usrp1_impl::get_tx_dsp_freq_range, this));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -442,4 +453,13 @@ double usrp1_impl::update_rx_codec_gain(const std::string &db, const double gain
     _dbc[db].codec->set_rx_pga_gain(gain, 'A');
     _dbc[db].codec->set_rx_pga_gain(gain, 'B');
     return _dbc[db].codec->get_rx_pga_gain('A');
+}
+
+uhd::meta_range_t usrp1_impl::get_rx_dsp_freq_range(void){
+    return meta_range_t(-_master_clock_rate/2, +_master_clock_rate/2);
+}
+
+uhd::meta_range_t usrp1_impl::get_tx_dsp_freq_range(void){
+    //magic scalar comes from codec control:
+    return meta_range_t(-_master_clock_rate*0.6875, +_master_clock_rate*0.6875);
 }
