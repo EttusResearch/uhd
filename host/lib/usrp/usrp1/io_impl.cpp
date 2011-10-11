@@ -441,9 +441,15 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
 double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
-    const size_t div = 2;
+    const size_t div = this->has_rx_halfband()? 2 : 1;
     const size_t rate = uhd::clip<size_t>(
         boost::math::iround(_master_clock_rate / samp_rate), 4, 256) & ~(div-1);
+
+    if (rate < 8 and this->has_rx_halfband()) UHD_MSG(warning) <<
+        "USRP1 cannot achieve decimations below 8 when the half-band filter is present.\n"
+        "The usrp1_fpga_4rx.rbf file is a special FPGA image without RX half-band filters.\n"
+        "To load this image, set the device address key/value pair: fpga=usrp1_fpga_4rx.rbf\n"
+    << std::endl;
 
     if (dspno == 0){ //only care if dsp0 is set since its homogeneous
         bool s = this->disable_rx();
@@ -464,7 +470,7 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
 double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 
-    const size_t div = 2;
+    const size_t div = this->has_tx_halfband()? 2 : 1;
     const size_t rate = uhd::clip<size_t>(
         boost::math::iround(_master_clock_rate / samp_rate), 8, 256) & ~(div-1);
 
@@ -534,7 +540,13 @@ bool usrp1_impl::recv_async_msg(
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
-rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
+rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
+    stream_args_t args = args_;
+
+    //setup defaults for unspecified values
+    args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
+    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+
     if (args.otw_format == "sc16"){
         _iface->poke32(FR_RX_FORMAT, 0
             | (0 << bmFR_RX_FORMAT_SHIFT_SHIFT)
@@ -553,11 +565,8 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
         throw uhd::value_error("USRP1 RX cannot handle requested wire format: " + args.otw_format);
     }
 
-    //map an empty channel set to chan0
-    const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
-
     //calculate packet size
-    const size_t bpp = _data_transport->get_recv_frame_size()/channels.size();
+    const size_t bpp = _data_transport->get_recv_frame_size()/args.channels.size();
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
@@ -580,7 +589,7 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
     id.input_markup = args.otw_format + "_item16_usrp1";
     id.num_inputs = 1;
     id.output_markup = args.cpu_format;
-    id.num_outputs = channels.size();
+    id.num_outputs = args.channels.size();
     id.args = args.args;
     my_streamer->set_converter(id);
 
@@ -596,16 +605,21 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args){
 /***********************************************************************
  * Transmit streamer
  **********************************************************************/
-tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args){
+tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
+    stream_args_t args = args_;
+
+    //setup defaults for unspecified values
+    args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
+    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+
     if (args.otw_format != "sc16"){
         throw uhd::value_error("USRP1 TX cannot handle requested wire format: " + args.otw_format);
     }
 
-    //map an empty channel set to chan0
-    const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+    _iface->poke32(FR_TX_FORMAT, bmFR_TX_FORMAT_16_IQ);
 
     //calculate packet size
-    const size_t bpp = _data_transport->get_send_frame_size()/channels.size();
+    const size_t bpp = _data_transport->get_send_frame_size()/args.channels.size();
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
@@ -623,7 +637,7 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args){
     //set the converter
     uhd::convert::id_type id;
     id.input_markup = args.cpu_format;
-    id.num_inputs = channels.size();
+    id.num_inputs = args.channels.size();
     id.output_markup = args.otw_format + "_item16_usrp1";
     id.num_outputs = 1;
     id.args = args.args;

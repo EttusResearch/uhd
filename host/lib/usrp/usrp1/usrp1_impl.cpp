@@ -195,12 +195,6 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _iface->poke32(FR_ADC_OFFSET_2, 0x00000000);
     _iface->poke32(FR_ADC_OFFSET_3, 0x00000000);
 
-    // Set default for RX format to 16-bit I&Q and no half-band filter bypass
-    _iface->poke32(FR_RX_FORMAT, 0x00000300);
-
-    // Set default for TX format to 16-bit I&Q
-    _iface->poke32(FR_TX_FORMAT, 0x00000000);
-
     UHD_LOG
         << "USRP1 Capabilities" << std::endl
         << "    number of duc's: " << get_num_ddcs() << std::endl

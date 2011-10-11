@@ -366,9 +366,12 @@ bool usrp2_impl::recv_async_msg(
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
-rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
-    //map an empty channel set to chan0
-    const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
+    stream_args_t args = args_;
+
+    //setup defaults for unspecified values
+    args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
+    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
     //calculate packet size
     static const size_t hdr_size = 0
@@ -383,7 +386,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
 
     //init some streamer stuff
-    my_streamer->resize(channels.size());
+    my_streamer->resize(args.channels.size());
     my_streamer->set_vrt_unpacker(&vrt::if_hdr_unpack_be);
 
     //set the converter
@@ -396,8 +399,8 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
     my_streamer->set_converter(id);
 
     //bind callbacks for the handler
-    for (size_t chan_i = 0; chan_i < channels.size(); chan_i++){
-        const size_t chan = channels[chan_i];
+    for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
+        const size_t chan = args.channels[chan_i];
         size_t num_chan_so_far = 0;
         BOOST_FOREACH(const std::string &mb, _mbc.keys()){
             num_chan_so_far += _mbc[mb].rx_chan_occ;
@@ -427,13 +430,16 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args){
 /***********************************************************************
  * Transmit streamer
  **********************************************************************/
-tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args){
+tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
+    stream_args_t args = args_;
+
+    //setup defaults for unspecified values
+    args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
+    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+
     if (args.otw_format != "sc16"){
         throw uhd::value_error("USRP TX cannot handle requested wire format: " + args.otw_format);
     }
-
-    //map an empty channel set to chan0
-    const std::vector<size_t> channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
     //calculate packet size
     static const size_t hdr_size = 0
@@ -448,7 +454,7 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args){
     boost::shared_ptr<sph::send_packet_streamer> my_streamer = boost::make_shared<sph::send_packet_streamer>(spp);
 
     //init some streamer stuff
-    my_streamer->resize(channels.size());
+    my_streamer->resize(args.channels.size());
     my_streamer->set_vrt_packer(&vrt::if_hdr_pack_be, vrt_send_header_offset_words32);
 
     //set the converter
@@ -461,8 +467,8 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args){
     my_streamer->set_converter(id);
 
     //bind callbacks for the handler
-    for (size_t chan_i = 0; chan_i < channels.size(); chan_i++){
-        const size_t chan = channels[chan_i];
+    for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
+        const size_t chan = args.channels[chan_i];
         size_t num_chan_so_far = 0;
         size_t abs = 0;
         BOOST_FOREACH(const std::string &mb, _mbc.keys()){

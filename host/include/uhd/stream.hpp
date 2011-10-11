@@ -39,8 +39,8 @@ struct UHD_API stream_args_t{
 
     //! Convenience constructor for streamer args
     stream_args_t(
-        const std::string &cpu = "fc32",
-        const std::string &otw = "sc16"
+        const std::string &cpu = "",
+        const std::string &otw = ""
     ){
         cpu_format = cpu;
         otw_format = otw;
