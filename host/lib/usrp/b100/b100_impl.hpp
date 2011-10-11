@@ -33,7 +33,6 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/types/otw_type.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -69,17 +68,8 @@ public:
     ~b100_impl(void);
 
     //the io interface
-    size_t send(const send_buffs_type &,
-                size_t,
-                const uhd::tx_metadata_t &,
-                const uhd::io_type_t &,
-                send_mode_t, double);
-    size_t recv(const recv_buffs_type &,
-                size_t, uhd::rx_metadata_t &,
-                const uhd::io_type_t &,
-                recv_mode_t, double);
-    size_t get_max_send_samps_per_packet(void) const;
-    size_t get_max_recv_samps_per_packet(void) const;
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
@@ -106,7 +96,6 @@ private:
     uhd::usrp::dboard_iface::sptr _dboard_iface;
 
     //handle io stuff
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
 
@@ -115,14 +104,18 @@ private:
         return _tree;
     }
 
+    std::vector<boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
+    std::vector<boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
+
     void check_fw_compat(void);
     void check_fpga_compat(void);
     double update_rx_codec_gain(const double); //sets A and B at once
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void set_db_eeprom(const std::string &, const uhd::usrp::dboard_eeprom_t &);
     void update_tick_rate(const double rate);
-    void update_rx_samp_rate(const double rate);
-    void update_tx_samp_rate(const double rate);
+    void update_rx_samp_rate(const size_t, const double rate);
+    void update_tx_samp_rate(const size_t, const double rate);
+    void update_rates(void);
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_clock_source(const std::string &);
