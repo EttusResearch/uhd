@@ -51,8 +51,8 @@ module double_buffer
    reg [BUF_SIZE-1:0]  len0, len1;
  
    assign data_o = read_ptr ? data_o_1 : data_o_0;
-   assign rw0_adr = (read_ok & ~read_ptr) ? read_adr : write_adr;
-   assign rw1_adr = (read_ok & read_ptr) ? read_adr : write_adr;
+   assign rw0_adr = (write_ok & ~write_ptr) ? write_adr : read_adr;
+   assign rw1_adr = (write_ok & write_ptr) ? write_adr : read_adr;
    
    wire [35:0] 	       access_dat_o_0, access_dat_o_1;
    wire 	       access_ptr;
