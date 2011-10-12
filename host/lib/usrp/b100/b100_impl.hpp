@@ -41,6 +41,7 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
+#include <boost/weak_ptr.hpp>
 
 static const double          B100_LINK_RATE_BPS = 256e6/8; //pratical link rate (< 480 Mbps)
 static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.ihx";

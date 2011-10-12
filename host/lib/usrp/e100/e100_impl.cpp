@@ -271,8 +271,9 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
             .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<double>(rx_dsp_path / "rate/value")
+            .set(1e6) //some default
             .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
-            .subscribe(boost::bind(&e100_impl::update_rx_samp_rate, this, _1));
+            .subscribe(boost::bind(&e100_impl::update_rx_samp_rate, this, dspno, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
             .coerce(boost::bind(&rx_dsp_core_200::set_freq, _rx_dsps[dspno], _1));
         _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
@@ -291,8 +292,9 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
     _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
+        .set(1e6) //some default
         .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _tx_dsp, _1))
-        .subscribe(boost::bind(&e100_impl::update_tx_samp_rate, this, _1));
+        .subscribe(boost::bind(&e100_impl::update_tx_samp_rate, this, 0, _1));
     _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
         .coerce(boost::bind(&tx_dsp_core_200::set_freq, _tx_dsp, _1));
     _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
@@ -376,16 +378,10 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate").update() //update and then subscribe the clock callback
-        .subscribe(boost::bind(&e100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
+    this->update_rates();
 
-    //and now that the tick rate is set, init the host rates to something
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
-        _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").set(1e6);
-    }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
-        _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").set(1e6);
-    }
+    _tree->access<double>(mb_path / "tick_rate") //now subscribe the clock rate setter
+        .subscribe(boost::bind(&e100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_rx_subdev_names()[0]));
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_tx_subdev_names()[0]));
