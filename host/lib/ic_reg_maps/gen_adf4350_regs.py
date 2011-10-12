@@ -55,7 +55,7 @@ low_noise_and_spur      2[29:30]    3       low_noise, reserved0, reserved1, low
 ## address 3
 ########################################################################
 clock_divider_12_bit    3[3:14]     0
-clock_div_mode          3[15:16]    0       clock_divider_off, fast_lock, resync_enable, reserved
+clock_div_mode          3[15:16]    1       clock_divider_off, fast_lock, resync_enable, reserved
 ##reserved              3[17]       0
 cycle_slip_reduction    3[18]       0       disabled, enabled
 ##reserved              3[19:20]    0
