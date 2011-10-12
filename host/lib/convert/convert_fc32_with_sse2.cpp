@@ -21,7 +21,7 @@
 
 using namespace uhd::convert;
 
-DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_SIMD){
     const fc32_t *input = reinterpret_cast<const fc32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
@@ -64,7 +64,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_CUSTOM){
     }
 }
 
-DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_SIMD){
     const fc32_t *input = reinterpret_cast<const fc32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
@@ -106,7 +106,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_CUSTOM){
     }
 }
 
-DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     fc32_t *output = reinterpret_cast<fc32_t *>(outputs[0]);
 
@@ -151,7 +151,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_CUSTOM){
     }
 }
 
-DECLARE_CONVERTER(sc16_item32_be, 1, fc32, 1, PRIORITY_CUSTOM){
+DECLARE_CONVERTER(sc16_item32_be, 1, fc32, 1, PRIORITY_SIMD){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     fc32_t *output = reinterpret_cast<fc32_t *>(outputs[0]);
 

@@ -92,9 +92,9 @@ private:
 BOOST_AUTO_TEST_CASE(test_sph_send_one_channel_one_packet_mode){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "fc32";
+    id.input_format = "fc32";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_be";
+    id.output_format = "sc16_item32_be";
     id.num_outputs = 1;
 
     dummy_send_xport_class dummy_send_xport("big");
@@ -150,9 +150,9 @@ BOOST_AUTO_TEST_CASE(test_sph_send_one_channel_one_packet_mode){
 BOOST_AUTO_TEST_CASE(test_sph_send_one_channel_full_buffer_mode){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "fc32";
+    id.input_format = "fc32";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_be";
+    id.output_format = "sc16_item32_be";
     id.num_outputs = 1;
 
     dummy_send_xport_class dummy_send_xport("big");

@@ -391,11 +391,10 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
 
     //set the converter
     uhd::convert::id_type id;
-    id.input_markup = args.otw_format + "_item32_be";
+    id.input_format = args.otw_format + "_item32_be";
     id.num_inputs = 1;
-    id.output_markup = args.cpu_format;
+    id.output_format = args.cpu_format;
     id.num_outputs = 1;
-    id.args = args.args;
     my_streamer->set_converter(id);
 
     //bind callbacks for the handler
@@ -459,11 +458,10 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //set the converter
     uhd::convert::id_type id;
-    id.input_markup = args.cpu_format;
+    id.input_format = args.cpu_format;
     id.num_inputs = 1;
-    id.output_markup = args.otw_format + "_item32_be";
+    id.output_format = args.otw_format + "_item32_be";
     id.num_outputs = 1;
-    id.args = args.args;
     my_streamer->set_converter(id);
 
     //bind callbacks for the handler

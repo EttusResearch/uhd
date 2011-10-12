@@ -75,7 +75,7 @@ static void test_convert_types_sc16(
     //run the loopback and test
     convert::id_type in_id = id;
     convert::id_type out_id = id;
-    std::swap(out_id.input_markup, out_id.output_markup);
+    std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
     BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
@@ -83,9 +83,9 @@ static void test_convert_types_sc16(
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16){
     convert::id_type id;
-    id.input_markup = "sc16";
+    id.input_format = "sc16";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_be";
+    id.output_format = "sc16_item32_be";
     id.num_outputs = 1;
 
     //try various lengths to test edge cases
@@ -96,9 +96,9 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16){
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
     convert::id_type id;
-    id.input_markup = "sc16";
+    id.input_format = "sc16";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_le";
+    id.output_format = "sc16_item32_le";
     id.num_outputs = 1;
 
     //try various lengths to test edge cases
@@ -126,7 +126,7 @@ static void test_convert_types_for_floats(
     //run the loopback and test
     convert::id_type in_id = id;
     convert::id_type out_id = id;
-    std::swap(out_id.input_markup, out_id.output_markup);
+    std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
     for (size_t i = 0; i < nsamps; i++){
@@ -137,9 +137,9 @@ static void test_convert_types_for_floats(
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
     convert::id_type id;
-    id.input_markup = "fc32";
+    id.input_format = "fc32";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_be";
+    id.output_format = "sc16_item32_be";
     id.num_outputs = 1;
 
     //try various lengths to test edge cases
@@ -150,9 +150,9 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32){
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
     convert::id_type id;
-    id.input_markup = "fc32";
+    id.input_format = "fc32";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_le";
+    id.output_format = "sc16_item32_le";
     id.num_outputs = 1;
 
     //try various lengths to test edge cases
@@ -163,9 +163,9 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32){
 
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64){
     convert::id_type id;
-    id.input_markup = "fc64";
+    id.input_format = "fc64";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_be";
+    id.output_format = "sc16_item32_be";
     id.num_outputs = 1;
 
     //try various lengths to test edge cases
@@ -176,9 +176,9 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64){
 
 BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64){
     convert::id_type id;
-    id.input_markup = "fc64";
+    id.input_format = "fc64";
     id.num_inputs = 1;
-    id.output_markup = "sc16_item32_le";
+    id.output_format = "sc16_item32_le";
     id.num_outputs = 1;
 
     //try various lengths to test edge cases
@@ -192,15 +192,15 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64){
  **********************************************************************/
 BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
     convert::id_type in_id;
-    in_id.input_markup = "fc32";
+    in_id.input_format = "fc32";
     in_id.num_inputs = 1;
-    in_id.output_markup = "sc16_item32_le";
+    in_id.output_format = "sc16_item32_le";
     in_id.num_outputs = 1;
 
     convert::id_type out_id;
-    out_id.input_markup = "sc16_item32_le";
+    out_id.input_format = "sc16_item32_le";
     out_id.num_inputs = 1;
-    out_id.output_markup = "sc16";
+    out_id.output_format = "sc16";
     out_id.num_outputs = 1;
 
     const size_t nsamps = 13;
@@ -233,15 +233,15 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
  **********************************************************************/
 BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
     convert::id_type in_id;
-    in_id.input_markup = "sc16";
+    in_id.input_format = "sc16";
     in_id.num_inputs = 1;
-    in_id.output_markup = "sc16_item32_le";
+    in_id.output_format = "sc16_item32_le";
     in_id.num_outputs = 1;
 
     convert::id_type out_id;
-    out_id.input_markup = "sc16_item32_le";
+    out_id.input_format = "sc16_item32_le";
     out_id.num_inputs = 1;
-    out_id.output_markup = "fc32";
+    out_id.output_format = "fc32";
     out_id.num_outputs = 1;
 
     const size_t nsamps = 13;

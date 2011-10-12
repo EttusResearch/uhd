@@ -27,29 +27,26 @@
 using namespace uhd;
 
 bool convert::operator==(const convert::id_type &lhs, const convert::id_type &rhs){
-    return
-        (lhs.input_markup == rhs.input_markup) and
-        (lhs.num_inputs == rhs.num_inputs) and
-        (lhs.output_markup == rhs.output_markup) and
-        (lhs.num_outputs == rhs.num_outputs) and
-        (lhs.args == rhs.args)
+    return true
+        and (lhs.input_format  == rhs.input_format)
+        and (lhs.num_inputs    == rhs.num_inputs)
+        and (lhs.output_format == rhs.output_format)
+        and (lhs.num_outputs   == rhs.num_outputs)
     ;
 }
 
 std::string convert::id_type::to_pp_string(void) const{
     return str(boost::format(
         "conversion ID\n"
-        "  Input markup: %s\n"
+        "  Input format: %s\n"
         "  Num inputs: %d\n"
-        "  Output markup: %s\n"
+        "  Output format: %s\n"
         "  Num outputs: %d\n"
-        "  Optional args: %s\n"
     )
-        % this->input_markup
+        % this->input_format
         % this->num_inputs
-        % this->output_markup
+        % this->output_format
         % this->num_outputs
-        % this->args
     );
 }
 
@@ -101,30 +98,30 @@ convert::function_type convert::get_converter(const id_type &id){
 }
 
 /***********************************************************************
- * Mappings for item markup to byte size for all items we can
+ * Mappings for item format to byte size for all items we can
  **********************************************************************/
 typedef uhd::dict<std::string, size_t> item_size_type;
 UHD_SINGLETON_FCN(item_size_type, get_item_size_table);
 
 void register_bytes_per_item(
-    const std::string &markup, const size_t size
+    const std::string &format, const size_t size
 ){
-    get_item_size_table()[markup] = size;
+    get_item_size_table()[format] = size;
 }
 
-size_t convert::get_bytes_per_item(const std::string &markup){
-    if (get_item_size_table().has_key(markup)) return get_item_size_table()[markup];
+size_t convert::get_bytes_per_item(const std::string &format){
+    if (get_item_size_table().has_key(format)) return get_item_size_table()[format];
 
     //OK. I am sorry about this.
     //We didnt find a match, so lets find a match for the first term.
     //This is partially a hack because of the way I append strings.
     //But as long as life is kind, we can keep this.
-    const size_t pos = markup.find("_");
+    const size_t pos = format.find("_");
     if (pos != std::string::npos){
-        return get_bytes_per_item(markup.substr(0, pos));
+        return get_bytes_per_item(format.substr(0, pos));
     }
 
-    throw uhd::key_error("Cannot find an item size:\n" + markup);
+    throw uhd::key_error("Cannot find an item size:\n" + format);
 }
 
 UHD_STATIC_BLOCK(convert_register_item_sizes){

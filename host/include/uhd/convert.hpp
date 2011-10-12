@@ -42,17 +42,17 @@ namespace uhd{ namespace convert{
     enum priority_type{
         PRIORITY_GENERAL = 0,
         PRIORITY_LIBORC = 1,
-        PRIORITY_CUSTOM = 2,
+        PRIORITY_SIMD = 2,
+        PRIORITY_CUSTOM = 3,
         PRIORITY_EMPTY = -1,
     };
 
     //! Identify a conversion routine in the registry
     struct id_type : boost::equality_comparable<id_type>{
-        std::string input_markup;
+        std::string input_format;
         size_t num_inputs;
-        std::string output_markup;
+        std::string output_format;
         size_t num_outputs;
-        std::string args;
         std::string to_pp_string(void) const;
     };
 
@@ -80,15 +80,15 @@ namespace uhd{ namespace convert{
 
     /*!
      * Register the size of a particular item.
-     * \param markup the item markup
+     * \param format the item format
      * \param size the size in bytes
      */
     UHD_API void register_bytes_per_item(
-        const std::string &markup, const size_t size
+        const std::string &format, const size_t size
     );
 
-    //! Convert an item markup to a size in bytes
-    UHD_API size_t get_bytes_per_item(const std::string &markup);
+    //! Convert an item format to a size in bytes
+    UHD_API size_t get_bytes_per_item(const std::string &format);
 
 }} //namespace
 

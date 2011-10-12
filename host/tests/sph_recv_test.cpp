@@ -107,9 +107,9 @@ private:
 BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     dummy_recv_xport_class dummy_recv_xport("big");
@@ -178,9 +178,9 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
 BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     dummy_recv_xport_class dummy_recv_xport("big");
@@ -259,9 +259,9 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
 BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     dummy_recv_xport_class dummy_recv_xport("big");
@@ -351,9 +351,9 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
@@ -434,9 +434,9 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
@@ -527,9 +527,9 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
@@ -615,9 +615,9 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
 ////////////////////////////////////////////////////////////////////////
     uhd::convert::id_type id;
-    id.input_markup = "sc16_item32_be";
+    id.input_format = "sc16_item32_be";
     id.num_inputs = 1;
-    id.output_markup = "fc32";
+    id.output_format = "fc32";
     id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;

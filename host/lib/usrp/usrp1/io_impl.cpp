@@ -600,11 +600,10 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
 
     //set the converter
     uhd::convert::id_type id;
-    id.input_markup = args.otw_format + "_item16_usrp1";
+    id.input_format = args.otw_format + "_item16_usrp1";
     id.num_inputs = 1;
-    id.output_markup = args.cpu_format;
+    id.output_format = args.cpu_format;
     id.num_outputs = args.channels.size();
-    id.args = args.args;
     my_streamer->set_converter(id);
 
     //save as weak ptr for update access
@@ -653,11 +652,10 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //set the converter
     uhd::convert::id_type id;
-    id.input_markup = args.cpu_format;
+    id.input_format = args.cpu_format;
     id.num_inputs = args.channels.size();
-    id.output_markup = args.otw_format + "_item16_usrp1";
+    id.output_format = args.otw_format + "_item16_usrp1";
     id.num_outputs = 1;
-    id.args = args.args;
     my_streamer->set_converter(id);
 
     //save as weak ptr for update access

@@ -23,30 +23,28 @@
 #include <boost/cstdint.hpp>
 #include <complex>
 
-#define _DECLARE_CONVERTER(fcn, in_mark, num_in, out_mark, num_out, prio) \
+#define _DECLARE_CONVERTER(fcn, in_form, num_in, out_form, num_out, prio) \
     static void fcn( \
         const uhd::convert::input_type &inputs, \
         const uhd::convert::output_type &outputs, \
-        const size_t nsamps, \
-        const double scale_factor \
+        const size_t nsamps, const double scale_factor \
     ); \
     UHD_STATIC_BLOCK(__register_##fcn##_##prio){ \
         uhd::convert::id_type id; \
-        id.input_markup = #in_mark; \
+        id.input_format = #in_form; \
         id.num_inputs = num_in; \
-        id.output_markup = #out_mark; \
+        id.output_format = #out_form; \
         id.num_outputs = num_out; \
         uhd::convert::register_converter(id, fcn, prio); \
     } \
     static void fcn( \
         const uhd::convert::input_type &inputs, \
         const uhd::convert::output_type &outputs, \
-        const size_t nsamps, \
-        const double scale_factor \
+        const size_t nsamps, const double scale_factor \
     )
 
-#define DECLARE_CONVERTER(in_mark, num_in, out_mark, num_out, prio) \
-    _DECLARE_CONVERTER(__convert_##in_mark##_##num_in##_##out_mark##_##num_out, in_mark, num_in, out_mark, num_out, prio)
+#define DECLARE_CONVERTER(in_form, num_in, out_form, num_out, prio) \
+    _DECLARE_CONVERTER(__convert_##in_form##_##num_in##_##out_form##_##num_out, in_form, num_in, out_form, num_out, prio)
 
 /***********************************************************************
  * Typedefs
