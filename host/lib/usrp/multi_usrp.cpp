@@ -359,32 +359,62 @@ public:
     }
 
     void set_clock_config(const clock_config_t &clock_config, size_t mboard){
-        if (mboard != ALL_MBOARDS){
-            //set the reference source...
-            std::string clock_source;
-            switch(clock_config.ref_source){
-            case clock_config_t::REF_INT: clock_source = "internal"; break;
-            case clock_config_t::PPS_SMA: clock_source = "external"; break;
-            case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
-            default: clock_source = "unknown";
-            }
-            _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").set(clock_source);
+        //set the reference source...
+        std::string clock_source;
+        switch(clock_config.ref_source){
+        case clock_config_t::REF_INT: clock_source = "internal"; break;
+        case clock_config_t::PPS_SMA: clock_source = "external"; break;
+        case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
+        default: clock_source = "unknown";
+        }
+        this->set_clock_source(clock_source, mboard);
 
-            //set the time source
-            std::string time_source;
-            switch(clock_config.pps_source){
-            case clock_config_t::PPS_INT: time_source = "internal"; break;
-            case clock_config_t::PPS_SMA: time_source = "external"; break;
-            case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
-            default: time_source = "unknown";
-            }
-            if (clock_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) time_source = "_external_";
-            _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").set(time_source);
+        //set the time source
+        std::string time_source;
+        switch(clock_config.pps_source){
+        case clock_config_t::PPS_INT: time_source = "internal"; break;
+        case clock_config_t::PPS_SMA: time_source = "external"; break;
+        case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
+        default: time_source = "unknown";
+        }
+        if (time_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) time_source = "_external_";
+        this->set_time_source(time_source, mboard);
+    }
+
+    void set_time_source(const std::string &source, const size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").set(source);
             return;
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
-            set_clock_config(clock_config, m);
+            return this->set_time_source(source, m);
         }
+    }
+
+    std::string get_time_source(const size_t mboard){
+        return _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").get();
+    }
+
+    std::vector<std::string> get_time_sources(const size_t mboard){
+        return _tree->access<std::vector<std::string> >(mb_root(mboard) / "time_source" / "options").get();
+    }
+
+    void set_clock_source(const std::string &source, const size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").set(source);
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            return this->set_clock_source(source, m);
+        }
+    }
+
+    std::string get_clock_source(const size_t mboard){
+        return _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").get();
+    }
+
+    std::vector<std::string> get_clock_sources(const size_t mboard){
+        return _tree->access<std::vector<std::string> >(mb_root(mboard) / "clock_source" / "options").get();
     }
 
     size_t get_num_mboards(void){

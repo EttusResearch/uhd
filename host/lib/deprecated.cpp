@@ -203,3 +203,31 @@ io_type_t::io_type_t(size_t size):
 {
     /* NOP */
 }
+
+#include <uhd/types/clock_config.hpp>
+
+using namespace uhd;
+
+clock_config_t clock_config_t::external(void){
+    clock_config_t clock_config;
+    clock_config.ref_source = clock_config_t::REF_SMA;
+    clock_config.pps_source = clock_config_t::PPS_SMA;
+    clock_config.pps_polarity = clock_config_t::PPS_POS;
+    return clock_config;
+}
+
+clock_config_t clock_config_t::internal(void){
+    clock_config_t clock_config;
+    clock_config.ref_source = clock_config_t::REF_INT;
+    clock_config.pps_source = clock_config_t::PPS_SMA;
+    clock_config.pps_polarity = clock_config_t::PPS_POS;
+    return clock_config;
+}
+
+clock_config_t::clock_config_t(void):
+    ref_source(REF_INT),
+    pps_source(PPS_SMA),
+    pps_polarity(PPS_POS)
+{
+    /* NOP */
+}

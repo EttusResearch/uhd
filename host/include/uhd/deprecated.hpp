@@ -243,3 +243,4 @@ namespace uhd{
 #endif /* INCLUDED_UHD_TYPES_OTW_TYPE_HPP */
 
 #include <uhd/types/io_type.hpp> //wish it was in here
+#include <uhd/types/clock_config.hpp> //wish it was in here

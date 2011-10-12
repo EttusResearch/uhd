@@ -18,11 +18,13 @@
 #ifndef INCLUDED_UHD_USRP_MULTI_USRP_HPP
 #define INCLUDED_UHD_USRP_MULTI_USRP_HPP
 
+#define UHD_USRP_MULTI_USRP_REF_SOURCES_API
+
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
+#include <uhd/deprecated.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhd/types/clock_config.hpp>
 #include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/sensors.hpp>
@@ -31,6 +33,7 @@
 #include <uhd/usrp/mboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <string>
 #include <vector>
 
 namespace uhd{ namespace usrp{
@@ -235,12 +238,60 @@ public:
 
     /*!
      * Set the clock configuration for the usrp device.
+     * DEPRECATED in favor of set time and clock source calls.
      * This tells the usrp how to get a 10Mhz reference and PPS clock.
      * See the documentation for clock_config_t for more info.
      * \param clock_config the clock configuration to set
      * \param mboard which motherboard to set the config
      */
     virtual void set_clock_config(const clock_config_t &clock_config, size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
+     * Set the time source for the usrp device.
+     * This sets the method of time synchronization,
+     * typically a pulse per second or an encoded time.
+     * Typical options for source: external, MIMO.
+     * \param source a string representing the time source
+     * \param mboard which motherboard to set the config
+     */
+    virtual void set_time_source(const std::string &source, const size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
+     * Get the currently set time source.
+     * \param mboard which motherboard to get the config
+     * \return the string representing the time source
+     */
+    virtual std::string get_time_source(const size_t mboard) = 0;
+
+    /*!
+     * Get a list of possible time sources.
+     * \param mboard which motherboard to get the list
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_time_sources(const size_t mboard) = 0;
+
+    /*!
+     * Set the clock source for the usrp device.
+     * This sets the source for a 10 Mhz reference clock.
+     * Typical options for source: internal, external, MIMO.
+     * \param source a string representing the clock source
+     * \param mboard which motherboard to set the config
+     */
+    virtual void set_clock_source(const std::string &source, const size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
+     * Get the currently set clock source.
+     * \param mboard which motherboard to get the config
+     * \return the string representing the clock source
+     */
+    virtual std::string get_clock_source(const size_t mboard) = 0;
+
+    /*!
+     * Get a list of possible clock sources.
+     * \param mboard which motherboard to get the list
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_clock_sources(const size_t mboard) = 0;
 
     /*!
      * Get the number of USRP motherboards in this configuration.
