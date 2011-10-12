@@ -89,3 +89,20 @@ Test the PPS input with the following app:
 
     cd <install-path>/share/uhd/examples
     ./test_pps_input --args=<args>
+
+------------------------------------------------------------------------
+Hardware setup notes
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Front panel LEDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The LEDs on the front panel can be useful in debugging hardware and software issues.
+The LEDs reveal the following about the state of the device:
+
+* **LED A:** transmitting
+* **LED B:** fpga loaded
+* **LED C:** receiving
+* **LED D:** fpga loaded
+* **LED E:** reference lock
+* **LED F:** board power
