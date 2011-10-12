@@ -37,8 +37,8 @@
  * offsets into boot eeprom for configuration values
  */
 #define	HW_REV_OFFSET		  5
-#define SERIAL_NO_OFFSET	248
-#define SERIAL_NO_LEN		  8
+#define SERIAL_NO_OFFSET	247
+#define SERIAL_NO_LEN		  9
 
 
 #define	bRequestType	SETUPDAT[0]
@@ -342,7 +342,7 @@ void
 patch_usb_descriptors(void)
 {
   static xdata unsigned char hw_rev;
-  static xdata unsigned char serial_no[8];
+  static xdata unsigned char serial_no[SERIAL_NO_LEN];
   unsigned char i;
 
   eeprom_read(I2C_ADDR_BOOT, HW_REV_OFFSET, &hw_rev, 1);	// LSB of device id

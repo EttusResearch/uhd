@@ -452,7 +452,8 @@ _usb_desc_serial_number_ascii::
 	.db	'1, 0
 	.db	'5, 0
 	.db	'9, 0
-	.db	'3, 0
+	.db	'2, 0
+	.db	'7, 0
 str6_end:
 
 	SI_FPGA_COMMAND_OUT_PATH = 7
