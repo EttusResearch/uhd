@@ -341,7 +341,7 @@ module u1plus_core
    assign test_rate = xfer_rate[7:0];
    assign test_len = reg_test[15:0];
    
-   assign { debug_led[2],debug_led[0],debug_led[1] } = reg_leds;  // LEDs are arranged funny on board
+   assign debug_led = {run_tx, (run_rx0 | run_rx1), cgen_st_ld};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 

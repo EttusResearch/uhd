@@ -335,7 +335,7 @@ module u1e_core
    assign test_ctrl = xfer_rate[11:8];
    assign test_rate = xfer_rate[7:0];
    
-   assign { debug_led[3:0] } = ~{run_rx0 | run_rx1,run_tx,reg_leds[1:0]};
+   assign { debug_led[3:0] } = ~{1'b1, run_tx, run_rx0 | run_rx1, cgen_st_ld};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
    assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
