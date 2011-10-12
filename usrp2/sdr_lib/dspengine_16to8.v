@@ -208,14 +208,14 @@ module dspengine_16to8
      (.P(prod_i), .A(scale_factor), .B({i16,2'b00}), .C(clk), .CE(stb_mult), .R(reset) ); 
    clip_reg #(.bits_in(24),.bits_out(16),.STROBED(1)) clip_i 
      (.clk(clk), .in(prod_i[35:12]), .out(scaled_i), .strobe_in(stb_clip), .strobe_out());
-   round_sd #(.WIDTH_IN(16),.WIDTH_OUT(8)) round_i
+   round_sd #(.WIDTH_IN(16),.WIDTH_OUT(8),.DISABLE_SD(1)) round_i
      (.clk(clk), .reset(reset), .in(scaled_i), .strobe_in(stb_round), .out(i8), .strobe_out());
 
    MULT18X18S mult_q 
      (.P(prod_q), .A(scale_factor), .B({q16,2'b00}), .C(clk), .CE(stb_mult), .R(reset) ); 
    clip_reg #(.bits_in(24),.bits_out(16),.STROBED(1)) clip_q 
      (.clk(clk), .in(prod_q[35:12]), .out(scaled_q), .strobe_in(stb_clip), .strobe_out());
-   round_sd #(.WIDTH_IN(16),.WIDTH_OUT(8)) round_q
+   round_sd #(.WIDTH_IN(16),.WIDTH_OUT(8),.DISABLE_SD(1)) round_q
      (.clk(clk), .reset(reset), .in(scaled_q), .strobe_in(stb_round), .out(q8), .strobe_out());
 
 endmodule // dspengine_16to8
