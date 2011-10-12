@@ -122,9 +122,9 @@ module dspengine_16to8
 		     begin
 			dsp_state <= DSP_CONVERT_DRAIN_PIPE;
 			if(~even)
-			  trailer_mask <= 32'h00010001;
+			  trailer_mask <= 32'h00400400;
 			else
-			  trailer_mask <= 32'h00010000;
+			  trailer_mask <= 32'h00400000;
 		     end
 		end
 	   end
