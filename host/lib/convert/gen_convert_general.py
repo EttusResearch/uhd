@@ -51,27 +51,23 @@ DECLARE_CONVERTER(sc8_item32_$(end), 1, $(cpu_type), 1, PRIORITY_GENERAL){
     const item32_t *input = reinterpret_cast<const item32_t *>(size_t(inputs[0]) & ~0x3);
     $(cpu_type)_t *output = reinterpret_cast<$(cpu_type)_t *>(outputs[0]);
     $(cpu_type)_t dummy;
+    size_t num_samps = nsamps;
 
-    const bool head_case = ((size_t(inputs[0]) & 0x3) != 0);
-    const bool tail_case = ((nsamps & 0x1) == 0)? head_case : not head_case;
-    const size_t num_pairs = (head_case? nsamps-1 : nsamps)/2;
-    size_t i = 0, j = 0;
-
-    //special head case, probably from a partial recv
-    if (head_case){
-        const item32_t item0 = $(to_host)(input[i++]);
-        item32_sc8_to_$(cpu_type)(item0, dummy, output[j++], scale_factor);
+    if ((size_t(inputs[0]) & 0x3) != 0){
+        const item32_t item0 = $(to_host)(*input++);
+        item32_sc8_to_$(cpu_type)(item0, dummy, *output++, scale_factor);
+        num_samps--;
     }
 
-    for (; i < num_pairs; i++, j+=2){
+    const size_t num_pairs = num_samps/2;
+    for (size_t i = 0, j = 0; i < num_pairs; i++, j+=2){
         const item32_t item_i = $(to_host)(input[i]);
         item32_sc8_to_$(cpu_type)(item_i, output[j], output[j+1], scale_factor);
     }
 
-    //special tail case, finished on an odd number
-    if (tail_case){
-        const item32_t item_i = $(to_host)(input[i]);
-        item32_sc8_to_$(cpu_type)(item_i, output[j], dummy, scale_factor);
+    if (num_samps != num_pairs*2){
+        const item32_t item_n = $(to_host)(input[num_pairs]);
+        item32_sc8_to_$(cpu_type)(item_n, output[num_samps-1], dummy, scale_factor);
     }
 }
 """

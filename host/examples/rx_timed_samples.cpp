@@ -98,7 +98,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(num_acc_samps < total_num_samps){
         //receive a single packet
         size_t num_rx_samps = rx_stream->recv(
-            &buff.front(), buff.size(), md, timeout
+            &buff.front(), buff.size(), md, timeout, true
         );
 
         //use a small timeout for subsequent packets
