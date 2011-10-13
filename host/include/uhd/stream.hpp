@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/types/ref_vector.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -71,11 +72,13 @@ struct UHD_API stream_args_t{
     std::string otw_format;
 
     /*!
-     * The args parameter is currently unused. Leave it blank.
-     * The intention is that a user with a custom DSP design
-     * may want to pass args and do something special with it.
+     * The args parameter is used to pass arbitrary key/value pairs.
+     * Possible keys used by args (depends on implementation):
+     * - scaler: 8sc converter scaling factor
+     * - function: magnitude or phase/magnitude
+     * - units: numeric units like counts or dBm
      */
-    std::string args;
+    device_addr_t args;
 
     /*!
      * The channels is a list of channel numbers.
