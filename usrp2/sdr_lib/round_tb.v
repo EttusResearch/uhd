@@ -22,30 +22,40 @@
 // Rounding "macro"
 // Keeps the topmost bits, does proper 2s comp round to zero (unbiased truncation)
 
-module round
-  #(parameter bits_in=0,
-    parameter bits_out=0,
-    parameter round_to_zero=0,       // original behavior
-    parameter round_to_nearest=1,    // lowest noise
-    parameter trunc=0)               // round to negative infinity
-    (input [bits_in-1:0] in,
-     output [bits_out-1:0] out,
-     output [bits_in-bits_out:0] err);
+module round_tb();
 
-   wire 			 round_corr;
-   wire 			 round_corr_trunc = 0;
-   wire 			 round_corr_rtz = (in[bits_in-1] & |in[bits_in-bits_out-1:0]);
-   wire 			 round_corr_nearest = in[bits_in-bits_out-1];
-   wire 			 round_corr_nearest_safe = (~in[bits_in-1] & (&in[bits_in-2:bits_out])) ? 0 :
-				 round_corr_nearest;
-      
-   assign round_corr = round_to_nearest ? round_corr_nearest_safe :
-		       trunc ? round_corr_trunc : 
-		       round_to_zero ? round_corr_rtz :
-		       0;  // default to trunc
-      
-   assign out = in[bits_in-1:bits_in-bits_out] + round_corr;
+   localparam IW=8;
+   localparam OW=4;
+   localparam EW=IW-OW+1;
    
-   assign err = in - {out,{(bits_in-bits_out){1'b0}}};
+   reg signed [IW-1:0] in;
+   wire signed [OW-1:0] out;
+   wire signed [EW-1:0] err;
+
+   round #(.bits_in(IW),
+	   .bits_out(OW),
+	   .round_to_zero(0),       // original behavior
+	   .round_to_nearest(1),    // lowest noise
+	   .trunc(0))               // round to negative infinity
+   round (.in(in),.out(out),.err(err));
+
+   initial $dumpfile("round_tb.vcd");
+   initial $dumpvars(0,round_tb);
+
+   wire signed [IW-1:0] out_round = {out,{IW-OW{1'b0}}};
    
+   initial
+     begin
+	in <= -129;
+	#1;
+	repeat (260)
+	  begin
+	     in <= in + 1;
+	     #1;
+	     $display("In %d, out %d, out_rnd %d, err %d, real err %d",in,out,out_round,-err,out_round-in);
+	     #1;
+	  end
+	$finish;
+     end
+     
 endmodule // round
