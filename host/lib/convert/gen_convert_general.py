@@ -28,6 +28,30 @@ TMPL_HEADER = """
 using namespace uhd::convert;
 """
 
+TMPL_CONV_GEN2_ITEM32 = """
+DECLARE_CONVERTER(item32, 1, sc16_item32_$(end), 1, PRIORITY_GENERAL){
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    if (scale_factor == 0){} //avoids unused warning
+
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = $(to_wire)(input[i]);
+    }
+}
+
+DECLARE_CONVERTER(sc16_item32_$(end), 1, item32, 1, PRIORITY_GENERAL){
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    if (scale_factor == 0){} //avoids unused warning
+
+    for (size_t i = 0; i < nsamps; i++){
+        output[i] = $(to_host)(input[i]);
+    }
+}
+"""
+
 TMPL_CONV_GEN2_COMPLEX = """
 DECLARE_CONVERTER($(cpu_type), 1, sc16_item32_$(end), 1, PRIORITY_GENERAL){
     const $(cpu_type)_t *input = reinterpret_cast<const $(cpu_type)_t *>(inputs[0]);
@@ -149,6 +173,10 @@ if __name__ == '__main__':
             output += parse_tmpl(
                 TMPL_CONV_GEN2_COMPLEX,
                 end=end, to_host=to_host, to_wire=to_wire, cpu_type=cpu_type
+            )
+        output += parse_tmpl(
+                TMPL_CONV_GEN2_ITEM32,
+                end=end, to_host=to_host, to_wire=to_wire
             )
 
     #generate complex converters for usrp1 format
