@@ -70,7 +70,8 @@ public:
     }
 
     void set_link_rate(const double rate){
-        _link_rate = rate/sizeof(boost::uint32_t); //in samps/s
+        //_link_rate = rate/sizeof(boost::uint32_t); //in samps/s
+        _link_rate = rate/sizeof(boost::uint16_t); //in samps/s (allows for 8sc)
     }
 
     double set_host_rate(const double rate){

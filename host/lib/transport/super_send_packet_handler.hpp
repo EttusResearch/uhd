@@ -219,7 +219,8 @@ private:
         const size_t buffer_offset_bytes = 0
     ){
         //load the rest of the if_packet_info in here
-        if_packet_info.num_payload_words32 = (nsamps_per_buff*_io_buffs.size()*_bytes_per_otw_item)/sizeof(boost::uint32_t);
+        if_packet_info.num_payload_bytes = nsamps_per_buff*_io_buffs.size()*_bytes_per_otw_item;
+        if_packet_info.num_payload_words32 = (if_packet_info.num_payload_bytes + 3/*round up*/)/sizeof(boost::uint32_t);
         if_packet_info.packet_count = _next_packet_seq;
 
         size_t buff_index = 0;

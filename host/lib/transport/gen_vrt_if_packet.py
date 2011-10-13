@@ -70,6 +70,10 @@ static pred_table_type get_pred_unpack_table(void){
 
 static const pred_table_type pred_unpack_table(get_pred_unpack_table());
 
+//maps trailer bits to num empty bytes
+//maps num empty bytes to trailer bits
+static const size_t occ_table[] = {0, 2, 1, 3};
+
 ########################################################################
 #def gen_code($XE_MACRO, $suffix)
 ########################################################################
@@ -122,20 +126,24 @@ void vrt::if_hdr_pack_$(suffix)(
             #set $num_header_words += 1
             #set $flags |= (0x1 << 20);
         #end if
-        ########## Trailer ##########
-        #if $pred & $tlr_p
-            //packet_buff[$num_header_words+if_packet_info.num_payload_words32] = $(XE_MACRO)(if_packet_info.tlr);
-            #set $flags |= (0x1 << 26);
-            #set $num_trailer_words = 1;
-        #else
-            #set $num_trailer_words = 0;
-        #end if
         ########## Burst Flags ##########
         #if $pred & $eob_p
             #set $flags |= (0x1 << 24);
         #end if
         #if $pred & $sob_p
             #set $flags |= (0x1 << 25);
+        #end if
+        ########## Trailer ##########
+        #if $pred & $tlr_p
+            {
+                const size_t empty_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t) - if_packet_info.num_payload_bytes;
+                if_packet_info.tlr |= (0x3 << 22) | (occ_table[empty_bytes & 0x3] << 10);
+            }
+            packet_buff[$num_header_words+if_packet_info.num_payload_words32] = $(XE_MACRO)(if_packet_info.tlr);
+            #set $flags |= (0x1 << 26);
+            #set $num_trailer_words = 1;
+        #else
+            #set $num_trailer_words = 0;
         #end if
         ########## Variables ##########
             if_packet_info.num_header_words32 = $num_header_words;
@@ -171,6 +179,8 @@ void vrt::if_hdr_unpack_$(suffix)(
     if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
 
     const pred_type pred = pred_unpack_table[pred_table_index(vrt_hdr_word)];
+
+    size_t empty_bytes = 0;
 
     switch(pred){
     #for $pred in range(2**7)
@@ -211,15 +221,6 @@ void vrt::if_hdr_unpack_$(suffix)(
         #else
             if_packet_info.has_tsf = false;
         #end if
-        ########## Trailer ##########
-        #if $pred & $tlr_p
-            if_packet_info.has_tlr = true;
-            if_packet_info.tlr = $(XE_MACRO)(packet_buff[packet_words32-1]);
-            #set $num_trailer_words = 1;
-        #else
-            if_packet_info.has_tlr = false;
-            #set $num_trailer_words = 0;
-        #end if
         ########## Burst Flags ##########
         #if $pred & $eob_p
             if_packet_info.eob = true;
@@ -231,12 +232,28 @@ void vrt::if_hdr_unpack_$(suffix)(
         #else
             if_packet_info.sob = false;
         #end if
+        ########## Trailer ##########
+        #if $pred & $tlr_p
+            if_packet_info.has_tlr = true;
+            if_packet_info.tlr = $(XE_MACRO)(packet_buff[packet_words32-1]);
+            #set $num_trailer_words = 1;
+            {
+                const int indicators = (if_packet_info.tlr >> 20) & (if_packet_info.tlr >> 8);
+                if ((indicators & (1 << 0)) != 0) if_packet_info.eob = true;
+                if ((indicators & (1 << 1)) != 0) if_packet_info.sob = true;
+                empty_bytes = occ_table[(indicators >> 2) & 0x3];
+            }
+        #else
+            if_packet_info.has_tlr = false;
+            #set $num_trailer_words = 0;
+        #end if
         ########## Variables ##########
             //another failure case
             if (packet_words32 < $($num_header_words + $num_trailer_words))
                 throw uhd::value_error("bad vrt header or invalid packet length");
             if_packet_info.num_header_words32 = $num_header_words;
             if_packet_info.num_payload_words32 = packet_words32 - $($num_header_words + $num_trailer_words);
+            if_packet_info.num_payload_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t) - empty_bytes;
         break;
     #end for
     }

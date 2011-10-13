@@ -327,7 +327,7 @@ private:
             info.alignment_time = info[index].time;
             info.indexes_todo.set();
             info.indexes_todo.reset(index);
-            info.data_bytes_to_copy = info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t);
+            info.data_bytes_to_copy = info[index].ifpi.num_payload_bytes;
         }
 
         //if the sequence id matches:
@@ -471,13 +471,8 @@ private:
         curr_info.metadata.time_spec = curr_info[0].time;
         curr_info.metadata.more_fragments = false;
         curr_info.metadata.fragment_offset = 0;
-        /* TODO SOB on RX not supported in hardware
-        static const int tlr_sob_flags = (1 << 21) | (1 << 9); //enable and indicator bits
-        curr_info.metadata.start_of_burst = curr_info[0].ifpi.has_tlr and (int(curr_info[0].ifpi.tlr & tlr_sob_flags) != 0);
-        */
-        curr_info.metadata.start_of_burst = false;
-        static const int tlr_eob_flags = (1 << 20) | (1 << 8); //enable and indicator bits
-        curr_info.metadata.end_of_burst   = curr_info[0].ifpi.has_tlr and (int(curr_info[0].ifpi.tlr & tlr_eob_flags) != 0);
+        curr_info.metadata.start_of_burst = curr_info[0].ifpi.sob;
+        curr_info.metadata.end_of_burst = curr_info[0].ifpi.eob;
         curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
 
     }

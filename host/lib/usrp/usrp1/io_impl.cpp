@@ -111,6 +111,7 @@ static void usrp1_bs_vrt_unpacker(
 ){
     if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
     if_packet_info.num_payload_words32 = if_packet_info.num_packet_words32;
+    if_packet_info.num_payload_bytes = if_packet_info.num_packet_words32*sizeof(boost::uint32_t);
     if_packet_info.num_header_words32 = 0;
     if_packet_info.packet_count = 0;
     if_packet_info.sob = false;
