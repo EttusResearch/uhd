@@ -82,7 +82,7 @@ ENDIF()
 ########################################################################
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
 SET(CPACK_PACKAGE_VENDOR              "Ettus Research LLC")
-SET(CPACK_PACKAGE_CONTACT             "support@ettus.com")
+SET(CPACK_PACKAGE_CONTACT             "Ettus Research <support@ettus.com>")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${UHD_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${UHD_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${UHD_VERSION_PATCH})
@@ -135,11 +135,29 @@ SET(CPACK_COMPONENTS_ALL libraries headers utilities examples tests manual doxyg
 ########################################################################
 SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libusb-1.0-0, libboost-dev")
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
+FOREACH(filename preinst postinst prerm postrm)
+    LIST(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
+    FILE(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/debian)
+    CONFIGURE_FILE(
+        ${CMAKE_SOURCE_DIR}/cmake/debian/${filename}.in
+        ${CMAKE_BINARY_DIR}/debian/${filename}
+    @ONLY)
+ENDFOREACH(filename)
 
 ########################################################################
 # Setup CPack RPM
 ########################################################################
 SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, libusb1")
+
+FOREACH(filename post_install post_uninstall pre_install pre_uninstall)
+    STRING(TOUPPER ${filename} filename_upper)
+    LIST(APPEND CPACK_RPM_${filename_upper}_SCRIPT_FILE ${CMAKE_BINARY_DIR}/redhat/${filename})
+    FILE(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/redhat)
+    CONFIGURE_FILE(
+        ${CMAKE_SOURCE_DIR}/cmake/redhat/${filename}.in
+        ${CMAKE_BINARY_DIR}/redhat/${filename}
+    @ONLY)
+ENDFOREACH(filename)
 
 ########################################################################
 # Setup CPack NSIS
