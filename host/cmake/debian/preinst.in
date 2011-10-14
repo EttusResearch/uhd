@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright 2011 Ettus Research LLC
 #
@@ -16,5 +17,5 @@
 #
 
 if [ "$1" = "install" ]; then
-    
+    ls
 fi
