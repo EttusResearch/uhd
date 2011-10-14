@@ -27,6 +27,7 @@ SET(manual_sources
     gpsdo.rst
     general.rst
     images.rst
+    stream.rst
     sync.rst
     transport.rst
     usrp1.rst
