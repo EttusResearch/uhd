@@ -34,7 +34,7 @@
 
 	.module usb_descriptors
 	
-	VID_FREE	 = 0x2500	; Free Software Folks
+	VID_FREE	 = 0x2500	; Ettus Research, LLC.
 	PID_USRP	 = 0x0002	; B100
 
 	;; We distinguish configured from unconfigured USRPs using the Device ID.
