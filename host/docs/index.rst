@@ -1,9 +1,9 @@
 ========================================================================
-UHD - Universal Hardware Driver
+UHD - USRP Hardware Driver
 ========================================================================
 
-The UHD is the universal hardware driver for Ettus Research products.
-The goal of the UHD is to provide a host driver and api for current and future Ettus Research products.
+The UHD is the "Universal Software Radio Peripheral" hardware driver.
+The goal of the UHD is to provide a host driver and API for current and future Ettus Research products.
 Users will be able to use the UHD driver standalone or with 3rd party applications.
 
 ------------------------------------------------------------------------

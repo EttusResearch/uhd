@@ -1,5 +1,5 @@
 ###############################################
-# Ettus Research - Universal Hardware Driver
+# Ettus Research - USRP Hardware Driver
 ###############################################
 The hardware driver for Ettus Research products.
 
@@ -8,9 +8,11 @@ The hardware driver for Ettus Research products.
 ###############################################
 USRP1
 USRP2
-USRP-N200
-USRP-N210
-USRP-E100
+N200
+N210
+E100
+E110
+B100
 
 ###############################################
 # Supported USRP Daughterboards

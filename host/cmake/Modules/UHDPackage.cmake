@@ -80,7 +80,7 @@ ENDIF()
 ########################################################################
 # Setup CPack General
 ########################################################################
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - Universal Hardware Driver")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
 SET(CPACK_PACKAGE_VENDOR              "Ettus Research LLC")
 SET(CPACK_PACKAGE_CONTACT             "support@ettus.com")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${UHD_VERSION_MAJOR})
