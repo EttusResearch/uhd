@@ -283,8 +283,10 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _tree->create<int>(mb_path / "rx_dsps"); //dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++){
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
+            .publish(boost::bind(&usrp1_impl::get_rx_dsp_host_rates, this));
         _tree->create<double>(rx_dsp_path / "rate/value")
-            .set(1e6)
+            .set(1e6) //some default rate
             .coerce(boost::bind(&usrp1_impl::update_rx_samp_rate, this, dspno, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_rx_dsp_freq, this, dspno, _1));
@@ -304,8 +306,10 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _tree->create<int>(mb_path / "tx_dsps"); //dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++){
         fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
+        _tree->create<meta_range_t>(tx_dsp_path / "rate/range")
+            .publish(boost::bind(&usrp1_impl::get_tx_dsp_host_rates, this));
         _tree->create<double>(tx_dsp_path / "rate/value")
-            .set(1e6)
+            .set(1e6) //some default rate
             .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, dspno, _1));
         _tree->create<double>(tx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, _1));

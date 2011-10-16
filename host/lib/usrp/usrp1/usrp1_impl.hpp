@@ -98,6 +98,8 @@ private:
     void update_tick_rate(const double rate);
     uhd::meta_range_t get_rx_dsp_freq_range(void);
     uhd::meta_range_t get_tx_dsp_freq_range(void);
+    uhd::meta_range_t get_rx_dsp_host_rates(void);
+    uhd::meta_range_t get_tx_dsp_host_rates(void);
 
     static uhd::usrp::dboard_iface::sptr make_dboard_iface(
         usrp1_iface::sptr,

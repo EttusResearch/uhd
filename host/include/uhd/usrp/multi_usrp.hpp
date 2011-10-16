@@ -18,7 +18,9 @@
 #ifndef INCLUDED_UHD_USRP_MULTI_USRP_HPP
 #define INCLUDED_UHD_USRP_MULTI_USRP_HPP
 
+//define API capabilities for compile time detection of new features
 #define UHD_USRP_MULTI_USRP_REF_SOURCES_API
+#define UHD_USRP_MULTI_USRP_GET_RATES_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -368,6 +370,13 @@ public:
     virtual double get_rx_rate(size_t chan = 0) = 0;
 
     /*!
+     * Get a range of possible RX rates.
+     * \param chan the channel index 0 to N-1
+     * \return the meta range of rates
+     */
+    virtual meta_range_t get_rx_rates(size_t chan = 0) = 0;
+
+    /*!
      * Set the RX center frequency.
      * \param tune_request tune request instructions
      * \param chan the channel index 0 to N-1
@@ -566,6 +575,13 @@ public:
      * \return the rate in Sps
      */
     virtual double get_tx_rate(size_t chan = 0) = 0;
+
+    /*!
+     * Get a range of possible TX rates.
+     * \param chan the channel index 0 to N-1
+     * \return the meta range of rates
+     */
+    virtual meta_range_t get_tx_rates(size_t chan = 0) = 0;
 
     /*!
      * Set the TX center frequency.

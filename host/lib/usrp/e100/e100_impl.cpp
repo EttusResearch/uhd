@@ -270,6 +270,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
+            .publish(boost::bind(&rx_dsp_core_200::get_host_rates, _rx_dsps[dspno]));
         _tree->create<double>(rx_dsp_path / "rate/value")
             .set(1e6) //some default
             .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
@@ -291,6 +293,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tx_dsp->set_link_rate(E100_TX_LINK_RATE_BPS);
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
+    _tree->create<meta_range_t>(mb_path / "tx_dsps/0/rate/range")
+        .publish(boost::bind(&tx_dsp_core_200::get_host_rates, _tx_dsp));
     _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
         .set(1e6) //some default
         .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _tx_dsp, _1))

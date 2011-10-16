@@ -477,6 +477,10 @@ public:
         return _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
     }
 
+    meta_range_t get_rx_rates(size_t chan){
+        return _tree->access<meta_range_t>(rx_dsp_root(chan) / "rate" / "range").get();
+    }
+
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
         tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN, _tree->subtree(rx_dsp_root(chan)), _tree->subtree(rx_rf_fe_root(chan)), tune_request);
         do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
@@ -585,6 +589,10 @@ public:
 
     double get_tx_rate(size_t chan){
         return _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
+    }
+
+    meta_range_t get_tx_rates(size_t chan){
+        return _tree->access<meta_range_t>(tx_dsp_root(chan) / "rate" / "range").get();
     }
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
