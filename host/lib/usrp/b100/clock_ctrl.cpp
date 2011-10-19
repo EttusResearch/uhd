@@ -153,6 +153,9 @@ static clock_settings_type get_clock_settings(double rate){
             if (cs.b_counter == 1 and cs.a_counter != 0) continue;
             if (cs.b_counter >= (1<<13)) continue;
             if (cs.a_counter >= (1<<6)) continue;
+            if (cs.get_vco_rate() > 1800e6 - vco_bound_pad) continue;
+            if (cs.get_vco_rate() < 1400e6 + vco_bound_pad) continue;
+            if (cs.get_out_rate() != rate) continue;
 
             UHD_MSG(status) << "USRP-B100 clock control: " << i << std::endl << cs.to_pp_string() << std::endl;
             return cs;
