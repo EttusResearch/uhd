@@ -21,6 +21,7 @@
 //define API capabilities for compile time detection of new features
 #define UHD_USRP_MULTI_USRP_REF_SOURCES_API
 #define UHD_USRP_MULTI_USRP_GET_RATES_API
+#define UHD_USRP_MULTI_USRP_DC_OFFSET_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -35,6 +36,7 @@
 #include <uhd/usrp/mboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <complex>
 #include <string>
 #include <vector>
 
@@ -528,6 +530,30 @@ public:
      */
     virtual std::vector<std::string> get_rx_sensor_names(size_t chan = 0) = 0;
 
+
+    /*!
+     * Enable/disable the automatic RX DC offset correction.
+     * The automatic correction subtracts out the long-run average.
+     *
+     * When disabled, the averaging option operation is halted.
+     * Once halted, the average value will be held constant
+     * until the user re-enables the automatic correction
+     * or overrides the value by manually setting the offset.
+     *
+     * \param enb true to enable automatic DC offset correction
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS) = 0;
+
+    /*!
+     * Set a constant RX DC offset value.
+     * The value is complex to control both I and Q.
+     * Only set this when automatic correction is disabled.
+     * \param offset the dc offset (1.0 is full-scale)
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_dc_offset(const std::complex<double> &offset, size_t chan = ALL_CHANS) = 0;
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -724,6 +750,15 @@ public:
      * \return a vector of sensor names
      */
     virtual std::vector<std::string> get_tx_sensor_names(size_t chan = 0) = 0;
+
+    /*!
+     * Set a constant TX DC offset value.
+     * The value is complex to control both I and Q.
+     * \param offset the dc offset (1.0 is full-scale)
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_tx_dc_offset(const std::complex<double> &offset, size_t chan = ALL_CHANS) = 0;
+
 };
 
 }}

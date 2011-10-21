@@ -547,6 +547,26 @@ public:
         return _tree->list(rx_rf_fe_root(chan) / "sensors");
     }
 
+    void set_rx_dc_offset(const bool enb, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<bool>(rx_rf_fe_root(chan).branch_path() / "dc_offset" / "enable").set(enb);
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_dc_offset(enb, c);
+        }
+    }
+
+    void set_rx_dc_offset(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(rx_rf_fe_root(chan).branch_path() / "dc_offset" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_dc_offset(offset, c);
+        }
+    }
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -659,6 +679,16 @@ public:
 
     std::vector<std::string> get_tx_sensor_names(size_t chan){
         return _tree->list(tx_rf_fe_root(chan) / "sensors");
+    }
+
+    void set_tx_dc_offset(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(tx_rf_fe_root(chan).branch_path() / "dc_offset" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_tx_num_channels(); c++){
+            this->set_tx_dc_offset(offset, c);
+        }
     }
 
 private:
