@@ -33,6 +33,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <cstdio>
 
 using namespace uhd;
@@ -187,13 +188,6 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // Normal mode with no loopback or Rx counting
     _iface->poke32(FR_MODE, 0x00000000);
     _iface->poke32(FR_DEBUG_EN, 0x00000000);
-    _iface->poke32(FR_DC_OFFSET_CL_EN, 0x0000000f);
-
-    // Reset offset correction registers
-    _iface->poke32(FR_ADC_OFFSET_0, 0x00000000);
-    _iface->poke32(FR_ADC_OFFSET_1, 0x00000000);
-    _iface->poke32(FR_ADC_OFFSET_2, 0x00000000);
-    _iface->poke32(FR_ADC_OFFSET_3, 0x00000000);
 
     UHD_LOG
         << "USRP1 Capabilities" << std::endl
@@ -276,6 +270,15 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         .subscribe(boost::bind(&usrp1_impl::update_rx_subdev_spec, this, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .subscribe(boost::bind(&usrp1_impl::update_tx_subdev_spec, this, _1));
+
+    BOOST_FOREACH(const std::string &db, _dbc.keys()){
+        _tree->create<std::complex<double> >(mb_path / "dboards" / db / "rx_frontends" / "dc_offset" / "value")
+            .coerce(boost::bind(&usrp1_impl::set_rx_dc_offset, this, db, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<bool>(mb_path / "dboards" / db / "rx_frontends" / "dc_offset" / "enable")
+            .subscribe(boost::bind(&usrp1_impl::set_enb_rx_dc_offset, this, db, _1))
+            .set(true);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
@@ -466,4 +469,28 @@ uhd::meta_range_t usrp1_impl::get_rx_dsp_freq_range(void){
 uhd::meta_range_t usrp1_impl::get_tx_dsp_freq_range(void){
     //magic scalar comes from codec control:
     return meta_range_t(-_master_clock_rate*0.6875, +_master_clock_rate*0.6875);
+}
+
+void usrp1_impl::set_enb_rx_dc_offset(const std::string &db, const bool enb){
+    const size_t shift = (db == "A")? 0 : 2;
+    _rx_dc_offset_shadow &= ~(0x3 << shift); //clear bits
+    _rx_dc_offset_shadow &= ((enb)? 0x3 : 0x0) << shift;
+    _iface->poke32(FR_DC_OFFSET_CL_EN, _rx_dc_offset_shadow & 0xf);
+}
+
+std::complex<double> usrp1_impl::set_rx_dc_offset(const std::string &db, const std::complex<double> &offset){
+    const boost::int32_t i_off = boost::math::iround(offset.real() * (1ul << 31));
+    const boost::int32_t q_off = boost::math::iround(offset.imag() * (1ul << 31));
+
+    if (db == "A"){
+        _iface->poke32(FR_ADC_OFFSET_0, i_off);
+        _iface->poke32(FR_ADC_OFFSET_1, q_off);
+    }
+
+    if (db == "B"){
+        _iface->poke32(FR_ADC_OFFSET_2, i_off);
+        _iface->poke32(FR_ADC_OFFSET_3, q_off);
+    }
+
+    return std::complex<double>(double(i_off) * (1ul << 31), double(q_off) * (1ul << 31));
 }

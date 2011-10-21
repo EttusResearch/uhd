@@ -31,6 +31,7 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
+#include <complex>
 
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
@@ -100,6 +101,9 @@ private:
     uhd::meta_range_t get_tx_dsp_freq_range(void);
     uhd::meta_range_t get_rx_dsp_host_rates(void);
     uhd::meta_range_t get_tx_dsp_host_rates(void);
+    size_t _rx_dc_offset_shadow;
+    void set_enb_rx_dc_offset(const std::string &db, const bool);
+    std::complex<double> set_rx_dc_offset(const std::string &db, const std::complex<double> &);
 
     static uhd::usrp::dboard_iface::sptr make_dboard_iface(
         usrp1_iface::sptr,
