@@ -33,7 +33,9 @@ public:
 
     virtual void set_mux(const bool swap) = 0;
 
-    virtual void set_offset(const std::complex<double> &off) = 0;
+    virtual void set_dc_offset_auto(const bool enb) = 0;
+
+    virtual std::complex<double> set_dc_offset(const std::complex<double> &off) = 0;
 
     virtual void set_correction(const std::complex<double> &cor) = 0;
 

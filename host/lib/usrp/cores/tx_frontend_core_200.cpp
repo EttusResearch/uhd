@@ -50,9 +50,15 @@ public:
         _iface->poke32(REG_TX_FE_MUX, mode_to_mux[mode]);
     }
 
-    void set_dc_offset(const std::complex<double> &off){
-        _iface->poke32(REG_TX_FE_DC_OFFSET_I, fs_to_bits(off.real(), 24));
-        _iface->poke32(REG_TX_FE_DC_OFFSET_Q, fs_to_bits(off.imag(), 24));
+    std::complex<double> set_dc_offset(const std::complex<double> &off){
+        static const double scaler = double(1ul << 23);
+        const boost::int32_t i_dc_off = boost::math::iround(off.real()*scaler);
+        const boost::int32_t q_dc_off = boost::math::iround(off.imag()*scaler);
+
+        _iface->poke32(REG_TX_FE_DC_OFFSET_I, i_dc_off);
+        _iface->poke32(REG_TX_FE_DC_OFFSET_Q, q_dc_off);
+
+        return std::complex<double>(i_dc_off/scaler, q_dc_off/scaler);
     }
 
     void set_correction(const std::complex<double> &cor){

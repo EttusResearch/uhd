@@ -24,6 +24,9 @@
 #define REG_RX_FE_OFFSET_I            _base + 12 //18 bits
 #define REG_RX_FE_OFFSET_Q            _base + 16 //18 bits
 
+#define OFFSET_FIXED (1ul << 31)
+#define OFFSET_SET   (1ul << 30)
+
 static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
 }
@@ -41,9 +44,23 @@ public:
         _iface->poke32(REG_RX_FE_SWAP_IQ, swap? 1 : 0);
     }
 
-    void set_offset(const std::complex<double> &off){
-        _iface->poke32(REG_RX_FE_OFFSET_I, fs_to_bits(off.real(), 24));
-        _iface->poke32(REG_RX_FE_OFFSET_Q, fs_to_bits(off.imag(), 24));
+    void set_dc_offset_auto(const bool enb){
+        this->set_dc_offset(enb? 0 : OFFSET_FIXED);
+    }
+
+    std::complex<double> set_dc_offset(const std::complex<double> &off){
+        static const double scaler = double(1ul << 29);
+        _i_dc_off = boost::math::iround(off.real()*scaler);
+        _q_dc_off = boost::math::iround(off.imag()*scaler);
+
+        this->set_dc_offset(OFFSET_SET | OFFSET_FIXED);
+
+        return std::complex<double>(_i_dc_off/scaler, _q_dc_off/scaler);
+    }
+
+    void set_dc_offset(const boost::uint32_t flags){
+        _iface->poke32(REG_RX_FE_OFFSET_I, flags | _i_dc_off);
+        _iface->poke32(REG_RX_FE_OFFSET_Q, flags | _q_dc_off);
     }
 
     void set_correction(const std::complex<double> &cor){
@@ -52,6 +69,7 @@ public:
     }
 
 private:
+    boost::int32_t _i_dc_off, _q_dc_off;
     wb_iface::sptr _iface;
     const size_t _base;
 };
