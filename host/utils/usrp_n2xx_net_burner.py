@@ -278,7 +278,7 @@ class burner_socket(object):
 
         return (self.memory_size_bytes, self.sector_size_bytes)
 
-    def burn_fw(self, fw, fpga, reset, safe):
+    def burn_fw(self, fw, fpga, reset, safe, check_rev):
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
@@ -287,7 +287,7 @@ class burner_socket(object):
 
         if fpga:
             #validate fpga image name against hardware rev
-            if(hw_rev != 0 and not any(name in fpga for name in n2xx_revs[hw_rev])):
+            if(check_rev and hw_rev != 0 and not any(name in fpga for name in n2xx_revs[hw_rev])):
                 raise Exception("Error: incorrect FPGA image version. Please use the correct image for device %s" % n2xx_revs[hw_rev][0])
 
             if safe: image_location = SAFE_FPGA_IMAGE_LOCATION_ADDR
@@ -471,6 +471,7 @@ def get_options():
     parser.add_option("--reset", action="store_true",          help="reset the device after writing", default=False)
     parser.add_option("--read", action="store_true",           help="read to file instead of write from file", default=False)
     parser.add_option("--overwrite-safe", action="store_true", help="never ever use this option", default=False)
+    parser.add_option("--dont-check-rev", action="store_true", help="disable revision checks", default=False)
     parser.add_option("--list", action="store_true",           help="list possible network devices", default=False)
     (options, args) = parser.parse_args()
 
@@ -518,4 +519,4 @@ if __name__=='__main__':
             addr = SAFE_FPGA_IMAGE_LOCATION_ADDR if options.overwrite_safe else PROD_FPGA_IMAGE_LOCATION_ADDR
             burner.read_image(file, size, addr)
 
-    else: burner.burn_fw(fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe)
+    else: burner.burn_fw(fw=options.fw, fpga=options.fpga, reset=options.reset, safe=options.overwrite_safe, check_rev=not options.dont_check_rev)
