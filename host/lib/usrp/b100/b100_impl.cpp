@@ -102,23 +102,16 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     pid = B100_PRODUCT_ID;
 
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+        usb_control::sptr control;
+        try{control = usb_control::make(handle, 0);}
+        catch(const uhd::exception &){continue;} //ignore claimed
+
+        fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
+        const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, mboard_eeprom_t::MAP_B100);
         device_addr_t new_addr;
         new_addr["type"] = "b100";
+        new_addr["name"] = mb_eeprom["name"];
         new_addr["serial"] = handle->get_serial();
-
-        //Attempt to read the name from the EEPROM and perform filtering.
-        try{
-            usb_control::sptr control = usb_control::make(handle, 0);
-            fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
-            const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, mboard_eeprom_t::MAP_B100);
-            new_addr["name"] = mb_eeprom["name"];
-        }
-        catch(const uhd::exception &){
-            //set these values as empty string so the device may still be found
-            //and the filter's below can still operate on the discovered device
-            new_addr["name"] = "";
-        }
-
         //this is a found b100 when the hint serial and name match or blank
         if (
             (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
