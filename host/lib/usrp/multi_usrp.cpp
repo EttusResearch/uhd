@@ -567,6 +567,16 @@ public:
         }
     }
 
+    void set_rx_correction(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(rx_rf_fe_root(chan).branch_path() / "correction" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_correction(offset, c);
+        }
+    }
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -688,6 +698,16 @@ public:
         }
         for (size_t c = 0; c < get_tx_num_channels(); c++){
             this->set_tx_dc_offset(offset, c);
+        }
+    }
+
+    void set_tx_correction(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(tx_rf_fe_root(chan).branch_path() / "correction" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_tx_num_channels(); c++){
+            this->set_tx_correction(offset, c);
         }
     }
 

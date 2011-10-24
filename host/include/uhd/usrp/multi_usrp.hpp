@@ -22,6 +22,7 @@
 #define UHD_USRP_MULTI_USRP_REF_SOURCES_API
 #define UHD_USRP_MULTI_USRP_GET_RATES_API
 #define UHD_USRP_MULTI_USRP_DC_OFFSET_API
+#define UHD_USRP_MULTI_USRP_CORRECTION_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -530,7 +531,6 @@ public:
      */
     virtual std::vector<std::string> get_rx_sensor_names(size_t chan = 0) = 0;
 
-
     /*!
      * Enable/disable the automatic RX DC offset correction.
      * The automatic correction subtracts out the long-run average.
@@ -553,6 +553,15 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_dc_offset(const std::complex<double> &offset, size_t chan = ALL_CHANS) = 0;
+
+    /*!
+     * Set the RX frontend IQ imbalance and gain correction.
+     * Use this to adjust the magnitude and phase of I and Q.
+     *
+     * \param correction the complex correction value
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_correction(const std::complex<double> &correction, size_t chan = ALL_CHANS) = 0;
 
     /*******************************************************************
      * TX methods
@@ -758,6 +767,15 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_dc_offset(const std::complex<double> &offset, size_t chan = ALL_CHANS) = 0;
+
+    /*!
+     * Set the TX frontend IQ imbalance and gain correction.
+     * Use this to adjust the magnitude and phase of I and Q.
+     *
+     * \param correction the complex correction value
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_tx_correction(const std::complex<double> &correction, size_t chan = ALL_CHANS) = 0;
 
 };
 
