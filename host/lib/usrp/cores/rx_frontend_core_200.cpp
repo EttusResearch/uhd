@@ -63,7 +63,7 @@ public:
         _iface->poke32(REG_RX_FE_OFFSET_Q, flags | _q_dc_off);
     }
 
-    void set_correction(const std::complex<double> &cor){
+    void set_iq_balance(const std::complex<double> &cor){
         _iface->poke32(REG_RX_FE_MAG_CORRECTION, fs_to_bits(std::abs(cor), 18));
         _iface->poke32(REG_RX_FE_PHASE_CORRECTION, fs_to_bits(std::atan2(cor.real(), cor.imag()), 18));
     }

@@ -288,14 +288,14 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->create<bool>(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "enable")
         .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _rx_fe, _1))
         .set(true);
-    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "correction" / "value")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_correction, _rx_fe, _1))
+    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "iq_balance" / "value")
+        .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _rx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
     _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "dc_offset" / "value")
         .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _tx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
-    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "correction" / "value")
-        .subscribe(boost::bind(&tx_frontend_core_200::set_correction, _tx_fe, _1))
+    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "iq_balance" / "value")
+        .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _tx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
 
     ////////////////////////////////////////////////////////////////////

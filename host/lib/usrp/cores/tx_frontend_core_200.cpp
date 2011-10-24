@@ -61,7 +61,7 @@ public:
         return std::complex<double>(i_dc_off/scaler, q_dc_off/scaler);
     }
 
-    void set_correction(const std::complex<double> &cor){
+    void set_iq_balance(const std::complex<double> &cor){
         _iface->poke32(REG_TX_FE_MAG_CORRECTION, fs_to_bits(std::abs(cor), 18));
         _iface->poke32(REG_TX_FE_PHASE_CORRECTION, fs_to_bits(std::atan2(cor.real(), cor.imag()), 18));
     }
