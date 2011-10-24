@@ -456,11 +456,27 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].tx_fe = tx_frontend_core_200::make(
             _mbc[mb].iface, U2_REG_SR_ADDR(SR_TX_FRONT)
         );
-        //TODO lots of properties to expose here for frontends
+
         _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
             .subscribe(boost::bind(&usrp2_impl::update_rx_subdev_spec, this, mb, _1));
         _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
             .subscribe(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
+
+        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "value")
+            .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _mbc[mb].rx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<bool>(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "enable")
+            .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _mbc[mb].rx_fe, _1))
+            .set(true);
+        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "correction" / "value")
+            .subscribe(boost::bind(&rx_frontend_core_200::set_correction, _mbc[mb].rx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "dc_offset" / "value")
+            .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _mbc[mb].tx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "correction" / "value")
+            .subscribe(boost::bind(&tx_frontend_core_200::set_correction, _mbc[mb].tx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
 
         ////////////////////////////////////////////////////////////////
         // create rx dsp control objects

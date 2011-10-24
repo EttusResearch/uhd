@@ -250,11 +250,27 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _rx_fe = rx_frontend_core_200::make(_fpga_ctrl, E100_REG_SR_ADDR(UE_SR_RX_FRONT));
     _tx_fe = tx_frontend_core_200::make(_fpga_ctrl, E100_REG_SR_ADDR(UE_SR_TX_FRONT));
-    //TODO lots of properties to expose here for frontends
+
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .subscribe(boost::bind(&e100_impl::update_rx_subdev_spec, this, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .subscribe(boost::bind(&e100_impl::update_tx_subdev_spec, this, _1));
+
+    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "value")
+        .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _rx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
+    _tree->create<bool>(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "enable")
+        .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _rx_fe, _1))
+        .set(true);
+    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "correction" / "value")
+        .subscribe(boost::bind(&rx_frontend_core_200::set_correction, _rx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
+    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "dc_offset" / "value")
+        .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _tx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
+    _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "correction" / "value")
+        .subscribe(boost::bind(&tx_frontend_core_200::set_correction, _tx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
