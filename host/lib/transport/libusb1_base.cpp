@@ -17,8 +17,11 @@
 
 #include "libusb1_base.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 #include <boost/foreach.hpp>
 #include <iostream>
 
@@ -195,6 +198,10 @@ private:
 libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::sptr dev){
     static uhd::dict<libusb_device *, boost::weak_ptr<device_handle> > handles;
 
+    //lock for atomic access to static table above
+    static boost::mutex mutex;
+    boost::mutex::scoped_lock lock(mutex);
+
     //not expired -> get existing handle
     if (handles.has_key(dev->get()) and not handles[dev->get()].expired()){
         return handles[dev->get()].lock();
@@ -207,7 +214,14 @@ libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::spt
         return new_handle;
     }
     catch(const uhd::exception &){
-        std::cerr << "USB open failed: see the application notes for your device." << std::endl;
+        #ifdef UHD_PLATFORM_LINUX
+        UHD_MSG(error) <<
+            "USB open failed: insufficient permissions.\n"
+            "See the application notes for your device.\n"
+        << std::endl;
+        #else
+        UHD_LOG << "USB open failed: device already claimed." << std::endl;
+        #endif
         throw;
     }
 }
