@@ -33,7 +33,6 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
-#include <uhd/usrp/mboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <complex>
@@ -54,7 +53,7 @@ namespace uhd{ namespace usrp{
  * In the single device, single channel case, these parameters can be unspecified.
  *
  * When using a single device with multiple channels:
- *  - Channel mapping is determined by the subdevice specifications
+ *  - Channel mapping is determined by the frontend specifications
  *  - All channels share a common RX sample rate
  *  - All channels share a common TX sample rate
  *
@@ -62,8 +61,8 @@ namespace uhd{ namespace usrp{
  *  - Channel mapping is determined by the device address arguments
  *  - All boards share a common RX sample rate
  *  - All boards share a common TX sample rate
- *  - All boards share a common RX subdevice specification size
- *  - All boards share a common TX subdevice specification size
+ *  - All boards share a common RX frontend specification size
+ *  - All boards share a common TX frontend specification size
  *  - All boards must have synchronized times (see the set_time_*() calls)
  *
  * Example to setup channel mapping for multiple devices:
@@ -75,13 +74,13 @@ namespace uhd{ namespace usrp{
  * dev_addr["addr1"] = "192.168.10.3";
  * multi_usrp::sptr dev = multi_usrp::make(dev_addr);
  *
- * //set the board on 10.2 to use the A RX subdevice (RX channel 0)
+ * //set the board on 10.2 to use the A RX frontend (RX channel 0)
  * dev->set_rx_subdev_spec("A:A", 0);
  *
- * //set the board on 10.3 to use the B RX subdevice (RX channel 1)
+ * //set the board on 10.3 to use the B RX frontend (RX channel 1)
  * dev->set_rx_subdev_spec("A:B", 1);
  *
- * //set both boards to use the AB TX subdevice (TX channels 0 and 1)
+ * //set both boards to use the AB TX frontend (TX channels 0 and 1)
  * dev->set_tx_subdev_spec("A:AB", multi_usrp::ALL_MBOARDS);
  *
  * //now that all the channels are mapped, continue with configuration...
@@ -316,30 +315,24 @@ public:
      * \return a vector of sensor names
      */
     virtual std::vector<std::string> get_mboard_sensor_names(size_t mboard = 0) = 0;
-    
-    /*!
-     * Get a handle to the mboard_iface object which controls peripheral access.
-     * \return a mboard_iface::sptr object
-     */
-    virtual mboard_iface::sptr get_mboard_iface(size_t mboard) = 0;
 
     /*******************************************************************
      * RX methods
      ******************************************************************/
     /*!
-     * Set the RX subdevice specification:
+     * Set the RX frontend specification:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
-     * \param spec the new subdevice specification
+     * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
      */
     virtual void set_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
-     * Get the RX subdevice specification.
+     * Get the RX frontend specification.
      * \param mboard the motherboard index 0 to M-1
-     * \return the subdevice specification in use
+     * \return the frontend specification in use
      */
     virtual uhd::usrp::subdev_spec_t get_rx_subdev_spec(size_t mboard = 0) = 0;
 
@@ -351,9 +344,9 @@ public:
     virtual size_t get_rx_num_channels(void) = 0;
 
     /*!
-     * Get the name of the RX subdevice.
+     * Get the name of the RX frontend.
      * \param chan the channel index 0 to N-1
-     * \return the subdevice name
+     * \return the frontend name
      */
     virtual std::string get_rx_subdev_name(size_t chan = 0) = 0;
 
@@ -453,28 +446,28 @@ public:
     virtual std::vector<std::string> get_rx_gain_names(size_t chan = 0) = 0;
 
     /*!
-     * Select the RX antenna on the subdevice.
+     * Select the RX antenna on the frontend.
      * \param ant the antenna name
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_antenna(const std::string &ant, size_t chan = 0) = 0;
 
     /*!
-     * Get the selected RX antenna on the subdevice.
+     * Get the selected RX antenna on the frontend.
      * \param chan the channel index 0 to N-1
      * \return the antenna name
      */
     virtual std::string get_rx_antenna(size_t chan = 0) = 0;
 
     /*!
-     * Get a list of possible RX antennas on the subdevice.
+     * Get a list of possible RX antennas on the frontend.
      * \param chan the channel index 0 to N-1
      * \return a vector of antenna names
      */
     virtual std::vector<std::string> get_rx_antennas(size_t chan = 0) = 0;
 
     /*!
-     * Get the locked status of the LO on the subdevice.
+     * Get the locked status of the LO on the frontend.
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
@@ -483,21 +476,21 @@ public:
     }
 
     /*!
-     * Set the RX bandwidth on the subdevice.
+     * Set the RX bandwidth on the frontend.
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_bandwidth(double bandwidth, size_t chan = 0) = 0;
 
     /*!
-     * Get the RX bandwidth on the subdevice.
+     * Get the RX bandwidth on the frontend.
      * \param chan the channel index 0 to N-1
      * \return the bandwidth in Hz
      */
     virtual double get_rx_bandwidth(size_t chan = 0) = 0;
 
     /*!
-     * Read the RSSI value on the RX subdevice.
+     * Read the RSSI value on the RX frontend.
      * \param chan the channel index 0 to N-1
      * \return the rssi in dB
      * \throw exception if RSSI readback not supported
@@ -507,7 +500,7 @@ public:
     }
 
     /*!
-     * Get the dboard interface object for the RX subdevice.
+     * Get the dboard interface object for the RX frontend.
      * The dboard interface gives access to GPIOs, SPI, I2C, low-speed ADC and DAC.
      * Use at your own risk!
      * \param chan the channel index 0 to N-1
@@ -516,7 +509,7 @@ public:
     virtual dboard_iface::sptr get_rx_dboard_iface(size_t chan = 0) = 0;
 
     /*!
-     * Get an RX subdevice sensor value.
+     * Get an RX frontend sensor value.
      * \param name the name of the sensor
      * \param chan the channel index 0 to N-1
      * \return a sensor value object
@@ -524,7 +517,7 @@ public:
     virtual sensor_value_t get_rx_sensor(const std::string &name, size_t chan = 0) = 0;
 
     /*!
-     * Get a list of possible RX subdevice sensor names.
+     * Get a list of possible RX frontend sensor names.
      * \param chan the channel index 0 to N-1
      * \return a vector of sensor names
      */
@@ -557,7 +550,7 @@ public:
      * Set the RX frontend IQ imbalance correction.
      * Use this to adjust the magnitude and phase of I and Q.
      *
-     * \param correction the complex correction value
+     * \param correction the complex correction (1.0 is full-scale)
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_iq_balance(const std::complex<double> &correction, size_t chan = ALL_CHANS) = 0;
@@ -566,19 +559,19 @@ public:
      * TX methods
      ******************************************************************/
     /*!
-     * Set the TX subdevice specification:
+     * Set the TX frontend specification:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
-     * \param spec the new subdevice specification
+     * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
      */
     virtual void set_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
-     * Get the TX subdevice specification.
+     * Get the TX frontend specification.
      * \param mboard the motherboard index 0 to M-1
-     * \return the subdevice specification in use
+     * \return the frontend specification in use
      */
     virtual uhd::usrp::subdev_spec_t get_tx_subdev_spec(size_t mboard = 0) = 0;
 
@@ -590,9 +583,9 @@ public:
     virtual size_t get_tx_num_channels(void) = 0;
 
     /*!
-     * Get the name of the TX subdevice.
+     * Get the name of the TX frontend.
      * \param chan the channel index 0 to N-1
-     * \return the subdevice name
+     * \return the frontend name
      */
     virtual std::string get_tx_subdev_name(size_t chan = 0) = 0;
 
@@ -692,28 +685,28 @@ public:
     virtual std::vector<std::string> get_tx_gain_names(size_t chan = 0) = 0;
 
     /*!
-     * Select the TX antenna on the subdevice.
+     * Select the TX antenna on the frontend.
      * \param ant the antenna name
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_antenna(const std::string &ant, size_t chan = 0) = 0;
 
     /*!
-     * Get the selected TX antenna on the subdevice.
+     * Get the selected TX antenna on the frontend.
      * \param chan the channel index 0 to N-1
      * \return the antenna name
      */
     virtual std::string get_tx_antenna(size_t chan = 0) = 0;
 
     /*!
-     * Get a list of possible TX antennas on the subdevice.
+     * Get a list of possible TX antennas on the frontend.
      * \param chan the channel index 0 to N-1
      * \return a vector of antenna names
      */
     virtual std::vector<std::string> get_tx_antennas(size_t chan = 0) = 0;
 
     /*!
-     * Get the locked status of the LO on the subdevice.
+     * Get the locked status of the LO on the frontend.
      * \param chan the channel index 0 to N-1
      * \return true for locked
      */
@@ -722,21 +715,21 @@ public:
     }
 
     /*!
-     * Set the TX bandwidth on the subdevice.
+     * Set the TX bandwidth on the frontend.
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_bandwidth(double bandwidth, size_t chan = 0) = 0;
 
     /*!
-     * Get the TX bandwidth on the subdevice.
+     * Get the TX bandwidth on the frontend.
      * \param chan the channel index 0 to N-1
      * \return the bandwidth in Hz
      */
     virtual double get_tx_bandwidth(size_t chan = 0) = 0;
 
     /*!
-     * Get the dboard interface object for the TX subdevice.
+     * Get the dboard interface object for the TX frontend.
      * The dboard interface gives access to GPIOs, SPI, I2C, low-speed ADC and DAC.
      * Use at your own risk!
      * \param chan the channel index 0 to N-1
@@ -745,7 +738,7 @@ public:
     virtual dboard_iface::sptr get_tx_dboard_iface(size_t chan = 0) = 0;
 
     /*!
-     * Get an TX subdevice sensor value.
+     * Get an TX frontend sensor value.
      * \param name the name of the sensor
      * \param chan the channel index 0 to N-1
      * \return a sensor value object
@@ -753,7 +746,7 @@ public:
     virtual sensor_value_t get_tx_sensor(const std::string &name, size_t chan = 0) = 0;
 
     /*!
-     * Get a list of possible TX subdevice sensor names.
+     * Get a list of possible TX frontend sensor names.
      * \param chan the channel index 0 to N-1
      * \return a vector of sensor names
      */
@@ -771,7 +764,7 @@ public:
      * Set the TX frontend IQ imbalance correction.
      * Use this to adjust the magnitude and phase of I and Q.
      *
-     * \param correction the complex correction value
+     * \param correction the complex correction (1.0 is full-scale)
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_iq_balance(const std::complex<double> &correction, size_t chan = ALL_CHANS) = 0;

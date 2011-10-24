@@ -17,7 +17,6 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
-#include <uhd/usrp/mboard_iface.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
@@ -427,10 +426,6 @@ public:
 
     std::vector<std::string> get_mboard_sensor_names(size_t mboard){
         return _tree->list(mb_root(mboard) / "sensors");
-    }
-
-    mboard_iface::sptr get_mboard_iface(size_t){
-        return mboard_iface::sptr(); //not implemented
     }
 
     /*******************************************************************
