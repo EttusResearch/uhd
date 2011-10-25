@@ -16,12 +16,19 @@ A USRP device has two stages of tuning:
 * RF front-end: translates bewteen RF and IF
 * DSP: translates between IF and baseband
 
-In a typical use-case, the user specifies an overall center frequency for the signal chain.
-The RF front-end will be tuned as close as possible to the center frequency,
-and the DSP will account for the error in tuning between target frequency and actual frequency.
-The user may also explicitly control both stages of tuning through the tune_request_t object.
+In a typical use-case, the user specifies an overall center frequency for the
+signal chain.  The RF front-end will be tuned as close as possible to the center
+frequency, and the DSP will account for the error in tuning between target
+frequency and actual frequency.  The user may also explicitly control both
+stages of tuning through through the tune_request_t object, which allows for
+more advanced tuning.
 
-Pseudo-code for tuning the receive chain:
+In general, Using UHD's advanced tuning is highly recommended as it makes it
+easy to move the DC component out of your band-of-interest.  This can be done by
+passing your desired LO offset to the tune_request_t object, and letting UHD
+handle the rest.
+
+Tuning the receive chain:
 ::
 
     //tuning to a desired center frequency
@@ -30,9 +37,8 @@ Pseudo-code for tuning the receive chain:
     --OR--
 
     //advanced tuning with tune_request_t
-    uhd::tune_request_t tune_req;
-    tune_req.target_freq = my_frequency_in_hz;
-    //fill in tune request fields...
+    uhd::tune_request_t tune_req(my_frequency_in_hz, desired_lo_offset);
+    //fill in any additional/optional tune request fields...
     usrp->set_rx_freq(tune_req);
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
