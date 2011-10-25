@@ -335,39 +335,8 @@ Test the PPS input with the following app:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Internal GPSDO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Please see the GPSDO application note for information on configuring and
-using the internal GPSDO.
-
-**Installation instructions:**
-
-1. Remove the daughterboard.
-2. Move J510 jumper on the motherboard from 1-2 to 2-3 in order to switch from external 10 MHz Ref Clock to GPSDO’s 10 MHz Ref Clock
-3. Screw the GPSDO module in place with the screws provided. The screws are treated to avoid loosening with vibration.
-4. Connect the GPSDO power cable to J509 on the motherboard, and then to connector D on the GPSDO module
-5. Connect an SMB to SMA cable between connectors B and J506 (PPS2)
-6. Connect an SMB to SMA cable between connectors C and J507 (CLK REF2)
-7. Connect the serial cable between connectors A and J312 (RS232-3) on the motherboard. If J312 on your USRP isn’t a keyed connector, please ensure to connect pin1 (TX) of connector A to pin3 (RX) on J312.
-8. Remove the washer and nut from the MMCX to SMA-Bulkhead cable. Connect it to connector E and then insert SMA-Bulkhead connector through the hole in the rear panel. Tighten nut to fasten in place.
-9. Replace the daughterboard pushing all the cables underneath.
-
-Then run the following commands:
-::
-
-    cd <install-path>/share/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=internal
-
-**Removal instructions:**
-
-Restore the jumper setting, disconnect the cables, and unscrew the GPSDO unit.
-Then run the following commands:
-::
-
-    cd <install-path>/share/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=none
-
-**Antenna Types:**
-
-The GPSDO is capable of supplying a 3V for active GPS antennas or supporting passive antennas
+Please see the `Internal GPSDO Application Notes <./gpsdo.html>`_
+for information on configuring and using the internal GPSDO.
 
 ------------------------------------------------------------------------
 Miscellaneous
@@ -381,8 +350,7 @@ they can be queried through the API.
 
 * mimo_locked - clock reference locked over the MIMO cable
 * ref_locked - clock reference locked (internal/external)
-* gps_time - GPS epoch seconds (available when GPSDO installed)
-* gps_locked - GPS lock status
+* other sensors are added when the GPSDO is enabled
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Multiple RX channels

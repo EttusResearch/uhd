@@ -73,3 +73,15 @@ The LEDs reveal the following about the state of the device:
 * **LED D:** fpga loaded
 * **LED E:** reference lock
 * **LED F:** board power
+
+------------------------------------------------------------------------
+Miscellaneous
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Available Sensors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following sensors are available;
+they can be queried through the API.
+
+* ref_locked - clock reference locked (internal/external)

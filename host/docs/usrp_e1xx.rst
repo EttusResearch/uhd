@@ -90,6 +90,15 @@ Test the PPS input with the following app:
     cd <install-path>/share/uhd/examples
     ./test_pps_input --args=<args>
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Internal GPSDO
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Please see the `Internal GPSDO Application Notes <./gpsdo.html>`_
+for information on configuring and using the internal GPSDO.
+
+UHD will always try to detect an installed GPSDO at runtime.
+There is not a special EEPROM value to burn for GPSDO detection.
+
 ------------------------------------------------------------------------
 Hardware setup notes
 ------------------------------------------------------------------------
@@ -106,3 +115,16 @@ The LEDs reveal the following about the state of the device:
 * **LED D:** fpga loaded
 * **LED E:** reference lock
 * **LED F:** board power
+
+------------------------------------------------------------------------
+Miscellaneous
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Available Sensors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following sensors are available;
+they can be queried through the API.
+
+* ref_locked - clock reference locked (internal/external)
+* other sensors are added when the GPSDO is enabled

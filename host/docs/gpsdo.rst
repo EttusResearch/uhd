@@ -23,29 +23,35 @@ Specifications
   * **1kHz:** -145dBc/Hz
   * **10kHz:** <-145dBc/Hz
 
-------------------------------------------------------------------------
-Installation
-------------------------------------------------------------------------
-See the documentation for your device for specifics on installing the GPSDO.
+**Antenna Types:**
+
+The GPSDO is capable of supplying a 3V for active GPS antennas or supporting passive antennas
 
 ------------------------------------------------------------------------
-Configuring the USRP to use the GPSDO
+Installation instructions
 ------------------------------------------------------------------------
+Installation instructions can be found here:
+`www.ettus.com/downloads/gpsdo-kit.pdf <http://www.ettus.com/downloads/gpsdo-kit.pdf>`_
+
+********************************************
+Post installation task (N-Series only)
+********************************************
 This is necessary if you require absolute GPS time in your application,
 or need to communicate with the GPSDO to obtain location, satellite info, etc.
 If you only require 10MHz and PPS signals for reference or MIMO use,
-(see the Synchronization application note), it is not necessary to perform
-this step.
+(see the `Synchronization Application Notes <./sync.html>`_),
+it is not necessary to perform this step.
 
 To configure the USRP to communicate with the GPSDO, use the
 usrp_burn_mb_eeprom utility:
 
 ::
 
-   $ cd <install-path>/share/uhd/utils
-   $ ./usrp_burn_mb_eeprom --key=gpsdo --val=internal
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=internal
 
-This will configure the driver to communicate with the GPSDO on startup.
+    -- restore original setting --
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=none
 
 ------------------------------------------------------------------------
 Using the GPSDO in your application
