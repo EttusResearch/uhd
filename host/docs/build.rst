@@ -9,7 +9,9 @@ Build Dependencies
 ------------------------------------------------------------------------
 
 **Linux Notes:**
-The dependencies can be acquired through the package manager.
+This is dependent on the distribution you are using, but most, if not all, of
+the dependencies should be available in the package repositories for your
+package manager.
 
 **Mac OS X Notes:**
 Install the "Xcode Developer Tools" to get the build tools (gcc and make).
@@ -137,7 +139,10 @@ Build and install
 Setup the library path (Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Make sure that libuhd.so is in your LD_LIBRARY_PATH
-or add it to /etc/ld.so.conf and make sure to run sudo ldconfig
+or add it to /etc/ld.so.conf and make sure to run:
+::
+
+    sudo ldconfig
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the library path (Mac OS X)
