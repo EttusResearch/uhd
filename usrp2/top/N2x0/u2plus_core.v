@@ -129,7 +129,7 @@ module u2plus_core
    // External RAM
    input [35:0] RAM_D_pi,
    output [35:0] RAM_D_po,
-   output RAM_D_poe,   
+   output RAM_D_poe,
    output [20:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
@@ -230,11 +230,11 @@ module u2plus_core
 		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
 		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
 		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
-		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // Settings Bus (only uses 1K)
 		.s8_addr(8'b1000_0000),.s8_mask(8'b1111_1100),  // PIC
 		.s9_addr(8'b1000_0100),.s9_mask(8'b1111_1100),  // Unused
 		.sa_addr(8'b1000_1000),.sa_mask(8'b1111_1100),  // UART
-		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // ATR
+		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // Unused
 		.sc_addr(8'b1001_0000),.sc_mask(8'b1111_0000),  // Unused
 		.sd_addr(8'b1010_0000),.sd_mask(8'b1111_0000),  // ICAP
 		.se_addr(8'b1011_0000),.se_mask(8'b1111_0000),  // SPI Flash
@@ -275,7 +275,10 @@ module u2plus_core
       .se_dat_i(se_dat_i),.se_ack_i(se_ack),.se_err_i(0),.se_rty_i(0),
       .sf_dat_o(sf_dat_o),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
-      
+
+   // Unused Slaves 9, b, c
+   assign s9_ack = 0;   assign sb_ack = 0;   assign sc_ack = 0;
+   
    // ////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
 
@@ -528,20 +531,6 @@ module u2plus_core
 	   .irq(irq) );
  	 
    // /////////////////////////////////////////////////////////////////////////
-   // Master Timer, Slave #9
-
-   // No longer used, replaced with simple_timer below
-   assign s9_ack = 0;
-   
-   // /////////////////////////////////////////////////////////////////////////
-   //  Simple Timer interrupts
-   /*
-   simple_timer #(.BASE(SR_SIMTIMER)) simple_timer
-     (.clk(wb_clk), .reset(wb_rst),
-      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .onetime_int(onetime_int), .periodic_int(periodic_int));
-   */
-   // /////////////////////////////////////////////////////////////////////////
    // UART, Slave #10
 
    quad_uart #(.TXDEPTH(3),.RXDEPTH(3)) uart  // depth of 3 is 128 entries
@@ -550,24 +539,6 @@ module u2plus_core
       .adr_i(sa_adr[6:2]),.dat_i(sa_dat_o),.dat_o(sa_dat_i),
       .rx_int_o(uart_rx_int),.tx_int_o(uart_tx_int),
       .tx_o(uart_tx_o),.rx_i(uart_rx_i),.baud_o(uart_baud_o));
-   
-   // /////////////////////////////////////////////////////////////////////////
-   // ATR Controller, Slave #11
-
-   /*
-   atr_controller atr_controller
-     (.clk_i(wb_clk),.rst_i(wb_rst),
-      .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
-      .we_i(sb_we),.stb_i(sb_stb),.cyc_i(sb_cyc),.ack_o(sb_ack),
-      .run_rx(run_rx0_d1 | run_rx1_d1),.run_tx(run_tx),.ctrl_lines(atr_lines) );
-   */
-   
-   // //////////////////////////////////////////////////////////////////////////
-   // Time Sync, Slave #12 
-
-   // No longer used, see time_64bit.  Still need to handle mimo time, though
-   assign sc_ack = 0;
-   
    // /////////////////////////////////////////////////////////////////////////
    // ICAP for reprogramming the FPGA, Slave #13 (D)
 
