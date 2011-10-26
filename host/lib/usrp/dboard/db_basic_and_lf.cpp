@@ -131,8 +131,8 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
     this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
         .set(freq_range_t(subdev_bandwidth_scalar[get_subdev_name()]*_max_freq, subdev_bandwidth_scalar[get_subdev_name()]*_max_freq));
     
-    //enable RX dboard clock
-    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
+    //disable RX dboard clock by default
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, false);
 
     //set GPIOs to output 0x0000 to decrease noise pickup
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0000);
@@ -180,8 +180,8 @@ basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
     this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
         .set(freq_range_t(subdev_bandwidth_scalar[get_subdev_name()]*_max_freq, subdev_bandwidth_scalar[get_subdev_name()]*_max_freq));
     
-    //enable TX dboard clock
-    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
+    //disable TX dboard clock by default
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, false);
 
     //set GPIOs to output 0x0000 to decrease noise pickup
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, 0x0000);
