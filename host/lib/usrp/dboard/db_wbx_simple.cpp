@@ -32,14 +32,16 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
+
 /***********************************************************************
  * The WBX Simple dboard constants
  **********************************************************************/
-static const freq_range_t wbx_freq_range(68.75e6, 2.2e9);
-
 static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
 
 static const prop_names_t wbx_rx_antennas = list_of("TX/RX")("RX2");
+
+//this will get set by a version-specific function call
+static freq_range_t wbx_freq_range(0.0, 0.0);
 
 /***********************************************************************
  * The WBX simple implementation
@@ -72,12 +74,18 @@ static dboard_base::sptr make_wbx_simple(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new wbx_simple(args));
 }
 
+/***********************************************************************
+ * ID Numbers for WBX daughterboard combinations.
+ **********************************************************************/
 UHD_STATIC_BLOCK(reg_wbx_simple_dboards){
     dboard_manager::register_dboard(0x0053, 0x0052, &make_wbx_simple, "WBX");
     dboard_manager::register_dboard(0x0053, 0x004f, &make_wbx_simple, "WBX + Simple GDB");
     dboard_manager::register_dboard(0x0057, 0x0056, &make_wbx_simple, "WBX v3");
     dboard_manager::register_dboard(0x0057, 0x004f, &make_wbx_simple, "WBX v3 + Simple GDB");
+    dboard_manager::register_dboard(0x0063, 0x0062, &make_wbx_simple, "WBX v4");
+    dboard_manager::register_dboard(0x0063, 0x004f, &make_wbx_simple, "WBX v4 + Simple GDB");
 }
+
 
 /***********************************************************************
  * Structors
@@ -99,6 +107,9 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        ANT_TXRX, ANTSW_IO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     ANT_RX2, ANTSW_IO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_RX2, ANTSW_IO);
+
+    //get the frequency range of our WBX db
+    wbx_freq_range = this->get_freq_range();
 
     //set some default values
     set_rx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
@@ -149,11 +160,19 @@ void wbx_simple::rx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        if (is_v3())
-            val = std::string("WBX v3 RX + Simple GDB");
-        else
+        switch(get_rx_id().to_uint16()) {
+        case 0x053:
             val = std::string("WBX RX + Simple GDB");
-        return;
+            return;
+        case 0x057:
+            val = std::string("WBX v3 RX + Simple GDB");
+            return;
+        case 0x063:
+            val = std::string("WBX v4 RX + Simple GDB");
+            return;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+        }
 
     case SUBDEV_PROP_FREQ:
         val = _rx_lo_freq;
@@ -206,11 +225,19 @@ void wbx_simple::tx_get(const wax::obj &key_, wax::obj &val){
     //handle the get request conditioned on the key
     switch(key.as<subdev_prop_t>()){
     case SUBDEV_PROP_NAME:
-        if (is_v3())
-            val = std::string("WBX v3 TX + Simple GDB");
-        else
+        switch(get_rx_id().to_uint16()) {
+        case 0x053:
             val = std::string("WBX TX + Simple GDB");
-        return;
+            return;
+        case 0x057:
+            val = std::string("WBX v3 TX + Simple GDB");
+            return;
+        case 0x063:
+            val = std::string("WBX v4 TX + Simple GDB");
+            return;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+        }
 
     case SUBDEV_PROP_FREQ:
         val = _tx_lo_freq;
