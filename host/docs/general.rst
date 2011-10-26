@@ -32,24 +32,26 @@ Tuning the receive chain:
 ::
 
     //tuning to a desired center frequency
-    usrp->set_rx_freq(my_frequency_in_hz);
+    usrp->set_rx_freq(target_frequency_in_hz);
 
     --OR--
 
     //advanced tuning with tune_request_t
-    uhd::tune_request_t tune_req(my_frequency_in_hz, desired_lo_offset);
+    uhd::tune_request_t tune_req(target_frequency_in_hz, desired_lo_offset);
     //fill in any additional/optional tune request fields...
     usrp->set_rx_freq(tune_req);
+
+More information can be fonud in *tune_request.hpp*.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RF front-end settling time
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 After tuning, the RF front-end will need time to settle into a usable state.
-Typically, this means that the local oscillators must be given time to lock before streaming begins.
-Lock time is not consistent; it varies depending upon the device and requested settings.
-After tuning and before streaming, the user should
-wait for the "lo_locked" sensor to become true,
-or sleep for a conservative amount of time (perhaps a second).
+Typically, this means that the local oscillators must be given time to lock
+before streaming begins.  Lock time is not consistent; it varies depending upon
+the device and requested settings.  After tuning and before streaming, the user
+should wait for the "lo_locked" sensor to become true, or sleep for
+a conservative amount of time (perhaps a second).
 
 Pseudo-code for dealing with settling time after tuning on receive:
 ::
