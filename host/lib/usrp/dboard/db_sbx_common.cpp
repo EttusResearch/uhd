@@ -81,7 +81,7 @@ static int tx_pga0_gain_to_iobits(double &gain){
     return iobits;
 }
 
-void sbx_xcvr::set_tx_gain(double gain, const std::string &name){
+double sbx_xcvr::set_tx_gain(double gain, const std::string &name){
     assert_has(sbx_tx_gain_ranges.keys(), name, "sbx tx gain name");
     if(name == "PGA0"){
         tx_pga0_gain_to_iobits(gain);
@@ -91,9 +91,10 @@ void sbx_xcvr::set_tx_gain(double gain, const std::string &name){
         update_atr();
     }
     else UHD_THROW_INVALID_CODE_PATH();
+    return _tx_gains[name];
 }
 
-void sbx_xcvr::set_rx_gain(double gain, const std::string &name){
+double sbx_xcvr::set_rx_gain(double gain, const std::string &name){
     assert_has(sbx_rx_gain_ranges.keys(), name, "sbx rx gain name");
     if(name == "PGA0"){
         rx_pga0_gain_to_iobits(gain);
@@ -103,6 +104,7 @@ void sbx_xcvr::set_rx_gain(double gain, const std::string &name){
         update_atr();
     }
     else UHD_THROW_INVALID_CODE_PATH();
+    return _rx_gains[name];
 }
 
 
@@ -122,6 +124,64 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
             UHD_THROW_INVALID_CODE_PATH();
     }
 
+    ////////////////////////////////////////////////////////////////////
+    // Register RX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name").set("SBX RX");
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
+    BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&sbx_xcvr::set_rx_gain, this, _1, name))
+            .set(sbx_rx_gain_ranges[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(sbx_rx_gain_ranges[name]);
+    }
+    this->get_rx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
+        .set((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
+    this->get_rx_subtree()->create<meta_range_t>("freq/range").set(sbx_freq_range);
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&sbx_xcvr::set_rx_ant, this, _1))
+        .set("RX2");
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(sbx_rx_antennas);
+    this->get_rx_subtree()->create<std::string>("connection").set("IQ");
+    this->get_rx_subtree()->create<bool>("enabled").set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset").set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(2*20.0e6, 2*20.0e6));
+
+    ////////////////////////////////////////////////////////////////////
+    // Register TX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<std::string>("name").set("SBX TX");
+    this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
+    BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
+        this->get_tx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&sbx_xcvr::set_tx_gain, this, _1, name))
+            .set(sbx_tx_gain_ranges[name].start());
+        this->get_tx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(sbx_tx_gain_ranges[name]);
+    }
+    this->get_tx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
+        .set((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
+    this->get_tx_subtree()->create<meta_range_t>("freq/range").set(sbx_freq_range);
+    this->get_tx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&sbx_xcvr::set_tx_ant, this, _1))
+        .set(sbx_tx_antennas.at(0));
+    this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(sbx_tx_antennas);
+    this->get_tx_subtree()->create<std::string>("connection").set("QI");
+    this->get_tx_subtree()->create<bool>("enabled").set(true); //always enabled
+    this->get_tx_subtree()->create<bool>("use_lo_offset").set(false);
+    this->get_tx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+    this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(2*20.0e6, 2*20.0e6));
+
     //enable the clocks that we need
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
@@ -138,18 +198,6 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     UHD_LOGV(often) << boost::format(
         "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
     ) % RXIO_MASK % TXIO_MASK << std::endl;
-
-    //set some default values
-    set_rx_lo_freq((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
-    set_tx_lo_freq((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
-    set_rx_ant("RX2");
-
-    BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
-        set_tx_gain(sbx_tx_gain_ranges[name].start(), name);
-    }
-    BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
-        set_rx_gain(sbx_rx_gain_ranges[name].start(), name);
-    }
 }
 
 sbx_xcvr::~sbx_xcvr(void){
@@ -165,8 +213,8 @@ void sbx_xcvr::update_atr(void){
     int tx_pga0_iobits = tx_pga0_gain_to_iobits(_tx_gains["PGA0"]);
     int rx_lo_lpf_en = (_rx_lo_freq == sbx_enable_rx_lo_filter.clip(_rx_lo_freq)) ? LO_LPF_EN : 0;
     int tx_lo_lpf_en = (_tx_lo_freq == sbx_enable_tx_lo_filter.clip(_tx_lo_freq)) ? LO_LPF_EN : 0;
-    int rx_ld_led = get_locked(dboard_iface::UNIT_RX) ? 0 : RX_LED_LD;
-    int tx_ld_led = get_locked(dboard_iface::UNIT_TX) ? 0 : TX_LED_LD;
+    int rx_ld_led = get_locked(dboard_iface::UNIT_RX).to_bool() ? 0 : RX_LED_LD;
+    int tx_ld_led = get_locked(dboard_iface::UNIT_TX).to_bool() ? 0 : TX_LED_LD;
     int rx_ant_led = _rx_ant == "TX/RX" ? RX_LED_RX1RX2 : 0;
     int tx_ant_led = _rx_ant == "TX/RX" ? 0 : TX_LED_TXRX;
 
@@ -226,222 +274,13 @@ void sbx_xcvr::set_tx_lo_freq(double freq){
     _tx_lo_freq = db_actual->set_lo_freq(dboard_iface::UNIT_TX, freq);
 }
 
-
 double sbx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
     return db_actual->set_lo_freq(unit, target_freq);
 }
 
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void sbx_xcvr::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_rx_gains.keys(), key.name, "sbx rx gain name");
-        val = _rx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(sbx_rx_gain_ranges.keys(), key.name, "sbx rx gain name");
-        val = sbx_rx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(sbx_rx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _rx_lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = sbx_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = _rx_ant;
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = sbx_rx_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void sbx_xcvr::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_rx_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_rx_ant(val.as<std::string>());
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "SBX: No tunable bandwidth, fixed filtered to 40MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
-/***********************************************************************
- * TX Get and Set
- **********************************************************************/
-void sbx_xcvr::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_tx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_tx_gains.keys(), key.name, "sbx tx gain name");
-        val = _tx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(sbx_tx_gain_ranges.keys(), key.name, "sbx tx gain name");
-        val = sbx_tx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(sbx_tx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _tx_lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = sbx_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("TX/RX");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = sbx_tx_antennas;
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_QI;
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_TX), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void sbx_xcvr::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_tx_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_tx_ant(val.as<std::string>());
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "SBX: No tunable bandwidth, fixed filtered to 40MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
-
-bool sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
-    return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
+    const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+    return sensor_value_t("LO", locked, "locked", "unlocked");
 }
 
 

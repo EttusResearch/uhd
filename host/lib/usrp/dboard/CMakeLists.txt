@@ -23,9 +23,9 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/db_basic_and_lf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_rfx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_xcvr2450.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_common.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_version3.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_version4.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_version3.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_version4.cpp
     #${CMAKE_CURRENT_SOURCE_DIR}/db_wbx_common.cpp
     #${CMAKE_CURRENT_SOURCE_DIR}/db_wbx_version2.cpp
     #${CMAKE_CURRENT_SOURCE_DIR}/db_wbx_version3.cpp

@@ -113,9 +113,9 @@ static const freq_range_t sbx_enable_rx_lo_filter = list_of
     (range_t(0.4e9, 1.5e9))
 ;
 
-static const prop_names_t sbx_tx_antennas = list_of("TX/RX");
+static const std::vector<std::string> sbx_tx_antennas = list_of("TX/RX");
 
-static const prop_names_t sbx_rx_antennas = list_of("TX/RX")("RX2");
+static const std::vector<std::string> sbx_rx_antennas = list_of("TX/RX")("RX2");
 
 static const uhd::dict<std::string, gain_range_t> sbx_tx_gain_ranges = map_list_of
     ("PGA0", gain_range_t(0, 31.5, double(0.5)))
@@ -133,12 +133,6 @@ public:
     sbx_xcvr(ctor_args_t args);
     ~sbx_xcvr(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
-
 protected:
 
     uhd::dict<std::string, double> _tx_gains, _rx_gains;
@@ -149,8 +143,8 @@ protected:
     void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
-    void set_rx_gain(double gain, const std::string &name);
-    void set_tx_gain(double gain, const std::string &name);
+    double set_rx_gain(double gain, const std::string &name);
+    double set_tx_gain(double gain, const std::string &name);
 
     void update_atr(void);
 
@@ -167,7 +161,7 @@ protected:
      * \param unit which unit rx or tx
      * \return true for locked
      */
-    bool get_locked(dboard_iface::unit_t unit);
+    sensor_value_t get_locked(dboard_iface::unit_t unit);
 
     /*!
      * Flash the LEDs
