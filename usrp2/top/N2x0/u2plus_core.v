@@ -163,6 +163,7 @@ module u2plus_core
    localparam SR_TX_CTRL  = 144;   // 6
    localparam SR_TX_DSP   = 160;   // 5
 
+   localparam SR_GPIO     = 184;   // 5   
    localparam SR_UDP_SM   = 192;   // 64
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
@@ -227,7 +228,7 @@ module u2plus_core
 		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // Packet Router (16-20K)
  		.s2_addr(8'b0101_0000),.s2_mask(8'b1111_1100),  // SPI
 		.s3_addr(8'b0101_0100),.s3_mask(8'b1111_1100),  // I2C
-		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
+		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // Unused
 		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
 		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
 		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // Settings Bus (only uses 1K)
@@ -277,6 +278,7 @@ module u2plus_core
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
 
    // Unused Slaves 9, b, c
+   assign s4_ack = 0;
    assign s9_ack = 0;   assign sb_ack = 0;   assign sc_ack = 0;
    
    // ////////////////////////////////////////////////////////////////////////////////////////
@@ -419,18 +421,21 @@ module u2plus_core
    assign 	 s3_dat_i[31:8] = 24'd0;
    
    // /////////////////////////////////////////////////////////////////////////
-   // GPIOs -- Slave #4
+   // GPIOs
 
-   nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
-		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[4:0]),.we_i(s4_we),
-		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx), .gpio({io_tx,io_rx}) );
+   wire [31:0] gpio_readback;
+   
+   gpio_atr #(.BASE(SR_GPIO), .WIDTH(32)) 
+   gpio_atr(.clk(dsp_clk),.reset(dsp_rst),
+	    .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+	    .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx),
+	    .gpio({io_tx,io_rx}), .gpio_readback(gpio_readback) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd7, 16'd3}; //major, minor
+   localparam compat_num = {16'd8, 16'd0}; //major, minor
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -438,7 +443,7 @@ module u2plus_core
 
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
-      .word08(status),.word09(32'b0),.word10(vita_time[63:32]),
+      .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
