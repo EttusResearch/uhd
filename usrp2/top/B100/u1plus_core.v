@@ -63,7 +63,7 @@ module u1plus_core
 
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
-   reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test;
+   reg [15:0] 	reg_cgen_ctrl, reg_test;
    wire [15:0] 	xfer_rate = 0;
    wire [7:0] 	test_rate;
    wire [3:0] 	test_ctrl;
@@ -304,7 +304,6 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 0, Misc LEDs, Switches, controls
    
-   localparam REG_LEDS = 7'd0;         // out
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
@@ -316,7 +315,6 @@ module u1plus_core
    always @(posedge wb_clk)
      if(wb_rst)
        begin
-	  reg_leds <= 0;
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
 	  //xfer_rate <= 0;
@@ -325,8 +323,6 @@ module u1plus_core
      else
        if(s0_cyc & s0_stb & s0_we) 
 	 case(s0_adr[6:0])
-	   REG_LEDS :
-	     reg_leds <= s0_dat_mosi;
 	   REG_CGEN_CTRL :
 	     reg_cgen_ctrl <= s0_dat_mosi;
 	   REG_TEST :
@@ -344,8 +340,7 @@ module u1plus_core
    assign debug_led = {run_tx, (run_rx0 | run_rx1), cgen_st_ld};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
-   assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
-			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
+   assign s0_dat_miso = (s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
 			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
