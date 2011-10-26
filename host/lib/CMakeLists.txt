@@ -77,11 +77,10 @@ INCLUDE_SUBDIRECTORY(utils)
 ########################################################################
 # Setup UHD_VERSION_STRING for version.cpp
 ########################################################################
-SET_SOURCE_FILES_PROPERTIES(
+CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
-    PROPERTIES COMPILE_DEFINITIONS
-    "UHD_VERSION_STRING=\"${UHD_VERSION}-${UHD_BUILD_INFO}\""
-)
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+@ONLY)
 
 ########################################################################
 # Append to the list of sources for lib uhd
@@ -90,7 +89,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/property_tree.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )
 

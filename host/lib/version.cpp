@@ -26,12 +26,12 @@ UHD_STATIC_BLOCK(print_system_info){
         << BOOST_PLATFORM << "; "
         << BOOST_COMPILER << "; "
         << "Boost_" << BOOST_VERSION << "; "
-        << "UHD_" << UHD_VERSION_STRING
+        << "UHD_" << uhd::get_version_string()
         << std::endl << std::endl
     ;
 }
 #endif
 
 std::string uhd::get_version_string(void){
-    return UHD_VERSION_STRING;
+    return "@UHD_VERSION@-@UHD_BUILD_INFO@";
 }
