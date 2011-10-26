@@ -60,8 +60,6 @@ module u1e_core
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
 
-   wire [7:0]	COMPAT_NUM = 8'd6;
-   
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
 
@@ -309,7 +307,6 @@ module u1e_core
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
    localparam REG_XFER_RATE = 7'd14;   // out
-   localparam REG_COMPAT = 7'd16;      // in
    
    always @(posedge wb_clk)
      if(wb_rst)
@@ -338,7 +335,6 @@ module u1e_core
    assign s0_dat_miso = (s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
-			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;
@@ -432,6 +428,9 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
 
+   //compatibility number -> increment when the fpga has been sufficiently altered
+   localparam compat_num = {16'd8, 16'd0}; //major, minor
+
    wire [31:0] reg_test32;
 
    //this setting reg is persistent across resets, to check for fpga loaded
@@ -446,7 +445,7 @@ module u1e_core
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
       .word04(reg_test32),              .word05(err_status),
-      .word06(32'b0),                   .word07(32'b0),
+      .word06(compat_num),              .word07(32'b0),
       .word08(32'b0),                   .word09(32'b0),
       .word10(32'b0),                   .word11(32'b0),
       .word12(32'b0),                   .word13(32'b0),
