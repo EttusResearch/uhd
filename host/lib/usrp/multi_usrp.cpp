@@ -534,6 +534,10 @@ public:
         return _tree->access<double>(rx_rf_fe_root(chan) / "bandwidth" / "value").get();
     }
 
+    meta_range_t get_rx_bandwidth_range(size_t chan){
+        return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "bandwidth" / "range").get();
+    }
+
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
         return _tree->access<dboard_iface::sptr>(rx_rf_fe_root(chan).branch_path().branch_path() / "iface").get();
     }
@@ -676,6 +680,10 @@ public:
 
     double get_tx_bandwidth(size_t chan){
         return _tree->access<double>(tx_rf_fe_root(chan) / "bandwidth" / "value").get();
+    }
+
+    meta_range_t get_tx_bandwidth_range(size_t chan){
+        return _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "bandwidth" / "range").get();
     }
 
     dboard_iface::sptr get_tx_dboard_iface(size_t chan){

@@ -23,6 +23,7 @@
 #define UHD_USRP_MULTI_USRP_GET_RATES_API
 #define UHD_USRP_MULTI_USRP_FRONTEND_CAL_API
 #define UHD_USRP_MULTI_USRP_COMMAND_TIME_API
+#define UHD_USRP_MULTI_USRP_BW_RANGE_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -505,6 +506,13 @@ public:
     virtual double get_rx_bandwidth(size_t chan = 0) = 0;
 
     /*!
+     * Get the range of the possible RX bandwidth settings.
+     * \param chan the channel index 0 to N-1
+     * \return a range of bandwidths in Hz
+     */
+    virtual meta_range_t get_rx_bandwidth_range(size_t chan = 0) = 0;
+
+    /*!
      * Read the RSSI value on the RX frontend.
      * \param chan the channel index 0 to N-1
      * \return the rssi in dB
@@ -742,6 +750,13 @@ public:
      * \return the bandwidth in Hz
      */
     virtual double get_tx_bandwidth(size_t chan = 0) = 0;
+
+    /*!
+     * Get the range of the possible TX bandwidth settings.
+     * \param chan the channel index 0 to N-1
+     * \return a range of bandwidths in Hz
+     */
+    virtual meta_range_t get_tx_bandwidth_range(size_t chan = 0) = 0;
 
     /*!
      * Get the dboard interface object for the TX frontend.
