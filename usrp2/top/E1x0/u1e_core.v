@@ -298,6 +298,7 @@ module u1e_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
+   assign s1_ack = 0;   assign s6_ack = 0;
    assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
@@ -377,14 +378,13 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////
    // GPIOs -- Slave #4
 
-   wire [31:0] 	atr_lines;
    wire [31:0] 	debug_gpio_0, debug_gpio_1;
    
    nsgpio16LE 
      nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
 		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
 		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
-		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
+		.atr(),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
 		.gpio( {io_tx,io_rx} ) );
 
    ////////////////////////////////////////////////////////////////////////////
@@ -433,15 +433,6 @@ module u1e_core
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
-
-   // /////////////////////////////////////////////////////////////////////////
-   // ATR Controller -- Slave #6
-
-   atr_controller16 atr_controller16
-     (.clk_i(wb_clk), .rst_i(wb_rst),
-      .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
-      .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(run_rx0 | run_rx1), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7

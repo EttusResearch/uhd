@@ -297,7 +297,7 @@ module u1plus_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s5_ack = 0;   
+   assign s1_ack = 0;   assign s4_ack = 0;   assign s5_ack = 0;   assign s6_ack = 0;
    assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
@@ -381,17 +381,15 @@ module u1plus_core
    IOBUF sda_pin(.O(sda_pad_i), .IO(db_sda), .I(sda_pad_o), .T(sda_pad_oen_o));
 
    // /////////////////////////////////////////////////////////////////////////
-   // GPIOs -- Slave #4
+   // GPIOs
 
-   wire [31:0] 	atr_lines;
-   wire [31:0] 	debug_gpio_0, debug_gpio_1;
+   wire [31:0] gpio_readback;
    
-   nsgpio16LE 
-     nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
-		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
-		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
-		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		.gpio( {io_tx,io_rx} ) );
+   gpio_atr #(.BASE(SR_GPIO), .WIDTH(32)) 
+   gpio_atr(.clk(dsp_clk),.reset(dsp_rst),
+	    .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+	    .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx),
+	    .gpio({io_tx,io_rx}), .gpio_readback(gpio_readback) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #8 + 9
@@ -401,15 +399,6 @@ module u1plus_core
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
-
-   // /////////////////////////////////////////////////////////////////////////
-   // ATR Controller -- Slave #6
-
-   atr_controller16 atr_controller16
-     (.clk_i(wb_clk), .rst_i(wb_rst),
-      .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
-      .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(run_rx0 | run_rx1), .run_tx(run_tx), .ctrl_lines(atr_lines));
 
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
@@ -426,7 +415,7 @@ module u1plus_core
 
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
-      .word04(reg_test32),              .word05(32'b0),
+      .word04(reg_test32),              .word05(gpio_readback),
       .word06(32'b0),                   .word07(32'b0),
       .word08(32'b0),                   .word09(32'b0),
       .word10(32'b0),                   .word11(32'b0),
@@ -447,7 +436,5 @@ module u1plus_core
 
    assign debug_clk = 2'b00; // { gpif_clk, clk_fpga };
    assign debug = 0;
-   assign debug_gpio_0 = 0;
-   assign debug_gpio_1 = 0;
    
 endmodule // u1plus_core
