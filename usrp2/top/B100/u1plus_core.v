@@ -354,19 +354,6 @@ module u1plus_core
    assign s0_ack = s0_stb & s0_cyc;
 
    // /////////////////////////////////////////////////////////////////////////////////////
-   // Slave 1, UART
-   //    depth of 3 is 128 entries, clkdiv of 278 gives 230.4k with a 64 MHz system clock
-
-/*   
-   simple_uart #(.TXDEPTH(3),.RXDEPTH(3), .CLKDIV_DEFAULT(278)) uart 
-     (.clk_i(wb_clk),.rst_i(wb_rst),
-      .we_i(s1_we),.stb_i(s1_stb),.cyc_i(s1_cyc),.ack_o(s1_ack),
-      .adr_i(s1_adr[3:1]),.dat_i({16'd0,s1_dat_mosi}),.dat_o(s1_dat_miso),
-      .rx_int_o(),.tx_int_o(),
-      .tx_o(debug_txd),.rx_i(debug_rxd),.baud_o());
-*/
-   
-   // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 2, SPI
 
    spi_top16 shared_spi
