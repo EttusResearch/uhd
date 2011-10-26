@@ -7,10 +7,12 @@ UHD - USRP-E1XX Series Application Notes
 ------------------------------------------------------------------------
 Specify a non-standard image
 ------------------------------------------------------------------------
-The UHD will automatically select the USRP embedded FPGA image from the installed images package.
-The FPGA image selection can be overridden with the "fpga" device address parameter.
+UHD will automatically select the USRP-Embedded FPGA image from the
+installed images package.  The FPGA image selection can be overridden with the
+"fpga" device address parameter.
 
-Example device address string representations to specify non-standard FPGA image:
+Example device address string representations to specify non-standard FPGA
+image:
 
 ::
 
@@ -19,9 +21,9 @@ Example device address string representations to specify non-standard FPGA image
 ------------------------------------------------------------------------
 Changing the master clock rate
 ------------------------------------------------------------------------
-The master clock rate of the USRP embedded feeds both the FPGA DSP and the codec chip.
-Hundreds of rates between 32MHz and 64MHz are available.
-A few notable rates are:
+The master clock rate of the USRP-Embedded feeds both the FPGA DSP and the codec
+chip.  Hundreds of rates between 32MHz and 64MHz are available.  A few notable
+rates are:
 
 * 64MHz - maximum rate of the codec chip
 * 61.44MHz - good for UMTS/WCDMA applications
@@ -30,12 +32,14 @@ A few notable rates are:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set 61.44MHz - uses external VCXO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To use the 61.44MHz clock rate, the USRP embedded will require two jumpers to be moved.
+To use the 61.44MHz clock rate with the USRP-Embedded, two jumpers must be moved
+on the device.
 
 * J16 is a two pin header, remove the jumper (or leave it on pin1 only)
 * J15 is a three pin header, move the jumper to (pin1, pin2)
 
-**Note:** See instructions below to communicate the desired clock rate into the UHD.
+**Note:** See instructions below to communicate the desired clock rate into the
+UHD.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set other rates - uses internal VCO
@@ -61,10 +65,11 @@ Clock Synchronization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Ref Clock - 10MHz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The E1xx has a 10MHz TCXO which can be used to discipline the flexible clocking by 
-selecting REF_INT for the clock_config_t.
+The E1xx has a 10MHz TCXO which can be used to discipline the flexible clocking
+by selecting REF_INT for the clock_config_t.
 
-Alternately, an external 10MHz reference clock can be supplied by soldering a connector.
+Alternately, an external 10MHz reference clock can be supplied by soldering
+a connector.
 
 * Connector J10 (REF_IN) needs MCX connector WM5541-ND or similar
 * Square wave will offer the best phase noise performance, but sinusoid is acceptable
@@ -75,7 +80,8 @@ Alternately, an external 10MHz reference clock can be supplied by soldering a co
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PPS - Pulse Per Second
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-An exteral PPS signal for timestamp synchronization can be supplied by soldering a connector.
+An exteral PPS signal for timestamp synchronization can be supplied by soldering
+a connector.
 
 * Connector J13 (PPS) needs MCX connector WM5541-ND or similar
 * Requires a square wave signal
@@ -106,8 +112,8 @@ Hardware setup notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Front panel LEDs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The LEDs on the front panel can be useful in debugging hardware and software issues.
-The LEDs reveal the following about the state of the device:
+The LEDs on the front panel can be useful in debugging hardware and software
+issues.  The LEDs reveal the following about the state of the device:
 
 * **LED A:** transmitting
 * **LED B:** fpga loaded
