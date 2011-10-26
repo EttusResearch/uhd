@@ -22,6 +22,7 @@
 #define UHD_USRP_MULTI_USRP_REF_SOURCES_API
 #define UHD_USRP_MULTI_USRP_GET_RATES_API
 #define UHD_USRP_MULTI_USRP_FRONTEND_CAL_API
+#define UHD_USRP_MULTI_USRP_COMMAND_TIME_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -224,6 +225,20 @@ public:
      * \return true when all motherboards time registers are in sync
      */
     virtual bool get_time_synchronized(void) = 0;
+
+    /*!
+     * Set the time at which the next control command will take effect.
+     *
+     * The time spec setting only takes effect on the first command.
+     * Subsequent commands will be sent ASAP unless user set time again.
+     * A timed command will throttle/back-pressure all subsequent commands,
+     * assuming that the subsequent commands occur within the time-window.
+     * If the time spec is late, the command will be activated upon arrival.
+     *
+     * \param time_spec the time at which the next command will activate
+     * \param mboard which motherboard to set the config
+     */
+    virtual void set_next_command_time(const time_spec_t &time_spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
      * Issue a stream command to the usrp device.

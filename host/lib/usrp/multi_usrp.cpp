@@ -347,6 +347,10 @@ public:
         return true;
     }
 
+    void set_next_command_time(const time_spec_t &, size_t){
+        throw uhd::not_implemented_error("Not implemented yet, but we have a very good idea of how to do it.");
+    }
+
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
         if (chan != ALL_CHANS){
             _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
