@@ -489,14 +489,17 @@ module u2_core
    wire 	 phy_reset;
    assign 	 PHY_RESETn = ~phy_reset;
    
-   setting_reg #(.my_addr(SR_MISC+0),.width(8)) sr_clk (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),
-				      .in(set_data),.out(clock_outs),.changed());
-   setting_reg #(.my_addr(SR_MISC+1),.width(8)) sr_ser (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(serdes_outs),.changed());
-   setting_reg #(.my_addr(SR_MISC+2),.width(8)) sr_adc (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(adc_outs),.changed());
-   setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(phy_reset),.changed());
+   setting_reg #(.my_addr(SR_MISC+0),.width(8)) sr_clk
+     (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),.in(set_data),.out(clock_outs),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+1),.width(8)) sr_ser
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(serdes_outs),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+2),.width(8)) sr_adc
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(adc_outs),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(phy_reset),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
    //  LEDS
@@ -507,11 +510,11 @@ module u2_core
    wire [7:0] 	 led_src, led_sw;
    wire [7:0] 	 led_hw = {run_tx, (run_rx0_d1 | run_rx1_d1), clk_status, serdes_link_up & good_sync, 1'b0};
    
-   setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(led_sw),.changed());
+   setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(led_sw),.changed());
 
-   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) 
-   sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
+   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) sr_led_src
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp), .in(set_data_dsp),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
    
@@ -620,8 +623,8 @@ module u2_core
    wire 	 clear_tx;
 
    setting_reg #(.my_addr(SR_TX_CTRL+1)) sr_clear_tx
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_tx));
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),
+      .in(set_data_dsp),.out(),.changed(clear_tx));
 
    ext_fifo #(.EXT_WIDTH(18),.INT_WIDTH(36),.RAM_DEPTH(19),.FIFO_DEPTH(19)) 
      ext_fifo_i1
