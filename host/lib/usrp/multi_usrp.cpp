@@ -548,7 +548,7 @@ public:
 
     void set_rx_dc_offset(const bool enb, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<bool>(rx_rf_fe_root(chan).branch_path() / "dc_offset" / "enable").set(enb);
+            _tree->access<bool>(rx_fe_root(chan) / "dc_offset" / "enable").set(enb);
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -558,7 +558,7 @@ public:
 
     void set_rx_dc_offset(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(rx_rf_fe_root(chan).branch_path() / "dc_offset" / "value").set(offset);
+            _tree->access<std::complex<double> >(rx_fe_root(chan) / "dc_offset" / "value").set(offset);
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -568,7 +568,7 @@ public:
 
     void set_rx_iq_balance(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(rx_rf_fe_root(chan).branch_path() / "iq_balance" / "value").set(offset);
+            _tree->access<std::complex<double> >(rx_fe_root(chan) / "iq_balance" / "value").set(offset);
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -692,7 +692,7 @@ public:
 
     void set_tx_dc_offset(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(tx_rf_fe_root(chan).branch_path() / "dc_offset" / "value").set(offset);
+            _tree->access<std::complex<double> >(tx_fe_root(chan) / "dc_offset" / "value").set(offset);
             return;
         }
         for (size_t c = 0; c < get_tx_num_channels(); c++){
@@ -702,7 +702,7 @@ public:
 
     void set_tx_iq_balance(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(tx_rf_fe_root(chan).branch_path() / "iq_balance" / "value").set(offset);
+            _tree->access<std::complex<double> >(tx_fe_root(chan) / "iq_balance" / "value").set(offset);
             return;
         }
         for (size_t c = 0; c < get_tx_num_channels(); c++){
@@ -756,6 +756,18 @@ private:
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
         return mb_root(mcp.mboard) / "tx_dsps" / name;
+    }
+
+    fs_path rx_fe_root(const size_t chan){
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
+        return mb_root(mcp.mboard) / "rx_frontends" / spec.db_name;
+    }
+
+    fs_path tx_fe_root(const size_t chan){
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
+        return mb_root(mcp.mboard) / "tx_frontends" / spec.db_name;
     }
 
     fs_path rx_rf_fe_root(const size_t chan){

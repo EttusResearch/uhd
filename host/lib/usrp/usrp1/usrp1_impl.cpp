@@ -272,10 +272,11 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         .subscribe(boost::bind(&usrp1_impl::update_tx_subdev_spec, this, _1));
 
     BOOST_FOREACH(const std::string &db, _dbc.keys()){
-        _tree->create<std::complex<double> >(mb_path / "dboards" / db / "rx_frontends" / "dc_offset" / "value")
+        const fs_path rx_fe_path = mb_path / "rx_frontends" / db;
+        _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
             .coerce(boost::bind(&usrp1_impl::set_rx_dc_offset, this, db, _1))
             .set(std::complex<double>(0.0, 0.0));
-        _tree->create<bool>(mb_path / "dboards" / db / "rx_frontends" / "dc_offset" / "enable")
+        _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
             .subscribe(boost::bind(&usrp1_impl::set_enb_rx_dc_offset, this, db, _1))
             .set(true);
     }

@@ -462,19 +462,22 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
             .subscribe(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
 
-        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "value")
+        const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
+        const fs_path tx_fe_path = mb_path / "rx_frontends" / "A";
+
+        _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
             .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _mbc[mb].rx_fe, _1))
             .set(std::complex<double>(0.0, 0.0));
-        _tree->create<bool>(mb_path / "dboards" / "A" / "rx_frontends" / "dc_offset" / "enable")
+        _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
             .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _mbc[mb].rx_fe, _1))
             .set(true);
-        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "rx_frontends" / "iq_balance" / "value")
+        _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
             .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _mbc[mb].rx_fe, _1))
             .set(std::complex<double>(0.0, 0.0));
-        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "dc_offset" / "value")
+        _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
             .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _mbc[mb].tx_fe, _1))
             .set(std::complex<double>(0.0, 0.0));
-        _tree->create<std::complex<double> >(mb_path / "dboards" / "A" / "tx_frontends" / "iq_balance" / "value")
+        _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
             .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _mbc[mb].tx_fe, _1))
             .set(std::complex<double>(0.0, 0.0));
 
