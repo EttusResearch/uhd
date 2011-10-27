@@ -257,7 +257,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         .subscribe(boost::bind(&e100_impl::update_tx_subdev_spec, this, _1));
 
     const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
-    const fs_path tx_fe_path = mb_path / "rx_frontends" / "A";
+    const fs_path tx_fe_path = mb_path / "tx_frontends" / "A";
 
     _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _rx_fe, _1))

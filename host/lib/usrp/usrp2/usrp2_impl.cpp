@@ -463,7 +463,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
 
         const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
-        const fs_path tx_fe_path = mb_path / "rx_frontends" / "A";
+        const fs_path tx_fe_path = mb_path / "tx_frontends" / "A";
 
         _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
             .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _mbc[mb].rx_fe, _1))
