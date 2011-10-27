@@ -101,7 +101,7 @@ wbx_base::wbx_version3::wbx_version3(wbx_base *_self_wbx_base) {
         self_base->get_tx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(wbx_v3_tx_gain_ranges[name]);
     }
-    this->get_rx_subtree()->create<double>("freq/value")
+    this->get_tx_subtree()->create<double>("freq/value")
          .coerce(boost::bind(&wbx_base::wbx_version3::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
          .set((wbx_v3_freq_range.start() + wbx_v3_freq_range.stop())/2.0);
     this->get_tx_subtree()->create<meta_range_t>("freq/range").set(wbx_v3_freq_range);
