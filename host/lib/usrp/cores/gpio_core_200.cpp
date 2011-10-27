@@ -23,15 +23,14 @@
 #define REG_GPIO_TX_ONLY       _base + 8
 #define REG_GPIO_BOTH          _base + 12
 #define REG_GPIO_DDR           _base + 16
-#define REG_GPIO_READ          _base + 0 //any address will readback
 
 using namespace uhd;
 using namespace usrp;
 
 class gpio_core_200_impl : public gpio_core_200{
 public:
-    gpio_core_200_impl(wb_iface::sptr iface, const size_t base):
-        _iface(iface), _base(base) { /* NOP */ }
+    gpio_core_200_impl(wb_iface::sptr iface, const size_t base, const size_t rb_addr):
+        _iface(iface), _base(base), _rb_addr(rb_addr) { /* NOP */ }
 
     void set_pin_ctrl(const unit_t unit, const boost::uint16_t value){
         _pin_ctrl[unit] = value; //shadow
@@ -57,12 +56,13 @@ public:
     }
 
     boost::uint16_t read_gpio(const unit_t unit){
-        return boost::uint16_t(_iface->peek32(REG_GPIO_READ) >> unit2shit(unit));
+        return boost::uint16_t(_iface->peek32(_rb_addr) >> unit2shit(unit));
     }
 
 private:
     wb_iface::sptr _iface;
     const size_t _base;
+    const size_t _rb_addr;
 
     uhd::dict<unit_t, boost::uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
     uhd::dict<unit_t, uhd::dict<atr_reg_t, boost::uint16_t> > _atr_regs;
@@ -95,6 +95,6 @@ private:
 
 };
 
-gpio_core_200::sptr gpio_core_200::make(wb_iface::sptr iface, const size_t base){
-    return sptr(new gpio_core_200_impl(iface, base));
+gpio_core_200::sptr gpio_core_200::make(wb_iface::sptr iface, const size_t base, const size_t rb_addr){
+    return sptr(new gpio_core_200_impl(iface, base, rb_addr));
 }

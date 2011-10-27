@@ -50,6 +50,7 @@
 #define SR_TX_CTRL  144   // 6
 #define SR_TX_DSP   160   // 5
 
+#define SR_GPIO     184
 #define SR_UDP_SM   192   // 64
 
 #define U2_REG_SR_ADDR(sr) (SETTING_REGS_BASE + (4 * (sr)))
@@ -95,6 +96,7 @@
 // Readback regs
 ////////////////////////////////////////////////
 #define U2_REG_STATUS READBACK_BASE + 4*8
+#define U2_REG_GPIO_RB READBACK_BASE + 4*9
 #define U2_REG_TIME64_SECS_RB_IMM READBACK_BASE + 4*10
 #define U2_REG_TIME64_TICKS_RB_IMM READBACK_BASE + 4*11
 #define U2_REG_COMPAT_NUM_RB READBACK_BASE + 4*12
