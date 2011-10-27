@@ -457,13 +457,19 @@ void b100_impl::check_fw_compat(void){
 }
 
 void b100_impl::check_fpga_compat(void){
-    const boost::uint16_t fpga_compat_num = _fpga_ctrl->peek16(B100_REG_MISC_COMPAT);
-    if (fpga_compat_num != B100_FPGA_COMPAT_NUM){
-        throw uhd::runtime_error(str(boost::format(
-            "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
-            "The FPGA build is not compatible with the host code build."
-        ) % B100_FPGA_COMPAT_NUM % fpga_compat_num));
+    const boost::uint32_t fpga_compat_num = _fpga_ctrl->peek32(B100_REG_RB_COMPAT);
+    boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+    if (fpga_major == 0){ //old version scheme
+        fpga_major = fpga_minor;
+        fpga_minor = 0;
     }
+    if (fpga_major != B100_FPGA_COMPAT_NUM){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected FPGA compatibility number %d, but got %d:\n"
+            "The FPGA build is not compatible with the host code build."
+        ) % int(B100_FPGA_COMPAT_NUM) % fpga_major));
+    }
+    _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 }
 
 double b100_impl::update_rx_codec_gain(const double gain){

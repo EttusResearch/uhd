@@ -167,15 +167,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     );
 
     //check that the compatibility is correct
-    const boost::uint16_t fpga_compat_num = _fpga_ctrl->peek16(E100_REG_MISC_COMPAT);
-    if (fpga_compat_num != E100_FPGA_COMPAT_NUM){
-        throw uhd::runtime_error(str(boost::format(
-            "\nPlease update the FPGA image for your device.\n"
-            "See the application notes for USRP E-Series for instructions.\n"
-            "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
-            "The FPGA build is not compatible with the host code build."
-        ) % E100_FPGA_COMPAT_NUM % fpga_compat_num));
-    }
+    this->check_fpga_compat();
 
     ////////////////////////////////////////////////////////////////////
     // Create controller objects
@@ -454,4 +446,20 @@ void e100_impl::update_clock_source(const std::string &source){
 sensor_value_t e100_impl::get_ref_locked(void){
     const bool lock = _clock_ctrl->get_locked();
     return sensor_value_t("Ref", lock, "locked", "unlocked");
+}
+
+void e100_impl::check_fpga_compat(void){
+    const boost::uint32_t fpga_compat_num = _fpga_ctrl->peek32(E100_REG_RB_COMPAT);
+    boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+    if (fpga_major == 0){ //old version scheme
+        fpga_major = fpga_minor;
+        fpga_minor = 0;
+    }
+    if (fpga_major != E100_FPGA_COMPAT_NUM){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected FPGA compatibility number %d, but got %d:\n"
+            "The FPGA build is not compatible with the host code build."
+        ) % int(E100_FPGA_COMPAT_NUM) % fpga_major));
+    }
+    _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 }
