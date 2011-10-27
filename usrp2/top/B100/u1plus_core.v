@@ -56,6 +56,8 @@ module u1plus_core
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
 
+   localparam SR_GPIO = 128;         // 5 regs
+   
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
 
@@ -250,14 +252,20 @@ module u1plus_core
    wire 	 s8_we,s9_we,sa_we,sb_we,sc_we,sd_we, se_we, sf_we;
    
    wb_1master #(.dw(dw), .aw(aw), .sw(sw), .decode_w(4),
-		.s0_addr(4'h0), .s0_mask(4'hF), .s1_addr(4'h1), .s1_mask(4'hF),
-		.s2_addr(4'h2), .s2_mask(4'hF),	.s3_addr(4'h3), .s3_mask(4'hF),
-		.s4_addr(4'h4), .s4_mask(4'hF),	.s5_addr(4'h5), .s5_mask(4'hF),
-		.s6_addr(4'h6), .s6_mask(4'hF),	.s7_addr(4'h7), .s7_mask(4'hF),
-		.s8_addr(4'h8), .s8_mask(4'hE),	.s9_addr(4'hf), .s9_mask(4'hF), // slave 8 is double wide
-		.sa_addr(4'ha), .sa_mask(4'hF),	.sb_addr(4'hb), .sb_mask(4'hF),
-		.sc_addr(4'hc), .sc_mask(4'hF),	.sd_addr(4'hd), .sd_mask(4'hF),
-		.se_addr(4'he), .se_mask(4'hF),	.sf_addr(4'hf), .sf_mask(4'hF))
+		.s0_addr(4'h0), .s0_mask(4'hF), // Misc Regs
+		.s1_addr(4'h1), .s1_mask(4'hF), // Unused
+		.s2_addr(4'h2), .s2_mask(4'hF),	// SPI
+		.s3_addr(4'h3), .s3_mask(4'hF), // I2C
+		.s4_addr(4'h4), .s4_mask(4'hF),	// Unused
+		.s5_addr(4'h5), .s5_mask(4'hF), // Unused on B1x0, Async Msg on E1x0
+		.s6_addr(4'h6), .s6_mask(4'hF),	// Unused
+		.s7_addr(4'h7), .s7_mask(4'hF), // Readback MUX
+		.s8_addr(4'h8), .s8_mask(4'h8), // Setting Regs -- slave 8 is 8 slaves wide
+		// slaves 9-f alias to slave 1, all are unused
+		.s9_addr(4'h1), .s9_mask(4'hF),
+		.sa_addr(4'h1), .sa_mask(4'hF),	.sb_addr(4'h1), .sb_mask(4'hF),
+		.sc_addr(4'h1), .sc_mask(4'hF),	.sd_addr(4'h1), .sd_mask(4'hF),
+		.se_addr(4'h1), .se_mask(4'hF),	.sf_addr(4'h1), .sf_mask(4'hF))
    wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_miso),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_mosi),
@@ -386,7 +394,7 @@ module u1plus_core
    // Settings Bus -- Slave #8 + 9
 
    // only have 64 regs, 32 bits each with current setup...
-   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
+   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(8)) settings_bus_16LE
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
@@ -409,8 +417,8 @@ module u1plus_core
 
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
-      .word04(reg_test32),              .word05(gpio_readback),
-      .word06(compat_num),              .word07(32'b0),
+      .word04(reg_test32),              .word05(32'b0),
+      .word06(compat_num),              .word07(gpio_readback),
       .word08(32'b0),                   .word09(32'b0),
       .word10(32'b0),                   .word11(32'b0),
       .word12(32'b0),                   .word13(32'b0),
