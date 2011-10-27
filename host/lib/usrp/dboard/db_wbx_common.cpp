@@ -58,6 +58,44 @@ static int rx_pga0_gain_to_iobits(double &gain){
  * WBX Common Implementation
  **********************************************************************/
 wbx_base::wbx_base(ctor_args_t args) : xcvr_dboard_base(args){
+
+    //enable the clocks that we need
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
+
+    ////////////////////////////////////////////////////////////////////
+    // Register RX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&wbx_base::get_locked, this, dboard_iface::UNIT_RX));
+    BOOST_FOREACH(const std::string &name, wbx_rx_gain_ranges.keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&wbx_base::set_rx_gain, this, _1, name))
+            .set(wbx_rx_gain_ranges[name].start());
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(wbx_rx_gain_ranges[name]);
+    }
+    this->get_rx_subtree()->create<std::string>("connection").set("IQ");
+    this->get_rx_subtree()->create<bool>("enabled")
+        .subscribe(boost::bind(&wbx_base::set_rx_enabled, this, _1))
+        .set(true); //start enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset").set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(2*20.0e6, 2*20.0e6));
+
+    ////////////////////////////////////////////////////////////////////
+    // Register TX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&wbx_base::get_locked, this, dboard_iface::UNIT_TX));
+    this->get_tx_subtree()->create<std::string>("connection").set("IQ");
+    this->get_tx_subtree()->create<bool>("use_lo_offset").set(false);
+    this->get_tx_subtree()->create<double>("bandwidth/value").set(2*20.0e6); //20MHz low-pass, we want complex double-sided
+    this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(2*20.0e6, 2*20.0e6));
+
+    // instantiate subclass foo
     switch(get_rx_id().to_uint16()) {
         case 0x053:
             db_actual = wbx_versionx_sptr(new wbx_version2(this));
@@ -72,6 +110,7 @@ wbx_base::wbx_base(ctor_args_t args) : xcvr_dboard_base(args){
             /* We didn't recognize the version of the board... */
             UHD_THROW_INVALID_CODE_PATH();
     }
+
 }
 
 
@@ -88,18 +127,10 @@ void wbx_base::set_rx_enabled(bool enb){
     );
 }
 
-void wbx_base::set_tx_enabled(bool enb){
-    db_actual->set_tx_enabled(enb);
-}
-
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-void wbx_base::set_tx_gain(double gain, const std::string &name){
-    db_actual->set_tx_gain(gain, name);
-}
-
-void wbx_base::set_rx_gain(double gain, const std::string &name){
+double wbx_base::set_rx_gain(double gain, const std::string &name){
     assert_has(wbx_rx_gain_ranges.keys(), name, "wbx rx gain name");
     if(name == "PGA0"){
         boost::uint16_t io_bits = rx_pga0_gain_to_iobits(gain);
@@ -109,150 +140,17 @@ void wbx_base::set_rx_gain(double gain, const std::string &name){
         this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, io_bits, RX_ATTN_MASK);
     }
     else UHD_THROW_INVALID_CODE_PATH();
+    return _rx_gains[name]; //returned shadowed
 }
 
 /***********************************************************************
  * Tuning
  **********************************************************************/
-freq_range_t wbx_base::get_freq_range(void) {
-    return db_actual->get_freq_range();
-}
-
 double wbx_base::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
     return db_actual->set_lo_freq(unit, target_freq);
 }
 
-bool wbx_base::get_locked(dboard_iface::unit_t unit){
-    return (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+sensor_value_t wbx_base::get_locked(dboard_iface::unit_t unit){
+    const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+    return sensor_value_t("LO", locked, "locked", "unlocked");
 }
-
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void wbx_base::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_rx_gains.keys(), key.name, "wbx rx gain name");
-        val = _rx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(wbx_rx_gain_ranges.keys(), key.name, "wbx rx gain name");
-        val = wbx_rx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(wbx_rx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = 0.0;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(0.0, 0.0, 0.0);;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, "");
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = _rx_enabled;
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", this->get_locked(dboard_iface::UNIT_RX), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void wbx_base::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_GAIN:
-        this->set_rx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        _rx_enabled = val.as<bool>();
-        this->set_rx_enabled(_rx_enabled);
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "WBX: No tunable bandwidth, fixed filtered to 40MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
-/***********************************************************************
- * TX Get and Set
- **********************************************************************/
-void wbx_base::tx_get(const wax::obj &key_, wax::obj &val){
-    db_actual->tx_get(key_, val);
-}
-
-void wbx_base::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_GAIN:
-        this->set_tx_gain(val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        _tx_enabled = val.as<bool>();
-        this->set_tx_enabled(_tx_enabled);
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << "WBX: No tunable bandwidth, fixed filtered to 40MHz";
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-
-

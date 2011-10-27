@@ -67,6 +67,7 @@
 
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/props.hpp>
 #include <uhd/utils/static.hpp>
@@ -75,6 +76,7 @@
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 
 namespace uhd{ namespace usrp{
 
@@ -95,23 +97,9 @@ public:
     virtual ~wbx_base(void);
 
 protected:
-    virtual void set_rx_gain(double gain, const std::string &name);
-    virtual void set_tx_gain(double gain, const std::string &name);
+    virtual double set_rx_gain(double gain, const std::string &name);
 
     virtual void set_rx_enabled(bool enb);
-    virtual void set_tx_enabled(bool enb);
-
-    virtual void rx_get(const wax::obj &key, wax::obj &val);
-    virtual void rx_set(const wax::obj &key, const wax::obj &val);
-
-    virtual void tx_get(const wax::obj &key, wax::obj &val);
-    virtual void tx_set(const wax::obj &key, const wax::obj &val);
-
-    /*!
-     * Retrieve the frequency range of the board.
-     * \return the frequency range as a freq_range_t
-     */
-    virtual freq_range_t get_freq_range(void);
 
     /*!
      * Set the LO frequency for the particular dboard unit.
@@ -128,8 +116,7 @@ protected:
      * \param unit which unit rx or tx
      * \return true for locked
      */
-    virtual bool get_locked(dboard_iface::unit_t unit);
-
+    virtual sensor_value_t get_locked(dboard_iface::unit_t unit);
 
     /*!
      * Version-agnostic ABC that wraps version-specific implementations of the
@@ -143,11 +130,20 @@ protected:
         wbx_versionx() {}
         ~wbx_versionx(void) {}
 
-        virtual void set_tx_gain(double gain, const std::string &name) = 0;
+        virtual double set_tx_gain(double gain, const std::string &name) = 0;
         virtual void set_tx_enabled(bool enb) = 0;
-        virtual void tx_get(const wax::obj &key, wax::obj &val) = 0;
-        virtual freq_range_t get_freq_range(void) = 0;
         virtual double set_lo_freq(dboard_iface::unit_t unit, double target_freq) = 0;
+
+        /*! This is the registered instance of the wrapper class, wbx_base. */
+        wbx_base *self_base;
+
+        property_tree::sptr get_rx_subtree(void){
+            return self_base->get_rx_subtree();
+        }
+
+        property_tree::sptr get_tx_subtree(void){
+            return self_base->get_tx_subtree();
+        }
     };
 
 
@@ -161,14 +157,9 @@ protected:
         wbx_version2(wbx_base *_self_wbx_base);
         ~wbx_version2(void);
 
-        void set_tx_gain(double gain, const std::string &name);
+        double set_tx_gain(double gain, const std::string &name);
         void set_tx_enabled(bool enb);
-        void tx_get(const wax::obj &key, wax::obj &val);
-        freq_range_t get_freq_range(void);
         double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
-
-        /*! This is the registered instance of the wrapper class, wbx_base. */
-        wbx_base *self_base;
     };
 
     /*!
@@ -181,14 +172,9 @@ protected:
         wbx_version3(wbx_base *_self_wbx_base);
         ~wbx_version3(void);
 
-        void set_tx_gain(double gain, const std::string &name);
+        double set_tx_gain(double gain, const std::string &name);
         void set_tx_enabled(bool enb);
-        void tx_get(const wax::obj &key, wax::obj &val);
-        freq_range_t get_freq_range(void);
         double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
-
-        /*! This is the registered instance of the wrapper class, wbx_base. */
-        wbx_base *self_base;
     };
 
     /*!
@@ -201,14 +187,9 @@ protected:
         wbx_version4(wbx_base *_self_wbx_base);
         ~wbx_version4(void);
 
-        void set_tx_gain(double gain, const std::string &name);
+        double set_tx_gain(double gain, const std::string &name);
         void set_tx_enabled(bool enb);
-        void tx_get(const wax::obj &key, wax::obj &val);
-        freq_range_t get_freq_range(void);
         double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
-
-        /*! This is the registered instance of the wrapper class, wbx_base. */
-        wbx_base *self_base;
     };
 
     /*!

@@ -75,9 +75,33 @@ wbx_base::wbx_version2::wbx_version2(wbx_base *_self_wbx_base) {
     //register our handle on the primary wbx_base instance
     self_base = _self_wbx_base;
 
-    //enable the clocks that we need
-    self_base->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
-    self_base->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
+    ////////////////////////////////////////////////////////////////////
+    // Register RX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name").set("WBX RX v2");
+    this->get_rx_subtree()->create<double>("freq/value")
+         .coerce(boost::bind(&wbx_base::wbx_version2::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
+         .set((wbx_v2_freq_range.start() + wbx_v2_freq_range.stop())/2.0);
+    this->get_rx_subtree()->create<meta_range_t>("freq/range").set(wbx_v2_freq_range);
+
+    ////////////////////////////////////////////////////////////////////
+    // Register TX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<std::string>("name").set("WBX TX v2");
+    BOOST_FOREACH(const std::string &name, wbx_v2_tx_gain_ranges.keys()){
+        self_base->get_tx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&wbx_base::wbx_version2::set_tx_gain, this, _1, name))
+            .set(wbx_v2_tx_gain_ranges[name].start());
+        self_base->get_tx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(wbx_v2_tx_gain_ranges[name]);
+    }
+    this->get_rx_subtree()->create<double>("freq/value")
+         .coerce(boost::bind(&wbx_base::wbx_version2::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
+         .set((wbx_v2_freq_range.start() + wbx_v2_freq_range.stop())/2.0);
+    this->get_tx_subtree()->create<meta_range_t>("freq/range").set(wbx_v2_freq_range);
+    this->get_tx_subtree()->create<bool>("enabled")
+        .subscribe(boost::bind(&wbx_base::wbx_version2::set_tx_enabled, this, _1))
+        .set(true); //start enabled
 
     //set attenuator control bits
     int v2_iobits = ADF4350_CE;
@@ -99,17 +123,6 @@ wbx_base::wbx_version2::wbx_version2(wbx_base *_self_wbx_base) {
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
-
-    BOOST_FOREACH(const std::string &name, wbx_v2_tx_gain_ranges.keys()) {
-        set_tx_gain(wbx_v2_tx_gain_ranges[name].start(), name);
-    }
-
-    BOOST_FOREACH(const std::string &name, wbx_rx_gain_ranges.keys()) {
-        self_base->set_rx_gain(wbx_rx_gain_ranges[name].start(), name);
-    }
-
-    self_base->set_rx_enabled(false);
-    set_tx_enabled(false);
 }
 
 wbx_base::wbx_version2::~wbx_version2(void){
@@ -119,7 +132,6 @@ wbx_base::wbx_version2::~wbx_version2(void){
 /***********************************************************************
  * Enables
  **********************************************************************/
-
 void wbx_base::wbx_version2::set_tx_enabled(bool enb){
     self_base->get_iface()->set_gpio_out(dboard_iface::UNIT_TX,
         (enb)? TX_POWER_UP | ADF4350_CE : TX_POWER_DOWN, TX_POWER_UP | TX_POWER_DOWN | ADF4350_CE);
@@ -129,7 +141,7 @@ void wbx_base::wbx_version2::set_tx_enabled(bool enb){
 /***********************************************************************
  * Gain Handling
  **********************************************************************/
-void wbx_base::wbx_version2::set_tx_gain(double gain, const std::string &name){
+double wbx_base::wbx_version2::set_tx_gain(double gain, const std::string &name){
     assert_has(wbx_v2_tx_gain_ranges.keys(), name, "wbx tx gain name");
     if(name == "PGA0"){
         double dac_volts = tx_pga0_gain_to_dac_volts(gain);
@@ -139,16 +151,13 @@ void wbx_base::wbx_version2::set_tx_gain(double gain, const std::string &name){
         self_base->get_iface()->write_aux_dac(dboard_iface::UNIT_TX, dboard_iface::AUX_DAC_A, dac_volts);
     }
     else UHD_THROW_INVALID_CODE_PATH();
+    return self_base->_tx_gains[name]; //shadowed
 }
 
 
 /***********************************************************************
  * Tuning
  **********************************************************************/
-freq_range_t wbx_base::wbx_version2::get_freq_range(void) {
-    return wbx_v2_freq_range;
-}
-
 double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
     UHD_LOGV(often) << boost::format(
         "WBX tune: target frequency %f Mhz"
@@ -247,8 +256,8 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
     UHD_LOGV(often)
         << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
 
-        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%d"
-            ) % R % BS % N % FRAC % MOD % T % D % RFdiv % self_base->get_locked(unit)<< std::endl
+        << boost::format("WBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%s"
+            ) % R % BS % N % FRAC % MOD % T % D % RFdiv % self_base->get_locked(unit).to_pp_string() << std::endl
         << boost::format("WBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
             ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
 
@@ -315,80 +324,3 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }
-
-
-/***********************************************************************
- * TX Get and Set
- **********************************************************************/
-void wbx_base::wbx_version2::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = self_base->get_tx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(self_base->_tx_gains.keys(), key.name, "wbx tx gain name");
-        val = self_base->_tx_gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(wbx_v2_tx_gain_ranges.keys(), key.name, "wbx tx gain name");
-        val = wbx_v2_tx_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(wbx_v2_tx_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = 0.0;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(0.0, 0.0, 0.0);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, "");
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = SUBDEV_CONN_COMPLEX_IQ;
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = self_base->_tx_enabled;
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        UHD_ASSERT_THROW(key.name == "lo_locked");
-        val = sensor_value_t("LO", self_base->get_locked(dboard_iface::UNIT_TX), "locked", "unlocked");
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = prop_names_t(1, "lo_locked");
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = 2*20.0e6; //20MHz low-pass, we want complex double-sided
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
