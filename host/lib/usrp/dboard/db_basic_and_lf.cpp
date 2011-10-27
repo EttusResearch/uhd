@@ -110,7 +110,7 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0000);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0xFFFF);
     this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0x0000);
-    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
+    //this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 }
 
 basic_rx::~basic_rx(void){
@@ -220,7 +220,7 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
  **********************************************************************/
 basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
     _max_freq = max_freq;
-    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
+    //this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
 }
 
 basic_tx::~basic_tx(void){
