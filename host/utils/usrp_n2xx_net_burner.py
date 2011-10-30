@@ -278,7 +278,7 @@ class burner_socket(object):
 
         return (self.memory_size_bytes, self.sector_size_bytes)
 
-    def burn_fw(self, fw, fpga, reset, safe, check_rev):
+    def burn_fw(self, fw, fpga, reset, safe, check_rev=True):
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
