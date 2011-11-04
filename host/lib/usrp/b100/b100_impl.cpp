@@ -139,6 +139,7 @@ UHD_STATIC_BLOCK(register_b100_device){
  * Structors
  **********************************************************************/
 b100_impl::b100_impl(const device_addr_t &device_addr){
+    _tree = property_tree::make();
 
     //extract the FPGA path for the B100
     std::string b100_fpga_image = find_image_path(
@@ -226,7 +227,6 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
-    _tree = property_tree::make();
     _tree->create<std::string>("/name").set("B-Series Device");
     const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set("B100 (B-Hundo)");

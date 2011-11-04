@@ -106,6 +106,7 @@ UHD_STATIC_BLOCK(register_e100_device){
  * Structors
  **********************************************************************/
 e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
+    _tree = property_tree::make();
 
     //setup the main interface into fpga
     const std::string node = device_addr["node"];
@@ -179,7 +180,6 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
-    _tree = property_tree::make();
     _tree->create<std::string>("/name").set("E-Series Device");
     const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set(str(boost::format("%s (euewanee)") % model));
