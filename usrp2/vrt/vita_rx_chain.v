@@ -72,9 +72,8 @@ module vita_rx_chain
       .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len), 
       .access_dat_i(buf_to_dsp), .access_dat_o(dsp_to_buf));
    
-   dsp_framer36 #(.BUF_SIZE(FIFOSIZE), 
-		  .PORT_SEL(UNIT), 
-		  .PROT_ENG_FLAGS(PROT_ENG_FLAGS)) dsp0_framer36
+   add_routing_header #(.PORT_SEL(UNIT), 
+			.PROT_ENG_FLAGS(PROT_ENG_FLAGS)) dsp_routing_header
      (.clk(clk), .reset(reset), .clear(clear),
       .data_i(rx_data_int2), .src_rdy_i(rx_src_rdy_int2), .dst_rdy_o(rx_dst_rdy_int2),
       .data_o(rx_data_o), .src_rdy_o(rx_src_rdy_o), .dst_rdy_i(rx_dst_rdy_i) );
