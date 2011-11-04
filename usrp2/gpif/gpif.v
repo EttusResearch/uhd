@@ -41,6 +41,9 @@ module gpif
     output [31:0] debug0, output [31:0] debug1
     );
 
+   assign tx_underrun = 0;
+   assign rx_overrun = 0;
+   
    wire 	  WR = gpif_ctl[0];
    wire 	  RD = gpif_ctl[1];
    wire 	  OE = gpif_ctl[2];

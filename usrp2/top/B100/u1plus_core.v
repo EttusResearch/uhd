@@ -64,9 +64,6 @@ module u1plus_core
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
    reg [15:0] 	reg_cgen_ctrl, reg_test;
-   wire [15:0] 	xfer_rate = 0;
-   wire [7:0] 	test_rate;
-   wire [3:0] 	test_ctrl;
    
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
@@ -90,7 +87,6 @@ module u1plus_core
 
    reset_sync reset_sync_wb(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
    reset_sync reset_sync_gp(.clk(gpif_clk), .reset_in(rst_fpga | global_reset), .reset_out(gpif_rst));
-   wire [15:0] 	test_len;
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
@@ -135,7 +131,7 @@ module u1plus_core
 	 
 	 .tx_underrun(tx_underrun_gpif), .rx_overrun(rx_overrun_gpif),
 
-	 .frames_per_packet(frames_per_packet), .test_len(test_len), .test_rate(test_rate), .test_ctrl(test_ctrl),
+	 .frames_per_packet(frames_per_packet),
 	 .debug0(debug0), .debug1(debug1));
 
    // /////////////////////////////////////////////////////////////////////////
@@ -315,14 +311,12 @@ module u1plus_core
    localparam REG_TEST = 7'd8;         // out
    localparam REG_RX_FRAMELEN = 7'd10; // in
    localparam REG_TX_FRAMELEN = 7'd12; // out
-   localparam REG_XFER_RATE = 7'd14;   // out
    
    always @(posedge wb_clk)
      if(wb_rst)
        begin
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
-	  //xfer_rate <= 0;
 	  frames_per_packet <= 0;
        end
      else
@@ -334,14 +328,8 @@ module u1plus_core
 	     reg_test <= s0_dat_mosi;
 	   REG_RX_FRAMELEN :
 	     frames_per_packet <= s0_dat_mosi[7:0];
-	   //REG_XFER_RATE :
-	     //xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
 
-   assign test_ctrl = xfer_rate[11:8];
-   assign test_rate = xfer_rate[7:0];
-   assign test_len = reg_test[15:0];
-   
    assign debug_led = {run_tx, (run_rx0 | run_rx1), cgen_st_ld};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
@@ -385,9 +373,9 @@ module u1plus_core
    wire [31:0] gpio_readback;
    
    gpio_atr #(.BASE(SR_GPIO), .WIDTH(32)) 
-   gpio_atr(.clk(dsp_clk),.reset(dsp_rst),
-	    .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-	    .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx),
+   gpio_atr(.clk(wb_clk),.reset(wb_rst),
+	    .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+	    .rx(run_rx0 | run_rx1), .tx(run_tx),
 	    .gpio({io_tx,io_rx}), .gpio_readback(gpio_readback) );
 
    // /////////////////////////////////////////////////////////////////////////
