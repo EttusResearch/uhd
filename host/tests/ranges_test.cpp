@@ -55,3 +55,16 @@ BOOST_AUTO_TEST_CASE(test_ranges_clip){
     BOOST_CHECK_CLOSE(mr.clip(50.9, false), 50.9, tolerance);
     BOOST_CHECK_CLOSE(mr.clip(50.9, true), 51.0, tolerance);
 }
+
+BOOST_AUTO_TEST_CASE(test_ranges_clip2){
+    meta_range_t mr;
+    mr.push_back(range_t(1.));
+    mr.push_back(range_t(2.));
+    mr.push_back(range_t(3.));
+
+    BOOST_CHECK_CLOSE(mr.clip(2., true), 2., tolerance);
+    BOOST_CHECK_CLOSE(mr.clip(0., true), 1., tolerance);
+    BOOST_CHECK_CLOSE(mr.clip(1.2, true), 1., tolerance);
+    BOOST_CHECK_CLOSE(mr.clip(3.1, true), 3., tolerance);
+    BOOST_CHECK_CLOSE(mr.clip(4., true), 3., tolerance);
+}

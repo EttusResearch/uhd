@@ -470,8 +470,7 @@ uhd::meta_range_t usrp1_impl::get_tx_dsp_host_rates(void){
 double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
     const size_t div = this->has_rx_halfband()? 2 : 1;
-    const size_t rate = this->get_rx_dsp_host_rates().clip(
-        boost::math::iround(_master_clock_rate / samp_rate), true);
+    const size_t rate = boost::math::iround(_master_clock_rate/this->get_rx_dsp_host_rates().clip(samp_rate, true));
 
     if (rate < 8 and this->has_rx_halfband()) UHD_MSG(warning) <<
         "USRP1 cannot achieve decimations below 8 when the half-band filter is present.\n"
@@ -499,8 +498,7 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 
     const size_t div = this->has_tx_halfband()? 2 : 1;
-    const size_t rate = this->get_tx_dsp_host_rates().clip(
-        boost::math::iround(_master_clock_rate / samp_rate), true);
+    const size_t rate = boost::math::iround(_master_clock_rate/this->get_tx_dsp_host_rates().clip(samp_rate, true));
 
     if (dspno == 0){ //only care if dsp0 is set since its homogeneous
         bool s = this->disable_tx();

@@ -149,8 +149,7 @@ public:
     }
 
     double set_host_rate(const double rate){
-        const size_t decim_rate = this->get_host_rates().clip(
-            boost::math::iround(_tick_rate/rate), true);
+        const size_t decim_rate = boost::math::iround(_tick_rate/this->get_host_rates().clip(rate, true));
         size_t decim = decim_rate;
 
         //determine which half-band filters are activated
