@@ -380,9 +380,9 @@ module u1e_core
    wire [31:0] gpio_readback;
    
    gpio_atr #(.BASE(SR_GPIO), .WIDTH(32)) 
-   gpio_atr(.clk(dsp_clk),.reset(dsp_rst),
-	    .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-	    .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx),
+   gpio_atr(.clk(wb_clk),.reset(wb_rst),
+	    .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+	    .rx(run_rx0 | run_rx1), .tx(run_tx),
 	    .gpio({io_tx,io_rx}), .gpio_readback(gpio_readback) );
 
    ////////////////////////////////////////////////////////////////////////////
