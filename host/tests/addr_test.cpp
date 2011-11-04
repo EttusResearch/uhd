@@ -39,7 +39,8 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
     //load the device address with something
     uhd::device_addr_t dev_addr;
     dev_addr["key1"] = "val1";
-    dev_addr["key2"] = "val2";
+    dev_addr["key1"] = "val1";
+    dev_addr["key3"] = "";
 
     //convert to and from args string
     std::cout << "Pretty Print: " << std::endl << dev_addr.to_pp_string();
