@@ -347,7 +347,11 @@ public:
         return true;
     }
 
-    void set_next_command_time(const time_spec_t &, size_t){
+    void set_command_time(const time_spec_t &, size_t){
+        throw uhd::not_implemented_error("Not implemented yet, but we have a very good idea of how to do it.");
+    }
+
+    void clear_command_time(size_t){
         throw uhd::not_implemented_error("Not implemented yet, but we have a very good idea of how to do it.");
     }
 
