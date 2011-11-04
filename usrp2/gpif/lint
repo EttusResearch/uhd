@@ -1,0 +1,2 @@
+iverilog -Wall -y . -y ../fifo/ -y ../control_lib/ -y ../models/ -y ../coregen/ -y ../simple_gemac/ -y ../sdr_lib/ -y ../vrt/ gpif.v 2>&1 | grep -v coregen | grep -v models
+
