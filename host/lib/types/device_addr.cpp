@@ -40,16 +40,15 @@ static std::string trim(const std::string &in){
 device_addr_t::device_addr_t(const std::string &args){
     BOOST_FOREACH(const std::string &pair, tokenizer(args, arg_delim)){
         if (trim(pair) == "") continue;
-        std::string key;
+        std::vector<std::string> toks;
         BOOST_FOREACH(const std::string &tok, tokenizer(pair, pair_delim)){
-            if (key.empty()) key = tok;
-            else{
-                this->set(trim(key), trim(tok));
-                goto continue_next_arg;
-            }
+            toks.push_back(tok);
         }
-        throw uhd::value_error("invalid args string: "+args);
-        continue_next_arg: continue;
+        if (toks.size() == 1) toks.push_back(""); //pad empty value
+        if (toks.size() == 2 and not trim(toks[0]).empty()){ //only valid combination
+            this->set(trim(toks[0]), trim(toks[1]));
+        }
+        else throw uhd::value_error("invalid args string: "+args); //otherwise error
     }
 }
 
