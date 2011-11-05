@@ -199,6 +199,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+    const unsigned sc8_scalar = unsigned(args.args.cast<double>("scalar", 0x400));
 
     //calculate packet size
     static const size_t hdr_size = 0
@@ -228,7 +229,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
     for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
         const size_t dsp = args.channels[chan_i];
         _rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
-        _rx_dsps[dsp]->set_format(args.otw_format, 0x400);
+        _rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
             &recv_packet_demuxer::get_recv_buff, _io_impl->demuxer, dsp, _1
         ));
