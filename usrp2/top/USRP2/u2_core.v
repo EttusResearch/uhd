@@ -450,7 +450,7 @@ module u2_core
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(32'b0),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
@@ -526,17 +526,10 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // Interrupt Controller, Slave #8
 
-   // Pass interrupts on dsp_clk to wb_clk.  These need edge triggering in the pic
-   wire 	 underrun_wb, overrun_wb, pps_wb;
-
-   oneshot_2clk underrun_1s (.clk_in(dsp_clk), .in(underrun), .clk_out(wb_clk), .out(underrun_wb));
-   oneshot_2clk overrun_1s (.clk_in(dsp_clk), .in(overrun0 | overrun1), .clk_out(wb_clk), .out(overrun_wb));
-   oneshot_2clk pps_1s (.clk_in(dsp_clk), .in(pps_int), .clk_out(wb_clk), .out(pps_wb));
-   
    assign irq= {{8'b0},
-		{8'b0},
-		{2'b0, good_sync, periodic_int, clk_status, serdes_link_up, uart_tx_int, uart_rx_int},
-		{pps_wb,overrun_wb,underrun_wb,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
+		{3'b0, uart_tx_int, 2'b0, uart_rx_int},
+		{4'b0, clk_status, 3'b0},
+		{3'b0, PHY_INTn,i2c_int,spi_int,2'b00}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
 	   .we_i(s8_we),.dat_i(s8_dat_o),.dat_o(s8_dat_i),.ack_o(s8_ack),.int_o(proc_int),
