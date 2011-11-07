@@ -405,7 +405,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
         BOOST_FOREACH(const std::string &mb, _mbc.keys()){
             num_chan_so_far += _mbc[mb].rx_chan_occ;
             if (chan < num_chan_so_far){
-                const size_t dsp = num_chan_so_far - chan - 1;
+                const size_t dsp = chan + _mbc[mb].rx_chan_occ - num_chan_so_far;
                 _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
                 _mbc[mb].rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
@@ -473,7 +473,7 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
         BOOST_FOREACH(const std::string &mb, _mbc.keys()){
             num_chan_so_far += _mbc[mb].tx_chan_occ;
             if (chan < num_chan_so_far){
-                const size_t dsp = num_chan_so_far - chan - 1;
+                const size_t dsp = chan + _mbc[mb].tx_chan_occ - num_chan_so_far;
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), abs, _1
                 ));
