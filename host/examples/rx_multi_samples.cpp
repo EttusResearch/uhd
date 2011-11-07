@@ -92,6 +92,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_time_now(uhd::time_spec_t(0.0));
     }
     else if (sync == "pps"){
+        usrp->set_time_source("external");
         usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
         boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
     }
@@ -99,10 +100,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(usrp->get_num_mboards() == 2);
 
         //make mboard 1 a slave over the MIMO Cable
-        uhd::clock_config_t clock_config;
-        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
-        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
-        usrp->set_clock_config(clock_config, 1);
+        usrp->set_clock_source("mimo", 1);
+        usrp->set_time_source("mimo", 1);
 
         //set time on the master (mboard 0)
         usrp->set_time_now(uhd::time_spec_t(0.0), 0);

@@ -99,7 +99,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
         ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -117,18 +117,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     //Lock mboard clocks
-    if (ref == "MIMO") {
-        uhd::clock_config_t clock_config;
-        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
-        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
-        usrp->set_clock_config(clock_config, 0);
-    }
-    else if (ref == "EXTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
-    }
-    else if (ref == "INTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
-    }
+    usrp->set_clock_source(ref);
 
     //always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
