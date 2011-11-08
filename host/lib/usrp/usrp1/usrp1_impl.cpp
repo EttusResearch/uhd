@@ -462,7 +462,7 @@ uhd::meta_range_t usrp1_impl::get_tx_dsp_freq_range(void){
 void usrp1_impl::set_enb_rx_dc_offset(const std::string &db, const bool enb){
     const size_t shift = (db == "A")? 0 : 2;
     _rx_dc_offset_shadow &= ~(0x3 << shift); //clear bits
-    _rx_dc_offset_shadow &= ((enb)? 0x3 : 0x0) << shift;
+    _rx_dc_offset_shadow |= ((enb)? 0x3 : 0x0) << shift;
     _iface->poke32(FR_DC_OFFSET_CL_EN, _rx_dc_offset_shadow & 0xf);
 }
 
