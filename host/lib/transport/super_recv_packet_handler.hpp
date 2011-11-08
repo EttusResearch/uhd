@@ -523,7 +523,9 @@ private:
             }
 
             //copy-convert the samples from the recv buffer
-            _converter(buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, _scale_factor);
+            if (nsamps_to_copy_per_io_buff != 0) _converter(
+                buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, _scale_factor
+            );
 
             //update the rx copy buffer to reflect the bytes copied
             buff_info.copy_buff += bytes_to_copy;

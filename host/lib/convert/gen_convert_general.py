@@ -72,7 +72,6 @@ DECLARE_CONVERTER(sc16_item32_$(end), 1, $(cpu_type), 1, PRIORITY_GENERAL){
 }
 
 DECLARE_CONVERTER(sc8_item32_$(end), 1, $(cpu_type), 1, PRIORITY_GENERAL){
-    if (nsamps == 0) return; //otherwise segfault
     const item32_t *input = reinterpret_cast<const item32_t *>(size_t(inputs[0]) & ~0x3);
     $(cpu_type)_t *output = reinterpret_cast<$(cpu_type)_t *>(outputs[0]);
     $(cpu_type)_t dummy;
