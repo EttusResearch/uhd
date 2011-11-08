@@ -94,8 +94,10 @@ module dsp_core_rx
 	    .xi({adc_i_mux[23],adc_i_mux}),. yi({adc_q_mux[23],adc_q_mux}), .zi(phase[31:8]),
 	    .xo(i_cordic),.yo(q_cordic),.zo() );
 
-   clip_reg #(.bits_in(25), .bits_out(24)) clip_i (.clk(clk), .in(i_cordic), .out(i_cordic_clip));
-   clip_reg #(.bits_in(25), .bits_out(24)) clip_q (.clk(clk), .in(q_cordic), .out(q_cordic_clip));
+   clip_reg #(.bits_in(25), .bits_out(24)) clip_i
+     (.clk(clk), .in(i_cordic), .strobe_in(1'b1), .out(i_cordic_clip));
+   clip_reg #(.bits_in(25), .bits_out(24)) clip_q
+     (.clk(clk), .in(q_cordic), .strobe_in(1'b1), .out(q_cordic_clip));
 
    // CIC decimator  24 bit I/O
    cic_strober cic_strober(.clock(clk),.reset(rst),.enable(run),.rate(cic_decim_rate),

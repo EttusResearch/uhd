@@ -129,7 +129,7 @@ module u2plus_core
    // External RAM
    input [35:0] RAM_D_pi,
    output [35:0] RAM_D_po,
-   output RAM_D_poe,   
+   output RAM_D_poe,
    output [20:0] RAM_A,
    output RAM_CE1n,
    output RAM_CENn,
@@ -163,6 +163,7 @@ module u2plus_core
    localparam SR_TX_CTRL  = 144;   // 6
    localparam SR_TX_DSP   = 160;   // 5
 
+   localparam SR_GPIO     = 184;   // 5   
    localparam SR_UDP_SM   = 192;   // 64
    
    // FIFO Sizes, 9 = 512 lines, 10 = 1024, 11 = 2048
@@ -227,14 +228,14 @@ module u2plus_core
 		.s1_addr(8'b0100_0000),.s1_mask(8'b1111_0000),  // Packet Router (16-20K)
  		.s2_addr(8'b0101_0000),.s2_mask(8'b1111_1100),  // SPI
 		.s3_addr(8'b0101_0100),.s3_mask(8'b1111_1100),  // I2C
-		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // GPIO
+		.s4_addr(8'b0101_1000),.s4_mask(8'b1111_1100),  // Unused
 		.s5_addr(8'b0101_1100),.s5_mask(8'b1111_1100),  // Readback
 		.s6_addr(8'b0110_0000),.s6_mask(8'b1111_0000),  // Ethernet MAC
-		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // 20K-24K, Settings Bus (only uses 1K)
+		.s7_addr(8'b0111_0000),.s7_mask(8'b1111_0000),  // Settings Bus (only uses 1K)
 		.s8_addr(8'b1000_0000),.s8_mask(8'b1111_1100),  // PIC
 		.s9_addr(8'b1000_0100),.s9_mask(8'b1111_1100),  // Unused
 		.sa_addr(8'b1000_1000),.sa_mask(8'b1111_1100),  // UART
-		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // ATR
+		.sb_addr(8'b1000_1100),.sb_mask(8'b1111_1100),  // Unused
 		.sc_addr(8'b1001_0000),.sc_mask(8'b1111_0000),  // Unused
 		.sd_addr(8'b1010_0000),.sd_mask(8'b1111_0000),  // ICAP
 		.se_addr(8'b1011_0000),.se_mask(8'b1111_0000),  // SPI Flash
@@ -275,7 +276,11 @@ module u2plus_core
       .se_dat_i(se_dat_i),.se_ack_i(se_ack),.se_err_i(0),.se_rty_i(0),
       .sf_dat_o(sf_dat_o),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
-      
+
+   // Unused Slaves 9, b, c
+   assign s4_ack = 0;
+   assign s9_ack = 0;   assign sb_ack = 0;   assign sc_ack = 0;
+   
    // ////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
 
@@ -416,18 +421,21 @@ module u2plus_core
    assign 	 s3_dat_i[31:8] = 24'd0;
    
    // /////////////////////////////////////////////////////////////////////////
-   // GPIOs -- Slave #4
+   // GPIOs
 
-   nsgpio nsgpio(.clk_i(wb_clk),.rst_i(wb_rst),
-		 .cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[4:0]),.we_i(s4_we),
-		 .dat_i(s4_dat_o),.dat_o(s4_dat_i),.ack_o(s4_ack),
-		 .rx(run_rx0_d1 | rx_rx1_d1), .tx(run_tx), .gpio({io_tx,io_rx}) );
+   wire [31:0] gpio_readback;
+   
+   gpio_atr #(.BASE(SR_GPIO), .WIDTH(32)) 
+   gpio_atr(.clk(dsp_clk),.reset(dsp_rst),
+	    .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+	    .rx(run_rx0_d1 | run_rx1_d1), .tx(run_tx),
+	    .gpio({io_tx,io_rx}), .gpio_readback(gpio_readback) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd7, 16'd3}; //major, minor
+   localparam compat_num = {16'd8, 16'd0}; //major, minor
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -435,8 +443,8 @@ module u2plus_core
 
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
-      .word08(status),.word09(32'b0),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq),
+      .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
+      .word11(vita_time[31:0]),.word12(compat_num),.word13({18'b0, button, 13'b0}),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
@@ -480,16 +488,20 @@ module u2plus_core
    wire 	 phy_reset;
    assign 	 PHY_RESETn = ~phy_reset;
    
-   setting_reg #(.my_addr(SR_MISC+0),.width(8)) sr_clk (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),
-				      .in(set_data),.out(clock_outs),.changed());
-   setting_reg #(.my_addr(SR_MISC+1),.width(8)) sr_ser (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(serdes_outs),.changed());
-   setting_reg #(.my_addr(SR_MISC+2),.width(8)) sr_adc (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(adc_outs),.changed());
-   setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(phy_reset),.changed());
-   setting_reg #(.my_addr(SR_MISC+5),.width(1)) sr_bld (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(bldr_done),.changed());
+   setting_reg #(.my_addr(SR_MISC+0),.width(8)) sr_clk
+     (.clk(wb_clk),.rst(wb_rst),.strobe(s7_ack),.addr(set_addr),.in(set_data),.out(clock_outs),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+1),.width(8)) sr_ser
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(serdes_outs),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+2),.width(8)) sr_adc
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(adc_outs),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+4),.width(1)) sr_phy
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(phy_reset),.changed());
+
+   setting_reg #(.my_addr(SR_MISC+5),.width(1)) sr_bld
+     (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),.in(set_data),.out(bldr_done),.changed());
 
    // /////////////////////////////////////////////////////////////////////////
    //  LEDS
@@ -500,47 +512,26 @@ module u2plus_core
    wire [7:0] 	 led_src, led_sw;
    wire [7:0] 	 led_hw = {run_tx, (run_rx0_d1 | run_rx1_d1), clk_status, serdes_link_up & good_sync, 1'b0};
    
-   setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
-				      .in(set_data),.out(led_sw),.changed());
+   setting_reg #(.my_addr(SR_MISC+3),.width(8)) sr_led
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.out(led_sw),.changed());
 
-   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) 
-   sr_led_src (.clk(wb_clk),.rst(wb_rst), .strobe(set_stb),.addr(set_addr), .in(set_data),.out(led_src),.changed());
+   setting_reg #(.my_addr(SR_MISC+6),.width(8), .at_reset(8'b0001_1110)) sr_led_src
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp), .in(set_data_dsp),.out(led_src),.changed());
 
    assign 	 leds = (led_src & led_hw) | (~led_src & led_sw);
    
    // /////////////////////////////////////////////////////////////////////////
    // Interrupt Controller, Slave #8
 
-   // Pass interrupts on dsp_clk to wb_clk.  These need edge triggering in the pic
-   wire 	 underrun_wb, overrun_wb, pps_wb;
-
-   oneshot_2clk underrun_1s (.clk_in(dsp_clk), .in(underrun), .clk_out(wb_clk), .out(underrun_wb));
-   oneshot_2clk overrun_1s (.clk_in(dsp_clk), .in(overrun0 | overrun1), .clk_out(wb_clk), .out(overrun_wb));
-   oneshot_2clk pps_1s (.clk_in(dsp_clk), .in(pps_int), .clk_out(wb_clk), .out(pps_wb));
-   
    assign irq= {{8'b0},
 		{uart_tx_int[3:0], uart_rx_int[3:0]},
-		{2'b0, button, periodic_int, clk_status, serdes_link_up, 2'b00},
-		{pps_wb,overrun_wb,underrun_wb,PHY_INTn,i2c_int,spi_int,onetime_int,buffer_int}};
+		{4'b0, clk_status, 3'b0},
+		{3'b0, PHY_INTn,i2c_int,spi_int,2'b00}};
    
    pic pic(.clk_i(wb_clk),.rst_i(wb_rst),.cyc_i(s8_cyc),.stb_i(s8_stb),.adr_i(s8_adr[4:2]),
 	   .we_i(s8_we),.dat_i(s8_dat_o),.dat_o(s8_dat_i),.ack_o(s8_ack),.int_o(proc_int),
 	   .irq(irq) );
  	 
-   // /////////////////////////////////////////////////////////////////////////
-   // Master Timer, Slave #9
-
-   // No longer used, replaced with simple_timer below
-   assign s9_ack = 0;
-   
-   // /////////////////////////////////////////////////////////////////////////
-   //  Simple Timer interrupts
-   /*
-   simple_timer #(.BASE(SR_SIMTIMER)) simple_timer
-     (.clk(wb_clk), .reset(wb_rst),
-      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-      .onetime_int(onetime_int), .periodic_int(periodic_int));
-   */
    // /////////////////////////////////////////////////////////////////////////
    // UART, Slave #10
 
@@ -550,24 +541,6 @@ module u2plus_core
       .adr_i(sa_adr[6:2]),.dat_i(sa_dat_o),.dat_o(sa_dat_i),
       .rx_int_o(uart_rx_int),.tx_int_o(uart_tx_int),
       .tx_o(uart_tx_o),.rx_i(uart_rx_i),.baud_o(uart_baud_o));
-   
-   // /////////////////////////////////////////////////////////////////////////
-   // ATR Controller, Slave #11
-
-   /*
-   atr_controller atr_controller
-     (.clk_i(wb_clk),.rst_i(wb_rst),
-      .adr_i(sb_adr[5:0]),.sel_i(sb_sel),.dat_i(sb_dat_o),.dat_o(sb_dat_i),
-      .we_i(sb_we),.stb_i(sb_stb),.cyc_i(sb_cyc),.ack_o(sb_ack),
-      .run_rx(run_rx0_d1 | run_rx1_d1),.run_tx(run_tx),.ctrl_lines(atr_lines) );
-   */
-   
-   // //////////////////////////////////////////////////////////////////////////
-   // Time Sync, Slave #12 
-
-   // No longer used, see time_64bit.  Still need to handle mimo time, though
-   assign sc_ack = 0;
-   
    // /////////////////////////////////////////////////////////////////////////
    // ICAP for reprogramming the FPGA, Slave #13 (D)
 
@@ -660,8 +633,8 @@ module u2plus_core
    wire 	 clear_tx;
 
    setting_reg #(.my_addr(SR_TX_CTRL+1)) sr_clear_tx
-     (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_tx));
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),
+      .in(set_data_dsp),.out(),.changed(clear_tx));
 
    assign 	 RAM_A[20:18] = 3'b0;
    

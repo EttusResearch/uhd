@@ -6,6 +6,7 @@
 # FIFO Sources
 ##################################################
 FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../fifo/, \
+add_routing_header.v \
 buffer_int.v \
 buffer_int2.v \
 buffer_pool.v \

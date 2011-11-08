@@ -11,7 +11,9 @@ atr_controller.v \
 bin2gray.v \
 dcache.v \
 decoder_3_8.v \
+dbsm.v \
 dpram32.v \
+double_buffer.v \
 gray2bin.v \
 gray_send.v \
 icache.v \
@@ -51,4 +53,5 @@ nsgpio16LE.v \
 settings_bus_16LE.v \
 atr_controller16.v \
 fifo_to_wb.v \
+gpio_atr.v \
 ))
