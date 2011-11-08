@@ -159,6 +159,9 @@ double wbx_base::wbx_version2::set_tx_gain(double gain, const std::string &name)
  * Tuning
  **********************************************************************/
 double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
+    //clip to tuning range
+    target_freq = wbx_v2_freq_range.clip(target_freq);
+
     UHD_LOGV(often) << boost::format(
         "WBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
