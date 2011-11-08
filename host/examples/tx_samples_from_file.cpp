@@ -29,10 +29,14 @@ namespace po = boost::program_options;
 
 template<typename samp_type> void send_from_file(
     uhd::usrp::multi_usrp::sptr usrp,
-    const uhd::io_type_t &io_type,
+    const std::string &cpu_format,
     const std::string &file,
     size_t samps_per_buff
 ){
+    //create a transmit streamer
+    uhd::stream_args_t stream_args(cpu_format);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     uhd::tx_metadata_t md;
     md.start_of_burst = false;
     md.end_of_burst = false;
@@ -47,10 +51,7 @@ template<typename samp_type> void send_from_file(
 
         md.end_of_burst = infile.eof();
 
-        usrp->get_device()->send(
-            &buff.front(), num_tx_samps, md, io_type,
-            uhd::device::SEND_MODE_FULL_BUFF
-        );
+        tx_stream->send(&buff.front(), num_tx_samps, md);
     }
 
     infile.close();
@@ -78,7 +79,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
         ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -96,18 +97,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     //Lock mboard clocks
-    if (ref == "MIMO") {
-        uhd::clock_config_t clock_config;
-        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
-        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
-        usrp->set_clock_config(clock_config, 0);
-    }
-    else if (ref == "EXTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
-    }
-    else if (ref == "INTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
-    }
+    usrp->set_clock_source(ref);
 
     //always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
@@ -172,9 +162,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //send from file
-    if (type == "double") send_from_file<std::complex<double> >(usrp, uhd::io_type_t::COMPLEX_FLOAT64, file, spb);
-    else if (type == "float") send_from_file<std::complex<float> >(usrp, uhd::io_type_t::COMPLEX_FLOAT32, file, spb);
-    else if (type == "short") send_from_file<std::complex<short> >(usrp, uhd::io_type_t::COMPLEX_INT16, file, spb);
+    if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", file, spb);
+    else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", file, spb);
+    else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", file, spb);
     else throw std::runtime_error("Unknown type " + type);
 
     //finished

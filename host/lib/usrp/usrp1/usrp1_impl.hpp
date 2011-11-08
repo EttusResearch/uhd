@@ -31,6 +31,7 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
+#include <complex>
 
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
@@ -55,21 +56,8 @@ public:
     ~usrp1_impl(void);
 
     //the io interface
-    size_t send(const send_buffs_type &,
-                size_t,
-                const uhd::tx_metadata_t &,
-                const uhd::io_type_t &,
-                send_mode_t, double);
-
-    size_t recv(const recv_buffs_type &,
-                size_t, uhd::rx_metadata_t &,
-                const uhd::io_type_t &,
-                recv_mode_t, double);
-
-    size_t get_max_send_samps_per_packet(void) const;
-
-    size_t get_max_recv_samps_per_packet(void) const;
-
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
@@ -94,21 +82,34 @@ private:
 
     double _master_clock_rate; //clock rate shadow
 
+    //weak pointers to streamers for update purposes
+    boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
+    boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
+
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void set_db_eeprom(const std::string &, const std::string &, const uhd::usrp::dboard_eeprom_t &);
     double update_rx_codec_gain(const std::string &, const double); //sets A and B at once
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
-    double update_rx_samp_rate(const double);
-    double update_tx_samp_rate(const double);
+    double update_rx_samp_rate(size_t dspno, const double);
+    double update_tx_samp_rate(size_t dspno, const double);
+    void update_rates(void);
     double update_rx_dsp_freq(const size_t, const double);
     double update_tx_dsp_freq(const size_t, const double);
+    void update_tick_rate(const double rate);
+    uhd::meta_range_t get_rx_dsp_freq_range(void);
+    uhd::meta_range_t get_tx_dsp_freq_range(void);
+    uhd::meta_range_t get_rx_dsp_host_rates(void);
+    uhd::meta_range_t get_tx_dsp_host_rates(void);
+    size_t _rx_dc_offset_shadow;
+    void set_enb_rx_dc_offset(const std::string &db, const bool);
+    std::complex<double> set_rx_dc_offset(const std::string &db, const std::complex<double> &);
 
     static uhd::usrp::dboard_iface::sptr make_dboard_iface(
         usrp1_iface::sptr,
         usrp1_codec_ctrl::sptr,
         dboard_slot_t,
-        const double,
+        const double &,
         const uhd::usrp::dboard_id_t &
     );
 
@@ -119,8 +120,7 @@ private:
     void tx_stream_on_off(bool);
     void handle_overrun(size_t);
 
-    //otw types
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
+    //channel mapping shadows
     uhd::usrp::subdev_spec_t _rx_subdev_spec, _tx_subdev_spec;
 
     //capabilities

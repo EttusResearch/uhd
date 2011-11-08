@@ -107,7 +107,7 @@ usrp2_dboard_iface::usrp2_dboard_iface(
 ){
     _iface = iface;
     _clock_ctrl = clock_ctrl;
-    _gpio = gpio_core_200::make(_iface, GPIO_BASE);
+    _gpio = gpio_core_200::make(_iface, U2_REG_SR_ADDR(SR_GPIO), U2_REG_GPIO_RB);
 
     //reset the aux dacs
     _dac_regs[UNIT_RX] = ad5623_regs_t();

@@ -20,11 +20,12 @@
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
-#include <uhd/utils/props.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <string>
+#include <vector>
 
 namespace uhd{ namespace usrp{
 
@@ -36,11 +37,6 @@ namespace uhd{ namespace usrp{
 class UHD_API dboard_manager : boost::noncopyable{
 public:
     typedef boost::shared_ptr<dboard_manager> sptr;
-
-    //! It does what it says...
-    static void populate_prop_tree_from_subdev(
-        property_tree::sptr subtree, wax::obj subdev
-    );
 
     //dboard constructor (each dboard should have a ::make with this signature)
     typedef dboard_base::sptr(*dboard_ctor_t)(dboard_base::ctor_args_t);
@@ -57,7 +53,7 @@ public:
         const dboard_id_t &dboard_id,
         dboard_ctor_t dboard_ctor,
         const std::string &name,
-        const prop_names_t &subdev_names = prop_names_t(1, "0")
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0")
     );
 
     /*!
@@ -74,27 +70,25 @@ public:
         const dboard_id_t &tx_dboard_id,
         dboard_ctor_t dboard_ctor,
         const std::string &name,
-        const prop_names_t &subdev_names = prop_names_t(1, "0")
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0")
     );
 
     /*!
      * Make a new dboard manager.
      * \param rx_dboard_id the id of the rx dboard
      * \param tx_dboard_id the id of the tx dboard
+     * \param gdboard_id the id of the grand-dboard
      * \param iface the custom dboard interface
+     * \param subtree the subtree to load with props
      * \return an sptr to the new dboard manager
      */
     static sptr make(
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
-        dboard_iface::sptr iface
+        dboard_id_t gdboard_id,
+        dboard_iface::sptr iface,
+        property_tree::sptr subtree
     );
-
-    //dboard manager interface
-    virtual prop_names_t get_rx_subdev_names(void) = 0;
-    virtual prop_names_t get_tx_subdev_names(void) = 0;
-    virtual wax::obj get_rx_subdev(const std::string &subdev_name) = 0;
-    virtual wax::obj get_tx_subdev(const std::string &subdev_name) = 0;
 };
 
 }} //namespace

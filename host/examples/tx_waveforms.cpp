@@ -100,7 +100,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
+        ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform [0 to 0.7]")
@@ -110,7 +110,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -128,18 +128,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     //Lock mboard clocks
-    if (ref == "MIMO") {
-        uhd::clock_config_t clock_config;
-        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
-        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
-        usrp->set_clock_config(clock_config, 0);
-    }
-    else if (ref == "EXTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
-    }
-    else if (ref == "INTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
-    }
+    usrp->set_clock_source(ref);
 
     //always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
@@ -202,7 +191,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const double cps = wave_freq/usrp->get_tx_rate();
     double theta = 0;
 
+    //create a transmit streamer
+    //linearly map channels (index0 = channel0, index1 = channel1, ...)
+    uhd::stream_args_t stream_args("fc32");
+    for (size_t chan = 0; chan < usrp->get_tx_num_channels(); chan++)
+        stream_args.channels.push_back(chan); //linear mapping
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //allocate a buffer which we re-use for each channel
+    if (spb == 0) spb = tx_stream->get_max_num_samps()*10;
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(usrp->get_tx_num_channels(), &buff.front());
 
@@ -250,11 +247,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         theta = std::fmod(theta, 1);
 
         //send the entire contents of the buffer
-        usrp->get_device()->send(
-            buffs, buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_FULL_BUFF
-        );
+        tx_stream->send(buffs, buff.size(), md);
 
         md.start_of_burst = false;
         md.has_time_spec = false;
@@ -262,10 +255,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //send a mini EOB packet
     md.end_of_burst = true;
-    usrp->get_device()->send("", 0, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    tx_stream->send("", 0, md);
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

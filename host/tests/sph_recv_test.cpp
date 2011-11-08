@@ -67,8 +67,8 @@ private:
  **********************************************************************/
 class dummy_recv_xport_class{
 public:
-    dummy_recv_xport_class(const uhd::otw_type_t &otw_type){
-        _otw_type = otw_type;
+    dummy_recv_xport_class(const std::string &end){
+        _end = end;
     }
 
     void push_back_packet(
@@ -77,10 +77,10 @@ public:
     ){
         const size_t max_pkt_len = (ifpi.num_payload_words32 + uhd::transport::vrt::max_if_hdr_words32 + 1/*tlr*/)*sizeof(boost::uint32_t);
         _mems.push_back(boost::shared_array<char>(new char[max_pkt_len]));
-        if (_otw_type.byteorder == uhd::otw_type_t::BO_BIG_ENDIAN){
+        if (_end == "big"){
             uhd::transport::vrt::if_hdr_pack_be(reinterpret_cast<boost::uint32_t *>(_mems.back().get()), ifpi);
         }
-        if (_otw_type.byteorder == uhd::otw_type_t::BO_LITTLE_ENDIAN){
+        if (_end == "little"){
             uhd::transport::vrt::if_hdr_pack_le(reinterpret_cast<boost::uint32_t *>(_mems.back().get()), ifpi);
         }
         (reinterpret_cast<boost::uint32_t *>(_mems.back().get()) + ifpi.num_header_words32)[0] = optional_msg_word | uhd::byteswap(optional_msg_word);
@@ -100,18 +100,19 @@ private:
     std::list<boost::shared_array<char> > _mems;
     std::list<size_t> _lens;
     std::list<dummy_mrb> _mrbs; //list means no-realloc
-    uhd::otw_type_t _otw_type;
+    std::string _end;
 };
 
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
-    dummy_recv_xport_class dummy_recv_xport(otw_type);
+    dummy_recv_xport_class dummy_recv_xport("big");
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
     ifpi.num_payload_words32 = 0;
@@ -144,7 +145,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
     handler.set_tick_rate(TICK_RATE);
     handler.set_samp_rate(SAMP_RATE);
     handler.set_xport_chan_get_buff(0, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xport, _1));
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //check the received packets
     size_t num_accum_samps = 0;
@@ -153,9 +154,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            &buff.front(), buff.size(), metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -169,9 +168,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            &buff.front(), buff.size(), metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -180,12 +177,13 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
-    dummy_recv_xport_class dummy_recv_xport(otw_type);
+    dummy_recv_xport_class dummy_recv_xport("big");
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
     ifpi.num_payload_words32 = 0;
@@ -220,7 +218,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
     handler.set_tick_rate(TICK_RATE);
     handler.set_samp_rate(SAMP_RATE);
     handler.set_xport_chan_get_buff(0, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xport, _1));
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //check the received packets
     size_t num_accum_samps = 0;
@@ -229,9 +227,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            &buff.front(), buff.size(), metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
@@ -253,9 +249,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            &buff.front(), buff.size(), metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -264,12 +258,13 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
-    dummy_recv_xport_class dummy_recv_xport(otw_type);
+    dummy_recv_xport_class dummy_recv_xport("big");
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
     ifpi.num_payload_words32 = 0;
@@ -310,7 +305,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
     handler.set_tick_rate(TICK_RATE);
     handler.set_samp_rate(SAMP_RATE);
     handler.set_xport_chan_get_buff(0, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xport, _1));
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //create an overflow handler
     overflow_handler_type overflow_handler;
@@ -323,9 +318,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            &buff.front(), buff.size(), metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -335,9 +328,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
         num_accum_samps += num_samps_ret;
         if (i == NUM_PKTS_TO_TEST/2){
             handler.recv(
-                &buff.front(), buff.size(), metadata,
-                uhd::io_type_t::COMPLEX_FLOAT32,
-                uhd::device::RECV_MODE_ONE_PACKET, 1.0
+                &buff.front(), buff.size(), metadata, 1.0, true
             );
             std::cout << "metadata.error_code " << metadata.error_code << std::endl;
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
@@ -350,9 +341,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            &buff.front(), buff.size(), metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            &buff.front(), buff.size(), metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -361,10 +350,11 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
@@ -386,7 +376,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
     static const size_t NUM_SAMPS_PER_BUFF = 20;
     static const size_t NCHANNELS = 4;
 
-    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class(otw_type));
+    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class("big"));
 
     //generate a bunch of packets
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
@@ -406,7 +396,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         handler.set_xport_chan_get_buff(ch, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xports[ch], _1));
     }
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //check the received packets
     size_t num_accum_samps = 0;
@@ -419,9 +409,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -435,9 +423,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -447,10 +433,11 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
@@ -472,7 +459,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
     static const size_t NUM_SAMPS_PER_BUFF = 20;
     static const size_t NCHANNELS = 4;
 
-    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class(otw_type));
+    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class("big"));
 
     //generate a bunch of packets
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
@@ -495,7 +482,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         handler.set_xport_chan_get_buff(ch, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xports[ch], _1));
     }
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //check the received packets
     size_t num_accum_samps = 0;
@@ -508,9 +495,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
@@ -532,9 +517,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -543,10 +526,11 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
@@ -568,7 +552,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
     static const size_t NUM_SAMPS_PER_BUFF = 20;
     static const size_t NCHANNELS = 4;
 
-    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class(otw_type));
+    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class("big"));
 
     //generate a bunch of packets
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
@@ -591,7 +575,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         handler.set_xport_chan_get_buff(ch, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xports[ch], _1));
     }
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //check the received packets
     size_t num_accum_samps = 0;
@@ -604,9 +588,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -623,9 +605,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
@@ -634,10 +614,11 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
 ////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
 ////////////////////////////////////////////////////////////////////////
-    uhd::otw_type_t otw_type;
-    otw_type.width = 16;
-    otw_type.shift = 0;
-    otw_type.byteorder = uhd::otw_type_t::BO_BIG_ENDIAN;
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
 
     uhd::transport::vrt::if_packet_info_t ifpi;
     ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
@@ -659,7 +640,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
     static const size_t NUM_SAMPS_PER_BUFF = 10;
     static const size_t NCHANNELS = 4;
 
-    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class(otw_type));
+    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class("big"));
 
     //generate a bunch of packets
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
@@ -679,7 +660,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         handler.set_xport_chan_get_buff(ch, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xports[ch], _1));
     }
-    handler.set_converter(otw_type);
+    handler.set_converter(id);
 
     //check the received packets
     size_t num_accum_samps = 0;
@@ -692,9 +673,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         size_t num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(metadata.has_time_spec);
@@ -705,9 +684,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         if (not metadata.more_fragments) continue;
 
         num_samps_ret = handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
@@ -722,9 +699,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
     for (size_t i = 0; i < 3; i++){
         std::cout << "timeout check " << i << std::endl;
         handler.recv(
-            buffs, NUM_SAMPS_PER_BUFF, metadata,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, 1.0
+            buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }

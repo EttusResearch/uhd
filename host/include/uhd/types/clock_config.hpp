@@ -23,9 +23,12 @@
 namespace uhd{
 
     /*!
-     * Clock configuration settings:
+     * The DEPRECATED Clock configuration settings:
      * The source for the 10MHz reference clock.
      * The source and polarity for the PPS clock.
+     *
+     * Deprecated in favor of set time/clock source calls.
+     * Its still in this file for the sake of gr-uhd swig.
      *
      * Use the convenience functions external() and internal(),
      * unless you have a special purpose and cannot use them.

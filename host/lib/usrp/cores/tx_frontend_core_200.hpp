@@ -33,9 +33,9 @@ public:
 
     virtual void set_mux(const std::string &mode) = 0;
 
-    virtual void set_dc_offset(const std::complex<double> &off) = 0;
+    virtual std::complex<double> set_dc_offset(const std::complex<double> &off) = 0;
 
-    virtual void set_correction(const std::complex<double> &cor) = 0;
+    virtual void set_iq_balance(const std::complex<double> &cor) = 0;
 
 };
 

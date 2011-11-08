@@ -51,7 +51,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
         ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
-        ("ref", po::value<std::string>(&ref)->default_value("INTERNAL"), "waveform type (INTERNAL, EXTERNAL, MIMO)")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -70,18 +70,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //Lock mboard clocks
-    if (ref == "MIMO") {
-        uhd::clock_config_t clock_config;
-        clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
-        clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
-        usrp->set_clock_config(clock_config, 0);
-    }
-    else if (ref == "EXTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::external(), 0);
-    }
-    else if (ref == "INTERNAL") {
-        usrp->set_clock_config(uhd::clock_config_t::internal(), 0);
-    }
+    usrp->set_clock_source(ref);
 
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
@@ -130,6 +119,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
 
+    //create a receive streamer
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+
     //setup streaming
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
@@ -139,14 +132,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples
     uhd::rx_metadata_t md;
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::transport::udp_simple::sptr udp_xport = uhd::transport::udp_simple::make_connected(addr, port);
 
     while(num_acc_samps < total_num_samps){
-        size_t num_rx_samps = usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET
+        size_t num_rx_samps = rx_stream->recv(
+            &buff.front(), buff.size(), md
         );
 
         //handle the error codes

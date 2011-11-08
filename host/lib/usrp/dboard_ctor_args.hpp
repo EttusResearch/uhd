@@ -18,6 +18,7 @@
 #ifndef INCLUDED_LIBUHD_USRP_DBOARD_CTOR_ARGS_HPP
 #define INCLUDED_LIBUHD_USRP_DBOARD_CTOR_ARGS_HPP
 
+#include <uhd/property_tree.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
@@ -29,6 +30,7 @@ namespace uhd{ namespace usrp{
         std::string               sd_name;
         dboard_iface::sptr        db_iface;
         dboard_id_t               rx_id, tx_id;
+        property_tree::sptr       rx_subtree, tx_subtree;
     };
 
 }} //namespace

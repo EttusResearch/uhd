@@ -31,9 +31,7 @@ INSTALL(FILES
     subdev_spec.hpp
 
     ### interfaces ###
-    single_usrp.hpp
     multi_usrp.hpp
-    mboard_iface.hpp
 
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
     COMPONENT headers

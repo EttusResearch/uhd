@@ -21,15 +21,12 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
-#include <uhd/device.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/types/io_type.hpp>
-#include <uhd/types/otw_type.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
@@ -124,34 +121,17 @@ public:
         _props.at(xport_chan).get_buff = get_buff;
     }
 
-    /*!
-     * Setup the conversion functions (homogeneous across transports).
-     * Here, we load a table of converters for all possible io types.
-     * This makes the converter look-up an O(1) operation.
-     * \param otw_type the channel data type
-     * \param width the streams per channel (usually 1)
-     */
-    void set_converter(const uhd::otw_type_t &otw_type, const size_t width = 1){
-        _io_buffs.resize(width);
-        _converters.resize(128);
-        for (size_t io_type = 0; io_type < _converters.size(); io_type++){
-            try{
-                _converters[io_type] = uhd::convert::get_converter_otw_to_cpu(
-                    io_type_t::tid_t(io_type), otw_type, 1, width
-                );
-            }catch(const uhd::value_error &){} //we expect this, not all io_types valid...
-        }
-        _bytes_per_item = otw_type.get_sample_size();
+    //! Set the conversion routine for all channels
+    void set_converter(const uhd::convert::id_type &id){
+        _io_buffs.resize(id.num_outputs);
+        _converter = uhd::convert::get_converter(id);
+        _bytes_per_otw_item = uhd::convert::get_bytes_per_item(id.input_format);
+        _bytes_per_cpu_item = uhd::convert::get_bytes_per_item(id.output_format);
     }
 
     //! Set the transport channel's overflow handler
     void set_overflow_handler(const size_t xport_chan, const handle_overflow_type &handle_overflow){
         _props.at(xport_chan).handle_overflow = handle_overflow;
-    }
-
-    //! Get a scoped lock object for this instance
-    boost::mutex::scoped_lock get_scoped_lock(void){
-        return boost::mutex::scoped_lock(_mutex);
     }
 
     //! Set the scale factor used in float conversion
@@ -165,15 +145,12 @@ public:
      * Dispatch into combinations of single packet receive calls.
      ******************************************************************/
     UHD_INLINE size_t recv(
-        const uhd::device::recv_buffs_type &buffs,
+        const uhd::rx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t &metadata,
-        const uhd::io_type_t &io_type,
-        uhd::device::recv_mode_t recv_mode,
-        double timeout
+        const double timeout,
+        const bool one_packet
     ){
-        boost::mutex::scoped_lock lock(_mutex);
-
         //handle metadata queued from a previous receive
         if (_queue_error_for_next_call){
             _queue_error_for_next_call = false;
@@ -183,48 +160,34 @@ public:
             if (_queue_metadata.error_code != rx_metadata_t::ERROR_CODE_TIMEOUT) return 0;
         }
 
-        switch(recv_mode){
+        size_t accum_num_samps = recv_one_packet(
+            buffs, nsamps_per_buff, metadata, timeout
+        );
 
-        ////////////////////////////////////////////////////////////////
-        case uhd::device::RECV_MODE_ONE_PACKET:{
-        ////////////////////////////////////////////////////////////////
-            return recv_one_packet(buffs, nsamps_per_buff, metadata, io_type, timeout);
-        }
+        if (one_packet) return accum_num_samps;
 
-        ////////////////////////////////////////////////////////////////
-        case uhd::device::RECV_MODE_FULL_BUFF:{
-        ////////////////////////////////////////////////////////////////
-            size_t accum_num_samps = recv_one_packet(
-                buffs, nsamps_per_buff, metadata, io_type, timeout
+        //first recv had an error code set, return immediately
+        if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) return accum_num_samps;
+
+        //loop until buffer is filled or error code
+        while(accum_num_samps < nsamps_per_buff){
+            size_t num_samps = recv_one_packet(
+                buffs, nsamps_per_buff - accum_num_samps, _queue_metadata,
+                timeout, accum_num_samps*_bytes_per_cpu_item
             );
 
-            //first recv had an error code set, return immediately
-            if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) return accum_num_samps;
-
-            //loop until buffer is filled or error code
-            while(accum_num_samps < nsamps_per_buff){
-                size_t num_samps = recv_one_packet(
-                    buffs, nsamps_per_buff - accum_num_samps, _queue_metadata,
-                    io_type, timeout, accum_num_samps*io_type.size
-                );
-
-                //metadata had an error code set, store for next call and return
-                if (_queue_metadata.error_code != rx_metadata_t::ERROR_CODE_NONE){
-                    _queue_error_for_next_call = true;
-                    break;
-                }
-                accum_num_samps += num_samps;
+            //metadata had an error code set, store for next call and return
+            if (_queue_metadata.error_code != rx_metadata_t::ERROR_CODE_NONE){
+                _queue_error_for_next_call = true;
+                break;
             }
-            return accum_num_samps;
+            accum_num_samps += num_samps;
         }
-
-        default: throw uhd::value_error("unknown recv mode");
-        }//switch(recv_mode)
+        return accum_num_samps;
     }
 
 private:
 
-    boost::mutex _mutex;
     vrt_unpacker_type _vrt_unpacker;
     size_t _header_offset_words32;
     double _tick_rate, _samp_rate;
@@ -242,8 +205,9 @@ private:
     };
     std::vector<xport_chan_props_type> _props;
     std::vector<void *> _io_buffs; //used in conversion
-    size_t _bytes_per_item; //used in conversion
-    std::vector<uhd::convert::function_type> _converters; //used in conversion
+    size_t _bytes_per_otw_item; //used in conversion
+    size_t _bytes_per_cpu_item; //used in conversion
+    uhd::convert::function_type _converter; //used in conversion
     double _scale_factor;
 
     //! information stored for a received buffer
@@ -363,7 +327,7 @@ private:
             info.alignment_time = info[index].time;
             info.indexes_todo.set();
             info.indexes_todo.reset(index);
-            info.data_bytes_to_copy = info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t);
+            info.data_bytes_to_copy = info[index].ifpi.num_payload_bytes;
         }
 
         //if the sequence id matches:
@@ -471,7 +435,7 @@ private:
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.has_time_spec = prev_info.metadata.has_time_spec;
                 curr_info.metadata.time_spec = prev_info.metadata.time_spec + time_spec_t(0,
-                    prev_info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t)/_bytes_per_item, _samp_rate);
+                    prev_info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t)/_bytes_per_otw_item, _samp_rate);
                 curr_info.metadata.more_fragments = false;
                 curr_info.metadata.fragment_offset = 0;
                 curr_info.metadata.start_of_burst = false;
@@ -507,13 +471,8 @@ private:
         curr_info.metadata.time_spec = curr_info[0].time;
         curr_info.metadata.more_fragments = false;
         curr_info.metadata.fragment_offset = 0;
-        /* TODO SOB on RX not supported in hardware
-        static const int tlr_sob_flags = (1 << 21) | (1 << 9); //enable and indicator bits
-        curr_info.metadata.start_of_burst = curr_info[0].ifpi.has_tlr and (int(curr_info[0].ifpi.tlr & tlr_sob_flags) != 0);
-        */
-        curr_info.metadata.start_of_burst = false;
-        static const int tlr_eob_flags = (1 << 20) | (1 << 8); //enable and indicator bits
-        curr_info.metadata.end_of_burst   = curr_info[0].ifpi.has_tlr and (int(curr_info[0].ifpi.tlr & tlr_eob_flags) != 0);
+        curr_info.metadata.start_of_burst = curr_info[0].ifpi.sob;
+        curr_info.metadata.end_of_burst = curr_info[0].ifpi.eob;
         curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
 
     }
@@ -525,11 +484,10 @@ private:
      * Then copy-convert available data into the user's IO buffers.
      ******************************************************************/
     UHD_INLINE size_t recv_one_packet(
-        const uhd::device::recv_buffs_type &buffs,
+        const uhd::rx_streamer::buffs_type &buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t &metadata,
-        const uhd::io_type_t &io_type,
-        double timeout,
+        const double timeout,
         const size_t buffer_offset_bytes = 0
     ){
         //get the next buffer if the current one has expired
@@ -551,9 +509,9 @@ private:
         metadata.time_spec += time_spec_t(0, info.fragment_offset_in_samps, _samp_rate);
 
         //extract the number of samples available to copy
-        const size_t nsamps_available = info.data_bytes_to_copy/_bytes_per_item;
+        const size_t nsamps_available = info.data_bytes_to_copy/_bytes_per_otw_item;
         const size_t nsamps_to_copy = std::min(nsamps_per_buff*_io_buffs.size(), nsamps_available);
-        const size_t bytes_to_copy = nsamps_to_copy*_bytes_per_item;
+        const size_t bytes_to_copy = nsamps_to_copy*_bytes_per_otw_item;
         const size_t nsamps_to_copy_per_io_buff = nsamps_to_copy/_io_buffs.size();
 
         size_t buff_index = 0;
@@ -565,7 +523,9 @@ private:
             }
 
             //copy-convert the samples from the recv buffer
-            _converters[io_type.tid](buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, _scale_factor);
+            if (nsamps_to_copy_per_io_buff != 0) _converter(
+                buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, _scale_factor
+            );
 
             //update the rx copy buffer to reflect the bytes copied
             buff_info.copy_buff += bytes_to_copy;
@@ -587,6 +547,34 @@ private:
 
         return nsamps_to_copy_per_io_buff;
     }
+};
+
+class recv_packet_streamer : public recv_packet_handler, public rx_streamer{
+public:
+    recv_packet_streamer(const size_t max_num_samps){
+        _max_num_samps = max_num_samps;
+    }
+
+    size_t get_num_channels(void) const{
+        return this->size();
+    }
+
+    size_t get_max_num_samps(void) const{
+        return _max_num_samps;
+    }
+
+    size_t recv(
+        const rx_streamer::buffs_type &buffs,
+        const size_t nsamps_per_buff,
+        uhd::rx_metadata_t &metadata,
+        const double timeout,
+        const bool one_packet
+    ){
+        return recv_packet_handler::recv(buffs, nsamps_per_buff, metadata, timeout, one_packet);
+    }
+
+private:
+    size_t _max_num_samps;
 };
 
 }}} //namespace

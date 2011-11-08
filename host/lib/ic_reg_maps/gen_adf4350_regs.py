@@ -51,6 +51,7 @@ reference_divide_by_2   2[24]       1       disabled, enabled
 reference_doubler       2[25]       0       disabled, enabled
 muxout                  2[26:28]    1       3state, dvdd, dgnd, rdiv, ndiv, analog_ld, dld, reserved
 low_noise_and_spur      2[29:30]    3       low_noise, reserved0, reserved1, low_spur
+##reserved              2[31]       0
 ########################################################################
 ## address 3
 ########################################################################

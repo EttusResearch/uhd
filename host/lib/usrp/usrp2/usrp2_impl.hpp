@@ -31,7 +31,6 @@
 #include <uhd/device.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/types/otw_type.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
@@ -73,18 +72,8 @@ public:
     ~usrp2_impl(void);
 
     //the io interface
-    size_t send(
-        const send_buffs_type &, size_t,
-        const uhd::tx_metadata_t &, const uhd::io_type_t &,
-        uhd::device::send_mode_t, double
-    );
-    size_t recv(
-        const recv_buffs_type &, size_t,
-        uhd::rx_metadata_t &, const uhd::io_type_t &,
-        uhd::device::recv_mode_t, double
-    );
-    size_t get_max_send_samps_per_packet(void) const;
-    size_t get_max_recv_samps_per_packet(void) const;
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
@@ -97,6 +86,8 @@ private:
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         std::vector<rx_dsp_core_200::sptr> rx_dsps;
+        std::vector<boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
+        std::vector<boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
         tx_dsp_core_200::sptr tx_dsp;
         time64_core_200::sptr time64;
         std::vector<uhd::transport::zero_copy_if::sptr> rx_dsp_xports;
@@ -120,15 +111,15 @@ private:
     }
 
     //io impl methods and members
-    uhd::otw_type_t _rx_otw_type, _tx_otw_type;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
     void update_tick_rate(const double rate);
-    void update_rx_samp_rate(const double rate);
-    void update_tx_samp_rate(const double rate);
+    void update_rx_samp_rate(const std::string &, const size_t, const double rate);
+    void update_tx_samp_rate(const std::string &, const size_t, const double rate);
+    void update_rates(void);
     //update spec methods are coercers until we only accept db_name == A
-    uhd::usrp::subdev_spec_t update_rx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
-    uhd::usrp::subdev_spec_t update_tx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
+    void update_rx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
+    void update_tx_subdev_spec(const std::string &, const uhd::usrp::subdev_spec_t &);
     double set_tx_dsp_freq(const std::string &, const double);
     uhd::meta_range_t get_tx_dsp_freq_range(const std::string &);
     void update_clock_source(const std::string &, const std::string &);

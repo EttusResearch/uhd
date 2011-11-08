@@ -31,7 +31,6 @@
 #define B100_REG_MISC_RX_LEN     B100_REG_MISC_BASE + 10
 #define B100_REG_MISC_TX_LEN     B100_REG_MISC_BASE + 12
 #define B100_REG_MISC_XFER_RATE  B100_REG_MISC_BASE + 14
-#define B100_REG_MISC_COMPAT     B100_REG_MISC_BASE + 16
 
 /////////////////////////////////////////////////////
 // Slave 1 -- UART
@@ -61,43 +60,6 @@
 
 #define B100_REG_I2C_BASE B100_REG_SLAVE(3)
 
-////////////////////////////////////////////////
-// Slave 4 -- GPIO
-
-#define B100_REG_GPIO_BASE B100_REG_SLAVE(4)
-
-#define B100_REG_GPIO_RX_IO      B100_REG_GPIO_BASE + 0
-#define B100_REG_GPIO_TX_IO      B100_REG_GPIO_BASE + 2
-#define B100_REG_GPIO_RX_DDR     B100_REG_GPIO_BASE + 4
-#define B100_REG_GPIO_TX_DDR     B100_REG_GPIO_BASE + 6
-#define B100_REG_GPIO_RX_SEL     B100_REG_GPIO_BASE + 8
-#define B100_REG_GPIO_TX_SEL     B100_REG_GPIO_BASE + 10
-#define B100_REG_GPIO_RX_DBG     B100_REG_GPIO_BASE + 12
-#define B100_REG_GPIO_TX_DBG     B100_REG_GPIO_BASE + 14
-
-//possible bit values for sel when dbg is 0:
-#define GPIO_SEL_SW    0 // if pin is an output, set by software in the io reg
-#define GPIO_SEL_ATR   1 // if pin is an output, set by ATR logic
-
-//possible bit values for sel when dbg is 1:
-#define GPIO_SEL_DEBUG_0   0 // if pin is an output, debug lines from FPGA fabric
-#define GPIO_SEL_DEBUG_1   1 // if pin is an output, debug lines from FPGA fabric
-
-///////////////////////////////////////////////////
-// Slave 6 -- ATR Controller
-//   16 regs
-
-#define B100_REG_ATR_BASE  B100_REG_SLAVE(6)
-
-#define	B100_REG_ATR_IDLE_RXSIDE  B100_REG_ATR_BASE + 0
-#define	B100_REG_ATR_IDLE_TXSIDE  B100_REG_ATR_BASE + 2
-#define B100_REG_ATR_INTX_RXSIDE  B100_REG_ATR_BASE + 4
-#define B100_REG_ATR_INTX_TXSIDE  B100_REG_ATR_BASE + 6
-#define	B100_REG_ATR_INRX_RXSIDE  B100_REG_ATR_BASE + 8
-#define	B100_REG_ATR_INRX_TXSIDE  B100_REG_ATR_BASE + 10
-#define	B100_REG_ATR_FULL_RXSIDE  B100_REG_ATR_BASE + 12
-#define	B100_REG_ATR_FULL_TXSIDE  B100_REG_ATR_BASE + 14
-
 ///////////////////////////////////////////////////
 // Slave 7 -- Readback Mux 32
 
@@ -108,6 +70,8 @@
 #define B100_REG_RB_TIME_PPS_SECS   B100_REG_RB_MUX_32_BASE + 8
 #define B100_REG_RB_TIME_PPS_TICKS  B100_REG_RB_MUX_32_BASE + 12
 #define B100_REG_RB_MISC_TEST32     B100_REG_RB_MUX_32_BASE + 16
+#define B100_REG_RB_COMPAT          B100_REG_RB_MUX_32_BASE + 24
+#define B100_REG_RB_GPIO            B100_REG_RB_MUX_32_BASE + 28
 
 ////////////////////////////////////////////////////
 // Slaves 8 & 9 -- Settings Bus
@@ -131,6 +95,8 @@
 #define B100_SR_CLEAR_RX_FIFO 61 // 1 reg
 #define B100_SR_CLEAR_TX_FIFO 62 // 1 reg
 #define B100_SR_GLOBAL_RESET 63  // 1 reg
+
+#define B100_SR_GPIO 128
 
 #define B100_REG_SR_ADDR(n) (B100_REG_SLAVE(8) + (4*(n)))
 

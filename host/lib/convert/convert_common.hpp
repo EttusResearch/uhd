@@ -23,43 +23,58 @@
 #include <boost/cstdint.hpp>
 #include <complex>
 
-#define DECLARE_CONVERTER(fcn, prio) \
+#define _DECLARE_CONVERTER(fcn, in_form, num_in, out_form, num_out, prio) \
     static void fcn( \
         const uhd::convert::input_type &inputs, \
         const uhd::convert::output_type &outputs, \
-        size_t nsamps, double scale_factor \
+        const size_t nsamps, const double scale_factor \
     ); \
-    UHD_STATIC_BLOCK(register_##fcn##_##prio){ \
-        uhd::convert::register_converter(#fcn, fcn, prio); \
+    UHD_STATIC_BLOCK(__register_##fcn##_##prio){ \
+        uhd::convert::id_type id; \
+        id.input_format = #in_form; \
+        id.num_inputs = num_in; \
+        id.output_format = #out_form; \
+        id.num_outputs = num_out; \
+        uhd::convert::register_converter(id, fcn, prio); \
     } \
     static void fcn( \
         const uhd::convert::input_type &inputs, \
         const uhd::convert::output_type &outputs, \
-        size_t nsamps, double scale_factor \
+        const size_t nsamps, const double scale_factor \
     )
+
+#define DECLARE_CONVERTER(in_form, num_in, out_form, num_out, prio) \
+    _DECLARE_CONVERTER(__convert_##in_form##_##num_in##_##out_form##_##num_out, in_form, num_in, out_form, num_out, prio)
 
 /***********************************************************************
  * Typedefs
  **********************************************************************/
 typedef std::complex<double>         fc64_t;
 typedef std::complex<float>          fc32_t;
+typedef std::complex<boost::int32_t> sc32_t;
 typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<boost::int8_t>  sc8_t;
+typedef double                       f64_t;
+typedef float                        f32_t;
+typedef boost::int32_t               s32_t;
+typedef boost::int16_t               s16_t;
+typedef boost::int8_t                s8_t;
+
 typedef boost::uint32_t              item32_t;
 
 /***********************************************************************
- * Convert complex short buffer to items32
+ * Convert complex short buffer to items32 sc16
  **********************************************************************/
-static UHD_INLINE item32_t sc16_to_item32(sc16_t num, double){
+static UHD_INLINE item32_t sc16_to_item32_sc16(sc16_t num, double){
     boost::uint16_t real = num.real();
     boost::uint16_t imag = num.imag();
     return (item32_t(real) << 16) | (item32_t(imag) << 0);
 }
 
 /***********************************************************************
- * Convert items32 buffer to complex short
+ * Convert items32 sc16 buffer to complex short
  **********************************************************************/
-static UHD_INLINE sc16_t item32_to_sc16(item32_t item, double){
+static UHD_INLINE sc16_t item32_sc16_to_sc16(item32_t item, double){
     return sc16_t(
         boost::int16_t(item >> 16),
         boost::int16_t(item >> 0)
@@ -67,40 +82,82 @@ static UHD_INLINE sc16_t item32_to_sc16(item32_t item, double){
 }
 
 /***********************************************************************
- * Convert complex float buffer to items32 (no swap)
+ * Convert complex float buffer to items32 sc16
  **********************************************************************/
-static UHD_INLINE item32_t fc32_to_item32(fc32_t num, float scale_factor){
+static UHD_INLINE item32_t fc32_to_item32_sc16(fc32_t num, double scale_factor){
+    boost::uint16_t real = boost::int16_t(num.real()*float(scale_factor));
+    boost::uint16_t imag = boost::int16_t(num.imag()*float(scale_factor));
+    return (item32_t(real) << 16) | (item32_t(imag) << 0);
+}
+
+/***********************************************************************
+ * Convert items32 sc16 buffer to complex float
+ **********************************************************************/
+static UHD_INLINE fc32_t item32_sc16_to_fc32(item32_t item, double scale_factor){
+    return fc32_t(
+        float(boost::int16_t(item >> 16)*float(scale_factor)),
+        float(boost::int16_t(item >> 0)*float(scale_factor))
+    );
+}
+
+/***********************************************************************
+ * Convert complex double buffer to items32 sc16
+ **********************************************************************/
+static UHD_INLINE item32_t fc64_to_item32_sc16(fc64_t num, double scale_factor){
     boost::uint16_t real = boost::int16_t(num.real()*scale_factor);
     boost::uint16_t imag = boost::int16_t(num.imag()*scale_factor);
     return (item32_t(real) << 16) | (item32_t(imag) << 0);
 }
 
 /***********************************************************************
- * Convert items32 buffer to complex float
+ * Convert items32 sc16 buffer to complex double
  **********************************************************************/
-static UHD_INLINE fc32_t item32_to_fc32(item32_t item, float scale_factor){
-    return fc32_t(
+static UHD_INLINE fc64_t item32_sc16_to_fc64(item32_t item, double scale_factor){
+    return fc64_t(
         float(boost::int16_t(item >> 16)*scale_factor),
         float(boost::int16_t(item >> 0)*scale_factor)
     );
 }
 
 /***********************************************************************
- * Convert complex double buffer to items32 (no swap)
+ * Convert items32 sc8 buffer to complex short
  **********************************************************************/
-static UHD_INLINE item32_t fc64_to_item32(fc64_t num, double scale_factor){
-    boost::uint16_t real = boost::int16_t(num.real()*scale_factor);
-    boost::uint16_t imag = boost::int16_t(num.imag()*scale_factor);
-    return (item32_t(real) << 16) | (item32_t(imag) << 0);
+static UHD_INLINE void item32_sc8_to_sc16(item32_t item, sc16_t &out0, sc16_t &out1, double){
+    out0 = sc16_t(
+        boost::int8_t(item >> 8),
+        boost::int8_t(item >> 0)
+    );
+    out1 = sc16_t(
+        boost::int8_t(item >> 24),
+        boost::int8_t(item >> 16)
+    );
 }
 
 /***********************************************************************
- * Convert items32 buffer to complex double
+ * Convert items32 sc8 buffer to complex float
  **********************************************************************/
-static UHD_INLINE fc64_t item32_to_fc64(item32_t item, double scale_factor){
-    return fc64_t(
-        float(boost::int16_t(item >> 16)*scale_factor),
-        float(boost::int16_t(item >> 0)*scale_factor)
+static UHD_INLINE void item32_sc8_to_fc32(item32_t item, fc32_t &out0, fc32_t &out1, double scale_factor){
+    out0 = fc32_t(
+        float(boost::int8_t(item >> 8)*float(scale_factor)),
+        float(boost::int8_t(item >> 0)*float(scale_factor))
+    );
+    out1 = fc32_t(
+        float(boost::int8_t(item >> 24)*float(scale_factor)),
+        float(boost::int8_t(item >> 16)*float(scale_factor))
+    );
+}
+
+/***********************************************************************
+ * Convert items32 sc8 buffer to complex double
+ **********************************************************************/
+static UHD_INLINE void item32_sc8_to_fc64(item32_t item, fc64_t &out0, fc64_t &out1, double scale_factor){
+    out0 = fc64_t(
+        float(boost::int8_t(item >> 8)*scale_factor),
+        float(boost::int8_t(item >> 0)*scale_factor)
+    );
+    out1 = fc64_t(
+        float(boost::int8_t(item >> 24)*scale_factor),
+        float(boost::int8_t(item >> 16)*scale_factor)
     );
 }
 

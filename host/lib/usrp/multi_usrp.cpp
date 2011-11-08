@@ -17,7 +17,6 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
-#include <uhd/usrp/mboard_iface.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
@@ -348,6 +347,14 @@ public:
         return true;
     }
 
+    void set_command_time(const time_spec_t &, size_t){
+        throw uhd::not_implemented_error("Not implemented yet, but we have a very good idea of how to do it.");
+    }
+
+    void clear_command_time(size_t){
+        throw uhd::not_implemented_error("Not implemented yet, but we have a very good idea of how to do it.");
+    }
+
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
         if (chan != ALL_CHANS){
             _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
@@ -359,32 +366,62 @@ public:
     }
 
     void set_clock_config(const clock_config_t &clock_config, size_t mboard){
-        if (mboard != ALL_MBOARDS){
-            //set the reference source...
-            std::string clock_source;
-            switch(clock_config.ref_source){
-            case clock_config_t::REF_INT: clock_source = "internal"; break;
-            case clock_config_t::PPS_SMA: clock_source = "external"; break;
-            case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
-            default: clock_source = "unknown";
-            }
-            _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").set(clock_source);
+        //set the reference source...
+        std::string clock_source;
+        switch(clock_config.ref_source){
+        case clock_config_t::REF_INT: clock_source = "internal"; break;
+        case clock_config_t::PPS_SMA: clock_source = "external"; break;
+        case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
+        default: clock_source = "unknown";
+        }
+        this->set_clock_source(clock_source, mboard);
 
-            //set the time source
-            std::string time_source;
-            switch(clock_config.pps_source){
-            case clock_config_t::PPS_INT: time_source = "internal"; break;
-            case clock_config_t::PPS_SMA: time_source = "external"; break;
-            case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
-            default: time_source = "unknown";
-            }
-            if (clock_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) time_source = "_external_";
-            _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").set(time_source);
+        //set the time source
+        std::string time_source;
+        switch(clock_config.pps_source){
+        case clock_config_t::PPS_INT: time_source = "internal"; break;
+        case clock_config_t::PPS_SMA: time_source = "external"; break;
+        case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
+        default: time_source = "unknown";
+        }
+        if (time_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) time_source = "_external_";
+        this->set_time_source(time_source, mboard);
+    }
+
+    void set_time_source(const std::string &source, const size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").set(source);
             return;
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
-            set_clock_config(clock_config, m);
+            return this->set_time_source(source, m);
         }
+    }
+
+    std::string get_time_source(const size_t mboard){
+        return _tree->access<std::string>(mb_root(mboard) / "time_source" / "value").get();
+    }
+
+    std::vector<std::string> get_time_sources(const size_t mboard){
+        return _tree->access<std::vector<std::string> >(mb_root(mboard) / "time_source" / "options").get();
+    }
+
+    void set_clock_source(const std::string &source, const size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").set(source);
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++){
+            return this->set_clock_source(source, m);
+        }
+    }
+
+    std::string get_clock_source(const size_t mboard){
+        return _tree->access<std::string>(mb_root(mboard) / "clock_source" / "value").get();
+    }
+
+    std::vector<std::string> get_clock_sources(const size_t mboard){
+        return _tree->access<std::vector<std::string> >(mb_root(mboard) / "clock_source" / "options").get();
     }
 
     size_t get_num_mboards(void){
@@ -397,10 +434,6 @@ public:
 
     std::vector<std::string> get_mboard_sensor_names(size_t mboard){
         return _tree->list(mb_root(mboard) / "sensors");
-    }
-
-    mboard_iface::sptr get_mboard_iface(size_t){
-        return mboard_iface::sptr(); //not implemented
     }
 
     /*******************************************************************
@@ -445,6 +478,10 @@ public:
 
     double get_rx_rate(size_t chan){
         return _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
+    }
+
+    meta_range_t get_rx_rates(size_t chan){
+        return _tree->access<meta_range_t>(rx_dsp_root(chan) / "rate" / "range").get();
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
@@ -501,6 +538,10 @@ public:
         return _tree->access<double>(rx_rf_fe_root(chan) / "bandwidth" / "value").get();
     }
 
+    meta_range_t get_rx_bandwidth_range(size_t chan){
+        return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "bandwidth" / "range").get();
+    }
+
     dboard_iface::sptr get_rx_dboard_iface(size_t chan){
         return _tree->access<dboard_iface::sptr>(rx_rf_fe_root(chan).branch_path().branch_path() / "iface").get();
     }
@@ -511,6 +552,36 @@ public:
 
     std::vector<std::string> get_rx_sensor_names(size_t chan){
         return _tree->list(rx_rf_fe_root(chan) / "sensors");
+    }
+
+    void set_rx_dc_offset(const bool enb, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<bool>(rx_fe_root(chan) / "dc_offset" / "enable").set(enb);
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_dc_offset(enb, c);
+        }
+    }
+
+    void set_rx_dc_offset(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(rx_fe_root(chan) / "dc_offset" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_dc_offset(offset, c);
+        }
+    }
+
+    void set_rx_iq_balance(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(rx_fe_root(chan) / "iq_balance" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_iq_balance(offset, c);
+        }
     }
 
     /*******************************************************************
@@ -555,6 +626,10 @@ public:
 
     double get_tx_rate(size_t chan){
         return _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
+    }
+
+    meta_range_t get_tx_rates(size_t chan){
+        return _tree->access<meta_range_t>(tx_dsp_root(chan) / "rate" / "range").get();
     }
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
@@ -611,6 +686,10 @@ public:
         return _tree->access<double>(tx_rf_fe_root(chan) / "bandwidth" / "value").get();
     }
 
+    meta_range_t get_tx_bandwidth_range(size_t chan){
+        return _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "bandwidth" / "range").get();
+    }
+
     dboard_iface::sptr get_tx_dboard_iface(size_t chan){
         return _tree->access<dboard_iface::sptr>(tx_rf_fe_root(chan).branch_path().branch_path() / "iface").get();
     }
@@ -621,6 +700,26 @@ public:
 
     std::vector<std::string> get_tx_sensor_names(size_t chan){
         return _tree->list(tx_rf_fe_root(chan) / "sensors");
+    }
+
+    void set_tx_dc_offset(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(tx_fe_root(chan) / "dc_offset" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_tx_num_channels(); c++){
+            this->set_tx_dc_offset(offset, c);
+        }
+    }
+
+    void set_tx_iq_balance(const std::complex<double> &offset, size_t chan){
+        if (chan != ALL_CHANS){
+            _tree->access<std::complex<double> >(tx_fe_root(chan) / "iq_balance" / "value").set(offset);
+            return;
+        }
+        for (size_t c = 0; c < get_tx_num_channels(); c++){
+            this->set_tx_iq_balance(offset, c);
+        }
     }
 
 private:
@@ -669,6 +768,18 @@ private:
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
         return mb_root(mcp.mboard) / "tx_dsps" / name;
+    }
+
+    fs_path rx_fe_root(const size_t chan){
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
+        return mb_root(mcp.mboard) / "rx_frontends" / spec.db_name;
+    }
+
+    fs_path tx_fe_root(const size_t chan){
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
+        return mb_root(mcp.mboard) / "tx_frontends" / spec.db_name;
     }
 
     fs_path rx_rf_fe_root(const size_t chan){

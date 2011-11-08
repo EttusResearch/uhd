@@ -20,6 +20,7 @@
 #include <boost/format.hpp>
 #include <stdexcept>
 
+using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
@@ -32,10 +33,6 @@ struct dboard_base::impl{
 dboard_base::dboard_base(ctor_args_t args){
     _impl = UHD_PIMPL_MAKE(impl, ());
     _impl->args = *static_cast<dboard_ctor_args_t *>(args);
-}
-
-dboard_base::~dboard_base(void){
-   /* NOP */
 }
 
 std::string dboard_base::get_subdev_name(void){
@@ -54,6 +51,14 @@ dboard_id_t dboard_base::get_tx_id(void){
     return _impl->args.tx_id;
 }
 
+property_tree::sptr dboard_base::get_rx_subtree(void){
+    return _impl->args.rx_subtree;
+}
+
+property_tree::sptr dboard_base::get_tx_subtree(void){
+    return _impl->args.tx_subtree;
+}
+
 /***********************************************************************
  * xcvr dboard dboard_base class
  **********************************************************************/
@@ -70,10 +75,6 @@ xcvr_dboard_base::xcvr_dboard_base(ctor_args_t args) : dboard_base(args){
     }
 }
 
-xcvr_dboard_base::~xcvr_dboard_base(void){
-    /* NOP */
-}
-
 /***********************************************************************
  * rx dboard dboard_base class
  **********************************************************************/
@@ -86,18 +87,6 @@ rx_dboard_base::rx_dboard_base(ctor_args_t args) : dboard_base(args){
     }
 }
 
-rx_dboard_base::~rx_dboard_base(void){
-    /* NOP */
-}
-
-void rx_dboard_base::tx_get(const wax::obj &, wax::obj &){
-    throw uhd::runtime_error("cannot call tx_get on a rx dboard");
-}
-
-void rx_dboard_base::tx_set(const wax::obj &, const wax::obj &){
-    throw uhd::runtime_error("cannot call tx_set on a rx dboard");
-}
-
 /***********************************************************************
  * tx dboard dboard_base class
  **********************************************************************/
@@ -108,16 +97,4 @@ tx_dboard_base::tx_dboard_base(ctor_args_t args) : dboard_base(args){
             " -> expected a rx id of \"%s\""
         ) % get_rx_id().to_pp_string() % dboard_id_t::none().to_pp_string()));
     }
-}
-
-tx_dboard_base::~tx_dboard_base(void){
-    /* NOP */
-}
-
-void tx_dboard_base::rx_get(const wax::obj &, wax::obj &){
-    throw uhd::runtime_error("cannot call rx_get on a tx dboard");
-}
-
-void tx_dboard_base::rx_set(const wax::obj &, const wax::obj &){
-    throw uhd::runtime_error("cannot call rx_set on a tx dboard");
 }

@@ -93,15 +93,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
+    //create a transmit streamer
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //allocate buffer with data to send
-    size_t spb = usrp->get_device()->get_max_send_samps_per_packet();
+    const size_t spb = tx_stream->get_max_num_samps();
 
     std::vector<std::complex<float> *> buffs;
     for(size_t i=0; i < usrp->get_num_mboards(); i++) {
         buffs.push_back(new std::complex<float>[spb]);
         for(size_t n=0; n < spb; n++)
             buffs.back()[n] = std::complex<float>(ampl, ampl);
-    }
+    };
 
     std::signal(SIGINT, &sig_int_handler);
     if(repeat) std::cout << "Press Ctrl + C to quit..." << std::endl;
@@ -127,10 +131,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             md.end_of_burst = samps_to_send < spb;
 
             //send a single packet
-            size_t num_tx_samps = usrp->get_device()->send(
-                buffs, samps_to_send, md,
-                uhd::io_type_t::COMPLEX_FLOAT32,
-                uhd::device::SEND_MODE_ONE_PACKET, timeout
+            size_t num_tx_samps = tx_stream->send(
+                buffs, samps_to_send, md, timeout
             );
                 
             //do not use time spec for subsequent packets

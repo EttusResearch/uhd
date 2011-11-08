@@ -56,17 +56,14 @@ module u1plus_core
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
 
-   wire [7:0]	COMPAT_NUM = 8'd5;
+   localparam SR_GPIO = 128;         // 5 regs
    
    wire 	wb_clk = clk_fpga;
    wire 	wb_rst, global_reset;
 
    wire 	pps_int;
    wire [63:0] 	vita_time, vita_time_pps;
-   reg [15:0] 	reg_leds, reg_cgen_ctrl, reg_test;
-   wire [15:0] 	xfer_rate = 0;
-   wire [7:0] 	test_rate;
-   wire [3:0] 	test_ctrl;
+   reg [15:0] 	reg_cgen_ctrl, reg_test;
    
    wire [7:0] 	set_addr;
    wire [31:0] 	set_data;
@@ -90,7 +87,6 @@ module u1plus_core
 
    reset_sync reset_sync_wb(.clk(wb_clk), .reset_in(rst_fpga | global_reset), .reset_out(wb_rst));
    reset_sync reset_sync_gp(.clk(gpif_clk), .reset_in(rst_fpga | global_reset), .reset_out(gpif_rst));
-   wire [15:0] 	test_len;
    
    // /////////////////////////////////////////////////////////////////////////////////////
    // GPIF Slave to Wishbone Master
@@ -135,7 +131,7 @@ module u1plus_core
 	 
 	 .tx_underrun(tx_underrun_gpif), .rx_overrun(rx_overrun_gpif),
 
-	 .frames_per_packet(frames_per_packet), .test_len(test_len), .test_rate(test_rate), .test_ctrl(test_ctrl),
+	 .frames_per_packet(frames_per_packet),
 	 .debug0(debug0), .debug1(debug1));
 
    // /////////////////////////////////////////////////////////////////////////
@@ -166,7 +162,7 @@ module u1plus_core
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
       .debug() );
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL0), .UNIT(0), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain0
+   vita_rx_chain #(.BASE(SR_RX_CTRL0), .UNIT(0), .FIFOSIZE(10), .PROT_ENG_FLAGS(0)) vita_rx_chain0
      (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp0),
@@ -189,7 +185,7 @@ module u1plus_core
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
       .debug() );
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL1), .UNIT(1), .FIFOSIZE(9), .PROT_ENG_FLAGS(0)) vita_rx_chain1
+   vita_rx_chain #(.BASE(SR_RX_CTRL1), .UNIT(1), .FIFOSIZE(10), .PROT_ENG_FLAGS(0)) vita_rx_chain1
      (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp1),
@@ -252,14 +248,20 @@ module u1plus_core
    wire 	 s8_we,s9_we,sa_we,sb_we,sc_we,sd_we, se_we, sf_we;
    
    wb_1master #(.dw(dw), .aw(aw), .sw(sw), .decode_w(4),
-		.s0_addr(4'h0), .s0_mask(4'hF), .s1_addr(4'h1), .s1_mask(4'hF),
-		.s2_addr(4'h2), .s2_mask(4'hF),	.s3_addr(4'h3), .s3_mask(4'hF),
-		.s4_addr(4'h4), .s4_mask(4'hF),	.s5_addr(4'h5), .s5_mask(4'hF),
-		.s6_addr(4'h6), .s6_mask(4'hF),	.s7_addr(4'h7), .s7_mask(4'hF),
-		.s8_addr(4'h8), .s8_mask(4'hE),	.s9_addr(4'hf), .s9_mask(4'hF), // slave 8 is double wide
-		.sa_addr(4'ha), .sa_mask(4'hF),	.sb_addr(4'hb), .sb_mask(4'hF),
-		.sc_addr(4'hc), .sc_mask(4'hF),	.sd_addr(4'hd), .sd_mask(4'hF),
-		.se_addr(4'he), .se_mask(4'hF),	.sf_addr(4'hf), .sf_mask(4'hF))
+		.s0_addr(4'h0), .s0_mask(4'hF), // Misc Regs
+		.s1_addr(4'h1), .s1_mask(4'hF), // Unused
+		.s2_addr(4'h2), .s2_mask(4'hF),	// SPI
+		.s3_addr(4'h3), .s3_mask(4'hF), // I2C
+		.s4_addr(4'h4), .s4_mask(4'hF),	// Unused
+		.s5_addr(4'h5), .s5_mask(4'hF), // Unused on B1x0, Async Msg on E1x0
+		.s6_addr(4'h6), .s6_mask(4'hF),	// Unused
+		.s7_addr(4'h7), .s7_mask(4'hF), // Readback MUX
+		.s8_addr(4'h8), .s8_mask(4'h8), // Setting Regs -- slave 8 is 8 slaves wide
+		// slaves 9-f alias to slave 1, all are unused
+		.s9_addr(4'h1), .s9_mask(4'hF),
+		.sa_addr(4'h1), .sa_mask(4'hF),	.sb_addr(4'h1), .sb_mask(4'hF),
+		.sc_addr(4'h1), .sc_mask(4'hF),	.sd_addr(4'h1), .sd_mask(4'hF),
+		.se_addr(4'h1), .se_mask(4'hF),	.sf_addr(4'h1), .sf_mask(4'hF))
    wb_1master
      (.clk_i(wb_clk),.rst_i(wb_rst),       
       .m0_dat_o(m0_dat_miso),.m0_ack_o(m0_ack),.m0_err_o(m0_err),.m0_rty_o(m0_rty),.m0_dat_i(m0_dat_mosi),
@@ -297,75 +299,47 @@ module u1plus_core
       .sf_dat_o(sf_dat_mosi),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_miso),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0) );
 
-   assign s5_ack = 0;   
+   assign s1_ack = 0;   assign s4_ack = 0;   assign s5_ack = 0;   assign s6_ack = 0;
    assign s9_ack = 0;   assign sa_ack = 0;   assign sb_ack = 0;
    assign sc_ack = 0;   assign sd_ack = 0;   assign se_ack = 0;   assign sf_ack = 0;
 
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 0, Misc LEDs, Switches, controls
    
-   localparam REG_LEDS = 7'd0;         // out
    localparam REG_CGEN_CTRL = 7'd4;    // out
    localparam REG_CGEN_ST = 7'd6;      // in
    localparam REG_TEST = 7'd8;         // out
    localparam REG_RX_FRAMELEN = 7'd10; // in
    localparam REG_TX_FRAMELEN = 7'd12; // out
-   localparam REG_XFER_RATE = 7'd14;   // out
-   localparam REG_COMPAT = 7'd16;      // in
    
    always @(posedge wb_clk)
      if(wb_rst)
        begin
-	  reg_leds <= 0;
 	  reg_cgen_ctrl <= 2'b11;
 	  reg_test <= 0;
-	  //xfer_rate <= 0;
 	  frames_per_packet <= 0;
        end
      else
        if(s0_cyc & s0_stb & s0_we) 
 	 case(s0_adr[6:0])
-	   REG_LEDS :
-	     reg_leds <= s0_dat_mosi;
 	   REG_CGEN_CTRL :
 	     reg_cgen_ctrl <= s0_dat_mosi;
 	   REG_TEST :
 	     reg_test <= s0_dat_mosi;
 	   REG_RX_FRAMELEN :
 	     frames_per_packet <= s0_dat_mosi[7:0];
-	   //REG_XFER_RATE :
-	     //xfer_rate <= s0_dat_mosi;
 	 endcase // case (s0_adr[6:0])
 
-   assign test_ctrl = xfer_rate[11:8];
-   assign test_rate = xfer_rate[7:0];
-   assign test_len = reg_test[15:0];
-   
    assign debug_led = {run_tx, (run_rx0 | run_rx1), cgen_st_ld};
    assign { cgen_sync_b, cgen_ref_sel } = reg_cgen_ctrl;
    
-   assign s0_dat_miso = (s0_adr[6:0] == REG_LEDS) ? reg_leds : 
-			(s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
+   assign s0_dat_miso = (s0_adr[6:0] == REG_CGEN_CTRL) ? reg_cgen_ctrl :
 			(s0_adr[6:0] == REG_CGEN_ST) ? {13'b0,cgen_st_status,cgen_st_ld,cgen_st_refmon} :
 			(s0_adr[6:0] == REG_TEST) ? reg_test :
-			(s0_adr[6:0] == REG_COMPAT) ? { 8'd0, COMPAT_NUM } :
 			16'hBEEF;
    
    assign s0_ack = s0_stb & s0_cyc;
 
-   // /////////////////////////////////////////////////////////////////////////////////////
-   // Slave 1, UART
-   //    depth of 3 is 128 entries, clkdiv of 278 gives 230.4k with a 64 MHz system clock
-
-/*   
-   simple_uart #(.TXDEPTH(3),.RXDEPTH(3), .CLKDIV_DEFAULT(278)) uart 
-     (.clk_i(wb_clk),.rst_i(wb_rst),
-      .we_i(s1_we),.stb_i(s1_stb),.cyc_i(s1_cyc),.ack_o(s1_ack),
-      .adr_i(s1_adr[3:1]),.dat_i({16'd0,s1_dat_mosi}),.dat_o(s1_dat_miso),
-      .rx_int_o(),.tx_int_o(),
-      .tx_o(debug_txd),.rx_i(debug_rxd),.baud_o());
-*/
-   
    // /////////////////////////////////////////////////////////////////////////////////////
    // Slave 2, SPI
 
@@ -394,38 +368,30 @@ module u1plus_core
    IOBUF sda_pin(.O(sda_pad_i), .IO(db_sda), .I(sda_pad_o), .T(sda_pad_oen_o));
 
    // /////////////////////////////////////////////////////////////////////////
-   // GPIOs -- Slave #4
+   // GPIOs
 
-   wire [31:0] 	atr_lines;
-   wire [31:0] 	debug_gpio_0, debug_gpio_1;
+   wire [31:0] gpio_readback;
    
-   nsgpio16LE 
-     nsgpio16LE(.clk_i(wb_clk),.rst_i(wb_rst),
-		.cyc_i(s4_cyc),.stb_i(s4_stb),.adr_i(s4_adr[3:0]),.we_i(s4_we),
-		.dat_i(s4_dat_mosi),.dat_o(s4_dat_miso),.ack_o(s4_ack),
-		.atr(atr_lines),.debug_0(debug_gpio_0),.debug_1(debug_gpio_1),
-		.gpio( {io_tx,io_rx} ) );
+   gpio_atr #(.BASE(SR_GPIO), .WIDTH(32)) 
+   gpio_atr(.clk(wb_clk),.reset(wb_rst),
+	    .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+	    .rx(run_rx0 | run_rx1), .tx(run_tx),
+	    .gpio({io_tx,io_rx}), .gpio_readback(gpio_readback) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Settings Bus -- Slave #8 + 9
 
    // only have 64 regs, 32 bits each with current setup...
-   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(6)) settings_bus_16LE
+   settings_bus_16LE #(.AWIDTH(11),.RWIDTH(8)) settings_bus_16LE
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
 
    // /////////////////////////////////////////////////////////////////////////
-   // ATR Controller -- Slave #6
-
-   atr_controller16 atr_controller16
-     (.clk_i(wb_clk), .rst_i(wb_rst),
-      .adr_i(s6_adr[5:0]), .sel_i(s6_sel), .dat_i(s6_dat_mosi), .dat_o(s6_dat_miso),
-      .we_i(s6_we), .stb_i(s6_stb), .cyc_i(s6_cyc), .ack_o(s6_ack),
-      .run_rx(run_rx0 | run_rx1), .run_tx(run_tx), .ctrl_lines(atr_lines));
-
-   // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7
+
+   //compatibility number -> increment when the fpga has been sufficiently altered
+   localparam compat_num = {16'd8, 16'd0}; //major, minor
 
    wire [31:0] reg_test32;
 
@@ -440,7 +406,7 @@ module u1plus_core
       .word00(vita_time[63:32]),        .word01(vita_time[31:0]),
       .word02(vita_time_pps[63:32]),    .word03(vita_time_pps[31:0]),
       .word04(reg_test32),              .word05(32'b0),
-      .word06(32'b0),                   .word07(32'b0),
+      .word06(compat_num),              .word07(gpio_readback),
       .word08(32'b0),                   .word09(32'b0),
       .word10(32'b0),                   .word11(32'b0),
       .word12(32'b0),                   .word13(32'b0),
@@ -460,7 +426,5 @@ module u1plus_core
 
    assign debug_clk = 2'b00; // { gpif_clk, clk_fpga };
    assign debug = 0;
-   assign debug_gpio_0 = 0;
-   assign debug_gpio_1 = 0;
    
 endmodule // u1plus_core

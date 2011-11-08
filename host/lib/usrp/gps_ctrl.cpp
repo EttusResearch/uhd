@@ -17,7 +17,6 @@
 
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/utils/msg.hpp>
-#include <uhd/utils/props.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
@@ -121,7 +120,7 @@ public:
         return sensor_value_t("GPS lock status", locked(), "locked", "unlocked");
     }
     else {
-        UHD_THROW_PROP_GET_ERROR();
+        throw uhd::value_error("gps ctrl get_sensor unknown key: " + key);
     }
   }
 

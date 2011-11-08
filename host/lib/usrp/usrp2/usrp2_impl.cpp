@@ -456,11 +456,30 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].tx_fe = tx_frontend_core_200::make(
             _mbc[mb].iface, U2_REG_SR_ADDR(SR_TX_FRONT)
         );
-        //TODO lots of properties to expose here for frontends
+
         _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-            .coerce(boost::bind(&usrp2_impl::update_rx_subdev_spec, this, mb, _1));
+            .subscribe(boost::bind(&usrp2_impl::update_rx_subdev_spec, this, mb, _1));
         _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-            .coerce(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
+            .subscribe(boost::bind(&usrp2_impl::update_tx_subdev_spec, this, mb, _1));
+
+        const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
+        const fs_path tx_fe_path = mb_path / "tx_frontends" / "A";
+
+        _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
+            .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _mbc[mb].rx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
+            .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _mbc[mb].rx_fe, _1))
+            .set(true);
+        _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
+            .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _mbc[mb].rx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
+            .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _mbc[mb].tx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
+            .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _mbc[mb].tx_fe, _1))
+            .set(std::complex<double>(0.0, 0.0));
 
         ////////////////////////////////////////////////////////////////
         // create rx dsp control objects
@@ -480,9 +499,12 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mbc[mb].rx_dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for lingering
             _mbc[mb].rx_dsp_xports[dspno]->get_recv_buff(0.01).get(); //recv with timeout for expected
             fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+            _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
+                .publish(boost::bind(&rx_dsp_core_200::get_host_rates, _mbc[mb].rx_dsps[dspno]));
             _tree->create<double>(rx_dsp_path / "rate/value")
+                .set(1e6) //some default
                 .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _mbc[mb].rx_dsps[dspno], _1))
-                .subscribe(boost::bind(&usrp2_impl::update_rx_samp_rate, this, _1));
+                .subscribe(boost::bind(&usrp2_impl::update_rx_samp_rate, this, mb, dspno, _1));
             _tree->create<double>(rx_dsp_path / "freq/value")
                 .coerce(boost::bind(&rx_dsp_core_200::set_freq, _mbc[mb].rx_dsps[dspno], _1));
             _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
@@ -500,9 +522,12 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].tx_dsp->set_link_rate(USRP2_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _mbc[mb].tx_dsp, _1));
+        _tree->create<meta_range_t>(mb_path / "tx_dsps/0/rate/range")
+            .publish(boost::bind(&tx_dsp_core_200::get_host_rates, _mbc[mb].tx_dsp));
         _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
+            .set(1e6) //some default
             .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _mbc[mb].tx_dsp, _1))
-            .subscribe(boost::bind(&usrp2_impl::update_tx_samp_rate, this, _1));
+            .subscribe(boost::bind(&usrp2_impl::update_tx_samp_rate, this, mb, 0, _1));
         _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
             .coerce(boost::bind(&usrp2_impl::set_tx_dsp_freq, this, mb, _1));
         _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
@@ -572,42 +597,21 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].iface, _mbc[mb].clock);
         _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mbc[mb].dboard_iface);
         _mbc[mb].dboard_manager = dboard_manager::make(
-            rx_db_eeprom.id,
-            ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
-            _mbc[mb].dboard_iface
+            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+            _mbc[mb].dboard_iface, _tree->subtree(mb_path / "dboards/A")
         );
-        BOOST_FOREACH(const std::string &name, _mbc[mb].dboard_manager->get_rx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards/A/rx_frontends" / name),
-                _mbc[mb].dboard_manager->get_rx_subdev(name)
-            );
-        }
-        BOOST_FOREACH(const std::string &name, _mbc[mb].dboard_manager->get_tx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards/A/tx_frontends" / name),
-                _mbc[mb].dboard_manager->get_tx_subdev(name)
-            );
-        }
     }
 
     //initialize io handling
     this->io_init();
 
     //do some post-init tasks
+    this->update_rates();
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         fs_path root = "/mboards/" + mb;
-        _tree->access<double>(root / "tick_rate").update();
 
-        //and now that the tick rate is set, init the host rates to something
-        BOOST_FOREACH(const std::string &name, _tree->list(root / "rx_dsps")){
-            _tree->access<double>(root / "rx_dsps" / name / "rate" / "value").set(1e6);
-        }
-        BOOST_FOREACH(const std::string &name, _tree->list(root / "tx_dsps")){
-            _tree->access<double>(root / "tx_dsps" / name / "rate" / "value").set(1e6);
-        }
-
-        _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_rx_subdev_names()[0]));
-        _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:"+_mbc[mb].dboard_manager->get_tx_subdev_names()[0]));
+        _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(root / "dboards/A/rx_frontends").at(0)));
+        _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(root / "dboards/A/tx_frontends").at(0)));
         _tree->access<std::string>(root / "clock_source/value").set("internal");
         _tree->access<std::string>(root / "time_source/value").set("none");
 

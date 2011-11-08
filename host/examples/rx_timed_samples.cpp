@@ -70,6 +70,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
+    //create a receive streamer
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+
     //setup streaming
     std::cout << std::endl;
     std::cout << boost::format(
@@ -85,7 +89,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::rx_metadata_t md;
 
     //allocate buffer to receive with samples
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
 
     //the first call to recv() will block this many seconds before receiving
     double timeout = seconds_in_future + 0.1; //timeout (delay before receive + padding)
@@ -93,10 +97,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_acc_samps = 0; //number of accumulated samples
     while(num_acc_samps < total_num_samps){
         //receive a single packet
-        size_t num_rx_samps = usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET, timeout
+        size_t num_rx_samps = rx_stream->recv(
+            &buff.front(), buff.size(), md, timeout, true
         );
 
         //use a small timeout for subsequent packets

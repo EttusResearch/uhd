@@ -73,8 +73,8 @@ module small_hb_int
      final_round (.clk(clk),.in(accum),.out(accum_rnd));
 
    wire [WIDTH-1:0] 	 clipped;
-   clip_reg #(.bits_in(WIDTH+3),.bits_out(WIDTH))
-     final_clip (.clk(clk),.in(accum_rnd),.out(clipped));
+   clip_reg #(.bits_in(WIDTH+3),.bits_out(WIDTH)) final_clip
+     (.clk(clk),.in(accum_rnd),.strobe_in(1'b1), .out(clipped));
 
    reg [WIDTH-1:0] 	 saved, saved_d3;
    always @(posedge clk)

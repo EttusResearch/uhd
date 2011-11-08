@@ -23,8 +23,11 @@
 namespace uhd{
 
     /*!
-     * The Input/Output configuration struct:
+     * The DEPRECATED Input/Output configuration struct:
      * Used to specify the IO type with device send/recv.
+     *
+     * Deprecated in favor of streamer interface.
+     * Its still in this file for the sake of gr-uhd swig.
      */
     class UHD_API io_type_t{
     public:

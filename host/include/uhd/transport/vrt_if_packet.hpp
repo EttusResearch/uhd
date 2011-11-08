@@ -44,6 +44,7 @@ namespace vrt{
 
         //size fields
         size_t num_payload_words32; //required in pack, derived in unpack
+        size_t num_payload_bytes;   //required in pack, derived in unpack
         size_t num_header_words32;  //derived in pack, derived in unpack
         size_t num_packet_words32;  //derived in pack, required in unpack
 

@@ -42,6 +42,7 @@
 #define REG_RX_CTRL_VRT_TLR        _ctrl_base + 24
 #define REG_RX_CTRL_NSAMPS_PP      _ctrl_base + 28
 #define REG_RX_CTRL_NCHANNELS      _ctrl_base + 32
+#define REG_RX_CTRL_FORMAT         _ctrl_base + 36
 
 template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
@@ -129,15 +130,26 @@ public:
     }
 
     void set_link_rate(const double rate){
-        _link_rate = rate/sizeof(boost::uint32_t); //in samps/s
+        //_link_rate = rate/sizeof(boost::uint32_t); //in samps/s
+        _link_rate = rate/sizeof(boost::uint16_t); //in samps/s (allows for 8sc)
+    }
+
+    uhd::meta_range_t get_host_rates(void){
+        meta_range_t range;
+        for (int rate = 512; rate > 256; rate -= 4){
+            range.push_back(range_t(_tick_rate/rate));
+        }
+        for (int rate = 256; rate > 128; rate -= 2){
+            range.push_back(range_t(_tick_rate/rate));
+        }
+        for (int rate = 128; rate >= int(std::ceil(_tick_rate/_link_rate)); rate -= 1){
+            range.push_back(range_t(_tick_rate/rate));
+        }
+        return range;
     }
 
     double set_host_rate(const double rate){
-        size_t decim_rate = uhd::clip<size_t>(
-            boost::math::iround(_tick_rate/rate), size_t(std::ceil(_tick_rate/_link_rate)), 512
-        );
-        if (decim_rate > 128) decim_rate &= ~0x1; //CIC up to 128, have to use 1 HB
-        if (decim_rate > 256) decim_rate &= ~0x3; //CIC up to 128, have to use 2 HB
+        const size_t decim_rate = boost::math::iround(_tick_rate/this->get_host_rates().clip(rate, true));
         size_t decim = decim_rate;
 
         //determine which half-band filters are activated
@@ -162,7 +174,7 @@ public:
     }
 
     double get_scaling_adjustment(void){
-        return _scaling_adjustment;
+        return _scaling_adjustment/_fxpt_scale_adj;
     }
 
     double set_freq(const double freq_){
@@ -192,12 +204,28 @@ public:
         if (_continuous_streaming) issue_stream_command(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
 
+    void set_format(const std::string &format, const unsigned scale){
+        unsigned format_word = 0;
+        if (format == "sc16"){
+            format_word = 0;
+            _fxpt_scale_adj = 32767.;
+        }
+        else if (format == "sc8"){
+            format_word = (1 << 18);
+            _fxpt_scale_adj = 32767./scale;
+        }
+        else throw uhd::value_error("USRP RX cannot handle requested wire format: " + format);
+
+        const unsigned scale_word = scale & 0x3ffff; //18 bits;
+        _iface->poke32(REG_RX_CTRL_FORMAT, format_word | scale_word);
+    }
+
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
     bool _continuous_streaming;
-    double _scaling_adjustment;
+    double _scaling_adjustment, _fxpt_scale_adj;
 };
 
 rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid, const bool lingering_packet){

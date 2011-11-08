@@ -24,12 +24,14 @@ ADD_SUBDIRECTORY(utils)
 INSTALL(FILES
     config.hpp
     convert.hpp
+    deprecated.hpp
     device.hpp
+    device_deprecated.ipp
     exception.hpp
     property_tree.ipp
     property_tree.hpp
+    stream.hpp
     version.hpp
-    wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
     COMPONENT headers
 )

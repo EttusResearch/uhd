@@ -48,6 +48,8 @@ public:
 
     virtual double set_host_rate(const double rate) = 0;
 
+    virtual uhd::meta_range_t get_host_rates(void) = 0;
+
     virtual double get_scaling_adjustment(void) = 0;
 
     virtual uhd::meta_range_t get_freq_range(void) = 0;
@@ -56,6 +58,7 @@ public:
 
     virtual void handle_overflow(void) = 0;
 
+    virtual void set_format(const std::string &format, const unsigned scale) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP */

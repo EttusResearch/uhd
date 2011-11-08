@@ -139,6 +139,7 @@ UHD_STATIC_BLOCK(register_b100_device){
  * Structors
  **********************************************************************/
 b100_impl::b100_impl(const device_addr_t &device_addr){
+    _tree = property_tree::make();
 
     //extract the FPGA path for the B100
     std::string b100_fpga_image = find_image_path(
@@ -226,7 +227,6 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
-    _tree = property_tree::make();
     _tree->create<std::string>("/name").set("B-Series Device");
     const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set("B100 (B-Hundo)");
@@ -276,11 +276,30 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _rx_fe = rx_frontend_core_200::make(_fpga_ctrl, B100_REG_SR_ADDR(B100_SR_RX_FRONT));
     _tx_fe = tx_frontend_core_200::make(_fpga_ctrl, B100_REG_SR_ADDR(B100_SR_TX_FRONT));
-    //TODO lots of properties to expose here for frontends
+
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .subscribe(boost::bind(&b100_impl::update_rx_subdev_spec, this, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .subscribe(boost::bind(&b100_impl::update_tx_subdev_spec, this, _1));
+
+    const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
+    const fs_path tx_fe_path = mb_path / "tx_frontends" / "A";
+
+    _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
+        .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _rx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
+    _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
+        .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _rx_fe, _1))
+        .set(true);
+    _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
+        .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _rx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
+    _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
+        .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _tx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
+    _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
+        .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _tx_fe, _1))
+        .set(std::complex<double>(0.0, 0.0));
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
@@ -296,9 +315,12 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
+            .publish(boost::bind(&rx_dsp_core_200::get_host_rates, _rx_dsps[dspno]));
         _tree->create<double>(rx_dsp_path / "rate/value")
+            .set(1e6) //some default
             .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
-            .subscribe(boost::bind(&b100_impl::update_rx_samp_rate, this, _1));
+            .subscribe(boost::bind(&b100_impl::update_rx_samp_rate, this, dspno, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
             .coerce(boost::bind(&rx_dsp_core_200::set_freq, _rx_dsps[dspno], _1));
         _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
@@ -316,9 +338,12 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tx_dsp->set_link_rate(B100_LINK_RATE_BPS);
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
+    _tree->create<meta_range_t>(mb_path / "tx_dsps/0/rate/range")
+        .publish(boost::bind(&tx_dsp_core_200::get_host_rates, _tx_dsp));
     _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
+        .set(1e6) //some default
         .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _tx_dsp, _1))
-        .subscribe(boost::bind(&b100_impl::update_tx_samp_rate, this, _1));
+        .subscribe(boost::bind(&b100_impl::update_tx_samp_rate, this, 0, _1));
     _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
         .coerce(boost::bind(&tx_dsp_core_200::set_freq, _tx_dsp, _1));
     _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
@@ -379,22 +404,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _dboard_iface = make_b100_dboard_iface(_fpga_ctrl, _fpga_i2c_ctrl, _fpga_spi_ctrl, _clock_ctrl, _codec_ctrl);
     _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_dboard_iface);
     _dboard_manager = dboard_manager::make(
-        rx_db_eeprom.id,
-        ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
-        _dboard_iface
+        rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+        _dboard_iface, _tree->subtree(mb_path / "dboards/A")
     );
-    BOOST_FOREACH(const std::string &name, _dboard_manager->get_rx_subdev_names()){
-        dboard_manager::populate_prop_tree_from_subdev(
-            _tree->subtree(mb_path / "dboards/A/rx_frontends" / name),
-            _dboard_manager->get_rx_subdev(name)
-        );
-    }
-    BOOST_FOREACH(const std::string &name, _dboard_manager->get_tx_subdev_names()){
-        dboard_manager::populate_prop_tree_from_subdev(
-            _tree->subtree(mb_path / "dboards/A/tx_frontends" / name),
-            _dboard_manager->get_tx_subdev(name)
-        );
-    }
 
     //initialize io handling
     this->io_init();
@@ -402,19 +414,13 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate").update() //update and then subscribe the clock callback
+    this->update_rates();
+
+    _tree->access<double>(mb_path / "tick_rate") //now subscribe the clock rate setter
         .subscribe(boost::bind(&b100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
-    //and now that the tick rate is set, init the host rates to something
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
-        _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").set(1e6);
-    }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
-        _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").set(1e6);
-    }
-
-    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_rx_subdev_names()[0]));
-    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:"+_dboard_manager->get_tx_subdev_names()[0]));
+    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/rx_frontends").at(0)));
+    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/tx_frontends").at(0)));
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
 }
@@ -438,13 +444,19 @@ void b100_impl::check_fw_compat(void){
 }
 
 void b100_impl::check_fpga_compat(void){
-    const boost::uint16_t fpga_compat_num = _fpga_ctrl->peek16(B100_REG_MISC_COMPAT);
-    if (fpga_compat_num != B100_FPGA_COMPAT_NUM){
-        throw uhd::runtime_error(str(boost::format(
-            "Expected FPGA compatibility number 0x%x, but got 0x%x:\n"
-            "The FPGA build is not compatible with the host code build."
-        ) % B100_FPGA_COMPAT_NUM % fpga_compat_num));
+    const boost::uint32_t fpga_compat_num = _fpga_ctrl->peek32(B100_REG_RB_COMPAT);
+    boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+    if (fpga_major == 0){ //old version scheme
+        fpga_major = fpga_minor;
+        fpga_minor = 0;
     }
+    if (fpga_major != B100_FPGA_COMPAT_NUM){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected FPGA compatibility number %d, but got %d:\n"
+            "The FPGA build is not compatible with the host code build."
+        ) % int(B100_FPGA_COMPAT_NUM) % fpga_major));
+    }
+    _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 }
 
 double b100_impl::update_rx_codec_gain(const double gain){

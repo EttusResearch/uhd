@@ -36,24 +36,22 @@ namespace po = boost::program_options;
  *    Issue a stream command with a time that is in the past.
  *    We expect to get an inline late command message.
  */
-bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp){
+bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr rx_stream, uhd::tx_streamer::sptr){
     std::cout << "Test late command message... " << std::flush;
 
     usrp->set_time_now(uhd::time_spec_t(200.0)); //set time
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = usrp->get_device()->get_max_recv_samps_per_packet();
+    stream_cmd.num_samps = rx_stream->get_max_num_samps();
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = uhd::time_spec_t(100.0); //time in the past
     usrp->issue_stream_cmd(stream_cmd);
 
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::rx_metadata_t md;
 
-    const size_t nsamps = usrp->get_device()->recv(
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::RECV_MODE_FULL_BUFF
+    const size_t nsamps = rx_stream->recv(
+        &buff.front(), buff.size(), md
     );
 
     switch(md.error_code){
@@ -85,27 +83,23 @@ bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp){
  *    Issue a stream command with num samps and more.
  *    We expect to get an inline broken chain message.
  */
-bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp){
+bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr rx_stream, uhd::tx_streamer::sptr){
     std::cout << "Test broken chain message... " << std::flush;
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);
     stream_cmd.stream_now = true;
-    stream_cmd.num_samps = usrp->get_device()->get_max_recv_samps_per_packet();
+    stream_cmd.num_samps = rx_stream->get_max_num_samps();
     usrp->issue_stream_cmd(stream_cmd);
 
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+    std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::rx_metadata_t md;
 
-    usrp->get_device()->recv( //once for the requested samples
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::RECV_MODE_FULL_BUFF
+    rx_stream->recv( //once for the requested samples
+        &buff.front(), buff.size(), md
     );
 
-    usrp->get_device()->recv( //again for the inline message
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::RECV_MODE_FULL_BUFF
+    rx_stream->recv( //again for the inline message
+        &buff.front(), buff.size(), md
     );
 
     switch(md.error_code){
@@ -137,7 +131,7 @@ bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp){
  *    Send a burst of many samples that will fragment internally.
  *    We expect to get an burst ack async message.
  */
-bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp){
+bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
     std::cout << "Test burst ack message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -146,12 +140,10 @@ bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp){
     md.has_time_spec  = false;
 
     //3 times max-sps guarantees a SOB, no burst, and EOB packet
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_send_samps_per_packet()*3);
+    std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps()*3);
 
-    usrp->get_device()->send(
-        &buff.front(), buff.size(), md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
+    tx_stream->send(
+        &buff.front(), buff.size(), md
     );
 
     uhd::async_metadata_t async_md;
@@ -185,7 +177,7 @@ bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp){
  *    Send a start of burst packet with no following end of burst.
  *    We expect to get an underflow(within a burst) async message.
  */
-bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp){
+bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
     std::cout << "Test underflow message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -193,10 +185,7 @@ bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp){
     md.end_of_burst   = false;
     md.has_time_spec  = false;
 
-    usrp->get_device()->send("", 0, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    tx_stream->send("", 0, md);
 
     uhd::async_metadata_t async_md;
     if (not usrp->get_device()->recv_async_msg(async_md, 1)){
@@ -229,7 +218,7 @@ bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp){
  *    Send a burst packet that occurs at a time in the past.
  *    We expect to get a time error async message.
  */
-bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp){
+bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
     std::cout << "Test time error message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -240,10 +229,7 @@ bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp){
 
     usrp->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
 
-    usrp->get_device()->send("", 0, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    tx_stream->send("", 0, md);
 
     uhd::async_metadata_t async_md;
     if (not usrp->get_device()->recv_async_msg(async_md)){
@@ -276,16 +262,12 @@ void flush_async(uhd::usrp::multi_usrp::sptr usrp){
     while (usrp->get_device()->recv_async_msg(async_md)){}
 }
 
-void flush_recv(uhd::usrp::multi_usrp::sptr usrp){
-    std::vector<std::complex<float> > buff(usrp->get_device()->get_max_recv_samps_per_packet());
+void flush_recv(uhd::rx_streamer::sptr rx_stream){
+    std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::rx_metadata_t md;
 
     do{
-        usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_FULL_BUFF
-        );
+        rx_stream->recv(&buff.front(), buff.size(), md);
     } while (md.error_code != uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
 }
 
@@ -319,10 +301,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
+    //create RX and TX streamers
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //------------------------------------------------------------------
     // begin messages test
     //------------------------------------------------------------------
-    static const uhd::dict<std::string, boost::function<bool(uhd::usrp::multi_usrp::sptr)> >
+    static const uhd::dict<std::string, boost::function<bool(uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr)> >
         tests = boost::assign::map_list_of
         ("Test Burst ACK ", &test_burst_ack_message)
         ("Test Underflow ", &test_underflow_message)
@@ -342,9 +329,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::srand(uhd::time_spec_t::get_system_time().get_full_secs());
     for (size_t n = 0; n < ntests; n++){
         std::string key = tests.keys()[std::rand() % tests.size()];
-        bool pass = tests[key](usrp);
+        bool pass = tests[key](usrp, rx_stream, tx_stream);
         flush_async(usrp);
-        flush_recv(usrp);
+        flush_recv(rx_stream);
 
         //store result
         if (pass) successes[key]++;

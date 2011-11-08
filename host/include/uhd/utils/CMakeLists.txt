@@ -26,7 +26,6 @@ INSTALL(FILES
     log.hpp
     msg.hpp
     pimpl.hpp
-    props.hpp
     safe_call.hpp
     safe_main.hpp
     static.hpp

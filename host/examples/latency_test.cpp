@@ -83,6 +83,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //allocate a buffer to use
     std::vector<std::complex<float> > buffer(nsamps);
 
+    //create RX and TX streamers
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //initialize result counts
     int time_error = 0;
     int ack = 0;
@@ -104,10 +109,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
          * Receive the requested packet
          **************************************************************/
         uhd::rx_metadata_t rx_md;
-        size_t num_rx_samps = usrp->get_device()->recv(
-            &buffer.front(), buffer.size(), rx_md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_FULL_BUFF
+        size_t num_rx_samps = rx_stream->recv(
+            &buffer.front(), buffer.size(), rx_md
         );
 
         if(verbose) std::cout << boost::format("Got packet: %u samples, %u full secs, %f frac secs")
@@ -121,10 +124,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         tx_md.end_of_burst = true;
         tx_md.has_time_spec = true;
         tx_md.time_spec = rx_md.time_spec + uhd::time_spec_t(rtt);
-        size_t num_tx_samps = usrp->get_device()->send(
-            &buffer.front(), buffer.size(), tx_md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_FULL_BUFF
+        size_t num_tx_samps = tx_stream->send(
+            &buffer.front(), buffer.size(), tx_md
         );
         if(verbose) std::cout << boost::format("Sent %d samples") % num_tx_samps << std::endl;
 

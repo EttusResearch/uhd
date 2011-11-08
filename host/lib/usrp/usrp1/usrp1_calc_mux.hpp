@@ -37,7 +37,7 @@ typedef std::pair<std::string, std::string> mapping_pair_t;
  *    to account for the reversal in the type conversion routines.
  **********************************************************************/
 static int calc_rx_mux_pair(int adc_for_i, int adc_for_q){
-    return (adc_for_i << 2) | (adc_for_q << 0); //shift reversal here
+    return (adc_for_i << 0) | (adc_for_q << 2);
 }
 
 /*!
@@ -98,7 +98,7 @@ static boost::uint32_t calc_rx_mux(const std::vector<mapping_pair_t> &mapping){
  *    to account for the reversal in the type conversion routines.
  **********************************************************************/
 static int calc_tx_mux_pair(int chn_for_i, int chn_for_q){
-    return (chn_for_i << 4) | (chn_for_q << 0); //shift reversal here
+    return (chn_for_i << 0) | (chn_for_q << 4);
 }
 
 /*!

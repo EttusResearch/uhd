@@ -33,6 +33,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <cstdio>
 
 using namespace uhd;
@@ -187,21 +188,6 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // Normal mode with no loopback or Rx counting
     _iface->poke32(FR_MODE, 0x00000000);
     _iface->poke32(FR_DEBUG_EN, 0x00000000);
-    _iface->poke32(FR_RX_SAMPLE_RATE_DIV, 0x00000001); //divide by 2
-    _iface->poke32(FR_TX_SAMPLE_RATE_DIV, 0x00000001); //divide by 2
-    _iface->poke32(FR_DC_OFFSET_CL_EN, 0x0000000f);
-
-    // Reset offset correction registers
-    _iface->poke32(FR_ADC_OFFSET_0, 0x00000000);
-    _iface->poke32(FR_ADC_OFFSET_1, 0x00000000);
-    _iface->poke32(FR_ADC_OFFSET_2, 0x00000000);
-    _iface->poke32(FR_ADC_OFFSET_3, 0x00000000);
-
-    // Set default for RX format to 16-bit I&Q and no half-band filter bypass
-    _iface->poke32(FR_RX_FORMAT, 0x00000300);
-
-    // Set default for TX format to 16-bit I&Q
-    _iface->poke32(FR_TX_FORMAT, 0x00000000);
 
     UHD_LOG
         << "USRP1 Capabilities" << std::endl
@@ -233,14 +219,25 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
     _master_clock_rate = 64e6;
-    try{
-        if (not mb_eeprom["mcr"].empty())
+    if (device_addr.has_key("mcr")){
+        try{
+            _master_clock_rate = boost::lexical_cast<double>(device_addr["mcr"]);
+        }
+        catch(const std::exception &e){
+            UHD_MSG(error) << "Error parsing FPGA clock rate from device address: " << e.what() << std::endl;
+        }
+    }
+    else if (not mb_eeprom["mcr"].empty()){
+        try{
             _master_clock_rate = boost::lexical_cast<double>(mb_eeprom["mcr"]);
-    }catch(const std::exception &e){
-        UHD_MSG(error) << "Error parsing FPGA clock rate from EEPROM: " << e.what() << std::endl;
+        }
+        catch(const std::exception &e){
+            UHD_MSG(error) << "Error parsing FPGA clock rate from EEPROM: " << e.what() << std::endl;
+        }
     }
     UHD_MSG(status) << boost::format("Using FPGA clock rate of %fMHz...") % (_master_clock_rate/1e6) << std::endl;
-    _tree->create<double>(mb_path / "tick_rate").set(_master_clock_rate);
+    _tree->create<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&usrp1_impl::update_tick_rate, this, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -274,18 +271,31 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .subscribe(boost::bind(&usrp1_impl::update_tx_subdev_spec, this, _1));
 
+    BOOST_FOREACH(const std::string &db, _dbc.keys()){
+        const fs_path rx_fe_path = mb_path / "rx_frontends" / db;
+        _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
+            .coerce(boost::bind(&usrp1_impl::set_rx_dc_offset, this, db, _1))
+            .set(std::complex<double>(0.0, 0.0));
+        _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
+            .subscribe(boost::bind(&usrp1_impl::set_enb_rx_dc_offset, this, db, _1))
+            .set(true);
+    }
+
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->create<int>(mb_path / "rx_dsps"); //dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++){
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
+            .publish(boost::bind(&usrp1_impl::get_rx_dsp_host_rates, this));
         _tree->create<double>(rx_dsp_path / "rate/value")
-            .coerce(boost::bind(&usrp1_impl::update_rx_samp_rate, this, _1));
+            .set(1e6) //some default rate
+            .coerce(boost::bind(&usrp1_impl::update_rx_samp_rate, this, dspno, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_rx_dsp_freq, this, dspno, _1));
         _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
-            .set(meta_range_t(-_master_clock_rate/2, +_master_clock_rate/2));
+            .publish(boost::bind(&usrp1_impl::get_rx_dsp_freq_range, this));
         _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd");
         if (dspno == 0){
             //only subscribe the callback for dspno 0 since it will stream all dsps
@@ -300,12 +310,15 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _tree->create<int>(mb_path / "tx_dsps"); //dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++){
         fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
+        _tree->create<meta_range_t>(tx_dsp_path / "rate/range")
+            .publish(boost::bind(&usrp1_impl::get_tx_dsp_host_rates, this));
         _tree->create<double>(tx_dsp_path / "rate/value")
-            .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, _1));
+            .set(1e6) //some default rate
+            .coerce(boost::bind(&usrp1_impl::update_tx_samp_rate, this, dspno, _1));
         _tree->create<double>(tx_dsp_path / "freq/value")
             .coerce(boost::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, _1));
-        _tree->create<meta_range_t>(tx_dsp_path / "freq/range") //magic scalar comes from codec control:
-            .set(meta_range_t(-_master_clock_rate*0.6875, +_master_clock_rate*0.6875));
+        _tree->create<meta_range_t>(tx_dsp_path / "freq/range")
+            .publish(boost::bind(&usrp1_impl::get_tx_dsp_freq_range, this));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -350,29 +363,16 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         );
         _tree->create<dboard_iface::sptr>(mb_path / "dboards" / db/ "iface").set(_dbc[db].dboard_iface);
         _dbc[db].dboard_manager = dboard_manager::make(
-            rx_db_eeprom.id,
-            ((gdb_eeprom.id == dboard_id_t::none())? tx_db_eeprom : gdb_eeprom).id,
-            _dbc[db].dboard_iface
+            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+            _dbc[db].dboard_iface, _tree->subtree(mb_path / "dboards" / db)
         );
-        BOOST_FOREACH(const std::string &name, _dbc[db].dboard_manager->get_rx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards" / db/ "rx_frontends" / name),
-                _dbc[db].dboard_manager->get_rx_subdev(name)
-            );
-        }
-        BOOST_FOREACH(const std::string &name, _dbc[db].dboard_manager->get_tx_subdev_names()){
-            dboard_manager::populate_prop_tree_from_subdev(
-                _tree->subtree(mb_path / "dboards" / db/ "tx_frontends" / name),
-                _dbc[db].dboard_manager->get_tx_subdev(name)
-            );
-        }
 
         //init the subdev specs if we have a dboard (wont leave this loop empty)
         if (rx_db_eeprom.id != dboard_id_t::none() or _rx_subdev_spec.empty()){
-            _rx_subdev_spec = subdev_spec_t(db + ":" + _dbc[db].dboard_manager->get_rx_subdev_names()[0]);
+            _rx_subdev_spec = subdev_spec_t(db + ":" + _tree->list(mb_path / "dboards" / db / "rx_frontends").at(0));
         }
         if (tx_db_eeprom.id != dboard_id_t::none() or _tx_subdev_spec.empty()){
-            _tx_subdev_spec = subdev_spec_t(db + ":" + _dbc[db].dboard_manager->get_tx_subdev_names()[0]);
+            _tx_subdev_spec = subdev_spec_t(db + ":" + _tree->list(mb_path / "dboards" / db / "tx_frontends").at(0));
         }
     }
 
@@ -382,14 +382,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-    //and now that the tick rate is set, init the host rates to something
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
-        _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").set(1e6);
-    }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
-        _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").set(1e6);
-    }
-
+    this->update_rates();
     if (_tree->list(mb_path / "rx_dsps").size() > 0)
         _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
     if (_tree->list(mb_path / "tx_dsps").size() > 0)
@@ -455,4 +448,37 @@ double usrp1_impl::update_rx_codec_gain(const std::string &db, const double gain
     _dbc[db].codec->set_rx_pga_gain(gain, 'A');
     _dbc[db].codec->set_rx_pga_gain(gain, 'B');
     return _dbc[db].codec->get_rx_pga_gain('A');
+}
+
+uhd::meta_range_t usrp1_impl::get_rx_dsp_freq_range(void){
+    return meta_range_t(-_master_clock_rate/2, +_master_clock_rate/2);
+}
+
+uhd::meta_range_t usrp1_impl::get_tx_dsp_freq_range(void){
+    //magic scalar comes from codec control:
+    return meta_range_t(-_master_clock_rate*0.6875, +_master_clock_rate*0.6875);
+}
+
+void usrp1_impl::set_enb_rx_dc_offset(const std::string &db, const bool enb){
+    const size_t shift = (db == "A")? 0 : 2;
+    _rx_dc_offset_shadow &= ~(0x3 << shift); //clear bits
+    _rx_dc_offset_shadow &= ((enb)? 0x3 : 0x0) << shift;
+    _iface->poke32(FR_DC_OFFSET_CL_EN, _rx_dc_offset_shadow & 0xf);
+}
+
+std::complex<double> usrp1_impl::set_rx_dc_offset(const std::string &db, const std::complex<double> &offset){
+    const boost::int32_t i_off = boost::math::iround(offset.real() * (1ul << 31));
+    const boost::int32_t q_off = boost::math::iround(offset.imag() * (1ul << 31));
+
+    if (db == "A"){
+        _iface->poke32(FR_ADC_OFFSET_0, i_off);
+        _iface->poke32(FR_ADC_OFFSET_1, q_off);
+    }
+
+    if (db == "B"){
+        _iface->poke32(FR_ADC_OFFSET_2, i_off);
+        _iface->poke32(FR_ADC_OFFSET_3, q_off);
+    }
+
+    return std::complex<double>(double(i_off) * (1ul << 31), double(q_off) * (1ul << 31));
 }

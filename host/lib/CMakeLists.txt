@@ -86,11 +86,11 @@ CONFIGURE_FILE(
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/deprecated.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/property_tree.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/wax.cpp
 )
 
 ########################################################################

@@ -704,14 +704,22 @@ static const std::vector<tvrx2_tda18272_freq_map_t> tvrx2_tda18272_freq_map = li
 
 static const freq_range_t tvrx2_freq_range(42e6, 870e6);
 
+static const freq_range_t tvrx2_bandwidth_range = list_of
+    (range_t(1.7e6))
+    (range_t(6.0e6))
+    (range_t(7.0e6))
+    (range_t(8.0e6))
+    (range_t(10.0e6))
+;
+
 static const uhd::dict<std::string, std::string> tvrx2_sd_name_to_antennas = map_list_of
     ("RX1", "J100")
     ("RX2", "J140")
 ;
 
-static const uhd::dict<std::string, subdev_conn_t> tvrx2_sd_name_to_conn = map_list_of
-    ("RX1",  SUBDEV_CONN_REAL_Q)
-    ("RX2",  SUBDEV_CONN_REAL_I)
+static const uhd::dict<std::string, std::string> tvrx2_sd_name_to_conn = map_list_of
+    ("RX1",  "Q")
+    ("RX2",  "I")
 ;
 
 static const uhd::dict<std::string, boost::uint8_t> tvrx2_sd_name_to_i2c_addr = map_list_of
@@ -745,9 +753,6 @@ public:
     tvrx2(ctor_args_t args);
     ~tvrx2(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     double _freq_scalar;
     double _lo_freq;
@@ -760,12 +765,11 @@ private:
 
     bool _enabled;
 
-    void set_enabled(void);
-    void set_disabled(void);
+    bool set_enabled(bool);
 
-    void set_lo_freq(double target_freq);
-    void set_gain(double gain, const std::string &name);
-    void set_bandwidth(double bandwidth);
+    double set_lo_freq(double target_freq);
+    double set_gain(double gain, const std::string &name);
+    double set_bandwidth(double bandwidth);
 
     void set_scaled_rf_freq(double rf_freq);
     double get_scaled_rf_freq(void);
@@ -825,10 +829,10 @@ private:
     }
 
     /*!
-     * Is the LO locked?
-     * \return true for locked
+     * Get the lock detect status of the LO.
+     * \return sensor for locked
      */
-    bool get_locked(void){
+    sensor_value_t get_locked(void){
         read_reg(0x5, 0x5);
 
         //return lock detect
@@ -838,14 +842,15 @@ private:
             "TVRX2 (%s): locked %d"
         ) % (get_subdev_name()) % locked << std::endl;
 
-        return locked;
+        return sensor_value_t("LO", locked, "locked", "unlocked");
     }
 
     /*!
      * Read the RSSI from the registers
-     * \return the rssi in dB(m?) FIXME
+     * Read the RSSI from the aux adc
+     * \return the rssi sensor in dB(m?) FIXME
      */
-    double get_rssi(void){
+    sensor_value_t get_rssi(void){
         //Launch RSSI calculation with MSM statemachine
         _tda18272hnm_regs.set_reg(0x19, 0x80); //set MSM_byte_1 for rssi calculation
         _tda18272hnm_regs.set_reg(0x1A, 0x01); //set MSM_byte_2 for launching rssi calculation
@@ -859,14 +864,16 @@ private:
 
         //calculate the rssi from the voltage
         double rssi_dBuV = 40.0 + double(((110.0 - 40.0)/128.0) * _tda18272hnm_regs.get_reg(0x7));
-        return rssi_dBuV - 107.0; //convert to dBm in 50ohm environment ( -108.8 if 75ohm ) FIXME
+        double rssi =  rssi_dBuV - 107.0; //convert to dBm in 50ohm environment ( -108.8 if 75ohm ) FIXME
+
+        return sensor_value_t("RSSI", rssi, "dBm");
     }
 
     /*!
      * Read the Temperature from the registers
      * \return the temp in degC
      */
-    double get_temp(void){
+    sensor_value_t get_temp(void){
         //Enable Temperature reading
         _tda18272hnm_regs.tm_on = tda18272hnm_regs_t::TM_ON_SENSOR_ON;
         send_reg(0x4, 0x4);
@@ -882,7 +889,7 @@ private:
         _tda18272hnm_regs.tm_on = tda18272hnm_regs_t::TM_ON_SENSOR_OFF;
         send_reg(0x4, 0x4);
 
-        return (double(_tda18272hnm_regs.tm_d));
+        return sensor_value_t("TEMP", double(_tda18272hnm_regs.tm_d), "degC");
     }
 };
 
@@ -930,24 +937,64 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
         ( 7, tvrx2_tda18272_rfcal_coeffs_t(10) )
     ;
 
+    //set defaults for LO, gains, and filter bandwidth
+    _bandwidth = 10e6;
+
+    _if_freq = 12.5e6;
+
+    _enabled = false;
+
+    //send initial register settings
+    //this->read_reg(0x0, 0x43);
+    //this->send_reg(0x0, 0x43);
+
+    //send magic xtal_cal_dac setting
+    send_reg(0x65, 0x65);
+
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name")
+        .set(get_rx_id().to_pp_string());
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
+        .publish(boost::bind(&tvrx2::get_locked, this));
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
+        .publish(boost::bind(&tvrx2::get_rssi, this));
+    this->get_rx_subtree()->create<sensor_value_t>("sensors/temperature")
+        .publish(boost::bind(&tvrx2::get_temp, this));
+    BOOST_FOREACH(const std::string &name, tvrx2_gain_ranges.keys()){
+        this->get_rx_subtree()->create<double>("gains/"+name+"/value")
+            .coerce(boost::bind(&tvrx2::set_gain, this, _1, name));
+        this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
+            .set(tvrx2_gain_ranges[name]);
+    }
+    this->get_rx_subtree()->create<double>("freq/value")
+        .coerce(boost::bind(&tvrx2::set_lo_freq, this, _1));
+    this->get_rx_subtree()->create<meta_range_t>("freq/range")
+        .set(tvrx2_freq_range);
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .set(tvrx2_sd_name_to_antennas[get_subdev_name()]);
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(list_of(tvrx2_sd_name_to_antennas[get_subdev_name()]));
+    this->get_rx_subtree()->create<std::string>("connection")
+        .set(tvrx2_sd_name_to_conn[get_subdev_name()]);
+    this->get_rx_subtree()->create<bool>("enabled")
+        .coerce(boost::bind(&tvrx2::set_enabled, this, _1))
+        .set(_enabled);
+    this->get_rx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value")
+        .coerce(boost::bind(&tvrx2::set_bandwidth, this, _1))
+        .set(_bandwidth);
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(tvrx2_bandwidth_range);
+
     //set the gpio directions and atr controls (identically)
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0); // All unused in atr
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, OUTPUT_MASK); // Set outputs
 
-    double ref_clock=0.0;
-
     //configure ref_clock
-
-    /*
-    std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
-    BOOST_FOREACH(ref_clock, uhd::sorted(clock_rates)){
-        if (ref_clock < 16.0e6) continue; 
-        if (ref_clock >= 16.0e6) break; 
-    }
-    this->get_iface()->set_clock_rate(dboard_iface::UNIT_RX, ref_clock);
-    */
-
-    ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
+    double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
 
     if (ref_clock == 64.0e6) {
         this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV4);
@@ -978,22 +1025,6 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
         "TVRX2 (%s): Refclock %f Hz, scalar = %f"
     ) % (get_subdev_name()) % (this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX)) % _freq_scalar << std::endl;
 
-    //set defaults for LO, gains, and filter bandwidth
-    _bandwidth = 10e6;
-
-    _if_freq = 12.5e6;
-
-    _lo_freq = tvrx2_freq_range.start();
-
-    _enabled = false;
-
-    //send initial register settings
-    //this->read_reg(0x0, 0x43);
-    //this->send_reg(0x0, 0x43);
-
-    //send magic xtal_cal_dac setting
-    send_reg(0x65, 0x65);
-
     _tda18272hnm_regs.irq_polarity = tda18272hnm_regs_t::IRQ_POLARITY_RAISED_VCC;
     _tda18272hnm_regs.irq_clear = tda18272hnm_regs_t::IRQ_CLEAR_TRUE;
     send_reg(0x37, 0x37);
@@ -1013,39 +1044,47 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
     transition_0();
 }
 
-void tvrx2::set_enabled(void){
-    //setup tuner parameters
-    transition_1();
+bool tvrx2::set_enabled(bool enable){
+    if (enable == _enabled) return _enabled;
 
-    transition_2(int(tvrx2_freq_range.start()));
+    if (enable and not _enabled){
+        //setup tuner parameters
+        transition_1();
 
-    test_rf_filter_robustness();
+        transition_2(int(tvrx2_freq_range.start()));
 
-    BOOST_FOREACH(const std::string &name, tvrx2_gain_ranges.keys()){
-        set_gain(tvrx2_gain_ranges[name].start(), name);
+        test_rf_filter_robustness();
+
+        BOOST_FOREACH(const std::string &name, tvrx2_gain_ranges.keys()){
+            this->get_rx_subtree()->access<double>("gains/"+name+"/value")
+                .set(tvrx2_gain_ranges[name].start());
+        }
+
+        this->get_rx_subtree()->access<double>("bandwidth/value")
+            .set(_bandwidth); // default bandwidth from datasheet
+
+        //transition_2 equivalent
+        this->get_rx_subtree()->access<double>("freq/value")
+            .set(tvrx2_freq_range.start());
+
+        //enter standby mode
+        transition_3();
+        _enabled = true;
+
+    } else {
+        //enter standby mode
+        transition_3();
+        _enabled = false;
     }
 
-    set_bandwidth(_bandwidth); // default bandwidth from datasheet
-
-    //transition_2 equivalent
-    set_lo_freq(tvrx2_freq_range.start());
-
-    //enter standby mode
-    transition_3();
-    _enabled = true;
+    return _enabled;
 }
 
 tvrx2::~tvrx2(void){
     UHD_LOGV(often) << boost::format(
         "TVRX2 (%s): Called Destructor"
     ) % (get_subdev_name()) << std::endl;
-    UHD_SAFE_CALL(if (_enabled) set_disabled();)
-}
-
-void tvrx2::set_disabled(void){
-    //enter standby mode
-    transition_3();
-    _enabled = false;
+    UHD_SAFE_CALL(if (_enabled) set_enabled(false);)
 }
 
 
@@ -1682,7 +1721,7 @@ void tvrx2::wait_irq(void){
 /***********************************************************************
  * Tuning
  **********************************************************************/
-void tvrx2::set_lo_freq(double target_freq){
+double tvrx2::set_lo_freq(double target_freq){
     //target_freq = std::clip(target_freq, tvrx2_freq_range.min, tvrx2_freq_range.max);
 
     read_reg(0x6, 0x6);
@@ -1711,7 +1750,9 @@ void tvrx2::set_lo_freq(double target_freq){
 
     UHD_LOGV(often) << boost::format(
         "\nTVRX2 (%s): RSSI = %f dBm\n"
-    ) % (get_subdev_name()) % (get_rssi()) << std::endl;
+    ) % (get_subdev_name()) % (get_rssi().to_real()) << std::endl;
+
+    return _lo_freq;
 }
 
 /***********************************************************************
@@ -1741,7 +1782,7 @@ static double gain_to_if_gain_dac(double &gain){
     return dac_volts;
 }
 
-void tvrx2::set_gain(double gain, const std::string &name){
+double tvrx2::set_gain(double gain, const std::string &name){
     assert_has(tvrx2_gain_ranges.keys(), name, "tvrx2 gain name");
 
     if (name == "IF"){
@@ -1752,6 +1793,8 @@ void tvrx2::set_gain(double gain, const std::string &name){
 
     //shadow gain setting
     _gains[name] = gain;
+
+    return gain;
 }
 
 /***********************************************************************
@@ -1780,7 +1823,10 @@ static tda18272hnm_regs_t::lp_fc_t bandwidth_to_lp_fc_reg(double &bandwidth){
     UHD_THROW_INVALID_CODE_PATH();
 }
 
-void tvrx2::set_bandwidth(double bandwidth){
+double tvrx2::set_bandwidth(double bandwidth){
+    //clip the input
+    bandwidth = tvrx2_bandwidth_range.clip(bandwidth);
+
     //compute low pass cutoff frequency setting
     _tda18272hnm_regs.lp_fc = bandwidth_to_lp_fc_reg(bandwidth);
 
@@ -1793,119 +1839,6 @@ void tvrx2::set_bandwidth(double bandwidth){
     UHD_LOGV(often) << boost::format(
         "TVRX2 (%s) Bandwidth (lp_fc): %f Hz, reg: %d"
     ) % (get_subdev_name()) % _bandwidth % (int(_tda18272hnm_regs.lp_fc)) << std::endl;
+
+    return _bandwidth;
 }
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void tvrx2::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = get_rx_id().to_pp_string();
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        assert_has(_gains.keys(), key.name, "tvrx2 gain name");
-        val = _gains[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        assert_has(tvrx2_gain_ranges.keys(), key.name, "tvrx2 gain name");
-        val = tvrx2_gain_ranges[key.name];
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(tvrx2_gain_ranges.keys());
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = tvrx2_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = tvrx2_sd_name_to_antennas[get_subdev_name()];
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, tvrx2_sd_name_to_antennas[get_subdev_name()]);
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = tvrx2_sd_name_to_conn[get_subdev_name()];
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = _enabled;
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_SENSOR:
-        if (key.name == "lo_locked")
-            val = sensor_value_t("LO", this->get_locked(), "locked", "unlocked");
-        else if (key.name == "rssi")
-            val = sensor_value_t("RSSI", this->get_rssi(), "dBm");
-        else if (key.name == "temperature")
-            val = sensor_value_t("TEMP", this->get_temp(), "degC");
-        else
-            UHD_THROW_INVALID_CODE_PATH();
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:{
-            prop_names_t names = list_of("lo_locked")("rssi")("temperature");
-            val = names;
-        }
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = _bandwidth;
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void tvrx2::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        this->set_gain( val.as<double>(), key.name);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        if ((val.as<bool>())) this->set_enabled();
-        else if (not (val.as<bool>())) this->set_disabled();
-
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        this->set_bandwidth(val.as<double>());
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
-}
-

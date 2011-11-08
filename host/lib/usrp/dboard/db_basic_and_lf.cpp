@@ -23,6 +23,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd;
@@ -48,9 +49,6 @@ public:
     basic_rx(ctor_args_t args, double max_freq);
     ~basic_rx(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     double _max_freq;
 };
@@ -60,18 +58,15 @@ public:
     basic_tx(ctor_args_t args, double max_freq);
     ~basic_tx(void);
 
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
-
 private:
     double _max_freq;
 };
 
-static const uhd::dict<std::string, subdev_conn_t> sd_name_to_conn = map_list_of
-    ("AB", SUBDEV_CONN_COMPLEX_IQ)
-    ("BA", SUBDEV_CONN_COMPLEX_QI)
-    ("A",  SUBDEV_CONN_REAL_I)
-    ("B",  SUBDEV_CONN_REAL_Q)
+static const uhd::dict<std::string, std::string> sd_name_to_conn = map_list_of
+    ("AB", "IQ")
+    ("BA", "QI")
+    ("A",  "I")
+    ("B",  "Q")
 ;
 
 /***********************************************************************
@@ -105,114 +100,48 @@ UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
  **********************************************************************/
 basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
     _max_freq = max_freq;
+    //this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
     
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->create<std::string>("name").set(
+        std::string(str(boost::format("%s - %s")
+            % get_rx_id().to_pp_string()
+            % get_subdev_name()
+        )));
+    this->get_rx_subtree()->create<int>("gains"); //phony property so this dir exists
+    this->get_rx_subtree()->create<double>("freq/value")
+        .set(double(0.0));
+    this->get_rx_subtree()->create<meta_range_t>("freq/range")
+        .set(freq_range_t(-_max_freq, +_max_freq));
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .set("");
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(list_of(""));
+    this->get_rx_subtree()->create<int>("sensors"); //phony property so this dir exists
+    this->get_rx_subtree()->create<std::string>("connection")
+        .set(sd_name_to_conn[get_subdev_name()]);
+    this->get_rx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_rx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_rx_subtree()->create<double>("bandwidth/value")
+        .set(subdev_bandwidth_scalar[get_subdev_name()]*_max_freq);
+    this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(subdev_bandwidth_scalar[get_subdev_name()]*_max_freq, subdev_bandwidth_scalar[get_subdev_name()]*_max_freq));
+    
+    //disable RX dboard clock by default
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, false);
+
     //set GPIOs to output 0x0000 to decrease noise pickup
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, 0x0000);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0xFFFF);
     this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0x0000);
-    //this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 }
 
 basic_rx::~basic_rx(void){
     /* NOP */
-}
-
-void basic_rx::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = std::string(str(boost::format("%s - %s")
-            % get_rx_id().to_pp_string()
-            % get_subdev_name()
-        ));
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        val = gain_range_t(0, 0, 0);
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(-_max_freq, +_max_freq);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = std::vector<std::string>(); //empty
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = sd_name_to_conn[get_subdev_name()];
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = subdev_bandwidth_scalar[get_subdev_name()]*_max_freq;
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(val.as<double>() == double(0));
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        if (val.as<std::string>().empty()) return;
-        throw uhd::value_error("no selectable antennas on this board");
-
-    case SUBDEV_PROP_FREQ:
-        return; // it wont do you much good, but you can set it
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << boost::format(
-            "%s: No tunable bandwidth, fixed filtered to %0.2fMHz"
-        ) % get_rx_id().to_pp_string() % _max_freq;
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
 }
 
 /***********************************************************************
@@ -221,106 +150,45 @@ void basic_rx::rx_set(const wax::obj &key_, const wax::obj &val){
 basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
     _max_freq = max_freq;
     //this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
+
+    ////////////////////////////////////////////////////////////////////
+    // Register properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->create<std::string>("name").set(
+        std::string(str(boost::format("%s - %s")
+            % get_rx_id().to_pp_string()
+            % get_subdev_name()
+        )));
+    this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
+    this->get_tx_subtree()->create<double>("freq/value")
+        .set(double(0.0));
+    this->get_tx_subtree()->create<meta_range_t>("freq/range")
+        .set(freq_range_t(-_max_freq, +_max_freq));
+    this->get_tx_subtree()->create<std::string>("antenna/value")
+        .set("");
+    this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(list_of(""));
+    this->get_tx_subtree()->create<int>("sensors"); //phony property so this dir exists
+    this->get_tx_subtree()->create<std::string>("connection")
+        .set(sd_name_to_conn[get_subdev_name()]);
+    this->get_tx_subtree()->create<bool>("enabled")
+        .set(true); //always enabled
+    this->get_tx_subtree()->create<bool>("use_lo_offset")
+        .set(false);
+    this->get_tx_subtree()->create<double>("bandwidth/value")
+        .set(subdev_bandwidth_scalar[get_subdev_name()]*_max_freq);
+    this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
+        .set(freq_range_t(subdev_bandwidth_scalar[get_subdev_name()]*_max_freq, subdev_bandwidth_scalar[get_subdev_name()]*_max_freq));
+    
+    //disable TX dboard clock by default
+    this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, false);
+
+    //set GPIOs to output 0x0000 to decrease noise pickup
+    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, 0x0000);
+    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, 0xFFFF);
+    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0x0000);
 }
 
 basic_tx::~basic_tx(void){
     /* NOP */
-}
-
-void basic_tx::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        val = std::string(str(boost::format("%s - %s")
-            % get_tx_id().to_pp_string()
-            % get_subdev_name()
-        ));
-        return;
-
-    case SUBDEV_PROP_OTHERS:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_GAIN:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_GAIN_RANGE:
-        val = gain_range_t(0, 0, 0);
-        return;
-
-    case SUBDEV_PROP_GAIN_NAMES:
-        val = prop_names_t(); //empty
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = double(0);
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = freq_range_t(-_max_freq, +_max_freq);
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = prop_names_t(1, ""); //vector of 1 empty string
-        return;
-
-    case SUBDEV_PROP_SENSOR_NAMES:
-        val = std::vector<std::string>(); //empty
-        return;
-
-    case SUBDEV_PROP_CONNECTION:
-        val = sd_name_to_conn[get_subdev_name()];
-        return;
-
-    case SUBDEV_PROP_ENABLED:
-        val = true; //always enabled
-        return;
-
-    case SUBDEV_PROP_USE_LO_OFFSET:
-        val = false;
-        return;
-
-    case SUBDEV_PROP_BANDWIDTH:
-        val = subdev_bandwidth_scalar[get_subdev_name()]*_max_freq;
-        return;
-
-    default: UHD_THROW_PROP_GET_ERROR();
-    }
-}
-
-void basic_tx::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_GAIN:
-        UHD_ASSERT_THROW(val.as<double>() == double(0));
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        if (val.as<std::string>().empty()) return;
-        throw uhd::value_error("no selectable antennas on this board");
-
-    case SUBDEV_PROP_FREQ:
-        return; // it wont do you much good, but you can set it
-
-    case SUBDEV_PROP_ENABLED:
-        return; //always enabled
-
-    case SUBDEV_PROP_BANDWIDTH:
-        UHD_MSG(warning) << boost::format(
-            "%s: No tunable bandwidth, fixed filtered to %0.2fMHz"
-        ) % get_tx_id().to_pp_string() % _max_freq;
-        return;
-
-    default: UHD_THROW_PROP_SET_ERROR();
-    }
 }

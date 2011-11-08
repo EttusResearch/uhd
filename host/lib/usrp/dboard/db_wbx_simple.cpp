@@ -32,14 +32,13 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
+
 /***********************************************************************
  * The WBX Simple dboard constants
  **********************************************************************/
-static const freq_range_t wbx_freq_range(68.75e6, 2.2e9);
+static const std::vector<std::string> wbx_tx_antennas = list_of("TX/RX");
 
-static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
-
-static const prop_names_t wbx_rx_antennas = list_of("TX/RX")("RX2");
+static const std::vector<std::string> wbx_rx_antennas = list_of("TX/RX")("RX2");
 
 /***********************************************************************
  * The WBX simple implementation
@@ -49,17 +48,7 @@ public:
     wbx_simple(ctor_args_t args);
     ~wbx_simple(void);
 
-    void rx_get(const wax::obj &key, wax::obj &val);
-    void rx_set(const wax::obj &key, const wax::obj &val);
-
-    void tx_get(const wax::obj &key, wax::obj &val);
-    void tx_set(const wax::obj &key, const wax::obj &val);
-
 private:
-    void set_rx_lo_freq(double freq);
-    void set_tx_lo_freq(double freq);
-    double _rx_lo_freq, _tx_lo_freq;
-
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
     std::string _rx_ant;
@@ -72,17 +61,44 @@ static dboard_base::sptr make_wbx_simple(dboard_base::ctor_args_t args){
     return dboard_base::sptr(new wbx_simple(args));
 }
 
+/***********************************************************************
+ * ID Numbers for WBX daughterboard combinations.
+ **********************************************************************/
 UHD_STATIC_BLOCK(reg_wbx_simple_dboards){
     dboard_manager::register_dboard(0x0053, 0x0052, &make_wbx_simple, "WBX");
     dboard_manager::register_dboard(0x0053, 0x004f, &make_wbx_simple, "WBX + Simple GDB");
     dboard_manager::register_dboard(0x0057, 0x0056, &make_wbx_simple, "WBX v3");
     dboard_manager::register_dboard(0x0057, 0x004f, &make_wbx_simple, "WBX v3 + Simple GDB");
+    dboard_manager::register_dboard(0x0063, 0x0062, &make_wbx_simple, "WBX v4");
+    dboard_manager::register_dboard(0x0063, 0x004f, &make_wbx_simple, "WBX v4 + Simple GDB");
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
 wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
+
+    ////////////////////////////////////////////////////////////////////
+    // Register RX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_rx_subtree()->access<std::string>("name").set(
+        this->get_rx_subtree()->access<std::string>("name").get() + " + Simple GDB");
+    this->get_rx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&wbx_simple::set_rx_ant, this, _1))
+        .set("RX2");
+    this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(wbx_rx_antennas);
+
+    ////////////////////////////////////////////////////////////////////
+    // Register TX properties
+    ////////////////////////////////////////////////////////////////////
+    this->get_tx_subtree()->access<std::string>("name").set(
+        this->get_tx_subtree()->access<std::string>("name").get() + " + Simple GDB");
+    this->get_tx_subtree()->create<std::string>("antenna/value")
+        .subscribe(boost::bind(&wbx_simple::set_tx_ant, this, _1))
+        .set(wbx_tx_antennas.at(0));
+    this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
+        .set(wbx_tx_antennas);
 
     //set the gpio directions and atr controls (antenna switches all under ATR)
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, ANTSW_IO, ANTSW_IO);
@@ -99,11 +115,6 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        ANT_TXRX, ANTSW_IO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     ANT_RX2, ANTSW_IO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_RX2, ANTSW_IO);
-
-    //set some default values
-    set_rx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
-    set_tx_lo_freq((wbx_freq_range.start() + wbx_freq_range.stop())/2.0);
-    set_rx_ant("RX2");
 }
 
 wbx_simple::~wbx_simple(void){
@@ -127,129 +138,4 @@ void wbx_simple::set_rx_ant(const std::string &ant){
 void wbx_simple::set_tx_ant(const std::string &ant){
     assert_has(wbx_tx_antennas, ant, "wbx tx antenna name");
     //only one antenna option, do nothing
-}
-
-/***********************************************************************
- * Tuning
- **********************************************************************/
-void wbx_simple::set_rx_lo_freq(double freq){
-    _rx_lo_freq = set_lo_freq(dboard_iface::UNIT_RX, wbx_freq_range.clip(freq));
-}
-
-void wbx_simple::set_tx_lo_freq(double freq){
-    _tx_lo_freq = set_lo_freq(dboard_iface::UNIT_TX, wbx_freq_range.clip(freq));
-}
-
-/***********************************************************************
- * RX Get and Set
- **********************************************************************/
-void wbx_simple::rx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        if (is_v3())
-            val = std::string("WBX v3 RX + Simple GDB");
-        else
-            val = std::string("WBX RX + Simple GDB");
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _rx_lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = wbx_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = _rx_ant;
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = wbx_rx_antennas;
-        return;
-
-    default:
-        //call into the base class for other properties
-        wbx_base::rx_get(key_, val);
-    }
-}
-
-void wbx_simple::rx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_rx_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_rx_ant(val.as<std::string>());
-        return;
-
-    default:
-        //call into the base class for other properties
-        wbx_base::rx_set(key_, val);
-    }
-}
-
-/***********************************************************************
- * TX Get and Set
- **********************************************************************/
-void wbx_simple::tx_get(const wax::obj &key_, wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-    case SUBDEV_PROP_NAME:
-        if (is_v3())
-            val = std::string("WBX v3 TX + Simple GDB");
-        else
-            val = std::string("WBX TX + Simple GDB");
-        return;
-
-    case SUBDEV_PROP_FREQ:
-        val = _tx_lo_freq;
-        return;
-
-    case SUBDEV_PROP_FREQ_RANGE:
-        val = wbx_freq_range;
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        val = std::string("TX/RX");
-        return;
-
-    case SUBDEV_PROP_ANTENNA_NAMES:
-        val = wbx_tx_antennas;
-        return;
-
-    default:
-        //call into the base class for other properties
-        wbx_base::tx_get(key_, val);
-    }
-}
-
-void wbx_simple::tx_set(const wax::obj &key_, const wax::obj &val){
-    named_prop_t key = named_prop_t::extract(key_);
-
-    //handle the get request conditioned on the key
-    switch(key.as<subdev_prop_t>()){
-
-    case SUBDEV_PROP_FREQ:
-        this->set_tx_lo_freq(val.as<double>());
-        return;
-
-    case SUBDEV_PROP_ANTENNA:
-        this->set_tx_ant(val.as<std::string>());
-        return;
-
-    default:
-        //call into the base class for other properties
-        wbx_base::tx_set(key_, val);
-    }
 }

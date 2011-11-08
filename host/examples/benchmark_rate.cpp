@@ -43,6 +43,10 @@ unsigned long long num_seq_errors = 0;
 void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
     uhd::set_thread_priority_safe();
 
+    //create a receive streamer
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+
     //print pre-test summary
     std::cout << boost::format(
         "Testing receive rate %f Msps"
@@ -50,7 +54,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
 
     //setup variables and allocate buffer
     uhd::rx_metadata_t md;
-    const size_t max_samps_per_packet = usrp->get_device()->get_max_recv_samps_per_packet();
+    const size_t max_samps_per_packet = rx_stream->get_max_num_samps();
     std::vector<std::complex<float> > buff(max_samps_per_packet);
     bool had_an_overflow = false;
     uhd::time_spec_t last_time;
@@ -58,10 +62,8 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
 
     usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     while (not boost::this_thread::interruption_requested()){
-        num_rx_samps += usrp->get_device()->recv(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::RECV_MODE_ONE_PACKET
+        num_rx_samps += rx_stream->recv(
+            &buff.front(), buff.size(), md
         );
 
         //handle the error codes
@@ -95,6 +97,10 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
 void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp){
     uhd::set_thread_priority_safe();
 
+    //create a transmit streamer
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //print pre-test summary
     std::cout << boost::format(
         "Testing transmit rate %f Msps"
@@ -103,23 +109,16 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp){
     //setup variables and allocate buffer
     uhd::tx_metadata_t md;
     md.has_time_spec = false;
-    const size_t max_samps_per_packet = usrp->get_device()->get_max_send_samps_per_packet();
+    const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
     std::vector<std::complex<float> > buff(max_samps_per_packet);
 
     while (not boost::this_thread::interruption_requested()){
-        num_tx_samps += usrp->get_device()->send(
-            &buff.front(), buff.size(), md,
-            uhd::io_type_t::COMPLEX_FLOAT32,
-            uhd::device::SEND_MODE_ONE_PACKET
-        );
+        num_tx_samps += tx_stream->send(&buff.front(), buff.size(), md);
     }
 
     //send a mini EOB packet
-    md.end_of_burst   = true;
-    usrp->get_device()->send("", 0, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_FULL_BUFF
-    );
+    md.end_of_burst = true;
+    tx_stream->send("", 0, md);
 }
 
 void benchmark_tx_rate_async_helper(uhd::usrp::multi_usrp::sptr usrp){

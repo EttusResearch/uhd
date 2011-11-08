@@ -33,7 +33,7 @@ public:
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
 
     //! makes a new GPIO core from iface and slave base
-    static sptr make(wb_iface::sptr iface, const size_t base);
+    static sptr make(wb_iface::sptr iface, const size_t base, const size_t rb_addr);
 
     //! 1 = ATR
     virtual void set_pin_ctrl(const unit_t unit, const boost::uint16_t value) = 0;

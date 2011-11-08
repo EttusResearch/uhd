@@ -36,4 +36,5 @@ API Documentation
 ^^^^^^^^^^^^^^^^^^^^^
 * `Doxygen <./../../doxygen/html/index.html>`_
 * `Using the API <./coding.html>`_
+* `Device streaming <./stream.html>`_
 
