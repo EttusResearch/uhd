@@ -31,6 +31,7 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
+#include <boost/weak_ptr.hpp>
 #include <complex>
 
 #ifndef INCLUDED_USRP1_IMPL_HPP

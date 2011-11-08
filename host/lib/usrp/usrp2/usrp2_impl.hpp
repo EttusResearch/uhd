@@ -41,6 +41,7 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
+#include <boost/weak_ptr.hpp>
 
 static const double USRP2_LINK_RATE_BPS = 1000e6/8;
 static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
