@@ -21,6 +21,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 #force the compiler because the check wont use the special flag below
 INCLUDE(CMakeForceCompiler)
+SET(CMAKE_SYSTEM_NAME Generic)
 CMAKE_FORCE_C_COMPILER(zpu-elf-gcc GNU)
 PROJECT(USRP_NXXX_FW C)
 

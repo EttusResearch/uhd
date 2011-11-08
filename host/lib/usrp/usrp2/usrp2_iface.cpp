@@ -119,7 +119,7 @@ public:
         }
         else{
             _lock_task.reset(); //shutdown the task
-            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0); //unlock
+            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0xfffffff0); //unlock
         }
     }
 
