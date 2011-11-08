@@ -32,7 +32,6 @@ INSTALL(FILES
     property_tree.hpp
     stream.hpp
     version.hpp
-    wax.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
     COMPONENT headers
 )

@@ -36,9 +36,9 @@ using namespace boost::assign;
 /***********************************************************************
  * The WBX Simple dboard constants
  **********************************************************************/
-static const prop_names_t wbx_tx_antennas = list_of("TX/RX");
+static const std::vector<std::string> wbx_tx_antennas = list_of("TX/RX");
 
-static const prop_names_t wbx_rx_antennas = list_of("TX/RX")("RX2");
+static const std::vector<std::string> wbx_rx_antennas = list_of("TX/RX")("RX2");
 
 /***********************************************************************
  * The WBX simple implementation

@@ -69,7 +69,6 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/props.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <boost/assign/list_of.hpp>
