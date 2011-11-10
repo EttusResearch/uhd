@@ -75,8 +75,9 @@ public:
         }
     }
 
-    inline std::complex<float> operator()(const double theta) const{
-        return _wave_table[unsigned(theta*wave_table_len)%wave_table_len];
+    inline std::complex<float> operator()(size_t &index) const{
+        index %= wave_table_len;
+        return _wave_table[index];
     }
 
 private:
@@ -188,8 +189,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //pre-compute the waveform values
     const wave_table_class wave_table(wave_type, ampl);
-    const double cps = wave_freq/usrp->get_tx_rate();
-    double theta = 0;
+    const size_t step = boost::math::iround(wave_freq/usrp->get_tx_rate() * wave_table_len);
+    size_t index = 0;
 
     //create a transmit streamer
     //linearly map channels (index0 = channel0, index1 = channel1, ...)
@@ -240,11 +241,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(not stop_signal_called){
         //fill the buffer with the waveform
         for (size_t n = 0; n < buff.size(); n++){
-            buff[n] = wave_table(theta += cps);
+            buff[n] = wave_table(index);
+            index += step;
         }
-
-        //bring the theta back into range [0, 1)
-        theta = std::fmod(theta, 1);
 
         //send the entire contents of the buffer
         tx_stream->send(buffs, buff.size(), md);
