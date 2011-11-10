@@ -170,12 +170,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(lo_locked.to_bool());
     }
     sensor_names = usrp->get_mboard_sensor_names(0);
-    if ((ref == "MIMO") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
+    if ((ref == "mimo") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
         uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
         std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(mimo_locked.to_bool());
     }
-    if ((ref == "EXTERNAL") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
+    if ((ref == "external") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
         std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(ref_locked.to_bool());
