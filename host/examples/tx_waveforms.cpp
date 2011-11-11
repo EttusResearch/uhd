@@ -75,9 +75,8 @@ public:
         }
     }
 
-    inline std::complex<float> operator()(size_t &index) const{
-        index %= wave_table_len;
-        return _wave_table[index];
+    inline std::complex<float> operator()(const size_t index) const{
+        return _wave_table[index % wave_table_len];
     }
 
 private:
@@ -241,8 +240,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(not stop_signal_called){
         //fill the buffer with the waveform
         for (size_t n = 0; n < buff.size(); n++){
-            buff[n] = wave_table(index);
-            index += step;
+            buff[n] = wave_table(index += step);
         }
 
         //send the entire contents of the buffer
