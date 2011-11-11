@@ -113,9 +113,9 @@ static const freq_range_t sbx_enable_rx_lo_filter = list_of
     (range_t(0.4e9, 1.5e9))
 ;
 
-static const std::vector<std::string> sbx_tx_antennas = list_of("TX/RX");
+static const std::vector<std::string> sbx_tx_antennas = list_of("TX/RX")("CAL");
 
-static const std::vector<std::string> sbx_rx_antennas = list_of("TX/RX")("RX2");
+static const std::vector<std::string> sbx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
 
 static const uhd::dict<std::string, gain_range_t> sbx_tx_gain_ranges = map_list_of
     ("PGA0", gain_range_t(0, 31.5, double(0.5)))

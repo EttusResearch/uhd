@@ -56,9 +56,9 @@ using namespace boost::assign;
 /***********************************************************************
  * The RFX Series constants
  **********************************************************************/
-static const std::vector<std::string> rfx_tx_antennas = list_of("TX/RX");
+static const std::vector<std::string> rfx_tx_antennas = list_of("TX/RX")("CAL");
 
-static const std::vector<std::string> rfx_rx_antennas = list_of("TX/RX")("RX2");
+static const std::vector<std::string> rfx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
 
 static const uhd::dict<std::string, gain_range_t> rfx_rx_gain_ranges = map_list_of
     ("PGA0", gain_range_t(0, 70, 0.022))
@@ -271,10 +271,17 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
     assert_has(rfx_rx_antennas, ant, "rfx rx antenna name");
 
     //set the rx atr regs that change with antenna setting
-    this->get_iface()->set_atr_reg(
-        dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        _power_up | MIXER_ENB | ((ant == "TX/RX")? ANT_TXRX : ANT_RX2)
-    );
+    if (ant == "CAL") {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TXRX  | MIXER_DIS);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TXRX  | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB | ANT_TXRX );
+    } 
+    else {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB |
+            ((ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+    }
 
     //shadow the setting
     _rx_ant = ant;
@@ -282,7 +289,16 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
 
 void rfx_xcvr::set_tx_ant(const std::string &ant){
     assert_has(rfx_tx_antennas, ant, "rfx tx antenna name");
-    //only one antenna option, do nothing
+
+    //set the tx atr regs that change with antenna setting
+    if (ant == "CAL") {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_RX | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX | MIXER_ENB);
+    } 
+    else {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TX | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TX | MIXER_ENB);
+    }
 }
 
 /***********************************************************************

@@ -36,9 +36,9 @@ using namespace boost::assign;
 /***********************************************************************
  * The WBX Simple dboard constants
  **********************************************************************/
-static const std::vector<std::string> wbx_tx_antennas = list_of("TX/RX");
+static const std::vector<std::string> wbx_tx_antennas = list_of("TX/RX")("CAL");
 
-static const std::vector<std::string> wbx_rx_antennas = list_of("TX/RX")("RX2");
+static const std::vector<std::string> wbx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
 
 /***********************************************************************
  * The WBX simple implementation
@@ -132,10 +132,28 @@ void wbx_simple::set_rx_ant(const std::string &ant){
     _rx_ant = ant;
 
     //write the new antenna setting to atr regs
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2), ANTSW_IO);
+    if (_rx_ant == "CAL") {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     ANT_TXRX, ANTSW_IO);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_TXRX, ANTSW_IO);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     ANT_TXRX, ANTSW_IO);
+    } 
+    else {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     ANT_RX2, ANTSW_IO);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_RX2, ANTSW_IO);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2), ANTSW_IO);
+    }
 }
 
 void wbx_simple::set_tx_ant(const std::string &ant){
     assert_has(wbx_tx_antennas, ant, "wbx tx antenna name");
-    //only one antenna option, do nothing
+
+    //write the new antenna setting to atr regs
+    if (ant == "CAL") {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     ANT_RX, ANTSW_IO);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_RX, ANTSW_IO);
+    } 
+    else {
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     ANT_TX, ANTSW_IO);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, ANT_TX, ANTSW_IO);
+    }
 }
