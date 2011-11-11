@@ -50,12 +50,12 @@ module tx_frontend
 	   
 	   add2_and_clip_reg #(.WIDTH(24)) add_clip_i
 	     (.clk(clk), .rst(rst), 
-	      .in1(tx_i), .in2({{4{corr_i[35]}},corr_i[35:16]}), .strobe_in(1'b1), 
+	      .in1(tx_i), .in2(corr_i[35:12]), .strobe_in(1'b1),
 	      .sum(i_bal), .strobe_out());
 	   
 	   add2_and_clip_reg #(.WIDTH(24)) add_clip_q
 	     (.clk(clk), .rst(rst), 
-	      .in1(tx_q), .in2({{4{corr_q[35]}},corr_q[35:16]}), .strobe_in(1'b1),
+	      .in1(tx_q), .in2(corr_q[35:12]), .strobe_in(1'b1),
 	      .sum(q_bal), .strobe_out());
 
 	   // DC Offset
