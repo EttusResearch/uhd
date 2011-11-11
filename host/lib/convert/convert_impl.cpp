@@ -103,7 +103,7 @@ convert::function_type convert::get_converter(const id_type &id){
 typedef uhd::dict<std::string, size_t> item_size_type;
 UHD_SINGLETON_FCN(item_size_type, get_item_size_table);
 
-void register_bytes_per_item(
+void convert::register_bytes_per_item(
     const std::string &format, const size_t size
 ){
     get_item_size_table()[format] = size;
@@ -126,16 +126,18 @@ size_t convert::get_bytes_per_item(const std::string &format){
 
 UHD_STATIC_BLOCK(convert_register_item_sizes){
     //register standard complex types
-    get_item_size_table()["fc64"] = sizeof(std::complex<double>);
-    get_item_size_table()["fc32"] = sizeof(std::complex<float>);
-    get_item_size_table()["sc32"] = sizeof(std::complex<boost::int32_t>);
-    get_item_size_table()["sc16"] = sizeof(std::complex<boost::int16_t>);
-    get_item_size_table()["sc8"] = sizeof(std::complex<boost::int8_t>);
+    convert::register_bytes_per_item("fc64", sizeof(std::complex<double>));
+    convert::register_bytes_per_item("fc32", sizeof(std::complex<float>));
+    convert::register_bytes_per_item("sc64", sizeof(std::complex<boost::int64_t>));
+    convert::register_bytes_per_item("sc32", sizeof(std::complex<boost::int32_t>));
+    convert::register_bytes_per_item("sc16", sizeof(std::complex<boost::int16_t>));
+    convert::register_bytes_per_item("sc8", sizeof(std::complex<boost::int8_t>));
 
     //register standard real types
-    get_item_size_table()["f64"] = sizeof(double);
-    get_item_size_table()["f32"] = sizeof(float);
-    get_item_size_table()["s32"] = sizeof(boost::int32_t);
-    get_item_size_table()["s16"] = sizeof(boost::int16_t);
-    get_item_size_table()["s8"] = sizeof(boost::int8_t);
+    convert::register_bytes_per_item("f64", sizeof(double));
+    convert::register_bytes_per_item("f32", sizeof(float));
+    convert::register_bytes_per_item("s64", sizeof(boost::int64_t));
+    convert::register_bytes_per_item("s32", sizeof(boost::int32_t));
+    convert::register_bytes_per_item("s16", sizeof(boost::int16_t));
+    convert::register_bytes_per_item("s8", sizeof(boost::int8_t));
 }
