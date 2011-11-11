@@ -17,17 +17,23 @@
 
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
+#include <uhd/utils/paths.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <iostream>
 #include <fstream>
 #include <complex>
 #include <cmath>
+#include <ctime>
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /***********************************************************************
  * Constants
@@ -73,11 +79,6 @@ static double compute_tone_dbrms(
     for (size_t i = 0; i < shifted.size(); i++){
         shifted[i] = std::complex<double>(samples[i]) * std::pow(e, std::complex<double>(0, -freq*tau*i));
     }
-
-    std::vector<std::complex<float> > buff(shifted.size());
-    for (size_t i = 0; i < buff.size(); i++) buff[i] = shifted[i];
-    std::ofstream outfile("/home/jblum/Desktop/gen.dat", std::ofstream::binary);
-    outfile.write((const char*)&buff.front(), buff.size() * 8);
 
     //filter the samples with a narrow low pass
     std::complex<double> iir_output = 0, iir_last = 0;
@@ -169,16 +170,51 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::
     }
 }
 
- struct result_t{
-        double freq, ampl, phase, sup;
-    };
+/***********************************************************************
+ * Store data to file
+ **********************************************************************/
+struct result_t{double freq, real_corr, imag_corr, sup;};
+static void store_results(uhd::usrp::multi_usrp::sptr usrp, const std::vector<result_t> &results){
+    //extract eeprom serial
+    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    const uhd::fs_path db_path = "/mboards/0/dboards/A/tx_eeprom";
+    const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
+    if (db_eeprom.serial.empty()) throw std::runtime_error("TX dboard has empty serial!");
+
+    //make the calibration file path
+    fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd";
+    fs::create_directory(cal_data_path);
+    cal_data_path = cal_data_path / "cal";
+    fs::create_directory(cal_data_path);
+    cal_data_path = cal_data_path / ("tx_fe_cal_v0.1_" + db_eeprom.serial + ".csv");
+
+    //fill the calibration file
+    std::ofstream cal_data(cal_data_path.string().c_str());
+    cal_data << boost::format("name, TX Frontend Calibration\n");
+    cal_data << boost::format("serial, %s\n") % db_eeprom.serial;
+    cal_data << boost::format("timestamp, %d\n") % time(NULL);
+    cal_data << boost::format("version, 0, 1\n");
+    cal_data << boost::format("DATA STARTS HERE\n");
+    cal_data << "tx_lo_frequency, tx_iq_correction_real, tx_iq_correction_imag, measured_suppression\n";
+
+    for (size_t i = 0; i < results.size(); i++){
+        cal_data
+            << results[i].freq << ", "
+            << results[i].real_corr << ", "
+            << results[i].imag_corr << ", "
+            << results[i].sup << "\n"
+        ;
+    }
+
+    std::cout << "wrote cal data to " << cal_data_path << std::endl;
+}
 
 /***********************************************************************
  * Main
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
-    double rate, tx_wave_freq, tx_wave_ampl, rx_offset;
+    double rate, tx_wave_freq, tx_wave_ampl, rx_offset, freq_step;
     size_t nsamps;
 
     po::options_description desc("Allowed options");
@@ -189,6 +225,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("tx_wave_freq", po::value<double>(&tx_wave_freq)->default_value(507.123e3), "Transmit wave frequency in Hz")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude in counts")
         ("rx_offset", po::value<double>(&rx_offset)->default_value(.9344e6), "RX LO offset from the TX LO in Hz")
+        ("freq_step", po::value<double>(&freq_step)->default_value(20e6), "Step size for LO sweep in Hz")
         ("nsamps", po::value<size_t>(&nsamps)->default_value(10000), "Samples per data capture")
     ;
 
@@ -229,13 +266,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<std::complex<float> > buff(nsamps);
 
     const uhd::meta_range_t freq_range = usrp->get_tx_freq_range();
-    const double freq_step = 100e6;
-
     std::vector<result_t> results;
 
     for (double tx_lo = freq_range.start()+freq_step; tx_lo < freq_range.stop()-freq_step; tx_lo += freq_step){
-    //const double tx_lo = 2.155e9;{
-        //tune the LOs
+
         tune_rx_and_tx(usrp, tx_lo, rx_offset);
 
         double phase_corr_start = -.3;
@@ -247,7 +281,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         double ampl_corr_step;
 
         std::complex<double> best_correction;
-        double best_supression = 0;
+        double best_suppression = 0;
         double best_phase_corr = 0;
         double best_ampl_corr = 0;
 
@@ -273,27 +307,27 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
                 const double tone_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
                 const double imag_dbrms = compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);
-                const double supression = tone_dbrms - imag_dbrms;
+                const double suppression = tone_dbrms - imag_dbrms;
 
                 //std::cout << "bb_tone_freq " << bb_tone_freq << std::endl;
                 //std::cout << "bb_imag_freq " << bb_imag_freq << std::endl;
                 //std::cout << "tone_dbrms " << tone_dbrms << std::endl;
                 //std::cout << "imag_dbrms " << imag_dbrms << std::endl;
-                //std::cout << "supression " << (tone_dbrms - imag_dbrms) << std::endl;
+                //std::cout << "suppression " << (tone_dbrms - imag_dbrms) << std::endl;
 
-                if (supression > best_supression){
+                if (suppression > best_suppression){
                     best_correction = correction;
-                    best_supression = supression;
+                    best_suppression = suppression;
                     best_phase_corr = phase_corr;
                     best_ampl_corr = ampl_corr;
-                    //std::cout << "   supression! " << supression << std::endl;
+                    //std::cout << "   suppression! " << suppression << std::endl;
                 }
 
             }}
 
             //std::cout << "best_phase_corr " << best_phase_corr << std::endl;
             //std::cout << "best_ampl_corr " << best_ampl_corr << std::endl;
-            //std::cout << "best_supression " << best_supression << std::endl;
+            //std::cout << "best_suppression " << best_suppression << std::endl;
 
             phase_corr_start = best_phase_corr - phase_corr_step;
             phase_corr_stop = best_phase_corr + phase_corr_step;
@@ -301,12 +335,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             ampl_corr_stop = best_ampl_corr + ampl_corr_step;
         }
 
-        if (best_supression > 30){ //most likely valid, keep result
+        if (best_suppression > 30){ //most likely valid, keep result
             result_t result;
             result.freq = tx_lo;
-            result.ampl = best_ampl_corr;
-            result.phase = best_phase_corr;
-            result.sup = best_supression;
+            result.real_corr = best_correction.real();
+            result.imag_corr = best_correction.imag();
+            result.sup = best_suppression;
             results.push_back(result);
         }
         std::cout << "." << std::flush;
@@ -318,15 +352,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     threads.interrupt_all();
     threads.join_all();
 
-
-    for (size_t i = 0; i < results.size(); i++){
-        std::cout
-        << results[i].freq << ", "
-        << results[i].ampl << ", "
-        << results[i].phase << ", "
-        << results[i].sup << ", "
-        << std::endl;
-    }
+    store_results(usrp, results);
 
     return 0;
 }

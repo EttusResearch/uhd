@@ -21,10 +21,12 @@ INSTALL(FILES
     assert_has.ipp
     byteswap.hpp
     byteswap.ipp
+    csv.hpp
     gain_group.hpp
     images.hpp
     log.hpp
     msg.hpp
+    paths.hpp
     pimpl.hpp
     safe_call.hpp
     safe_main.hpp

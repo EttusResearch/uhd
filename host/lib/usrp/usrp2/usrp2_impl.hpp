@@ -106,6 +106,8 @@ private:
     uhd::sensor_value_t get_mimo_locked(const std::string &);
     uhd::sensor_value_t get_ref_locked(const std::string &);
 
+    void set_tx_fe_corrections(const std::string &mb, const double tx_lo_freq);
+
     //device properties interface
     uhd::property_tree::sptr get_tree(void) const{
         return _tree;

@@ -16,6 +16,7 @@
 //
 
 #include <uhd/config.hpp>
+#include <uhd/utils/paths.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -23,6 +24,8 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <cstdlib> //getenv
+#include <cstdio>  //P_tmpdir
 
 namespace fs = boost::filesystem;
 
@@ -78,4 +81,28 @@ std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
     paths.push_back(get_uhd_pkg_data_path() / "modules");
     return paths;
+}
+
+/***********************************************************************
+ * Implement the functions in paths.hpp
+ **********************************************************************/
+std::string uhd::get_tmp_path(void){
+    const char *tmp_path = std::getenv("TMP");
+    if (tmp_path != NULL) return tmp_path;
+
+    #ifdef P_tmpdir
+    if (P_tmpdir != NULL) return P_tmpdir;
+    #endif
+
+    return "/tmp";
+}
+
+std::string uhd::get_app_path(void){
+    const char *appdata_path = std::getenv("APPDATA");
+    if (appdata_path != NULL) return appdata_path;
+
+    const char *home_path = std::getenv("HOME");
+    if (home_path != NULL) return home_path;
+
+    return uhd::get_tmp_path();
 }
