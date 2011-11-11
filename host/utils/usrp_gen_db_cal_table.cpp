@@ -36,8 +36,6 @@ static const double e = 2.71828183;
 static const double tau = 6.28318531;
 static const double alpha = 0.0001; //very tight iir filter
 static const size_t wave_table_len = 8192;
-static const float ampl = 0.7; //transmitted wave amplitude
-static const double tx_wave_freq = 507.123e3; //freq of tx sine wave in Hz
 
 /***********************************************************************
  * Sinusoid wave table
@@ -51,7 +49,7 @@ static std::vector<std::complex<float> > gen_table(void){
     //compute i and q pairs with 90% offset and scale to amplitude
     for (size_t i = 0; i < wave_table_len; i++){
         const size_t q = (i+(3*wave_table_len)/4)%wave_table_len;
-        wave_table[i] = std::complex<float>(ampl*real_wave_table[i], ampl*real_wave_table[q]);
+        wave_table[i] = std::complex<float>(real_wave_table[i], real_wave_table[q]);
     }
 
     return wave_table;
@@ -96,7 +94,7 @@ static double compute_tone_dbrms(
 /***********************************************************************
  * Transmit thread
  **********************************************************************/
-static void tx_thread(uhd::usrp::multi_usrp::sptr usrp){
+static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_freq, const double tx_wave_ampl){
     uhd::set_thread_priority_safe();
 
     //create a transmit streamer
@@ -116,7 +114,7 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp){
     //fill buff and send until interrupted
     while (not boost::this_thread::interruption_requested()){
         for (size_t i = 0; i < buff.size(); i++){
-            buff[i] = wave_table_lookup(index);
+            buff[i] = float(tx_wave_ampl) * wave_table_lookup(index);
             index += step;
         }
         tx_stream->send(&buff.front(), buff.size(), md);
@@ -128,17 +126,70 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp){
 }
 
 /***********************************************************************
+ * Tune RX and TX routine
+ **********************************************************************/
+static void tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_lo_freq, const double rx_offset){
+    //tune the transmitter with no cordic
+    uhd::tune_request_t tx_tune_req(tx_lo_freq);
+    tx_tune_req.dsp_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
+    tx_tune_req.dsp_freq = 0;
+    usrp->set_tx_freq(tx_tune_req);
+
+    //tune the receiver
+    usrp->set_rx_freq(usrp->get_tx_freq() - rx_offset);
+
+    //wait for the LOs to become locked
+    boost::system_time start = boost::get_system_time();
+    while (not usrp->get_tx_sensor("lo_locked").to_bool() or not usrp->get_rx_sensor("lo_locked").to_bool()){
+        if (boost::get_system_time() > start + boost::posix_time::milliseconds(100)){
+            throw std::runtime_error("timed out waiting for TX and/or RX LO to lock");
+        }
+    }
+}
+
+/***********************************************************************
+ * Data capture routine
+ **********************************************************************/
+static void capture_samples(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr rx_stream, std::vector<std::complex<float> > &buff){
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = buff.size();
+    stream_cmd.stream_now = true;
+    usrp->issue_stream_cmd(stream_cmd);
+    uhd::rx_metadata_t md;
+    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+
+    //validate the received data
+    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
+        throw std::runtime_error(str(boost::format(
+            "Unexpected error code 0x%x"
+        ) % md.error_code));
+    }
+    if (num_rx_samps != buff.size()){
+        throw std::runtime_error("did not get all the samples requested");
+    }
+}
+
+ struct result_t{
+        double freq, ampl, phase, sup;
+    };
+
+/***********************************************************************
  * Main
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
-    double rate;
+    double rate, tx_wave_freq, tx_wave_ampl, rx_offset;
+    size_t nsamps;
 
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "device address args [default = \"\"]")
         ("rate", po::value<double>(&rate)->default_value(12.5e6), "RX and TX sample rate in Hz")
+        ("tx_wave_freq", po::value<double>(&tx_wave_freq)->default_value(507.123e3), "Transmit wave frequency in Hz")
+        ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude in counts")
+        ("rx_offset", po::value<double>(&rx_offset)->default_value(.9344e6), "RX LO offset from the TX LO in Hz")
+        ("nsamps", po::value<size_t>(&nsamps)->default_value(10000), "Samples per data capture")
     ;
 
     po::variables_map vm;
@@ -163,31 +214,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_rx_rate(rate);
     usrp->set_tx_rate(rate);
 
-    //tune the transmitter with no cordic
-    uhd::tune_request_t tx_tune_req(2.155e9);
-    tx_tune_req.dsp_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
-    tx_tune_req.dsp_freq = 0;
-    usrp->set_tx_freq(tx_tune_req);
-    {
-        boost::system_time start = boost::get_system_time();
-        while (not usrp->get_tx_sensor("lo_locked").to_bool()){
-            if (boost::get_system_time() > start + boost::posix_time::milliseconds(100)){
-                throw std::runtime_error("timed out waiting for TX LO to lock");
-            }
-        }
-    }
-
-    //tune the receiver
-    usrp->set_rx_freq(2.155e9 - .9344e6);
-    {
-        boost::system_time start = boost::get_system_time();
-        while (not usrp->get_rx_sensor("lo_locked").to_bool()){
-            if (boost::get_system_time() > start + boost::posix_time::milliseconds(100)){
-                throw std::runtime_error("timed out waiting for RX LO to lock");
-            }
-        }
-    }
-
     //set max receiver gain
     usrp->set_rx_gain(usrp->get_rx_gain_range().stop());
 
@@ -197,47 +223,110 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //create a transmitter thread
     boost::thread_group threads;
-    threads.create_thread(boost::bind(&tx_thread, usrp));
+    threads.create_thread(boost::bind(&tx_thread, usrp, tx_wave_freq, tx_wave_ampl));
 
-    //receive some samples
-    std::vector<std::complex<float> > buff(100000);
-    usrp->set_time_now(uhd::time_spec_t(0.0));
-    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = buff.size();
-    stream_cmd.stream_now = false;
-    stream_cmd.time_spec = uhd::time_spec_t(0.1);
-    usrp->issue_stream_cmd(stream_cmd);
-    uhd::rx_metadata_t md;
-    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+    //re-usable buffer for samples
+    std::vector<std::complex<float> > buff(nsamps);
 
-    //validate the received data
-    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-        throw std::runtime_error(str(boost::format(
-            "Unexpected error code 0x%x"
-        ) % md.error_code));
+    const uhd::meta_range_t freq_range = usrp->get_tx_freq_range();
+    const double freq_step = 100e6;
+
+    std::vector<result_t> results;
+
+    for (double tx_lo = freq_range.start()+freq_step; tx_lo < freq_range.stop()-freq_step; tx_lo += freq_step){
+    //const double tx_lo = 2.155e9;{
+        //tune the LOs
+        tune_rx_and_tx(usrp, tx_lo, rx_offset);
+
+        double phase_corr_start = -.3;
+        double phase_corr_stop = .3;
+        double phase_corr_step;
+
+        double ampl_corr_start = -.3;
+        double ampl_corr_stop = .3;
+        double ampl_corr_step;
+
+        std::complex<double> best_correction;
+        double best_supression = 0;
+        double best_phase_corr = 0;
+        double best_ampl_corr = 0;
+
+        for (size_t i = 0; i < 7; i++){
+
+            phase_corr_step = (phase_corr_stop - phase_corr_start)/4;
+            ampl_corr_step = (ampl_corr_stop - ampl_corr_start)/4;
+
+            for (double phase_corr = phase_corr_start; phase_corr <= phase_corr_stop; phase_corr += phase_corr_step){
+            for (double ampl_corr = ampl_corr_start; ampl_corr <= ampl_corr_stop; ampl_corr += ampl_corr_step){
+
+                const std::complex<double> correction = std::polar(ampl_corr+1, phase_corr*tau);
+                usrp->set_tx_iq_balance(correction);
+
+                //receive some samples
+                capture_samples(usrp, rx_stream, buff);
+
+                const double actual_rx_rate = usrp->get_rx_rate();
+                const double actual_tx_freq = usrp->get_tx_freq();
+                const double actual_rx_freq = usrp->get_rx_freq();
+                const double bb_tone_freq = actual_tx_freq + tx_wave_freq - actual_rx_freq;
+                const double bb_imag_freq = actual_tx_freq - tx_wave_freq - actual_rx_freq;
+
+                const double tone_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
+                const double imag_dbrms = compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);
+                const double supression = tone_dbrms - imag_dbrms;
+
+                //std::cout << "bb_tone_freq " << bb_tone_freq << std::endl;
+                //std::cout << "bb_imag_freq " << bb_imag_freq << std::endl;
+                //std::cout << "tone_dbrms " << tone_dbrms << std::endl;
+                //std::cout << "imag_dbrms " << imag_dbrms << std::endl;
+                //std::cout << "supression " << (tone_dbrms - imag_dbrms) << std::endl;
+
+                if (supression > best_supression){
+                    best_correction = correction;
+                    best_supression = supression;
+                    best_phase_corr = phase_corr;
+                    best_ampl_corr = ampl_corr;
+                    //std::cout << "   supression! " << supression << std::endl;
+                }
+
+            }}
+
+            //std::cout << "best_phase_corr " << best_phase_corr << std::endl;
+            //std::cout << "best_ampl_corr " << best_ampl_corr << std::endl;
+            //std::cout << "best_supression " << best_supression << std::endl;
+
+            phase_corr_start = best_phase_corr - phase_corr_step;
+            phase_corr_stop = best_phase_corr + phase_corr_step;
+            ampl_corr_start = best_ampl_corr - ampl_corr_step;
+            ampl_corr_stop = best_ampl_corr + ampl_corr_step;
+        }
+
+        if (best_supression > 30){ //most likely valid, keep result
+            result_t result;
+            result.freq = tx_lo;
+            result.ampl = best_ampl_corr;
+            result.phase = best_phase_corr;
+            result.sup = best_supression;
+            results.push_back(result);
+        }
+        std::cout << "." << std::flush;
+
     }
-    if (num_rx_samps != buff.size()){
-        throw std::runtime_error("did not get all the samples requested");
-    }
+    std::cout << std::endl;
 
     //stop the transmitter
     threads.interrupt_all();
     threads.join_all();
 
-    const double actual_rx_rate = usrp->get_rx_rate();
-    const double actual_tx_freq = usrp->get_tx_freq();
-    const double actual_rx_freq = usrp->get_rx_freq();
-    const double bb_tone_freq = actual_tx_freq + tx_wave_freq - actual_rx_freq;
-    const double bb_imag_freq = actual_tx_freq - tx_wave_freq - actual_rx_freq;
 
-    const double tone_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
-    const double imag_dbrms = compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);
-
-    std::cout << "bb_tone_freq " << bb_tone_freq << std::endl;
-    std::cout << "bb_imag_freq " << bb_imag_freq << std::endl;
-    std::cout << "tone_dbrms " << tone_dbrms << std::endl;
-    std::cout << "imag_dbrms " << imag_dbrms << std::endl;
-    std::cout << "supression " << (tone_dbrms - imag_dbrms) << std::endl;
+    for (size_t i = 0; i < results.size(); i++){
+        std::cout
+        << results[i].freq << ", "
+        << results[i].ampl << ", "
+        << results[i].phase << ", "
+        << results[i].sup << ", "
+        << std::endl;
+    }
 
     return 0;
 }
