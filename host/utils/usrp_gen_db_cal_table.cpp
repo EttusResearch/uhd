@@ -18,6 +18,7 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
@@ -38,33 +39,26 @@ namespace fs = boost::filesystem;
 /***********************************************************************
  * Constants
  **********************************************************************/
-static const double e = 2.71828183;
 static const double tau = 6.28318531;
 static const double alpha = 0.0001; //very tight iir filter
 static const size_t wave_table_len = 8192;
+static const size_t num_search_steps = 5;
+static const size_t num_search_iters = 7;
 
 /***********************************************************************
  * Sinusoid wave table
  **********************************************************************/
 static std::vector<std::complex<float> > gen_table(void){
     std::vector<std::complex<float> > wave_table(wave_table_len);
-    std::vector<double> real_wave_table(wave_table_len);
-    for (size_t i = 0; i < wave_table_len; i++)
-        real_wave_table[i] = std::sin((tau*i)/wave_table_len);
-
-    //compute i and q pairs with 90% offset and scale to amplitude
     for (size_t i = 0; i < wave_table_len; i++){
-        const size_t q = (i+(3*wave_table_len)/4)%wave_table_len;
-        wave_table[i] = std::complex<float>(real_wave_table[i], real_wave_table[q]);
+        wave_table[i] = std::polar<float>(1.0, (tau*i)/wave_table_len);
     }
-
     return wave_table;
 }
 
-static std::complex<float> wave_table_lookup(size_t &index){
+static std::complex<float> wave_table_lookup(const size_t index){
     static const std::vector<std::complex<float> > wave_table = gen_table();
-    index %= wave_table_len;
-    return wave_table[index];
+    return wave_table[index % wave_table_len];
 }
 
 /***********************************************************************
@@ -77,7 +71,7 @@ static double compute_tone_dbrms(
     //shift the samples so the tone at freq is down at DC
     std::vector<std::complex<double> > shifted(samples.size());
     for (size_t i = 0; i < shifted.size(); i++){
-        shifted[i] = std::complex<double>(samples[i]) * std::pow(e, std::complex<double>(0, -freq*tau*i));
+        shifted[i] = std::complex<double>(samples[i]) * std::polar<double>(1.0, -freq*tau*i);
     }
 
     //filter the samples with a narrow low pass
@@ -115,8 +109,7 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_fre
     //fill buff and send until interrupted
     while (not boost::this_thread::interruption_requested()){
         for (size_t i = 0; i < buff.size(); i++){
-            buff[i] = float(tx_wave_ampl) * wave_table_lookup(index);
-            index += step;
+            buff[i] = float(tx_wave_ampl) * wave_table_lookup(index += step);
         }
         tx_stream->send(&buff.front(), buff.size(), md);
     }
@@ -129,7 +122,7 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_fre
 /***********************************************************************
  * Tune RX and TX routine
  **********************************************************************/
-static void tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_lo_freq, const double rx_offset){
+static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_lo_freq, const double rx_offset){
     //tune the transmitter with no cordic
     uhd::tune_request_t tx_tune_req(tx_lo_freq);
     tx_tune_req.dsp_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
@@ -146,6 +139,8 @@ static void tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_lo_
             throw std::runtime_error("timed out waiting for TX and/or RX LO to lock");
         }
     }
+
+    return usrp->get_tx_freq();
 }
 
 /***********************************************************************
@@ -187,6 +182,9 @@ static void store_results(uhd::usrp::multi_usrp::sptr usrp, const std::vector<re
     cal_data_path = cal_data_path / "cal";
     fs::create_directory(cal_data_path);
     cal_data_path = cal_data_path / ("tx_fe_cal_v0.1_" + db_eeprom.serial + ".csv");
+    if (fs::exists(cal_data_path)){
+        fs::rename(cal_data_path, cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
+    }
 
     //fill the calibration file
     std::ofstream cal_data(cal_data_path.string().c_str());
@@ -214,18 +212,21 @@ static void store_results(uhd::usrp::multi_usrp::sptr usrp, const std::vector<re
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
-    double rate, tx_wave_freq, tx_wave_ampl, rx_offset, freq_step;
+    double rate, tx_wave_freq, tx_wave_ampl, rx_offset, freq_step, tx_gain, rx_gain;
     size_t nsamps;
 
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
+        ("verbose", "enable some verbose")
         ("args", po::value<std::string>(&args)->default_value(""), "device address args [default = \"\"]")
         ("rate", po::value<double>(&rate)->default_value(12.5e6), "RX and TX sample rate in Hz")
         ("tx_wave_freq", po::value<double>(&tx_wave_freq)->default_value(507.123e3), "Transmit wave frequency in Hz")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude in counts")
         ("rx_offset", po::value<double>(&rx_offset)->default_value(.9344e6), "RX LO offset from the TX LO in Hz")
-        ("freq_step", po::value<double>(&freq_step)->default_value(20e6), "Step size for LO sweep in Hz")
+        ("tx_gain", po::value<double>(&tx_gain)->default_value(0), "TX gain in dB")
+        ("rx_gain", po::value<double>(&rx_gain)->default_value(0), "RX gain in dB")
+        ("freq_step", po::value<double>(&freq_step)->default_value(10e6), "Step size for LO sweep in Hz")
         ("nsamps", po::value<size_t>(&nsamps)->default_value(10000), "Samples per data capture")
     ;
 
@@ -247,12 +248,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
+    //set the antennas to cal
+    if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL")){
+        throw std::runtime_error("This board does not have the CAL antenna option, cannot self-calibrate.");
+    }
+    usrp->set_rx_antenna("CAL");
+    usrp->set_tx_antenna("CAL");
+
     //set the sample rates
     usrp->set_rx_rate(rate);
     usrp->set_tx_rate(rate);
 
-    //set max receiver gain
-    usrp->set_rx_gain(usrp->get_rx_gain_range().stop());
+    //set midrange rx gain, default 0 tx gain
+    usrp->set_tx_gain(tx_gain);
+    usrp->set_rx_gain(rx_gain);
 
     //create a receive streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
@@ -265,33 +274,26 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //re-usable buffer for samples
     std::vector<std::complex<float> > buff(nsamps);
 
-    const uhd::meta_range_t freq_range = usrp->get_tx_freq_range();
+    //store the results here
     std::vector<result_t> results;
 
-    for (double tx_lo = freq_range.start()+freq_step; tx_lo < freq_range.stop()-freq_step; tx_lo += freq_step){
+    const uhd::meta_range_t freq_range = usrp->get_tx_freq_range();
+    for (double tx_lo_i = freq_range.start()+50e6; tx_lo_i < freq_range.stop()-50e6; tx_lo_i += freq_step){
+        const double tx_lo = tune_rx_and_tx(usrp, tx_lo_i, rx_offset);
 
-        tune_rx_and_tx(usrp, tx_lo, rx_offset);
-
-        double phase_corr_start = -.3;
-        double phase_corr_stop = .3;
-        double phase_corr_step;
-
-        double ampl_corr_start = -.3;
-        double ampl_corr_stop = .3;
-        double ampl_corr_step;
-
+        //bounds and results from searching
         std::complex<double> best_correction;
-        double best_suppression = 0;
-        double best_phase_corr = 0;
-        double best_ampl_corr = 0;
+        double phase_corr_start = -.3, phase_corr_stop = .3, phase_corr_step;
+        double ampl_corr_start = -.3, ampl_corr_stop = .3, ampl_corr_step;
+        double best_suppression = 0, best_phase_corr = 0, best_ampl_corr = 0;
 
-        for (size_t i = 0; i < 7; i++){
+        for (size_t i = 0; i < num_search_iters; i++){
 
-            phase_corr_step = (phase_corr_stop - phase_corr_start)/4;
-            ampl_corr_step = (ampl_corr_stop - ampl_corr_start)/4;
+            phase_corr_step = (phase_corr_stop - phase_corr_start)/(num_search_steps-1);
+            ampl_corr_step = (ampl_corr_stop - ampl_corr_start)/(num_search_steps-1);
 
-            for (double phase_corr = phase_corr_start; phase_corr <= phase_corr_stop; phase_corr += phase_corr_step){
-            for (double ampl_corr = ampl_corr_start; ampl_corr <= ampl_corr_stop; ampl_corr += ampl_corr_step){
+            for (double phase_corr = phase_corr_start; phase_corr <= phase_corr_stop + phase_corr_step/2; phase_corr += phase_corr_step){
+            for (double ampl_corr = ampl_corr_start; ampl_corr <= ampl_corr_stop + ampl_corr_step/2; ampl_corr += ampl_corr_step){
 
                 const std::complex<double> correction = std::polar(ampl_corr+1, phase_corr*tau);
                 usrp->set_tx_iq_balance(correction);
@@ -320,7 +322,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     best_suppression = suppression;
                     best_phase_corr = phase_corr;
                     best_ampl_corr = ampl_corr;
-                    //std::cout << "   suppression! " << suppression << std::endl;
                 }
 
             }}
@@ -343,7 +344,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             result.sup = best_suppression;
             results.push_back(result);
         }
-        std::cout << "." << std::flush;
+        if (vm.count("verbose")){
+            std::cout << boost::format("%f MHz: best suppression %fdB") % (tx_lo/1e6) % best_suppression << std::endl;
+        }
+        else std::cout << "." << std::flush;
 
     }
     std::cout << std::endl;

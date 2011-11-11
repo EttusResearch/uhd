@@ -23,6 +23,7 @@
 #include <uhd/types/dict.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread/mutex.hpp>
 #include <cstdio>
 #include <complex>
 #include <fstream>
@@ -39,7 +40,7 @@ static bool tx_fe_cal_comp(tx_fe_cal_t a, tx_fe_cal_t b){
     return (a.tx_lo_freq < b.tx_lo_freq);
 }
 
-//TODO should lock access to this
+boost::mutex corrections_mutex;;
 static uhd::dict<std::string, std::vector<tx_fe_cal_t> > cache;
 
 static double linear_interp(double x, double x0, double y0, double x1, double y1){
@@ -127,6 +128,7 @@ void uhd::usrp::apply_tx_fe_corrections(
     const std::string &slot, //name of dboard slot
     const double tx_lo_freq //actual lo freq
 ){
+    boost::mutex::scoped_lock l(corrections_mutex);
     try{
         _apply_tx_fe_corrections(sub_tree, slot, tx_lo_freq);
     }
