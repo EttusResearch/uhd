@@ -15,10 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/paths.hpp>
+#include <uhd/property_tree.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
+#include <boost/filesystem.hpp>
+#include <iostream>
 #include <vector>
 #include <complex>
 #include <cmath>
 #include <fstream>
+
+namespace fs = boost::filesystem;
 
 struct result_t{double freq, real_corr, imag_corr, sup;};
 
@@ -82,4 +90,50 @@ static inline void write_samples_to_file(
     std::ofstream outfile(file.c_str(), std::ofstream::binary);
     outfile.write((const char*)&samples.front(), samples.size()*sizeof(std::complex<float>));
     outfile.close();
+}
+
+/***********************************************************************
+ * Store data to file
+ **********************************************************************/
+static void store_results(
+    uhd::usrp::multi_usrp::sptr usrp,
+    const std::vector<result_t> &results,
+    const std::string &XX,
+    const std::string &xx
+){
+    //extract eeprom serial
+    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    const uhd::fs_path db_path = "/mboards/0/dboards/A/" + xx + "_eeprom";
+    const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
+    if (db_eeprom.serial.empty()) throw std::runtime_error(XX + " dboard has empty serial!");
+
+    //make the calibration file path
+    fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd";
+    fs::create_directory(cal_data_path);
+    cal_data_path = cal_data_path / "cal";
+    fs::create_directory(cal_data_path);
+    cal_data_path = cal_data_path / (xx + "_fe_cal_v0.1_" + db_eeprom.serial + ".csv");
+    if (fs::exists(cal_data_path)){
+        fs::rename(cal_data_path, cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
+    }
+
+    //fill the calibration file
+    std::ofstream cal_data(cal_data_path.string().c_str());
+    cal_data << boost::format("name, %s Frontend Calibration\n") % XX;
+    cal_data << boost::format("serial, %s\n") % db_eeprom.serial;
+    cal_data << boost::format("timestamp, %d\n") % time(NULL);
+    cal_data << boost::format("version, 0, 1\n");
+    cal_data << boost::format("DATA STARTS HERE\n");
+    cal_data << "lo_frequency, iq_correction_real, iq_correction_imag, measured_suppression\n";
+
+    for (size_t i = 0; i < results.size(); i++){
+        cal_data
+            << results[i].freq << ", "
+            << results[i].real_corr << ", "
+            << results[i].imag_corr << ", "
+            << results[i].sup << "\n"
+        ;
+    }
+
+    std::cout << "wrote cal data to " << cal_data_path << std::endl;
 }
