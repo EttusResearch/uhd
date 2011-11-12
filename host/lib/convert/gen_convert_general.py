@@ -33,8 +33,6 @@ DECLARE_CONVERTER(item32, 1, sc16_item32_$(end), 1, PRIORITY_GENERAL){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
-    if (scale_factor == 0){} //avoids unused warning
-
     for (size_t i = 0; i < nsamps; i++){
         output[i] = $(to_wire)(input[i]);
     }
@@ -43,8 +41,6 @@ DECLARE_CONVERTER(item32, 1, sc16_item32_$(end), 1, PRIORITY_GENERAL){
 DECLARE_CONVERTER(sc16_item32_$(end), 1, item32, 1, PRIORITY_GENERAL){
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
-
-    if (scale_factor == 0){} //avoids unused warning
 
     for (size_t i = 0; i < nsamps; i++){
         output[i] = $(to_host)(input[i]);
@@ -103,8 +99,6 @@ DECLARE_CONVERTER($(cpu_type), $(width), sc16_item16_usrp1, 1, PRIORITY_GENERAL)
     #end for
     boost::uint16_t *output = reinterpret_cast<boost::uint16_t *>(outputs[0]);
 
-    if (scale_factor == 0){} //avoids unused warning
-
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
         output[j++] = $(to_wire)(boost::int16_t(input$(w)[i].real()$(do_scale)));
@@ -118,8 +112,6 @@ DECLARE_CONVERTER(sc16_item16_usrp1, 1, $(cpu_type), $(width), PRIORITY_GENERAL)
     #for $w in range($width)
     $(cpu_type)_t *output$(w) = reinterpret_cast<$(cpu_type)_t *>(outputs[$(w)]);
     #end for
-
-    if (scale_factor == 0){} //avoids unused warning
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
@@ -137,8 +129,6 @@ DECLARE_CONVERTER(sc8_item16_usrp1, 1, $(cpu_type), $(width), PRIORITY_GENERAL){
     #for $w in range($width)
     $(cpu_type)_t *output$(w) = reinterpret_cast<$(cpu_type)_t *>(outputs[$(w)]);
     #end for
-
-    if (scale_factor == 0){} //avoids unused warning
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)

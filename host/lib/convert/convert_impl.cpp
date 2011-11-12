@@ -69,8 +69,8 @@ UHD_SINGLETON_FCN(fcn_table_type, get_table);
  **********************************************************************/
 void uhd::convert::register_converter(
     const id_type &id,
-    function_type fcn,
-    priority_type prio
+    const function_type &fcn,
+    const priority_type prio
 ){
     //get a reference to the function table
     fcn_table_type &table = get_table();

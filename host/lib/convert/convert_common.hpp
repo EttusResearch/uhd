@@ -21,30 +21,30 @@
 #include <uhd/convert.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/bind.hpp>
 #include <complex>
 
-#define _DECLARE_CONVERTER(fcn, in_form, num_in, out_form, num_out, prio) \
-    static void fcn( \
-        const uhd::convert::input_type &inputs, \
-        const uhd::convert::output_type &outputs, \
-        const size_t nsamps, const double scale_factor \
-    ); \
-    UHD_STATIC_BLOCK(__register_##fcn##_##prio){ \
+#define _DECLARE_CONVERTER(name, in_form, num_in, out_form, num_out, prio) \
+    struct name : public uhd::convert::converter{ \
+        static sptr make(void){return sptr(new name());} \
+        double scale_factor; \
+        void set_scalar(const double s){scale_factor = s;} \
+        void operator()(const input_type&, const output_type&, const size_t); \
+    }; \
+    UHD_STATIC_BLOCK(__register_##name##_##prio){ \
         uhd::convert::id_type id; \
         id.input_format = #in_form; \
         id.num_inputs = num_in; \
         id.output_format = #out_form; \
         id.num_outputs = num_out; \
-        uhd::convert::register_converter(id, fcn, prio); \
+        uhd::convert::register_converter(id, boost::bind(&name::make), prio); \
     } \
-    static void fcn( \
-        const uhd::convert::input_type &inputs, \
-        const uhd::convert::output_type &outputs, \
-        const size_t nsamps, const double scale_factor \
+    void name::operator()( \
+        const input_type &inputs, const output_type &outputs, const size_t nsamps \
     )
 
 #define DECLARE_CONVERTER(in_form, num_in, out_form, num_out, prio) \
-    _DECLARE_CONVERTER(__convert_##in_form##_##num_in##_##out_form##_##num_out, in_form, num_in, out_form, num_out, prio)
+    _DECLARE_CONVERTER(__convert_##in_form##_##num_in##_##out_form##_##num_out##_##prio, in_form, num_in, out_form, num_out, prio)
 
 /***********************************************************************
  * Typedefs
