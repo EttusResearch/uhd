@@ -30,6 +30,12 @@ namespace uhd{ namespace usrp{
         const double tx_lo_freq //actual lo freq
     );
 
+    void apply_rx_fe_corrections(
+        property_tree::sptr sub_tree, //starts at mboards/x
+        const std::string &slot, //name of dboard slot
+        const double rx_lo_freq //actual lo freq
+    );
+
 }} //namespace uhd::usrp
 
 #endif /* INCLUDED_LIBUHD_USRP_COMMON_APPLY_CORRECTIONS_HPP */

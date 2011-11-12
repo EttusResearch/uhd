@@ -30,33 +30,40 @@
 
 namespace fs = boost::filesystem;
 
-struct tx_fe_cal_t{
-    double tx_lo_freq;
-    double iq_corr_real;
-    double iq_corr_imag;
-};
+boost::mutex corrections_mutex;
 
-static bool tx_fe_cal_comp(tx_fe_cal_t a, tx_fe_cal_t b){
-    return (a.tx_lo_freq < b.tx_lo_freq);
-}
-
-boost::mutex corrections_mutex;;
-static uhd::dict<std::string, std::vector<tx_fe_cal_t> > cache;
-
+/***********************************************************************
+ * Helper routines
+ **********************************************************************/
 static double linear_interp(double x, double x0, double y0, double x1, double y1){
     return y0 + (x - x0)*(y1 - y0)/(x1 - x0);
 }
 
-static std::complex<double> get_tx_fe_iq_correction(
-    const std::string &key, const double tx_lo_freq
+/***********************************************************************
+ * FE apply corrections implementation
+ **********************************************************************/
+struct fe_cal_t{
+    double lo_freq;
+    double iq_corr_real;
+    double iq_corr_imag;
+};
+
+static bool fe_cal_comp(fe_cal_t a, fe_cal_t b){
+    return (a.lo_freq < b.lo_freq);
+}
+
+static uhd::dict<std::string, std::vector<fe_cal_t> > fe_cal_cache;
+
+static std::complex<double> get_fe_iq_correction(
+    const std::string &key, const double lo_freq
 ){
-    const std::vector<tx_fe_cal_t> &datas = cache[key];
+    const std::vector<fe_cal_t> &datas = fe_cal_cache[key];
 
     //search for lo freq
     size_t lo_index = 0;
     size_t hi_index = datas.size()-1;
     for (size_t i = 0; i < datas.size(); i++){
-        if (datas[i].tx_lo_freq > tx_lo_freq){
+        if (datas[i].lo_freq > lo_freq){
             hi_index = i;
             break;
         }
@@ -68,34 +75,32 @@ static std::complex<double> get_tx_fe_iq_correction(
 
     //interpolation time
     return std::complex<double>(
-        linear_interp(tx_lo_freq, datas[lo_index].tx_lo_freq, datas[lo_index].iq_corr_real, datas[hi_index].tx_lo_freq, datas[hi_index].iq_corr_real),
-        linear_interp(tx_lo_freq, datas[lo_index].tx_lo_freq, datas[lo_index].iq_corr_imag, datas[hi_index].tx_lo_freq, datas[hi_index].iq_corr_imag)
+        linear_interp(lo_freq, datas[lo_index].lo_freq, datas[lo_index].iq_corr_real, datas[hi_index].lo_freq, datas[hi_index].iq_corr_real),
+        linear_interp(lo_freq, datas[lo_index].lo_freq, datas[lo_index].iq_corr_imag, datas[hi_index].lo_freq, datas[hi_index].iq_corr_imag)
     );
 }
 
-static void _apply_tx_fe_corrections(
-    uhd::property_tree::sptr sub_tree, //starts at mboards/x
-    const std::string &slot, //name of dboard slot
-    const double tx_lo_freq //actual lo freq
+static void apply_fe_corrections(
+    uhd::property_tree::sptr sub_tree,
+    const uhd::fs_path &db_path,
+    const uhd::fs_path &fe_path,
+    const std::string &file_prefix,
+    const double lo_freq
 ){
-    //path constants
-    const uhd::fs_path tx_db_path = "dboards/" + slot + "/tx_eeprom";
-    const uhd::fs_path tx_fe_path = "tx_frontends/" + slot + "/iq_balance/value";
-
     //extract eeprom serial
-    const uhd::usrp::dboard_eeprom_t db_eeprom = sub_tree->access<uhd::usrp::dboard_eeprom_t>(tx_db_path).get();
+    const uhd::usrp::dboard_eeprom_t db_eeprom = sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
 
     //make the calibration file path
-    const fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd" / "cal" / ("tx_fe_cal_v0.1_" + db_eeprom.serial + ".csv");
+    const fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd" / "cal" / (file_prefix + db_eeprom.serial + ".csv");
     if (not fs::exists(cal_data_path)) return;
 
     //parse csv file or get from cache
-    if (not cache.has_key(cal_data_path.string())){
+    if (not fe_cal_cache.has_key(cal_data_path.string())){
         std::ifstream cal_data(cal_data_path.string().c_str());
         const uhd::csv::rows_type rows = uhd::csv::to_rows(cal_data);
 
         bool read_data = false, skip_next = false;;
-        std::vector<tx_fe_cal_t> datas;
+        std::vector<fe_cal_t> datas;
         BOOST_FOREACH(const uhd::csv::row_type &row, rows){
             if (not read_data and not row.empty() and row[0] == "DATA STARTS HERE"){
                 read_data = true;
@@ -107,32 +112,61 @@ static void _apply_tx_fe_corrections(
                 skip_next = false;
                 continue;
             }
-            tx_fe_cal_t data;
-            std::sscanf(row[0].c_str(), "%lf" , &data.tx_lo_freq);
+            fe_cal_t data;
+            std::sscanf(row[0].c_str(), "%lf" , &data.lo_freq);
             std::sscanf(row[1].c_str(), "%lf" , &data.iq_corr_real);
             std::sscanf(row[2].c_str(), "%lf" , &data.iq_corr_imag);
             datas.push_back(data);
         }
-        std::sort(datas.begin(), datas.end(), tx_fe_cal_comp);
-        cache[cal_data_path.string()] = datas;
+        std::sort(datas.begin(), datas.end(), fe_cal_comp);
+        fe_cal_cache[cal_data_path.string()] = datas;
         UHD_MSG(status) << "Loaded " << cal_data_path.string() << std::endl;
 
     }
 
-    sub_tree->access<std::complex<double> >(tx_fe_path)
-        .set(get_tx_fe_iq_correction(cal_data_path.string(), tx_lo_freq));
+    sub_tree->access<std::complex<double> >(fe_path)
+        .set(get_fe_iq_correction(cal_data_path.string(), lo_freq));
 }
 
+/***********************************************************************
+ * Wrapper routines with nice try/catch + print
+ **********************************************************************/
 void uhd::usrp::apply_tx_fe_corrections(
     property_tree::sptr sub_tree, //starts at mboards/x
     const std::string &slot, //name of dboard slot
-    const double tx_lo_freq //actual lo freq
+    const double lo_freq //actual lo freq
 ){
     boost::mutex::scoped_lock l(corrections_mutex);
     try{
-        _apply_tx_fe_corrections(sub_tree, slot, tx_lo_freq);
+        apply_fe_corrections(
+            sub_tree,
+            "dboards/" + slot + "/tx_eeprom",
+            "tx_frontends/" + slot + "/iq_balance/value",
+            "tx_fe_cal_v0.1_",
+            lo_freq
+        );
     }
     catch(const std::exception &e){
         UHD_MSG(error) << "Failure in apply_tx_fe_corrections: " << e.what() << std::endl;
+    }
+}
+
+void uhd::usrp::apply_rx_fe_corrections(
+    property_tree::sptr sub_tree, //starts at mboards/x
+    const std::string &slot, //name of dboard slot
+    const double lo_freq //actual lo freq
+){
+    boost::mutex::scoped_lock l(corrections_mutex);
+    try{
+        apply_fe_corrections(
+            sub_tree,
+            "dboards/" + slot + "/rx_eeprom",
+            "rx_frontends/" + slot + "/iq_balance/value",
+            "rx_fe_cal_v0.1_",
+            lo_freq
+        );
+    }
+    catch(const std::exception &e){
+        UHD_MSG(error) << "Failure in apply_rx_fe_corrections: " << e.what() << std::endl;
     }
 }

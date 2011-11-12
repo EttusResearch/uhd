@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "usrp_cal_utils.hpp"
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/paths.hpp>
@@ -30,61 +31,10 @@
 #include <iostream>
 #include <fstream>
 #include <complex>
-#include <cmath>
 #include <ctime>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-
-/***********************************************************************
- * Constants
- **********************************************************************/
-static const double tau = 6.28318531;
-static const double alpha = 0.0001; //very tight iir filter
-static const size_t wave_table_len = 8192;
-static const size_t num_search_steps = 5;
-static const size_t num_search_iters = 7;
-
-/***********************************************************************
- * Sinusoid wave table
- **********************************************************************/
-static std::vector<std::complex<float> > gen_table(void){
-    std::vector<std::complex<float> > wave_table(wave_table_len);
-    for (size_t i = 0; i < wave_table_len; i++){
-        wave_table[i] = std::polar<float>(1.0, (tau*i)/wave_table_len);
-    }
-    return wave_table;
-}
-
-static std::complex<float> wave_table_lookup(const size_t index){
-    static const std::vector<std::complex<float> > wave_table = gen_table();
-    return wave_table[index % wave_table_len];
-}
-
-/***********************************************************************
- * Compute power of a tone
- **********************************************************************/
-static double compute_tone_dbrms(
-    const std::vector<std::complex<float> > &samples,
-    const double freq //freq is fractional
-){
-    //shift the samples so the tone at freq is down at DC
-    std::vector<std::complex<double> > shifted(samples.size());
-    for (size_t i = 0; i < shifted.size(); i++){
-        shifted[i] = std::complex<double>(samples[i]) * std::polar<double>(1.0, -freq*tau*i);
-    }
-
-    //filter the samples with a narrow low pass
-    std::complex<double> iir_output = 0, iir_last = 0;
-    double output = 0;
-    for (size_t i = 0; i < shifted.size(); i++){
-        iir_output = alpha * shifted[i] + (1-alpha)*iir_last;
-        iir_last = iir_output;
-        output += std::abs(iir_output);
-    }
-
-    return 20*std::log10(output/shifted.size());
-}
 
 /***********************************************************************
  * Transmit thread
@@ -133,6 +83,7 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_l
     usrp->set_rx_freq(usrp->get_tx_freq() - rx_offset);
 
     //wait for the LOs to become locked
+    boost::this_thread::sleep(boost::posix_time::milliseconds(50));
     boost::system_time start = boost::get_system_time();
     while (not usrp->get_tx_sensor("lo_locked").to_bool() or not usrp->get_rx_sensor("lo_locked").to_bool()){
         if (boost::get_system_time() > start + boost::posix_time::milliseconds(100)){
@@ -168,7 +119,6 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::
 /***********************************************************************
  * Store data to file
  **********************************************************************/
-struct result_t{double freq, real_corr, imag_corr, sup;};
 static void store_results(uhd::usrp::multi_usrp::sptr usrp, const std::vector<result_t> &results){
     //extract eeprom serial
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
@@ -236,7 +186,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("USRP Generate Daughterboard Calibration Table %s") % desc << std::endl;
+        std::cout << boost::format("USRP Generate TX Frontend Calibration Table %s") % desc << std::endl;
         std::cout <<
             "This application measures leakage between RX and TX on an XCVR daughterboard to self-calibrate.\n"
             << std::endl;

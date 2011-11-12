@@ -608,6 +608,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
                 .subscribe(boost::bind(&usrp2_impl::set_tx_fe_corrections, this, mb, _1));
         }
+        const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
+        BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+            _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
+                .subscribe(boost::bind(&usrp2_impl::set_rx_fe_corrections, this, mb, _1));
+        }
     }
 
     //initialize io handling
@@ -661,8 +666,12 @@ sensor_value_t usrp2_impl::get_ref_locked(const std::string &mb){
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
 
-void usrp2_impl::set_tx_fe_corrections(const std::string &mb, const double tx_lo_freq){
-    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/" + mb), "A", tx_lo_freq);
+void usrp2_impl::set_rx_fe_corrections(const std::string &mb, const double lo_freq){
+    apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/" + mb), "A", lo_freq);
+}
+
+void usrp2_impl::set_tx_fe_corrections(const std::string &mb, const double lo_freq){
+    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/" + mb), "A", lo_freq);
 }
 
 #include <boost/math/special_functions/round.hpp>
