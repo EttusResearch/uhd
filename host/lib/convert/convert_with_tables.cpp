@@ -27,16 +27,17 @@ typedef boost::uint16_t (*tohost16_type)(boost::uint16_t);
 
 /***********************************************************************
  * Implementation for sc16 lookup table
+ *  - Lookup the real and imaginary parts individually
  **********************************************************************/
-template <typename type, tohost16_type tohost, size_t real_shift, size_t imag_shift>
+template <typename type, tohost16_type tohost, size_t lo_shift, size_t hi_shift>
 class convert_sc16_item32_1_to_fcxx_1 : public converter{
 public:
     convert_sc16_item32_1_to_fcxx_1(void): _table(sc16_table_len){}
 
     void set_scalar(const double scalar){
         for (size_t i = 0; i < sc16_table_len; i++){
-            const boost::int16_t val = tohost(boost::uint16_t(i & 0xffff));
-            _table[i] = type(val*scalar);
+            const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
+            _table[i] = type(boost::int16_t(val)*scalar);
         }
     }
 
@@ -47,8 +48,8 @@ public:
         for (size_t i = 0; i < nsamps; i++){
             const item32_t item = input[i];
             output[i] = std::complex<type>(
-                _table[boost::uint16_t(item >> real_shift)],
-                _table[boost::uint16_t(item >> imag_shift)]
+                _table[boost::uint16_t(item >> lo_shift)],
+                _table[boost::uint16_t(item >> hi_shift)]
             );
         }
     }
@@ -58,35 +59,96 @@ private:
 };
 
 /***********************************************************************
+ * Implementation for sc8 lookup table
+ *  - Lookup the real and imaginary parts together
+ **********************************************************************/
+template <typename type, tohost16_type tohost, size_t lo_shift, size_t hi_shift>
+class convert_sc8_item32_1_to_fcxx_1 : public converter{
+public:
+    convert_sc8_item32_1_to_fcxx_1(void): _table(sc16_table_len){}
+
+    void set_scalar(const double scalar){
+        for (size_t i = 0; i < sc16_table_len; i++){
+            const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
+            _table[i] = std::complex<type>(boost::int8_t(val >> 8)*scalar, boost::int8_t(val >> 0)*scalar);
+        }
+    }
+
+    void operator()(const input_type &inputs, const output_type &outputs, const size_t nsamps){
+        const item32_t *input = reinterpret_cast<const item32_t *>(size_t(inputs[0]) & ~0x3);
+        std::complex<type> *output = reinterpret_cast<std::complex<type> *>(outputs[0]);
+
+        size_t num_samps = nsamps;
+
+        if ((size_t(inputs[0]) & 0x3) != 0){
+            const item32_t item0 = *input++;
+            *output++ = _table[boost::uint16_t(item0 >> hi_shift)];
+            num_samps--;
+        }
+
+        const size_t num_pairs = num_samps/2;
+        for (size_t i = 0, j = 0; i < num_pairs; i++, j+=2){
+            const item32_t item_i = (input[i]);
+            output[j] = _table[boost::uint16_t(item_i >> lo_shift)];
+            output[j + 1] = _table[boost::uint16_t(item_i >> hi_shift)];
+        }
+
+        if (num_samps != num_pairs*2){
+            const item32_t item_n = input[num_pairs];
+            output[num_samps-1] = _table[boost::uint16_t(item_n >> lo_shift)];
+        }
+    }
+
+private:
+    std::vector<std::complex<type> > _table;
+};
+
+/***********************************************************************
  * Factory functions and registration
  **********************************************************************/
 
 #ifdef BOOST_BIG_ENDIAN
-#  define ITEM32_BE_TO_R16 16
-#  define ITEM32_BE_TO_I16 0
-#  define ITEM32_LE_TO_R16 0
-#  define ITEM32_LE_TO_I16 16
+#  define BE_LO_SHIFT 16
+#  define BE_HI_SHIFT 0
+#  define LE_LO_SHIFT 0
+#  define LE_HI_SHIFT 16
 #else
-#  define ITEM32_BE_TO_R16 0
-#  define ITEM32_BE_TO_I16 16
-#  define ITEM32_LE_TO_R16 16
-#  define ITEM32_LE_TO_I16 0
+#  define BE_LO_SHIFT 0
+#  define BE_HI_SHIFT 16
+#  define LE_LO_SHIFT 16
+#  define LE_HI_SHIFT 0
 #endif
 
 static converter::sptr make_convert_sc16_item32_be_1_to_fc32_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::ntohx, ITEM32_BE_TO_R16, ITEM32_BE_TO_I16>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
 }
 
 static converter::sptr make_convert_sc16_item32_be_1_to_fc64_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::ntohx, ITEM32_BE_TO_R16, ITEM32_BE_TO_I16>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
 }
 
 static converter::sptr make_convert_sc16_item32_le_1_to_fc32_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::wtohx, ITEM32_LE_TO_R16, ITEM32_LE_TO_I16>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
 }
 
 static converter::sptr make_convert_sc16_item32_le_1_to_fc64_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::wtohx, ITEM32_LE_TO_R16, ITEM32_LE_TO_I16>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
+}
+
+static converter::sptr make_convert_sc8_item32_be_1_to_fc32_1(void){
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<float, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
+}
+
+static converter::sptr make_convert_sc8_item32_be_1_to_fc64_1(void){
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<double, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
+}
+
+static converter::sptr make_convert_sc8_item32_le_1_to_fc32_1(void){
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<float, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
+}
+
+static converter::sptr make_convert_sc8_item32_le_1_to_fc64_1(void){
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<double, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
 }
 
 UHD_STATIC_BLOCK(register_convert_sc16_item32_1_to_fcxx_1){
@@ -109,4 +171,20 @@ UHD_STATIC_BLOCK(register_convert_sc16_item32_1_to_fcxx_1){
     id.output_format = "fc64";
     id.input_format = "sc16_item32_le";
     uhd::convert::register_converter(id, &make_convert_sc16_item32_le_1_to_fc64_1, PRIORITY_TABLE);
+
+    id.output_format = "fc32";
+    id.input_format = "sc8_item32_be";
+    uhd::convert::register_converter(id, &make_convert_sc8_item32_be_1_to_fc32_1, PRIORITY_TABLE);
+
+    id.output_format = "fc64";
+    id.input_format = "sc8_item32_be";
+    uhd::convert::register_converter(id, &make_convert_sc8_item32_be_1_to_fc64_1, PRIORITY_TABLE);
+
+    id.output_format = "fc32";
+    id.input_format = "sc8_item32_le";
+    uhd::convert::register_converter(id, &make_convert_sc8_item32_le_1_to_fc32_1, PRIORITY_TABLE);
+
+    id.output_format = "fc64";
+    id.input_format = "sc8_item32_le";
+    uhd::convert::register_converter(id, &make_convert_sc8_item32_le_1_to_fc64_1, PRIORITY_TABLE);
 }
