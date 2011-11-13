@@ -21,7 +21,6 @@
 #include <uhd/convert.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/cstdint.hpp>
-#include <boost/bind.hpp>
 #include <complex>
 
 #define _DECLARE_CONVERTER(name, in_form, num_in, out_form, num_out, prio) \
@@ -37,7 +36,7 @@
         id.num_inputs = num_in; \
         id.output_format = #out_form; \
         id.num_outputs = num_out; \
-        uhd::convert::register_converter(id, boost::bind(&name::make), prio); \
+        uhd::convert::register_converter(id, &name::make, prio); \
     } \
     void name::operator()( \
         const input_type &inputs, const output_type &outputs, const size_t nsamps \
