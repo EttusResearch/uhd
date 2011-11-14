@@ -142,7 +142,14 @@ void uhd::usrp::apply_tx_fe_corrections(
             sub_tree,
             "dboards/" + slot + "/tx_eeprom",
             "tx_frontends/" + slot + "/iq_balance/value",
-            "tx_fe_cal_v0.1_",
+            "tx_iq_cal_v0.1_",
+            lo_freq
+        );
+        apply_fe_corrections(
+            sub_tree,
+            "dboards/" + slot + "/tx_eeprom",
+            "tx_frontends/" + slot + "/dc_offset/value",
+            "tx_dc_cal_v0.1_",
             lo_freq
         );
     }
@@ -162,7 +169,7 @@ void uhd::usrp::apply_rx_fe_corrections(
             sub_tree,
             "dboards/" + slot + "/rx_eeprom",
             "rx_frontends/" + slot + "/iq_balance/value",
-            "rx_fe_cal_v0.1_",
+            "rx_iq_cal_v0.1_",
             lo_freq
         );
     }

@@ -28,7 +28,7 @@
 
 namespace fs = boost::filesystem;
 
-struct result_t{double freq, real_corr, imag_corr, sup;};
+struct result_t{double freq, real_corr, imag_corr, best, delta;};
 
 /***********************************************************************
  * Constants
@@ -39,6 +39,8 @@ static const size_t wave_table_len = 8192;
 static const size_t num_search_steps = 5;
 static const size_t num_search_iters = 7;
 static const size_t skip_initial_samps = 20;
+static const double default_freq_step = 13.7e3;
+static const size_t default_num_samps = 10000;
 
 /***********************************************************************
  * Sinusoid wave table
@@ -99,7 +101,8 @@ static void store_results(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::vector<result_t> &results,
     const std::string &XX,
-    const std::string &xx
+    const std::string &xx,
+    const std::string &what
 ){
     //extract eeprom serial
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
@@ -112,7 +115,7 @@ static void store_results(
     fs::create_directory(cal_data_path);
     cal_data_path = cal_data_path / "cal";
     fs::create_directory(cal_data_path);
-    cal_data_path = cal_data_path / (xx + "_fe_cal_v0.1_" + db_eeprom.serial + ".csv");
+    cal_data_path = cal_data_path / str(boost::format("%s_%s_cal_v0.1_%s.csv") % xx % what % db_eeprom.serial);
     if (fs::exists(cal_data_path)){
         fs::rename(cal_data_path, cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
     }
@@ -124,14 +127,15 @@ static void store_results(
     cal_data << boost::format("timestamp, %d\n") % time(NULL);
     cal_data << boost::format("version, 0, 1\n");
     cal_data << boost::format("DATA STARTS HERE\n");
-    cal_data << "lo_frequency, iq_correction_real, iq_correction_imag, measured_suppression\n";
+    cal_data << "lo_frequency, correction_real, correction_imag, measured, delta\n";
 
     for (size_t i = 0; i < results.size(); i++){
         cal_data
             << results[i].freq << ", "
             << results[i].real_corr << ", "
             << results[i].imag_corr << ", "
-            << results[i].sup << "\n"
+            << results[i].best << ", "
+            << results[i].delta << "\n"
         ;
     }
 
