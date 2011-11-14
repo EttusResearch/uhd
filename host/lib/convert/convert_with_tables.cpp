@@ -29,7 +29,7 @@ typedef boost::uint16_t (*tohost16_type)(boost::uint16_t);
  * Implementation for sc16 lookup table
  *  - Lookup the real and imaginary parts individually
  **********************************************************************/
-template <typename type, tohost16_type tohost, size_t lo_shift, size_t hi_shift>
+template <typename type, tohost16_type tohost, size_t re_shift, size_t im_shift>
 class convert_sc16_item32_1_to_fcxx_1 : public converter{
 public:
     convert_sc16_item32_1_to_fcxx_1(void): _table(sc16_table_len){}
@@ -48,8 +48,8 @@ public:
         for (size_t i = 0; i < nsamps; i++){
             const item32_t item = input[i];
             output[i] = std::complex<type>(
-                _table[boost::uint16_t(item >> lo_shift)],
-                _table[boost::uint16_t(item >> hi_shift)]
+                _table[boost::uint16_t(item >> re_shift)],
+                _table[boost::uint16_t(item >> im_shift)]
             );
         }
     }
@@ -108,47 +108,43 @@ private:
  **********************************************************************/
 
 #ifdef BOOST_BIG_ENDIAN
-#  define BE_LO_SHIFT 16
-#  define BE_HI_SHIFT 0
-#  define LE_LO_SHIFT 0
-#  define LE_HI_SHIFT 16
+#  define SHIFT_PAIR0 16, 0
+#  define SHIFT_PAIR1 0, 16
 #else
-#  define BE_LO_SHIFT 0
-#  define BE_HI_SHIFT 16
-#  define LE_LO_SHIFT 16
-#  define LE_HI_SHIFT 0
+#  define SHIFT_PAIR0 0, 16
+#  define SHIFT_PAIR1 16, 0
 #endif
 
 static converter::sptr make_convert_sc16_item32_be_1_to_fc32_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::ntohx, SHIFT_PAIR0>());
 }
 
 static converter::sptr make_convert_sc16_item32_be_1_to_fc64_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::ntohx, SHIFT_PAIR0>());
 }
 
 static converter::sptr make_convert_sc16_item32_le_1_to_fc32_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<float, uhd::wtohx, SHIFT_PAIR1>());
 }
 
 static converter::sptr make_convert_sc16_item32_le_1_to_fc64_1(void){
-    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
+    return converter::sptr(new convert_sc16_item32_1_to_fcxx_1<double, uhd::wtohx, SHIFT_PAIR1>());
 }
 
 static converter::sptr make_convert_sc8_item32_be_1_to_fc32_1(void){
-    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<float, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<float, uhd::ntohx, SHIFT_PAIR1>());
 }
 
 static converter::sptr make_convert_sc8_item32_be_1_to_fc64_1(void){
-    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<double, uhd::ntohx, BE_LO_SHIFT, BE_HI_SHIFT>());
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<double, uhd::ntohx, SHIFT_PAIR1>());
 }
 
 static converter::sptr make_convert_sc8_item32_le_1_to_fc32_1(void){
-    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<float, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<float, uhd::wtohx, SHIFT_PAIR0>());
 }
 
 static converter::sptr make_convert_sc8_item32_le_1_to_fc64_1(void){
-    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<double, uhd::wtohx, LE_LO_SHIFT, LE_HI_SHIFT>());
+    return converter::sptr(new convert_sc8_item32_1_to_fcxx_1<double, uhd::wtohx, SHIFT_PAIR0>());
 }
 
 UHD_STATIC_BLOCK(register_convert_sc16_item32_1_to_fcxx_1){
