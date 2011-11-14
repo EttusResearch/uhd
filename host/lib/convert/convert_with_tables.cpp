@@ -70,7 +70,9 @@ public:
     void set_scalar(const double scalar){
         for (size_t i = 0; i < sc16_table_len; i++){
             const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
-            _table[i] = std::complex<type>(boost::int8_t(val >> 8)*scalar, boost::int8_t(val >> 0)*scalar);
+            const type real = type(boost::int8_t(val >> 8)*scalar);
+            const type imag = type(boost::int8_t(val >> 0)*scalar);
+            _table[i] = std::complex<type>(real, imag);
         }
     }
 
