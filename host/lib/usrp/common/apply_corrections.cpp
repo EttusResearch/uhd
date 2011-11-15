@@ -58,6 +58,7 @@ static std::complex<double> get_fe_dc_correction(
     const std::string &key, const double lo_freq
 ){
     const std::vector<fe_cal_t> &datas = fe_cal_cache[key];
+    if (datas.empty()) throw uhd::runtime_error("empty calibration table " + key);
 
     //search for lo freq
     size_t lo_index = 0;
@@ -84,6 +85,7 @@ static std::complex<double> get_fe_iq_correction(
     const std::string &key, const double lo_freq
 ){
     const std::vector<fe_cal_t> &datas = fe_cal_cache[key];
+    if (datas.empty()) throw uhd::runtime_error("empty calibration table " + key);
 
     //search for lo freq
     size_t lo_index = 0;
@@ -153,11 +155,11 @@ static void apply_fe_corrections(
 
     }
 
-    if (file_prefix.find("dc") != std::string::npos){
+    if (file_prefix.find("dc_cal") != std::string::npos){
         sub_tree->access<std::complex<double> >(fe_path)
             .set(get_fe_dc_correction(cal_data_path.string(), lo_freq));
     }
-    else if (file_prefix.find("iq") != std::string::npos){
+    else if (file_prefix.find("iq_cal") != std::string::npos){
         sub_tree->access<std::complex<double> >(fe_path)
             .set(get_fe_iq_correction(cal_data_path.string(), lo_freq));
     }

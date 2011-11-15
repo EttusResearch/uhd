@@ -39,8 +39,33 @@ static const size_t wave_table_len = 8192;
 static const size_t num_search_steps = 5;
 static const size_t num_search_iters = 7;
 static const size_t skip_initial_samps = 20;
-static const double default_freq_step = 13.7e6;
+static const double default_freq_step = 7.3e6;
 static const size_t default_num_samps = 10000;
+
+/***********************************************************************
+ * Determine gain settings
+ **********************************************************************/
+static inline void set_optimum_gain(uhd::usrp::multi_usrp::sptr usrp){
+    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    const uhd::fs_path tx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
+    const std::string tx_name = tree->access<std::string>(tx_fe_path / "name").get();
+    if (tx_name.find("WBX") != std::string::npos or tx_name.find("SBX") != std::string::npos){
+        usrp->set_tx_gain(0);
+    }
+    else{
+        throw std::runtime_error("self-calibration is not supported for this hardware");
+    }
+
+    const uhd::fs_path rx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
+    const std::string rx_name = tree->access<std::string>(rx_fe_path / "name").get();
+    if (rx_name.find("WBX") != std::string::npos or rx_name.find("SBX") != std::string::npos){
+        usrp->set_rx_gain(25);
+    }
+    else{
+        throw std::runtime_error("self-calibration is not supported for this hardware");
+    }
+
+}
 
 /***********************************************************************
  * Sinusoid wave table

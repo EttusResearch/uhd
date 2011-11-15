@@ -115,7 +115,8 @@ static void capture_samples(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
-    double rate, tx_wave_ampl, tx_offset, freq_step, tx_gain, rx_gain;
+    double rate, tx_wave_ampl, tx_offset;
+    double freq_start, freq_stop, freq_step;
     size_t nsamps;
 
     po::options_description desc("Allowed options");
@@ -126,8 +127,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(12.5e6), "RX and TX sample rate in Hz")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude in counts")
         ("tx_offset", po::value<double>(&tx_offset)->default_value(.9344e6), "TX LO offset from the RX LO in Hz")
-        ("tx_gain", po::value<double>(&tx_gain)->default_value(0), "TX gain in dB")
-        ("rx_gain", po::value<double>(&rx_gain)->default_value(0), "RX gain in dB")
+        ("freq_start", po::value<double>(&freq_start), "Frequency start in Hz (do not specify for default)")
+        ("freq_stop", po::value<double>(&freq_stop), "Frequency stop in Hz (do not specify for default)")
         ("freq_step", po::value<double>(&freq_step)->default_value(default_freq_step), "Step size for LO sweep in Hz")
         ("nsamps", po::value<size_t>(&nsamps)->default_value(default_num_samps), "Samples per data capture")
     ;
@@ -157,13 +158,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_rx_antenna("CAL");
     usrp->set_tx_antenna("CAL");
 
+    //set optimum gain settings
+    set_optimum_gain(usrp);
+
     //set the sample rates
     usrp->set_rx_rate(rate);
     usrp->set_tx_rate(rate);
-
-    //set midrange rx gain, default 0 tx gain
-    usrp->set_tx_gain(tx_gain);
-    usrp->set_rx_gain(rx_gain);
 
     //create a receive streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
@@ -179,8 +179,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //store the results here
     std::vector<result_t> results;
 
-    const uhd::meta_range_t freq_range = usrp->get_rx_freq_range();
-    for (double rx_lo_i = freq_range.start()+50e6; rx_lo_i < freq_range.stop()-50e6; rx_lo_i += freq_step){
+    if (not vm.count("freq_start")) freq_start = usrp->get_rx_freq_range().start() + 50e6;
+    if (not vm.count("freq_stop")) freq_stop = usrp->get_rx_freq_range().stop() - 50e6;
+
+    for (double rx_lo_i = freq_start; rx_lo_i <= freq_stop; rx_lo_i += freq_step){
         const double rx_lo = tune_rx_and_tx(usrp, rx_lo_i, tx_offset);
 
         //frequency constants for this tune event
