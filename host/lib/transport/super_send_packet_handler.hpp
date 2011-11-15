@@ -56,7 +56,6 @@ public:
         _next_packet_seq(0)
     {
         this->resize(size);
-        this->set_scale_factor(32767.);
     }
 
     //! Resize the number of transport channels
@@ -100,7 +99,8 @@ public:
     //! Set the conversion routine for all channels
     void set_converter(const uhd::convert::id_type &id){
         _io_buffs.resize(id.num_inputs);
-        _converter = uhd::convert::get_converter(id);
+        _converter = uhd::convert::get_converter(id)();
+        this->set_scale_factor(32767.); //update after setting converter
         _bytes_per_otw_item = uhd::convert::get_bytes_per_item(id.output_format);
         _bytes_per_cpu_item = uhd::convert::get_bytes_per_item(id.input_format);
     }
@@ -116,7 +116,7 @@ public:
 
     //! Set the scale factor used in float conversion
     void set_scale_factor(const double scale_factor){
-        _scale_factor = scale_factor;
+        _converter->set_scalar(scale_factor);
     }
 
     /*******************************************************************
@@ -202,11 +202,10 @@ private:
     std::vector<const void *> _io_buffs; //used in conversion
     size_t _bytes_per_otw_item; //used in conversion
     size_t _bytes_per_cpu_item; //used in conversion
-    uhd::convert::function_type _converter; //used in conversion
+    uhd::convert::converter::sptr _converter; //used in conversion
     size_t _max_samples_per_packet;
     std::vector<const void *> _zero_buffs;
     size_t _next_packet_seq;
-    double _scale_factor;
 
     /*******************************************************************
      * Send a single packet:
@@ -239,9 +238,7 @@ private:
             otw_mem += if_packet_info.num_header_words32;
 
             //copy-convert the samples into the send buffer
-            if (nsamps_per_buff != 0) _converter(
-                _io_buffs, otw_mem, nsamps_per_buff, _scale_factor
-            );
+            _converter->conv(_io_buffs, otw_mem, nsamps_per_buff);
 
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);

@@ -91,11 +91,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     UNSET(CMAKE_REQUIRED_FLAGS)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-IF(HAVE_ARM_NEON_H AND ENABLE_ORC)
-    #prefer orc support, its faster than the current intrinsic implementations
-    MESSAGE(STATUS "Enabled conversion support with ORC.")
-ELSEIF(HAVE_ARM_NEON_H)
-    MESSAGE(STATUS "Enabled conversion support with NEON intrinsics.")
+IF(HAVE_ARM_NEON_H)
     SET_SOURCE_FILES_PROPERTIES(
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
         PROPERTIES COMPILE_FLAGS "${NEON_FLAGS}"
@@ -117,5 +113,6 @@ LIBUHD_PYTHON_GEN_SOURCE(
 )
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_tables.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_impl.cpp
 )

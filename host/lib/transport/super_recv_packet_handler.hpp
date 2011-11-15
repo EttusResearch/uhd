@@ -71,7 +71,6 @@ public:
     {
         this->resize(size);
         set_alignment_failure_threshold(1000);
-        this->set_scale_factor(1/32767.);
     }
 
     //! Resize the number of transport channels
@@ -124,7 +123,8 @@ public:
     //! Set the conversion routine for all channels
     void set_converter(const uhd::convert::id_type &id){
         _io_buffs.resize(id.num_outputs);
-        _converter = uhd::convert::get_converter(id);
+        _converter = uhd::convert::get_converter(id)();
+        this->set_scale_factor(1/32767.); //update after setting converter
         _bytes_per_otw_item = uhd::convert::get_bytes_per_item(id.input_format);
         _bytes_per_cpu_item = uhd::convert::get_bytes_per_item(id.output_format);
     }
@@ -136,7 +136,7 @@ public:
 
     //! Set the scale factor used in float conversion
     void set_scale_factor(const double scale_factor){
-        _scale_factor = scale_factor;
+        _converter->set_scalar(scale_factor);
     }
 
     /*******************************************************************
@@ -207,8 +207,7 @@ private:
     std::vector<void *> _io_buffs; //used in conversion
     size_t _bytes_per_otw_item; //used in conversion
     size_t _bytes_per_cpu_item; //used in conversion
-    uhd::convert::function_type _converter; //used in conversion
-    double _scale_factor;
+    uhd::convert::converter::sptr _converter; //used in conversion
 
     //! information stored for a received buffer
     struct per_buffer_info_type{
@@ -523,9 +522,7 @@ private:
             }
 
             //copy-convert the samples from the recv buffer
-            if (nsamps_to_copy_per_io_buff != 0) _converter(
-                buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff, _scale_factor
-            );
+            _converter->conv(buff_info.copy_buff, _io_buffs, nsamps_to_copy_per_io_buff);
 
             //update the rx copy buffer to reflect the bytes copied
             buff_info.copy_buff += bytes_to_copy;

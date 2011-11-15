@@ -20,32 +20,38 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/ref_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/operators.hpp>
 #include <string>
 
 namespace uhd{ namespace convert{
 
-    typedef uhd::ref_vector<void *> output_type;
-    typedef uhd::ref_vector<const void *> input_type;
+    //! A conversion class that implements a conversion from inputs -> outputs.
+    class converter{
+    public:
+        typedef boost::shared_ptr<converter> sptr;
+        typedef uhd::ref_vector<void *> output_type;
+        typedef uhd::ref_vector<const void *> input_type;
 
-    //! input vectors, output vectors, num samples, scale factor
-    typedef boost::function<void(const input_type&, const output_type&, const size_t, const double)> function_type;
+        //! Set the scale factor (used in floating point conversions)
+        virtual void set_scalar(const double) = 0;
 
-    /*!
-     * Describe the priority of a converter function.
-     * A higher priority function takes precedence.
-     * The general case function are the lowest.
-     * Next comes the liborc implementations.
-     * Custom intrinsics implementations are highest.
-     */
-    enum priority_type{
-        PRIORITY_GENERAL = 0,
-        PRIORITY_LIBORC = 1,
-        PRIORITY_SIMD = 2,
-        PRIORITY_CUSTOM = 3,
-        PRIORITY_EMPTY = -1,
+        //! The public conversion method to convert inputs -> outputs
+        UHD_INLINE void conv(const input_type &in, const output_type &out, const size_t num){
+            if (num != 0) (*this)(in, out, num);
+        }
+
+    private:
+        //! Callable method: input vectors, output vectors, num samples
+        virtual void operator()(const input_type&, const output_type&, const size_t) = 0;
     };
+
+    //! Conversion factory function typedef
+    typedef boost::function<converter::sptr(void)> function_type;
+
+    //! Priority of conversion routines
+    typedef int priority_type;
 
     //! Identify a conversion routine in the registry
     struct id_type : boost::equality_comparable<id_type>{
@@ -62,19 +68,19 @@ namespace uhd{ namespace convert{
     /*!
      * Register a converter function.
      * \param id identify the conversion
-     * \param fcn a pointer to the converter
+     * \param fcn makes a new converter
      * \param prio the function priority
      */
     UHD_API void register_converter(
         const id_type &id,
-        function_type fcn,
-        priority_type prio
+        const function_type &fcn,
+        const priority_type prio
     );
 
     /*!
-     * Get a converter function.
+     * Get a converter factory function.
      * \param id identify the conversion
-     * \return the converter function
+     * \return the converter factory function
      */
     UHD_API function_type get_converter(const id_type &id);
 
