@@ -46,6 +46,22 @@
     _DECLARE_CONVERTER(__convert_##in_form##_##num_in##_##out_form##_##num_out##_##prio, in_form, num_in, out_form, num_out, prio)
 
 /***********************************************************************
+ * Setup priorities
+ **********************************************************************/
+static const int PRIORITY_GENERAL = 0;
+static const int PRIORITY_EMPTY = -1;
+
+#ifdef __ARM_NEON__
+static const int PRIORITY_LIBORC = 3;
+static const int PRIORITY_SIMD = 1; //neon conversions could be implemented better, orc wins
+static const int PRIORITY_TABLE = 2; //tables require large cache, so they are slower on arm
+#else
+static const int PRIORITY_LIBORC = 1;
+static const int PRIORITY_SIMD = 2;
+static const int PRIORITY_TABLE = 3;
+#endif
+
+/***********************************************************************
  * Typedefs
  **********************************************************************/
 typedef std::complex<double>         fc64_t;

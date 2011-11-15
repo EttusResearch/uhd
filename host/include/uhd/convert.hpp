@@ -50,21 +50,8 @@ namespace uhd{ namespace convert{
     //! Conversion factory function typedef
     typedef boost::function<converter::sptr(void)> function_type;
 
-    /*!
-     * Describe the priority of a converter function.
-     * A higher priority function takes precedence.
-     * The general case function are the lowest.
-     * Next comes the liborc implementations.
-     * Custom intrinsics implementations are highest.
-     */
-    enum priority_type{
-        PRIORITY_GENERAL = 0,
-        PRIORITY_LIBORC = 1,
-        PRIORITY_SIMD = 2,
-        PRIORITY_TABLE = 3,
-        PRIORITY_CUSTOM = 4,
-        PRIORITY_EMPTY = -1,
-    };
+    //! Priority of conversion routines
+    typedef int priority_type;
 
     //! Identify a conversion routine in the registry
     struct id_type : boost::equality_comparable<id_type>{
