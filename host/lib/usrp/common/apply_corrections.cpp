@@ -54,7 +54,7 @@ static bool fe_cal_comp(fe_cal_t a, fe_cal_t b){
 
 static uhd::dict<std::string, std::vector<fe_cal_t> > fe_cal_cache;
 
-static std::complex<double> get_fe_iq_correction(
+static std::complex<double> get_fe_dc_correction(
     const std::string &key, const double lo_freq
 ){
     const std::vector<fe_cal_t> &datas = fe_cal_cache[key];
@@ -77,6 +77,35 @@ static std::complex<double> get_fe_iq_correction(
     return std::complex<double>(
         linear_interp(lo_freq, datas[lo_index].lo_freq, datas[lo_index].iq_corr_real, datas[hi_index].lo_freq, datas[hi_index].iq_corr_real),
         linear_interp(lo_freq, datas[lo_index].lo_freq, datas[lo_index].iq_corr_imag, datas[hi_index].lo_freq, datas[hi_index].iq_corr_imag)
+    );
+}
+
+static std::complex<double> get_fe_iq_correction(
+    const std::string &key, const double lo_freq
+){
+    const std::vector<fe_cal_t> &datas = fe_cal_cache[key];
+
+    //search for lo freq
+    size_t lo_index = 0;
+    size_t hi_index = datas.size()-1;
+    for (size_t i = 0; i < datas.size(); i++){
+        if (datas[i].lo_freq > lo_freq){
+            hi_index = i;
+            break;
+        }
+        lo_index = i;
+    }
+
+    if (lo_index == 0) return std::complex<double>(datas[lo_index].iq_corr_real, datas[lo_index].iq_corr_imag);
+    if (hi_index == lo_index) return std::complex<double>(datas[hi_index].iq_corr_real, datas[hi_index].iq_corr_imag);
+
+    const std::complex<double> lo_val(datas[lo_index].iq_corr_real, datas[lo_index].iq_corr_imag);
+    const std::complex<double> hi_val(datas[hi_index].iq_corr_real, datas[hi_index].iq_corr_imag);
+
+    //interpolation time
+    return std::polar<double>(
+        linear_interp(lo_freq, datas[lo_index].lo_freq, std::abs(lo_val), datas[hi_index].lo_freq, std::abs(hi_val)),
+        linear_interp(lo_freq, datas[lo_index].lo_freq, std::arg(lo_val), datas[hi_index].lo_freq, std::arg(hi_val))
     );
 }
 
@@ -124,8 +153,15 @@ static void apply_fe_corrections(
 
     }
 
-    sub_tree->access<std::complex<double> >(fe_path)
-        .set(get_fe_iq_correction(cal_data_path.string(), lo_freq));
+    if (file_prefix.find("dc") != std::string::npos){
+        sub_tree->access<std::complex<double> >(fe_path)
+            .set(get_fe_dc_correction(cal_data_path.string(), lo_freq));
+    }
+    else if (file_prefix.find("iq") != std::string::npos){
+        sub_tree->access<std::complex<double> >(fe_path)
+            .set(get_fe_iq_correction(cal_data_path.string(), lo_freq));
+    }
+    else throw uhd::runtime_error("could not determine interpolation function");
 }
 
 /***********************************************************************

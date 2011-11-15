@@ -39,7 +39,7 @@ static const size_t wave_table_len = 8192;
 static const size_t num_search_steps = 5;
 static const size_t num_search_iters = 7;
 static const size_t skip_initial_samps = 20;
-static const double default_freq_step = 13.7e3;
+static const double default_freq_step = 13.7e6;
 static const size_t default_num_samps = 10000;
 
 /***********************************************************************

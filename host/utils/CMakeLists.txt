@@ -37,9 +37,9 @@ ENDFOREACH(util_source)
 SET(util_share_sources
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
-    usrp_gen_rx_iq_cal_table.cpp
-    usrp_gen_tx_iq_cal_table.cpp
-    usrp_gen_tx_dc_cal_table.cpp
+    usrp_cal_rx_iq_balance.cpp
+    usrp_cal_tx_dc_offset.cpp
+    usrp_cal_tx_iq_balance.cpp
 )
 
 IF(ENABLE_USB)

@@ -140,7 +140,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")){
-        std::cout << boost::format("USRP Generate TX Frontend Calibration Table %s") % desc << std::endl;
+        std::cout << boost::format("USRP Generate TX IQ Balance Calibration Table %s") % desc << std::endl;
         std::cout <<
             "This application measures leakage between RX and TX on an XCVR daughterboard to self-calibrate.\n"
             << std::endl;
