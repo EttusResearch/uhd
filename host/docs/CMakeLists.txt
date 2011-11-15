@@ -22,6 +22,7 @@ SET(manual_sources
     index.rst
     identification.rst
     build.rst
+    calibration.rst
     coding.rst
     dboards.rst
     gpsdo.rst

@@ -21,6 +21,9 @@
 SET(util_runtime_sources
     uhd_find_devices.cpp
     uhd_usrp_probe.cpp
+    uhd_cal_rx_iq_balance.cpp
+    uhd_cal_tx_dc_offset.cpp
+    uhd_cal_tx_iq_balance.cpp
 )
 
 #for each source: build an executable and install
@@ -37,9 +40,6 @@ ENDFOREACH(util_source)
 SET(util_share_sources
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
-    usrp_cal_rx_iq_balance.cpp
-    usrp_cal_tx_dc_offset.cpp
-    usrp_cal_tx_iq_balance.cpp
 )
 
 IF(ENABLE_USB)
