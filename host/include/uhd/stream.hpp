@@ -49,10 +49,12 @@ struct UHD_API stream_args_t{
 
     /*!
      * The CPU format is a string that describes the format of host memory.
-     * Common CPU formats are:
-     *  - fc32 - complex<float>
+     * Conversions for the following CPU formats have been implemented:
      *  - fc64 - complex<double>
+     *  - fc32 - complex<float>
      *  - sc16 - complex<int16_t>
+     *
+     * The following are not implemented, but are listed to demonstrate naming convention:
      *  - sc8 - complex<int8_t>
      *  - f32 - float
      *  - f64 - double
@@ -63,9 +65,11 @@ struct UHD_API stream_args_t{
 
     /*!
      * The OTW format is a string that describes the format over-the-wire.
-     * Common OTW format are:
+     * The following over-the-wire formats have been implemented:
      *  - sc16 - Q16 I16
      *  - sc8 - Q8_1 I8_1 Q8_0 I8_0
+     *
+     * The following are not implemented, but are listed to demonstrate naming convention:
      *  - s16 - R16_1 R16_0
      *  - s8 - R8_3 R8_2 R8_1 R8_0
      */
@@ -74,7 +78,11 @@ struct UHD_API stream_args_t{
     /*!
      * The args parameter is used to pass arbitrary key/value pairs.
      * Possible keys used by args (depends on implementation):
-     * - scaler: 8sc converter scaling factor
+     * - scalar: an integer scaling factor used with the sc8 wire format.
+     * The key/value pair scalar=1024 means that the sample in the DSP
+     * was multiplied by 1024 before its upper 8 bits were harvested.
+     *
+     * The following are not implemented, but are listed for conceptual purposes:
      * - function: magnitude or phase/magnitude
      * - units: numeric units like counts or dBm
      */
