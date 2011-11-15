@@ -135,6 +135,20 @@ static UHD_INLINE fc64_t item32_sc16_to_fc64(item32_t item, double scale_factor)
 }
 
 /***********************************************************************
+ * Convert items32 sc8 buffer to complex char
+ **********************************************************************/
+static UHD_INLINE void item32_sc8_to_sc8(item32_t item, sc8_t &out0, sc8_t &out1, double){
+    out0 = sc8_t(
+        boost::int8_t(item >> 8),
+        boost::int8_t(item >> 0)
+    );
+    out1 = sc8_t(
+        boost::int8_t(item >> 24),
+        boost::int8_t(item >> 16)
+    );
+}
+
+/***********************************************************************
  * Convert items32 sc8 buffer to complex short
  **********************************************************************/
 static UHD_INLINE void item32_sc8_to_sc16(item32_t item, sc16_t &out0, sc16_t &out1, double){
