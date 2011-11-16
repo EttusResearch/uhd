@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "apply_corrections.hpp"
 #include "e100_impl.hpp"
 #include "e100_regs.hpp"
 #include <uhd/utils/msg.hpp>
@@ -374,6 +375,18 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         _dboard_iface, _tree->subtree(mb_path / "dboards/A")
     );
 
+    //bind frontend corrections to the dboard freq props
+    const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
+        _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+            .subscribe(boost::bind(&e100_impl::set_tx_fe_corrections, this, _1));
+    }
+    const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+        _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
+            .subscribe(boost::bind(&e100_impl::set_rx_fe_corrections, this, _1));
+    }
+
     //initialize io handling
     this->io_init();
 
@@ -449,4 +462,12 @@ void e100_impl::check_fpga_compat(void){
         ) % int(E100_FPGA_COMPAT_NUM) % fpga_major));
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
+}
+
+void e100_impl::set_rx_fe_corrections(const double lo_freq){
+    apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+}
+
+void e100_impl::set_tx_fe_corrections(const double lo_freq){
+    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
 }

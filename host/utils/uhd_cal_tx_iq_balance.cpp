@@ -50,11 +50,12 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_fre
     size_t index = 0;
     const double tx_rate = usrp->get_tx_rate();
     const size_t step = boost::math::iround(wave_table_len * tx_wave_freq/tx_rate);
+    wave_table table(tx_wave_ampl);
 
     //fill buff and send until interrupted
     while (not boost::this_thread::interruption_requested()){
         for (size_t i = 0; i < buff.size(); i++){
-            buff[i] = float(tx_wave_ampl) * wave_table_lookup(index += step);
+            buff[i] = table(index += step);
         }
         tx_stream->send(&buff.front(), buff.size(), md);
     }
@@ -224,7 +225,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             result.delta = best_suppression - initial_suppression;
             results.push_back(result);
             if (vm.count("verbose")){
-                std::cout << boost::format("%f MHz: best suppression %f dB, corrected %f dB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
+                std::cout << boost::format("TX IQ: %f MHz: best suppression %f dB, corrected %f dB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
             }
             else std::cout << "." << std::flush;
         }

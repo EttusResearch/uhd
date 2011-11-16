@@ -58,6 +58,10 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(4e6);
     }
+    else if (mb_name.find("E10") != std::string::npos){
+        usrp->set_tx_rate(4e6);
+        usrp->set_rx_rate(8e6);
+    }
     else{
         throw std::runtime_error("self-calibration is not supported for this hardware");
     }
@@ -85,18 +89,22 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 /***********************************************************************
  * Sinusoid wave table
  **********************************************************************/
-static inline std::vector<std::complex<float> > gen_table(void){
-    std::vector<std::complex<float> > wave_table(wave_table_len);
-    for (size_t i = 0; i < wave_table_len; i++){
-        wave_table[i] = std::complex<float>(std::polar(1.0, (tau*i)/wave_table_len));
+class wave_table{
+public:
+    wave_table(const double ampl){
+        _table.resize(wave_table_len);
+        for (size_t i = 0; i < wave_table_len; i++){
+            _table[i] = std::complex<float>(std::polar(ampl, (tau*i)/wave_table_len));
+        }
     }
-    return wave_table;
-}
 
-static inline std::complex<float> wave_table_lookup(const size_t index){
-    static const std::vector<std::complex<float> > wave_table = gen_table();
-    return wave_table[index % wave_table_len];
-}
+    inline std::complex<float> operator()(const size_t index) const{
+        return _table[index % wave_table_len];
+    }
+
+private:
+    std::vector<std::complex<float> > _table;
+};
 
 /***********************************************************************
  * Compute power of a tone
@@ -106,16 +114,16 @@ static inline double compute_tone_dbrms(
     const double freq //freq is fractional
 ){
     //shift the samples so the tone at freq is down at DC
-    std::vector<std::complex<double> > shifted(samples.size() - skip_initial_samps);
+    std::vector<std::complex<float> > shifted(samples.size() - skip_initial_samps);
     for (size_t i = 0; i < shifted.size(); i++){
-        shifted[i] = std::complex<double>(samples[i+skip_initial_samps]) * std::polar<double>(1.0, -freq*tau*i);
+        shifted[i] = samples[i+skip_initial_samps] * std::complex<float>(std::polar(1.0, -freq*tau*i));
     }
 
     //filter the samples with a narrow low pass
-    std::complex<double> iir_output = 0, iir_last = 0;
+    std::complex<float> iir_output = 0, iir_last = 0;
     double output = 0;
     for (size_t i = 0; i < shifted.size(); i++){
-        iir_output = alpha * shifted[i] + (1-alpha)*iir_last;
+        iir_output = float(alpha) * shifted[i] + float(1-alpha)*iir_last;
         iir_last = iir_output;
         output += std::abs(iir_output);
     }

@@ -130,6 +130,8 @@ private:
     void update_clock_source(const std::string &);
     uhd::sensor_value_t get_ref_locked(void);
     void check_fpga_compat(void);
+    void set_rx_fe_corrections(const double);
+    void set_tx_fe_corrections(const double);
 
 };
 
