@@ -216,35 +216,37 @@ void sbx_xcvr::update_atr(void){
     int rx_ld_led = get_locked(dboard_iface::UNIT_RX).to_bool() ? 0 : RX_LED_LD;
     int tx_ld_led = get_locked(dboard_iface::UNIT_TX).to_bool() ? 0 : TX_LED_LD;
     int rx_ant_led = _rx_ant == "TX/RX" ? RX_LED_RX1RX2 : 0;
-    int tx_ant_led = _rx_ant == "TX/RX" ? 0 : TX_LED_TXRX;
+    int tx_ant_led = _tx_ant == "TX/RX" ? 0 : TX_LED_TXRX;
 
     //setup the tx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,
         tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_TX | TX_MIXER_ENB);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_TX | TX_MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,
         rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
-        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_RX2 | RX_MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_RX2 | RX_MIXER_ENB);
 
-    //set the atr regs that change with antenna setting
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_DIS |
-            ((_rx_ant == "TX/RX")? ANT_RX : ANT_TX));
+    //set the RX atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
         rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB | 
-            ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2));
+            ((_rx_ant != "RX2")? ANT_TXRX : ANT_RX2));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
+        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_DIS |
+            ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
+        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB |
+            ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
 
-    UHD_LOGV(often) << boost::format(
-        "SBX RXONLY ATR REG: 0x%08x"
-    ) % (rx_pga0_iobits | RX_POWER_UP | RX_MIXER_ENB | ((_rx_ant == "TX/RX")? ANT_TXRX : ANT_RX2)) << std::endl;
+    //set the TX atr regs that change with antenna setting
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_DIS |
+            ((_rx_ant != "RX2")? ANT_RX : ANT_TX));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB |
+            ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX,
+        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB |
+            ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
 }
 
 void sbx_xcvr::set_rx_ant(const std::string &ant){
@@ -260,7 +262,12 @@ void sbx_xcvr::set_rx_ant(const std::string &ant){
 
 void sbx_xcvr::set_tx_ant(const std::string &ant){
     assert_has(sbx_tx_antennas, ant, "sbx tx antenna name");
-    //only one antenna option, do nothing
+
+    //shadow the setting
+    _tx_ant = ant;
+
+    //write the new antenna setting to atr regs
+    update_atr();
 }
 
 /***********************************************************************

@@ -50,10 +50,15 @@ static void do_samp_rate_warning_message(
 }
 
 static void do_tune_freq_warning_message(
-    double target_freq,
+    const tune_request_t &tune_req,
     double actual_freq,
     const std::string &xx
 ){
+    //forget the warning when manual policy
+    if (tune_req.dsp_freq_policy == tune_request_t::POLICY_MANUAL) return;
+    if (tune_req.rf_freq_policy == tune_request_t::POLICY_MANUAL) return;
+
+    const double target_freq = tune_req.target_freq;
     static const double max_allowed_error = 1.0; //Hz
     if (std::abs(target_freq - actual_freq) > max_allowed_error){
         UHD_MSG(warning) << boost::format(
@@ -486,7 +491,7 @@ public:
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
         tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN, _tree->subtree(rx_dsp_root(chan)), _tree->subtree(rx_rf_fe_root(chan)), tune_request);
-        do_tune_freq_warning_message(tune_request.target_freq, get_rx_freq(chan), "RX");
+        do_tune_freq_warning_message(tune_request, get_rx_freq(chan), "RX");
         return r;
     }
 
@@ -634,7 +639,7 @@ public:
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
         tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN, _tree->subtree(tx_dsp_root(chan)), _tree->subtree(tx_rf_fe_root(chan)), tune_request);
-        do_tune_freq_warning_message(tune_request.target_freq, get_tx_freq(chan), "TX");
+        do_tune_freq_warning_message(tune_request, get_tx_freq(chan), "TX");
         return r;
     }
 

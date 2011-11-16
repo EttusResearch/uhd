@@ -17,6 +17,7 @@
 
 #include "usrp2_impl.hpp"
 #include "fw_common.h"
+#include "apply_corrections.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
@@ -473,13 +474,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .set(true);
         _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
             .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _mbc[mb].rx_fe, _1))
-            .set(std::complex<double>(0.0, 0.0));
+            .set(std::polar<double>(1.0, 0.0));
         _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
             .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _mbc[mb].tx_fe, _1))
             .set(std::complex<double>(0.0, 0.0));
         _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
             .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _mbc[mb].tx_fe, _1))
-            .set(std::complex<double>(0.0, 0.0));
+            .set(std::polar<double>(1.0, 0.0));
 
         ////////////////////////////////////////////////////////////////
         // create rx dsp control objects
@@ -600,6 +601,18 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
             _mbc[mb].dboard_iface, _tree->subtree(mb_path / "dboards/A")
         );
+
+        //bind frontend corrections to the dboard freq props
+        const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
+        BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
+            _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+                .subscribe(boost::bind(&usrp2_impl::set_tx_fe_corrections, this, mb, _1));
+        }
+        const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
+        BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+            _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
+                .subscribe(boost::bind(&usrp2_impl::set_rx_fe_corrections, this, mb, _1));
+        }
     }
 
     //initialize io handling
@@ -651,6 +664,14 @@ sensor_value_t usrp2_impl::get_mimo_locked(const std::string &mb){
 sensor_value_t usrp2_impl::get_ref_locked(const std::string &mb){
     const bool lock = (_mbc[mb].iface->peek32(U2_REG_IRQ_RB) & (1<<11)) != 0;
     return sensor_value_t("Ref", lock, "locked", "unlocked");
+}
+
+void usrp2_impl::set_rx_fe_corrections(const std::string &mb, const double lo_freq){
+    apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/" + mb), "A", lo_freq);
+}
+
+void usrp2_impl::set_tx_fe_corrections(const std::string &mb, const double lo_freq){
+    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/" + mb), "A", lo_freq);
 }
 
 #include <boost/math/special_functions/round.hpp>
