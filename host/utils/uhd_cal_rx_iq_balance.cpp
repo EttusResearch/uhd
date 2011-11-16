@@ -89,33 +89,11 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double rx_l
 }
 
 /***********************************************************************
- * Data capture routine
- **********************************************************************/
-static void capture_samples(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr rx_stream, std::vector<std::complex<float> > &buff){
-    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = buff.size();
-    stream_cmd.stream_now = true;
-    usrp->issue_stream_cmd(stream_cmd);
-    uhd::rx_metadata_t md;
-    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
-
-    //validate the received data
-    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-        throw std::runtime_error(str(boost::format(
-            "Unexpected error code 0x%x"
-        ) % md.error_code));
-    }
-    if (num_rx_samps != buff.size()){
-        throw std::runtime_error("did not get all the samples requested");
-    }
-}
-
-/***********************************************************************
  * Main
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
-    double rate, tx_wave_ampl, tx_offset;
+    double tx_wave_ampl, tx_offset;
     double freq_start, freq_stop, freq_step;
     size_t nsamps;
 
@@ -124,7 +102,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("verbose", "enable some verbose")
         ("args", po::value<std::string>(&args)->default_value(""), "device address args [default = \"\"]")
-        ("rate", po::value<double>(&rate)->default_value(12.5e6), "RX and TX sample rate in Hz")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude in counts")
         ("tx_offset", po::value<double>(&tx_offset)->default_value(.9344e6), "TX LO offset from the RX LO in Hz")
         ("freq_start", po::value<double>(&freq_start), "Frequency start in Hz (do not specify for default)")
@@ -158,12 +135,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_rx_antenna("CAL");
     usrp->set_tx_antenna("CAL");
 
-    //set optimum gain settings
-    set_optimum_gain(usrp);
-
-    //set the sample rates
-    usrp->set_rx_rate(rate);
-    usrp->set_tx_rate(rate);
+    //set optimum defaults
+    set_optimum_defaults(usrp);
 
     //create a receive streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
@@ -174,7 +147,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     threads.create_thread(boost::bind(&tx_thread, usrp, tx_wave_ampl));
 
     //re-usable buffer for samples
-    std::vector<std::complex<float> > buff(nsamps);
+    std::vector<std::complex<float> > buff;
 
     //store the results here
     std::vector<result_t> results;
@@ -194,7 +167,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         //capture initial uncorrected value
         usrp->set_rx_iq_balance(std::polar<double>(1.0, 0.0));
-        capture_samples(usrp, rx_stream, buff);
+        capture_samples(usrp, rx_stream, buff, nsamps);
         const double initial_suppression = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate) - compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);
 
         //bounds and results from searching
@@ -215,7 +188,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                 usrp->set_rx_iq_balance(correction);
 
                 //receive some samples
-                capture_samples(usrp, rx_stream, buff);
+                capture_samples(usrp, rx_stream, buff, nsamps);
 
                 const double tone_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
                 const double imag_dbrms = compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);

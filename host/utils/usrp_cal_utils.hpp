@@ -43,10 +43,25 @@ static const double default_freq_step = 7.3e6;
 static const size_t default_num_samps = 10000;
 
 /***********************************************************************
- * Determine gain settings
+ * Set standard defaults for devices
  **********************************************************************/
-static inline void set_optimum_gain(uhd::usrp::multi_usrp::sptr usrp){
+static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+
+    const uhd::fs_path mb_path = "/mboards/0";
+    const std::string mb_name = tree->access<std::string>(mb_path / "name").get();
+    if (mb_name.find("USRP2") != std::string::npos){
+        usrp->set_tx_rate(12.5e6);
+        usrp->set_rx_rate(12.5e6);
+    }
+    else if (mb_name.find("B100") != std::string::npos){
+        usrp->set_tx_rate(4e6);
+        usrp->set_rx_rate(4e6);
+    }
+    else{
+        throw std::runtime_error("self-calibration is not supported for this hardware");
+    }
+
     const uhd::fs_path tx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
     const std::string tx_name = tree->access<std::string>(tx_fe_path / "name").get();
     if (tx_name.find("WBX") != std::string::npos or tx_name.find("SBX") != std::string::npos){
@@ -165,4 +180,38 @@ static void store_results(
     }
 
     std::cout << "wrote cal data to " << cal_data_path << std::endl;
+}
+
+/***********************************************************************
+ * Data capture routine
+ **********************************************************************/
+static void capture_samples(
+    uhd::usrp::multi_usrp::sptr usrp,
+    uhd::rx_streamer::sptr rx_stream,
+    std::vector<std::complex<float> > &buff,
+    const size_t nsamps_requested
+){
+    buff.resize(nsamps_requested);
+    uhd::rx_metadata_t md;
+
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = buff.size();
+    stream_cmd.stream_now = true;
+    usrp->issue_stream_cmd(stream_cmd);
+    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+
+    //validate the received data
+    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
+        throw std::runtime_error(str(boost::format(
+            "Unexpected error code 0x%x"
+        ) % md.error_code));
+    }
+    //we can live if all the data didnt come in
+    if (num_rx_samps > buff.size()/2){
+        buff.resize(num_rx_samps);
+        return;
+    }
+    if (num_rx_samps != buff.size()){
+        throw std::runtime_error("did not get all the samples requested");
+    }
 }
