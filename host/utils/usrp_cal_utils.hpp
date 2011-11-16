@@ -73,7 +73,7 @@ static inline void set_optimum_gain(uhd::usrp::multi_usrp::sptr usrp){
 static inline std::vector<std::complex<float> > gen_table(void){
     std::vector<std::complex<float> > wave_table(wave_table_len);
     for (size_t i = 0; i < wave_table_len; i++){
-        wave_table[i] = std::polar<float>(1.0, (tau*i)/wave_table_len);
+        wave_table[i] = std::complex<float>(std::polar(1.0, (tau*i)/wave_table_len));
     }
     return wave_table;
 }

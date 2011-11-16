@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "apply_corrections.hpp"
 #include "b100_impl.hpp"
 #include "b100_ctrl.hpp"
 #include "fpga_regs_standard.h"
@@ -408,6 +409,18 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         _dboard_iface, _tree->subtree(mb_path / "dboards/A")
     );
 
+    //bind frontend corrections to the dboard freq props
+    const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
+        _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+            .subscribe(boost::bind(&b100_impl::set_tx_fe_corrections, this, _1));
+    }
+    const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+        _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
+            .subscribe(boost::bind(&b100_impl::set_rx_fe_corrections, this, _1));
+    }
+
     //initialize io handling
     this->io_init();
 
@@ -500,4 +513,12 @@ void b100_impl::clear_fpga_fifo(void) {
 sensor_value_t b100_impl::get_ref_locked(void){
     const bool lock = _clock_ctrl->get_locked();
     return sensor_value_t("Ref", lock, "locked", "unlocked");
+}
+
+void b100_impl::set_rx_fe_corrections(const double lo_freq){
+    apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+}
+
+void b100_impl::set_tx_fe_corrections(const double lo_freq){
+    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
 }

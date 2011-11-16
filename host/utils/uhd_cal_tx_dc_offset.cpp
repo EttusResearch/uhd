@@ -246,7 +246,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             result.delta = initial_dc_dbrms - lowest_offset;
             results.push_back(result);
             if (vm.count("verbose")){
-                std::cout << boost::format("%f MHz: lowest offset %fdB, corrected %fdB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
+                std::cout << boost::format("%f MHz: lowest offset %f dB, corrected %f dB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
             }
             else std::cout << "." << std::flush;
         }

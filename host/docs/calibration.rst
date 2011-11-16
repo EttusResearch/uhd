@@ -28,11 +28,12 @@ The following RF frontends are supported by the self-calibration utilities:
  * more to come...
 
 ********************************************
-Basic tool usage
+Calibration utilities
 ********************************************
-
 UHD installs the calibration utilities into <install-path>/bin.
-Run the following from the command line:
+**Disconnect** any extrernal hardware from the RF antenna ports,
+and run the following from the command line.
+Each utility will take several minutes to complete.
 ::
 
     uhd_cal_rx_iq_balance --verbose --args=<optional device args>
@@ -43,13 +44,13 @@ See the output given by --help for more advanced options, such as:
 manually choosing the frequency range and step size for the sweeps.
 
 ********************************************
-Calibration files
+Calibration data
 ********************************************
 Calibration files are stored in the user's home/application directory.
 They can easily be moved from machine to another by copying the "cal" directory.
 Re-running a calibration utility will replace the existing calibration file.
 The old calibration file will be renamed so it may be recovered by the user.
 
- * **Unix:** ${HOME}/.uhd/cal 
- * **Windows:** %APPDATA%\.uhd\cal 
+ * **Unix:** ${HOME}/.uhd/cal/
+ * **Windows:** %APPDATA%\\.uhd\\cal\\
 

@@ -125,6 +125,8 @@ private:
     void clear_fpga_fifo(void);
     void handle_async_message(uhd::transport::managed_recv_buffer::sptr);
     uhd::sensor_value_t get_ref_locked(void);
+    void set_rx_fe_corrections(const double);
+    void set_tx_fe_corrections(const double);
 };
 
 #endif /* INCLUDED_b100_IMPL_HPP */

@@ -251,7 +251,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             result.delta = best_suppression - initial_suppression;
             results.push_back(result);
             if (vm.count("verbose")){
-                std::cout << boost::format("%f MHz: best suppression %fdB, corrected %fdB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
+                std::cout << boost::format("%f MHz: best suppression %f dB, corrected %f dB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
             }
             else std::cout << "." << std::flush;
         }
