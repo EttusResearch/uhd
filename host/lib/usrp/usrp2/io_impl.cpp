@@ -474,6 +474,7 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
             num_chan_so_far += _mbc[mb].tx_chan_occ;
             if (chan < num_chan_so_far){
                 const size_t dsp = chan + _mbc[mb].tx_chan_occ - num_chan_so_far;
+                _mbc[mb].tx_dsp->clear();
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), abs, _1
                 ));

@@ -36,6 +36,8 @@ public:
         const boost::uint32_t sid, const bool lingering_packet = false
     );
 
+    virtual void clear(void) = 0;
+
     virtual void set_nsamps_per_packet(const size_t nsamps) = 0;
 
     virtual void issue_stream_command(const uhd::stream_cmd_t &stream_cmd) = 0;

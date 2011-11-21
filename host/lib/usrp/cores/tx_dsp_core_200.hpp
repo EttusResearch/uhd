@@ -34,6 +34,8 @@ public:
         const boost::uint32_t sid
     );
 
+    virtual void clear(void) = 0;
+
     virtual void set_tick_rate(const double rate) = 0;
 
     virtual void set_link_rate(const double rate) = 0;

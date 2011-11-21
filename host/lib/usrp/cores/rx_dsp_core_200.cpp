@@ -79,7 +79,12 @@ public:
         _iface->poke32(REG_RX_CTRL_VRT_TLR, 0);
     }
 
+    void clear(void){
+        _iface->poke32(REG_RX_CTRL_CLEAR, 1); //reset
+    }
+
     void set_nsamps_per_packet(const size_t nsamps){
+        this->clear(); // a good place to clear as well!
         _iface->poke32(REG_RX_CTRL_NSAMPS_PP, nsamps);
     }
 

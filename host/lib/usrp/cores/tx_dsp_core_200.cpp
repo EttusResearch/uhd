@@ -65,6 +65,10 @@ public:
         _iface->poke32(REG_TX_CTRL_POLICY, FLAG_TX_CTRL_POLICY_NEXT_PACKET);
     }
 
+    void clear(void){
+        _iface->poke32(REG_TX_CTRL_CLEAR_STATE, 1); //reset
+    }
+
     void set_tick_rate(const double rate){
         _tick_rate = rate;
     }
