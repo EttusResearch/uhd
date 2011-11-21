@@ -102,6 +102,9 @@ void b100_impl::handle_async_message(managed_recv_buffer::sptr rbuf){
             ( async_metadata_t::EVENT_CODE_SEQ_ERROR
             | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
         ) UHD_MSG(fastpath) << "S";
+        else if (metadata.event_code &
+            async_metadata_t::EVENT_CODE_TIME_ERROR
+        ) UHD_MSG(fastpath) << "L";
     }
     else UHD_MSG(error) << "Unknown async packet" << std::endl;
 }

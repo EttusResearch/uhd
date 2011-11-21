@@ -225,6 +225,9 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                     ( async_metadata_t::EVENT_CODE_SEQ_ERROR
                     | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
                 ) UHD_MSG(fastpath) << "S";
+                else if (metadata.event_code &
+                    async_metadata_t::EVENT_CODE_TIME_ERROR
+                ) UHD_MSG(fastpath) << "L";
             }
             else{
                 //TODO unknown received packet, may want to print error...
