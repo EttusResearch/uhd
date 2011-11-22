@@ -210,8 +210,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
             .set(dbsrx_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .coerce(boost::bind(&dbsrx::set_lo_freq, this, _1))
-        .set(dbsrx_freq_range.start());
+        .coerce(boost::bind(&dbsrx::set_lo_freq, this, _1));
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(dbsrx_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
@@ -225,8 +224,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<bool>("use_lo_offset")
         .set(false);
     this->get_rx_subtree()->create<double>("bandwidth/value")
-        .coerce(boost::bind(&dbsrx::set_bandwidth, this, _1))
-        .set(2.0*_bandwidth); //_bandwidth in lowpass, convert to complex bandpass
+        .coerce(boost::bind(&dbsrx::set_bandwidth, this, _1));
     this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
         .set(dbsrx_bandwidth_range);
 
@@ -241,6 +239,12 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     else{
         this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, 0x0); // All Inputs
     }
+
+    //now its safe to set inital freq and bw
+    this->get_rx_subtree()->access<double>("freq/value")
+        .set(dbsrx_freq_range.start());
+    this->get_rx_subtree()->access<double>("bandwidth/value")
+        .set(2.0*_bandwidth); //_bandwidth in lowpass, convert to complex bandpass
 }
 
 dbsrx::~dbsrx(void){
