@@ -165,7 +165,11 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     this->check_fw_compat(); //check after making fx2
     //-- setup clock after making fx2 and before loading fpga --//
     _clock_ctrl = b100_clock_ctrl::make(_fx2_ctrl, device_addr.cast<double>("master_clock_rate", B100_DEFAULT_TICK_RATE));
+
+    //load FPGA image, gpif is disabled while loading
+    this->enable_gpif(false);
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+    this->enable_gpif(true);
 
     //create the control transport
     device_addr_t ctrl_xport_args;
@@ -182,19 +186,12 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     );
 
     ////////////////////////////////////////////////////////////////////
-    // Create controller objects
+    // Initialize FPGA wishbone communication
     ////////////////////////////////////////////////////////////////////
     _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
-    this->enable_gpif(true); //TODO best place to put this?
-    this->check_fpga_compat(); //check after making control
-
-    ////////////////////////////////////////////////////////////////////
-    // Reset buffers in data path
-    ////////////////////////////////////////////////////////////////////
-    _fpga_ctrl->poke32(B100_REG_GLOBAL_RESET, 0);
-    _fpga_ctrl->poke32(B100_REG_CLEAR_RX, 0);
-    _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
-    this->reset_gpif(6);
+    this->reset_gpif(6); //always reset first to ensure communication
+    _fpga_ctrl->poke32(B100_REG_GLOBAL_RESET, 0); //global fpga reset
+    this->check_fpga_compat(); //check after reset and making control
 
     ////////////////////////////////////////////////////////////////////
     // Initialize peripherals after reset
