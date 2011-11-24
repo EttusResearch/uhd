@@ -30,15 +30,15 @@ namespace fs = boost::filesystem;
 
 struct result_t{double freq, real_corr, imag_corr, best, delta;};
 
+typedef std::complex<float> samp_type;
+
 /***********************************************************************
  * Constants
  **********************************************************************/
 static const double tau = 6.28318531;
-static const double alpha = 0.0001; //very tight iir filter
 static const size_t wave_table_len = 8192;
 static const size_t num_search_steps = 5;
 static const size_t num_search_iters = 7;
-static const size_t skip_initial_samps = 20;
 static const double default_freq_step = 7.3e6;
 static const size_t default_num_samps = 10000;
 
@@ -94,51 +94,43 @@ public:
     wave_table(const double ampl){
         _table.resize(wave_table_len);
         for (size_t i = 0; i < wave_table_len; i++){
-            _table[i] = std::complex<float>(std::polar(ampl, (tau*i)/wave_table_len));
+            _table[i] = samp_type(std::polar(ampl, (tau*i)/wave_table_len));
         }
     }
 
-    inline std::complex<float> operator()(const size_t index) const{
+    inline samp_type operator()(const size_t index) const{
         return _table[index % wave_table_len];
     }
 
 private:
-    std::vector<std::complex<float> > _table;
+    std::vector<samp_type > _table;
 };
 
 /***********************************************************************
  * Compute power of a tone
  **********************************************************************/
 static inline double compute_tone_dbrms(
-    const std::vector<std::complex<float> > &samples,
+    const std::vector<samp_type > &samples,
     const double freq //freq is fractional
 ){
     //shift the samples so the tone at freq is down at DC
-    std::vector<std::complex<float> > shifted(samples.size() - skip_initial_samps);
-    for (size_t i = 0; i < shifted.size(); i++){
-        shifted[i] = samples[i+skip_initial_samps] * std::complex<float>(std::polar(1.0, -freq*tau*i));
+    //and average the samples to measure the DC component
+    samp_type average = 0;
+    for (size_t i = 0; i < samples.size(); i++){
+        average += samp_type(std::polar(1.0, -freq*tau*i)) * samples[i];
     }
 
-    //filter the samples with a narrow low pass
-    std::complex<float> iir_output = 0, iir_last = 0;
-    double output = 0;
-    for (size_t i = 0; i < shifted.size(); i++){
-        iir_output = float(alpha) * shifted[i] + float(1-alpha)*iir_last;
-        iir_last = iir_output;
-        output += std::abs(iir_output);
-    }
-
-    return 20*std::log10(output/shifted.size());
+    return 20*std::log10(std::abs(average/float(samples.size())));
 }
 
 /***********************************************************************
  * Write a dat file
  **********************************************************************/
 static inline void write_samples_to_file(
-    const std::vector<std::complex<float> > &samples, const std::string &file
+    const std::vector<samp_type > &samples, const std::string &file
 ){
     std::ofstream outfile(file.c_str(), std::ofstream::binary);
-    outfile.write((const char*)&samples.front(), samples.size()*sizeof(std::complex<float>));
+    outfile.write((const char*)&samples.front(), samples.size()*sizeof(samp_type));
     outfile.close();
 }
 
@@ -196,7 +188,7 @@ static void store_results(
 static void capture_samples(
     uhd::usrp::multi_usrp::sptr usrp,
     uhd::rx_streamer::sptr rx_stream,
-    std::vector<std::complex<float> > &buff,
+    std::vector<samp_type > &buff,
     const size_t nsamps_requested
 ){
     buff.resize(nsamps_requested);

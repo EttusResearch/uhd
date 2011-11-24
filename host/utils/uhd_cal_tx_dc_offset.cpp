@@ -44,7 +44,7 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_fre
     //setup variables and allocate buffer
     uhd::tx_metadata_t md;
     md.has_time_spec = false;
-    std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps()*10);
+    std::vector<samp_type> buff(tx_stream->get_max_num_samps()*10);
 
     //values for the wave table lookup
     size_t index = 0;
@@ -150,7 +150,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     threads.create_thread(boost::bind(&tx_thread, usrp, tx_wave_freq, tx_wave_ampl));
 
     //re-usable buffer for samples
-    std::vector<std::complex<float> > buff;
+    std::vector<samp_type> buff;
 
     //store the results here
     std::vector<result_t> results;
