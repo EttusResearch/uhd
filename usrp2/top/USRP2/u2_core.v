@@ -441,7 +441,7 @@ module u2_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd8, 16'd1}; //major, minor
+   localparam compat_num = {16'd8, 16'd2}; //major, minor
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -450,7 +450,7 @@ module u2_core
       .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13(32'b0),
+      .word11(vita_time[31:0]),.word12(compat_num),.word13({20'b0, clk_status, serdes_link_up, 10'b0}),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
