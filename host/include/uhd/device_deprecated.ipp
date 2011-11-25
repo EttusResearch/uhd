@@ -19,6 +19,8 @@
 //it supports the old send/recv functions
 //this was replaced by the streamer API
 
+#define _lazymin(x, y) (((x) > (y))? (y) : (x))
+
 /*!
  * Send modes for the device send routine.
  */
@@ -88,7 +90,7 @@ size_t send(
         _tx_streamer = get_tx_stream(args);
     }
     const size_t nsamps = (send_mode == SEND_MODE_ONE_PACKET)?
-        std::min(nsamps_per_buff, get_max_send_samps_per_packet()) :
+        _lazymin(nsamps_per_buff, get_max_send_samps_per_packet()) :
         nsamps_per_buff;
     return _tx_streamer->send(buffs, nsamps, metadata, timeout);
 }
@@ -143,7 +145,7 @@ size_t recv(
         _rx_streamer = get_rx_stream(args);
     }
     const size_t nsamps = (recv_mode == RECV_MODE_ONE_PACKET)?
-        std::min(nsamps_per_buff, get_max_recv_samps_per_packet()) :
+        _lazymin(nsamps_per_buff, get_max_recv_samps_per_packet()) :
         nsamps_per_buff;
     return _rx_streamer->recv(buffs, nsamps, metadata, timeout);
 }
