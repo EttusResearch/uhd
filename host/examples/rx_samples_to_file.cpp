@@ -36,8 +36,10 @@ template<typename samp_type> void recv_to_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::string &cpu_format,
     const std::string &file,
-    size_t samps_per_buff
+    size_t samps_per_buff,
+    int num_requested_samples
 ){
+    int num_total_samps = 0;
     //create a receive streamer
     uhd::stream_args_t stream_args(cpu_format);
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
@@ -47,10 +49,23 @@ template<typename samp_type> void recv_to_file(
     std::ofstream outfile(file.c_str(), std::ofstream::binary);
     bool overflow_message = true;
 
-    while(not stop_signal_called){
-        size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+    //setup streaming
+    uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)?
+        uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
+        uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
+    );
+    stream_cmd.num_samps = num_requested_samples;
+    stream_cmd.stream_now = true;
+    stream_cmd.time_spec = uhd::time_spec_t();
+    usrp->issue_stream_cmd(stream_cmd);
 
-        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
+    while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)){
+        size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0);
+
+        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
+            std::cout << boost::format("Timeout while streaming") << std::endl;
+            break;
+        }
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
             if (overflow_message){
                 overflow_message = false;
@@ -69,6 +84,8 @@ template<typename samp_type> void recv_to_file(
                 "Unexpected error code 0x%x"
             ) % md.error_code));
         }
+
+        num_total_samps += num_rx_samps;
 
         outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
     }
@@ -181,23 +198,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
 
-    //setup streaming
-    uhd::stream_cmd_t stream_cmd((total_num_samps == 0)?
-        uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
-    );
-    stream_cmd.num_samps = total_num_samps;
-    stream_cmd.stream_now = true;
-    usrp->issue_stream_cmd(stream_cmd);
     if (total_num_samps == 0){
         std::signal(SIGINT, &sig_int_handler);
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >(usrp, "fc64", file, spb);
-    else if (type == "float") recv_to_file<std::complex<float> >(usrp, "fc32", file, spb);
-    else if (type == "short") recv_to_file<std::complex<short> >(usrp, "sc16", file, spb);
+    if (type == "double") recv_to_file<std::complex<double> >(usrp, "fc64", file, spb, total_num_samps);
+    else if (type == "float") recv_to_file<std::complex<float> >(usrp, "fc32", file, spb, total_num_samps);
+    else if (type == "short") recv_to_file<std::complex<short> >(usrp, "sc16", file, spb, total_num_samps);
     else throw std::runtime_error("Unknown type " + type);
 
     //finished
