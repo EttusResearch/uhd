@@ -603,10 +603,6 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
     boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
         boost::make_shared<usrp1_recv_packet_streamer>(spp, _soft_time_ctrl);
 
-    //special scale factor change for sc8
-    if (args.otw_format == "sc8")
-        my_streamer->set_scale_factor(1.0/127);
-
     //init some streamer stuff
     my_streamer->set_tick_rate(_master_clock_rate);
     my_streamer->set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
@@ -621,6 +617,10 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
     id.output_format = args.cpu_format;
     id.num_outputs = args.channels.size();
     my_streamer->set_converter(id);
+
+    //special scale factor change for sc8
+    if (args.otw_format == "sc8")
+        my_streamer->set_scale_factor(1.0/127);
 
     //save as weak ptr for update access
     _rx_streamer = my_streamer;
