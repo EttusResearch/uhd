@@ -85,6 +85,7 @@ size_t send(
         stream_args_t args;
         args.cpu_format = (_send_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
+        args.args["noclear"] = "1";
         for (size_t ch = 0; ch < buffs.size(); ch++)
             args.channels.push_back(ch); //linear mapping
         _tx_streamer = get_tx_stream(args);
@@ -140,6 +141,7 @@ size_t recv(
         stream_args_t args;
         args.cpu_format = (_recv_tid == io_type_t::COMPLEX_FLOAT32)? "fc32" : "sc16";
         args.otw_format = "sc16";
+        args.args["noclear"] = "1";
         for (size_t ch = 0; ch < buffs.size(); ch++)
             args.channels.push_back(ch); //linear mapping
         _rx_streamer = get_rx_stream(args);
@@ -159,6 +161,7 @@ size_t get_max_send_samps_per_packet(void){
         stream_args_t args;
         args.cpu_format = "fc32";
         args.otw_format = "sc16";
+        args.args["noclear"] = "1";
         _tx_streamer = get_tx_stream(args);
         _send_tid = io_type_t::COMPLEX_FLOAT32;
     }
@@ -174,6 +177,7 @@ size_t get_max_recv_samps_per_packet(void){
         stream_args_t args;
         args.cpu_format = "fc32";
         args.otw_format = "sc16";
+        args.args["noclear"] = "1";
         _rx_streamer = get_rx_stream(args);
         _recv_tid = io_type_t::COMPLEX_FLOAT32;
     }

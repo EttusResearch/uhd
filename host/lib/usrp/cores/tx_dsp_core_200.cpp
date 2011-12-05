@@ -56,17 +56,17 @@ public:
         const size_t dsp_base, const size_t ctrl_base,
         const boost::uint32_t sid
     ):
-        _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base)
+        _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base), _sid(sid)
     {
         //init the tx control registers
-        _iface->poke32(REG_TX_CTRL_CLEAR_STATE, 1); //reset
-        _iface->poke32(REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
-        _iface->poke32(REG_TX_CTRL_REPORT_SID, sid);
-        _iface->poke32(REG_TX_CTRL_POLICY, FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+        this->clear();
     }
 
     void clear(void){
         _iface->poke32(REG_TX_CTRL_CLEAR_STATE, 1); //reset
+        _iface->poke32(REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
+        _iface->poke32(REG_TX_CTRL_REPORT_SID, _sid);
+        _iface->poke32(REG_TX_CTRL_POLICY, FLAG_TX_CTRL_POLICY_NEXT_PACKET);
     }
 
     void set_tick_rate(const double rate){
@@ -150,6 +150,7 @@ private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
+    const boost::uint32_t _sid;
 };
 
 tx_dsp_core_200::sptr tx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid){
