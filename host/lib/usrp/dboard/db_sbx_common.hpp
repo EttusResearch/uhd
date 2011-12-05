@@ -47,7 +47,7 @@
 #define TX_ATTN_MASK    (63 << TX_ATTN_SHIFT)   // valid bits of RX Attenuator Control
 
 // Mixer functions
-#define TX_MIXER_ENB    (SYNTH_PDBRF)
+#define TX_MIXER_ENB    (SYNTH_PDBRF|TX_ENABLE)
 #define TX_MIXER_DIS    0
 
 #define RX_MIXER_ENB    (SYNTH_PDBRF)
@@ -61,7 +61,7 @@
 #define RXIO_MASK       (LO_LPF_EN|LNASW|SYNTH_CE|SYNTH_PDBRF|RX_ATTN_MASK|DIS_POWER_RX|RX_DISABLE)
 
 // Power functions
-#define TX_POWER_UP     (SYNTH_CE|TX_ENABLE)
+#define TX_POWER_UP     (SYNTH_CE)
 #define TX_POWER_DOWN   (DIS_POWER_TX)
 
 #define RX_POWER_UP     (SYNTH_CE)
