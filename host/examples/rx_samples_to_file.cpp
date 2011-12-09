@@ -35,13 +35,14 @@ void sig_int_handler(int){stop_signal_called = true;}
 template<typename samp_type> void recv_to_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::string &cpu_format,
+    const std::string &wire_format,
     const std::string &file,
     size_t samps_per_buff,
     int num_requested_samples
 ){
     int num_total_samps = 0;
     //create a receive streamer
-    uhd::stream_args_t stream_args(cpu_format);
+    uhd::stream_args_t stream_args(cpu_format,wire_format);
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
@@ -97,7 +98,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref;
+    std::string args, file, type, ant, subdev, ref, wirefmt;
     size_t total_num_samps, spb;
     double rate, freq, gain, bw;
 
@@ -117,6 +118,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
+        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -204,9 +206,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >(usrp, "fc64", file, spb, total_num_samps);
-    else if (type == "float") recv_to_file<std::complex<float> >(usrp, "fc32", file, spb, total_num_samps);
-    else if (type == "short") recv_to_file<std::complex<short> >(usrp, "sc16", file, spb, total_num_samps);
+    if (type == "double") recv_to_file<std::complex<double> >(usrp, "fc64", wirefmt, file, spb, total_num_samps);
+    else if (type == "float") recv_to_file<std::complex<float> >(usrp, "fc32", wirefmt, file, spb, total_num_samps);
+    else if (type == "short") recv_to_file<std::complex<short> >(usrp, "sc16", wirefmt, file, spb, total_num_samps);
     else throw std::runtime_error("Unknown type " + type);
 
     //finished
