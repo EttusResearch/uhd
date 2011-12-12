@@ -114,16 +114,17 @@ wbx_base::wbx_version3::wbx_version3(wbx_base *_self_wbx_base) {
     int v3_tx_mod = ADF4350_PDBRF;
 
     //set the gpio directions and atr controls
-    self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, v3_tx_mod);
+    self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, v3_tx_mod|v3_iobits);
     self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXBB_PDB|ADF4350_PDBRF);
     self_base->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TX_PUP_5V|TX_PUP_3V|v3_tx_mod|v3_iobits);
     self_base->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RX_PUP_5V|RX_PUP_3V|ADF4350_CE|RXBB_PDB|ADF4350_PDBRF|RX_ATTN_MASK);
 
     //setup ATR for the mixer enables (always enabled to prevent phase slip between bursts)
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        v3_tx_mod, TX_MIXER_DIS | v3_tx_mod);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     v3_tx_mod, TX_MIXER_DIS | v3_tx_mod);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     v3_tx_mod, TX_MIXER_DIS | v3_tx_mod);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, v3_tx_mod, TX_MIXER_DIS | v3_tx_mod);
+    //set TX gain iobits to min gain (max attenuation) when RX_ONLY or IDLE to suppress LO leakage
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        v3_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     v3_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     v3_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, v3_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
 
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
@@ -152,10 +153,13 @@ double wbx_base::wbx_version3::set_tx_gain(double gain, const std::string &name)
     assert_has(wbx_v3_tx_gain_ranges.keys(), name, "wbx tx gain name");
     if(name == "PGA0"){
         boost::uint16_t io_bits = tx_pga0_gain_to_iobits(gain);
+
         self_base->_tx_gains[name] = gain;
 
         //write the new gain to tx gpio outputs
-        self_base->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, io_bits, TX_ATTN_MASK);
+        //Update ATR with gain io_bits, only update for TX_ONLY and FULL_DUPLEX ATR states
+        self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     io_bits, TX_ATTN_MASK);
+        self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, io_bits, TX_ATTN_MASK);
     }
     else UHD_THROW_INVALID_CODE_PATH();
     return self_base->_tx_gains[name]; //shadow
