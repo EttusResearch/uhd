@@ -199,8 +199,9 @@ public:
      * the seconds in the time spec should be current seconds + 1.
      *
      * \param time_spec the time to latch into the usrp device
+     * \param mboard the motherboard index 0 to M-1
      */
-    virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
+    virtual void set_time_next_pps(const time_spec_t &time_spec, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!
      * Synchronize the times across all motherboards in this configuration.

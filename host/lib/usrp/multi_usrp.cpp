@@ -304,9 +304,13 @@ public:
         }
     }
 
-    void set_time_next_pps(const time_spec_t &time_spec){
+    void set_time_next_pps(const time_spec_t &time_spec, size_t mboard){
+        if (mboard != ALL_MBOARDS){
+            _tree->access<time_spec_t>(mb_root(mboard) / "time/pps").set(time_spec);
+            return;
+        }
         for (size_t m = 0; m < get_num_mboards(); m++){
-            _tree->access<time_spec_t>(mb_root(m) / "time/pps").set(time_spec);
+            set_time_next_pps(time_spec, m);
         }
     }
 
@@ -326,7 +330,7 @@ public:
         }
 
         UHD_MSG(status) << "    2) set times next pps (synchronously)" << std::endl;
-        set_time_next_pps(time_spec);
+        set_time_next_pps(time_spec, ALL_MBOARDS);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 
         //verify that the time registers are read to be within a few RTT
