@@ -68,13 +68,13 @@ Make sure that xtclsh from the Xilinx ISE bin directory is in your $PATH.
 See <uhd-repo-path>/fpga/usrp2/top/*
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Microblaze firmware builds
+ZPU firmware builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Microblaze GCC compiler from the Xilinx EDK is required to build the Microblaze firmware images.
-The build requires that you have a unix-like environment with autotools and make.
-Make sure that mb-gcc from the Xilinx EDK/microblaze directory is in your $PATH.
+The ZPU GCC compiler is required to build the ZPU firmware images.
+The build requires that you have a unix-like environment with cmake and make.
+Make sure that zpu-elf-gcc is in your $PATH.
 
-See <uhd-repo-path>/firmware/microblaze
+See <uhd-repo-path>/firmware/zpu
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Altera FPGA builds
@@ -88,6 +88,6 @@ See <uhd-repo-path>/fpga/usrp1/toplevel/*
 FX2 firmware builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The sdcc compiler is required to build the FX2 firmware images.
-The build requires that you have a unix-like environment with autotools and make.
+The build requires that you have a unix-like environment with cmake and make.
 
 See <uhd-repo-path>/firmware/fx2
