@@ -129,6 +129,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     double lo_offset = 0.0;
     if (rf_fe_subtree->access<bool>("use_lo_offset").get()){
+        //If the frontend has lo_offset value and range properties, trust it for lo_offset
+        if (rf_fe_subtree->exists("lo_offset/value")) lo_offset = rf_fe_subtree->access<double>("lo_offset/value").get();
+
         //If the local oscillator will be in the passband, use an offset.
         //But constrain the LO offset by the width of the filter bandwidth.
         const double rate = dsp_subtree->access<double>("rate/value").get();
@@ -147,6 +150,14 @@ static tune_result_t tune_xx_subdev_and_dsp(
         break;
 
     case tune_request_t::POLICY_MANUAL:
+        //If the rf_fe understands lo_offset settings, infer the desired lo_offset and set it
+        //  Side effect: In TVRX2 for example, after setting the lo_offset (if_freq) with a
+        //  POLICY_MANUAL, there is no way for the user to automatically get back to default
+        //  if_freq without deconstruct/reconstruct the rf_fe objects.
+        if (rf_fe_subtree->exists("lo_offset/value")) {
+            rf_fe_subtree->access<double>("lo_offset/value").set(tune_request.rf_freq - tune_request.target_freq);
+        }
+
         target_rf_freq = tune_request.rf_freq;
         rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
         break;

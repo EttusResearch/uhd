@@ -702,7 +702,9 @@ static const std::vector<tvrx2_tda18272_freq_map_t> tvrx2_tda18272_freq_map = li
     ( tvrx2_tda18272_freq_map_t(969728000, 0x00, 0x0A, 3) )
 ;
 
-static const freq_range_t tvrx2_freq_range(42e6, 870e6);
+static const freq_range_t tvrx2_rf_freq_range(42e6, 870e6);
+
+static const freq_range_t tvrx2_lo_offset_range(25e3, 12.5e6);
 
 static const freq_range_t tvrx2_bandwidth_range = list_of
     (range_t(1.7e6))
@@ -768,6 +770,7 @@ private:
     bool set_enabled(bool);
 
     double set_lo_freq(double target_freq);
+    double set_lo_offset(double lo_offset);
     double set_gain(double gain, const std::string &name);
     double set_bandwidth(double bandwidth);
 
@@ -971,7 +974,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<double>("freq/value")
         .coerce(boost::bind(&tvrx2::set_lo_freq, this, _1));
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
-        .set(tvrx2_freq_range);
+        .set(tvrx2_rf_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
         .set(tvrx2_sd_name_to_antennas[get_subdev_name()]);
     this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
@@ -982,7 +985,12 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
         .coerce(boost::bind(&tvrx2::set_enabled, this, _1))
         .set(_enabled);
     this->get_rx_subtree()->create<bool>("use_lo_offset")
-        .set(false);
+        .set(true);
+    this->get_rx_subtree()->create<double>("lo_offset/value")
+        .coerce(boost::bind(&tvrx2::set_lo_offset, this, _1))
+        .set(-_if_freq/2.0);
+    this->get_rx_subtree()->create<meta_range_t>("lo_offset/range")
+        .set(tvrx2_lo_offset_range);
     this->get_rx_subtree()->create<double>("bandwidth/value")
         .coerce(boost::bind(&tvrx2::set_bandwidth, this, _1))
         .set(_bandwidth);
@@ -1051,7 +1059,7 @@ bool tvrx2::set_enabled(bool enable){
         //setup tuner parameters
         transition_1();
 
-        transition_2(int(tvrx2_freq_range.start()));
+        transition_2(int(tvrx2_rf_freq_range.start()));
 
         test_rf_filter_robustness();
 
@@ -1065,7 +1073,7 @@ bool tvrx2::set_enabled(bool enable){
 
         //transition_2 equivalent
         this->get_rx_subtree()->access<double>("freq/value")
-            .set(tvrx2_freq_range.start());
+            .set(tvrx2_rf_freq_range.start());
 
         //enter standby mode
         transition_3();
@@ -1101,6 +1109,8 @@ double tvrx2::get_scaled_rf_freq(void){
 
 void tvrx2::set_scaled_if_freq(double if_freq){
     _tda18272hnm_regs.if_freq = int(_freq_scalar*if_freq/(50e3)); //max 12.8MHz??
+    send_reg(0x15, 0x15);
+    _if_freq = get_scaled_if_freq();
 }
 
 double tvrx2::get_scaled_if_freq(void){
@@ -1722,14 +1732,14 @@ void tvrx2::wait_irq(void){
  * Tuning
  **********************************************************************/
 double tvrx2::set_lo_freq(double target_freq){
-    //target_freq = std::clip(target_freq, tvrx2_freq_range.min, tvrx2_freq_range.max);
+    //target_freq = std::clip(target_freq, tvrx2_rf_freq_range.min, tvrx2_rf_freq_range.max);
 
     read_reg(0x6, 0x6);
 
     if (_tda18272hnm_regs.sm == tda18272hnm_regs_t::SM_STANDBY) {
-        transition_2(int(target_freq + _bandwidth/2 - get_scaled_if_freq()));
+        transition_2(int(target_freq + get_scaled_if_freq()));
     } else {
-        transition_4(int(target_freq + _bandwidth/2 - get_scaled_if_freq()));
+        transition_4(int(target_freq + get_scaled_if_freq()));
     }
     read_reg(0x16, 0x18);
 
@@ -1754,6 +1764,13 @@ double tvrx2::set_lo_freq(double target_freq){
 
     return _lo_freq;
 }
+
+double tvrx2::set_lo_offset(double lo_offset){
+    lo_offset = tvrx2_lo_offset_range.clip(lo_offset);
+    set_scaled_if_freq(-lo_offset*2.0);
+    return -get_scaled_if_freq()/2.0;
+}
+
 
 /***********************************************************************
  * Gain Handling
