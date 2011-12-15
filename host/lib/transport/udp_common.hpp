@@ -44,8 +44,15 @@ namespace uhd{ namespace transport{
         FD_ZERO(&rset);
         FD_SET(sock_fd, &rset);
 
+        //http://www.gnu.org/s/hello/manual/libc/Interrupted-Primitives.html
+        //This macro is provided with gcc to properly deal with EINTR.
+        //If not provided, define an empty macro, assume that is OK
+        #ifndef TEMP_FAILURE_RETRY
+            #define TEMP_FAILURE_RETRY(x) (x)
+        #endif
+
         //call select with timeout on receive socket
-        return ::select(sock_fd+1, &rset, NULL, NULL, &tv) > 0;
+        return TEMP_FAILURE_RETRY(::select(sock_fd+1, &rset, NULL, NULL, &tv)) > 0;
     }
 
 }} //namespace uhd::transport
