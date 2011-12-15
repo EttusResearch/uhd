@@ -187,16 +187,15 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     this->get_rx_subtree()->create<std::string>("name")
         .set(get_rx_id().to_pp_string());
+    this->get_rx_subtree()->create<int>("sensors"); //phony property so this dir exists
     BOOST_FOREACH(const std::string &name, get_tvrx_gain_ranges().keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .coerce(boost::bind(&tvrx::set_gain, this, _1, name))
-            .set(get_tvrx_gain_ranges()[name].start());
+            .coerce(boost::bind(&tvrx::set_gain, this, _1, name));
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(get_tvrx_gain_ranges()[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .coerce(boost::bind(&tvrx::set_freq, this, _1))
-        .set(tvrx_freq_range.start());
+        .coerce(boost::bind(&tvrx::set_freq, this, _1));
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(tvrx_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
@@ -230,11 +229,12 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
 
     //set default freq
     _lo_freq = tvrx_freq_range.start() + tvrx_if_freq; //init _lo_freq to a sane default
-    set_freq(tvrx_freq_range.start());
+    this->get_rx_subtree()->access<double>("freq/value").set(tvrx_freq_range.start());
 
     //set default gains
     BOOST_FOREACH(const std::string &name, get_tvrx_gain_ranges().keys()){
-        set_gain(get_tvrx_gain_ranges()[name].start(), name);
+        this->get_rx_subtree()->access<double>("gains/"+name+"/value")
+            .set(get_tvrx_gain_ranges()[name].start());
     }
 }
 
