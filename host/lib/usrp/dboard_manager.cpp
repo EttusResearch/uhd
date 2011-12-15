@@ -202,7 +202,14 @@ dboard_manager_impl::dboard_manager_impl(
         this->init(rx_dboard_id, tx_dboard_id, subtree);
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << "The daughterboard manager encountered a recoverable error in init" << std::endl << e.what();
+        UHD_MSG(error) << boost::format(
+            "The daughterboard manager encountered a recoverable error in init.\n"
+            "Loading the \"unknown\" dabugterboard implementations to continue.\n"
+            "The daughterboard cannot operate until this error is resolved.\n"
+        ) << e.what() << std::endl;
+        //clean up the stuff added by the call above
+        subtree->remove("rx_frontends");
+        subtree->remove("tx_frontends");
         this->init(dboard_id_t::none(), dboard_id_t::none(), subtree);
     }
 }
