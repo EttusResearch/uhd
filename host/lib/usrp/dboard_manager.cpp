@@ -204,7 +204,7 @@ dboard_manager_impl::dboard_manager_impl(
     catch(const std::exception &e){
         UHD_MSG(error) << boost::format(
             "The daughterboard manager encountered a recoverable error in init.\n"
-            "Loading the \"unknown\" dabugterboard implementations to continue.\n"
+            "Loading the \"unknown\" daughterboard implementations to continue.\n"
             "The daughterboard cannot operate until this error is resolved.\n"
         ) << e.what() << std::endl;
         //clean up the stuff added by the call above
