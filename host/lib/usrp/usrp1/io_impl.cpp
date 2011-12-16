@@ -497,7 +497,7 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
 
 double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 
-    const size_t div = this->has_tx_halfband()? 2 : 1;
+    const size_t div = this->has_tx_halfband()? 4 : 2; //doubled for codec interp
     const size_t rate = boost::math::iround(_master_clock_rate/this->get_tx_dsp_host_rates().clip(samp_rate, true));
 
     if (dspno == 0){ //only care if dsp0 is set since its homogeneous
