@@ -400,5 +400,12 @@ double tvrx::set_freq(double freq) {
 
     _lo_freq = actual_lo_freq; //for rx props
 
+    //Check the the IF if larger than the dsp rate and apply a corrective adjustment
+    //so that the cordic will be tuned to a possible rate within its range.
+    const double codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
+    if (tvrx_if_freq >= codec_rate/2){
+        return _lo_freq - codec_rate;
+    }
+
     return _lo_freq;
 }
