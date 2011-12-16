@@ -543,7 +543,7 @@ double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_){
     static const boost::uint32_t dsp_index_to_reg_val[4] = {
         FR_RX_FREQ_0, FR_RX_FREQ_1, FR_RX_FREQ_2, FR_RX_FREQ_3
     };
-    _iface->poke32(dsp_index_to_reg_val[dspno], ~freq_word + 1);
+    _iface->poke32(dsp_index_to_reg_val[dspno], freq_word);
 
     return (double(freq_word) / scale_factor) * _master_clock_rate;
 }
