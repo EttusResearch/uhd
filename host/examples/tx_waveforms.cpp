@@ -76,7 +76,7 @@ public:
     }
 
     inline std::complex<float> operator()(const double theta) const{
-        return _wave_table[unsigned(boost::math::iround(theta*wave_table_len))%wave_table_len];
+        return _wave_table[unsigned(theta*wave_table_len)%wave_table_len];
     }
 
 private:
