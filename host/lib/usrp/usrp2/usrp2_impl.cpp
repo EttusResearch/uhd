@@ -113,10 +113,13 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
         if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
 
             //make a boost asio ipv4 with the raw addr in host byte order
-            boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
             device_addr_t new_addr;
             new_addr["type"] = "usrp2";
-            new_addr["addr"] = ip_addr.to_string();
+            //We used to get the address from the control packet.
+            //Now now uses the socket itself to yield the address.
+            //boost::asio::ip::address_v4 ip_addr(ntohl(ctrl_data_in->data.ip_addr));
+            //new_addr["addr"] = ip_addr.to_string();
+            new_addr["addr"] = udp_transport->get_recv_addr();
 
             //Attempt to read the name from the EEPROM and perform filtering.
             //This operation can throw due to compatibility mismatch.

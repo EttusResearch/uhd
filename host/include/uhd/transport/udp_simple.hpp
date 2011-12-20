@@ -85,6 +85,12 @@ public:
      * \return the number of bytes received or zero on timeout
      */
     virtual size_t recv(const boost::asio::mutable_buffer &buff, double timeout = 0.1) = 0;
+
+    /*!
+     * Get the last IP address as seen by recv().
+     * Only use this with the broadcast socket.
+     */
+    virtual std::string get_recv_addr(void) = 0;
 };
 
 }} //namespace
