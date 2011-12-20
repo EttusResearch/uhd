@@ -159,7 +159,7 @@ basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     this->get_tx_subtree()->create<std::string>("name").set(
         std::string(str(boost::format("%s - %s")
-            % get_rx_id().to_pp_string()
+            % get_tx_id().to_pp_string()
             % get_subdev_name()
         )));
     this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
