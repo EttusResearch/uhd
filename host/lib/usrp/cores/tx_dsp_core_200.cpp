@@ -60,13 +60,23 @@ public:
     {
         //init the tx control registers
         this->clear();
+        this->set_underflow_policy("next_packet");
     }
 
     void clear(void){
         _iface->poke32(REG_TX_CTRL_CLEAR_STATE, 1); //reset
         _iface->poke32(REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
         _iface->poke32(REG_TX_CTRL_REPORT_SID, _sid);
-        _iface->poke32(REG_TX_CTRL_POLICY, FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+    }
+
+    void set_underflow_policy(const std::string &policy){
+        if (policy == "next_packet"){
+            _iface->poke32(REG_TX_CTRL_POLICY, FLAG_TX_CTRL_POLICY_NEXT_PACKET);
+        }
+        else if (policy == "next_burst"){
+            _iface->poke32(REG_TX_CTRL_POLICY, FLAG_TX_CTRL_POLICY_NEXT_BURST);
+        }
+        else throw uhd::value_error("USRP TX cannot handle requested underflow policy: " + policy);
     }
 
     void set_tick_rate(const double rate){

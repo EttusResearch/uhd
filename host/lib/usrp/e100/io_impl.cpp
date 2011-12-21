@@ -367,6 +367,7 @@ tx_streamer::sptr e100_impl::get_tx_stream(const uhd::stream_args_t &args_){
         const size_t dsp = args.channels[chan_i];
         UHD_ASSERT_THROW(dsp == 0); //always 0
         if (not args.args.has_key("noclear")) _tx_dsp->clear();
+        if (args.args.has_key("underflow_policy")) _tx_dsp->set_underflow_policy(args.args["underflow_policy"]);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
             &zero_copy_if::get_send_buff, _data_transport, _1
         ));

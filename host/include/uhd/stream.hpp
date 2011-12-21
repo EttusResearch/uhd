@@ -78,9 +78,15 @@ struct UHD_API stream_args_t{
     /*!
      * The args parameter is used to pass arbitrary key/value pairs.
      * Possible keys used by args (depends on implementation):
+     *
      * - scalar: an integer scaling factor used with the sc8 wire format.
      * The key/value pair scalar=1024 means that the sample in the DSP
      * was multiplied by 1024 before its upper 8 bits were harvested.
+     *
+     * - underflow_policy: how the TX DSP should recover from underflow.
+     * Possible options are "next_burst" or "next_packet".
+     * In the "next_burst" mode, the DSP drops incoming packets until a new burst is started.
+     * In the "next_packet" mode, the DSP starts transmitting again at the next packet.
      *
      * The following are not implemented, but are listed for conceptual purposes:
      * - function: magnitude or phase/magnitude
