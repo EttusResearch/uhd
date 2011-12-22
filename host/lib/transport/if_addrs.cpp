@@ -51,7 +51,12 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
 
             //correct the bcast address when its same as the gateway
             if (if_addr.inet == if_addr.bcast or sockaddr_to_ip_addr(iter->ifa_broadaddr) == boost::asio::ip::address_v4(0)){
-                if_addr.bcast = boost::asio::ip::address_v4::broadcast(sockaddr_to_ip_addr(iter->ifa_addr), sockaddr_to_ip_addr(iter->ifa_netmask)).to_string();
+                //manually calculate broadcast address
+                //https://svn.boost.org/trac/boost/ticket/5198
+                const boost::uint32_t addr = sockaddr_to_ip_addr(iter->ifa_addr).to_ulong();
+                const boost::uint32_t mask = sockaddr_to_ip_addr(iter->ifa_netmask).to_ulong();
+                const boost::uint32_t bcast = (addr & mask) | ~mask;
+                if_addr.bcast = boost::asio::ip::address_v4(bcast).to_string();
             }
 
             if_addrs.push_back(if_addr);
