@@ -54,6 +54,7 @@ CHECK_CXX_SOURCE_COMPILES("
 IF(HAVE_PTHREAD_SETSCHEDPARAM)
     MESSAGE(STATUS "  Priority scheduling supported through pthread_setschedparam.")
     SET(THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
+    LIBUHD_APPEND_LIBS(pthread)
 ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
     MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
     SET(THREAD_PRIO_DEFS HAVE_WIN_SETTHREADPRIORITY)
