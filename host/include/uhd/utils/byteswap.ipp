@@ -36,7 +36,7 @@
         return _byteswap_uint64(x);
     }
 
-#elif defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 2
+#elif defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 3
 
     UHD_INLINE boost::uint16_t uhd::byteswap(boost::uint16_t x){
         return (x>>8) | (x<<8); //DNE return __builtin_bswap16(x);
