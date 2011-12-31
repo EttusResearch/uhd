@@ -103,6 +103,11 @@ UHD_STATIC_BLOCK(register_e100_device){
     device::register_device(&e100_find, &e100_make);
 }
 
+static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost::assign::map_list_of
+    ("E100", "usrp_e100_fpga_v2.bin")
+    ("E110", "usrp_e110_fpga.bin")
+;
+
 /***********************************************************************
  * Structors
  **********************************************************************/
@@ -119,13 +124,14 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
 
     //determine the model string for this device
     const std::string model = device_addr.get("model", mb_eeprom.get("model", ""));
-    if (model.empty()) throw uhd::runtime_error("unable to determine model");
+    if (not model_to_fpga_file_name.has_key(model)) throw uhd::runtime_error(str(boost::format(
+        "\n"
+        "  The specified model string \"%s\" is not recognized.\n"
+        "  Perhaps the EEPROM is uninitialized, missing, or damaged.\n"
+        "  Or, a monitor is pirating the I2C address of the EEPROM.\n"
+    ) % model));
 
     //extract the fpga path and compute hash
-    static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost::assign::map_list_of
-        ("E100", "usrp_e100_fpga_v2.bin")
-        ("E110", "usrp_e110_fpga.bin")
-    ;
     const std::string default_fpga_file_name = model_to_fpga_file_name[model];
     const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
     const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(e100_fpga_image));
