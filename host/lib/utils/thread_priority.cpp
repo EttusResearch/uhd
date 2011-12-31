@@ -98,9 +98,9 @@ static void check_priority_range(float priority){
 /***********************************************************************
  * Unimplemented API to set priority
  **********************************************************************/
-#ifdef HAVE_LOAD_MODULES_DUMMY
+#ifdef HAVE_THREAD_PRIO_DUMMY
     void uhd::set_thread_priority(float, bool){
         throw uhd::not_implemented_error("set thread priority not implemented");
     }
 
-#endif /* HAVE_LOAD_MODULES_DUMMY */
+#endif /* HAVE_THREAD_PRIO_DUMMY */
