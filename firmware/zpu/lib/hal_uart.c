@@ -108,7 +108,7 @@ hal_uart_getc_noblock(hal_uart_name_t u)
 //  int timeout = 0;
 //  while (((uart_regs[u].rxlevel) == 0) && (timeout++ < HAL_UART_TIMEOUT_MS))
 //    mdelay(1);
-  if(uart_regs[u].rxlevel == 0) return 255;
+  if(uart_regs[u].rxlevel == 0) return -1;
   return uart_regs[u].rxchar;
 }
 

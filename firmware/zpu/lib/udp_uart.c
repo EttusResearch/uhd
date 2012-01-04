@@ -94,8 +94,9 @@ void udp_uart_poll(void){
 
         //read all characters we can without blocking
         for (size_t j = state->len; j < sizeof(_states[0].buf); j++){
-            uint8_t ch = hal_uart_getc_noblock((hal_uart_name_t)i);
-            if (ch == 255) break;
+            int ret = hal_uart_getc_noblock((hal_uart_name_t)i);
+            if (ret == -1) break;
+            char ch = (char) ret;
             if (ch == '\n' || ch == '\r') newline = true;
             state->buf[j] = ch;
             state->len++;

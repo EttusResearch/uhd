@@ -257,8 +257,9 @@ fngets_noblock(hal_uart_name_t u, char * const s, int len)
 {
   int i;
   for(i=0; i < len; i++) {
-      s[i] = (char) hal_uart_getc_noblock(u);
-      if((s[i] == 255) || (s[i] == '\n')) break;
+      int ret = hal_uart_getc_noblock(u);
+      s[i] = (char) ret;
+      if((ret == -1) || (s[i] == '\n')) break;
   }
   s[i] = 0;
 
