@@ -179,18 +179,31 @@ public:
         return rates;
     }
 
-    //uses output clock 6 (cmos) on USRP2 and output clock 5 (cmos) on USRP2+
+    //uses output clock 6 (cmos) on USRP2, output clock 5 (cmos) on N200/N210 r3,
+    //and output clock 5 (lvds) on N200/N210 r4
     void enable_tx_dboard_clock(bool enb){
-        switch(clk_regs.tx_db) {
-        case 5: //USRP2+
+        switch(_iface->get_rev()) {
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
+          _ad9510_regs.power_down_lvds_cmos_out5 = enb? 0 : 1;
+          _ad9510_regs.lvds_cmos_select_out5 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT5_LVDS;
+          _ad9510_regs.output_level_lvds_out5 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT5_1_75MA;
+          break;
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
           _ad9510_regs.power_down_lvds_cmos_out5 = enb? 0 : 1;
           _ad9510_regs.lvds_cmos_select_out5 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT5_CMOS;
           _ad9510_regs.output_level_lvds_out5 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT5_1_75MA;
           break;
-        case 6: //USRP2
+        case usrp2_iface::USRP2_REV3:
+        case usrp2_iface::USRP2_REV4:
           _ad9510_regs.power_down_lvds_cmos_out6 = enb? 0 : 1;
           _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_CMOS;
           _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
+          break;
+
+        default:
+          throw uhd::not_implemented_error("enable_tx_dboard_clock: unknown hardware version");
           break;
         }
 
