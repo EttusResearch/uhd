@@ -273,16 +273,12 @@ void sbx_xcvr::set_tx_ant(const std::string &ant){
 /***********************************************************************
  * Tuning
  **********************************************************************/
-void sbx_xcvr::set_rx_lo_freq(double freq){
-    _rx_lo_freq = db_actual->set_lo_freq(dboard_iface::UNIT_RX, freq);
-}
-
-void sbx_xcvr::set_tx_lo_freq(double freq){
-    _tx_lo_freq = db_actual->set_lo_freq(dboard_iface::UNIT_TX, freq);
-}
-
 double sbx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
-    return db_actual->set_lo_freq(unit, target_freq);
+    const double actual = db_actual->set_lo_freq(unit, target_freq);
+    if (unit == dboard_iface::UNIT_RX) _rx_lo_freq = actual;
+    if (unit == dboard_iface::UNIT_TX) _tx_lo_freq = actual;
+    update_atr();
+    return actual;
 }
 
 sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {

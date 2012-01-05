@@ -139,8 +139,6 @@ protected:
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _tx_ant, _rx_ant;
 
-    void set_rx_lo_freq(double freq);
-    void set_tx_lo_freq(double freq);
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
     double set_rx_gain(double gain, const std::string &name);

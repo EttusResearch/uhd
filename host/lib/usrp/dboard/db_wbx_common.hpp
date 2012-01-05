@@ -101,14 +101,6 @@ protected:
     virtual void set_rx_enabled(bool enb);
 
     /*!
-     * Set the LO frequency for the particular dboard unit.
-     * \param unit which unit rx or tx
-     * \param target_freq the desired frequency in Hz
-     * \return the actual frequency in Hz
-     */
-    virtual double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
-
-    /*!
      * Get the lock detect status of the LO.
      *
      * This operation is identical for all versions of the WBX board.

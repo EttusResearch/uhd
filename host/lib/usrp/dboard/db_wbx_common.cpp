@@ -146,10 +146,6 @@ double wbx_base::set_rx_gain(double gain, const std::string &name){
 /***********************************************************************
  * Tuning
  **********************************************************************/
-double wbx_base::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
-    return db_actual->set_lo_freq(unit, target_freq);
-}
-
 sensor_value_t wbx_base::get_locked(dboard_iface::unit_t unit){
     const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
     return sensor_value_t("LO", locked, "locked", "unlocked");
