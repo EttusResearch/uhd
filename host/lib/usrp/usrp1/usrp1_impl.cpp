@@ -237,7 +237,8 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     }
     UHD_MSG(status) << boost::format("Using FPGA clock rate of %fMHz...") % (_master_clock_rate/1e6) << std::endl;
     _tree->create<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&usrp1_impl::update_tick_rate, this, _1));
+        .subscribe(boost::bind(&usrp1_impl::update_tick_rate, this, _1))
+        .set(_master_clock_rate);
 
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
