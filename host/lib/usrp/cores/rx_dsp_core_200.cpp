@@ -216,7 +216,9 @@ public:
         }
         else if (format == "sc8"){
             format_word = (1 << 18);
-            _fxpt_scale_adj = 32767./scale;
+            _fxpt_scale_adj = 127. * scale;
+            _fxpt_scale_adj /= 256; //engine 16to8 drops lower 8 bits
+            _fxpt_scale_adj /= 4; //scale operation 2-bit pad
         }
         else throw uhd::value_error("USRP RX cannot handle requested wire format: " + format);
 
