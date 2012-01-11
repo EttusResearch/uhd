@@ -208,8 +208,8 @@ dboard_manager_impl::dboard_manager_impl(
             "The daughterboard cannot operate until this error is resolved.\n"
         ) << e.what() << std::endl;
         //clean up the stuff added by the call above
-        subtree->remove("rx_frontends");
-        subtree->remove("tx_frontends");
+        if (subtree->exists("rx_frontends")) subtree->remove("rx_frontends");
+        if (subtree->exists("tx_frontends")) subtree->remove("tx_frontends");
         this->init(dboard_id_t::none(), dboard_id_t::none(), subtree);
     }
 }
