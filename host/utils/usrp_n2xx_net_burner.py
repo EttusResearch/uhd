@@ -282,7 +282,7 @@ class burner_socket(object):
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
-        if(hw_rev != 0): print("Hardware type: %s" % n2xx_revs[hw_rev][0])
+        if n2xx_revs.has_key(hw_rev): print("Hardware type: %s" % n2xx_revs[hw_rev][0])
         print("Flash size: %i\nSector size: %i\n" % (flash_size, sector_size))
 
         if fpga:
