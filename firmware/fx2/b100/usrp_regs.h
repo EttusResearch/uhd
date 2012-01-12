@@ -41,8 +41,6 @@
 #define bmALTERA_NCONFIG	bmBIT1
 #define bmALTERA_DATA0		bmBIT3
 #define bmALTERA_NSTATUS	bmBIT4
-#define bmRESET_FPGA_FIFOS  bmBIT7
-
 
 #define	bmALTERA_BITS		(bmALTERA_DCLK			\
 				 | bmALTERA_NCONFIG		\
@@ -64,7 +62,6 @@
 sbit at PORT_A_ADDR+0 bitALTERA_DCLK;	// 0x80 is the bit address of PORT A
 sbit at PORT_A_ADDR+1 bitALTERA_NCONFIG;
 sbit at PORT_A_ADDR+3 bitALTERA_DATA0;
-sbit at PORT_A_ADDR+6 bitSHORT_PACKET_SIGNAL;
 
 sbit at PORT_C_ADDR+7 bitALTERA_CONF_DONE;
 
@@ -101,30 +98,5 @@ sbit at PORT_C_ADDR+7 bitALTERA_CONF_DONE;
 
 #define	bmPORT_E_OUTPUTS	(0)
 #define	bmPORT_E_INITIAL	(0)
-
-/*
- * FPGA output lines that are tied to FX2 RDYx inputs.
- * These are readable using GPIFREADYSTAT.
- */
-//#define	bmFPGA_HAS_SPACE		bmBIT0	// usbrdy[0] has room for 512 byte packet
-//#define	bmFPGA_PKT_AVAIL		bmBIT1	// usbrdy[1] has >= 512 bytes available
-
-#define bmDATA_EMPTY            bmBIT0 //data output FIFO has no data ready
-#define bmDATA_FIFO_FULL        bmBIT1 //data input FIFO is full
-#define bmCTRL_EMPTY            bmBIT2 //control output FIFO has no data ready
-#define bmCTRL_FIFO_FULL        bmBIT3 //control input FIFO is full
-
-// #define	bmTX_UNDERRUN			bmBIT2  // usbrdy[2] D/A ran out of data
-// #define	bmRX_OVERRUN			bmBIT3	// usbrdy[3] A/D ran out of buffer
-
-/*
- * FPGA input lines that are tied to the FX2 CTLx outputs.
- *
- * These are controlled by the GPIF microprogram...
- */
-// WE					bmBIT0	// usbctl[0] write enable
-// RE					bmBIT1	// usbctl[1] read enable
-// OE					bmBIT2	// usbctl[2] output enable
-// EP                   bmBIT3  // usbctl[3] endpoint select (data/ctrl)
 
 #endif /* _USRP_REV1_REGS_H_ */
