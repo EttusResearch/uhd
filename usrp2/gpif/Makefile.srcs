@@ -11,4 +11,5 @@ gpif_wr.v \
 gpif_rd.v \
 packet_reframer.v \
 packet_splitter.v \
+slave_fifo.v \
 ))

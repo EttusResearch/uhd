@@ -23,8 +23,8 @@ module B100
    output [2:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
 
    // GPIF
-   inout [15:0] GPIF_D, input [3:0] GPIF_CTL, output [3:0] GPIF_RDY,
-   input [1:0] GPIF_ADR, output GPIF_CS, output GPIF_SLOE, output GPIF_PKTEND,
+   inout [15:0] GPIF_D, input [3:0] GPIF_CTL, output GPIF_SLOE, 
+   output [1:0] GPIF_ADR, output GPIF_SLWR, output GPIF_SLRD, output GPIF_PKTEND,
    input IFCLK,
    
    inout SDA_FPGA, inout SCL_FPGA, // I2C
@@ -156,9 +156,10 @@ module B100
    u1plus_core u1p_c(.clk_fpga(clk_fpga), .rst_fpga(reset),
 		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
 		     .debug_txd(), .debug_rxd(1'b1),
-		     .gpif_d(GPIF_D), .gpif_ctl(GPIF_CTL), .gpif_rdy(GPIF_RDY),
-		     .gpif_misc({GPIF_CS,GPIF_SLOE,GPIF_PKTEND}),
-		     .gpif_clk(IFCLK),
+		     
+		     .gpif_d(GPIF_D), .gpif_ctl(GPIF_CTL), .gpif_pktend(GPIF_PKTEND),
+		     .gpif_sloe(GPIF_SLOE), .gpif_slwr(GPIF_SLWR), .gpif_slrd(GPIF_SLRD),
+		     .gpif_fifoadr(GPIF_ADR), .gpif_clk(IFCLK),
 
 		     .db_sda(SDA_FPGA), .db_scl(SCL_FPGA),
 		     .sclk(sclk), .sen({SEN_CODEC,SEN_TX_DB,SEN_RX_DB}), .mosi(mosi), .miso(miso),
