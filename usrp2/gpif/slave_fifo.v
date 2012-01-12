@@ -20,7 +20,7 @@
 //this is a FIFO master interface for the FX2 in "slave fifo" mode.
 
 module slave_fifo
-  #(parameter TXFIFOSIZE = 11, parameter RXFIFOSIZE = 11)
+  #(parameter TXFIFOSIZE = 12, parameter RXFIFOSIZE = 12)
    (// GPIF signals
     input gpif_clk, input gpif_rst,
     inout [15:0] gpif_d,
@@ -243,7 +243,7 @@ module slave_fifo
      else
        data_tx_dst_rdy <= wr_fifo_space >= 256;
 
-   fifo_cascade #(.WIDTH(18), .SIZE(10)) wr_fifo
+   fifo_cascade #(.WIDTH(18), .SIZE(12)) wr_fifo
      (.clk(gpif_clk), .reset(gpif_rst), .clear(0),
       .datain({eop,sop,gpif_d}), .src_rdy_i(data_tx_src_rdy), .dst_rdy_o(/*data_tx_dst_rdy*/), .space(wr_fifo_space),
       .dataout(data_tx_int), .src_rdy_o(tx_src_rdy_int), .dst_rdy_i(tx_dst_rdy_int), .occupied());
@@ -308,7 +308,7 @@ module slave_fifo
       .arst(fifo_rst));
 
    //rd_fifo buffers writes to the 2clock fifo above
-   fifo_cascade #(.WIDTH(19), .SIZE(12)) rd_fifo
+   fifo_cascade #(.WIDTH(19), .SIZE(RXFIFOSIZE)) rd_fifo
      (.clk(~gpif_clk), .reset(gpif_rst), .clear(0),
       .datain(data_rx_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int), .space(rxfifospace),
       .dataout(gpif_d_out_data), .src_rdy_o(data_rx_src_rdy), .dst_rdy_i(data_rx_dst_rdy), .occupied());

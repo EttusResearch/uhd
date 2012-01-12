@@ -37,8 +37,8 @@ module u1plus_core
    input pps_in
    );
 
-   localparam TXFIFOSIZE = 11;
-   localparam RXFIFOSIZE = 11;
+   localparam TXFIFOSIZE = 12;
+   localparam RXFIFOSIZE = 12;
 
    // 64 total regs in address space
    localparam SR_RX_CTRL0 = 0;       // 9 regs (+0 to +8)
