@@ -72,7 +72,7 @@ public:
 
     void commit(size_t len){
         if (_msb.get() == NULL) return;
-        _msb->commit(next_boundary(len, _boundary));
+        _msb->commit(len);
         _queue.push_with_haste(this);
         _msb.reset();
     }
@@ -133,7 +133,7 @@ public:
             managed_recv_buffer::sptr recv_buff; //the buffer to be returned to the user
             
             recv_buff = wmrb->get_new(_last_recv_buff, mem, len);
-            _last_recv_offset = next_boundary(_last_recv_offset + len, _usb_frame_boundary);
+            _last_recv_offset = next_boundary(_last_recv_offset + len, 4);
             
             //check if this receive buffer has been exhausted
             if (_last_recv_offset >= _last_recv_buff->size()) {
