@@ -223,15 +223,6 @@ ADD_SUBDIRECTORY(usrp_e_utils)
 ########################################################################
 # Create Pkg Config File
 ########################################################################
-#set other pkg-config configuration variables
-IF(ENABLE_USB)
-    LIST(APPEND UHD_PC_REQUIRES "libusb-1.0")
-ENDIF()
-
-IF(ENABLE_ORC)
-    LIST(APPEND UHD_PC_REQUIRES "orc-0.4")
-ENDIF()
-
 FOREACH(inc ${Boost_INCLUDE_DIRS})
     LIST(APPEND UHD_PC_CFLAGS "-I${inc}")
 ENDFOREACH(inc)
