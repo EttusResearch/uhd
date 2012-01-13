@@ -126,10 +126,10 @@ module slave_fifo
              state <= STATE_DATA_TX_SLOE;
            else if(data_rx_src_rdy & ~FX2_DF)
              state <= STATE_DATA_RX_ADR;
-           else if(~data_rx_src_rdy & ~dsp_rx_run & pktend_latch)
+           else if(~data_rx_src_rdy & ~dsp_rx_run & pktend_latch & ~FX2_DF)
              state <= STATE_PKTEND;
              
-           if(dsp_rx_run)
+           if(data_rx_src_rdy)
              pktend_latch <= 1;
             end
 
@@ -456,12 +456,12 @@ module slave_fifo
    // ////////////////////////////////////////////
    //    DEBUG
    
-   //assign debug0 = { data_tx_dst_rdy, refr_state, gpif_ctl[3:0], refr_eof, slrd, slwr, pktend, fifoadr[1:0], state[3:0], refr_len[15:0]};
-   assign debug0 = { data_tx_src_rdy, data_tx_dst_rdy, tx_src_rdy_int, tx_dst_rdy_int, 
-                     tx19_src_rdy, tx19_dst_rdy, refr_src_rdy, refr_dst_rdy, 
-                     tx36_src_rdy, tx36_dst_rdy,
-                     gpif_ctl[3:0], fifoadr[1:0], 
-                     wr_fifo_space[15:0]};
+   assign debug0 = { pktend_latch, data_rx_src_rdy, gpif_ctl[3:0], sloe, slrd, slwr, pktend, fifoadr[1:0], state[3:0], gpif_d[15:0]};
+   //assign debug0 = { data_tx_src_rdy, data_tx_dst_rdy, tx_src_rdy_int, tx_dst_rdy_int, 
+   //                  tx19_src_rdy, tx19_dst_rdy, refr_src_rdy, refr_dst_rdy, 
+   //                  tx36_src_rdy, tx36_dst_rdy,
+   //                  gpif_ctl[3:0], fifoadr[1:0], 
+   //                  wr_fifo_space[15:0]};
    assign debug1 = { 16'b0, transfer_count[7:0], ctrl_rx_src_rdy, ctrl_tx_dst_rdy, data_rx_src_rdy,
                      data_tx_dst_rdy, ctrl_tx_src_rdy, ctrl_rx_dst_rdy, data_tx_src_rdy, data_rx_dst_rdy};
 endmodule // slave_fifo
