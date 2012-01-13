@@ -51,7 +51,7 @@ ENDIF(ENABLE_USB)
 IF(LINUX AND ENABLE_USB)
     INSTALL(FILES
         uhd-usrp.rules
-        DESTINATION ${PKG_DATA_DIR}/utils
+        DESTINATION ${PKG_LIB_DIR}/utils
         COMPONENT utilities
     )
 ENDIF(LINUX AND ENABLE_USB)
@@ -61,7 +61,7 @@ FOREACH(util_source ${util_share_sources})
     GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
     ADD_EXECUTABLE(${util_name} ${util_source})
     TARGET_LINK_LIBRARIES(${util_name} uhd)
-    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/utils COMPONENT utilities)
+    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 ENDFOREACH(util_source)
 
 IF(ENABLE_USRP2)
@@ -72,7 +72,7 @@ IF(ENABLE_USRP2)
         )
         INSTALL(FILES
             ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
-            DESTINATION ${PKG_DATA_DIR}/utils
+            DESTINATION ${PKG_LIB_DIR}/utils
             COMPONENT utilities
         )
     ENDIF(WIN32 AND UHD_RELEASE_MODE)
@@ -82,7 +82,7 @@ IF(ENABLE_USRP2)
         usrp2_card_burner_gui.py
         usrp_n2xx_net_burner.py
         usrp_n2xx_net_burner_gui.py
-        DESTINATION ${PKG_DATA_DIR}/utils
+        DESTINATION ${PKG_LIB_DIR}/utils
         COMPONENT utilities
     )
 ENDIF(ENABLE_USRP2)

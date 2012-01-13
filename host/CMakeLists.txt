@@ -42,6 +42,9 @@ SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib${LIB_SUFFIX})
 SET(INCLUDE_DIR include)
 SET(PKG_DATA_DIR share/uhd)
+IF(NOT DEFINED PKG_LIB_DIR)
+    SET(PKG_LIB_DIR ${PKG_DATA_DIR})
+ENDIF()
 SET(PKG_DOC_DIR share/doc/uhd)
 
 ########################################################################

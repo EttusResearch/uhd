@@ -36,7 +36,7 @@ IF(ENABLE_USRP_E_UTILS)
         GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
         ADD_EXECUTABLE(${util_name} ${util_source})
         TARGET_LINK_LIBRARIES(${util_name} ${Boost_LIBRARIES})
-        INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_DATA_DIR}/usrp_e_utils)
+        INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/usrp_e_utils)
     ENDFOREACH(util_source)
 
 ENDIF(ENABLE_USRP_E_UTILS)
