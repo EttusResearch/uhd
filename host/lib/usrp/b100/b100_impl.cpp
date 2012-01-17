@@ -44,6 +44,7 @@ const boost::uint16_t B100_VENDOR_ID  = 0x2500;
 const boost::uint16_t B100_PRODUCT_ID = 0x0002;
 const boost::uint16_t FX2_VENDOR_ID    = 0x04b4;
 const boost::uint16_t FX2_PRODUCT_ID   = 0x8613;
+static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
 /***********************************************************************
  * Discovery
@@ -102,23 +103,30 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     vid = B100_VENDOR_ID;
     pid = B100_PRODUCT_ID;
 
-    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
-        usb_control::sptr control;
-        try{control = usb_control::make(handle, 0);}
-        catch(const uhd::exception &){continue;} //ignore claimed
+    const boost::system_time timeout_time = boost::get_system_time() + REENUMERATION_TIMEOUT_MS;
 
-        fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
-        const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, mboard_eeprom_t::MAP_B100);
-        device_addr_t new_addr;
-        new_addr["type"] = "b100";
-        new_addr["name"] = mb_eeprom["name"];
-        new_addr["serial"] = handle->get_serial();
-        //this is a found b100 when the hint serial and name match or blank
-        if (
-            (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
-            (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
-        ){
-            b100_addrs.push_back(new_addr);
+    //search for the device until found or timeout
+    while (boost::get_system_time() < timeout_time and b100_addrs.empty())
+    {
+        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid))
+        {
+            usb_control::sptr control;
+            try{control = usb_control::make(handle, 0);}
+            catch(const uhd::exception &){continue;} //ignore claimed
+
+            fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
+            const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, mboard_eeprom_t::MAP_B100);
+            device_addr_t new_addr;
+            new_addr["type"] = "b100";
+            new_addr["name"] = mb_eeprom["name"];
+            new_addr["serial"] = handle->get_serial();
+            //this is a found b100 when the hint serial and name match or blank
+            if (
+                (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
+                (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
+            ){
+                b100_addrs.push_back(new_addr);
+            }
         }
     }
 
