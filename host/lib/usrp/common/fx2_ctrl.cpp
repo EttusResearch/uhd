@@ -22,6 +22,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/cstdint.hpp>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -35,6 +36,8 @@ using namespace uhd::usrp;
 
 static const bool load_img_msg = true;
 
+typedef boost::uint32_t hash_type;
+
 /***********************************************************************
  * Helper Functions
  **********************************************************************/
@@ -44,7 +47,7 @@ static const bool load_img_msg = true;
  * \param filename file used to generate hash value
  * \return hash value in a size_t type
  */
-static size_t generate_hash(const char *filename)
+static hash_type generate_hash(const char *filename)
 {
     std::ifstream file(filename);
     if (not file){
@@ -63,7 +66,7 @@ static size_t generate_hash(const char *filename)
     }
 
     file.close();
-    return hash;
+    return hash_type(hash);
 }
 
 
@@ -140,9 +143,9 @@ public:
     {
         const char *filename = filestring.c_str();
 
-        size_t hash = generate_hash(filename);
+        hash_type hash = generate_hash(filename);
 
-        size_t loaded_hash; usrp_get_firmware_hash(loaded_hash);
+        hash_type loaded_hash; usrp_get_firmware_hash(loaded_hash);
 
         if (not force and (hash == loaded_hash)) return;
 
@@ -217,9 +220,9 @@ public:
     {
         const char *filename = filestring.c_str();
 
-        size_t hash = generate_hash(filename);
+        hash_type hash = generate_hash(filename);
 
-        size_t loaded_hash; usrp_get_fpga_hash(loaded_hash);
+        hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
 
         if (hash == loaded_hash) return;
         const int ep0_size = 64;
@@ -308,32 +311,32 @@ public:
     }
 
 
-    void usrp_get_firmware_hash(size_t &hash)
+    void usrp_get_firmware_hash(hash_type &hash)
     {
         UHD_ASSERT_THROW(usrp_control_read(0xa0, USRP_HASH_SLOT_0_ADDR, 0,
-                                 (unsigned char*) &hash, sizeof(size_t)) >= 0);
+                                 (unsigned char*) &hash, sizeof(hash)) >= 0);
     }
 
 
-    void usrp_set_firmware_hash(size_t hash)
+    void usrp_set_firmware_hash(hash_type hash)
     {
         UHD_ASSERT_THROW(usrp_control_write(0xa0, USRP_HASH_SLOT_0_ADDR, 0,
-                                  (unsigned char*) &hash, sizeof(size_t)) >= 0);
+                                  (unsigned char*) &hash, sizeof(hash)) >= 0);
 
     }
 
 
-    void usrp_get_fpga_hash(size_t &hash)
+    void usrp_get_fpga_hash(hash_type &hash)
     {
         UHD_ASSERT_THROW(usrp_control_read(0xa0, USRP_HASH_SLOT_1_ADDR, 0,
-                                 (unsigned char*) &hash, sizeof(size_t)) >= 0);
+                                 (unsigned char*) &hash, sizeof(hash)) >= 0);
     }
 
 
-    void usrp_set_fpga_hash(size_t hash)
+    void usrp_set_fpga_hash(hash_type hash)
     {
         UHD_ASSERT_THROW(usrp_control_write(0xa0, USRP_HASH_SLOT_1_ADDR, 0,
-                                  (unsigned char*) &hash, sizeof(size_t)) >= 0);
+                                  (unsigned char*) &hash, sizeof(hash)) >= 0);
     }
 
     void usrp_tx_enable(bool on)
