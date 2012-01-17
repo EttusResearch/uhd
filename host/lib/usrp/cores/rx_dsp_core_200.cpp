@@ -20,6 +20,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/thread/thread.hpp> //thread sleep
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <algorithm>
@@ -65,6 +66,7 @@ public:
             stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
             stream_cmd.num_samps = 1;
             issue_stream_command(stream_cmd);
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //lets lingering pkt propagate
         }
 
         this->clear();

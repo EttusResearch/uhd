@@ -116,7 +116,10 @@ public:
      * \param xport_chan which transport channel
      * \param get_buff the getter function
      */
-    void set_xport_chan_get_buff(const size_t xport_chan, const get_buff_type &get_buff){
+    void set_xport_chan_get_buff(const size_t xport_chan, const get_buff_type &get_buff, const bool flush = false){
+        if (flush){
+            while (get_buff(0.0));
+        }
         _props.at(xport_chan).get_buff = get_buff;
     }
 

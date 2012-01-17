@@ -312,7 +312,7 @@ rx_streamer::sptr e100_impl::get_rx_stream(const uhd::stream_args_t &args_){
         _rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
             &recv_packet_demuxer::get_recv_buff, _io_impl->demuxer, dsp, _1
-        ));
+        ), true /*flush*/);
         my_streamer->set_overflow_handler(chan_i, boost::bind(
             &rx_dsp_core_200::handle_overflow, _rx_dsps[dsp]
         ));

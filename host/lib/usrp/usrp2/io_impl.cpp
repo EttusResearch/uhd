@@ -419,7 +419,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
                 _mbc[mb].rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
-                ));
+                ), true /*flush*/);
                 _mbc[mb].rx_streamers[dsp] = my_streamer; //store weak pointer
                 break;
             }
