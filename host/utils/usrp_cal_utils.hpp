@@ -155,7 +155,7 @@ static void store_results(
     fs::create_directory(cal_data_path);
     cal_data_path = cal_data_path / "cal";
     fs::create_directory(cal_data_path);
-    cal_data_path = cal_data_path / str(boost::format("%s_%s_cal_v0.1_%s.csv") % xx % what % db_eeprom.serial);
+    cal_data_path = cal_data_path / str(boost::format("%s_%s_cal_v0.2_%s.csv") % xx % what % db_eeprom.serial);
     if (fs::exists(cal_data_path)){
         fs::rename(cal_data_path, cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
     }

@@ -166,7 +166,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         const double bb_imag_freq = -bb_tone_freq;
 
         //capture initial uncorrected value
-        usrp->set_rx_iq_balance(std::polar<double>(1.0, 0.0));
+        usrp->set_rx_iq_balance(0.0);
         capture_samples(usrp, rx_stream, buff, nsamps);
         const double initial_suppression = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate) - compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);
 
@@ -184,7 +184,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             for (double phase_corr = phase_corr_start; phase_corr <= phase_corr_stop + phase_corr_step/2; phase_corr += phase_corr_step){
             for (double ampl_corr = ampl_corr_start; ampl_corr <= ampl_corr_stop + ampl_corr_step/2; ampl_corr += ampl_corr_step){
 
-                const std::complex<double> correction = std::polar(ampl_corr+1, phase_corr*tau);
+                const std::complex<double> correction(ampl_corr, phase_corr);
                 usrp->set_rx_iq_balance(correction);
 
                 //receive some samples
