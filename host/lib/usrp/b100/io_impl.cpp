@@ -211,7 +211,8 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
     const size_t bpp = 2048 - hdr_size; //limited by FPGA pkt buffer size
-    const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
+    const size_t bpi = convert::get_bytes_per_item(args.otw_format);
+    const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
 
     //make the new streamer given the samples per packet
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);

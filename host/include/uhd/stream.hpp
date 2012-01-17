@@ -88,6 +88,11 @@ struct UHD_API stream_args_t{
      * In the "next_burst" mode, the DSP drops incoming packets until a new burst is started.
      * In the "next_packet" mode, the DSP starts transmitting again at the next packet.
      *
+     * - spp: (samples per packet) controls the size of RX packets.
+     * When not specified, the packets are always maximum frame size.
+     * Users should specify this option to request smaller than default
+     * packets, probably with the intention of reducing packet latency.
+     *
      * The following are not implemented, but are listed for conceptual purposes:
      * - function: magnitude or phase/magnitude
      * - units: numeric units like counts or dBm
