@@ -297,11 +297,7 @@ typedef struct {
 
 // --- VITA RX CTRL regs ---
 typedef struct {
-  // The following 3 are logically a single command register.
-  // They are clocked into the underlying fifo when time_ticks is written.
-  volatile uint32_t	cmd;		// {now, chain, num_samples(30)
-  volatile uint32_t	time_secs;
-  volatile uint32_t	time_ticks;
+  volatile uint32_t	_pad[3];
   volatile uint32_t	clear;
 } sr_rx_ctrl_t;
 
