@@ -302,6 +302,7 @@ typedef struct {
   volatile uint32_t	cmd;		// {now, chain, num_samples(30)
   volatile uint32_t	time_secs;
   volatile uint32_t	time_ticks;
+  volatile uint32_t	clear;
 } sr_rx_ctrl_t;
 
 #define sr_rx_ctrl0 ((sr_rx_ctrl_t *) _SR_ADDR(SR_RX_CTRL0))

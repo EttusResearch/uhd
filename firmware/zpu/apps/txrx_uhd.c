@@ -54,23 +54,19 @@ static void handle_udp_data_packet(
     //handle ICMP destination unreachable
     if (payload == NULL) switch(src.port){
     case USRP2_UDP_RX_DSP0_PORT:
-        //the end continuous streaming command
-        sr_rx_ctrl0->cmd = 1 << 31 | 1 << 28; //no samples now
-        sr_rx_ctrl0->time_secs = 0;
-        sr_rx_ctrl0->time_ticks = 0; //latch the command
-        break;
+        //reset dsp to stop streaming
+        sr_rx_ctrl0->clear = 1;
+        return;
 
     case USRP2_UDP_RX_DSP1_PORT:
-        //the end continuous streaming command
-        sr_rx_ctrl1->cmd = 1 << 31 | 1 << 28; //no samples now
-        sr_rx_ctrl1->time_secs = 0;
-        sr_rx_ctrl1->time_ticks = 0; //latch the command
-        break;
+        //reset dsp to stop streaming
+        sr_rx_ctrl1->clear = 1;
+        return;
 
     case USRP2_UDP_TX_DSP0_PORT:
         //end async update packets per second
         sr_tx_ctrl->cyc_per_up = 0;
-        break;
+        return;
 
     default: return;
     }
