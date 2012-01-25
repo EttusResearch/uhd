@@ -287,7 +287,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(xcvr_antennas);
     this->get_tx_subtree()->create<std::string>("connection")
-        .set("IQ");
+        .set("QI");
     this->get_tx_subtree()->create<bool>("enabled")
         .set(true); //always enabled
     this->get_tx_subtree()->create<bool>("use_lo_offset")
