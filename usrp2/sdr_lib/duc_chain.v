@@ -15,13 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+//! The USRP digital up-conversion chain
 
-module dsp_core_tx
+module duc_chain
   #(parameter BASE=0)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   output [23:0] tx_i, output [23:0] tx_q,
+   output [23:0] dac_i,
+   output [23:0] dac_q,
 
    // To tx_control
    input [31:0] sample,

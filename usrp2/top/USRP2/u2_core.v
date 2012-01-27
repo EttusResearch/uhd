@@ -564,10 +564,10 @@ module u2_core
    always @(posedge dsp_clk)
      run_rx0_d1 <= run_rx0;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
+   ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_i(adc_i),.adc_ovf_i(adc_ovf_a),.adc_q(adc_q),.adc_ovf_q(adc_ovf_b),
+      .adc_i(adc_i),.adc_q(adc_q),
       .sample(sample_rx0), .run(run_rx0_d1), .strobe(strobe_rx0),
       .debug() );
 
@@ -592,10 +592,10 @@ module u2_core
    always @(posedge dsp_clk)
      run_rx1_d1 <= run_rx1;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
+   ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_i(adc_i),.adc_ovf_i(adc_ovf_a),.adc_q(adc_q),.adc_ovf_q(adc_ovf_b),
+      .adc_i(adc_i),.adc_q(adc_q),
       .sample(sample_rx1), .run(run_rx1_d1), .strobe(strobe_rx1),
       .debug() );
 
@@ -648,8 +648,10 @@ module u2_core
 	.debug2(debug_extfifo2) );
 
    wire [23:0] 	 tx_i, tx_q;
+   wire [31:0]   sample_tx;
+   wire strobe_tx;
    
-   vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
+   vita_tx_chain #(.BASE(SR_TX_CTRL),
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
 		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
 		   .DSP_NUMBER(0))
@@ -659,9 +661,16 @@ module u2_core
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
-      .tx_i(tx_i),.tx_q(tx_q),
+      .sample(sample_tx), .strobe(strobe_tx),
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
+
+   duc_chain #(.BASE(SR_TX_DSP)) duc_chain
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .dac_i(tx_i),.dac_q(tx_q),
+      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+      .debug() );
 
    tx_frontend #(.BASE(SR_TX_FRONT)) tx_frontend
      (.clk(dsp_clk), .rst(dsp_rst),

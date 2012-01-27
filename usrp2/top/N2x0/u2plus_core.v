@@ -576,7 +576,7 @@ module u2plus_core
    always @(posedge dsp_clk)
      run_rx0_d1 <= run_rx0;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
+   ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_i(adc_i),.adc_ovf_i(adc_ovf_a),.adc_q(adc_q),.adc_ovf_q(adc_ovf_b),
@@ -604,7 +604,7 @@ module u2plus_core
    always @(posedge dsp_clk)
      run_rx1_d1 <= run_rx1;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
+   ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_i(adc_i),.adc_ovf_i(adc_ovf_a),.adc_q(adc_q),.adc_ovf_q(adc_ovf_b),

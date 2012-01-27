@@ -15,14 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+//! The USRP digital down-conversion chain
 
-module dsp_core_rx
+module ddc_chain
   #(parameter BASE = 160)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   input [23:0] adc_i, input adc_ovf_i,
-   input [23:0] adc_q, input adc_ovf_q,
+   input [23:0] adc_i,
+   input [23:0] adc_q,
    
    output [31:0] sample,
    input run,
@@ -141,4 +142,4 @@ module dsp_core_rx
    
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_hb1, strobe_hb2};
    
-endmodule // dsp_core_rx
+endmodule // ddc_chain

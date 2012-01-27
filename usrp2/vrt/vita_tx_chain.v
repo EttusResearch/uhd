@@ -17,8 +17,7 @@
 
 
 module vita_tx_chain
-  #(parameter BASE_CTRL=0,
-    parameter BASE_DSP=0,
+  #(parameter BASE=0,
     parameter REPORT_ERROR=0,
     parameter DO_FLOW_CONTROL=0,
     parameter PROT_ENG_FLAGS=0,
@@ -29,7 +28,7 @@ module vita_tx_chain
     input [63:0] vita_time,
     input [35:0] tx_data_i, input tx_src_rdy_i, output tx_dst_rdy_o,
     output [35:0] err_data_o, output err_src_rdy_o, input err_dst_rdy_i,
-    output [23:0] tx_i, output [23:0] tx_q,
+    output [31:0] sample, input strobe,
     output underrun, output run,
     output [31:0] debug);
 
@@ -39,7 +38,6 @@ module vita_tx_chain
    wire [FIFOWIDTH-1:0] tx1_data;
    wire 		tx1_src_rdy, tx1_dst_rdy;
    wire 		clear_vita;
-   wire [31:0] 		sample_tx;
    wire [31:0] 		streamid, message;
    wire 		trigger, sent;
    wire [31:0] 		debug_vtc, debug_vtd, debug_tx_dsp;
@@ -48,20 +46,19 @@ module vita_tx_chain
    wire [31:0] 		error_code;
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
-   wire 		strobe_tx;
    
    assign underrun = error;
    assign message = error_code;
    
-   setting_reg #(.my_addr(BASE_CTRL+1)) sr
+   setting_reg #(.my_addr(BASE+1)) sr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(clear_vita));
 
-   setting_reg #(.my_addr(BASE_CTRL+2), .at_reset(0)) sr_streamid
+   setting_reg #(.my_addr(BASE+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed(clear_seqnum));
 
-   vita_tx_deframer #(.BASE(BASE_CTRL), 
+   vita_tx_deframer #(.BASE(BASE), 
 		      .MAXCHAN(MAXCHAN), 
 		      .USE_TRANS_HEADER(USE_TRANS_HEADER)) 
    vita_tx_deframer
@@ -72,20 +69,13 @@ module vita_tx_chain
       .current_seqnum(current_seqnum),
       .debug(debug_vtd) );
 
-   vita_tx_control #(.BASE(BASE_CTRL), .WIDTH(32*MAXCHAN)) vita_tx_control
+   vita_tx_control #(.BASE(BASE), .WIDTH(32*MAXCHAN)) vita_tx_control
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .error(error), .ack(ack), .error_code(error_code),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
-      .sample(sample_tx), .run(run), .strobe(strobe_tx), .packet_consumed(packet_consumed),
+      .sample(sample), .run(run), .strobe(strobe), .packet_consumed(packet_consumed),
       .debug(debug_vtc) );
-   
-   dsp_core_tx #(.BASE(BASE_DSP)) dsp_core_tx
-     (.clk(clk),.rst(reset),
-      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .sample(sample_tx), .run(run), .strobe(strobe_tx),
-      .tx_i(tx_i),.tx_q(tx_q),
-      .debug(debug_tx_dsp) );
 
    wire [35:0] 		flow_data, err_data_int;
    wire 		flow_src_rdy, flow_dst_rdy, err_src_rdy_int, err_dst_rdy_int;
@@ -96,7 +86,7 @@ module vita_tx_chain
       .streamid(streamid), .vita_time(vita_time), .message(32'd0),
       .seqnum(current_seqnum),
       .data_o(flow_data), .src_rdy_o(flow_src_rdy), .dst_rdy_i(flow_dst_rdy));
-   trigger_context_pkt #(.BASE(BASE_CTRL)) trigger_context_pkt
+   trigger_context_pkt #(.BASE(BASE)) trigger_context_pkt
      (.clk(clk), .reset(reset), .clear(clear_vita),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .packet_consumed(packet_consumed), .trigger(trigger));

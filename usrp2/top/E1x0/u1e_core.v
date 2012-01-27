@@ -160,7 +160,7 @@ module u1e_core
    wire [35:0] 	 vita_rx_data0;
    wire 	 vita_rx_src_rdy0, vita_rx_dst_rdy0;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP0)) dsp_core_rx0
+   ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_i(adc_i),.adc_ovf_i(0),.adc_q(adc_q),.adc_ovf_q(0),
@@ -183,7 +183,7 @@ module u1e_core
    wire [35:0] 	 vita_rx_data1;
    wire 	 vita_rx_src_rdy1, vita_rx_dst_rdy1;
    
-   dsp_core_rx #(.BASE(SR_RX_DSP1)) dsp_core_rx1
+   ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_i(adc_i),.adc_ovf_i(0),.adc_q(adc_q),.adc_ovf_q(0),

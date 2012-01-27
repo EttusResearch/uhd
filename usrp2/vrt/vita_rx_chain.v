@@ -23,9 +23,10 @@ module vita_rx_chain
     parameter PROT_ENG_FLAGS=1)
    (input clk, input reset, input clear,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
-    input [63:0] vita_time, output overrun,
-    input [31:0] sample, output run, input strobe,
+    input [63:0] vita_time,
+    input [31:0] sample, input strobe,
     output [35:0] rx_data_o, output rx_src_rdy_o, input rx_dst_rdy_i,
+    output overrun, output run,
     output [31:0] debug );
        
    wire [100:0] sample_data;

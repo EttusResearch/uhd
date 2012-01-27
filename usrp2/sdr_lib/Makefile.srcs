@@ -23,8 +23,8 @@ clip_reg.v \
 cordic.v \
 cordic_z24.v \
 cordic_stage.v \
-dsp_core_rx.v \
-dsp_core_tx.v \
+ddc_chain.v \
+duc_chain.v \
 dspengine_16to8.v \
 hb_dec.v \
 hb_interp.v \
