@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,14 +18,15 @@
 //! The USRP digital up-conversion chain
 
 module duc_chain
-  #(parameter BASE=0)
+  #(parameter BASE = 0, parameter DSPNO = 0)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   output [23:0] dac_i,
-   output [23:0] dac_q,
+   // From TX frontend
+   output [23:0] tx_fe_i,
+   output [23:0] tx_fe_q,
 
-   // To tx_control
+   // To TX control
    input [31:0] sample,
    input run,
    output strobe,
@@ -36,7 +37,7 @@ module duc_chain
    wire [31:0] phase_inc;
    reg [31:0]  phase;
    wire [7:0]  interp_rate;
-   wire [3:0]  dacmux_a, dacmux_b;
+   wire [3:0]  tx_femux_a, tx_femux_b;
    wire        enable_hb1, enable_hb2;
    wire        rate_change;
    
@@ -147,8 +148,8 @@ module duc_chain
       .R(rst)     // Synchronous reset input
       );
 
-   assign tx_i = prod_i[28:5];
-   assign tx_q = prod_q[28:5];
+   assign tx_fe_i = prod_i[28:5];
+   assign tx_fe_q = prod_q[28:5];
    
    assign      debug = {strobe_cic, strobe_hb1, strobe_hb2,run};
 

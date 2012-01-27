@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -547,14 +547,14 @@ module u2_core
 
    // /////////////////////////////////////////////////////////////////////////
    // ADC Frontend
-   wire [23:0] 	 adc_i, adc_q;
+   wire [23:0] 	 rx_fe_i, rx_fe_q;
    
    rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .adc_a({adc_a,2'b00}),.adc_ovf_a(adc_ovf_a),
       .adc_b({adc_b,2'b00}),.adc_ovf_b(adc_ovf_b),
-      .i_out(adc_i), .q_out(adc_q), .run(run_rx0_d1 | run_rx1_d1), .debug());
+      .i_out(rx_fe_i), .q_out(rx_fe_q), .run(run_rx0_d1 | run_rx1_d1), .debug());
    
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
@@ -564,10 +564,10 @@ module u2_core
    always @(posedge dsp_clk)
      run_rx0_d1 <= run_rx0;
    
-   ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
+   ddc_chain #(.BASE(SR_RX_DSP0), .DSPNO(0)) ddc_chain0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_i(adc_i),.adc_q(adc_q),
+      .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx0), .run(run_rx0_d1), .strobe(strobe_rx0),
       .debug() );
 
@@ -592,10 +592,10 @@ module u2_core
    always @(posedge dsp_clk)
      run_rx1_d1 <= run_rx1;
    
-   ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
+   ddc_chain #(.BASE(SR_RX_DSP1), .DSPNO(1)) ddc_chain1
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .adc_i(adc_i),.adc_q(adc_q),
+      .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx1), .run(run_rx1_d1), .strobe(strobe_rx1),
       .debug() );
 
@@ -647,7 +647,7 @@ module u2_core
 	.debug(debug_extfifo),
 	.debug2(debug_extfifo2) );
 
-   wire [23:0] 	 tx_i, tx_q;
+   wire [23:0] 	 tx_fe_i, tx_fe_q;
    wire [31:0]   sample_tx;
    wire strobe_tx;
    
@@ -665,17 +665,17 @@ module u2_core
       .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
 
-   duc_chain #(.BASE(SR_TX_DSP)) duc_chain
+   duc_chain #(.BASE(SR_TX_DSP), .DSPNO(0)) duc_chain
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .dac_i(tx_i),.dac_q(tx_q),
+      .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
       .debug() );
 
    tx_frontend #(.BASE(SR_TX_FRONT)) tx_frontend
      (.clk(dsp_clk), .rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
-      .tx_i(tx_i), .tx_q(tx_q), .run(1'b1),
+      .tx_i(tx_fe_i), .tx_q(tx_fe_q), .run(1'b1),
       .dac_a(dac_a), .dac_b(dac_b));
          
    // ///////////////////////////////////////////////////////////////////////////////////

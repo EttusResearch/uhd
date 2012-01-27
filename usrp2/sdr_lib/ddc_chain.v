@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,13 +18,15 @@
 //! The USRP digital down-conversion chain
 
 module ddc_chain
-  #(parameter BASE = 160)
+  #(parameter BASE = 0, parameter DSPNO = 0)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-   input [23:0] adc_i,
-   input [23:0] adc_q,
-   
+   // From RX frontend
+   input [23:0] rx_fe_i,
+   input [23:0] rx_fe_q,
+
+   // To RX control
    output [31:0] sample,
    input run,
    output strobe,
@@ -44,7 +46,7 @@ module ddc_chain
    wire        enable_hb1, enable_hb2;
    wire [7:0]  cic_decim_rate;
 
-   reg [23:0]  adc_i_mux, adc_q_mux;
+   reg [23:0]  rx_fe_i_mux, rx_fe_q_mux;
    wire        realmode;
    wire        swap_iq;
    
@@ -71,13 +73,13 @@ module ddc_chain
    always @(posedge clk)
      if(swap_iq)
        begin
-	  adc_i_mux <= adc_q;
-	  adc_q_mux <= realmode ? 24'd0 : adc_i;
+	  rx_fe_i_mux <= rx_fe_q;
+	  rx_fe_q_mux <= realmode ? 24'd0 : rx_fe_i;
        end
      else
        begin
-	  adc_i_mux <= adc_i;
-	  adc_q_mux <= realmode ? 24'd0 : adc_q;
+	  rx_fe_i_mux <= rx_fe_i;
+	  rx_fe_q_mux <= realmode ? 24'd0 : rx_fe_q;
        end
 
    // NCO
@@ -92,7 +94,7 @@ module ddc_chain
    // CORDIC  24-bit I/O
    cordic_z24 #(.bitwidth(25))
      cordic(.clock(clk), .reset(rst), .enable(run),
-	    .xi({adc_i_mux[23],adc_i_mux}),. yi({adc_q_mux[23],adc_q_mux}), .zi(phase[31:8]),
+	    .xi({rx_fe_i_mux[23],rx_fe_i_mux}),. yi({rx_fe_q_mux[23],rx_fe_q_mux}), .zi(phase[31:8]),
 	    .xo(i_cordic),.yo(q_cordic),.zo() );
 
    clip_reg #(.bits_in(25), .bits_out(24)) clip_i
