@@ -21,7 +21,7 @@ module vita_rx_chain
     parameter UNIT=0,
     parameter FIFOSIZE=10,
     parameter PROT_ENG_FLAGS=1)
-   (input clk, input reset, input clear,
+   (input clk, input reset,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input [63:0] vita_time,
     input [31:0] sample, input strobe,
@@ -35,7 +35,13 @@ module vita_rx_chain
 
    wire [35:0] 	rx_data_int;
    wire 	rx_src_rdy_int, rx_dst_rdy_int;
-   
+
+   wire clear;
+
+   setting_reg #(.my_addr(BASE+3)) sr
+     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
+      .in(set_data),.out(),.changed(clear));
+
    vita_rx_control #(.BASE(BASE), .WIDTH(32)) vita_rx_control
      (.clk(clk), .reset(reset), .clear(clear),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),

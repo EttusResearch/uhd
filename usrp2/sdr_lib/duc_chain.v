@@ -18,7 +18,7 @@
 //! The USRP digital up-conversion chain
 
 module duc_chain
-  #(parameter BASE = 0, parameter DSPNO = 0)
+  #(parameter BASE = 0)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 

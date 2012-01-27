@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ module u1e_core
    localparam SR_CLEAR_RX_FIFO = 61; // 1 reg
    localparam SR_CLEAR_TX_FIFO = 62; // 1 reg
    localparam SR_GLOBAL_RESET = 63;  // 1 reg
+   localparam SR_USER_REGS = 64;     // 2 regs
 
    localparam SR_GPIO = 128;         // 5 regs
    
@@ -70,10 +71,10 @@ module u1e_core
    reg [15:0] 	reg_cgen_ctrl, reg_test, xfer_rate;
    wire [7:0] 	test_rate;
    wire [3:0] 	test_ctrl;
-   
-   wire [7:0] 	set_addr;
-   wire [31:0] 	set_data;
-   wire 	set_stb;
+
+   wire [7:0]  set_addr, set_addr_user;
+   wire [31:0] set_data, set_data_user;
+   wire        set_stb, set_stb_user;
 
    wire [31:0] 	debug_vt;
    wire 	rx_overrun_dsp0, rx_overrun_dsp1, rx_overrun_gpmc, tx_underrun_dsp, tx_underrun_gpmc;
@@ -142,7 +143,7 @@ module u1e_core
    // /////////////////////////////////////////////////////////////////////////
    // RX ADC Frontend, does IQ Balance, DC Offset, muxing
 
-   wire [23:0] 	 adc_i, adc_q;  // 24 bits is total overkill here, but it matches u2/u2p
+   wire [23:0] 	 rx_fe_i, rx_fe_q;  // 24 bits is total overkill here, but it matches u2/u2p
    wire 	 run_rx0, run_rx1;
    
    rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
@@ -150,7 +151,7 @@ module u1e_core
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_a({rx_i,4'b00}),.adc_ovf_a(0),
       .adc_b({rx_q,4'b00}),.adc_ovf_b(0),
-      .i_out(adc_i), .q_out(adc_q), .run(run_rx0 | run_rx1), .debug());
+      .i_out(rx_fe_i), .q_out(rx_fe_q), .run(run_rx0 | run_rx1), .debug());
    
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
@@ -163,12 +164,12 @@ module u1e_core
    ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .adc_i(adc_i),.adc_ovf_i(0),.adc_q(adc_q),.adc_ovf_q(0),
+      .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
       .debug() );
 
    vita_rx_chain #(.BASE(SR_RX_CTRL0), .UNIT(0), .FIFOSIZE(10), .PROT_ENG_FLAGS(0)) vita_rx_chain0
-     (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
+     (.clk(wb_clk),.reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp0),
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
@@ -186,12 +187,12 @@ module u1e_core
    ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .adc_i(adc_i),.adc_ovf_i(0),.adc_q(adc_q),.adc_ovf_q(0),
+      .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
       .debug() );
 
    vita_rx_chain #(.BASE(SR_RX_CTRL1), .UNIT(1), .FIFOSIZE(10), .PROT_ENG_FLAGS(0)) vita_rx_chain1
-     (.clk(wb_clk),.reset(wb_rst),.clear(clear_rx),
+     (.clk(wb_clk),.reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .overrun(rx_overrun_dsp1),
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
@@ -210,10 +211,12 @@ module u1e_core
    // ///////////////////////////////////////////////////////////////////////////////////
    // DSP TX
 
-   wire [23:0] 	 tx_i_int, tx_q_int;
    wire 	 run_tx;
-   
-   vita_tx_chain #(.BASE_CTRL(SR_TX_CTRL), .BASE_DSP(SR_TX_DSP), 
+   wire [23:0] 	 tx_fe_i, tx_fe_q;
+   wire [31:0]   sample_tx;
+   wire strobe_tx;
+
+   vita_tx_chain #(.BASE(SR_TX_CTRL), 
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(0),
 		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
 		   .DSP_NUMBER(0)) 
@@ -223,14 +226,21 @@ module u1e_core
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
-      .tx_i(tx_i_int),.tx_q(tx_q_int),
-      .underrun(tx_underrun_dsp), .run(run_tx),
+      .sample(sample_tx), .strobe(strobe_tx),
+      .underrun(underrun), .run(run_tx),
       .debug(debug_vt));
+
+   duc_chain #(.BASE(SR_TX_DSP)) duc_chain
+     (.clk(dsp_clk),.rst(dsp_rst),
+      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),
+      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+      .debug() );
 
    tx_frontend #(.BASE(SR_TX_FRONT), .WIDTH_OUT(14)) tx_frontend
      (.clk(wb_clk), .rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .tx_i(tx_i_int), .tx_q(tx_q_int), .run(1'b1),
+      .tx_i(tx_fe_i), .tx_q(tx_fe_q), .run(1'b1),
       .dac_a(tx_i), .dac_b(tx_q));
 
    // /////////////////////////////////////////////////////////////////////////////////////
@@ -431,6 +441,12 @@ module u1e_core
      (.wb_clk(wb_clk),.wb_rst(wb_rst),.wb_adr_i(s8_adr),.wb_dat_i(s8_dat_mosi),
       .wb_stb_i(s8_stb),.wb_we_i(s8_we),.wb_ack_o(s8_ack),
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
+
+   user_settings #(.BASE(SR_USER_REGS)) user_settings
+     (.clk(dsp_clk),.rst(dsp_rst),.set_stb(set_stb),
+      .set_addr(set_addr),.set_data(set_data),
+      .set_addr_user(set_addr_user),.set_data_user(set_data_user),
+      .set_stb_user(set_stb_user) );
 
    // /////////////////////////////////////////////////////////////////////////
    // Readback mux 32 -- Slave #7

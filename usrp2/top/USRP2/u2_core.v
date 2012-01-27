@@ -157,7 +157,7 @@ module u2_core
    localparam SR_SIMTIMER =   8;   // 2
    localparam SR_TIME64   =  10;   // 6
    localparam SR_BUF_POOL =  16;   // 4
-
+   localparam SR_USER_REGS = 20;   // 2
    localparam SR_RX_FRONT =  24;   // 5
    localparam SR_RX_CTRL0 =  32;   // 9
    localparam SR_RX_DSP0  =  48;   // 7
@@ -179,11 +179,11 @@ module u2_core
    localparam ETH_RX_FIFOSIZE = 11;
    localparam SERDES_TX_FIFOSIZE = 9;
    localparam SERDES_RX_FIFOSIZE = 9;  // RX currently doesn't use a fifo?
-   
-   wire [7:0] 	set_addr, set_addr_dsp;
-   wire [31:0] 	set_data, set_data_dsp;
-   wire 	set_stb, set_stb_dsp;
-   
+
+   wire [7:0]  set_addr, set_addr_dsp, set_addr_user;
+   wire [31:0] set_data, set_data_dsp, set_data_user;
+   wire        set_stb, set_stb_dsp, set_stb_user;
+
    wire 	ram_loader_done, ram_loader_rst;
    wire 	wb_rst;
    wire 	dsp_rst = wb_rst;
@@ -441,7 +441,7 @@ module u2_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd8, 16'd2}; //major, minor
+   localparam compat_num = {16'd8, 16'd3}; //major, minor
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -484,7 +484,13 @@ module u2_core
    settings_bus_crossclock settings_bus_crossclock
      (.clk_i(wb_clk), .rst_i(wb_rst), .set_stb_i(set_stb), .set_addr_i(set_addr), .set_data_i(set_data),
       .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp), .set_addr_o(set_addr_dsp), .set_data_o(set_data_dsp));
-   
+
+   user_settings #(.BASE(SR_USER_REGS)) user_settings
+     (.clk(dsp_clk),.rst(dsp_rst),.set_stb(set_stb_dsp),
+      .set_addr(set_addr_dsp),.set_data(set_data_dsp),
+      .set_addr_user(set_addr_user),.set_data_user(set_data_user),
+      .set_stb_user(set_stb_user) );
+
    // Output control lines
    wire [7:0] 	 clock_outs, serdes_outs, adc_outs;
    assign 	 {clock_ready, clk_en[1:0], clk_sel[1:0]} = clock_outs[4:0];
@@ -559,25 +565,20 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
    wire [31:0] 	 sample_rx0;
-   wire 	 clear_rx0, strobe_rx0;
+   wire 	 strobe_rx0;
 
    always @(posedge dsp_clk)
      run_rx0_d1 <= run_rx0;
    
-   ddc_chain #(.BASE(SR_RX_DSP0), .DSPNO(0)) ddc_chain0
+   ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx0), .run(run_rx0_d1), .strobe(strobe_rx0),
       .debug() );
 
-   setting_reg #(.my_addr(SR_RX_CTRL0+3)) sr_clear_rx0
-     (.clk(dsp_clk),.rst(dsp_rst),
-      .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
-      .out(),.changed(clear_rx0));
-
    vita_rx_chain #(.BASE(SR_RX_CTRL0),.UNIT(0),.FIFOSIZE(DSP_RX_FIFOSIZE)) vita_rx_chain0
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx0),
+     (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun0),
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
@@ -587,25 +588,20 @@ module u2_core
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 1
    wire [31:0] 	 sample_rx1;
-   wire 	 clear_rx1, strobe_rx1;
+   wire 	 strobe_rx1;
 
    always @(posedge dsp_clk)
      run_rx1_d1 <= run_rx1;
    
-   ddc_chain #(.BASE(SR_RX_DSP1), .DSPNO(1)) ddc_chain1
+   ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx1), .run(run_rx1_d1), .strobe(strobe_rx1),
       .debug() );
 
-   setting_reg #(.my_addr(SR_RX_CTRL1+3)) sr_clear_rx1
-     (.clk(dsp_clk),.rst(dsp_rst),
-      .strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),
-      .out(),.changed(clear_rx1));
-
    vita_rx_chain #(.BASE(SR_RX_CTRL1),.UNIT(2),.FIFOSIZE(DSP_RX_FIFOSIZE)) vita_rx_chain1
-     (.clk(dsp_clk), .reset(dsp_rst), .clear(clear_rx1),
+     (.clk(dsp_clk), .reset(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .vita_time(vita_time), .overrun(overrun1),
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
@@ -619,10 +615,6 @@ module u2_core
    wire 	 tx_src_rdy, tx_dst_rdy;
    wire [31:0] 	 debug_vt;
    wire 	 clear_tx;
-
-   setting_reg #(.my_addr(SR_TX_CTRL+1)) sr_clear_tx
-     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),
-      .in(set_data_dsp),.out(),.changed(clear_tx));
 
    ext_fifo #(.EXT_WIDTH(18),.INT_WIDTH(36),.RAM_DEPTH(19),.FIFO_DEPTH(19)) 
      ext_fifo_i1
@@ -663,9 +655,10 @@ module u2_core
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .sample(sample_tx), .strobe(strobe_tx),
       .underrun(underrun), .run(run_tx),
+      .clear_vita(clear_tx), //output internal vita clear signal
       .debug(debug_vt));
 
-   duc_chain #(.BASE(SR_TX_DSP), .DSPNO(0)) duc_chain
+   duc_chain #(.BASE(SR_TX_DSP)) duc_chain
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),
@@ -677,7 +670,7 @@ module u2_core
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .tx_i(tx_fe_i), .tx_q(tx_fe_q), .run(1'b1),
       .dac_a(dac_a), .dac_b(dac_b));
-         
+
    // ///////////////////////////////////////////////////////////////////////////////////
    // SERDES
 
