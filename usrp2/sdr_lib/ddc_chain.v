@@ -18,9 +18,10 @@
 //! The USRP digital down-conversion chain
 
 module ddc_chain
-  #(parameter BASE = 0)
+  #(parameter BASE = 0, parameter DSPNO = 0)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
+   input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
 
    // From RX frontend
    input [23:0] rx_fe_i,
@@ -91,10 +92,12 @@ module ddc_chain
      else
        phase <= phase + phase_inc;
 
+   wire [23:0] to_cordic_i, to_cordic_q;
+
    // CORDIC  24-bit I/O
    cordic_z24 #(.bitwidth(25))
      cordic(.clock(clk), .reset(rst), .enable(run),
-	    .xi({rx_fe_i_mux[23],rx_fe_i_mux}),. yi({rx_fe_q_mux[23],rx_fe_q_mux}), .zi(phase[31:8]),
+	    .xi({to_cordic_i[23],to_cordic_i}),. yi({to_cordic_q[23],to_cordic_q}), .zi(phase[31:8]),
 	    .xo(i_cordic),.yo(q_cordic),.zo() );
 
    clip_reg #(.bits_in(25), .bits_out(24)) clip_i
@@ -136,12 +139,22 @@ module ddc_chain
       .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
    // Round final answer to 16 bits
+   wire [31:0] ddc_chain_out;
+   wire ddc_chain_stb;
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_i
-     (.clk(clk),.reset(rst), .in(i_hb2),.strobe_in(strobe_hb2), .out(sample[31:16]), .strobe_out(strobe));
+     (.clk(clk),.reset(rst), .in(i_hb2),.strobe_in(strobe_hb2), .out(ddc_chain_out[31:16]), .strobe_out(ddc_chain_stb));
 
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_q
-     (.clk(clk),.reset(rst), .in(q_hb2),.strobe_in(strobe_hb2), .out(sample[15:0]), .strobe_out());
-   
+     (.clk(clk),.reset(rst), .in(q_hb2),.strobe_in(strobe_hb2), .out(ddc_chain_out[15:0]), .strobe_out());
+
+   custom_dsp_rx #(.DSPNO(DSPNO)) custom(
+    .clock(clk), .reset(rst), .enable(run),
+    .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
+    .frontend_i(rx_fe_i_mux), .frontend_q(rx_fe_q_mux),
+    .ddc_in_i(to_cordic_i), .ddc_in_q(to_cordic_q),
+    .ddc_out_sample(ddc_chain_out), .ddc_out_strobe(ddc_chain_stb),
+    .bb_sample(sample), .bb_strobe(strobe));
+
    assign      debug = {enable_hb1, enable_hb2, run, strobe, strobe_cic, strobe_hb1, strobe_hb2};
    
 endmodule // ddc_chain

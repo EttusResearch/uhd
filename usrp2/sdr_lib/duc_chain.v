@@ -18,15 +18,16 @@
 //! The USRP digital up-conversion chain
 
 module duc_chain
-  #(parameter BASE = 0)
+  #(parameter BASE = 0, parameter DSPNO = 0)
   (input clk, input rst,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
+   input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
 
-   // From TX frontend
+   // To TX frontend
    output [23:0] tx_fe_i,
    output [23:0] tx_fe_q,
 
-   // To TX control
+   // From TX control
    input [31:0] sample,
    input run,
    output strobe,
@@ -85,8 +86,8 @@ module duc_chain
    wire        signed [17:0] da, db;
    wire        signed [35:0] prod_i, prod_q;
 
-   wire [17:0] bb_i = {sample[31:16],2'b0};
-   wire [17:0] bb_q = {sample[15:0],2'b0};
+   wire [15:0] bb_i;
+   wire [15:0] bb_q;
    wire [17:0] i_interp, q_interp;
 
    wire [17:0] hb1_i, hb1_q, hb2_i, hb2_q;
@@ -96,9 +97,9 @@ module duc_chain
    //   but the default case inside hb_interp handles this
    
    hb_interp #(.IWIDTH(18),.OWIDTH(18),.ACCWIDTH(24)) hb_interp_i
-     (.clk(clk),.rst(rst),.bypass(~enable_hb1),.cpo(cpo),.stb_in(strobe_hb1),.data_in(bb_i),.stb_out(strobe_hb2),.data_out(hb1_i));
+     (.clk(clk),.rst(rst),.bypass(~enable_hb1),.cpo(cpo),.stb_in(strobe_hb1),.data_in({bb_i, 2'b0}),.stb_out(strobe_hb2),.data_out(hb1_i));
    hb_interp #(.IWIDTH(18),.OWIDTH(18),.ACCWIDTH(24)) hb_interp_q
-     (.clk(clk),.rst(rst),.bypass(~enable_hb1),.cpo(cpo),.stb_in(strobe_hb1),.data_in(bb_q),.stb_out(strobe_hb2),.data_out(hb1_q));
+     (.clk(clk),.rst(rst),.bypass(~enable_hb1),.cpo(cpo),.stb_in(strobe_hb1),.data_in({bb_q, 2'b0}),.stb_out(strobe_hb2),.data_out(hb1_q));
    
    small_hb_int #(.WIDTH(18)) small_hb_interp_i
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.stb_in(strobe_hb2),.data_in(hb1_i),
@@ -148,9 +149,14 @@ module duc_chain
       .R(rst)     // Synchronous reset input
       );
 
-   assign tx_fe_i = prod_i[28:5];
-   assign tx_fe_q = prod_q[28:5];
-   
+   custom_dsp_tx #(.DSPNO(DSPNO)) custom(
+    .clock(clk), .reset(rst), .enable(run),
+    .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
+    .frontend_i(tx_fe_i), .frontend_q(tx_fe_q),
+    .duc_out_i(prod_i[28:5]), .duc_out_q(prod_q[28:5]),
+    .duc_in_sample({bb_i, bb_q}), .duc_in_strobe(strobe_hb1),
+    .bb_sample(sample), .bb_strobe(strobe));
+
    assign      debug = {strobe_cic, strobe_hb1, strobe_hb2,run};
 
 endmodule // dsp_core

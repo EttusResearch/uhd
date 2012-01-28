@@ -21,6 +21,7 @@ include ../../vrt/Makefile.srcs
 include ../../udp/Makefile.srcs
 include ../../coregen/Makefile.srcs
 include ../../gpif/Makefile.srcs
+include ../../custom/Makefile.srcs
 
 ##################################################
 # Project Properties
@@ -50,7 +51,7 @@ SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) $(SDR_LIB_SRCS) $(SERDES_SRCS) \
 $(SIMPLE_GEMAC_SRCS) $(TIMING_SRCS) $(OPENCORES_SRCS) \
 $(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) $(EXTRAM_SRCS) \
-$(GPIF_SRCS)
+$(GPIF_SRCS) $(CUSTOM_SRCS)
 
 ##################################################
 # Process Properties

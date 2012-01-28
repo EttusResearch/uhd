@@ -161,9 +161,10 @@ module u1e_core
    wire [35:0] 	 vita_rx_data0;
    wire 	 vita_rx_src_rdy0, vita_rx_dst_rdy0;
    
-   ddc_chain #(.BASE(SR_RX_DSP0)) ddc_chain0
+   ddc_chain #(.BASE(SR_RX_DSP0), .DSPNO(0)) ddc_chain0
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
       .debug() );
@@ -184,9 +185,10 @@ module u1e_core
    wire [35:0] 	 vita_rx_data1;
    wire 	 vita_rx_src_rdy1, vita_rx_dst_rdy1;
    
-   ddc_chain #(.BASE(SR_RX_DSP1)) ddc_chain1
+   ddc_chain #(.BASE(SR_RX_DSP1), .DSPNO(1)) ddc_chain1
      (.clk(wb_clk),.rst(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
       .debug() );
@@ -227,10 +229,10 @@ module u1e_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .sample(sample_tx), .strobe(strobe_tx),
-      .underrun(underrun), .run(run_tx),
+      .underrun(tx_underrun_dsp), .run(run_tx),
       .debug(debug_vt));
 
-   duc_chain #(.BASE(SR_TX_DSP)) duc_chain
+   duc_chain #(.BASE(SR_TX_DSP), .DSPNO(0)) duc_chain
      (.clk(dsp_clk),.rst(dsp_rst),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),
