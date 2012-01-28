@@ -122,8 +122,8 @@ public:
         // Calculate CIC interpolation (i.e., without halfband interpolators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
         double rate_cubed = std::pow(double(interp & 0xff), 3);
-        const boost::int16_t scale = boost::math::iround((4096*std::pow(2, ceil_log2(rate_cubed)))/(1.65*rate_cubed));
-        _iface->poke32(REG_DSP_TX_SCALE_IQ, (boost::uint32_t(scale) << 16) | (boost::uint32_t(scale) << 0));
+        const boost::int32_t scale = boost::math::iround((4096*std::pow(2, ceil_log2(rate_cubed)))/(1.65*rate_cubed));
+        _iface->poke32(REG_DSP_TX_SCALE_IQ, scale);
 
         return _tick_rate/interp_rate;
     }

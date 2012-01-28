@@ -80,8 +80,9 @@ struct UHD_API stream_args_t{
      * Possible keys used by args (depends on implementation):
      *
      * - scalar: an integer scaling factor used with the sc8 wire format.
-     * The key/value pair scalar=1024 means that the sample in the DSP
-     * was multiplied by 1024 before its upper 8 bits were harvested.
+     * Use scalar=1 to harvest the lower 8-bits.
+     * Use scalar=256 to harvest the upper 8-bits.
+     * Any scalar in-between is also a possibility.
      *
      * - underflow_policy: how the TX DSP should recover from underflow.
      * Possible options are "next_burst" or "next_packet".

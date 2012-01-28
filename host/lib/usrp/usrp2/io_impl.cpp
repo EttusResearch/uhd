@@ -380,7 +380,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
-    const unsigned sc8_scalar = unsigned(args.args.cast<double>("scalar", 0x400));
+    const unsigned sc8_scalar = unsigned(args.args.cast<double>("scalar", 1));
 
     //calculate packet size
     static const size_t hdr_size = 0

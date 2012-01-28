@@ -18,6 +18,7 @@
 #include "rx_dsp_core_200.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
@@ -27,7 +28,7 @@
 #include <cmath>
 
 #define REG_DSP_RX_FREQ       _dsp_base + 0
-//skip one right here
+#define REG_DSP_RX_SCALE_IQ   _dsp_base + 4
 #define REG_DSP_RX_DECIM      _dsp_base + 8
 #define REG_DSP_RX_MUX        _dsp_base + 12
 
@@ -60,6 +61,11 @@ public:
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base), _sid(sid)
     {
+        //init to something so update method has reasonable defaults
+        _scaling_adjustment = 1.0;
+        _extra_scaling = 1.0;
+        _fxpt_scalar_correction = 1.0;
+
         //This is a hack/fix for the lingering packet problem.
         //The caller should also flush the recv transports
         if (lingering_packet){
@@ -175,12 +181,20 @@ public:
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
         const double rate_pow = std::pow(double(decim & 0xff), 4);
         _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        this->update_scalar();
 
         return _tick_rate/decim_rate;
     }
 
+    void update_scalar(void){
+        const double target_scalar = (1 << 16)*_scaling_adjustment/_extra_scaling;
+        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
+        _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
+    }
+
     double get_scaling_adjustment(void){
-        return _scaling_adjustment/_fxpt_scale_adj;
+        return _fxpt_scalar_correction*_extra_scaling/32767.;
     }
 
     double set_freq(const double freq_){
@@ -214,18 +228,17 @@ public:
         unsigned format_word = 0;
         if (format == "sc16"){
             format_word = 0;
-            _fxpt_scale_adj = 32767.;
+            _extra_scaling = 1.0;
         }
         else if (format == "sc8"){
-            format_word = (1 << 18);
-            _fxpt_scale_adj = 127. * scale;
-            _fxpt_scale_adj /= 256; //engine 16to8 drops lower 8 bits
-            _fxpt_scale_adj /= 4; //scale operation 2-bit pad
+            format_word = (1 << 0);
+            _extra_scaling = scale;
         }
         else throw uhd::value_error("USRP RX cannot handle requested wire format: " + format);
 
-        const unsigned scale_word = scale & 0x3ffff; //18 bits;
-        _iface->poke32(REG_RX_CTRL_FORMAT, format_word | scale_word);
+        this->update_scalar();
+
+        _iface->poke32(REG_RX_CTRL_FORMAT, format_word);
     }
 
 private:
@@ -233,7 +246,7 @@ private:
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
     bool _continuous_streaming;
-    double _scaling_adjustment, _fxpt_scale_adj;
+    double _scaling_adjustment, _extra_scaling, _fxpt_scalar_correction;
     const boost::uint32_t _sid;
 };
 
