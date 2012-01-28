@@ -34,7 +34,7 @@ module duc_chain
    output [31:0] debug
    );
 
-   wire [15:0] i, q, scale_i, scale_q;
+   wire [17:0] scale_factor;
    wire [31:0] phase_inc;
    reg [31:0]  phase;
    wire [7:0]  interp_rate;
@@ -46,9 +46,9 @@ module duc_chain
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(phase_inc),.changed());
 
-   setting_reg #(.my_addr(BASE+1)) sr_1
+   setting_reg #(.my_addr(BASE+1), .width(18)) sr_1
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({scale_i,scale_q}),.changed());
+      .in(set_data),.out(scale_factor),.changed());
    
    setting_reg #(.my_addr(BASE+2), .width(10)) sr_2
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
@@ -134,7 +134,7 @@ module duc_chain
    MULT18X18S MULT18X18S_inst 
      (.P(prod_i),    // 36-bit multiplier output
       .A(da_c[cwidth-1:cwidth-18]),    // 18-bit multiplier input
-      .B({{2{scale_i[15]}},scale_i}),    // 18-bit multiplier input
+      .B(scale_factor),    // 18-bit multiplier input
       .C(clk),    // Clock input
       .CE(1),  // Clock enable input
       .R(rst)     // Synchronous reset input
@@ -143,7 +143,7 @@ module duc_chain
    MULT18X18S MULT18X18S_inst_2 
      (.P(prod_q),    // 36-bit multiplier output
       .A(db_c[cwidth-1:cwidth-18]),    // 18-bit multiplier input
-      .B({{2{scale_q[15]}},scale_q}),    // 18-bit multiplier input
+      .B(scale_factor),    // 18-bit multiplier input
       .C(clk),    // Clock input
       .CE(1),  // Clock enable input
       .R(rst)     // Synchronous reset input

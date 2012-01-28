@@ -435,7 +435,7 @@ module u2plus_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd8, 16'd2}; //major, minor
+   localparam compat_num = {16'd9, 16'd0}; //major, minor
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),

@@ -37,6 +37,7 @@ module ddc_chain
    wire [31:0] phase_inc;
    reg [31:0]  phase;
 
+   wire [17:0] scale_factor;
    wire [24:0] i_cordic, q_cordic;
    wire [23:0] i_cordic_clip, q_cordic_clip;
    wire [23:0] i_cic, q_cic;
@@ -54,13 +55,11 @@ module ddc_chain
    setting_reg #(.my_addr(BASE+0)) sr_0
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(phase_inc),.changed());
-   
-   /*
-   setting_reg #(.my_addr(BASE+1)) sr_1
+
+   setting_reg #(.my_addr(BASE+1), .width(18)) sr_1
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({scale_i,scale_q}),.changed());
-   */
-   
+      .in(set_data),.out(scale_factor),.changed());
+
    setting_reg #(.my_addr(BASE+2), .width(10)) sr_2
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_hb1, enable_hb2, cic_decim_rate}),.changed());
@@ -138,14 +137,33 @@ module ddc_chain
      (.clk(clk),.rst(rst),.bypass(~enable_hb2),.run(run),.cpi(cpi_hb),
       .stb_in(strobe_hb1),.data_in(q_hb1),.stb_out(),.data_out(q_hb2));
 
+   //scalar operation (gain of 6 bits)
+   wire [35:0] prod_i, prod_q;
+
+   MULT18X18S mult_i
+     (.P(prod_i), .A(i_hb2[23:6]), .B(scale_factor), .C(clk), .CE(strobe_hb2), .R(rst) );
+   MULT18X18S mult_q
+     (.P(prod_q), .A(q_hb2[23:6]), .B(scale_factor), .C(clk), .CE(strobe_hb2), .R(rst) );
+
+   //pipeline for the multiplier (gain of 10 bits)
+   reg [23:0] prod_reg_i, prod_reg_q;
+   reg strobe_mult;
+
+   always @(posedge clk) begin
+       strobe_mult <= strobe_hb2;
+       prod_reg_i <= prod_i[33:10];
+       prod_reg_q <= prod_q[33:10];
+   end
+
    // Round final answer to 16 bits
    wire [31:0] ddc_chain_out;
    wire ddc_chain_stb;
+
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_i
-     (.clk(clk),.reset(rst), .in(i_hb2),.strobe_in(strobe_hb2), .out(ddc_chain_out[31:16]), .strobe_out(ddc_chain_stb));
+     (.clk(clk),.reset(rst), .in(prod_reg_i),.strobe_in(strobe_mult), .out(ddc_chain_out[31:16]), .strobe_out(ddc_chain_stb));
 
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_q
-     (.clk(clk),.reset(rst), .in(q_hb2),.strobe_in(strobe_hb2), .out(ddc_chain_out[15:0]), .strobe_out());
+     (.clk(clk),.reset(rst), .in(prod_reg_q),.strobe_in(strobe_mult), .out(ddc_chain_out[15:0]), .strobe_out());
 
    custom_dsp_rx #(.DSPNO(DSPNO)) custom(
     .clock(clk), .reset(rst), .enable(run),
