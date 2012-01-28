@@ -77,6 +77,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     // This requirement is a courtesy of libusb1.0 on windows.
 
     //find the usrps and load firmware
+    size_t found = 0;
     BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
         //extract the firmware path for the b100
         std::string b100_fw_image;
@@ -97,6 +98,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
         catch(const uhd::exception &){continue;} //ignore claimed
 
         fx2_ctrl::make(control)->usrp_load_firmware(b100_fw_image);
+        found++;
     }
 
     //get descriptors again with serial number, but using the initialized VID/PID now since we have firmware
@@ -106,7 +108,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     const boost::system_time timeout_time = boost::get_system_time() + REENUMERATION_TIMEOUT_MS;
 
     //search for the device until found or timeout
-    while (boost::get_system_time() < timeout_time and b100_addrs.empty())
+    while (boost::get_system_time() < timeout_time and b100_addrs.empty() and found != 0)
     {
         BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid))
         {
