@@ -18,6 +18,7 @@
 
 module vita_tx_chain
   #(parameter BASE=0,
+    parameter FIFOSIZE=10,
     parameter REPORT_ERROR=0,
     parameter DO_FLOW_CONTROL=0,
     parameter PROT_ENG_FLAGS=0,
@@ -46,31 +47,57 @@ module vita_tx_chain
    wire [31:0] 		error_code;
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
-   
+
+   wire clear;
+   assign clear_vita = clear;
    assign underrun = error;
    assign message = error_code;
    
    setting_reg #(.my_addr(BASE+1)) sr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_vita));
+      .in(set_data),.out(),.changed(clear));
 
    setting_reg #(.my_addr(BASE+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed(clear_seqnum));
 
+   wire [FIFOSIZE-1:0] access_adr, access_len;
+   wire 	       access_we, access_stb, access_ok, access_done, access_skip_read;
+   wire [35:0] 	       dsp_to_buf, buf_to_dsp;
+   wire [35:0] 	       tx_data_int2;
+   wire 	       tx_src_rdy_int2, tx_dst_rdy_int2;
+
+   double_buffer #(.BUF_SIZE(FIFOSIZE)) db
+     (.clk(clk),.reset(reset),.clear(clear),
+      .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done),
+      .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len),
+      .access_dat_i(dsp_to_buf), .access_dat_o(buf_to_dsp),
+
+      .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
+      .data_o(tx_data_int2), .src_rdy_o(tx_src_rdy_int2), .dst_rdy_i(tx_dst_rdy_int2));
+/*
+   dspengine_8to16 #(.BASE(BASE+X), .BUF_SIZE(FIFOSIZE)) dspengine_16to8
+     (.clk(clk),.reset(reset),.clear(clear),
+      .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
+      .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done),
+      .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len),
+      .access_dat_i(buf_to_dsp), .access_dat_o(dsp_to_buf));
+*/
+   assign access_done = access_ok; //passthrough
+
    vita_tx_deframer #(.BASE(BASE), 
 		      .MAXCHAN(MAXCHAN), 
 		      .USE_TRANS_HEADER(USE_TRANS_HEADER)) 
    vita_tx_deframer
-     (.clk(clk), .reset(reset), .clear(clear_vita), .clear_seqnum(clear_seqnum),
+     (.clk(clk), .reset(reset), .clear(clear), .clear_seqnum(clear_seqnum),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
-      .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
+      .data_i(tx_data_int2), .src_rdy_i(tx_src_rdy_int2), .dst_rdy_o(tx_dst_rdy_int2),
       .sample_fifo_o(tx1_data), .sample_fifo_src_rdy_o(tx1_src_rdy), .sample_fifo_dst_rdy_i(tx1_dst_rdy),
       .current_seqnum(current_seqnum),
       .debug(debug_vtd) );
 
    vita_tx_control #(.BASE(BASE), .WIDTH(32*MAXCHAN)) vita_tx_control
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(clear),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .vita_time(vita_time), .error(error), .ack(ack), .error_code(error_code),
       .sample_fifo_i(tx1_data), .sample_fifo_src_rdy_i(tx1_src_rdy), .sample_fifo_dst_rdy_o(tx1_dst_rdy),
@@ -81,18 +108,18 @@ module vita_tx_chain
    wire 		flow_src_rdy, flow_dst_rdy, err_src_rdy_int, err_dst_rdy_int;
    
    gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS),.DSP_NUMBER(DSP_NUMBER)) gen_flow_pkt
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(clear),
       .trigger(trigger & (DO_FLOW_CONTROL==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(32'd0),
       .seqnum(current_seqnum),
       .data_o(flow_data), .src_rdy_o(flow_src_rdy), .dst_rdy_i(flow_dst_rdy));
    trigger_context_pkt #(.BASE(BASE)) trigger_context_pkt
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(clear),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .packet_consumed(packet_consumed), .trigger(trigger));
    
    gen_context_pkt #(.PROT_ENG_FLAGS(PROT_ENG_FLAGS),.DSP_NUMBER(DSP_NUMBER)) gen_tx_err_pkt
-     (.clk(clk), .reset(reset), .clear(clear_vita),
+     (.clk(clk), .reset(reset), .clear(clear),
       .trigger((error|ack) & (REPORT_ERROR==1)), .sent(), 
       .streamid(streamid), .vita_time(vita_time), .message(message),
       .seqnum(current_seqnum),

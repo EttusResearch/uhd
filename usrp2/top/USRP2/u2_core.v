@@ -175,6 +175,7 @@ module u2_core
    // all (most?) are 36 bits wide, so 9 is 1 BRAM, 10 is 2, 11 is 4 BRAMs
    // localparam DSP_TX_FIFOSIZE = 9;  unused -- DSPTX uses extram fifo
    localparam DSP_RX_FIFOSIZE = 10;
+   localparam DSP_TX_FIFOSIZE = 10;
    localparam ETH_TX_FIFOSIZE = 9;
    localparam ETH_RX_FIFOSIZE = 11;
    localparam SERDES_TX_FIFOSIZE = 9;
@@ -645,7 +646,7 @@ module u2_core
    wire [31:0]   sample_tx;
    wire strobe_tx;
    
-   vita_tx_chain #(.BASE(SR_TX_CTRL),
+   vita_tx_chain #(.BASE(SR_TX_CTRL), .FIFOSIZE(DSP_TX_FIFOSIZE),
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
 		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
 		   .DSP_NUMBER(0))
