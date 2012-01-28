@@ -228,8 +228,8 @@ module u1plus_core
       .debug(debug_vt));
 
    duc_chain #(.BASE(SR_TX_DSP), .DSPNO(0)) duc_chain
-     (.clk(dsp_clk),.rst(dsp_rst),
-      .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
+     (.clk(wb_clk),.rst(wb_rst),
+      .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
@@ -401,7 +401,7 @@ module u1plus_core
       .strobe(set_stb),.addr(set_addr),.data(set_data) );
 
    user_settings #(.BASE(SR_USER_REGS)) user_settings
-     (.clk(dsp_clk),.rst(dsp_rst),.set_stb(set_stb),
+     (.clk(wb_clk),.rst(wb_rst),.set_stb(set_stb),
       .set_addr(set_addr),.set_data(set_data),
       .set_addr_user(set_addr_user),.set_data_user(set_data_user),
       .set_stb_user(set_stb_user) );
