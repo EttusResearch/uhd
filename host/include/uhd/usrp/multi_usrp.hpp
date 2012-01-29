@@ -24,6 +24,7 @@
 #define UHD_USRP_MULTI_USRP_FRONTEND_CAL_API
 #define UHD_USRP_MULTI_USRP_COMMAND_TIME_API
 #define UHD_USRP_MULTI_USRP_BW_RANGE_API
+#define UHD_USRP_MULTI_USRP_USER_REGS_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -337,6 +338,15 @@ public:
      * \return a vector of sensor names
      */
     virtual std::vector<std::string> get_mboard_sensor_names(size_t mboard = 0) = 0;
+
+    /*!
+     * Perform write on the user configuration register bus. These only exist if
+     * the user has implemented custom setting registers in the device FPGA.
+     * \param addr 8-bit register address
+     * \param data 32-bit register value
+     * \param mboard which motherboard to set the user register
+     */
+    virtual void set_user_register(const boost::uint8_t addr, const boost::uint32_t data, size_t mboard = ALL_MBOARDS) = 0;
 
     /*******************************************************************
      * RX methods

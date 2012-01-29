@@ -29,6 +29,7 @@
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
 #include "time64_core_200.hpp"
+#include "user_settings_core_200.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
@@ -84,6 +85,7 @@ private:
     std::vector<rx_dsp_core_200::sptr> _rx_dsps;
     tx_dsp_core_200::sptr _tx_dsp;
     time64_core_200::sptr _time64;
+    user_settings_core_200::sptr _user;
     b100_clock_ctrl::sptr _clock_ctrl;
     b100_codec_ctrl::sptr _codec_ctrl;
     b100_ctrl::sptr _fpga_ctrl;

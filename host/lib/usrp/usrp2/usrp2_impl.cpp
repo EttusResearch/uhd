@@ -572,6 +572,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
         _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
 
+        ////////////////////////////////////////////////////////////////////
+        // create user-defined control objects
+        ////////////////////////////////////////////////////////////////////
+        _mbc[mb].user = user_settings_core_200::make(_mbc[mb].iface, U2_REG_SR_ADDR(SR_USER_REGS));
+        _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
+            .subscribe(boost::bind(&user_settings_core_200::set_reg, _mbc[mb].user, _1));
+
         ////////////////////////////////////////////////////////////////
         // create dboard control objects
         ////////////////////////////////////////////////////////////////

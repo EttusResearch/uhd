@@ -104,6 +104,7 @@
 #define UE_SR_CLEAR_RX_FIFO 61 // 1 reg
 #define UE_SR_CLEAR_TX_FIFO 62 // 1 reg
 #define UE_SR_GLOBAL_RESET 63  // 1 reg
+#define UE_SR_USER_REGS 64     // 2 regs
 
 #define UE_SR_GPIO 128
 

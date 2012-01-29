@@ -388,6 +388,13 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
+    // create user-defined control objects
+    ////////////////////////////////////////////////////////////////////
+    _user = user_settings_core_200::make(_fpga_ctrl, B100_REG_SR_ADDR(B100_SR_USER_REGS));
+    _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
+        .subscribe(boost::bind(&user_settings_core_200::set_reg, _user, _1));
+
+    ////////////////////////////////////////////////////////////////////
     // create dboard control objects
     ////////////////////////////////////////////////////////////////////
 
