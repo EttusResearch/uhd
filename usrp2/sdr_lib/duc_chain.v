@@ -153,7 +153,7 @@ module duc_chain
     .clock(clk), .reset(rst), .enable(run),
     .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
     .frontend_i(tx_fe_i), .frontend_q(tx_fe_q),
-    .duc_out_i(prod_i[28:5]), .duc_out_q(prod_q[28:5]),
+    .duc_out_i(prod_i[33:10]), .duc_out_q(prod_q[33:10]),
     .duc_in_sample({bb_i, bb_q}), .duc_in_strobe(strobe_hb1),
     .bb_sample(sample), .bb_strobe(strobe));
 
