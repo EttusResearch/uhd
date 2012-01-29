@@ -307,6 +307,8 @@ void usrp2_impl::update_tx_samp_rate(const std::string &mb, const size_t dsp, co
     if (my_streamer.get() == NULL) return;
 
     my_streamer->set_samp_rate(rate);
+    const double adj = _mbc[mb].tx_dsp->get_scaling_adjustment();
+    my_streamer->set_scale_factor(adj);
 }
 
 void usrp2_impl::update_rates(void){
@@ -380,7 +382,6 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
-    const unsigned sc8_scalar = unsigned(args.args.cast<double>("scalar", 1));
 
     //calculate packet size
     static const size_t hdr_size = 0
@@ -416,8 +417,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
             if (chan < num_chan_so_far){
                 const size_t dsp = chan + _mbc[mb].rx_chan_occ - num_chan_so_far;
                 _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
-                if (not args.args.has_key("noclear")) _mbc[mb].rx_dsps[dsp]->clear();
-                _mbc[mb].rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
+                _mbc[mb].rx_dsps[dsp]->setup(args);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
                 ), true /*flush*/);
@@ -446,10 +446,6 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
-
-    if (args.otw_format != "sc16"){
-        throw uhd::value_error("USRP TX cannot handle requested wire format: " + args.otw_format);
-    }
 
     //calculate packet size
     static const size_t hdr_size = 0
@@ -485,10 +481,9 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
             if (chan < num_chan_so_far){
                 const size_t dsp = chan + _mbc[mb].tx_chan_occ - num_chan_so_far;
                 if (not args.args.has_key("noclear")){
-                    _mbc[mb].tx_dsp->clear();
                     _io_impl->fc_mons[abs]->clear();
                 }
-                if (args.args.has_key("underflow_policy")) _mbc[mb].tx_dsp->set_underflow_policy(args.args["underflow_policy"]);
+                _mbc[mb].tx_dsp->setup(args);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), abs, _1
                 ));

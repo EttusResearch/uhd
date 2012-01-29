@@ -224,17 +224,19 @@ public:
         if (_continuous_streaming) issue_stream_command(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
 
-    void set_format(const std::string &format, const unsigned scale){
+    void setup(const uhd::stream_args_t &stream_args){
+        if (not stream_args.args.has_key("noclear")) this->clear();
+
         unsigned format_word = 0;
-        if (format == "sc16"){
+        if (stream_args.otw_format == "sc16"){
             format_word = 0;
             _extra_scaling = 1.0;
         }
-        else if (format == "sc8"){
+        else if (stream_args.otw_format == "sc8"){
             format_word = (1 << 0);
-            _extra_scaling = scale;
+            _extra_scaling = stream_args.args.cast<double>("scalar", 1.0);
         }
-        else throw uhd::value_error("USRP RX cannot handle requested wire format: " + format);
+        else throw uhd::value_error("USRP RX cannot handle requested wire format: " + stream_args.otw_format);
 
         this->update_scalar();
 

@@ -58,6 +58,11 @@ public:
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base), _sid(sid)
     {
+        //init to something so update method has reasonable defaults
+        _scaling_adjustment = 1.0;
+        _extra_scaling = 1.0;
+        _fxpt_scalar_correction = 1.0;
+
         //init the tx control registers
         this->clear();
         this->set_underflow_policy("next_packet");
@@ -121,11 +126,22 @@ public:
 
         // Calculate CIC interpolation (i.e., without halfband interpolators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
-        double rate_cubed = std::pow(double(interp & 0xff), 3);
-        const boost::int32_t scale = boost::math::iround((4096*std::pow(2, ceil_log2(rate_cubed)))/(1.65*rate_cubed));
-        _iface->poke32(REG_DSP_TX_SCALE_IQ, scale);
+        const double rate_pow = std::pow(double(interp & 0xff), 3);
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        this->update_scalar();
 
         return _tick_rate/interp_rate;
+    }
+
+    void update_scalar(void){
+        const double target_scalar = (1 << 17)*_scaling_adjustment/_extra_scaling;
+        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
+        _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
+    }
+
+    double get_scaling_adjustment(void){
+        return _fxpt_scalar_correction*_extra_scaling*32767.;
     }
 
     double set_freq(const double freq_){
@@ -156,10 +172,26 @@ public:
         _iface->poke32(REG_TX_CTRL_PACKETS_PER_UP, (packets_per_up == 0)? 0 : (FLAG_TX_CTRL_UP_ENB | packets_per_up));
     }
 
+    void setup(const uhd::stream_args_t &stream_args){
+        if (not stream_args.args.has_key("noclear")) this->clear();
+
+        if (stream_args.otw_format == "sc16"){
+            _extra_scaling = 1.0;
+        }
+        else throw uhd::value_error("USRP TX cannot handle requested wire format: " + stream_args.otw_format);
+
+        this->update_scalar();
+
+        if (stream_args.args.has_key("underflow_policy")){
+            this->set_underflow_policy(stream_args.args["underflow_policy"]);
+        }
+    }
+
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
+    double _scaling_adjustment, _extra_scaling, _fxpt_scalar_correction;
     const boost::uint32_t _sid;
 };
 
