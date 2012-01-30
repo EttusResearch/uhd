@@ -46,9 +46,9 @@ module double_buffer_tb();
       .data_i(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o),
       .data_o(data_o), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));
 
-   dspengine_16to8 dspengine_16to8
+   dspengine_8to16 dspengine_8to16
      (.clk(clk),.reset(rst),.clear(0),
-      .set_stb(set_stb), .set_addr(0), .set_data({13'h0,1'b1,18'h00400}),
+      .set_stb(set_stb), .set_addr(0), .set_data(1),
       .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done), 
       .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len), 
       .access_dat_i(buf_to_dsp), .access_dat_o(dsp_to_buf));
@@ -69,7 +69,7 @@ module double_buffer_tb();
 	@(posedge clk);
 	@(posedge clk);
 	@(posedge clk);
-
+/*
 	// Passthrough
 	$display("Passthrough");
 	src_rdy_i <= 1;
@@ -86,12 +86,12 @@ module double_buffer_tb();
 
 	repeat (5)
 	  @(posedge clk);
-
+*/
 	$display("Enabled");
 	set_stb <= 1;
 	@(posedge clk);
 	set_stb <= 0;
-
+/*
 	@(posedge clk);
 	$display("Non-IF Data Passthrough");
 	src_rdy_i <= 1;
@@ -159,23 +159,23 @@ module double_buffer_tb();
 
 	while(~dst_rdy_o)
 	  @(posedge clk);
-
+*/
 	$display("No StreamID, Trailer, Even");
 	src_rdy_i <= 1;
   	data_i <= { 2'b00,1'b0,1'b1,32'h0400FFFF};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'h21002200};
+	data_i <= { 2'b00,1'b0,1'b0,32'h21222324};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'h23002400};
+	data_i <= { 2'b00,1'b0,1'b0,32'h25262728};
 	src_rdy_i <= 0;
 	@(posedge clk);
 	src_rdy_i <= 1;
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'h25002600};
+	data_i <= { 2'b00,1'b0,1'b0,32'h292a2b2c};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'h27002800};
+	data_i <= { 2'b00,1'b0,1'b0,32'h2d2e2f30};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b1,1'b0,32'h29002a00};
+	data_i <= { 2'b00,1'b1,1'b0,32'hDEADBEEF};
 	@(posedge clk);
 	src_rdy_i <= 0;
 	@(posedge clk);
@@ -183,6 +183,30 @@ module double_buffer_tb();
 	while(~dst_rdy_o)
 	  @(posedge clk);
 
+	$display("No StreamID, Trailer, Odd");
+	src_rdy_i <= 1;
+  	data_i <= { 2'b00,1'b0,1'b1,32'h0400FFFF};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'h21222324};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'h25262728};
+	src_rdy_i <= 0;
+	@(posedge clk);
+	src_rdy_i <= 1;
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'h292a2b2c};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'h2d2e2f30};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b1,1'b0,32'hDEBDBF0D};
+	@(posedge clk);
+	src_rdy_i <= 0;
+	@(posedge clk);
+
+	while(~dst_rdy_o)
+	  @(posedge clk);
+
+/*
 	$display("No StreamID, Trailer, Odd");
 	src_rdy_i <= 1;
   	data_i <= { 2'b00,1'b0,1'b1,32'h0400FFFF};
@@ -246,7 +270,7 @@ module double_buffer_tb();
 	@(posedge clk);
 	src_rdy_i <= 0;
 	@(posedge clk);
-
+*/
      end
    
    initial #28000 $finish;
