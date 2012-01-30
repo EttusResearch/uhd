@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 
 ##################################################
@@ -26,6 +26,7 @@ cordic_stage.v \
 ddc_chain.v \
 duc_chain.v \
 dspengine_16to8.v \
+dspengine_8to16.v \
 hb_dec.v \
 hb_interp.v \
 pipectrl.v \

@@ -1,5 +1,5 @@
 
-// Copyright 2011 Ettus Research LLC
+// Copyright 2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ module dspengine_8to16
    reg [15:0] 	      length;
    reg 		      wait_for_trailer;
    reg [15:0] 	      data_in_len, data_out_len;
+   wire [15:0] 	      data_in_lenx2 = {data_in_len[14:0], 1'b0} - (access_dat_i[20] & access_dat_i[8]);
 
    reg [7:0] 	      i8_0, q8_0;
    wire [7:0] 	      i8_1 = access_dat_i[15:8];
@@ -123,8 +124,8 @@ module dspengine_8to16
 		dsp_state <= DSP_WRITE_TRAILER;
 	      new_trailer <= access_dat_i[31:0]; // Leave trailer unchanged
 	      odd <= access_dat_i[20] & access_dat_i[8];
-	      data_out_len <= {data_in_len,1'b0} - (access_dat_i[20] & access_dat_i[8]);
-	      write_adr <= hdr_length_reg + {data_in_len,1'b0} - (access_dat_i[20] & access_dat_i[8]);
+	      data_out_len <= data_in_lenx2;
+	      write_adr <= hdr_length_reg + data_in_lenx2;
 	   end
 
 	 DSP_WRITE_TRAILER :
