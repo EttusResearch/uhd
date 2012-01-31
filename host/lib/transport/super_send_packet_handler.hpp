@@ -134,7 +134,7 @@ public:
         vrt::if_packet_info_t if_packet_info;
         if_packet_info.has_sid = false;
         if_packet_info.has_cid = false;
-        if_packet_info.has_tlr = false;
+        if_packet_info.has_tlr = true;
         if_packet_info.has_tsi = metadata.has_time_spec;
         if_packet_info.has_tsf = metadata.has_time_spec;
         if_packet_info.tsi     = boost::uint32_t(metadata.time_spec.get_full_secs());

@@ -63,8 +63,7 @@ public:
     {
         //init to something so update method has reasonable defaults
         _scaling_adjustment = 1.0;
-        _extra_scaling = 1.0;
-        _fxpt_scalar_correction = 1.0;
+        _dsp_extra_scaling = 1.0;
 
         //This is a hack/fix for the lingering packet problem.
         //The caller should also flush the recv transports
@@ -187,14 +186,14 @@ public:
     }
 
     void update_scalar(void){
-        const double target_scalar = (1 << 16)*_scaling_adjustment/_extra_scaling;
+        const double target_scalar = (1 << 16)*_scaling_adjustment/_dsp_extra_scaling;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
     }
 
     double get_scaling_adjustment(void){
-        return _fxpt_scalar_correction*_extra_scaling/32767.;
+        return _fxpt_scalar_correction*_host_extra_scaling/32767.;
     }
 
     double set_freq(const double freq_){
@@ -230,11 +229,15 @@ public:
         unsigned format_word = 0;
         if (stream_args.otw_format == "sc16"){
             format_word = 0;
-            _extra_scaling = 1.0;
+            _dsp_extra_scaling = 1.0;
+            _host_extra_scaling = 1.0;
         }
         else if (stream_args.otw_format == "sc8"){
             format_word = (1 << 0);
-            _extra_scaling = stream_args.args.cast<double>("scalar", 1.0);
+            double peak = stream_args.args.cast<double>("peak", 1.0);
+            peak = std::max(peak, 1.0/256);
+            _host_extra_scaling = peak*256;
+            _dsp_extra_scaling = peak*256;
         }
         else throw uhd::value_error("USRP RX cannot handle requested wire format: " + stream_args.otw_format);
 
@@ -248,7 +251,7 @@ private:
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
     bool _continuous_streaming;
-    double _scaling_adjustment, _extra_scaling, _fxpt_scalar_correction;
+    double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
     const boost::uint32_t _sid;
 };
 

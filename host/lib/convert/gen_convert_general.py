@@ -92,6 +92,22 @@ DECLARE_CONVERTER(sc8_item32_$(end), 1, $(cpu_type), 1, PRIORITY_GENERAL){
         item32_sc8_to_$(cpu_type)(item_n, output[num_samps-1], dummy, scale_factor);
     }
 }
+
+DECLARE_CONVERTER($(cpu_type), 1, sc8_item32_$(end), 1, PRIORITY_GENERAL){
+    const $(cpu_type)_t *input = reinterpret_cast<const $(cpu_type)_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    const size_t num_pairs = nsamps/2;
+    for (size_t i = 0, j = 0; i < num_pairs; i++, j+=2){
+        const item32_t item = $(cpu_type)_to_item32_sc8(input[j], input[j+1], scale_factor);
+        output[i] = $(to_wire)(item);
+    }
+
+    if (nsamps != num_pairs*2){
+        const item32_t item = $(cpu_type)_to_item32_sc8(input[nsamps-1], 0, scale_factor);
+        output[num_pairs] = $(to_wire)(item);
+    }
+}
 """
 
 TMPL_CONV_USRP1_COMPLEX = """

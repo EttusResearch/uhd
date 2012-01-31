@@ -18,6 +18,7 @@
 #include "tx_dsp_core_200.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -35,6 +36,7 @@
 #define REG_TX_CTRL_POLICY          _ctrl_base + 12
 #define REG_TX_CTRL_CYCLES_PER_UP   _ctrl_base + 16
 #define REG_TX_CTRL_PACKETS_PER_UP  _ctrl_base + 20
+#define REG_TX_CTRL_FORMAT          _ctrl_base + 24
 
 #define FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
 #define FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
@@ -60,8 +62,7 @@ public:
     {
         //init to something so update method has reasonable defaults
         _scaling_adjustment = 1.0;
-        _extra_scaling = 1.0;
-        _fxpt_scalar_correction = 1.0;
+        _dsp_extra_scaling = 1.0;
 
         //init the tx control registers
         this->clear();
@@ -134,14 +135,14 @@ public:
     }
 
     void update_scalar(void){
-        const double target_scalar = (1 << 17)*_scaling_adjustment/_extra_scaling;
+        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
         _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
     }
 
     double get_scaling_adjustment(void){
-        return _fxpt_scalar_correction*_extra_scaling*32767.;
+        return _fxpt_scalar_correction*_host_extra_scaling*32767.;
     }
 
     double set_freq(const double freq_){
@@ -175,12 +176,24 @@ public:
     void setup(const uhd::stream_args_t &stream_args){
         if (not stream_args.args.has_key("noclear")) this->clear();
 
+        unsigned format_word = 0;
         if (stream_args.otw_format == "sc16"){
-            _extra_scaling = 1.0;
+            format_word = 0;
+            _dsp_extra_scaling = 1.0;
+            _host_extra_scaling = 1.0;
+        }
+        else if (stream_args.otw_format == "sc8"){
+            format_word = (1 << 0);
+            double peak = stream_args.args.cast<double>("peak", 1.0);
+            peak = std::max(peak, 1.0/256);
+            _host_extra_scaling = 1.0/peak/256;
+            _dsp_extra_scaling = 1.0/peak;
         }
         else throw uhd::value_error("USRP TX cannot handle requested wire format: " + stream_args.otw_format);
 
         this->update_scalar();
+
+        _iface->poke32(REG_TX_CTRL_FORMAT, format_word);
 
         if (stream_args.args.has_key("underflow_policy")){
             this->set_underflow_policy(stream_args.args["underflow_policy"]);
@@ -191,7 +204,7 @@ private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
-    double _scaling_adjustment, _extra_scaling, _fxpt_scalar_correction;
+    double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
     const boost::uint32_t _sid;
 };
 

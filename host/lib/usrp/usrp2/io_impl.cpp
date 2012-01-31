@@ -450,6 +450,7 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
     //calculate packet size
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;

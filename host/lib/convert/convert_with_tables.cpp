@@ -68,24 +68,19 @@ class convert_sc8_item32_1_to_fcxx_1 : public converter{
 public:
     convert_sc8_item32_1_to_fcxx_1(void): _table(sc16_table_len){}
 
-    void set_scalar(const double scalar){
-
-        //special case, this is converts sc8 to sc16,
-        //use the scale-factor but no normalization
+    //special case for sc16 type, 32767 undoes float normalization
+    static type conv(const boost::int8_t &num, const double scalar){
         if (sizeof(type) == sizeof(s16_t)){
-            for (size_t i = 0; i < sc16_table_len; i++){
-                const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
-                const type real = type(boost::math::iround(boost::int8_t(val >> 8)*scalar*32767));
-                const type imag = type(boost::math::iround(boost::int8_t(val >> 0)*scalar*32767));
-                _table[i] = std::complex<type>(real, imag);
-            }
-            return;
+            return type(boost::math::iround(num*scalar*32767));
         }
+        return type(num*scalar);
+    }
 
+    void set_scalar(const double scalar){
         for (size_t i = 0; i < sc16_table_len; i++){
             const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
-            const type real = type(boost::int8_t(val >> 8)*scalar);
-            const type imag = type(boost::int8_t(val >> 0)*scalar);
+            const type real = conv(boost::int8_t(val >> 8), scalar);
+            const type imag = conv(boost::int8_t(val >> 0), scalar);
             _table[i] = std::complex<type>(real, imag);
         }
     }

@@ -79,10 +79,11 @@ struct UHD_API stream_args_t{
      * The args parameter is used to pass arbitrary key/value pairs.
      * Possible keys used by args (depends on implementation):
      *
-     * - scalar: an integer scaling factor used with the sc8 wire format.
-     * Use scalar=1 to harvest the lower 8-bits.
-     * Use scalar=256 to harvest the upper 8-bits.
-     * Any scalar in-between is also a possibility.
+     * - peak: specifies a fractional sample level to calculate scaling with the sc8 wire format.
+     * When using sc8 samples over the wire, the device must scale samples
+     * (both on the host and in the device) to satisfy the dynamic range needs.
+     * The peak value specifies a fraction of the maximum sample level (1.0 = 100%).
+     * Set peak to max_sample_level/full_scale_level to ensure optimum dynamic range.
      *
      * - underflow_policy: how the TX DSP should recover from underflow.
      * Possible options are "next_burst" or "next_packet".
