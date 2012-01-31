@@ -17,7 +17,8 @@
 
 module dspengine_8to16
   #(parameter BASE = 0,
-    parameter BUF_SIZE = 9)
+    parameter BUF_SIZE = 9,
+    parameter HEADER_OFFSET = 0)
    (input clk, input reset, input clear,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
@@ -40,14 +41,15 @@ module dspengine_8to16
    
    reg [3:0] 	 dsp_state;
    localparam DSP_IDLE = 0;
-   localparam DSP_PARSE_HEADER = 1;
-   localparam DSP_READ = 2;
-   localparam DSP_WRITE_1 = 3;
-   localparam DSP_WRITE_0 = 4;
-   localparam DSP_READ_TRAILER = 5;
-   localparam DSP_WRITE_TRAILER = 6;
-   localparam DSP_WRITE_HEADER = 7;
-   localparam DSP_DONE = 8;
+   localparam DSP_IDLE_RD = 1;
+   localparam DSP_PARSE_HEADER = 2;
+   localparam DSP_READ = 3;
+   localparam DSP_WRITE_1 = 4;
+   localparam DSP_WRITE_0 = 5;
+   localparam DSP_READ_TRAILER = 6;
+   localparam DSP_WRITE_TRAILER = 7;
+   localparam DSP_WRITE_HEADER = 8;
+   localparam DSP_DONE = 9;
 
    // Parse VITA header
    wire 	 is_if_data = (access_dat_i[31:29] == 3'b000);
@@ -66,10 +68,10 @@ module dspengine_8to16
    reg 		      has_trailer_reg;
    
    reg [31:0] 	      new_header, new_trailer, trailer_mask;
-   reg [15:0] 	      length;
    reg 		      wait_for_trailer;
-   reg [15:0] 	      data_in_len, data_out_len;
-   wire [15:0] 	      data_in_lenx2 = {data_in_len[14:0], 1'b0} - (access_dat_i[20] & access_dat_i[8]);
+   reg [15:0] 	      data_in_len;
+   wire       	      is_odd = access_dat_i[22] & access_dat_i[10];
+   wire [15:0] 	      data_in_lenx2 = {data_in_len[14:0], 1'b0} - is_odd;
 
    reg [7:0] 	      i8_0, q8_0;
    wire [7:0] 	      i8_1 = access_dat_i[15:8];
@@ -87,20 +89,20 @@ module dspengine_8to16
        case(dsp_state)
 	 DSP_IDLE :
 	   begin
-	      read_adr <= 1; // Skip 0 for transport header
-	      write_adr <= 1; // Skip 0 for transport header
+	      read_adr <= HEADER_OFFSET;
+	      write_adr <= HEADER_OFFSET;
 	      if(access_ok)
-		dsp_state <= DSP_PARSE_HEADER;
+		dsp_state <= DSP_IDLE_RD;
 	   end
-	 
+
+	 DSP_IDLE_RD: //extra idle state for read to become valid
+		dsp_state <= DSP_PARSE_HEADER;
+
 	 DSP_PARSE_HEADER :
 	   begin
-	      // FIXME is data always valid here?
-
 	      has_trailer_reg <= has_trailer;
 	      new_header[31:16] <= access_dat_i[31:16];
-	      new_header[15:0] <= access_len-1;
-	      length <= access_len;
+	      new_header[15:0] <= access_len-HEADER_OFFSET;
 	      hdr_length_reg <= hdr_length;
 	      if(~is_if_data | ~convert | ~has_trailer)
 		// ~convert is valid (16 bit mode) but both ~trailer and ~is_if_data are both
@@ -111,7 +113,7 @@ module dspengine_8to16
 		   read_adr <= access_len - 1; // point to trailer
 		   dsp_state <= DSP_READ_TRAILER;
 		   wait_for_trailer <= 0;
-		   data_in_len <= access_len - hdr_length - 2;
+		   data_in_len <= access_len - hdr_length - HEADER_OFFSET - 1 /*trailer*/;
 		end
 	   end
 	 
@@ -121,9 +123,8 @@ module dspengine_8to16
 	      if(wait_for_trailer)
 		dsp_state <= DSP_WRITE_TRAILER;
 	      new_trailer <= access_dat_i[31:0]; // Leave trailer unchanged
-	      odd <= access_dat_i[20] & access_dat_i[8];
-	      data_out_len <= data_in_lenx2;
-	      write_adr <= hdr_length_reg + data_in_lenx2 + 1;
+	      odd <= is_odd;
+	      write_adr <= hdr_length_reg + data_in_lenx2 + HEADER_OFFSET;
 	   end
 
 	 DSP_WRITE_TRAILER :

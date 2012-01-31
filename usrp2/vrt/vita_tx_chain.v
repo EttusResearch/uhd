@@ -76,7 +76,7 @@ module vita_tx_chain
       .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
       .data_o(tx_data_int2), .src_rdy_o(tx_src_rdy_int2), .dst_rdy_i(tx_dst_rdy_int2));
 
-   dspengine_8to16 #(.BASE(BASE+6), .BUF_SIZE(FIFOSIZE)) dspengine_8to16
+   dspengine_8to16 #(.BASE(BASE+6), .BUF_SIZE(FIFOSIZE), .HEADER_OFFSET(USE_TRANS_HEADER)) dspengine_8to16
      (.clk(clk),.reset(reset),.clear(clear),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done),
