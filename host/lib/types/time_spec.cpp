@@ -16,7 +16,6 @@
 //
 
 #include <uhd/types/time_spec.hpp>
-#include <boost/math/special_functions/round.hpp>
 
 using namespace uhd;
 
@@ -109,7 +108,7 @@ time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
  * Time spec accessors
  **********************************************************************/
 long time_spec_t::get_tick_count(double tick_rate) const{
-    return boost::math::iround(this->get_frac_secs()*tick_rate);
+    return long(this->get_frac_secs()*tick_rate + 0.5);
 }
 
 double time_spec_t::get_real_secs(void) const{
