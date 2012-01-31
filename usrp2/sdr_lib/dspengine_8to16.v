@@ -42,8 +42,8 @@ module dspengine_8to16
    localparam DSP_IDLE = 0;
    localparam DSP_PARSE_HEADER = 1;
    localparam DSP_READ = 2;
-   localparam DSP_WRITE_0 = 3;
-   localparam DSP_WRITE_1 = 4;
+   localparam DSP_WRITE_1 = 3;
+   localparam DSP_WRITE_0 = 4;
    localparam DSP_READ_TRAILER = 5;
    localparam DSP_WRITE_TRAILER = 6;
    localparam DSP_WRITE_HEADER = 7;
@@ -65,8 +65,6 @@ module dspengine_8to16
    reg [BUF_SIZE-1:0] read_adr, write_adr;
    reg 		      has_trailer_reg;
    
-   wire 	      last = (read_adr + 1) == (access_len - has_trailer_reg);
-
    reg [31:0] 	      new_header, new_trailer, trailer_mask;
    reg [15:0] 	      length;
    reg 		      wait_for_trailer;
@@ -89,8 +87,8 @@ module dspengine_8to16
        case(dsp_state)
 	 DSP_IDLE :
 	   begin
-	      read_adr <= 0;
-	      write_adr <= 0;
+	      read_adr <= 1; // Skip 0 for transport header
+	      write_adr <= 1; // Skip 0 for transport header
 	      if(access_ok)
 		dsp_state <= DSP_PARSE_HEADER;
 	   end
@@ -101,7 +99,7 @@ module dspengine_8to16
 
 	      has_trailer_reg <= has_trailer;
 	      new_header[31:16] <= access_dat_i[31:16];
-	      new_header[15:0] <= access_len;
+	      new_header[15:0] <= access_len-1;
 	      length <= access_len;
 	      hdr_length_reg <= hdr_length;
 	      if(~is_if_data | ~convert | ~has_trailer)
@@ -110,10 +108,10 @@ module dspengine_8to16
 		dsp_state <= DSP_WRITE_HEADER;  
 	      else
 		begin
-		   read_adr <= access_len-1; // point to trailer
+		   read_adr <= access_len - 1; // point to trailer
 		   dsp_state <= DSP_READ_TRAILER;
 		   wait_for_trailer <= 0;
-		   data_in_len <= access_len - hdr_length - 1;
+		   data_in_len <= access_len - hdr_length - 2;
 		end
 	   end
 	 
@@ -125,7 +123,7 @@ module dspengine_8to16
 	      new_trailer <= access_dat_i[31:0]; // Leave trailer unchanged
 	      odd <= access_dat_i[20] & access_dat_i[8];
 	      data_out_len <= data_in_lenx2;
-	      write_adr <= hdr_length_reg + data_in_lenx2;
+	      write_adr <= hdr_length_reg + data_in_lenx2 + 1;
 	   end
 
 	 DSP_WRITE_TRAILER :
@@ -133,7 +131,7 @@ module dspengine_8to16
 	      dsp_state <= DSP_READ;
 	      write_adr <= write_adr - 1;
 	      read_adr <= read_adr - 1;
-	      new_header[15:0] <= write_adr + 1; // length = addr of trailer + 1
+	      new_header[15:0] <= write_adr; // length = addr of trailer + 1
 	   end
 
 	 DSP_READ :
@@ -146,7 +144,7 @@ module dspengine_8to16
 	   begin
 	      write_adr <= write_adr - 1;
 	      odd <= 0;
-	      if(write_adr == hdr_length_reg)
+	      if(write_adr == (hdr_length_reg+1))
 		dsp_state <= DSP_WRITE_HEADER;
 	      else if(odd)
 		dsp_state <= DSP_READ;
@@ -157,7 +155,7 @@ module dspengine_8to16
 	 DSP_WRITE_0 :
 	   begin
 	      write_adr <= write_adr - 1;
-	      if(write_adr == hdr_length_reg)
+	      if(write_adr == (hdr_length_reg+1))
 		dsp_state <= DSP_WRITE_HEADER;
 	      else
 		dsp_state <= DSP_READ;
@@ -168,8 +166,8 @@ module dspengine_8to16
 
 	 DSP_DONE :
 	   begin
-	      read_adr <= 0;
-	      write_adr <= 0;
+	      read_adr <= 1;
+	      write_adr <= 1;
 	      dsp_state <= DSP_IDLE;
 	   end
        endcase // case (dsp_state)
@@ -184,7 +182,7 @@ module dspengine_8to16
 		      (dsp_state == DSP_WRITE_0) |
 		      (dsp_state == DSP_WRITE_1);
    
-   assign access_dat_o = (dsp_state == DSP_WRITE_HEADER) ? { 4'h1, new_header } :
+   assign access_dat_o = (dsp_state == DSP_WRITE_HEADER) ? { 4'h0, new_header } :
 			 (dsp_state == DSP_WRITE_TRAILER) ? { 4'h2, new_trailer } :
 			 (dsp_state == DSP_WRITE_0) ? { 4'h0, i8_0, 8'd0, q8_0, 8'd0 } :
 			 (dsp_state == DSP_WRITE_1) ? { 4'h0, i8_1, 8'd0, q8_1, 8'd0 } :
