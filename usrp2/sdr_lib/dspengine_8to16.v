@@ -132,7 +132,7 @@ module dspengine_8to16
 	      dsp_state <= DSP_READ;
 	      write_adr <= write_adr - 1;
 	      read_adr <= read_adr - 1;
-	      new_header[15:0] <= write_adr; // length = addr of trailer + 1
+	      new_header[15:0] <= write_adr + (1 - HEADER_OFFSET); // length = addr of trailer + 1
 	   end
 
 	 DSP_READ :
@@ -145,7 +145,7 @@ module dspengine_8to16
 	   begin
 	      write_adr <= write_adr - 1;
 	      odd <= 0;
-	      if(write_adr == (hdr_length_reg+1))
+	      if(write_adr == (hdr_length_reg+HEADER_OFFSET))
 		dsp_state <= DSP_WRITE_HEADER;
 	      else if(odd)
 		dsp_state <= DSP_READ;
@@ -156,7 +156,7 @@ module dspengine_8to16
 	 DSP_WRITE_0 :
 	   begin
 	      write_adr <= write_adr - 1;
-	      if(write_adr == (hdr_length_reg+1))
+	      if(write_adr == (hdr_length_reg+HEADER_OFFSET))
 		dsp_state <= DSP_WRITE_HEADER;
 	      else
 		dsp_state <= DSP_READ;
@@ -167,8 +167,8 @@ module dspengine_8to16
 
 	 DSP_DONE :
 	   begin
-	      read_adr <= 1;
-	      write_adr <= 1;
+	      read_adr <= HEADER_OFFSET;
+	      write_adr <= HEADER_OFFSET;
 	      dsp_state <= DSP_IDLE;
 	   end
        endcase // case (dsp_state)

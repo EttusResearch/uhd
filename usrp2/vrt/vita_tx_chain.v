@@ -64,8 +64,8 @@ module vita_tx_chain
    wire [FIFOSIZE-1:0] access_adr, access_len;
    wire 	       access_we, access_stb, access_ok, access_done, access_skip_read;
    wire [35:0] 	       dsp_to_buf, buf_to_dsp;
-   wire [35:0] 	       tx_data_int2;
-   wire 	       tx_src_rdy_int2, tx_dst_rdy_int2;
+   wire [35:0] 	       tx_data_int1, tx_data_int2;
+   wire 	       tx_src_rdy_int1, tx_dst_rdy_int1, tx_src_rdy_int2, tx_dst_rdy_int2;
 
    double_buffer #(.BUF_SIZE(FIFOSIZE)) db
      (.clk(clk),.reset(reset),.clear(clear),
@@ -74,7 +74,7 @@ module vita_tx_chain
       .access_dat_i(dsp_to_buf), .access_dat_o(buf_to_dsp),
 
       .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
-      .data_o(tx_data_int2), .src_rdy_o(tx_src_rdy_int2), .dst_rdy_i(tx_dst_rdy_int2));
+      .data_o(tx_data_int1), .src_rdy_o(tx_src_rdy_int1), .dst_rdy_i(tx_dst_rdy_int1));
 
    dspengine_8to16 #(.BASE(BASE+6), .BUF_SIZE(FIFOSIZE), .HEADER_OFFSET(USE_TRANS_HEADER)) dspengine_8to16
      (.clk(clk),.reset(reset),.clear(clear),
@@ -82,6 +82,11 @@ module vita_tx_chain
       .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done),
       .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len),
       .access_dat_i(buf_to_dsp), .access_dat_o(dsp_to_buf));
+
+   fifo_cascade #(.WIDTH(36), .SIZE(9)) post_engine_buffering(
+    .clk(clk), .reset(reset), .clear(clear),
+    .datain(tx_data_int1), .src_rdy_i(tx_src_rdy_int1), .dst_rdy_o(tx_dst_rdy_int1),
+    .dataout(tx_data_int2), .src_rdy_o(tx_src_rdy_int2), .dst_rdy_i(tx_dst_rdy_int2));
 
    vita_tx_deframer #(.BASE(BASE), 
 		      .MAXCHAN(MAXCHAN), 
