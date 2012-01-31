@@ -73,7 +73,9 @@ module double_buffer_tb();
 	// Passthrough
 	$display("Passthrough");
 	src_rdy_i <= 1;
-	data_i <= { 2'b00,1'b0,1'b1,32'hFFFFFFFF};
+	data_i <= { 2'b00,1'b0,1'b1,32'h01234567};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'hFFFFFFFF};
 	@(posedge clk);
 	data_i <= { 2'b00,1'b0,1'b0,32'h04050607};
 	@(posedge clk);
@@ -95,7 +97,9 @@ module double_buffer_tb();
 	@(posedge clk);
 	$display("Non-IF Data Passthrough");
 	src_rdy_i <= 1;
-	data_i <= { 2'b00,1'b0,1'b1,32'hC0000000};
+	data_i <= { 2'b00,1'b0,1'b1,32'h89acdef0};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'hC0000000};
 	@(posedge clk);
 	data_i <= { 2'b00,1'b0,1'b0,32'h14151617};
 	@(posedge clk);
@@ -111,7 +115,9 @@ module double_buffer_tb();
 	
 	$display("No StreamID, No Trailer, Even");
 	src_rdy_i <= 1;
-  	data_i <= { 2'b00,1'b0,1'b1,32'h0000FFFF};
+  	data_i <= { 2'b00,1'b0,1'b1,32'hAAAAAAAA};
+	@(posedge clk);
+  	data_i <= { 2'b00,1'b0,1'b0,32'h0000FFFF};
 	@(posedge clk);
 	data_i <= { 2'b00,1'b0,1'b0,32'h01000200};
 	@(posedge clk);
@@ -139,7 +145,9 @@ module double_buffer_tb();
 
 	$display("No StreamID, No Trailer, Odd");
 	src_rdy_i <= 1;
-  	data_i <= { 2'b00,1'b0,1'b1,32'h0000FFFF};
+  	data_i <= { 2'b00,1'b0,1'b1,32'hBBBBBBBB};
+	@(posedge clk);
+  	data_i <= { 2'b00,1'b0,1'b0,32'h0000FFFF};
 	@(posedge clk);
 	data_i <= { 2'b00,1'b0,1'b0,32'h11001200};
 	@(posedge clk);
@@ -162,7 +170,9 @@ module double_buffer_tb();
 */
 	$display("No StreamID, Trailer, Even");
 	src_rdy_i <= 1;
-  	data_i <= { 2'b00,1'b0,1'b1,32'h0400FFFF};
+  	data_i <= { 2'b00,1'b0,1'b1,32'hCCCCCCCC};
+	@(posedge clk);
+  	data_i <= { 2'b00,1'b0,1'b0,32'h0400FFFF};
 	@(posedge clk);
 	data_i <= { 2'b00,1'b0,1'b0,32'h21222324};
 	@(posedge clk);
@@ -182,10 +192,12 @@ module double_buffer_tb();
 
 	while(~dst_rdy_o)
 	  @(posedge clk);
-
+/*
 	$display("No StreamID, Trailer, Odd");
 	src_rdy_i <= 1;
-  	data_i <= { 2'b00,1'b0,1'b1,32'h0400FFFF};
+  	data_i <= { 2'b00,1'b0,1'b1,32'hDDDDDDDD};
+	@(posedge clk);
+  	data_i <= { 2'b00,1'b0,1'b0,32'h0400FFFF};
 	@(posedge clk);
 	data_i <= { 2'b00,1'b0,1'b0,32'h21222324};
 	@(posedge clk);
@@ -202,7 +214,7 @@ module double_buffer_tb();
 	@(posedge clk);
 	src_rdy_i <= 0;
 	@(posedge clk);
-
+*/
 	while(~dst_rdy_o)
 	  @(posedge clk);
 
