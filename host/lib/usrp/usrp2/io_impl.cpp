@@ -449,10 +449,11 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //calculate packet size
     static const size_t hdr_size = 0
+        + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
-        + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+        - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
     ;
     const size_t bpp = _mbc[_mbc.keys().front()].tx_dsp_xport->get_send_frame_size() - hdr_size;
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);

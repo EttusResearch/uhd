@@ -264,6 +264,7 @@ tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t &args_){
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
+        - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
     static const size_t bpp = 2048 - hdr_size;
