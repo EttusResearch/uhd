@@ -146,7 +146,10 @@ module dspengine_8to16
 	      write_adr <= write_adr - 1;
 	      odd <= 0;
 	      if(write_adr == (hdr_length_reg+HEADER_OFFSET))
-		dsp_state <= DSP_WRITE_HEADER;
+		begin
+		   write_adr <= HEADER_OFFSET;
+		   dsp_state <= DSP_WRITE_HEADER;
+		end
 	      else if(odd)
 		dsp_state <= DSP_READ;
 	      else
@@ -157,7 +160,10 @@ module dspengine_8to16
 	   begin
 	      write_adr <= write_adr - 1;
 	      if(write_adr == (hdr_length_reg+HEADER_OFFSET))
-		dsp_state <= DSP_WRITE_HEADER;
+		begin
+		   write_adr <= HEADER_OFFSET;
+		   dsp_state <= DSP_WRITE_HEADER;
+		end
 	      else
 		dsp_state <= DSP_READ;
 	   end
