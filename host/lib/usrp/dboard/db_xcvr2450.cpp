@@ -171,8 +171,8 @@ private:
         }
 
         //constants for the rssi calculation
-        static const double min_v = 0.5, max_v = 2.5;
-        static const double rssi_dyn_range = 60;
+        static const double min_v = 2.5, max_v = 0.5;
+        static const double rssi_dyn_range = 60.0;
         //calculate the rssi from the voltage
         double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
         double rssi = max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);

@@ -136,7 +136,6 @@ Bandwidths (Hz):
 Sensors:
 
 * **lo_locked**: boolean for LO lock state
-* **rssi**:      float for rssi in dBm
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 XCVR 2450

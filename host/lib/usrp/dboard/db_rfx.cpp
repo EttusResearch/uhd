@@ -111,21 +111,9 @@ private:
     }
 
     /*!
-     * Read the RSSI from the aux adc
-     * \return the rssi sensor in dBm
+     * Removed incorrect/confusing RSSI calculation
+     * Limited dynamic range of sensor makes this less useful
      */
-    sensor_value_t get_rssi(void){
-        //RSSI from VAGC vs RF Power, Fig 34, pg 13
-        double max_power = -3.0;
-
-        //constants for the rssi calculation
-        static const double min_v = 0.35, max_v = 1.0;
-        static const double rssi_dyn_range = 60;
-        //calculate the rssi from the voltage
-        double voltage = this->get_iface()->read_aux_adc(dboard_iface::UNIT_RX, dboard_iface::AUX_ADC_B);
-        const double rssi = max_power - rssi_dyn_range*(voltage - min_v)/(max_v - min_v);
-        return sensor_value_t("RSSI", rssi, "dBm");
-    }
 };
 
 /***********************************************************************
@@ -189,8 +177,6 @@ rfx_xcvr::rfx_xcvr(
     this->get_rx_subtree()->create<std::string>("name").set("RFX RX");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
-    this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
-        .publish(boost::bind(&rfx_xcvr::get_rssi, this));
     BOOST_FOREACH(const std::string &name, _rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .coerce(boost::bind(&rfx_xcvr::set_rx_gain, this, _1, name))
