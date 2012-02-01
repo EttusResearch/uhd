@@ -19,6 +19,7 @@
 module vita_tx_chain
   #(parameter BASE=0,
     parameter FIFOSIZE=10,
+    parameter POST_ENGINE_FIFOSIZE=0,
     parameter REPORT_ERROR=0,
     parameter DO_FLOW_CONTROL=0,
     parameter PROT_ENG_FLAGS=0,
@@ -83,10 +84,19 @@ module vita_tx_chain
       .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len),
       .access_dat_i(buf_to_dsp), .access_dat_o(dsp_to_buf));
 
-   fifo_cascade #(.WIDTH(36), .SIZE(9)) post_engine_buffering(
-    .clk(clk), .reset(reset), .clear(clear),
-    .datain(tx_data_int1), .src_rdy_i(tx_src_rdy_int1), .dst_rdy_o(tx_dst_rdy_int1),
-    .dataout(tx_data_int2), .src_rdy_o(tx_src_rdy_int2), .dst_rdy_i(tx_dst_rdy_int2));
+    generate
+    if (POST_ENGINE_FIFOSIZE==0) begin
+        assign tx_data_int2 = tx_data_int1;
+        assign tx_src_rdy_int2 = tx_src_rdy_int1;
+        assign tx_dst_rdy_int1 = tx_dst_rdy_int2;
+    end
+    else begin
+       fifo_cascade #(.WIDTH(36), .SIZE(POST_ENGINE_FIFOSIZE)) post_engine_buffering(
+        .clk(clk), .reset(reset), .clear(clear),
+        .datain(tx_data_int1), .src_rdy_i(tx_src_rdy_int1), .dst_rdy_o(tx_dst_rdy_int1),
+        .dataout(tx_data_int2), .src_rdy_o(tx_src_rdy_int2), .dst_rdy_i(tx_dst_rdy_int2));
+    end
+    endgenerate
 
    vita_tx_deframer #(.BASE(BASE), 
 		      .MAXCHAN(MAXCHAN), 

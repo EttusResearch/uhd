@@ -661,6 +661,7 @@ module u2plus_core
    wire strobe_tx;
    
    vita_tx_chain #(.BASE(SR_TX_CTRL), .FIFOSIZE(DSP_TX_FIFOSIZE),
+		   .POST_ENGINE_FIFOSIZE(DSP_TX_FIFOSIZE+1),
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(1),
 		   .PROT_ENG_FLAGS(1), .USE_TRANS_HEADER(1),
 		   .DSP_NUMBER(0))
