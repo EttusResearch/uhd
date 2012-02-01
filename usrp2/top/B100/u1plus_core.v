@@ -23,8 +23,9 @@ module u1plus_core
    output debug_txd, input debug_rxd,
    
    // GPIF
-   inout [15:0] gpif_d, input [3:0] gpif_ctl, output [3:0] gpif_rdy,
-   output [2:0] gpif_misc, input gpif_clk,
+   inout [15:0] gpif_d, input [3:0] gpif_ctl, output gpif_sloe,
+   output gpif_slwr, output gpif_slrd, output gpif_pktend, output [1:0] gpif_fifoadr,
+   input gpif_clk,
    
    inout db_sda, inout db_scl,
    output sclk, output [15:0] sen, output mosi, input miso,
@@ -36,8 +37,8 @@ module u1plus_core
    input pps_in
    );
 
-   localparam TXFIFOSIZE = 11;
-   localparam RXFIFOSIZE = 11;
+   localparam TXFIFOSIZE = 12;
+   localparam RXFIFOSIZE = 12;
 
    // 64 total regs in address space
    localparam SR_RX_CTRL0 = 0;       // 9 regs (+0 to +8)
@@ -115,15 +116,20 @@ module u1plus_core
    setting_reg #(.my_addr(SR_CLEAR_TX_FIFO), .width(1)) sr_clear_tx
      (.clk(wb_clk),.rst(wb_rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(clear_tx));
+      
+   wire 	 run_rx0, run_rx1;
 
-   gpif #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
-   gpif (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), .gpif_d(gpif_d),
-	 .gpif_ctl(gpif_ctl), .gpif_rdy(gpif_rdy), .gpif_misc(gpif_misc),
+   slave_fifo #(.TXFIFOSIZE(TXFIFOSIZE), .RXFIFOSIZE(RXFIFOSIZE))
+   slave_fifo (.gpif_clk(gpif_clk), .gpif_rst(gpif_rst), .gpif_d(gpif_d),
+	 .gpif_ctl(gpif_ctl), .sloe(gpif_sloe), .slwr(gpif_slwr), .slrd(gpif_slrd),
+     .pktend(gpif_pktend), .fifoadr(gpif_fifoadr),
 	 
 	 .wb_clk(wb_clk), .wb_rst(wb_rst),
 	 .wb_adr_o(m0_adr), .wb_dat_mosi(m0_dat_mosi), .wb_dat_miso(m0_dat_miso),
 	 .wb_sel_o(m0_sel), .wb_cyc_o(m0_cyc), .wb_stb_o(m0_stb), .wb_we_o(m0_we),
 	 .wb_ack_i(m0_ack), .triggers(8'd0),
+	 
+	 .dsp_rx_run(run_rx0 | run_rx1),
 	 
 	 .fifo_clk(wb_clk), .fifo_rst(wb_rst), .clear_tx(clear_tx), .clear_rx(clear_rx),
 	 .tx_data_o(tx_data), .tx_src_rdy_o(tx_src_rdy), .tx_dst_rdy_i(tx_dst_rdy),
@@ -132,14 +138,13 @@ module u1plus_core
 	 
 	 .tx_underrun(tx_underrun_gpif), .rx_overrun(rx_overrun_gpif),
 
-	 .frames_per_packet(frames_per_packet),
+	 .test_len(0), .test_rate(0), .test_ctrl(0),
 	 .debug0(debug0), .debug1(debug1));
 
    // /////////////////////////////////////////////////////////////////////////
    // RX ADC Frontend, does IQ Balance, DC Offset, muxing
 
    wire [23:0] 	 rx_fe_i, rx_fe_q;  // 24 bits is total overkill here, but it matches u2/u2p
-   wire 	 run_rx0, run_rx1;
    
    rx_frontend #(.BASE(SR_RX_FRONT)) rx_frontend
      (.clk(wb_clk),.rst(wb_rst),
