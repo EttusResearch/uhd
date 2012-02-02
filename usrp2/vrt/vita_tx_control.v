@@ -187,8 +187,17 @@ module vita_tx_control
    
    assign sample_fifo_dst_rdy_o = (ibs_state == IBS_ERROR) | (strobe & (ibs_state == IBS_RUN));  // FIXME also cleanout
 
-   assign sample = (ibs_state == IBS_RUN) ? sample_fifo_i[5+64+16+WIDTH-1:5+64+16] : {WIDTH{1'b0}};
-   //assign run = (ibs_state == IBS_RUN) | (ibs_state == IBS_CONT_BURST);
+   //register the output sample
+   reg [31:0] sample_held;
+   assign sample = sample_held;
+   always @(posedge clk)
+     if(reset | clear)
+        sample_held <= 0;
+     else if (~run)
+       sample_held <= 0;
+     else if (strobe)
+       sample_held <= sample_fifo_i[5+64+16+WIDTH-1:5+64+16];
+
    assign error = send_error;
    assign ack = send_ack;
 
