@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -211,7 +211,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    const size_t bpp = 2048 - hdr_size; //limited by FPGA pkt buffer size
+    const size_t bpp = B100_MAX_PKT_BYTE_LIMIT - hdr_size;
     const size_t bpi = convert::get_bytes_per_item(args.otw_format);
     const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
 
@@ -260,10 +260,6 @@ tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t &args_){
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
-    if (args.otw_format == "sc8"){
-        throw uhd::value_error("USRP TX requested wire format not implemented in FPGA: " + args.otw_format);
-    }
-
     //calculate packet size
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
@@ -271,7 +267,7 @@ tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t &args_){
         - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
     ;
-    static const size_t bpp = _data_transport->get_send_frame_size() - hdr_size;
+    static const size_t bpp = B100_MAX_PKT_BYTE_LIMIT - hdr_size;
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
