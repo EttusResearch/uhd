@@ -16,49 +16,48 @@ Common reference signals
 ------------------------------------------------------------------------
 USRPs take two reference signals in order to synchronize clocks and time:
 
-* A 10MHz reference to provide a single frequency reference for both devices, and
+* A 10MHz reference to provide a single frequency reference for both devices.
 * A pulse-per-second (1PPS) to synchronize the sample time across devices.
+* Or, the MIMO cable transmits an encoded time message from one device to another.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Provide reference signals
+PPS and 10 MHz reference signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-USRPs have two primary means of providing synchronization:
-
-**Method 1:**
 Connect the front panel SMA connectors to the reference sources.
 Typically, these signals are provided by an external GPSDO.
 However, some USRP models can provide these signals from an optional internal GPSDO.
 
-**Method 2:**
-Use the MIMO Expansion cable to share reference sources (USRP2 and N-Series).
-The MIMO cable can be used synchronize one device to another device.
-Users of the MIMO cable may use method 1 to synchronize multiple pairs of devices.
+::
+
+    usrp->set_clock_source("external");
+    usrp->set_time_source("external");
 
 **Note:**
+Sometimes the delay on the PPS signal will cause it to arrive inside the timing
+margin the FPGA sampling clock, causing PPS edges to be separated by less or
+more than 100 million cycles of the FPGA clock. If this is the case,
+you can change the edge reference of the PPS signal with this special parameter:
+
+::
+
+    usrp->set_time_source("_external_");
+
+**Note2:**
 For users generating their own signals for the external SMA connectors,
 the pulse-per-second should be clocked from the 10MHz reference.
 See the application notes for your device for specific signal requirements.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Set the clock configuration
+MIMO cable reference signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In order to synchronize to an external clock,
-configure the USRP device using the "external" clock configuration:
+Use the MIMO expansion cable to share reference sources (USRP2 and N-Series).
+The MIMO cable can be used synchronize one device to another device.
+Users of the MIMO cable may use method 1 to synchronize multiple pairs of devices.
 
 ::
 
-    usrp->set_clock_config(uhd::clock_config_t::external());
-
-Sometimes the delay on the PPS signal will cause it to arrive inside the timing
-margin the FPGA sampling clock, causing PPS edges to be separated by less or
-more than 100million cycles of the FPGA clock. If this is the case,
-you can change the edge reference of the PPS clock with the clock_config_t:
-
-::
-
-    uhd::clock_config_t clock_config = uhd::clock_config_t::external();
-    clock_config.pps_polarity = uhd::clock_config_t::PPS_NEG;
-    usrp->set_clock_config(clock_config);
+    usrp->set_clock_source("mimo");
+    usrp->set_time_source("mimo");
 
 ------------------------------------------------------------------------
 Synchronizing the device time
@@ -141,7 +140,7 @@ For receive, a burst is started when the user issues a stream command. This stre
     stream_cmd.time_spec = time_to_recv;
     usrp->issue_stream_cmd(stream_cmd);
 
-For transmit, a burst is started when the user calls send(). The metadata should have a time spec and start of burst set:
+For transmit, a burst is started when the user calls send(). The metadata should have a time spec set:
 ::
 
     uhd::tx_metadata_t md;
@@ -151,11 +150,7 @@ For transmit, a burst is started when the user calls send(). The metadata should
     md.time_spec = time_to_send;
 
     //send a single packet
-    size_t num_tx_samps = usrp->get_device()->send(
-        buffs, samps_to_send, md,
-        uhd::io_type_t::COMPLEX_FLOAT32,
-        uhd::device::SEND_MODE_ONE_PACKET, timeout
-    );
+    size_t num_tx_samps = tx_streamer->send(buffs, samps_to_send, md);
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Align LOs in the front-end
