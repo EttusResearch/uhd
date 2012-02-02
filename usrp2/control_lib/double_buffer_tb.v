@@ -27,7 +27,7 @@ module double_buffer_tb();
    reg src_rdy_i = 0;
    wire dst_rdy_o;
    
-   wire dst_rdy_i = 1;
+   wire dst_rdy_i = 0;
    wire [35:0] data_o;
    reg [35:0]  data_i;
 
@@ -46,7 +46,7 @@ module double_buffer_tb();
       .data_i(data_i), .src_rdy_i(src_rdy_i), .dst_rdy_o(dst_rdy_o),
       .data_o(data_o), .src_rdy_o(src_rdy_o), .dst_rdy_i(dst_rdy_i));
 
-   dspengine_8to16 dspengine_8to16
+   dspengine_8to16 #(.HEADER_OFFSET(1)) dspengine_8to16
      (.clk(clk),.reset(rst),.clear(0),
       .set_stb(set_stb), .set_addr(0), .set_data(1),
       .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done), 
@@ -168,6 +168,7 @@ module double_buffer_tb();
 	while(~dst_rdy_o)
 	  @(posedge clk);
 */
+   /*
 	$display("No StreamID, Trailer, Even");
 	src_rdy_i <= 1;
   	data_i <= { 2'b00,1'b0,1'b1,32'hCCCCCCCC};
@@ -189,7 +190,7 @@ module double_buffer_tb();
 	@(posedge clk);
 	src_rdy_i <= 0;
 	@(posedge clk);
-
+*/
 	while(~dst_rdy_o)
 	  @(posedge clk);
 /*
@@ -262,27 +263,49 @@ module double_buffer_tb();
 
 	while(~dst_rdy_o)
 	  @(posedge clk);
-
+*/
 	$display("StreamID, Trailer, Odd");
 	src_rdy_i <= 1;
-  	data_i <= { 2'b00,1'b0,1'b1,32'h1400FFFF};
+  	data_i <= { 2'b00,1'b0,1'b1,32'hABCDEF98};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'ha100a200};
+  	data_i <= { 2'b00,1'b0,1'b0,32'h1c034567};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'ha300a400};
+	data_i <= { 2'b00,1'b0,1'b0,32'ha0a1a2a3};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'ha4a5a6a7};
+//	src_rdy_i <= 0;
+//	@(posedge clk);
+//	src_rdy_i <= 1;
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'ha8a9aaab};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'hacadaeaf};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b1,1'b0,32'hdeadbeef};
+	@(posedge clk);
 	src_rdy_i <= 0;
 	@(posedge clk);
 	src_rdy_i <= 1;
+  	data_i <= { 2'b00,1'b0,1'b1,32'hABCDEF98};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'ha500a600};
+  	data_i <= { 2'b00,1'b0,1'b0,32'h1c034567};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b0,1'b0,32'ha700a800};
+	data_i <= { 2'b00,1'b0,1'b0,32'ha0a1a2a3};
 	@(posedge clk);
-	data_i <= { 2'b00,1'b1,1'b0,32'hbbb0bbb0};
+	data_i <= { 2'b00,1'b0,1'b0,32'ha4a5a6a7};
+//	src_rdy_i <= 0;
+//	@(posedge clk);
+//	src_rdy_i <= 1;
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'ha8a9aaab};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b0,1'b0,32'hacadaeaf};
+	@(posedge clk);
+	data_i <= { 2'b00,1'b1,1'b0,32'hdeadbeef};
 	@(posedge clk);
 	src_rdy_i <= 0;
 	@(posedge clk);
-*/
+
      end
    
    initial #28000 $finish;
