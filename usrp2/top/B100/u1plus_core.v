@@ -169,9 +169,10 @@ module u1plus_core
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
       .debug() );
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL0), .UNIT(0), .FIFOSIZE(10), .PROT_ENG_FLAGS(0)) vita_rx_chain0
+   vita_rx_chain #(.BASE(SR_RX_CTRL0), .UNIT(0), .FIFOSIZE(10), .PROT_ENG_FLAGS(0), .DSP_NUMBER(0)) vita_rx_chain0
      (.clk(wb_clk),.reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .vita_time(vita_time), .overrun(rx_overrun_dsp0),
       .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
       .rx_data_o(vita_rx_data0), .rx_dst_rdy_i(vita_rx_dst_rdy0), .rx_src_rdy_o(vita_rx_src_rdy0),
@@ -193,9 +194,10 @@ module u1plus_core
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
       .debug() );
 
-   vita_rx_chain #(.BASE(SR_RX_CTRL1), .UNIT(1), .FIFOSIZE(10), .PROT_ENG_FLAGS(0)) vita_rx_chain1
+   vita_rx_chain #(.BASE(SR_RX_CTRL1), .UNIT(1), .FIFOSIZE(10), .PROT_ENG_FLAGS(0), .DSP_NUMBER(1)) vita_rx_chain1
      (.clk(wb_clk),.reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .vita_time(vita_time), .overrun(rx_overrun_dsp1),
       .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
       .rx_data_o(vita_rx_data1), .rx_dst_rdy_i(vita_rx_dst_rdy1), .rx_src_rdy_o(vita_rx_src_rdy1),
@@ -218,13 +220,14 @@ module u1plus_core
    wire [31:0]   sample_tx;
    wire strobe_tx;
 
-   vita_tx_chain #(.BASE(SR_TX_CTRL), .FIFOSIZE(10),
+   vita_tx_chain #(.BASE(SR_TX_CTRL), .FIFOSIZE(0/*no engine*/),
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(0),
 		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
 		   .DSP_NUMBER(0)) 
    vita_tx_chain
      (.clk(wb_clk), .reset(wb_rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
+      .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .vita_time(vita_time),
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),

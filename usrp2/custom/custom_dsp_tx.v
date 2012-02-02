@@ -31,23 +31,29 @@
 
 module custom_dsp_tx
 #(
+    //the dsp unit number: 0, 1, 2...
     parameter DSPNO = 0,
-    parameter ADCW = 24
+
+    //frontend bus width
+    parameter WIDTH = 24
 )
 (
     //control signals
     input clock, input reset, input enable,
 
-    //settings bus
-    input set_stb, input [7:0] set_addr, input [31:0] set_data,
+    //main settings bus for built-in modules
+    input set_stb_main, input [7:0] set_addr_main, input [31:0] set_data_main,
+
+    //user settings bus, controlled through user setting regs API
+    input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
 
     //full rate outputs directly to the TX frontend
-    output [ADCW-1:0] frontend_i,
-    output [ADCW-1:0] frontend_q,
+    output [WIDTH-1:0] frontend_i,
+    output [WIDTH-1:0] frontend_q,
 
     //full rate outputs directly from the DUC chain
-    input [ADCW-1:0] duc_out_i,
-    input [ADCW-1:0] duc_out_q,
+    input [WIDTH-1:0] duc_out_i,
+    input [WIDTH-1:0] duc_out_q,
 
     //strobed samples {I16,Q16} to the TX DUC chain
     output [31:0] duc_in_sample,
@@ -80,7 +86,7 @@ module custom_dsp_tx
             );
             `endif
         end
-        if (DSPNO==1) begin
+        else begin
             `ifndef TX_DSP1_MODULE
             assign frontend_i = duc_out_i;
             assign frontend_q = duc_out_q;
@@ -88,42 +94,6 @@ module custom_dsp_tx
             assign bb_strobe = duc_in_strobe;
             `else
             TX_DSP1_CUSTOM_MODULE_NAME tx_dsp1_custom
-            (
-                .clock(clock), .reset(reset), .enable(enable),
-                .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-                .frontend_i(frontend_i), .frontend_q(frontend_q),
-                .duc_out_i(duc_out_i), .duc_out_q(duc_out_q),
-                .duc_in_sample(duc_in_sample), .duc_in_strobe(duc_in_strobe),
-                .bb_sample(bb_sample), .bb_strobe(bb_strobe)
-            );
-            `endif
-        end
-        if (DSPNO==2) begin
-            `ifndef TX_DSP2_MODULE
-            assign frontend_i = duc_out_i;
-            assign frontend_q = duc_out_q;
-            assign duc_in_sample = bb_sample;
-            assign bb_strobe = duc_in_strobe;
-            `else
-            TX_DSP2_CUSTOM_MODULE_NAME tx_dsp2_custom
-            (
-                .clock(clock), .reset(reset), .enable(enable),
-                .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-                .frontend_i(frontend_i), .frontend_q(frontend_q),
-                .duc_out_i(duc_out_i), .duc_out_q(duc_out_q),
-                .duc_in_sample(duc_in_sample), .duc_in_strobe(duc_in_strobe),
-                .bb_sample(bb_sample), .bb_strobe(bb_strobe)
-            );
-            `endif
-        end
-        else begin
-            `ifndef TX_DSP3_MODULE
-            assign frontend_i = duc_out_i;
-            assign frontend_q = duc_out_q;
-            assign duc_in_sample = bb_sample;
-            assign bb_strobe = duc_in_strobe;
-            `else
-            TX_DSP3_CUSTOM_MODULE_NAME tx_dsp3_custom
             (
                 .clock(clock), .reset(reset), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
