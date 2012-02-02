@@ -260,6 +260,10 @@ tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t &args_){
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
+    if (args.otw_format == "sc8"){
+        throw uhd::value_error("USRP TX requested wire format not implemented in FPGA: " + args.otw_format);
+    }
+
     //calculate packet size
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
