@@ -44,7 +44,7 @@
 #define REG_RX_CTRL_VRT_TLR        _ctrl_base + 24
 #define REG_RX_CTRL_NSAMPS_PP      _ctrl_base + 28
 #define REG_RX_CTRL_NCHANNELS      _ctrl_base + 32
-#define REG_RX_CTRL_FORMAT         _ctrl_base + 36
+#define REG_RX_CTRL_FORMAT         REG_RX_CTRL_CLEAR //re-use clear address
 
 template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
