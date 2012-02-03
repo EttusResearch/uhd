@@ -244,7 +244,7 @@ module slave_fifo
        data_tx_dst_rdy <= wr_fifo_space >= 256;
 
    fifo_cascade #(.WIDTH(18), .SIZE(12)) wr_fifo
-     (.clk(gpif_clk), .reset(gpif_rst), .clear(0),
+     (.clk(gpif_clk), .reset(gpif_rst), .clear(clear_tx),
       .datain({eop,sop,gpif_d}), .src_rdy_i(data_tx_src_rdy), .dst_rdy_o(/*data_tx_dst_rdy*/), .space(wr_fifo_space),
       .dataout(data_tx_int), .src_rdy_o(tx_src_rdy_int), .dst_rdy_i(tx_dst_rdy_int), .occupied());
    
@@ -269,7 +269,7 @@ module slave_fifo
       .state(refr_state), .eof_out(refr_eof), .length(refr_len));
 
    fifo19_to_fifo36 #(.LE(1)) f19_to_f36
-     (.clk(fifo_clk), .reset(fifo_rst), .clear(0),
+     (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
       .f19_datain(refr_data), .f19_src_rdy_i(refr_src_rdy), .f19_dst_rdy_o(refr_dst_rdy),
       .f36_dataout(tx36_data), .f36_src_rdy_o(tx36_src_rdy), .f36_dst_rdy_i(tx36_dst_rdy));
    
@@ -309,7 +309,7 @@ module slave_fifo
 
    //rd_fifo buffers writes to the 2clock fifo above
    fifo_cascade #(.WIDTH(19), .SIZE(RXFIFOSIZE)) rd_fifo
-     (.clk(~gpif_clk), .reset(gpif_rst), .clear(0),
+     (.clk(~gpif_clk), .reset(gpif_rst), .clear(clear_rx),
       .datain(data_rx_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int), .space(rxfifospace),
       .dataout(gpif_d_out_data), .src_rdy_o(data_rx_src_rdy), .dst_rdy_i(data_rx_dst_rdy), .occupied());
 
@@ -359,7 +359,7 @@ module slave_fifo
    //mux FIFO-to-WB along with async tx err pkts into one ctrl resp fifo
    //how is this clocked on wb_clk?
    fifo19_mux #(.prio(0)) mux_err_stream
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .data0_i(resp_int), .src0_rdy_i(resp_src_rdy_int), .dst0_rdy_o(resp_dst_rdy_int),
       .data1_i(tx_err19_data), .src1_rdy_i(tx_err19_src_rdy), .dst1_rdy_o(tx_err19_dst_rdy),
       .data_o(resp_data), .src_rdy_o(resp_src_rdy), .dst_rdy_i(resp_dst_rdy));

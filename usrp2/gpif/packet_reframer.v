@@ -38,7 +38,7 @@ module packet_reframer
    
    always @(posedge clk)
      if(reset | clear)
-       state <= 0;
+       state <= RF_IDLE;
      else
        if(src_rdy_i & dst_rdy_i)
 	 case(state)
@@ -49,16 +49,9 @@ module packet_reframer
 	     end
 	   RF_PKT :
 	     begin
-		if(length == 2)
-		   begin
-		  state <= RF_IDLE;
-		  length <= 0;
-		   end
-		else
-		  length <= length - 1;
+		if(eof_out) state <= RF_IDLE;
+		length <= length - 1;
 	     end
-	   default :
-	     state <= RF_IDLE;
 	 endcase // case (state)
    
    assign dst_rdy_o = dst_rdy_i; // this is a little pessimistic but ok

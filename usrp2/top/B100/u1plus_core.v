@@ -207,7 +207,7 @@ module u1plus_core
    // RX Stream muxing
 
    fifo36_mux #(.prio(0)) mux_data_streams
-     (.clk(wb_clk), .reset(wb_rst), .clear(0),
+     (.clk(wb_clk), .reset(wb_rst), .clear(clear_rx),
       .data0_i(vita_rx_data0), .src0_rdy_i(vita_rx_src_rdy0), .dst0_rdy_o(vita_rx_dst_rdy0),
       .data1_i(vita_rx_data1), .src1_rdy_i(vita_rx_src_rdy1), .dst1_rdy_o(vita_rx_dst_rdy1),
       .data_o(rx_data), .src_rdy_o(rx_src_rdy), .dst_rdy_i(rx_dst_rdy));
