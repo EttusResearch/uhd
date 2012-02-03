@@ -37,7 +37,7 @@ module u1plus_core
    input pps_in
    );
 
-   localparam TXFIFOSIZE = 12;
+   localparam TXFIFOSIZE = 11;
    localparam RXFIFOSIZE = 12;
 
    // 64 total regs in address space
@@ -220,7 +220,7 @@ module u1plus_core
    wire [31:0]   sample_tx;
    wire strobe_tx;
 
-   vita_tx_chain #(.BASE(SR_TX_CTRL), .FIFOSIZE(0/*no engine*/),
+   vita_tx_chain #(.BASE(SR_TX_CTRL), .FIFOSIZE(10), .POST_ENGINE_FIFOSIZE(11),
 		   .REPORT_ERROR(1), .DO_FLOW_CONTROL(0),
 		   .PROT_ENG_FLAGS(0), .USE_TRANS_HEADER(0),
 		   .DSP_NUMBER(0)) 

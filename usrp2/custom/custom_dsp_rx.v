@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//CUSTOMIZE ME!
+//COPY ME, CUSTOMIZE ME...
 
 //The following module effects the IO of the DDC chain.
 //By default, this entire module is a simple pass-through.
@@ -31,9 +31,6 @@
 
 module custom_dsp_rx
 #(
-    //the dsp unit number: 0, 1, 2...
-    parameter DSPNO = 0,
-
     //frontend bus width
     parameter WIDTH = 24
 )
@@ -41,11 +38,8 @@ module custom_dsp_rx
     //control signals
     input clock, input reset, input enable,
 
-    //main settings bus for built-in modules
-    input set_stb_main, input [7:0] set_addr_main, input [31:0] set_data_main,
-
     //user settings bus, controlled through user setting regs API
-    input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
+    input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
     //full rate inputs directly from the RX frontend
     input [WIDTH-1:0] frontend_i,
@@ -61,49 +55,12 @@ module custom_dsp_rx
 
     //strobbed baseband samples {I16,Q16} from this module
     output [31:0] bb_sample,
-    output bb_strobe, //high on valid sample
-
-    //debug output (optional)
-    output [31:0] debug
+    output bb_strobe //high on valid sample
 );
 
-    generate
-        if (DSPNO==0) begin
-            `ifndef RX_DSP0_MODULE
-            assign ddc_in_i = frontend_i;
-            assign ddc_in_q = frontend_q;
-            assign bb_sample = ddc_out_sample;
-            assign bb_strobe = ddc_out_strobe;
-            `else
-            RX_DSP0_CUSTOM_MODULE_NAME rx_dsp0_custom
-            (
-                .clock(clock), .reset(reset), .enable(enable),
-                .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-                .frontend_i(frontend_i), .frontend_q(frontend_q),
-                .ddc_in_i(ddc_in_i), .ddc_in_q(ddc_in_q),
-                .ddc_out_sample(ddc_out_sample), .ddc_out_strobe(ddc_out_strobe),
-                .bb_sample(bb_sample), .bb_strobe(bb_strobe)
-            );
-            `endif
-        end
-        else begin
-            `ifndef RX_DSP1_MODULE
-            assign ddc_in_i = frontend_i;
-            assign ddc_in_q = frontend_q;
-            assign bb_sample = ddc_out_sample;
-            assign bb_strobe = ddc_out_strobe;
-            `else
-            RX_DSP1_CUSTOM_MODULE_NAME rx_dsp1_custom
-            (
-                .clock(clock), .reset(reset), .enable(enable),
-                .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
-                .frontend_i(frontend_i), .frontend_q(frontend_q),
-                .ddc_in_i(ddc_in_i), .ddc_in_q(ddc_in_q),
-                .ddc_out_sample(ddc_out_sample), .ddc_out_strobe(ddc_out_strobe),
-                .bb_sample(bb_sample), .bb_strobe(bb_strobe)
-            );
-            `endif
-        end
-    endgenerate
+    assign ddc_in_i = frontend_i;
+    assign ddc_in_q = frontend_q;
+    assign bb_sample = ddc_out_sample;
+    assign bb_strobe = ddc_out_strobe;
 
 endmodule //custom_dsp_rx

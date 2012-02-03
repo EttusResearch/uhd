@@ -19,6 +19,7 @@
 module vita_tx_chain
   #(parameter BASE=0,
     parameter FIFOSIZE=10,
+    parameter POST_ENGINE_FIFOSIZE=10,
     parameter REPORT_ERROR=0,
     parameter DO_FLOW_CONTROL=0,
     parameter PROT_ENG_FLAGS=0,
@@ -75,6 +76,8 @@ module vita_tx_chain
        wire [FIFOSIZE-1:0] access_adr, access_len;
        wire 	       access_we, access_stb, access_ok, access_done, access_skip_read;
        wire [35:0] 	       dsp_to_buf, buf_to_dsp;
+       wire [35:0] tx_data_int0;
+       wire tx_src_rdy_int0, tx_dst_rdy_int0;
 
        double_buffer #(.BUF_SIZE(FIFOSIZE)) db
          (.clk(clk),.reset(reset),.clear(clear),
@@ -83,15 +86,21 @@ module vita_tx_chain
           .access_dat_i(dsp_to_buf), .access_dat_o(buf_to_dsp),
 
           .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
-          .data_o(tx_data_int1), .src_rdy_o(tx_src_rdy_int1), .dst_rdy_i(tx_dst_rdy_int1));
+          .data_o(tx_data_int0), .src_rdy_o(tx_src_rdy_int0), .dst_rdy_i(tx_dst_rdy_int0));
 
-       custom_engine_tx #(.DSPNO(DSP_NUMBER), .MAIN_SETTINGS_BASE(BASE+6), .BUF_SIZE(FIFOSIZE), .HEADER_OFFSET(USE_TRANS_HEADER)) dspengine_tx
+       vita_tx_engine_glue #(.DSPNO(DSP_NUMBER), .MAIN_SETTINGS_BASE(BASE+1), .BUF_SIZE(FIFOSIZE), .HEADER_OFFSET(USE_TRANS_HEADER)) dspengine_tx
          (.clock(clk),.reset(reset),.clear(clear),
           .set_stb_main(set_stb), .set_addr_main(set_addr), .set_data_main(set_data),
           .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
           .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done),
           .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len),
           .access_dat_i(buf_to_dsp), .access_dat_o(dsp_to_buf));
+
+       fifo_cascade #(.WIDTH(36), .SIZE(POST_ENGINE_FIFOSIZE)) post_engine_buffering(
+        .clk(clk), .reset(reset), .clear(clear),
+        .datain(tx_data_int0), .src_rdy_i(tx_src_rdy_int0), .dst_rdy_o(tx_dst_rdy_int0),
+        .dataout(tx_data_int1), .src_rdy_o(tx_src_rdy_int1), .dst_rdy_i(tx_dst_rdy_int1));
+
     end
     endgenerate
 

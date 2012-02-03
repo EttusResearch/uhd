@@ -74,7 +74,7 @@ module vita_rx_chain
       .data_i(rx_data_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int),
       .data_o(rx_data_int2), .src_rdy_o(rx_src_rdy_int2), .dst_rdy_i(rx_dst_rdy_int2));
 
-   custom_engine_rx #(.DSPNO(DSP_NUMBER), .MAIN_SETTINGS_BASE(BASE+9), .BUF_SIZE(FIFOSIZE)) dspengine_rx
+   vita_rx_engine_glue #(.DSPNO(DSP_NUMBER), .MAIN_SETTINGS_BASE(BASE+3), .BUF_SIZE(FIFOSIZE)) dspengine_rx
      (.clock(clk),.reset(reset),.clear(clear),
       .set_stb_main(set_stb), .set_addr_main(set_addr), .set_data_main(set_data),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),

@@ -165,10 +165,9 @@ module ddc_chain
    round_sd #(.WIDTH_IN(24),.WIDTH_OUT(16)) round_q
      (.clk(clk),.reset(rst), .in(prod_reg_q),.strobe_in(strobe_mult), .out(ddc_chain_out[15:0]), .strobe_out());
 
-   custom_dsp_rx #(.DSPNO(DSPNO)) custom(
+   dsp_rx_glue #(.DSPNO(DSPNO)) custom(
     .clock(clk), .reset(rst), .enable(run),
-    .set_stb_main(set_stb), .set_addr_main(set_addr), .set_data_main(set_data),
-    .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
+    .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
     .frontend_i(rx_fe_i_mux), .frontend_q(rx_fe_q_mux),
     .ddc_in_i(to_cordic_i), .ddc_in_q(to_cordic_q),
     .ddc_out_sample(ddc_chain_out), .ddc_out_strobe(ddc_chain_stb),

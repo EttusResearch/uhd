@@ -1,5 +1,5 @@
 #
-# Copyright 2008 Ettus Research LLC
+# Copyright 2008-2012 Ettus Research LLC
 #
 
 ##################################################
@@ -7,7 +7,14 @@
 ##################################################
 TOP_MODULE := B100
 BUILD_DIR := build-B100/
-export PROJ_FILE := $(BUILD_DIR)$(TOP_MODULE).ise
+
+# set me in a custom makefile
+CUSTOM_SRCS =
+CUSTOM_DEFS =
+
+##################################################
+# Include other makefiles
+##################################################
 
 include ../Makefile.common
 include ../../fifo/Makefile.srcs
@@ -21,7 +28,6 @@ include ../../vrt/Makefile.srcs
 include ../../udp/Makefile.srcs
 include ../../coregen/Makefile.srcs
 include ../../gpif/Makefile.srcs
-include ../../custom/Makefile.srcs
 
 ##################################################
 # Project Properties
@@ -64,7 +70,8 @@ SYNTHESIZE_PROPERTIES = \
 "Register Balancing" Yes \
 "Use Clock Enable" Auto \
 "Use Synchronous Reset" Auto \
-"Use Synchronous Set" Auto
+"Use Synchronous Set" Auto \
+"Verilog Macros" "$(CUSTOM_MOD_DEFS)"
 
 TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"
