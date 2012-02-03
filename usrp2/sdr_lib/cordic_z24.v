@@ -119,8 +119,6 @@ module cordic_z24(clock, reset, enable, xi, yi, zi, xo, yo, zo );
    assign xo = x20[bitwidth:1];  
    assign yo = y20[bitwidth:1];
    assign zo = z20;		  
-   //assign xo = x20[bitwidth+1:2];  // CORDIC gain is ~1.6, plus gain from rotating vectors
-   //assign yo = y20[bitwidth+1:2];
 
 endmodule // cordic
 
