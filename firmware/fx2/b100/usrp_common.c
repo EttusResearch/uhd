@@ -33,7 +33,7 @@ init_usrp (void)
   CKCON = 0;		// MOVX takes 2 cycles
 
   // IFCLK is generated internally and runs at 48 MHz; slave FIFO mode
-  IFCONFIG = bmIFCLKSRC | bm3048MHZ | bmIFCLKOE | bmIFSLAVE;
+  IFCONFIG = bmIFCLKSRC | bm3048MHZ | bmIFCLKOE;
   SYNCDELAY;
 
   // configure IO ports (B and D are used by slave FIFO)

@@ -81,6 +81,15 @@ static void initialize_gpif_buffer(int ep) {
   FIFORESET = 0x00; SYNCDELAY;
 }
 
+void enable_xfers(int enable) {
+    if(enable) {
+        IFCONFIG |= bmIFSLAVE;
+    } else {
+        IFCONFIG &= ~bmIFSLAVE;
+    }
+    set_led_0(enable);
+}
+
 /*
  * Handle our "Vendor Extension" commands on endpoint 0.
  * If we handle this one, return non-zero.
@@ -174,6 +183,7 @@ app_vendor_cmd (void)
       break;
       
     case VRQ_ENABLE_GPIF:
+      enable_xfers(wValueL);
       break;
     
     case VRQ_CLEAR_FPGA_FIFO:
@@ -266,13 +276,6 @@ main (void)
   EA = 1;		// global interrupt enable
 
   fx2_renumerate ();	// simulates disconnect / reconnect
-
-//  setup_flowstate_common();
-
-//set up gpif slave mode here
-  //set slave FIFO mode
-  //set synchronous slave mode
-  ////both done in init_usrp()
   
   //set FLAGA, FLAGB, FLAGC, FLAGD to be EP2EF, EP4EF, EP6PF, EP8PF
   PINFLAGSAB = (bmEP2EF) | (bmEP4EF << 4);
