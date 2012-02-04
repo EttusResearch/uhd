@@ -58,9 +58,6 @@ void b100_impl::io_init(void){
     _fpga_ctrl->poke32(B100_REG_CLEAR_RX, 0);
     _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
 
-    //set the expected packet size in USB frames
-    _fpga_ctrl->poke32(B100_REG_MISC_RX_LEN, 4);
-
     //allocate streamer weak ptrs containers
     _rx_streamers.resize(_rx_dsps.size());
     _tx_streamers.resize(1/*known to be 1 dsp*/);

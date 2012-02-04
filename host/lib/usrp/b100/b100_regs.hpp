@@ -42,10 +42,6 @@
 #define B100_REG_MISC_SW         B100_REG_MISC_BASE + 2
 #define B100_REG_MISC_CGEN_CTRL  B100_REG_MISC_BASE + 4
 #define B100_REG_MISC_CGEN_ST    B100_REG_MISC_BASE + 6
-#define B100_REG_MISC_TEST       B100_REG_MISC_BASE + 8
-#define B100_REG_MISC_RX_LEN     B100_REG_MISC_BASE + 10
-#define B100_REG_MISC_TX_LEN     B100_REG_MISC_BASE + 12
-#define B100_REG_MISC_XFER_RATE  B100_REG_MISC_BASE + 14
 
 /////////////////////////////////////////////////////
 // Slave 1 -- UART
